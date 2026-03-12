@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\adaptive_systems\correlation_analyzer.py
+# hypothesis_version: 6.148.3
+
+[0.3, 0.6, 0.7, 0.8, 1.0, 100, 86400, 'assets', 'average_correlation', 'breakdown_threshold', 'breakdown_type', 'centrality', 'close', 'cluster_id', 'cluster_size', 'communities', 'correlation', 'correlation_change', 'correlation_cluster', 'correlation_flip', 'correlation_regime', 'cross_correlations', 'current_regime', 'density', 'end', 'external_correlation', 'flip_magnitude', 'global', 'high_correlation', 'historical_regimes', 'internal_correlation', 'lag', 'lag_asset', 'lead_asset', 'lead_lag', 'lookback_window', 'low_correlation', 'network_stats', 'normal_correlation', 'pearson', 'regime_change', 'regime_duration', 'regime_stability', 'regime_stats', 'regime_type', 'relationship_type', 'short_window', 'sign_change', 'spearman', 'start', 'strongest_pair', 'unknown', 'volatility', 'weakest_pair']

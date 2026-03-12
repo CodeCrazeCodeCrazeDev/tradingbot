@@ -1,0 +1,83 @@
+# Elite Trading Bot Configuration
+
+# MetaTrader5 Settings
+mt5:
+  server: "MetaQuotes-Demo"
+  login: 12345678
+  password: "demo"
+  timeout: 60000
+  symbols:
+    - "EURUSD"
+    - "GBPUSD"
+    - "USDJPY"
+  timeframes:
+    - "M15"
+    - "H1"
+    - "H4"
+    - "D1"
+
+# Trading Parameters
+trading:
+  mode: "paper"  # paper or live
+  risk_per_trade: 0.02  # 2% risk per trade
+  max_positions: 5
+  position_sizing: "risk_based"  # risk_based, fixed, kelly
+  stop_loss_atr_multiplier: 2.0
+  take_profit_rr_ratio: 2.0
+  breakeven_threshold: 1.0  # Move to breakeven at 1R
+  trailing_stop_activation: 1.5  # Activate trailing stop at 1.5R
+  trailing_stop_distance: 2.0  # ATR multiplier for trailing stop
+
+# Elite Features
+elite_features:
+  use_quantum: true
+  use_blockchain: true
+  use_ai_ml: true
+  use_emotions: true
+  use_sentiment: true
+  use_advanced_exits: true
+  use_market_intelligence: true
+
+# AI/ML Settings
+ai_ml:
+  model_path: "models"
+  prediction_horizon: 10
+  confidence_threshold: 0.7
+  feature_engineering: true
+  ensemble_models: true
+  use_reinforcement: true
+  use_deep_learning: true
+
+# Market Intelligence
+market_intelligence:
+  data_update_interval: 60  # seconds
+  news_impact_window: 3600  # seconds
+  sentiment_threshold: 0.6
+  correlation_threshold: 0.7
+  volatility_regimes: true
+  liquidity_analysis: true
+  order_flow_analysis: true
+
+# Logging
+logging:
+  level: "INFO"
+  file: "trading_bot.log"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  max_size: 10485760  # 10MB
+  backup_count: 5
+
+# Database
+database:
+  type: "sqlite"
+  path: "trading_bot.db"
+  backup_enabled: true
+  backup_interval: 86400  # 24 hours
+
+# Performance Tracking
+performance:
+  track_metrics: true
+  save_trades: true
+  generate_reports: true
+  report_interval: "daily"
+  calculate_statistics: true
+  plot_equity_curve: true

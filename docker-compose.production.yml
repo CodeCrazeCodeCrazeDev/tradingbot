@@ -1,0 +1,235 @@
+version: '3.8'
+
+# ===========================================
+# AlphaAlgo Trading Bot - Production Stack
+# ===========================================
+# Includes: Trading Bot, PostgreSQL, Redis, 
+# Prometheus, Grafana, and supporting services
+
+networks:
+  alphaalgo-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+  timescaledb-data:
+
+services:
+  # =========================================
+  # Core Trading Bot
+  # =========================================
+  trading-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+      target: production
+    container_name: alphaalgo-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://alphaalgo:${DB_PASSWORD:-alphaalgo123}@postgres:5432/alphaalgo
+      - REDIS_URL=redis://redis:6379/0
+      - PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PAPER_TRADING=${PAPER_TRADING:-true}
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./backups:/app/backups
+      - ./state:/app/state
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - alphaalgo-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+  # =========================================
+  # PostgreSQL Database
+  # =========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: alphaalgo-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=alphaalgo
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-alphaalgo123}
+      - POSTGRES_DB=alphaalgo
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./deploy/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U alphaalgo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - alphaalgo-network
+
+  # =========================================
+  # TimescaleDB for Time-Series Data
+  # =========================================
+  timescaledb:
+    image: timescale/timescaledb:latest-pg15
+    container_name: alphaalgo-timescaledb
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=alphaalgo
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-alphaalgo123}
+      - POSTGRES_DB=alphaalgo_timeseries
+    volumes:
+      - timescaledb-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U alphaalgo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - alphaalgo-network
+
+  # =========================================
+  # Redis Cache
+  # =========================================
+  redis:
+    image: redis:7-alpine
+    container_name: alphaalgo-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - alphaalgo-network
+
+  # =========================================
+  # Prometheus Monitoring
+  # =========================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: alphaalgo-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9091:9090"
+    networks:
+      - alphaalgo-network
+
+  # =========================================
+  # Grafana Dashboard
+  # =========================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: alphaalgo-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - alphaalgo-network
+
+  # =========================================
+  # Alertmanager
+  # =========================================
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alphaalgo-alertmanager
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    volumes:
+      - ./deploy/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    ports:
+      - "9093:9093"
+    networks:
+      - alphaalgo-network
+
+  # =========================================
+  # Nginx Reverse Proxy
+  # =========================================
+  nginx:
+    image: nginx:alpine
+    container_name: alphaalgo-nginx
+    restart: unless-stopped
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/nginx/ssl:/etc/nginx/ssl:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - trading-bot
+      - grafana
+    networks:
+      - alphaalgo-network
+
+  # =========================================
+  # API Documentation (Swagger UI)
+  # =========================================
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    container_name: alphaalgo-swagger
+    restart: unless-stopped
+    environment:
+      - SWAGGER_JSON=/api/openapi.json
+    volumes:
+      - ./docs/api/openapi.json:/api/openapi.json:ro
+    ports:
+      - "8081:8080"
+    networks:
+      - alphaalgo-network

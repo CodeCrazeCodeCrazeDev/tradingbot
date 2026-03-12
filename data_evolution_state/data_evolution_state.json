@@ -1,0 +1,71 @@
+{
+  "quality_thresholds": {
+    "completeness": 0.95,
+    "accuracy": 0.99,
+    "timeliness": 0.9,
+    "consistency": 0.95,
+    "validity": 0.99,
+    "freshness": 0.95
+  },
+  "validation_rules": {
+    "price_change_max": 0.1,
+    "volume_spike_threshold": 10,
+    "timestamp_max_delay": 5,
+    "missing_fields_allowed": 0,
+    "outlier_std_threshold": 4
+  },
+  "source_reliability": {},
+  "stats": {
+    "data_points_validated": 0,
+    "quality_issues_found": 0,
+    "data_cleaned": 0,
+    "sources_evaluated": 0,
+    "evolutions_performed": 12
+  },
+  "alt_data_sources": {
+    "news": {
+      "enabled": true,
+      "weight": 0.2777777777777778,
+      "lag_hours": 0,
+      "reliability": 0.7,
+      "sentiment_threshold": 0.3
+    },
+    "social": {
+      "enabled": true,
+      "weight": 0.16666666666666666,
+      "lag_hours": 0,
+      "reliability": 0.5,
+      "sentiment_threshold": 0.4
+    },
+    "economic": {
+      "enabled": true,
+      "weight": 0.3333333333333333,
+      "lag_hours": 24,
+      "reliability": 0.9,
+      "impact_threshold": 0.5
+    },
+    "satellite": {
+      "enabled": false,
+      "weight": 0.1,
+      "lag_hours": 48,
+      "reliability": 0.6,
+      "change_threshold": 0.1
+    },
+    "blockchain": {
+      "enabled": true,
+      "weight": 0.22222222222222224,
+      "lag_hours": 0,
+      "reliability": 0.8,
+      "flow_threshold": 1000000
+    }
+  },
+  "level2_params": {
+    "depth_levels": 10,
+    "imbalance_threshold": 0.3,
+    "spread_alert_threshold": 0.001,
+    "liquidity_window": 100,
+    "iceberg_detection_sensitivity": 0.7,
+    "spoofing_detection_sensitivity": 0.8,
+    "order_flow_smoothing": 0.1
+  }
+}

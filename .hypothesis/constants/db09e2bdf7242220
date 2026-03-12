@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\institutional_entry\entry_signal_generator.py
+# hypothesis_version: 6.148.3
+
+[0.05, 0.1, 0.3, 0.4, 0.6, 0.7, 0.75, 0.9, 1.0, 1.5, 2.0, 2.5, 100, ' [EXPIRED]', '15m', '1d', '1h', '1m', '4h', '5m', 'absorption_threshold', 'body', 'body_ratio', 'close', 'high', 'is_bearish', 'is_bullish', 'long', 'low', 'macd', 'macd_hist', 'macd_signal', 'medium', 'moderate', 'momentum_macd_fast', 'momentum_macd_signal', 'momentum_macd_slow', 'momentum_rsi_period', 'mtf_alignment_config', 'nearest', 'open', 'primary_timeframe', 'range', 'rel_volume', 'rsi', 'short', 'sma', 'strong', 'timeframes', 'trend_sma_period', 'very_high', 'very_low', 'very_strong', 'very_weak', 'vol_ma', 'volume', 'volume_ma_period', 'weak']

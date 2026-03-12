@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\system_supervisor\security_supervisor.py
+# hypothesis_version: 6.148.3
+
+[168, 300, 1000, 3600, '*.py', '=', 'API_KEY_ENCRYPTION', 'API_KEY_PERMISSIONS', 'AUTO_DISABLE', 'CRITICAL', 'DDOS_DETECTION', 'INSECURE_ENDPOINT', 'Logged', 'MALWARE_SCAN', 'S_IROTH', 'THREAT', 'WARNING', 'a', 'api_keys', 'api_keys_file', 'breach', 'checks', 'config', 'config/api_keys.json', 'critical_events', 'ddos', 'del /f /q', 'description', 'encryption_enabled', 'endpoints', 'eval(', 'exec(', 'format c:', 'https://', 'ignore', 'last_scan', 'logs/security.log', 'malware', 'models', 'network', 'r', 'rb', 'recent_events', 'rm -rf /', 'scan_interval_hours', 'secure', 'security_log', 'severity', 'ssl_required', 'ssl_tls', 'status', 'subprocess.call', 'threat', 'timestamp', 'total_events', 'trading_bot', 'type', 'utf-8', 'warning', 'warning_events']

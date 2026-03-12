@@ -1,0 +1,132 @@
+[
+  {
+    "alert_id": "92f630b7-8bb7-47e0-b02c-c78c4db9a6da",
+    "priority": 2,
+    "title": "Trading System Started",
+    "message": "AlphaAlgo started in paper mode",
+    "category": "system",
+    "source": "system",
+    "data": {},
+    "channels": [
+      "log",
+      "file",
+      "console"
+    ],
+    "delivered_to": [
+      "log"
+    ],
+    "created_at": "2025-12-03T20:19:07.565363",
+    "delivered_at": null,
+    "acknowledged_at": null,
+    "acknowledged_by": null
+  },
+  {
+    "alert_id": "92f630b7-8bb7-47e0-b02c-c78c4db9a6da",
+    "priority": 2,
+    "title": "Trading System Started",
+    "message": "AlphaAlgo started in paper mode",
+    "category": "system",
+    "source": "system",
+    "data": {},
+    "channels": [
+      "log",
+      "file",
+      "console"
+    ],
+    "delivered_to": [
+      "log",
+      "file"
+    ],
+    "created_at": "2025-12-03T20:19:07.565363",
+    "delivered_at": "2025-12-03T20:19:07.568081",
+    "acknowledged_at": null,
+    "acknowledged_by": null
+  },
+  {
+    "alert_id": "1c74810c-2f15-496a-ae64-3784eb8a07b6",
+    "priority": 2,
+    "title": "Trading System Started",
+    "message": "AlphaAlgo started in paper mode",
+    "category": "system",
+    "source": "system",
+    "data": {},
+    "channels": [
+      "log",
+      "file",
+      "console"
+    ],
+    "delivered_to": [
+      "log"
+    ],
+    "created_at": "2025-12-03T21:33:37.111357",
+    "delivered_at": null,
+    "acknowledged_at": null,
+    "acknowledged_by": null
+  },
+  {
+    "alert_id": "1c74810c-2f15-496a-ae64-3784eb8a07b6",
+    "priority": 2,
+    "title": "Trading System Started",
+    "message": "AlphaAlgo started in paper mode",
+    "category": "system",
+    "source": "system",
+    "data": {},
+    "channels": [
+      "log",
+      "file",
+      "console"
+    ],
+    "delivered_to": [
+      "log",
+      "file"
+    ],
+    "created_at": "2025-12-03T21:33:37.111357",
+    "delivered_at": "2025-12-03T21:33:37.113657",
+    "acknowledged_at": null,
+    "acknowledged_by": null
+  },
+  {
+    "alert_id": "0a96b75a-a81c-43b9-9ba7-dead58161a72",
+    "priority": 2,
+    "title": "Trading System Started",
+    "message": "AlphaAlgo started in paper mode",
+    "category": "system",
+    "source": "system",
+    "data": {},
+    "channels": [
+      "log",
+      "file",
+      "console"
+    ],
+    "delivered_to": [
+      "log"
+    ],
+    "created_at": "2025-12-03T23:36:44.915784",
+    "delivered_at": null,
+    "acknowledged_at": null,
+    "acknowledged_by": null
+  },
+  {
+    "alert_id": "0a96b75a-a81c-43b9-9ba7-dead58161a72",
+    "priority": 2,
+    "title": "Trading System Started",
+    "message": "AlphaAlgo started in paper mode",
+    "category": "system",
+    "source": "system",
+    "data": {},
+    "channels": [
+      "log",
+      "file",
+      "console"
+    ],
+    "delivered_to": [
+      "log",
+      "file",
+      "console"
+    ],
+    "created_at": "2025-12-03T23:36:44.915784",
+    "delivered_at": "2025-12-03T23:36:44.922292",
+    "acknowledged_at": null,
+    "acknowledged_by": null
+  }
+]

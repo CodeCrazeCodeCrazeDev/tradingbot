@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\safety\latency_circuit_breaker.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.5, 1.0, 500, 'allow_new_entries', 'average_latency_ms', 'conservative', 'mode', 'normal', 'paused', 'recent_checks']

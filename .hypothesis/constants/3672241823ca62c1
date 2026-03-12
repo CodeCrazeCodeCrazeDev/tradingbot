@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\ml\complete_ai_system.py
+# hypothesis_version: 6.148.3
+
+[0.0, 'AutoWeightedEnsemble', 'CompleteAISystem', 'HyperparameterTuner', 'accuracy']

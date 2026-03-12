@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\adaptive_systems\code_generation\code_validator.py
+# hypothesis_version: 6.148.3
+
+[100, '-v', '.py', 'E', 'FAILED', '_', 'avg_validation_time', 'basic', 'by_level', 'comprehensive', 'count', 'error', 'error_count', 'eval', 'exec', 'flake8', 'invalid_count', 'level', 'mypy', 'os.system', 'pytest', 'standard', 'strict', 'subprocess.Popen', 'subprocess.call', 'subprocess.run', 'test_', 'timestamp', 'total_validations', 'utf-8', 'valid', 'valid_count', 'validation_time', 'warning', 'warning_count']

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\adaptive_systems\knowledge_acquisition\knowledge_base.py
+# hypothesis_version: 6.148.3
+
+[0.0, 100, ' AND data LIKE ?', ' AND status = ?', ', ', '.trading_bot', '?', 'KnowledgeItem', 'acquisition_date', 'ai', 'algorithm', 'application_count', 'applied', 'avg_confidence', 'book', 'by_status', 'by_type', 'confidence', 'content', 'generated', 'human', 'hybrid', 'id', 'knowledge_base.db', 'knowledge_type', 'last_applied', 'metadata', 'outdated', 'rejected', 'related_ids', 'source', 'status', 'tags', 'title', 'total_items', 'unverified', 'verification_score', 'verified']

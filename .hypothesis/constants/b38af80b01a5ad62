@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\analysis\news_collector.py
+# hypothesis_version: 6.148.3
+
+[100, 200, 5000, ' OR ', '%B %d, %Y', '%Y-%m-%d', '%b %d, %Y', '%m/%d/%Y', '(\\d+)', '+00:00', '...', 'AAPL', 'Alpha Vantage', 'GOOGL', 'MSFT', 'NewsAPI', 'Seeking Alpha', 'User-Agent', 'YOUR_API_KEY', 'Yahoo Finance', 'Z', '\\s+', '__main__', 'a', 'alpha_vantage', 'api_keys', 'articles', 'bloomberg', 'cnbc', 'collected_at', 'content', 'day', 'default', 'description', 'div.C\\(#959595\\)', 'earnings', 'feed', 'financial_times', 'h3', 'hour', 'href', 'html.parser', 'market_watch', 'minute', 'month', 'name', 'newsapi', 'publishedAt', 'published_at', 'rate_limits', 'reuters', 'script', 'seeking_alpha', 'sentiment', 'source', 'sources', 'span', 'style', 'summary', 'tech stocks', 'ticker_sentiment', 'tickers', 'time_published', 'title', 'url', 'week', 'yahoo_finance', 'yesterday']

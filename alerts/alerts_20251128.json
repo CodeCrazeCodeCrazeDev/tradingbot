@@ -1,0 +1,14 @@
+{"id": "latency_critical_20251128_053036", "metric": "latency", "level": "critical", "message": "High latency: 2000.0ms", "timestamp": "2025-11-28 05:30:36.113629", "acknowledged": false}
+{"id": "latency_critical_20251128_053036", "metric": "latency", "level": "critical", "message": "High latency: 2000.0ms", "timestamp": "2025-11-28 05:30:36.122062", "acknowledged": false}
+{"id": "latency_critical_20251128_060942", "metric": "latency", "level": "critical", "message": "High latency: 2000.0ms", "timestamp": "2025-11-28 06:09:42.013525", "acknowledged": false}
+{"id": "latency_critical_20251128_060942", "metric": "latency", "level": "critical", "message": "High latency: 2000.0ms", "timestamp": "2025-11-28 06:09:42.017558", "acknowledged": false}
+{"id": "latency_critical_20251128_070355", "metric": "latency", "level": "critical", "message": "High latency: 2000.0ms", "timestamp": "2025-11-28 07:03:55.436578", "acknowledged": false}
+{"id": "latency_critical_20251128_070355", "metric": "latency", "level": "critical", "message": "High latency: 2000.0ms", "timestamp": "2025-11-28 07:03:55.445583", "acknowledged": false}
+{"id": "latency_critical_20251128_084840", "metric": "latency", "level": "critical", "message": "High latency: 2000.0ms", "timestamp": "2025-11-28 08:48:40.703479", "acknowledged": false}
+{"id": "latency_critical_20251128_084840", "metric": "latency", "level": "critical", "message": "High latency: 2000.0ms", "timestamp": "2025-11-28 08:48:40.715878", "acknowledged": false}
+{"id": "latency_critical_20251128_120706", "metric": "latency", "level": "critical", "message": "High latency: 2000.0ms", "timestamp": "2025-11-28 12:07:06.301813", "acknowledged": false}
+{"id": "latency_critical_20251128_120706", "metric": "latency", "level": "critical", "message": "High latency: 2000.0ms", "timestamp": "2025-11-28 12:07:06.313159", "acknowledged": false}
+{"id": "latency_critical_20251128_131054", "metric": "latency", "level": "critical", "message": "High latency: 2000.0ms", "timestamp": "2025-11-28 13:10:54.285734", "acknowledged": false}
+{"id": "latency_critical_20251128_131054", "metric": "latency", "level": "critical", "message": "High latency: 2000.0ms", "timestamp": "2025-11-28 13:10:54.301365", "acknowledged": false}
+{"id": "latency_critical_20251128_194158", "metric": "latency", "level": "critical", "message": "High latency: 2000.0ms", "timestamp": "2025-11-28 19:41:58.141137", "acknowledged": false}
+{"id": "latency_critical_20251128_194158", "metric": "latency", "level": "critical", "message": "High latency: 2000.0ms", "timestamp": "2025-11-28 19:41:58.149184", "acknowledged": false}

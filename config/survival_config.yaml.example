@@ -1,0 +1,71 @@
+# Elite Trading Bot - Survival Configuration Example
+# =====================================================
+
+# Core trading parameters
+symbols:
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+
+timeframes:
+  - M5   # 5-minute
+  - M15  # 15-minute
+  - H1   # 1-hour
+
+# Risk Management Parameters
+risk_limits:
+  max_position_size: 0.02    # 2% of account per position
+  max_leverage: 5.0          # Maximum leverage
+  max_daily_loss: 0.05      # 5% daily loss limit
+  max_drawdown: 0.15        # 15% maximum drawdown
+  max_correlation: 0.7       # Maximum correlation between positions
+  max_open_positions: 5      # Maximum number of open positions
+  min_free_margin: 0.3      # Minimum 30% free margin
+
+# Security Parameters
+security:
+  key_file: "config/encryption.key"
+  api_keys_file: "config/api_keys.json"
+  key_rotation_days: 30       # Number of days before key rotation
+  
+  # API rate limiting
+  rate_limits:
+    max_requests_per_second: 10
+    max_orders_per_minute: 30
+    
+  # Encryption settings
+  encryption:
+    use_secure_storage: true  # Use secure storage for keys when available
+    verify_integrity: true    # Verify integrity of encrypted data
+
+# Notification Settings
+notifications:
+  telegram:
+    enabled: true
+    token: "YOUR_TELEGRAM_BOT_TOKEN"
+    chat_id: "YOUR_CHAT_ID"
+  
+  email:
+    enabled: false
+    smtp_server: "smtp.gmail.com"
+    smtp_port: 587
+    username: "your_email@gmail.com"
+    password: "YOUR_EMAIL_PASSWORD"
+    recipients:
+      - "alerts@yourdomain.com"
+
+# Monitoring Parameters
+monitoring:
+  health_check_interval: 30   # Health check interval (seconds)
+  risk_check_interval: 60     # Risk check interval (seconds)
+  data_update_interval: 1.0   # Market data update interval (seconds)
+  analysis_interval: 5.0      # Analysis update interval (seconds)
+  max_consecutive_failures: 3 # Maximum consecutive health check failures before emergency shutdown
+
+  # Performance thresholds
+  thresholds:
+    cpu_usage: 80.0          # Maximum CPU usage (%)
+    memory_usage: 80.0       # Maximum memory usage (%)
+    disk_usage: 90.0         # Maximum disk usage (%)
+    latency_ms: 100          # Maximum latency (milliseconds)
+    error_rate: 0.01         # Maximum error rate (1%)

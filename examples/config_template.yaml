@@ -1,0 +1,218 @@
+# Elite Trading Bot - Configuration Template
+# =====================================================
+
+# Trading parameters
+symbols:
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+
+timeframes:
+  - M5
+  - M15
+  - H1
+
+# System parameters
+data_update_interval: 1.0  # seconds
+analysis_interval: 5.0  # seconds
+
+# Trading settings
+trading_enabled: true
+risk_per_trade: 1.0  # percent
+max_open_trades: 5
+
+# Trading hours
+trading_hours:
+  start: "00:00"
+  end: "23:59"
+  timezone: "UTC"
+  weekend_trading: false
+
+# Data stream configuration
+data_stream:
+  # Data source (mt5, zmq, api)
+  source: "mt5"
+  
+  # MT5 settings (if using MT5)
+  mt5:
+    server: "MetaQuotes-Demo"
+    login: 12345678
+    password: "password"
+    timeout: 60000
+  
+  # ZMQ settings (if using ZMQ)
+  zmq:
+    endpoint: "tcp://localhost:5555"
+  
+  # API settings (if using API)
+  api:
+    url: "https://api.example.com"
+    key: "your_api_key"
+    secret: "your_api_secret"
+  
+  # Caching settings
+  use_redis: true
+  redis_host: "localhost"
+  redis_port: 6379
+  redis_db: 0
+  
+  # Simulation settings (for testing)
+  simulate_data: false
+
+# Time series database configuration
+time_series_db:
+  data_dir: "data/time_series"
+  partition_by: "day"  # day, week, month
+  compression: "snappy"  # snappy, gzip, brotli
+  cache_enabled: true
+  cache_size: 100  # partitions
+  auto_archive: true
+  archive_after: 30  # days
+
+# Analysis configuration
+analysis:
+  # Minimum confidence threshold for signals
+  min_confidence: 70.0
+  
+  # Signal weights for different components
+  signal_weights:
+    market_structure: 0.15
+    liquidity: 0.10
+    order_flow: 0.15
+    microstructure: 0.05
+    price_action: 0.10
+    technical: 0.15
+    sentiment: 0.10
+    fundamental: 0.05
+    predictive: 0.15
+  
+  # Technical indicators settings
+  technical:
+    rsi_period: 14
+    macd_fast: 12
+    macd_slow: 26
+    macd_signal: 9
+    bb_period: 20
+    bb_std: 2.0
+  
+  # Market structure settings
+  market_structure:
+    swing_lookback: 10
+    trend_strength_threshold: 0.7
+  
+  # Liquidity settings
+  liquidity:
+    volume_threshold: 1.5
+    zone_merge_distance: 0.0010
+  
+  # Order flow settings
+  order_flow:
+    imbalance_threshold: 0.7
+    volume_delta_period: 20
+
+# Execution configuration
+execution:
+  # Error handling
+  max_retries: 3
+  retry_delay: 1.0  # seconds
+  
+  # Smart order router settings
+  smart_router:
+    venues:
+      - id: "primary_broker"
+        name: "Primary Broker"
+        type: "broker"
+        latency_ms: 15.0
+        cost_bps: 2.5
+        fill_rate: 0.98
+        liquidity_score: 0.9
+      
+      - id: "secondary_broker"
+        name: "Secondary Broker"
+        type: "broker"
+        latency_ms: 25.0
+        cost_bps: 2.0
+        fill_rate: 0.95
+        liquidity_score: 0.85
+  
+  # Execution algorithms settings
+  algorithms:
+    twap:
+      interval: 60  # seconds
+      chunks: 5
+    
+    vwap:
+      volume_profile: "historical"
+      deviation_limit: 0.1
+  
+  # Position management
+  position_management:
+    use_stop_loss: true
+    stop_loss_type: "percent"  # percent, points, atr
+    stop_loss_value: 1.0
+    
+    use_take_profit: true
+    take_profit_type: "percent"  # percent, points, risk_reward
+    take_profit_value: 2.0
+    
+    use_trailing_stop: true
+    trailing_activation: 0.5  # percent of take profit
+    trailing_distance: 0.5  # percent
+
+# Monitoring configuration
+monitoring:
+  # Health monitoring
+  health:
+    monitor_interval: 5.0  # seconds
+    cpu_limit: 80.0  # percent
+    memory_limit: 80.0  # percent
+    disk_limit: 80.0  # percent
+  
+  # Alerts
+  alerts:
+    channels:
+      - "console"
+      # - "email"
+      # - "sms"
+    
+    email:
+      server: "smtp.example.com"
+      port: 587
+      username: "your_email@example.com"
+      password: "your_password"
+      recipients:
+        - "alerts@example.com"
+    
+    sms:
+      provider: "twilio"
+      account_sid: "your_account_sid"
+      auth_token: "your_auth_token"
+      from_number: "+1234567890"
+      to_numbers:
+        - "+1234567890"
+
+# Dashboard configuration
+dashboard:
+  server:
+    host: "0.0.0.0"
+    port: 8000
+    debug: false
+    reload: true
+  
+  ui:
+    refresh_intervals:
+      system_status: 5000  # 5 seconds
+      positions: 1000      # 1 second
+      performance: 60000   # 1 minute
+      alerts: 10000        # 10 seconds
+      market_data: 1000    # 1 second
+
+# Feature flags
+features:
+  quantum_integration: false
+  blockchain_validation: false
+  multi_symbol_trading: true
+  adaptive_exits: true
+  market_intelligence: true
+  self_healing: true
+  personalized_learning: false

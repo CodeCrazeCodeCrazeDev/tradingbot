@@ -1,0 +1,74 @@
+# Trading Configuration
+# AlphaAlgo Trading Bot
+
+# Trading Parameters
+trading:
+  mode: paper  # paper, live, smoke
+  default_symbol: EURUSD
+  additional_symbols:
+    - GBPUSD
+    - USDJPY
+  timeframe: M15
+  bars_to_fetch: 200
+
+# Risk Management
+risk:
+  max_risk_per_trade: 0.02  # 2%
+  max_daily_loss: 0.05  # 5%
+  max_drawdown: 0.20  # 20%
+  max_position_size: 0.10  # 10% of equity
+  max_correlated_exposure: 0.30  # 30%
+  max_leverage: 5
+
+# Position Sizing
+position_sizing:
+  method: fixed_risk  # fixed_risk, kelly, volatility
+  default_lot_size: 0.01
+  min_lot_size: 0.01
+  max_lot_size: 1.0
+
+# Execution
+execution:
+  algorithm: smart  # market, twap, vwap, smart
+  slippage_tolerance_bps: 5
+  max_retries: 3
+  retry_delay_ms: 100
+
+# Strategy
+strategy:
+  use_ml: true
+  use_transformer: false
+  use_rl: false
+  confidence_threshold: 0.6
+  
+  # Technical Analysis
+  ma_fast_period: 10
+  ma_slow_period: 50
+  rsi_period: 14
+  rsi_overbought: 70
+  rsi_oversold: 30
+
+# Safety
+safety:
+  emergency_stop_enabled: true
+  max_consecutive_losses: 5
+  circuit_breaker_enabled: true
+  latency_threshold_ms: 500
+
+# Logging
+logging:
+  level: INFO
+  file_enabled: true
+  console_enabled: true
+
+# Data
+data:
+  cache_enabled: true
+  cache_ttl_seconds: 300
+  staleness_threshold_seconds: 60
+
+# Correlation
+correlation:
+  max_state_age_hours: 168  # 7 days - increased from 24
+  update_interval_minutes: 60
+  min_history_bars: 100

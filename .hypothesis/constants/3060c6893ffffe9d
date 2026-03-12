@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\opportunity_scanner\momentum_capture.py
+# hypothesis_version: 6.148.3
+
+[0.001, 0.005, 0.01, 0.02, 0.03, 0.05, 0.2, 0.3, 0.5, 0.6, 0.75, 0.8, 0.9, 0.94, 0.95, 0.97, 0.98, 0.999, 1.0, 1.001, 1.02, 1.03, 1.05, 1.06, 1.08, 1.1, 1.5, 4.0, 8.0, 12.0, 24.0, 48.0, 100, 1000, 'LONG', 'SHORT', 'acceleration', 'adx', 'analysis', 'avg_volume', 'breakout', 'breakout_level', 'consistency', 'continuation', 'current_velocities', 'divergence', 'exhaustion', 'high', 'is_accelerating', 'low', 'min_velocity', 'momentum_long', 'momentum_medium', 'momentum_short', 'pattern', 'price', 'price_history', 'reversal', 'rsi', 'slope_long', 'slope_medium', 'slope_short', 'squeeze', 'strength', 'timestamp', 'trend_strength', 'velocities', 'velocity', 'velocity_5', 'velocity_50', 'volume', 'volume_history', 'volume_momentum', 'volume_surge']

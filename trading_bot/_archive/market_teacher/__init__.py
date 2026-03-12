@@ -1,0 +1,217 @@
+"""
+market_teacher package
+"""
+
+try:
+    from .absolute_laws import (
+        AbsoluteLawsEnforcer,
+        ApprovalRequest,
+        HumanSupremacyLayer,
+        ImmutableLock,
+        LawType,
+        LawViolation,
+        LearningDraftWorkflow,
+        SafetySystemProtection,
+        ViolationSeverity
+    )
+    from .agent_collective import (
+        AgentCollective,
+        AgentCompetition,
+        AgentSignal,
+        AgentType,
+        KnowledgeTransfer,
+        MacroSpecialist,
+        MeanReversionSpecialist,
+        MetaAgent,
+        MicrostructureSpecialist,
+        MomentumSpecialist,
+        SentimentSpecialist,
+        SharedKnowledge,
+        SpecialistAgent,
+        VolatilitySpecialist
+    )
+    from .agent_population import (
+        AgentOperatingMode,
+        AgentPerformance,
+        AgentPopulationController,
+        GraduationCriteria,
+        OperatingModeType
+    )
+    from .alpha_meta import (
+        AbsoluteLaws,
+        AgentLifecycleManager,
+        AlphaMetaGovernor,
+        GovernanceAction,
+        GovernanceDecision,
+        LearningCoordinator,
+        MarketAdaptationManager,
+        RiskGovernance,
+        RiskLevel
+    )
+    from .curiosity_engine import (
+        CounterfactualLearner,
+        CuriosityDrivenExplorer,
+        CuriosityReward,
+        IntrinsicMotivation,
+        NoveltyDetector,
+        NoveltyType,
+        RegretMinimizer,
+        VirtualTrade
+    )
+    from .human_gateway import (
+        ApprovalPriority,
+        ApprovalRequest,
+        ApprovalStatus,
+        DashboardInterface,
+        HumanApprovalGateway,
+        HumanOverride
+    )
+    from .learning_framework import (
+        ContinuousLearner,
+        ExplorationExploitation,
+        LearningCycle,
+        LearningPhase,
+        MetaLearner,
+        MultiArmedBandit,
+        ThompsonSampler
+    )
+    from .market_feedback import (
+        BlackSwanLearner,
+        FeedbackType,
+        ImmediateFeedback,
+        LongTermFeedback,
+        MarketFeedbackSystem,
+        MarketLesson,
+        MediumTermFeedback,
+        ShortTermFeedback
+    )
+    from .market_teacher_orchestrator import (
+        LearningState,
+        MarketTeacherOrchestrator,
+        TeachingSession,
+        create_market_teacher_system,
+        quick_start_learning,
+        retry
+    )
+    from .safety_framework import (
+        CircuitBreaker,
+        HierarchicalRiskManager,
+        RiskLevel,
+        SafeExplorationFramework,
+        SafetyConstraints,
+        SafetyViolation,
+        SafetyViolationType
+    )
+    from .stealth_protection import (
+        AntiDriftLock,
+        BehaviorSignature,
+        DriftDetectionSystem,
+        DriftLevel,
+        StealthMetrics,
+        StealthProtectionLayer
+    )
+    from .strategy_evolution import (
+        ConceptDriftDetector,
+        EvolutionaryStrategySystem,
+        GeneticOptimizer,
+        MutationType,
+        PopulationManager,
+        StrategyDNA,
+        StrategyMutation
+    )
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in market_teacher: {e}')
+
+__all__ = [
+    'AbsoluteLaws',
+    'AbsoluteLawsEnforcer',
+    'AgentCollective',
+    'AgentCompetition',
+    'AgentLifecycleManager',
+    'AgentOperatingMode',
+    'AgentPerformance',
+    'AgentPopulationController',
+    'AgentSignal',
+    'AgentType',
+    'AlphaMetaGovernor',
+    'AntiDriftLock',
+    'ApprovalPriority',
+    'ApprovalRequest',
+    'ApprovalStatus',
+    'BehaviorSignature',
+    'BlackSwanLearner',
+    'CircuitBreaker',
+    'ConceptDriftDetector',
+    'ContinuousLearner',
+    'CounterfactualLearner',
+    'CuriosityDrivenExplorer',
+    'CuriosityReward',
+    'DashboardInterface',
+    'DriftDetectionSystem',
+    'DriftLevel',
+    'EvolutionaryStrategySystem',
+    'ExplorationExploitation',
+    'FeedbackType',
+    'GeneticOptimizer',
+    'GovernanceAction',
+    'GovernanceDecision',
+    'GraduationCriteria',
+    'HierarchicalRiskManager',
+    'HumanApprovalGateway',
+    'HumanOverride',
+    'HumanSupremacyLayer',
+    'ImmediateFeedback',
+    'ImmutableLock',
+    'IntrinsicMotivation',
+    'KnowledgeTransfer',
+    'LawType',
+    'LawViolation',
+    'LearningCoordinator',
+    'LearningCycle',
+    'LearningDraftWorkflow',
+    'LearningPhase',
+    'LearningState',
+    'LongTermFeedback',
+    'MacroSpecialist',
+    'MarketAdaptationManager',
+    'MarketFeedbackSystem',
+    'MarketLesson',
+    'MarketTeacherOrchestrator',
+    'MeanReversionSpecialist',
+    'MediumTermFeedback',
+    'MetaAgent',
+    'MetaLearner',
+    'MicrostructureSpecialist',
+    'MomentumSpecialist',
+    'MultiArmedBandit',
+    'MutationType',
+    'NoveltyDetector',
+    'NoveltyType',
+    'OperatingModeType',
+    'PopulationManager',
+    'RegretMinimizer',
+    'RiskGovernance',
+    'RiskLevel',
+    'SafeExplorationFramework',
+    'SafetyConstraints',
+    'SafetySystemProtection',
+    'SafetyViolation',
+    'SafetyViolationType',
+    'SentimentSpecialist',
+    'SharedKnowledge',
+    'ShortTermFeedback',
+    'SpecialistAgent',
+    'StealthMetrics',
+    'StealthProtectionLayer',
+    'StrategyDNA',
+    'StrategyMutation',
+    'TeachingSession',
+    'ThompsonSampler',
+    'ViolationSeverity',
+    'VirtualTrade',
+    'VolatilitySpecialist',
+    'create_market_teacher_system',
+    'quick_start_learning',
+    'retry',
+]

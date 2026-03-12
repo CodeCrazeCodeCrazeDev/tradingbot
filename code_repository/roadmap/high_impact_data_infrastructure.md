@@ -1,0 +1,102 @@
+# High-Impact: Data & Infrastructure (100)
+
+- [HI-DAT-001] Tick/bar schema validation (types, ranges) — Impacted: `MarketDataStream`
+- [HI-DAT-002] Staleness detection + pause — Impacted: `_market_data_loop`
+- [HI-DAT-003] Time sync/NTP drift watchdog — Impacted: monitoring
+- [HI-DAT-004] Sequence/duplication guard for ticks — Impacted: data ingest
+- [HI-DAT-005] OHLCV resampling correctness tests — Impacted: data utils
+- [HI-DAT-006] Data quarantine pipeline for bad bars — Impacted: QC
+- [HI-DAT-007] Backfill service with gaps reporting — Impacted: infra
+- [HI-DAT-008] Multi-level cache eviction policy — Impacted: pipeline
+- [HI-DAT-009] Redis/Plasma health checks & fallbacks — Impacted: pipeline
+- [HI-DAT-010] Async queue backpressure handling — Impacted: loops
+- [HI-DAT-011] Config version pinning at runtime — Impacted: init
+- [HI-DAT-012] Safe rolling deploy with drain — Impacted: ops
+- [HI-DAT-013] Persistent checkpoints for restart — Impacted: persistence
+- [HI-DAT-014] Data lineage metadata — Impacted: logging
+- [HI-DAT-015] Dataset fingerprinting/hashing — Impacted: QC
+- [HI-DAT-016] Memory leak detection and alarms — Impacted: monitoring
+- [HI-DAT-017] CPU/mem/disk thresholds per env — Impacted: health loop
+- [HI-DAT-018] Windows disk path correctness (C:\) — Impacted: health loop
+- [HI-DAT-019] Log rotation & archival — Impacted: logging
+- [HI-DAT-020] Structured JSON logging w/ trace IDs — Impacted: logging
+- [HI-DAT-021] PII/secrets redaction in logs — Impacted: logging
+- [HI-DAT-022] Metrics registry (Prometheus) — Impacted: monitoring
+- [HI-DAT-023] Per-loop heartbeat and liveness — Impacted: health
+- [HI-DAT-024] Self-healing task restarts — Impacted: orchestrator
+- [HI-DAT-025] Graceful SIGINT/SIGTERM handling — Impacted: runner
+- [HI-DAT-026] File descriptor/socket leak checks — Impacted: monitoring
+- [HI-DAT-027] High-water marks for queues — Impacted: monitoring
+- [HI-DAT-028] Thread/process pool sizing policy — Impacted: infra
+- [HI-DAT-029] Batch size adaptive tuning — Impacted: pipeline
+- [HI-DAT-030] Parquet partitioning strategy — Impacted: storage
+- [HI-DAT-031] Cold storage lifecycle policies — Impacted: storage
+- [HI-DAT-032] Data retention by compliance rules — Impacted: storage
+- [HI-DAT-033] Dataset diffing across sources — Impacted: QC
+- [HI-DAT-034] Canary data feeds — Impacted: data ingest
+- [HI-DAT-035] Retryable IO wrappers util — Impacted: infra
+- [HI-DAT-036] Alert noise suppression rules — Impacted: monitoring
+- [HI-DAT-037] Synthetic data generators for tests — Impacted: tests
+- [HI-DAT-038] Deterministic replay harness — Impacted: backtest
+- [HI-DAT-039] Top-N bottlenecks dashboard — Impacted: ops
+- [HI-DAT-040] Slow consumer detection — Impacted: pipeline
+- [HI-DAT-041] Multi-env config separation — Impacted: config
+- [HI-DAT-042] Secrets from OS vault (Win CredMgr) — Impacted: security
+- [HI-DAT-043] Periodic key rotation policy — Impacted: security
+- [HI-DAT-044] Encrypt at rest (sensitive files) — Impacted: storage
+- [HI-DAT-045] TLS everywhere for sockets — Impacted: infra
+- [HI-DAT-046] Health endpoint for supervision — Impacted: runner
+- [HI-DAT-047] Watchdog for deadlocks — Impacted: health
+- [HI-DAT-048] Timezone/clock normalization — Impacted: ingest
+- [HI-DAT-049] Telemetry sampling (cost control) — Impacted: monitoring
+- [HI-DAT-050] Resource quotas per component — Impacted: infra
+- [HI-DAT-051] CI smoke tests for data pipeline — Impacted: CI
+- [HI-DAT-052] Error budgets per service — Impacted: SRE
+- [HI-DAT-053] Async retries with circuit breakers — Impacted: util
+- [HI-DAT-054] Exponential backoff standard lib — Impacted: util
+- [HI-DAT-055] Config validation schema (pydantic) — Impacted: init
+- [HI-DAT-056] Snapshot/restore TimeSeriesDB — Impacted: storage
+- [HI-DAT-057] Live metrics for GC pauses — Impacted: monitoring
+- [HI-DAT-058] Profiling in prod sampling — Impacted: perf
+- [HI-DAT-059] Hot path vectorization (NumPy) — Impacted: analysis
+- [HI-DAT-060] Numba/JIT for heavy loops — Impacted: analysis
+- [HI-DAT-061] Fallback to safe defaults on config miss — Impacted: init
+- [HI-DAT-062] Panic log bundle collector — Impacted: ops
+- [HI-DAT-063] Backpressure to analysis on lag — Impacted: orchestrator
+- [HI-DAT-064] Guard against huge batches — Impacted: pipeline
+- [HI-DAT-065] Clock skew tests in CI — Impacted: tests
+- [HI-DAT-066] Dataset schema versioning — Impacted: QC
+- [HI-DAT-067] Cloud-ready storage adapters — Impacted: storage
+- [HI-DAT-068] Multi-process safe queues — Impacted: infra
+- [HI-DAT-069] WAL for critical state — Impacted: persistence
+- [HI-DAT-070] Retry budget per op to avoid storms — Impacted: util
+- [HI-DAT-071] Paging large logs/metrics safely — Impacted: ops
+- [HI-DAT-072] Configurable health thresholds — Impacted: health loop
+- [HI-DAT-073] Dynamic logging levels at runtime — Impacted: logging
+- [HI-DAT-074] Pre-commit hooks for large files — Impacted: devex
+- [HI-DAT-075] Data anonymization for sharing — Impacted: QC
+- [HI-DAT-076] Audit trail for data corrections — Impacted: QC
+- [HI-DAT-077] Duplicate trade/order detection — Impacted: recon
+- [HI-DAT-078] Memory footprint budget by comp — Impacted: infra
+- [HI-DAT-079] Retry visualization dashboard — Impacted: ops
+- [HI-DAT-080] Incident timeline generator — Impacted: ops
+- [HI-DAT-081] Offline mode with limited features — Impacted: runner
+- [HI-DAT-082] Self-test on startup checklist — Impacted: init
+- [HI-DAT-083] Canary release toggles — Impacted: devops
+- [HI-DAT-084] Large file safe writers (atomic) — Impacted: storage
+- [HI-DAT-085] Unhandled exception sentinel — Impacted: runtime
+- [HI-DAT-086] Async task leak detector — Impacted: infra
+- [HI-DAT-087] Backfill idempotency keys — Impacted: data jobs
+- [HI-DAT-088] Export packs for analysis — Impacted: storage
+- [HI-DAT-089] Metrics tags: symbol, venue, strategy — Impacted: monitoring
+- [HI-DAT-090] Standardize error codes — Impacted: util
+- [HI-DAT-091] Size-aware batching for network — Impacted: pipeline
+- [HI-DAT-092] Heartbeat to external supervisor — Impacted: ops
+- [HI-DAT-093] Log-based alert correlation — Impacted: monitoring
+- [HI-DAT-094] Heatmap of component latencies — Impacted: dashboard
+- [HI-DAT-095] Overflow queues to disk — Impacted: pipeline
+- [HI-DAT-096] Rolling checksum for streams — Impacted: QC
+- [HI-DAT-097] End-to-end data SLA tracking — Impacted: ops
+- [HI-DAT-098] Auto-tune thread pool sizes — Impacted: infra
+- [HI-DAT-099] Data compression strategy review — Impacted: storage
+- [HI-DAT-100] Capacity planning playbook — Impacted: docs

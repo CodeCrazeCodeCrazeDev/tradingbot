@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\advanced_features\liquidity_holography.py
+# hypothesis_version: 6.148.3
+
+[0.0, 1e-08, 0.001, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 1.0, 2.0, 24.0, 3600.0, 100, 221, 222, 223, 224, 300, 1000, 1800, 3600, 10000, 14400, 86400, 604800, '15m', '1d', '1h', '1m', '3d', '4h', '5m', 'Liquidity Mass', 'Price', 'Time', 'close', 'cluster_centers', 'cluster_densities', 'cluster_labels', 'decay_rates', 'inf', 'plasma', 'price_density', 'tight', 'timestamps', 'viridis', 'volume', 'volume_density']

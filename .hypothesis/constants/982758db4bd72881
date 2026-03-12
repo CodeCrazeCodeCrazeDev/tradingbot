@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\adaptive_systems\ensemble_learning.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.02, 0.1, 0.2, 0.3, 0.33, 0.34, 0.4, 0.5, 0.6, 1.0, -1000, 100, 1000, 'arbitrage', 'avg_confidence', 'bayesian_averaging', 'buy', 'confidence_threshold', 'correct_prediction', 'db_path', 'dynamic_selection', 'ensemble_accuracy', 'hold', 'mean_reversion', 'microstructure', 'min_strategies', 'momentum', 'none', 'pattern_recognition', 'performance_weighted', 'performance_window', 'pnl', 'rebalance_frequency', 'regime_adaptive', 'sell', 'sentiment_based', 'signal_distribution', 'stacking', 'strategy_weights', 'total_predictions', 'trend_following', 'weighted_voting']

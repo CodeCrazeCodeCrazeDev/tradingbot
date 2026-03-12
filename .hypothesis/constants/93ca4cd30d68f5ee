@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\analysis\order_flow.py
+# hypothesis_version: 6.148.3
+
+[-0.5, 0.0001, 0.001, 0.01, 0.1, 0.3, 0.5, 0.67, 0.99, 1.0, 1.5, 2.0, 100, 1000, '\nSignal summary:', '15min', '2023-01-01', '5min', '__main__', 'ask_price', 'ask_volume', 'bearish', 'bid_price', 'bid_volume', 'bullish', 'buy', 'close', 'delta_bar', 'delta_bars', 'footprint_bar', 'footprint_bars', 'high', 'imbalances', 'inf', 'low', 'market_depth', 'net_signal', 'open', 'price', 'processing_time_ms', 'sell', 'side', 'signal', 'strength', 'timestamp', 'volume']

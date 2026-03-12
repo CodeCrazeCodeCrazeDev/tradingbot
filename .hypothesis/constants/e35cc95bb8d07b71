@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\ml\data_leakage_guard.py
+# hypothesis_version: 6.148.3
+
+[0.99, 100, 1000, 10000, '2024-01-01', '=', 'CRITICAL', 'H', 'HIGH', 'MEDIUM', '__main__', 'affected_features', 'available', 'correlation', 'critical_violations', 'description', 'features_validated', 'future_count', 'future_points', 'future_sma', 'group_leakage', 'leakage_type', 'look_ahead', 'max_train_time', 'metadata', 'min_test_time', 'overlap_count', 'price', 'required', 'severity', 'sma_20', 'target_leakage', 'temporal_leakage', 'timestamp', 'total_validations', 'total_violations', 'train_test_split', 'validated_features', 'violations_detected', 'volume']

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\ai_core\execution\__init__.py
+# hypothesis_version: 6.148.3
+
+[1e-06, 0.0001, 0.001, 0.01, 0.02, 0.1, 1000000, 'ExecutionOptimizer', 'MarketImpactModel', 'RLAdaptiveExecutor', 'action', 'almgren_chriss', 'avg_volume', 'estimated_cost', 'executed', 'execution_rate', 'hold', 'linear', 'not_trained', 'quantity', 'rl', 'spread', 'status', 'time_horizon', 'total_cost', 'trajectory', 'unknown_strategy', 'volatility']

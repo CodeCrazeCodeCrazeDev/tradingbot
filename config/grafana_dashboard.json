@@ -1,0 +1,133 @@
+{
+  "dashboard": {
+    "title": "AlphaAlgo Trading System",
+    "tags": ["trading", "alphaalgo"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Portfolio Value",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "portfolio_value",
+            "legendFormat": "Portfolio Value"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Drawdown",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "portfolio_drawdown",
+            "legendFormat": "Drawdown %"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Trade P&L Distribution",
+        "type": "heatmap",
+        "targets": [
+          {
+            "expr": "rate(trade_pnl_sum[5m])",
+            "legendFormat": "P&L"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "id": 4,
+        "title": "Trade Count by Direction",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(trades_total[5m])) by (direction)",
+            "legendFormat": "{{direction}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "id": 5,
+        "title": "Model Inference Latency",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(model_inference_latency_seconds_bucket[5m]))",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(model_inference_latency_seconds_bucket[5m]))",
+            "legendFormat": "p50"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+      },
+      {
+        "id": 6,
+        "title": "System Health Score",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "system_health_score",
+            "legendFormat": "Health"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+      },
+      {
+        "id": 7,
+        "title": "Open Positions",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(open_positions) by (symbol)",
+            "legendFormat": "{{symbol}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
+      },
+      {
+        "id": 8,
+        "title": "Risk Exposure",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "current_risk_exposure",
+            "legendFormat": "Risk %"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
+      },
+      {
+        "id": 9,
+        "title": "Order Execution Latency",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(order_execution_latency_seconds_bucket[5m]))",
+            "legendFormat": "p95"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32}
+      },
+      {
+        "id": 10,
+        "title": "Slippage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(order_slippage_pips_bucket[5m]))",
+            "legendFormat": "p95 slippage"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32}
+      }
+    ]
+  }
+}

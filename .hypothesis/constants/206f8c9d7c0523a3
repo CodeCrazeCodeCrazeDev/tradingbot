@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\risk\MASTER_risk_manager.py
+# hypothesis_version: 6.148.3
+
+[0.0, 1e-05, 0.0001, 0.0005, 0.001, 0.003, 0.004, 0.005, 0.008, 0.01, 0.015, 0.02, 0.025, 0.03, 0.05, 0.08, 0.1, 0.15, 0.2, 0.25, 0.3, 0.5, 0.7, 0.75, 0.8, 0.85, 0.9, 1.0, 1.2, 1.5, 50.0, 100.0, 100, 10000, 'balance', 'enable_ml', 'equity', 'inf', 'max_correlated_risk', 'max_daily_loss', 'max_drawdown_limit', 'max_monthly_loss', 'max_open_positions', 'max_portfolio_risk', 'max_risk_per_trade', 'max_sector_risk', 'max_weekly_loss', 'pips', 'profit', 'risk_pct', 'take_profit_pips']

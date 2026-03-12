@@ -1,0 +1,100 @@
+# Elite Trading Bot - MT5 Configuration
+
+# General settings
+symbols:
+  - EUR/USD
+  - GBP/USD
+  - USD/JPY
+  - GOLD
+  - BTCUSD
+  - ETHUSD
+  - US500
+  - AAPL
+  - MSFT
+  - GOOGL
+
+timeframes:
+  - M1
+  - M5
+  - M15
+  - H1
+  - H4
+  - D1
+
+primary_timeframe: M15
+decision_interval_minutes: 5
+account_size: 10000.0
+max_position_size: 0.05  # 5% of account
+close_positions_on_stop: true
+risk_reward_ratio: 2.0
+sl_atr_multiplier: 2.0
+
+# MT5 connector configuration
+connector_config:
+  exchange_name: mt5
+  account: 12345678  # Replace with your MT5 account number
+  password: "your_password"  # Replace with your MT5 password
+  server: "MetaQuotes-Demo"  # Replace with your broker's server name
+  mt5_path: "C:/Program Files/MetaTrader 5/terminal64.exe"  # Path to MT5 terminal
+
+# Dashboard configuration
+dashboard_config:
+  port: 8051
+  update_interval: 5
+  theme: dark
+  title: "Elite Trading Bot - MT5 Dashboard"
+
+# Risk manager configuration
+risk_manager_config:
+  max_drawdown: 0.15
+  max_position_size: 0.05
+  position_sizing_method: kelly
+  kelly_fraction: 0.5
+  risk_per_trade: 0.01
+  max_open_trades: 10
+  max_trades_per_symbol: 2
+  max_correlated_trades: 3
+  correlation_threshold: 0.7
+
+# Market impact configuration
+market_impact_config:
+  asset_type: forex
+  params:
+    permanent_impact: 0.05
+    temporary_impact: 0.2
+    decay_rate: 0.5
+    volatility: 0.01
+    spread: 0.0001
+    adv_percentage: 0.01
+
+# Brain architecture configuration
+brain_config:
+  component_weights:
+    liquidity_holography: 0.15
+    institutional_dna: 0.15
+    volatility_impulse: 0.15
+    fractal_momentum: 0.15
+    multi_agent_rl: 0.15
+    quantum_optimizer: 0.10
+    blockchain_validator: 0.05
+    digital_twin: 0.10
+  confidence_threshold: 0.6
+  adaptive_learning: true
+  learning_rate: 0.01
+  update_interval_hours: 24
+
+# Quantum computing configuration
+quantum_config:
+  use_quantum: true
+  quantum_simulator: true
+  optimization_method: "QAOA"
+  shots: 1024
+  optimization_interval_hours: 12
+
+# Blockchain validation configuration
+blockchain_config:
+  use_blockchain: true
+  validation_interval_minutes: 60
+  store_predictions: true
+  store_trades: true
+  verification_level: "medium"

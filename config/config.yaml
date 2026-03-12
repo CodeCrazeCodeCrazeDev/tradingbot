@@ -1,0 +1,75 @@
+mt5:
+  path: "C:/Program Files/MetaTrader 5/terminal64.exe"
+  server: "MetaQuotes-Demo"
+  login: 0  # Will use default terminal account (MetaQuotes demo)
+  password: ""  # Will use default terminal account
+  timeout: 60000
+  symbols:
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+  timeframes:
+  - M15
+  - H1
+  - H4
+  - D1
+trading:
+  mode: "paper"  # paper or live
+  risk_per_trade: 0.01  # 1% risk per trade
+  max_positions: 5
+  position_sizing: risk_based
+  stop_loss_atr_multiplier: 2.0
+  take_profit_rr_ratio: 2.0
+  breakeven_threshold: 1.0
+  trailing_stop_activation: 1.5
+elite_features:
+  use_quantum: true
+  use_blockchain: true
+  use_ai_ml: true
+  use_emotions: true
+  use_sentiment: true
+  use_advanced_exits: true
+  use_market_intelligence: true
+ai_ml:
+  model_path: models
+  prediction_horizon: 10
+  confidence_threshold: 0.7
+  feature_engineering: true
+  ensemble_models: true
+  use_reinforcement: true
+  use_deep_learning: true
+market_intelligence:
+  data_update_interval: 60
+  news_impact_window: 3600
+  sentiment_threshold: 0.6
+  correlation_threshold: 0.7
+  volatility_regimes: true
+  liquidity_analysis: true
+  order_flow_analysis: true
+logging:
+  level: INFO
+  file: logs/trading_bot.log
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  max_size: 10485760
+  backup_count: 5
+database:
+  type: sqlite
+  path: data/trading_bot.db
+  backup_enabled: true
+  backup_interval: 86400
+performance:
+  track_metrics: true
+  save_trades: true
+  generate_reports: true
+  report_interval: daily
+  calculate_statistics: true
+  plot_equity_curve: true
+notifications:
+  email_enabled: false
+  email_note: Email disabled - basic auth not supported. Use OAuth2 or disable.
+risk:
+  max_position_size: 0.01
+  min_position_size: 0.01
+  risk_per_trade_pct: 1.0
+  max_drawdown_pct: 20.0
+  position_size_rounding: 0.01

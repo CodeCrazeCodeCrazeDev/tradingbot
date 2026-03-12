@@ -1,0 +1,59 @@
+# Multi-Symbol Trading Configuration
+# This configuration allows the bot to trade multiple currency pairs simultaneously
+
+# General settings
+mode: paper
+timeframe: H1
+bars: 500
+
+# ML features
+use_ml: true
+use_transformer: true
+use_rl: true
+market_regime: true
+sentiment_analysis: true
+order_flow: true
+
+# Execution
+execution_algo: smart
+
+# Symbols to trade - Major currency pairs
+symbols:
+  - EURUSD  # Euro vs US Dollar
+  - GBPUSD  # British Pound vs US Dollar
+  - USDJPY  # US Dollar vs Japanese Yen
+  - AUDUSD  # Australian Dollar vs US Dollar
+  - USDCAD  # US Dollar vs Canadian Dollar
+
+# Risk management per symbol (percentages)
+risk_allocation:
+  EURUSD: 30
+  GBPUSD: 20
+  USDJPY: 20
+  AUDUSD: 15
+  USDCAD: 15
+
+# Watchlist for sentiment analysis (includes symbols and their components)
+watchlist:
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+  - AUDUSD
+  - USDCAD
+  - EUR
+  - GBP
+  - JPY
+  - AUD
+  - CAD
+  - USD
+
+# Advanced features
+track_emotions: true
+quantum_blockchain: false
+adaptive_mode: true
+self_improve: true
+internet_access: false
+
+# Correlation management
+manage_correlations: true
+max_correlated_exposure: 50  # Maximum percentage of capital in correlated pairs

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\ml\online_learning.py
+# hypothesis_version: 6.148.3
+
+[1e-10, 0.05, 0.1, 1.0, 5.0, 100, 1000, 'AsyncOnlineLearner', 'OnlineLearner', 'close', 'current_mean', 'drift_detected', 'drift_magnitude', 'mae', 'model_lock', 'mse', 'p_value', 'partial_fit', 'performance', 'performance_after', 'performance_before', 'rb', 'reference_mean', 'rmse', 'samples', 'stop_event', 'timestamp', 'update_queue', 'update_thread', 'wb', 'weights']

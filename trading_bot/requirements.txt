@@ -1,0 +1,10 @@
+# Auto-generated requirements
+numpy
+pandas
+loguru
+PyYAML
+MetaTrader5
+scikit-learn
+ta
+aiohttp
+psutil

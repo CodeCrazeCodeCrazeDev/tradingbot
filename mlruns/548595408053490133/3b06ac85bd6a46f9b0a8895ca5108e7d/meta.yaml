@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/peterson/trading%20bot/mlruns/548595408053490133/3b06ac85bd6a46f9b0a8895ca5108e7d/artifacts
+end_time: 1764309023806
+entry_point_name: ''
+experiment_id: '548595408053490133'
+lifecycle_stage: active
+run_id: 3b06ac85bd6a46f9b0a8895ca5108e7d
+run_name: traveling-horse-225
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1764309023583
+status: 3
+tags: []
+user_id: peterson

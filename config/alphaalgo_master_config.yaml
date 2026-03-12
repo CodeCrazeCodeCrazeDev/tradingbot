@@ -1,0 +1,315 @@
+# =============================================================================
+# ALPHAALGO MASTER CONFIGURATION
+# =============================================================================
+# Central configuration for all trading bot services.
+# This file controls the entire trading system behavior.
+#
+# ARCHITECTURE LAYERS:
+# - Layer 0: Infrastructure (health, monitoring, logging)
+# - Layer 1: Data Foundation (database, connectivity, data feeds)
+# - Layer 2: Risk & Safety (MSOS, risk management) - HIGHEST PRIORITY
+# - Layer 3: Intelligence (ML, AI, cognitive)
+# - Layer 4: Signal Generation (alpha, strategy, analysis)
+# - Layer 5: Execution (brokers, orders, positions)
+# - Layer 6: Governance (compliance, audit, approval)
+# - Layer 7: Orchestration (event pipeline, coordination)
+#
+# IMMUTABLE PRINCIPLES:
+# 1. RISK FIRST: Risk services have VETO power over all trades
+# 2. HUMAN CONTROL: Human override ALWAYS works
+# 3. FAIL-SAFE: Default to NO TRADE when uncertain
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# APPLICATION SETTINGS
+# -----------------------------------------------------------------------------
+app:
+  name: "AlphaAlgo Trading Bot"
+  version: "3.0.0"
+  environment: "development"  # development, staging, production
+
+# -----------------------------------------------------------------------------
+# SERVICE INTEGRATION
+# -----------------------------------------------------------------------------
+services:
+  # Enable/disable service tiers
+  enable_tier1: true   # Core trading system (required)
+  enable_tier2: true   # Enhanced features (optional)
+  enable_tier3: true   # Additional modules (optional)
+  enable_tier4: true   # Complete system - all modules (optional)
+  enable_tier5: true   # Complete ecosystem - all remaining modules (optional)
+  
+  # Health check settings
+  health_check_interval: 30  # seconds
+  
+  # Service-specific configurations
+  # Each service can be enabled/disabled and configured individually
+
+# -----------------------------------------------------------------------------
+# TRADING SETTINGS
+# -----------------------------------------------------------------------------
+trading:
+  mode: "paper"  # paper, live
+  symbols:
+    - "BTCUSDT"
+    - "ETHUSDT"
+  timeframes:
+    - "1h"
+    - "4h"
+  max_concurrent_positions: 3
+  initial_capital: 10000.0
+  tick_interval: 1.0  # seconds
+
+# -----------------------------------------------------------------------------
+# RISK MANAGEMENT (CRITICAL)
+# -----------------------------------------------------------------------------
+risk:
+  # Per-trade limits
+  max_risk_per_trade: 0.02      # 2% max risk per trade
+  max_position_size_pct: 0.10   # 10% max position size
+  
+  # Daily limits
+  max_daily_loss: 0.05          # 5% max daily loss
+  max_daily_trades: 10
+  
+  # Portfolio limits
+  max_drawdown: 0.20            # 20% max drawdown
+  max_correlation_exposure: 0.70
+  
+  # Monitoring
+  check_interval: 10  # seconds
+
+# -----------------------------------------------------------------------------
+# MSOS (Market Survival Operating System)
+# -----------------------------------------------------------------------------
+msos:
+  enabled: true
+  interval: 5  # seconds
+  
+  # Tradability checks
+  min_liquidity_score: 0.5
+  max_spread_bps: 50
+  
+  # Capital governance
+  max_single_position_pct: 0.15
+  min_cash_reserve_pct: 0.20
+  
+  # Loss monitoring
+  daily_loss_limit: 0.05
+  weekly_loss_limit: 0.10
+  monthly_loss_limit: 0.15
+
+# -----------------------------------------------------------------------------
+# EXECUTION
+# -----------------------------------------------------------------------------
+execution:
+  # Order types
+  default_order_type: "market"
+  use_limit_orders: false
+  
+  # Slippage
+  max_slippage_bps: 10
+  
+  # Timeouts
+  order_timeout_seconds: 300
+  
+  # Smart routing
+  use_smart_routing: true
+  
+  # Paper trading simulation
+  simulate_slippage: true
+  simulate_partial_fills: false
+
+# -----------------------------------------------------------------------------
+# SIGNALS
+# -----------------------------------------------------------------------------
+signals:
+  # Confidence thresholds
+  min_confidence: 0.5
+  high_confidence: 0.75
+  
+  # Signal lifecycle
+  signal_ttl_seconds: 300  # 5 minutes
+  decay_rate: 0.01
+  
+  # News gating
+  enable_news_gating: true
+  news_blackout_minutes: 30
+  
+  # History
+  max_history: 1000
+
+# -----------------------------------------------------------------------------
+# BROKER CONFIGURATION
+# -----------------------------------------------------------------------------
+broker:
+  # Primary broker
+  primary: "simulation"  # simulation, mt5, alpaca, binance
+  
+  # Simulation settings
+  simulation:
+    initial_balance: 10000.0
+    commission_pct: 0.001
+    
+  # MT5 settings (if using MT5)
+  mt5:
+    server: ""
+    login: ""
+    password: ""
+    
+  # Alpaca settings (if using Alpaca)
+  alpaca:
+    api_key: ""
+    secret_key: ""
+    paper: true
+    
+  # Binance settings (if using Binance)
+  binance:
+    api_key: ""
+    secret_key: ""
+    testnet: true
+
+# -----------------------------------------------------------------------------
+# DATABASE
+# -----------------------------------------------------------------------------
+database:
+  # SQLite (default)
+  type: "sqlite"
+  path: "data/trading_bot.db"
+  
+  # Connection pool
+  pool_size: 5
+  
+  # Backup
+  backup_enabled: true
+  backup_interval_hours: 24
+
+# -----------------------------------------------------------------------------
+# DATA FEEDS
+# -----------------------------------------------------------------------------
+data_feeds:
+  # Primary data source
+  primary: "yahoo"  # yahoo, coingecko, alpaca, binance
+  
+  # Fallback sources
+  fallbacks:
+    - "coingecko"
+    
+  # Update intervals
+  tick_interval: 1.0
+  bar_interval: 60.0
+  
+  # Staleness detection
+  max_staleness_seconds: 60
+
+# -----------------------------------------------------------------------------
+# AI & ML SETTINGS
+# -----------------------------------------------------------------------------
+ai:
+  # Analysis intervals
+  analysis_interval: 60  # seconds
+  learning_interval: 300  # seconds
+  
+  # Model settings
+  use_ensemble: true
+  confidence_calibration: true
+  
+  # Feature engineering
+  feature_decay_hours: 24
+
+# -----------------------------------------------------------------------------
+# COGNITIVE ARCHITECTURE
+# -----------------------------------------------------------------------------
+cognitive:
+  enabled: true
+  
+  # 10-layer system
+  layers:
+    market_state_detection: true
+    integration_mode: true
+    multi_agent_coordination: true
+    neuro_symbolic_reasoning: true
+    advanced_rl: true
+    multi_modal_fusion: true
+    self_healing: true
+    quantum_simulation: false  # Requires quantum libraries
+    explainability: true
+    continuous_evolution: true
+
+# -----------------------------------------------------------------------------
+# MONITORING & LOGGING
+# -----------------------------------------------------------------------------
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  console:
+    enabled: true
+  file:
+    enabled: true
+    max_size_mb: 10
+    backup_count: 5
+
+monitoring:
+  # Status reporting
+  status_interval: 60  # seconds
+  health_interval: 30  # seconds
+  
+  # Alerts
+  enable_alerts: true
+  alert_channels:
+    - "log"
+    # - "email"
+    # - "telegram"
+
+# -----------------------------------------------------------------------------
+# GOVERNANCE
+# -----------------------------------------------------------------------------
+governance:
+  # G0/G1/G2 hierarchy
+  require_human_approval_for_live: true
+  
+  # Compliance
+  enable_compliance_checks: true
+  
+  # Audit
+  enable_audit_trail: true
+  audit_retention_days: 365
+
+# -----------------------------------------------------------------------------
+# ADVANCED FEATURES (TIER 2)
+# -----------------------------------------------------------------------------
+advanced:
+  # AAMIS V3
+  aamis:
+    enabled: false
+    interval: 30
+    
+  # Adaptive Systems
+  adaptive:
+    enabled: false
+    learning_rate: 0.01
+    
+  # DeepChart
+  deepchart:
+    enabled: false
+    
+  # Autonomous Learning
+  autonomous:
+    enabled: false
+    
+  # Backtesting
+  backtesting:
+    enabled: false
+    start_date: "2024-01-01"
+    end_date: "2024-12-31"
+
+# -----------------------------------------------------------------------------
+# ENVIRONMENT VARIABLES (Override with env vars)
+# -----------------------------------------------------------------------------
+# The following can be overridden with environment variables:
+# - ALPHAALGO_MODE: trading.mode
+# - ALPHAALGO_SYMBOLS: trading.symbols (comma-separated)
+# - ALPHAALGO_LOG_LEVEL: logging.level
+# - ALPHAALGO_BROKER: broker.primary
+# - MT5_SERVER, MT5_LOGIN, MT5_PASSWORD: broker.mt5.*
+# - ALPACA_API_KEY, ALPACA_SECRET_KEY: broker.alpaca.*
+# - BINANCE_API_KEY, BINANCE_SECRET_KEY: broker.binance.*

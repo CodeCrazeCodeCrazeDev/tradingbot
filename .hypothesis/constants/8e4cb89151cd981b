@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\internet_access\data_acquisition.py
+# hypothesis_version: 6.148.3
+
+[0.0005, 0.001, 0.1, 0.2, 0.3, 0.4, 0.7, 1.1, 60.0, -1000, 100, 200, 1000, 10000, 100000, ' OR ', '%', '%Y%m%d_%H%M%S', '1d', '1h', '1m', '1min', '1w', '4h', '5m', 'EURUSD', 'Mock News', 'apiKey', 'api_key', 'api_keys', 'apikey', 'articles', 'bars', 'close', 'consumer_confidence', 'count', 'data', 'data_cache', 'description', 'en', 'endpoints', 'gdp_growth', 'high', 'indicator', 'indicators', 'inflation_rate', 'interest_rate', 'interval', 'language', 'latest_close', 'low', 'macro', 'market_data', 'metadata', 'name', 'negative', 'neutral', 'news', 'news_api', 'open', 'pageSize', 'positive', 'publishedAt', 'q', 'score', 'sentiment', 'sentiment_api', 'series_id', 'sortBy', 'source', 'symbol', 'symbols', 'technical', 'timeframe', 'timestamp', 'title', 'unemployment_rate', 'unit', 'url', 'value', 'volume', 'w']

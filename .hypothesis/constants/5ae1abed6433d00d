@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\connectivity\websocket_client.py
+# hypothesis_version: 6.148.3
+
+[300, 'binance', 'channel', 'channels', 'coinbase', 'connected', 'connecting', 'connection_id', 'disconnected', 'e', 'error', 'last_message_age', 'level2', 'matches', 'name', 'product_ids', 'reconnect_count', 'reconnecting', 'state', 'stream', 'subscribe', 'subscribed', 'subscribing', 'subscription', 'subscriptions', 'ticker', 'type', 'unknown', 'unsubscribe', 'url', 'utf-8', 'wss://']

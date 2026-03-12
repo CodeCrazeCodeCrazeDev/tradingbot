@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\core\analysis_orchestrator.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.05, 0.1, 0.15, 0.2, 0.5, 0.6, 0.99, 1.0, 1.01, 1.105, 60.0, -100, 100, 101, 102, 103, 104, 105, 900, 1000, 1100, 1200, 1300, 'EURUSD', 'H1', '__main__', 'aggregated', 'buy_confidence', 'close', 'components', 'conflicting_signals', 'context', 'entry_price', 'fundamental', 'high', 'imbalance', 'indicator', 'liquidity', 'low', 'market_structure', 'microstructure', 'min_confidence', 'model', 'open', 'order_flow', 'pattern', 'predictive', 'price_action', 'ratio', 'reason', 'regime', 'reward', 'risk', 'sell_confidence', 'sentiment', 'sentiment_type', 'signal_weights', 'stop_level', 'target_level', 'technical', 'trend_strength', 'type', 'urgency', 'volatility', 'volume', 'zone_type']

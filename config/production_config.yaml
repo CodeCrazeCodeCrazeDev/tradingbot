@@ -1,0 +1,215 @@
+# ============================================================================
+# Trading Bot - Production Configuration
+# ============================================================================
+# Centralized configuration for all components
+
+# Trading Configuration
+trading:
+  mode: paper  # paper, live
+  symbols:
+    - EURUSD
+    - GBPUSD
+    - USDJPY
+  timeframes:
+    - M15
+    - H1
+    - H4
+  max_positions: 5
+  max_orders_per_symbol: 3
+  default_lot_size: 0.01
+  min_lot_size: 0.01
+  max_lot_size: 1.0
+  slippage_tolerance: 3.0
+  spread_limit: 5.0
+
+# Risk Management
+risk:
+  max_risk_per_trade: 0.02  # 2%
+  max_daily_loss: 0.05  # 5%
+  max_drawdown: 0.20  # 20%
+  max_correlation_exposure: 0.30
+  max_sector_exposure: 0.40
+  stop_loss_atr_multiplier: 2.0
+  take_profit_atr_multiplier: 3.0
+  trailing_stop_enabled: true
+  trailing_stop_distance: 1.5
+  use_kelly_criterion: true
+  kelly_fraction: 0.25
+  var_confidence: 0.95
+  var_horizon_days: 1
+
+# Broker Configuration
+broker:
+  broker_type: mt5  # mt5, alpaca, binance
+  api_key: ${BROKER_API_KEY}
+  api_secret: ${BROKER_API_SECRET}
+  account_id: ${BROKER_ACCOUNT_ID}
+  server: ${MT5_SERVER}
+  login: ${MT5_LOGIN}
+  password: ${MT5_PASSWORD}
+  terminal_path: ""
+  is_paper: true
+  timeout: 30
+  retry_attempts: 3
+  retry_delay: 1.0
+
+# Data Configuration
+data:
+  primary_source: mt5
+  fallback_sources:
+    - yahoo
+    - binance
+  cache_enabled: true
+  cache_ttl_seconds: 60
+  history_days: 365
+  tick_data_enabled: false
+  staleness_threshold_seconds: 30
+  validation_enabled: true
+  quarantine_enabled: true
+
+# Machine Learning
+ml:
+  enabled: true
+  model_path: models/
+  prediction_confidence_threshold: 0.7
+  retrain_interval_hours: 24
+  feature_importance_threshold: 0.01
+  ensemble_enabled: true
+  ensemble_models:
+    - lstm
+    - transformer
+    - xgboost
+  online_learning_enabled: true
+  drift_detection_enabled: true
+
+# Signal Configuration
+signal:
+  min_confidence: 0.6
+  signal_ttl_seconds: 300
+  decay_rate: 0.1
+  multi_timeframe_required: true
+  min_timeframe_agreement: 2
+  news_gating_enabled: true
+  news_blackout_minutes: 30
+  validation_required: true
+  min_validation_score: 0.7
+
+# Execution Configuration
+execution:
+  algorithm: smart  # market, twap, vwap, smart
+  twap_duration_minutes: 10
+  twap_slices: 5
+  vwap_participation_rate: 0.1
+  smart_routing_enabled: true
+  dark_pool_enabled: false
+  iceberg_enabled: true
+  iceberg_show_ratio: 0.2
+  max_slippage_bps: 10
+  retry_on_reject: true
+  max_retry_attempts: 3
+
+# Monitoring Configuration
+monitoring:
+  enabled: true
+  dashboard_port: 8080
+  metrics_port: 9090
+  health_check_interval: 30
+  alert_channels:
+    - log
+    - telegram
+  log_level: INFO
+  log_file: logs/trading_bot.log
+  log_rotation: daily
+  log_retention_days: 30
+
+# Database Configuration
+database:
+  db_type: sqlite  # sqlite, postgresql
+  host: localhost
+  port: 5432
+  database: trading_bot
+  username: ${DB_USER}
+  password: ${DB_PASSWORD}
+  sqlite_path: trading_bot.db
+  pool_size: 5
+  auto_migrate: true
+
+# Telegram Configuration
+telegram:
+  enabled: false
+  bot_token: ${TELEGRAM_TOKEN}
+  chat_id: ${TELEGRAM_CHAT_ID}
+  admin_ids: []
+  notification_types:
+    - trade
+    - alert
+    - error
+    - daily_report
+
+# External APIs
+api:
+  alpha_vantage_key: ${ALPHA_VANTAGE_KEY}
+  news_api_key: ${NEWS_API_KEY}
+  fred_api_key: ${FRED_API_KEY}
+  twitter_bearer_token: ${TWITTER_BEARER_TOKEN}
+  reddit_client_id: ${REDDIT_CLIENT_ID}
+  reddit_client_secret: ${REDDIT_CLIENT_SECRET}
+
+# Rate Limiting
+rate_limit:
+  enabled: true
+  default_requests_per_minute: 60
+  default_requests_per_second: 5
+  burst_allowance: 10
+  backoff_multiplier: 2.0
+  max_backoff_seconds: 300
+
+# Performance Configuration
+performance:
+  parallel_processing: true
+  max_workers: 4
+  memory_limit_mb: 1024
+  cache_size_mb: 256
+  gc_interval_seconds: 300
+  profiling_enabled: false
+  profiling_interval: 60
+
+# Error Recovery
+error_recovery:
+  retry_enabled: true
+  max_retries: 3
+  initial_delay: 1.0
+  max_delay: 60.0
+  exponential_base: 2.0
+  circuit_breaker_enabled: true
+  failure_threshold: 5
+  recovery_timeout: 30.0
+
+# Audit Configuration
+audit:
+  enabled: true
+  storage_type: sqlite  # sqlite, file, postgresql
+  retention_days: 365
+  compress_old: true
+  max_file_size_mb: 10
+
+# Dashboard Configuration
+dashboard:
+  enabled: true
+  host: 0.0.0.0
+  port: 8080
+  ws_port: 8081
+  enable_auth: true
+  api_key: ${DASHBOARD_API_KEY}
+  cors_origins:
+    - "*"
+  refresh_interval_ms: 1000
+
+# Push Notifications
+push_notifications:
+  enabled: false
+  fcm_server_key: ${FCM_SERVER_KEY}
+  fcm_project_id: ${FCM_PROJECT_ID}
+  vapid_public_key: ${VAPID_PUBLIC_KEY}
+  vapid_private_key: ${VAPID_PRIVATE_KEY}
+  vapid_email: ${VAPID_EMAIL}

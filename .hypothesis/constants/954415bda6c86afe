@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\agents\specialized_agents.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.001, 0.002, 0.005, 0.01, 0.015, 0.02, 0.05, 0.15, 0.2, 0.3, 0.4, 0.5, 0.7, 0.75, 0.8, 0.9, 0.99, 1.0, 1.01, 2.0, 2.5, 3.0, 5.0, -5000, -2000, 100, 'BUY', 'HOLD', 'Market Making', 'Mean Reversion', 'Risk Management', 'SELL', 'Trend Following', 'Volatility Trading', 'macd', 'market_maker', 'mean_reversion_agent', 'open_positions', 'price', 'risk_manager', 'rsi', 'sma_20', 'sma_50', 'spread', 'total_pnl', 'trend_agent', 'volatility', 'volatility_agent']

@@ -1,0 +1,286 @@
+# Eternal Evolution Trading Bot - Deployment Configuration
+# =========================================================
+#
+# This configuration controls the autonomous evolution system.
+# The bot evolves EVERYTHING while remaining a trading bot.
+#
+# SAFETY: Human approval is REMOVED but replaced with:
+# - Reward model guidance
+# - Harmful evolution detection
+# - Automatic rollback
+# - Circuit breakers
+# - Hard limits
+
+# ============================================================
+# DEPLOYMENT MODE
+# ============================================================
+deployment:
+  mode: paper  # paper, live, backtest
+  environment: production  # development, staging, production
+  auto_start: true
+  
+# ============================================================
+# EVOLUTION SETTINGS
+# ============================================================
+evolution:
+  # Evolution timing
+  interval_hours: 6  # How often to run evolution cycles
+  auto_evolve: true  # Enable autonomous evolution
+  
+  # NO HUMAN APPROVAL - replaced with safety mechanisms
+  require_human_approval: false
+  
+  # Safety mechanisms instead of human approval
+  safety:
+    # Pre-evolution checks
+    sandbox_testing: true
+    simulation_required: true
+    
+    # Post-evolution monitoring
+    monitoring_period_hours: 1
+    auto_rollback: true
+    
+    # Circuit breaker
+    circuit_breaker:
+      enabled: true
+      max_failures_per_day: 3
+      cooldown_hours: 6
+
+# ============================================================
+# REWARD MODEL CONFIGURATION
+# ============================================================
+reward_model:
+  # Reward weights (must sum to 1.0)
+  weights:
+    profit: 0.15
+    risk_adjusted_return: 0.20
+    drawdown: 0.15
+    win_rate: 0.10
+    sharpe_ratio: 0.15
+    sortino_ratio: 0.10
+    stability: 0.05
+    consistency: 0.05
+    recovery: 0.03
+    capital_preservation: 0.02
+  
+  # Penalty multipliers
+  penalties:
+    excessive_risk: 2.0
+    large_drawdown: 3.0
+    consecutive_losses: 1.5
+    overtrading: 1.0
+    position_concentration: 1.5
+    volatility_spike: 1.0
+    system_instability: 2.0
+    rule_violation: 5.0
+    capital_destruction: 10.0
+  
+  # Thresholds
+  thresholds:
+    min_sharpe: 0.5
+    target_sharpe: 2.0
+    max_drawdown: 0.20
+    critical_drawdown: 0.30
+    min_win_rate: 0.40
+    target_win_rate: 0.55
+    max_daily_trades: 50
+    min_profit_factor: 1.2
+
+# ============================================================
+# HARD LIMITS (CANNOT BE EXCEEDED)
+# ============================================================
+hard_limits:
+  # Risk limits
+  max_risk_per_trade: 0.05      # 5% absolute maximum
+  max_daily_loss: 0.10          # 10% absolute maximum
+  max_drawdown: 0.25            # 25% absolute maximum
+  max_position_size: 0.50       # 50% of capital maximum
+  max_leverage: 10.0            # 10x maximum leverage
+  
+  # Trading limits
+  min_stop_loss_distance: 0.001 # Must always have stop loss
+  max_consecutive_losses: 10    # Circuit breaker trigger
+  min_win_rate: 0.30            # Below this is concerning
+  
+  # These limits CANNOT be changed by evolution
+  immutable: true
+
+# ============================================================
+# HARMFUL EVOLUTION DETECTION
+# ============================================================
+harm_detection:
+  # Patterns that are automatically blocked
+  blocked_patterns:
+    - remove_stop_loss
+    - disable_risk_check
+    - unlimited_position
+    - ignore_drawdown
+    - bypass_safety
+    - remove_limit
+    - disable_circuit_breaker
+  
+  # Trend detection
+  trend_detection:
+    enabled: true
+    lookback_evolutions: 5
+    max_negative_ratio: 0.6  # Block if >60% negative
+  
+  # Automatic rollback triggers
+  rollback_triggers:
+    negative_reward_threshold: -1.0
+    capital_loss_threshold: 0.10
+    drawdown_threshold: 0.20
+    consecutive_failures: 3
+
+# ============================================================
+# RISK EVOLUTION
+# ============================================================
+risk_evolution:
+  enabled: true
+  learning_rate: 0.05
+  min_trades_for_evolution: 50
+  
+  # Evolvable parameters
+  parameters:
+    max_risk_per_trade:
+      min: 0.005
+      max: 0.03
+      default: 0.02
+    stop_loss_multiplier:
+      min: 1.0
+      max: 4.0
+      default: 2.0
+    take_profit_ratio:
+      min: 1.0
+      max: 4.0
+      default: 2.0
+    kelly_fraction:
+      min: 0.1
+      max: 0.5
+      default: 0.25
+
+# ============================================================
+# ARCHITECTURE EVOLUTION
+# ============================================================
+architecture_evolution:
+  enabled: true
+  
+  # Patterns to evolve
+  patterns:
+    circuit_breaker:
+      failure_threshold: 5
+      recovery_timeout: 60
+    retry:
+      max_attempts: 3
+      backoff_multiplier: 2.0
+    rate_limiter:
+      requests_per_second: 10
+    cache:
+      ttl_seconds: 300
+      max_size: 1000
+
+# ============================================================
+# DATA EVOLUTION
+# ============================================================
+data_evolution:
+  enabled: true
+  
+  # Data quality thresholds
+  quality:
+    min_freshness: 0.8
+    min_completeness: 0.9
+    min_accuracy: 0.95
+  
+  # Level 2 data
+  level2:
+    enabled: true
+    depth_levels: 10
+    update_frequency_ms: 100
+  
+  # Alternative data sources
+  alternative_data:
+    news_sentiment:
+      enabled: true
+      weight: 0.25
+    social_sentiment:
+      enabled: true
+      weight: 0.15
+    economic_indicators:
+      enabled: true
+      weight: 0.30
+    blockchain_data:
+      enabled: true
+      weight: 0.20
+    satellite_imagery:
+      enabled: false
+      weight: 0.10
+
+# ============================================================
+# SECURITY EVOLUTION
+# ============================================================
+security_evolution:
+  enabled: true
+  
+  # Security layers
+  layers:
+    authentication:
+      max_attempts: 5
+      lockout_duration: 300
+    rate_limiting:
+      requests_per_minute: 60
+      requests_per_hour: 1000
+    anomaly_detection:
+      sensitivity: 0.7
+      auto_block_threshold: 0.95
+
+# ============================================================
+# TRADING CONFIGURATION
+# ============================================================
+trading:
+  symbols:
+    - BTCUSDT
+    - ETHUSDT
+  
+  # Position sizing
+  position_sizing:
+    method: kelly  # fixed, kelly, optimal_f, volatility
+    max_position_pct: 0.10
+  
+  # Risk management
+  risk:
+    max_open_positions: 5
+    max_correlation_exposure: 0.50
+    use_trailing_stop: true
+
+# ============================================================
+# MONITORING & LOGGING
+# ============================================================
+monitoring:
+  # Metrics collection
+  metrics:
+    enabled: true
+    interval_seconds: 60
+  
+  # Logging
+  logging:
+    level: INFO
+    file: eternal_evolution.log
+    max_size_mb: 100
+    backup_count: 5
+  
+  # Alerts
+  alerts:
+    enabled: true
+    channels:
+      - console
+      # - telegram  # Uncomment and configure
+      # - email     # Uncomment and configure
+
+# ============================================================
+# PERSISTENCE
+# ============================================================
+persistence:
+  state_path: eternal_evolution_state
+  checkpoint_interval_hours: 1
+  max_checkpoints: 20
+  backup_enabled: true

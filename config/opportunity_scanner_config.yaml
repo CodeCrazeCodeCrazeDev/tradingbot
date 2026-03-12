@@ -1,0 +1,273 @@
+# AlphaAlgo Opportunity Scanner Configuration
+# Comprehensive opportunity detection across multiple strategies
+
+# Global Scanner Settings
+scanner:
+  enabled: true
+  scan_interval: 60  # Scan every 60 seconds
+  max_opportunities_per_scan: 20
+  min_opportunity_confidence: 0.6
+  
+  # Symbols to scan
+  symbols:
+    - EURUSD
+    - GBPUSD
+    - USDJPY
+    - AUDUSD
+    - USDCAD
+    - NZDUSD
+    - USDCHF
+    - XAUUSD  # Gold
+    - BTCUSD  # Bitcoin
+    - US30    # Dow Jones
+  
+  # Timeframes to analyze
+  timeframes: [M5, M15, H1, H4, D1]
+
+# Market Inefficiency Scanner
+market_inefficiency:
+  enabled: true
+  
+  # Inefficiency types to detect
+  detect_types:
+    - price_dislocation
+    - liquidity_imbalance
+    - volatility_anomaly
+    - spread_anomaly
+    - volume_divergence
+    - momentum_divergence
+    - correlation_breakdown
+    - regime_transition
+  
+  # Detection thresholds
+  thresholds:
+    price_dislocation: 0.003  # 0.3% deviation
+    liquidity_imbalance: 2.0  # 2:1 buy/sell ratio
+    volatility_spike: 2.5  # 2.5x normal volatility
+    spread_widening: 1.5  # 1.5x normal spread
+  
+  # Scoring
+  min_inefficiency_score: 0.65
+  expected_return_threshold: 0.015  # 1.5% minimum expected return
+
+# Arbitrage Scanners
+arbitrage:
+  # Cross-exchange arbitrage
+  cross_exchange:
+    enabled: false  # Requires multiple exchange connections
+    exchanges: []
+    min_spread: 0.005  # 0.5% minimum spread
+    max_execution_time: 2  # 2 seconds max
+  
+  # Triangular arbitrage
+  triangular:
+    enabled: true
+    currency_pairs:
+      - [EURUSD, GBPUSD, EURGBP]
+      - [AUDUSD, NZDUSD, AUDNZD]
+    min_profit: 0.002  # 0.2% minimum profit
+  
+  # Statistical arbitrage
+  statistical:
+    enabled: true
+    lookback_period: 100
+    z_score_threshold: 2.0
+    mean_reversion_confidence: 0.7
+
+# News Trading
+news_trading:
+  enabled: true
+  
+  # News sources
+  news_api_key: ""  # Set your NewsAPI key
+  sources:
+    - reuters
+    - bloomberg
+    - forex_factory
+    - investing_com
+  
+  # Event detection
+  high_impact_only: true
+  event_types:
+    - central_bank_decision
+    - employment_data
+    - inflation_data
+    - gdp_release
+    - geopolitical_event
+  
+  # Trading windows
+  pre_event_window: 300  # 5 minutes before
+  post_event_window: 900  # 15 minutes after
+  
+  # Sentiment analysis
+  sentiment_threshold: 0.7
+  sentiment_sources:
+    - news_headlines
+    - social_media
+    - analyst_reports
+
+# Correlation Trading
+correlation:
+  enabled: true
+  
+  # Correlation breakdown detection
+  correlation_window: 50
+  breakdown_threshold: 0.3  # Correlation drops below 0.3
+  
+  # Pairs trading
+  pairs_trading:
+    enabled: true
+    cointegration_test: true
+    entry_z_score: 2.0
+    exit_z_score: 0.5
+    max_holding_period: 5  # 5 days
+  
+  # Spread analysis
+  spread_monitoring: true
+  spread_mean_reversion: true
+
+# Market Making
+market_making:
+  enabled: false  # Requires special permissions
+  
+  # Quote parameters
+  spread_target: 0.0002  # 2 pips
+  quote_size: 10000  # 0.1 lot
+  max_inventory: 100000  # 1 lot
+  
+  # Risk management
+  inventory_skew: true
+  adverse_selection_protection: true
+
+# Order Flow Analysis
+order_flow:
+  enabled: true
+  
+  # Imbalance detection
+  imbalance_threshold: 1.5  # 1.5:1 buy/sell ratio
+  volume_spike_threshold: 2.0  # 2x average volume
+  
+  # Dark pool monitoring
+  dark_pool:
+    enabled: false  # Requires special data feed
+    min_block_size: 100000
+  
+  # Whale tracking
+  whale_tracking:
+    enabled: true
+    large_order_threshold: 50000  # 0.5 lot
+    accumulation_detection: true
+
+# Volatility Trading
+volatility:
+  enabled: true
+  
+  # Volatility arbitrage
+  volatility_arbitrage:
+    enabled: true
+    implied_vs_realized: true
+    term_structure_trading: true
+  
+  # Gamma scalping
+  gamma_scalping:
+    enabled: false  # Requires options
+    rehedge_threshold: 0.1
+  
+  # Volatility skew
+  skew_trading:
+    enabled: true
+    skew_threshold: 0.15
+
+# Momentum Trading
+momentum:
+  enabled: true
+  
+  # Momentum burst detection
+  burst_detection:
+    enabled: true
+    lookback_periods: [5, 10, 20]
+    momentum_threshold: 0.02  # 2% move
+    volume_confirmation: true
+  
+  # Breakout scanning
+  breakout:
+    enabled: true
+    consolidation_period: 20
+    breakout_threshold: 0.015  # 1.5% breakout
+    volume_multiplier: 1.5
+  
+  # Trend acceleration
+  trend_acceleration:
+    enabled: true
+    acceleration_threshold: 1.5
+    trend_strength_min: 0.6
+
+# Opportunity Scoring
+scoring:
+  # Weighting factors
+  weights:
+    confidence: 0.3
+    expected_return: 0.25
+    risk_reward_ratio: 0.2
+    time_sensitivity: 0.15
+    market_conditions: 0.1
+  
+  # Filtering
+  min_total_score: 0.65
+  max_opportunities_per_symbol: 3
+  
+  # Ranking
+  rank_by: total_score  # Options: total_score, expected_return, confidence
+
+# Risk Controls
+risk_controls:
+  # Per-opportunity limits
+  max_position_size: 0.05  # 5% of portfolio
+  max_leverage: 10
+  
+  # Exposure limits
+  max_total_exposure: 0.5  # 50% of portfolio
+  max_correlated_exposure: 0.3  # 30% in correlated opportunities
+  
+  # Time limits
+  max_holding_period: 86400  # 24 hours
+  stale_opportunity_timeout: 300  # 5 minutes
+
+# Performance Tracking
+performance:
+  track_scanner_performance: true
+  track_per_strategy: true
+  
+  # Metrics
+  metrics:
+    - hit_rate
+    - average_return
+    - sharpe_ratio
+    - opportunities_per_day
+    - false_positive_rate
+  
+  # Optimization
+  auto_tune_thresholds: true
+  optimization_interval: 86400  # Daily
+
+# Logging
+logging:
+  level: INFO
+  log_all_scans: false
+  log_opportunities: true
+  log_path: logs/opportunity_scanner/
+  
+  # Detailed logging
+  log_scoring_details: true
+  log_rejected_opportunities: true
+
+# Feature Flags
+features:
+  enable_market_inefficiency: true
+  enable_arbitrage: true
+  enable_news_trading: true
+  enable_correlation: true
+  enable_market_making: false
+  enable_order_flow: true
+  enable_volatility: true
+  enable_momentum: true

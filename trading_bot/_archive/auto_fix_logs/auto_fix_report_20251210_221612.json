@@ -1,0 +1,19 @@
+{
+  "timestamp": "20251210_221612",
+  "root_directory": "C:\\Users\\peterson\\trading bot\\trading_bot",
+  "max_iterations": 10,
+  "backup_directory": "C:\\Users\\peterson\\trading bot\\trading_bot\\auto_fix_backups\\20251209_232515",
+  "iterations": [
+    {
+      "iteration": 1,
+      "files_scanned": 1308,
+      "issues_found": 23,
+      "issues_fixed": 0,
+      "issues_by_type": {
+        "TYPO": 10,
+        "SYNTAX_ERROR": 13
+      },
+      "fixed_files": []
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\execution\smart_router.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.95, 2.5, 15.0, 'EURUSD', '__main__', 'average', 'avg_cost_bps', 'avg_latency_ms', 'bad', 'broker', 'buy', 'dark_pool', 'default_algorithm', 'default_venue', 'ecn', 'excellent', 'exchange', 'fill_rate', 'good', 'market', 'market_maker', 'placeholder', 'poor', 'primary_broker', 'sell', 'status', 'total_orders', 'venue_id']

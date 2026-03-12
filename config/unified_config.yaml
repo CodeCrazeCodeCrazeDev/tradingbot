@@ -1,0 +1,222 @@
+# AlphaAlgo Unified Trading System Configuration
+# Version: 2.0.0
+
+# =============================================================================
+# TRADING MODE
+# =============================================================================
+trading_mode: paper  # paper, live, backtest, simulation
+
+# =============================================================================
+# SYMBOLS
+# =============================================================================
+symbols:
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+  - BTCUSD
+
+primary_symbol: EURUSD
+
+# =============================================================================
+# TIMEFRAMES
+# =============================================================================
+timeframes:
+  - M1
+  - M5
+  - M15
+  - H1
+  - H4
+  - D1
+
+primary_timeframe: H1
+
+# =============================================================================
+# RISK MANAGEMENT (Bounded by Immutable Reward Model)
+# =============================================================================
+risk:
+  # These cannot exceed the immutable limits
+  max_risk_per_trade: 0.01     # 1% (max allowed: 2%)
+  max_daily_loss: 0.03         # 3% (max allowed: 5%)
+  max_drawdown: 0.15           # 15% (max allowed: 20%)
+  max_position_size: 0.05      # 5% (max allowed: 10%)
+  max_leverage: 2.0            # 2x (max allowed: 3x)
+  max_positions: 5
+  max_correlation: 0.6
+
+# =============================================================================
+# EXECUTION
+# =============================================================================
+execution:
+  max_slippage_bps: 5
+  max_spread_pips: 3
+  order_timeout_seconds: 30
+  retry_attempts: 3
+  retry_delay_seconds: 1
+
+# =============================================================================
+# DATA SOURCES
+# =============================================================================
+data:
+  primary_source: mt5
+  backup_sources:
+    - yahoo
+    - binance
+  cache_enabled: true
+  cache_ttl_seconds: 60
+  staleness_threshold_seconds: 30
+
+# =============================================================================
+# BROKER CONFIGURATION
+# =============================================================================
+broker:
+  name: mt5
+  server: "MetaQuotes-Demo"
+  timeout_seconds: 30
+  
+  # Paper trading settings
+  paper:
+    initial_balance: 10000
+    currency: USD
+    leverage: 100
+
+# =============================================================================
+# EVOLUTION LAYER
+# =============================================================================
+evolution:
+  enabled: true
+  evolution_interval_hours: 24
+  min_experiences_for_evolution: 100
+  
+  # Learning parameters
+  learning:
+    enabled: true
+    max_experiences: 100000
+    
+  # Optimization parameters
+  optimization:
+    enabled: true
+    max_iterations: 100
+
+# =============================================================================
+# HUMAN LAYER
+# =============================================================================
+human:
+  # Approval settings
+  approval:
+    default_timeout_seconds: 3600
+    
+  # Alert settings
+  alerts:
+    min_interval_seconds: 60
+    channels:
+      - log
+      - file
+      - console
+      
+  # Override settings
+  override:
+    emergency_stop_enabled: true
+
+# =============================================================================
+# TELEMETRY
+# =============================================================================
+telemetry:
+  # Logging
+  logging:
+    level: info
+    dir: logs
+    structured: false
+    max_bytes: 10485760  # 10MB
+    backup_count: 5
+    
+  # Metrics
+  metrics:
+    enabled: true
+    prometheus_port: 9090
+    
+  # Health checks
+  health:
+    enabled: true
+    check_interval_seconds: 30
+    critical_components:
+      - reward_model
+      - broker
+      - data_feed
+
+# =============================================================================
+# STRATEGIES
+# =============================================================================
+strategies:
+  enabled:
+    - trend_following
+    - mean_reversion
+    - momentum
+    
+  weights:
+    trend_following: 0.4
+    mean_reversion: 0.3
+    momentum: 0.3
+
+# =============================================================================
+# SIGNALS
+# =============================================================================
+signals:
+  min_confidence: 0.6
+  max_age_seconds: 300
+  
+  weights:
+    technical: 0.3
+    sentiment: 0.2
+    ml_model: 0.3
+    fundamental: 0.2
+
+# =============================================================================
+# NOTIFICATIONS
+# =============================================================================
+notifications:
+  telegram:
+    enabled: false
+    token: ""
+    chat_id: ""
+    
+  email:
+    enabled: false
+    smtp_server: ""
+    smtp_port: 587
+    username: ""
+    password: ""
+    from_address: ""
+    to_addresses: []
+
+# =============================================================================
+# STORAGE
+# =============================================================================
+storage:
+  base_dir: data
+  
+  # Database
+  database:
+    type: sqlite
+    path: data/alphaalgo.db
+    
+  # State persistence
+  state:
+    dir: evolution_state
+    save_interval_seconds: 300
+
+# =============================================================================
+# PERFORMANCE
+# =============================================================================
+performance:
+  # Threading
+  max_workers: 4
+  
+  # Caching
+  cache:
+    enabled: true
+    max_size_mb: 100
+    
+  # Memory
+  memory:
+    max_usage_percent: 80
+    gc_threshold_mb: 500

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\indicators\advanced_technical.py
+# hypothesis_version: 6.148.3
+
+[-4.6, 0.01, 0.1, 0.4, 0.5, 0.6, 0.7, 1.0, 1.5, 2.0, 3.0, 100, 102, 300, 500, 1000, 10000, '1H', '2024-01-01', 'MEAN_REVERTING', 'RANDOM_WALK', 'STRONG_TRENDING', 'TRENDING', '__main__', 'bb_lower', 'bb_upper', 'close', 'frama', 'high', 'hurst_exponent', 'hurst_regime', 'kalman_trend', 'kama', 'kc_lower', 'kc_upper', 'low', 'momentum', 'open', 'squeeze_on', 'supertrend', 'supertrend_direction', 'volume']

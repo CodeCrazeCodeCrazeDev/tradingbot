@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\data\time_series_db.py
+# hypothesis_version: 6.148.3
+
+[100, 10000, 86400, '%Y%W', '%Y%m', '%Y%m%d', '*.parquet', 'archive', 'archive_after', 'auto_archive', 'cache_enabled', 'cache_size', 'compression', 'data/time_series', 'data_dir', 'day', 'gzip', 'max_partition_size', 'month', 'partition_by', 'snappy', 'time', 'timestamp', 'week']

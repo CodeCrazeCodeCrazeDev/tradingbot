@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\safety\connectivity_monitor.py
+# hypothesis_version: 6.148.3
+
+[135, 405, '%Y-%m-%d %H:%M:%S', '=', 'All positions closed', 'Connection restored', 'DISCONNECT_CLOSE', 'EURUSD', 'MT5 not available', 'MT5_ACCOUNT', 'MT5_PASSWORD', 'MT5_SERVER', 'account', 'action', 'balance', 'comment', 'deviation', 'disconnect_time', 'equity', 'margin', 'position', 'positions_closed', 'price', 'state_saved', 'symbol', 'timestamp', 'type', 'type_filling', 'type_time', 'volume', 'w']

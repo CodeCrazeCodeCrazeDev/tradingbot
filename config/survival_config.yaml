@@ -1,0 +1,204 @@
+# Elite Trading Bot - Survival Configuration
+# =====================================================
+
+# Core trading parameters
+symbols:
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+
+timeframes:
+  - M5   # 5-minute
+  - M15  # 15-minute
+  - H1   # 1-hour
+
+# Risk Management Parameters
+risk_limits:
+  max_position_size: 0.02    # 2% of account per position
+  max_leverage: 5.0          # Maximum leverage
+  max_daily_loss: 0.05      # 5% daily loss limit
+  max_drawdown: 0.15        # 15% maximum drawdown
+  max_correlation: 0.7       # Maximum correlation between positions
+  max_open_positions: 5      # Maximum number of open positions
+  min_free_margin: 0.3      # Minimum 30% free margin
+
+# Analysis Parameters
+analysis:
+  min_confidence: 70.0       # Minimum signal confidence (0-100)
+  signal_weights:
+    market_structure: 0.15
+    liquidity: 0.10
+    order_flow: 0.15
+    microstructure: 0.05
+    price_action: 0.10
+    technical: 0.15
+    sentiment: 0.10
+    fundamental: 0.05
+    predictive: 0.15
+
+  # Technical indicators
+  indicators:
+    rsi:
+      period: 14
+      overbought: 70
+      oversold: 30
+    
+    macd:
+      fast_period: 12
+      slow_period: 26
+      signal_period: 9
+    
+    bollinger_bands:
+      period: 20
+      std_dev: 2.0
+
+# Execution Parameters
+execution:
+  retry_attempts: 3          # Number of retry attempts for failed orders
+  retry_delay: 1.0          # Delay between retries (seconds)
+  slippage_tolerance: 0.001  # Maximum allowed slippage (0.1%)
+  
+  # Smart order routing
+  smart_router:
+    enabled: true
+    cost_weight: 0.3
+    latency_weight: 0.3
+    fill_rate_weight: 0.4
+
+  # Position management
+  position_management:
+    use_trailing_stop: true
+    trailing_activation: 0.5  # Activate at 50% of take profit
+    trailing_distance: 0.5    # Trail by 50% of activation
+
+# Monitoring Parameters
+monitoring:
+  health_check_interval: 30   # Health check interval (seconds)
+  risk_check_interval: 60     # Risk check interval (seconds)
+  data_update_interval: 1.0   # Market data update interval (seconds)
+  analysis_interval: 5.0      # Analysis update interval (seconds)
+
+  # Performance thresholds
+  thresholds:
+    cpu_usage: 80.0          # Maximum CPU usage (%)
+    memory_usage: 80.0       # Maximum memory usage (%)
+    latency_ms: 100          # Maximum latency (milliseconds)
+    error_rate: 0.01         # Maximum error rate (1%)
+
+  resource_limits:
+    cpu_warning: 90.0
+    cpu_critical: 95.0
+    memory_warning: 90.0
+    memory_critical: 95.0
+    disk_warning: 95.0
+    disk_critical: 98.0
+
+# Security Parameters
+security:
+  key_file: "config/encryption.key"
+  api_keys_file: "config/api_keys.json"
+  key_rotation_days: 30       # Number of days before key rotation
+  
+  # API rate limiting
+  rate_limits:
+    max_requests_per_second: 10
+    max_orders_per_minute: 30
+    
+  # Encryption settings
+  encryption:
+    use_secure_storage: true  # Use secure storage for keys when available
+    verify_integrity: true    # Verify integrity of encrypted data
+
+# Notification Settings
+notifications:
+  telegram:
+    enabled: true
+    token: "encrypted_token_here"
+    chat_id: "your_chat_id_here"
+  
+  email:
+    enabled: true
+    smtp_server: "smtp.gmail.com"
+    smtp_port: 587
+    username: "your_email@gmail.com"
+    password: "encrypted_password_here"
+    recipients:
+      - "alerts@yourdomain.com"
+
+  # Notification levels
+  levels:
+    trade_entry: info
+    trade_exit: info
+    position_update: info
+    risk_warning: warning
+    error: error
+    system_status: info
+
+# Data Management
+data_stream:
+  source: "mt5"              # Market data source
+  simulate_data: false       # Use simulated data for testing
+  use_redis: true           # Use Redis for caching
+  
+  # Redis settings
+  redis:
+    host: "localhost"
+    port: 6379
+    db: 0
+
+time_series_db:
+  data_dir: "data/time_series"
+  partition_by: "day"
+  compression: "snappy"
+  cache_enabled: true
+  cache_size: 100
+  auto_archive: true
+  archive_after: 30
+
+# Recovery Settings
+recovery:
+  max_retry_attempts: 3      # Maximum retry attempts for recovery
+  retry_delay: 5.0          # Delay between recovery attempts (seconds)
+  
+  # Auto-recovery actions
+  actions:
+    reconnect_on_disconnect: true
+    restart_on_crash: true
+    close_positions_on_error: false
+
+# Feature Flags
+features:
+  use_ai_predictions: true
+  use_sentiment_analysis: true
+  use_quantum_optimization: false
+  use_blockchain_validation: false
+  use_advanced_execution: true
+  use_multi_timeframe: true
+  use_correlation_protection: true
+  use_adaptive_position_sizing: true
+
+# Logging Settings
+logging:
+  level: INFO
+  file: "logs/trading_system.log"
+  max_size: 10485760        # 10MB
+  backup_count: 5
+  format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+
+# Performance Optimization
+optimization:
+  use_parallel_processing: true
+  use_gpu_acceleration: false
+  cache_technical_indicators: true
+  batch_size: 1000
+  max_lookback: 10000
+  cleanup_interval: 3600    # 1 hour
+
+# Emergency Controls
+emergency:
+  pause_on_high_spread: true
+  max_spread_multiplier: 3.0
+  pause_on_high_volatility: true
+  volatility_threshold: 2.0
+  pause_on_news: true
+  news_impact_threshold: "high"

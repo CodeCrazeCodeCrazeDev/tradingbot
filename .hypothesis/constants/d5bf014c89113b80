@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\risk\drawdown_protector.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.5, 0.75, 1.0, 2.0, 20.0, 100, 1000, 'EMERGENCY SHUTDOWN', '⛔ CRITICAL', '🔴 RED', '🟡 YELLOW', '🟢 GREEN']

@@ -1,0 +1,254 @@
+{
+  "timestamp": "2026-02-04T17:33:33.848741",
+  "total_dependencies": 34,
+  "required": {
+    "numpy": {
+      "name": "numpy",
+      "status": "installed",
+      "installed_version": "2.2.6",
+      "required_version": ">=1.20.0",
+      "description": "Numerical computing library"
+    },
+    "pandas": {
+      "name": "pandas",
+      "status": "installed",
+      "installed_version": "2.3.2",
+      "required_version": ">=1.3.0",
+      "description": "Data manipulation and analysis"
+    },
+    "pyyaml": {
+      "name": "pyyaml",
+      "status": "installed",
+      "installed_version": "6.0.1",
+      "required_version": ">=5.4.0",
+      "description": "YAML configuration parser"
+    },
+    "requests": {
+      "name": "requests",
+      "status": "installed",
+      "installed_version": "2.32.5",
+      "required_version": ">=2.26.0",
+      "description": "HTTP library"
+    },
+    "aiohttp": {
+      "name": "aiohttp",
+      "status": "installed",
+      "installed_version": "3.12.15",
+      "required_version": ">=3.8.0",
+      "description": "Async HTTP client/server"
+    },
+    "websockets": {
+      "name": "websockets",
+      "status": "installed",
+      "installed_version": "16.0",
+      "required_version": ">=10.0",
+      "description": "WebSocket client and server"
+    },
+    "scikit-learn": {
+      "name": "scikit-learn",
+      "status": "installed",
+      "installed_version": "1.7.1",
+      "required_version": ">=1.0.0",
+      "description": "Machine learning library"
+    },
+    "scipy": {
+      "name": "scipy",
+      "status": "installed",
+      "installed_version": "1.16.1",
+      "required_version": ">=1.7.0",
+      "description": "Scientific computing"
+    },
+    "loguru": {
+      "name": "loguru",
+      "status": "installed",
+      "installed_version": "0.7.3",
+      "required_version": ">=0.6.0",
+      "description": "Advanced logging"
+    },
+    "redis": {
+      "name": "redis",
+      "status": "installed",
+      "installed_version": "6.4.0",
+      "required_version": ">=4.0.0",
+      "description": "Redis client for caching"
+    },
+    "sqlalchemy": {
+      "name": "sqlalchemy",
+      "status": "installed",
+      "installed_version": "2.0.43",
+      "required_version": ">=1.4.0",
+      "description": "SQL toolkit and ORM"
+    },
+    "nltk": {
+      "name": "nltk",
+      "status": "installed",
+      "installed_version": "3.9.1",
+      "required_version": ">=3.6.0",
+      "description": "Natural language processing"
+    },
+    "spacy": {
+      "name": "spacy",
+      "status": "installed",
+      "installed_version": "3.8.7",
+      "required_version": ">=3.0.0",
+      "description": "Advanced NLP"
+    },
+    "ccxt": {
+      "name": "ccxt",
+      "status": "installed",
+      "installed_version": "4.5.34",
+      "required_version": ">=2.0.0",
+      "description": "Cryptocurrency exchange trading"
+    }
+  },
+  "optional": {
+    "torch": {
+      "name": "torch",
+      "status": "installed",
+      "installed_version": "2.8.0",
+      "required_version": ">=1.10.0",
+      "description": "PyTorch deep learning framework"
+    },
+    "torchvision": {
+      "name": "torchvision",
+      "status": "installed",
+      "installed_version": "0.23.0",
+      "required_version": ">=0.11.0",
+      "description": "PyTorch vision library"
+    },
+    "tensorflow": {
+      "name": "tensorflow",
+      "status": "installed",
+      "installed_version": "2.20.0",
+      "required_version": ">=2.8.0",
+      "description": "TensorFlow deep learning"
+    },
+    "xgboost": {
+      "name": "xgboost",
+      "status": "installed",
+      "installed_version": "3.1.3",
+      "required_version": ">=1.5.0",
+      "description": "Gradient boosting library"
+    },
+    "lightgbm": {
+      "name": "lightgbm",
+      "status": "installed",
+      "installed_version": "4.6.0",
+      "required_version": ">=3.3.0",
+      "description": "Light gradient boosting"
+    },
+    "catboost": {
+      "name": "catboost",
+      "status": "installed",
+      "installed_version": "1.2.8",
+      "required_version": ">=1.0.0",
+      "description": "CatBoost gradient boosting"
+    },
+    "ta-lib": {
+      "name": "ta-lib",
+      "status": "installed",
+      "installed_version": "0.6.7",
+      "required_version": null,
+      "description": "Technical analysis library"
+    },
+    "qiskit": {
+      "name": "qiskit",
+      "status": "installed",
+      "installed_version": "2.1.2",
+      "required_version": ">=0.30.0",
+      "description": "Quantum computing framework"
+    },
+    "web3": {
+      "name": "web3",
+      "status": "installed",
+      "installed_version": "7.13.0",
+      "required_version": ">=5.0.0",
+      "description": "Ethereum blockchain interaction"
+    },
+    "ibapi": {
+      "name": "ibapi",
+      "status": "installed",
+      "installed_version": "9.81.1.post1",
+      "required_version": null,
+      "description": "Interactive Brokers API"
+    },
+    "d3rlpy": {
+      "name": "d3rlpy",
+      "status": "installed",
+      "installed_version": "2.8.1",
+      "required_version": ">=1.0.0",
+      "description": "Offline reinforcement learning"
+    },
+    "stable-baselines3": {
+      "name": "stable-baselines3",
+      "status": "installed",
+      "installed_version": "2.7.0",
+      "required_version": ">=1.5.0",
+      "description": "Reinforcement learning algorithms"
+    },
+    "gym": {
+      "name": "gym",
+      "status": "installed",
+      "installed_version": "0.26.2",
+      "required_version": ">=0.21.0",
+      "description": "RL environment toolkit"
+    },
+    "plotly": {
+      "name": "plotly",
+      "status": "installed",
+      "installed_version": "6.3.0",
+      "required_version": ">=5.0.0",
+      "description": "Interactive plotting"
+    },
+    "dash": {
+      "name": "dash",
+      "status": "installed",
+      "installed_version": "3.2.0",
+      "required_version": ">=2.0.0",
+      "description": "Web dashboard framework"
+    },
+    "streamlit": {
+      "name": "streamlit",
+      "status": "installed",
+      "installed_version": "1.49.1",
+      "required_version": ">=1.10.0",
+      "description": "Data app framework"
+    },
+    "transformers": {
+      "name": "transformers",
+      "status": "installed",
+      "installed_version": "4.56.1",
+      "required_version": ">=4.20.0",
+      "description": "Hugging Face transformers"
+    },
+    "optuna": {
+      "name": "optuna",
+      "status": "installed",
+      "installed_version": "4.5.0",
+      "required_version": ">=2.10.0",
+      "description": "Hyperparameter optimization"
+    },
+    "mlflow": {
+      "name": "mlflow",
+      "status": "installed",
+      "installed_version": "3.5.1",
+      "required_version": ">=1.20.0",
+      "description": "ML experiment tracking"
+    },
+    "prophet": {
+      "name": "prophet",
+      "status": "installed",
+      "installed_version": "1.3.0",
+      "required_version": ">=1.0.0",
+      "description": "Time series forecasting"
+    }
+  },
+  "summary": {
+    "installed": 34,
+    "missing": 0,
+    "outdated": 0,
+    "optional_missing": 0,
+    "failed": 0
+  },
+  "installation_log": []
+}

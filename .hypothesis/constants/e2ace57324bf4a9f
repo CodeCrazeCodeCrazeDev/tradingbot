@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\risk_management\portfolio_manager.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.02, 0.05, 100000.0, 100, 252, 3600, 'BTC', 'ETH', 'EUR', 'GOLD', 'OIL', 'USD', 'Unknown', 'action', 'close', 'close_price', 'direction', 'entry_price', 'hold_time', 'inf', 'largest_position', 'least_profitable', 'long', 'long_positions', 'market_value', 'max_portfolios', 'most_profitable', 'open', 'pnl', 'pnl_pct', 'portfolio_summaries', 'position_id', 'positions', 'price', 'quantity', 'rebalance_threshold', 'sharpe_ratio', 'short', 'short_positions', 'symbol', 'timestamp', 'total_market_value', 'total_pnl', 'total_pnl_pct', 'total_portfolios', 'total_positions', 'total_unrealized_pnl', 'total_value', 'unrealized_pnl', 'value', 'weight']

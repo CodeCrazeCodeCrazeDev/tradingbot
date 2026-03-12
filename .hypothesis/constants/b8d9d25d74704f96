@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\infrastructure\monitoring.py
+# hypothesis_version: 6.148.3
+
+[0.05, 0.1, 0.2, 0.5, 0.7, 500, 1000, '\nACTIVE ALERTS:', '\nTRADING METRICS:', '%Y%m%d', '- No active alerts', '=', 'No metrics available', 'PERFORMANCE REPORT', 'a', 'acknowledged', 'active_alerts', 'alerts', 'critical', 'current', 'current_alerts', 'drawdown', 'error_rate', 'history', 'id', 'is_healthy', 'latency', 'level', 'max', 'mean', 'message', 'metric', 'metrics', 'min', 'pnl', 'sharpe', 'success_rate', 'thresholds', 'throughput', 'timestamp', 'total', 'warning']

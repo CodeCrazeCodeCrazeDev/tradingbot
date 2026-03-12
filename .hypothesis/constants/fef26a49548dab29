@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\world_model\imagination.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.5, 1.0, '\nExpected Outcomes:', '\nRisk Analysis:', 'action', 'all_results', 'analysis', 'best_trajectory', 'confidence', 'cumulative_reward', 'cvar_95', 'decoded_states', 'expected_return', 'final_state', 'horizon', 'max_return', 'min_return', 'num_simulations', 'predicted_rewards', 'rewards', 'risk_metrics', 'simulation_id', 'std_return', 'trajectory', 'var_95', 'worst_trajectory']

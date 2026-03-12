@@ -1,0 +1,260 @@
+# Live Trading Configuration
+# CAUTION: This configuration is for REAL MONEY trading
+# Only use after successful paper trading validation
+
+# ==============================================================================
+# LIVE TRADING MODE SETTINGS
+# ==============================================================================
+mode: live
+
+live_trading:
+  enabled: true
+  
+  # SAFETY: Start with small capital
+  # Recommended: 1-5% of total available capital for initial live testing
+  initial_capital_limit: 500.0  # Maximum capital to risk initially
+  currency: USD
+  
+  # Broker configuration
+  broker:
+    type: mt5  # mt5, binance, interactive_brokers
+    
+    # MT5 Settings (configure in .env file for security)
+    mt5:
+      login: ${MT5_LOGIN}
+      password: ${MT5_PASSWORD}
+      server: ${MT5_SERVER}
+      timeout: 60000
+      
+    # Binance Settings (if using)
+    binance:
+      api_key: ${BINANCE_API_KEY}
+      api_secret: ${BINANCE_API_SECRET}
+      testnet: false
+
+# ==============================================================================
+# CAPITAL SAFEGUARDS
+# ==============================================================================
+capital_safeguards:
+  # Hard limits - NEVER exceeded
+  absolute_max_capital: 1000.0  # Maximum capital ever at risk
+  
+  # Progressive scaling
+  scaling:
+    enabled: true
+    # Start with minimal capital, scale up based on performance
+    stages:
+      - name: "Stage 1 - Validation"
+        capital: 100.0
+        min_trades: 20
+        min_win_rate: 0.50
+        max_drawdown: 0.10
+        duration_days: 7
+        
+      - name: "Stage 2 - Confirmation"
+        capital: 250.0
+        min_trades: 50
+        min_win_rate: 0.48
+        max_drawdown: 0.12
+        duration_days: 14
+        
+      - name: "Stage 3 - Scaling"
+        capital: 500.0
+        min_trades: 100
+        min_win_rate: 0.45
+        max_drawdown: 0.15
+        duration_days: 30
+        
+      - name: "Stage 4 - Full"
+        capital: 1000.0
+        min_trades: 200
+        min_win_rate: 0.45
+        max_drawdown: 0.15
+        duration_days: null  # No limit
+
+# ==============================================================================
+# RISK CONTROLS (Live Mode - STRICT)
+# ==============================================================================
+risk:
+  # Position sizing - CONSERVATIVE
+  max_position_size_pct: 2.0  # Maximum 2% of capital per position
+  max_risk_per_trade_pct: 0.5  # Maximum 0.5% risk per trade
+  
+  # Daily limits - STRICT
+  max_daily_trades: 10
+  max_daily_loss_pct: 2.0  # Stop trading if 2% daily loss
+  max_daily_loss_absolute: 20.0  # Or $20, whichever is lower
+  
+  # Weekly limits
+  max_weekly_loss_pct: 5.0
+  max_weekly_loss_absolute: 50.0
+  
+  # Drawdown controls - AGGRESSIVE PROTECTION
+  max_drawdown_pct: 10.0  # Maximum 10% drawdown
+  drawdown_pause_threshold: 5.0  # Pause at 5% drawdown
+  drawdown_recovery_required: 2.0  # Must recover 2% before resuming
+  
+  # Correlation limits
+  max_correlated_exposure_pct: 20.0
+  max_positions: 3  # Maximum concurrent positions
+  
+  # Time-based restrictions
+  trading_hours:
+    enabled: true
+    sessions:
+      - name: "London"
+        start: "08:00"
+        end: "16:00"
+        timezone: "Europe/London"
+      - name: "New York"
+        start: "13:00"
+        end: "21:00"
+        timezone: "America/New_York"
+    
+  # News avoidance
+  news_filter:
+    enabled: true
+    avoid_high_impact: true
+    minutes_before: 30
+    minutes_after: 15
+
+# ==============================================================================
+# EMERGENCY CONTROLS
+# ==============================================================================
+emergency:
+  # Kill switch conditions
+  kill_switch:
+    enabled: true
+    triggers:
+      - max_consecutive_losses: 5
+      - daily_loss_pct: 3.0
+      - weekly_loss_pct: 7.0
+      - drawdown_pct: 12.0
+      - system_health_below: 80.0
+      - latency_above_ms: 500
+      - connection_failures: 3
+  
+  # Auto-close all positions
+  auto_close:
+    on_kill_switch: true
+    on_disconnect: true
+    on_critical_error: true
+  
+  # Recovery requirements
+  recovery:
+    manual_review_required: true
+    min_cooldown_hours: 24
+    health_check_required: true
+
+# ==============================================================================
+# SYMBOLS FOR LIVE TRADING
+# ==============================================================================
+symbols:
+  # Start with most liquid pairs only
+  primary: EURUSD
+  additional:
+    - GBPUSD
+  
+  # Restricted symbols (not allowed in live)
+  restricted:
+    - XAUUSD  # Gold - too volatile for initial testing
+    - BTCUSD  # Crypto - too volatile
+    - exotic pairs
+
+# ==============================================================================
+# EXECUTION SETTINGS
+# ==============================================================================
+execution:
+  # Order types
+  default_order_type: market
+  use_limit_orders: false  # Start with market orders for reliability
+  
+  # Slippage protection
+  max_slippage_pips: 3.0
+  reject_if_slippage_exceeded: true
+  
+  # Retry logic
+  max_retries: 3
+  retry_delay_ms: 1000
+  
+  # Fill confirmation
+  require_fill_confirmation: true
+  fill_timeout_seconds: 30
+
+# ==============================================================================
+# MONITORING & ALERTS
+# ==============================================================================
+monitoring:
+  enabled: true
+  
+  # Real-time monitoring
+  realtime:
+    position_check_interval_seconds: 5
+    equity_check_interval_seconds: 10
+    connection_check_interval_seconds: 30
+  
+  # Alerts - ALL ENABLED for live
+  alerts:
+    email:
+      enabled: true
+      address: ${ALERT_EMAIL}
+      on_trade: true
+      on_error: true
+      on_warning: true
+      
+    sms:
+      enabled: false  # Enable if configured
+      phone: ${ALERT_PHONE}
+      on_critical_only: true
+      
+    telegram:
+      enabled: false  # Enable if configured
+      bot_token: ${TELEGRAM_BOT_TOKEN}
+      chat_id: ${TELEGRAM_CHAT_ID}
+
+# ==============================================================================
+# LOGGING (Comprehensive for Live)
+# ==============================================================================
+logging:
+  level: DEBUG  # Full logging for live trading
+  log_all_trades: true
+  log_signals: true
+  log_risk_checks: true
+  log_order_flow: true
+  log_market_data: false  # Too verbose
+  
+  # Audit trail
+  audit:
+    enabled: true
+    log_dir: logs/audit
+    retention_days: 365
+
+# ==============================================================================
+# REPORTING
+# ==============================================================================
+reporting:
+  daily_report: true
+  weekly_report: true
+  monthly_report: true
+  
+  output_dir: reports/live_trading
+  
+  # Email reports
+  email_reports:
+    enabled: true
+    daily_summary: true
+    weekly_summary: true
+
+# ==============================================================================
+# SAFETY CHECKLIST (Must pass before live trading)
+# ==============================================================================
+pre_live_checklist:
+  - paper_trading_validated: true
+  - min_paper_trades_completed: 50
+  - paper_profit_factor_above: 1.2
+  - paper_max_drawdown_below: 0.15
+  - broker_connection_tested: true
+  - emergency_contacts_configured: true
+  - backup_systems_tested: true
+  - risk_limits_reviewed: true
+  - capital_limits_set: true

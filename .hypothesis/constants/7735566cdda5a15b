@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\adaptive_systems\__init__.py
+# hypothesis_version: 6.148.3
+
+['AdaptiveMarketMaker', 'AdaptiveRiskManager', 'CorrelationAnalyzer', 'CorrelationSignal', 'DetectedMarketRegime', 'EnsembleMethod', 'EnsemblePrediction', 'FailsafeAction', 'FeedbackType', 'HealthStatus', 'LearningType', 'LiquidityParameters', 'LiquidityProvider', 'LiquidityQuote', 'MarketRegime', 'MarketRegimeDetector', 'MarketState', 'MetaLearningEngine', 'MicrostructureSignal', 'ModelType', 'OrderFlowAnalyzer', 'OrderFlowSignal', 'OrderType', 'ParameterOptimizer', 'PatternSignal', 'PatternType', 'QuoteUpdate', 'RegimeDetector', 'RegimeSignal', 'SentimentAnalyzer', 'SentimentData', 'SentimentSignal', 'SentimentSource', 'StrategyComponent', 'StrategyPrediction', 'StrategySelector', 'StrategyType', 'SystemHealthMonitor', 'TradingDecision', 'VolatilityAnalyzer', 'VolatilityRegime', 'VolatilitySignal']

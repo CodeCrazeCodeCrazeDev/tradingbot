@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\execution\slippage_tracker.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.01, 0.1, 0.3, 0.4, 0.5, 0.6, 5.0, 100, 10000, 'No records found', 'adv', 'alpha', 'avg_cost_per_trade', 'avg_slippage_bps', 'buy', 'buy_avg_slippage_bps', 'count', 'error', 'expected_price', 'fill_price', 'linear', 'max_slippage_bps', 'median_slippage_bps', 'min_slippage_bps', 'participation', 'power', 'quantity', 's', 'sell', 'side', 'slippage_bps', 'slippage_cost', 'sqrt', 'std_slippage_bps', 'symbol', 'timestamp', 'total_cost']

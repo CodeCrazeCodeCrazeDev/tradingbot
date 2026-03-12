@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\multimodal\fusion_network.py
+# hypothesis_version: 6.148.3
+
+[0.1, '\nPrice Analysis:', '\nText Analysis:', '.price', '.text', 'BUY', 'HOLD', 'SELL', 'combined_sentiment', 'cpu', 'cuda', 'encoding', 'fused_features', 'fusion_layers', 'indicators', 'macro', 'news_embeddings', 'ohlcv', 'order_book', 'patterns', 'prediction_head', 'predictions', 'price_patterns', 'satellite', 'symbol_mentions', 'text_sentiment', 'trade_flow', 'weather']

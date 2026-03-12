@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\risk\kelly_criterion.py
+# hypothesis_version: 6.148.3
+
+[0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.8, 1.0, 100, 1000, '25%', '5%', '50%', '75%', '95%', 'Median', 'Number of Trades', 'blue', 'default_fraction', 'equity_curves', 'expected_return', 'half_kelly', 'max_final_capital', 'max_fraction', 'max_max_drawdown', 'mean_final_capital', 'mean_max_drawdown', 'median_final_capital', 'median_max_drawdown', 'min_edge', 'min_final_capital', 'min_win_rate', 'optimal_fraction', 'percentiles', 'profit', 'quarter_kelly', 'red', 'risk_of_ruin', 'ticker', 'unknown', 'white', 'win_loss_ratio', 'win_rate']

@@ -1,0 +1,82 @@
+{
+  "patterns": {
+    "circuit_breaker": {
+      "enabled": true,
+      "failure_threshold": 5,
+      "recovery_timeout": 30,
+      "half_open_requests": 3
+    },
+    "retry_with_backoff": {
+      "enabled": true,
+      "max_retries": 3,
+      "initial_delay": 1.0,
+      "max_delay": 30.0,
+      "exponential_base": 2.0
+    },
+    "bulkhead": {
+      "enabled": true,
+      "max_concurrent": 10,
+      "queue_size": 100,
+      "timeout": 30
+    },
+    "timeout": {
+      "enabled": true,
+      "default_timeout": 30,
+      "critical_timeout": 5,
+      "non_critical_timeout": 60
+    },
+    "cache": {
+      "enabled": true,
+      "max_size": 10000,
+      "ttl_seconds": 300,
+      "eviction_policy": "lru"
+    },
+    "rate_limiter": {
+      "enabled": true,
+      "requests_per_second": 1000,
+      "burst_size": 20,
+      "cooldown_seconds": 1
+    },
+    "health_check": {
+      "enabled": true,
+      "interval_seconds": 30,
+      "timeout_seconds": 5,
+      "unhealthy_threshold": 3
+    },
+    "graceful_degradation": {
+      "enabled": true,
+      "degradation_threshold": 0.8,
+      "features_to_disable": [
+        "non_critical_logging",
+        "analytics"
+      ]
+    },
+    "load_balancer": {
+      "enabled": false,
+      "algorithm": "round_robin",
+      "health_check_interval": 10
+    },
+    "failover": {
+      "enabled": true,
+      "failover_timeout": 10,
+      "max_failovers": 3,
+      "cooldown_period": 60
+    }
+  },
+  "stats": {
+    "evolutions_performed": 12,
+    "patterns_tuned": 10,
+    "errors_recovered": 0,
+    "circuit_breaks": 0,
+    "graceful_degradations": 0,
+    "health_checks_passed": 0,
+    "health_checks_failed": 0
+  },
+  "baselines": {
+    "latency_p50": null,
+    "latency_p99": null,
+    "memory_baseline": null,
+    "cpu_baseline": null
+  },
+  "circuit_states": {}
+}

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\connectors\mt5_connector.py
+# hypothesis_version: 6.148.3
+
+[0.1, 0.5, 128, 256, 512, 1000, 234000, 999999999, '-', '..', '/', 'BTC/USD', 'BTCUSD', 'EUR/USD', 'EURUSD', 'GBP/USD', 'GBPUSD', 'GOLD', 'Invalid price value', 'MT5', 'Trading Bot', 'USD/JPY', 'USDJPY', 'XAUUSD', '^[a-zA-Z0-9\\-\\.]+$', 'account', 'action', 'balance', 'buy', 'comment', 'currency', 'deal', 'deviation', 'equity', 'free_margin', 'high', 'low', 'magic', 'margin', 'margin_level', 'market_data', 'mt5_path', 'not_found', 'nt', 'open', 'order', 'order_book', 'order_id', 'password', 'price', 'price_current', 'price_open', 'profit', 'quantity', 'sell', 'server', 'side', 'sl', 'slippage', 'status', 'stop_loss', 'swap', 'symbol', 'take_profit', 'ticker', 'ticket', 'time', 'tp', 'trade', 'type', 'type_filling', 'type_time', 'volume']

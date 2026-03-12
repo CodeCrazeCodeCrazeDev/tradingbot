@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\reporting\logger.py
+# hypothesis_version: 6.148.3
+
+['%Y%m%d_%H%M%S', '10 MB', '14 days', 'INFO', 'logs', 'reporting.log_level', 'utf-8', 'zip']

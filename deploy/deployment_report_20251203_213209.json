@@ -1,0 +1,11 @@
+{
+  "deployment_time": "2025-12-03T21:32:09.773715",
+  "python_version": "3.13.7",
+  "project_root": "C:\\Users\\peterson\\trading bot",
+  "status": "SUCCESS",
+  "directories_created": [
+    "C:\\Users\\peterson\\trading bot\\logs",
+    "C:\\Users\\peterson\\trading bot\\state",
+    "C:\\Users\\peterson\\trading bot\\backup"
+  ]
+}

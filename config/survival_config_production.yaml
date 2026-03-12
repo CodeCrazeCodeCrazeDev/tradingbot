@@ -1,0 +1,63 @@
+emergency:
+  pause_on_critical_error: true
+  pause_on_high_spread: true
+  pause_on_high_volatility: true
+  pause_on_news: true
+features:
+  use_adaptive_position_sizing: true
+  use_advanced_execution: true
+  use_ai_predictions: true
+  use_correlation_protection: true
+  use_multi_timeframe: true
+  use_sentiment_analysis: true
+monitoring:
+  analysis_interval: 5.0
+  data_update_interval: 1.0
+  health_check_interval: 30
+  max_consecutive_failures: 3
+  risk_check_interval: 60
+  thresholds:
+    cpu_usage: 80.0
+    disk_usage: 90.0
+    error_rate: 0.01
+    latency_ms: 100
+    memory_usage: 80.0
+notifications:
+  email:
+    enabled: false
+    password: YOUR_EMAIL_PASSWORD
+    recipients:
+    - alerts@yourdomain.com
+    smtp_port: 587
+    smtp_server: smtp.gmail.com
+    username: your_email@gmail.com
+  telegram:
+    chat_id: YOUR_CHAT_ID
+    enabled: true
+    token: YOUR_TELEGRAM_BOT_TOKEN
+risk_limits:
+  max_correlation: 0.7
+  max_daily_loss: 0.03
+  max_drawdown: 0.1
+  max_leverage: 5.0
+  max_open_positions: 3
+  max_position_size: 0.01
+  min_free_margin: 0.3
+security:
+  api_keys_file: config/api_keys.json
+  encryption:
+    use_secure_storage: true
+    verify_integrity: true
+  key_file: config/encryption.key
+  key_rotation_days: 30
+  rate_limits:
+    max_orders_per_minute: 30
+    max_requests_per_second: 10
+symbols:
+- EURUSD
+- GBPUSD
+- USDJPY
+timeframes:
+- M5
+- M15
+- H1

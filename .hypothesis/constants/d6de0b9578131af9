@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\validation\risk_validation_gate.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.02, 0.05, 0.08, 0.1, 0.2, 0.25, 0.3, 100.0, 'current_drawdown', 'daily_loss', 'emergency_drawdown', 'emergency_shutdown', 'limits', 'max_correlated_risk', 'max_daily_loss', 'max_drawdown', 'max_monthly_loss', 'max_open_positions', 'max_portfolio_risk', 'max_risk_per_trade', 'max_weekly_loss', 'monthly_loss', 'open_positions', 'risk_pct', 'weekly_loss']

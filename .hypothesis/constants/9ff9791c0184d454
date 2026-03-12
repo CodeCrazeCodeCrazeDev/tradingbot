@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\database\market_microstructure.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.001, 0.1, 0.3, 0.7, 300, 1000, 100000, 'avg_cluster_size', 'avg_price', 'avg_spread', 'avg_trade_size', 'buy', 'buy_volume', 'cluster_count', 'clusters', 'imbalance_ratio', 'impact_coefficient', 'impact_decay', 'large_trades_count', 'liquidity_analysis', 'liquidity_zones', 'order_flow', 'pressure_score', 'price', 'price_impact', 'resistance', 'sell_volume', 'side', 'start_time', 'support', 'timestamp', 'trades', 'trading_patterns', 'type', 'unknown', 'volume', 'volume_concentration', 'vwap_window']

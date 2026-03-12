@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\multimodal\price_encoder.py
+# hypothesis_version: 6.148.3
+
+[0.1, 10000.0, 5000, 'cpu', 'cuda', 'encoded', 'encoding', 'final_combiner', 'global', 'indicator_encoder', 'indicator_encoding', 'momentum', 'pattern_encoder', 'pattern_encoding', 'patterns', 'pe', 'support_resistance', 'trend', 'volatility', 'volume']

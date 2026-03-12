@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\advanced_features\multi_agent_rl.py
+# hypothesis_version: 6.148.3
+
+[-1.0, -0.02, 0.0, 0.001, 0.02, 0.03, 0.05, 0.1, 0.2, 0.25, 0.35, 0.4, 0.5, 0.8, 1.0, 1.3, 1.5, 5.0, 10.0, 1000.0, 10000.0, -1000, 100, 128, 1000, 10000, ' | ', '15M', '1D', '1M', '1W', '4H', '5M', 'High', 'Normal', 'action_distribution', 'action_scores', 'adaptive', 'agent_agreement_rate', 'agent_decisions', 'agent_type', 'agent_weights', 'average_confidence', 'buy', 'decisions_analyzed', 'down', 'emergency', 'final_decision', 'head_ai', 'hold', 'ignore', 'immediate', 'insufficient_data', 'long', 'macro_strategist', 'market_state', 'medium', 'num_agents', 'operational', 'recent_performance', 'risk_sentinel', 'sell', 'short', 'system_health', 'tactical_executioner', 'timestamp', 'total_decisions', 'transitional', 'up']

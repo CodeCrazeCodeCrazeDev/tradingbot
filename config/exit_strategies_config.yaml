@@ -1,0 +1,330 @@
+# AlphaAlgo Exit Strategies Configuration
+# Advanced exit management for profit maximization and risk control
+
+# Global Exit Settings
+exit_strategies:
+  enabled: true
+  multiple_exits: true  # Allow multiple exit strategies per trade
+  partial_exits: true  # Allow scaling out of positions
+  
+# Base Exit Strategy
+base_exit:
+  # Stop Loss
+  stop_loss:
+    enabled: true
+    type: adaptive  # Options: fixed, adaptive, trailing, volatility_based
+    fixed_distance: 0.02  # 2% fixed stop
+    atr_multiplier: 2.0  # For volatility-based stops
+    
+  # Take Profit
+  take_profit:
+    enabled: true
+    type: scaled  # Options: fixed, scaled, adaptive
+    fixed_distance: 0.04  # 4% fixed target
+    risk_reward_ratio: 2.0  # 2:1 RR ratio
+    
+  # Break Even
+  break_even:
+    enabled: true
+    trigger_distance: 0.015  # Move to BE after 1.5% profit
+    lock_in_profit: 0.005  # Lock in 0.5% profit
+
+# Trailing Stop
+trailing_stop:
+  enabled: true
+  
+  # Trailing parameters
+  activation_profit: 0.02  # Activate after 2% profit
+  trail_distance: 0.01  # Trail 1% behind
+  
+  # Dynamic trailing
+  dynamic_trailing: true
+  volatility_adjusted: true
+  atr_multiplier: 1.5
+  
+  # Step trailing
+  step_trailing: false
+  step_size: 0.01  # Move in 1% steps
+
+# Adaptive Exit Strategy
+adaptive_exit:
+  enabled: true
+  
+  # Market condition adaptation
+  adapt_to_conditions: true
+  
+  # Volatility-based exits
+  volatility_based:
+    enabled: true
+    high_vol_multiplier: 1.5  # Wider stops in high volatility
+    low_vol_multiplier: 0.8  # Tighter stops in low volatility
+    
+  # Trend-based exits
+  trend_based:
+    enabled: true
+    strong_trend_hold_longer: true
+    weak_trend_exit_faster: true
+    
+  # Time-based component
+  time_based:
+    enabled: true
+    max_holding_period: 86400  # 24 hours
+    time_decay_factor: 0.1  # Reduce targets over time
+
+# Fibonacci Exit Levels
+fibonacci_exits:
+  enabled: true
+  
+  # Fibonacci retracement levels
+  retracement_levels: [0.236, 0.382, 0.5, 0.618, 0.786]
+  
+  # Fibonacci extension levels
+  extension_levels: [1.272, 1.618, 2.0, 2.618]
+  
+  # Partial exits at levels
+  partial_exit_at_levels: true
+  exit_percentages: [25, 25, 25, 25]  # Exit 25% at each level
+
+# Time-Based Exit
+time_based_exit:
+  enabled: true
+  
+  # Time limits
+  max_holding_period: 86400  # 24 hours default
+  
+  # Time-of-day exits
+  end_of_day_exit: false
+  end_of_week_exit: false
+  
+  # Session-based
+  exit_before_major_news: true
+  exit_before_weekend: false
+
+# Dynamic Trade Manager
+dynamic_manager:
+  enabled: true
+  
+  # Trade health monitoring
+  health_check_interval: 300  # 5 minutes
+  
+  # Health indicators
+  health_factors:
+    - profit_loss
+    - time_in_trade
+    - market_conditions
+    - volatility_change
+    - trend_strength
+    - volume_profile
+  
+  # Health-based actions
+  health_thresholds:
+    excellent: 0.8  # Add to position
+    good: 0.6  # Hold
+    fair: 0.4  # Tighten stops
+    poor: 0.2  # Reduce position
+    critical: 0.0  # Exit immediately
+  
+  # Position scaling
+  scaling:
+    add_on_strength: true
+    add_max_times: 2
+    add_increment: 0.5  # 50% of original position
+    
+    reduce_on_weakness: true
+    reduce_increment: 0.33  # 33% reduction
+
+# Partial Exit Strategy
+partial_exits:
+  enabled: true
+  
+  # Exit schedule
+  exit_levels:
+    - profit: 0.02  # 2% profit
+      exit_percent: 33  # Exit 33%
+    - profit: 0.04  # 4% profit
+      exit_percent: 33  # Exit another 33%
+    - profit: 0.06  # 6% profit
+      exit_percent: 34  # Exit remaining 34%
+  
+  # Trailing remainder
+  trail_remainder: true
+  remainder_trail_distance: 0.015  # 1.5% trail
+
+# Scaled Exit Strategy
+scaled_exits:
+  enabled: true
+  
+  # Scaling method
+  method: profit_based  # Options: profit_based, time_based, volatility_based
+  
+  # Profit-based scaling
+  profit_targets: [0.02, 0.04, 0.06, 0.08]
+  exit_sizes: [25, 25, 25, 25]  # Percentage to exit at each target
+  
+  # Time-based scaling
+  time_targets: [3600, 7200, 14400, 28800]  # 1h, 2h, 4h, 8h
+  
+  # Volatility-based scaling
+  volatility_targets: [1.0, 1.5, 2.0, 2.5]  # ATR multiples
+
+# Profit Maximizer
+profit_maximizer:
+  enabled: true
+  
+  # Maximization strategy
+  strategy: dynamic  # Options: fixed, dynamic, adaptive
+  
+  # Target adjustment
+  dynamic_targets: true
+  adjust_based_on:
+    - market_momentum
+    - volatility
+    - trend_strength
+    - time_of_day
+  
+  # Profit protection
+  protect_profits: true
+  profit_protection_threshold: 0.03  # Protect after 3% profit
+  protection_level: 0.5  # Protect 50% of profit
+  
+  # Risk-reward optimization
+  optimize_risk_reward: true
+  min_risk_reward: 1.5
+  target_risk_reward: 3.0
+
+# Market Condition Exit
+market_condition_exit:
+  enabled: true
+  
+  # Condition monitoring
+  monitor_conditions:
+    - volatility_spike
+    - trend_reversal
+    - volume_drying_up
+    - correlation_breakdown
+    - news_event
+  
+  # Exit triggers
+  volatility_spike_threshold: 2.5  # 2.5x normal volatility
+  trend_reversal_confidence: 0.7
+  volume_threshold: 0.5  # 50% of average volume
+  
+  # Preemptive exits
+  exit_before_major_news: true
+  exit_on_market_close: false
+
+# Exit Signal Generator
+signal_generator:
+  enabled: true
+  
+  # Signal sources
+  sources:
+    - technical_indicators
+    - price_action
+    - volume_analysis
+    - sentiment_shift
+    - regime_change
+  
+  # Signal aggregation
+  aggregation_method: weighted_voting
+  min_signal_strength: 0.6
+  
+  # Confirmation
+  require_confirmation: true
+  confirmation_sources: 2  # Require 2 sources to confirm
+  
+  # Signal types
+  signal_types:
+    - strong_exit  # Exit immediately
+    - weak_exit  # Reduce position
+    - hold  # No action
+    - add  # Add to position
+
+# Multi-Timeframe Exit Analyzer
+multi_timeframe:
+  enabled: true
+  
+  # Timeframes to analyze
+  timeframes: [M15, H1, H4]
+  
+  # Alignment requirement
+  require_alignment: false  # Don't require all TFs to agree
+  alignment_weight: 0.3  # Weight given to TF alignment
+  
+  # Timeframe priority
+  primary_timeframe: H1
+  confirmation_timeframes: [M15, H4]
+
+# Exit Confirmation
+confirmation:
+  enabled: true
+  
+  # Confirmation requirements
+  require_confirmation: true
+  confirmation_methods:
+    - price_action
+    - volume
+    - momentum
+  
+  # Confirmation thresholds
+  min_confirmations: 2
+  confirmation_timeout: 300  # 5 minutes
+
+# Performance Tracking
+performance:
+  track_exit_performance: true
+  
+  # Metrics
+  metrics:
+    - average_exit_quality
+    - profit_captured_ratio
+    - premature_exit_rate
+    - late_exit_rate
+    - optimal_exit_distance
+  
+  # Optimization
+  optimize_exits: true
+  optimization_frequency: weekly
+
+# Risk Controls
+risk_controls:
+  # Maximum loss
+  max_loss_per_trade: 0.02  # 2% max loss
+  max_loss_per_day: 0.05  # 5% max daily loss
+  
+  # Forced exits
+  force_exit_on_margin_call: true
+  force_exit_on_system_error: true
+  
+  # Emergency exits
+  emergency_exit_enabled: true
+  emergency_conditions:
+    - drawdown > 0.15
+    - consecutive_losses >= 5
+    - system_health < 0.3
+
+# Logging
+logging:
+  level: INFO
+  log_all_exits: true
+  log_exit_reasons: true
+  log_path: logs/exit_strategies/
+  
+  # Detailed logging
+  log_partial_exits: true
+  log_exit_signals: true
+  log_performance_metrics: true
+
+# Feature Flags
+features:
+  enable_trailing_stop: true
+  enable_adaptive_exit: true
+  enable_fibonacci_exits: true
+  enable_time_based_exit: true
+  enable_dynamic_manager: true
+  enable_partial_exits: true
+  enable_scaled_exits: true
+  enable_profit_maximizer: true
+  enable_market_condition_exit: true
+  enable_signal_generator: true
+  enable_multi_timeframe: true

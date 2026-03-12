@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\risk\advanced_risk_metrics.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.05, 0.2, 0.5, 0.95, 0.99, 1.0, 100, 252, 10000, 'calmar', 'cvar_95', 'cvar_99', 'drawdown_breach', 'historical', 'inf', 'max_drawdown', 'monte_carlo', 'parametric', 'sharpe', 'single', 'sortino', 'var_95', 'var_99', 'var_breach']

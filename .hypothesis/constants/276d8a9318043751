@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\event_monitoring\event_monitor.py
+# hypothesis_version: 6.148.3
+
+[100, 1000, 3600, 'active_sources', 'correlation', 'custom', 'custom_source', 'economic', 'economic_calendar', 'enable_all_sources', 'event_count', 'last_processed', 'liquidity', 'liquidity_analysis', 'market', 'max_events_stored', 'news', 'news_api', 'order_flow', 'price_action', 'queue_size', 'running', 'social', 'social_media', 'technical', 'technical_indicator', 'volatility']

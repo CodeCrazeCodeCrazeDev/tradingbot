@@ -1,0 +1,175 @@
+# ============================================================================
+# Trading Bot - Docker Compose Configuration
+# ============================================================================
+# Production-ready multi-container deployment
+
+version: '3.8'
+
+services:
+  # ===========================================================================
+  # Trading Bot - Main Application
+  # ===========================================================================
+  trading-bot:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    container_name: trading-bot
+    restart: unless-stopped
+    ports:
+      - "8080:8080"   # Dashboard
+      - "8081:8081"   # WebSocket
+    environment:
+      - TRADING_BOT_MODE=${TRADING_BOT_MODE:-paper}
+      - TRADING_BOT_LOG_LEVEL=${TRADING_BOT_LOG_LEVEL:-INFO}
+      - TRADING_BOT_DB_TYPE=postgresql
+      - TRADING_BOT_DB_HOST=postgres
+      - TRADING_BOT_DB_PORT=5432
+      - TRADING_BOT_DB_NAME=trading_bot
+      - TRADING_BOT_DB_USER=${POSTGRES_USER:-tradingbot}
+      - TRADING_BOT_DB_PASSWORD=${POSTGRES_PASSWORD:-tradingbot123}
+      - REDIS_URL=redis://redis:6379/0
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+    volumes:
+      - trading-data:/app/data
+      - trading-logs:/app/logs
+      - trading-models:/app/models
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - trading-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # ===========================================================================
+  # PostgreSQL Database
+  # ===========================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: trading-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-tradingbot}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-tradingbot123}
+      - POSTGRES_DB=trading_bot
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - trading-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tradingbot}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================================================
+  # Redis Cache
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: trading-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - trading-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================================================
+  # Prometheus Metrics
+  # ===========================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: trading-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+    networks:
+      - trading-network
+
+  # ===========================================================================
+  # Grafana Dashboard
+  # ===========================================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: trading-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - trading-network
+
+  # ===========================================================================
+  # Nginx Reverse Proxy
+  # ===========================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: trading-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - trading-bot
+      - grafana
+    networks:
+      - trading-network
+
+# ===========================================================================
+# Networks
+# ===========================================================================
+networks:
+  trading-network:
+    driver: bridge
+
+# ===========================================================================
+# Volumes
+# ===========================================================================
+volumes:
+  trading-data:
+  trading-logs:
+  trading-models:
+  postgres-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:

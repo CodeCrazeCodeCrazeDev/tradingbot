@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\exit_strategies\adaptive_exits.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0, 1.272, 1.618, 2.0, 2.618, 5.0, 20.0, 25.0, 30.0, 100.0, 100, 'atr', 'atr_multiplier', 'atr_period', 'breakeven', 'breakeven_activated', 'close', 'direction', 'enable_trailing_stop', 'entry_price', 'entry_time', 'fib_levels', 'high', 'id', 'last_update_time', 'long', 'low', 'open', 'partial_exit_times', 'partial_exits', 'price', 'ratio', 'remaining_size', 'short', 'size', 'stop_loss', 'symbol', 'take_profit', 'time', 'time_based', 'time_based_exit', 'trailing_stop', 'trend_change_exit']

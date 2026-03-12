@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\infrastructure\auto_scaler.py
+# hypothesis_version: 6.148.3
+
+[30.0, 60.0, 70.0, 80.0, 'Auto-scaler stopped', 'No workers available', '__main__', 'cpu_percent', 'current_instances', 'execute', 'max_instances', 'memory_percent', 'min_instances', 'running', 'start', 'stop']

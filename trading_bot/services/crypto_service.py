@@ -1,0 +1,84 @@
+"""
+Crypto Service
+==============
+
+Wraps Crypto module capabilities as an event-driven service.
+"""
+
+import asyncio
+import logging
+from datetime import datetime
+from typing import Dict, Optional
+
+from trading_bot.core.service_registry import BaseService, ServiceHealth, ServicePriority
+
+logger = logging.getLogger(__name__)
+
+
+class CryptoService(BaseService):
+    """
+    Crypto Service - Cryptocurrency and DeFi
+    
+    Provides:
+    - Crypto DeFi module
+    - Yield optimizer
+    - Cross-chain bridge
+    """
+    
+    SERVICE_NAME = "crypto"
+    SERVICE_TYPE = "crypto"
+    PRIORITY = ServicePriority.NORMAL
+    DEPENDENCIES = ["blockchain"]
+    
+    def __init__(self, config: Optional[Dict] = None):
+        super().__init__(config)
+        self._interval: float = config.get('interval', 60.0) if config else 60.0
+        self._task: Optional[asyncio.Task] = None
+        self._defi_module = None
+        self._yield_optimizer = None
+        
+    async def start(self) -> None:
+        self._running = True
+        await self._load_components()
+        self._task = asyncio.create_task(self._run_loop())
+        logger.info("CryptoService started")
+    
+    async def stop(self) -> None:
+        self._running = False
+        if self._task:
+            self._task.cancel()
+            try:
+                await self._task
+            except asyncio.CancelledError:
+                pass
+        logger.info("CryptoService stopped")
+    
+    async def health_check(self) -> ServiceHealth:
+        loaded = sum([self._defi_module is not None, self._yield_optimizer is not None])
+        return ServiceHealth(
+            healthy=self._running and loaded > 0,
+            last_check=datetime.utcnow(),
+            message=f"{loaded}/2 Crypto components loaded"
+        )
+    
+    async def _load_components(self) -> None:
+        try:
+            from trading_bot.crypto import CryptoDeFiModule
+            self._defi_module = CryptoDeFiModule()
+            logger.info("CryptoDeFiModule loaded")
+        except ImportError as e:
+            logger.warning(f"CryptoDeFiModule not available: {e}")
+        
+        try:
+            from trading_bot.crypto import YieldOptimizer
+            self._yield_optimizer = YieldOptimizer()
+            logger.info("YieldOptimizer loaded")
+        except ImportError as e:
+            logger.warning(f"YieldOptimizer not available: {e}")
+    
+    async def _run_loop(self) -> None:
+        while self._running:
+            try:
+                await asyncio.sleep(self._interval)
+            except asyncio.CancelledError:
+                break

@@ -1,0 +1,33 @@
+# EURUSD Swing Trading configuration with full ML suite
+symbol: EURUSD
+timeframe: H4  # Using 4-hour timeframe for swing trading
+bars: 1000
+mode: paper
+
+# ML features
+use_ml: true
+use_transformer: true
+use_rl: true
+market_regime: true
+sentiment_analysis: true  # Important for swing trading
+order_flow: true
+
+# Execution
+execution_algo: smart
+
+# Watchlist for sentiment analysis
+watchlist:
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+  - EUR
+  - USD
+  - GBP
+  - JPY
+
+# Advanced features
+track_emotions: true  # Track emotional impact on longer-term trades
+quantum_blockchain: false
+adaptive_mode: true  # Adapt to changing market conditions
+self_improve: true  # Learn from past trades
+internet_access: false

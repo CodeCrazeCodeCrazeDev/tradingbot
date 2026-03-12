@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\voice_assistant\voice_controller.py
+# hypothesis_version: 6.148.3
+
+[0.5, 0.9, 100, 150, 'No recent trades.', 'SpeechRecognizer', 'TextToSpeech', 'Trading paused.', 'Trading resumed.', 'VoiceAssistant', 'VoiceCommand', 'VoiceResponse', 'balance', 'close all positions', 'close position', 'close_all_positions', 'command', 'emergency stop', 'emergency_stop', 'en-US', 'get_balance', 'get_last_trade', 'get_market_status', 'get_performance', 'get_positions', 'get_statistics', 'get_status', 'kill switch', 'language', 'last trade', 'market status', 'pause', 'pause trading', 'performance', 'positions', 'profit', 'pyttsx3', 'rate', 'response', 'resume', 'resume trading', 'start', 'start trading', 'status', 'stop', 'stop trading', 'timestamp', 'tts_engine', 'voice', 'voices', 'volume', 'win rate', 'win_rate']

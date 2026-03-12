@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\multimodal\text_encoder.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.1, 0.4, 0.5, 0.6, 1.0, 128, 512, '#', '$', 'ProsusAI/finbert', 'bearish', 'believe', 'bullish', 'cashtag', 'combined_sentiment', 'cpu', 'crash', 'cuda', 'decline', 'decrease', 'expect', 'gains', 'growth', 'hashtag', 'higher', 'http', 'increase', 'losses', 'lower', 'negative', 'news', 'news_embeddings', 'news_sentiment', 'plunge', 'positive', 'profit', 'pt', 'rally', 'risk', 'social', 'social_confidence', 'social_embeddings', 'social_sentiment', 'source_weights', 'strong', 'surge', 'symbol_mentions', 'think', 'vinai/bertweet-base', 'weak']

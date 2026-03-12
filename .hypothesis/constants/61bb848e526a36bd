@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\advanced_features\fractal_momentum.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.001, 0.002, 0.02, 0.1, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 2.0, 10.0, -100, 100, '15m', '1h', '4h', '5m', 'bearish_hidden', 'bearish_regular', 'bullish_hidden', 'bullish_regular', 'close', 'confidence', 'confirmation_score', 'confirmed', 'doji', 'high', 'indicator', 'indicator_points', 'low', 'macd', 'macd_histogram', 'macd_signal', 'momentum', 'near_key_level', 'no_divergence', 'none', 'open', 'overall_confirmation', 'pattern_detected', 'price_points', 'resistance', 'resistance_level', 'reversal_pattern', 'roc', 'rsi', 'stoch_d', 'stoch_k', 'strength', 'support', 'support_level', 'timestamp', 'type', 'volume', 'volume_expansion', 'williams_r']

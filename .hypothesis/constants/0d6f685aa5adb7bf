@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\ai_core\meta_learning\__init__.py
+# hypothesis_version: 6.148.3
+
+[0.001, 0.01, 0.02, 0.1, 0.6, 0.8, 'AdaptiveRetrainer', 'ContinualLearner', 'MAMLTrainer', 'RegimeDetector', 'X', 'abundant', 'daily', 'high', 'high_volatility', 'learned', 'limited', 'low', 'low_volatility', 'medium', 'medium_volatility', 'memory_size', 'meta_loss', 'moderate', 'name', 'next_retrain', 'num_tasks', 'opportunities', 'performance_after', 'performance_before', 'retrained', 'risk', 'schedule', 'scheduled', 'status', 'task_id', 'tomorrow', 'trained', 'y']

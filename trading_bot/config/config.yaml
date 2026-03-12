@@ -1,0 +1,25 @@
+mt5:
+  login: 0
+  password: ''
+  server: MetaQuotes-Demo
+  path: C:/Program Files/MetaTrader 5/terminal64.exe
+  timezone: UTC
+risk:
+  max_drawdown_pct: 20
+  risk_per_trade_pct: 1.0
+  reward_to_risk_quick: 2
+  reward_to_risk_standard: 3
+reporting:
+  log_level: INFO
+  report_times_utc:
+    daily: '23:59'
+    weekly: Fri 23:59
+    monthly: last day 23:59
+trading:
+  mode: paper
+  risk_per_trade: 0.01
+  max_positions: 5
+logging:
+  level: INFO
+database:
+  path: data/trading_bot.db

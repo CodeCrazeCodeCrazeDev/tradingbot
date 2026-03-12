@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\utils\validation.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.2, 0.4, 0.6, 1.0, 1.2, 252, 1000, 3600, 'age_seconds', 'avg_bars_held', 'avg_trade', 'bars_held', 'buy', 'close', 'confidence', 'direction', 'entry_price', 'exit_price', 'exit_type', 'high', 'inf', 'low', 'max_drawdown', 'open', 'profit', 'profit_factor', 'risk_per_trade', 'sell', 'sharpe_ratio', 'source', 'stop_loss', 'symbol', 'take_profit', 'timeframe', 'timestamp', 'total_trades', 'win_rate']

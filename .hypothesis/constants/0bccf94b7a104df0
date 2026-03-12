@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\adaptive_systems\advanced_pattern_recognition.py
+# hypothesis_version: 6.148.3
+
+[-0.0001, 0.0, 0.0001, 0.0005, 0.01, 0.02, 0.03, 0.05, 0.1, 0.15, 0.3, 0.4, 0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.95, 0.98, 0.99, 1.0, 1.01, 1.02, 1.05, 50.0, -100, 100, 1000, 'H1', 'TALIB_AVAILABLE', 'channel_down', 'channel_up', 'close', 'confidence_threshold', 'cup_handle', 'double_bottom', 'double_top', 'down', 'features', 'flag_bear', 'flag_bull', 'head_shoulders', 'high', 'intercept', 'low', 'max_pattern_length', 'min_pattern_length', 'pennant', 'performance', 'r_squared', 'resistance', 'rsi', 'slope', 'support', 'trend', 'triangle_ascending', 'triangle_descending', 'triangle_symmetrical', 'up', 'volatility', 'volume', 'volume_avg', 'wedge_falling', 'wedge_rising']

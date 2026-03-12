@@ -1,0 +1,102 @@
+# High-Impact: Risk & Compliance (100)
+
+- [HI-RSK-001] Pre-trade hard limits engine (leverage, exposure, notional caps) — Impacted: `trading_bot/core/survival_core.py`, `ExecutionManager`
+- [HI-RSK-002] Loss-only daily cap enforcement with auto-halt and resume windows — Impacted: `_risk_check_loop`
+- [HI-RSK-003] Graduated drawdown ladder (reduce size, block entries, flatten) — Impacted: `_risk_check_loop`, `ExecutionManager`
+- [HI-RSK-004] Portfolio CVaR limits across horizons (1d/5d) — Impacted: `get_portfolio_status()`, risk module
+- [HI-RSK-005] Rolling correlation matrix gating vs static groups — Impacted: `ExecutionManager.check_portfolio_risk`
+- [HI-RSK-006] Symbol/venue blacklists and trading windows (session calendars) — Impacted: pre-trade checks
+- [HI-RSK-007] Liquidity/volatility guardrails (max spread, min depth) — Impacted: `_process_signal()`, router
+- [HI-RSK-008] Circuit breakers for flash moves and abnormal volatility — Impacted: risk loop, monitoring
+- [HI-RSK-009] Stale data kill-switch (pause if ticks older than N sec) — Impacted: `_market_data_loop`
+- [HI-RSK-010] Margin/free-margin proactive throttling — Impacted: `_risk_check_loop`, `ExecutionManager`
+- [HI-RSK-011] Overnight/rollover risk controls (auto-trim) — Impacted: scheduler, risk loop
+- [HI-RSK-012] Max order frequency per symbol/strategy — Impacted: `ExecutionManager`
+- [HI-RSK-013] Order size caps by volatility regime — Impacted: sizing logic
+- [HI-RSK-014] Per-strategy risk budgets with dynamic rebalancing — Impacted: risk allocator
+- [HI-RSK-015] Hedging policy across correlated symbols — Impacted: router/hedger
+- [HI-RSK-016] Mandatory stop-loss presence per order type — Impacted: `place_order()` validation
+- [HI-RSK-017] Slippage budget guard; cancel if exceeded — Impacted: post-trade checks
+- [HI-RSK-018] PnL unit normalization (pip/tick/notional) — Impacted: `get_portfolio_status()`
+- [HI-RSK-019] FX conversion for multi-CCY portfolios — Impacted: portfolio accounting
+- [HI-RSK-020] Position lifecycle state machine (working/filled/closing) — Impacted: execution state
+- [HI-RSK-021] Partial fill handling with risk recompute — Impacted: `ExecutionManager`
+- [HI-RSK-022] Broker reconciliation job (positions, balances) — Impacted: new recon module
+- [HI-RSK-023] Max gap-through-stop contingency (OCO/market-out) — Impacted: order templates
+- [HI-RSK-024] Exposure by asset class/region caps — Impacted: risk allocator
+- [HI-RSK-025] Time-at-risk limit (duration-based exit) — Impacted: exits
+- [HI-RSK-026] News embargo windows with resume policy — Impacted: scheduler, pre-trade checks
+- [HI-RSK-027] Compliance audit log (immutable, append-only) — Impacted: logging layer
+- [HI-RSK-028] Wash trade/self-trade prevention (where relevant) — Impacted: pre-trade logic
+- [HI-RSK-029] Portfolio-level Kelly dampener with floor/ceiling — Impacted: sizing
+- [HI-RSK-030] Scenario-based risk tests (spread blowout, outage) — Impacted: `examples/`
+- [HI-RSK-031] Risk queue backpressure on analysis if risk hot — Impacted: orchestrator
+- [HI-RSK-032] Pre-trade validation schema with human-readable errors — Impacted: validators
+- [HI-RSK-033] Position netting/aggregation per symbol — Impacted: position book
+- [HI-RSK-034] Stop distance minimums by regime — Impacted: sizing
+- [HI-RSK-035] Auto-breakeven/take-profit templates — Impacted: exits
+- [HI-RSK-036] Max consecutive loss day guard — Impacted: scheduler, risk loop
+- [HI-RSK-037] Realized vs expected variance guard — Impacted: monitoring
+- [HI-RSK-038] Position heatmap by correlation cluster — Impacted: dashboard
+- [HI-RSK-039] Halt on data schema drift — Impacted: data validators
+- [HI-RSK-040] Kill-switch hotkey and bot API — Impacted: ops interface
+- [HI-RSK-041] Per-asset leverage tables — Impacted: risk calc
+- [HI-RSK-042] Balance snapshotting for recovery — Impacted: persistence
+- [HI-RSK-043] Risk incident runbooks with drills — Impacted: docs/runbooks
+- [HI-RSK-044] Double-confirmation for large orders — Impacted: HIL (human-in-loop)
+- [HI-RSK-045] CVaR budget split per strategy — Impacted: allocator
+- [HI-RSK-046] Rolling max drawdown over window — Impacted: risk loop
+- [HI-RSK-047] Exposure decay after bad regimes — Impacted: allocator
+- [HI-RSK-048] Max open orders pending cap — Impacted: execution
+- [HI-RSK-049] Liquidity score threshold per symbol — Impacted: router
+- [HI-RSK-050] Broker outage fallback path — Impacted: adapter/routing
+- [HI-RSK-051] Quote sanity checks (crossed/locked) — Impacted: market data
+- [HI-RSK-052] Spread outlier detection (MAD/robust z) — Impacted: data QC
+- [HI-RSK-053] Position concentration cap (top N) — Impacted: allocator
+- [HI-RSK-054] Settlement/holiday rules — Impacted: calendars
+- [HI-RSK-055] FIFO/LIFO accounting policy — Impacted: PnL engine
+- [HI-RSK-056] Funding/rollover cost modeling — Impacted: risk/PnL
+- [HI-RSK-057] Scenario CVaR stress (shock curves) — Impacted: risk sim
+- [HI-RSK-058] Abnormal fill price watchdog — Impacted: post-trade
+- [HI-RSK-059] Execution drift vs benchmark alerts — Impacted: monitoring
+- [HI-RSK-060] Child order throttling per venue — Impacted: router
+- [HI-RSK-061] Dynamic symbol allowlist by regime — Impacted: strategy gate
+- [HI-RSK-062] Emergency auto-hedge (index/basket) — Impacted: hedger
+- [HI-RSK-063] Price banding (limit away from far touch) — Impacted: pricing
+- [HI-RSK-064] Exposure decay by realized vol — Impacted: allocator
+- [HI-RSK-065] Max pending cancel-replace rate — Impacted: router
+- [HI-RSK-066] Trade replay consent & retention policy — Impacted: compliance
+- [HI-RSK-067] Sanitize signal inputs (NaN/inf) — Impacted: analysis
+- [HI-RSK-068] Stop-hunting spoofing detection — Impacted: analysis/monitoring
+- [HI-RSK-069] Max slippage per strategy/venue — Impacted: router
+- [HI-RSK-070] Post-trade TCA metrics standard — Impacted: reporting
+- [HI-RSK-071] Dollar risk parity allocator — Impacted: portfolio
+- [HI-RSK-072] Exposure by direction caps (net long/short) — Impacted: allocator
+- [HI-RSK-073] Basket-level stops (portfolio SL) — Impacted: exits
+- [HI-RSK-074] State checkpoint/restore (warm start) — Impacted: persistence
+- [HI-RSK-075] Critical alert escalation (SMS/voice) — Impacted: notifications
+- [HI-RSK-076] Dual-control for parameter changes — Impacted: ops workflow
+- [HI-RSK-077] Immutable config snapshots per run — Impacted: run launcher
+- [HI-RSK-078] Audit diff for config at runtime — Impacted: monitoring
+- [HI-RSK-079] Reject trades near maintenance windows — Impacted: scheduler
+- [HI-RSK-080] Per-venue risk multipliers — Impacted: router/risk
+- [HI-RSK-081] Reject orders on abnormal queue size — Impacted: router
+- [HI-RSK-082] Market impact estimator in sizing — Impacted: execution
+- [HI-RSK-083] Latency-aware risk gates — Impacted: pre-trade
+- [HI-RSK-084] Panic unwind scenario tested monthly — Impacted: ops drills
+- [HI-RSK-085] Intraday loss cap by session — Impacted: risk loop
+- [HI-RSK-086] Limit outstanding exposure time — Impacted: post-trade
+- [HI-RSK-087] Kill all on conflicting fills — Impacted: reconciliation
+- [HI-RSK-088] Auto-pause after N rejects/timeouts — Impacted: execution
+- [HI-RSK-089] API key scope minimization — Impacted: secrets mgmt
+- [HI-RSK-090] Non-trading hours hard block — Impacted: scheduler
+- [HI-RSK-091] Strategy interlock (mutual exclusion) — Impacted: orchestrator
+- [HI-RSK-092] Counterparty risk scoring — Impacted: router
+- [HI-RSK-093] Limit order book snapshot sanity — Impacted: data QC
+- [HI-RSK-094] Recovery from partial shutdown — Impacted: lifecycle
+- [HI-RSK-095] Force-flat after emergency — Impacted: ops policy
+- [HI-RSK-096] Human ack for resume after critical — Impacted: ops
+- [HI-RSK-097] Versioned parameter registry — Impacted: config
+- [HI-RSK-098] Compliance export pack (CSV/JSON) — Impacted: reporting
+- [HI-RSK-099] Run-level unique trace/ids — Impacted: logging
+- [HI-RSK-100] Risk review checklist CI job — Impacted: CI/docs

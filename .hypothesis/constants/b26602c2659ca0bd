@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\risk\position_size_calculator.py
+# hypothesis_version: 6.148.3
+
+[0.0001, 0.01, 0.25, 0.55, 1.0, 10.0, 100.0, 100, 100000, 'JPY', 'PositionSizeMethod', 'avg_loss', 'avg_volatility', 'avg_win', 'contract_size', 'current_volatility', 'default_risk_pct', 'fixed_risk', 'kelly', 'kelly_fraction', 'lot_step', 'max_position_size', 'min_position_size', 'optimal_f', 'pip_size', 'pip_value', 'risk_parity', 'symbol_specs', 'symbol_volatility', 'volatility', 'win_rate']

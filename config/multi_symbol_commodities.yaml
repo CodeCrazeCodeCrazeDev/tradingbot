@@ -1,0 +1,62 @@
+# Multi-Symbol Trading Configuration - Commodity Currencies
+# Focus on currencies influenced by commodity prices
+
+# General settings
+mode: paper
+timeframe: H1
+bars: 500
+
+# ML features
+use_ml: true
+use_transformer: true
+use_rl: true
+market_regime: true
+sentiment_analysis: true
+order_flow: true
+
+# Execution
+execution_algo: smart
+
+# Symbols to trade - Commodity currency pairs
+symbols:
+  - AUDUSD  # Australian Dollar vs US Dollar (influenced by gold, metals)
+  - NZDUSD  # New Zealand Dollar vs US Dollar (influenced by agricultural commodities)
+  - USDCAD  # US Dollar vs Canadian Dollar (influenced by oil)
+  - USDRUB  # US Dollar vs Russian Ruble (influenced by oil, gas)
+  - USDZAR  # US Dollar vs South African Rand (influenced by gold, metals)
+
+# Risk management per symbol (percentages)
+risk_allocation:
+  AUDUSD: 25
+  NZDUSD: 20
+  USDCAD: 25
+  USDRUB: 15
+  USDZAR: 15
+
+# Watchlist for sentiment analysis (includes commodities)
+watchlist:
+  - AUDUSD
+  - NZDUSD
+  - USDCAD
+  - USDRUB
+  - USDZAR
+  - AUD
+  - NZD
+  - CAD
+  - RUB
+  - ZAR
+  - USD
+  - GOLD
+  - OIL
+  - SILVER
+
+# Advanced features
+track_emotions: true
+quantum_blockchain: false
+adaptive_mode: true
+self_improve: true
+internet_access: false
+
+# Correlation management
+manage_correlations: true
+max_correlated_exposure: 60  # Higher due to commodity price influences

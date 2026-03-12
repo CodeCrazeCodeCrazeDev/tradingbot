@@ -1,0 +1,28 @@
+﻿{
+    "config_files":  [
+                         "config\\config.yaml"
+                     ],
+    "repo_root":  "c:\\Users\\peterson\\trading bot",
+    "timestamp":  "20251008-003908",
+    "dependencies":  [
+                         "requirements.txt",
+                         "requirements-extras.txt"
+                     ],
+    "test_files":  [
+                       "tests\\"
+                   ],
+    "shell":  "PowerShell",
+    "last_operator_session":  "2025-10-08 00:28:00",
+    "position_validator":  "Active - max 1.0 lots",
+    "os":  "Windows 10 Pro Education",
+    "current_status":  "Bot previously running, PID 12140 mentioned in handoff",
+    "startup_scripts":  [
+                            "START_BOT_SIMPLE.bat",
+                            "START_BOT_WITH_WATCHDOG.bat",
+                            "start_monitored_bot.ps1",
+                            "RUN_BOT.bat",
+                            "main.py"
+                        ],
+    "git_available":  false,
+    "trading_mode":  "paper"
+}

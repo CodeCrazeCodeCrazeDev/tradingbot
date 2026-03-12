@@ -1,0 +1,22 @@
+{
+  "deployment_id": "20251007_081156",
+  "timestamp": "2025-10-07T08:11:56.224986",
+  "week": 0,
+  "feature": {
+    "name": "MVP Core",
+    "description": "Basic bot with EMA, RSI, MACD",
+    "file": "mvp_bot.py",
+    "complexity": "low",
+    "risk": "low"
+  },
+  "stage": "rollback",
+  "performance_data": {},
+  "thresholds": {
+    "min_win_rate": 55.0,
+    "max_drawdown": 15.0,
+    "min_profit_factor": 1.3,
+    "min_trades": 10,
+    "max_errors_per_day": 5,
+    "min_uptime": 95.0
+  }
+}

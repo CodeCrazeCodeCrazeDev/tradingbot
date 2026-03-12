@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\connectivity\web_client.py
+# hypothesis_version: 6.148.3
+
+[0.5, 400, 429, 500, 502, 503, 504, 'Accept', 'DELETE', 'EliteTradingBot/1.0', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'User-Agent', 'application/json', 'http://', 'https://']

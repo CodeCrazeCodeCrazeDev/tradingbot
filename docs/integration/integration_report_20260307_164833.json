@@ -1,0 +1,83 @@
+{
+  "generated_at": "2026-03-07T16:48:33.281356",
+  "elapsed_seconds": 300.8,
+  "phases_completed": [
+    "phase_1_foundation",
+    "phase_2_data",
+    "phase_3_risk_execution",
+    "phase_4_signals_ai",
+    "phase_5_orchestration",
+    "phase_6_wiring"
+  ],
+  "integration_stats": {
+    "discovered": 2145,
+    "classified": 2145,
+    "validated": 200,
+    "loaded": 208,
+    "started": 0,
+    "failed": 8,
+    "quarantined": 80
+  },
+  "registry_report": {
+    "total_modules": 2145,
+    "by_promotion_state": {
+      "registered": 200,
+      "quarantined": 80,
+      "discovered": 1865
+    },
+    "by_layer": {
+      "UNCLASSIFIED": 213,
+      "INTELLIGENCE_CORE": 750,
+      "SIGNAL_GENERATION": 388,
+      "ORCHESTRATION": 216,
+      "GOVERNANCE": 72,
+      "EXECUTION": 135,
+      "DATA_FOUNDATION": 139,
+      "RISK_SAFETY": 113,
+      "INFRASTRUCTURE": 119
+    },
+    "by_tier": {
+      "?": 213,
+      "B": 441,
+      "C": 459,
+      "A": 802,
+      "D": 230
+    },
+    "by_capital_impact": {
+      "none": 516,
+      "indirect": 1345,
+      "direct": 284
+    },
+    "healthy_imports": 200,
+    "broken_imports": 0,
+    "unchecked": 1945,
+    "quarantined": 80,
+    "promoted": 0,
+    "generated": "2026-03-07T13:48:33.299711"
+  },
+  "services_count": 1852,
+  "errors": [],
+  "warnings": [],
+  "phase_stats": {
+    "phase_1": {
+      "loaded": 185,
+      "failed": 0
+    },
+    "phase_2": {
+      "loaded": 133,
+      "failed": 0
+    },
+    "phase_3": {
+      "loaded": 248,
+      "failed": 0
+    },
+    "phase_4": {
+      "loaded": 1078,
+      "failed": 6
+    },
+    "phase_5": {
+      "loaded": 208,
+      "failed": 8
+    }
+  }
+}

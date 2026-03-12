@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\safety\emergency_kill_switch.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.05, 0.15, 1.0, 200, 204, '%Y-%m-%d', '587', '=', 'ALERT_EMAIL', 'Consecutive Losses', 'DISCORD_WEBHOOK_URL', 'Daily Loss', 'EMAIL_FROM', 'EMERGENCY_CLOSE', 'EMERGENCY_STOP.txt', 'From', 'HTML', 'Manual Kill Switch', 'Max Drawdown', 'SMTP_PASSWORD', 'SMTP_PORT', 'SMTP_SERVER', 'SMTP_USER', 'Subject', 'TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID', 'To', 'Trading Bot Alert', 'action', 'chat_id', 'comment', 'consecutive_losses', 'content', 'daily_start_equity', 'deviation', 'magic', 'parse_mode', 'peak_equity', 'plain', 'position', 'price', 'symbol', 'text', 'timestamp', 'triggers', 'type', 'type_filling', 'type_time', 'username', 'volume', 'w']

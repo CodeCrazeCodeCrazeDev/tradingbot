@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite Trading Bot Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/gridjs/dist/theme/mermaid.min.css" rel="stylesheet">
+    <link href="/static/css/dashboard.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Elite Trading Bot</a>
+            <div class="d-flex">
+                <span id="systemStatus" class="badge bg-success me-2">System Healthy</span>
+                <button id="pauseButton" class="btn btn-warning me-2">Pause Trading</button>
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="modeDropdown" data-bs-toggle="dropdown">
+                        Trading Mode
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" data-mode="aggressive">Aggressive</a></li>
+                        <li><a class="dropdown-item" href="#" data-mode="balanced">Balanced</a></li>
+                        <li><a class="dropdown-item" href="#" data-mode="conservative">Conservative</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-3">
+        <div class="row">
+            <!-- System Health -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        System Health
+                    </div>
+                    <div class="card-body">
+                        <div id="healthMetrics"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Overview -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        Performance Overview
+                    </div>
+                    <div class="card-body">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <!-- Active Positions -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        Active Positions
+                    </div>
+                    <div class="card-body">
+                        <div id="positionsGrid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Market Data -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        Live Market Data
+                    </div>
+                    <div class="card-body">
+                        <div id="marketDataGrid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <!-- Alerts -->
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        System Alerts
+                    </div>
+                    <div class="card-body">
+                        <div id="alertsContainer"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergency Actions Modal -->
+    <div class="modal fade" id="emergencyModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Emergency Actions</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-danger" onclick="closeAllPositions()">Close All Positions</button>
+                        <button class="btn btn-warning" onclick="setUltraConservativeMode()">Ultra Conservative Mode</button>
+                        <button class="btn btn-secondary" onclick="pauseTrading()">Pause Trading</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

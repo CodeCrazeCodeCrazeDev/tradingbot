@@ -1,0 +1,34 @@
+# Render.com deployment configuration
+# Free tier: 750 hours/month, auto-sleep after 15 min inactivity
+# Deploy: Connect GitHub repo at render.com -> New -> Background Worker
+
+services:
+  - type: worker
+    name: alphaalgo-trading-bot
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py --mode paper --symbol EURUSD --timeframe M15
+    envVars:
+      - key: TRADING_BOT_MODE
+        value: paper
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: TRADING_BOT_LOG_LEVEL
+        value: INFO
+    autoDeploy: true
+
+  # Optional: Dashboard web service
+  - type: web
+    name: alphaalgo-dashboard
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m trading_bot.api.api_server
+    envVars:
+      - key: PORT
+        value: "10000"
+    autoDeploy: true
+    healthCheckPath: /health

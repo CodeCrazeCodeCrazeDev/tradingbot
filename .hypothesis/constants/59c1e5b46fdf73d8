@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\analytics\enhanced_performance.py
+# hypothesis_version: 6.148.3
+
+[0.01, 0.3, 100, 300, 'avg_intensity', 'avg_profit', 'direction', 'dominant_emotion', 'emotional_data', 'emotional_impact', 'emotional_metrics', 'entry_emotions', 'entry_time', 'equity', 'equity_data', 'exit_emotions', 'exit_time', 'id', 'intensity', 'is_win', 'journal_entries', 'loss', 'max_drawdown_pct', 'profit', 'recommendations', 'result', 'state', 'states', 'summary', 'time', 'times', 'timestamp', 'trade_count', 'win_rate']

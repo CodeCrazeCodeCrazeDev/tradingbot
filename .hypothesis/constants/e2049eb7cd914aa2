@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\connectors\binance_connector.py
+# hypothesis_version: 6.148.3
+
+[200, 1000, '&', '-', '/', '24hrTicker', 'E', 'GTC', 'LIMIT', 'P', 'SUBSCRIBE', 'T', 'X-MBX-APIKEY', 'a', 'askPrice', 'asset', 'b', 'balances', 'bidPrice', 'buy', 'c', 'depthUpdate', 'e', 'free', 'h', 'id', 'k', 'kline', 'l', 'lastPrice', 'locked', 'm', 'market_data', 'method', 'o', 'orderId', 'order_book', 'p', 'params', 'price', 'priceChangePercent', 'q', 'quantity', 's', 'sell', 'side', 'signature', 'symbol', 't', 'ticker', 'timeInForce', 'time_in_force', 'timestamp', 'total', 'totalAssetOfBtc', 'total_btc', 'trade', 'type', 'utf-8', 'v', 'volume']

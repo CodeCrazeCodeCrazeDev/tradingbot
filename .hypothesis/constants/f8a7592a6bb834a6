@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\exit_strategies\exit_strategy.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.1, 0.5, 1.0, 2.0, 100.0, 100, 'atr', 'breakeven', 'breakeven_stop', 'custom', 'enable_trailing_stop', 'fibonacci_exit', 'fixed_stop', 'fixed_take_profit', 'indicator_based', 'indicator_signal', 'long', 'manual_exit', 'market_structure', 'opportunity_cost', 'partial_exit', 'percent', 'points', 'risk_management', 'risk_percent', 'risk_reward', 'scaled_take_profit', 'stop_loss', 'stop_loss_hit', 'structure_change', 'take_profit', 'take_profit_hit', 'target_reached', 'time_based_exit', 'time_exit', 'trailing_stop', 'trailing_stop_hit', 'trend_change', 'trend_reversal', 'volatility_event', 'volatility_expansion', 'volatility_stop']

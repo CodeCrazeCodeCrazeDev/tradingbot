@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\data\real_time_processor.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.01, 0.1, 0.2, 1.0, 100, 252, 1000, 10000000, '/tmp/plasma', 'RealTimeProcessor', 'avg_processing_time', 'batch_count', 'batch_size', 'batch_timeout', 'close', 'data', 'data_type', 'default', 'errors', 'func', 'high_volatility', 'indicators', 'item_id', 'low_volatility', 'max_workers', 'normal', 'object_store_size', 'plasma_client', 'processed_items', 'processing_time', 'queue_size', 'results', 'rsi', 'rsi_period', 'sma_fast', 'sma_fast_period', 'sma_slow', 'sma_slow_period', 'update_interval', 'use_plasma', 'use_process_pool']

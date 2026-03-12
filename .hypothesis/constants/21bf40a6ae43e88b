@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\ai_core\rl\advanced_rl_agents.py
+# hypothesis_version: 6.148.3
+
+[-0.5, 0.0003, 0.005, 0.05, 0.1, 0.5, 0.99, 1.0, 100, 128, 256, 1000000, '=', 'DEMO COMPLETE', '__main__', 'action', 'cpu', 'cql_loss', 'cuda', 'done', 'mean_q', 'mmd', 'next_state', 'perturbation_loss', 'policy_loss', 'q_loss', 'reward', 'state', 'vae_loss']

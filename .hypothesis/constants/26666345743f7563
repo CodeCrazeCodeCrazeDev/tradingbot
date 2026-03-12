@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\dashboard\risk_panel.py
+# hypothesis_version: 6.148.3
+
+[0.1, 0.5, '400px', 'Account Size', 'Asset', 'BTC/USD', 'BTCUSD', 'Calculate', 'Direction', 'EUR/USD', 'EURUSD', 'Enter account size', 'Exposure (%)', 'Free Margin', 'GBP/USD', 'GBPUSD', 'Margin Used', 'Max Drawdown', 'N/A', 'Portfolio Exposure', 'Position Calculator', 'Position Size', 'Risk %', 'Risk Allocation', 'Risk Amount', 'Risk Level', 'Risk Per Trade (%)', 'Stop Loss', 'Stop Loss (pips)', 'Symbol', 'Take Profit', 'Total Exposure', 'USD/JPY', 'USDJPY', 'VaR (95%)', 'asset', 'card-title', 'direction', 'free_margin', 'height', 'label', 'margin_used', 'max_drawdown', 'mb-4', 'mt-3', 'number', 'paper', 'plotly_dark', 'position_size', 'primary', 'rgba(0, 0, 0, 0)', 'risk_amount', 'risk_level', 'risk_percent', 'stop_loss', 'take_profit', 'text-center', 'total_exposure', 'value', 'var_95']

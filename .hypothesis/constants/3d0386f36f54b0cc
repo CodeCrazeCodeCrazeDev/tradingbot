@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\execution\smart_execution.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.001, 0.1, 0.2, 0.5, 1.0, 5.0, 100.0, 100, 'ExecutionThread', 'adaptive_config', 'algorithm', 'average_fill_price', 'average_price', 'completion_callback', 'creation_time', 'display_size', 'end_time', 'execution_time', 'fill_rate', 'filled_quantity', 'iceberg_config', 'id', 'is_config', 'last_update_time', 'max_slices', 'num_slices', 'params', 'price', 'quantity', 'side', 'slices', 'sniper_config', 'sor_config', 'start_time', 'status', 'symbol', 'timestamp', 'twap_config', 'venue', 'vwap_config']

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\dashboard\survival_dashboard.py
+# hypothesis_version: 6.148.3
+
+[-100, 100, 403, 8000, '/', '/api/emergency/stop', '/api/status', '/api/trading/pause', '/api/trading/resume', '/static', '/ws', '0.0.0.0', '1.0.0', '</p>', 'Invalid API Key', 'X-API-Key', 'alerts', 'api_keys', 'components', 'dashboard', 'dashboard/static', 'default_key', 'details', 'index_path', 'info', 'last_update', 'level', 'message', 'performance_metrics', 'portfolio', 'r', 'risk_metrics', 'static', 'static_files_path', 'status', 'system', 'timestamp', 'title', 'trading_paused', 'trading_resumed']

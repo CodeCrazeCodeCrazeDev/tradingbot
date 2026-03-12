@@ -1,0 +1,310 @@
+# Adaptive Trading Bot Configuration
+# This configuration automatically adjusts based on market regimes
+
+# Base Configuration
+base:
+  account_balance: 10000
+  max_drawdown: 0.15
+  emergency_stop_loss: 0.20
+  
+# Market Regime Configurations
+regimes:
+  trending_bull:
+    risk_per_trade: 0.025  # 2.5% - Higher risk in bull trends
+    max_positions: 6
+    stop_loss_atr: 1.8
+    take_profit_rr: 2.5
+    trailing_stop_atr: 2.0
+    position_sizing: "aggressive"
+    correlation_limit: 0.7
+    
+    # Technical indicators
+    rsi_period: 14
+    rsi_oversold: 25
+    rsi_overbought: 75
+    ma_fast: 8
+    ma_slow: 21
+    bb_period: 20
+    bb_std: 2.0
+    
+    # Strategy weights
+    strategy_weights:
+      trend_following: 0.4
+      momentum: 0.3
+      breakout: 0.2
+      swing: 0.1
+    
+    # Sentiment weights
+    sentiment_weights:
+      news: 0.2
+      social: 0.25
+      economic: 0.25
+      technical: 0.3
+
+  trending_bear:
+    risk_per_trade: 0.015  # 1.5% - Reduced risk in bear markets
+    max_positions: 4
+    stop_loss_atr: 2.2
+    take_profit_rr: 1.8
+    trailing_stop_atr: 2.5
+    position_sizing: "conservative"
+    correlation_limit: 0.6
+    
+    # Technical indicators
+    rsi_period: 14
+    rsi_oversold: 30
+    rsi_overbought: 70
+    ma_fast: 10
+    ma_slow: 30
+    bb_period: 20
+    bb_std: 2.2
+    
+    # Strategy weights
+    strategy_weights:
+      trend_following: 0.3
+      momentum: 0.2
+      mean_reversion: 0.2
+      swing: 0.2
+      breakout: 0.1
+    
+    # Sentiment weights
+    sentiment_weights:
+      news: 0.35
+      social: 0.1
+      economic: 0.35
+      technical: 0.2
+
+  ranging:
+    risk_per_trade: 0.02  # 2% - Standard risk
+    max_positions: 5
+    stop_loss_atr: 2.0
+    take_profit_rr: 1.5
+    trailing_stop_atr: 2.2
+    position_sizing: "balanced"
+    correlation_limit: 0.8
+    
+    # Technical indicators
+    rsi_period: 14
+    rsi_oversold: 30
+    rsi_overbought: 70
+    ma_fast: 12
+    ma_slow: 26
+    bb_period: 20
+    bb_std: 2.0
+    
+    # Strategy weights
+    strategy_weights:
+      mean_reversion: 0.4
+      scalping: 0.3
+      swing: 0.2
+      sentiment_based: 0.1
+    
+    # Sentiment weights
+    sentiment_weights:
+      news: 0.25
+      social: 0.15
+      economic: 0.3
+      technical: 0.3
+
+  high_volatility:
+    risk_per_trade: 0.01  # 1% - Very conservative
+    max_positions: 3
+    stop_loss_atr: 3.0
+    take_profit_rr: 1.2
+    trailing_stop_atr: 3.5
+    position_sizing: "very_conservative"
+    correlation_limit: 0.5
+    
+    # Technical indicators
+    rsi_period: 10
+    rsi_oversold: 20
+    rsi_overbought: 80
+    ma_fast: 5
+    ma_slow: 15
+    bb_period: 15
+    bb_std: 2.5
+    
+    # Strategy weights
+    strategy_weights:
+      breakout: 0.3
+      momentum: 0.3
+      scalping: 0.2
+      swing: 0.2
+    
+    # Sentiment weights
+    sentiment_weights:
+      news: 0.4
+      social: 0.05
+      economic: 0.4
+      technical: 0.15
+
+  low_volatility:
+    risk_per_trade: 0.022  # 2.2% - Slightly higher risk
+    max_positions: 6
+    stop_loss_atr: 1.5
+    take_profit_rr: 1.8
+    trailing_stop_atr: 1.8
+    position_sizing: "moderate"
+    correlation_limit: 0.8
+    
+    # Technical indicators
+    rsi_period: 21
+    rsi_oversold: 35
+    rsi_overbought: 65
+    ma_fast: 15
+    ma_slow: 35
+    bb_period: 25
+    bb_std: 1.8
+    
+    # Strategy weights
+    strategy_weights:
+      mean_reversion: 0.3
+      scalping: 0.3
+      swing: 0.2
+      sentiment_based: 0.2
+    
+    # Sentiment weights
+    sentiment_weights:
+      news: 0.2
+      social: 0.2
+      economic: 0.25
+      technical: 0.35
+
+  breakout:
+    risk_per_trade: 0.03  # 3% - Higher risk for breakouts
+    max_positions: 4
+    stop_loss_atr: 1.5
+    take_profit_rr: 3.0
+    trailing_stop_atr: 1.8
+    position_sizing: "aggressive"
+    correlation_limit: 0.6
+    
+    # Technical indicators
+    rsi_period: 12
+    rsi_oversold: 25
+    rsi_overbought: 75
+    ma_fast: 6
+    ma_slow: 18
+    bb_period: 18
+    bb_std: 2.2
+    
+    # Strategy weights
+    strategy_weights:
+      breakout: 0.5
+      momentum: 0.3
+      trend_following: 0.2
+    
+    # Sentiment weights
+    sentiment_weights:
+      news: 0.15
+      social: 0.3
+      economic: 0.2
+      technical: 0.35
+
+  crisis:
+    risk_per_trade: 0.005  # 0.5% - Minimal risk
+    max_positions: 2
+    stop_loss_atr: 4.0
+    take_profit_rr: 1.0
+    trailing_stop_atr: 4.5
+    position_sizing: "minimal"
+    correlation_limit: 0.3
+    
+    # Technical indicators
+    rsi_period: 8
+    rsi_oversold: 15
+    rsi_overbought: 85
+    ma_fast: 3
+    ma_slow: 10
+    bb_period: 12
+    bb_std: 3.0
+    
+    # Strategy weights
+    strategy_weights:
+      mean_reversion: 0.4
+      swing: 0.3
+      sentiment_based: 0.3
+    
+    # Sentiment weights
+    sentiment_weights:
+      news: 0.5
+      social: 0.05
+      economic: 0.4
+      technical: 0.05
+
+# Adaptive System Settings
+adaptive_system:
+  regime_detection:
+    lookback_period: 100
+    volatility_window: 20
+    trend_window: 50
+    update_frequency: 5  # minutes
+    
+  risk_management:
+    drawdown_protection: true
+    correlation_monitoring: true
+    position_sizing_adjustment: true
+    emergency_protocols: true
+    
+  parameter_optimization:
+    enabled: true
+    min_samples: 20
+    optimization_frequency: 100  # trades
+    improvement_threshold: 0.05
+    
+  strategy_rotation:
+    enabled: true
+    min_trades_for_evaluation: 10
+    performance_window: 50
+    rotation_threshold: 0.15
+    confidence_threshold: 0.6
+    
+  sentiment_analysis:
+    adaptive_weighting: true
+    regime_based_thresholds: true
+    confidence_adjustment: true
+    
+# Health Monitoring
+health_monitor:
+  enabled: true
+  check_interval: 60  # seconds
+  
+  # System health thresholds
+  thresholds:
+    max_drawdown: 0.15
+    consecutive_losses: 5
+    win_rate_minimum: 0.3
+    connection_timeout: 30
+    memory_usage_max: 0.8
+    cpu_usage_max: 0.9
+    
+  # Failsafe actions
+  failsafes:
+    emergency_stop: true
+    position_closure: true
+    risk_reduction: true
+    strategy_pause: true
+    
+  # Alerts
+  alerts:
+    email_enabled: false
+    webhook_enabled: false
+    log_level: "WARNING"
+
+# Performance Tracking
+performance:
+  track_regime_performance: true
+  track_strategy_performance: true
+  track_parameter_performance: true
+  generate_adaptive_reports: true
+  
+  # Metrics to track
+  metrics:
+    - "total_pnl"
+    - "win_rate"
+    - "sharpe_ratio"
+    - "max_drawdown"
+    - "profit_factor"
+    - "regime_accuracy"
+    - "strategy_rotation_success"
+    - "parameter_optimization_improvement"

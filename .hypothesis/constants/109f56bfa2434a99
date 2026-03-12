@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\analysis\market_structure.py
+# hypothesis_version: 6.148.3
+
+[-0.003, 0.0, 0.001, 0.0015, 0.002, 0.003, 0.1, 0.2, 0.3, 0.8, 0.998, 0.999, 1.0, 1.001, 1.002, 1.1, 1.2, 1.25, 1.5, 3.0, 5.0, 100, 500, 1000, 3600, 14400, 86400, '\nStructure Events:', '\nStructure Mapping:', '15m', '1M', '1d', '1h', '1m', '1w', '30m', '4h', '5m', 'BOS', 'CHOCH', 'COS', 'Index', 'StructureEvent', '__main__', 'close', 'current_trend', 'description', 'down', 'entry', 'entry_zones', 'event', 'exit_points', 'high', 'long', 'low', 'num_tests', 'open', 'price', 'quality_score', 'recent_test', 'resistance', 'resistance_levels', 'reward_pct', 'risk_pct', 'risk_reward', 'risk_reward_ratio', 'short', 'sideways', 'stop_loss', 'strength', 'support', 'support_levels', 'swings', 'take_profits', 'time', 'timeframe', 'type', 'unknown', 'up', 'volume']

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\self_improvement\model_learner.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.2, 0.55, 0.6, 0.62, 0.65, 0.68, 1.0, 500, 10000, '%Y%m%d_%H%M%S', '0', '1', 'accuracy', 'current_model.pkl', 'current_version.txt', 'error', 'example_*.json', 'f1_score', 'failed', 'features', 'metadata', 'metrics', 'min_model_accuracy', 'min_model_precision', 'model_dir', 'models', 'models/sandbox', 'models/training_data', 'outcome', 'placeholder', 'pnl', 'precision', 'r', 'reason', 'recall', 'rolling_window_size', 'root_cause', 'sandbox_dir', 'sandbox_path', 'skipped', 'status', 'success', 'timestamp', 'trade_id', 'trained_on', 'training_data_dir', 'type', 'validation_samples', 'validation_split', 'version', 'w', 'wb', 'win']

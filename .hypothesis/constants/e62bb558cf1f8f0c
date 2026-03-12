@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\ml\confidence_calibration.py
+# hypothesis_version: 6.148.3
+
+[0.7, 0.85, 'HIGH', 'MEDIUM', 'clip', 'isotonic', 'news_impact', 'platt']

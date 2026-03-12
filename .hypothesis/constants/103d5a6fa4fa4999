@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\dashboard\signal_panel.py
+# hypothesis_version: 6.148.3
+
+[0.5, '400px', 'Active Signals', 'Avg Confidence', 'Confidence', 'Count', 'Direction', 'Market Conditions', 'Market Regime: ', 'N/A', 'No active signals', 'Profitable Signals', 'Sentiment: ', 'Signal', 'Signal Accuracy', 'Signal Distribution', 'Signal Type', 'Signal Win Rate', 'Status', 'Strategy', 'Strategy Insights', 'Symbol', 'Time', 'Total Signals', 'Volatility: ', 'active_signals', 'avg_confidence', 'buy', 'card-title', 'direction', 'height', 'market_regime', 'mb-3', 'mb-4', 'paper', 'plotly_dark', 'profitable_signals', 'recommendations', 'rgba(0, 0, 0, 0)', 'sell', 'sentiment', 'signal', 'signal_accuracy', 'signal_win_rate', 'status', 'strategy', 'symbol', 'text-center', 'text-danger', 'text-success', 'time', 'top_strategies', 'total_signals', 'volatility']

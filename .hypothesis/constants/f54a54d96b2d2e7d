@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\analysis\liquidity.py
+# hypothesis_version: 6.148.3
+
+[1e-05, 0.0001, 0.002, 0.01, 0.02, 0.1, 0.25, 0.4, 0.5, 0.68, 0.75, 0.99, 1.0, 1.2, 1.5, 2.0, 100, 1000, '\nPremium zones:', '15min', '2023-01-01', '5min', 'Discount zones:', 'LiquidityGrab', '__main__', 'bearish', 'bullish', 'buy', 'close', 'fvgs', 'high', 'liquidity_pools', 'low', 'mixed', 'open', 'order_blocks', 'sell', 'volume', 'volume_profiles']

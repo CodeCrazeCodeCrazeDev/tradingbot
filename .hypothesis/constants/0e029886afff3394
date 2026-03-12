@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\orchestrator\performance_tracker.py
+# hypothesis_version: 6.148.3
+
+[-0.02, 0.02, 0.05, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1.2, 1.5, 2.0, -100, 100, 252, 10000, 100000, 'avg_loss', 'avg_win', 'avoid', 'best_opportunities', 'best_strategies', 'by_time', 'by_type', 'close', 'disable', 'duration', 'entry', 'entry_price', 'entry_time', 'equity_curve', 'exit', 'increase_size', 'inf', 'metrics', 'opportunity_filters', 'opportunity_type', 'optimization_targets', 'performance', 'pnl', 'position_sizing', 'prioritize', 'profit_factor', 'reduce_size', 'risk_adjustments', 'sharpe_ratio', 'size', 'strategy', 'suggestions', 'tighten_stops', 'time_filters', 'timestamp', 'total', 'total_return', 'total_trades', 'trades', 'unknown', 'win_rate', 'wins', 'worst_performers']

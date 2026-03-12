@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\analysis\anomaly_detection.py
+# hypothesis_version: 6.148.3
+
+[0.1, 0.95, 2.5, -1000, 100, 1000, 'anomaly_score', 'anomaly_threshold', 'autoencoder', 'autoencoder_state', 'body_size', 'close', 'config', 'cpu', 'cuda', 'feature', 'ffill', 'high', 'high_low_range', 'isolation_forest', 'log_returns', 'lookback_window', 'low', 'method', 'min_samples', 'model_type', 'momentum', 'n_components', 'neural_network', 'none', 'open', 'pca', 'principal_components', 'reconstruction_error', 'relative_volume', 'returns', 'rsi', 'scaler', 'statistical', 'threshold', 'value', 'volatility', 'volume', 'volume_change', 'z_score']

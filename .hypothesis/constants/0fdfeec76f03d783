@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\ml\ppo_agent.py
+# hypothesis_version: 6.148.3
+
+[0.0, 1e-08, 0.0003, 0.01, 0.2, 0.5, 0.95, 0.99, 100, 256, 10000, 'actions', 'actor_loss', 'batch_size', 'config', 'cpu', 'critic_loss', 'cuda', 'device', 'dones', 'entropy', 'entropy_coef', 'epochs', 'epsilon', 'gae_lambda', 'gamma', 'log_probs', 'lr', 'max_grad_norm', 'optimizer_state_dict', 'policy_state_dict', 'rewards', 'states', 'training_step', 'value_coef', 'values']

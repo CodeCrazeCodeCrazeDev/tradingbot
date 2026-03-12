@@ -1,0 +1,88 @@
+{
+  "timestamp": "2025-11-30T13:37:27.495930",
+  "data_points": 1000,
+  "optimizations": [
+    {
+      "best_params": {
+        "fast_period": 5,
+        "slow_period": 60
+      },
+      "best_score": 24.4399055691961,
+      "total_combinations": 30,
+      "optimization_time": 0.1401,
+      "method": "grid_search",
+      "validation": null
+    },
+    {
+      "best_params": {
+        "fast_period": 5,
+        "slow_period": 20
+      },
+      "best_score": -999,
+      "total_combinations": 5,
+      "optimization_time": 0.460983,
+      "method": "walk_forward",
+      "validation": {
+        "n_windows": 5,
+        "avg_oos_score": -999.0,
+        "window_results": [
+          {
+            "window": 0,
+            "params": {
+              "fast_period": 5,
+              "slow_period": 20
+            },
+            "train_score": -999,
+            "oos_score": -999,
+            "oos_return": 0.17109256407679452,
+            "oos_sharpe": 2.1827229227507288
+          },
+          {
+            "window": 1,
+            "params": {
+              "fast_period": 5,
+              "slow_period": 20
+            },
+            "train_score": 3.869565934695788,
+            "oos_score": -999,
+            "oos_return": -0.07125500160254306,
+            "oos_sharpe": -1.4571535309699388
+          },
+          {
+            "window": 2,
+            "params": {
+              "fast_period": 5,
+              "slow_period": 20
+            },
+            "train_score": -999,
+            "oos_score": -999,
+            "oos_return": -0.04877367834568868,
+            "oos_sharpe": -0.6963206362445304
+          },
+          {
+            "window": 3,
+            "params": {
+              "fast_period": 5,
+              "slow_period": 20
+            },
+            "train_score": 2.303599434309692,
+            "oos_score": -999,
+            "oos_return": 0.0695349502558638,
+            "oos_sharpe": 0.9925797746499103
+          },
+          {
+            "window": 4,
+            "params": {
+              "fast_period": 5,
+              "slow_period": 20
+            },
+            "train_score": -999,
+            "oos_score": -999,
+            "oos_return": -0.018840694765351947,
+            "oos_sharpe": -0.5208204784642224
+          }
+        ]
+      }
+    }
+  ]
+}

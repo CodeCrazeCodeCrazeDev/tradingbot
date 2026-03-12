@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\learning\performance_analyzer.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.003, 0.005, 0.01, 0.015, 0.3, 0.33, 0.34, 0.4, 0.5, 0.6, 40.0, 60.0, 100.0, 100, 500, 1500, 'BUY', 'SELL', 'UNKNOWN', 'best_hours', 'best_symbols', 'buy_win_rate', 'confidence', 'crossover_required', 'crossover_win_rate', 'hour', 'loss', 'losses', 'macd', 'macd_accuracy', 'macd_weight', 'optimal_buy', 'optimal_sell', 'outcome', 'pnl', 'rsi', 'rsi_accuracy', 'rsi_weight', 'sell_win_rate', 'sma_20', 'sma_50', 'sma_accuracy', 'sma_weight', 'symbol', 'symbol_performance', 'total_pnl', 'trades', 'type', 'volatility', 'win', 'win_rate', 'wins', 'worst_hours', 'worst_symbols']

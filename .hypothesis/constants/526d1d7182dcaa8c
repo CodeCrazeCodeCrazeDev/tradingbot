@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\event_monitoring\market_condition_monitor.py
+# hypothesis_version: 6.148.3
+
+[-0.3, 0.0, 0.3, 0.5, 0.7, 1.0, 1.5, 2.0, 50.0, 100.0, 100, 120, 360, '15m', '1d', '1h', '1m', '30m', '4h', '5m', 'atr', 'atr_ma', 'auto_update', 'breakdown', 'breakout', 'close', 'contracting', 'correlation_change', 'deep', 'drying', 'expanding', 'extremely_high', 'extremely_low', 'high', 'imbalance', 'imbalanced', 'improving', 'liquidity_event', 'liquidity_window', 'low', 'mean_reverting', 'normal', 'open', 'ranging', 'regime_change', 'rsi', 'significant_decrease', 'significant_increase', 'sma20', 'sma50', 'thin', 'transitioning', 'trending_bearish', 'trending_bullish', 'unknown', 'very_deep', 'very_thin', 'volatile_bearish', 'volatile_bullish', 'volatile_neutral', 'volatility_event', 'volatility_window', 'volume', 'zscore']

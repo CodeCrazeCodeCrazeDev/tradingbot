@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\event_monitoring\event_processor.py
+# hypothesis_version: 6.148.3
+
+[0.1, 0.25, 0.5, 1.0, 2.0, 5.0, 300, 'action', 'adjust_position_size', 'adjust_stop_loss', 'adjust_take_profit', 'adjustment_factor', 'close_position', 'custom', 'economic_events', 'enabled', 'enter_position', 'event_id', 'execution_count', 'handlers', 'hedge', 'high_priority_market', 'ignore', 'impact_score', 'last_triggered', 'liquidity_drop', 'max_events_per_batch', 'max_retries', 'message', 'news_events', 'notify', 'pause_trading', 'prioritizer_config', 'priority_weights', 'recency_weight', 'resume_trading', 'retry_delay_seconds', 'running', 'sentiment', 'significant_decrease', 'significant_increase', 'strategy', 'symbol', 'timestamp', 'volatility_spike']

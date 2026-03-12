@@ -1,0 +1,72 @@
+﻿{
+    "summary":  {
+                    "total_checks":  7,
+                    "warnings":  0,
+                    "critical_issues":  0,
+                    "checks_passed":  7
+                },
+    "connectivity_check":  {
+                               "status":  "OK",
+                               "tests":  [
+                                             {
+                                                 "test":  "DNS",
+                                                 "status":  "OK"
+                                             },
+                                             {
+                                                 "status":  "OK",
+                                                 "response_code":  200,
+                                                 "test":  "Internet"
+                                             }
+                                         ]
+                           },
+    "timestamp":  "2025-10-08 11:39:50",
+    "trading_check":  {
+                          "position_validator":  "Unknown",
+                          "position_sizes":  [
+                                                 "BUY 1.0 lots\u001b[0m",
+                                                 "BUY 1.0 lots\u001b[0m",
+                                                 "BUY 1.0 lots\u001b[0m",
+                                                 "BUY 1.0 lots\u001b[0m",
+                                                 "BUY 1.0 lots\u001b[0m",
+                                                 "BUY 1.0 lots\u001b[0m",
+                                                 "BUY 1.0 lots\u001b[0m",
+                                                 "BUY 1.0 lots\u001b[0m",
+                                                 "BUY 1.0 lots\u001b[0m",
+                                                 "BUY 1.0 lots\u001b[0m"
+                                             ],
+                          "status":  "OK",
+                          "recent_trades":  67
+                      },
+    "overall_status":  "OK",
+    "log_check":  {
+                      "warnings_found":  null,
+                      "status":  "OK",
+                      "files_checked":  4,
+                      "errors_found":  2
+                  },
+    "disk_check":  {
+                       "used_gb":  90.44,
+                       "drive":  "C:",
+                       "free_gb":  28.15,
+                       "total_gb":  118.59,
+                       "usage_pct":  76.26,
+                       "status":  "OK"
+                   },
+    "process_check":  {
+                          "pid":  12140,
+                          "start_time":  "2025-10-08 00:16:22",
+                          "threads":  12,
+                          "uptime_minutes":  683.46,
+                          "name":  "python",
+                          "status":  "RUNNING",
+                          "cpu_seconds":  1422.09,
+                          "memory_mb":  150.28
+                      },
+    "resource_check":  {
+                           "memory_used_gb":  6.39,
+                           "cpu_usage_pct":  61.4,
+                           "memory_total_gb":  7.89,
+                           "status":  "OK",
+                           "memory_usage_pct":  80.99
+                       }
+}

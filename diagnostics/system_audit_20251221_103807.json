@@ -1,0 +1,435 @@
+{
+  "timestamp": "2025-12-21T10:37:44.376437",
+  "sections": {
+    "todos": {
+      "count": 20,
+      "items": [
+        {
+          "file": "trading_bot\\deepseek_ai_engineer\\codebase_intelligence.py",
+          "line": 214,
+          "content": "if '# TODO' in line:"
+        },
+        {
+          "file": "trading_bot\\deepseek_ai_engineer\\codebase_intelligence.py",
+          "line": 216,
+          "content": "if '# FIXME' in line:"
+        },
+        {
+          "file": "trading_bot\\deepseek_ai_engineer\\daily_maintenance.py",
+          "line": 334,
+          "content": "# TODO/FIXME markers"
+        },
+        {
+          "file": "trading_bot\\deepseek_ai_engineer\\daily_maintenance.py",
+          "line": 426,
+          "content": "if '# TODO' in line or '# FIXME' in line:"
+        },
+        {
+          "file": "trading_bot\\deepseek_engineer\\codebase_analyzer.py",
+          "line": 1019,
+          "content": "# TODOs: 0.5 hours each"
+        },
+        {
+          "file": "trading_bot\\self_improvement\\code_analyzer.py",
+          "line": 176,
+          "content": "# TODO"
+        },
+        {
+          "file": "trading_bot\\self_improvement\\code_analyzer.py",
+          "line": 193,
+          "content": "# FIXME"
+        },
+        {
+          "file": "trading_bot\\self_improvement\\code_analyzer.py",
+          "line": 210,
+          "content": "# HACK"
+        },
+        {
+          "file": "trading_bot\\self_improvement\\proposal_engine.py",
+          "line": 227,
+          "content": "new_code=f\"# TODO: {issue.description} - NEEDS IMPLEMENTATION\\nraise NotImplementedError('TODO: Impl"
+        },
+        {
+          "file": "trading_bot\\self_improvement\\proposal_engine.py",
+          "line": 527,
+          "content": "new_code=\"# TODO: Convert to f-string manually\","
+        },
+        {
+          "file": "trading_bot\\autonomous_backups\\20251209_225001\\deepseek_engineer\\codebase_analyzer.py",
+          "line": 1019,
+          "content": "# TODOs: 0.5 hours each"
+        },
+        {
+          "file": "trading_bot\\autonomous_backups\\20251209_225001\\self_improvement\\code_analyzer.py",
+          "line": 176,
+          "content": "# TODO"
+        },
+        {
+          "file": "trading_bot\\autonomous_backups\\20251209_225001\\self_improvement\\code_analyzer.py",
+          "line": 193,
+          "content": "# FIXME"
+        },
+        {
+          "file": "trading_bot\\autonomous_backups\\20251209_225001\\self_improvement\\code_analyzer.py",
+          "line": 210,
+          "content": "# HACK"
+        },
+        {
+          "file": "trading_bot\\autonomous_backups\\20251209_223656\\deepseek_ai_engineer\\daily_maintenance.py",
+          "line": 334,
+          "content": "# TODO/FIXME markers"
+        },
+        {
+          "file": "trading_bot\\autonomous_backups\\20251209_223656\\deepseek_ai_engineer\\daily_maintenance.py",
+          "line": 426,
+          "content": "if '# TODO' in line or '# FIXME' in line:"
+        },
+        {
+          "file": "trading_bot\\autonomous_backups\\20251209_223656\\deepseek_engineer\\codebase_analyzer.py",
+          "line": 1019,
+          "content": "# TODOs: 0.5 hours each"
+        },
+        {
+          "file": "trading_bot\\autonomous_backups\\20251209_223656\\self_improvement\\code_analyzer.py",
+          "line": 176,
+          "content": "# TODO"
+        },
+        {
+          "file": "trading_bot\\autonomous_backups\\20251209_223656\\self_improvement\\code_analyzer.py",
+          "line": 193,
+          "content": "# FIXME"
+        },
+        {
+          "file": "trading_bot\\autonomous_backups\\20251209_223656\\self_improvement\\code_analyzer.py",
+          "line": 210,
+          "content": "# HACK"
+        }
+      ]
+    },
+    "hardcoded": {
+      "count": 297,
+      "items": [
+        {
+          "file": "trading_bot\\auto_dependency_installer.py",
+          "type": "Hardcoded timeout",
+          "match": "timeout=300"
+        },
+        {
+          "file": "trading_bot\\auto_dependency_installer.py",
+          "type": "Hardcoded timeout",
+          "match": "timeout=600"
+        },
+        {
+          "file": "trading_bot\\auto_dependency_installer.py",
+          "type": "Hardcoded timeout",
+          "match": "timeout=120"
+        },
+        {
+          "file": "trading_bot\\constants.py",
+          "type": "Hardcoded leverage",
+          "match": "LEVERAGE = 100"
+        },
+        {
+          "file": "trading_bot\\constants.py",
+          "type": "Hardcoded leverage",
+          "match": "LEVERAGE = 1"
+        },
+        {
+          "file": "trading_bot\\realtime_dependency_manager.py",
+          "type": "Hardcoded timeout",
+          "match": "timeout=30"
+        },
+        {
+          "file": "trading_bot\\realtime_dependency_manager.py",
+          "type": "Hardcoded timeout",
+          "match": "timeout=600"
+        },
+        {
+          "file": "trading_bot\\aamis_v3\\complete_aamis_system.py",
+          "type": "Hardcoded stop loss",
+          "match": "stop_loss=0.0"
+        },
+        {
+          "file": "trading_bot\\aamis_v3\\complete_aamis_system.py",
+          "type": "Hardcoded take profit",
+          "match": "take_profit=0.0"
+        },
+        {
+          "file": "trading_bot\\adaptive_systems\\adaptive_learning.py",
+          "type": "Hardcoded timeout",
+          "match": "timeout=1"
+        },
+        {
+          "file": "trading_bot\\adaptive_systems\\master_controller.py",
+          "type": "Hardcoded stop loss",
+          "match": "stop_loss=0.0"
+        },
+        {
+          "file": "trading_bot\\adaptive_systems\\master_controller.py",
+          "type": "Hardcoded take profit",
+          "match": "take_profit=0.0"
+        },
+        {
+          "file": "trading_bot\\adaptive_systems\\system_health.py",
+          "type": "Hardcoded timeout",
+          "match": "timeout=5"
+        },
+        {
+          "file": "trading_bot\\adversarial_curriculum\\curriculum_orchestrator.py",
+          "type": "Hardcoded leverage",
+          "match": "leverage=0"
+        },
+        {
+          "file": "trading_bot\\adversarial_curriculum\\market_environment.py",
+          "type": "Hardcoded leverage",
+          "match": "leverage=0"
+        },
+        {
+          "file": "trading_bot\\ai_engineer\\autonomous_orchestrator.py",
+          "type": "Hardcoded localhost port",
+          "match": "localhost:11434"
+        },
+        {
+          "file": "trading_bot\\ai_engineer\\autonomous_orchestrator.py",
+          "type": "Hardcoded localhost port",
+          "match": "localhost:11434"
+        },
+        {
+          "file": "trading_bot\\ai_engineer\\autonomous_orchestrator.py",
+          "type": "Hardcoded timeout",
+          "match": "timeout=300"
+        },
+        {
+          "file": "trading_bot\\ai_engineer\\deepseek_integration.py",
+          "type": "Hardcoded localhost port",
+          "match": "localhost:11434"
+        },
+        {
+          "file": "trading_bot\\ai_engineer\\deepseek_integration.py",
+          "type": "Hardcoded localhost port",
+          "match": "localhost:11434"
+        }
+      ]
+    },
+    "unified_architecture": {
+      "layer_1": {
+        "file": "layer1_data_foundation.py",
+        "has_class": true,
+        "has_init": true,
+        "lines": 907,
+        "status": "COMPLETE"
+      },
+      "layer_2": {
+        "file": "layer2_intelligence_core.py",
+        "has_class": true,
+        "has_init": true,
+        "lines": 717,
+        "status": "COMPLETE"
+      },
+      "layer_3": {
+        "file": "layer3_strategy_engine.py",
+        "has_class": true,
+        "has_init": true,
+        "lines": 835,
+        "status": "COMPLETE"
+      },
+      "layer_4": {
+        "file": "layer4_execution.py",
+        "has_class": true,
+        "has_init": true,
+        "lines": 661,
+        "status": "COMPLETE"
+      },
+      "layer_5": {
+        "file": "layer5_risk_safety.py",
+        "has_class": true,
+        "has_init": true,
+        "lines": 741,
+        "status": "COMPLETE"
+      },
+      "layer_6": {
+        "file": "layer6_orchestration.py",
+        "has_class": true,
+        "has_init": true,
+        "lines": 737,
+        "status": "COMPLETE"
+      }
+    },
+    "risk_management": {
+      "max_risk_per_trade": true,
+      "max_daily_loss": true,
+      "max_drawdown": true,
+      "position_sizing": true,
+      "correlation_check": true,
+      "portfolio_risk": true,
+      "circuit_breaker": true,
+      "kill_switch": false
+    },
+    "inactive_features": [
+      {
+        "feature": "telegram",
+        "config_file": "complete_config.yaml",
+        "how_to_enable": "Set 'enabled: true' in config/complete_config.yaml"
+      },
+      {
+        "feature": "telegram",
+        "config_file": "complete_config.yaml",
+        "how_to_enable": "Set 'enabled: true' in config/complete_config.yaml"
+      },
+      {
+        "feature": "email",
+        "config_file": "complete_config.yaml",
+        "how_to_enable": "Set 'enabled: true' in config/complete_config.yaml"
+      },
+      {
+        "feature": "satellite_imagery",
+        "config_file": "eternal_evolution_config.yaml",
+        "how_to_enable": "Set 'enabled: true' in config/eternal_evolution_config.yaml"
+      },
+      {
+        "feature": "sms",
+        "config_file": "live_trading_config.yaml",
+        "how_to_enable": "Set 'enabled: true' in config/live_trading_config.yaml"
+      },
+      {
+        "feature": "telegram",
+        "config_file": "live_trading_config.yaml",
+        "how_to_enable": "Set 'enabled: true' in config/live_trading_config.yaml"
+      },
+      {
+        "feature": "simulate_conditions",
+        "config_file": "network_config.yaml",
+        "how_to_enable": "Set 'enabled: true' in config/network_config.yaml"
+      },
+      {
+        "feature": "cross_exchange",
+        "config_file": "opportunity_scanner_config.yaml",
+        "how_to_enable": "Set 'enabled: true' in config/opportunity_scanner_config.yaml"
+      },
+      {
+        "feature": "market_making",
+        "config_file": "opportunity_scanner_config.yaml",
+        "how_to_enable": "Set 'enabled: true' in config/opportunity_scanner_config.yaml"
+      },
+      {
+        "feature": "dark_pool",
+        "config_file": "opportunity_scanner_config.yaml",
+        "how_to_enable": "Set 'enabled: true' in config/opportunity_scanner_config.yaml"
+      },
+      {
+        "feature": "gamma_scalping",
+        "config_file": "opportunity_scanner_config.yaml",
+        "how_to_enable": "Set 'enabled: true' in config/opportunity_scanner_config.yaml"
+      },
+      {
+        "feature": "telegram",
+        "config_file": "production_config.yaml",
+        "how_to_enable": "Set 'enabled: true' in config/production_config.yaml"
+      },
+      {
+        "feature": "push_notifications",
+        "config_file": "production_config.yaml",
+        "how_to_enable": "Set 'enabled: true' in config/production_config.yaml"
+      },
+      {
+        "feature": "email",
+        "config_file": "survival_config_production.yaml",
+        "how_to_enable": "Set 'enabled: true' in config/survival_config_production.yaml"
+      },
+      {
+        "feature": "email",
+        "config_file": "testing_config.yaml",
+        "how_to_enable": "Set 'enabled: true' in config/testing_config.yaml"
+      },
+      {
+        "feature": "telegram",
+        "config_file": "unified_config.yaml",
+        "how_to_enable": "Set 'enabled: true' in config/unified_config.yaml"
+      },
+      {
+        "feature": "email",
+        "config_file": "unified_config.yaml",
+        "how_to_enable": "Set 'enabled: true' in config/unified_config.yaml"
+      }
+    ],
+    "brokers": {
+      "alpaca_adapter": {
+        "status": "COMPLETE",
+        "has_connect": true,
+        "has_execute": true,
+        "has_positions": true,
+        "is_mock": false
+      },
+      "binance_adapter": {
+        "status": "COMPLETE",
+        "has_connect": true,
+        "has_execute": true,
+        "has_positions": true,
+        "is_mock": false
+      },
+      "broker_adapter": {
+        "status": "MOCK",
+        "has_connect": true,
+        "has_execute": true,
+        "has_positions": true,
+        "is_mock": true
+      },
+      "broker_interface": {
+        "status": "INCOMPLETE",
+        "has_connect": false,
+        "has_execute": false,
+        "has_positions": false,
+        "is_mock": false
+      },
+      "connection_manager": {
+        "status": "INCOMPLETE",
+        "has_connect": true,
+        "has_execute": true,
+        "has_positions": false,
+        "is_mock": false
+      },
+      "free_brokers": {
+        "status": "INCOMPLETE",
+        "has_connect": false,
+        "has_execute": false,
+        "has_positions": false,
+        "is_mock": false
+      },
+      "kraken_adapter": {
+        "status": "COMPLETE",
+        "has_connect": true,
+        "has_execute": true,
+        "has_positions": true,
+        "is_mock": false
+      },
+      "live_order_router": {
+        "status": "COMPLETE",
+        "has_connect": true,
+        "has_execute": true,
+        "has_positions": true,
+        "is_mock": false
+      },
+      "mt5_adapter": {
+        "status": "COMPLETE",
+        "has_connect": true,
+        "has_execute": true,
+        "has_positions": true,
+        "is_mock": false
+      },
+      "multi_broker_adapter": {
+        "status": "MOCK",
+        "has_connect": true,
+        "has_execute": true,
+        "has_positions": true,
+        "is_mock": true
+      },
+      "real_broker_integration": {
+        "status": "COMPLETE",
+        "has_connect": true,
+        "has_execute": true,
+        "has_positions": true,
+        "is_mock": false
+      }
+    }
+  }
+}

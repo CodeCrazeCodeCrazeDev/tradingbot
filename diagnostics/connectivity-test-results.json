@@ -1,0 +1,9 @@
+﻿{
+    "api":  true,
+    "ping":  true,
+    "https":  true,
+    "dns":  true,
+    "issues":  [
+
+               ]
+}

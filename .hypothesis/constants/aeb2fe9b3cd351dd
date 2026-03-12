@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\self_improvement\canary_validator.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.002, 0.05, 0.1, 0.2, 0.3, 0.5, 1.0, 100, 'EURUSD', 'GBPUSD', 'avg_pnl_change_pct', 'baseline_metrics', 'canary_instruments', 'canary_metrics', 'canary_min_trades', 'comparison', 'confidence', 'drawdown_change', 'end_time', 'execution_latency_ms', 'extend_testing', 'failed', 'failed_criteria', 'fill_type', 'fix', 'fix_id', 'full', 'min_trade_count', 'note', 'passed', 'passed_criteria', 'pending', 'pnl', 'promote', 'recommendation', 'reject', 'running', 'signals', 'slippage', 'slippage_change', 'start_time', 'status', 'timeout', 'trades', 'win_rate_change_pct', 'win_rate_improvement']

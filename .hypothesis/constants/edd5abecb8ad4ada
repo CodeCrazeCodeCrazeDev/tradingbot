@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\market_intelligence\performance_optimization.py
+# hypothesis_version: 6.148.3
+
+[0.1, 0.5, 0.7, 0.8, 1.0, 1.5, 2.0, 5.0, 10.0, -1000, 100, 128, 1000, 10000, ' LIMIT 10000', 'LIMIT', 'ORDER BY', 'SELECT', 'WHERE', 'WHERE timestamp', '_performance_monitor', 'available', 'avg_execution_time', 'avg_time', 'batch_size', 'bottlenecks', 'call_count', 'category', 'cpu_metrics', 'cpu_percent', 'cpu_times', 'estimated_cost', 'estimated_rows', 'execution_time', 'execution_times', 'float', 'float64', 'free', 'function', 'high', 'int64', 'integer', 'max_time', 'medium', 'memory_full_info', 'memory_info', 'memory_metrics', 'memory_percent', 'min_time', 'num_threads', 'object', 'percent', 'processing_time', 'severity', 'std_time', 'suggested_indexes', 'summary_stats', 'threshold_exceeded', 'timestamp', 'total', 'used']

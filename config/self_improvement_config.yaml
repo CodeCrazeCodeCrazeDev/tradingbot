@@ -1,0 +1,213 @@
+# Self-Improvement System Configuration
+
+# General settings
+auto_approve: true  # Whether to auto-approve code modifications
+knowledge_base_dir: "knowledge_base"  # Directory to store knowledge base
+enable_scheduled_improvements: true  # Enable automatic scheduling of improvements
+improvement_schedule_interval_hours: 12  # How often to check for improvements (reduced from 24 to 12)
+
+# API keys for external services
+api_keys:
+  openai: ""  # Add your OpenAI API key here
+  # Add other API keys as needed
+
+# Local model paths
+local_models:
+  gpt4all_path: "models/gpt4all-j-v1.3-groovy.bin"  # Path to GPT4All model file
+
+# Knowledge acquisition settings
+knowledge_acquisition:
+  min_confidence: 0.7  # Minimum confidence score for knowledge items
+  max_items: 20  # Maximum number of knowledge items to use for code generation
+  sources:
+    books: true  # Enable book knowledge acquisition
+    human: true  # Enable human knowledge acquisition
+    ai: true  # Enable AI knowledge acquisition
+    algorithm: true  # Enable algorithm knowledge acquisition
+
+# Code generation settings
+code_generation:
+  default_model: "gpt-4"  # Default model to use for code generation
+  models:
+    gpt-4:
+      temperature: 0.2
+      max_tokens: 4000
+      api_type: "openai"
+      strengths: ["complex algorithms", "architecture design", "refactoring"]
+    gpt4all:
+      temperature: 0.7
+      max_tokens: 2048
+      api_type: "local"
+      model_type: "gpt4all-j"
+      batch_size: 8
+      threads: 4
+      strengths: ["simple functions", "bug fixes", "documentation", "offline generation"]
+  include_tests: true  # Whether to include tests in generated code
+  include_type_hints: true  # Whether to include type hints in generated code
+  model_selection: "auto"  # How to select models: "auto", "manual", or "strengths"
+
+# Validation settings
+validation:
+  level: "strict"  # Validation level (basic, standard, strict, comprehensive)
+  run_tests: true  # Whether to run tests on generated code
+
+# Safety settings
+safety:
+  level: "standard"  # Safety level (basic, standard, strict, paranoid)
+  principle_level: 2  # Trading principle level to enforce (1-4)
+  allowed_modification_types:  # Allowed types of code modifications
+    - "replace"
+    - "update"
+    - "refactor"
+    - "insert"  # Added insert to allow more granular modifications
+  allowed_file_patterns:  # File patterns that can be modified
+    - "*.py"
+  excluded_file_patterns:  # File patterns that cannot be modified
+    - "*test*.py"  # Don't modify test files
+    - "setup.py"    # Don't modify setup file
+  critical_files:  # Files that require extra validation before modification
+    - "main.py"
+    - "trading_bot/adaptive_systems/__init__.py"
+
+# Trading principles settings
+trading_principles:
+  enforce_core_principles: true  # Enforce core trading principles
+  min_preserved_principles: 2  # Minimum number of principles that must be preserved (reduced from 3 to 2)
+  principle_level: 2  # Default principle level (1-4)
+  risk_tolerance: "moderate"  # Risk tolerance level (conservative, moderate, aggressive)
+  
+  # Core principles that must be preserved
+  core_principles:
+    # Level 1-2: Basic Trading Principles
+    # Risk management principles
+    - "position sizing"
+    - "stop loss"
+    - "risk management"
+    - "drawdown control"
+    - "risk-reward ratio"
+    - "portfolio diversification"
+    - "capital preservation"
+    
+    # Trading strategy principles
+    - "entry criteria"
+    - "exit criteria"
+    - "signal generation"
+    - "market analysis"
+    - "trend following"
+    - "mean reversion"
+    - "momentum"
+    - "volatility"
+    
+    # Performance evaluation principles
+    - "performance metrics"
+    - "backtesting"
+    - "forward testing"
+    - "optimization"
+    - "validation"
+    
+    # Execution principles
+    - "execution algorithm"
+    - "slippage control"
+    - "liquidity analysis"
+    - "order routing"
+    
+    # Level 3: Advanced Market Microstructure Principles
+    - "order flow analysis"
+    - "market depth interpretation"
+    - "institutional footprint detection"
+    - "liquidity pool identification"
+    - "smart money concepts"
+    - "order block detection"
+    - "fair value gap analysis"
+    - "imbalance detection"
+    - "liquidity void recognition"
+    - "volume profile analysis"
+    - "market structure analysis"
+    - "wyckoff methodology"
+    - "market maker manipulation"
+    - "stop hunting detection"
+    - "high-frequency trading defense"
+    
+    # Level 4: Quantum and Blockchain Principles
+    - "quantum portfolio optimization"
+    - "quantum risk parity"
+    - "quantum monte carlo simulation"
+    - "quantum nash equilibrium"
+    - "blockchain trade validation"
+    - "cryptographic proof generation"
+    - "immutable prediction recording"
+    - "distributed consensus trading"
+    - "quantum-resistant cryptography"
+    - "quantum random number generation"
+    - "quantum entanglement modeling"
+    - "blockchain transparency"
+    - "smart contract automation"
+
+# Improvement targets
+improvement_targets:
+  # Risk tolerance settings
+  risk_tolerance:
+    conservative:
+      win_rate_threshold: 0.65  # Higher win rate requirement
+      drawdown_threshold: 0.08  # Lower drawdown tolerance
+      improvement_frequency: 168  # Hours (1 week)
+    moderate:
+      win_rate_threshold: 0.55  # Moderate win rate requirement
+      drawdown_threshold: 0.12  # Moderate drawdown tolerance
+      improvement_frequency: 72   # Hours (3 days)
+    aggressive:
+      win_rate_threshold: 0.45  # Lower win rate requirement
+      drawdown_threshold: 0.18  # Higher drawdown tolerance
+      improvement_frequency: 24   # Hours (1 day)
+  
+  # Components that can be improved
+  components:
+    - name: "strategy_selector"
+      file_path: "trading_bot/adaptive_systems/strategy_selector.py"
+      improvement_threshold: 0.55  # Performance threshold (adjusted from 0.6)
+      principle_level: 2  # Use level 2 principles for this component
+      auto_approve: true  # Auto-approve changes to this component
+      
+    - name: "risk_manager"
+      file_path: "trading_bot/adaptive_systems/adaptive_risk.py"
+      improvement_threshold: 0.12  # Drawdown threshold (adjusted from 0.1)
+      principle_level: 2  # Use level 2 principles for this component
+      auto_approve: true  # Auto-approve changes to this component
+      
+    - name: "market_regime_detector"
+      file_path: "trading_bot/adaptive_systems/market_regime.py"
+      improvement_threshold: 0.65  # Accuracy threshold (adjusted from 0.7)
+      principle_level: 2  # Use level 2 principles for this component
+      auto_approve: true  # Auto-approve changes to this component
+      
+    - name: "parameter_optimizer"
+      file_path: "trading_bot/adaptive_systems/parameter_optimizer.py"
+      improvement_threshold: 0.45  # Optimization effectiveness threshold (adjusted from 0.5)
+      principle_level: 2  # Use level 2 principles for this component
+      auto_approve: true  # Auto-approve changes to this component
+      
+    # Level 3 components (market microstructure)
+    - name: "market_microstructure"
+      file_path: "trading_bot/adaptive_systems/market_microstructure.py"
+      improvement_threshold: 0.55  # Performance threshold (adjusted from 0.6)
+      principle_level: 3  # Use level 3 principles for this component
+      auto_approve: true  # Auto-approve changes to this component
+      
+    - name: "order_flow_analyzer"
+      file_path: "trading_bot/adaptive_systems/order_flow_analyzer.py"
+      improvement_threshold: 0.55  # Performance threshold (adjusted from 0.6)
+      principle_level: 3  # Use level 3 principles for this component
+      auto_approve: true  # Auto-approve changes to this component
+      
+    # Level 4 components (quantum and blockchain)
+    - name: "quantum_integration"
+      file_path: "trading_bot/adaptive_systems/quantum_integration.py"
+      improvement_threshold: 0.45  # Performance threshold (adjusted from 0.5)
+      principle_level: 4  # Use level 4 principles for this component
+      auto_approve: false  # Require manual approval for quantum components
+      
+    - name: "blockchain_validation"
+      file_path: "trading_bot/adaptive_systems/blockchain_validation.py"
+      improvement_threshold: 0.45  # Performance threshold (adjusted from 0.5)
+      principle_level: 4  # Use level 4 principles for this component
+      auto_approve: false  # Require manual approval for blockchain components

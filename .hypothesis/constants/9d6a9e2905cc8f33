@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\connectors\__init__.py
+# hypothesis_version: 6.148.3
+
+['BaseConnector', 'ConnectionStatus', 'MT5Connector', 'MarketData', 'OrderBook', 'Ticker', 'Trade']

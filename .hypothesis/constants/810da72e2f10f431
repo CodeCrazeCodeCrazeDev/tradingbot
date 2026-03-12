@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\analysis\market_context.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.015, 0.2, 1.0, 100, 102, 1000, 10000, '1H', '2024-01-01', '2024-02-01', '__main__', 'accumulation', 'close', 'distribution', 'high', 'low', 'markdown', 'markup', 'moderate', 'neutral', 'open', 'strong', 'tr1', 'tr2', 'tr3', 'unknown', 'volume', 'weak']

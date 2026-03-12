@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\validation\data_validator.py
+# hypothesis_version: 6.148.3
+
+[1.5, 3.0, 100.0, -100, 100, 500, 1000, 'Negative volume', 'close', 'degraded', 'duplicates', 'gaps', 'high', 'index', 'invalid', 'invalid_records', 'issues', 'low', 'max_history', 'max_outlier_std', 'no_data', 'ok', 'open', 'outliers', 'quality_score', 'status', 'time', 'timestamp', 'total', 'total_records', 'valid', 'valid_records', 'volume', 'warnings']

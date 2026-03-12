@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\social\copy_trading.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.02, 0.1, 1.0, 1000.0, 100, 1000, 3600, 'allocation_amount', 'avg_trade_duration', 'copy_delay_ms', 'copy_mode', 'creation_date', 'creator_name', 'current_followers', 'date', 'description', 'duration_hours', 'id', 'inf', 'is_active', 'last_updated', 'leaderboard_size', 'max_drawdown', 'max_followers', 'medium', 'min_capital', 'name', 'pending', 'performance', 'performance_history', 'price', 'profit_factor', 'recent_trades', 'return', 'risk_level', 'risk_multiplier', 'score', 'sharpe_ratio', 'side', 'size', 'start_date', 'status', 'strategy', 'strategy_id', 'strategy_name', 'subscription_fee', 'symbol', 'symbols', 'tags', 'timestamp', 'total_return', 'total_trades', 'volatility', 'win_rate']

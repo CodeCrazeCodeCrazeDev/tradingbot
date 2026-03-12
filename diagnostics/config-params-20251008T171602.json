@@ -1,0 +1,8 @@
+{
+  "timestamp": "2025-10-08T17:16:02+03:00",
+  "MAX_LOT_SIZE": 0.01,
+  "RISK_PER_TRADE": 0.01,
+  "MAX_DRAWDOWN": 20.0,
+  "HEALTH_CHECK_INTERVAL": 60,
+  "AUTO_CORRECT": true
+}

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\execution\partial_fill_aggregator.py
+# hypothesis_version: 6.148.3
+
+[0.0, 1e-08, 1.1, 1.1005, 1.101, 3.0, 4.0, 10.0, 100, 300, 'BUY', 'EURUSD', 'FILL-1', 'FILL-2', 'FILL-3', 'ORD-001', '__main__', 'active_orders', 'average_price', 'cancelled', 'commission', 'complete', 'complete_fills', 'completed_orders', 'created_at', 'expired', 'fill_count', 'fill_id', 'fill_percentage', 'filled_quantity', 'fully_filled', 'incomplete_orders', 'last_fill_at', 'metadata', 'order_id', 'partial', 'partial_fills', 'partially_filled', 'pending', 'price', 'quantity', 'remaining_quantity', 'side', 'status', 'symbol', 'timeout', 'timeouts', 'timestamp', 'total_commission', 'total_fill_events', 'total_orders', 'total_quantity', 'venue']

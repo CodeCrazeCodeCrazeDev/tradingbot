@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\infrastructure\health_endpoints.py
+# hypothesis_version: 6.148.3
+
+[300, 1000, 1024, '/', '/health', '/health/live', '/health/ready', '/health/status', 'Check failed', 'alive', 'check_interval', 'components', 'critical', 'dead', 'degraded', 'detailed_checks', 'error', 'healthy', 'is_connected', 'last_check', 'last_update', 'max_component_age', 'metadata', 'not_ready', 'overall', 'ready', 'startup_grace_period', 'startup_time', 'status', 'timestamp', 'unhealthy', 'uptime_seconds']

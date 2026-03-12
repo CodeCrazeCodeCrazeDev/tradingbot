@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\elite_system\regime_detection.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.002, 0.01, 0.03, 0.2, 0.45, 0.5, 0.55, 0.6, 0.8, 0.94, 1.0, 1.1, 1.2, 1.5, 1.8, 2.0, 2.2, 2.5, -200, 100, 250, ',', 'adaptive', 'atr', 'balanced', 'bb_width', 'close', 'ewma_vol', 'high', 'high_correlation', 'hurst', 'hurst_mean_reverting', 'insufficient_data', 'invalid', 'low', 'low_correlation', 'ma_fast', 'ma_gap', 'ma_slow', 'mean-reversion', 'mean_reverting', 'metrics', 'normal_correlation', 'position_size_factor', 'quiet_range', 'range-breakout-scalp', 'range-fade', 'realized_vol', 'reason', 'regime', 'ret', 'rule_default', 'std', 'stop_atr_mult', 'strategy_bias', 'tr', 'tr1', 'tr2', 'tr3', 'trend_slope', 'trending_bear', 'trending_bull', 'unknown', 'vol_percentile', 'volatile_sideways']

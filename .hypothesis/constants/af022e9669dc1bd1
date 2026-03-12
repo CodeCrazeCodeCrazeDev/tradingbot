@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\risk\risk_manager.py
+# hypothesis_version: 6.148.3
+
+['MarketRegime', 'PositionSize', 'RiskAssessment', 'RiskLimits', 'RiskManager', 'RiskMode', 'TradeDirection', 'TradeQuality', 'TradingStats', 'create_risk_manager']

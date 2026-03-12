@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\adaptive_systems\knowledge_acquisition\algorithm_knowledge.py
+# hypothesis_version: 6.148.3
+
+[0.6, 0.7, 0.8, 0.85, 0.9, '"""(.*?)"""', '--pretty=%an', '-1', '.py', '/', '<title>(.*?)</title>', 'Key Components:\n', 'Unknown', 'algorithm', 'analysis', 'author', 'backtest', 'class', 'class_name', 'code_repository', 'english', 'file_count', 'function', 'function_name', 'indicator', 'item_count', 'item_id', 'method', 'model', 'module', 'optimization', 'pattern', 'prediction', 'r', 'relative_path', 'repo_url', 'research_paper', 'risk', 'risk_model', 'signal', 'source', 'source_title', 'source_type', 'strategy', 'temp_repos', 'timestamp', 'trading', 'trading_strategy', 'url', 'utf-8']

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\trade_journal\journal_manager.py
+# hypothesis_version: 6.148.3
+
+[0.5, '*.json', 'JournalEntry', 'PerformanceAnalyzer', 'ScreenshotCapture', 'TradeJournal', 'TradeNote', 'avg_profit', 'best_setups', 'category', 'common_mistakes', 'count', 'direction', 'entry', 'entry_price', 'entry_time', 'exit', 'exit_price', 'exit_time', 'lessons_learned', 'losing_trades', 'market_conditions', 'note', 'notes', 'observation', 'poor', 'position_size', 'profit', 'profit_loss', 'profit_pips', 'quality', 'r', 'screenshots', 'setup_quality', 'stop_loss', 'strategy', 'strategy_stats', 'symbol', 'tags', 'take_profit', 'timestamp', 'total_profit', 'total_trades', 'trade_id', 'trade_journal', 'trades', 'w', 'win', 'win_rate', 'winning_trades', 'wins']

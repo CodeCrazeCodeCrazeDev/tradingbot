@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\adaptive_systems\adaptive_risk.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.01, 0.02, 0.05, 0.08, 0.1, 0.12, 0.15, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.5, 2.0, 10000, 'account_balance', 'base_risk_per_trade', 'consecutive_losses', 'current_drawdown', 'initial_balance', 'max_drawdown', 'min_position_size', 'open_positions', 'peak_balance', 'pnl', 'recent_performance', 'symbol', 'win_rate']

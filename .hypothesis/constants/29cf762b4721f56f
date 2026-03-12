@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\analysis\causal_inference.py
+# hypothesis_version: 6.148.3
+
+[-0.0001, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.3, 0.5, 1.96, 500, 1000, '=', 'VALIDATION RESULTS', '__main__', 'atr', 'causal_effect', 'confidence_interval', 'effect_size', 'future_return', 'instrument', 'is_causal', 'is_significant', 'large', 'macd', 'new_effect', 'note', 'outcome', 'p_value', 'random_common_cause', 'rsi', 'small', 'standard_error', 'treatment', 'trend_strength', 'volume']

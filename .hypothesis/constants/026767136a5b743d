@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\agents\__init__.py
+# hypothesis_version: 6.148.3
+
+['AgentCommunication', 'AgentProposal', 'AgentState', 'AgentType', 'BaseAgent', 'MarketMakerAgent', 'MeanReversionAgent', 'RiskManagerAgent', 'TrendFollowingAgent', 'VolatilityAgent']

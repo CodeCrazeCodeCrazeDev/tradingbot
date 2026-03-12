@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\system_supervisor\data_validator.py
+# hypothesis_version: 6.148.3
+
+[-1.0, 0.1, 1.0, -1000, -100, 100, 300, 1000, 86400, '+00:00', ', ', 'Data is None', 'Invalid symbol type', 'Invalid title type', 'Invalid volume type', 'Missing timestamp', 'Title too short', 'Z', 'close', 'data', 'data_providers', 'data_type', 'error', 'high', 'integrity', 'invalid', 'issues', 'json', 'last_close', 'low', 'market_data', 'max_data_age', 'news', 'open', 'price', 'publishedAt', 'quarantined', 'quarantined_items', 'reason', 'recent_issues', 'score', 'sentiment', 'source', 'status', 'suspect', 'symbol', 'time', 'timestamp', 'title', 'total_validations', 'valid', 'valid_pct', 'volume']

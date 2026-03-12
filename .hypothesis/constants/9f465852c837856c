@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\database\database_manager.py
+# hypothesis_version: 6.148.3
+
+[' AND metric_type = ?', ' AND period = ?', ' AND symbol = ?', ' AND timestamp <= ?', ' AND timestamp >= ?', 'acknowledged', 'alert_id', 'average_pnl', 'best_trade', 'by_strategy', 'by_symbol', 'close', 'confidence', 'daily', 'entry_price', 'exchange', 'executed', 'exit_price', 'expected_return', 'fees', 'high', 'losing_trades', 'low', 'message', 'metadata', 'metric_type', 'open', 'opportunity_id', 'opportunity_type', 'period', 'pnl', 'quantity', 'risk_score', 'severity', 'side', 'strategy', 'symbol', 'timestamp', 'total_pnl', 'total_trades', 'trade_id', 'trading_bot.db', 'type', 'unknown', 'value', 'volume', 'win_rate', 'winning_trades', 'worst_trade']

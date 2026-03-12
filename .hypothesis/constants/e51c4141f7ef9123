@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\world_model\latent_dynamics.py
+# hypothesis_version: 6.148.3
+
+[-0.5, 0.1, 0.5, 'decoded_states', 'decoder', 'dynamics', 'dynamics_loss', 'encoder', 'kl_loss', 'latent_states', 'predicted_rewards', 'recon_loss', 'reward_loss', 'reward_predictor', 'total_loss']

@@ -1,0 +1,58 @@
+{
+  "generated_at": "2026-03-07T16:24:33.070771",
+  "summary": {
+    "total_errors_found": 5,
+    "fixed": 0,
+    "failed": 5,
+    "skipped": 0
+  },
+  "fixes": [],
+  "remaining_errors": [
+    {
+      "file_path": "C:\\Users\\peterson\\trading bot\\trading_bot\\recursive_evolution\\module_evolution_rules.py",
+      "relative_path": "recursive_evolution\\module_evolution_rules.py",
+      "error_type": "SyntaxError",
+      "message": "invalid syntax. Perhaps you forgot a comma?",
+      "line": 254,
+      "offset": 12,
+      "content_preview": "    251:             \"analysis_bypass\",\n    252:             \"validation_skip\",\n    253:             \"quality_check_disable\"\n>>> 254:         }),g\n    255:         max_change_frequency_hours=4,\n    256:         max_changes_per_day=6,\n    257:         testing_required=True,"
+    },
+    {
+      "file_path": "C:\\Users\\peterson\\trading bot\\trading_bot\\_archive\\auto_fix_backups\\20251209_231151\\error_handling\\comprehensive_recovery.py",
+      "relative_path": "_archive\\auto_fix_backups\\20251209_231151\\error_handling\\comprehensive_recovery.py",
+      "error_type": "SyntaxError",
+      "message": "unterminated triple-quoted string literal (detected at line 626)",
+      "line": 601,
+      "offset": 5,
+      "content_preview": "    598:         @with_fallback(fallback_fetch)\n    599:         async def fetch_data():\n    600:             ...\n>>> 601:     \"\"\"\n    602:     def decorator(func: Callable[..., T]) -> Callable[..., T]:\n    603:         orchestrator = get_orchestrator()\n    604:         orchestrator.register_fallback(func.__name__, fallback_func)"
+    },
+    {
+      "file_path": "C:\\Users\\peterson\\trading bot\\trading_bot\\_archive\\auto_fix_backups\\20251209_231151\\streaming\\redis_streamer.py",
+      "relative_path": "_archive\\auto_fix_backups\\20251209_231151\\streaming\\redis_streamer.py",
+      "error_type": "SyntaxError",
+      "message": "unexpected indent",
+      "line": 223,
+      "offset": 8,
+      "content_preview": "    220:     \"\"\"Auto-implemented by DeepSeek Elite Engine.\"\"\"\n    221:     logger.warning(f\"Auto-implemented function called: {self.__class__.__name__ if hasattr(self, \"__class__\") else \"\"}\")\n    222:     return None  # DONE (auto-completed): Implement full functionality\n>>> 223:         \"\"\"Auto-implemented by DeepSeek Elite Engine.\"\"\"\n    224:         logger.warning(f\"Auto-implemented function called: {self.__class__.__name__ if hasattr(self, \"__class__\") else \"\"}\")\n    225:         return None  # DONE (auto-completed): Implement full functionality\n    226:     "
+    },
+    {
+      "file_path": "C:\\Users\\peterson\\trading bot\\trading_bot\\_archive\\auto_fix_backups\\20251209_232515\\error_handling\\comprehensive_recovery.py",
+      "relative_path": "_archive\\auto_fix_backups\\20251209_232515\\error_handling\\comprehensive_recovery.py",
+      "error_type": "SyntaxError",
+      "message": "unterminated triple-quoted string literal (detected at line 626)",
+      "line": 601,
+      "offset": 5,
+      "content_preview": "    598:         @with_fallback(fallback_fetch)\n    599:         async def fetch_data():\n    600:             ...\n>>> 601:     \"\"\"\n    602:     def decorator(func: Callable[..., T]) -> Callable[..., T]:\n    603:         orchestrator = get_orchestrator()\n    604:         orchestrator.register_fallback(func.__name__, fallback_func)"
+    },
+    {
+      "file_path": "C:\\Users\\peterson\\trading bot\\trading_bot\\_archive\\auto_fix_backups\\20251209_232515\\streaming\\redis_streamer.py",
+      "relative_path": "_archive\\auto_fix_backups\\20251209_232515\\streaming\\redis_streamer.py",
+      "error_type": "SyntaxError",
+      "message": "unexpected indent",
+      "line": 223,
+      "offset": 8,
+      "content_preview": "    220:     \"\"\"Auto-implemented by DeepSeek Elite Engine.\"\"\"\n    221:     logger.warning(f\"Auto-implemented function called: {self.__class__.__name__ if hasattr(self, \"__class__\") else \"\"}\")\n    222:     return None  # DONE (auto-completed): Implement full functionality\n>>> 223:         \"\"\"Auto-implemented by DeepSeek Elite Engine.\"\"\"\n    224:         logger.warning(f\"Auto-implemented function called: {self.__class__.__name__ if hasattr(self, \"__class__\") else \"\"}\")\n    225:         return None  # DONE (auto-completed): Implement full functionality\n    226:     "
+    }
+  ],
+  "backup_directory": "C:\\Users\\peterson\\trading bot\\trading_bot\\syntax_fix_backups\\20260307_162018"
+}

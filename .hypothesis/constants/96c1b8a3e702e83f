@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\infrastructure\mlflow_tracker.py
+# hypothesis_version: 6.148.3
+
+[0.001, 0.5, 0.85, 'No runs found', '__main__', 'accuracy', 'alphaalgo_trading', 'batch_size', 'learning_rate', 'loss', 'pytorch', 'records', 'sklearn', 'test_experiment', 'test_run', 'val_loss']

@@ -1,0 +1,47 @@
+{
+  "timestamp": "2025-10-07T12:20:29+03:00",
+  "total_tests_discovered": 134,
+  "tests_run": 8,
+  "passed": 2,
+  "failed": 5,
+  "errors": 1,
+  "test_results": {
+    "test_elite_imports": "PASSED",
+    "test_error_handling": "PASSED",
+    "test_broker_connection": "ERROR - missing fixture 'broker_config'",
+    "test_correlation_calculation": "FAILED - correlation_matrix is None, mt5_interface not defined",
+    "test_position_size_adjustment": "FAILED - assertion error on position sizes",
+    "test_multi_symbol_initialization": "FAILED - missing mt5i argument in _create_trader()",
+    "test_risk_limits": "FAILED - exposure calculation error",
+    "test_parallel_processing": "FAILED - missing mt5i argument"
+  },
+  "issues_identified": [
+    {
+      "severity": "HIGH",
+      "file": "main.py",
+      "issue": "update_correlations() - NameError: name 'mt5_interface' is not defined",
+      "line": 366
+    },
+    {
+      "severity": "HIGH",
+      "file": "main.py",
+      "issue": "_create_trader() missing required argument 'mt5i'",
+      "line": 300
+    },
+    {
+      "severity": "MEDIUM",
+      "file": "tests/test_broker_connection.py",
+      "issue": "Missing pytest fixture 'broker_config'",
+      "line": 355
+    }
+  ],
+  "fixes_applied": [
+    {
+      "file": "tests/test_advanced_features_integration.py",
+      "issue": "pytest import was commented out",
+      "fix": "Uncommented pytest import"
+    }
+  ],
+  "status": "PARTIAL - Core imports work, integration tests have issues",
+  "recommendation": "Fix mt5_interface references and missing parameters before full test run"
+}

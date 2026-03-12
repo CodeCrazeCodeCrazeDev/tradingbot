@@ -1,0 +1,232 @@
+# AlphaAlgo Network Monitoring Configuration
+# Internet Stability & Safety Module Settings
+
+# ==============================================================================
+# NETWORK ENDPOINTS
+# ==============================================================================
+network:
+  # Primary endpoints to monitor (replace with your actual broker API endpoints)
+  primary_endpoints:
+    - "https://api.oanda.com/v3/accounts"  # Example: OANDA API
+    - "https://api.metaquotes.net"          # Example: MetaTrader API
+    - "8.8.8.8"                             # Google DNS (reliable fallback)
+    - "1.1.1.1"                             # Cloudflare DNS (reliable fallback)
+  
+  # Fallback endpoints for redundancy
+  fallback_endpoints:
+    - "https://www.google.com"
+    - "8.8.4.4"                             # Google DNS secondary
+    - "1.0.0.1"                             # Cloudflare DNS secondary
+
+# ==============================================================================
+# THRESHOLDS
+# ==============================================================================
+thresholds:
+  # Latency thresholds (milliseconds)
+  latency_warning_ms: 150                   # Warning threshold
+  latency_critical_ms: 300                  # Critical threshold - triggers Safe Mode
+  
+  # Packet loss threshold (percentage)
+  packet_loss_threshold: 10                 # 10% packet loss triggers Safe Mode
+  
+  # Timeout for connection attempts (seconds)
+  timeout_seconds: 5                        # 5 second timeout for each check
+  
+  # Stable network requirements for recovery
+  stable_latency_ms: 100                    # Must be below 100ms to be considered stable
+  stable_duration_seconds: 60               # Must be stable for 60 seconds before recovery
+
+# ==============================================================================
+# MONITORING SETTINGS
+# ==============================================================================
+monitoring:
+  # How often to check network status (seconds)
+  check_interval_seconds: 10                # Check every 10 seconds
+  
+  # How many metrics to keep in memory
+  max_metrics_history: 1000                 # Keep last 1000 metrics
+  
+  # Enable detailed logging
+  detailed_logging: true
+
+# ==============================================================================
+# RECOVERY SETTINGS
+# ==============================================================================
+recovery:
+  # Maximum time to stay offline before emergency shutdown (minutes)
+  max_offline_minutes: 15                   # Shutdown after 15 minutes offline
+  
+  # Retry settings for API calls (exponential backoff delays in seconds)
+  retry_delays: [1, 2, 4, 8, 16]           # 1s, 2s, 4s, 8s, 16s
+  
+  # Auto-recovery enabled
+  auto_recovery_enabled: true               # Automatically resume when stable
+  
+  # Require manual approval for recovery
+  require_manual_approval: false            # Set to true for manual control
+
+# ==============================================================================
+# SAFE MODE SETTINGS
+# ==============================================================================
+safe_mode:
+  # Actions allowed in Safe Mode
+  allow_new_trades: false                   # No new trades in Safe Mode
+  allow_modify_positions: true              # Can modify SL/TP
+  allow_close_positions: true               # Can close positions
+  
+  # Monitoring frequency in Safe Mode (seconds)
+  check_interval_seconds: 5                 # Check more frequently in Safe Mode
+  
+  # Auto-exit Safe Mode when stable
+  auto_exit_safe_mode: true
+
+# ==============================================================================
+# OFFLINE MODE SETTINGS
+# ==============================================================================
+offline_mode:
+  # Save state frequency (seconds)
+  save_state_interval_seconds: 30           # Save state every 30 seconds
+  
+  # Actions allowed in Offline Mode
+  allow_any_trading: false                  # No trading allowed offline
+  
+  # Local cache settings
+  use_cached_data: true                     # Use cached market data if available
+  max_cache_age_minutes: 5                  # Maximum age of cached data
+
+# ==============================================================================
+# ALERT SETTINGS
+# ==============================================================================
+alerts:
+  # Enable alerts
+  enabled: true
+  
+  # Alert on mode changes
+  alert_on_safe_mode: true
+  alert_on_offline_mode: true
+  alert_on_recovery: true
+  alert_on_normal_mode: true
+  
+  # Alert on network issues
+  alert_on_high_latency: true
+  alert_on_packet_loss: true
+  alert_on_connection_lost: true
+  
+  # Critical alert threshold (minutes offline)
+  critical_alert_after_minutes: 2           # Send critical alert after 2 minutes offline
+  
+  # Alert channels (configure in main config)
+  channels:
+    - email
+    - telegram
+    - sms
+  
+  # Alert message templates
+  templates:
+    safe_mode: "ALERT: AlphaAlgo network unstable (ping: {latency}ms). Entered Safe Mode to protect trades."
+    offline_mode: "CRITICAL: AlphaAlgo connection lost. All trading paused."
+    recovery: "INFO: AlphaAlgo network stable. Initiating recovery process."
+    normal_mode: "SUCCESS: AlphaAlgo resumed normal operations."
+
+# ==============================================================================
+# LOGGING
+# ==============================================================================
+logging:
+  # Log directory
+  log_dir: "logs"
+  
+  # Network monitor log file
+  network_log_file: "logs/network_monitor.log"
+  
+  # Test results log file
+  test_log_file: "logs/network_test_results.log"
+  
+  # Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  log_level: "INFO"
+  
+  # Log rotation
+  max_log_size_mb: 100
+  backup_count: 10
+
+# ==============================================================================
+# STATE PERSISTENCE
+# ==============================================================================
+state:
+  # State directory
+  state_dir: "state"
+  
+  # Recovery state file
+  recovery_state_file: "state/recovery.json"
+  
+  # Save state on mode change
+  save_on_mode_change: true
+  
+  # Backup state files
+  backup_state_files: true
+  max_backups: 5
+
+# ==============================================================================
+# PERFORMANCE OPTIMIZATION
+# ==============================================================================
+performance:
+  # Use async operations
+  async_enabled: true
+  
+  # Maximum concurrent endpoint checks
+  max_concurrent_checks: 10
+  
+  # Connection pool size
+  connection_pool_size: 20
+  
+  # Enable connection keep-alive
+  keep_alive: true
+  
+  # Request timeout (seconds)
+  request_timeout: 5
+
+# ==============================================================================
+# TESTING & SIMULATION
+# ==============================================================================
+testing:
+  # Enable test mode
+  test_mode: false
+  
+  # Simulate network conditions
+  simulate_conditions:
+    enabled: false
+    latency_ms: 0                           # Add artificial latency
+    packet_loss_percent: 0                  # Simulate packet loss
+    random_disconnects: false               # Random disconnections
+  
+  # Test scenarios
+  scenarios:
+    high_latency:
+      latency_ms: 500
+      duration_seconds: 60
+    
+    packet_loss:
+      packet_loss_percent: 20
+      duration_seconds: 60
+    
+    connection_loss:
+      disconnect_duration_seconds: 120
+      reconnect_after: true
+
+# ==============================================================================
+# INTEGRATION
+# ==============================================================================
+integration:
+  # Integrate with health monitor
+  health_monitor_integration: true
+  
+  # Integrate with risk manager
+  risk_manager_integration: true
+  
+  # Integrate with alert system
+  alert_system_integration: true
+  
+  # Integrate with trading engine
+  trading_engine_integration: true
+  
+  # Report to system supervisor
+  system_supervisor_integration: true

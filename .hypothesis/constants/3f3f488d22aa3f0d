@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\signals\news_gating.py
+# hypothesis_version: 6.148.3
+
+['HIGH', 'LOW', 'Low-impact news', 'MEDIUM', 'Unknown', 'event', 'impact']

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\infrastructure\performance_optimizer.py
+# hypothesis_version: 6.148.3
+
+[0.01, 100, 300, 1000, '=', 'PERFORMANCE REPORT', '__dict__', '__main__', '_cache', 'count', 'int', 'max', 'mean', 'median', 'min', 'p95', 'p99', 'test_operation']

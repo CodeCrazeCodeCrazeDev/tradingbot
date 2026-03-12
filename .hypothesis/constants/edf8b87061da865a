@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\advanced_features\black_swan_protection.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.05, 0.1, 0.15, 0.8, 1.0, 1.5, 2.0, 3.0, 5.0, 20.0, '50%', 'action_taken', 'black_swan', 'critical', 'crypto', 'current_drawdown', 'details', 'drawdown_threshold', 'elevated', 'emergency_exit', 'equity', 'forex', 'full_shutdown', 'full_system_shutdown', 'halt_new_trades', 'high', 'market_stress', 'monitor', 'new_trades_halted', 'normal', 'position_reduction', 'reduce_exposure', 'success', 'timestamp', 'vix', 'volatility_ratio', 'volatility_threshold']

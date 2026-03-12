@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\connectivity\network_alerts.py
+# hypothesis_version: 6.148.3
+
+[160, 200, 201, 300, 587, 'Body', 'CRITICAL', 'From', 'INFO', 'Markdown', 'Subject', 'To', 'WARNING', 'Webhook alert sent', 'account_sid', 'auth_token', 'bot_token', 'chat_id', 'email', 'enabled', 'from_address', 'from_number', 'level', 'message', 'network_status', 'parse_mode', 'plain', 'sms', 'smtp.gmail.com', 'smtp_host', 'smtp_password', 'smtp_port', 'smtp_user', 'telegram', 'text', 'timestamp', 'to_address', 'to_number', 'trading_mode', 'unknown', 'url', 'webhook', 'ℹ️', '⚠️', '📢', '🚨']

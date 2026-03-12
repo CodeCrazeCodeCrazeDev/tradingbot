@@ -1,0 +1,26 @@
+{
+  "session_id": "c216d76ac9a0",
+  "start_time": "2025-12-19T21:07:41.679448",
+  "end_time": "2025-12-19T23:07:59.433079",
+  "duration": "2:00:17.753631",
+  "config": {
+    "duration_hours": 2.0,
+    "mode": "BALANCED",
+    "start_level": 1,
+    "target_level": 7,
+    "min_accuracy_to_advance": 0.7,
+    "tests_per_level": 3,
+    "resources_per_topic": 3,
+    "auto_transfer": true,
+    "require_all_tests_pass": true
+  },
+  "final_level": 6,
+  "resources_studied": 234,
+  "concepts_learned": 468,
+  "tests_taken": 699,
+  "tests_passed": 124,
+  "knowledge_transferred": 458,
+  "final_accuracy": 0.5599999999999999,
+  "evolution_cycles": 233,
+  "success": false
+}

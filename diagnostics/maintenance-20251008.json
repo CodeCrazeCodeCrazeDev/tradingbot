@@ -1,0 +1,36 @@
+﻿{
+    "timestamp":  "2025-10-08 07:18:40",
+    "tasks":  [
+                  {
+                      "status":  "SKIPPED",
+                      "name":  "Config Update Check",
+                      "reason":  "Automated deploy not configured"
+                  },
+                  {
+                      "output":  "============================= test session starts =============================\r\nplatform win32 -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0\r\nrootdir: C:\\Users\\peterson\\trading bot\r\nconfigfile: pytest.ini\r\nplugins: anyio-4.10.0, dash-3.2.0, asyncio-1.2.0, cov-7.0.0, timeout-2.4.0\r\nasyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function\r\ntimeout: 30.0s\r\ntimeout method: thread\r\ntimeout func_only: False\r\ncollected 161 items / 3 errors\r\n\r\n=========================== short test summary info ===========================\r\nERROR tests/test_elite_system_integration.py\r\nERROR tests/test_integrated_system.py\r\nERROR tests/test_survival_core.py\r\n!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!\r\n======================== 3 errors in 369.04s (0:06:09) ========================\r\n",
+                      "status":  "FAIL",
+                      "name":  "Smoke Tests"
+                  },
+                  {
+                      "status":  "COMPLETED",
+                      "logs_archived":  0,
+                      "name":  "Log Rotation"
+                  },
+                  {
+                      "free_gb":  28.19,
+                      "status":  "OK",
+                      "name":  "Disk Usage Check",
+                      "usage_pct":  76.23
+                  },
+                  {
+                      "status":  "ERROR",
+                      "error":  "Invalid JSON primitive: WARNING.",
+                      "name":  "Dependency Audit"
+                  },
+                  {
+                      "status":  "SKIPPED",
+                      "name":  "Config Backup",
+                      "reason":  "Backup already exists for today"
+                  }
+              ]
+}

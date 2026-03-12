@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\database\data_normalizer.py
+# hypothesis_version: 6.148.3
+
+[0.0, 'UNKNOWN', 'ask', 'bid', 'close', 'high', 'instrument', 'low', 'open', 'price', 'real_volume', 'symbol', 'tick_volume', 'timestamp', 'volume']

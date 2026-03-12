@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\dashboard\live_dashboard.py
+# hypothesis_version: 6.148.3
+
+[200, 503, 1000, 8000, '/', '/api/metrics', '/api/orders', '/api/positions', '/api/status', '/health/live', '/health/ready', '/ws', '0.0.0.0', 'alive', 'checks', 'created_at', 'current_price', 'data_quality', 'database', 'entry_price', 'error_count', 'execution', 'filled', 'id', 'info', 'not_ready', 'orders', 'paused', 'pending', 'performance', 'positions_count', 'quantity', 'ready', 'realized_pnl', 'rejected', 'risk', 'risk_limits', 'running', 'side', 'start_time', 'status', 'survival_core', 'symbol', 'system', 'time_series_db', 'timestamp', 'total', 'total_exposure', 'total_pnl', 'unrealized_pnl', 'uptime_seconds']

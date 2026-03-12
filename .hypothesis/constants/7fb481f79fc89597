@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\signals\signal_lifecycle.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.3, 0.5, 0.8, 0.85, 1.0, 1.095, 1.1, 1.11, 300, 1000, 'BUY', 'EURUSD', 'TEST-001', '__main__', 'active', 'active_signals', 'age_seconds', 'avg_age', 'avg_confidence', 'by_state', 'by_symbol', 'cancelled', 'created_at', 'current_confidence', 'decay_function', 'degraded', 'direction', 'entry_price', 'executed', 'expired', 'exponential', 'initial_confidence', 'linear', 'metadata', 'remaining_ttl', 'sigmoid', 'signal_id', 'signals_cancelled', 'signals_created', 'signals_executed', 'signals_expired', 'signals_in_history', 'state', 'step', 'stop_loss', 'symbol', 'take_profit', 'total_active']

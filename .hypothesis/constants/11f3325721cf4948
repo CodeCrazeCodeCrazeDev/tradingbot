@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\intel\news_pipeline.py
+# hypothesis_version: 6.148.3
+
+[0.5, 0.8, 1.0, 100, 200, 1000, 3600, ' OR ', '+00:00', './data/news', '<[^>]+>', 'Bloomberg', 'CNBC', 'Financial Times', 'NEWSAPI_KEY', 'NewsAPI', 'NewsArticle', 'No articles in index', 'RSS Feed', 'Reuters', 'Wall Street Journal', 'Z', '[^\\w\\s.,!?;:()\\-\\\'"]', '\\b[a-zA-Z]{3,}\\b', '\\s+', 'all-MiniLM-L6-v2', 'apiKey', 'articles', 'articles.json', 'asset', 'compound', 'confidence', 'content', 'description', 'en', 'english', 'faiss_index.bin', 'float32', 'https?://\\S+', 'id', 'impact', 'keywords', 'language', 'link', 'name', 'pageSize', 'publishedAt', 'published_at', 'published_parsed', 'punkt', 'q', 'r', 'relevance_score', 'sentiment', 'sentiment_score', 'sortBy', 'source', 'stopwords', 'summary', 'title', 'url', 'vader_lexicon', 'value', 'w']

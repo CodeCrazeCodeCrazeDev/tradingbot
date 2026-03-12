@@ -1,0 +1,29 @@
+# EURUSD Scalping configuration with ML and order flow
+symbol: EURUSD
+timeframe: M5  # Using 5-minute timeframe for scalping
+bars: 500
+mode: paper
+
+# ML features
+use_ml: true
+use_transformer: true  # For quick pattern recognition
+use_rl: false  # Not needed for scalping
+market_regime: true
+sentiment_analysis: false  # Too slow for scalping
+order_flow: true  # Important for scalping
+
+# Execution
+execution_algo: smart
+
+# Watchlist for order flow analysis
+watchlist:
+  - EURUSD
+  - EUR
+  - USD
+
+# Advanced features
+track_emotions: false
+quantum_blockchain: false
+adaptive_mode: false
+self_improve: false
+internet_access: false

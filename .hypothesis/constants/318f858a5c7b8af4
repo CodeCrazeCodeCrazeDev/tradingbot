@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\execution\complete_execution_system.py
+# hypothesis_version: 6.148.3
+
+[0.01, 0.1, 0.3, 0.4, 0.5, 0.7, 0.8, 0.9, 1.2, 10.0, 10000, 'AlgorithmicExecution', 'AtomicCancelReplace', 'BUY', 'CANCELLED', 'Cancel failed', 'EXPIRED', 'FAILED', 'FILLED', 'FOK', 'FOK_PARTIAL', 'ICEBERG', 'INVALID_TYPE', 'IOC', 'IOC_NOT_FILLED', 'LIMIT', 'MARKET', 'OrderStateMachine', 'OrderTypeSupport', 'PARTIAL', 'PENDING', 'PLACED', 'POST_ONLY', 'POST_ONLY_WOULD_TAKE', 'REJECTED', 'Replace failed', 'STOP', 'SUBMITTED', 'SUCCESS', 'SlippageControl', 'SmartRouter', 'VENUE_A', 'VENUE_B', 'adaptive', 'delay', 'error', 'filled', 'filled_qty', 'limit_price', 'max_rate', 'new_order_id', 'order_id', 'period', 'price', 'quantity', 'reason', 'side', 'size', 'slice_num', 'status', 'success', 'symbol', 'target_participation', 'type', 'venues', 'volatility']

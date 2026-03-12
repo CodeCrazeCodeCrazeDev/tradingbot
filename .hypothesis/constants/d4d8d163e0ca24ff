@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\market_intelligence\technical_analysis.py
+# hypothesis_version: 6.148.3
+
+[0.1, 0.5, 1.5, 100, 'close', 'doji', 'engulfing_bullish', 'hammer', 'hanging_man', 'high', 'histogram', 'low', 'lower', 'macd', 'middle', 'normal', 'open', 'resistance_levels', 'shooting_star', 'signal', 'slowd', 'slowk', 'support_levels', 'upper']

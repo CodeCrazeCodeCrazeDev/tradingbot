@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\ai_core\forecasting\__init__.py
+# hypothesis_version: 6.148.3
+
+[0.005, 0.01, 100, 128, 'DeepARModel', 'ForecastEnsemble', 'InformerModel', 'NBEATSModel', 'mean', 'samples', 'seasonality', 'std', 'trend']

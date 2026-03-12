@@ -1,0 +1,101 @@
+﻿[
+    {
+        "recent_trades":  17,
+        "timestamp":  "2025-10-08 00:50:04",
+        "cpu_pct":  143.36,
+        "process_alive":  true,
+        "check_number":  1,
+        "errors_in_last_check":  0,
+        "memory_mb":  716.33
+    },
+    {
+        "recent_trades":  17,
+        "timestamp":  "2025-10-08 00:53:05",
+        "cpu_pct":  150.28,
+        "process_alive":  true,
+        "check_number":  2,
+        "errors_in_last_check":  0,
+        "memory_mb":  224.59
+    },
+    {
+        "recent_trades":  17,
+        "timestamp":  "2025-10-08 00:56:05",
+        "cpu_pct":  156.2,
+        "process_alive":  true,
+        "check_number":  3,
+        "errors_in_last_check":  0,
+        "memory_mb":  161.34
+    },
+    {
+        "recent_trades":  17,
+        "timestamp":  "2025-10-08 00:59:05",
+        "cpu_pct":  161.8,
+        "process_alive":  true,
+        "check_number":  4,
+        "errors_in_last_check":  0,
+        "memory_mb":  161.5
+    },
+    {
+        "recent_trades":  17,
+        "timestamp":  "2025-10-08 01:02:05",
+        "cpu_pct":  167.98,
+        "process_alive":  true,
+        "check_number":  5,
+        "errors_in_last_check":  0,
+        "memory_mb":  158.46
+    },
+    {
+        "recent_trades":  17,
+        "timestamp":  "2025-10-08 01:05:05",
+        "cpu_pct":  174.92,
+        "process_alive":  true,
+        "check_number":  6,
+        "errors_in_last_check":  0,
+        "memory_mb":  158.54
+    },
+    {
+        "recent_trades":  17,
+        "timestamp":  "2025-10-08 01:08:05",
+        "cpu_pct":  182.12,
+        "process_alive":  true,
+        "check_number":  7,
+        "errors_in_last_check":  0,
+        "memory_mb":  157.75
+    },
+    {
+        "recent_trades":  17,
+        "timestamp":  "2025-10-08 01:11:05",
+        "cpu_pct":  187.48,
+        "process_alive":  true,
+        "check_number":  8,
+        "errors_in_last_check":  0,
+        "memory_mb":  157.5
+    },
+    {
+        "recent_trades":  17,
+        "timestamp":  "2025-10-08 01:14:05",
+        "cpu_pct":  194.91,
+        "process_alive":  true,
+        "check_number":  9,
+        "errors_in_last_check":  0,
+        "memory_mb":  157.75
+    },
+    {
+        "recent_trades":  17,
+        "timestamp":  "2025-10-08 01:17:05",
+        "cpu_pct":  200.03,
+        "process_alive":  true,
+        "check_number":  10,
+        "errors_in_last_check":  0,
+        "memory_mb":  151.66
+    },
+    {
+        "recent_trades":  17,
+        "timestamp":  "2025-10-08 01:20:04",
+        "cpu_pct":  205.17,
+        "process_alive":  true,
+        "check_number":  11,
+        "errors_in_last_check":  0,
+        "memory_mb":  151.74
+    }
+]

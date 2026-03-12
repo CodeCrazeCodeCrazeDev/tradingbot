@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\advanced_features\quantum_computing.py
+# hypothesis_version: 6.148.3
+
+[0.0, 1e-06, 0.01, 1.0, 2.0, 10.0, 100, 1000, '==', 'SLSQP', '__dict__', 'classical_avg_time', 'classical_comparison', 'combined_payoff', 'eq', 'fun', 'iterations', 'max_weight', 'maxiter', 'mean_reversion', 'min_weight', 'momentum_allocation', 'nash_equilibrium', 'objective_value', 'optimization_count', 'optimization_history', 'optimization_time', 'optimization_type', 'qasm_simulator', 'qiskit_available', 'quantum_advantage', 'quantum_available', 'quantum_avg_time', 'quantum_enabled', 'quantum_metrics', 'results', 'risk_parity', 'speedup_factor', 'strategies', 'success', 'sum_weights', 'system_info', 'timestamp', 'total_optimizations', 'type', 'w', 'weights']

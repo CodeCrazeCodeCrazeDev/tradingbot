@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\opportunity_scanner\correlation_analysis.py
+# hypothesis_version: 6.148.3
+
+[-0.1, 0.01, 0.1, 0.15, 0.5, 0.6, 0.7, 0.75, 0.8, 0.95, 1.0, 1.5, 2.0, 252, 'COMPRESSED', 'LONG', 'MEAN_REVERTING', 'SHORT', 'TRENDING', 'UNKNOWN', 'VOLATILE', 'average_stability', 'confidence', 'current', 'current_spread', 'current_stability', 'half_life', 'hedge_ratio', 'is_cointegrated', 'is_stable', 'lagged', 'lookback_period', 'mean', 'mean_reversion_speed', 'min_correlation', 'momentum', 'negative', 'nonlinear', 'p_value', 'percentile', 'positive', 'price', 'price_history', 'regime', 'seasonal', 'spread_mean', 'spread_std', 'std', 'test_statistic', 'trend', 'z_score', 'z_score_threshold']

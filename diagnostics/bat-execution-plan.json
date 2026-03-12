@@ -1,0 +1,85 @@
+{
+  "timestamp": "2025-10-07T12:21:00+03:00",
+  "bat_files_analysis": {
+    "safe_to_run": [
+      {
+        "file": "START_BOT_SIMPLE.bat",
+        "reason": "Runs in paper trading mode (safe, no real money)",
+        "command": "py main.py --mode paper --symbol EURUSD --timeframe H1 --bars 200",
+        "timeout_ms": 300000
+      },
+      {
+        "file": "start_safe_testing.bat",
+        "reason": "Testing mode indicated by name",
+        "timeout_ms": 300000
+      },
+      {
+        "file": "CREATE_DESKTOP_SHORTCUT.bat",
+        "reason": "Only creates shortcut, non-destructive",
+        "timeout_ms": 30000
+      }
+    ],
+    "requires_inspection": [
+      {
+        "file": "RUN_BOT.bat",
+        "reason": "Runs run_bot_now.py - need to check if paper/live mode",
+        "installs_packages": true
+      },
+      {
+        "file": "MASTER_CONTROL.bat",
+        "reason": "Master control - unknown operations"
+      },
+      {
+        "file": "run_enhanced_bot.bat",
+        "reason": "Enhanced bot - need to verify mode"
+      },
+      {
+        "file": "start_trading_bot.bat",
+        "reason": "Trading bot - need to verify paper/live mode"
+      },
+      {
+        "file": "start_autonomous_ai.bat",
+        "reason": "Autonomous AI - could make automated decisions"
+      },
+      {
+        "file": "start_full_automation.bat",
+        "reason": "Full automation - could be live trading"
+      }
+    ],
+    "potentially_destructive": [
+      {
+        "file": "deploy_to_production.bat",
+        "reason": "Deploys to production, builds Docker images",
+        "action": "SKIP - requires manual approval"
+      },
+      {
+        "file": "install_as_windows_service.bat",
+        "reason": "Modifies Windows services",
+        "action": "SKIP - requires manual approval"
+      },
+      {
+        "file": "apply_all_fixes.bat",
+        "reason": "Applies fixes - could modify code",
+        "action": "SKIP - requires manual approval"
+      },
+      {
+        "file": "start_production.bat",
+        "reason": "Production mode - could be live trading",
+        "action": "SKIP - requires manual approval"
+      },
+      {
+        "file": "run_alpha_deployment.bat",
+        "reason": "Deployment script",
+        "action": "SKIP - requires manual approval"
+      }
+    ],
+    "docker_related": [
+      {
+        "file": "run_docker_tests.bat",
+        "reason": "Docker tests - safe but requires Docker",
+        "action": "RUN if Docker available"
+      }
+    ]
+  },
+  "execution_strategy": "Run safe files first, inspect 'requires_inspection' files, skip destructive files"
+}

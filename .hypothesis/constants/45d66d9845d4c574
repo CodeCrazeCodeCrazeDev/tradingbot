@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\opportunity_scanner\market_making.py
+# hypothesis_version: 6.148.3
+
+[5e-05, 0.0001, 0.0002, 0.001, 0.01, 0.03, 0.1, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.5, 100, 3600, 10000, 100000, 'BUY', 'NEUTRAL', 'SELL', 'adaptive', 'ask', 'ask_depth', 'ask_pressure', 'asks', 'avg_trade_size', 'bid', 'bid_depth', 'bid_pressure', 'bids', 'buy', 'calibrated_at', 'capture_potential', 'confidence', 'current_inventory', 'high_frequency', 'imbalances', 'informed', 'inventory_based', 'kappa', 'lambda', 'max_dollar_exposure', 'max_inventory', 'max_long', 'max_order_size', 'max_short', 'mid', 'mid_price', 'min_spread', 'net_pressure', 'predicted_direction', 'price', 'pure_spread', 'quote_frequency', 'quote_size', 'risk_aversion', 'side', 'spread', 'spread_adjustment', 'tick_size', 'trades', 'volatility', 'volume']

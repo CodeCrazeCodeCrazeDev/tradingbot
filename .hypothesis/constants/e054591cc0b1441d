@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\analysis\wyckoff.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.02, 0.9, 1.1, 100.0, 'accumulation', 'close', 'distribution', 'high', 'low', 'markdown', 'markup', 'unknown', 'volume']

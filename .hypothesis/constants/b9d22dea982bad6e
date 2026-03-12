@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\core\execution_manager.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.1, 0.3, 0.5, 0.7, 0.8, 1.0, 1.105, 1.1075, 1.2, 2.0, 3.0, 1000, 'EURUSD', 'GTC', '__main__', 'approved', 'buy', 'cancellation_result', 'cancellation_time', 'cancelled', 'client_order_id', 'execution_engine', 'expected_cost_bps', 'expected_fill_rate', 'expected_latency_ms', 'expired', 'filled', 'limit', 'market', 'max_retries', 'modification_result', 'modification_time', 'partially_filled', 'pending', 'position_close', 'purpose', 'reason', 'rejected', 'rejection_reason', 'retry_delay', 'risk_manager', 'routing_decision', 'sell', 'smart_router', 'stop', 'stop_limit', 'submission_result', 'submission_time', 'submitted', 'take_profit', 'trailing_stop', 'twap', 'unknown', 'vwap']

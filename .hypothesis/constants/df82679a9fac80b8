@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\risk\var_engine.py
+# hypothesis_version: 6.148.3
+
+[-0.15, -0.12, -0.1, -0.08, -0.07, -0.06, -0.05, -0.04, -0.03, -0.02, 0.0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.1, 0.12, 0.94, 0.95, 0.99, 100, 252, 10000, 'AUDUSD', 'DistributionType', 'EURUSD', 'GBPUSD', 'Position', 'StressTestResult', 'USD', 'USDCAD', 'USDJPY', 'VaREngine', 'VaRMethod', 'VaRResult', 'breach_rate', 'breaches', 'component_var', 'confidence_level', 'cornish_fisher', 'currency', 'ewma', 'expected_breach_rate', 'expected_breaches', 'expected_shortfall', 'flash_crash', 'generalized_pareto', 'get_var_engine', 'historical', 'kupiec_lr', 'kupiec_p_value', 'kurtosis', 'marginal_var', 'market_crash', 'mean_return', 'method', 'model_valid', 'monte_carlo', 'normal', 'parametric', 'risk_off', 'skewness', 'student_t', 'time_horizon_days', 'timestamp', 'total_observations', 'usd_collapse', 'var_value', 'volatility']

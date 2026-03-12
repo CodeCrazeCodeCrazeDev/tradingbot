@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\adaptive_systems\code_generation\code_repository.py
+# hypothesis_version: 6.148.3
+
+['change_count_by_file', 'change_id', 'changes', 'code_backups', 'code_repository', 'dependencies', 'description', 'file_path', 'files', 'from_version', 'generated', 'generated_at', 'hash', 'latest_version', 'latest_versions', 'metadata', 'metadata.json', 'original_timestamp', 'r', 'rollback', 'rollback_to', 'safety_checked', 'source_knowledge', 'timestamp', 'to_version', 'total_changes', 'total_files', 'total_versions', 'utf-8', 'validated', 'version_history', 'versions', 'w']

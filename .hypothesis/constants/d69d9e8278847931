@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\analysis\liquidity_radar.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.001, 0.002, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.999, 1.0, 1.001, 1.5, 2.0, 3.0, 5.0, -1000, 100, 1000, '1H', 'avg_volume', 'bar_count', 'bearish', 'bullish', 'buy_side', 'buy_side_liquidity', 'close', 'confidence_threshold', 'critical', 'current_price', 'distance', 'error', 'external', 'fvg_type', 'gap_size', 'high', 'inf', 'internal', 'liquidity_imbalance', 'lookback_periods', 'low', 'merged_from', 'min_volume_threshold', 'moderate', 'move_direction', 'move_size', 'nearest_buy_zone', 'nearest_sell_zone', 'net_liquidity', 'open', 'original_ids', 'peak_indices', 'price', 'resting', 'sell_side', 'sell_side_liquidity', 'strength', 'strength_multipliers', 'strong', 'sweep_confirmation', 'swept', 'symbol', 'timestamp', 'total_zones', 'touch_sensitivity', 'trough_indices', 'volume', 'weak', 'zone_breakdown', 'zone_merge_distance']

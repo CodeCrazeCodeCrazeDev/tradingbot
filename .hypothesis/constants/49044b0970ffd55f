@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\adaptive_systems\strategy_selector.py
+# hypothesis_version: 6.148.3
+
+[0.0, 1e-06, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.9, 1.0, 2.0, 'active', 'aggressive', 'arbitrage', 'breakout', 'confidence_score', 'confidence_threshold', 'conservative', 'current_strategy', 'from_strategy', 'improvement', 'inf', 'last_updated', 'manual', 'max_drawdown', 'mean_reversion', 'momentum', 'performance_window', 'pnl', 'poor_performance', 'reason', 'recent_rotations', 'regime', 'rotation_threshold', 'scalping', 'sentiment_based', 'sharpe_ratio', 'strategies', 'swing', 'timestamp', 'to_strategy', 'total_pnl', 'total_rotations', 'total_trades', 'trend_following', 'win_rate']

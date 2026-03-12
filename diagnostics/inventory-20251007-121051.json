@@ -1,0 +1,46 @@
+{
+  "run_timestamp": "2025-10-07T12:10:51+03:00",
+  "os": "Windows 10 Pro Education 64-bit",
+  "os_version": "10.0.19045",
+  "repo_root": "c:\\Users\\peterson\\trading bot",
+  "bat_files": [
+    "CREATE_DESKTOP_SHORTCUT.bat",
+    "MASTER_CONTROL.bat",
+    "RUN_BOT.bat",
+    "START_BOT_SIMPLE.bat",
+    "START_BOT_WITH_WATCHDOG.bat",
+    "apply_all_fixes.bat",
+    "deploy_to_production.bat",
+    "install_as_windows_service.bat",
+    "perfect_bot\\run_perfect_bot.bat",
+    "run_alpha_deployment.bat",
+    "run_docker_tests.bat",
+    "run_enhanced_bot.bat",
+    "start_autonomous_ai.bat",
+    "start_full_automation.bat",
+    "start_production.bat",
+    "start_safe_testing.bat",
+    "start_trading_bot.bat"
+  ],
+  "requirements_files": [
+    "requirements.txt",
+    "requirements-extras.txt",
+    "perfect_bot\\requirements.txt",
+    "trading_bot\\dashboard\\requirements.txt"
+  ],
+  "docker_files": [
+    "docker-compose.yml",
+    "docker-compose.production.yml",
+    "Dockerfile",
+    "Dockerfile.production"
+  ],
+  "test_directories": [
+    "tests",
+    "test_reports"
+  ],
+  "config_directories": [
+    "config"
+  ],
+  "python_files_count": "estimated 200+",
+  "ci_config": "none detected"
+}

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\connectivity\proxy_manager.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.1, 0.3, 0.5, 0.9, 1.0, 200, 8080, 'No proxies to test', 'avg_latency', 'banned_count', 'banned_until', 'current_proxy', 'failure_count', 'host', 'http', 'https', 'id', 'last_checked', 'last_latency', 'last_rotation', 'last_used', 'pass1', 'password', 'port', 'protocol', 'proxies', 'proxy1.example.com', 'proxy2.example.com', 'proxy_count', 'r', 'success_count', 'success_rate', 'url', 'user1', 'username', 'working_count']

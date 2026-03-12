@@ -1,0 +1,66 @@
+# Multi-Symbol Trading Configuration - Diversified Portfolio
+# A balanced mix of different currency types for maximum diversification
+
+# General settings
+mode: paper
+timeframe: H1
+bars: 500
+
+# ML features
+use_ml: true
+use_transformer: true
+use_rl: true
+market_regime: true
+sentiment_analysis: true
+order_flow: true
+
+# Execution
+execution_algo: smart
+
+# Symbols to trade - Diversified selection
+symbols:
+  - EURUSD  # Major - Euro vs US Dollar
+  - GBPJPY  # Cross - British Pound vs Japanese Yen
+  - AUDUSD  # Commodity - Australian Dollar vs US Dollar
+  - USDMXN  # Exotic - US Dollar vs Mexican Peso
+  - EURCHF  # Safe haven - Euro vs Swiss Franc
+
+# Risk management per symbol (percentages)
+risk_allocation:
+  EURUSD: 25  # Major pair gets highest allocation
+  GBPJPY: 20  # Cross pair
+  AUDUSD: 20  # Commodity currency
+  USDMXN: 15  # Exotic pair gets lower allocation due to higher risk
+  EURCHF: 20  # Safe haven pair
+
+# Watchlist for sentiment analysis
+watchlist:
+  - EURUSD
+  - GBPJPY
+  - AUDUSD
+  - USDMXN
+  - EURCHF
+  - EUR
+  - USD
+  - GBP
+  - JPY
+  - AUD
+  - MXN
+  - CHF
+  - GOLD
+  - OIL
+
+# Advanced features
+track_emotions: true
+quantum_blockchain: false
+adaptive_mode: true
+self_improve: true
+internet_access: false
+
+# Correlation management
+manage_correlations: true
+max_correlated_exposure: 40  # Strict correlation management for diversified portfolio
+
+# Special settings
+dynamic_allocation: true  # Dynamically adjust allocations based on market conditions
+volatility_adjusted_position_sizing: true  # Adjust position sizes based on volatility

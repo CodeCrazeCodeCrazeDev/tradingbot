@@ -1,0 +1,106 @@
+{
+  "timestamp": "2025-10-19T14:11:26.546476",
+  "phases": {
+    "phase1": {
+      "status": "completed",
+      "start_time": 1760872286.5501711,
+      "checks": {
+        "module_existence": {
+          "passed": true,
+          "found": 13,
+          "missing": 0,
+          "missing_modules": [],
+          "message": "Found 13/13 required modules"
+        },
+        "import_validation": {
+          "passed": false,
+          "tests": [
+            {
+              "module": "adaptive_integration",
+              "status": "failed",
+              "error": "No module named 'trading_bot.risk.advanced_risk_manager'"
+            },
+            {
+              "module": "offline_rl",
+              "status": "success",
+              "components": [
+                "AlphaAlgoAutonomousSystem",
+                "CQLAgent",
+                "IQLAgent",
+                "BCQAgent"
+              ]
+            },
+            {
+              "module": "regime_detector",
+              "status": "success",
+              "components": [
+                "RegimeDetector"
+              ]
+            }
+          ],
+          "success_count": 2,
+          "total_count": 3,
+          "message": "2/3 import tests passed"
+        },
+        "dependencies": {
+          "passed": false,
+          "installed": [
+            "numpy",
+            "pandas",
+            "torch",
+            "scipy"
+          ],
+          "missing": [
+            "scikit-learn"
+          ],
+          "message": "4/5 required packages installed"
+        },
+        "architecture": {
+          "passed": false,
+          "alignments": [
+            {
+              "component": "system_initialization",
+              "status": "misaligned",
+              "error": "No module named 'trading_bot.risk.advanced_risk_manager'"
+            }
+          ],
+          "message": "0/1 components aligned"
+        },
+        "configuration": {
+          "passed": false,
+          "checks": [
+            {
+              "setting": "system_config",
+              "status": "invalid",
+              "error": "No module named 'trading_bot.risk.advanced_risk_manager'"
+            }
+          ],
+          "message": "0/1 configuration checks passed"
+        }
+      },
+      "end_time": 1760872558.7184165,
+      "duration": 272.16824531555176,
+      "score": 20.0
+    },
+    "phase2": {
+      "status": "failed",
+      "start_time": 1760872558.7194471,
+      "mode_tests": {},
+      "error": "No module named 'trading_bot.risk.advanced_risk_manager'"
+    }
+  },
+  "overall_status": "poor",
+  "issues_found": [],
+  "recommendations": [
+    {
+      "priority": "high",
+      "category": "missing_dependencies",
+      "message": "Required dependencies are missing. Install with: pip install <package>",
+      "missing": [
+        "scikit-learn"
+      ]
+    }
+  ],
+  "total_duration": 272.1802866458893,
+  "overall_score": 20.0
+}

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\agents\base_agent.py
+# hypothesis_version: 6.148.3
+
+[0.0, 1e-08, 0.2, 0.3, 0.5, 0.7, 0.8, 0.9, 1.0, 2.0, 3.0, 100, 300, 'HIGH', 'LOW', 'MEDIUM', 'action', 'agent_id', 'agent_type', 'arbitrageur', 'avg_return', 'confidence', 'data', 'expected_return', 'market_maker', 'mean_reverter', 'now', 'outcome', 'pnl', 'priority', 'reasoning', 'recent_performance', 'risk_level', 'risk_manager', 'risk_score', 'sender', 'sharpe_ratio', 'timestamp', 'total_trades', 'trend_follower', 'type', 'unknown', 'volatility', 'volatility_trader', 'win', 'win_rate']

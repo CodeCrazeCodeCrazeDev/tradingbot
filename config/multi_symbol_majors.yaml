@@ -1,0 +1,59 @@
+# Multi-Symbol Trading Configuration - Major Currency Pairs
+# Focus on the most liquid currency pairs in the forex market
+
+# General settings
+mode: paper
+timeframe: H1
+bars: 500
+
+# ML features
+use_ml: true
+use_transformer: true
+use_rl: true
+market_regime: true
+sentiment_analysis: true
+order_flow: true
+
+# Execution
+execution_algo: smart
+
+# Symbols to trade - Major currency pairs
+symbols:
+  - EURUSD  # Euro vs US Dollar
+  - GBPUSD  # British Pound vs US Dollar
+  - USDJPY  # US Dollar vs Japanese Yen
+  - USDCHF  # US Dollar vs Swiss Franc
+  - AUDUSD  # Australian Dollar vs US Dollar
+
+# Risk management per symbol (percentages)
+risk_allocation:
+  EURUSD: 25
+  GBPUSD: 25
+  USDJPY: 20
+  USDCHF: 15
+  AUDUSD: 15
+
+# Watchlist for sentiment analysis
+watchlist:
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+  - USDCHF
+  - AUDUSD
+  - EUR
+  - GBP
+  - JPY
+  - CHF
+  - AUD
+  - USD
+
+# Advanced features
+track_emotions: true
+quantum_blockchain: false
+adaptive_mode: true
+self_improve: true
+internet_access: false
+
+# Correlation management
+manage_correlations: true
+max_correlated_exposure: 50

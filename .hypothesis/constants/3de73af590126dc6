@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\strategy\ml_strategy.py
+# hypothesis_version: 6.148.3
+
+[0.3, 0.7, 1.5, 2.0, 60.0, 100, 10000, 'EURUSD', 'buy', 'close', 'combined', 'confidence', 'confidence_threshold', 'direction', 'high', 'low', 'macd', 'macd_signal', 'name', 'news', 'ohlc', 'open', 'patterns', 'predictions', 'returns', 'rsi', 'score', 'sell', 'sentiment', 'social', 'suggested_rr', 'suggested_stop_pips', 'values', 'volatility', 'volume']

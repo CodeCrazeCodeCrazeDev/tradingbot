@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\self_improvement\root_cause_analyzer.py
+# hypothesis_version: 6.148.3
+
+[0.001, 0.005, 0.1, 0.2, 0.3, 0.5, 0.6, 0.65, 0.7, 0.75, 0.78, 0.8, 0.85, 0.9, 1.0, 1.5, 2.0, 1000, 'Reduce position size', 'agreement', 'atr', 'cause_type', 'confidence', 'cpu', 'critical', 'description', 'drift', 'error_count', 'estimated_impact', 'evidence', 'execution_issue', 'execution_latency', 'fill_type', 'full', 'high', 'hypothesis_id', 'latency_ms', 'low', 'market_external', 'max_lot_size', 'medium', 'memory', 'multi_tf_agreement', 'news_count', 'news_events', 'order_fill', 'position_size', 'ratio', 'rejected', 'resource_usage', 'risk_sizing', 'signal_confidence', 'signal_drift', 'signal_quality', 'size', 'sl_distance', 'slippage', 'software_data', 'spike_detected', 'spread', 'spread_widening', 'stop_loss_tightness', 'suggested_fixes', 'system_errors', 'threshold', 'tight_sl_atr_ratio', 'unknown', 'volatility_spike']

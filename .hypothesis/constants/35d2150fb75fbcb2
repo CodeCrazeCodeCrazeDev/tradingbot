@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\institutional_entry\institutional_footprint.py
+# hypothesis_version: 6.148.3
+
+[0.5, 0.6, 0.7, 0.99, 1.0, 1.01, 1.5, 2.0, 2.5, 3.0, 'Buying exhaustion', 'Selling exhaustion', 'absorption', 'absorption_threshold', 'ask_volume', 'bid_volume', 'body', 'body_ratio', 'climax', 'close', 'custom', 'delta', 'delta_divergence', 'delta_ma', 'delta_ma_period', 'delta_ratio', 'effort_vs_result', 'exhaustion', 'exhaustion_threshold', 'has_delta_data', 'hidden_liquidity', 'high', 'imbalance', 'imbalance_threshold', 'imbalances', 'institutional_sweep', 'is_bearish', 'is_bullish', 'low', 'min_delta_ratio', 'open', 'range', 'rel_volume', 'signals', 'stopping_volume', 'timeframe', 'timestamp', 'vol_ma', 'volume', 'volume_ma_period']

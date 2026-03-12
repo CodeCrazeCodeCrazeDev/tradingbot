@@ -1,0 +1,71 @@
+# Windsurf Ignore File
+# Excludes large backup directories from indexing to prevent IDE crashes
+
+# Backup directories (causing 10,000+ files to be indexed)
+autonomous_backups/
+evolution_backups/
+backup/
+fix_backups/
+syntax_fix_backups/
+complete_work_backups/
+
+# Nested backup directories inside trading_bot/
+trading_bot/autonomous_backups/
+trading_bot/auto_fix_backups/
+trading_bot/backup/
+
+# Catch-all for any backup folders
+**/autonomous_backups/
+**/evolution_backups/
+**/backup/
+**/fix_backups/
+**/syntax_fix_backups/
+**/*_backups/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Large binary files
+*.dll
+*.lib
+*.so
+*.dylib
+
+# Data files
+*.parquet
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+
+# Logs
+logs/
+*.log
+
+# Git
+.git/
+
+# Node modules (if any)
+node_modules/
+
+# IDE folders
+.idea/
+.vscode/
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/

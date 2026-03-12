@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\market_intelligence\latent_space.py
+# hypothesis_version: 6.148.3
+
+[0.001, 0.02, 0.5, 100, 'autoencoder', 'autoencoder_loss', 'avg_return', 'avg_rsi', 'avg_volume_ratio', 'bb_position', 'bearish_trending', 'body_size', 'bullish_trending', 'close', 'cluster_centers', 'cluster_labels', 'count', 'cpu', 'cuda', 'dbscan', 'high', 'ica', 'ica_components', 'inertia', 'kmeans', 'latent_features', 'log_returns', 'low', 'lower_shadow', 'macd_signal', 'method', 'n_clusters', 'n_features', 'n_noise_points', 'n_regimes', 'n_samples', 'open', 'pca', 'pca_components', 'price_momentum_20', 'price_momentum_5', 'price_volume_trend', 'range_ratio', 'regime_labels', 'regime_transitions', 'regime_type', 'returns', 'rsi', 'sma_20', 'sma_5', 'trend_strength', 'true_range', 'upper_shadow', 'volatility', 'volatility_20', 'volatility_5', 'volatility_ratio', 'volume', 'volume_momentum', 'volume_ratio']

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\indicators\advanced_statistical.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 100, 500, '1H', '2024-01-01', 'NEUTRAL', 'OVERBOUGHT', 'OVERSOLD', '__main__', 'adf_stat', 'adf_statistic', 'bear', 'beta', 'bull', 'close', 'confidence', 'current_regime', 'error_covariance', 'ffill', 'filtered', 'half_life', 'innovation', 'is_cointegrated', 'kalman_gain', 'kalman_innovation', 'kalman_trend', 'lower_band', 'middle_band', 'neutral', 'p_value', 'pair', 'position', 'predicted', 'predicted_regime', 'regime_confidence', 'spread_mean', 'spread_std', 'upper_band', 'zscore', 'zscore_signal']

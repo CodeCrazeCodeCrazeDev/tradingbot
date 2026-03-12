@@ -1,0 +1,187 @@
+"""
+autonomous package
+"""
+
+try:
+    from .alpha_factor_discovery import AlphaFactor, GeneticProgramming
+    from .meta_agent import (
+        BiasType,
+        Decision,
+        DecisionCritique,
+        DecisionOutcome,
+        DecisionQuality,
+        ImprovementPlan,
+        MetaAgent,
+        get_meta_agent
+    )
+    from .self_checklist_advanced import (
+        SelfBacktestingValidator,
+        SelfBackupRestore,
+        SelfCalibrationCheck,
+        SelfChecklistItem,
+        SelfChecklistStatus,
+        SelfCircuitBreaker,
+        SelfConsistencyMonitor,
+        SelfEvolvingStrategies,
+        SelfPatch,
+        SelfRealityAlignment,
+        SelfRetrainingOnDrift,
+        SelfRewardFunctionAdjustment,
+        SelfRollback,
+        SelfSandboxMode,
+        SelfSecurityScan,
+        SelfTuningParameters
+    )
+    from .self_checklist_core import (
+        SelfBenchmarking,
+        SelfBudgeting,
+        SelfChecklistItem,
+        SelfChecklistStatus,
+        SelfConfidenceEstimation,
+        SelfContextRecognition,
+        SelfExplainability,
+        SelfMemorySystem,
+        SelfMoodIndex,
+        SelfStateReflection
+    )
+    from .self_checklist_extended import (
+        SelfAgentCollaboration,
+        SelfAuditTrails,
+        SelfChecklistItem,
+        SelfChecklistStatus,
+        SelfCrossValidation,
+        SelfInfrastructureScaling,
+        SelfIsolation,
+        SelfKnowledgeGraph,
+        SelfLatencyControl,
+        SelfMetaLearning,
+        SelfMultiMarketAwareness,
+        SelfObservationLoop,
+        SelfPruning,
+        SelfReflectiveMetaAgent,
+        SelfRestart,
+        SelfRiskGovernance,
+        SelfStrategyGeneration,
+        SelfStrategyMarketplace,
+        SelfSupervisedLearningEngine
+    )
+    from .self_checklist_orchestrator import (
+        SelfChecklistOrchestrator,
+        SelfChecklistReport,
+        SelfChecklistStatus,
+        get_checklist_summary,
+        get_self_checklist_orchestrator,
+        run_full_checklist,
+        run_quick_checklist
+    )
+    from .self_healing import (
+        FailureDiagnoser,
+        FailureEvent,
+        FailureType,
+        HealthMetrics,
+        HealthStatus,
+        RecoveryAction,
+        RecoveryOrchestrator,
+        SelfHealingMonitor,
+        SelfHealingSystem,
+        get_self_healing_system
+    )
+    from .self_healing_system import (
+        ErrorSeverity,
+        HealthMetrics,
+        HealthStatus,
+        SelfHealingSystem,
+        SystemError
+    )
+    from .self_optimizing_engine import OptimizationResult, SelfOptimizingEngine, StrategyParameter
+    from .strategy_tuner import (
+        AutonomousStrategyTuner,
+        BayesianOptimizer,
+        GeneticOptimizer,
+        GridSearchOptimizer,
+        OptimizationResult,
+        PerformanceMonitor
+    )
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in autonomous: {e}')
+
+__all__ = [
+    'AlphaFactor',
+    'AutonomousStrategyTuner',
+    'BayesianOptimizer',
+    'BiasType',
+    'Decision',
+    'DecisionCritique',
+    'DecisionOutcome',
+    'DecisionQuality',
+    'ErrorSeverity',
+    'FailureDiagnoser',
+    'FailureEvent',
+    'FailureType',
+    'GeneticOptimizer',
+    'GeneticProgramming',
+    'GridSearchOptimizer',
+    'HealthMetrics',
+    'HealthStatus',
+    'ImprovementPlan',
+    'MetaAgent',
+    'OptimizationResult',
+    'PerformanceMonitor',
+    'RecoveryAction',
+    'RecoveryOrchestrator',
+    'SelfAgentCollaboration',
+    'SelfAuditTrails',
+    'SelfBacktestingValidator',
+    'SelfBackupRestore',
+    'SelfBenchmarking',
+    'SelfBudgeting',
+    'SelfCalibrationCheck',
+    'SelfChecklistItem',
+    'SelfChecklistOrchestrator',
+    'SelfChecklistReport',
+    'SelfChecklistStatus',
+    'SelfCircuitBreaker',
+    'SelfConfidenceEstimation',
+    'SelfConsistencyMonitor',
+    'SelfContextRecognition',
+    'SelfCrossValidation',
+    'SelfEvolvingStrategies',
+    'SelfExplainability',
+    'SelfHealingMonitor',
+    'SelfHealingSystem',
+    'SelfInfrastructureScaling',
+    'SelfIsolation',
+    'SelfKnowledgeGraph',
+    'SelfLatencyControl',
+    'SelfMemorySystem',
+    'SelfMetaLearning',
+    'SelfMoodIndex',
+    'SelfMultiMarketAwareness',
+    'SelfObservationLoop',
+    'SelfOptimizingEngine',
+    'SelfPatch',
+    'SelfPruning',
+    'SelfRealityAlignment',
+    'SelfReflectiveMetaAgent',
+    'SelfRestart',
+    'SelfRetrainingOnDrift',
+    'SelfRewardFunctionAdjustment',
+    'SelfRiskGovernance',
+    'SelfRollback',
+    'SelfSandboxMode',
+    'SelfSecurityScan',
+    'SelfStateReflection',
+    'SelfStrategyGeneration',
+    'SelfStrategyMarketplace',
+    'SelfSupervisedLearningEngine',
+    'SelfTuningParameters',
+    'StrategyParameter',
+    'SystemError',
+    'get_checklist_summary',
+    'get_meta_agent',
+    'get_self_checklist_orchestrator',
+    'get_self_healing_system',
+    'run_full_checklist',
+    'run_quick_checklist',
+]

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\adaptive_systems\knowledge_acquisition\__init__.py
+# hypothesis_version: 6.148.3
+
+['AIKnowledge', 'AISource', 'AlgorithmKnowledge', 'AlgorithmSource', 'BookKnowledge', 'BookSource', 'FeedbackSource', 'HumanKnowledge', 'KnowledgeBase', 'KnowledgeItem', 'KnowledgeStatus', 'KnowledgeType']

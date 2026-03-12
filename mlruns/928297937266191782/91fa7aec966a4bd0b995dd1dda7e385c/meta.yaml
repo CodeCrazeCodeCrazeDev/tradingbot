@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/peterson/trading%20bot/mlruns/928297937266191782/91fa7aec966a4bd0b995dd1dda7e385c/artifacts
+end_time: 1764243269281
+entry_point_name: ''
+experiment_id: '928297937266191782'
+lifecycle_stage: active
+run_id: 91fa7aec966a4bd0b995dd1dda7e385c
+run_name: able-slug-825
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1764243269169
+status: 3
+tags: []
+user_id: peterson

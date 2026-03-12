@@ -1,0 +1,43 @@
+{
+  "status": {
+    "is_running": true,
+    "current_cycle": null,
+    "total_cycles": 2,
+    "total_improvements": 0,
+    "last_cycle_time": "2025-12-05T21:33:37.453433",
+    "reward_model_valid": true
+  },
+  "cycle_history": [
+    {
+      "cycle_id": "cycle_20251204_213337",
+      "status": "complete",
+      "started_at": "2025-12-04T21:33:37.181586",
+      "experiences_learned": 0,
+      "optimizations_performed": 0,
+      "proposals_created": 0,
+      "proposals_approved": 0,
+      "proposals_applied": 0,
+      "reward_before": 0,
+      "reward_after": 0,
+      "improvement": 0,
+      "completed_at": "2025-12-04T21:33:37.315555",
+      "duration_seconds": 0.133969
+    },
+    {
+      "cycle_id": "cycle_20251205_213337",
+      "status": "complete",
+      "started_at": "2025-12-05T21:33:37.418768",
+      "experiences_learned": 0,
+      "optimizations_performed": 0,
+      "proposals_created": 0,
+      "proposals_approved": 0,
+      "proposals_applied": 0,
+      "reward_before": 0,
+      "reward_after": 0,
+      "improvement": 0,
+      "completed_at": "2025-12-05T21:33:37.452550",
+      "duration_seconds": 0.033782
+    }
+  ],
+  "timestamp": "2025-12-05T21:33:37.454124"
+}

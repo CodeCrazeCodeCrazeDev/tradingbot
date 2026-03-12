@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\advanced_features\institutional_flow_detector.py
+# hypothesis_version: 6.148.3
+
+[0.002, 0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 100, 500, 1000, 5000, 10000, 50000, 'accumulation', 'activity_breakdown', 'appearances', 'ask', 'ask_volume', 'asks', 'avg_confidence', 'avg_visible_size', 'bearish', 'bearish_signals', 'bid', 'bid_volume', 'bids', 'block', 'bullish', 'bullish_signals', 'buy', 'dark_pool', 'db_path', 'distribution', 'dominant_activity', 'exchange', 'executions', 'first_seen', 'iceberg', 'iceberg_threshold', 'liquidity_provision', 'market_impact_score', 'market_making', 'momentum_ignition', 'neutral', 'none', 'normal', 'price', 'sell', 'side', 'spoof', 'stop_hunt', 'sweep', 'timestamp', 'total_signals', 'total_volume', 'unknown', 'volume']

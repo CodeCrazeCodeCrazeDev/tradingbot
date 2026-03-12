@@ -1,0 +1,115 @@
+# Loss Learning Self-Improvement Configuration
+# Conservative, auditable, and reversible automated learning from losing trades
+
+# Global settings
+AUTO_LEARN: true  # Enable automatic learning from losses
+CONF_THRESHOLD: 0.6  # Minimum confidence to proceed without human review
+AUTO_PROMOTE: false  # Require human approval before promoting fixes to live
+
+# Repository settings
+repo_path: "."
+backup_dir: "backups/autolearn"
+
+# Triage settings
+triage:
+  loss_small_threshold: 0.005  # 0.5% of equity
+  loss_medium_threshold: 0.02  # 2% of equity
+  max_drawdown: 0.20  # 20% - critical threshold
+  candles_lookback: 200  # Number of candles to analyze
+  news_window_minutes: 30  # News event window
+
+# Root cause analysis settings
+root_cause:
+  low_confidence_threshold: 0.5
+  high_slippage_threshold: 0.005  # 0.5%
+  high_latency_threshold: 1000  # milliseconds
+  tight_sl_atr_ratio: 1.5  # Minimum SL distance as multiple of ATR
+  volatility_spike_threshold: 2.0  # ATR multiplier for spike detection
+
+# Fix generator settings
+fix_generator:
+  auto_approve_risk_threshold: "LOW"  # Only auto-approve SAFE and LOW risk fixes
+  max_lot_size: 1.0  # NEVER increase this automatically
+  risk_per_trade: 0.01  # NEVER increase this automatically
+  min_stop_loss_pips: 10  # NEVER decrease this automatically
+  
+  # Minimum model performance thresholds
+  min_model_accuracy: 0.6
+  min_model_precision: 0.55
+
+# Canary validation settings
+canary:
+  canary_duration_minutes: 60  # Run canary for 60 minutes
+  canary_min_trades: 100  # Or until 100 trades executed
+  canary_instruments:  # Test on subset of instruments
+    - EURUSD
+    - GBPUSD
+  
+  # Validation thresholds
+  max_win_rate_degradation: 0.10  # Allow max 10% win rate decrease
+  max_drawdown_increase: 0.05  # Allow max 5% drawdown increase
+  min_trade_count: 30  # Minimum trades to validate
+  max_slippage_increase: 0.002  # Allow max 0.2% slippage increase
+
+# Audit logging settings
+audit:
+  audit_dir: "diagnostics/self_improve"
+  changes_log: "diagnostics/changes-log.txt"
+
+# Continuous learning settings
+learning:
+  training_data_dir: "models/training_data"
+  model_dir: "models"
+  sandbox_dir: "models/sandbox"
+  min_examples_for_retrain: 500  # Accumulate 500 examples before retraining
+  rolling_window_size: 10000  # Keep last 10,000 examples
+  validation_split: 0.2  # 20% for validation
+  
+  # Model validation thresholds
+  min_model_accuracy: 0.6
+  min_model_precision: 0.55
+
+# Safety rules (NEVER violate these)
+safety_rules:
+  # PROHIBITED automatic actions
+  prohibited:
+    - "increase MAX_LOT_SIZE"
+    - "increase RISK_PER_TRADE"
+    - "remove stop_loss"
+    - "remove take_profit"
+    - "disable risk_management"
+    - "bypass validation"
+  
+  # ALLOWED automatic actions (only risk-reducing)
+  allowed:
+    - "increase confidence_threshold"
+    - "add signal filters"
+    - "reduce position_size"
+    - "widen stop_loss (with size compensation)"
+    - "add time filters"
+    - "add volatility filters"
+    - "add news filters"
+    - "reduce trading frequency"
+    - "clear cache"
+    - "rollback model"
+
+# Escalation settings
+escalation:
+  # Escalate to human if:
+  escalate_on_low_confidence: true
+  escalate_on_critical_loss: true
+  escalate_on_multiple_failures: true  # 3+ similar losses in short period
+  escalate_on_system_errors: true
+  
+  # Notification settings
+  notify_email: "peterkiragu68@outlook.com"
+  notify_on_escalation: true
+  notify_on_fix_applied: true
+  notify_on_rollback: true
+
+# Performance monitoring
+monitoring:
+  track_fix_effectiveness: true
+  rollback_on_degradation: true
+  degradation_threshold: 0.15  # 15% performance decrease triggers rollback
+  monitoring_period_days: 7  # Monitor for 7 days after applying fix

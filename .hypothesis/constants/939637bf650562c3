@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\connectors\base_connector.py
+# hypothesis_version: 6.148.3
+
+[1.0, '/', 'api_key', 'api_secret', 'authenticated', 'connected', 'connecting', 'disconnected', 'error', 'exchange', 'market_data', 'max_reconnect', 'order_book', 'rate_limit', 'reconnecting', 'testnet', 'ticker', 'trade', 'unknown']

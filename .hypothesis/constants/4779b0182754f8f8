@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\system_supervisor\auto_repair_system.py
+# hypothesis_version: 6.148.3
+
+[-100, 120, 300, 600, '401', '429', 'Adapt JSON parsing', 'Refresh API token', 'Restore from backup', 'action', 'alpha_vantage', 'api_rate_limit', 'api_structure_change', 'attribute', 'auth', 'backup_dir', 'backup_sources', 'bot_backups', 'connection', 'corrupt', 'corrupted_file', 'damaged', 'data_cache', 'decode', 'details', 'failure_type', 'finnhub', 'import', 'invalid', 'json', 'keyerror', 'malformed_data', 'market_data', 'missing_dependency', 'module', 'network_timeout', 'news', 'newsapi', 'not found', 'parse', 'rate limit', 'reddit_api', 'sentiment', 'stocktwits', 'success', 'timeout', 'timestamp', 'twitter_api', 'unauthorized', 'unknown', 'yahoo_finance']

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\ml\transformer_model.py
+# hypothesis_version: 6.148.3
+
+[0.001, 0.01, 0.1, 0.2, 0.5, 1.0, 10000.0, 100, 128, 5000, 'batch_size', 'best_val_loss', 'config', 'cpu', 'cuda', 'd_model', 'device', 'dropout', 'epochs_trained', 'final_train_loss', 'inf', 'lr', 'min', 'model_state_dict', 'nhead', 'num_layers', 'optimizer_state_dict', 'pe']

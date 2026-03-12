@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\ai_core\mlops\model_registry.py
+# hypothesis_version: 6.148.3
+
+['-inf', 'active', 'archived', 'models/registry', 'r', 'rb', 'registry.json', 'w', 'wb']

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\analysis\sentiment_analyzer.py
+# hypothesis_version: 6.148.3
+
+[-0.2, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, -100, 100, '-', 'AAPL', 'GOOGL', 'MSFT', 'Mention Volume', 'Sentiment Score', 'TSLA', 'Time', '__main__', 'b-', 'bearish', 'bloomberg', 'bullish', 'cache_dir', 'cnbc', 'confidence', 'content', 'created_at', 'earnings', 'financial_times', 'green', 'key_topics', 'min_confidence', 'min_volume', 'neutral', 'news', 'news_collector', 'news_sentiment', 'o', 'platform', 'published_at', 'r', 'red', 'reddit', 'reuters', 'score', 'seeking_alpha', 'sentiment_analyzer', 'sentiment_cache', 'sentiment_change', 'signal_type', 'skyblue', 'social', 'social_collector', 'social_sentiment', 'source', 'sources', 'stocktwits', 'strength', 'tech stocks', 'text', 'thresholds', 'ticker', 'timestamp', 'title', 'tradingview', 'twitter', 'volume', 'w', 'weights', 'wsj', 'yahoo_finance']

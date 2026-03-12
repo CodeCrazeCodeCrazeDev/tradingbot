@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\data\mt5_interface.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.0001, 0.00015, 0.0002, 0.01, 1.0, 100.0, 100000.0, 500, 1000, '15min', 'AccountInfo', 'D1', 'H1', 'H4', 'M1', 'M15', 'M30', 'M5', 'MT5 Password: ', 'MT5Interface', 'SymbolInfo', 'ask', 'balance', 'bid', 'close', 'datetime64[s]', 'equity', 'f8', 'high', 'i4', 'login', 'low', 'margin', 'margin_free', 'mt5.login', 'mt5.password', 'mt5.path', 'mt5.server', 'open', 'paper', 'point', 'real_volume', 's', 'spread', 'tick_volume', 'time', 'trade_contract_size', 'trade_tick_value', 'trading.mode', 'volume_max', 'volume_min', 'volume_step']

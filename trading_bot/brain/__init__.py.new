@@ -1,0 +1,65 @@
+"""
+Brain Architecture Module for Elite Trading Bot
+Multi-layer intelligence hierarchy for advanced trading decisions
+"""
+
+# Original brain components
+from trading_bot.brain.brain_architecture import EliteBrain, BrainDecision, DecisionState
+from trading_bot.brain.central_controller import CentralController
+
+# Tier structure and base classes
+from trading_bot.brain.tier_structure import (
+    AlphaBrain, SignalOutput, MarketStateVector, OrderFlowIntelligence,
+    MarketGeometryModel, RegimeContextVector, SentimentVector, MacroContext,
+    RiskParameters, ExecutionIntelligence, EliteBrainSignal, TierBase
+)
+
+# Tier implementations
+from trading_bot.brain.tier1_technical import Tier1TechnicalAnalysis
+from trading_bot.brain.tier2_orderflow import Tier2OrderFlowIntelligence
+from trading_bot.brain.tier3_structure import Tier3MarketStructure
+from trading_bot.brain.tier4_regime import Tier4RegimeDetection
+from trading_bot.brain.tier5_sentiment import Tier5SentimentAnalysis
+from trading_bot.brain.tier6_macro import Tier6MacroAnalysis
+from trading_bot.brain.tier7_risk import Tier7RiskManagement
+from trading_bot.brain.tier8_execution import Tier8ExecutionIntelligence
+from trading_bot.brain.tier9_metalearning import Tier9MetaLearning
+
+# Elite Brain Controller
+from trading_bot.brain.elite_brain import EliteBrainController
+
+__all__ = [
+    # Original components
+    'EliteBrain',
+    'BrainDecision',
+    'DecisionState',
+    'CentralController',
+    
+    # Tier structure and base classes
+    'AlphaBrain',
+    'SignalOutput',
+    'MarketStateVector',
+    'OrderFlowIntelligence',
+    'MarketGeometryModel',
+    'RegimeContextVector',
+    'SentimentVector',
+    'MacroContext',
+    'RiskParameters',
+    'ExecutionIntelligence',
+    'EliteBrainSignal',
+    'TierBase',
+    
+    # Tier implementations
+    'Tier1TechnicalAnalysis',
+    'Tier2OrderFlowIntelligence',
+    'Tier3MarketStructure',
+    'Tier4RegimeDetection',
+    'Tier5SentimentAnalysis',
+    'Tier6MacroAnalysis',
+    'Tier7RiskManagement',
+    'Tier8ExecutionIntelligence',
+    'Tier9MetaLearning',
+    
+    # Elite Brain Controller
+    'EliteBrainController'
+]

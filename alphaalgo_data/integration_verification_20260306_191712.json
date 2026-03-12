@@ -1,0 +1,1389 @@
+{
+  "meta": {
+    "generated": "2026-03-06T19:17:12.689912",
+    "total_duration_s": 402.83,
+    "plan_file": "C:/Users/peterson/.windsurf/plans/world-class-module-integration-99af5b.md"
+  },
+  "scan": {
+    "total_modules": 2144,
+    "by_promotion_state": {
+      "discovered": 2064,
+      "quarantined": 80
+    },
+    "by_layer": {
+      "UNCLASSIFIED": 212,
+      "INTELLIGENCE_CORE": 750,
+      "SIGNAL_GENERATION": 388,
+      "ORCHESTRATION": 216,
+      "GOVERNANCE": 72,
+      "EXECUTION": 135,
+      "DATA_FOUNDATION": 139,
+      "RISK_SAFETY": 113,
+      "INFRASTRUCTURE": 119
+    },
+    "by_tier": {
+      "?": 212,
+      "B": 441,
+      "C": 459,
+      "A": 802,
+      "D": 230
+    },
+    "by_capital_impact": {
+      "none": 515,
+      "indirect": 1345,
+      "direct": 284
+    },
+    "healthy_imports": 0,
+    "broken_imports": 0,
+    "unchecked": 2144,
+    "quarantined": 80,
+    "promoted": 0,
+    "generated": "2026-03-06T19:12:07.045080",
+    "scan_duration_s": 97.1,
+    "newly_discovered": 2144
+  },
+  "import_health": {
+    "healthy": 300,
+    "broken": 0,
+    "skipped": 1844,
+    "duration_s": 170.35
+  },
+  "dependency_graph": {
+    "services_in_graph": 87,
+    "dependency_edges": 122,
+    "layers_covered": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "tiers_covered": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "startup_order_valid": false,
+    "cycle_error": "Circular dependencies detected: ['risk_manager', 'reality_gates', 'hedge_fund_safety', 'risk_unified', 'broker_adapter', 'order_manager', 'fill_tracker', 'portfolio_manager', 'position_manager', 'execution_engine', 'smart_order_router', 'market_making', 'institutional_entry', 'hedge_fund', 'wealth_manager', 'profit_maximizer', 'approval_engine', 'human_layer', 'master_orchestrator']",
+    "warnings": [
+      "Circular dependencies detected: ['risk_manager', 'reality_gates', 'hedge_fund_safety', 'risk_unified', 'broker_adapter', 'order_manager', 'fill_tracker', 'portfolio_manager', 'position_manager', 'execution_engine', 'smart_order_router', 'market_making', 'institutional_entry', 'hedge_fund', 'wealth_manager', 'profit_maximizer', 'approval_engine', 'human_layer', 'master_orchestrator']"
+    ],
+    "startup_order": [],
+    "duration_s": 0.63
+  },
+  "static_verification": {
+    "modules_verified": 157,
+    "passed": 4,
+    "failed": 0,
+    "warned": 153,
+    "pass_rate": 2.5,
+    "duration_s": 134.54,
+    "reports": [
+      {
+        "module": "trading_bot.risk",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.advanced_ai.safety_verification",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.dashboard.risk_panel",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.hedge_fund_safety.ai_behavior_guardrails",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.hedge_fund_safety.catastrophic_prevention",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.hedge_fund_safety.financial_safeguards",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.hedge_fund_safety.hidden_risk_detection",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.hedge_fund_safety.mitigation_orchestrator",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.hedge_fund_safety.operational_safety",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.hedge_fund_safety.systemic_protection",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.integrations.risk_layer",
+        "overall": "pass",
+        "passed": 6,
+        "failed": 0,
+        "warnings": 0,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.msos.anti_overreaction",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.msos.assumption_engine",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.msos.capital_governor",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.msos.core",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.msos.data_adversarial",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.msos.entropy_budget",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.msos.execution_reality",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.msos.loss_monitor",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.msos.market_tradability",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.msos.orchestrator",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.msos.post_mortem",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.msos.quant_factory",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.msos.regime_instability",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.msos.signal_semantics",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.msos.time_risk",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.orchestrator.risk_manager",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.reality_gates.data_integrity_gate",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.reality_gates.drift_detection_gate",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.reality_gates.execution_realism_gate",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.reality_gates.kill_switch_gate",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.reality_gates.master_reality_gate",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.reality_gates.multiple_testing_gate",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.reality_gates.walk_forward_gate",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.advanced_circuit_breaker",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.advanced_position_sizing",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.advanced_risk",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.advanced_risk_manager",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.advanced_risk_metrics",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.advanced_risk_system",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.anomaly_detector",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.black_litterman",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.black_swan_protection",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.circuit_breaker",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.circuit_breaker_manager",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.complete_risk_system",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.correlation_manager",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.correlation_persistence",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.cvar_calculator",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.cvar_optimizer",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.drawdown_manager",
+        "overall": "pass",
+        "passed": 6,
+        "failed": 0,
+        "warnings": 0,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.drawdown_protector",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.dynamic_kelly",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.forecast_based_sizing",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.fractal_position_sizing",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.free_risk_manager",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.kelly_calculator",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.kelly_criterion",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.MASTER_risk_manager",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.monte_carlo",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.multilayerriskmanager",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.overnight_risk_sim",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.portfolio_risk",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.portfolio_risk_manager",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.position_sizer",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.position_size_calculator",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.position_validator",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.pre_trade_checks",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.RiskManager",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.riskmonitoringdashboard",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.risk_adjusted_optimizer",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.risk_budget_allocator",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.risk_manager",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.spillover_predictor",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.stress_testing",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.tail_risk_hedge",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.testriskmanager",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.trade_validation",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.trailing_stop",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.unified_risk_manager",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk.var_engine",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk_management.black_swan_protection",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk_management.budget_allocator",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk_management.drawdown_ladder",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk_management.portfolio_manager",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk_management.position_sizing",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk_management.risk_engine",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk_management.risk_monitor",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk_management.var_calculator",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.risk_unified.unified_risk",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.safety.auto_pause",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.safety.circuit_breaker",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.safety.emergency_kill_switch",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.safety.emergency_shutdown",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.safety.fail_safe",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.safety.implement_fallback",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.safety.latency_circuit_breaker",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.safety.pre_trade_validator",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.safety.resource_watchdog",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.safety.runtime_risk_monitor",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.safety.safety_orchestrator",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.services.msos_service",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.services.risk_service",
+        "overall": "pass",
+        "passed": 6,
+        "failed": 0,
+        "warnings": 0,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.ultimate_production.risk_fortress",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.upgrades.risk_upgrades_101_150",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.upgrades.risk_upgrades_151_200",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.validation.risk_validation_gate",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.approval",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.broker",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.exit_strategies",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.portfolio",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.position_manager",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.trading_engine",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.ultimate_approval",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.unified_approval",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.wealth",
+        "overall": "pass",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 0,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.approval.human_in_loop",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.broker.binance_broker",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.broker.broker_interface",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.broker.ib_broker",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.brokers.alpaca_adapter",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.brokers.alpaca_broker",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.brokers.binance_adapter",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.brokers.binance_broker",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.brokers.broker_adapter",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.brokers.broker_interface",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.brokers.connection_manager",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.brokers.free_brokers",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.brokers.kraken_adapter",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.brokers.live_order_router",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.brokers.mt5_adapter",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.brokers.mt5_broker",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.brokers.multi_broker_adapter",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.brokers.real_broker_integration",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.core.execution_manager",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.core.institutionalfootprintpanel",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.core.position_reconciliation",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.core.tradingbot",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.core.trading_system",
+        "overall": "warning",
+        "passed": 5,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.critical_fixes.execution_quality_monitor",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.critical_fixes.position_state_manager",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.ctrader.ctrader_integration",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 1,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.data.tradingdatabase",
+        "overall": "warning",
+        "passed": 4,
+        "failed": 0,
+        "warnings": 2,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.decision_layer.concepts_10_meta",
+        "overall": "warning",
+        "passed": 3,
+        "failed": 0,
+        "warnings": 3,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.decision_layer.concepts_11_quantitative_edge",
+        "overall": "warning",
+        "passed": 3,
+        "failed": 0,
+        "warnings": 3,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.decision_layer.concepts_1_cognitive",
+        "overall": "warning",
+        "passed": 3,
+        "failed": 0,
+        "warnings": 3,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.decision_layer.concepts_2_probabilistic",
+        "overall": "warning",
+        "passed": 3,
+        "failed": 0,
+        "warnings": 3,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.decision_layer.concepts_3_behavioral",
+        "overall": "warning",
+        "passed": 3,
+        "failed": 0,
+        "warnings": 3,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.decision_layer.concepts_4_game_theory",
+        "overall": "warning",
+        "passed": 3,
+        "failed": 0,
+        "warnings": 3,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.decision_layer.concepts_5_temporal",
+        "overall": "warning",
+        "passed": 3,
+        "failed": 0,
+        "warnings": 3,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.decision_layer.concepts_6_risk",
+        "overall": "warning",
+        "passed": 3,
+        "failed": 0,
+        "warnings": 3,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.decision_layer.concepts_7_microstructure",
+        "overall": "warning",
+        "passed": 3,
+        "failed": 0,
+        "warnings": 3,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.decision_layer.concepts_8_adaptive",
+        "overall": "warning",
+        "passed": 3,
+        "failed": 0,
+        "warnings": 3,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.decision_layer.concepts_9_multiagent",
+        "overall": "warning",
+        "passed": 3,
+        "failed": 0,
+        "warnings": 3,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.decision_layer.core_types",
+        "overall": "warning",
+        "passed": 3,
+        "failed": 0,
+        "warnings": 3,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.decision_layer.decision_analytics",
+        "overall": "warning",
+        "passed": 3,
+        "failed": 0,
+        "warnings": 3,
+        "failed_checks": []
+      },
+      {
+        "module": "trading_bot.decision_layer.decision_integration_bridge",
+        "overall": "warning",
+        "passed": 3,
+        "failed": 0,
+        "warnings": 3,
+        "failed_checks": []
+      }
+    ]
+  },
+  "promotion_summary": {
+    "total_modules": 2144,
+    "by_promotion_state": {
+      "registered": 299,
+      "quarantined": 80,
+      "verified": 1,
+      "discovered": 1764
+    },
+    "by_layer": {
+      "UNCLASSIFIED": 212,
+      "INTELLIGENCE_CORE": 750,
+      "SIGNAL_GENERATION": 388,
+      "ORCHESTRATION": 216,
+      "GOVERNANCE": 72,
+      "EXECUTION": 135,
+      "DATA_FOUNDATION": 139,
+      "RISK_SAFETY": 113,
+      "INFRASTRUCTURE": 119
+    },
+    "by_tier": {
+      "?": 212,
+      "B": 441,
+      "C": 459,
+      "A": 802,
+      "D": 230
+    },
+    "by_capital_impact": {
+      "none": 515,
+      "indirect": 1345,
+      "direct": 284
+    },
+    "healthy_imports": 300,
+    "broken_imports": 0,
+    "unchecked": 1844,
+    "quarantined": 80,
+    "promoted": 0,
+    "generated": "2026-03-06T19:17:12.689872"
+  },
+  "integration_score": {
+    "classification_coverage": 90.1,
+    "import_health": 100.0,
+    "dependency_graph": 0,
+    "static_verification": 2.5,
+    "overall_score": 48.1
+  }
+}

@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/peterson/trading%20bot/mlruns/928297937266191782/44c1e067c79c4dc796fee8a6197708e9/artifacts
+end_time: 1764406974564
+entry_point_name: ''
+experiment_id: '928297937266191782'
+lifecycle_stage: active
+run_id: 44c1e067c79c4dc796fee8a6197708e9
+run_name: redolent-penguin-284
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1764406974433
+status: 3
+tags: []
+user_id: peterson

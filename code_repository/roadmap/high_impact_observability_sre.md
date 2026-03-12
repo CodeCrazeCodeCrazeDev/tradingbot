@@ -1,0 +1,64 @@
+# High-Impact: Monitoring, Observability & SRE (Phase 1: 60/100)
+
+- [HI-OBS-001] Structured JSON logs with correlation/trace IDs — Impacted: logging across `trading_bot/core/`
+- [HI-OBS-002] Request-scoped context (symbol, order_id, strategy) in logs — Impacted: logging middleware
+- [HI-OBS-003] Centralized log levels toggled at runtime — Impacted: logging config
+- [HI-OBS-004] Metrics registry (Prometheus) with standard labels — Impacted: monitoring
+- [HI-OBS-005] SLIs: latency, error rate, throughput per component — Impacted: metrics
+- [HI-OBS-006] SLOs and error budgets per service — Impacted: ops policy
+- [HI-OBS-007] Alert rules for breached SLOs with throttling — Impacted: alerting
+- [HI-OBS-008] Heartbeat checks for all async loops — Impacted: `_market_data_loop`, `_analysis_loop`, `_risk_check_loop`, `_health_check_loop`
+- [HI-OBS-009] Watchdog restarts on missed heartbeats — Impacted: health management
+- [HI-OBS-010] Synthetic probes for broker/data endpoints — Impacted: adapters
+- [HI-OBS-011] End-to-end latency histograms by symbol — Impacted: metrics
+- [HI-OBS-012] Queue depth metrics and high-water marks — Impacted: monitoring
+- [HI-OBS-013] Resource gauges (CPU, mem, disk, handles) — Impacted: health loop
+- [HI-OBS-014] Disk path correctness (Windows vs Linux) — Impacted: `_health_check_loop`
+- [HI-OBS-015] Alert deduplication and grouping — Impacted: notifications
+- [HI-OBS-016] Incident severity taxonomy and escalation — Impacted: ops
+- [HI-OBS-017] Pager escalation for critical alerts — Impacted: notifications
+- [HI-OBS-018] Incident timeline auto-collection — Impacted: ops tooling
+- [HI-OBS-019] Runbooks linked from alerts — Impacted: docs+alerts
+- [HI-OBS-020] Dashboards: overview and per-component detail — Impacted: dashboard
+- [HI-OBS-021] Per-venue SLA dashboards (latency/fill) — Impacted: execution metrics
+- [HI-OBS-022] Retry/backoff metrics and reasons — Impacted: util
+- [HI-OBS-023] Error taxonomy and codes standard — Impacted: exceptions
+- [HI-OBS-024] Top-N error sources dashboard — Impacted: analytics
+- [HI-OBS-025] P95/P99 latency tracking per operation — Impacted: metrics
+- [HI-OBS-026] Trace critical flows (signal->order->fill) — Impacted: tracing
+- [HI-OBS-027] Trace sampling with dynamic rates — Impacted: tracing
+- [HI-OBS-028] Log redaction for secrets/PII — Impacted: logging
+- [HI-OBS-029] Anomaly detection on SLIs — Impacted: monitoring
+- [HI-OBS-030] Canary deploy metrics comparison — Impacted: CI/CD
+- [HI-OBS-031] Golden signals dashboard (latency, errors, traffic, saturation) — Impacted: dashboard
+- [HI-OBS-032] Self-test status page (startup checklist) — Impacted: runner
+- [HI-OBS-033] Proactive capacity alerts (headroom) — Impacted: SRE
+- [HI-OBS-034] Incident postmortem template and storage — Impacted: ops
+- [HI-OBS-035] Alert runbook accuracy reviews — Impacted: ops
+- [HI-OBS-036] Rollback detection and confirmation — Impacted: CI/CD+ops
+- [HI-OBS-037] Config drift alerts from desired state — Impacted: config monitor
+- [HI-OBS-038] Health endpoints for external supervisors — Impacted: runner
+- [HI-OBS-039] SLA breach simulators for drills — Impacted: ops drills
+- [HI-OBS-040] Pre-production soak tests with shadow traffic — Impacted: staging
+- [HI-OBS-041] Noisy-neighbor detection in shared hosts — Impacted: infra
+- [HI-OBS-042] Memory leak detectors and alarms — Impacted: monitoring
+- [HI-OBS-043] GC pause time metrics — Impacted: monitoring
+- [HI-OBS-044] Overflow to disk queues with alerts — Impacted: pipeline
+- [HI-OBS-045] Backpressure signals propagated to analysis — Impacted: orchestrator
+- [HI-OBS-046] Synthetic latency injectors for chaos tests — Impacted: chaos
+- [HI-OBS-047] Broker/data failover drills — Impacted: ops
+- [HI-OBS-048] SLA contracts for external services — Impacted: vendor mgmt
+- [HI-OBS-049] Dead letter queues for poison messages — Impacted: pipeline
+- [HI-OBS-050] Out-of-memory sentinel and dump capture — Impacted: runtime
+- [HI-OBS-051] Signal drop rate metrics and alarms — Impacted: analysis
+- [HI-OBS-052] Order failure matrix (by reason x venue) — Impacted: analytics
+- [HI-OBS-053] Real-time TCA dashboard — Impacted: analytics
+- [HI-OBS-054] Health trend reports (daily/weekly) — Impacted: reporting
+- [HI-OBS-055] Alert fatigue score and tuning — Impacted: notifications
+- [HI-OBS-056] Latency budget per stage enforcement — Impacted: analysis/execution
+- [HI-OBS-057] Panic button status and audit — Impacted: ops
+- [HI-OBS-058] Per-component uptime reports — Impacted: reporting
+- [HI-OBS-059] Alert ack/resolve tracking — Impacted: notifications
+- [HI-OBS-060] Environment banner (dev/stage/prod) in logs/metrics — Impacted: telemetry
+
+Note: This file seeds 60/100 items. Remaining 40 will be added in the next batch.

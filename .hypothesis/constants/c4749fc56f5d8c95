@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\opportunity_scanner\__init__.py
+# hypothesis_version: 6.148.3
+
+['ArbitrageOpportunity', 'BreakoutScanner', 'CatalystIdentifier', 'CointegrationMonitor', 'DarkPoolMonitor', 'EfficiencyRatio', 'EventDrivenTrader', 'FlowOpportunity', 'GammaScalping', 'InefficiencyType', 'LatencyArbitrage', 'LiquidityProvider', 'MakingOpportunity', 'MarketMakerStrategy', 'MispricingDetector', 'MomentumOpportunity', 'NewsImpactAnalyzer', 'NewsOpportunity', 'OrderBookImbalance', 'PairsTradingEngine', 'PriceAnomaly', 'SpreadAnalyzer', 'SpreadCapture', 'StatisticalArbitrage', 'StrangleHarvester', 'TriangularArbitrage', 'VelocityTracker', 'VolatilityArbitrage', 'VolatilitySkewTrader', 'WhaleTracker']

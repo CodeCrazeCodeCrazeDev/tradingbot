@@ -1,0 +1,170 @@
+{
+  "layers": {
+    "authentication": {
+      "enabled": true,
+      "max_attempts": 5,
+      "lockout_duration": 300,
+      "require_2fa": false,
+      "session_timeout": 3600,
+      "password_min_length": 12
+    },
+    "authorization": {
+      "enabled": true,
+      "default_deny": true,
+      "role_based": true,
+      "attribute_based": false,
+      "permission_cache_ttl": 300
+    },
+    "encryption": {
+      "enabled": true,
+      "algorithm": "AES-256-GCM",
+      "key_rotation_days": 30,
+      "tls_min_version": "1.2",
+      "encrypt_at_rest": true
+    },
+    "input_validation": {
+      "enabled": true,
+      "sanitize_html": true,
+      "validate_json": true,
+      "max_input_length": 10000,
+      "block_sql_injection": true,
+      "block_xss": true
+    },
+    "rate_limiting": {
+      "enabled": true,
+      "requests_per_minute": 60,
+      "requests_per_hour": 1000,
+      "burst_limit": 20,
+      "by_ip": true,
+      "by_user": true
+    },
+    "anomaly_detection": {
+      "enabled": true,
+      "sensitivity": 0.7,
+      "learning_period_days": 7,
+      "alert_threshold": 0.8,
+      "auto_block_threshold": 0.95
+    },
+    "audit_logging": {
+      "enabled": true,
+      "log_all_requests": false,
+      "log_auth_events": true,
+      "log_data_access": true,
+      "retention_days": 90
+    },
+    "network_security": {
+      "enabled": true,
+      "allowed_ips": [],
+      "blocked_ips": [],
+      "geo_blocking": false,
+      "blocked_countries": []
+    },
+    "api_security": {
+      "enabled": true,
+      "require_api_key": true,
+      "validate_signatures": true,
+      "replay_protection": true,
+      "nonce_expiry": 300
+    },
+    "data_protection": {
+      "enabled": true,
+      "mask_sensitive": true,
+      "encrypt_pii": true,
+      "data_classification": true,
+      "access_logging": true
+    }
+  },
+  "rules": [
+    {
+      "rule_id": "auth_brute_force",
+      "layer": "authentication",
+      "condition": "failed_attempts > 5 in 5 minutes",
+      "action": "block",
+      "enabled": true,
+      "hits": 0,
+      "false_positives": 0,
+      "effectiveness": 1.0
+    },
+    {
+      "rule_id": "sql_injection",
+      "layer": "input_validation",
+      "condition": "input contains SQL keywords",
+      "action": "block",
+      "enabled": true,
+      "hits": 0,
+      "false_positives": 0,
+      "effectiveness": 1.0
+    },
+    {
+      "rule_id": "xss_attempt",
+      "layer": "input_validation",
+      "condition": "input contains script tags",
+      "action": "block",
+      "enabled": true,
+      "hits": 0,
+      "false_positives": 0,
+      "effectiveness": 1.0
+    },
+    {
+      "rule_id": "rate_limit_exceeded",
+      "layer": "rate_limiting",
+      "condition": "requests > limit",
+      "action": "block",
+      "enabled": true,
+      "hits": 0,
+      "false_positives": 0,
+      "effectiveness": 1.0
+    },
+    {
+      "rule_id": "anomalous_behavior",
+      "layer": "anomaly_detection",
+      "condition": "behavior score > threshold",
+      "action": "alert",
+      "enabled": true,
+      "hits": 0,
+      "false_positives": 0,
+      "effectiveness": 1.0
+    },
+    {
+      "rule_id": "replay_attack",
+      "layer": "api_security",
+      "condition": "nonce already used",
+      "action": "block",
+      "enabled": true,
+      "hits": 0,
+      "false_positives": 0,
+      "effectiveness": 1.0
+    },
+    {
+      "rule_id": "unusual_trading",
+      "layer": "anomaly_detection",
+      "condition": "trading pattern anomaly",
+      "action": "alert",
+      "enabled": true,
+      "hits": 0,
+      "false_positives": 0,
+      "effectiveness": 1.0
+    },
+    {
+      "rule_id": "data_exfiltration",
+      "layer": "data_protection",
+      "condition": "large data export",
+      "action": "alert",
+      "enabled": true,
+      "hits": 0,
+      "false_positives": 0,
+      "effectiveness": 1.0
+    }
+  ],
+  "blocked_ips": [],
+  "blocked_users": [],
+  "stats": {
+    "events_processed": 0,
+    "attacks_blocked": 0,
+    "false_positives": 0,
+    "rules_evolved": 0,
+    "threats_detected": 0,
+    "successful_authentications": 0,
+    "failed_authentications": 0
+  }
+}

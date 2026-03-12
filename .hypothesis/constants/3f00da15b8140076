@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\dashboard\analytics_panel.py
+# hypothesis_version: 6.148.3
+
+[0.5, '400px', 'Allocation (%)', 'Anomaly Score', 'Asset', 'Current Regime: ', 'Detected Anomalies', 'Feature', 'Feature Importance', 'Importance Score', 'Market Analysis', 'Market Insights', 'Model Accuracy', 'N/A', 'Quantum Advantage', 'RdBu', 'Regime Duration: ', 'Regime Prediction', 'Regime Probability: ', 'anomalies', 'anomaly_score', 'card-title', 'correlation_matrix', 'current_regime', 'description', 'feature_importance', 'height', 'market_insights', 'mb-3', 'mb-4', 'model_accuracy', 'paper', 'plotly_dark', 'quantum_advantage', 'regime_analysis', 'regime_duration', 'regime_prediction', 'rgba(0, 0, 0, 0)']

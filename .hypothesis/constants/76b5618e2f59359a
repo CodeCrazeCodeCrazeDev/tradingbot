@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\market_intelligence\event_detection.py
+# hypothesis_version: 6.148.3
+
+[0.005, 0.1, 0.3, 0.5, 2.0, 3.0, 120, 'actual_rate', 'announcement_type', 'anomaly_severity', 'anomaly_type', 'asset_pair', 'avg_volume', 'bearish', 'breakout_type', 'bullish', 'close', 'correlation', 'curr_open', 'down', 'expected_correlation', 'expected_rate', 'gap_direction', 'gap_points', 'gap_size', 'high', 'immediate_impact', 'isolation_forest', 'local_outlier_factor', 'long_ma', 'low', 'max_excursion', 'mean_volatility', 'medium', 'negative', 'news_timestamp', 'one_class_svm', 'open', 'positive', 'post_news_price', 'pre_news_price', 'prev_close', 'price', 'return', 'shift_type', 'short_ma', 'spike_ratio', 'surprise_factor', 'timestamp', 'total_impact', 'type', 'unknown', 'up', 'volatility', 'volatility_increase', 'volume', 'z_score']

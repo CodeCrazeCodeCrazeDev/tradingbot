@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\institutional_entry\entry_validator.py
+# hypothesis_version: 6.148.3
+
+[0.2, 0.3, 0.5, 0.6, 1.0, 1.2, 100, 'close', 'confidence_threshold', 'confirmation_count', 'data', 'defer', 'enable_trend_filter', 'enable_volume_filter', 'high', 'invalid', 'long', 'low', 'macd', 'macd_hist', 'macd_signal', 'max_wick_ratio', 'min_confirmations', 'min_structure_points', 'min_volume_threshold', 'nearest', 'needs_confirmation', 'open', 'rsi', 'sma', 'swing_high', 'swing_low', 'swing_window', 'trend_sma_period', 'valid', 'volume', 'volume_confirmation']

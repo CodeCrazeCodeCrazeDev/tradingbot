@@ -1,0 +1,198 @@
+{
+  "validation_summary": {
+    "start_time": "2025-10-08T12:29:50.164427",
+    "end_time": "2025-10-08T12:31:18.468361",
+    "duration_seconds": 88.3,
+    "total_tests": 14,
+    "status_counts": {
+      "PASS": 5,
+      "FAIL": 7,
+      "WARNING": 2,
+      "SKIP": 0
+    },
+    "pass_rate": 35.71,
+    "overall_status": "FAILED",
+    "operational_ready": false
+  },
+  "results": [
+    {
+      "component": "Directory Structure",
+      "status": "WARNING",
+      "message": "Missing directories: models",
+      "details": {
+        "missing": [
+          "models"
+        ]
+      },
+      "error": null,
+      "timestamp": "2025-10-08T12:29:50.166831"
+    },
+    {
+      "component": "Configuration Files",
+      "status": "PASS",
+      "message": "Configuration files valid",
+      "details": {
+        "trading_mode": "paper",
+        "symbols": [
+          "EURUSD",
+          "GBPUSD",
+          "USDJPY"
+        ],
+        "risk_per_trade": 0.01
+      },
+      "error": null,
+      "timestamp": "2025-10-08T12:29:50.354307"
+    },
+    {
+      "component": "API Keys",
+      "status": "PASS",
+      "message": "API keys configured for: alpha_vantage, fred, newsapi",
+      "details": {
+        "configured": [
+          "alpha_vantage",
+          "fred",
+          "newsapi"
+        ],
+        "missing": []
+      },
+      "error": null,
+      "timestamp": "2025-10-08T12:29:50.364625"
+    },
+    {
+      "component": "Dependencies",
+      "status": "FAIL",
+      "message": "Missing packages: pyyaml, scikit-learn",
+      "details": {
+        "installed": [
+          "pandas",
+          "numpy",
+          "MetaTrader5",
+          "loguru",
+          "scipy",
+          "matplotlib",
+          "requests"
+        ],
+        "missing": [
+          "pyyaml",
+          "scikit-learn"
+        ]
+      },
+      "error": null,
+      "timestamp": "2025-10-08T12:29:51.950817"
+    },
+    {
+      "component": "Trading Bot Imports",
+      "status": "PASS",
+      "message": "All 5 critical imports successful",
+      "details": {
+        "imports": [
+          "trading_bot.data.MT5Interface",
+          "trading_bot.strategy.StrategyEngine",
+          "trading_bot.risk.RiskManager",
+          "trading_bot.execution.PaperExecutor",
+          "trading_bot.analytics.PerformanceAnalytics"
+        ]
+      },
+      "error": null,
+      "timestamp": "2025-10-08T12:31:10.945214"
+    },
+    {
+      "component": "MT5 Connection",
+      "status": "FAIL",
+      "message": "MT5 connection error: 'MT5Interface' object has no attribute 'initialize'",
+      "details": {},
+      "error": "'MT5Interface' object has no attribute 'initialize'",
+      "timestamp": "2025-10-08T12:31:10.951473"
+    },
+    {
+      "component": "Market Data",
+      "status": "FAIL",
+      "message": "Market data validation error: 'MT5Interface' object has no attribute 'initialize'",
+      "details": {},
+      "error": "'MT5Interface' object has no attribute 'initialize'",
+      "timestamp": "2025-10-08T12:31:10.955878"
+    },
+    {
+      "component": "API Connectivity",
+      "status": "PASS",
+      "message": "All 3 APIs responding correctly",
+      "details": {
+        "tests": [
+          [
+            "Alpha Vantage",
+            "PASS"
+          ],
+          [
+            "FRED",
+            "PASS"
+          ],
+          [
+            "NewsAPI",
+            "PASS"
+          ]
+        ]
+      },
+      "error": null,
+      "timestamp": "2025-10-08T12:31:17.331254"
+    },
+    {
+      "component": "Technical Indicators",
+      "status": "FAIL",
+      "message": "Indicator validation error: cannot import name 'TechnicalAnalysis' from 'trading_bot.analysis' (C:\\Users\\peterson\\trading bot\\trading_bot\\analysis\\__init__.py)",
+      "details": {},
+      "error": "cannot import name 'TechnicalAnalysis' from 'trading_bot.analysis' (C:\\Users\\peterson\\trading bot\\trading_bot\\analysis\\__init__.py)",
+      "timestamp": "2025-10-08T12:31:17.339566"
+    },
+    {
+      "component": "Signal Generation",
+      "status": "FAIL",
+      "message": "Signal generation error: 'MT5Interface' object has no attribute 'initialize'",
+      "details": {},
+      "error": "'MT5Interface' object has no attribute 'initialize'",
+      "timestamp": "2025-10-08T12:31:17.345630"
+    },
+    {
+      "component": "Risk Management",
+      "status": "FAIL",
+      "message": "Risk management validation error: 'MT5Interface' object has no attribute 'initialize'",
+      "details": {},
+      "error": "'MT5Interface' object has no attribute 'initialize'",
+      "timestamp": "2025-10-08T12:31:17.349878"
+    },
+    {
+      "component": "Execution Engine",
+      "status": "FAIL",
+      "message": "Execution engine validation error: 'MT5Interface' object has no attribute 'initialize'",
+      "details": {},
+      "error": "'MT5Interface' object has no attribute 'initialize'",
+      "timestamp": "2025-10-08T12:31:17.354327"
+    },
+    {
+      "component": "System Resources",
+      "status": "WARNING",
+      "message": "Resource warnings: High memory usage: 93.9%",
+      "details": {
+        "cpu_percent": 77.7,
+        "cpu_count": 4,
+        "memory_percent": 93.9,
+        "memory_available_gb": 0.48,
+        "disk_percent": 76.5,
+        "disk_free_gb": 27.88
+      },
+      "error": null,
+      "timestamp": "2025-10-08T12:31:18.367381"
+    },
+    {
+      "component": "Logging System",
+      "status": "PASS",
+      "message": "Logging system operational (188 log files)",
+      "details": {
+        "log_directory": "logs",
+        "log_file_count": 188,
+        "total_size_mb": 17.53
+      },
+      "error": null,
+      "timestamp": "2025-10-08T12:31:18.454688"
+    }
+  ]
+}

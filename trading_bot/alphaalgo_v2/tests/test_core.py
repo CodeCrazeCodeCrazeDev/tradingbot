@@ -1,0 +1,284 @@
+"""
+Tests for core module
+"""
+
+import pytest
+from datetime import datetime, timedelta
+import uuid
+
+from ..core.types import (
+    Signal, SignalType, Order, OrderType, OrderStatus,
+    Position, Trade, RiskDecision, RiskLevel, MarketData,
+    ExecutionResult, EvolutionProposal, ProposalStatus,
+)
+from ..core.constants import (
+    MAX_RISK_PER_TRADE, MAX_DAILY_LOSS, MAX_DRAWDOWN,
+    TradingMode, SafetyLevel, MarketRegime,
+)
+from ..core.exceptions import (
+    AlphaAlgoError, DataError, ExecutionError, RiskError,
+    RiskLimitExceededError, ValidationError,
+)
+
+import logging
+logger = logging.getLogger(__name__)
+
+
+
+class TestSignal:
+    """Tests for Signal type"""
+    
+    def test_signal_creation(self):
+        """Test signal creation"""
+        try:
+            signal = Signal(
+                id=str(uuid.uuid4()),
+                symbol="EURUSD",
+                signal_type=SignalType.BUY,
+                price=1.0850,
+                confidence=0.75,
+                stop_loss=1.0800,
+                take_profit=1.0950,
+                timeframe="M15",
+                source="test",
+            )
+        
+            assert signal.symbol == "EURUSD"
+            assert signal.signal_type == SignalType.BUY
+            assert signal.confidence == 0.75
+        except Exception as e:
+            logger.error(f"Error in test_signal_creation: {e}")
+            raise
+    
+    def test_signal_risk_reward(self):
+        """Test risk/reward calculation"""
+        try:
+            signal = Signal(
+                id=str(uuid.uuid4()),
+                symbol="EURUSD",
+                signal_type=SignalType.BUY,
+                price=1.0850,
+                confidence=0.75,
+                stop_loss=1.0800,
+                take_profit=1.0950,
+                timeframe="M15",
+                source="test",
+            )
+        
+            rr = signal.risk_reward_ratio
+            assert rr is not None
+            assert rr == 2.0  # 100 pips TP / 50 pips SL
+        except Exception as e:
+            logger.error(f"Error in test_signal_risk_reward: {e}")
+            raise
+    
+    def test_signal_expiry(self):
+        """Test signal expiry"""
+        # Expired signal
+        try:
+            expired_signal = Signal(
+                id=str(uuid.uuid4()),
+                symbol="EURUSD",
+                signal_type=SignalType.BUY,
+                price=1.0850,
+                confidence=0.75,
+                timeframe="M15",
+                source="test",
+                expires_at=datetime.now() - timedelta(minutes=5),
+            )
+        
+            assert expired_signal.is_expired
+        
+            # Valid signal
+            valid_signal = Signal(
+                id=str(uuid.uuid4()),
+                symbol="EURUSD",
+                signal_type=SignalType.BUY,
+                price=1.0850,
+                confidence=0.75,
+                timeframe="M15",
+                source="test",
+                expires_at=datetime.now() + timedelta(minutes=30),
+            )
+        
+            assert not valid_signal.is_expired
+        except Exception as e:
+            logger.error(f"Error in test_signal_expiry: {e}")
+            raise
+
+
+class TestOrder:
+    """Tests for Order type"""
+    
+    def test_order_creation(self):
+        """Test order creation"""
+        try:
+            order = Order(
+                id=str(uuid.uuid4()),
+                symbol="EURUSD",
+                order_type=OrderType.MARKET,
+                side=SignalType.BUY,
+                volume=0.1,
+                price=1.0850,
+            )
+        
+            assert order.symbol == "EURUSD"
+            assert order.order_type == OrderType.MARKET
+            assert order.volume == 0.1
+            assert order.status == OrderStatus.PENDING
+        except Exception as e:
+            logger.error(f"Error in test_order_creation: {e}")
+            raise
+
+
+class TestPosition:
+    """Tests for Position type"""
+    
+    def test_position_creation(self):
+        """Test position creation"""
+        try:
+            position = Position(
+                id=str(uuid.uuid4()),
+                symbol="EURUSD",
+                side=SignalType.BUY,
+                volume=0.1,
+                entry_price=1.0850,
+                current_price=1.0860,
+            )
+        
+            assert position.symbol == "EURUSD"
+            assert position.volume == 0.1
+        except Exception as e:
+            logger.error(f"Error in test_position_creation: {e}")
+            raise
+    
+    def test_position_profit(self):
+        """Test position profit calculation"""
+        try:
+            position = Position(
+                id=str(uuid.uuid4()),
+                symbol="EURUSD",
+                side=SignalType.BUY,
+                volume=1.0,
+                entry_price=1.0850,
+                current_price=1.0860,
+                profit=10.0,
+            )
+        
+            assert position.profit == 10.0
+        except Exception as e:
+            logger.error(f"Error in test_position_profit: {e}")
+            raise
+
+
+class TestRiskDecision:
+    """Tests for RiskDecision type"""
+    
+    def test_risk_decision_allowed(self):
+        """Test allowed risk decision"""
+        try:
+            decision = RiskDecision(
+                allowed=True,
+                reason="Risk within limits",
+                risk_level=RiskLevel.LOW,
+            )
+        
+            assert decision.allowed
+            assert decision.risk_level == RiskLevel.LOW
+        except Exception as e:
+            logger.error(f"Error in test_risk_decision_allowed: {e}")
+            raise
+    
+    def test_risk_decision_rejected(self):
+        """Test rejected risk decision"""
+        try:
+            decision = RiskDecision(
+                allowed=False,
+                reason="Drawdown limit exceeded",
+                risk_level=RiskLevel.CRITICAL,
+            )
+        
+            assert not decision.allowed
+            assert decision.risk_level == RiskLevel.CRITICAL
+        except Exception as e:
+            logger.error(f"Error in test_risk_decision_rejected: {e}")
+            raise
+
+
+class TestConstants:
+    """Tests for constants"""
+    
+    def test_immutable_limits(self):
+        """Test immutable risk limits"""
+        try:
+            assert MAX_RISK_PER_TRADE == 0.02
+            assert MAX_DAILY_LOSS == 0.05
+            assert MAX_DRAWDOWN == 0.20
+        except Exception as e:
+            logger.error(f"Error in test_immutable_limits: {e}")
+            raise
+    
+    def test_trading_modes(self):
+        """Test trading modes"""
+        try:
+            assert TradingMode.LIVE.value == "live"
+            assert TradingMode.PAPER.value == "paper"
+            assert TradingMode.BACKTEST.value == "backtest"
+        except Exception as e:
+            logger.error(f"Error in test_trading_modes: {e}")
+            raise
+    
+    def test_safety_levels(self):
+        """Test safety levels"""
+        try:
+            assert SafetyLevel.GREEN.value == "green"
+            assert SafetyLevel.BLACK.value == "black"
+        except Exception as e:
+            logger.error(f"Error in test_safety_levels: {e}")
+            raise
+
+
+class TestExceptions:
+    """Tests for exceptions"""
+    
+    def test_base_exception(self):
+        """Test base exception"""
+        try:
+            error = AlphaAlgoError("Test error", code="TEST_ERROR")
+        
+            assert str(error) == "[TEST_ERROR] Test error"
+            assert error.code == "TEST_ERROR"
+        except Exception as e:
+            logger.error(f"Error in test_base_exception: {e}")
+            raise
+    
+    def test_data_error(self):
+        """Test data error"""
+        try:
+            error = DataError("Data fetch failed", symbol="EURUSD", source="yahoo")
+        
+            assert error.symbol == "EURUSD"
+            assert error.source == "yahoo"
+        except Exception as e:
+            logger.error(f"Error in test_data_error: {e}")
+            raise
+    
+    def test_risk_error(self):
+        """Test risk error"""
+        try:
+            error = RiskLimitExceededError(
+                "Risk limit exceeded",
+                risk_type="daily_loss",
+                current_value=0.06,
+                limit_value=0.05,
+            )
+        
+            assert error.risk_type == "daily_loss"
+            assert error.current_value == 0.06
+        except Exception as e:
+            logger.error(f"Error in test_risk_error: {e}")
+            raise
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

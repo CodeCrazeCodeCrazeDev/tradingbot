@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\connectivity\api_client.py
+# hypothesis_version: 6.148.3
+
+[100, 1000, '1d', '1mo', '5min', 'TIME_SERIES_DAILY', 'TIME_SERIES_INTRADAY', 'TIME_SERIES_MONTHLY', 'TIME_SERIES_WEEKLY', 'alpha_vantage', 'apikey', 'compact', 'daily', 'depth', 'end_time', 'exchange_info', 'from_currency', 'function', 'headers', 'interval', 'intraday', 'limit', 'market_data', 'monthly', 'outputsize', 'params', 'quote', 'range', 'start_time', 'symbol', 'symbols', 'timeframe', 'to_currency', 'weekly', 'yahoo_finance']

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\signals\signal_provenance.py
+# hypothesis_version: 6.148.3
+
+[0.5, '1.0', 'confidence', 'features', 'metadata', 'models', 'quality_score', 'signal_id', 'sources', 'timestamp', 'version']

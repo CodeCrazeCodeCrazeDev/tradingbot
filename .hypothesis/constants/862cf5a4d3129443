@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\infrastructure\prometheus_exporter.py
+# hypothesis_version: 6.148.3
+
+[0.001, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 1.0, 5.0, 10.0, 10.5, 95.0, -1000, -500, -100, 100, 500, 1000, 8000, 100000, '\nStopped', '2.0.0', 'BUY', 'EURUSD', 'MARKET', 'Risk limit breaches', '__main__', 'alphaalgo', 'breaker_name', 'closed', 'data_source', 'direction', 'environment', 'limit_type', 'model_confidence', 'model_name', 'open_positions', 'order_slippage_pips', 'order_type', 'portfolio_drawdown', 'portfolio_value', 'prediction', 'status', 'strategy', 'symbol', 'system_health_score', 'test', 'tft', 'trade_pnl', 'trades_total', 'trading_system_info', 'version']

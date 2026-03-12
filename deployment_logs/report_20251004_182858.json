@@ -1,0 +1,16 @@
+{
+  "deployment_id": "20251004_182858",
+  "timestamp": "2025-10-04T18:32:00.104096",
+  "stage": "STAGE 1: AUTOMATED TESTING",
+  "success": false,
+  "test_results": {
+    "total_tests": 18,
+    "passed_tests": 0,
+    "pass_rate": 0.0,
+    "unit_tests": false,
+    "integration_tests": false,
+    "regression_tests": false
+  },
+  "validation_results": {},
+  "log_file": "deployment_logs\\deployment_20251004_182858.log"
+}

@@ -1,0 +1,249 @@
+# AlphaAlgo Complete Configuration
+# Integrates all autonomous systems
+
+# ==============================================================================
+# SYSTEM HEALTH & VALIDATION
+# ==============================================================================
+system_health:
+  # Minimum health percentage required for live trading
+  min_health_for_live: 95.0
+  
+  # How often to re-validate the system (hours)
+  revalidation_interval_hours: 1
+  
+  # Log directory for all health-related logs
+  log_dir: "diagnostics/system_health"
+  
+  # Health Monitor Settings
+  health_monitor:
+    max_latency_ms: 100           # Maximum acceptable latency
+    max_cpu_percent: 90           # Maximum CPU usage
+    min_memory_mb: 500            # Minimum available memory
+    min_system_health: 95         # Minimum health for live trading
+  
+  # Auto-Repair Settings
+  auto_repair:
+    max_repair_attempts: 3        # Maximum attempts to fix an issue
+  
+  # Stability Tester Settings
+  stability_tester:
+    test_duration_minutes: 60     # Duration of stability test
+    tick_interval_ms: 100         # Interval between market ticks
+  
+  # Intelligent Learner Settings
+  intelligent_learner:
+    initial_strategy_weights:
+      trend_following: 0.3
+      mean_reversion: 0.2
+      momentum: 0.2
+      breakout: 0.15
+      volatility: 0.15
+
+# ==============================================================================
+# AUTONOMOUS TRADING SYSTEM
+# ==============================================================================
+autonomous:
+  # Autonomous Fixer
+  autonomous_fixer:
+    auto_fix_enabled: true        # Enable automatic issue fixing
+    max_fix_attempts: 3           # Maximum fix attempts per issue
+    safety_check_interval: 60     # Seconds between safety checks
+  
+  # Internet Strategy Improver
+  internet_improver:
+    internet_learning_enabled: true
+    api_keys:
+      openai: ""                  # Add your OpenAI API key (optional)
+      anthropic: ""               # Add your Anthropic API key (optional)
+    search_sources:
+      - trading_forums
+      - research_papers
+      - github_repos
+      - ai_models
+  
+  # Mirror Market Tester
+  mirror_tester:
+    mirror_test_duration_hours: 24
+    min_trades_required: 30
+    performance_threshold: 0.05   # 5% improvement required
+    statistical_significance_required: true
+  
+  # Self-Improvement Engine
+  self_improvement:
+    AUTO_LEARN: true
+    CONF_THRESHOLD: 0.6           # Confidence threshold for escalation
+    AUTO_PROMOTE: false           # Require human approval
+    
+    # Triage settings
+    triage:
+      loss_small_threshold: 0.005    # 0.5% of equity
+      loss_medium_threshold: 0.02    # 2% of equity
+      max_drawdown: 0.20             # 20% max drawdown
+      candles_lookback: 200
+      news_window_minutes: 30
+    
+    # Root cause analysis
+    root_cause:
+      low_confidence_threshold: 0.5
+      high_slippage_threshold: 0.005
+      high_latency_threshold: 1000
+      tight_sl_atr_ratio: 1.5
+      volatility_spike_threshold: 2.0
+    
+    # Fix generation
+    fix_generator:
+      max_lot_size: 1.0              # NEVER increase automatically
+      risk_per_trade: 0.01           # NEVER increase automatically
+      min_stop_loss_pips: 10
+    
+    # Canary validation
+    canary:
+      canary_duration_minutes: 60
+      canary_min_trades: 100
+      canary_instruments: ["EURUSD", "GBPUSD"]
+      max_win_rate_degradation: 0.10
+      max_drawdown_increase: 0.05
+      min_trade_count: 30
+      max_slippage_increase: 0.002
+    
+    # Audit logging
+    audit:
+      log_dir: "diagnostics/self_improve"
+      changes_log: "diagnostics/changes-log.txt"
+    
+    # Continuous learning
+    learning:
+      model_dir: "models/self_improvement"
+      retrain_threshold: 500
+      validation_split: 0.2
+
+# ==============================================================================
+# TRADING PARAMETERS
+# ==============================================================================
+trading:
+  # Symbols to trade
+  symbols:
+    - EURUSD
+    - GBPUSD
+    - USDJPY
+  
+  # Risk management
+  risk:
+    max_risk_per_trade: 0.01      # 1% per trade
+    max_daily_loss: 0.05          # 5% daily loss limit
+    max_drawdown: 0.20            # 20% max drawdown
+    max_lot_size: 1.0
+  
+  # Position sizing
+  position_sizing:
+    method: "kelly"               # kelly, fixed, risk_parity
+    kelly_fraction: 0.25          # Conservative Kelly
+  
+  # Stop loss / Take profit
+  stops:
+    use_atr_stops: true
+    atr_multiplier: 1.5
+    min_stop_pips: 10
+    risk_reward_ratio: 2.0
+
+# ==============================================================================
+# NETWORK MONITORING & STABILITY
+# ==============================================================================
+network:
+  # Enable network monitoring
+  enabled: true
+  
+  # Primary endpoints (replace with your actual broker API)
+  primary_endpoints:
+    - "https://api.oanda.com/v3/accounts"
+    - "8.8.8.8"
+    - "1.1.1.1"
+  
+  # Fallback endpoints
+  fallback_endpoints:
+    - "https://www.google.com"
+    - "8.8.4.4"
+  
+  # Thresholds
+  latency_warning_ms: 150
+  latency_critical_ms: 300
+  packet_loss_threshold: 10
+  timeout_seconds: 5
+  
+  # Recovery settings
+  stable_latency_ms: 100
+  stable_duration_seconds: 60
+  max_offline_minutes: 15
+  
+  # Retry settings
+  retry_delays: [1, 2, 4, 8, 16]
+  
+  # Monitoring interval
+  check_interval_seconds: 10
+  
+  # Paths
+  log_dir: "logs"
+  state_dir: "state"
+  
+  # Safe Mode settings
+  safe_mode:
+    allow_new_trades: false
+    allow_modify_positions: true
+    allow_close_positions: true
+  
+  # Auto-recovery
+  auto_recovery_enabled: true
+
+# ==============================================================================
+# MONITORING & ALERTS
+# ==============================================================================
+monitoring:
+  # Enable/disable monitoring
+  enabled: true
+  
+  # Alert settings
+  alerts:
+    email: "peterkiragu68@outlook.com"
+    notify_on_critical: true
+    notify_on_mode_change: true
+    notify_on_large_loss: true
+    notify_on_network_issues: true
+    large_loss_threshold: 0.02    # 2% of equity
+  
+  # Performance tracking
+  performance:
+    track_every_trade: true
+    generate_daily_report: true
+    generate_weekly_report: true
+
+# ==============================================================================
+# LOGGING
+# ==============================================================================
+logging:
+  level: "INFO"                   # DEBUG, INFO, WARNING, ERROR
+  log_to_file: true
+  log_to_console: true
+  log_directory: "logs"
+  max_log_size_mb: 100
+  backup_count: 10
+
+# ==============================================================================
+# SAFETY RULES (NEVER VIOLATE)
+# ==============================================================================
+safety:
+  # Never trade if system health below this
+  min_health_for_trading: 95.0
+  
+  # Prohibited automatic actions
+  prohibited_actions:
+    - increase_max_lot_size
+    - increase_risk_per_trade
+    - remove_stop_loss
+    - disable_risk_management
+    - bypass_validation
+  
+  # Emergency shutdown triggers
+  emergency_shutdown:
+    max_consecutive_losses: 10
+    max_daily_drawdown: 0.10      # 10%
+    system_health_critical: 70.0  # Below 70% health

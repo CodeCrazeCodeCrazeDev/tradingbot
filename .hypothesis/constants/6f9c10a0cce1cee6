@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\learning\strategy_optimizer.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.005, 0.015, 0.3, 0.33, 0.34, 0.4, 0.5, 0.7, 40.0, 60.0, 100.0, '=', 'best_hours', 'best_symbols', 'confidence', 'crossover_required', 'knowledge', 'last_updated', 'macd_threshold', 'macd_weight', 'optimal_buy', 'optimal_sell', 'parameters', 'performance_score', 'r', 'rsi_buy', 'rsi_buy_threshold', 'rsi_sell', 'rsi_sell_threshold', 'rsi_weight', 'sma_required', 'sma_weight', 'stop_loss', 'stop_loss_pct', 'take_profit_pct', 'trade_history', 'update_count', 'w', 'worst_hours', 'worst_symbols']

@@ -1,0 +1,148 @@
+# Dashboard Configuration
+
+# Server settings
+server:
+  host: "0.0.0.0"
+  port: 8000
+  debug: false
+  reload: true
+
+# Redis connection
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+  decode_responses: true
+
+# UI settings
+ui:
+  refresh_intervals:
+    system_status: 5000  # 5 seconds
+    positions: 1000      # 1 second
+    performance: 60000   # 1 minute
+    alerts: 10000        # 10 seconds
+    market_data: 1000    # 1 second
+
+  charts:
+    performance:
+      default_timeframe: "1D"  # 1 day
+      available_timeframes: ["1H", "4H", "1D", "1W", "1M"]
+      max_data_points: 100
+      colors:
+        profit: "#28a745"
+        loss: "#dc3545"
+        line: "#17a2b8"
+
+  tables:
+    positions:
+      page_size: 10
+      sortable: true
+      searchable: true
+      columns:
+        - name: "Symbol"
+          sortable: true
+        - name: "Direction"
+          sortable: true
+        - name: "Size"
+          sortable: true
+        - name: "Entry"
+          sortable: true
+        - name: "Current"
+          sortable: true
+        - name: "P/L"
+          sortable: true
+        - name: "Actions"
+          sortable: false
+
+    market_data:
+      page_size: 10
+      sortable: true
+      searchable: true
+      columns:
+        - name: "Symbol"
+          sortable: true
+        - name: "Bid"
+          sortable: true
+        - name: "Ask"
+          sortable: true
+        - name: "Last"
+          sortable: true
+        - name: "Volume"
+          sortable: true
+
+# Trading modes
+trading_modes:
+  - name: "Aggressive"
+    id: "aggressive"
+    description: "Maximum return potential with higher risk"
+    risk_level: "High"
+    
+  - name: "Balanced"
+    id: "balanced"
+    description: "Optimal risk-reward ratio"
+    risk_level: "Medium"
+    
+  - name: "Conservative"
+    id: "conservative"
+    description: "Capital preservation focus"
+    risk_level: "Low"
+    
+  - name: "Ultra Conservative"
+    id: "ultra_conservative"
+    description: "Maximum protection during high volatility"
+    risk_level: "Very Low"
+
+# Alert settings
+alerts:
+  max_display: 100
+  levels:
+    - name: "CRITICAL"
+      color: "#dc3545"
+      icon: "exclamation-triangle"
+      
+    - name: "WARNING"
+      color: "#ffc107"
+      icon: "exclamation-circle"
+      
+    - name: "INFO"
+      color: "#17a2b8"
+      icon: "info-circle"
+
+# Health monitoring
+health:
+  components:
+    - name: "MT5 Connection"
+      id: "MT5_CONNECTION"
+      critical: true
+      
+    - name: "Data Pipeline"
+      id: "DATA_PIPELINE"
+      critical: true
+      
+    - name: "Strategy Engine"
+      id: "STRATEGY_ENGINE"
+      critical: true
+      
+    - name: "Risk Manager"
+      id: "RISK_MANAGER"
+      critical: true
+      
+    - name: "Order Executor"
+      id: "ORDER_EXECUTOR"
+      critical: true
+
+  thresholds:
+    cpu_usage: 80.0      # 80% CPU usage warning
+    memory_usage: 85.0   # 85% memory usage warning
+    latency: 1000.0      # 1000ms latency warning
+    error_rate: 0.05     # 5% error rate warning
+
+# Feature flags
+features:
+  quantum_integration: true
+  blockchain_validation: true
+  multi_symbol_trading: true
+  adaptive_exits: true
+  market_intelligence: true
+  self_healing: true
+  personalized_learning: true

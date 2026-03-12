@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\connectivity\web_scraper.py
+# hypothesis_version: 6.148.3
+
+[0.0, 86400, '(\\d{4}-\\d{2}-\\d{2})', '(\\w+ \\d{1,2}, \\d{4})', '*', ',', '.author', '.byline', '/', '/index.html', 'User-Agent', 'a', 'a[rel="author"]', 'article', 'article_count', 'author', 'commodities', 'compound', 'content', 'crypto', 'disallow:', 'disallowed', 'div#content', 'div.article-body', 'div.article-content', 'div.content', 'div.entry-content', 'div.post-content', 'div.story-body', 'div.story-content', 'error', 'footer', 'forex', 'header', 'href', 'html.parser', 'http://', 'https://', 'https://decrypt.co', 'keywords', 'latest_articles', 'main', 'meta', 'meta[name="author"]', 'name', 'nav', 'neg', 'negative', 'neu', 'neutral', 'pos', 'positive', 'publish_date', 'scraped_at', 'script', 'sentiment', 'stocks', 'style', 'timestamp', 'title', 'url', 'user-agent:', 'vader_lexicon']

@@ -1,0 +1,40 @@
+{
+  "timestamp": "2025-10-08T17:16:02+03:00",
+  "os": "windows",
+  "repo_root": "c:/Users/peterson/trading bot",
+  "startup_scripts": [
+    "RUN_COMPLETE_VALIDATION.bat",
+    "run_full_validation.py",
+    "operational_mode.py",
+    "run_bot.py",
+    "run_multi_symbol.py",
+    "start_trading_bot.bat",
+    "START_OPERATIONAL_BOT.bat",
+    "start_monitored_bot.ps1"
+  ],
+  "dependency_manifests": [
+    "requirements.txt",
+    "requirements-extras.txt",
+    "setup.py",
+    "Dockerfile",
+    "Dockerfile.production",
+    "docker-compose.yml",
+    "docker-compose.production.yml"
+  ],
+  "config_files": [
+    "config/config.yaml",
+    "config/complete_config.yaml",
+    "config/testing_config.yaml",
+    "config/elite_mt5_config.yaml",
+    "config/elite_config.yaml",
+    "config/dashboard_config.yaml",
+    "config/adaptive_config.yaml",
+    "config/survival_config.yaml",
+    "config/survival_config_production.yaml",
+    "config/self_improvement_config.yaml"
+  ],
+  "supervisor_configs": [
+    "system_supervisor.py",
+    "monitor_bot.ps1"
+  ]
+}

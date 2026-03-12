@@ -1,0 +1,2 @@
+{"id": "latency_critical_20251201_120035", "metric": "latency", "level": "critical", "message": "High latency: 2000.0ms", "timestamp": "2025-12-01 12:00:35.501593", "acknowledged": false}
+{"id": "latency_critical_20251201_120035", "metric": "latency", "level": "critical", "message": "High latency: 2000.0ms", "timestamp": "2025-12-01 12:00:35.512316", "acknowledged": false}

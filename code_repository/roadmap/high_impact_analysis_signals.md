@@ -1,0 +1,102 @@
+# High-Impact: Analysis, Signals & Strategy Gating (100)
+
+- [HI-ANA-001] Signal TTL and confidence decay over time — Impacted: `AnalysisOrchestrator`
+- [HI-ANA-002] Multi-timeframe consensus with quorum thresholds — Impacted: signals
+- [HI-ANA-003] Feature store versioning & hashes in metadata — Impacted: analysis pipeline
+- [HI-ANA-004] Data leakage guards in feature computation — Impacted: feature engineering
+- [HI-ANA-005] Regime detection gating (trend/mean-revert) — Impacted: orchestrator
+- [HI-ANA-006] Adaptive thresholds by volatility regime — Impacted: signal filters
+- [HI-ANA-007] Outlier-robust features (winsorize/MAD) — Impacted: features
+- [HI-ANA-008] Rolling validation of signal quality (PSR) — Impacted: monitoring
+- [HI-ANA-009] Signal provenance & lineage logging — Impacted: logging
+- [HI-ANA-010] Warm-up sample requirements per indicator — Impacted: validators
+- [HI-ANA-011] NaN/inf handling with imputation rules — Impacted: preprocessing
+- [HI-ANA-012] Cross-signal conflict resolver with tie-breakers — Impacted: orchestrator
+- [HI-ANA-013] News/Events-aware gating (embargo periods) — Impacted: gating
+- [HI-ANA-014] Spread/liquidity-aware signal suppression — Impacted: filters
+- [HI-ANA-015] Sharpe/Sortino-based adaptive weighting — Impacted: combiner
+- [HI-ANA-016] Multiple hypothesis control (FDR) — Impacted: research->prod
+- [HI-ANA-017] Drift detection on feature distributions — Impacted: monitoring
+- [HI-ANA-018] Concept drift adaptation with decay — Impacted: weighting
+- [HI-ANA-019] Confidence intervals & calibration (Platt/Isotonic) — Impacted: predictor
+- [HI-ANA-020] Error bars on predicted PnL/edge — Impacted: risk gates
+- [HI-ANA-021] Backtest-live feature parity tests — Impacted: CI
+- [HI-ANA-022] Deterministic replay of signal pipeline — Impacted: testing
+- [HI-ANA-023] Label leakage guardrails in training — Impacted: ML
+- [HI-ANA-024] Cross-validation by market regimes — Impacted: ML
+- [HI-ANA-025] Rolling retrain scheduler with safety checks — Impacted: ML ops
+- [HI-ANA-026] Model registry with version pinning — Impacted: ML ops
+- [HI-ANA-027] Shadow-model evaluation in prod — Impacted: ML ops
+- [HI-ANA-028] Canary deploy for new signal modules — Impacted: orchestrator
+- [HI-ANA-029] Feature importance drift monitoring — Impacted: ML explainability
+- [HI-ANA-030] Robust statistics for microstructure noise — Impacted: features
+- [HI-ANA-031] Liquidity/impact-aware expected value — Impacted: signal EV
+- [HI-ANA-032] Opportunity rarity weighting — Impacted: combiner
+- [HI-ANA-033] Latency budget accounting in pipeline — Impacted: analysis
+- [HI-ANA-034] Async cancellation & timeout guards — Impacted: analysis loops
+- [HI-ANA-035] PnL attribution by signal family — Impacted: reporting
+- [HI-ANA-036] Event-based signals with TTL (news) — Impacted: gating
+- [HI-ANA-037] Confidence floors per regime — Impacted: filters
+- [HI-ANA-038] Minimum liquidity checks before emit — Impacted: emit rules
+- [HI-ANA-039] Position overlap prevention across signals — Impacted: orchestrator
+- [HI-ANA-040] Hedged pair logic for correlation trades — Impacted: signal->execution
+- [HI-ANA-041] Risk-parity scaling across signals — Impacted: combiner
+- [HI-ANA-042] Dynamic risk budget per signal health — Impacted: allocator
+- [HI-ANA-043] Signal cooldown after large losses — Impacted: gating
+- [HI-ANA-044] Adaptive stop/TP suggestions with ATR — Impacted: metadata
+- [HI-ANA-045] Micro-batch feature updates to reduce jitter — Impacted: pipeline
+- [HI-ANA-046] Cache invalidation rules for features — Impacted: pipeline
+- [HI-ANA-047] E2E latency metrics per symbol/signal — Impacted: monitoring
+- [HI-ANA-048] Signal suppression during maintenance — Impacted: scheduler
+- [HI-ANA-049] Confidence by trade direction symmetry — Impacted: predictor
+- [HI-ANA-050] Cointegration tests stability (rolling) — Impacted: stat arb
+- [HI-ANA-051] Regime-specific hyperparameters — Impacted: config
+- [HI-ANA-052] Online learning safety bounds — Impacted: ML
+- [HI-ANA-053] Stop-recommendation sanity ranges — Impacted: metadata
+- [HI-ANA-054] Feature lag alignment verification — Impacted: pipeline
+- [HI-ANA-055] Ensemble model variance reduction — Impacted: predictor
+- [HI-ANA-056] Signal deduplication across sources — Impacted: orchestrator
+- [HI-ANA-057] Confidence smoothing (EMA) — Impacted: filters
+- [HI-ANA-058] Min sample sizes for statistical claims — Impacted: validators
+- [HI-ANA-059] Stability checks under missing bars — Impacted: robustness
+- [HI-ANA-060] Non-stationarity detection triggers — Impacted: monitoring
+- [HI-ANA-061] Rolling beta exposures by signal — Impacted: analytics
+- [HI-ANA-062] Risk-adjusted decision thresholds — Impacted: gates
+- [HI-ANA-063] Slippage-aware expected return — Impacted: signal EV
+- [HI-ANA-064] Feature scaling consistency — Impacted: preprocessing
+- [HI-ANA-065] SNR-based signal gating — Impacted: filters
+- [HI-ANA-066] Meta-labeling pipeline and eval — Impacted: ML
+- [HI-ANA-067] Trade duration modeling inputs — Impacted: exits
+- [HI-ANA-068] Class imbalance handling — Impacted: ML
+- [HI-ANA-069] Cross-validation leakage audit — Impacted: ML
+- [HI-ANA-070] Missing data policy per source — Impacted: ingest
+- [HI-ANA-071] Drift alarms route to risk gates — Impacted: monitoring
+- [HI-ANA-072] Nonlinear feature expansions capped — Impacted: features
+- [HI-ANA-073] Time-of-day effects modeling — Impacted: features
+- [HI-ANA-074] Event windows (pre/post) params — Impacted: gating
+- [HI-ANA-075] Correlation clustering for ensemble diversity — Impacted: ensemble
+- [HI-ANA-076] Stop/TP as features (structure aware) — Impacted: features
+- [HI-ANA-077] Labeling policy audit trail — Impacted: ML
+- [HI-ANA-078] Out-of-sample guard (temporal splits) — Impacted: ML
+- [HI-ANA-079] Confidence-to-size mapping sanity — Impacted: execution bridge
+- [HI-ANA-080] Rebalancing cadence throttles — Impacted: orchestrator
+- [HI-ANA-081] Signal persistence safeguards — Impacted: filters
+- [HI-ANA-082] Macro calendar features (NFP/FOMC) — Impacted: features
+- [HI-ANA-083] Multi-asset spillover features — Impacted: features
+- [HI-ANA-084] Dynamic symbol allowlist by health — Impacted: gating
+- [HI-ANA-085] Risk-of-ruin aware thresholds — Impacted: gates
+- [HI-ANA-086] Feature drift auto-triage — Impacted: monitoring
+- [HI-ANA-087] Online calibration recalcs — Impacted: ML
+- [HI-ANA-088] Bounded predictions (clipping) — Impacted: predictor
+- [HI-ANA-089] Explainability embeds in order metadata — Impacted: `_process_signal()`
+- [HI-ANA-090] Confidence reconciliation across MTFs — Impacted: combiner
+- [HI-ANA-091] Turnover constraints per signal — Impacted: gates
+- [HI-ANA-092] Stop distance guard vs volatility — Impacted: filters
+- [HI-ANA-093] Max concurrent signals per symbol — Impacted: orchestrator
+- [HI-ANA-094] Feature QA tests in CI (schema, ranges) — Impacted: CI
+- [HI-ANA-095] Recompute protection (idempotency) — Impacted: pipeline
+- [HI-ANA-096] Fallback heuristics if model down — Impacted: gates
+- [HI-ANA-097] Signal archive & replay corpus — Impacted: research
+- [HI-ANA-098] Auto-disable sick signals — Impacted: orchestrator
+- [HI-ANA-099] Strategy stoplist if underperforming — Impacted: gating
+- [HI-ANA-100] Parity tests: backtest vs live decision logs — Impacted: CI

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\indicators\__init__.py
+# hypothesis_version: 6.148.3
+
+['2.0.0', 'AdaptiveEnsemble', 'AdvancedMLIndicators', 'CVDMultiTimeframe', 'CopulaModel', 'ExplainableAI', 'FRAMA', 'HiddenMarkovModel', 'HiddenMarkovRegime', 'HurstExponent', 'IcebergDetector', 'IcebergOrder', 'KAMA', 'KalmanFilter', 'MLSignal', 'MetaLearner', 'OrderBookImbalance', 'RegimeAwareRL', 'SuperTrend', 'TTMSqueeze', 'TickImbalanceBar', 'TransformerPredictor', 'VolumeDeltaHeatmap', 'ZScoreReversionModel']

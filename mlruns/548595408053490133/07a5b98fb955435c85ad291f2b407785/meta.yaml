@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/peterson/trading%20bot/mlruns/548595408053490133/07a5b98fb955435c85ad291f2b407785/artifacts
+end_time: 1764434441633
+entry_point_name: ''
+experiment_id: '548595408053490133'
+lifecycle_stage: active
+run_id: 07a5b98fb955435c85ad291f2b407785
+run_name: dapper-sheep-432
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1764434441471
+status: 3
+tags: []
+user_id: peterson

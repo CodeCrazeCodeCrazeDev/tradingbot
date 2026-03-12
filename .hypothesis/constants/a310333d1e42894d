@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\connectivity\cache_manager.py
+# hypothesis_version: 6.148.3
+
+[100, 250, 1000, 1024, 3600, '_', 'access_count', 'cache_index.json', 'created_at', 'disk_cache', 'disk_hits', 'disk_usage_bytes', 'disk_usage_mb', 'expired', 'expired_count', 'expires_at', 'hit_rate', 'hits', 'key', 'last_accessed', 'max_size', 'max_size_mb', 'memory_cache', 'memory_hits', 'metadata', 'misses', 'r', 'rb', 'size', 'utilization', 'w', 'wb']

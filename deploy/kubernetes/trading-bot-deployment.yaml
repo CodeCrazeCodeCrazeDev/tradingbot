@@ -1,0 +1,379 @@
+# ============================================================================
+# Trading Bot - Kubernetes Deployment
+# ============================================================================
+# Production-ready Kubernetes manifests
+
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: trading-bot
+  labels:
+    app: trading-bot
+    environment: production
+
+---
+# ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trading-bot-config
+  namespace: trading-bot
+data:
+  TRADING_BOT_MODE: "paper"
+  TRADING_BOT_LOG_LEVEL: "INFO"
+  TRADING_BOT_DB_TYPE: "postgresql"
+  TRADING_BOT_DB_HOST: "postgres-service"
+  TRADING_BOT_DB_PORT: "5432"
+  TRADING_BOT_DB_NAME: "trading_bot"
+  REDIS_URL: "redis://redis-service:6379/0"
+  DASHBOARD_PORT: "8080"
+  WS_PORT: "8081"
+  METRICS_PORT: "9090"
+
+---
+# Secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: trading-bot-secrets
+  namespace: trading-bot
+type: Opaque
+stringData:
+  TRADING_BOT_DB_USER: "tradingbot"
+  TRADING_BOT_DB_PASSWORD: "changeme-in-production"
+  TELEGRAM_TOKEN: ""
+  TELEGRAM_CHAT_ID: ""
+  API_KEY: ""
+
+---
+# Trading Bot Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trading-bot
+  namespace: trading-bot
+  labels:
+    app: trading-bot
+    component: main
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: trading-bot
+      component: main
+  template:
+    metadata:
+      labels:
+        app: trading-bot
+        component: main
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: trading-bot-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: trading-bot
+          image: trading-bot:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: websocket
+              containerPort: 8081
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: trading-bot-config
+            - secretRef:
+                name: trading-bot-secrets
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+            - name: logs
+              mountPath: /app/logs
+            - name: models
+              mountPath: /app/models
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: trading-bot-data-pvc
+        - name: logs
+          persistentVolumeClaim:
+            claimName: trading-bot-logs-pvc
+        - name: models
+          persistentVolumeClaim:
+            claimName: trading-bot-models-pvc
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: trading-bot
+                topologyKey: kubernetes.io/hostname
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: trading-bot-service
+  namespace: trading-bot
+  labels:
+    app: trading-bot
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+    - name: websocket
+      port: 8081
+      targetPort: 8081
+      protocol: TCP
+    - name: metrics
+      port: 9090
+      targetPort: 9090
+      protocol: TCP
+  selector:
+    app: trading-bot
+    component: main
+
+---
+# Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: trading-bot-ingress
+  namespace: trading-bot
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+    - hosts:
+        - trading.example.com
+      secretName: trading-bot-tls
+  rules:
+    - host: trading.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: trading-bot-service
+                port:
+                  number: 8080
+          - path: /ws
+            pathType: Prefix
+            backend:
+              service:
+                name: trading-bot-service
+                port:
+                  number: 8081
+
+---
+# ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: trading-bot-sa
+  namespace: trading-bot
+
+---
+# PersistentVolumeClaim - Data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: trading-bot-data-pvc
+  namespace: trading-bot
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+
+---
+# PersistentVolumeClaim - Logs
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: trading-bot-logs-pvc
+  namespace: trading-bot
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard
+
+---
+# PersistentVolumeClaim - Models
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: trading-bot-models-pvc
+  namespace: trading-bot
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard
+
+---
+# HorizontalPodAutoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: trading-bot-hpa
+  namespace: trading-bot
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: trading-bot
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+
+---
+# PodDisruptionBudget
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: trading-bot-pdb
+  namespace: trading-bot
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: trading-bot
+      component: main
+
+---
+# NetworkPolicy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: trading-bot-network-policy
+  namespace: trading-bot
+spec:
+  podSelector:
+    matchLabels:
+      app: trading-bot
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8081
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9090
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to: []  # Allow external traffic (for API calls)
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80

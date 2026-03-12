@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\indicators\advanced_liquidity.py
+# hypothesis_version: 6.148.3
+
+[-0.2, 0.0, 0.0001, 0.2, 0.5, 0.8, 1.0, 1.2, 2.0, 100, 102, 500, 1000, 10000, '15T', '1H', '1min', '2024-01-01', '4H', '5T', 'BEARISH', 'BULLISH', 'NEUTRAL', 'RESISTANCE', 'SUPPORT', '__main__', 'absorption_ratio', 'absorption_signal', 'ask_volume', 'bid_volume', 'buy', 'buy_volume', 'close', 'cvd_alignment', 'cvd_values', 'end_time', 'ffill', 'first', 'high', 'high_activity_zones', 'icebergs_detected', 'imbalance', 'imbalance_ratio', 'last', 'latest_iceberg', 'low', 'max', 'min', 'open', 'price', 'sell', 'sell_volume', 'sentiment', 'side', 'start_time', 'sum', 'tick_count', 'volume', 'weighted_imbalance']

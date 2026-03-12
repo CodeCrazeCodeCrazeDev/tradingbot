@@ -1,0 +1,365 @@
+# AlphaAlgo Adaptive Systems Configuration
+# Self-improving trading systems that learn and evolve
+
+# Global Adaptive Settings
+adaptive:
+  enabled: true
+  adaptation_speed: medium  # Options: slow, medium, fast
+  learning_mode: online  # Options: online, batch, hybrid
+  
+# Market Regime Detection
+market_regime:
+  enabled: true
+  
+  # Regime types to detect
+  regimes:
+    - trending_bull
+    - trending_bear
+    - ranging_high_vol
+    - ranging_low_vol
+    - breakout
+    - reversal
+    - crisis
+  
+  # Detection methods
+  detection_methods:
+    - volatility_clustering
+    - trend_strength
+    - volume_profile
+    - correlation_structure
+    - hidden_markov_model
+  
+  # Parameters
+  lookback_period: 100
+  regime_change_threshold: 0.7
+  min_regime_duration: 10  # bars
+  
+  # Adaptation
+  adapt_strategies_to_regime: true
+  regime_specific_parameters: true
+
+# Adaptive Risk Manager
+adaptive_risk:
+  enabled: true
+  
+  # Risk adjustment
+  dynamic_position_sizing: true
+  volatility_scaling: true
+  drawdown_scaling: true
+  
+  # Adjustment parameters
+  risk_multiplier_range: [0.5, 2.0]  # 50% to 200% of base risk
+  adjustment_speed: 0.1  # 10% adjustment per period
+  
+  # Conditions
+  increase_risk_conditions:
+    - winning_streak >= 3
+    - sharpe_ratio > 1.5
+    - drawdown < 0.05
+  
+  decrease_risk_conditions:
+    - losing_streak >= 2
+    - sharpe_ratio < 0.5
+    - drawdown > 0.10
+
+# Strategy Selector
+strategy_selector:
+  enabled: true
+  
+  # Available strategies
+  strategies:
+    - trend_following
+    - mean_reversion
+    - momentum
+    - breakout
+    - volatility
+    - arbitrage
+    - news_trading
+  
+  # Selection method
+  selection_method: performance_based  # Options: performance_based, regime_based, ensemble
+  
+  # Performance tracking
+  performance_window: 50  # trades
+  min_sample_size: 20  # minimum trades before evaluation
+  
+  # Dynamic weighting
+  dynamic_weights: true
+  weight_adjustment_frequency: daily
+  
+  # Ensemble settings
+  ensemble:
+    min_strategies: 2
+    max_strategies: 5
+    diversity_bonus: 0.1
+
+# Parameter Optimizer
+parameter_optimizer:
+  enabled: true
+  
+  # Optimization method
+  method: bayesian  # Options: grid_search, random_search, bayesian, genetic
+  
+  # Parameters to optimize
+  optimize_parameters:
+    - entry_threshold
+    - exit_threshold
+    - stop_loss_distance
+    - take_profit_distance
+    - position_size
+    - holding_period
+  
+  # Optimization settings
+  optimization_frequency: weekly
+  optimization_window: 1000  # bars
+  validation_window: 200  # bars
+  
+  # Constraints
+  parameter_bounds:
+    entry_threshold: [0.5, 0.9]
+    exit_threshold: [0.3, 0.7]
+    stop_loss_distance: [0.01, 0.05]
+    take_profit_distance: [0.02, 0.10]
+  
+  # Safety
+  max_parameter_change: 0.2  # 20% max change per optimization
+  require_validation: true
+
+# Self-Improvement Engine
+self_improvement:
+  enabled: true
+  
+  # Learning types
+  learning_types:
+    - supervised  # Learn from labeled outcomes
+    - reinforcement  # Learn from rewards
+    - unsupervised  # Discover patterns
+    - meta_learning  # Learn how to learn
+  
+  # Improvement areas
+  improvement_targets:
+    - signal_quality
+    - entry_timing
+    - exit_timing
+    - position_sizing
+    - risk_management
+  
+  # Learning rate
+  learning_rate: 0.01
+  exploration_rate: 0.1  # 10% exploration vs exploitation
+  
+  # Experience replay
+  experience_buffer_size: 10000
+  batch_size: 32
+  replay_frequency: daily
+
+# Adaptive Learning Engine
+adaptive_learning:
+  enabled: true
+  
+  # Model types
+  models:
+    - neural_network
+    - gradient_boosting
+    - random_forest
+    - support_vector_machine
+  
+  # Online learning
+  online_updates: true
+  update_frequency: hourly
+  
+  # Concept drift detection
+  drift_detection: true
+  drift_threshold: 0.05
+  retrain_on_drift: true
+  
+  # Feature engineering
+  auto_feature_engineering: true
+  feature_selection: true
+  max_features: 50
+
+# Performance Feedback System
+feedback_system:
+  enabled: true
+  
+  # Feedback types
+  feedback_types:
+    - trade_outcome  # Win/loss
+    - profit_loss  # Actual P/L
+    - risk_adjusted  # Sharpe, Sortino
+    - timing  # Entry/exit quality
+    - opportunity_cost  # Missed opportunities
+  
+  # Feedback processing
+  feedback_delay: 0  # Immediate feedback
+  aggregate_feedback: true
+  weighted_feedback: true  # Recent feedback weighted more
+  
+  # Learning from feedback
+  adjust_confidence: true
+  adjust_thresholds: true
+  adjust_strategies: true
+
+# Meta Learning Engine
+meta_learning:
+  enabled: true
+  
+  # Meta-learning approach
+  approach: model_agnostic  # Options: model_agnostic, metric_learning, memory_based
+  
+  # Fast adaptation
+  few_shot_learning: true
+  adaptation_steps: 5
+  
+  # Transfer learning
+  transfer_learning: true
+  source_tasks: [EURUSD, GBPUSD, USDJPY]
+  target_tasks: [AUDUSD, NZDUSD]
+
+# System Health Monitor
+system_health:
+  enabled: true
+  
+  # Health checks
+  check_frequency: 60  # seconds
+  
+  # Monitored metrics
+  metrics:
+    - cpu_usage
+    - memory_usage
+    - latency
+    - error_rate
+    - trade_frequency
+    - signal_quality
+    - risk_exposure
+  
+  # Thresholds
+  thresholds:
+    cpu_usage_critical: 90
+    memory_usage_critical: 90
+    latency_critical: 1000  # ms
+    error_rate_critical: 0.05  # 5%
+  
+  # Failsafe actions
+  failsafe_actions:
+    high_cpu: reduce_computation
+    high_memory: clear_cache
+    high_latency: simplify_models
+    high_error_rate: pause_trading
+  
+  # Auto-recovery
+  auto_recovery: true
+  recovery_attempts: 3
+
+# Ensemble Learning
+ensemble_learning:
+  enabled: true
+  
+  # Ensemble method
+  method: stacking  # Options: voting, averaging, stacking, boosting
+  
+  # Base models
+  base_models:
+    - gradient_boosting
+    - random_forest
+    - neural_network
+    - support_vector_machine
+  
+  # Meta-learner
+  meta_learner: logistic_regression
+  
+  # Diversity
+  encourage_diversity: true
+  diversity_weight: 0.2
+
+# Advanced Pattern Recognition
+pattern_recognition:
+  enabled: true
+  
+  # Pattern types
+  patterns:
+    - candlestick_patterns
+    - chart_patterns
+    - harmonic_patterns
+    - elliott_wave
+    - market_profile
+  
+  # Recognition method
+  method: deep_learning  # Options: rule_based, machine_learning, deep_learning
+  
+  # Confidence thresholds
+  min_pattern_confidence: 0.7
+  require_confirmation: true
+
+# Real-time Sentiment
+sentiment_analysis:
+  enabled: true
+  
+  # Sentiment sources
+  sources:
+    - news_headlines
+    - social_media
+    - analyst_reports
+    - market_commentary
+  
+  # Analysis method
+  method: transformer  # Options: lexicon, machine_learning, transformer
+  
+  # Sentiment integration
+  sentiment_weight: 0.15
+  sentiment_threshold: 0.6
+
+# Market Microstructure
+market_microstructure:
+  enabled: true
+  
+  # Analysis components
+  components:
+    - order_book_imbalance
+    - trade_flow_toxicity
+    - price_impact
+    - liquidity_provision
+  
+  # High-frequency signals
+  hf_signals: true
+  signal_decay: 300  # seconds
+
+# Logging and Monitoring
+logging:
+  level: INFO
+  log_adaptations: true
+  log_learning_progress: true
+  log_path: logs/adaptive_systems/
+  
+  # Performance logging
+  log_regime_changes: true
+  log_parameter_updates: true
+  log_model_updates: true
+
+# Safety Controls
+safety:
+  # Adaptation limits
+  max_adaptation_rate: 0.1  # 10% max change per period
+  require_validation: true
+  validation_threshold: 0.05  # 5% improvement required
+  
+  # Rollback
+  auto_rollback_on_failure: true
+  keep_previous_versions: 5
+  
+  # Human oversight
+  require_approval_for_major_changes: false
+  alert_on_significant_adaptation: true
+
+# Feature Flags
+features:
+  enable_market_regime_detection: true
+  enable_adaptive_risk: true
+  enable_strategy_selector: true
+  enable_parameter_optimizer: true
+  enable_self_improvement: true
+  enable_adaptive_learning: true
+  enable_feedback_system: true
+  enable_meta_learning: true
+  enable_system_health_monitor: true
+  enable_ensemble_learning: true

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\safety\resource_watchdog.py
+# hypothesis_version: 6.148.3
+
+[0.0, 80.0, 85.0, 'Alert administrator', 'Clear caches', 'Pause all trading', 'Pause new entries', 'Resources OK', 'psutil not available']

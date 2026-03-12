@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\execution\paper_executor.py
+# hypothesis_version: 6.148.3
+
+[0.0001, 0.98, 0.99, 1.0, 1.01, 1.02, 'No closed trades yet', 'buy', 'lot', 'message', 'sell', 'stop loss', 'take profit', 'trades']

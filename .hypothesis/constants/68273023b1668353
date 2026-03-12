@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\self_improvement\triage.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.005, 0.02, 0.2, 0.5, 1.0, 200, 1000, 'anomalies', 'atr', 'candles_after', 'candles_before', 'candles_lookback', 'cpu_usage', 'critical', 'entry_price', 'entry_time', 'errors_in_logs', 'execution_latency_ms', 'exit_price', 'exit_time', 'fees', 'full', 'indicator_values', 'indicators_used', 'large', 'latency_ms', 'loss_category', 'loss_small_threshold', 'market_regime', 'market_snapshot', 'max_drawdown', 'medium', 'memory_usage', 'model_confidence', 'multi_tf_agreement', 'news_events', 'news_window_minutes', 'order_fill_type', 'pnl', 'pnl_pct', 'regime', 'side', 'signal_confidence', 'signal_context', 'signal_drift', 'size', 'sl', 'slippage', 'small', 'spread', 'symbol', 'system_metrics', 'ticket_id', 'timeframe', 'timestamp', 'tp', 'trade_data', 'trade_id', 'unknown', 'volatility_spike', 'volume_avg']

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\adaptive_systems\market_regime.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.0001, 0.01, 0.015, 0.02, 0.03, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 0.9, 0.98, 1.0, 1.02, 1.5, 2.0, 3.0, 50.0, -500, -100, 100, 1000, 'atr', 'average_confidence', 'bb_width', 'breakout', 'breakout_threshold', 'close', 'confidence', 'crisis', 'crisis_threshold', 'current_regime', 'high', 'high_volatility', 'lookback_period', 'low', 'low_volatility', 'macd_hist', 'price_position', 'ranging', 'ranging_threshold', 'regime_distribution', 'regime_duration', 'reversal', 'rsi', 'sideways', 'sma_ratio', 'strength', 'trend_slope', 'trend_strength', 'trend_window', 'trending_bear', 'trending_bull', 'volatility', 'volatility_high', 'volatility_low', 'volatility_window', 'volume', 'volume_ratio']

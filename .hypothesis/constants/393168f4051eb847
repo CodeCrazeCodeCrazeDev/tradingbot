@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\infrastructure\auto_scaling.py
+# hypothesis_version: 6.148.3
+
+[0.02, 0.2, 0.3, 0.5, 0.7, 0.8, 1.0, 1.5, 2.0, 10.0, 100.0, 300, 1000, 1024, 'No scaling needed', 'action', 'cooldown_period', 'cpu', 'cpu_usage', 'current', 'current_workers', 'disk_io', 'down', 'gpu', 'gpu_memory', 'gpu_usage', 'high', 'history', 'is_scaling', 'last_scale', 'last_update', 'low', 'max', 'max_workers', 'mean', 'medium', 'memory', 'memory_usage', 'metrics', 'min_workers', 'network_io', 'none', 'pressure', 'reason', 'scale_down_threshold', 'scale_up_threshold', 'scaling_params', 'thresholds', 'timestamp', 'trades_per_second', 'up', 'volatility', 'volume', 'worker_step', 'workers']

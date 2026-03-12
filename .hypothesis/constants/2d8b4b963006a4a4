@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\advanced_features\digital_twin.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.0001, 0.001, 0.01, 0.1, 0.3, 0.5, 0.6, 0.7, 1.0, 1000.0, 10000.0, 252, 100000, '-inf', 'DEFAULT', 'SPY', 'action', 'ask', 'balance', 'balance_after', 'best_regime', 'bid', 'buy', 'close', 'commission', 'detailed_results', 'drawdown', 'equity', 'error', 'high', 'high_volatility', 'impact', 'inf', 'linear', 'liquidity_score', 'low', 'low_volatility', 'max', 'max_drawdown', 'mean', 'min', 'open', 'overall_performance', 'pnl', 'price', 'profit_factor', 'rankings', 'regime_analysis', 'regime_performance', 'return', 'sell', 'sharpe', 'sharpe_ratio', 'simulation', 'size', 'slippage', 'spread', 'sqrt', 'std', 'summary', 'symbol', 'timestamp', 'total_return', 'trades', 'trending', 'unknown', 'volatility', 'volume', 'win_rate', 'worst_regime']

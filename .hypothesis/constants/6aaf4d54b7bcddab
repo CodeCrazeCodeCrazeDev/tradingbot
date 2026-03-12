@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\adaptive_systems\parameter_optimizer.py
+# hypothesis_version: 6.148.3
+
+[-0.5, 1e-09, 1e-06, 0.005, 0.05, 0.1, 0.5, 0.6, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.5, 2.5, 3.5, 4.0, -200, 100, 'L-BFGS-B', 'active', 'average_improvement', 'bb_period', 'bb_std', 'continuous', 'current_parameters', 'discrete', 'duration_minutes', 'entry_confidence', 'exit_confidence', 'inf', 'last_optimization', 'ma_fast', 'ma_slow', 'max_drawdown', 'max_positions', 'min_samples', 'no_optimizations', 'parameters', 'performance_samples', 'pnl', 'regime', 'risk_per_trade', 'rsi_overbought', 'rsi_oversold', 'rsi_period', 'sentiment_weight', 'status', 'stop_loss_atr', 'take_profit_rr', 'timestamp', 'total_optimizations', 'trailing_stop_atr']

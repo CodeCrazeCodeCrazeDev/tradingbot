@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite Trading System Visualization</title>
+    
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card {
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background-color: #2c2c2c;
+            border-bottom: 1px solid #333;
+        }
+        .navbar {
+            background-color: #1e1e1e !important;
+            border-bottom: 1px solid #333;
+        }
+        .btn-primary {
+            background-color: #2196F3;
+            border-color: #2196F3;
+        }
+        .btn-primary:hover {
+            background-color: #0d8bf2;
+            border-color: #0d8bf2;
+        }
+        .dropdown-menu {
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+        }
+        .dropdown-item {
+            color: #e0e0e0;
+        }
+        .dropdown-item:hover {
+            background-color: #2c2c2c;
+            color: #ffffff;
+        }
+        .badge {
+            font-size: 85%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Elite Trading System</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">Dashboard</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="symbolDropdown" role="button" data-bs-toggle="dropdown">
+                            Symbols
+                        </a>
+                        <ul class="dropdown-menu" id="symbolMenu">
+                            <li><a class="dropdown-item" href="#" data-symbol="EURUSD">EUR/USD</a></li>
+                            <li><a class="dropdown-item" href="#" data-symbol="GBPUSD">GBP/USD</a></li>
+                            <li><a class="dropdown-item" href="#" data-symbol="BTCUSD">BTC/USD</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="timeframeDropdown" role="button" data-bs-toggle="dropdown">
+                            Timeframe
+                        </a>
+                        <ul class="dropdown-menu" id="timeframeMenu">
+                            <li><a class="dropdown-item" href="#" data-timeframe="1H">1 Hour</a></li>
+                            <li><a class="dropdown-item" href="#" data-timeframe="4H">4 Hours</a></li>
+                            <li><a class="dropdown-item" href="#" data-timeframe="1D">Daily</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <span class="navbar-text">
+                    <span class="badge bg-success">Quantum Enabled</span>
+                    <span class="badge bg-info">Blockchain Validated</span>
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col">
+                <h2 id="symbolTitle">EUR/USD Analysis</h2>
+                <p class="text-muted">Advanced market analysis with quantum computing and blockchain validation</p>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-4">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Market Chart</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" id="toggleIndicators">Toggle Indicators</button>
+                            <button class="btn btn-sm btn-outline-info" id="toggleLiquidity">Toggle Liquidity</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="marketChart" style="height: 500px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <!-- Signal Card -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">Trading Signal</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h3 id="signalDirection" class="mb-0">BUY</h3>
+                            <span id="signalBadge" class="badge bg-success">Strong</span>
+                        </div>
+                        <div class="progress mb-3" style="height: 10px;">
+                            <div id="signalStrength" class="progress-bar bg-success" role="progressbar" style="width: 75%"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <p class="mb-1">Confidence:</p>
+                                <h5 id="signalConfidence">85%</h5>
+                            </div>
+                            <div class="col-6">
+                                <p class="mb-1">Risk/Reward:</p>
+                                <h5 id="signalRiskReward">1:2.5</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Market Context Card -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">Market Context</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <p class="mb-1">Phase:</p>
+                                <h5 id="marketPhase">Accumulation</h5>
+                            </div>
+                            <div class="col-6">
+                                <p class="mb-1">Regime:</p>
+                                <h5 id="marketRegime">Trending Bull</h5>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <p class="mb-1">Volatility:</p>
+                                <h5 id="marketVolatility">1.2%</h5>
+                            </div>
+                            <div class="col-6">
+                                <p class="mb-1">Trend Strength:</p>
+                                <h5 id="trendStrength">0.78</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Row -->
+        <div class="row">
+            <!-- Liquidity Analysis -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Liquidity Analysis</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="liquidityChart" style="height: 200px;"></div>
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Accumulation Strength:</span>
+                                <span id="accumulationStrength">0.65</span>
+                            </div>
+                            <div class="progress mb-3" style="height: 8px;">
+                                <div class="progress-bar bg-info" role="progressbar" style="width: 65%"></div>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Distribution Strength:</span>
+                                <span id="distributionStrength">0.35</span>
+                            </div>
+                            <div class="progress mb-3" style="height: 8px;">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: 35%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quantum Analysis -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Quantum Analysis</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="quantumChart" style="height: 200px;"></div>
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Quantum Advantage:</span>
+                                <span id="quantumAdvantage">1.8x</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Optimal Position:</span>
+                                <span id="optimalPosition">2.5%</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Expected Return:</span>
+                                <span id="expectedReturn">1.2%</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Blockchain Validation:</span>
+                                <span id="blockchainValidation">✓ Confirmed (0.82)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Analysis -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Risk Analysis</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="riskChart" style="height: 200px;"></div>
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Position Size:</span>
+                                <span id="positionSize">2.0%</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Stop Loss:</span>
+                                <span id="stopLoss">1.1025</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Take Profit:</span>
+                                <span id="takeProfit">1.1150</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Risk Level:</span>
+                                <span id="riskLevel">Medium</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script>
+        // Current state
+        let currentSymbol = 'EURUSD';
+        let currentTimeframe = '1H';
+        let showIndicators = true;
+        let showLiquidity = true;
+
+        // Generate random data based on symbol
+        function generateData(symbol, periods = 100) {
+            const data = {
+                time: [],
+                open: [],
+                high: [],
+                low: [],
+                close: [],
+                volume: []
+            };
+            
+            // Set base price based on symbol
+            let basePrice = 100;
+            if (symbol === 'EURUSD') basePrice = 1.1;
+            else if (symbol === 'GBPUSD') basePrice = 1.3;
+            else if (symbol === 'BTCUSD') basePrice = 50000;
+            
+            // Generate seed from symbol
+            const seed = symbol.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            
+            // Simple pseudo-random number generator with seed
+            function seededRandom() {
+                const x = Math.sin(seed + data.time.length) * 10000;
+                return x - Math.floor(x);
+            }
+            
+            // Generate time series data
+            const now = new Date();
+            let price = basePrice;
+            
+            for (let i = periods - 1; i >= 0; i--) {
+                const date = new Date(now);
+                date.setHours(now.getHours() - i);
+                data.time.push(date);
+                
+                const change = (seededRandom() - 0.5) * 0.01 * basePrice;
+                const open = price;
+                price += change;
+                const close = price;
+                
+                const highAdd = Math.abs(seededRandom() * 0.005 * basePrice);
+                const lowSub = Math.abs(seededRandom() * 0.005 * basePrice);
+                
+                const high = Math.max(open, close) + highAdd;
+                const low = Math.min(open, close) - lowSub;
+                
+                data.open.push(open);
+                data.high.push(high);
+                data.low.push(low);
+                data.close.push(close);
+                data.volume.push(Math.floor(seededRandom() * 9000) + 1000);
+            }
+            
+            return data;
+        }
+
+        // Create market chart
+        function createMarketChart(symbol) {
+            const data = generateData(symbol);
+            
+            // Candlestick trace
+            const candlestick = {
+                x: data.time,
+                open: data.open,
+                high: data.high,
+                low: data.low,
+                close: data.close,
+                type: 'candlestick',
+                name: symbol,
+                increasing: {line: {color: '#26a69a'}},
+                decreasing: {line: {color: '#ef5350'}}
+            };
+            
+            // Volume trace
+            const volume = {
+                x: data.time,
+                y: data.volume,
+                type: 'bar',
+                name: 'Volume',
+                marker: {
+                    color: data.close.map((close, i) => 
+                        close >= data.open[i] ? 'rgba(38, 166, 154, 0.3)' : 'rgba(239, 83, 80, 0.3)')
+                },
+                yaxis: 'y2'
+            };
+            
+            // Moving averages
+            const ma20 = {
+                x: data.time,
+                y: calculateMA(data.close, 20),
+                type: 'scatter',
+                mode: 'lines',
+                line: {color: 'rgba(255, 255, 0, 0.7)', width: 1},
+                name: 'MA20',
+                visible: showIndicators
+            };
+            
+            const ma50 = {
+                x: data.time,
+                y: calculateMA(data.close, 50),
+                type: 'scatter',
+                mode: 'lines',
+                line: {color: 'rgba(0, 255, 255, 0.7)', width: 1},
+                name: 'MA50',
+                visible: showIndicators
+            };
+            
+            // Liquidity zones
+            const liquidityZones = generateLiquidityZones(data);
+            const liquidityShapes = liquidityZones.map(zone => ({
+                type: 'rect',
+                x0: zone.start,
+                x1: zone.end,
+                y0: zone.low,
+                y1: zone.high,
+                fillcolor: zone.type === 'buy' ? 'rgba(38, 166, 154, 0.2)' : 'rgba(239, 83, 80, 0.2)',
+                line: {width: 0},
+                layer: 'below',
+                visible: showLiquidity
+            }));
+            
+            // Signal
+            const lastPrice = data.close[data.close.length - 1];
+            const signalType = ma20.y[ma20.y.length - 1] > ma50.y[ma50.y.length - 1] ? 'BUY' : 'SELL';
+            const signalColor = signalType === 'BUY' ? '#26a69a' : '#ef5350';
+            
+            const signal = {
+                x: [data.time[data.time.length - 1]],
+                y: [lastPrice],
+                type: 'scatter',
+                mode: 'markers+text',
+                marker: {
+                    symbol: 'diamond',
+                    size: 12,
+                    color: signalColor
+                },
+                text: [signalType],
+                textposition: 'top center',
+                name: 'Signal'
+            };
+            
+            // Layout
+            const layout = {
+                title: `${formatSymbol(symbol)} Analysis`,
+                paper_bgcolor: '#121212',
+                plot_bgcolor: '#121212',
+                font: {color: '#e0e0e0'},
+                xaxis: {
+                    rangeslider: {visible: false},
+                    gridcolor: '#333333'
+                },
+                yaxis: {
+                    title: 'Price',
+                    gridcolor: '#333333',
+                    side: 'right'
+                },
+                yaxis2: {
+                    title: 'Volume',
+                    overlaying: 'y',
+                    side: 'left',
+                    showgrid: false,
+                    domain: [0, 0.2]
+                },
+                shapes: liquidityShapes,
+                legend: {
+                    orientation: 'h',
+                    y: 1.1
+                },
+                margin: {t: 30, b: 30, l: 50, r: 50},
+                height: 500
+            };
+            
+            Plotly.newPlot('marketChart', [candlestick, volume, ma20, ma50, signal], layout);
+            
+            // Update signal display
+            updateSignalDisplay(data, ma20.y, ma50.y);
+            
+            // Update market context
+            updateMarketContext(data);
+            
+            // Update liquidity chart
+            updateLiquidityChart(data);
+            
+            // Update quantum chart
+            updateQuantumChart(data);
+            
+            // Update risk chart
+            updateRiskChart(data);
+        }
+
+        // Calculate moving average
+        function calculateMA(data, period) {
+            const result = [];
+            for (let i = 0; i < data.length; i++) {
+                if (i < period - 1) {
+                    result.push(null);
+                } else {
+                    let sum = 0;
+                    for (let j = 0; j < period; j++) {
+                        sum += data[i - j];
+                    }
+                    result.push(sum / period);
+                }
+            }
+            return result;
+        }
+
+        // Generate liquidity zones
+        function generateLiquidityZones(data) {
+            const zones = [];
+            const numZones = 5;
+            
+            for (let i = 0; i < numZones; i++) {
+                const startIdx = Math.floor(Math.random() * (data.time.length - 20));
+                const endIdx = startIdx + Math.floor(Math.random() * 10) + 5;
+                
+                const type = Math.random() > 0.5 ? 'buy' : 'sell';
+                const priceLevel = type === 'buy' ? 
+                    Math.max(...data.high.slice(startIdx, endIdx)) :
+                    Math.min(...data.low.slice(startIdx, endIdx));
+                
+                const zoneHeight = Math.random() * 0.01 * (type === 'buy' ? 
+                    Math.max(...data.high) : Math.max(...data.low));
+                
+                zones.push({
+                    start: data.time[startIdx],
+                    end: data.time[endIdx],
+                    low: type === 'buy' ? priceLevel : priceLevel - zoneHeight,
+                    high: type === 'buy' ? priceLevel + zoneHeight : priceLevel,
+                    type: type
+                });
+            }
+            
+            return zones;
+        }
+
+        // Update signal display
+        function updateSignalDisplay(data, ma20, ma50) {
+            const lastPrice = data.close[data.close.length - 1];
+            const signalType = ma20[ma20.length - 1] > ma50[ma50.length - 1] ? 'BUY' : 'SELL';
+            const signalColor = signalType === 'BUY' ? '#26a69a' : '#ef5350';
+            const signalStrength = Math.abs(ma20[ma20.length - 1] - ma50[ma50.length - 1]) / lastPrice * 1000;
+            const normalizedStrength = Math.min(100, Math.max(0, signalStrength * 100));
+            
+            document.getElementById('signalDirection').textContent = signalType;
+            document.getElementById('signalDirection').style.color = signalColor;
+            
+            document.getElementById('signalStrength').style.width = `${normalizedStrength}%`;
+            document.getElementById('signalStrength').className = `progress-bar ${signalType === 'BUY' ? 'bg-success' : 'bg-danger'}`;
+            
+            document.getElementById('signalBadge').textContent = normalizedStrength > 70 ? 'Strong' : 
+                normalizedStrength > 40 ? 'Moderate' : 'Weak';
+            document.getElementById('signalBadge').className = `badge ${normalizedStrength > 70 ? 'bg-success' : 
+                normalizedStrength > 40 ? 'bg-warning' : 'bg-danger'}`;
+            
+            document.getElementById('signalConfidence').textContent = `${Math.round(normalizedStrength * 0.9)}%`;
+            
+            // Calculate risk/reward based on recent volatility
+            const atr = calculateATR(data);
+            const stopDistance = atr * 1.5;
+            const targetDistance = atr * 3;
+            const riskReward = (targetDistance / stopDistance).toFixed(1);
+            document.getElementById('signalRiskReward').textContent = `1:${riskReward}`;
+            
+            // Update stop loss and take profit
+            const stopLoss = signalType === 'BUY' ? 
+                (lastPrice - stopDistance).toFixed(4) : 
+                (lastPrice + stopDistance).toFixed(4);
+            const takeProfit = signalType === 'BUY' ? 
+                (lastPrice + targetDistance).toFixed(4) : 
+                (lastPrice - targetDistance).toFixed(4);
+            
+            document.getElementById('stopLoss').textContent = stopLoss;
+            document.getElementById('takeProfit').textContent = takeProfit;
+        }
+
+        // Calculate ATR (Average True Range)
+        function calculateATR(data, period = 14) {
+            const trueRanges = [];
+            
+            for (let i = 1; i < data.close.length; i++) {
+                const high = data.high[i];
+                const low = data.low[i];
+                const prevClose = data.close[i-1];
+                
+                const tr1 = high - low;
+                const tr2 = Math.abs(high - prevClose);
+                const tr3 = Math.abs(low - prevClose);
+                
+                trueRanges.push(Math.max(tr1, tr2, tr3));
+            }
+            
+            // Calculate simple moving average of true ranges
+            let sum = 0;
+            for (let i = 0; i < period && i < trueRanges.length; i++) {
+                sum += trueRanges[trueRanges.length - 1 - i];
+            }
+            
+            return sum / Math.min(period, trueRanges.length);
+        }
+
+        // Update market context
+        function updateMarketContext(data) {
+            // Determine market phase based on moving averages
+            const ma20 = calculateMA(data.close, 20);
+            const ma50 = calculateMA(data.close, 50);
+            const ma200 = calculateMA(data.close, 200);
+            
+            const lastMA20 = ma20[ma20.length - 1];
+            const lastMA50 = ma50[ma50.length - 1];
+            const lastMA200 = ma200[ma200.length - 1] || lastMA50; // Fallback if not enough data
+            
+            let phase = 'Unknown';
+            if (lastMA20 > lastMA50 && lastMA50 > lastMA200) {
+                phase = 'Accumulation';
+            } else if (lastMA20 < lastMA50 && lastMA50 < lastMA200) {
+                phase = 'Distribution';
+            } else if (lastMA20 > lastMA50 && lastMA50 < lastMA200) {
+                phase = 'Markup';
+            } else if (lastMA20 < lastMA50 && lastMA50 > lastMA200) {
+                phase = 'Markdown';
+            }
+            
+            document.getElementById('marketPhase').textContent = phase;
+            
+            // Determine market regime
+            const atr = calculateATR(data);
+            const volatility = atr / data.close[data.close.length - 1] * 100;
+            const trend = lastMA20 > lastMA50 ? 'Bull' : 'Bear';
+            const volatilityThreshold = 1.0; // 1% threshold
+            
+            let regime = 'Unknown';
+            if (volatility > volatilityThreshold) {
+                regime = `Volatile ${trend}`;
+            } else {
+                regime = `Trending ${trend}`;
+            }
+            
+            document.getElementById('marketRegime').textContent = regime;
+            document.getElementById('marketVolatility').textContent = `${volatility.toFixed(2)}%`;
+            
+            // Calculate trend strength
+            const trendStrength = Math.min(1, Math.abs(lastMA20 - lastMA50) / lastMA50 * 20);
+            document.getElementById('trendStrength').textContent = trendStrength.toFixed(2);
+        }
+
+        // Update liquidity chart
+        function updateLiquidityChart(data) {
+            // Generate key price levels
+            const levels = [];
+            const numLevels = 5;
+            
+            // Find local highs and lows
+            for (let i = 10; i < data.close.length - 10; i++) {
+                const window = data.high.slice(i-5, i+5);
+                if (data.high[i] === Math.max(...window)) {
+                    levels.push({
+                        price: data.high[i],
+                        type: 'resistance'
+                    });
+                }
+                
+                const windowLow = data.low.slice(i-5, i+5);
+                if (data.low[i] === Math.min(...windowLow)) {
+                    levels.push({
+                        price: data.low[i],
+                        type: 'support'
+                    });
+                }
+            }
+            
+            // Sort and take top levels
+            levels.sort((a, b) => a.price - b.price);
+            const filteredLevels = [];
+            let lastPrice = 0;
+            
+            for (const level of levels) {
+                if (Math.abs(level.price - lastPrice) / lastPrice > 0.005) {
+                    filteredLevels.push(level);
+                    lastPrice = level.price;
+                }
+                
+                if (filteredLevels.length >= numLevels) break;
+            }
+            
+            // Create horizontal lines for key levels
+            const traces = filteredLevels.map(level => ({
+                x: [data.time[0], data.time[data.time.length - 1]],
+                y: [level.price, level.price],
+                mode: 'lines',
+                line: {
+                    color: level.type === 'resistance' ? 'rgba(239, 83, 80, 0.7)' : 'rgba(38, 166, 154, 0.7)',
+                    width: 1,
+                    dash: 'dash'
+                },
+                name: level.type === 'resistance' ? 'Resistance' : 'Support'
+            }));
+            
+            // Add current price
+            traces.push({
+                x: [data.time[0], data.time[data.time.length - 1]],
+                y: [data.close[data.close.length - 1], data.close[data.close.length - 1]],
+                mode: 'lines',
+                line: {
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    width: 2
+                },
+                name: 'Current Price'
+            });
+            
+            const layout = {
+                paper_bgcolor: '#1e1e1e',
+                plot_bgcolor: '#1e1e1e',
+                font: {color: '#e0e0e0'},
+                xaxis: {
+                    showticklabels: false,
+                    showgrid: false
+                },
+                yaxis: {
+                    title: 'Price',
+                    gridcolor: '#333333',
+                    side: 'right'
+                },
+                showlegend: false,
+                margin: {t: 0, b: 0, l: 0, r: 40},
+                height: 200
+            };
+            
+            Plotly.newPlot('liquidityChart', traces, layout);
+            
+            // Update strength indicators
+            const accStrength = Math.random() * 0.5 + 0.3;
+            const distStrength = Math.random() * 0.5 + 0.2;
+            
+            document.getElementById('accumulationStrength').textContent = accStrength.toFixed(2);
+            document.querySelector('.progress-bar.bg-info').style.width = `${accStrength * 100}%`;
+            
+            document.getElementById('distributionStrength').textContent = distStrength.toFixed(2);
+            document.querySelector('.progress-bar.bg-warning').style.width = `${distStrength * 100}%`;
+        }
+
+        // Update quantum chart
+        function updateQuantumChart(data) {
+            // Generate quantum portfolio optimization data
+            const assets = ['Current', 'Optimized'];
+            const returns = [1.0, 1.2];
+            const risks = [1.0, 0.8];
+            
+            const trace = {
+                x: risks,
+                y: returns,
+                mode: 'markers+text',
+                type: 'scatter',
+                text: assets,
+                textposition: 'top',
+                marker: {
+                    size: 12,
+                    color: ['rgba(255, 255, 255, 0.7)', 'rgba(33, 150, 243, 0.7)']
+                },
+                name: 'Portfolio'
+            };
+            
+            // Add efficient frontier
+            const efficientFrontier = {
+                x: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2],
+                y: [0.7, 0.85, 0.95, 1.05, 1.12, 1.18, 1.22, 1.25],
+                mode: 'lines',
+                line: {
+                    color: 'rgba(255, 193, 7, 0.5)',
+                    width: 2,
+                    dash: 'dash'
+                },
+                name: 'Efficient Frontier'
+            };
+            
+            const layout = {
+                paper_bgcolor: '#1e1e1e',
+                plot_bgcolor: '#1e1e1e',
+                font: {color: '#e0e0e0'},
+                xaxis: {
+                    title: 'Risk',
+                    gridcolor: '#333333'
+                },
+                yaxis: {
+                    title: 'Return',
+                    gridcolor: '#333333'
+                },
+                showlegend: false,
+                margin: {t: 0, b: 40, l: 40, r: 10},
+                height: 200
+            };
+            
+            Plotly.newPlot('quantumChart', [trace, efficientFrontier], layout);
+            
+            // Update quantum metrics
+            const advantage = (1 + Math.random()).toFixed(1);
+            const position = (Math.random() * 3 + 1).toFixed(1);
+            const expectedReturn = (Math.random() * 1.5 + 0.5).toFixed(1);
+            const validation = Math.random() > 0.2 ? 
+                `✓ Confirmed (${(Math.random() * 0.3 + 0.7).toFixed(2)})` : 
+                `✗ Rejected (${(Math.random() * 0.3 + 0.3).toFixed(2)})`;
+            
+            document.getElementById('quantumAdvantage').textContent = `${advantage}x`;
+            document.getElementById('optimalPosition').textContent = `${position}%`;
+            document.getElementById('expectedReturn').textContent = `${expectedReturn}%`;
+            document.getElementById('blockchainValidation').textContent = validation;
+        }
+
+        // Update risk chart
+        function updateRiskChart(data) {
+            // Generate risk radar chart
+            const riskMetrics = [
+                'VaR', 'CVaR', 'Correlation', 'Black Swan', 'VaR'
+            ];
+            
+            const riskValues = [
+                0.8, 0.6, 0.4, 0.3, 0.8
+            ];
+            
+            const trace = {
+                type: 'scatterpolar',
+                r: riskValues,
+                theta: riskMetrics,
+                fill: 'toself',
+                fillcolor: 'rgba(33, 150, 243, 0.2)',
+                line: {
+                    color: 'rgba(33, 150, 243, 0.7)'
+                }
+            };
+            
+            const layout = {
+                paper_bgcolor: '#1e1e1e',
+                plot_bgcolor: '#1e1e1e',
+                font: {color: '#e0e0e0'},
+                polar: {
+                    radialaxis: {
+                        visible: true,
+                        range: [0, 1]
+                    }
+                },
+                showlegend: false,
+                margin: {t: 0, b: 0, l: 20, r: 20},
+                height: 200
+            };
+            
+            Plotly.newPlot('riskChart', [trace], layout);
+            
+            // Update risk metrics
+            const posSize = (Math.random() * 3 + 1).toFixed(1);
+            document.getElementById('positionSize').textContent = `${posSize}%`;
+            
+            // Risk level based on various factors
+            const riskLevels = ['Low', 'Medium', 'High'];
+            const riskIndex = Math.floor(Math.random() * 3);
+            document.getElementById('riskLevel').textContent = riskLevels[riskIndex];
+        }
+
+        // Format symbol for display
+        function formatSymbol(symbol) {
+            if (symbol === 'EURUSD') return 'EUR/USD';
+            if (symbol === 'GBPUSD') return 'GBP/USD';
+            if (symbol === 'BTCUSD') return 'BTC/USD';
+            return symbol;
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // Create initial chart
+            createMarketChart(currentSymbol);
+            
+            // Set up symbol menu clicks
+            document.querySelectorAll('#symbolMenu .dropdown-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    currentSymbol = this.getAttribute('data-symbol');
+                    document.getElementById('symbolTitle').textContent = `${formatSymbol(currentSymbol)} Analysis`;
+                    createMarketChart(currentSymbol);
+                });
+            });
+            
+            // Set up timeframe menu clicks
+            document.querySelectorAll('#timeframeMenu .dropdown-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    currentTimeframe = this.getAttribute('data-timeframe');
+                    createMarketChart(currentSymbol);
+                });
+            });
+            
+            // Toggle indicators
+            document.getElementById('toggleIndicators').addEventListener('click', function() {
+                showIndicators = !showIndicators;
+                createMarketChart(currentSymbol);
+            });
+            
+            // Toggle liquidity
+            document.getElementById('toggleLiquidity').addEventListener('click', function() {
+                showLiquidity = !showLiquidity;
+                createMarketChart(currentSymbol);
+            });
+        });
+    </script>
+</body>
+</html>

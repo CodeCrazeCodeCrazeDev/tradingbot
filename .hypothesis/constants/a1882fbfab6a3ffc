@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\database\data_streaming.py
+# hypothesis_version: 6.148.3
+
+[1000, 3600, 5555, 10000, ':', 'active_streams', 'bar', 'bars', 'bound_addr', 'buffer_sizes', 'data', 'enable_redis_cache', 'indicator', 'indicators', 'last_update', 'max_workers', 'messages_per_second', 'messages_processed', 'processing_times', 'redis_ttl', 'redis_url', 'signals', 'stream_id', 'tcp://127.0.0.1:*', 'tick', 'ticks', 'use_zmq', 'zmq_base_port']

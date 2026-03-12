@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\safety\auto_pause.py
+# hypothesis_version: 6.148.3
+
+[120, ' (ready to resume)', '=', 'Forced resume', 'PAUSE_TRADING.txt', 'Trading active', 'consecutive_losses', 'drift_detected', 'high_cpu', 'high_latency', 'high_memory', 'manual', 'none', '▶️  AUTO-RESUME']

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\signals\complete_signal_system.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.05, 0.1, 0.4, 0.5, 0.6, 0.7, 1.0, 1.5, 100, 200, 1000, 'CompleteSignal', 'CompleteSignalSystem', 'EnsembleVoting', 'FeatureDriftDetector', 'WalkForwardValidator', 'avg_performance', 'confidence', 'direction', 'mean', 'medium', 'position_multiplier', 'results', 'signal_id', 'std', 'strength_bucket', 'strong', 'symbol', 'trending', 'validated', 'volatile', 'weak']

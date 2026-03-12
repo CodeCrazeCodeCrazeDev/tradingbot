@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\performance\algorithm_optimizer.py
+# hypothesis_version: 6.148.3
+
+[1e-10, 1.0, 100, 1000, ':', 'R', 'T', 'avg_time', 'backtest', 'count', 'custom', 'float64', 'inf', 'market_analysis', 'max_time', 'min_time', 'np.', 'numpy', 'pattern_detection', 'risk_calculation', 'signal_generation', 'total_time', 'unhashable']

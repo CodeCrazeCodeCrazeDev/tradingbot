@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\ml\explainable_ai.py
+# hypothesis_version: 6.148.3
+
+[0.02, 0.05, 0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.5, '=', 'N/A', 'buy', 'category', 'confidence_levels', 'decision', 'description', 'drawdown', 'feature', 'feature_importance', 'high', 'hold', 'importance', 'input_data', 'low', 'market', 'market_conditions', 'market_data', 'market_regime', 'market_stress', 'max_drawdown', 'medium', 'mixed signals', 'model_name', 'model_output', 'name', 'performance', 'prediction', 'price', 'risk_assessment', 'risk_level', 'risk_metrics', 'sell', 'symbol', 'technical', 'technical_signals', 'trade_decision', 'trend', 'value', 'very_high', 'volatility', 'volume', 'volume_ratio']

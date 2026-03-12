@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\dashboard\visualization.py
+# hypothesis_version: 6.148.3
+
+['OHLC', 'RdBu', 'area', 'bar', 'box', 'candlestick', 'close', 'heatmap', 'high', 'histogram', 'line', 'lines', 'low', 'markers', 'open', 'pie', 'plotly', 'plotly_dark', 'plotly_white', 'presentation', 'radar', 'rgba(0, 0, 0, 0)', 'sankey', 'scatter', 'simple_white', 'sunburst', 'time', 'treemap', 'values', 'violin', 'waterfall', 'x', 'x_labels', 'y', 'y_labels']

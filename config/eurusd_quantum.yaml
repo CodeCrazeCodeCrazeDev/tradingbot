@@ -1,0 +1,41 @@
+# EURUSD Quantum Trading configuration with full feature set
+symbol: EURUSD
+timeframe: D1  # Using daily timeframe for quantum analysis
+bars: 2000
+mode: paper
+
+# ML features
+use_ml: true
+use_transformer: true
+use_rl: true
+market_regime: true
+sentiment_analysis: true
+order_flow: true
+
+# Execution
+execution_algo: smart
+
+# Watchlist for comprehensive analysis
+watchlist:
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+  - USDCHF
+  - AUDUSD
+  - NZDUSD
+  - USDCAD
+  - EUR
+  - USD
+  - GBP
+  - JPY
+  - CHF
+  - AUD
+  - NZD
+  - CAD
+
+# Advanced features
+track_emotions: true
+quantum_blockchain: true  # Enable quantum features
+adaptive_mode: true
+self_improve: true
+internet_access: false

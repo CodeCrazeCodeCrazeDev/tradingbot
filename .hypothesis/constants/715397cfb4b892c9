@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\system_supervisor\__init__.py
+# hypothesis_version: 6.148.3
+
+['AutoRepairSystem', 'ConnectionHealth', 'ConnectionMetrics', 'DataIntegrity', 'DataValidator', 'FailoverManager', 'FailureType', 'ModuleHealth', 'ModuleMonitor', 'ModuleStatus', 'PerformanceMetrics', 'RepairAction', 'SecurityEvent', 'SecurityStatus', 'SecuritySupervisor', 'SystemHealth', 'SystemStatus', 'SystemSupervisor', 'TradingMode', 'UpdateStatus', 'ValidationResult']

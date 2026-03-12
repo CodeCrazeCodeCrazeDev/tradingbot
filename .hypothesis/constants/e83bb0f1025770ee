@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\ai_core\drift_detection\__init__.py
+# hypothesis_version: 6.148.3
+
+[0.002, 0.9999, 1000, 'ADWINDetector', 'ConceptDriftMonitor', 'PageHinkleyDetector', 'adwin', 'adwin_drift', 'adwin_drifts', 'drift_detected', 'drift_history', 'error', 'page_hinkley', 'page_hinkley_drift', 'ph_drifts', 'timestamp', 'total_drifts']

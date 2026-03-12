@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\signals\multi_timeframe_consensus.py
+# hypothesis_version: 6.148.3
+
+[0.1, 0.15, 0.2, 0.25, 0.6, '15m', '1d', '1h', '1m', '4h', '5m']

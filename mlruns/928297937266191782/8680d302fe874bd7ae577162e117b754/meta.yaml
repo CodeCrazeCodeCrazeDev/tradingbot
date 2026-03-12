@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/peterson/trading%20bot/mlruns/928297937266191782/8680d302fe874bd7ae577162e117b754/artifacts
+end_time: 1764432741879
+entry_point_name: ''
+experiment_id: '928297937266191782'
+lifecycle_stage: active
+run_id: 8680d302fe874bd7ae577162e117b754
+run_name: melodic-fish-159
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1764432741622
+status: 3
+tags: []
+user_id: peterson

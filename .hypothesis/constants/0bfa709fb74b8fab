@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\execution\idempotent_executor.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.1, 1.0, 100, 300, 3600, 10000, 'BUY', 'EURUSD', 'GBPUSD', 'GTC', 'MARKET', 'Order cache cleared', '__main__', 'average_price', 'cache_hit_rate_pct', 'cache_hits', 'cache_misses', 'cache_size_pct', 'cached_orders', 'cancelled', 'client_order_id', 'content_mismatches', 'duplicate_detections', 'error_message', 'exchange_order_id', 'expired', 'filled', 'filled_quantity', 'metadata', 'order_type', 'partially_filled', 'pending', 'price', 'quantity', 'rejected', 'side', 'status', 'stop_price', 'submitted', 'submitted_at', 'symbol', 'time_in_force', 'timestamp', 'total_requests']

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\monitoring\prometheus_exporter.py
+# hypothesis_version: 6.148.3
+
+[0.1, 1.85, 2.5, 8.3, 10.0, 12.0, 40.0, 45.0, 65.0, 250.5, 500.0, 600.0, 10250.5, -100, 100, 200, 250, 300, 500, 600, 1000, 1800, 3600, 7200, 9090, 14400, 28800, '\nUpdating metrics...', '=', 'CRITICAL', 'Current', 'Current PnL', 'Current PnL in USD', 'Drawdown', 'Error Rate', 'Execution Latency', 'Maximum', 'Sharpe Ratio', 'Sharpe ratio', 'Total Trades', 'Total errors', 'Trade duration', 'Trading Bot Metrics', 'WARNING', 'Win Rate', 'Win rate percentage', '__main__', 'dashboard', 'error_type', 'expr', 'gauge', 'graph', 'heatmap', 'legendFormat', 'level', 'message', 'panels', 'stat', 'targets', 'timestamp', 'title', 'trading_current_pnl', 'trading_errors_total', 'trading_latency_ms', 'trading_max_drawdown', 'trading_sharpe_ratio', 'trading_total_trades', 'trading_trade_pnl', 'trading_win_rate', 'type', 'w']

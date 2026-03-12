@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\system_supervisor\module_monitor.py
+# hypothesis_version: 6.148.3
+
+[0.0, 300, 1000, 'CRITICAL', 'WARNING', 'api_connector', 'check_interval', 'clear_cache', 'consecutive_failures', 'data_feed', 'data_validity', 'degraded', 'error_count_hourly', 'failed', 'health_check', 'initialize', 'is_healthy', 'is_running', 'is_stale', 'last_data_fetch', 'last_failure', 'last_success', 'last_update', 'max_restart_attempts', 'modules', 'news_fetcher', 'offline', 'overall_health', 'refresh_connections', 'response_latency_ms', 'restart_count', 'restarting', 'running', 'sentiment_analyzer', 'stale_threshold', 'start', 'status', 'stop', 'timestamp']

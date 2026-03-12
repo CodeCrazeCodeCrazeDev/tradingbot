@@ -1,0 +1,247 @@
+# AlphaAlgo 2.0 Configuration
+
+# General settings
+general:
+  symbols: ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD"]
+  risk_aversion: 0.5  # 0=risk-neutral, 1=very risk-averse
+  trading_enabled: true
+
+# Data settings
+data:
+  cache_enabled: true
+  batch_size: 100
+  history_size: 1000
+  quarantine_dir: "data/quarantine"
+  checkpoint_dir: "data/checkpoints"
+
+# Machine learning settings
+ml:
+  feature_config:
+    price:
+      returns: true
+      ma_windows: [20, 50, 200]
+      levels: true
+    volume:
+      changes: true
+      profile_windows: [20, 50]
+    indicators:
+      rsi: true
+      macd: true
+      bbands: true
+  model_params:
+    hidden_dim: 64
+    num_layers: 2
+    dropout: 0.2
+  training:
+    batch_size: 64
+    learning_rate: 0.001
+    epochs: 100
+    early_stopping: true
+    patience: 10
+  checkpoints:
+    save_dir: "models"
+    save_interval: 3600  # seconds
+
+# Broker settings
+broker:
+  name: "binance"  # binance, ib
+  testnet: true
+  timeout: 30  # seconds
+  retry_attempts: 3
+
+# Risk management settings
+risk:
+  max_position_size: 1.0
+  max_portfolio_var: 0.02  # 2% VaR limit
+  max_drawdown: 0.1  # 10% max drawdown
+  max_correlation: 0.7
+  risk_free_rate: 0.02  # 2% risk-free rate
+  thresholds:
+    var_95: 0.02
+    volatility: 0.02
+    drawdown: 0.1
+    correlation: 0.7
+    leverage: 5.0
+
+# Infrastructure settings
+infrastructure:
+  auto_scaling: true
+  monitoring_interval: 60  # seconds
+  resources:
+    min_workers: 1
+    max_workers: 8
+    worker_step: 1
+    gpu_enabled: true
+    memory_limit: 16GB
+    storage_limit: 100GB
+  thresholds:
+    latency:
+      critical: 1000  # ms
+      warning: 500
+    error_rate:
+      critical: 0.1  # 10%
+      warning: 0.05
+    success_rate:
+      critical: 0.5  # 50%
+      warning: 0.7
+    drawdown:
+      critical: 0.2  # 20%
+      warning: 0.1
+
+# API settings
+api:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  timeout: 30
+  rate_limit:
+    requests: 100
+    window: 60  # seconds
+  security:
+    jwt_secret: "${JWT_SECRET}"
+    jwt_expiry: 3600  # seconds
+
+# Dashboard settings
+dashboard:
+  host: "0.0.0.0"
+  port: 8050
+  refresh_interval: 30  # seconds
+  theme: "darkly"
+
+# Advanced RL settings
+advanced_rl:
+  distributional:
+    state_dim: 20
+    action_dim: 3
+    num_quantiles: 51
+    learning_rate: 0.0005
+    gamma: 0.99
+    target_update_interval: 10
+  multi_objective:
+    objectives:
+      pnl:
+        weight: 0.5
+        min: -0.1
+        max: 0.1
+      sharpe:
+        weight: 0.2
+        min: -3.0
+        max: 3.0
+      drawdown:
+        weight: 0.2
+        min: -0.2
+        max: 0.0
+      volatility:
+        weight: 0.1
+        min: 0.0
+        max: 0.05
+
+# Multi-agent settings
+multi_agent:
+  agents:
+    trend_following:
+      weight: 0.3
+      lookback: 20
+    mean_reversion:
+      weight: 0.3
+      lookback: 10
+    volatility:
+      weight: 0.2
+      lookback: 50
+    risk_manager:
+      weight: 0.2
+      lookback: 100
+  coordinator:
+    method: "weighted_vote"  # weighted_vote, consensus
+    adaptation_interval: 20
+
+# Neuro-symbolic settings
+neuro_symbolic:
+  knowledge_graph:
+    rules_file: "knowledge/financial_rules.json"
+  chain_of_thought:
+    max_steps: 5
+    reasoning_depth: 3
+  fusion:
+    input_dim: 20
+    hidden_dim: 64
+    output_dim: 3
+
+# World model settings
+world_model:
+  latent_dim: 32
+  hidden_dim: 64
+  imagination:
+    num_simulations: 10
+    horizon: 50
+  synthetic_data:
+    base_volatility: 0.01
+    dt: 0.004  # 1/252
+
+# Meta-learning settings
+meta_learning:
+  maml:
+    inner_lr: 0.01
+    outer_lr: 0.001
+    inner_steps: 5
+    task_batch_size: 10
+  evolutionary:
+    population_size: 20
+    mutation_rate: 0.1
+    crossover_rate: 0.5
+    generations: 50
+  self_rewriting:
+    enabled: true
+    safety_checks: true
+    max_iterations: 5
+
+# Multimodal settings
+multimodal:
+  text:
+    news_sources: ["reuters", "bloomberg"]
+    social_sources: ["twitter", "reddit"]
+    model: "finbert"
+  price:
+    patterns: ["trend", "reversal", "consolidation"]
+    indicators: ["momentum", "trend", "volatility", "volume"]
+  alt_data:
+    sources: ["satellite", "weather", "macro"]
+  fusion:
+    method: "attention"  # attention, concat, weighted
+    output_dim: 64
+
+# Explainability settings
+explainability:
+  feature_attribution:
+    method: "shap"  # shap, integrated_gradients
+    num_samples: 100
+  narrative:
+    template_file: "templates/explanations.json"
+    max_length: 200
+  confidence:
+    metrics: ["signal_strength", "prediction_uncertainty", "market_uncertainty", "data_quality"]
+
+# Error handling settings
+error_handling:
+  thresholds:
+    max_consecutive_errors: 3
+    error_rate_threshold: 0.1
+    recovery_timeout: 300  # seconds
+
+# Logging settings
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/alphaalgo_2_0.log"
+  rotation: true
+  max_size: 10MB
+  backup_count: 5
+
+# Feature flags
+features:
+  advanced_rl: true
+  multi_agent: true
+  world_model: true
+  multimodal: true
+  explainability: true
+  auto_scaling: true

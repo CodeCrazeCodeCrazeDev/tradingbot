@@ -1,0 +1,228 @@
+{
+  "report_metadata": {
+    "generated_at": "2025-10-08 00:47:00",
+    "operator": "Autonomous Bot Monitor AI",
+    "session_duration_minutes": 11,
+    "report_version": "1.0",
+    "workspace": "c:\\Users\\peterson\\trading bot"
+  },
+  "overall_status": {
+    "status": "OPERATIONAL",
+    "level": "WARNING",
+    "summary": "Bot running successfully with minor connectivity warning",
+    "readiness_for_live": "NOT_READY",
+    "completion_percentage": 60
+  },
+  "environment": {
+    "os": "Windows 10 Pro Education",
+    "os_version": "10.0.19045",
+    "architecture": "64-bit",
+    "shell": "PowerShell",
+    "python_available": true,
+    "git_available": false,
+    "repo_root": "c:\\Users\\peterson\\trading bot"
+  },
+  "inventory": {
+    "startup_scripts": [
+      "START_BOT_SIMPLE.bat",
+      "START_BOT_WITH_WATCHDOG.bat",
+      "start_monitored_bot.ps1",
+      "RUN_BOT.bat",
+      "main.py"
+    ],
+    "dependency_files": [
+      "requirements.txt",
+      "requirements-extras.txt"
+    ],
+    "config_files": [
+      "config\\config.yaml"
+    ],
+    "test_directories": [
+      "tests\\"
+    ],
+    "total_packages_installed": 200
+  },
+  "backup": {
+    "created": true,
+    "path": "diagnostics\\backups\\backup-20251008-003941.zip",
+    "size_mb": 4.64,
+    "sha256": "F14D6C6D3FAB94150F574FF825748FC3347280AAF3F379A828ECAFA27BE83998",
+    "timestamp": "2025-10-08 00:39:41",
+    "integrity_verified": true
+  },
+  "static_checks": {
+    "performed": true,
+    "timestamp": "2025-10-08 00:39:41",
+    "dependencies_check": "PASS",
+    "startup_script_safety": "PASS",
+    "destructive_commands_found": false,
+    "elevated_privileges_required": false,
+    "risk_level": "LOW"
+  },
+  "process_status": {
+    "bot_running": true,
+    "pid": 12140,
+    "process_name": "python",
+    "start_time": "2025-10-08 00:16:22",
+    "uptime_minutes": 30.7,
+    "cpu_seconds": 121.14,
+    "memory_mb": 722.79,
+    "threads": 1,
+    "status": "STABLE",
+    "crashes_detected": 0,
+    "restarts_needed": 0
+  },
+  "health_checks": {
+    "timestamp": "2025-10-08 00:46:06",
+    "total_checks": 7,
+    "checks_passed": 6,
+    "critical_issues": 0,
+    "warnings": 1,
+    "overall_health": "WARNING",
+    "details": {
+      "process_check": {
+        "status": "RUNNING",
+        "uptime_minutes": 29.7,
+        "memory_mb": 722.79
+      },
+      "resource_check": {
+        "status": "OK",
+        "cpu_usage_pct": 40.12,
+        "memory_usage_pct": 81.37,
+        "memory_total_gb": 7.89,
+        "memory_used_gb": 6.42
+      },
+      "disk_check": {
+        "status": "OK",
+        "drive": "C:",
+        "usage_pct": 76.31,
+        "free_gb": 28.09
+      },
+      "log_check": {
+        "status": "OK",
+        "errors_found": 2,
+        "warnings_found": 0,
+        "error_rate_pct": 2.0
+      },
+      "connectivity_check": {
+        "status": "WARNING",
+        "dns_resolution": "OK",
+        "internet_connectivity": "ISSUE_DETECTED"
+      },
+      "trading_check": {
+        "status": "OK",
+        "position_validator": "ACTIVE",
+        "recent_trades": 67,
+        "position_size": "1.0 lots"
+      }
+    }
+  },
+  "trading_configuration": {
+    "mode": "paper",
+    "symbol": "EURUSD",
+    "timeframe": "H1",
+    "risk_per_trade_pct": 1.0,
+    "max_position_size": 0.01,
+    "position_validator": {
+      "active": true,
+      "max_lots": 1.0,
+      "max_risk_pct": 2.0
+    },
+    "safety_mechanisms": {
+      "emergency_stop": false,
+      "circuit_breakers": false,
+      "daily_loss_limit": false
+    }
+  },
+  "trading_activity": {
+    "trades_executed": 67,
+    "position_sizes_observed": [
+      "1.0 lots"
+    ],
+    "position_sizing_compliant": true,
+    "errors_detected": 2,
+    "error_rate_pct": 2.99,
+    "trading_frequency": "~5 seconds per trade",
+    "validator_working": true
+  },
+  "log_analysis": {
+    "log_files_checked": [
+      "logs\\stderr_with_validator.log",
+      "logs\\stderr.log",
+      "logs\\stdout.log",
+      "logs\\runtime.log"
+    ],
+    "total_log_files": 115,
+    "active_log": "logs\\stderr_with_validator.log",
+    "active_log_size_kb": 134,
+    "last_updated": "2025-10-08 00:47:08",
+    "recent_errors": [
+      "Minor errors detected (2 in last 100 lines)"
+    ],
+    "critical_errors": []
+  },
+  "fixes_applied": [],
+  "conservative_remediations": {
+    "attempted": 0,
+    "successful": 0,
+    "failed": 0,
+    "details": []
+  },
+  "issues_detected": [
+    {
+      "severity": "WARNING",
+      "category": "connectivity",
+      "description": "Internet connectivity test failed",
+      "impact": "May affect external API calls",
+      "recommended_action": "Check network connection if external data sources are needed",
+      "critical": false
+    }
+  },
+  "recommended_next_steps": [
+    "Continue monitoring bot for extended period (2 weeks recommended)",
+    "Run daily health checks using: powershell -ExecutionPolicy Bypass -File daily_health_check.ps1",
+    "Monitor position sizes to ensure validator remains active",
+    "Test real MT5 broker connection in paper mode",
+    "Implement emergency stop mechanism before live trading",
+    "Complete LIVE_TRADING_READINESS.md checklist (currently 60% complete)"
+  ],
+  "artifacts_created": [
+    "diagnostics\\inventory-20251008-003908.json",
+    "diagnostics\\backups\\backup-20251008-003941.zip",
+    "diagnostics\\changes-log.txt",
+    "diagnostics\\static-checks-20251008-003941.log",
+    "diagnostics\\health-20251008-003941.json",
+    "diagnostics\\summary.txt",
+    "diagnostics\\report-20251008-004700.json"
+  ],
+  "monitoring": {
+    "continuous_monitoring_available": true,
+    "monitoring_script": "diagnostics\\continuous_monitor.ps1",
+    "recommended_duration_minutes": 30,
+    "check_interval_seconds": 180
+  },
+  "previous_operator_session": {
+    "completed_at": "2025-10-08 00:28:00",
+    "duration_hours": 2.85,
+    "status": "SUCCESS",
+    "fixes_applied": [
+      "Position sizing validated and capped at 1.0 lots",
+      "Async/await mismatch fixed",
+      "Infinite trade loop fixed",
+      "Position validator implemented"
+    ],
+    "readiness_achieved": "60%"
+  },
+  "safety_assessment": {
+    "safe_to_continue": true,
+    "destructive_operations_detected": false,
+    "secrets_exposure_risk": "LOW",
+    "data_loss_risk": "NONE",
+    "trading_mode": "paper",
+    "position_sizing_safe": true,
+    "overall_risk": "LOW"
+  },
+  "escalation_required": false,
+  "critical_files_created": [],
+  "pause_requests": []
+}

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\performance\memory_optimization.py
+# hypothesis_version: 6.148.3
+
+[0.5, 100, 1000, 1024, 'Empty DataFrame', 'T', 'amount', 'asks', 'bids', 'category', 'close', 'custom', 'data', 'description', 'f', 'final_usage_mb', 'float', 'high', 'i', 'indicators', 'initial_usage_mb', 'int', 'low', 'market_depth', 'object', 'ohlcv', 'open', 'optimization_result', 'optimized_size', 'order_book', 'original_size', 'price', 'price_series', 'quantity', 'reduction_mb', 'reduction_percent', 'signals', 'size', 'time_series', 'timestamp', 'timestamps', 'trade_data', 'volume']

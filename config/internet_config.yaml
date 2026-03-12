@@ -1,0 +1,102 @@
+# AlphaAlgo Internet-Empowered Trading Configuration
+
+# Trading symbols
+symbols:
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+
+# Data cache directory
+cache_dir: data_cache
+
+# Trading cycle interval (minutes)
+trading_interval_minutes: 5
+
+# Phase 1: Connection Configuration
+connections:
+  endpoints:
+    broker_feed:
+      url: https://api.broker.com/feed
+      backup_url: https://backup.broker.com/feed
+      timeout: 3.0
+      critical: true
+    
+    economic_api:
+      url: https://api.tradingeconomics.com/data
+      backup_url: null
+      timeout: 5.0
+      critical: false
+    
+    sentiment_api:
+      url: https://api.sentiment.com/v1/analyze
+      backup_url: null
+      timeout: 5.0
+      critical: false
+    
+    model_repo:
+      url: https://models.alphaalgo.com/latest
+      backup_url: null
+      timeout: 10.0
+      critical: false
+
+# Phase 2: Data Acquisition Configuration
+data_acquisition:
+  endpoints:
+    market_data:
+      url: https://api.marketdata.com/v1/ohlcv
+    news:
+      url: https://newsapi.org/v2/everything
+    sentiment:
+      url: https://api.sentimentinvestor.com/v1
+    macro:
+      url: https://api.fred.org/series
+  
+  # API keys loaded from config/api_keys.json
+  api_keys: {}
+
+# Phase 3: Intelligence Fusion Configuration
+fusion:
+  # Weighted decision fusion (must sum to 1.0)
+  fusion_weights:
+    technical: 0.60    # 60% - Technical analysis
+    sentiment: 0.25    # 25% - Social sentiment
+    news: 0.10         # 10% - News analysis
+    volatility: 0.05   # 5% - Volatility filter
+  
+  # Confidence thresholds
+  min_confidence: 0.60      # Minimum confidence to trade
+  strong_confidence: 0.80   # Strong confidence threshold
+
+# Phase 4: Security Configuration
+security:
+  secure_dir: secure
+  
+  # Known model hashes for verification (SHA-256)
+  known_hashes:
+    technical_model.pkl: ""
+    sentiment_model.pkl: ""
+    fusion_model.pkl: ""
+  
+  # SSL/TLS verification
+  verify_ssl: true
+  
+  # Content scanning
+  scan_downloads: true
+
+# Phase 5: Auto-Update Configuration
+auto_update:
+  models_dir: models
+  archive_dir: models/archive
+  update_log: update_report.log
+  
+  # Update schedule
+  update_interval_hours: 24
+  
+  # Performance thresholds
+  min_performance: 0.70     # Retrain if performance < 70%
+  target_performance: 0.85  # Target performance level
+  
+  # Model retraining
+  retrain_on_poor_performance: true
+  archive_before_update: true
+  keep_last_n_archives: 10

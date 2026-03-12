@@ -1,0 +1,171 @@
+"""
+performance package
+"""
+
+try:
+    from .algorithm_optimizer import (
+        AlgorithmOptimizer,
+        LRUCache,
+        OptimizationLevel,
+        OptimizationProfile,
+        OptimizationTarget,
+        R,
+        T,
+        get_default_optimizer,
+        optimize_indicator,
+        optimized_bollinger_bands,
+        optimized_exponential_moving_average,
+        optimized_find_peaks,
+        optimized_find_troughs,
+        optimized_macd,
+        optimized_moving_average,
+        optimized_rsi
+    )
+    from .complete_performance_system import (
+        CompletePerformanceSystem,
+        ParallelProcessor,
+        VectorizedIndicators,
+        fast_rsi,
+        fast_sma
+    )
+    from .memory_manager import (
+        MemoryConfig,
+        MemoryManager,
+        MemoryMonitor,
+        MemoryPressure,
+        MemoryStats,
+        RingBuffer,
+        SizeLimitedLRUCache,
+        T,
+        WeakRefCache,
+        cached,
+        get_memory_manager,
+        memory_limited
+    )
+    from .memory_optimization import (
+        DataStructureType,
+        MemoryEfficientCache,
+        MemoryOptimizer,
+        OptimizationResult,
+        RingBuffer,
+        T,
+        get_default_optimizer,
+        optimize_market_data
+    )
+    from .parallel_processor import (
+        ParallelProcessor,
+        ProcessingResult,
+        TaskType,
+        get_default_processor,
+        parallel_market_analysis
+    )
+    from .performance_monitor import (
+        MetricType,
+        PerformanceMonitor,
+        PerformanceSnapshot,
+        ProfileResult,
+        get_default_monitor,
+        identify_bottlenecks,
+        profile,
+        record_metric,
+        start_profiling,
+        stop_profiling,
+        take_snapshot
+    )
+    from .performance_profiler import (
+        PerformanceMetric,
+        PerformanceOptimizer,
+        PerformanceProfiler,
+        get_profiler,
+        profile,
+        retry
+    )
+    from .profiler import (
+        AsyncProfiler,
+        CodeProfiler,
+        FunctionProfiler,
+        HotSpot,
+        OptimizationSuggestion,
+        PerformanceOptimizer,
+        ProfileResult,
+        T,
+        get_profile_results,
+        get_profiler,
+        get_slowest_functions,
+        profile,
+        profile_with_threshold
+    )
+    from .windows_optimizer import WindowsOptimizer, optimize_for_trading
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in performance: {e}')
+
+__all__ = [
+    'AlgorithmOptimizer',
+    'AsyncProfiler',
+    'CodeProfiler',
+    'CompletePerformanceSystem',
+    'DataStructureType',
+    'FunctionProfiler',
+    'HotSpot',
+    'LRUCache',
+    'MemoryConfig',
+    'MemoryEfficientCache',
+    'MemoryManager',
+    'MemoryMonitor',
+    'MemoryOptimizer',
+    'MemoryPressure',
+    'MemoryStats',
+    'MetricType',
+    'OptimizationLevel',
+    'OptimizationProfile',
+    'OptimizationResult',
+    'OptimizationSuggestion',
+    'OptimizationTarget',
+    'ParallelProcessor',
+    'PerformanceMetric',
+    'PerformanceMonitor',
+    'PerformanceOptimizer',
+    'PerformanceProfiler',
+    'PerformanceSnapshot',
+    'ProcessingResult',
+    'ProfileResult',
+    'R',
+    'RingBuffer',
+    'SizeLimitedLRUCache',
+    'T',
+    'TaskType',
+    'VectorizedIndicators',
+    'WeakRefCache',
+    'WindowsOptimizer',
+    'cached',
+    'fast_rsi',
+    'fast_sma',
+    'get_default_monitor',
+    'get_default_optimizer',
+    'get_default_processor',
+    'get_memory_manager',
+    'get_profile_results',
+    'get_profiler',
+    'get_slowest_functions',
+    'identify_bottlenecks',
+    'memory_limited',
+    'optimize_for_trading',
+    'optimize_indicator',
+    'optimize_market_data',
+    'optimized_bollinger_bands',
+    'optimized_exponential_moving_average',
+    'optimized_find_peaks',
+    'optimized_find_troughs',
+    'optimized_macd',
+    'optimized_moving_average',
+    'optimized_rsi',
+    'parallel_market_analysis',
+    'profile',
+    'profile_with_threshold',
+    'record_metric',
+    'retry',
+    'start_profiling',
+    'stop_profiling',
+    'take_snapshot',
+]

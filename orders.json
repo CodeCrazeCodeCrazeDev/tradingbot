@@ -1,0 +1,29 @@
+{
+  "orders": {
+    "47e45eed-7911-446b-864b-6be21116e373": {
+      "order_id": "47e45eed-7911-446b-864b-6be21116e373",
+      "client_order_id": "CLT_20251221082136_47e45eed",
+      "symbol": "EURUSD",
+      "side": "BUY",
+      "order_type": "MARKET",
+      "quantity": 0.1,
+      "price": null,
+      "stop_price": null,
+      "time_in_force": "GTC",
+      "status": "PENDING",
+      "filled_quantity": 0.0,
+      "average_fill_price": 0.0,
+      "commission": 0.0,
+      "created_at": "2025-12-21T08:21:36.796362",
+      "submitted_at": null,
+      "filled_at": null,
+      "broker_order_id": null,
+      "strategy_id": null,
+      "error_message": null
+    }
+  },
+  "fills": {},
+  "positions": {},
+  "daily_order_count": 0,
+  "last_reset_date": "2025-12-21"
+}

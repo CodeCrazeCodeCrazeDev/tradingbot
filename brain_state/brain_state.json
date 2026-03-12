@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-02-28T23:22:23.601767",
+  "stats": {
+    "thoughts_generated": 0,
+    "trades_executed": 0,
+    "trades_won": 0,
+    "trades_lost": 0,
+    "total_pnl": 0.0,
+    "max_drawdown": 0.0,
+    "errors": 0
+  },
+  "capital": 100000.0,
+  "pnl": 0.0,
+  "positions": {},
+  "loaded_subsystems": [],
+  "failed_subsystems": []
+}

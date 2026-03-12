@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\backtesting\strategy_backtester.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.02, 0.7, 100000.0, 'buy', 'confidence', 'confidence_threshold', 'direction', 'expected_shortfall', 'inf', 'liquidity_zones', 'market_context', 'max_drawdown', 'ml_prediction', 'order_flow', 'profit', 'profit_factor', 'reason', 'sell', 'sharpe_ratio', 'total_return', 'var_95', 'win_rate']

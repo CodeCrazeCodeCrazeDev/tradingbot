@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\signals\adaptive_thresholds.py
+# hypothesis_version: 6.148.3
+
+[0.3, 0.5, 0.7, 100, 'high', 'low', 'medium']

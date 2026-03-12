@@ -1,0 +1,63 @@
+# Multi-Symbol Trading Configuration - Exotic Pairs
+# Focus on less liquid but potentially higher-yielding currency pairs
+
+# General settings
+mode: paper
+timeframe: H1
+bars: 500
+
+# ML features
+use_ml: true
+use_transformer: true
+use_rl: true
+market_regime: true
+sentiment_analysis: true
+order_flow: true
+
+# Execution
+execution_algo: smart
+
+# Symbols to trade - Exotic currency pairs
+symbols:
+  - USDMXN  # US Dollar vs Mexican Peso
+  - USDBRL  # US Dollar vs Brazilian Real
+  - USDTRY  # US Dollar vs Turkish Lira
+  - USDINR  # US Dollar vs Indian Rupee
+  - USDSGD  # US Dollar vs Singapore Dollar
+
+# Risk management per symbol (percentages)
+risk_allocation:
+  USDMXN: 25
+  USDBRL: 20
+  USDTRY: 15  # Higher volatility, lower allocation
+  USDINR: 20
+  USDSGD: 20
+
+# Watchlist for sentiment analysis
+watchlist:
+  - USDMXN
+  - USDBRL
+  - USDTRY
+  - USDINR
+  - USDSGD
+  - USD
+  - MXN
+  - BRL
+  - TRY
+  - INR
+  - SGD
+
+# Advanced features
+track_emotions: true
+quantum_blockchain: false
+adaptive_mode: true
+self_improve: true
+internet_access: false
+
+# Correlation management
+manage_correlations: true
+max_correlated_exposure: 45
+
+# Special settings for exotic pairs
+wider_stops: true  # Use wider stop losses due to higher volatility
+slippage_protection: true  # Enable additional slippage protection

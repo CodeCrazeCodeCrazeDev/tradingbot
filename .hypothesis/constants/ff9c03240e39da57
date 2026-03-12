@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\agents\coordinator.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.3, 0.5, 0.7, 0.9, '=', 'BUY', 'HOLD', 'No agent proposals', 'SELL', 'action', 'agent_id', 'agent_type', 'avg_return', 'best_agent', 'confidence', 'consensus', 'ensemble', 'method', 'num_agents', 'reasoning', 'sharpe_ratio', 'total_trades', 'votes', 'weighted_vote', 'win_rate', '🤖 AGENT PERFORMANCE']

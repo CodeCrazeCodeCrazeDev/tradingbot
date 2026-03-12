@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # Main trading bot service with strategy
+  trading-bot:
+    build: .
+    container_name: elite-trading-bot
+    restart: unless-stopped
+    environment:
+      - MT5_LOGIN=97224465
+      - MT5_PASSWORD=WdHb@1Zk
+      - MT5_INVESTOR=B-CtN4Ev
+      - MT5_SERVER=MetaQuotes-Demo
+      - EMAIL_ADDRESS=peterkiragu68@outlook.com
+      - SMTP_SERVER=smtp-mail.outlook.com
+      - SMTP_PORT=587
+      - SMTP_USERNAME=peterkiragu68@outlook.com
+      - MAX_DAILY_LOSS=100
+      - MAX_POSITION_SIZE=0.01
+      - MAX_POSITIONS=3
+      - PAPER_TRADING=true
+    volumes:
+      - ./logs:/app/logs
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; import psutil; exit(0 if 'python' in ' '.join([p.name() for p in psutil.process_iter()]) else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Test service for running comprehensive tests
+  test:
+    build: .
+    container_name: elite-trading-bot-test
+    environment:
+      - MT5_LOGIN=97224465
+      - MT5_PASSWORD=WdHb@1Zk
+      - MT5_INVESTOR=B-CtN4Ev
+      - MT5_SERVER=MetaQuotes-Demo
+      - EMAIL_ADDRESS=peterkiragu68@outlook.com
+    volumes:
+      - ./logs:/app/logs
+    command: python test_bot_comprehensive.py

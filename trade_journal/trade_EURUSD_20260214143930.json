@@ -1,0 +1,21 @@
+{
+  "trade_id": "EURUSD_20260214143930",
+  "timestamp": "2026-02-14T14:39:30.950103",
+  "symbol": "EURUSD",
+  "direction": "short",
+  "entry_price": 1.18689,
+  "exit_price": 1.18689,
+  "quantity": 10.0,
+  "pnl": 0.0,
+  "return_pct": 0.0,
+  "duration_hours": 0,
+  "strategy": "main_loop",
+  "reasoning": "[Signal(time=datetime.datetime(2026, 2, 14, 14, 39, 30, 945337), symbol='EURUSD', direction='sell', rationale='BOS after low break', stop_loss_pips=20, take_profit_rr=2, confidence=70.0), Signal(time=datetime.datetime(2026, 2, 14, 14, 39, 30, 945367), symbol='EURUSD', direction='sell', rationale='BOS after low break', stop_loss_pips=20, take_profit_rr=2, confidence=70.0), Signal(time=datetime.datetime(2026, 2, 14, 14, 39, 30, 945384), symbol='EURUSD', direction='buy', rationale='Unfilled bull FV",
+  "market_conditions": {
+    "symbol": "EURUSD",
+    "price": 1.18689
+  },
+  "emotions": "",
+  "lessons_learned": "",
+  "tags": []
+}

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\adaptive_systems\knowledge_acquisition\book_knowledge.py
+# hypothesis_version: 6.148.3
+
+[0.6, 0.7, 0.8, 100, 200, 2000, 'Unknown', '\\n\\s*\\n', '\\s+', '^#{1,6}\\s+(.+)$', 'academic_paper', 'ai', 'algorithm', 'analysis', 'arbitrage', 'article', 'author', 'backtest', 'blog_article', 'content', 'corpora/stopwords', 'cryptocurrency', 'div.article', 'div.content', 'div.post', 'documentation', 'english', 'forex', 'fundamental', 'html.parser', 'indicator', 'machine learning', 'main', 'market', 'meta', 'momentum', 'name', 'optimization', 'pt', 'punkt', 'r', 'research_paper', 'risk', 'segment_index', 'source_title', 'source_type', 'stock', 'stopwords', 'strategy', 'technical', 'textbook', 'tokenizers/punkt', 'trading', 'trading_book', 'trend', 'url', 'utf-8', 'volatility']

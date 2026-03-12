@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\execution\algorithms.py
+# hypothesis_version: 6.148.3
+
+[0.01, 0.02, 0.1, 0.12, 0.15, 0.5, 1.0, 70.0, 80.0, 100, 'H1', 'Invalid plan ID', 'No pending chunks', 'Plan not found', 'active', 'actual_time', 'algorithm', 'allow_partial', 'average_price', 'cancelled', 'cancelled_chunks', 'chunk_id', 'chunk_size', 'completed', 'direction', 'end_time', 'error', 'executed', 'executed_chunks', 'executed_price', 'expected_end_time', 'high', 'hour', 'id', 'interval_minutes', 'low', 'market', 'market_orders', 'market_pct', 'max_duration_minutes', 'normal', 'num_chunks', 'pending', 'plan', 'plan_id', 'planned_time', 'price', 'price_deviation', 'price_limit_pct', 'reference_price', 'remaining_chunks', 'schedule', 'start_time', 'status', 'success', 'symbol', 'total_orders', 'total_volume', 'twap', 'twap_orders', 'twap_pct', 'volume', 'volume_weight', 'vwap', 'vwap_orders', 'vwap_pct']

@@ -1,0 +1,102 @@
+# High-Impact: Execution & Market Access (100)
+
+- [HI-EXE-001] Client order IDs + idempotent submits — Impacted: `ExecutionManager.place_order()`
+- [HI-EXE-002] Robust retry with jitter/time budget — Impacted: adapters
+- [HI-EXE-003] IOC/FOK/PostOnly/TIF support — Impacted: order params
+- [HI-EXE-004] Smart router with venue scoring (latency, fee, fill) — Impacted: router
+- [HI-EXE-005] Partial fill aggregator with timeouts — Impacted: execution state
+- [HI-EXE-006] Cancel-replace flow control and pacing — Impacted: adapters
+- [HI-EXE-007] Slippage/impact-aware limit price calculator — Impacted: pricing
+- [HI-EXE-008] Dynamic switch market->limit near wide spreads — Impacted: strategy
+- [HI-EXE-009] Quote staleness guard pre-submit — Impacted: pre-trade
+- [HI-EXE-010] Venue outage detection and failover — Impacted: routing
+- [HI-EXE-011] Best price across venues with sweep logic — Impacted: SOR
+- [HI-EXE-012] Iceberg/child order planner — Impacted: execution algos
+- [HI-EXE-013] TWAP/VWAP/POV with anti-gaming — Impacted: algos
+- [HI-EXE-014] Queue position estimator (when available) — Impacted: router
+- [HI-EXE-015] Max child order rate per venue — Impacted: pacing
+- [HI-EXE-016] Per-venue throttles and buckets — Impacted: adapters
+- [HI-EXE-017] Cross-venue redundancy for critical symbols — Impacted: routing
+- [HI-EXE-018] Order confirmation/fill ack timers — Impacted: state machine
+- [HI-EXE-019] Auto-cancel stale working orders — Impacted: lifecycle
+- [HI-EXE-020] Reject reason classifier & recovery path — Impacted: execution
+- [HI-EXE-021] Price banding from reference mid — Impacted: pricing
+- [HI-EXE-022] Liquidity-taking vs making policy by regime — Impacted: algos
+- [HI-EXE-023] Dynamic aggression controller (spread/vol) — Impacted: algos
+- [HI-EXE-024] Post-trade TCA attribution (venue/algos) — Impacted: analytics
+- [HI-EXE-025] Latency SLAs per venue with alerts — Impacted: monitoring
+- [HI-EXE-026] Order book snapshot validation — Impacted: data QC
+- [HI-EXE-027] Maker fee/ rebates modeling — Impacted: PnL
+- [HI-EXE-028] Smart cancel-all on halt (preserve hedges) — Impacted: ops
+- [HI-EXE-029] Price rounding/tick size normalization — Impacted: adapters
+- [HI-EXE-030] Market close/open handling specifics — Impacted: scheduler
+- [HI-EXE-031] Market impact estimator integration — Impacted: pricing
+- [HI-EXE-032] Venue-specific order param sets — Impacted: adapters
+- [HI-EXE-033] Cross-asset hedge routing — Impacted: router
+- [HI-EXE-034] Fill slippage vs expected tracking — Impacted: monitoring
+- [HI-EXE-035] Cancel on disconnect policy — Impacted: lifecycle
+- [HI-EXE-036] Throttle on reject storm — Impacted: execution
+- [HI-EXE-037] Price protection bands by symbol — Impacted: pre-trade
+- [HI-EXE-038] Graceful shutdown flush (await fills) — Impacted: stop()
+- [HI-EXE-039] Venue warmup/health probes — Impacted: adapters
+- [HI-EXE-040] Retry ladder per error class — Impacted: execution
+- [HI-EXE-041] Child order sizing by depth — Impacted: algos
+- [HI-EXE-042] Backoff on high spread/low depth — Impacted: pre-trade
+- [HI-EXE-043] Guard obscure order types per venue — Impacted: adapters
+- [HI-EXE-044] Strict id handling across rest/websocket — Impacted: adapters
+- [HI-EXE-045] Failsafe: flat book on inconsistent fills — Impacted: ops
+- [HI-EXE-046] Emergency venue switch on SLA breach — Impacted: router
+- [HI-EXE-047] Cross-session carry rules — Impacted: scheduler
+- [HI-EXE-048] Symbol halt/trading status awareness — Impacted: data
+- [HI-EXE-049] Max working orders per symbol — Impacted: execution
+- [HI-EXE-050] Maker-only sweeper during wide spreads — Impacted: algos
+- [HI-EXE-051] Depth-weighted mid for pricing — Impacted: pricing
+- [HI-EXE-052] Venue fee table auto-refresh — Impacted: adapters
+- [HI-EXE-053] Trade reporting reconciliation — Impacted: recon
+- [HI-EXE-054] Cancel stale reduce-only orders — Impacted: lifecycle
+- [HI-EXE-055] Replace sizing on volatility spikes — Impacted: algos
+- [HI-EXE-056] OTC/fallback channel if exchange down — Impacted: ops
+- [HI-EXE-057] Rate limit sharing across processes — Impacted: infra
+- [HI-EXE-058] Multi-path order send (hedge) — Impacted: router
+- [HI-EXE-059] Avoid crossing fees thresholds — Impacted: pricing
+- [HI-EXE-060] Iceberg randomization vs detection — Impacted: algos
+- [HI-EXE-061] Venue time sync status checks — Impacted: monitoring
+- [HI-EXE-062] Back-pressure to signals under load — Impacted: orchestrator
+- [HI-EXE-063] Non-tradable instrument guard — Impacted: validation
+- [HI-EXE-064] Price step/lot size validations — Impacted: adapters
+- [HI-EXE-065] Safeguard against negative sizes — Impacted: validation
+- [HI-EXE-066] Enforce notional min orders — Impacted: pre-trade
+- [HI-EXE-067] Reroute on partial venue outage — Impacted: SOR
+- [HI-EXE-068] Venue-specific latency models — Impacted: pricing
+- [HI-EXE-069] Cancel-after (auto-cancel timer) — Impacted: order params
+- [HI-EXE-070] Queue-aware sweep aggressiveness — Impacted: algos
+- [HI-EXE-071] Retry same vs alt venue policies — Impacted: SOR
+- [HI-EXE-072] Duplicate fill detection — Impacted: recon
+- [HI-EXE-073] Atomic cancel/replace if supported — Impacted: adapters
+- [HI-EXE-074] Order aging dashboard — Impacted: monitoring
+- [HI-EXE-075] Simulator parity for order states — Impacted: backtest
+- [HI-EXE-076] Pre-submit price distance checks — Impacted: pre-trade
+- [HI-EXE-077] Hard stopout route if SL breached — Impacted: exits
+- [HI-EXE-078] Dynamic TIF by volatility/session — Impacted: algos
+- [HI-EXE-079] Venue config validation at startup — Impacted: init
+- [HI-EXE-080] Auto-disable sick venues — Impacted: router
+- [HI-EXE-081] Dark/liquidity pool hooks if applicable — Impacted: router
+- [HI-EXE-082] Reject order types not supported — Impacted: adapters
+- [HI-EXE-083] Limit max slippage per submit — Impacted: pre-trade
+- [HI-EXE-084] Fill price outlier kill — Impacted: post-trade
+- [HI-EXE-085] Reprice cadence controller — Impacted: algos
+- [HI-EXE-086] Trade-at-close/opener support — Impacted: algos
+- [HI-EXE-087] Cross-account netting rules — Impacted: portfolio
+- [HI-EXE-088] Cancel-all on session end — Impacted: scheduler
+- [HI-EXE-089] Alt connectivity channel (backup ISP/VPN) — Impacted: infra
+- [HI-EXE-090] Entropy in slice times to avoid detection — Impacted: algos
+- [HI-EXE-091] Venue microburst detection throttling — Impacted: SOR
+- [HI-EXE-092] Maker-only mode during outages — Impacted: router
+- [HI-EXE-093] Route away from high reject venues — Impacted: SOR
+- [HI-EXE-094] Pre-hedge before child slicing — Impacted: algos
+- [HI-EXE-095] Venue capacity model — Impacted: SOR
+- [HI-EXE-096] Reconcile cancels vs exchange events — Impacted: recon
+- [HI-EXE-097] Human override command set — Impacted: ops
+- [HI-EXE-098] SLA dashboards per venue — Impacted: monitoring
+- [HI-EXE-099] Cancel/replace stats reporting — Impacted: analytics
+- [HI-EXE-100] Continuous router self-test — Impacted: ops/sim

@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\connectivity\auth_manager.py
+# hypothesis_version: 6.148.3
+
+[b'elite_trading_bot_salt', 100000, '****', 'Authorization', 'ETB_', 'X-API-Key', 'access_token', 'added_at', 'api_key', 'api_key_preview', 'api_secret', 'client_id', 'client_secret', 'default_password', 'has_access_token', 'has_refresh_token', 'has_secret', 'header_name', 'oauth', 'r', 'refresh_token', 'token_expired', 'token_expiry', 'type', 'w']

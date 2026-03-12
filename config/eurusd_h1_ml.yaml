@@ -1,0 +1,33 @@
+# EURUSD H1 ML-enhanced configuration
+symbol: EURUSD
+timeframe: H1
+bars: 200
+mode: paper
+
+# ML features
+use_ml: true
+use_transformer: true
+use_rl: true
+market_regime: true
+sentiment_analysis: true
+order_flow: true
+
+# Execution
+execution_algo: smart
+
+# Risk management is handled internally by the bot
+
+# Watchlist for sentiment analysis
+watchlist:
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+  - EUR
+  - USD
+
+# Advanced features
+track_emotions: false
+quantum_blockchain: false
+adaptive_mode: false
+self_improve: false
+internet_access: false

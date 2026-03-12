@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\database\shared_memory_manager.py
+# hypothesis_version: 6.148.3
+
+[0.7, 0.8, 100, 1024, 'bytes', 'cleanup_interval', 'cleanup_threshold', 'columns', 'created', 'current_size', 'dtypes', 'float', 'index', 'int', 'last_cleanup', 'max_size', 'object_count', 'pickle', 'usage_percent']

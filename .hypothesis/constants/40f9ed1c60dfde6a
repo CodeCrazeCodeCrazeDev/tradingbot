@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\connectivity\rate_limiter.py
+# hypothesis_version: 6.148.3
+
+[0.0, 1000, 'alpha_vantage', 'available_tokens', 'binance', 'capacity', 'coinbase', 'depth', 'endpoints', 'finnhub', 'iex_cloud', 'klines', 'rate', 'requests', 'service', 'trades', 'wait_time', 'yahoo_finance']

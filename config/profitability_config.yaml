@@ -1,0 +1,68 @@
+# =============================================================================
+# PROFITABILITY CONFIGURATION
+# =============================================================================
+# The SOLE objective of this trading bot is to be PROFITABLE.
+# Every decision must be evaluated against this single criterion.
+# =============================================================================
+
+objective: MAXIMIZE_PROFIT
+
+# Signal Quality Gates
+signals:
+  min_confidence: 0.6
+  min_risk_reward_ratio: 1.5
+  max_signals_per_hour: 10
+  require_multi_timeframe_confirmation: true
+  require_volume_confirmation: true
+
+# Risk Management (Capital Preservation)
+risk:
+  max_risk_per_trade_pct: 2.0
+  max_daily_loss_pct: 5.0
+  max_drawdown_pct: 15.0
+  max_open_positions: 5
+  max_correlated_exposure_pct: 30.0
+  use_trailing_stop: true
+  trailing_stop_activation_pips: 20
+  trailing_stop_distance_pips: 10
+
+# Profit Targets
+profit:
+  daily_target_pct: 0.5
+  weekly_target_pct: 2.5
+  compound_winners: true
+  scale_into_winners: true
+  partial_take_profit_at_1R: 0.5
+  partial_take_profit_at_2R: 0.3
+  let_remainder_run: true
+
+# Data Requirements
+data:
+  use_real_data_only: true
+  never_use_mock_data: true
+  min_bars_for_analysis: 200
+  timeframes:
+    - M5
+    - M15
+    - H1
+    - H4
+  primary_timeframe: M15
+
+# Self-Improvement
+self_improvement:
+  enabled: true
+  learn_from_losses: true
+  learn_from_wins: true
+  adapt_to_market_regime: true
+  strategy_evolution: true
+  risk_optimization: true
+  execution_optimization: true
+  improvement_cycle_minutes: 30
+
+# Market Regime Adaptation
+regime:
+  detect_regime: true
+  adapt_strategy_to_regime: true
+  reduce_size_in_volatile: true
+  increase_size_in_trending: true
+  avoid_trading_in_choppy: true

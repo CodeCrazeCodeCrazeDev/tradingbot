@@ -1,0 +1,360 @@
+# AlphaAlgo Risk Management Configuration
+# Comprehensive risk control and portfolio management
+
+# Global Risk Settings
+risk_management:
+  enabled: true
+  risk_level: moderate  # Options: conservative, moderate, aggressive
+  
+  # Portfolio limits
+  max_portfolio_risk: 0.05  # 5% max total portfolio risk
+  max_position_risk: 0.02  # 2% max risk per position
+  max_positions: 10
+  
+  # Exposure limits
+  max_total_exposure: 1.0  # 100% of capital (no leverage)
+  max_leverage: 10  # Maximum leverage allowed
+  max_correlated_exposure: 0.5  # 50% max in correlated assets
+
+# Risk Engine
+risk_engine:
+  enabled: true
+  
+  # Risk assessment frequency
+  assessment_frequency: 60  # seconds
+  
+  # Risk levels
+  risk_levels:
+    very_low: [0.0, 0.01]
+    low: [0.01, 0.02]
+    moderate: [0.02, 0.04]
+    high: [0.04, 0.06]
+    very_high: [0.06, 1.0]
+  
+  # Risk alerts
+  alert_on_high_risk: true
+  alert_threshold: 0.04  # Alert at 4% risk
+  
+  # Risk actions
+  auto_reduce_on_high_risk: true
+  reduction_threshold: 0.06  # Auto-reduce at 6% risk
+
+# Position Sizing
+position_sizing:
+  # Sizing method
+  method: kelly  # Options: fixed, kelly, optimal_f, risk_parity, volatility_based
+  
+  # Fixed sizing
+  fixed:
+    position_size: 0.02  # 2% of capital per trade
+  
+  # Kelly Criterion
+  kelly:
+    use_fractional_kelly: true
+    kelly_fraction: 0.5  # Half-Kelly for safety
+    min_win_rate: 0.4  # Minimum 40% win rate required
+    max_position_size: 0.1  # 10% max per position
+  
+  # Optimal F
+  optimal_f:
+    calculation_window: 100  # trades
+    max_position_size: 0.08  # 8% max
+  
+  # Risk Parity
+  risk_parity:
+    target_risk_contribution: equal  # Equal risk from each position
+    rebalance_frequency: daily
+  
+  # Volatility-based
+  volatility_based:
+    target_volatility: 0.15  # 15% annual volatility target
+    lookback_period: 20
+    atr_multiplier: 2.0
+
+# Portfolio Manager
+portfolio:
+  enabled: true
+  
+  # Portfolio optimization
+  optimization:
+    enabled: true
+    method: mean_variance  # Options: mean_variance, risk_parity, black_litterman
+    rebalance_frequency: daily
+    
+  # Diversification
+  diversification:
+    min_assets: 3
+    max_assets: 10
+    correlation_threshold: 0.7  # Max correlation between assets
+    
+  # Sector limits
+  sector_limits:
+    forex: 0.5  # 50% max
+    commodities: 0.3  # 30% max
+    indices: 0.3  # 30% max
+    crypto: 0.2  # 20% max
+
+# Value at Risk (VaR)
+var_calculator:
+  enabled: true
+  
+  # VaR parameters
+  confidence_level: 0.95  # 95% confidence
+  time_horizon: 1  # 1 day
+  
+  # Calculation method
+  method: historical  # Options: historical, parametric, monte_carlo
+  
+  # Historical VaR
+  historical:
+    lookback_period: 252  # 1 year
+    
+  # Monte Carlo VaR
+  monte_carlo:
+    simulations: 10000
+    random_seed: 42
+  
+  # VaR limits
+  max_var: 0.03  # 3% max daily VaR
+  alert_threshold: 0.025  # Alert at 2.5% VaR
+
+# Drawdown Monitor
+drawdown_monitor:
+  enabled: true
+  
+  # Drawdown thresholds
+  warning_threshold: 0.10  # 10% drawdown warning
+  critical_threshold: 0.15  # 15% drawdown critical
+  max_drawdown: 0.20  # 20% max drawdown
+  
+  # Actions
+  reduce_risk_on_drawdown: true
+  reduction_levels:
+    - drawdown: 0.10
+      risk_reduction: 0.2  # Reduce risk by 20%
+    - drawdown: 0.15
+      risk_reduction: 0.5  # Reduce risk by 50%
+    - drawdown: 0.20
+      risk_reduction: 1.0  # Stop trading
+  
+  # Recovery mode
+  recovery_mode:
+    enabled: true
+    trigger_threshold: 0.10  # Enter recovery at 10% DD
+    exit_threshold: 0.05  # Exit recovery at 5% DD
+    reduced_position_size: 0.5  # 50% of normal size
+
+# Stress Testing
+stress_test:
+  enabled: true
+  
+  # Test scenarios
+  scenarios:
+    - name: market_crash
+      shock: -0.20  # -20% market move
+    - name: volatility_spike
+      vol_multiplier: 3.0
+    - name: liquidity_crisis
+      spread_multiplier: 5.0
+    - name: correlation_breakdown
+      correlation_shock: 1.0  # All correlations → 1
+  
+  # Test frequency
+  test_frequency: weekly
+  
+  # Stress limits
+  max_loss_in_stress: 0.15  # 15% max loss in stress scenario
+
+# Black Swan Protection
+black_swan:
+  enabled: true
+  
+  # Tail risk analysis
+  tail_risk:
+    enabled: true
+    confidence_level: 0.99  # 99% confidence
+    expected_shortfall: true  # Calculate CVaR
+  
+  # Protection level
+  protection_level: moderate  # Options: minimal, moderate, aggressive
+  
+  # Hedging strategies
+  hedging:
+    enabled: true
+    hedge_ratio: 0.3  # 30% portfolio hedged
+    hedge_instruments:
+      - VIX  # Volatility hedge
+      - inverse_etf  # Market inverse
+      - safe_haven  # Gold, bonds
+    
+    rehedge_threshold: 0.1  # Rehedge when ratio deviates 10%
+  
+  # Emergency protocols
+  emergency_protocol:
+    enabled: true
+    triggers:
+      - market_crash: -0.10  # -10% market move
+      - volatility_spike: 3.0  # 3x normal volatility
+      - liquidity_crisis: true
+    
+    actions:
+      - close_all_positions
+      - activate_hedges
+      - notify_admin
+      - pause_new_trades
+
+# Risk Monitoring
+monitoring:
+  enabled: true
+  
+  # Real-time monitoring
+  real_time: true
+  update_frequency: 10  # seconds
+  
+  # Monitored metrics
+  metrics:
+    - portfolio_value
+    - total_exposure
+    - var
+    - drawdown
+    - correlation_matrix
+    - position_sizes
+    - leverage
+    - margin_usage
+  
+  # Alerts
+  alerts:
+    enabled: true
+    alert_channels:
+      - log
+      - email
+      - telegram
+    
+    alert_conditions:
+      - high_risk
+      - high_drawdown
+      - high_correlation
+      - margin_call_warning
+      - position_limit_breach
+
+# Risk Limits
+limits:
+  # Trade limits
+  max_trades_per_day: 20
+  max_trades_per_hour: 5
+  
+  # Loss limits
+  max_loss_per_trade: 0.02  # 2%
+  max_loss_per_day: 0.05  # 5%
+  max_loss_per_week: 0.10  # 10%
+  max_loss_per_month: 0.15  # 15%
+  
+  # Exposure limits
+  max_exposure_per_symbol: 0.2  # 20%
+  max_exposure_per_sector: 0.4  # 40%
+  max_exposure_per_currency: 0.5  # 50%
+  
+  # Leverage limits
+  max_leverage_per_position: 10
+  max_total_leverage: 5
+  
+  # Concentration limits
+  max_single_position: 0.2  # 20% of portfolio
+  min_diversification: 3  # Minimum 3 positions
+
+# Correlation Management
+correlation:
+  enabled: true
+  
+  # Correlation calculation
+  calculation_window: 50
+  update_frequency: daily
+  
+  # Correlation limits
+  max_pairwise_correlation: 0.7
+  max_portfolio_correlation: 0.5
+  
+  # Correlation-based actions
+  reduce_correlated_positions: true
+  correlation_penalty: 0.2  # Reduce size by 20% for high correlation
+
+# Margin Management
+margin:
+  enabled: true
+  
+  # Margin requirements
+  initial_margin_ratio: 0.1  # 10% initial margin
+  maintenance_margin_ratio: 0.05  # 5% maintenance margin
+  
+  # Margin monitoring
+  monitor_margin_level: true
+  margin_call_threshold: 0.2  # Margin call at 20%
+  liquidation_threshold: 0.1  # Force liquidation at 10%
+  
+  # Actions
+  auto_reduce_on_margin_call: true
+  close_positions_on_liquidation: true
+
+# Performance Attribution
+attribution:
+  enabled: true
+  
+  # Attribution analysis
+  analyze_risk_contribution: true
+  analyze_return_contribution: true
+  
+  # Components
+  components:
+    - asset_allocation
+    - security_selection
+    - timing
+    - interaction
+  
+  # Reporting
+  report_frequency: weekly
+
+# Logging
+logging:
+  level: INFO
+  log_risk_assessments: true
+  log_limit_breaches: true
+  log_path: logs/risk_management/
+  
+  # Detailed logging
+  log_position_sizing: true
+  log_var_calculations: true
+  log_stress_tests: true
+  log_correlation_matrix: true
+
+# Safety Controls
+safety:
+  # Circuit breakers
+  circuit_breakers:
+    enabled: true
+    daily_loss_breaker: 0.05  # Stop at 5% daily loss
+    consecutive_loss_breaker: 5  # Stop after 5 consecutive losses
+    
+  # Kill switch
+  kill_switch:
+    enabled: true
+    manual_trigger: true
+    auto_trigger_conditions:
+      - portfolio_loss > 0.20
+      - system_error_critical
+      - margin_call_imminent
+  
+  # Validation
+  pre_trade_validation: true
+  post_trade_validation: true
+
+# Feature Flags
+features:
+  enable_risk_engine: true
+  enable_position_sizing: true
+  enable_portfolio_manager: true
+  enable_var_calculator: true
+  enable_drawdown_monitor: true
+  enable_stress_test: true
+  enable_black_swan_protection: true
+  enable_correlation_management: true
+  enable_margin_management: true

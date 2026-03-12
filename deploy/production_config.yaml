@@ -1,0 +1,204 @@
+# =============================================================================
+# PRODUCTION DEPLOYMENT CONFIGURATION
+# AlphaAlgo Trading Bot - Production Settings
+# =============================================================================
+
+# Application Settings
+app:
+  name: "AlphaAlgo Trading Bot"
+  version: "2.0.0"
+  environment: "production"
+  debug: false
+  log_level: "INFO"
+
+# Trading Mode
+trading:
+  mode: "paper"  # paper, live (CHANGE TO 'live' ONLY WHEN READY)
+  symbols:
+    - "BTCUSDT"
+    - "ETHUSDT"
+    - "SOLUSDT"
+  timeframes:
+    - "1h"
+    - "4h"
+    - "1d"
+  max_concurrent_positions: 5
+  
+# Risk Management (CRITICAL - DO NOT EXCEED)
+risk:
+  max_risk_per_trade: 0.02      # 2% max risk per trade
+  max_daily_loss: 0.05          # 5% max daily loss
+  max_drawdown: 0.20            # 20% max drawdown - EMERGENCY STOP
+  max_position_size_pct: 0.10   # 10% max position size
+  max_leverage: 3               # 3x max leverage
+  require_stop_loss: true
+  min_risk_reward: 1.5          # Minimum 1.5:1 R:R ratio
+  
+# Capital Management
+capital:
+  initial_capital: 10000        # Starting capital (USD)
+  reserve_pct: 0.20             # Keep 20% in reserve
+  compound_profits: true
+  
+# Execution Settings
+execution:
+  default_order_type: "limit"
+  max_slippage_pct: 0.5         # 0.5% max slippage
+  retry_attempts: 3
+  retry_delay_seconds: 1
+  use_twap: true
+  twap_duration_minutes: 15
+  
+# Data Sources (FREE APIs)
+data_sources:
+  primary:
+    - provider: "binance"
+      type: "crypto"
+      rate_limit: 1200  # requests per minute
+    - provider: "yahoo_finance"
+      type: "stocks"
+      rate_limit: 100
+  alternative:
+    - provider: "coingecko"
+      type: "crypto"
+      rate_limit: 50
+    - provider: "fred"
+      type: "economic"
+      rate_limit: 120
+      
+# API Keys (SET VIA ENVIRONMENT VARIABLES)
+api_keys:
+  alpha_vantage: "${ALPHA_VANTAGE_API_KEY}"
+  fred: "${FRED_API_KEY}"
+  newsapi: "${NEWSAPI_KEY}"
+  binance_api: "${BINANCE_API_KEY}"
+  binance_secret: "${BINANCE_SECRET_KEY}"
+  
+# Broker Configuration
+broker:
+  primary: "binance"
+  paper_trading: true
+  testnet: true  # Use testnet for paper trading
+  
+# AI/ML Settings
+ml:
+  enabled: true
+  models:
+    - "transformer_forecaster"
+    - "ensemble_predictor"
+    - "ppo_agent"
+  min_confidence: 0.70          # Minimum 70% confidence to trade
+  retrain_interval_hours: 24
+  
+# Signal Validation
+validation:
+  min_validation_score: 0.70    # Minimum validation score
+  require_multi_timeframe: true
+  require_volume_confirmation: true
+  manipulation_detection: true
+  
+# Monitoring & Alerts
+monitoring:
+  health_check_interval: 60     # seconds
+  metrics_interval: 300         # 5 minutes
+  alert_channels:
+    - type: "email"
+      enabled: true
+      recipients: ["${ALERT_EMAIL}"]
+    - type: "telegram"
+      enabled: false
+      chat_id: "${TELEGRAM_CHAT_ID}"
+      
+# Logging
+logging:
+  level: "INFO"
+  format: "json"
+  file:
+    enabled: true
+    path: "logs/trading_bot.log"
+    max_size_mb: 100
+    backup_count: 10
+  console:
+    enabled: true
+    
+# Database
+database:
+  type: "sqlite"
+  path: "data/trading_bot.db"
+  backup_interval_hours: 24
+  
+# Checkpointing
+checkpoint:
+  enabled: true
+  interval_seconds: 60
+  max_checkpoints: 10
+  path: "state/checkpoints"
+  
+# Emergency Controls
+emergency:
+  auto_flatten_on_drawdown: true
+  drawdown_threshold: 0.15      # 15% drawdown triggers flatten
+  require_confirmation: false   # Auto-flatten without confirmation
+  notification_required: true
+  
+# Performance Optimization
+performance:
+  parallel_processing: true
+  max_workers: 4
+  cache_ttl_seconds: 60
+  memory_limit_mb: 2048
+  
+# Governance (DeepSeek-style)
+governance:
+  autonomy_level: "advisory"    # full, advisory, restricted
+  require_approval_above: 10000 # Require approval for trades > $10k
+  max_auto_trade_size: 5000     # Max auto-trade size
+  
+# Evolution Settings
+evolution:
+  enabled: true
+  interval_hours: 24
+  require_human_approval: true
+  max_parameter_change_pct: 20  # Max 20% parameter change per cycle
+  
+# Fail-Safe Modes
+fail_safe:
+  modes:
+    - name: "normal"
+      position_multiplier: 1.0
+    - name: "cautious"
+      position_multiplier: 0.75
+      trigger: "elevated_volatility"
+    - name: "defensive"
+      position_multiplier: 0.5
+      trigger: "high_volatility"
+    - name: "emergency"
+      position_multiplier: 0.25
+      trigger: "extreme_volatility"
+    - name: "shutdown"
+      position_multiplier: 0.0
+      trigger: "max_drawdown"
+      
+# Scheduled Tasks
+scheduler:
+  tasks:
+    - name: "daily_report"
+      schedule: "0 0 * * *"     # Midnight daily
+      enabled: true
+    - name: "weekly_rebalance"
+      schedule: "0 0 * * 0"     # Sunday midnight
+      enabled: false
+    - name: "model_retrain"
+      schedule: "0 2 * * *"     # 2 AM daily
+      enabled: true
+      
+# Feature Flags
+features:
+  slow_inference: true
+  signal_validation: true
+  market_psychology: true
+  growth_optimization: true
+  emergency_response: true
+  neural_evolution: true
+  quantum_optimization: false   # Requires Qiskit
+  defi_integration: false       # Requires Web3

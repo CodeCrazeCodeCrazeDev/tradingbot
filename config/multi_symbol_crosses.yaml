@@ -1,0 +1,58 @@
+# Multi-Symbol Trading Configuration - Cross Currency Pairs
+# Focus on non-USD currency pairs for diversification
+
+# General settings
+mode: paper
+timeframe: H1
+bars: 500
+
+# ML features
+use_ml: true
+use_transformer: true
+use_rl: true
+market_regime: true
+sentiment_analysis: true
+order_flow: true
+
+# Execution
+execution_algo: smart
+
+# Symbols to trade - Cross currency pairs
+symbols:
+  - EURGBP  # Euro vs British Pound
+  - EURJPY  # Euro vs Japanese Yen
+  - GBPJPY  # British Pound vs Japanese Yen
+  - AUDJPY  # Australian Dollar vs Japanese Yen
+  - EURCHF  # Euro vs Swiss Franc
+
+# Risk management per symbol (percentages)
+risk_allocation:
+  EURGBP: 25
+  EURJPY: 20
+  GBPJPY: 20
+  AUDJPY: 15
+  EURCHF: 20
+
+# Watchlist for sentiment analysis
+watchlist:
+  - EURGBP
+  - EURJPY
+  - GBPJPY
+  - AUDJPY
+  - EURCHF
+  - EUR
+  - GBP
+  - JPY
+  - AUD
+  - CHF
+
+# Advanced features
+track_emotions: true
+quantum_blockchain: false
+adaptive_mode: true
+self_improve: true
+internet_access: false
+
+# Correlation management
+manage_correlations: true
+max_correlated_exposure: 40  # Lower than majors due to higher correlation risk

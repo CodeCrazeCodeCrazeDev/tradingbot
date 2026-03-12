@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\market_intelligence\liquidity_analysis.py
+# hypothesis_version: 6.148.3
+
+[0.0005, 0.001, 0.236, 0.3, 0.382, 0.5, 0.618, 0.786, 1.5, 100, 'bearish', 'bearish_bos', 'bearish_void', 'body_pct', 'body_size', 'break_level', 'bullish', 'bullish_bos', 'bullish_void', 'close', 'current_price', 'current_zone', 'discount', 'discount_threshold', 'ema_fast', 'ema_slow', 'equilibrium', 'fib_levels', 'first_touch', 'high', 'is_filled', 'is_mitigated', 'last_touch', 'level', 'low', 'mitigation', 'mitigation_level', 'mitigation_timestamp', 'new_trend', 'open', 'premium', 'premium_threshold', 'previous_high', 'previous_low', 'previous_trend', 'price', 'price_at_change', 'resistance', 'strength', 'structure_break', 'support', 'swing_high', 'swing_low', 'timestamp', 'touch_points', 'touches', 'trend', 'trend_change', 'type', 'void_high', 'void_low', 'void_size', 'volume', 'volume_ma', 'volume_ratio']

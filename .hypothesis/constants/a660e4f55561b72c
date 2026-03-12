@@ -1,0 +1,4 @@
+# file: C:\Users\peterson\trading bot\trading_bot\data\pipeline_monitor.py
+# hypothesis_version: 6.148.3
+
+[0.0, 0.1, 0.35, 0.8, 100, 1000, 1024, 8000, '95th Percentile', 'Average', 'CPU (%)', 'Component', 'Items per second', 'Memory (MB)', 'PipelineMetrics', 'PipelineMonitor', 'Time', 'Time (seconds)', 'Usage', 'avg', 'bottleneck_threshold', 'bottlenecks', 'component', 'components', 'cpu', 'cpu_percent', 'cpu_usage', 'current', 'enable_prometheus', 'errors', 'history', 'items_processed', 'max', 'memory_bytes', 'memory_usage', 'min', 'monitoring_interval', 'p95', 'processing_time', 'prometheus_port', 'resources', 'right', 'threshold', 'throughput', 'timestamp', 'total', 'type', 'types', 'unknown', 'value']

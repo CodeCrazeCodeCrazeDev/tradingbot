@@ -1,0 +1,109 @@
+# Trading System Configuration
+
+# Data Pipeline Settings
+data_pipeline:
+  market_stream:
+    buffer_sizes:
+      market_data: 1000
+      trades: 5000
+    zmq_base_port: 5555
+    redis_url: "redis://localhost:6379"
+    max_workers: 8
+
+  processor:
+    processing_workers: 4
+    batch_size: 100
+    plasma_socket: "/tmp/plasma"
+
+  database:
+    db_path: "market_data.db"
+    parquet_dir: "market_data_archive"
+    use_redis: true
+    max_workers: 4
+
+# Analysis Settings
+analysis:
+  microstructure:
+    large_trade_threshold: 100000
+    vwap_window: 20
+    impact_decay: 0.1
+    impact_coefficient: 0.1
+
+  order_flow:
+    short_window: 20
+    medium_window: 50
+    long_window: 100
+    volume_threshold: 0.8
+    delta_threshold: 0.6
+    absorption_threshold: 0.7
+
+  analytics:
+    min_confidence: 0.7
+    feature_lookback: 100
+    prediction_threshold: 0.8
+    regime_detection: true
+
+# Trading Parameters
+trading:
+  account_size: 100000
+  max_risk_per_trade: 0.01  # 1% risk per trade
+  max_position_size: 0.1    # 10% max position size
+  max_symbol_exposure: 50000
+  min_signal_confidence: 0.8
+  
+  # Risk-Reward Settings
+  min_reward_ratio: 1.5
+  base_stop_multiplier: 2.0
+  volatility_stop_multiplier: 1.5
+  
+  # Position Sizing
+  kelly_fraction: 0.5
+  position_scale_factor: 0.8
+  
+  # Execution Settings
+  slippage_tolerance: 0.0002
+  execution_timeout: 5  # seconds
+  retry_attempts: 3
+
+# Market Regimes
+market_regimes:
+  trending:
+    min_momentum: 0.7
+    reward_multiplier: 1.5
+    size_multiplier: 1.2
+    
+  volatile:
+    max_volatility: 0.8
+    reward_multiplier: 0.8
+    size_multiplier: 0.6
+    
+  ranging:
+    momentum_threshold: 0.3
+    reward_multiplier: 1.0
+    size_multiplier: 1.0
+
+# Performance Monitoring
+monitoring:
+  prometheus_port: 8000
+  metrics_interval: 1  # seconds
+  alert_thresholds:
+    latency: 1.0      # milliseconds
+    error_rate: 0.01  # 1%
+    memory_usage: 80  # percent
+    cpu_usage: 80     # percent
+
+# Optimization Parameters
+optimization:
+  feature_selection:
+    min_importance: 0.05
+    max_features: 20
+    
+  signal_weights:
+    microstructure: 0.4
+    order_flow: 0.4
+    technical: 0.2
+    
+  prediction_weights:
+    price_direction: 0.5
+    volatility: 0.3
+    regime: 0.2

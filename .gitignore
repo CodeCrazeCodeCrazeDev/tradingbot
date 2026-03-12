@@ -1,0 +1,84 @@
+# API Keys
+config/api_keys.json
+
+# Cached data
+data/
+*.cache
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.env
+.venv
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+
+# Local development
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# CRITICAL: Credentials and secrets
+.env
+.env.*
+!.env.template
+*.key
+*.pem
+*.credentials
+secrets/
+credentials.json
+task-definition.json
+
+# Backups (may contain sensitive data) - ALSO CAUSING IDE CRASHES
+backups/
+backup/
+backup/fix_backup_*/
+autonomous_backups/
+evolution_backups/
+fix_backups/
+syntax_fix_backups/
+complete_work_backups/
+*.backup
+*.bak
+
+# Encryption keys
+config/encryption.key
+
+# Test reports with sensitive data
+test_reports/*.json
+.env 
+
+.secret_key
+secrets.json
