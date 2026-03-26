@@ -1,0 +1,8 @@
+app:
+  environment: development
+
+trading:
+  mode: paper
+
+logging:
+  level: DEBUG
