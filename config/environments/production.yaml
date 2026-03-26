@@ -1,0 +1,11 @@
+app:
+  environment: production
+
+trading:
+  mode: live
+
+monitoring:
+  status_interval: 30
+
+logging:
+  level: INFO

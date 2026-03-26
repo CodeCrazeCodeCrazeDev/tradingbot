@@ -1,0 +1,40 @@
+app:
+  name: AlphaAlgo Trading Bot
+  version: 3.0.0
+  environment: development
+
+trading:
+  mode: paper
+  symbols:
+    - EURUSD
+  timeframes:
+    - M15
+  max_concurrent_positions: 3
+
+account:
+  initial_capital: 10000
+  mt5_login: null
+  mt5_password: null
+  mt5_server: null
+
+services:
+  enable_tier1: true
+  enable_tier2: false
+  enable_tier3: false
+  enable_tier4: false
+  enable_tier5: false
+
+monitoring:
+  status_interval: 60
+  health_host: 0.0.0.0
+  health_port: 8080
+
+state:
+  runtime_file: state/runtime_state.json
+
+logging:
+  level: INFO
+  console:
+    enabled: true
+  file:
+    enabled: true

@@ -1,17 +1,14 @@
-"""
-from pathlib import Path
-from dataclasses import field
-MetaTrader 5 Connector
-Real-time data and trading for MT5 platform
-"""
+"""MetaTrader 5 connector with resilient reconnect logic."""
 
-import MetaTrader5 as mt5
 import asyncio
 from typing import Dict, List, Optional
 from datetime import datetime
 import logging
-import pandas as pd
-import numpy as np
+
+try:
+    import MetaTrader5 as mt5
+except ImportError:  # pragma: no cover
+    mt5 = None
 
 from .base_connector import (
     BaseConnector, ConnectionStatus, MarketData, 
@@ -45,48 +42,59 @@ class MT5Connector(BaseConnector):
         
         # Monitoring tasks
         self.monitoring_tasks = {}
+        self._connect_lock = asyncio.Lock()
+        self._monitor_task: Optional[asyncio.Task] = None
         
     async def connect(self):
         """Connect to MT5"""
-        try:
-            self.status = ConnectionStatus.CONNECTING
-            
-            # Initialize MT5
-            if self.mt5_path:
-                if not mt5.initialize(self.mt5_path):
+        if mt5 is None:
+            raise RuntimeError("MetaTrader5 package is not installed")
+
+        async with self._connect_lock:
+            if self.status in (ConnectionStatus.CONNECTED, ConnectionStatus.AUTHENTICATED):
+                return
+
+            try:
+                self.status = ConnectionStatus.CONNECTING
+
+                # Clean up any stale MT5 state before reconnect
+                mt5.shutdown()
+                await asyncio.sleep(0.2)
+
+                # Initialize MT5
+                if self.mt5_path:
+                    initialized = mt5.initialize(self.mt5_path)
+                else:
+                    initialized = mt5.initialize()
+                if not initialized:
                     raise Exception(f"MT5 initialization failed: {mt5.last_error()}")
-            else:
-                if not mt5.initialize():
-                    raise Exception(f"MT5 initialization failed: {mt5.last_error()}")
-            
-            # Login to account
-            if self.account and self.password and self.server:
-                authorized = mt5.login(
-                    login=int(self.account),
-                    password=self.password,
-                    server=self.server
-                )
-                
-                if not authorized:
-                    raise Exception(f"MT5 login failed: {mt5.last_error()}")
-                
-                self.status = ConnectionStatus.AUTHENTICATED
-            else:
-                self.status = ConnectionStatus.CONNECTED
-            
-            # Get account info
-            account_info = mt5.account_info()
-            if account_info:
-                logger.info(f"Connected to MT5: {account_info.name} ({account_info.login})")
-                logger.info(f"Balance: {account_info.balance}, Equity: {account_info.equity}")
-            
-            # Start monitoring
-            asyncio.create_task(self._monitor_connection())
-            
-        except Exception as e:
-            logger.error(f"Failed to connect to MT5: {e}")
-            self.status = ConnectionStatus.ERROR
-            raise
+
+                # Login to account
+                if self.account and self.password and self.server:
+                    authorized = mt5.login(
+                        login=int(self.account),
+                        password=self.password,
+                        server=self.server
+                    )
+
+                    if not authorized:
+                        raise Exception(f"MT5 login failed: {mt5.last_error()}")
+
+                    self.status = ConnectionStatus.AUTHENTICATED
+                else:
+                    self.status = ConnectionStatus.CONNECTED
+
+                account_info = mt5.account_info()
+                if account_info:
+                    logger.info(f"Connected to MT5: {account_info.name} ({account_info.login})")
+
+                if not self._monitor_task or self._monitor_task.done():
+                    self._monitor_task = asyncio.create_task(self._monitor_connection())
+
+            except Exception as e:
+                logger.error(f"Failed to connect to MT5: {e}")
+                self.status = ConnectionStatus.ERROR
+                raise
     
     async def disconnect(self):
         """Disconnect from MT5"""
@@ -94,9 +102,14 @@ class MT5Connector(BaseConnector):
             # Cancel monitoring tasks
             for task in self.monitoring_tasks.values():
                 task.cancel()
+            self.monitoring_tasks.clear()
+            if self._monitor_task:
+                self._monitor_task.cancel()
+                self._monitor_task = None
             
             # Shutdown MT5
-            mt5.shutdown()
+            if mt5 is not None:
+                mt5.shutdown()
             
             self.status = ConnectionStatus.DISCONNECTED
             logger.info("Disconnected from MT5")
@@ -398,14 +411,17 @@ class MT5Connector(BaseConnector):
     
     async def _monitor_connection(self):
         """Monitor MT5 connection"""
-        while self.status in [ConnectionStatus.CONNECTED, ConnectionStatus.AUTHENTICATED]:
+        while self.status in [ConnectionStatus.CONNECTED, ConnectionStatus.AUTHENTICATED, ConnectionStatus.RECONNECTING]:
             try:
                 # Check if terminal is connected
                 terminal_info = mt5.terminal_info()
                 
                 if not terminal_info or not terminal_info.connected:
                     logger.warning("MT5 terminal disconnected")
-                    await self.reconnect()
+                    ok = await self.reconnect()
+                    if not ok:
+                        self.status = ConnectionStatus.ERROR
+                        break
                 
                 await asyncio.sleep(5)  # Check every 5 seconds
                 
@@ -498,9 +514,9 @@ class MT5Connector(BaseConnector):
         # Validate symbol
         if not isinstance(order['symbol'], str) or len(order['symbol']) > 32:
             raise ValueError("Invalid symbol format")
-        try:
-        
+
         # Validate quantity
+        try:
             quantity = float(order['quantity'])
             if quantity <= 0:
                 raise ValueError("Quantity must be positive")

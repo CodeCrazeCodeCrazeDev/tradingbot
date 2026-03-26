@@ -17,15 +17,9 @@ import argparse
 import logging
 import signal
 import sys
-import os
 from pathlib import Path
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-
-try:
-    import yaml
-except ImportError:
-    yaml = None
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -62,6 +56,7 @@ from trading_bot.background import (
     AdaptiveLearningService, SystemHealthService,
     WorkflowEngine, Workflow, WorkflowStep
 )
+from trading_bot.runtime import load_runtime_config, RuntimeStateStore, RuntimeHealth
 
 logger = logging.getLogger(__name__)
 
@@ -108,31 +103,8 @@ def setup_logging(config: Dict[str, Any]) -> logging.Logger:
 
 
 def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
-    """Load configuration from YAML file"""
-    if config_path:
-        config_file = Path(config_path)
-    else:
-        # Try default locations
-        config_locations = [
-            project_root / 'deploy' / 'production_config.yaml',
-            project_root / 'config' / 'alphaalgo_config.yaml',
-            project_root / 'config' / 'survival_config.yaml',
-        ]
-        
-        config_file = None
-        for loc in config_locations:
-            if loc.exists():
-                config_file = loc
-                break
-                
-    if config_file and config_file.exists():
-        with open(config_file) as f:
-            config = yaml.safe_load(f)
-        logger.info(f"Loaded config from: {config_file}")
-        return config
-    else:
-        logger.info("No config file found, using defaults")
-        return get_default_config()
+    """Load config from base + environment override with env-var substitution."""
+    return load_runtime_config(config_path=config_path)
 
 
 def get_default_config() -> Dict[str, Any]:
@@ -206,6 +178,24 @@ class TradingBot:
         self.use_tier3_services = config.get('services', {}).get('enable_tier3', False)
         self.use_tier4_services = config.get('services', {}).get('enable_tier4', False)
         self.use_tier5_services = config.get('services', {}).get('enable_tier5', False)
+        self.state_store = RuntimeStateStore(path=config.get("state", {}).get("runtime_file", "state/runtime_state.json"))
+        self.health_server: Optional[RuntimeHealth] = None
+        self._restore_state()
+
+    def _restore_state(self) -> None:
+        state = self.state_store.load()
+        self.trades_executed = int(state.get("trades_executed", self.trades_executed))
+        self.total_pnl = float(state.get("total_pnl", self.total_pnl))
+
+    def _persist_state(self) -> None:
+        self.state_store.save(
+            {
+                "running": self.running,
+                "trades_executed": self.trades_executed,
+                "total_pnl": self.total_pnl,
+                "trading_halted": self.trading_halted,
+            }
+        )
         
     async def initialize(self):
         """Initialize all components and services"""
@@ -393,6 +383,15 @@ class TradingBot:
             await asyncio.sleep(5)
         
         try:
+            # Start runtime health endpoint
+            monitoring_cfg = self.config.get("monitoring", {})
+            self.health_server = RuntimeHealth(
+                self.get_status,
+                host=monitoring_cfg.get("health_host", "0.0.0.0"),
+                port=int(monitoring_cfg.get("health_port", 8080)),
+            )
+            await self.health_server.start()
+
             # Start background services
             await self.background_manager.start()
             
@@ -425,6 +424,7 @@ class TradingBot:
                 # Log status periodically
                 if iteration % (status_interval // 10) == 0:
                     await self._log_status()
+                    self._persist_state()
                 
                 # Check service health
                 health_report = self.registry.get_health_report()
@@ -442,6 +442,7 @@ class TradingBot:
                 break
             except Exception as e:
                 self.logger.error(f"Error in main loop: {e}")
+                self._persist_state()
                 await asyncio.sleep(5)
                 
     async def _log_status(self):
@@ -471,6 +472,9 @@ class TradingBot:
         # Stop background services
         if self.background_manager:
             await self.background_manager.stop()
+        if self.health_server:
+            await self.health_server.stop()
+        self._persist_state()
         
         # Unsubscribe from events
         if self.event_bus:
@@ -537,6 +541,10 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
+    def global_exception_handler(exc_type, exc_value, exc_traceback):
+        log.critical("Unhandled exception", exc_info=(exc_type, exc_value, exc_traceback))
+    sys.excepthook = global_exception_handler
+
     try:
         # Run bot
         asyncio.run(run_bot(bot))
@@ -651,6 +659,14 @@ def print_banner(log: logging.Logger) -> None:
 
 async def run_bot(bot: TradingBot):
     """Run the trading bot"""
+    loop = asyncio.get_running_loop()
+
+    def loop_exception_handler(_loop, context):
+        bot.logger.error(f"Global async exception: {context.get('message')}")
+        if context.get("exception"):
+            bot.logger.exception(context["exception"])
+
+    loop.set_exception_handler(loop_exception_handler)
     await bot.initialize()
     await bot.start()
 
