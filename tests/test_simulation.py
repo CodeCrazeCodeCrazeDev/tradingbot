@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import Dict, List, Any
+from trading_bot.world_model.simulation_orchestrator import DegradationLevel, PredictiveShield
 
 
 @pytest.mark.simulation
@@ -90,6 +91,24 @@ class TestPaperTradingSimulation:
             "commission": round(order["quantity"] * 3.5, 2),  # $3.5 per 0.01 lot
             "timestamp": datetime.now()
         }
+
+
+def test_l10_predictive_shield_degrades_before_violation():
+    shield = PredictiveShield(warn_threshold=0.3, block_threshold=0.7)
+
+    decision = shield.evaluate(
+        {
+            "drawdown_pressure": 0.4,
+            "surprise": 0.6,
+            "liquidity_gap": 0.4,
+            "model_uncertainty": 0.5,
+        }
+    )
+
+    assert decision.approved
+    assert decision.near_miss
+    assert decision.degradation_level == DegradationLevel.REDUCED_RISK
+    assert len(shield.near_misses) == 1
 
 
 @pytest.mark.simulation

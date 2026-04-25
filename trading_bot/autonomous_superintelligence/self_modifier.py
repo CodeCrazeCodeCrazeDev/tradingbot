@@ -8,10 +8,11 @@ import asyncio
 import json
 import logging
 import inspect
+import math
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Callable, Tuple
-from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Set, Callable, Tuple, Sequence
+from dataclasses import dataclass, field
 import importlib
 import sys
 import numpy as np
@@ -19,6 +20,10 @@ import torch
 import torch.nn as nn
 
 logger = logging.getLogger(__name__)
+
+
+def _utc() -> str:
+    return datetime.utcnow().isoformat() + "Z"
 
 
 @dataclass
@@ -392,6 +397,100 @@ class SelfModificationEngine:
 # =============================================================================
 # L9: Meta-Learning and Self-Improvement Loop — Change Control Board Protocol
 # =============================================================================
+
+@dataclass(frozen=True)
+class CanaryDecision:
+    candidate_id: str
+    action: str
+    rollout_fraction: float
+    reason: str
+    p_value: Optional[float] = None
+
+
+class ABSignificanceTester:
+    """Automated A/B significance testing for self-modification promotion."""
+
+    def __init__(self, *, alpha: float = 0.05, min_samples: int = 30) -> None:
+        self.alpha = alpha
+        self.min_samples = min_samples
+
+    def test(self, control: Sequence[float], treatment: Sequence[float]) -> Dict[str, float]:
+        if len(control) < self.min_samples or len(treatment) < self.min_samples:
+            return {"p_value": 1.0, "effect": 0.0, "significant": 0.0}
+
+        c = np.asarray(control, dtype=float)
+        t = np.asarray(treatment, dtype=float)
+        effect = float(t.mean() - c.mean())
+        se = math.sqrt(float(c.var(ddof=1) / len(c) + t.var(ddof=1) / len(t)))
+        if se <= 1e-12:
+            p_value = 0.0 if effect > 0 else 1.0
+        else:
+            z_score = effect / se
+            p_value = 2.0 * (1.0 - _normal_cdf(abs(z_score)))
+        return {"p_value": p_value, "effect": effect, "significant": float(p_value < self.alpha)}
+
+
+class CanaryRolloutController:
+    """Preferred L9 promotion path: canary first, promote only with evidence."""
+
+    def __init__(self, *, tester: Optional[ABSignificanceTester] = None) -> None:
+        self.tester = tester or ABSignificanceTester()
+        self.rollouts: Dict[str, float] = {}
+
+    def decide(
+        self,
+        candidate_id: str,
+        control: Sequence[float],
+        treatment: Sequence[float],
+        *,
+        current_fraction: float = 0.05,
+    ) -> CanaryDecision:
+        stats = self.tester.test(control, treatment)
+        if stats["significant"] and stats["effect"] > 0:
+            next_fraction = min(1.0, max(0.10, current_fraction * 2))
+            action = "expand" if next_fraction < 1.0 else "promote"
+            reason = f"positive significant effect {stats['effect']:.4f}"
+        elif stats["significant"] and stats["effect"] < 0:
+            next_fraction = 0.0
+            action = "rollback"
+            reason = f"negative significant effect {stats['effect']:.4f}"
+        else:
+            next_fraction = current_fraction
+            action = "continue_canary"
+            reason = "insufficient evidence"
+
+        self.rollouts[candidate_id] = next_fraction
+        return CanaryDecision(candidate_id, action, next_fraction, reason, stats["p_value"])
+
+
+@dataclass(frozen=True)
+class CrossLayerAuditEvent:
+    layer: str
+    component: str
+    action: str
+    evidence: Dict[str, Any]
+    timestamp: str = field(default_factory=_utc)
+
+
+class CrossLayerAuditTrail:
+    """Auditable L9 trail tying self-modification to upstream/downstream layers."""
+
+    def __init__(self) -> None:
+        self.events: List[CrossLayerAuditEvent] = []
+
+    def record(self, layer: str, component: str, action: str, evidence: Dict[str, Any]) -> None:
+        self.events.append(CrossLayerAuditEvent(layer, component, action, evidence))
+
+    def report(self) -> Dict[str, Any]:
+        by_layer: Dict[str, int] = {}
+        for event in self.events:
+            by_layer[event.layer] = by_layer.get(event.layer, 0) + 1
+        return {"events": [event.__dict__ for event in self.events], "by_layer": by_layer}
+
+
+def _normal_cdf(x: float) -> float:
+    return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
+
 
 class ShadowNetwork:
     """

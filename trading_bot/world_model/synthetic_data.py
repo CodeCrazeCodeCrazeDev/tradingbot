@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 class MarketRegime(Enum):
     """Different market regimes to simulate."""
+    NORMAL = "normal"
     TRENDING_UP = "trending_up"
     TRENDING_DOWN = "trending_down"
     RANGING = "ranging"

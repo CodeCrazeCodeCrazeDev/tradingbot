@@ -5,7 +5,14 @@ A self-improving, self-modifying AI system that manages its own operations.
 
 from .core_intelligence import AutonomousCore
 from .agent_coordinator import AgentCoordinator
-from .self_modifier import SelfModificationEngine
+from .self_modifier import (
+    SelfModificationEngine,
+    ABSignificanceTester,
+    CanaryDecision,
+    CanaryRolloutController,
+    CrossLayerAuditEvent,
+    CrossLayerAuditTrail,
+)
 from .research_engine import ScientificResearchEngine
 from .opportunity_detector import GlobalOpportunityDetector
 from .resource_manager import AutonomousResourceManager
@@ -24,6 +31,11 @@ __all__ = [
     'AutonomousCore',
     'AgentCoordinator',
     'SelfModificationEngine',
+    'ABSignificanceTester',
+    'CanaryDecision',
+    'CanaryRolloutController',
+    'CrossLayerAuditEvent',
+    'CrossLayerAuditTrail',
     'ScientificResearchEngine',
     'GlobalOpportunityDetector',
     'AutonomousResourceManager',

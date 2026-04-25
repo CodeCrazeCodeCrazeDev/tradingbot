@@ -16,7 +16,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Dict, List, Optional, Tuple, Set, Callable
+from typing import Any, Dict, List, Optional, Tuple, Set, Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from collections import defaultdict

@@ -710,6 +710,63 @@ async def run_counterfactual_analysis(
 # L10: Governance and Verifier Layer — Formal Methods Light: Runtime Shield
 # =============================================================================
 
+class DegradationLevel(str, Enum):
+    NORMAL = "normal"
+    REDUCED_RISK = "reduced_risk"
+    PAPER_ONLY = "paper_only"
+    ANALYSIS_ONLY = "analysis_only"
+    HALTED = "halted"
+
+
+@dataclass(frozen=True)
+class ShieldDecision:
+    approved: bool
+    degradation_level: DegradationLevel
+    reason: str
+    predicted_violation_probability: float
+    near_miss: bool
+
+
+class PredictiveShield:
+    """Predictive L10 shield with near-miss learning and graceful degradation."""
+
+    def __init__(
+        self,
+        *,
+        warn_threshold: float = 0.35,
+        block_threshold: float = 0.70,
+        halt_threshold: float = 0.90,
+    ) -> None:
+        self.warn_threshold = warn_threshold
+        self.block_threshold = block_threshold
+        self.halt_threshold = halt_threshold
+        self.near_misses: List[Dict[str, Any]] = []
+
+    def evaluate(self, risk_features: Dict[str, float]) -> ShieldDecision:
+        probability = self._predict_violation_probability(risk_features)
+        near_miss = self.warn_threshold <= probability < self.block_threshold
+        if probability >= self.halt_threshold:
+            decision = ShieldDecision(False, DegradationLevel.HALTED, "predicted violation halt", probability, near_miss)
+        elif probability >= self.block_threshold:
+            decision = ShieldDecision(False, DegradationLevel.ANALYSIS_ONLY, "predicted violation block", probability, near_miss)
+        elif probability >= self.warn_threshold:
+            decision = ShieldDecision(True, DegradationLevel.REDUCED_RISK, "near miss: degrade risk", probability, near_miss)
+            self.near_misses.append({"features": dict(risk_features), "probability": probability, "timestamp": datetime.utcnow().isoformat() + "Z"})
+        else:
+            decision = ShieldDecision(True, DegradationLevel.NORMAL, "clear", probability, near_miss)
+        return decision
+
+    def _predict_violation_probability(self, features: Dict[str, float]) -> float:
+        weighted = (
+            0.35 * float(features.get("drawdown_pressure", 0.0))
+            + 0.25 * float(features.get("surprise", 0.0))
+            + 0.20 * float(features.get("liquidity_gap", 0.0))
+            + 0.20 * float(features.get("model_uncertainty", 0.0))
+        )
+        learned_bonus = min(0.20, 0.02 * len(self.near_misses))
+        return max(0.0, min(1.0, weighted + learned_bonus))
+
+
 class LTLFormula:
     """
     Linear Temporal Logic (LTL) formula for runtime safety specification.

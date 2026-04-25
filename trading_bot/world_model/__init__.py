@@ -53,6 +53,22 @@ from .imagination import (
     LQRTracker,
     DiffusionPolicyHead,
     ActorController,
+    # L7 ceiling-push
+    RiskAwarePlanResult,
+    RiskAwareCVaRPlanner,
+    PlanRepairEngine,
+    TemporalBoundaryConsistencyChecker,
+    # L8 ceiling-push
+    ContactMode,
+    ContactModeDecision,
+    ContactModeSwitcher,
+    ComplianceAction,
+    ComplianceController,
+    ResidualDiffusionRefiner,
+    # Cross-cutting loops
+    AdversarialSelfPlay,
+    CausalAgentLoop,
+    DreamAndVerifyLoop,
 )
 
 # L2 + L5: Counterfactual Engine (Object-Centric + Counterfactual Simulator)
@@ -121,6 +137,9 @@ from .simulation_orchestrator import (
     # L10: Governance/Verifier
     LTLFormula,
     RuntimeShield,
+    DegradationLevel,
+    ShieldDecision,
+    PredictiveShield,
     create_runtime_shield,
 )
 
@@ -182,6 +201,23 @@ __all__ = [
     'LQRTracker',
     'DiffusionPolicyHead',
     'ActorController',
+    'RiskAwarePlanResult',
+    'RiskAwareCVaRPlanner',
+    'PlanRepairEngine',
+    'TemporalBoundaryConsistencyChecker',
+    # L8/L10 ceiling-push + cross-cut loops
+    'AdversarialSelfPlay',
+    'ComplianceAction',
+    'ComplianceController',
+    'ContactMode',
+    'ContactModeDecision',
+    'ContactModeSwitcher',
+    'CausalAgentLoop',
+    'DegradationLevel',
+    'DreamAndVerifyLoop',
+    'PredictiveShield',
+    'ResidualDiffusionRefiner',
+    'ShieldDecision',
     # L0: World Fabric Simulator
     'DomainRandomizationConfig',
     'CurriculumLevel',
