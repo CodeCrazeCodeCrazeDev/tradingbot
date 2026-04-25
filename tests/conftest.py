@@ -204,12 +204,127 @@ def sample_signal():
     }
 
 
+@pytest.fixture
+def sample_position():
+    """Provide sample position data for tests."""
+    from datetime import timedelta
+    return {
+        'id': 'position-456',
+        'symbol': 'EURUSD',
+        'direction': 'long',
+        'entry_price': 1.0850,
+        'current_price': 1.0880,
+        'quantity': 0.01,
+        'unrealized_pnl': 30.0,
+        'realized_pnl': 0.0,
+        'open_time': datetime.now() - timedelta(hours=2),
+        'strategy': 'test_strategy'
+    }
+
+
+@pytest.fixture
+def sample_order():
+    """Provide sample order data for tests."""
+    return {
+        'id': 'order-789',
+        'symbol': 'EURUSD',
+        'side': 'buy',
+        'type': 'market',
+        'quantity': 0.01,
+        'price': None,
+        'status': 'filled',
+        'filled_quantity': 0.01,
+        'avg_fill_price': 1.0850,
+        'created_at': datetime.now(),
+        'filled_at': datetime.now() + timedelta(seconds=1)
+    }
+
+
+@pytest.fixture
+def sample_account_info():
+    """Provide sample account information for tests."""
+    return {
+        'balance': 10000.0,
+        'equity': 10250.0,
+        'margin': 500.0,
+        'free_margin': 9750.0,
+        'margin_level': 2050.0,
+        'open_positions': 1,
+        'unrealized_pnl': 250.0,
+        'realized_pnl_today': 150.0
+    }
+
+
+@pytest.fixture
+def sample_risk_limits():
+    """Provide sample risk limits configuration for tests."""
+    return {
+        'max_daily_loss': 100.0,
+        'max_position_size': 0.05,
+        'max_positions': 5,
+        'max_risk_per_trade': 0.02,
+        'max_risk_per_symbol': 0.05,
+        'max_correlation_exposure': 0.1,
+        'max_drawdown': 0.05,
+        'emergency_stop_loss': 0.1
+    }
+
+
+@pytest.fixture
+def temp_config_file():
+    """Create a temporary configuration file for tests."""
+    import tempfile
+    import yaml
+    
+    config = {
+        'environment': 'test',
+        'paper_trading': True,
+        'risk_management': {
+            'enabled': True,
+            'max_daily_loss': 100,
+            'max_position_size': 0.01
+        },
+        'logging': {
+            'level': 'DEBUG',
+            'file': 'logs/test.log'
+        },
+        'database': {
+            'url': 'sqlite:///test.db'
+        }
+    }
+    
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        yaml.dump(config, f)
+        temp_path = Path(f.name)
+    
+    yield temp_path
+    temp_path.unlink(missing_ok=True)
+
+
 # Pytest hooks
 def pytest_configure(config):
-    """Configure pytest."""
-    config.addinivalue_line(
-        "markers", "critical: mark test as critical for production"
-    )
+    """Configure pytest with all markers."""
+    markers = [
+        ("critical", "mark test as critical for production"),
+        ("unit", "Fast unit tests (< 1s each)"),
+        ("integration", "Component integration tests"),
+        ("system", "Full system integration tests"),
+        ("e2e", "End-to-end tests"),
+        ("ml", "Machine learning model tests"),
+        ("slow", "Tests requiring > 10s to run"),
+        ("asyncio", "Async/await tests"),
+        ("broker", "Tests requiring broker connection"),
+        ("database", "Tests requiring database"),
+        ("network", "Tests requiring network access"),
+        ("performance", "Performance benchmark tests"),
+        ("stress", "Stress and load tests"),
+        ("risk", "Risk management tests"),
+        ("simulation", "Paper trading and simulation tests"),
+        ("security", "Security-related tests"),
+    ]
+    
+    for marker, description in markers:
+        config.addinivalue_line("markers", f"{marker}: {description}")
 
 
 def pytest_collection_modifyitems(config, items):

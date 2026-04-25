@@ -377,6 +377,129 @@ class MasterIntegrationEngine:
                 logger.warning(f"Auto-register failed for {svc_name}: {exc} → registering stub")
                 self.register_stub(svc_name, reason=str(exc)[:100])
 
+
+    def _determine_integration_stage(self, record: ModuleRecord) -> str:
+        """Map a module record to professional integration stage."""
+        path = record.module_path.lower()
+        tokens = path.split('.')
+
+        if 'orchestr' in path or record.layer == 7:
+            return 'orchestration'
+
+        if (
+            'system' in path
+            or 'engine' in path
+            or 'core' in path
+            or 'master' in path
+            or record.layer in (4, 5, 6)
+        ):
+            return 'systems'
+
+        framework_tokens = {
+            'framework', 'integration', 'domain', 'skills', 'ai_core', 'unified',
+            'architecture', 'connectivity', 'governance', 'observability'
+        }
+        if any(tok in framework_tokens for tok in tokens):
+            return 'frameworks'
+
+        return 'modules'
+
+    async def bootstrap_hierarchical(self, max_modules: Optional[int] = None) -> Dict[str, Any]:
+        """
+        Professional full integration pipeline:
+        modules → frameworks → systems → orchestration.
+
+        Registers every discovered module as an integrated service (legacy adapter when
+        importable, otherwise stub) and starts services via wave policy.
+        """
+        t0 = time.monotonic()
+        logger.info("=== MasterIntegrationEngine HIERARCHICAL BOOTSTRAP START ===")
+
+        # Fresh inventory and classification
+        self.module_registry.scan()
+        self.module_registry.classify()
+        self.module_registry.analyze_static()
+        self.module_registry.check_imports(quick=True)
+
+        records = [
+            r for r in self.module_registry.records.values()
+            if r.promotion_state != PromotionState.QUARANTINED.value
+        ]
+        records.sort(key=lambda r: (self._determine_integration_stage(r), r.layer, r.tier, r.module_path))
+        if max_modules is not None:
+            records = records[:max_modules]
+
+        stages = ['modules', 'frameworks', 'systems', 'orchestration']
+        stage_anchor = {
+            'modules': 'stage_modules',
+            'frameworks': 'stage_frameworks',
+            'systems': 'stage_systems',
+            'orchestration': 'stage_orchestration',
+        }
+        stage_layer = {'modules': 1, 'frameworks': 2, 'systems': 5, 'orchestration': 7}
+
+        # Register stage anchors with explicit dependencies
+        for idx, stage in enumerate(stages):
+            deps = [stage_anchor[stages[idx - 1]]] if idx > 0 else []
+            self.register_stub(stage_anchor[stage], reason=f"integration_anchor:{stage}")
+            rec = self._services[stage_anchor[stage]]
+            rec.service.SERVICE_LAYER = stage_layer[stage]
+            rec.service.DEPENDENCIES = deps
+
+        registered_real = 0
+        registered_stub = len(stages)
+        stage_counts = {k: 0 for k in stages}
+
+        for record in records:
+            stage = self._determine_integration_stage(record)
+            stage_counts[stage] += 1
+            service_name = record.module_path.replace('.', '__')
+            deps = [stage_anchor[stage]]
+
+            try:
+                module_obj = importlib.import_module(record.module_path)
+                self.register_legacy(
+                    instance=module_obj,
+                    service_name=service_name,
+                    layer=record.layer,
+                    tier=record.tier,
+                    domain=record.module_path,
+                    capital_impact=record.capital_impact,
+                    rollback_class=record.rollback_class,
+                    dependencies=deps,
+                )
+                registered_real += 1
+            except Exception as exc:
+                self.register_stub(service_name, reason=str(exc)[:120])
+                stub_rec = self._services[service_name]
+                stub_rec.service.SERVICE_LAYER = record.layer
+                stub_rec.service.SERVICE_TIER = record.tier
+                stub_rec.service.DEPENDENCIES = deps
+                registered_stub += 1
+
+        start_results = await self.start_all()
+        self._save_state()
+
+        elapsed = time.monotonic() - t0
+        summary = {
+            'bootstrap_duration_s': round(elapsed, 2),
+            'pipeline': 'modules->frameworks->systems->orchestration',
+            'modules_discovered': len(self.module_registry.records),
+            'modules_selected': len(records),
+            'services_registered': len(self._services),
+            'services_registered_real': registered_real,
+            'services_registered_stub': registered_stub,
+            'services_started': sum(1 for r in self._services.values() if r.service.is_running),
+            'engine_state': self._state.value,
+            'stage_counts': stage_counts,
+            'start_results': start_results,
+        }
+        logger.info(
+            f"=== HIERARCHICAL BOOTSTRAP COMPLETE in {elapsed:.1f}s "
+            f"({summary['services_started']}/{summary['services_registered']} started) ==="
+        )
+        return summary
+
     # -----------------------------------------------------------------------
     # Startup / shutdown
     # -----------------------------------------------------------------------

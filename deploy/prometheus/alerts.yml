@@ -1,0 +1,223 @@
+groups:
+  - name: trading_bot_alerts
+    rules:
+      # ============================================
+      # Critical Alerts
+      # ============================================
+      
+      - alert: TradingBotDown
+        expr: up{job="trading-bot"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Trading Bot is down"
+          description: "Trading Bot has been down for more than 1 minute"
+
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(trading_bot_errors_total[5m])) 
+            / 
+            sum(rate(trading_bot_requests_total[5m]))
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is above 10% for 5 minutes"
+
+      - alert: DatabaseConnectionFailed
+        expr: trading_bot_database_connection_status == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection failed"
+          description: "Trading Bot cannot connect to database"
+
+      # ============================================
+      # Risk Management Alerts
+      # ============================================
+
+      - alert: DailyLossLimitReached
+        expr: trading_bot_daily_pnl < -100
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Daily loss limit reached"
+          description: "Daily loss has reached $100 limit"
+
+      - alert: MaxDrawdownExceeded
+        expr: trading_bot_drawdown_percent > 5
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Maximum drawdown exceeded"
+          description: "Current drawdown is {{ $value }}%, exceeding 5% limit"
+
+      - alert: PositionSizeLimit
+        expr: trading_bot_position_size > 0.05
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Position size limit warning"
+          description: "Position size {{ $value }} exceeds recommended limit"
+
+      - alert: MarginCallRisk
+        expr: trading_bot_margin_level < 150
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Margin call risk"
+          description: "Margin level is {{ $value }}%, approaching margin call"
+
+      # ============================================
+      # Trading Performance Alerts
+      # ============================================
+
+      - alert: NoTradesExecuted
+        expr: |
+          increase(trading_bot_trades_total[1h]) == 0
+          and on() (
+            hour() >= 8 and hour() <= 17
+          )
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No trades executed"
+          description: "No trades in last hour during trading hours"
+
+      - alert: StrategyUnderperforming
+        expr: |
+          (
+            trading_bot_strategy_win_rate < 0.4
+            and
+            trading_bot_strategy_trades_total > 20
+          )
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Strategy underperforming"
+          description: "Win rate below 40% after 20+ trades"
+
+      - alert: UnexpectedPosition
+        expr: |
+          (
+            trading_bot_open_positions > 5
+          )
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of open positions"
+          description: "{{ $value }} open positions, review risk exposure"
+
+      # ============================================
+      # System Performance Alerts
+      # ============================================
+
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(trading_bot_request_duration_seconds_bucket[5m])) by (le)
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High request latency"
+          description: "95th percentile latency is {{ $value }}s"
+
+      - alert: HighCPUUsage
+        expr: |
+          100 - (avg by (instance) (
+            irate(node_cpu_seconds_total{mode="idle"}[5m])
+          ) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is above 80%"
+
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes
+          ) / node_memory_MemTotal_bytes * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is above 85%"
+
+      - alert: DiskSpaceLow
+        expr: |
+          (
+            node_filesystem_avail_bytes{mountpoint="/"} 
+            / node_filesystem_size_bytes{mountpoint="/"}
+          ) * 100 < 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space"
+          description: "Less than 10% disk space remaining"
+
+      # ============================================
+      # Data Quality Alerts
+      # ============================================
+
+      - alert: StaleMarketData
+        expr: |
+          time() - trading_bot_last_market_data_timestamp > 300
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Stale market data"
+          description: "Market data is more than 5 minutes old"
+
+      - alert: BrokerDisconnected
+        expr: trading_bot_broker_connected == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Broker disconnected"
+          description: "Trading Bot lost connection to broker"
+
+      # ============================================
+      # ML Model Alerts
+      # ============================================
+
+      - alert: ModelPredictionLatency
+        expr: |
+          histogram_quantile(0.99, 
+            sum(rate(trading_bot_ml_prediction_duration_seconds_bucket[5m])) by (le)
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ML model prediction slow"
+          description: "99th percentile prediction time is {{ $value }}s"
+
+      - alert: ModelAccuracyDegraded
+        expr: |
+          trading_bot_ml_model_accuracy < 0.6
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ML model accuracy degraded"
+          description: "Model accuracy dropped to {{ $value }}"

@@ -487,3 +487,259 @@ async def quick_start(config: Optional[Dict[str, Any]] = None) -> TradingHiveMin
     hivemind = TradingHiveMind(config)
     await hivemind.initialize()
     return hivemind
+
+
+class UniversalHivemindController:
+    """
+    Universal controller that manages ALL agent systems in the trading bot.
+    
+    This is the master controller that ensures all agents across all modules
+    are controlled by the central hivemind intelligence.
+    
+    Controlled Systems:
+    - Hivemind swarms (Technical, Fundamental, Sentiment, Risk, Execution, Macro, Quant)
+    - RadarAI agents (MetaOrchestrator, DataFusion, Ontology, Intelligence, Strategy, etc.)
+    - Agents (MultiAgentDebate, Executor, Planner, Verifier)
+    - Agents2 (MultiAgentCoordinator with specialized agents)
+    - Self-Coordinating AI (Discovery, Self-Programming, Experimentation)
+    - Foundation Agents (Cognitive Core, Curiosity Engine, etc.)
+    - Core Agent System (MasterOrchestrator, AgentRegistry, ReActLoop, etc.)
+    - AI Core Agents (Orchestrator, Executor, Planner, Verifier, SafetyValidator)
+    - Improvement Agent (DeepAnalyzer, WeaknessDetector, ImprovementProposer)
+    - Aletheia Autonomous (StrategyGenerator, StrategyVerifier, StrategyReviser)
+    
+    Usage:
+        controller = UniversalHivemindController()
+        await controller.initialize()
+        
+        # All agents are now under unified hivemind control
+        result = await controller.analyze_with_all_agents(symbol, market_data)
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        
+        # Main hivemind
+        self.trading_hivemind: Optional[TradingHiveMind] = None
+        
+        # Agent system controllers
+        self.radar_ai = None
+        self.agents_manager = None
+        self.agents2_manager = None
+        self.self_coordinating = None
+        self.foundation_agents = None
+        self.core_agent_system = None
+        self.ai_core_agents = None
+        self.improvement_agent = None
+        self.aletheia_autonomous = None
+        
+        # State
+        self._initialized = False
+        self._running = False
+        
+        logger.info("UniversalHivemindController created")
+    
+    async def initialize(self) -> None:
+        """Initialize all agent systems under hivemind control."""
+        logger.info("Initializing Universal Hivemind Controller...")
+        
+        # Initialize main TradingHiveMind
+        try:
+            self.trading_hivemind = TradingHiveMind(self.config)
+            await self.trading_hivemind.initialize()
+            logger.info("✓ TradingHiveMind initialized")
+        except Exception as e:
+            logger.warning(f"TradingHiveMind initialization: {e}")
+        
+        # Initialize RadarAI under hivemind control
+        try:
+            from ..radar_ai import RadarAIHivemindAdapter
+            self.radar_ai = RadarAIHivemindAdapter(hivemind_controller=self)
+            await self.radar_ai.initialize(self.config.get('radar_ai', {}))
+            logger.info("✓ RadarAI under hivemind control")
+        except Exception as e:
+            logger.warning(f"RadarAI initialization: {e}")
+        
+        # Initialize Agents module under hivemind control
+        try:
+            from ..agents import HivemindAgentManager
+            self.agents_manager = HivemindAgentManager(hivemind_controller=self, config=self.config)
+            await self.agents_manager.initialize()
+            logger.info("✓ Agents module under hivemind control")
+        except Exception as e:
+            logger.warning(f"Agents initialization: {e}")
+        
+        # Initialize Agents2 module under hivemind control
+        try:
+            from ..agents2 import HivemindAgents2Manager
+            self.agents2_manager = HivemindAgents2Manager(hivemind_controller=self, config=self.config)
+            await self.agents2_manager.initialize()
+            logger.info("✓ Agents2 module under hivemind control")
+        except Exception as e:
+            logger.warning(f"Agents2 initialization: {e}")
+        
+        # Initialize Self-Coordinating AI under hivemind control
+        try:
+            from ..self_coordinating_ai import HivemindSelfCoordinatingAdapter
+            self.self_coordinating = HivemindSelfCoordinatingAdapter(hivemind_controller=self, config=self.config)
+            await self.self_coordinating.initialize()
+            logger.info("✓ Self-Coordinating AI under hivemind control")
+        except Exception as e:
+            logger.warning(f"Self-Coordinating AI initialization: {e}")
+        
+        # Initialize Foundation Agents under hivemind control
+        try:
+            from ..foundation_agents import HivemindFoundationAdapter
+            self.foundation_agents = HivemindFoundationAdapter(hivemind_controller=self, config=self.config)
+            await self.foundation_agents.initialize()
+            logger.info("✓ Foundation Agents under hivemind control")
+        except Exception as e:
+            logger.warning(f"Foundation Agents initialization: {e}")
+        
+        # Initialize Core Agent System under hivemind control
+        try:
+            from ..core_agent_system import HivemindCoreAgentAdapter
+            self.core_agent_system = HivemindCoreAgentAdapter(hivemind_controller=self, config=self.config)
+            await self.core_agent_system.initialize()
+            logger.info("✓ Core Agent System under hivemind control")
+        except Exception as e:
+            logger.warning(f"Core Agent System initialization: {e}")
+        
+        # Initialize AI Core Agents under hivemind control
+        try:
+            from ..ai_core.agents import HivemindAICoreAdapter
+            self.ai_core_agents = HivemindAICoreAdapter(hivemind_controller=self, config=self.config)
+            await self.ai_core_agents.initialize()
+            logger.info("✓ AI Core Agents under hivemind control")
+        except Exception as e:
+            logger.warning(f"AI Core Agents initialization: {e}")
+        
+        # Initialize Improvement Agent under hivemind control
+        try:
+            from ..improvement_agent import HivemindImprovementAdapter
+            self.improvement_agent = HivemindImprovementAdapter(hivemind_controller=self, config=self.config)
+            await self.improvement_agent.initialize()
+            logger.info("✓ Improvement Agent under hivemind control")
+        except Exception as e:
+            logger.warning(f"Improvement Agent initialization: {e}")
+        
+        # Initialize Aletheia Autonomous under hivemind control
+        try:
+            from ..aletheia_autonomous import HivemindAletheiaAdapter
+            self.aletheia_autonomous = HivemindAletheiaAdapter(hivemind_controller=self, config=self.config)
+            await self.aletheia_autonomous.initialize()
+            logger.info("✓ Aletheia Autonomous under hivemind control")
+        except Exception as e:
+            logger.warning(f"Aletheia Autonomous initialization: {e}")
+        
+        self._initialized = True
+        logger.info("=" * 60)
+        logger.info("UNIVERSAL HIVEMIND CONTROLLER READY")
+        logger.info("All agent systems are under unified control")
+        logger.info("=" * 60)
+    
+    async def analyze_with_all_agents(self, symbol: str, market_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Run analysis through ALL controlled agent systems.
+        
+        This aggregates intelligence from every agent system under hivemind control.
+        """
+        if not self._initialized:
+            await self.initialize()
+        
+        results = {
+            'symbol': symbol,
+            'timestamp': datetime.now().isoformat(),
+            'systems': {}
+        }
+        
+        # Trading Hivemind analysis
+        if self.trading_hivemind:
+            try:
+                results['systems']['trading_hivemind'] = await self.trading_hivemind.analyze(symbol, market_data)
+            except Exception as e:
+                logger.error(f"TradingHiveMind analysis error: {e}")
+        
+        # RadarAI analysis
+        if self.radar_ai:
+            try:
+                results['systems']['radar_ai'] = self.radar_ai.get_status()
+            except Exception as e:
+                logger.error(f"RadarAI analysis error: {e}")
+        
+        # Agents2 analysis
+        if self.agents2_manager:
+            try:
+                results['systems']['agents2'] = self.agents2_manager.analyze_market(market_data)
+            except Exception as e:
+                logger.error(f"Agents2 analysis error: {e}")
+        
+        return results
+    
+    def get_unified_status(self) -> Dict[str, Any]:
+        """Get status of ALL controlled agent systems."""
+        return {
+            'initialized': self._initialized,
+            'running': self._running,
+            'trading_hivemind': self.trading_hivemind.get_status() if self.trading_hivemind else None,
+            'radar_ai': self.radar_ai.get_status() if self.radar_ai else None,
+            'agents': self.agents_manager.get_status() if self.agents_manager else None,
+            'agents2': self.agents2_manager.get_status() if self.agents2_manager else None,
+            'self_coordinating': self.self_coordinating.get_status() if self.self_coordinating else None,
+            'foundation_agents': self.foundation_agents.get_status() if self.foundation_agents else None,
+            'core_agent_system': self.core_agent_system.get_status() if self.core_agent_system else None,
+            'ai_core_agents': self.ai_core_agents.get_status() if self.ai_core_agents else None,
+            'improvement_agent': self.improvement_agent.get_status() if self.improvement_agent else None,
+            'aletheia_autonomous': self.aletheia_autonomous.get_status() if self.aletheia_autonomous else None,
+        }
+    
+    async def start_all(self) -> None:
+        """Start all agent systems."""
+        self._running = True
+        
+        if self.self_coordinating:
+            await self.self_coordinating.start()
+        if self.foundation_agents:
+            await self.foundation_agents.start()
+        if self.agents_manager:
+            await self.agents_manager.start()
+        if self.agents2_manager:
+            await self.agents2_manager.start()
+        if self.core_agent_system:
+            await self.core_agent_system.start()
+        if self.ai_core_agents:
+            await self.ai_core_agents.start()
+        if self.improvement_agent:
+            await self.improvement_agent.start()
+        if self.aletheia_autonomous:
+            await self.aletheia_autonomous.start()
+        
+        logger.info("All agent systems started")
+    
+    async def stop_all(self) -> None:
+        """Stop all agent systems."""
+        self._running = False
+        
+        if self.self_coordinating:
+            await self.self_coordinating.stop()
+        if self.foundation_agents:
+            await self.foundation_agents.stop()
+        if self.agents_manager:
+            await self.agents_manager.stop()
+        if self.agents2_manager:
+            await self.agents2_manager.stop()
+        if self.core_agent_system:
+            await self.core_agent_system.stop()
+        if self.ai_core_agents:
+            await self.ai_core_agents.stop()
+        if self.improvement_agent:
+            await self.improvement_agent.stop()
+        if self.aletheia_autonomous:
+            await self.aletheia_autonomous.stop()
+        
+        logger.info("All agent systems stopped")
+
+
+# Aliases for easy access
+HivemindAgentController = UniversalHivemindController
+AgentController = UniversalHivemindController

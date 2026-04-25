@@ -92,8 +92,8 @@ class Reporter:  # noqa: B024 – simple orchestrator
                 total_pnl = sum(t.get("pnl", 0) for t in trades)
                 fh.write(f"Total P&L: {total_pnl:.2f}\n")
                 fh.write(f"Average Trade: {total_pnl/len(trades):.2f}\n")
-                fh.write(f"Best Trade: {max(t.get("pnl", 0) for t in trades):.2f}\n")
-                fh.write(f"Worst Trade: {min(t.get("pnl", 0) for t in trades):.2f}\n")
+                fh.write(f"Best Trade: {max(t.get('pnl', 0) for t in trades):.2f}\n")
+                fh.write(f"Worst Trade: {min(t.get('pnl', 0) for t in trades):.2f}\n")
             else:
                 fh.write("No trades today.\n")
         logger.success("Daily report saved: {}", file)

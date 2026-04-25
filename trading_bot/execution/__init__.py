@@ -101,6 +101,31 @@ except ImportError as e:
     # smart_execution not available
     pass
 
+# Phase 4: Liquidity-Aware Sizing and Execution Optimization
+try:
+    from .liquidity_aware_sizer import (
+        LiquidityAwareSizer,
+        MarketDepth,
+        OrderBookLevel,
+        ImpactModel,
+        ExecutionTimingOptimizer
+    )
+except ImportError as e:
+    # liquidity_aware_sizer not available
+    pass
+
+try:
+    from .advanced_execution_algorithms import (
+        SlippageMinimizer,
+        AdaptiveExecutionEngine,
+        DynamicParameterAdjuster,
+        OrderType,
+        ExecutionSlice
+    )
+except ImportError as e:
+    # advanced_execution_algorithms not available
+    pass
+
 __all__ = [
     'AdvancedOrderManager',
     'BracketOrderManager',
@@ -117,4 +142,15 @@ __all__ = [
     'OrderTimeoutManager',
     'PositionManager',
     'SmartExecutionEngine',
+    # Phase 4: Execution Optimization
+    'LiquidityAwareSizer',
+    'MarketDepth',
+    'OrderBookLevel',
+    'ImpactModel',
+    'ExecutionTimingOptimizer',
+    'SlippageMinimizer',
+    'AdaptiveExecutionEngine',
+    'DynamicParameterAdjuster',
+    'OrderType',
+    'ExecutionSlice',
 ]

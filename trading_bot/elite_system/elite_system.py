@@ -14,7 +14,10 @@ import logging
 from datetime import datetime, timedelta
 import asyncio
 import json
-import yaml
+try:
+    import yaml
+except ImportError:
+    yaml = None
 from pathlib import Path
 import warnings
 warnings.filterwarnings('ignore')

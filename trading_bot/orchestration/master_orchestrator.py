@@ -59,7 +59,7 @@ class OrchestratorConfig:
     # Feature flags
     enable_ai_features: bool = True
     enable_ml_features: bool = True
-    enable_quantum_features: False
+    enable_quantum_features: bool = False
     enable_evolution_features: bool = True
     enable_sentient_features: bool = False
 

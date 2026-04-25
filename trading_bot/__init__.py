@@ -45,6 +45,8 @@ IMMUTABLE PRINCIPLES:
 
 """
 
+import logging
+
 # Layer 7: Infrastructure & Orchestration (ONLY layer exposed at package level)
 try:
     from .infrastructure.orchestration import SystemOrchestrator
@@ -81,8 +83,7 @@ try:
         DEFAULT_TAKE_PROFIT_PIPS
     )
 except ImportError as e:
-    import logging
-    logging.getLogger(__name__).warning(f'Infrastructure layer not available: {e}')
+    logging.getLogger(__name__).info(f'Infrastructure layer not available: {e}')
     
     # Fallback minimal interface
     class SystemOrchestrator:
@@ -176,9 +177,227 @@ try:
         SUBSYSTEM_REGISTRY
     )
 except ImportError as e:
-    logging.getLogger(__name__).warning(f'Unified AI Brain not available: {e}')
+    logging.getLogger(__name__).info(f'Unified AI Brain not available: {e}')
     UnifiedAIBrain = None
     BrainConfig = None
+
+# Import integration layer (professional module lifecycle integration)
+try:
+    from .integration import (
+        # Professional engine (authoritative lifecycle owner)
+        MasterIntegrationEngine,
+        EngineConfig,
+        EngineState,
+        get_engine,
+        reset_engine,
+        # Verification + registry primitives
+        VerificationPipeline,
+        ModuleRegistry,
+        get_module_registry,
+        # Backward-compatible legacy integrator
+        MasterIntegrator,
+        get_master_integrator,
+        IntegrationPhase,
+    )
+
+    async def integrate_all_modules(config=None):
+        """Integrate trading_bot modules using the professional integration engine."""
+        raw_config = config or {}
+
+        # Build EngineConfig using only known fields; ignore unknowns safely.
+        engine_config = EngineConfig(
+            health_check_interval_s=raw_config.get('health_check_interval_s', 30.0),
+            health_check_timeout_s=raw_config.get('health_check_timeout_s', 5.0),
+            fail_fast_on_tier_a=raw_config.get('fail_fast_on_tier_a', True),
+            max_start_retries=raw_config.get('max_start_retries', 2),
+            retry_delay_s=raw_config.get('retry_delay_s', 2.0),
+            block_direct_impact_without_risk=raw_config.get('block_direct_impact_without_risk', True),
+            state_file=raw_config.get('state_file', 'alphaalgo_data/engine_state.json'),
+            startup_wave_order=raw_config.get('startup_wave_order', [0, 1, 4, 5, 2, 3, 6, 7]),
+        )
+
+        # Singleton engine + clean state for repeatable integrations.
+        reset_engine()
+        engine = get_engine(config=engine_config)
+
+        # Professional hierarchical bootstrap:
+        # modules -> frameworks -> systems -> orchestration.
+        module_limit = raw_config.get('module_limit')
+        bootstrap_summary = await engine.bootstrap_hierarchical(max_modules=module_limit)
+
+        # Optional verification pass for stricter professional flows.
+        if raw_config.get('run_verification', False):
+            verifier = VerificationPipeline()
+            verification_report = await verifier.run_full_verification(engine)
+            return {
+                'engine': engine,
+                'bootstrap': bootstrap_summary,
+                'verification': verification_report,
+            }
+
+        return {
+            'engine': engine,
+            'bootstrap': bootstrap_summary,
+        }
+
+except ImportError as e:
+    logging.getLogger(__name__).info(f'Integration layer not available: {e}')
+    MasterIntegrationEngine = None
+    EngineConfig = None
+    EngineState = None
+    VerificationPipeline = None
+    MasterIntegrator = None
+    IntegrationPhase = None
+
+    def get_engine(config=None):
+        raise RuntimeError('Integration layer not available')
+
+    def reset_engine():
+        raise RuntimeError('Integration layer not available')
+
+    def get_master_integrator(config=None):
+        raise RuntimeError('Integration layer not available')
+
+    async def integrate_all_modules(config=None):
+        raise RuntimeError('Integration layer not available')
+
+# Import Meta-Governance Layer (Agent Optimization and Safety)
+try:
+    from .meta_governance import (
+        MetaAgentGovernanceLayer,
+        AgentType,
+        ChangeCategory,
+        ChangeType,
+        UnderperformanceType,
+        AgentPerformance,
+        ForbiddenChangeAttempt,
+        CandidateUpgrade,
+        ValidationCriteria,
+        ValidationResult,
+        create_meta_agent_governance_layer,
+    )
+except ImportError as e:
+    logging.getLogger(__name__).info(f'Meta-governance layer not available: {e}')
+    MetaAgentGovernanceLayer = None
+    AgentType = None
+    ChangeCategory = None
+    ChangeType = None
+    UnderperformanceType = None
+    AgentPerformance = None
+    ForbiddenChangeAttempt = None
+    CandidateUpgrade = None
+    ValidationCriteria = None
+    ValidationResult = None
+    create_meta_agent_governance_layer = None
+
+# Production golden path (decision gate, parity runner, monitoring, security audit)
+try:
+    from .golden_path import (
+        AccountContext,
+        AgentTrapDefenseConfig,
+        AgentTrapScanner,
+        DecisionGateConfig,
+        GoldenPathTradingRunner,
+        MarketContext,
+        ModelPerformanceMonitor,
+        ModelVote,
+        PredictionSample,
+        RiskContext,
+        TradeDecision,
+        TradeDecisionValidator,
+        TradeIntent,
+        TradingMode,
+        TrapCategory,
+        audit_local_secrets,
+    )
+except ImportError as e:
+    logging.getLogger(__name__).info(f'Golden path layer not available: {e}')
+    AccountContext = None
+    AgentTrapDefenseConfig = None
+    AgentTrapScanner = None
+    DecisionGateConfig = None
+    GoldenPathTradingRunner = None
+    MarketContext = None
+    ModelPerformanceMonitor = None
+    ModelVote = None
+    PredictionSample = None
+    RiskContext = None
+    TradeDecision = None
+    TradeDecisionValidator = None
+    TradeIntent = None
+    TradingMode = None
+    TrapCategory = None
+    audit_local_secrets = None
+
+# AEAN governed meta-intelligence layer
+try:
+    from .aean_meta_intelligence_layer import (
+        AEANConstraints,
+        AEANMetaIntelligenceLayer,
+        BenchmarkResult as AEANBenchmarkResult,
+        BenchmarkTask as AEANBenchmarkTask,
+        CapabilityCandidate as AEANCapabilityCandidate,
+        DeploymentDecision as AEANDeploymentDecision,
+        FrontierObservation,
+        MonitoringResult as AEANMonitoringResult,
+        ValidationResult as AEANValidationResult,
+        create_aean_meta_intelligence_layer,
+    )
+except ImportError as e:
+    logging.getLogger(__name__).info(f'AEAN meta-intelligence layer not available: {e}')
+    AEANConstraints = None
+    AEANMetaIntelligenceLayer = None
+    AEANBenchmarkResult = None
+    AEANBenchmarkTask = None
+    AEANCapabilityCandidate = None
+    AEANDeploymentDecision = None
+    FrontierObservation = None
+    AEANMonitoringResult = None
+    AEANValidationResult = None
+    create_aean_meta_intelligence_layer = None
+
+# Universal Action Layer / Claw
+try:
+    from .universal_action_layer import (
+        ActionIntent,
+        ActionPolicy,
+        ActionResult,
+        ActionRiskTier,
+        ActionStatus,
+        ActionType,
+        CommandActionAdapter,
+        DecisionBundle,
+        DecisionConstraints,
+        ExecutionStatus,
+        FeedbackReport,
+        FunctionActionAdapter,
+        GovernanceSignature,
+        GovernanceReceipt,
+        UniversalActionLayer,
+        WorkflowActionAdapter,
+        sign_decision_bundle,
+        create_universal_action_layer,
+    )
+except ImportError as e:
+    logging.getLogger(__name__).info(f'Universal action layer not available: {e}')
+    ActionIntent = None
+    ActionPolicy = None
+    ActionResult = None
+    ActionRiskTier = None
+    ActionStatus = None
+    ActionType = None
+    CommandActionAdapter = None
+    DecisionBundle = None
+    DecisionConstraints = None
+    ExecutionStatus = None
+    FeedbackReport = None
+    FunctionActionAdapter = None
+    GovernanceSignature = None
+    GovernanceReceipt = None
+    UniversalActionLayer = None
+    WorkflowActionAdapter = None
+    sign_decision_bundle = None
+    create_universal_action_layer = None
 
 # Clean exports - Unified AI Brain + orchestration layer
 __all__ = [
@@ -195,6 +414,17 @@ __all__ = [
     'create_brain',
     'quick_start',
     'SUBSYSTEM_REGISTRY',
+    # Module integration
+    'MasterIntegrationEngine',
+    'EngineConfig',
+    'EngineState',
+    'get_engine',
+    'reset_engine',
+    'VerificationPipeline',
+    'MasterIntegrator',
+    'IntegrationPhase',
+    'get_master_integrator',
+    'integrate_all_modules',
     # NEW: Unified Orchestration System
     'MasterOrchestrator',
     'OrchestratorConfig',
@@ -215,7 +445,66 @@ __all__ = [
     'setup_logging',
     'VERSION_STRING',
     'DEFAULT_RISK_PERCENTAGE',
-    'MAX_DRAWDOWN_PERCENTAGE'
+    'MAX_DRAWDOWN_PERCENTAGE',
+    # NEW: Meta-Agent Governance Layer
+    'MetaAgentGovernanceLayer',
+    'AgentType',
+    'ChangeCategory',
+    'ChangeType',
+    'UnderperformanceType',
+    'AgentPerformance',
+    'ForbiddenChangeAttempt',
+    'CandidateUpgrade',
+    'ValidationCriteria',
+    'ValidationResult',
+    'create_meta_agent_governance_layer',
+    # Production golden path
+    'AccountContext',
+    'AgentTrapDefenseConfig',
+    'AgentTrapScanner',
+    'DecisionGateConfig',
+    'GoldenPathTradingRunner',
+    'MarketContext',
+    'ModelPerformanceMonitor',
+    'ModelVote',
+    'PredictionSample',
+    'RiskContext',
+    'TradeDecision',
+    'TradeDecisionValidator',
+    'TradeIntent',
+    'TradingMode',
+    'TrapCategory',
+    'audit_local_secrets',
+    # AEAN governed meta-intelligence
+    'AEANConstraints',
+    'AEANMetaIntelligenceLayer',
+    'AEANBenchmarkResult',
+    'AEANBenchmarkTask',
+    'AEANCapabilityCandidate',
+    'AEANDeploymentDecision',
+    'FrontierObservation',
+    'AEANMonitoringResult',
+    'AEANValidationResult',
+    'create_aean_meta_intelligence_layer',
+    # Universal Action Layer / Claw
+    'ActionIntent',
+    'ActionPolicy',
+    'ActionResult',
+    'ActionRiskTier',
+    'ActionStatus',
+    'ActionType',
+    'CommandActionAdapter',
+    'DecisionBundle',
+    'DecisionConstraints',
+    'ExecutionStatus',
+    'FeedbackReport',
+    'FunctionActionAdapter',
+    'GovernanceSignature',
+    'GovernanceReceipt',
+    'UniversalActionLayer',
+    'WorkflowActionAdapter',
+    'sign_decision_bundle',
+    'create_universal_action_layer',
 ]
 
 # Layer access documentation

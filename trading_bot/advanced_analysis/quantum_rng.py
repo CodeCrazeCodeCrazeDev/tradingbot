@@ -5,7 +5,7 @@ Implements quantum-inspired and true quantum random number generation
 for position sizing randomization and unpredictable trading decisions.
 
 Features:
-- Quantum random number generation (IBM Quantum integration)
+- Quantum random number generation (IBM or any Quantum integration)
 - Cryptographic fallback RNG
 - Position sizing randomization
 - Entry timing randomization

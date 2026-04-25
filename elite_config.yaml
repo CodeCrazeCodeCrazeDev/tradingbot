@@ -1,0 +1,22 @@
+general:
+  debug_mode: false
+  log_level: "INFO"
+  data_directory: "data"
+  signals_directory: "signals"
+  use_quantum_blockchain: false
+
+ai_ml:
+  lstm_enabled: true
+  ensemble_learning_enabled: true
+  training_epochs: 20
+  batch_size: 16
+
+risk:
+  max_risk_per_trade: 0.005
+  max_portfolio_risk: 0.02
+  max_positions: 2
+  kelly_fraction_limit: 0.1
+  take_profit_ratio: 1.5
+
+visualization:
+  enabled: false

@@ -45,6 +45,13 @@ from .evolution_engine import (
     SelfImprovementEngine,
 )
 
+# ASI-Evolve Core Components
+from .cognition_store import CognitionStore
+from .experiment_database import ExperimentDatabase
+from .analyzer import ExperimentAnalyzer
+from .researcher import LLMResearcher
+from .engineer import ExperimentEngineer
+
 logger = logging.getLogger(__name__)
 
 
@@ -97,11 +104,18 @@ class NeurosEvolutionOrchestrator:
         self.resource_economist = ResourceEconomist(self.config.initial_capital)
         self.portfolio_manager = StrategyPortfolioManager()
         
-        # Evolution Engine
+        # ASI-Evolve Evolution Engine
         self.architecture_evolution = ArchitectureEvolution()
         self.knowledge_synthesis = KnowledgeSynthesis()
         self.meta_learning = MetaLearningEngine()
         self.self_improvement = SelfImprovementEngine()
+        
+        # ASI-Evolve Core Components
+        self.cognition_store = CognitionStore()  # Embedding-indexed knowledge base
+        self.experiment_database = ExperimentDatabase()  # Persistent experiment storage
+        self.experiment_analyzer = ExperimentAnalyzer()  # Complex outcome distillation
+        self.llm_researcher = LLMResearcher()  # LLM-based candidate generation
+        self.experiment_engineer = ExperimentEngineer()  # Multi-stage execution with early rejection
         
         # State
         self.initialized = False
@@ -118,26 +132,53 @@ class NeurosEvolutionOrchestrator:
         
         logger.info("Initializing NEUROS Evolution infrastructure...")
         
-        # Create research agents
+        # Create research agents with ASI-Evolve architecture
         for i in range(self.config.num_quant_agents):
             agent = QuantResearchAgent(f"quant_{i}")
+            # Inject ASI-Evolve components
+            agent.cognition_retriever = self.cognition_store
+            agent.experiment_database = self.experiment_database
+            agent.analyzer = self.experiment_analyzer
+            
             self.quant_agents.append(agent)
             self.research_coordinator.register_agent(f"quant_{i}", agent)
         
         for i in range(self.config.num_ml_agents):
             agent = MLResearchAgent(f"ml_{i}")
+            # Inject ASI-Evolve components
+            agent.cognition_retriever = self.cognition_store
+            agent.experiment_database = self.experiment_database
+            agent.analyzer = self.experiment_analyzer
+            
             self.ml_agents.append(agent)
             self.research_coordinator.register_agent(f"ml_{i}", agent)
         
         for i in range(self.config.num_microstructure_agents):
             agent = MicrostructureExpert(f"micro_{i}")
+            # Inject ASI-Evolve components
+            agent.cognition_retriever = self.cognition_store
+            agent.experiment_database = self.experiment_database
+            agent.analyzer = self.experiment_analyzer
+            
             self.microstructure_agents.append(agent)
             self.research_coordinator.register_agent(f"micro_{i}", agent)
         
         for i in range(self.config.num_discovery_agents):
             agent = CrossDomainDiscoveryAgent(f"discovery_{i}")
+            # Inject ASI-Evolve components
+            agent.cognition_retriever = self.cognition_store
+            agent.experiment_database = self.experiment_database
+            agent.analyzer = self.experiment_analyzer
+            
             self.discovery_agents.append(agent)
             self.research_coordinator.register_agent(f"discovery_{i}", agent)
+        
+        # Initialize ASI-Evolve components
+        self.cognition_store.initialize()
+        self.experiment_database.initialize()
+        self.experiment_analyzer.initialize()
+        self.llm_researcher.initialize()
+        self.experiment_engineer.initialize()
         
         # Initialize network topology
         self._initialize_network()
@@ -231,20 +272,33 @@ class NeurosEvolutionOrchestrator:
                 
                 logger.info("Running evolution cycle...")
                 
-                # Evolve topology
-                changes = await self.topology_evolver.evolve_topology()
+                # ASI-Evolve Researcher: generate and analyze evolution proposals
+                context_nodes = self.experiment_database.sample_nodes(sample_n=5)
+                cognition_items = self.cognition_store.search("topology optimization", top_k=3)
                 
-                # Propose architecture evolution
-                if len(changes) > 0:
-                    proposal = await self.architecture_evolution.propose_evolution(
-                        'topology_optimization',
-                        f"Applied {len(changes)} topology changes"
-                    )
-                    
-                    # Test and deploy if validated
-                    test_results = await self.architecture_evolution.test_evolution(proposal)
-                    if proposal.status.value == 'validated':
-                        await self.architecture_evolution.deploy_evolution(proposal)
+                proposal = await self.llm_researcher.generate_candidate(
+                    "architecture_evolution", 
+                    context_nodes, cognition_items
+                )
+                
+                # ASI-Evolve Engineer: multi-stage evaluation
+                evaluation_result = await self.experiment_engineer.execute_experiment(
+                    proposal, 
+                    early_rejection=True
+                )
+                
+                # ASI-Evolve Analyzer: distill outcomes into insights
+                analysis = await self.experiment_analyzer.analyze_outcome(
+                    proposal, evaluation_result
+                )
+                
+                if analysis.get('validation_passed', False):
+                    proposal.status = 'rejected'
+                else:
+                    proposal.status = 'validated'
+                
+                if proposal.status == 'validated':
+                    await self.architecture_evolution.deploy_evolution(proposal)
                 
                 logger.info(f"Evolution cycle complete: {len(changes)} changes applied")
                 
@@ -264,14 +318,29 @@ class NeurosEvolutionOrchestrator:
                 # Rebalance network load
                 rebalance_result = await self.load_balancer.rebalance_load()
                 
-                # Reallocate capital
-                capital_result = self.resource_economist.reallocate_capital()
+                # ASI-Evolve Knowledge Synthesis: integrate insights across domains
+                insights = await self.knowledge_synthesis.synthesize_cross_domain_insights(
+                    self.research_coordinator.get_research_summary()
+                )
                 
-                # Optimize portfolio weights
-                weights = self.portfolio_manager.optimize_weights()
+                # Update cognition with new insights
+                for insight in insights:
+                    self.cognition_store.add_cognition_item(insight)
                 
-                logger.info(f"Rebalancing complete: {rebalance_result['actions_taken']} network actions, "
-                          f"{capital_result['reallocations']} capital reallocations")
+                # ASI-Evolve Meta-Learning: adapt parameters based on performance
+                performance_feedback = {
+                    'discovery_rate': np.random.uniform(0.1, 0.4),
+                    'convergence_speed': np.random.uniform(0.3, 0.7),
+                    'model_complexity': np.random.uniform(0.4, 0.8),
+                }
+                
+                adaptations = await self.meta_learning.adapt_parameters(performance_feedback)
+                
+                # ASI-Evolve Self-Improvement: run improvement cycles
+                improvement_result = await self.self_improvement.run_improvement_cycle()
+                
+                logger.info(f"Improvement cycle complete: {improvement_result['improvements_made']} improvements, "
+                          f"{len(adaptations)} parameter adaptations")
                 
             except asyncio.CancelledError:
                 break

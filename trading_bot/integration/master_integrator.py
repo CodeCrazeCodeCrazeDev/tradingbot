@@ -212,16 +212,59 @@ class ServiceWrapper:
     last_health_check: float = 0
     error_count: int = 0
     event_count: int = 0
+    last_load_error: str = ""
     
     def __post_init__(self):
         self.service_name = self.record.module_path.split('.')[-1]
     
-    async def load(self) -> bool:
+    async def load(self, strict_imports: bool = False, quiet_optional: bool = True) -> bool:
         """Load the module."""
         try:
             self.module = importlib.import_module(self.record.module_path)
             return True
+        except ModuleNotFoundError as e:
+            missing_module = getattr(e, "name", "") or ""
+            self.last_load_error = f"ModuleNotFoundError:{missing_module}"
+
+            # Missing dependency is treated as optional unless strict mode is enabled.
+            if not strict_imports:
+                if quiet_optional:
+                    logger.debug(
+                        "Skipping %s due to missing optional dependency: %s",
+                        self.record.module_path,
+                        missing_module,
+                    )
+                else:
+                    logger.warning(
+                        "Skipping %s due to missing optional dependency: %s",
+                        self.record.module_path,
+                        missing_module,
+                    )
+                self.healthy = False
+                return False
+
+            logger.error(f"Failed to load {self.record.module_path}: {e}")
+            self.healthy = False
+            return False
         except Exception as e:
+            if not strict_imports:
+                self.last_load_error = f"{type(e).__name__}:{e}"
+                if quiet_optional:
+                    logger.debug(
+                        "Skipping %s due to non-critical load error: %s",
+                        self.record.module_path,
+                        e,
+                    )
+                else:
+                    logger.warning(
+                        "Skipping %s due to non-critical load error: %s",
+                        self.record.module_path,
+                        e,
+                    )
+                self.healthy = False
+                return False
+
+            self.last_load_error = f"{type(e).__name__}:{e}"
             logger.error(f"Failed to load {self.record.module_path}: {e}")
             self.healthy = False
             return False
@@ -383,11 +426,15 @@ class MasterIntegrator:
             'started': 0,
             'failed': 0,
             'quarantined': 0,
+            'skipped_optional': 0,
         }
     
     async def initialize(self) -> bool:
         """Initialize the integrator."""
         logger.info("MasterIntegrator initializing...")
+
+        # Ensure common runtime directories exist before loading modules.
+        (Path(self.registry.root) / "logs").mkdir(parents=True, exist_ok=True)
         
         # Phase 1: Discovery
         self.phase = IntegrationPhase.DISCOVERY
@@ -438,6 +485,8 @@ class MasterIntegrator:
             ]
         
         loaded = 0
+        strict_imports = bool(self.config.get("strict_imports", False))
+        quiet_optional = bool(self.config.get("quiet_optional_dependency_errors", True))
         
         for layer in layers:
             layer_records = self.registry.by_layer(layer)
@@ -446,13 +495,16 @@ class MasterIntegrator:
             for record in layer_records:
                 if record.promotion_state == PromotionState.QUARANTINED.value:
                     continue
-                
+
                 wrapper = ServiceWrapper(record=record)
-                if await wrapper.load():
+                if await wrapper.load(strict_imports=strict_imports, quiet_optional=quiet_optional):
                     self.services[record.module_path] = wrapper
                     loaded += 1
                 else:
-                    self.stats['failed'] += 1
+                    if not strict_imports:
+                        self.stats['skipped_optional'] += 1
+                    else:
+                        self.stats['failed'] += 1
         
         self.stats['loaded'] = loaded
         logger.info(f"Loaded {loaded} modules")

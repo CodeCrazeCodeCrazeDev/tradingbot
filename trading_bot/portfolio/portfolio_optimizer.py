@@ -909,3 +909,656 @@ if __name__ == "__main__":
     logger.info(f"\n=== Optimizer Statistics ===")
     logger.info(f"  Optimizations Run: {stats['optimizations_run']}")
     logger.info(f"  Success Rate: {stats['success_rate']:.1%}")
+
+
+# ============================================================================
+# EDGE PORTFOLIO MANAGEMENT SYSTEMS
+# ============================================================================
+
+@dataclass
+class EdgeAllocation:
+    """Allocation to a specific edge/strategy"""
+    edge_id: str
+    edge_type: str  # 'momentum', 'mean_reversion', 'breakout', etc.
+    weight: float
+    expected_return: float
+    stability_score: float  # 0-1, how stable is this edge
+    correlation_to_portfolio: float
+    last_updated: datetime
+
+
+@dataclass
+class EdgePortfolio:
+    """Portfolio of edges rather than assets"""
+    edges: Dict[str, EdgeAllocation]
+    total_expected_return: float
+    portfolio_stability: float
+    diversification_score: float
+    rebalance_timestamp: datetime
+
+
+class EdgePortfolioManager:
+    """
+    Edge Portfolio Manager
+    
+    Not portfolio of assets.
+    Portfolio of:
+    - Strategies
+    - Edges
+    - Signals
+    
+    Allocate capital based on:
+    - Edge strength
+    - Stability
+    - Correlation between edges
+    """
+    
+    def __init__(
+        self,
+        min_edge_stability: float = 0.6,
+        max_edge_correlation: float = 0.7,
+        rebalancing_frequency_days: int = 7
+    ):
+        self.min_edge_stability = min_edge_stability
+        self.max_edge_correlation = max_edge_correlation
+        self.rebalancing_frequency = rebalancing_frequency_days
+        
+        self.current_portfolio: Optional[EdgePortfolio] = None
+        self.edge_performance_history: Dict[str, List[Dict]] = defaultdict(list)
+        self.edge_stability_scores: Dict[str, float] = {}
+        
+    def register_edge(
+        self,
+        edge_id: str,
+        edge_type: str,
+        performance_history: List[float],
+        correlation_to_others: Dict[str, float]
+    ) -> float:
+        """Register a new edge and calculate its stability score."""
+        if len(performance_history) < 10:
+            logger.warning(f"Insufficient history for edge {edge_id}")
+            return 0.0
+        
+        # Calculate stability metrics
+        returns = np.array(performance_history)
+        
+        # Sharpe ratio
+        sharpe = np.mean(returns) / np.std(returns) if np.std(returns) > 0 else 0
+        
+        # Consistency (percentage of positive periods)
+        win_rate = np.sum(returns > 0) / len(returns)
+        
+        # Max drawdown
+        cumulative = np.cumprod(1 + returns)
+        peak = np.maximum.accumulate(cumulative)
+        drawdown = (peak - cumulative) / peak
+        max_dd = np.max(drawdown)
+        
+        # Stability score
+        stability = (
+            min(1.0, sharpe / 2.0) * 0.4 +  # Sharpe contribution
+            win_rate * 0.3 +  # Win rate contribution
+            (1 - min(1.0, max_dd / 0.2)) * 0.3  # Drawdown contribution
+        )
+        
+        self.edge_stability_scores[edge_id] = stability
+        self.edge_performance_history[edge_id].append({
+            'timestamp': datetime.now(),
+            'stability': stability,
+            'sharpe': sharpe,
+            'win_rate': win_rate,
+            'max_drawdown': max_dd
+        })
+        
+        logger.info(f"Registered edge {edge_id}: stability={stability:.2f}, sharpe={sharpe:.2f}")
+        
+        return stability
+    
+    def optimize_edge_portfolio(
+        self,
+        available_edges: List[str],
+        edge_expected_returns: Dict[str, float],
+        edge_correlations: pd.DataFrame
+    ) -> EdgePortfolio:
+        """
+        Optimize portfolio allocation across edges.
+        
+        Args:
+            available_edges: List of edge IDs to consider
+            edge_expected_returns: Expected return for each edge
+            edge_correlations: Correlation matrix between edges
+            
+        Returns:
+            EdgePortfolio with optimized allocations
+        """
+        # Filter edges by stability
+        viable_edges = [
+            e for e in available_edges
+            if self.edge_stability_scores.get(e, 0) >= self.min_edge_stability
+        ]
+        
+        if not viable_edges:
+            logger.warning("No viable edges meet stability threshold")
+            return EdgePortfolio(
+                edges={},
+                total_expected_return=0.0,
+                portfolio_stability=0.0,
+                diversification_score=0.0,
+                rebalance_timestamp=datetime.now()
+            )
+        
+        # Filter correlation matrix to viable edges
+        viable_corr = edge_correlations.loc[viable_edges, viable_edges]
+        
+        # Check pairwise correlations
+        high_corr_pairs = []
+        for i, e1 in enumerate(viable_edges):
+            for e2 in viable_edges[i+1:]:
+                if abs(viable_corr.loc[e1, e2]) > self.max_edge_correlation:
+                    high_corr_pairs.append((e1, e2, viable_corr.loc[e1, e2]))
+        
+        # Remove lower-quality edges from high correlation pairs
+        edges_to_exclude = set()
+        for e1, e2, corr in high_corr_pairs:
+            s1 = self.edge_stability_scores.get(e1, 0)
+            s2 = self.edge_stability_scores.get(e2, 0)
+            if s1 < s2:
+                edges_to_exclude.add(e1)
+            else:
+                edges_to_exclude.add(e2)
+        
+        final_edges = [e for e in viable_edges if e not in edges_to_exclude]
+        
+        # Allocate proportionally to stability * expected_return
+        allocations = {}
+        total_score = 0.0
+        
+        for edge in final_edges:
+            stability = self.edge_stability_scores.get(edge, 0.5)
+            expected_ret = edge_expected_returns.get(edge, 0)
+            score = stability * max(0, expected_ret)
+            allocations[edge] = score
+            total_score += score
+        
+        # Normalize to sum to 1.0
+        if total_score > 0:
+            for edge in allocations:
+                allocations[edge] /= total_score
+        else:
+            # Equal weight if no positive expectations
+            for edge in allocations:
+                allocations[edge] = 1.0 / len(allocations) if allocations else 0
+        
+        # Create edge allocations
+        edge_allocs = {}
+        for edge_id, weight in allocations.items():
+            edge_allocs[edge_id] = EdgeAllocation(
+                edge_id=edge_id,
+                edge_type='unknown',  # Would be populated from edge metadata
+                weight=weight,
+                expected_return=edge_expected_returns.get(edge_id, 0),
+                stability_score=self.edge_stability_scores.get(edge_id, 0),
+                correlation_to_portfolio=0.0,  # Would calculate from correlations
+                last_updated=datetime.now()
+            )
+        
+        # Calculate portfolio metrics
+        total_expected = sum(
+            a.weight * a.expected_return for a in edge_allocs.values()
+        )
+        
+        avg_stability = np.mean([a.stability_score for a in edge_allocs.values()]) if edge_allocs else 0
+        
+        # Diversification score based on number of uncorrelated edges
+        n_edges = len(final_edges)
+        diversification = min(1.0, n_edges / 10) * (1 - self._avg_correlation(edge_correlations, final_edges))
+        
+        portfolio = EdgePortfolio(
+            edges=edge_allocs,
+            total_expected_return=total_expected,
+            portfolio_stability=avg_stability,
+            diversification_score=diversification,
+            rebalance_timestamp=datetime.now()
+        )
+        
+        self.current_portfolio = portfolio
+        
+        logger.info(f"Optimized edge portfolio: {n_edges} edges, "
+                   f"expected_return={total_expected:.2%}, stability={avg_stability:.2f}")
+        
+        return portfolio
+    
+    def _avg_correlation(self, corr_matrix: pd.DataFrame, edges: List[str]) -> float:
+        """Calculate average off-diagonal correlation."""
+        if len(edges) < 2:
+            return 0.0
+        
+        subset = corr_matrix.loc[edges, edges]
+        # Get upper triangle (excluding diagonal)
+        mask = np.triu(np.ones_like(subset, dtype=bool), k=1)
+        correlations = subset.where(mask).stack().values
+        
+        return np.mean(np.abs(correlations)) if len(correlations) > 0 else 0.0
+    
+    def get_edge_allocation(self, edge_id: str) -> Optional[float]:
+        """Get current allocation for an edge."""
+        if not self.current_portfolio:
+            return None
+        
+        alloc = self.current_portfolio.edges.get(edge_id)
+        return alloc.weight if alloc else 0.0
+    
+    def should_rebalance(self) -> bool:
+        """Check if portfolio needs rebalancing."""
+        if not self.current_portfolio:
+            return True
+        
+        days_since_rebalance = (
+            datetime.now() - self.current_portfolio.rebalance_timestamp
+        ).days
+        
+        return days_since_rebalance >= self.rebalancing_frequency
+    
+    def get_portfolio_report(self) -> Dict[str, Any]:
+        """Generate comprehensive portfolio report."""
+        if not self.current_portfolio:
+            return {'status': 'no_portfolio'}
+        
+        p = self.current_portfolio
+        
+        return {
+            'num_edges': len(p.edges),
+            'total_expected_return': p.total_expected_return,
+            'portfolio_stability': p.portfolio_stability,
+            'diversification_score': p.diversification_score,
+            'days_since_rebalance': (datetime.now() - p.rebalance_timestamp).days,
+            'edge_breakdown': [
+                {
+                    'edge_id': e.edge_id,
+                    'weight': e.weight,
+                    'stability': e.stability_score,
+                    'expected_return': e.expected_return
+                }
+                for e in p.edges.values()
+            ],
+            'should_rebalance': self.should_rebalance()
+        }
+
+
+class EdgeOrthogonalityAnalyzer:
+    """
+    Edge Orthogonality Analyzer
+    
+    Most strategies overlap.
+    
+    Measure:
+    - Correlation between edges
+    
+    Goal:
+    - Diversify REAL edges
+    - Not duplicate signals
+    """
+    
+    def __init__(self, orthogonality_threshold: float = 0.5):
+        self.orthogonality_threshold = orthogonality_threshold
+        self.edge_returns: Dict[str, List[float]] = defaultdict(list)
+        self.orthogonality_matrix: Optional[pd.DataFrame] = None
+        
+    def add_edge_returns(self, edge_id: str, returns: List[float]):
+        """Add return series for an edge."""
+        self.edge_returns[edge_id].extend(returns)
+        
+        # Keep last 252 periods (1 year)
+        if len(self.edge_returns[edge_id]) > 252:
+            self.edge_returns[edge_id] = self.edge_returns[edge_id][-252:]
+    
+    def calculate_orthogonality_matrix(self) -> pd.DataFrame:
+        """Calculate orthogonality (1 - |correlation|) between all edges."""
+        # Create returns DataFrame
+        min_length = min(len(v) for v in self.edge_returns.values()) if self.edge_returns else 0
+        
+        if min_length < 30:
+            logger.warning("Insufficient data for orthogonality calculation")
+            return pd.DataFrame()
+        
+        returns_df = pd.DataFrame({
+            edge: returns[-min_length:]
+            for edge, returns in self.edge_returns.items()
+        })
+        
+        # Calculate correlation matrix
+        corr = returns_df.corr()
+        
+        # Orthogonality = 1 - |correlation|
+        orthogonality = 1 - corr.abs()
+        
+        self.orthogonality_matrix = orthogonality
+        
+        return orthogonality
+    
+    def find_orthogonal_combinations(self, n_edges: int = 3) -> List[List[str]]:
+        """Find combinations of edges that are mutually orthogonal."""
+        if self.orthogonality_matrix is None:
+            self.calculate_orthogonality_matrix()
+        
+        if self.orthogonality_matrix.empty:
+            return []
+        
+        edges = list(self.orthogonality_matrix.index)
+        
+        if len(edges) < n_edges:
+            return []
+        
+        # Find combinations with average orthogonality above threshold
+        from itertools import combinations
+        
+        orthogonal_combos = []
+        
+        for combo in combinations(edges, n_edges):
+            # Calculate average orthogonality within this combination
+            avg_ortho = 0.0
+            count = 0
+            for i, e1 in enumerate(combo):
+                for e2 in combo[i+1:]:
+                    avg_ortho += self.orthogonality_matrix.loc[e1, e2]
+                    count += 1
+            
+            if count > 0:
+                avg_ortho /= count
+                if avg_ortho > self.orthogonality_threshold:
+                    orthogonal_combos.append(list(combo))
+        
+        # Sort by average orthogonality
+        def avg_ortho_score(combo):
+            total = 0.0
+            count = 0
+            for i, e1 in enumerate(combo):
+                for e2 in combo[i+1:]:
+                    total += self.orthogonality_matrix.loc[e1, e2]
+                    count += 1
+            return total / count if count > 0 else 0
+        
+        orthogonal_combos.sort(key=avg_ortho_score, reverse=True)
+        
+        return orthogonal_combos[:10]  # Return top 10
+    
+    def identify_redundant_edges(self) -> Dict[str, List[str]]:
+        """Identify edges that are redundant (highly correlated) with others."""
+        if self.orthogonality_matrix is None:
+            self.calculate_orthogonality_matrix()
+        
+        if self.orthogonality_matrix.empty:
+            return {}
+        
+        redundant = {}
+        
+        for edge in self.orthogonality_matrix.index:
+            # Find edges with correlation > 0.8 (orthogonality < 0.2)
+            high_corr = self.orthogonality_matrix[edge][
+                self.orthogonality_matrix[edge] < 0.2
+            ].index.tolist()
+            
+            # Remove self
+            high_corr = [e for e in high_corr if e != edge]
+            
+            if high_corr:
+                redundant[edge] = high_corr
+        
+        return redundant
+    
+    def get_orthogonality_report(self) -> Dict[str, Any]:
+        """Generate orthogonality report."""
+        if self.orthogonality_matrix is None:
+            self.calculate_orthogonality_matrix()
+        
+        if self.orthogonality_matrix.empty:
+            return {'status': 'insufficient_data'}
+        
+        # Calculate average orthogonality
+        avg_ortho = self.orthogonality_matrix.values[np.triu_indices_from(
+            self.orthogonality_matrix.values, k=1
+        )].mean()
+        
+        redundant = self.identify_redundant_edges()
+        
+        best_combos = self.find_orthogonal_combinations(n_edges=3)
+        
+        return {
+            'num_edges_analyzed': len(self.orthogonality_matrix.index),
+            'average_orthogonality': avg_ortho,
+            'redundant_edges': redundant,
+            'best_orthogonal_combinations': best_combos[:5],
+            'recommendation': (
+                'Consider removing redundant edges' if redundant 
+                else 'Edge set is well diversified'
+            )
+        }
+
+
+class PositionSizingOptimizer:
+    """
+    Position Sizing Optimizer
+    
+    Uses Kelly Criterion and Optimal f for mathematically optimal position sizing.
+    
+    Kelly Formula: f* = (bp - q) / b
+    where: b = odds, p = win probability, q = loss probability
+    
+    Optimal f: Maximizes geometric growth rate of capital.
+    
+    Features:
+    - Kelly Criterion calculator
+    - Optimal f estimator
+    - Fractional Kelly for risk adjustment
+    - Maximum drawdown protection
+    """
+    
+    def __init__(
+        self,
+        kelly_fraction: float = 0.5,  # Half-Kelly for safety
+        max_position_pct: float = 0.25,  # Max 25% per position
+        min_position_pct: float = 0.01   # Min 1% per position
+    ):
+        self.kelly_fraction = kelly_fraction
+        self.max_position_pct = max_position_pct
+        self.min_position_pct = min_position_pct
+        self.sizing_history: List[Dict] = []
+        
+    def calculate_kelly_criterion(
+        self,
+        win_rate: float,
+        avg_win: float,
+        avg_loss: float
+    ) -> Dict[str, float]:
+        """
+        Calculate Kelly Criterion optimal position size.
+        
+        Args:
+            win_rate: Probability of winning (0-1)
+            avg_win: Average win amount (positive)
+            avg_loss: Average loss amount (positive)
+            
+        Returns:
+            Kelly metrics including full and fractional Kelly
+        """
+        if avg_loss == 0 or win_rate <= 0 or win_rate >= 1:
+            return {'full_kelly': 0, 'fractional_kelly': 0, 'edge': 0}
+        
+        # Kelly formula: f* = (bp - q) / b
+        # b = avg_win / avg_loss (odds)
+        b = avg_win / avg_loss
+        p = win_rate
+        q = 1 - p
+        
+        kelly_pct = (b * p - q) / b
+        
+        # Edge calculation
+        edge = p * avg_win - q * avg_loss
+        
+        # Apply fractional Kelly for safety
+        fractional_kelly = kelly_pct * self.kelly_fraction
+        
+        # Apply constraints
+        constrained_kelly = max(
+            self.min_position_pct,
+            min(fractional_kelly, self.max_position_pct)
+        )
+        
+        return {
+            'full_kelly': kelly_pct,
+            'fractional_kelly': fractional_kelly,
+            'constrained_kelly': constrained_kelly,
+            'edge': edge,
+            'odds': b,
+            'win_rate': win_rate,
+            'risk_adjusted': self.kelly_fraction != 1.0
+        }
+    
+    def calculate_optimal_f(
+        self,
+        trade_history: List[float],
+        max_iterations: int = 100
+    ) -> Dict[str, float]:
+        """
+        Calculate Optimal f using trade history.
+        
+        Optimal f maximizes the geometric mean of returns.
+        
+        Args:
+            trade_history: List of trade returns (as decimals)
+            max_iterations: Max iterations for optimization
+            
+        Returns:
+            Optimal f and related metrics
+        """
+        if len(trade_history) < 10:
+            return {'optimal_f': 0, 'geometric_mean': 0, 'status': 'insufficient_data'}
+        
+        def geometric_mean(f: float, returns: List[float]) -> float:
+            """Calculate geometric mean for given f."""
+            if f <= 0 or f >= 1:
+                return -1e10
+            
+            # HPR (Holding Period Return) for each trade
+            hprs = [1 + f * r for r in returns]
+            
+            # Check for negative HPR (ruin)
+            if any(h <= 0 for h in hprs):
+                return -1e10
+            
+            # Geometric mean
+            product = np.prod(hprs)
+            if product <= 0:
+                return -1e10
+            
+            return product ** (1 / len(hprs))
+        
+        # Grid search for optimal f
+        best_f = 0
+        best_gm = 0
+        
+        for f in np.linspace(0.01, 0.99, max_iterations):
+            gm = geometric_mean(f, trade_history)
+            if gm > best_gm:
+                best_gm = gm
+                best_f = f
+        
+        # Apply safety constraints
+        constrained_f = max(
+            self.min_position_pct,
+            min(best_f * self.kelly_fraction, self.max_position_pct)
+        )
+        
+        return {
+            'optimal_f': best_f,
+            'constrained_f': constrained_f,
+            'geometric_mean': best_gm,
+            'toxic_risk': best_f > self.max_position_pct,
+            'recommendation': 'Use constrained f' if best_f > self.max_position_pct else 'Optimal f safe to use'
+        }
+    
+    def calculate_position_size(
+        self,
+        capital: float,
+        strategy_edge: Dict[str, Any],
+        volatility: float,
+        correlation_to_portfolio: float = 0.0
+    ) -> Dict[str, Any]:
+        """
+        Calculate final position size using multiple methods.
+        
+        Args:
+            capital: Available capital
+            strategy_edge: Dict with win_rate, avg_win, avg_loss
+            volatility: Current market volatility (0-1)
+            correlation_to_portfolio: Correlation with existing positions
+            
+        Returns:
+            Position sizing recommendation
+        """
+        win_rate = strategy_edge.get('win_rate', 0.5)
+        avg_win = strategy_edge.get('avg_win', 0.02)
+        avg_loss = strategy_edge.get('avg_loss', 0.01)
+        
+        # Method 1: Kelly Criterion
+        kelly = self.calculate_kelly_criterion(win_rate, avg_win, avg_loss)
+        
+        # Method 2: Volatility adjustment (smaller size in high vol)
+        vol_adjustment = 1.0 - (volatility - 0.15) * 2 if volatility > 0.15 else 1.0
+        vol_adjustment = max(0.2, vol_adjustment)
+        
+        # Method 3: Correlation adjustment (reduce size if highly correlated)
+        corr_adjustment = 1.0 - abs(correlation_to_portfolio) * 0.5
+        
+        # Combined adjustment
+        combined_pct = kelly['constrained_kelly'] * vol_adjustment * corr_adjustment
+        
+        # Final position size in currency
+        position_size = capital * combined_pct
+        
+        sizing_record = {
+            'timestamp': datetime.now(),
+            'capital': capital,
+            'kelly_pct': kelly['constrained_kelly'],
+            'vol_adjustment': vol_adjustment,
+            'corr_adjustment': corr_adjustment,
+            'final_pct': combined_pct,
+            'position_size': position_size,
+            'units': int(position_size / 100) if position_size > 100 else 0  # Example: $100 per unit
+        }
+        
+        self.sizing_history.append(sizing_record)
+        
+        # Keep last 50 records
+        if len(self.sizing_history) > 50:
+            self.sizing_history = self.sizing_history[-50:]
+        
+        return {
+            'position_size': position_size,
+            'position_pct': combined_pct,
+            'kelly_details': kelly,
+            'adjustments': {
+                'volatility': vol_adjustment,
+                'correlation': corr_adjustment
+            },
+            'risk_warning': combined_pct > self.max_position_pct * 0.9,
+            'method': 'kelly_with_adjustments'
+        }
+    
+    def get_sizing_performance_report(self) -> Dict[str, Any]:
+        """Analyze historical sizing performance."""
+        if len(self.sizing_history) < 10:
+            return {'status': 'insufficient_data'}
+        
+        recent = self.sizing_history[-20:]
+        
+        avg_size = np.mean([r['position_pct'] for r in recent])
+        max_size = max([r['position_pct'] for r in recent])
+        
+        return {
+            'average_position_size': avg_size,
+            'max_position_size': max_size,
+            'sizing_consistency': 1.0 - np.std([r['position_pct'] for r in recent]),
+            'risk_profile': 'AGGRESSIVE' if avg_size > 0.2 else 'MODERATE' if avg_size > 0.1 else 'CONSERVATIVE',
+            'recommendation': 'Review sizing if avg > 20%' if avg_size > 0.2 else 'Sizing within normal range'
+        }

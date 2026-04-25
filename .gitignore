@@ -75,6 +75,13 @@ complete_work_backups/
 
 # Encryption keys
 config/encryption.key
+.key
+.salt
+.secret_key
+*.salt
+*.secret
+*.token
+*.vault
 
 # Test reports with sensitive data
 test_reports/*.json

@@ -1,0 +1,7 @@
+# Accelerating Mathematical and Scientific Discovery with Gemini Deep Think
+
+Thang Luong and Vahab Mirrokni
+Listen to article 10 minutes
+Under direction from expert mathematicians and scientists, Gemini Deep Think is solving professional research problems across mathematics, physics, and computer science
+In the summer of 2025, an advanced version of Gemini Deep Think achieved Gold-medal standard at the International Mathematics Olympiad (IMO) and later, an updated version, [obtained](https://deepmind.google/blog/gemini-achieves-gold-medal-level-at-the-international-collegiate-programming-contest-world-finals/) similar results at the International Collegiate Programming Contest. These results demonstrated the model could reason through some of the most challenging math and programming problems designed for students. Since then, Gemini Deep Think mode has moved into science, engineering and enterprise workflows to tackle more complex, open-ended challenges.
+In the last week, our teams published two papers (1, [2](https://arxiv.org/abs/2602.03837)) detailing a cross-disciplinary effort to solve professional research problems using Gemini Deep Think mode. These results stem from deep collaboration between mathematicians, physicists, and computer scientists.

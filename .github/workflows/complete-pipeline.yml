@@ -1,0 +1,635 @@
+name: Complete Testing & Deployment Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
+
+env:
+  PYTHON_VERSION: '3.11'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # =========================================================================
+  # STAGE 1: Static Analysis
+  # =========================================================================
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-static-${{ hashFiles('**/requirements.txt', '**/requirements-dev.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-static-
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install black isort flake8 mypy bandit safety
+      
+      - name: Run Black (format check)
+        run: black --check --line-length=100 trading_bot/
+      
+      - name: Run isort (import check)
+        run: isort --check-only --profile black trading_bot/
+      
+      - name: Run Flake8 (linting)
+        run: flake8 trading_bot/ --max-line-length=100 --extend-ignore=E203,W503
+      
+      - name: Run MyPy (type checking)
+        run: mypy trading_bot/ --ignore-missing-imports
+        continue-on-error: true
+      
+      - name: Run Bandit (security scan)
+        run: bandit -r trading_bot/ -ll -f json -o bandit-report.json
+        continue-on-error: true
+      
+      - name: Upload Bandit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: bandit-report.json
+          retention-days: 30
+      
+      - name: Run Safety (dependency check)
+        run: safety check --json --output safety-report.json || true
+      
+      - name: Upload Safety report
+        uses: actions/upload-artifact@v4
+        with:
+          name: safety-report
+          path: safety-report.json
+          retention-days: 30
+
+  # =========================================================================
+  # STAGE 2: Unit Testing
+  # =========================================================================
+  unit-test:
+    name: Unit Tests
+    runs-on: ${{ matrix.os }}
+    needs: [static-analysis]
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ['3.9', '3.10', '3.11']
+      fail-fast: false
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.python-version }}-pip-
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov pytest-timeout pytest-xdist hypothesis
+      
+      - name: Run unit tests (fast)
+        run: |
+          pytest -m "unit and not slow" -v --timeout=60 -n auto --cov=trading_bot --cov-report=xml --cov-report=term
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          flags: unittests
+          name: unit-tests-${{ matrix.os }}-${{ matrix.python-version }}
+          fail_ci_if_error: false
+
+  # =========================================================================
+  # STAGE 3: Integration Testing
+  # =========================================================================
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [unit-test]
+    timeout-minutes: 30
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: trading_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio
+      
+      - name: Run integration tests
+        run: |
+          pytest tests/ -m integration -v --timeout=300
+        continue-on-error: true
+        env:
+          DATABASE_URL: postgresql://postgres:test@localhost:5432/trading_test
+          REDIS_URL: redis://localhost:6379
+
+  # =========================================================================
+  # STAGE 4: System Testing
+  # =========================================================================
+  system-test:
+    name: System Tests
+    runs-on: ubuntu-latest
+    needs: [integration-test]
+    timeout-minutes: 45
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio
+      
+      - name: Run system tests
+        run: |
+          pytest tests/ -m system -v --timeout=300
+        continue-on-error: true
+
+  # =========================================================================
+  # STAGE 5: Simulation Testing
+  # =========================================================================
+  simulation-test:
+    name: Simulation Tests
+    runs-on: ubuntu-latest
+    needs: [system-test]
+    timeout-minutes: 60
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run simulation mode
+        run: |
+          python main.py --mode simulation --duration 1800 --max-trades 5
+        timeout-minutes: 45
+      
+      - name: Analyze simulation results
+        run: |
+          python -c "
+          import json
+          from pathlib import Path
+          
+          results_file = Path('logs/simulation_results.json')
+          if results_file.exists():
+              with open(results_file) as f:
+                  results = json.load(f)
+              
+              print(f'Simulation complete: {results.get(\"trades\", 0)} trades executed')
+              print(f'Errors: {results.get(\"errors\", 0)}')
+              
+              if results.get('errors', 0) > 0:
+                  print('WARNING: Errors detected in simulation')
+          else:
+              print('No simulation results found')
+          "
+      
+      - name: Upload simulation logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: simulation-logs
+          path: logs/
+          retention-days: 7
+
+  # =========================================================================
+  # STAGE 6: Stress Testing
+  # =========================================================================
+  stress-test:
+    name: Stress Tests
+    runs-on: ubuntu-latest
+    needs: [system-test]
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-benchmark locust
+      
+      - name: Run stress tests
+        run: |
+          pytest tests/ -m stress -v --timeout=600 --benchmark-only
+        continue-on-error: true
+      
+      - name: Check resource usage
+        run: |
+          python -c "
+          import psutil
+          print(f'CPU Usage: {psutil.cpu_percent()}%')
+          print(f'Memory Usage: {psutil.virtual_memory().percent}%')
+          print(f'Disk Usage: {psutil.disk_usage(\"/\").percent}%')
+          "
+
+  # =========================================================================
+  # STAGE 7: Risk Validation
+  # =========================================================================
+  risk-validation:
+    name: Risk Validation
+    runs-on: ubuntu-latest
+    needs: [simulation-test, stress-test]
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+      
+      - name: Run risk validation tests
+        run: |
+          pytest tests/ -m risk -v --timeout=300
+      
+      - name: Validate risk configuration
+        run: |
+          python -c "
+          from pathlib import Path
+          import sys
+          
+          # Check if risk limits are configured
+          config_path = Path('config/production.yaml')
+          if config_path.exists():
+              print('Production config found')
+          else:
+              print('WARNING: Production config not found')
+          
+          # Run risk validation check
+          try:
+              from trading_bot.risk import RiskValidationGate
+              print('RiskValidationGate imported successfully')
+          except Exception as e:
+              print(f'ERROR: Risk validation import failed: {e}')
+              sys.exit(1)
+          "
+
+  # =========================================================================
+  # STAGE 8: Performance Profiling
+  # =========================================================================
+  performance-profile:
+    name: Performance Profiling
+    runs-on: ubuntu-latest
+    needs: [risk-validation]
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-benchmark memory-profiler line-profiler
+      
+      - name: Run performance benchmarks
+        run: |
+          pytest tests/ -m performance -v --benchmark-only --timeout=300
+        continue-on-error: true
+      
+      - name: Profile critical paths
+        run: |
+          python -c "
+          import cProfile
+          import pstats
+          from pathlib import Path
+          
+          # Profile signal generation
+          profiler = cProfile.Profile()
+          profiler.enable()
+          
+          try:
+              from trading_bot.signals import SignalGenerator
+              print('SignalGenerator loaded for profiling')
+          except Exception as e:
+              print(f'Profiling error: {e}')
+          
+          profiler.disable()
+          
+          stats = pstats.Stats(profiler)
+          stats.sort_stats('cumulative')
+          stats.print_stats(20)
+          
+          stats.dump_stats('profile.stats')
+          "
+      
+      - name: Upload profiling results
+        uses: actions/upload-artifact@v4
+        with:
+          name: profiling-results
+          path: |
+            profile.stats
+            .benchmarks/
+          retention-days: 30
+
+  # =========================================================================
+  # STAGE 9: Security Scan
+  # =========================================================================
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: [unit-test]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install security tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit safety
+      
+      - name: Run Bandit security scan
+        run: |
+          bandit -r trading_bot/ -f json -o bandit-full-report.json || true
+          bandit -r trading_bot/ -ll
+      
+      - name: Run Safety check
+        run: |
+          safety check --json --output safety-full-report.json || true
+      
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            bandit-full-report.json
+            safety-full-report.json
+          retention-days: 30
+
+  # =========================================================================
+  # STAGE 10: Build Package
+  # =========================================================================
+  build-package:
+    name: Build Package
+    runs-on: ubuntu-latest
+    needs: [static-analysis, unit-test, security-scan]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel setuptools
+      
+      - name: Build package
+        run: python -m build
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-packages
+          path: dist/
+          retention-days: 7
+
+  # =========================================================================
+  # STAGE 11: Docker Build
+  # =========================================================================
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [build-package]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # =========================================================================
+  # STAGE 12: Deploy to Staging
+  # =========================================================================
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [performance-profile, docker-build]
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to staging
+        run: |
+          echo "Deploying to staging environment..."
+          # Add actual staging deployment here
+          # kubectl apply -f k8s/staging/
+      
+      - name: Run smoke tests on staging
+        run: |
+          echo "Running smoke tests on staging..."
+          # pytest tests/smoke_tests.py
+
+  # =========================================================================
+  # STAGE 13: Deploy to Production
+  # =========================================================================
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to production
+        run: |
+          echo "Deploying to production environment..."
+          # Add actual production deployment here
+          # kubectl apply -f k8s/production/
+      
+      - name: Verify deployment
+        run: |
+          echo "Verifying production deployment..."
+          # kubectl rollout status deployment/trading-bot
+
+  # =========================================================================
+  # STAGE 14: Post-Deployment Monitoring Setup
+  # =========================================================================
+  setup-monitoring:
+    name: Setup Monitoring
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup monitoring
+        run: |
+          echo "Setting up monitoring and alerting..."
+          # Configure Prometheus/Grafana
+          # Setup log aggregation
+          # Configure alerts
+
+  # =========================================================================
+  # STAGE 15: Notify Status
+  # =========================================================================
+  notify:
+    name: Notify Status
+    runs-on: ubuntu-latest
+    needs: [
+      static-analysis, unit-test, integration-test, system-test,
+      simulation-test, stress-test, risk-validation, performance-profile,
+      security-scan, build-package, docker-build
+    ]
+    if: always()
+    
+    steps:
+      - name: Check job statuses
+        run: |
+          echo "Pipeline Status Summary:"
+          echo "========================"
+          echo "Static Analysis: ${{ needs.static-analysis.result }}"
+          echo "Unit Tests: ${{ needs.unit-test.result }}"
+          echo "Integration Tests: ${{ needs.integration-test.result }}"
+          echo "System Tests: ${{ needs.system-test.result }}"
+          echo "Simulation Tests: ${{ needs.simulation-test.result }}"
+          echo "Stress Tests: ${{ needs.stress-test.result }}"
+          echo "Risk Validation: ${{ needs.risk-validation.result }}"
+          echo "Performance Profile: ${{ needs.performance-profile.result }}"
+          echo "Security Scan: ${{ needs.security-scan.result }}"
+          echo "Build Package: ${{ needs.build-package.result }}"
+          echo "Docker Build: ${{ needs.docker-build.result }}"
+      
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "Pipeline failed! Check logs for details."
+          # Add Slack/Discord/Email notification here
+      
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "Pipeline completed successfully!"
+          # Add Slack/Discord/Email notification here

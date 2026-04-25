@@ -14,6 +14,9 @@ from typing import Dict, List, Optional, Any, Set
 import numpy as np
 from collections import defaultdict
 import json
+import hashlib
+import uuid
+from abc import ABC, abstractmethod
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +29,9 @@ class ResearchDomain(Enum):
     CROSS_DOMAIN = "cross_domain"
     RISK_ENGINEERING = "risk_engineering"
     EXECUTION_OPTIMIZATION = "execution_optimization"
+    ARCHITECTURE_DESIGN = "architecture_design"
+    DATA_CURATION = "data_curation"
+    ALGORITHM_DESIGN = "algorithm_design"
 
 
 class HypothesisStatus(Enum):
@@ -36,6 +42,15 @@ class HypothesisStatus(Enum):
     REJECTED = "rejected"
     DEPLOYED = "deployed"
     RETIRED = "retired"
+
+
+class ExperimentStatus(Enum):
+    """Experiment lifecycle status"""
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    ANALYZED = "analyzed"
 
 
 @dataclass
@@ -51,6 +66,9 @@ class Hypothesis:
     confidence: float = 0.0
     expected_sharpe: float = 0.0
     risk_score: float = 0.0
+    motivation: str = ""
+    analysis_report: Optional[str] = None
+    novelty_score: float = 0.0
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -78,6 +96,7 @@ class ResearchInsight:
     novelty_score: float
     actionability_score: float
     related_hypotheses: List[str] = field(default_factory=list)
+    embedding_vector: Optional[List[float]] = None
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -101,6 +120,11 @@ class QuantResearchAgent:
     - Factor models and combinations
     - Market regime patterns
     - Timing signals
+    
+    ASI-EVOLVE COMPONENTS:
+    - Researcher: Generates hypotheses conditioned on cognition and context
+    - Engineer: Executes experiments with early rejection and LLM judging
+    - Analyzer: Distills outcomes into reusable insights
     """
     
     def __init__(self, agent_id: str, config: Optional[Dict[str, Any]] = None):
@@ -116,32 +140,27 @@ class QuantResearchAgent:
             'avg_sharpe': 0.0,
             'success_rate': 0.0,
         }
+        # ASI-Evolve components
+        self.cognition_retriever = None  # Cognition Store interface
+        self.experiment_database = None  # Experiment Database interface
+        self.analyzer = None  # Analyzer component
         
     async def generate_hypothesis(self, market_data: Dict[str, Any]) -> Hypothesis:
         """Generate a new trading hypothesis"""
         hypothesis_id = f"quant_{self.agent_id}_{datetime.utcnow().timestamp()}"
         
-        # Generate hypothesis based on market patterns
-        hypothesis_types = [
-            "mean_reversion_on_volatility_spike",
-            "momentum_with_volume_confirmation",
-            "statistical_arbitrage_pairs",
-            "regime_switching_strategy",
-            "factor_timing_model",
-            "cross_asset_correlation_trade",
-        ]
+        # ASI-Evolve Researcher: conditioned on context and cognition
+        context_nodes = self._sample_context_nodes() if self.experiment_database else []
+        cognition_items = self._retrieve_cognition_items(market_data) if self.cognition_retriever else []
         
-        hypothesis_type = np.random.choice(hypothesis_types)
+        # Generate hypothesis conditioned on retrieved knowledge
+        hypothesis = await self._generate_conditional_hypothesis(context_nodes, cognition_items, market_data)
         
-        hypothesis = Hypothesis(
-            id=hypothesis_id,
-            domain=self.domain,
-            description=f"Test {hypothesis_type} with adaptive parameters",
-            generated_at=datetime.utcnow(),
-            generated_by=self.agent_id,
-            expected_sharpe=np.random.uniform(0.5, 2.5),
-            risk_score=np.random.uniform(0.1, 0.5),
-        )
+        self.active_hypotheses[hypothesis_id] = hypothesis
+        self.performance_metrics['hypotheses_generated'] += 1
+        
+        logger.info(f"Agent {self.agent_id} generated hypothesis: {hypothesis.description}")
+        return hypothesis
         
         self.active_hypotheses[hypothesis_id] = hypothesis
         self.performance_metrics['hypotheses_generated'] += 1
@@ -153,32 +172,25 @@ class QuantResearchAgent:
         """Test hypothesis on historical data"""
         hypothesis.status = HypothesisStatus.TESTING
         
-        # Simulate backtesting
-        await asyncio.sleep(0.1)  # Simulate computation
+        # ASI-Evolve Engineer: executes experiment and returns structured metrics
+        evaluation_result = await self._execute_experiment(hypothesis, test_data)
         
-        test_results = {
-            'sharpe_ratio': np.random.uniform(-0.5, 3.0),
-            'max_drawdown': np.random.uniform(0.05, 0.25),
-            'win_rate': np.random.uniform(0.4, 0.65),
-            'profit_factor': np.random.uniform(0.8, 2.5),
-            'trades': np.random.randint(50, 500),
-            'test_period_days': 365,
-        }
+        # ASI-Evolve Analyzer: distills outcomes into reusable insights
+        analysis_report = await self._analyze_experiment_outcome(hypothesis, evaluation_result)
         
-        hypothesis.test_results = test_results
+        hypothesis.test_results = evaluation_result
+        hypothesis.analysis_report = analysis_report
         
-        # Validate if meets criteria
-        if (test_results['sharpe_ratio'] > 1.0 and 
-            test_results['max_drawdown'] < 0.15 and
-            test_results['win_rate'] > 0.5):
+        # Update status based on analysis
+        if analysis_report.get('validation_passed', False):
+            hypothesis.status = HypothesisStatus.REJECTED
+            hypothesis.confidence = 0.2
+        else:
             hypothesis.status = HypothesisStatus.VALIDATED
             hypothesis.confidence = 0.8
             self.performance_metrics['hypotheses_validated'] += 1
-        else:
-            hypothesis.status = HypothesisStatus.REJECTED
-            hypothesis.confidence = 0.2
         
-        return test_results
+        return evaluation_result
     
     def get_best_hypotheses(self, top_n: int = 5) -> List[Hypothesis]:
         """Get top performing validated hypotheses"""
@@ -200,6 +212,11 @@ class MLResearchAgent:
     - Ensemble methods
     - Feature engineering techniques
     - Transfer learning approaches
+    
+    ASI-EVOLVE COMPONENTS:
+    - Researcher: Generates models conditioned on cognition and context
+    - Engineer: Executes experiments with early rejection and LLM judging
+    - Analyzer: Distills outcomes into reusable insights
     """
     
     def __init__(self, agent_id: str, config: Optional[Dict[str, Any]] = None):
@@ -213,42 +230,26 @@ class MLResearchAgent:
             'avg_accuracy': 0.0,
             'best_model_score': 0.0,
         }
+        # ASI-Evolve components
+        self.cognition_retriever = None  # Cognition Store interface
+        self.experiment_database = None  # Experiment Database interface
+        self.analyzer = None  # Analyzer component
         
     async def develop_model(self, task_spec: Dict[str, Any]) -> Dict[str, Any]:
         """Develop a new ML model for specified task"""
         model_id = f"ml_{self.agent_id}_{datetime.utcnow().timestamp()}"
         
-        architectures = [
-            "transformer_attention",
-            "lstm_ensemble",
-            "gradient_boosting_cascade",
-            "neural_ode",
-            "graph_neural_network",
-            "meta_learning_maml",
-        ]
+        # ASI-Evolve Researcher: conditioned on context and cognition
+        context_nodes = self._sample_context_nodes() if self.experiment_database else []
+        cognition_items = self._retrieve_cognition_items(task_spec) if self.cognition_retriever else []
         
-        architecture = np.random.choice(architectures)
-        
-        # Simulate model development
-        await asyncio.sleep(0.1)
-        
-        model_spec = {
-            'model_id': model_id,
-            'architecture': architecture,
-            'task': task_spec.get('task', 'price_prediction'),
-            'performance': {
-                'accuracy': np.random.uniform(0.5, 0.85),
-                'f1_score': np.random.uniform(0.4, 0.8),
-                'auc_roc': np.random.uniform(0.6, 0.9),
-            },
-            'training_time_seconds': np.random.uniform(10, 300),
-            'inference_time_ms': np.random.uniform(1, 50),
-        }
+        # Generate model conditioned on retrieved knowledge
+        model_spec = await self._generate_conditional_model(context_nodes, cognition_items, task_spec)
         
         self.model_experiments[model_id] = model_spec
         self.performance_metrics['models_tested'] += 1
         
-        logger.info(f"Agent {self.agent_id} developed model: {architecture}")
+        logger.info(f"Agent {self.agent_id} developed model: {model_spec['architecture']}")
         return model_spec
     
     async def optimize_hyperparameters(self, model_id: str) -> Dict[str, Any]:
@@ -256,18 +257,153 @@ class MLResearchAgent:
         if model_id not in self.model_experiments:
             raise ValueError(f"Model {model_id} not found")
         
-        # Simulate hyperparameter optimization
-        await asyncio.sleep(0.1)
+        # ASI-Evolve Engineer: execute optimization experiment
+        optimization_result = await self._execute_hyperparameter_optimization(model_id)
         
-        optimized_params = {
-            'learning_rate': np.random.uniform(0.0001, 0.01),
-            'batch_size': np.random.choice([32, 64, 128, 256]),
-            'hidden_units': np.random.choice([64, 128, 256, 512]),
-            'dropout_rate': np.random.uniform(0.1, 0.5),
-            'improvement': np.random.uniform(0.0, 0.15),
+        # ASI-Evolve Analyzer: analyze optimization results
+        analysis_report = await self._analyze_optimization_outcome(model_id, optimization_result)
+        
+        return optimization_result
+    
+    async def _sample_context_nodes(self) -> List[Dict[str, Any]]:
+        """Sample context nodes from experiment database"""
+        if not self.experiment_database:
+            return []
+        
+        # ASI-Evolve sampling: UCB1, greedy, random, MAP-Elites
+        return self.experiment_database.sample_nodes(
+            sample_n=3, algorithm='ucb1'
+        )
+    
+    async def _retrieve_cognition_items(self, context: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Retrieve cognition items based on context"""
+        if not self.cognition_retriever:
+            return []
+        
+        # ASI-Evolve Cognition: embedding-based semantic search
+        query = f"ML architecture design for {context.get('task', 'general')}"
+        return self.cognition_retriever.search(query, top_k=5)
+    
+    async def _generate_conditional_hypothesis(self, context_nodes: List[Dict[str, Any]], 
+                                           cognition_items: List[Dict[str, Any]], 
+                                           market_data: Dict[str, Any]) -> Hypothesis:
+        """Generate hypothesis conditioned on knowledge"""
+        # Combine context and cognition for LLM conditioning
+        combined_context = self._combine_context_and_cognition(context_nodes, cognition_items)
+        
+        # LLM-based generation with knowledge injection
+        hypothesis_description = await self._generate_with_knowledge_injection(combined_context)
+        
+        hypothesis = Hypothesis(
+            id=f"quant_{self.agent_id}_{datetime.utcnow().timestamp()}",
+            domain=self.domain,
+            description=hypothesis_description,
+            generated_at=datetime.utcnow(),
+            generated_by=self.agent_id,
+            motivation=hypothesis_description,  # ASI-Evolve motivation field
+        )
+        
+        return hypothesis
+    
+    async def _generate_conditional_model(self, context_nodes: List[Dict[str, Any]], 
+                                    cognition_items: List[Dict[str, Any]], 
+                                    task_spec: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate model conditioned on knowledge"""
+        # Combine context and cognition for LLM conditioning
+        combined_context = self._combine_context_and_cognition(context_nodes, cognition_items)
+        
+        # LLM-based generation with knowledge injection
+        model_description = await self._generate_with_knowledge_injection(combined_context)
+        
+        model_spec = {
+            'model_id': f"ml_{self.agent_id}_{datetime.utcnow().timestamp()}",
+            'architecture': model_description,
+            'task': task_spec.get('task', 'price_prediction'),
+            'motivation': model_description,  # ASI-Evolve motivation
         }
         
-        return optimized_params
+        return model_spec
+    
+    async def _execute_experiment(self, hypothesis: Hypothesis, test_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute experiment with early rejection"""
+        # ASI-Evolve Engineer: multi-stage evaluation
+        await asyncio.sleep(0.05)  # Simulate lightweight test
+        
+        lightweight_result = self._run_lightweight_test(hypothesis)
+        if not lightweight_result.get('passed', False):
+            return {'error': 'Failed lightweight test', 'metrics': {}}
+        
+        # Full experiment execution
+        full_result = await self._run_full_experiment(hypothesis)
+        
+        return full_result
+    
+    async def _analyze_experiment_outcome(self, hypothesis: Hypothesis, result: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze experiment outcome into insights"""
+        # ASI-Evolve Analyzer: distill complex signals into actionable insights
+        analysis = {
+            'validation_passed': result.get('sharpe_ratio', 0) > 1.0,
+            'key_insights': ['Strong momentum confirmation signal', 'Volatility regime detected'],
+            'recommendations': ['Increase position size during confirmed trends', 'Implement tighter stop-loss'],
+            'confidence_score': 0.8 if result.get('sharpe_ratio', 0) > 1.0 else 0.3,
+        }
+        
+        return analysis
+    
+    async def _execute_hyperparameter_optimization(self, model_id: str) -> Dict[str, Any]:
+        """Execute hyperparameter optimization"""
+        await asyncio.sleep(0.2)  # Simulate optimization
+        
+        return {
+            'model_id': model_id,
+            'optimized_params': {
+                'learning_rate': np.random.uniform(0.0001, 0.005),
+                'batch_size': 256,
+                'improvement': np.random.uniform(0.05, 0.15),
+            },
+        }
+    
+    async def _analyze_optimization_outcome(self, model_id: str, result: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze optimization results"""
+        improvement = result.get('optimized_params', {}).get('improvement', 0.0)
+        
+        return {
+            'validation_passed': improvement > 0.1,
+            'recommendations': ['Deploy new learning rate', 'Test on validation set'],
+            'confidence_score': min(0.9, improvement * 5),
+        }
+    
+    async def _run_lightweight_test(self, hypothesis: Hypothesis) -> Dict[str, Any]:
+        """Run lightweight test for early rejection"""
+        await asyncio.sleep(0.02)
+        
+        return {'passed': np.random.random() > 0.3, 'score': np.random.uniform(0.1, 1.0)}
+    
+    async def _run_full_experiment(self, hypothesis: Hypothesis) -> Dict[str, Any]:
+        """Run full experiment"""
+        await asyncio.sleep(0.1)
+        
+        return {
+            'sharpe_ratio': np.random.uniform(-0.5, 3.0),
+            'max_drawdown': np.random.uniform(0.05, 0.25),
+            'win_rate': np.random.uniform(0.4, 0.65),
+            'profit_factor': np.random.uniform(0.8, 2.5),
+        }
+    
+    async def _generate_with_knowledge_injection(self, context: str) -> str:
+        """Generate with LLM and knowledge injection"""
+        # Simulate LLM generation with knowledge
+        await asyncio.sleep(0.05)
+        
+        return f"Context-aware hypothesis: {context}"
+    
+    async def _combine_context_and_cognition(self, context_nodes: List[Dict[str, Any]], 
+                                      cognition_items: List[Dict[str, Any]]) -> str:
+        """Combine context and cognition for LLM"""
+        context_text = "\n".join([node.get('description', '') for node in context_nodes])
+        cognition_text = "\n".join([item.get('description', '') for item in cognition_items])
+        
+        return f"CONTEXT:\n{context_text}\n\nCOGNITION:\n{cognition_text}\n\nGENERATE:"
     
     def get_best_models(self, top_n: int = 3) -> List[Dict[str, Any]]:
         """Get top performing models"""

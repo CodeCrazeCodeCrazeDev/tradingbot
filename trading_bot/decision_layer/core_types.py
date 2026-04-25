@@ -28,6 +28,7 @@ class DecisionCategory(Enum):
     MULTI_AGENT = "multi_agent"
     META = "meta"
     QUANTITATIVE_EDGE = "quantitative_edge"
+    RESEARCH_INFORMED = "research_informed"
 
 
 class DecisionAction(Enum):

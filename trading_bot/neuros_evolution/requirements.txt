@@ -1,0 +1,63 @@
+# Core dependencies
+asyncio
+aiofiles
+paramiko
+psutil
+numpy
+requests
+schedule
+
+# Visual testing and browser automation
+selenium
+webdriver-manager
+pillow
+opencv-python
+screen-brightness-control
+pyautogui
+mss
+pytesseract
+
+# Code analysis and AST
+ast
+black
+flake8
+pylint
+coverage
+
+# Data processing
+pandas
+scipy
+
+# Email notifications
+smtplib
+email
+
+# System monitoring
+gitpython
+pathlib
+
+# Testing framework
+pytest
+pytest-asyncio
+pytest-cov
+
+# Development tools
+jupyter
+ipython
+
+# Optional: Machine learning for advanced features
+scikit-learn
+tensorflow
+torch
+
+# Optional: Advanced monitoring
+prometheus-client
+grafana-api
+
+# Optional: Advanced security
+bandit
+safety
+
+# Optional: Performance profiling
+py-spy
+memory-profiler

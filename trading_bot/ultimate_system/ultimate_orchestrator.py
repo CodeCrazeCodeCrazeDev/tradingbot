@@ -27,6 +27,11 @@ import time
 
 logger = logging.getLogger(__name__)
 
+try:
+    from .self_evolving_core import LearningEvent
+except Exception:
+    LearningEvent = None
+
 
 class TradingMode(Enum):
     """Trading modes"""
@@ -335,9 +340,8 @@ class UltimateOrchestrator:
                         )
                         
                         # Learn from research
-                        if self.evolution_core and results:
+                        if self.evolution_core and LearningEvent is not None and results:
                             for result in results:
-                                from .self_evolving_core import LearningEvent
                                 event = LearningEvent(
                                     event_id=f"research_{result.result_id}",
                                     event_type='discovery',
@@ -482,7 +486,7 @@ class UltimateOrchestrator:
             )
             
             # 6. Learn from signal generation
-            if self.evolution_core:
+            if self.evolution_core and LearningEvent is not None:
                 event = LearningEvent(
                     event_id=signal_id,
                     event_type='signal',

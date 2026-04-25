@@ -1,8 +1,9 @@
 """
 Master Orchestrator - Unified Trading Bot Controller
-Coordinates all 4 layers: Core Systems, Background Services, Scheduled Jobs, Coordination
+Coordinates all 5 layers: Core Systems, Background Services, Scheduled Jobs, Coordination, Autonomous Superintelligence
 
 This is the central brain that ensures every system contributes to profitability.
+Now enhanced with autonomous superintelligence for self-management and continuous improvement.
 """
 
 import asyncio
@@ -16,6 +17,13 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import redis
+
+try:
+    from trading_bot.autonomous_superintelligence import AutonomousSuperintelligence
+    SUPERINTELLIGENCE_AVAILABLE = True
+except ImportError:
+    SUPERINTELLIGENCE_AVAILABLE = False
+    logging.warning("Autonomous Superintelligence not available")
 
 # Configure logging
 logging.basicConfig(
@@ -31,12 +39,13 @@ logger = logging.getLogger(__name__)
 
 class MasterOrchestrator:
     """
-    Master Orchestrator - Coordinates all 4 layers of the trading bot.
+    Master Orchestrator - Coordinates all 5 layers of the trading bot.
     
     Layer 1: Core Systems (in main.py)
     Layer 2: Background Services (separate processes)
     Layer 3: Scheduled Jobs (nightly/weekly)
     Layer 4: Coordination (on-demand)
+    Layer 5: Autonomous Superintelligence (self-managing AI)
     """
     
     def __init__(self, config: Optional[Dict] = None):
@@ -45,11 +54,16 @@ class MasterOrchestrator:
         self.background_processes: Dict[str, multiprocessing.Process] = {}
         self.running = False
         
+        self.superintelligence = None
+        self.superintelligence_enabled = config.get('enable_superintelligence', False)
+        
         # Initialize Redis connection
         self._init_redis()
         
         logger.info("=" * 70)
         logger.info("MASTER ORCHESTRATOR INITIALIZED")
+        if self.superintelligence_enabled and SUPERINTELLIGENCE_AVAILABLE:
+            logger.info("AUTONOMOUS SUPERINTELLIGENCE: ENABLED")
         logger.info("=" * 70)
     
     def _init_redis(self):
@@ -286,6 +300,59 @@ class MasterOrchestrator:
         logger.info("=" * 70)
     
     # ========================================================================
+    # LAYER 5: AUTONOMOUS SUPERINTELLIGENCE
+    # ========================================================================
+    
+    async def start_superintelligence(self):
+        """Start Layer 5 autonomous superintelligence."""
+        if not self.superintelligence_enabled:
+            logger.info("Autonomous Superintelligence disabled")
+            return
+        
+        if not SUPERINTELLIGENCE_AVAILABLE:
+            logger.error("Autonomous Superintelligence not available - install required modules")
+            return
+        
+        logger.info("=" * 70)
+        logger.info("LAYER 5: STARTING AUTONOMOUS SUPERINTELLIGENCE")
+        logger.info("=" * 70)
+        
+        try:
+            si_config = {
+                'total_capital': self.config.get('si_capital', 100000.0),
+                'max_agents': self.config.get('si_max_agents', 50),
+                'min_agents': self.config.get('si_min_agents', 10),
+                'safety_enabled': self.config.get('si_safety', True),
+                'max_concurrent_experiments': self.config.get('si_max_experiments', 10),
+                'scan_interval': self.config.get('si_scan_interval', 60),
+            }
+            
+            self.superintelligence = AutonomousSuperintelligence(si_config)
+            await self.superintelligence.initialize()
+            
+            logger.info("✓ Autonomous Superintelligence initialized")
+            logger.info("  - Autonomy Level: %.1f%%", 
+                       self.superintelligence.core.state.autonomy_level * 100)
+            logger.info("  - Active Agents: %d", 
+                       len(self.superintelligence.agent_coordinator.agents))
+            logger.info("  - Capital: $%.2f", si_config['total_capital'])
+            
+            asyncio.create_task(self.superintelligence.start())
+            
+            logger.info("✓ Autonomous Superintelligence started")
+            logger.info("=" * 70)
+            
+        except Exception as e:
+            logger.error("Failed to start Autonomous Superintelligence: %s", e)
+    
+    async def stop_superintelligence(self):
+        """Stop Layer 5 autonomous superintelligence."""
+        if self.superintelligence:
+            logger.info("Stopping Autonomous Superintelligence...")
+            await self.superintelligence.shutdown()
+            logger.info("✓ Autonomous Superintelligence stopped")
+    
+    # ========================================================================
     # SYSTEM STATUS & MONITORING
     # ========================================================================
     
@@ -325,6 +392,20 @@ class MasterOrchestrator:
             'status': 'standby',
         }
         
+        # Layer 5: Autonomous Superintelligence
+        if self.superintelligence:
+            si_status = self.superintelligence.core.get_status()
+            status['layers']['layer_5_superintelligence'] = {
+                'status': 'active',
+                'autonomy_level': si_status['autonomy_level'],
+                'agents': si_status['active_agents'],
+                'decisions': si_status['decisions_made'],
+            }
+        else:
+            status['layers']['layer_5_superintelligence'] = {
+                'status': 'disabled',
+            }
+        
         # Redis status
         status['redis'] = {
             'connected': self.redis_client is not None,
@@ -362,6 +443,15 @@ class MasterOrchestrator:
         print(f"  Status: {status['layers']['layer_4_coordination']['status'].upper()}")
         print()
         
+        print("LAYER 5 - Autonomous Superintelligence")
+        si_layer = status['layers']['layer_5_superintelligence']
+        print(f"  Status: {si_layer['status'].upper()}")
+        if si_layer['status'] == 'active':
+            print(f"  Autonomy Level: {si_layer['autonomy_level']:.1%}")
+            print(f"  Active Agents: {si_layer['agents']}")
+            print(f"  Decisions Made: {si_layer['decisions']}")
+        print()
+        
         print(f"Redis: {'CONNECTED' if status['redis']['connected'] else 'DISCONNECTED'}")
         print("=" * 70)
     
@@ -369,8 +459,8 @@ class MasterOrchestrator:
     # STARTUP & SHUTDOWN
     # ========================================================================
     
-    def start_all(self, args=None):
-        """Start all layers of the trading bot."""
+    async def start_all_async(self, args=None):
+        """Start all layers of the trading bot asynchronously."""
         logger.info("\n" + "=" * 70)
         logger.info("STARTING FULL STACK TRADING BOT")
         logger.info("=" * 70)
@@ -386,6 +476,10 @@ class MasterOrchestrator:
         # Layer 4: Coordination (standby)
         self.activate_coordination_layer()
         
+        # Layer 5: Autonomous Superintelligence
+        if self.superintelligence_enabled:
+            await self.start_superintelligence()
+        
         logger.info("\n" + "=" * 70)
         logger.info("FULL STACK STARTUP COMPLETE")
         logger.info("=" * 70)
@@ -394,15 +488,46 @@ class MasterOrchestrator:
         logger.info("Layer 2 (Background): Running")
         logger.info("Layer 3 (Scheduled): Configured")
         logger.info("Layer 4 (Coordination): Standby")
+        if self.superintelligence_enabled:
+            logger.info("Layer 5 (Superintelligence): ACTIVE")
         logger.info("=" * 70 + "\n")
     
-    def stop_all(self):
-        """Stop all layers gracefully."""
+    def start_all(self, args=None):
+        """Start all layers of the trading bot (synchronous wrapper)."""
+        if self.superintelligence_enabled:
+            asyncio.run(self.start_all_async(args))
+        else:
+            logger.info("\n" + "=" * 70)
+            logger.info("STARTING FULL STACK TRADING BOT")
+            logger.info("=" * 70)
+            
+            self.running = True
+            
+            self.start_background_services()
+            self.setup_scheduled_jobs()
+            self.activate_coordination_layer()
+            
+            logger.info("\n" + "=" * 70)
+            logger.info("FULL STACK STARTUP COMPLETE")
+            logger.info("=" * 70)
+            logger.info("\nAll systems operational. Ready for trading.")
+            logger.info("Layer 1 (Core): Start with main.py --use-all-systems")
+            logger.info("Layer 2 (Background): Running")
+            logger.info("Layer 3 (Scheduled): Configured")
+            logger.info("Layer 4 (Coordination): Standby")
+            logger.info("=" * 70 + "\n")
+    
+    async def stop_all_async(self):
+        """Stop all layers gracefully (async)."""
         logger.info("\n" + "=" * 70)
         logger.info("SHUTTING DOWN FULL STACK")
         logger.info("=" * 70)
         
         self.running = False
+        
+        # Stop superintelligence first
+        if self.superintelligence:
+            await self.stop_superintelligence()
         
         # Stop background services
         self.stop_background_services()
@@ -410,6 +535,22 @@ class MasterOrchestrator:
         logger.info("=" * 70)
         logger.info("SHUTDOWN COMPLETE")
         logger.info("=" * 70 + "\n")
+    
+    def stop_all(self):
+        """Stop all layers gracefully (synchronous wrapper)."""
+        if self.superintelligence:
+            asyncio.run(self.stop_all_async())
+        else:
+            logger.info("\n" + "=" * 70)
+            logger.info("SHUTTING DOWN FULL STACK")
+            logger.info("=" * 70)
+            
+            self.running = False
+            self.stop_background_services()
+            
+            logger.info("=" * 70)
+            logger.info("SHUTDOWN COMPLETE")
+            logger.info("=" * 70 + "\n")
     
     # ========================================================================
     # HEALTH MONITORING

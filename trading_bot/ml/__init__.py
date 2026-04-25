@@ -69,6 +69,84 @@ except ImportError as e:
     # personalized_learning not available
     pass
 
+# MICROFISH - Micro-pattern detection
+try:
+    from .microfish import (
+        MICROFISH,
+        MicroFishConfig,
+        MicroPattern,
+        MicroPatternType,
+        FishNet,
+        OrderFlowAnalyzer,
+        IcebergDetector,
+        SpoofingDetector,
+    )
+except ImportError as e:
+    # microfish not available
+    pass
+
+# OPENCLAW - Feature extraction
+try:
+    from .openclaw import (
+        OPENCLAW,
+        OpenClawConfig,
+        ExtractedFeature,
+        FeatureSource,
+        ClawNet,
+        ClawAttention,
+        FeatureQualityAssessor,
+        CrossDomainFusion,
+        AdaptiveFeatureSelector,
+    )
+except ImportError as e:
+    # openclaw not available
+    pass
+
+# OPENCLIP Trading - Vision-language model
+try:
+    from .openclip_trading import (
+        OPENCLIP,
+        OpenCLIPConfig,
+        OpenCLIPTrading,
+        ChartEncoder,
+        TextEncoder,
+        ChartPatternType,
+        ChartPatternClassifier,
+        TradingSignalGenerator,
+    )
+except ImportError as e:
+    # openclip_trading not available
+    pass
+
+# DeepFlow 2.0 - Optical flow analysis
+try:
+    from .deepflow2 import (
+        DeepFlow2,
+        DeepFlowConfig,
+        DeepFlowNet,
+        FlowVector,
+        FlowType,
+        FlowEncoder,
+        CorrelationVolume,
+        MultiScaleFlowEstimator,
+        FlowAttention,
+    )
+except ImportError as e:
+    # deepflow2 not available
+    pass
+
+# Advanced Vision-Flow Orchestrator
+try:
+    from .advanced_vision_flow_orchestrator import (
+        AdvancedVisionFlowOrchestrator,
+        OrchestratorConfig,
+        UnifiedSignal,
+        SignalStrength,
+    )
+except ImportError as e:
+    # advanced_vision_flow_orchestrator not available
+    pass
+
 __all__ = [
     'MarketRegimeClassifier',
     'AdaptiveModelManager',
@@ -79,6 +157,49 @@ __all__ = [
     'ModelMonitoringSystem',
     'OnlineLearningSystem',
     'PersonalizedLearningSystem',
+    # MICROFISH
+    'MICROFISH',
+    'MicroFishConfig',
+    'MicroPattern',
+    'MicroPatternType',
+    'FishNet',
+    'OrderFlowAnalyzer',
+    'IcebergDetector',
+    'SpoofingDetector',
+    # OPENCLAW
+    'OPENCLAW',
+    'OpenClawConfig',
+    'ExtractedFeature',
+    'FeatureSource',
+    'ClawNet',
+    'ClawAttention',
+    'FeatureQualityAssessor',
+    'CrossDomainFusion',
+    'AdaptiveFeatureSelector',
+    # OPENCLIP
+    'OPENCLIP',
+    'OpenCLIPConfig',
+    'OpenCLIPTrading',
+    'ChartEncoder',
+    'TextEncoder',
+    'ChartPatternType',
+    'ChartPatternClassifier',
+    'TradingSignalGenerator',
+    # DeepFlow2
+    'DeepFlow2',
+    'DeepFlowConfig',
+    'DeepFlowNet',
+    'FlowVector',
+    'FlowType',
+    'FlowEncoder',
+    'CorrelationVolume',
+    'MultiScaleFlowEstimator',
+    'FlowAttention',
+    # Orchestrator
+    'AdvancedVisionFlowOrchestrator',
+    'OrchestratorConfig',
+    'UnifiedSignal',
+    'SignalStrength',
 ]
 
 

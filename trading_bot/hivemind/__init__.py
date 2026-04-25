@@ -124,6 +124,9 @@ try:
         TradingHiveMind,
         HiveMindConfig,
         quick_start,
+        UniversalHivemindController,
+        HivemindAgentController,
+        AgentController,
     )
 except ImportError:
     pass
@@ -333,22 +336,350 @@ __all__ = [
 
 __version__ = '2.0.0'
 
-class HivemindOrchestrator:
-    """Auto-generated stub orchestrator for module integration."""
-    def __init__(self, config=None):
-        self.config = config or {}
-        self.running = False
-        self._initialized = True
-    
-    async def start(self):
-        """Start the orchestrator."""
-        self.running = True
-    
-    async def stop(self):
-        """Stop the orchestrator."""
-        self.running = False
-    
-    def get_status(self):
-        """Get orchestrator status."""
-        return {"running": self.running, "initialized": self._initialized}
+# Import all agent systems under hivemind control
+# These imports make all agents accessible through the hivemind module
 
+# RadarAI Agents
+try:
+    from ..radar_ai.agents import (
+        MetaOrchestrator as RadarMetaOrchestrator,
+        DataFusionAgent,
+        OntologyAgent,
+        IntelligenceAgent,
+        StrategyAgent,
+        BullAgent,
+        BearAgent,
+        SimulationAgent,
+        RiskEvaluationAgent,
+        ExecutionAgent,
+        ExperimentInfrastructure,
+    )
+except ImportError:
+    pass
+
+# RadarAI Hivemind Controller
+try:
+    from ..radar_ai.hivemind_controller import (
+        HivemindController as RadarHivemindController,
+        AgentSwarm,
+        OntologyDrivenAgent,
+        AgentRole,
+        AgentTier,
+        AgentDecision,
+        SwarmConsensus,
+        ConsensusMethod as AgentConsensusMethod,
+    )
+except ImportError:
+    pass
+
+# Agents2 System
+try:
+    from ..agents2 import (
+        MultiAgentCoordinator,
+        RiskManagerAgent as Agents2RiskManager,
+    )
+    from ..agents2.base_agent import BaseAgent, AgentProposal
+    from ..agents2.specialized_agents import (
+        RiskManagerAgent,
+        PortfolioManagerAgent,
+        StrategyOptimizerAgent,
+    )
+except ImportError:
+    pass
+
+# Multi-Agent Debate System
+try:
+    from ..agents.multi_agent_debate import (
+        MultiAgentDebateSystem,
+        DebateTopic,
+        DebateResult,
+        DebateAgent,
+    )
+except ImportError:
+    pass
+
+# Self-Coordinating AI
+try:
+    from ..self_coordinating_ai import (
+        SelfCoordinatingAIOrchestrator,
+        CoreProductionSystem,
+        SandboxExecutor,
+        ComputeBudgetController,
+        ExperimentRegistry,
+        DataIntegrityFirewall,
+        CodeSafetyScanner,
+        PromotionSystem,
+        MarketOpportunityDiscovery,
+        SelfProgrammingProposer,
+    )
+except ImportError:
+    pass
+
+# Foundation Agents
+try:
+    from ..foundation_agents.foundation_agent_orchestrator import (
+        FoundationAgentOrchestrator,
+    )
+except ImportError:
+    pass
+
+# Core Agent System
+try:
+    from ..core_agent_system import (
+        HivemindCoreAgentAdapter,
+        MasterOrchestrator,
+        AgentRegistry,
+        ReActLoop,
+        IntegratedAgentSystem,
+    )
+except ImportError:
+    pass
+
+# AI Core Agents
+try:
+    from ..ai_core.agents import (
+        HivemindAICoreAdapter,
+        AICoreOrchestrator,
+        ExecutorAgent,
+        PlannerAgent,
+        VerifierAgent,
+        SafetyValidator,
+    )
+except ImportError:
+    pass
+
+# Improvement Agent
+try:
+    from ..improvement_agent import (
+        HivemindImprovementAdapter,
+        ImprovementAgent,
+        DeepAnalyzer,
+        WeaknessDetector,
+        ImprovementProposer,
+    )
+except ImportError:
+    pass
+
+# Aletheia Autonomous
+try:
+    from ..aletheia_autonomous import (
+        HivemindAletheiaAdapter,
+        AletheiaOrchestrator,
+        StrategyGenerator,
+        StrategyVerifier,
+        StrategyReviser,
+    )
+except ImportError:
+    pass
+
+
+# Aliases for backward compatibility - use UniversalHivemindController
+class HivemindAgentController(UniversalHivemindController):
+    """Backward compatible alias for UniversalHivemindController."""
+    pass
+
+class AgentController(UniversalHivemindController):
+    """Backward compatible alias for UniversalHivemindController."""
+    pass
+
+class HivemindOrchestrator(UniversalHivemindController):
+    """Backward compatible alias for UniversalHivemindController."""
+    pass
+
+
+__all__ = [
+    # Core V1
+    'HiveNode',
+    'NodeType',
+    'NodeState',
+    'NodeVote',
+    'SwarmSignal',
+    'CollectiveDecision',
+    'ConsensusMethod',
+    
+    # Nodes
+    'TechnicalNode',
+    'FundamentalNode',
+    'SentimentNode',
+    'RiskNode',
+    'ExecutionNode',
+    'MacroNode',
+    'MicrostructureNode',
+    'QuantNode',
+    
+    # Swarm
+    'Swarm',
+    'SwarmType',
+    'SwarmConfig',
+    
+    # Consensus
+    'ConsensusEngine',
+    'VotingStrategy',
+    'ConflictResolver',
+    
+    # Memory
+    'CollectiveMemory',
+    'SharedKnowledge',
+    'EmergentPattern',
+    
+    # Coordinator V1
+    'TradingHiveMind',
+    'HiveMindConfig',
+    'quick_start',
+    
+    # Master Controllers
+    'UniversalHivemindController',
+    'HivemindAgentController',
+    'HivemindOrchestrator',
+    'AgentController',
+    
+    # Military Protocols
+    'MilitaryCommandCenter',
+    'MilitaryHiveMind',
+    'SecurityClearance',
+    'ThreatLevel',
+    'DefenseCondition',
+    'OperationalMode',
+    'Rank',
+    'MissionType',
+    'MissionPlan',
+    'RulesOfEngagement',
+    'ThreatAssessment',
+    'BattleDamageAssessment',
+    
+    # V2 - Neural Mesh
+    'NeuralMesh',
+    'TelepathicCommunicator',
+    'MeshNode',
+    'NeuralLink',
+    'NeuralSignal',
+    'LinkType',
+    'SignalType',
+    'create_neural_mesh',
+    
+    # V2 - Quantum Entanglement
+    'QuantumEntanglementEngine',
+    'QuantumHivemindBridge',
+    'TradingQubit',
+    'EntangledPair',
+    'QuantumState',
+    'EntanglementType',
+    'create_quantum_entanglement',
+    
+    # V2 - Collective Consciousness
+    'CollectiveConsciousness',
+    'AttentionMechanism',
+    'GlobalWorkspace',
+    'Perception',
+    'CollectiveInsight',
+    'SharedMemory',
+    'ConsciousnessLevel',
+    'AttentionFocus',
+    'EmotionalState',
+    'create_collective_consciousness',
+    
+    # V2 - Master Orchestrator
+    'HivemindOrchestratorV2',
+    'HivemindMode',
+    'HivemindHealth',
+    'HivemindState',
+    'HivemindConfig',
+    'HivemindDecision',
+    'create_hivemind_v2',
+    'run_hivemind_v2',
+    
+    # Safety Guards
+    'SafetyOrchestrator',
+    'SafetyConfig',
+    'CircuitBreaker',
+    'CircuitState',
+    'LossLimitGuard',
+    'RateLimiter',
+    'InputValidator',
+    'ThreadSafeState',
+    'create_safety_orchestrator',
+    
+    # RadarAI Agents
+    'RadarMetaOrchestrator',
+    'DataFusionAgent',
+    'OntologyAgent',
+    'IntelligenceAgent',
+    'StrategyAgent',
+    'BullAgent',
+    'BearAgent',
+    'SimulationAgent',
+    'RiskEvaluationAgent',
+    'ExecutionAgent',
+    'ExperimentInfrastructure',
+    
+    # RadarAI Hivemind
+    'RadarHivemindController',
+    'AgentSwarm',
+    'OntologyDrivenAgent',
+    'AgentRole',
+    'AgentTier',
+    'AgentDecision',
+    'SwarmConsensus',
+    'AgentConsensusMethod',
+    
+    # Agents2
+    'BaseAgent',
+    'AgentProposal',
+    'MultiAgentCoordinator',
+    'RiskManagerAgent',
+    'PortfolioManagerAgent',
+    'StrategyOptimizerAgent',
+    'Agents2RiskManager',
+    
+    # Multi-Agent Debate
+    'MultiAgentDebateSystem',
+    'DebateTopic',
+    'DebateResult',
+    'DebateAgent',
+    
+    # Self-Coordinating AI
+    'SelfCoordinatingAIOrchestrator',
+    'CoreProductionSystem',
+    'SandboxExecutor',
+    'ComputeBudgetController',
+    'ExperimentRegistry',
+    'DataIntegrityFirewall',
+    'CodeSafetyScanner',
+    'PromotionSystem',
+    'MarketOpportunityDiscovery',
+    'SelfProgrammingProposer',
+    
+    # Foundation Agents
+    'FoundationAgentOrchestrator',
+    
+    # Core Agent System
+    'HivemindCoreAgentAdapter',
+    'MasterOrchestrator',
+    'AgentRegistry',
+    'ReActLoop',
+    'IntegratedAgentSystem',
+    
+    # AI Core Agents
+    'HivemindAICoreAdapter',
+    'AICoreOrchestrator',
+    'ExecutorAgent',
+    'PlannerAgent',
+    'VerifierAgent',
+    'SafetyValidator',
+    
+    # Improvement Agent
+    'HivemindImprovementAdapter',
+    'ImprovementAgent',
+    'DeepAnalyzer',
+    'WeaknessDetector',
+    'ImprovementProposer',
+    
+    # Aletheia Autonomous
+    'HivemindAletheiaAdapter',
+    'AletheiaOrchestrator',
+    'StrategyGenerator',
+    'StrategyVerifier',
+    'StrategyReviser',
+]
+
+__version__ = '2.0.0'

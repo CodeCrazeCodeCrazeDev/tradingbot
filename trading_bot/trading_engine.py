@@ -33,6 +33,7 @@ from trading_bot.database.signal_processor import SignalProcessor, TradingSignal
 from trading_bot.database.timeseries_db import TimeSeriesDB
 from trading_bot.database.pipeline_monitor import PipelineMonitor
 from trading_bot.database.data_normalizer import DataNormalizer
+from trading_bot.utils.bounded_collections import BoundedList, BoundedDict, memory_monitor
 
 # Import opportunity scanner
 from trading_bot.opportunity_scanner.scanner_interface import UnifiedScanner, OpportunityData
@@ -84,15 +85,15 @@ class TradingEngine:
         self.orchestrator.risk_manager = self.risk_manager
         self.orchestrator.opportunity_scanner = self.scanner
         
-        # Trading state
-        self.active_trades = {}
-        self.pending_orders = {}
-        self.trade_history = []  # Bounded in _close_trade
+        # Trading state with bounded collections
+        self.active_trades = BoundedDict(max_size=1000)
+        self.pending_orders = BoundedDict(max_size=5000)
+        self.trade_history = BoundedList(max_size=self._max_history_size)
         self.symbols = []
         self.running = False  # Control flag for graceful shutdown
         self._max_history_size = 10000  # Prevent unbounded growth
         
-        # Performance metrics
+        # Performance metrics with bounded collections
         self.start_time = datetime.now()
         self.metrics = {
             'trades': 0,
@@ -101,8 +102,14 @@ class TradingEngine:
             'total_pnl': 0.0,
             'max_drawdown': 0.0,
             'sharpe_ratio': 0.0,
-            'processing_latency': []
+            'processing_latency': BoundedList(max_size=5000)
         }
+        
+        # Register collections with memory monitor
+        memory_monitor.register('active_trades', self.active_trades)
+        memory_monitor.register('pending_orders', self.pending_orders)
+        memory_monitor.register('trade_history', self.trade_history)
+        memory_monitor.register('processing_latency', self.metrics['processing_latency'])
         
         # Thread pool for background tasks
         self.executor = ThreadPoolExecutor(
@@ -172,11 +179,9 @@ class TradingEngine:
                         market_data, 'market_data'
                     )
                     
-                    # Update metrics (bounded to prevent memory leak)
+                    # Update metrics (already bounded)
                     processing_time = time.time() - start_time
                     self.metrics['processing_latency'].append(processing_time)
-                    if len(self.metrics['processing_latency']) > 10000:
-                        self.metrics['processing_latency'] = self.metrics['processing_latency'][-5000:]
                     
                     # Record metrics
                     await self.monitor.record_metrics('data_processing', {

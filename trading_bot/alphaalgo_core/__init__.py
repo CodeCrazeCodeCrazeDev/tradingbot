@@ -120,10 +120,29 @@ except ImportError as e:
     # self_repair not available
     pass
 
+# alphaalgo_meta_system
+try:
+    from .alphaalgo_meta_system import (
+        AlphaAlgoMetaSystem,
+        WorkflowType,
+        BottleneckType,
+        ImprovementStatus,
+        WorkflowBottleneck,
+        ImprovementProposal,
+        RiskCapabilityBalance,
+        SandboxValidationResult,
+        create_alphaalgo_meta_system,
+    )
+except ImportError as e:
+    # alphaalgo_meta_system not available
+    pass
+
 __all__ = [
     'AlphaAlgoCore',
     'AlphaAlgoCoreIntegration',
+    'AlphaAlgoMetaSystem',
     'AlphaAlgoOrchestrator',
+    'BottleneckType',
     'CapitalGovernanceSystem',
     'CentralController',
     'ExposureController',
@@ -132,12 +151,19 @@ __all__ = [
     'FeatureEngineerAI',
     'G1_Controller',
     'GovernanceSystem',
+    'ImprovementProposal',
+    'ImprovementStatus',
     'MasterOrchestratorIntegration',
     'PortfolioRiskManagerIntegration',
     'RegimeHostilityEngine',
+    'RiskCapabilityBalance',
+    'SandboxValidationResult',
     'SecurityCore',
     'SelfRepairEngine',
     'SystemHealth',
     'SystemStatus',
     'TradingEngineIntegration',
+    'WorkflowBottleneck',
+    'WorkflowType',
+    'create_alphaalgo_meta_system',
 ]
