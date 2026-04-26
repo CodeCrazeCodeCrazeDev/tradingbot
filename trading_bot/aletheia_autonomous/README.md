@@ -1,4 +1,4 @@
-# Aletheia Autonomous Research System
+#  Research System
 
 An AI-powered autonomous trading strategy research system based on DeepMind's Aletheia principles.
 

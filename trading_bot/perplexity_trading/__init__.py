@@ -191,6 +191,16 @@ try:
 except ImportError as e:
     pass
 
+# Research guardrails
+try:
+    from .research_guardrails import (
+        PerplexityTradingGuard,
+        ResearchGuardConfig,
+        ResearchGuardReport,
+    )
+except ImportError as e:
+    pass
+
 # Main orchestrator
 try:
     from .orchestrator import (
@@ -344,6 +354,10 @@ __all__ = [
     'HumanApprovalGate',
     'ApprovalRequest',
     'ApprovalDecision',
+    # Research guardrails
+    'PerplexityTradingGuard',
+    'ResearchGuardConfig',
+    'ResearchGuardReport',
     # Orchestrator V1
     'PerplexityTradingOrchestrator',
     'OrchestratorConfig',

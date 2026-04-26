@@ -41,6 +41,7 @@ from .retrieval_pipeline import RetrievalPipeline
 from .persistent_memory import PersistentMemory
 from .assembly_qa import AssemblyEngine
 from .human_approval import HumanApprovalGate
+from .research_guardrails import PerplexityTradingGuard, ResearchGuardConfig
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,18 @@ class OrchestratorConfig:
     # Approval settings
     require_approval_for_trades: bool = True
     approval_timeout_seconds: float = 300.0
+
+    # Research guard settings
+    enable_research_guard: bool = True
+    live_mode: bool = False
+    research_guard_min_citations: int = 2
+    research_guard_min_distinct_source_types: int = 2
+    research_guard_min_citation_confidence: float = 0.60
+    research_guard_max_data_age_seconds: float = 900.0
+    research_guard_min_trade_confidence: float = 0.70
+    research_guard_require_complete_risk_plan: bool = True
+    research_guard_block_conflicting_evidence: bool = True
+    research_guard_research_only_mode: bool = False
     
     # Logging
     verbose: bool = False
@@ -100,6 +113,18 @@ class PerplexityTradingOrchestrator:
         self.memory = PersistentMemory(self.config.memory_db_path, config)
         self.assembly_engine = AssemblyEngine(config)
         self.approval_gate = HumanApprovalGate(config)
+        self.research_guard = PerplexityTradingGuard(
+            ResearchGuardConfig(
+                min_citations_for_trade=self.config.research_guard_min_citations,
+                min_distinct_source_types_for_trade=self.config.research_guard_min_distinct_source_types,
+                min_citation_confidence=self.config.research_guard_min_citation_confidence,
+                max_data_age_seconds=self.config.research_guard_max_data_age_seconds,
+                min_confidence_for_trade=self.config.research_guard_min_trade_confidence,
+                require_complete_risk_plan_for_trade=self.config.research_guard_require_complete_risk_plan,
+                block_conflicting_evidence_for_trade=self.config.research_guard_block_conflicting_evidence,
+                research_only_mode=self.config.research_guard_research_only_mode,
+            )
+        )
         
         # Agent pool
         self.agents: Dict[AgentType, BaseTradingAgent] = {}
@@ -211,6 +236,21 @@ class PerplexityTradingOrchestrator:
                 subtask_results,
                 symbol=symbol or self.task_decomposer.extract_symbol(query),
             )
+
+            # Step 6b: Apply research guard before approval or execution decisions.
+            if self.config.enable_research_guard:
+                decision, guard_report = self.research_guard.apply(
+                    decision,
+                    live_mode=self.config.live_mode,
+                    governance_approved=bool(
+                        trading_query.context.get("governance_approved")
+                        or trading_query.constraints.get("governance_approved")
+                    ),
+                )
+                decision.model_versions["perplexity_research_guard"] = "1.0"
+                decision.reasoning_chain.append(
+                    f"[RESEARCH_GUARD] accepted={guard_report.accepted}; final_action={guard_report.final_action}"
+                )
             
             # Step 7: Handle approval if needed
             if decision.requires_approval:
@@ -232,7 +272,8 @@ class PerplexityTradingOrchestrator:
                     decision.approval_reason = approval.reason
                     decision.action = "NO_TRADE"
             else:
-                decision.approval_status = ApprovalStatus.AUTO_APPROVED
+                if decision.approval_status != ApprovalStatus.REJECTED:
+                    decision.approval_status = ApprovalStatus.AUTO_APPROVED
             
             # Step 8: Store in memory
             logger.info("Step 8: Storing decision in memory...")

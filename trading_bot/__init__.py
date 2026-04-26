@@ -46,6 +46,7 @@ IMMUTABLE PRINCIPLES:
 """
 
 import logging
+import sys
 
 # Layer 7: Infrastructure & Orchestration (ONLY layer exposed at package level)
 try:
@@ -400,6 +401,12 @@ except ImportError as e:
     create_universal_action_layer = None
 
 # Clean exports - Unified AI Brain + orchestration layer
+try:
+    from .core import chainofthoughtreasoner as _chainofthoughtreasoner
+    sys.modules[__name__ + '.chainofthoughtreasoner'] = _chainofthoughtreasoner
+except Exception as e:
+    logging.getLogger(__name__).info(f'ChainOfThoughtReasoner compatibility alias not available: {e}')
+
 __all__ = [
     # Unified AI Brain (PRIMARY)
     'UnifiedAIBrain',

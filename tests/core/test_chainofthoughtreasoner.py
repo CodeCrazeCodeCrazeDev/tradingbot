@@ -9,6 +9,7 @@ import pytest
 import asyncio
 import logging
 from unittest.mock import Mock, patch, MagicMock
+from pathlib import Path
 
 try:
     from trading_bot.chainofthoughtreasoner import *
@@ -19,6 +20,16 @@ except ImportError:
     from trading_bot.chainofthoughtreasoner import *
 
 logger = logging.getLogger(__name__)
+
+from trading_bot.core.chainofthoughtreasoner import (
+    LatentThoughtState,
+    LogicKernelResult,
+    MythosReasoningResult,
+    RedBlueReview,
+    ReasoningMode,
+    ReasoningStep,
+    ReasoningTrace,
+)
 
 class TestChainOfThoughtReasonerConfig:
     """Comprehensive tests for ChainOfThoughtReasonerConfig"""
@@ -188,6 +199,91 @@ def test_module_integration():
     """Test chainofthoughtreasoner module integration"""
     logger.info("Testing module integration")
     assert True  # Module imported successfully
+
+
+def test_mythos_public_dataclasses_are_exported():
+    state = LatentThoughtState(
+        iteration=0,
+        vector=[0.1, 0.2],
+        energy=0.1,
+        delta=0.01,
+        settledness=0.9,
+    )
+    step = ReasoningStep(
+        iteration=0,
+        mode=ReasoningMode.ANALYSIS.value,
+        expert_scores={"evidence": 0.8},
+        conclusion="evidence dominates",
+        confidence=0.8,
+        premises=["If evidence dominates then evidence dominates", "evidence dominates"],
+        settledness=0.9,
+    )
+    logic = LogicKernelResult(
+        premises=step.premises,
+        conclusion=step.conclusion,
+        status="valid",
+        validity_score=0.9,
+        soundness_score=0.8,
+        verified=True,
+    )
+    trace = ReasoningTrace(
+        mode=ReasoningMode.ANALYSIS.value,
+        states=[state],
+        steps=[step],
+        converged=True,
+        settledness_score=0.9,
+        locked_logic=logic,
+    )
+    result = MythosReasoningResult(
+        decision="VERIFIED",
+        conclusion=step.conclusion,
+        confidence=0.8,
+        explanation="ok",
+        reasoning_chain=[step.to_dict()],
+        trace=trace,
+        logic_kernel_result=logic,
+    )
+
+    assert result.to_dict()["trace"]["locked_logic"]["verified"]
+
+
+def test_red_blue_review_serializes_logic_kernel_outputs():
+    attack = LogicKernelResult(
+        premises=["If exploit indicators are present then vulnerability risk is present", "exploit indicators are present"],
+        conclusion="vulnerability risk is present",
+        status="valid",
+        validity_score=0.9,
+        soundness_score=0.8,
+        verified=True,
+    )
+    defense = LogicKernelResult(
+        premises=["mitigations are not established"],
+        conclusion="vulnerability risk is mitigated",
+        status="uncertain",
+        validity_score=0.3,
+        soundness_score=0.3,
+    )
+    review = RedBlueReview(
+        attacker_hypothesis="attacker can reach a vulnerable condition",
+        defender_response="defender requires mitigations",
+        attack_premises=attack.premises,
+        defense_premises=defense.premises,
+        exploit_path=attack.conclusion,
+        exploit_verification=attack,
+        defense_verification=defense,
+        risk_score=0.8,
+        verdict="risk_confirmed",
+    )
+
+    assert review.to_dict()["exploit_verification"]["verified"]
+
+
+def test_legacy_top_level_chainofthoughtreasoner_alias():
+    import trading_bot.chainofthoughtreasoner as legacy
+
+    reasoner = legacy.create_chainofthoughtreasoner()
+
+    assert reasoner.get_status()["name"] == "ChainOfThoughtReasoner"
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

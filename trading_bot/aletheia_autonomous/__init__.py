@@ -24,6 +24,13 @@ from .research_framework import AutonomousResearchFramework, ResearchProject, Re
 from .tool_system import ToolIntegrationSystem, BaseTool, MarketDataTool, BacktestTool, RiskAnalysisTool, KnowledgeBaseTool
 from .principles import AletheiaPrinciples, Principle
 from .governance_integration import AletheiaGovernanceIntegration, GovernanceLevel, GovernanceAction
+from .financial_decision_auditor import (
+    AletheiaAuditConfig,
+    AletheiaFinancialAudit,
+    AletheiaFinancialDecisionAuditor,
+    FinancialEvidenceItem,
+    PrincipleCheck,
+)
 from .human_ai_interface import HumanAIInterface, StrategyPresentation, HumanFeedback, InteractionMode
 from .testing_framework import AletheiaTestFramework, TestResult
 
@@ -133,6 +140,11 @@ __all__ = [
     "AletheiaGovernanceIntegration",
     "GovernanceLevel",
     "GovernanceAction",
+    "AletheiaAuditConfig",
+    "AletheiaFinancialAudit",
+    "AletheiaFinancialDecisionAuditor",
+    "FinancialEvidenceItem",
+    "PrincipleCheck",
     
     # Human-AI Interface
     "HumanAIInterface",

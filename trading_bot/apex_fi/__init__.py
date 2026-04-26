@@ -95,6 +95,23 @@ except ImportError:
     get_constitutional_layer = None
 
 try:
+    from .aletheia_bridge import (
+        ApexAletheiaBridge,
+        ApexAletheiaBridgeConfig,
+        ApexAletheiaGovernedDecision,
+        ApexEvidence,
+        ApexProposal,
+        ApexRiskEnvelope,
+    )
+except ImportError:
+    ApexAletheiaBridge = None
+    ApexAletheiaBridgeConfig = None
+    ApexAletheiaGovernedDecision = None
+    ApexEvidence = None
+    ApexProposal = None
+    ApexRiskEnvelope = None
+
+try:
     from .apex_orchestrator import (
         APEXOrchestrator,
         quick_start,
@@ -169,6 +186,12 @@ __all__ = [
     'SandboxProtocol',
     'HumanOversightBridge',
     'ConstitutionalBreach',
+    'ApexAletheiaBridge',
+    'ApexAletheiaBridgeConfig',
+    'ApexAletheiaGovernedDecision',
+    'ApexEvidence',
+    'ApexProposal',
+    'ApexRiskEnvelope',
     
     # Orchestrator
     'APEXOrchestrator',

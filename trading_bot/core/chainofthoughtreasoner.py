@@ -53,6 +53,9 @@ class ChainOfThoughtReasonerConfig:
     oscillation_threshold: float = 0.015
     logic_validity_threshold: float = 0.80
     min_settledness: float = 0.55
+    expert_locking_enabled: bool = True
+    expert_lock_margin: float = 0.08
+    red_blue_enabled: bool = True
     params: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -109,6 +112,34 @@ class LogicKernelResult:
 
 
 @dataclass
+class RedBlueReview:
+    """Attacker/defender review for vulnerability-oriented reasoning."""
+
+    attacker_hypothesis: str
+    defender_response: str
+    attack_premises: List[str]
+    defense_premises: List[str]
+    exploit_path: str
+    exploit_verification: LogicKernelResult
+    defense_verification: LogicKernelResult
+    risk_score: float
+    verdict: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "attacker_hypothesis": self.attacker_hypothesis,
+            "defender_response": self.defender_response,
+            "attack_premises": list(self.attack_premises),
+            "defense_premises": list(self.defense_premises),
+            "exploit_path": self.exploit_path,
+            "exploit_verification": self.exploit_verification.to_dict(),
+            "defense_verification": self.defense_verification.to_dict(),
+            "risk_score": self.risk_score,
+            "verdict": self.verdict,
+        }
+
+
+@dataclass
 class ReasoningTrace:
     """Compact audit trace emitted after the recurrent loop settles."""
 
@@ -118,6 +149,8 @@ class ReasoningTrace:
     converged: bool
     settledness_score: float
     locked_logic: Optional[LogicKernelResult] = None
+    locked_expert: Optional[str] = None
+    red_blue_review: Optional[RedBlueReview] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -127,6 +160,8 @@ class ReasoningTrace:
             "converged": self.converged,
             "settledness_score": self.settledness_score,
             "locked_logic": self.locked_logic.to_dict() if self.locked_logic else None,
+            "locked_expert": self.locked_expert,
+            "red_blue_review": self.red_blue_review.to_dict() if self.red_blue_review else None,
         }
 
 
@@ -167,6 +202,8 @@ class ChainOfThoughtReasoner:
         self._initialized = False
         self._history: List[MythosReasoningResult] = []
         self._logic_lock: Optional[LogicKernelResult] = None
+        self._expert_lock: Optional[str] = None
+        self._expert_lock_streak = 0
         self._verifier = LogicalVerifier({"storage_path": kwargs.get("logic_storage_path", "logical_verifier_data")}) if LogicalVerifier else None
         logger.debug("ChainOfThoughtReasoner initialized")
 
@@ -202,6 +239,8 @@ class ChainOfThoughtReasoner:
 
         for iteration in range(self.config.max_reasoning_loops):
             expert_scores = self._score_experts(problem, context, latent, mode)
+            locked_expert = self._update_expert_lock(expert_scores, mode)
+            expert_scores = self._apply_expert_lock(expert_scores, locked_expert)
             target = self._expert_target_vector(expert_scores, len(latent))
             next_latent = self._refine_latent(latent, target, iteration)
             delta = self._distance(latent, next_latent)
@@ -251,6 +290,11 @@ class ChainOfThoughtReasoner:
                 break
 
         final_logic = locked_logic or self.verify_conclusion(steps[-1].premises if steps else [], conclusion)
+        red_blue_review = self._run_red_blue_review(problem, context, steps, final_logic, mode)
+        if red_blue_review and red_blue_review.verdict == "risk_confirmed":
+            conclusion = red_blue_review.exploit_path
+            final_logic = red_blue_review.exploit_verification
+            confidence = max(confidence, red_blue_review.risk_score)
         settledness_score = states[-1].settledness if states else 0.0
         decision, action, confidence = self._finalize_decision(conclusion, confidence, final_logic, mode, analysis_only, settledness_score)
         trace = ReasoningTrace(
@@ -260,6 +304,8 @@ class ChainOfThoughtReasoner:
             converged=bool(states and states[-1].delta < self.config.convergence_threshold),
             settledness_score=settledness_score,
             locked_logic=final_logic,
+            locked_expert=self._expert_lock,
+            red_blue_review=red_blue_review,
         )
         result = MythosReasoningResult(
             decision=decision,
@@ -348,6 +394,8 @@ class ChainOfThoughtReasoner:
         cleared = len(self._history)
         self._history.clear()
         self._logic_lock = None
+        self._expert_lock = None
+        self._expert_lock_streak = 0
         return {"reset": True, "cleared_history": cleared}
 
     def get_status(self) -> Dict[str, Any]:
@@ -360,6 +408,8 @@ class ChainOfThoughtReasoner:
             "history_size": len(self._history),
             "logic_kernel_available": self._verifier is not None,
             "logic_locked": self._logic_lock is not None,
+            "locked_expert": self._expert_lock,
+            "red_blue_enabled": self.config.red_blue_enabled,
         }
 
     async def shutdown(self):
@@ -447,6 +497,43 @@ class ChainOfThoughtReasoner:
         }
         return {key: round(float(value), 6) for key, value in scores.items()}
 
+    def _update_expert_lock(self, scores: Dict[str, float], mode: ReasoningMode) -> Optional[str]:
+        """Keep recurrent refinement focused on the expert most relevant to the task."""
+        if not self.config.expert_locking_enabled or not scores:
+            return None
+
+        dominant = max(scores, key=scores.get)
+        top_score = scores[dominant]
+        target = dominant
+        if mode == ReasoningMode.VULNERABILITY:
+            vuln_score = scores.get("software_vulnerability", 0.0)
+            if vuln_score >= 0.45:
+                target = "software_vulnerability"
+        elif mode == ReasoningMode.PROOF:
+            logic_score = scores.get("math_logic", 0.0)
+            if logic_score + self.config.expert_lock_margin >= top_score:
+                target = "math_logic"
+        elif mode == ReasoningMode.TRADE and scores.get("risk", 1.0) < 0.45:
+            target = "risk"
+
+        if target == self._expert_lock:
+            self._expert_lock_streak += 1
+        else:
+            self._expert_lock = target if scores[target] >= 0.45 else None
+            self._expert_lock_streak = 1 if self._expert_lock else 0
+        return self._expert_lock
+
+    def _apply_expert_lock(self, scores: Dict[str, float], locked_expert: Optional[str]) -> Dict[str, float]:
+        if not locked_expert or locked_expert not in scores:
+            return scores
+        focused = {}
+        for expert, score in scores.items():
+            if expert == locked_expert:
+                focused[expert] = self._clip01(score + 0.12 + min(self._expert_lock_streak, 3) * 0.03)
+            else:
+                focused[expert] = self._clip01(score * 0.97)
+        return {key: round(value, 6) for key, value in focused.items()}
+
     def _expert_target_vector(self, scores: Dict[str, float], dim: int) -> List[float]:
         values = list(scores.values())
         target = []
@@ -533,6 +620,72 @@ class ChainOfThoughtReasoner:
             return [str(problem), f"If the premises support the claim then {conclusion}"]
 
         return [f"If {max(scores, key=scores.get)} evidence dominates then {conclusion}", f"{max(scores, key=scores.get)} evidence dominates"]
+
+    def _run_red_blue_review(
+        self,
+        problem: str,
+        context: Dict[str, Any],
+        steps: Sequence[ReasoningStep],
+        final_logic: LogicKernelResult,
+        mode: ReasoningMode,
+    ) -> Optional[RedBlueReview]:
+        if not self.config.red_blue_enabled or mode != ReasoningMode.VULNERABILITY:
+            return None
+
+        last_step = steps[-1] if steps else None
+        evidence_score = (last_step.expert_scores.get("evidence", 0.0) if last_step else 0.0)
+        vuln_score = (last_step.expert_scores.get("software_vulnerability", 0.0) if last_step else 0.0)
+        attacker_hypothesis = "attacker can reach a vulnerable condition from the supplied indicators"
+        defender_response = "defender requires input validation, authorization, isolation, and audit evidence before accepting the path"
+
+        attack_premises = [
+            "If exploit indicators and supporting evidence are present then vulnerability risk is present",
+            "exploit indicators and supporting evidence are present"
+            if vuln_score >= 0.55 and evidence_score >= 0.40
+            else "exploit indicators or supporting evidence are incomplete",
+        ]
+        explicit_attack = context.get("attack_premises")
+        if isinstance(explicit_attack, Iterable) and not isinstance(explicit_attack, (str, bytes, dict)):
+            attack_premises = [str(item) for item in explicit_attack if str(item).strip()] or attack_premises
+
+        mitigations = context.get("mitigations") or context.get("defenses") or []
+        if isinstance(mitigations, str):
+            mitigations = [mitigations]
+        has_mitigations = bool(mitigations)
+        defense_premises = [
+            "If effective mitigations cover the attack surface then vulnerability risk is mitigated",
+            "effective mitigations cover the attack surface" if has_mitigations else "mitigations are not established",
+        ]
+
+        exploit_path = "vulnerability risk is present"
+        exploit_verification = self.verify_conclusion(attack_premises, exploit_path)
+        defense_verification = (
+            self.verify_conclusion(defense_premises, "vulnerability risk is mitigated")
+            if has_mitigations
+            else self._fallback_logic(defense_premises, "vulnerability risk is mitigated", verified=False, status="incomplete")
+        )
+
+        risk_score = self._clip01(0.25 + 0.40 * vuln_score + 0.25 * evidence_score + 0.10 * final_logic.validity_score)
+        if defense_verification.verified:
+            risk_score *= 0.55
+        if exploit_verification.verified and not defense_verification.verified and risk_score >= 0.55:
+            verdict = "risk_confirmed"
+        elif defense_verification.verified:
+            verdict = "risk_mitigated"
+        else:
+            verdict = "needs_more_evidence"
+
+        return RedBlueReview(
+            attacker_hypothesis=attacker_hypothesis,
+            defender_response=defender_response,
+            attack_premises=attack_premises,
+            defense_premises=defense_premises,
+            exploit_path=exploit_path,
+            exploit_verification=exploit_verification,
+            defense_verification=defense_verification,
+            risk_score=round(risk_score, 6),
+            verdict=verdict,
+        )
 
     def _finalize_decision(
         self,
@@ -674,6 +827,7 @@ __all__ = [
     "ReasoningStep",
     "ReasoningTrace",
     "LogicKernelResult",
+    "RedBlueReview",
     "MythosReasoningResult",
     "ReasoningMode",
     "ChainOfThoughtReasoner",

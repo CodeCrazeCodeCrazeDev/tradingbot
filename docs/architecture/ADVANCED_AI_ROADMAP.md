@@ -407,6 +407,44 @@ class ChainOfThoughtTrader:
         }
 ```
 
+**Mythos Recurrent Reasoning Kernel**
+
+The production `ChainOfThoughtReasoner` keeps the public chain-of-thought API, but it now performs most refinement in a compact latent loop rather than by emitting long visible reasoning. The recurrent core repeatedly scores domain experts, updates a latent state, watches for convergence or oscillation, and emits only an auditable summary trace.
+
+- **Recurrent depth**: iterative latent refinement simulates backtracking and statekeeping without expanding user-visible token output.
+- **Verifiable Logic Kernel (VLK)**: every candidate conclusion is checked against explicit premises and rejected or downgraded when the argument is circular, incomplete, or logically unsupported.
+- **Red vs. blue review**: vulnerability mode runs a bounded attacker/defender simulation. The red side proposes a risk hypothesis, the blue side checks whether mitigations cover it, and the VLK verifies both claims before the final verdict.
+- **Expert locking**: once a task-relevant expert dominates, such as `software_vulnerability` for security review or `math_logic` for proofs, the recurrent core locks focus there so iterative hypothesis testing stays on target.
+
+**Autonomy Control Plane**
+
+The `autonomy_control_plane` module wraps high-risk autonomous work in explicit safety controls before any trading, infrastructure, credential, or code-change path can move from simulation to execution.
+
+- **Tiered sandbox mesh**: routes reads, simulated writes, approved writes, and live execution through separate privilege tiers.
+- **Dynamic credential rotation**: issues short-lived credential leases and tracks rotation versions without exposing raw secrets.
+- **Client-side signed approval**: requires HMAC-signed approval envelopes bound to the exact proposal being approved.
+- **Session memory compaction**: preserves high-signal requirements and recent context while dropping stale transcript weight.
+- **Tool-call fusion**: batches compatible read-only calls while keeping stateful or mutating calls isolated.
+- **Context prefetch**: selects likely relevant files or artifacts before deeper reasoning starts.
+- **Self-consistency/verifier layer**: requires candidate agreement and mandatory terms before accepting a result.
+- **Automated patch generation with strict approval**: generates unified diffs as pending proposals and blocks application until a valid signed approval is attached.
+
+**AlphaAlgo Governance Extensions**
+
+- **Self-consistency plus debate validation**: trade thesis validation, strategy selection, post-trade diagnosis, backtest interpretation, and research proposal ranking require a winning candidate, pro/con arguments, and verifier agreement.
+- **Formal invariants over predictions**: continual synthetic data should target hard rules such as no direct production access, no persistent sandbox secrets, signed approval for high-risk actions, and paper trading before production.
+- **Ephemeral sandbox mesh**: risky actions run as coordinator-managed micro-VM sessions, with no persistent secrets, no direct production access, destruction after task completion, and logs exported to the audit store.
+- **Blinded tool execution**: agents call a tool proxy, the proxy requests a vault-issued scoped token, and the broker/API only receives the scoped token, never raw long-lived credentials.
+- **Streaming-session immune memory**: raw logs remain append-only, compressed summaries are generated hierarchically, retrieval filters select relevant state, and contradiction tracking flags conflicting instructions.
+- **Glass-box overseer**: every risky action gets an action classification, risk category, policy rule, required evidence, missing evidence, and approve/reject/manual-review decision.
+- **Decision provenance tracing**: risky decisions carry append-only causal events and a sealed digest for later audit.
+- **Confidential computing posture**: start with vault secrets, scoped tokens, sandbox isolation, least privilege, signed deployments, and audit logs; reserve TEEs for partner secrets, proprietary models, sensitive customer data, or untrusted infrastructure.
+- **High-risk signed approval list**: live deployment, broker credential changes, risk-limit changes, capital scaling, production patching, strategy promotion, and kill-switch override require hardware-backed or key-based approval.
+- **Persistent specialists**: route tasks to risk, execution, macro, backtest, code review, and security specialist agents rather than relying on opaque expert subnetworks.
+- **Compiler-assisted tool-call fusion**: an execution plan compiler blocks unsafe calls, merges repeated calls, parallelizes independent calls, and summarizes results back to the agent.
+- **Responsible patch lifecycle**: AI may find a bug, create a patch, write a regression test, open a pull request, and attach a risk report, but public disclosure, exploit publication, critical-system patch submission, production mutation, staging, and production rollout remain human/CI/governance gated.
+- **Mythos-inspired governor**: translate Project Glasswing lessons into AlphaAlgo task plans that keep security work defensive, private until patched, sandboxed, specialist-routed, and sealed with decision provenance.
+
 ---
 
 ## 📅 **PHASE 4: WORLD MODELS & SIMULATION (Weeks 13-16)**
