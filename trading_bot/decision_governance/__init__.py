@@ -253,7 +253,98 @@ from .cross_domain_transfer import (
 # Main Integration
 from .integration import DecisionGovernanceSystem
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
+
+# ============================================
+# SECURITY FIXES: DGS Hardening Components
+# ============================================
+
+# Fix #1: DGS-Governor (Meta-Governance Layer)
+from .governance_governor import (
+    GovernanceGovernor,
+    DGSComponentAudit,
+    GovernanceGovernorState,
+    DGSDriftType,
+    create_governance_governor,
+)
+
+# Fix #2: Latency Tier System (Microsecond to Second Governance)
+from .latency_tier_system import (
+    DGSLatencyTierSystem,
+    LatencyBudget,
+    TierDecision,
+    PostHocReview,
+    DecisionSpeed,
+    GovernanceTier,
+    create_latency_tier_system,
+)
+
+# Fix #3: Adversarial Precision Tracker (Fix Noise Generation)
+from .layer3_adversarial_analyst import (
+    AdversarialPrecisionTracker,
+    AttackOutcome,
+)
+
+# Fix #4: Ontology Gap Detector (Handle Novel Regimes)
+from .layer4_regime_engine import (
+    OntologyGapDetector,
+    OntologyGapEvent,
+)
+
+# Fix #5: Sandbox Validation (Measurable Counterfactuals)
+from .layer5_counterfactual import (
+    SandboxValidator,
+    SandboxValidationResult,
+)
+
+# Fix #6: Abstention Budget (Prevent Default Abstention)
+from .abstention_budget import (
+    AbstentionBudgetTracker,
+    AbstentionBudgetConfig,
+    StrategyRegimeAbstentionRecord,
+    AbstentionAction,
+    create_abstention_budget_tracker,
+)
+
+# Fix #7: Multi-Method Attribution (Attribution Error Prevention)
+from .multi_method_attribution import (
+    MultiMethodAttributionEngine,
+    MultiMethodAttribution,
+    AttributionResult,
+    AttributionMethod,
+    AttributionConfidence,
+    CounterfactualReplayAttribution,
+    ControlGroupAttribution,
+    StatisticalContributionAttribution,
+    create_multi_method_attribution_engine,
+)
+
+# Fix #8: Novelty Search (Escape Local Optima)
+from .novelty_search import (
+    NoveltySearchEngine,
+    NoveltySearchBudget,
+    ExploratoryCapability,
+    CapabilityStatus,
+    create_novelty_search_engine,
+)
+
+# Fix #9: Risk Control Evolution (Safe Risk Control Updates)
+from .risk_control_evolution import (
+    RiskControlEvolutionEngine,
+    RiskControlProposal,
+    RiskControlVersion,
+    RiskControlProposalStatus,
+    create_risk_control_evolution_engine,
+)
+
+# Fix #10: Stochastic Gate Audits (Adversarial Gaming Defense)
+from .stochastic_gate_audits import (
+    StochasticGateAuditSystem,
+    StochasticAudit,
+    AgentTrackRecord,
+    GovernanceEvasionIndicator,
+    create_stochastic_audit_system,
+)
 
 __all__ = [
     # Main integration
@@ -444,4 +535,75 @@ __all__ = [
     'TransferProposal',
     'DomainAdapter',
     'create_cross_domain_transfer_system',
+    
+    # ============================================
+    # SECURITY FIXES (New in v2.1.0)
+    # ============================================
+    
+    # Fix #1: DGS-Governor (Meta-Governance Layer)
+    'GovernanceGovernor',
+    'DGSComponentAudit',
+    'GovernanceGovernorState',
+    'DGSDriftType',
+    'create_governance_governor',
+    
+    # Fix #2: Latency Tier System
+    'DGSLatencyTierSystem',
+    'LatencyBudget',
+    'TierDecision',
+    'PostHocReview',
+    'DecisionSpeed',
+    'GovernanceTier',
+    'create_latency_tier_system',
+    
+    # Fix #3: Adversarial Precision
+    'AdversarialPrecisionTracker',
+    'AttackOutcome',
+    
+    # Fix #4: Ontology Gap Detection
+    'OntologyGapDetector',
+    'OntologyGapEvent',
+    
+    # Fix #5: Sandbox Validation
+    'SandboxValidator',
+    'SandboxValidationResult',
+    
+    # Fix #6: Abstention Budget
+    'AbstentionBudgetTracker',
+    'AbstentionBudgetConfig',
+    'StrategyRegimeAbstentionRecord',
+    'AbstentionAction',
+    'create_abstention_budget_tracker',
+    
+    # Fix #7: Multi-Method Attribution
+    'MultiMethodAttributionEngine',
+    'MultiMethodAttribution',
+    'AttributionResult',
+    'AttributionMethod',
+    'AttributionConfidence',
+    'CounterfactualReplayAttribution',
+    'ControlGroupAttribution',
+    'StatisticalContributionAttribution',
+    'create_multi_method_attribution_engine',
+    
+    # Fix #8: Novelty Search
+    'NoveltySearchEngine',
+    'NoveltySearchBudget',
+    'ExploratoryCapability',
+    'CapabilityStatus',
+    'create_novelty_search_engine',
+    
+    # Fix #9: Risk Control Evolution
+    'RiskControlEvolutionEngine',
+    'RiskControlProposal',
+    'RiskControlVersion',
+    'RiskControlProposalStatus',
+    'create_risk_control_evolution_engine',
+    
+    # Fix #10: Stochastic Gate Audits
+    'StochasticGateAuditSystem',
+    'StochasticAudit',
+    'AgentTrackRecord',
+    'GovernanceEvasionIndicator',
+    'create_stochastic_audit_system',
 ]

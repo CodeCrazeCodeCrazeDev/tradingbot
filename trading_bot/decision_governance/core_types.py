@@ -54,6 +54,9 @@ class GovernanceDecision(Enum):
     DEFER = "defer"
     REJECT = "reject"
     ABSTAIN = "abstain"
+    PAPER_ONLY = "paper_only"        # Execute on paper only, no real capital
+    MANUAL_REVIEW = "manual_review"  # Escalate to human for final decision
+    KILL_SWITCH = "kill_switch"      # Emergency halt — stop all activity
 
 
 class RegimeDimension(Enum):

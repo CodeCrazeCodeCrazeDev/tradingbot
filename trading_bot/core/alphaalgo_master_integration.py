@@ -48,7 +48,15 @@ from trading_bot.core.multi_dimensional_confidence_system import (
 from trading_bot.core.unified_decision_gate import (
     get_global_gate,
     UnifiedDecisionGate,
-    UnifiedDecision
+    UnifiedDecision,
+)
+from trading_bot.core.signal_counterintelligence import (
+    AlphaAlgoIntelligenceDirectorate,
+    CounterintelligenceMode,
+    DirectorateRunReport,
+    IntelligenceCompartment,
+    IntelligenceDecision,
+    IntelligenceRole,
 )
 from trading_bot.core.confidence_weighted_position_sizer import (
     get_global_sizer,
@@ -84,6 +92,7 @@ class CompleteEvaluationResult:
     # Metadata
     timestamp: datetime
     total_evaluation_time_ms: float
+    counterintelligence: Optional[DirectorateRunReport] = None
 
 
 class AlphaAlgoMasterIntegration:
@@ -107,11 +116,14 @@ class AlphaAlgoMasterIntegration:
     def __init__(
         self,
         confidence_threshold: float = 0.6,
-        enable_strict_mode: bool = True
+        enable_strict_mode: bool = True,
+        counterintelligence_mode: CounterintelligenceMode = CounterintelligenceMode.HARD_GATE,
+        intelligence_directorate: Optional[AlphaAlgoIntelligenceDirectorate] = None,
     ):
         try:
             self.confidence_threshold = confidence_threshold
             self.enable_strict_mode = enable_strict_mode
+            self.counterintelligence_mode = self._coerce_counterintelligence_mode(counterintelligence_mode)
         
             # Initialize all components
             self.hostility_gate = get_global_hostility_gate()
@@ -121,6 +133,9 @@ class AlphaAlgoMasterIntegration:
             self.decision_gate = get_global_gate()
             self.position_sizer = get_global_sizer()
             self.self_fixer = get_global_self_fixer()
+            self.intelligence_directorate = intelligence_directorate or AlphaAlgoIntelligenceDirectorate(
+                mode=self.counterintelligence_mode
+            )
         
             # Statistics
             self.total_evaluations = 0
@@ -151,6 +166,55 @@ class AlphaAlgoMasterIntegration:
             strategy_id = signal.get('strategy_id', 'unknown')
         
             logger.info(f"Evaluating signal {signal_id} for {symbol} (strategy: {strategy_id})")
+
+            # STAGE -1: Signal Counterintelligence and Intelligence Directorate
+            logger.debug("Stage -1: signal counterintelligence")
+            kill_switch_active = bool(
+                signal.get("kill_switch_active")
+                or market_context.get("kill_switch_active")
+                or portfolio_state.get("kill_switch_active")
+            )
+            directorate_report = self.intelligence_directorate.evaluate_raw_signal(
+                signal,
+                role=IntelligenceRole.RESEARCH_ANALYST,
+                compartment=IntelligenceCompartment.RESEARCH,
+                production_model_artifact=signal.get("production_model_artifact"),
+                feedback_metrics=signal.get("feedback_metrics"),
+                mode=self.counterintelligence_mode,
+                kill_switch_active=kill_switch_active,
+            )
+            signal.setdefault("metadata", {})
+            signal["metadata"]["intelligence"] = directorate_report.to_execution_metadata()
+            signal["intelligence"] = directorate_report.to_execution_metadata()
+
+            if (
+                directorate_report.governance_decision != IntelligenceDecision.ACCEPT
+                or not directorate_report.counterintelligence.execution_allowed
+            ):
+                decision = self.decision_gate.evaluate(
+                    signal=signal,
+                    market_context=market_context,
+                    portfolio_state=portfolio_state,
+                    counterintelligence_report=directorate_report.counterintelligence,
+                )
+                result = CompleteEvaluationResult(
+                    signal_id=signal_id,
+                    symbol=symbol,
+                    market_hostility=None,
+                    decomposed_signal=None,
+                    adversarial_analysis=None,
+                    confidence_vector=None,
+                    unified_decision=decision,
+                    position_sizing=None,
+                    approved=False,
+                    final_quantity=0.0,
+                    rejection_reason=decision.rejection_reason,
+                    timestamp=datetime.utcnow(),
+                    total_evaluation_time_ms=(datetime.utcnow() - start_time).total_seconds() * 1000,
+                    counterintelligence=directorate_report,
+                )
+                self.rejected_count += 1
+                return result
         
             # STAGE 0: Check if strategy is allowed (post-trade self-fixing)
             if not self.self_fixer.is_strategy_allowed(strategy_id):
@@ -169,7 +233,8 @@ class AlphaAlgoMasterIntegration:
                     final_quantity=0.0,
                     rejection_reason=f"Strategy {strategy_id} is quarantined or disabled",
                     timestamp=datetime.utcnow(),
-                    total_evaluation_time_ms=0.0
+                    total_evaluation_time_ms=0.0,
+                    counterintelligence=directorate_report,
                 )
             
                 self.rejected_count += 1
@@ -290,6 +355,7 @@ class AlphaAlgoMasterIntegration:
                 market_context=market_context,
                 portfolio_state=portfolio_state,
                 market_hostility_result=hostility_assessment,
+                counterintelligence_report=directorate_report.counterintelligence,
                 decomposed_signal=decomposed,
                 adversarial_analysis=adversarial,
                 confidence_vector=confidence_vector
@@ -367,7 +433,8 @@ class AlphaAlgoMasterIntegration:
                 final_quantity=position_sizing.final_quantity,
                 rejection_reason="",
                 timestamp=datetime.utcnow(),
-                total_evaluation_time_ms=total_time
+                total_evaluation_time_ms=total_time,
+                counterintelligence=directorate_report,
             )
         
             logger.info(
@@ -434,6 +501,14 @@ class AlphaAlgoMasterIntegration:
             'decision_gate': self.decision_gate.get_statistics(),
             'strategy_health': self.self_fixer.get_all_strategy_health()
         }
+
+    def _coerce_counterintelligence_mode(self, value: Any) -> CounterintelligenceMode:
+        if isinstance(value, CounterintelligenceMode):
+            return value
+        try:
+            return CounterintelligenceMode(str(value))
+        except ValueError:
+            return CounterintelligenceMode.HARD_GATE
 
 
 # Global singleton

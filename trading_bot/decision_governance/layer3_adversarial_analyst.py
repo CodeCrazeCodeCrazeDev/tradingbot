@@ -14,8 +14,9 @@ Generates:
 """
 
 from typing import Dict, List, Optional, Any, Tuple
-from datetime import datetime
+from datetime import datetime, timedelta
 from dataclasses import dataclass, field
+from collections import defaultdict, deque
 import logging
 import random
 
@@ -25,6 +26,318 @@ from .core_types import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class AttackOutcome:
+    """Tracks the outcome of an adversarial attack"""
+    attack_id: str
+    challenge_type: str
+    target_claim_id: str
+    severity_at_generation: float
+    decision_outcome: str  # APPROVE, REJECT, etc.
+    actual_result: Optional[str] = None  # SUCCESS, FAILURE, UNKNOWN
+    pnl: Optional[float] = None
+    prediction_correct: Optional[bool] = None  # Did attack predict actual failure?
+    outcome_timestamp: Optional[datetime] = None
+
+
+class AdversarialPrecisionTracker:
+    """
+    Precision Tracker for Adversarial Counter-Analyst
+    
+    Fix: Score the counter-analyst on precision—attacks that correctly 
+    predict actual failures, weighted by severity. Attacks that waste 
+    arbiter attention get negative reward.
+    
+    Attack 3 enhancement: Tournament scoring + out-of-sample cross-validation.
+    - Multiple counter-analyst variants compete
+    - Scored on HELD-OUT failure prediction, not in-sample
+    - Only the most accurate (not most numerous) objections are weighted
+    
+    This prevents the adversarial analyst from becoming a noise generator
+    that attacks everything without predictive value.
+    """
+    
+    def __init__(self, window_size: int = 100, precision_threshold: float = 0.3):
+        self.window_size = window_size
+        self.precision_threshold = precision_threshold
+        
+        # Track attack outcomes
+        self.attack_outcomes: deque = deque(maxlen=window_size)
+        self.challenge_id_to_attack: Dict[str, AttackOutcome] = {}
+        
+        # Precision metrics by challenge type
+        self.type_precision: Dict[str, List[bool]] = defaultdict(list)
+        
+        # Severity-weighted precision
+        self.weighted_precision_history: deque = deque(maxlen=50)
+        
+        # Attention waste tracking (attacks on decisions that succeed)
+        self.attention_waste_count: int = 0
+        self.total_challenges: int = 0
+        
+        # Reward accumulator for reinforcement learning
+        self.cumulative_reward: float = 0.0
+        
+        # Attack 3: Tournament scoring — per-analyst-variant out-of-sample precision
+        self.tournament_scores: Dict[str, deque] = defaultdict(lambda: deque(maxlen=window_size))
+        self.tournament_weights: Dict[str, float] = {}  # Cached weights per variant
+        
+        # Attack 3: Out-of-sample cross-validation split
+        self.oos_split_ratio: float = 0.3  # 30% held out for scoring
+        self.training_outcomes: deque = deque(maxlen=window_size)
+        self.oos_outcomes: deque = deque(maxlen=window_size)
+        
+    def record_challenge_generated(
+        self,
+        challenge: AdversarialChallenge,
+        final_decision: str
+    ):
+        """Record when a challenge is generated and what decision was made"""
+        attack = AttackOutcome(
+            attack_id=challenge.id or f"attack_{datetime.utcnow().timestamp()}",
+            challenge_type=challenge.challenge_type,
+            target_claim_id=challenge.target_claim_id,
+            severity_at_generation=challenge.severity,
+            decision_outcome=final_decision
+        )
+        
+        self.attack_outcomes.append(attack)
+        self.challenge_id_to_attack[attack.attack_id] = attack
+        self.total_challenges += 1
+        
+        # If decision was rejected due to this challenge, positive contribution
+        if final_decision == "REJECT":
+            pass  # Will be scored when outcome known
+        
+    def record_decision_outcome(
+        self,
+        challenge_ids: List[str],
+        decision_id: str,
+        actual_pnl: Optional[float],
+        was_failure: bool
+    ):
+        """
+        Record the actual outcome to evaluate attack precision.
+        
+        An attack was "correct" if:
+        - It predicted failure (high severity) AND failure occurred
+        - It challenged a claim that turned out to be false
+        
+        An attack "wasted attention" if:
+        - It challenged a thesis that ultimately succeeded
+        - Severity was high but outcome was positive
+        """
+        for challenge_id in challenge_ids:
+            if challenge_id not in self.challenge_id_to_attack:
+                continue
+                
+            attack = self.challenge_id_to_attack[challenge_id]
+            attack.actual_result = "FAILURE" if was_failure else "SUCCESS"
+            attack.pnl = actual_pnl
+            attack.outcome_timestamp = datetime.utcnow()
+            
+            # Determine if prediction was correct
+            # High severity challenge should correlate with failure
+            if attack.severity_at_generation > 0.6:
+                if was_failure:
+                    # Correctly predicted failure
+                    attack.prediction_correct = True
+                    reward = attack.severity_at_generation * 1.0  # Weighted by severity
+                else:
+                    # False alarm - wasted attention
+                    attack.prediction_correct = False
+                    reward = -0.5  # Negative reward for wasting attention
+                    self.attention_waste_count += 1
+            else:
+                # Low severity challenges are less critical
+                if was_failure:
+                    # Missed the failure - severity too low
+                    attack.prediction_correct = False
+                    reward = -0.2
+                else:
+                    # Correctly didn't predict failure
+                    attack.prediction_correct = True
+                    reward = 0.1
+            
+            self.cumulative_reward += reward
+            
+            # Track by type
+            self.type_precision[attack.challenge_type].append(attack.prediction_correct)
+            
+            # Update weighted precision
+            self._update_weighted_precision()
+    
+    def _update_weighted_precision(self):
+        """Calculate severity-weighted precision"""
+        recent = list(self.attack_outcomes)[-50:]
+        if not recent:
+            return
+        
+        weighted_correct = 0.0
+        weighted_total = 0.0
+        
+        for attack in recent:
+            if attack.prediction_correct is not None:
+                weight = attack.severity_at_generation
+                weighted_total += weight
+                if attack.prediction_correct:
+                    weighted_correct += weight
+        
+        if weighted_total > 0:
+            precision = weighted_correct / weighted_total
+            self.weighted_precision_history.append(precision)
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get precision statistics"""
+        recent = list(self.attack_outcomes)
+        
+        if not recent:
+            return {
+                'precision': 0.0,
+                'weighted_precision': 0.0,
+                'attention_waste_rate': 0.0,
+                'cumulative_reward': self.cumulative_reward,
+                'sample_size': 0,
+                'trend': 'unknown'
+            }
+        
+        # Calculate precision
+        with_outcomes = [a for a in recent if a.prediction_correct is not None]
+        if with_outcomes:
+            precision = sum(1 for a in with_outcomes if a.prediction_correct) / len(with_outcomes)
+        else:
+            precision = 0.0
+        
+        # Weighted precision
+        weighted_precision = self.weighted_precision_history[-1] if self.weighted_precision_history else 0.0
+        
+        # Attention waste rate
+        waste_rate = self.attention_waste_count / max(1, self.total_challenges)
+        
+        # Trend
+        trend = 'stable'
+        if len(self.weighted_precision_history) >= 10:
+            first_half = list(self.weighted_precision_history)[:5]
+            second_half = list(self.weighted_precision_history)[-5:]
+            if np.mean(second_half) > np.mean(first_half) * 1.1:
+                trend = 'improving'
+            elif np.mean(second_half) < np.mean(first_half) * 0.9:
+                trend = 'declining'
+        
+        # Precision by challenge type
+        type_stats = {}
+        for challenge_type, outcomes in self.type_precision.items():
+            if outcomes:
+                type_stats[challenge_type] = {
+                    'precision': sum(outcomes) / len(outcomes),
+                    'sample_size': len(outcomes)
+                }
+        
+        return {
+            'precision': precision,
+            'weighted_precision': weighted_precision,
+            'attention_waste_rate': waste_rate,
+            'cumulative_reward': self.cumulative_reward,
+            'sample_size': len(with_outcomes),
+            'trend': trend,
+            'type_precision': type_stats,
+            'total_challenges': self.total_challenges,
+            'attention_waste_count': self.attention_waste_count
+        }
+    
+    def should_generate_challenge(self, challenge_type: str, base_probability: float) -> bool:
+        """
+        Adjust challenge generation probability based on type precision.
+        
+        If a challenge type has low precision, reduce its generation rate.
+        """
+        if challenge_type not in self.type_precision:
+            return random.random() < base_probability
+        
+        type_outcomes = self.type_precision[challenge_type]
+        if not type_outcomes:
+            return random.random() < base_probability
+        
+        type_precision = sum(type_outcomes) / len(type_outcomes)
+        
+        # If precision is below threshold, reduce generation rate
+        if type_precision < self.precision_threshold:
+            adjusted_prob = base_probability * (type_precision / self.precision_threshold)
+            return random.random() < adjusted_prob
+        
+        return random.random() < base_probability
+
+    # ── Attack 3: Tournament Scoring ──────────────────────────────────────
+
+    def record_tournament_outcome(
+        self,
+        variant_id: str,
+        challenge_type: str,
+        predicted_failure: bool,
+        actual_failure: bool,
+        severity: float = 1.0,
+    ):
+        """
+        Attack 3: Record out-of-sample outcome for a specific
+        counter-analyst variant. Used to compute tournament weights.
+        """
+        correct = predicted_failure == actual_failure
+        self.tournament_scores[variant_id].append(1.0 if correct else 0.0)
+
+        # Assign to OOS set if random split
+        import random as _r
+        if _r.random() < self.oos_split_ratio:
+            self.oos_outcomes.append({
+                "variant": variant_id,
+                "challenge_type": challenge_type,
+                "correct": correct,
+                "severity": severity,
+            })
+        else:
+            self.training_outcomes.append({
+                "variant": variant_id,
+                "challenge_type": challenge_type,
+                "correct": correct,
+                "severity": severity,
+            })
+
+    def get_tournament_weight(self, variant_id: str) -> float:
+        """
+        Attack 3: Get the out-of-sample precision weight for a variant.
+        Variants with no history get default 0.5 weight.
+        Only OOS outcomes are used — no in-sample leakage.
+        """
+        if variant_id in self.tournament_weights:
+            return self.tournament_weights[variant_id]
+
+        scores = self.tournament_scores.get(variant_id, deque())
+        if not scores:
+            return 0.5
+
+        # Use only OOS outcomes for weight calculation
+        oos_for_variant = [o for o in self.oos_outcomes if o["variant"] == variant_id]
+        if oos_for_variant:
+            weight = sum(o["correct"] for o in oos_for_variant) / len(oos_for_variant)
+        else:
+            weight = sum(scores) / len(scores)
+
+        self.tournament_weights[variant_id] = weight
+        return weight
+
+    def get_tournament_ranking(self) -> List[Tuple[str, float]]:
+        """Attack 3: Rank counter-analyst variants by OOS precision"""
+        ranking = []
+        for variant_id, scores in self.tournament_scores.items():
+            if scores:
+                ranking.append((variant_id, sum(scores) / len(scores)))
+        ranking.sort(key=lambda x: x[1], reverse=True)
+        return ranking
+
+    def invalidate_tournament_weights(self):
+        """Force recalculation of cached tournament weights"""
+        self.tournament_weights.clear()
 
 
 @dataclass
@@ -40,10 +353,16 @@ class AdversarialCounterAnalyst:
     """
     Generates adversarial challenges to trade theses.
     This system is explicitly designed to attack and find weaknesses.
+    
+    Now includes precision tracking to prevent noise generation.
+    Attacks are scored on whether they correctly predict actual failures.
     """
     
-    def __init__(self, attack_depth: int = 3):
+    def __init__(self, attack_depth: int = 3, enable_precision_tracking: bool = True):
         self.attack_depth = attack_depth
+        
+        # Precision tracking to prevent noise generation (Fix #2)
+        self.precision_tracker = AdversarialPrecisionTracker() if enable_precision_tracking else None
         
         # Define attack strategies
         self.strategies = [

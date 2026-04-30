@@ -238,6 +238,14 @@ TIER1_SERVICES: List[ServiceDefinition] = [
         priority=ServicePriority.HIGH,
         dependencies=["risk"],
     ),
+    ServiceDefinition(
+        name="intelligence_directorate",
+        service_class="trading_bot.services.intelligence_directorate_service.IntelligenceDirectorateService",
+        layer=ServiceLayer.GOVERNANCE,
+        priority=ServicePriority.NORMAL,
+        dependencies=["audit", "approval", "compliance"],
+        critical=True,
+    ),
     
     # -------------------------------------------------------------------------
     # LAYER 7: ORCHESTRATION

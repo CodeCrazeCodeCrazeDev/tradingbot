@@ -13,6 +13,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Callable
 
+from ..a2a import A2AMessageBus
+from ..world2agent import World2AgentBridge
 from .core import (
     HiveNode,
     NodeType,
@@ -82,12 +84,18 @@ class TradingHiveMind:
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        self.config = HiveMindConfig(**(config or {}))
+        raw_config = config or {}
+        config_keys = set(HiveMindConfig.__annotations__.keys())
+        filtered_config = {k: v for k, v in raw_config.items() if k in config_keys}
+        self.config = HiveMindConfig(**filtered_config)
+        self.raw_config = raw_config
+        self.a2a_bus = raw_config.get("a2a_bus") or A2AMessageBus()
+        self.world_bridge = raw_config.get("world_bridge") or World2AgentBridge(self.a2a_bus)
         
         # Core components
-        self.swarm_manager = SwarmManager(config)
-        self.consensus_engine = ConsensusEngine(config)
-        self.collective_memory = CollectiveMemory(self.config.memory_db_path, config)
+        self.swarm_manager = SwarmManager(filtered_config)
+        self.consensus_engine = ConsensusEngine(filtered_config)
+        self.collective_memory = CollectiveMemory(self.config.memory_db_path, filtered_config)
         
         # State
         self.initialized = False
@@ -102,6 +110,10 @@ class TradingHiveMind:
         # Callbacks
         self.on_decision: Optional[Callable[[CollectiveDecision], None]] = None
         self.on_emergent_signal: Optional[Callable[[SwarmSignal], None]] = None
+        self.a2a_bus.register_agent(
+            "hivemind.coordinator",
+            capabilities=["collective_analysis", "consensus", "swarm_coordination"],
+        )
     
     async def initialize(self) -> None:
         """Initialize the hivemind"""
@@ -109,6 +121,11 @@ class TradingHiveMind:
         
         # Initialize swarms based on config
         self._configure_swarms()
+        for swarm_name in self.swarm_manager.swarms.keys():
+            self.a2a_bus.register_agent(
+                f"hivemind.swarm.{swarm_name}",
+                capabilities=["swarm_analysis"],
+            )
         
         # Load collective memory
         stats = self.collective_memory.get_stats()
@@ -154,6 +171,16 @@ class TradingHiveMind:
         start_time = time.time()
         self.total_analyses += 1
         self.current_symbol = symbol
+        self.world_bridge.publish_world_state(
+            source=f"hivemind.{symbol}",
+            world_state={
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "market_data": market_data,
+            },
+            tags=[symbol, timeframe, "hivemind"],
+            context_type="market",
+        )
         
         logger.info(f"Hivemind analyzing {symbol} on {timeframe}")
         
@@ -217,6 +244,22 @@ class TradingHiveMind:
             self.successful_analyses += 1
             
             self.last_decision = decision
+            self.a2a_bus.broadcast(
+                sender="hivemind.coordinator",
+                intent="collective_decision",
+                payload=self.world_bridge.build_agent_context(
+                    "hivemind.coordinator",
+                    {
+                        "symbol": symbol,
+                        "action": decision.action,
+                        "consensus_score": decision.consensus_score,
+                        "confidence": decision.confidence,
+                        "processing_time_ms": decision.processing_time_ms,
+                    },
+                ),
+                channel="hivemind",
+                metadata={"symbol": symbol, "timeframe": timeframe},
+            )
             
             # Callbacks
             if self.on_decision:
@@ -448,6 +491,7 @@ class TradingHiveMind:
     
     def get_status(self) -> Dict[str, Any]:
         """Get hivemind status"""
+        latest_snapshot = self.world_bridge.get_latest_snapshot()
         return {
             'initialized': self.initialized,
             'total_nodes': self._count_nodes(),
@@ -459,6 +503,9 @@ class TradingHiveMind:
             'swarms': self.swarm_manager.get_status(),
             'memory': self.collective_memory.get_stats(),
             'last_decision': self.last_decision.to_dict() if self.last_decision else None,
+            'a2a_registered_agents': self.a2a_bus.list_agents(),
+            'a2a_message_count': self.a2a_bus.message_count(),
+            'latest_world_context_id': latest_snapshot.context_id if latest_snapshot else None,
         }
     
     def get_node_rankings(self) -> List[Dict[str, Any]]:
@@ -518,6 +565,13 @@ class UniversalHivemindController:
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
+        self.a2a_bus = self.config.get("a2a_bus") or A2AMessageBus()
+        self.world_bridge = self.config.get("world_bridge") or World2AgentBridge(self.a2a_bus)
+        self.shared_config = {
+            **self.config,
+            "a2a_bus": self.a2a_bus,
+            "world_bridge": self.world_bridge,
+        }
         
         # Main hivemind
         self.trading_hivemind: Optional[TradingHiveMind] = None
@@ -536,6 +590,10 @@ class UniversalHivemindController:
         # State
         self._initialized = False
         self._running = False
+        self.a2a_bus.register_agent(
+            "hivemind.universal_controller",
+            capabilities=["system_unification", "cross_agent_governance", "interop"],
+        )
         
         logger.info("UniversalHivemindController created")
     
@@ -545,7 +603,7 @@ class UniversalHivemindController:
         
         # Initialize main TradingHiveMind
         try:
-            self.trading_hivemind = TradingHiveMind(self.config)
+            self.trading_hivemind = TradingHiveMind(self.shared_config)
             await self.trading_hivemind.initialize()
             logger.info("✓ TradingHiveMind initialized")
         except Exception as e:
@@ -555,7 +613,13 @@ class UniversalHivemindController:
         try:
             from ..radar_ai import RadarAIHivemindAdapter
             self.radar_ai = RadarAIHivemindAdapter(hivemind_controller=self)
-            await self.radar_ai.initialize(self.config.get('radar_ai', {}))
+            await self.radar_ai.initialize(
+                {
+                    **self.config.get('radar_ai', {}),
+                    'a2a_bus': self.a2a_bus,
+                    'world_bridge': self.world_bridge,
+                }
+            )
             logger.info("✓ RadarAI under hivemind control")
         except Exception as e:
             logger.warning(f"RadarAI initialization: {e}")
@@ -563,7 +627,7 @@ class UniversalHivemindController:
         # Initialize Agents module under hivemind control
         try:
             from ..agents import HivemindAgentManager
-            self.agents_manager = HivemindAgentManager(hivemind_controller=self, config=self.config)
+            self.agents_manager = HivemindAgentManager(hivemind_controller=self, config=self.shared_config)
             await self.agents_manager.initialize()
             logger.info("✓ Agents module under hivemind control")
         except Exception as e:
@@ -572,7 +636,7 @@ class UniversalHivemindController:
         # Initialize Agents2 module under hivemind control
         try:
             from ..agents2 import HivemindAgents2Manager
-            self.agents2_manager = HivemindAgents2Manager(hivemind_controller=self, config=self.config)
+            self.agents2_manager = HivemindAgents2Manager(hivemind_controller=self, config=self.shared_config)
             await self.agents2_manager.initialize()
             logger.info("✓ Agents2 module under hivemind control")
         except Exception as e:
@@ -581,7 +645,7 @@ class UniversalHivemindController:
         # Initialize Self-Coordinating AI under hivemind control
         try:
             from ..self_coordinating_ai import HivemindSelfCoordinatingAdapter
-            self.self_coordinating = HivemindSelfCoordinatingAdapter(hivemind_controller=self, config=self.config)
+            self.self_coordinating = HivemindSelfCoordinatingAdapter(hivemind_controller=self, config=self.shared_config)
             await self.self_coordinating.initialize()
             logger.info("✓ Self-Coordinating AI under hivemind control")
         except Exception as e:
@@ -590,7 +654,7 @@ class UniversalHivemindController:
         # Initialize Foundation Agents under hivemind control
         try:
             from ..foundation_agents import HivemindFoundationAdapter
-            self.foundation_agents = HivemindFoundationAdapter(hivemind_controller=self, config=self.config)
+            self.foundation_agents = HivemindFoundationAdapter(hivemind_controller=self, config=self.shared_config)
             await self.foundation_agents.initialize()
             logger.info("✓ Foundation Agents under hivemind control")
         except Exception as e:
@@ -599,7 +663,7 @@ class UniversalHivemindController:
         # Initialize Core Agent System under hivemind control
         try:
             from ..core_agent_system import HivemindCoreAgentAdapter
-            self.core_agent_system = HivemindCoreAgentAdapter(hivemind_controller=self, config=self.config)
+            self.core_agent_system = HivemindCoreAgentAdapter(hivemind_controller=self, config=self.shared_config)
             await self.core_agent_system.initialize()
             logger.info("✓ Core Agent System under hivemind control")
         except Exception as e:
@@ -608,7 +672,7 @@ class UniversalHivemindController:
         # Initialize AI Core Agents under hivemind control
         try:
             from ..ai_core.agents import HivemindAICoreAdapter
-            self.ai_core_agents = HivemindAICoreAdapter(hivemind_controller=self, config=self.config)
+            self.ai_core_agents = HivemindAICoreAdapter(hivemind_controller=self, config=self.shared_config)
             await self.ai_core_agents.initialize()
             logger.info("✓ AI Core Agents under hivemind control")
         except Exception as e:
@@ -617,7 +681,7 @@ class UniversalHivemindController:
         # Initialize Improvement Agent under hivemind control
         try:
             from ..improvement_agent import HivemindImprovementAdapter
-            self.improvement_agent = HivemindImprovementAdapter(hivemind_controller=self, config=self.config)
+            self.improvement_agent = HivemindImprovementAdapter(hivemind_controller=self, config=self.shared_config)
             await self.improvement_agent.initialize()
             logger.info("✓ Improvement Agent under hivemind control")
         except Exception as e:
@@ -626,7 +690,7 @@ class UniversalHivemindController:
         # Initialize Aletheia Autonomous under hivemind control
         try:
             from ..aletheia_autonomous import HivemindAletheiaAdapter
-            self.aletheia_autonomous = HivemindAletheiaAdapter(hivemind_controller=self, config=self.config)
+            self.aletheia_autonomous = HivemindAletheiaAdapter(hivemind_controller=self, config=self.shared_config)
             await self.aletheia_autonomous.initialize()
             logger.info("✓ Aletheia Autonomous under hivemind control")
         except Exception as e:
@@ -647,6 +711,12 @@ class UniversalHivemindController:
         if not self._initialized:
             await self.initialize()
         
+        self.world_bridge.publish_world_state(
+            source="hivemind.universal_controller",
+            world_state={"symbol": symbol, "market_data": market_data},
+            tags=[symbol, "universal_hivemind"],
+            context_type="market",
+        )
         results = {
             'symbol': symbol,
             'timestamp': datetime.now().isoformat(),
@@ -681,6 +751,8 @@ class UniversalHivemindController:
         return {
             'initialized': self._initialized,
             'running': self._running,
+            'a2a_registered_agents': self.a2a_bus.list_agents(),
+            'a2a_message_count': self.a2a_bus.message_count(),
             'trading_hivemind': self.trading_hivemind.get_status() if self.trading_hivemind else None,
             'radar_ai': self.radar_ai.get_status() if self.radar_ai else None,
             'agents': self.agents_manager.get_status() if self.agents_manager else None,

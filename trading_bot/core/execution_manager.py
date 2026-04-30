@@ -19,6 +19,10 @@ from trading_bot.execution.smart_router import SmartOrderRouter, VenueType, Exec
 from trading_bot.execution.smart_execution import SmartExecutionEngine
 from trading_bot.execution.algorithms import TWAPExecutor, VWAPExecutor
 from trading_bot.risk.risk_manager import RiskManager
+from trading_bot.core.signal_counterintelligence import (
+    CounterintelligenceMode,
+    validate_intelligence_metadata,
+)
 
 # Evolution: Added retry decorator
 def retry(max_attempts=3, delay=1.0):
@@ -167,6 +171,9 @@ class ExecutionManager:
         # Error handling configuration
         self.max_retries = self.config.get('max_retries', 3)
         self.retry_delay = self.config.get('retry_delay', 1.0)  # seconds
+        self.counterintelligence_mode = self._coerce_counterintelligence_mode(
+            self.config.get("counterintelligence_mode", CounterintelligenceMode.HARD_GATE)
+        )
         
         logger.info("Execution Manager initialized")
     
@@ -242,6 +249,20 @@ class ExecutionManager:
         self.orders[order_id] = order
         self.orders_by_client_id[client_order_id] = order
         self.submitted_order_ids.add(client_order_id)
+
+        intelligence_metadata = metadata.get("intelligence") or metadata.get("intelligence_metadata") or metadata
+        gate_passed, gate_reasons = validate_intelligence_metadata(
+            intelligence_metadata,
+            self.counterintelligence_mode,
+        )
+        if not gate_passed:
+            order.status = OrderStatus.REJECTED
+            order.metadata["rejection_reason"] = "; ".join(gate_reasons)
+            logger.warning(
+                f"Order {order_id} rejected by signal counterintelligence: "
+                f"{order.metadata['rejection_reason']}"
+            )
+            return order
         
         # Check risk limits
         risk_check = self.risk_manager.check_order_risk(order)
@@ -289,6 +310,14 @@ class ExecutionManager:
             logger.error(f"Order {order_id} submission failed: {e}")
         
         return order
+
+    def _coerce_counterintelligence_mode(self, value: Any) -> CounterintelligenceMode:
+        if isinstance(value, CounterintelligenceMode):
+            return value
+        try:
+            return CounterintelligenceMode(str(value))
+        except ValueError:
+            return CounterintelligenceMode.HARD_GATE
     
     async def _submit_order(self, order: Order) -> Dict[str, Any]:
         """

@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
 
+from ..a2a import A2AMessageBus
+from ..world2agent import World2AgentBridge
 from .core_intelligence import AutonomousCore
 from .agent_coordinator import AgentCoordinator
 from .self_modifier import SelfModificationEngine
@@ -52,21 +54,29 @@ class AutonomousSuperintelligence:
     
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
+        self.a2a_bus = self.config.get("a2a_bus") or A2AMessageBus()
+        self.world_bridge = self.config.get("world_bridge") or World2AgentBridge(self.a2a_bus)
         
-        storage_base = Path(config.get('storage_path', 'autonomous_superintelligence_data'))
+        storage_base = Path(self.config.get('storage_path', 'autonomous_superintelligence_data'))
         storage_base.mkdir(parents=True, exist_ok=True)
+        self.a2a_bus.register_agent(
+            "autonomous_superintelligence.master",
+            capabilities=["global_autonomy", "cross_system_coordination", "interop"],
+        )
         
         self.core = AutonomousCore({
             'storage_path': str(storage_base / 'core')
         })
         
         self.agent_coordinator = AgentCoordinator({
-            'storage_path': str(storage_base / 'agents')
+            'storage_path': str(storage_base / 'agents'),
+            'a2a_bus': self.a2a_bus,
+            'world_bridge': self.world_bridge,
         })
         
         self.self_modifier = SelfModificationEngine({
             'storage_path': str(storage_base / 'modifications'),
-            'safety_enabled': config.get('safety_enabled', True),
+            'safety_enabled': self.config.get('safety_enabled', True),
         })
         
         self.research_engine = ScientificResearchEngine({
@@ -75,23 +85,23 @@ class AutonomousSuperintelligence:
         
         self.opportunity_detector = GlobalOpportunityDetector({
             'storage_path': str(storage_base / 'opportunities'),
-            'scan_interval': config.get('scan_interval', 60),
+            'scan_interval': self.config.get('scan_interval', 60),
         })
         
         self.resource_manager = AutonomousResourceManager({
             'storage_path': str(storage_base / 'resources'),
-            'total_capital': config.get('total_capital', 100000.0),
+            'total_capital': self.config.get('total_capital', 100000.0),
         })
         
         self.experiment_engine = ContinuousExperimentEngine({
             'storage_path': str(storage_base / 'experiments'),
-            'max_concurrent': config.get('max_concurrent_experiments', 5),
+            'max_concurrent': self.config.get('max_concurrent_experiments', 5),
         })
         
         self.lifecycle_manager = AgentLifecycleManager({
             'storage_path': str(storage_base / 'lifecycle'),
-            'max_agents': config.get('max_agents', 100),
-            'min_agents': config.get('min_agents', 5),
+            'max_agents': self.config.get('max_agents', 100),
+            'min_agents': self.config.get('min_agents', 5),
         })
         
         self.infrastructure_expander = InfrastructureExpander({
@@ -172,6 +182,22 @@ class AutonomousSuperintelligence:
         await self.meta_orchestrator.initialize()
         
         self.initialized = True
+        self.world_bridge.publish_world_state(
+            source="autonomous_superintelligence.master",
+            world_state={
+                "status": "initialized",
+                "storage_path": str(self.storage_path),
+                "subsystems": [
+                    "core",
+                    "agent_coordinator",
+                    "research_engine",
+                    "opportunity_detector",
+                    "resource_manager",
+                ],
+            },
+            tags=["autonomous_superintelligence", "system_ready"],
+            context_type="system",
+        )
         
         logger.info("=" * 80)
         logger.info("AUTONOMOUS SUPERINTELLIGENCE READY")

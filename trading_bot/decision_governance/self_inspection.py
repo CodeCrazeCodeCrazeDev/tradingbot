@@ -1259,3 +1259,578 @@ def create_self_inspection_engine(
         capability_discovery_engine=capability_discovery_engine,
         storage_path=storage_path
     )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Deep Governance Auditor — offline full-depth reasoning system
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class DeepAuditResult:
+    """Result of a deep governance audit on a single decision"""
+    decision_id: str
+    audit_timestamp: datetime
+    # Component results
+    claim_graph_score: float
+    evidence_sufficiency_score: float
+    adversarial_precision_score: float
+    counterfactual_robustness_score: float
+    attribution_confidence: float
+    calibration_score: float
+    capability_gap_detected: bool
+    # Aggregate
+    overall_score: float
+    findings: List[Dict[str, Any]]
+    failure_memory_entries: List[Dict[str, Any]]
+    recommended_actions: List[str]
+
+
+class DeepGovernanceAuditor:
+    """
+    Deep Governance Auditor — the slower, offline, full-depth reasoning system.
+
+    Components (as specified):
+    1. Full claim graph          — complete claim dependency analysis
+    2. Evidence sufficiency audit — thorough evidence coverage + freshness
+    3. Calibrated adversarial counter-analyst — tournament-scored objections (Attack 3)
+    4. Parameterized counterfactual simulator — empirical ranges + sensitivity (Attack 5)
+    5. Multi-method attribution engine — weighted agreement, not single-cause (Attack 7)
+    6. Calibration analyzer       — Brier score / log-loss tracking (Attack 10)
+    7. Failure memory writer      — store with attribution uncertainty
+    8. Capability gap detector    — identify missing capabilities
+
+    Hard constraints:
+    - No LLM causal attribution as source of truth
+    - No promotion from tiny sample wins
+    - No single attribution method can trigger system evolution
+    - No counterfactuals that cannot be parameterized and replayed
+    """
+
+    def __init__(
+        self,
+        claim_graph_constructor=None,
+        evidence_auditor=None,
+        adversarial_analyst=None,
+        counterfactual_simulator=None,
+        attribution_engine=None,
+        decision_memory=None,
+        outcome_memory=None,
+        failure_memory=None,
+        capability_discovery=None,
+        min_sample_for_promotion: int = 30,
+    ):
+        self.claim_graph = claim_graph_constructor
+        self.evidence_auditor = evidence_auditor
+        self.adversarial_analyst = adversarial_analyst
+        self.counterfactual_simulator = counterfactual_simulator
+        self.attribution_engine = attribution_engine
+        self.decision_memory = decision_memory
+        self.outcome_memory = outcome_memory
+        self.failure_memory = failure_memory
+        self.capability_discovery = capability_discovery
+        self.min_sample_for_promotion = min_sample_for_promotion
+
+        # Audit history
+        self.audit_history: deque = deque(maxlen=500)
+
+        # Attack 3: Adversarial tournament tracking
+        self.adversarial_tournament_scores: Dict[str, deque] = defaultdict(lambda: deque(maxlen=100))
+
+        # Attack 5: Empirical stress parameter ranges (derived from history)
+        self.empirical_stress_ranges: Dict[str, Dict[str, float]] = {}
+
+        # Attack 7: Per-method historical accuracy for weighting
+        self.method_accuracy: Dict[str, deque] = defaultdict(lambda: deque(maxlen=100))
+
+        logger.info("DeepGovernanceAuditor initialized")
+
+    # ── Main Audit Entry ──────────────────────────────────────────────────
+
+    async def audit_decision(self, decision_id: str, context: Dict[str, Any]) -> DeepAuditResult:
+        """
+        Run full deep audit on a decision. This is the offline,
+        full-depth governance path — not suitable for latency-sensitive trading.
+        """
+        findings = []
+        failure_entries = []
+
+        # 1. Full claim graph
+        cg_score, cg_findings = self._audit_claim_graph(context)
+
+        # 2. Evidence sufficiency audit
+        ev_score, ev_findings = self._audit_evidence_sufficiency(context)
+
+        # 3. Calibrated adversarial counter-analyst (Attack 3)
+        adv_score, adv_findings = self._audit_adversarial_calibrated(context)
+
+        # 4. Parameterized counterfactual simulator (Attack 5)
+        cf_score, cf_findings = self._audit_counterfactual_parameterized(context)
+
+        # 5. Multi-method attribution (Attack 7)
+        attr_score, attr_findings = self._audit_attribution(context)
+
+        # 6. Calibration analyzer (Attack 10)
+        cal_score, cal_findings = self._audit_calibration(context)
+
+        # 7. Failure memory writer
+        failure_entries = self._write_failure_memory(context, attr_score)
+
+        # 8. Capability gap detector
+        cap_gap, cap_findings = self._detect_capability_gaps(context)
+
+        findings = cg_findings + ev_findings + adv_findings + cf_findings + attr_findings + cal_findings + cap_findings
+
+        overall = (cg_score + ev_score + adv_score + cf_score + attr_score + cal_score) / 6.0
+
+        result = DeepAuditResult(
+            decision_id=decision_id,
+            audit_timestamp=datetime.utcnow(),
+            claim_graph_score=cg_score,
+            evidence_sufficiency_score=ev_score,
+            adversarial_precision_score=adv_score,
+            counterfactual_robustness_score=cf_score,
+            attribution_confidence=attr_score,
+            calibration_score=cal_score,
+            capability_gap_detected=cap_gap,
+            overall_score=overall,
+            findings=findings,
+            failure_memory_entries=failure_entries,
+            recommended_actions=[f["recommendation"] for f in findings if f.get("recommendation")],
+        )
+        self.audit_history.append(result)
+        return result
+
+    # ── 1. Full Claim Graph ──────────────────────────────────────────────
+
+    def _audit_claim_graph(self, context: Dict) -> Tuple[float, List[Dict]]:
+        """Full claim dependency analysis — detect circular reasoning, orphan claims, unsupported chains"""
+        claims = context.get("claims", [])
+        findings = []
+        score = 1.0
+
+        if not claims:
+            return 0.0, [{"issue": "no_claims", "severity": "critical", "recommendation": "Reject — no claims"}]
+
+        # Check for orphan claims (no evidence refs)
+        orphans = [c for c in claims if not getattr(c, "evidence_refs", None)]
+        if orphans:
+            score -= 0.15 * len(orphans) / len(claims)
+            findings.append({"issue": "orphan_claims", "count": len(orphans), "severity": "high",
+                             "recommendation": "Add evidence to orphan claims"})
+
+        # Check for circular dependencies
+        claim_ids = set(getattr(c, "id", str(i)) for i, c in enumerate(claims))
+        dep_graph = {}
+        for c in claims:
+            cid = getattr(c, "id", str(claims.index(c)))
+            deps = getattr(c, "dependent_claims", [])
+            dep_graph[cid] = [d for d in deps if d in claim_ids]
+
+        visited, on_stack = set(), set()
+        def has_cycle(node):
+            if node in on_stack:
+                return True
+            if node in visited:
+                return False
+            visited.add(node); on_stack.add(node)
+            for nb in dep_graph.get(node, []):
+                if has_cycle(nb):
+                    return True
+            on_stack.discard(node)
+            return False
+
+        cycles = any(has_cycle(n) for n in dep_graph if n not in visited)
+        if cycles:
+            score -= 0.3
+            findings.append({"issue": "circular_claims", "severity": "critical",
+                             "recommendation": "Break circular claim dependencies"})
+
+        return max(0.0, score), findings
+
+    # ── 2. Evidence Sufficiency Audit ────────────────────────────────────
+
+    def _audit_evidence_sufficiency(self, context: Dict) -> Tuple[float, List[Dict]]:
+        """Thorough evidence coverage + freshness check"""
+        evidence = context.get("evidence", [])
+        findings = []
+        score = 1.0
+
+        if not evidence:
+            return 0.0, [{"issue": "no_evidence", "severity": "critical",
+                          "recommendation": "Reject — no evidence provided"}]
+
+        # Freshness check
+        now = datetime.utcnow()
+        stale = [e for e in evidence if hasattr(e, "freshness") and e.freshness < 0.3]
+        if len(stale) / len(evidence) > 0.3:
+            score -= 0.2
+            findings.append({"issue": "stale_evidence", "pct": len(stale) / len(evidence),
+                             "severity": "high", "recommendation": "Refresh stale evidence"})
+
+        # Conflicting evidence
+        conflicting = [e for e in evidence if hasattr(e, "status") and e.status.value == "conflicting"]
+        if conflicting:
+            score -= 0.15 * len(conflicting) / len(evidence)
+            findings.append({"issue": "conflicting_evidence", "count": len(conflicting),
+                             "severity": "medium", "recommendation": "Resolve conflicting evidence"})
+
+        return max(0.0, score), findings
+
+    # ── 3. Calibrated Adversarial Counter-Analyst (Attack 3) ─────────────
+
+    def _audit_adversarial_calibrated(self, context: Dict) -> Tuple[float, List[Dict]]:
+        """
+        Attack 3 fix: Score objections by OUT-OF-SAMPLE ability to predict
+        actual future trade failures, not by internal properties.
+        Use a tournament system — multiple counter-analysts compete.
+        Only the most accurate (not most numerous) objections are weighted.
+        """
+        challenges = context.get("adversarial_challenges", [])
+        findings = []
+        score = 1.0
+
+        if not challenges:
+            return 0.7, [{"issue": "no_challenges", "severity": "low",
+                          "recommendation": "Generate adversarial challenges"}]
+
+        # Tournament scoring: weight by historical out-of-sample precision
+        weighted_severity = 0.0
+        total_weight = 0.0
+        for ch in challenges:
+            ch_type = getattr(ch, "challenge_type", "unknown")
+            # Get out-of-sample precision for this challenge type
+            history = self.adversarial_tournament_scores.get(ch_type, deque())
+            oos_precision = sum(history) / len(history) if history else 0.5  # Default 50%
+
+            severity = getattr(ch, "severity", 0.5)
+            weight = oos_precision  # Weight by proven accuracy, not internal score
+            weighted_severity += severity * weight
+            total_weight += weight
+
+        avg_weighted_severity = weighted_severity / total_weight if total_weight > 0 else 0.5
+        score = 1.0 - avg_weighted_severity
+
+        # Penalize low-precision challenge types
+        if avg_weighted_severity > 0.6:
+            findings.append({"issue": "high_weighted_severity", "value": avg_weighted_severity,
+                             "severity": "high",
+                             "recommendation": "Counter-analyst generating high-severity noise — recalibrate"})
+
+        # Check for collusion risk (same source for thesis + challenge)
+        thesis_source = context.get("thesis_source", "")
+        challenge_sources = set(getattr(ch, "source", "") for ch in challenges)
+        if thesis_source and thesis_source in challenge_sources:
+            score -= 0.3
+            findings.append({"issue": "potential_collusion", "severity": "critical",
+                             "recommendation": "Thesis and challenge from same source — use independent counter-analyst"})
+
+        return max(0.0, score), findings
+
+    def record_adversarial_outcome(self, challenge_type: str, predicted_failure: bool, actual_failure: bool):
+        """Record out-of-sample outcome for tournament scoring (Attack 3)"""
+        correct = predicted_failure == actual_failure
+        self.adversarial_tournament_scores[challenge_type].append(1.0 if correct else 0.0)
+
+    # ── 4. Parameterized Counterfactual Simulator (Attack 5) ─────────────
+
+    def _audit_counterfactual_parameterized(self, context: Dict) -> Tuple[float, List[Dict]]:
+        """
+        Attack 5 fix: Parameter ranges must be EMPIRICALLY derived from
+        historical stress periods. Require sensitivity analysis — if small
+        parameter changes flip the thesis, flag as fragile.
+        No counterfactuals that cannot be parameterized and replayed.
+        """
+        scenarios = context.get("counterfactual_scenarios", [])
+        findings = []
+        score = 1.0
+
+        if not scenarios:
+            return 0.5, [{"issue": "no_counterfactuals", "severity": "medium",
+                          "recommendation": "Run parameterized counterfactual simulations"}]
+
+        # Check each scenario for parameterization
+        non_parameterized = 0
+        fragile = 0
+        for s in scenarios:
+            # Must be measurable in sandbox
+            if hasattr(s, "sandbox_measurable") and not s.sandbox_measurable:
+                non_parameterized += 1
+                continue
+
+            # Must have empirical parameter ranges (Attack 5)
+            ptype = getattr(s, "perturbation_type", "unknown")
+            if ptype in self.empirical_stress_ranges:
+                # Check if scenario uses values within empirical range
+                params = getattr(s, "parameters", {})
+                emp_range = self.empirical_stress_ranges[ptype]
+                if params:
+                    for k, v in params.items():
+                        if k in emp_range:
+                            emp_min = emp_range[k].get("min", v)
+                            emp_max = emp_range[k].get("max", v)
+                            if v < emp_min or v > emp_max:
+                                findings.append({"issue": "parameter_outside_empirical_range",
+                                                 "param": k, "value": v, "range": emp_range[k],
+                                                 "severity": "medium",
+                                                 "recommendation": f"Use empirical range for {k}"})
+
+            # Sensitivity analysis: if small changes flip thesis → fragile
+            if hasattr(s, "thesis_survives") and hasattr(s, "expected_outcome_change"):
+                if abs(s.expected_outcome_change) > 0.5:
+                    fragile += 1
+
+        if non_parameterized > 0:
+            score -= 0.2 * non_parameterized / len(scenarios)
+            findings.append({"issue": "non_parameterized_counterfactuals",
+                             "count": non_parameterized, "severity": "high",
+                             "recommendation": "Only use parameterized, replayable counterfactuals"})
+
+        if fragile > 0:
+            score -= 0.1 * fragile / len(scenarios)
+            findings.append({"issue": "fragile_thesis_sensitivity",
+                             "count": fragile, "severity": "medium",
+                             "recommendation": "Thesis is fragile to small parameter changes — reduce position size"})
+
+        return max(0.0, score), findings
+
+    def update_empirical_stress_ranges(self, historical_data: Dict[str, Dict[str, float]]):
+        """Attack 5: Derive parameter ranges from historical stress periods (e.g., COVID flash crash)"""
+        self.empirical_stress_ranges.update(historical_data)
+
+    # ── 5. Multi-Method Attribution (Attack 7) ────────────────────────────
+
+    def _audit_attribution(self, context: Dict) -> Tuple[float, List[Dict]]:
+        """
+        Attack 7 fix: Accept disagreement as information.
+        Evolution triggered by WEIGHTED agreement where each method's
+        historical accuracy is tracked. A high-confidence single method
+        (proven accurate on held-out failures) IS sufficient.
+        Rule: no evolution from low-confidence or uncorrelated methods alone.
+        """
+        attribution = context.get("attribution_result")
+        findings = []
+        score = 0.5  # Default uncertain
+
+        if not attribution:
+            return 0.5, [{"issue": "no_attribution", "severity": "medium",
+                          "recommendation": "Run multi-method attribution before deep audit"}]
+
+        # Check method count
+        methods = getattr(attribution, "individual_results", [])
+        if not methods:
+            return 0.3, [{"issue": "no_attribution_methods", "severity": "high",
+                          "recommendation": "Require at least 2 attribution methods"}]
+
+        # Weighted agreement using per-method historical accuracy
+        weighted_scores = []
+        for m in methods:
+            method_name = m.method.value if hasattr(m.method, "value") else str(m.method)
+            history = self.method_accuracy.get(method_name, deque())
+            accuracy = sum(history) / len(history) if history else 0.5
+            weight = accuracy  # Weight by proven accuracy
+            weighted_scores.append(m.attribution_score * weight)
+
+        # High-confidence single method is sufficient (Attack 7)
+        for m in methods:
+            method_name = m.method.value if hasattr(m.method, "value") else str(m.method)
+            history = self.method_accuracy.get(method_name, deque())
+            if len(history) >= 20:  # Proven track record
+                accuracy = sum(history) / len(history)
+                if accuracy > 0.7 and m.confidence > 0.8:
+                    # High-confidence single method IS sufficient
+                    score = m.confidence * accuracy
+                    findings.append({"issue": "high_confidence_single_method",
+                                     "method": method_name, "accuracy": accuracy,
+                                     "severity": "info",
+                                     "recommendation": f"Method {method_name} has proven accuracy — sufficient for evolution"})
+                    break
+        else:
+            # No single high-confidence method — need weighted agreement
+            if len(methods) >= 2:
+                method_weights = []
+                for m in methods:
+                    mname = m.method.value if hasattr(m.method, "value") else str(m.method)
+                    hist = self.method_accuracy.get(mname, deque())
+                    if hist:
+                        method_weights.append(sum(hist) / len(hist))
+                    else:
+                        method_weights.append(0.5)
+                total_weight = sum(method_weights)
+                if total_weight > 0:
+                    score = sum(ws * mw for ws, mw in zip(weighted_scores, method_weights)) / total_weight
+                else:
+                    score = sum(m.attribution_score for m in methods) / len(methods) * 0.5
+            else:
+                # Single low-confidence method — NOT sufficient for evolution
+                score = 0.2
+                findings.append({"issue": "single_low_confidence_method", "severity": "high",
+                                 "recommendation": "Cannot trigger evolution from single low-confidence method"})
+
+        # Store attribution uncertainty in failure memory
+        uncertainty = 1.0 - getattr(attribution, "agreement_level", 0.5)
+        if uncertainty > 0.5:
+            findings.append({"issue": "high_attribution_uncertainty", "value": uncertainty,
+                             "severity": "medium",
+                             "recommendation": "Store as uncertainty in failure memory — do not act as single-cause"})
+
+        return max(0.0, min(1.0, score)), findings
+
+    def record_attribution_accuracy(self, method_name: str, was_correct: bool):
+        """Track per-method accuracy for weighted agreement (Attack 7)"""
+        self.method_accuracy[method_name].append(1.0 if was_correct else 0.0)
+
+    # ── 6. Calibration Analyzer (Attack 10) ──────────────────────────────
+
+    def _audit_calibration(self, context: Dict) -> Tuple[float, List[Dict]]:
+        """
+        Attack 10 fix: Use ex-ante evaluation only.
+        Compare DGS's predicted probability of success against actual outcomes
+        using proper scoring rules (Brier score, log loss).
+        Do NOT use binary good/bad classifications based on PnL.
+        """
+        calibration_data = context.get("calibration_records", [])
+        findings = []
+        score = 0.5
+
+        if not calibration_data:
+            return 0.5, [{"issue": "no_calibration_data", "severity": "medium",
+                          "recommendation": "Track ex-ante predictions vs outcomes using Brier score"}]
+
+        # Calculate Brier score from recent records
+        resolved = [r for r in calibration_data
+                    if hasattr(r, "brier_score") and r.brier_score is not None]
+        if resolved:
+            avg_brier = sum(r.brier_score for r in resolved) / len(resolved)
+            # Brier score: 0 = perfect, 0.25 = random for binary, 1 = worst
+            score = max(0.0, 1.0 - avg_brier * 4)  # Scale so 0.25 → 0.0
+
+            if avg_brier > 0.3:
+                findings.append({"issue": "poor_calibration", "brier": avg_brier,
+                                 "severity": "high",
+                                 "recommendation": "Recalibrate confidence estimation — Brier score too high"})
+
+        # Check for binary PnL classification (anti-pattern)
+        if context.get("uses_binary_pnl_classification"):
+            findings.append({"issue": "binary_pnl_classification", "severity": "critical",
+                             "recommendation": "STOP using binary good/bad based on PnL — use proper scoring rules"})
+
+        return max(0.0, score), findings
+
+    # ── 7. Failure Memory Writer ─────────────────────────────────────────
+
+    def _write_failure_memory(self, context: Dict, attribution_confidence: float) -> List[Dict]:
+        """
+        Write to failure memory WITH attribution uncertainty.
+        Never store single-cause stories.
+        """
+        entries = []
+        outcome = context.get("outcome")
+
+        if not outcome or not outcome.get("was_failure"):
+            return entries
+
+        entry = {
+            "decision_id": context.get("decision_id"),
+            "timestamp": datetime.utcnow().isoformat(),
+            "failure_type": outcome.get("failure_type", "unknown"),
+            "attribution_uncertainty": 1.0 - attribution_confidence,
+            "attribution_methods_agree": attribution_confidence > 0.6,
+            "context_regime": context.get("regime_hash", ""),
+            "disagreement_stored": True,
+        }
+        entries.append(entry)
+
+        # Write to failure memory if available
+        if self.failure_memory and hasattr(self.failure_memory, "store_pattern"):
+            try:
+                self.failure_memory.store_pattern(
+                    pattern_type=entry["failure_type"],
+                    context=entry,
+                    uncertainty=entry["attribution_uncertainty"],
+                )
+            except Exception as e:
+                logger.error(f"Failed to write failure memory: {e}")
+
+        return entries
+
+    # ── 8. Capability Gap Detector ───────────────────────────────────────
+
+    def _detect_capability_gaps(self, context: Dict) -> Tuple[bool, List[Dict]]:
+        """Detect missing capabilities that could have prevented failures"""
+        findings = []
+        gap_detected = False
+
+        # Check if capability discovery engine identifies gaps
+        if self.capability_discovery and hasattr(self.capability_discovery, "identify_gaps"):
+            try:
+                gaps = self.capability_discovery.identify_gaps(context)
+                if gaps:
+                    gap_detected = True
+                    for g in gaps[:3]:
+                        findings.append({"issue": "capability_gap", "gap": g,
+                                         "severity": "medium",
+                                         "recommendation": f"Develop capability: {g}"})
+            except Exception:
+                pass
+
+        # Check for patterns suggesting capability gaps
+        regime = context.get("regime_hash", "")
+        if context.get("outcome", {}).get("was_failure"):
+            # Failure in a regime where we have limited data → capability gap
+            gap_detected = True
+            findings.append({"issue": "regime_capability_gap", "regime": regime,
+                             "severity": "high",
+                             "recommendation": "Insufficient capability for this regime — expand or avoid"})
+
+        return gap_detected, findings
+
+    # ── Batch Audit ──────────────────────────────────────────────────────
+
+    async def audit_batch(self, decision_ids: List[str], contexts: Dict[str, Dict]) -> List[DeepAuditResult]:
+        """Audit multiple decisions in batch (for post-hoc review)"""
+        results = []
+        for did in decision_ids:
+            ctx = contexts.get(did, {})
+            result = await self.audit_decision(did, ctx)
+            results.append(result)
+        return results
+
+    def get_audit_statistics(self) -> Dict[str, Any]:
+        """Get deep audit statistics"""
+        if not self.audit_history:
+            return {"total_audits": 0}
+
+        recent = list(self.audit_history)[-50:]
+        return {
+            "total_audits": len(self.audit_history),
+            "avg_overall_score": np.mean([r.overall_score for r in recent]),
+            "capability_gap_rate": sum(1 for r in recent if r.capability_gap_detected) / len(recent),
+            "adversarial_tournament_sizes": {k: len(v) for k, v in self.adversarial_tournament_scores.items()},
+            "method_accuracy_summary": {k: sum(v) / len(v) for k, v in self.method_accuracy.items() if v},
+            "empirical_stress_ranges_loaded": list(self.empirical_stress_ranges.keys()),
+        }
+
+
+def create_deep_governance_auditor(
+    claim_graph_constructor=None,
+    evidence_auditor=None,
+    adversarial_analyst=None,
+    counterfactual_simulator=None,
+    attribution_engine=None,
+    decision_memory=None,
+    outcome_memory=None,
+    failure_memory=None,
+    capability_discovery=None,
+) -> DeepGovernanceAuditor:
+    """Factory function to create Deep Governance Auditor"""
+    return DeepGovernanceAuditor(
+        claim_graph_constructor=claim_graph_constructor,
+        evidence_auditor=evidence_auditor,
+        adversarial_analyst=adversarial_analyst,
+        counterfactual_simulator=counterfactual_simulator,
+        attribution_engine=attribution_engine,
+        decision_memory=decision_memory,
+        outcome_memory=outcome_memory,
+        failure_memory=failure_memory,
+        capability_discovery=capability_discovery,
+    )

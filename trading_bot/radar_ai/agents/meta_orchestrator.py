@@ -20,6 +20,9 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Set
 import uuid
 
+from ...a2a import A2AMessageBus
+from ...world2agent import World2AgentBridge
+
 logger = logging.getLogger(__name__)
 
 
@@ -245,9 +248,16 @@ class MetaOrchestrator:
     - Ensure proper execution order
     """
     
-    def __init__(self, auto_approve_simulations: bool = True):
+    def __init__(
+        self,
+        auto_approve_simulations: bool = True,
+        a2a_bus: Optional[A2AMessageBus] = None,
+        world_bridge: Optional[World2AgentBridge] = None,
+    ):
         self.orchestrator_id = f"META-{uuid.uuid4().hex[:8]}"
         self.auto_approve_simulations = auto_approve_simulations
+        self.a2a_bus = a2a_bus or A2AMessageBus()
+        self.world_bridge = world_bridge or World2AgentBridge(self.a2a_bus)
         
         # Critical rules enforcer
         self.rules_enforcer = CriticalRulesEnforcer()
@@ -268,12 +278,17 @@ class MetaOrchestrator:
         self.total_requests = 0
         self.total_approvals = 0
         self.total_rejections = 0
+        self.a2a_bus.register_agent(
+            self.orchestrator_id,
+            capabilities=["approval", "workflow_control", "radar_ai_orchestration"],
+        )
         
         logger.info(f"MetaOrchestrator initialized: {self.orchestrator_id}")
     
     def register_agent(self, agent_name: str, agent_instance: Any):
         """Register an agent with the orchestrator"""
         self.registered_agents[agent_name] = agent_instance
+        self.a2a_bus.register_agent(agent_name, capabilities=["radar_ai_agent"])
         logger.info(f"Registered agent: {agent_name}")
     
     async def submit_request(
@@ -318,6 +333,18 @@ class MetaOrchestrator:
             self.total_approvals += 1
         else:
             self.pending_requests.append(request)
+
+        self.a2a_bus.send(
+            sender=agent_name,
+            recipients=[self.orchestrator_id],
+            intent="agent_request",
+            payload=self.world_bridge.build_agent_context(
+                self.orchestrator_id,
+                request.to_dict(),
+            ),
+            channel="radar_ai",
+            metadata={"request_type": request_type, "status": request.status.value},
+        )
         
         return request
     
@@ -369,6 +396,16 @@ class MetaOrchestrator:
                 self.total_approvals += 1
                 
                 logger.info(f"Approved request: {request_id} from {request.agent_name}")
+                self.a2a_bus.send(
+                    sender=self.orchestrator_id,
+                    recipients=[request.agent_name],
+                    intent="request_approved",
+                    payload=self.world_bridge.build_agent_context(
+                        request.agent_name,
+                        request.to_dict(),
+                    ),
+                    channel="radar_ai",
+                )
                 
                 return {'status': 'approved', 'request': request.to_dict()}
         
@@ -384,6 +421,19 @@ class MetaOrchestrator:
                 self.total_rejections += 1
                 
                 logger.info(f"Rejected request: {request_id} - {reason}")
+                self.a2a_bus.send(
+                    sender=self.orchestrator_id,
+                    recipients=[request.agent_name],
+                    intent="request_rejected",
+                    payload=self.world_bridge.build_agent_context(
+                        request.agent_name,
+                        {
+                            **request.to_dict(),
+                            "reason": reason,
+                        },
+                    ),
+                    channel="radar_ai",
+                )
                 
                 return {'status': 'rejected', 'reason': reason}
         
@@ -398,6 +448,16 @@ class MetaOrchestrator:
         )
         
         self.active_workflows[workflow.execution_id] = workflow
+        self.a2a_bus.broadcast(
+            sender=self.orchestrator_id,
+            intent="workflow_started",
+            payload=self.world_bridge.build_agent_context(
+                self.orchestrator_id,
+                workflow.to_dict(),
+            ),
+            recipients=list(self.registered_agents.keys()),
+            channel="radar_ai",
+        )
         
         logger.info(f"Started workflow: {workflow.execution_id}")
         
@@ -433,6 +493,20 @@ class MetaOrchestrator:
                 return {'status': 'blocked', 'message': 'Cannot skip to execution'}
             
             workflow.current_stage = next_stage
+            self.a2a_bus.broadcast(
+                sender=self.orchestrator_id,
+                intent="workflow_stage_advanced",
+                payload=self.world_bridge.build_agent_context(
+                    self.orchestrator_id,
+                    {
+                        "workflow_id": workflow_id,
+                        "current_stage": next_stage.name,
+                        "stage_result": stage_result,
+                    },
+                ),
+                recipients=list(self.registered_agents.keys()),
+                channel="radar_ai",
+            )
             
             logger.info(f"Workflow {workflow_id} advanced to {next_stage.name}")
             
@@ -501,6 +575,7 @@ class MetaOrchestrator:
     
     def get_status(self) -> Dict[str, Any]:
         """Get orchestrator status"""
+        latest_snapshot = self.world_bridge.get_latest_snapshot()
         return {
             'orchestrator_id': self.orchestrator_id,
             'registered_agents': list(self.registered_agents.keys()),
@@ -511,4 +586,6 @@ class MetaOrchestrator:
             'total_rejections': self.total_rejections,
             'rule_violations': len(self.rules_enforcer.get_violations()),
             'has_violations': self.rules_enforcer.has_violations(),
+            'a2a_message_count': self.a2a_bus.message_count(),
+            'latest_world_context_id': latest_snapshot.context_id if latest_snapshot else None,
         }

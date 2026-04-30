@@ -102,6 +102,25 @@ def _results():
     ]
 
 
+def _system_observations():
+    return [
+        distill.AISystemObservation(
+            observation_id="sys-workflow",
+            system_name="frontier-workflow-system",
+            signal_type=distill.ReverseEngineeringSignalType.WORKFLOW,
+            workflow_steps=(
+                "planner routes task to retrieval tool",
+                "critic verifier validates outputs",
+                "memory context is compressed before execute",
+            ),
+            outputs=("structured tool plan with validation trace",),
+            claims=("improves tool reliability on long-context tasks",),
+            evidence=("public eval trace", "workflow transcript", "replay result"),
+            metrics={"tool_use": 0.88, "memory_context": 0.80, "cost": 0.35, "latency_ms": 900},
+        )
+    ]
+
+
 def test_engine_profiles_frontier_model_conditions_cost_and_failures():
     profiler = distill.ModelProfiler()
     profile = profiler.build_profile("frontier-x", _observations(), _results())
@@ -191,6 +210,37 @@ def test_sandbox_validator_blocks_side_effects_and_rollout():
     assert not validation.accepted
     assert not validation.compatible_with_global_objective
     assert rollout is None
+
+
+def test_sandbox_validator_enforces_aean_global_objective_constraints():
+    artifact = distill.AlphaAlgoNativeArtifact(
+        artifact_id="artifact-cost",
+        kind=distill.AlphaAlgoArtifactKind.MODEL_SELECTION_POLICY,
+        name="costly",
+        content={},
+        source_pattern_id="pattern",
+        valid_domains=("research",),
+        valid_tasks=("research:cost",),
+        budget_cap=0.10,
+        rollback_triggers=("cost_exceeds_budget",),
+    )
+    result = distill.BenchmarkResult(
+        task_id="research:cost",
+        model_name="frontier-x",
+        score=0.75,
+        baseline_score=0.70,
+        cost=0.50,
+        latency_ms=100,
+        stability=0.69,
+    )
+
+    validation = distill.SandboxValidator(
+        distill.AEANGlobalObjective(min_long_term_lift=0.02, min_stability=0.70, max_cost_delta=0.0)
+    ).validate(artifact, [result])
+
+    assert not validation.accepted
+    assert validation.metrics["cost_delta"] > 0
+    assert validation.stability < 0.70
 
 
 def test_full_distillation_loop_creates_selective_lineage_records():
@@ -290,3 +340,84 @@ def test_meta_intelligence_continuous_loop_runs_bounded_cycles():
 
     assert len(reports) == 1
     assert reports[0].advantage_score > 0
+
+
+def test_reverse_engineering_decomposes_classifies_extracts_and_rejects():
+    engine = distill.AISystemReverseEngineeringEngine()
+    observations = _system_observations() + [
+        distill.AISystemObservation(
+            observation_id="sys-hype",
+            system_name="frontier-workflow-system",
+            signal_type=distill.ReverseEngineeringSignalType.CLAIM,
+            claims=("magic guaranteed autonomous profit always",),
+            evidence=(),
+            metrics={},
+        )
+    ]
+
+    report = engine.run("frontier-workflow-system", observations)
+
+    assert report.decompositions[0].tools_used
+    assert report.decompositions[0].architecture_patterns
+    assert report.decompositions[0].data_flow
+    assert report.assessments[0].classification == distill.ReverseEngineeringClassification.REUSABLE_COMPONENT
+    assert report.extracted_components
+    assert report.frontier_observations
+    assert "claim is hype-heavy and evidence-light" in report.rejected_ideas
+
+
+def test_meta_layer_arbitrages_reverse_engineered_system_outputs():
+    layer = distill.FrontierMetaIntelligenceLayer()
+    tasks = [
+        distill.BenchmarkTask(
+            task_id="research:tool_use",
+            domain="research",
+            task_type="tool_use",
+            objective="Use reverse-engineered workflow safely.",
+            baseline_score=0.60,
+        )
+    ]
+    results = [
+        distill.BenchmarkResult(
+            task_id="research:tool_use",
+            model_name="frontier-workflow-system",
+            score=0.78,
+            baseline_score=0.60,
+            cost=0.30,
+            latency_ms=900,
+            stability=0.86,
+            metadata={"task_type": "tool_use"},
+        )
+    ]
+
+    report = layer.arbitrage_reverse_engineered_system(
+        "frontier-workflow-system",
+        _system_observations(),
+        tasks,
+        results,
+    )
+
+    assert report.reverse_engineering is not None
+    assert report.reverse_engineering.extracted_components
+    assert report.native_artifacts
+    assert report.advantage_score > 0
+
+
+def test_reverse_engineering_rejects_dangerous_authority_before_distillation():
+    observation = distill.AISystemObservation(
+        observation_id="sys-danger",
+        system_name="frontier-danger-system",
+        signal_type=distill.ReverseEngineeringSignalType.WORKFLOW,
+        workflow_steps=("agent performs live deployment bypass with credential access",),
+        outputs=("risk limit weakening applied without approval",),
+        claims=("faster autonomous release",),
+        evidence=("incident report",),
+        metrics={"tool_use": 0.92},
+    )
+
+    reverse_report = distill.AISystemReverseEngineeringEngine().run("frontier-danger-system", [observation])
+
+    assert reverse_report.assessments[0].classification == distill.ReverseEngineeringClassification.DANGEROUS_POWER
+    assert not reverse_report.extracted_components
+    assert not reverse_report.frontier_observations
+    assert "dangerous authority is not transferable into AEAN runtime" in reverse_report.rejected_ideas

@@ -32,6 +32,7 @@ class DecisionOutcome(Enum):
     REJECTED_LOW_CONFIDENCE = "rejected_low_confidence"
     REJECTED_CATASTROPHIC_RISK = "rejected_catastrophic_risk"
     REJECTED_PORTFOLIO_IMPACT = "rejected_portfolio_impact"
+    REJECTED_COUNTERINTELLIGENCE = "rejected_counterintelligence"
 
 
 class CatastrophicFailureMode(Enum):
@@ -77,6 +78,7 @@ class UnifiedDecision:
     
     # Check results
     market_hostility_check: Optional[GateCheckResult] = None
+    counterintelligence_check: Optional[GateCheckResult] = None
     claim_decomposition_check: Optional[GateCheckResult] = None
     adversarial_analysis_check: Optional[GateCheckResult] = None
     confidence_vector_check: Optional[GateCheckResult] = None
@@ -306,6 +308,7 @@ class UnifiedDecisionGate:
         market_context: Dict,
         portfolio_state: Dict,
         # Results from previous stages
+        counterintelligence_report: Any = None,
         market_hostility_result: Any = None,
         decomposed_signal: Any = None,
         adversarial_analysis: Any = None,
@@ -330,6 +333,41 @@ class UnifiedDecisionGate:
                 outcome=DecisionOutcome.APPROVED,
                 approved=False
             )
+
+            # Check 0: Signal Counterintelligence
+            if counterintelligence_report:
+                ci_payload = (
+                    counterintelligence_report.to_dict()
+                    if hasattr(counterintelligence_report, "to_dict")
+                    else {}
+                )
+                ci_decision = ci_payload.get("decision", getattr(counterintelligence_report, "decision", "unknown"))
+                ci_allowed = bool(
+                    getattr(
+                        counterintelligence_report,
+                        "execution_allowed",
+                        getattr(counterintelligence_report, "accepted", False),
+                    )
+                )
+                blocked_reasons = list(
+                    getattr(counterintelligence_report, "blocked_reasons", [])
+                    or ci_payload.get("blocked_reasons", [])
+                )
+                reason = "; ".join(blocked_reasons) if blocked_reasons else f"counterintelligence decision {ci_decision}"
+                decision.counterintelligence_check = GateCheckResult(
+                    check_name="Signal Counterintelligence",
+                    passed=ci_allowed,
+                    reason="Counterintelligence accepted signal" if ci_allowed else reason,
+                    severity=0.0 if ci_allowed else 1.0,
+                    details=ci_payload,
+                )
+
+                if not ci_allowed:
+                    decision.outcome = DecisionOutcome.REJECTED_COUNTERINTELLIGENCE
+                    decision.rejection_reason = reason
+                    decision.failed_checks.append("Signal Counterintelligence")
+                    self._finalize_decision(decision, start_time)
+                    return decision
         
             # Check 1: Market Hostility Gate
             if market_hostility_result:

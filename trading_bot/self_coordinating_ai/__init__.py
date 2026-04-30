@@ -84,7 +84,9 @@ class HivemindSelfCoordinatingAdapter:
         """Initialize Self-Coordinating AI under hivemind control."""
         from .orchestrator import OrchestratorConfig
         
-        orch_config = OrchestratorConfig(**self.config)
+        config_keys = set(OrchestratorConfig.__annotations__.keys())
+        filtered_config = {k: v for k, v in self.config.items() if k in config_keys}
+        orch_config = OrchestratorConfig(**filtered_config)
         self.orchestrator = SelfCoordinatingAIOrchestrator(orch_config)
         self._initialized = True
     

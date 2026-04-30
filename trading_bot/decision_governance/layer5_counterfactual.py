@@ -36,21 +36,205 @@ class CounterfactualScenario:
     expected_outcome_change: float  # Expected change in thesis confidence (-1 to 1)
     thesis_survives: bool
     robustness_contribution: float  # How much this test contributes to overall robustness
+    
+    # Fix #4: Sandbox validation
+    sandbox_measurable: bool = False  # Can this be tested in sandbox?
+    governance_input: bool = True     # Should this affect live decisions?
+    offline_hypothesis_only: bool = False  # If True, only for offline analysis
+    measurement_difficulty: str = "unknown"  # "easy", "medium", "hard", "impossible"
+
+
+@dataclass
+class SandboxValidationResult:
+    """Result of validating if a counterfactual can be sandbox-tested"""
+    can_measure: bool
+    difficulty: str  # easy, medium, hard
+    required_instruments: List[str]
+    estimated_execution_time_ms: float
+    validation_confidence: float  # 0-1 confidence that sandbox reflects reality
+
+
+class SandboxValidator:
+    """
+    Validates whether counterfactual scenarios can be measured in sandbox.
+    
+    Fix #4: Your Counterfactual Simulator Will Generate Plausible but Misleading Fictions
+    
+    Without ground-truth causal structure, counterfactuals are sophisticated storytelling.
+    
+    Solution: Restrict counterfactuals to interventions you can actually execute 
+    and measure in sandbox. Everything else is a hypothesis generator for the 
+    offline plane, not a governance input.
+    """
+    
+    # Perturbations that CAN be measured in sandbox
+    SANDBOX_MEASURABLE_TYPES = {
+        'execution_delay',      # Can test with simulated latency
+        'higher_slippage',      # Can test with different slippage models
+        'partial_fills',        # Can test with fill simulation
+        'evidence_removal',     # Can re-run analysis without specific data
+        'position_size_change', # Can test with different sizing
+    }
+    
+    # Perturbations that CANNOT be measured (hypothetical only)
+    HYPOTHETICAL_TYPES = {
+        'market_crash',         # Cannot simulate market crashes realistically
+        'counterparty_default', # Too rare, cannot simulate
+        'regulatory_change',    # Cannot simulate regulatory changes
+        'major_news_event',     # Cannot simulate news impact
+        'opposite_narrative',   # Philosophical, not measurable
+    }
+    
+    def __init__(self):
+        self.validation_history: List[Dict] = []
+        self.sandbox_accuracy_tracking: Dict[str, List[bool]] = defaultdict(list)
+    
+    def validate_scenario(
+        self,
+        scenario: CounterfactualScenario,
+        available_sandbox_tools: List[str]
+    ) -> SandboxValidationResult:
+        """
+        Validate if a counterfactual scenario can be sandbox-tested.
+        
+        Returns validation result with measurability assessment.
+        """
+        perturbation = scenario.perturbation_type
+        
+        # Check if type is inherently measurable
+        if perturbation in self.SANDBOX_MEASURABLE_TYPES:
+            can_measure = True
+            difficulty = "easy"
+            confidence = 0.8
+        elif perturbation in self.HYPOTHETICAL_TYPES:
+            can_measure = False
+            difficulty = "impossible"
+            confidence = 0.1
+        else:
+            # Unknown type - check if we have tools
+            can_measure = self._has_required_tools(scenario, available_sandbox_tools)
+            difficulty = "medium" if can_measure else "hard"
+            confidence = 0.5 if can_measure else 0.2
+        
+        result = SandboxValidationResult(
+            can_measure=can_measure,
+            difficulty=difficulty,
+            required_instruments=self._get_required_instruments(scenario),
+            estimated_execution_time_ms=self._estimate_execution_time(scenario),
+            validation_confidence=confidence
+        )
+        
+        self.validation_history.append({
+            'scenario_id': scenario.id,
+            'perturbation_type': perturbation,
+            'result': result,
+            'timestamp': datetime.utcnow()
+        })
+        
+        return result
+    
+    def _has_required_tools(
+        self,
+        scenario: CounterfactualScenario,
+        available_tools: List[str]
+    ) -> bool:
+        """Check if sandbox has required tools for this scenario"""
+        required = self._get_required_instruments(scenario)
+        return all(tool in available_tools for tool in required)
+    
+    def _get_required_instruments(self, scenario: CounterfactualScenario) -> List[str]:
+        """Get list of required sandbox instruments"""
+        mapping = {
+            'execution_delay': ['latency_simulator', 'order_executor'],
+            'higher_slippage': ['slippage_model', 'market_impact_simulator'],
+            'partial_fills': ['fill_simulator', 'order_book_model'],
+            'evidence_removal': ['backtest_engine', 'data_filter'],
+            'position_size_change': ['position_sizer', 'risk_calculator'],
+            'market_perturbation': ['market_simulator', 'regime_model'],
+        }
+        return mapping.get(scenario.perturbation_type, ['basic_sandbox'])
+    
+    def _estimate_execution_time(self, scenario: CounterfactualScenario) -> float:
+        """Estimate sandbox execution time in milliseconds"""
+        base_times = {
+            'evidence_removal': 50.0,
+            'execution_delay': 100.0,
+            'higher_slippage': 80.0,
+            'partial_fills': 120.0,
+            'market_perturbation': 200.0,
+        }
+        return base_times.get(scenario.perturbation_type, 150.0)
+    
+    def update_accuracy_tracking(
+        self,
+        perturbation_type: str,
+        sandbox_prediction: float,
+        actual_outcome: float
+    ):
+        """Track how accurate sandbox predictions are for each perturbation type"""
+        # Within 20% of actual = accurate
+        accurate = abs(sandbox_prediction - actual_outcome) < 0.2
+        self.sandbox_accuracy_tracking[perturbation_type].append(accurate)
+    
+    def get_sandbox_confidence(self, perturbation_type: str) -> float:
+        """Get historical accuracy of sandbox for a perturbation type"""
+        history = self.sandbox_accuracy_tracking.get(perturbation_type, [])
+        if not history:
+            return 0.5  # Unknown = 50% confidence
+        return sum(history) / len(history)
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get validation statistics"""
+        if not self.validation_history:
+            return {'total_validations': 0}
+        
+        measurable_count = sum(
+            1 for v in self.validation_history
+            if v['result'].can_measure
+        )
+        
+        type_breakdown = defaultdict(lambda: {'measurable': 0, 'total': 0})
+        for v in self.validation_history:
+            ptype = v['perturbation_type']
+            type_breakdown[ptype]['total'] += 1
+            if v['result'].can_measure:
+                type_breakdown[ptype]['measurable'] += 1
+        
+        return {
+            'total_validations': len(self.validation_history),
+            'sandbox_measurable_pct': measurable_count / len(self.validation_history),
+            'type_breakdown': dict(type_breakdown),
+            'sandbox_accuracy_by_type': {
+                ptype: self.get_sandbox_confidence(ptype)
+                for ptype in self.sandbox_accuracy_tracking.keys()
+            }
+        }
 
 
 class CounterfactualSimulator:
     """
     Simulates counterfactual scenarios to test thesis robustness.
     Identifies fragile dependencies in the reasoning chain.
+    
+    Now with sandbox validation to prevent misleading counterfactuals.
     """
     
     def __init__(
         self,
         min_robustness_score: float = 0.6,
-        num_scenarios: int = 5
+        num_scenarios: int = 5,
+        enable_sandbox_validation: bool = True,
+        sandbox_tools: Optional[List[str]] = None
     ):
         self.min_robustness_score = min_robustness_score
         self.num_scenarios = num_scenarios
+        
+        # Fix #4: Sandbox validation
+        self.sandbox_validator = SandboxValidator() if enable_sandbox_validation else None
+        self.sandbox_tools = sandbox_tools or [
+            'latency_simulator', 'slippage_model', 'fill_simulator',
+            'backtest_engine', 'position_sizer', 'market_simulator'
+        ]
         
     def simulate_counterfactuals(
         self,

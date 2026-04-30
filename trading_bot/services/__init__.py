@@ -38,6 +38,7 @@ from .api_service import APIService
 from .approval_service import ApprovalService
 from .arbitrage_service import ArbitrageService
 from .audit_service import AuditService
+from .intelligence_directorate_service import IntelligenceDirectorateService
 from .auto_optimizer_service import AutoOptimizerService
 from .autonomous_service import AutonomousService
 from .autonomous_learner_service import AutonomousLearnerService
@@ -127,6 +128,7 @@ __all__ = [
     'ApprovalService',
     'ArbitrageService',
     'AuditService',
+    'IntelligenceDirectorateService',
     'AutoOptimizerService',
     'AutonomousService',
     'AutonomousLearnerService',

@@ -127,6 +127,19 @@ class SimulationAgent:
             },
             requires_approval=False,
         )
+        if getattr(self.meta_orchestrator, "world_bridge", None) is not None:
+            self.meta_orchestrator.world_bridge.publish_world_state(
+                source="SimulationAgent",
+                world_state={
+                    "strategy_analysis": strategy_analysis,
+                    "market_picture": market_picture,
+                    "num_scenarios": num_scenarios,
+                    "request_id": request.request_id,
+                },
+                audience=list(getattr(self.meta_orchestrator, "registered_agents", {}).keys()),
+                tags=[strategy_analysis.get("symbol", "UNKNOWN"), "pre_simulation"],
+                context_type="simulation_request",
+            )
         
         logger.info(f"Starting world-model simulation: {num_scenarios} scenarios")
         
@@ -203,6 +216,25 @@ class SimulationAgent:
         self.simulations.append(result)
         self.total_simulations += 1
         self.total_scenarios_run += num_scenarios
+        if getattr(self.meta_orchestrator, "world_bridge", None) is not None:
+            self.meta_orchestrator.world_bridge.publish_simulation_result(
+                source="SimulationAgent",
+                simulation_result=result,
+                audience=list(getattr(self.meta_orchestrator, "registered_agents", {}).keys()),
+                tags=[symbol, verdict],
+            )
+        if getattr(self.meta_orchestrator, "a2a_bus", None) is not None:
+            self.meta_orchestrator.a2a_bus.broadcast(
+                sender="SimulationAgent",
+                intent="simulation_result",
+                payload=self.meta_orchestrator.world_bridge.build_agent_context(
+                    "SimulationAgent",
+                    result.to_dict(),
+                ),
+                recipients=list(getattr(self.meta_orchestrator, "registered_agents", {}).keys()),
+                channel="radar_ai",
+                metadata={"verdict": verdict, "symbol": symbol},
+            )
         
         logger.info(f"Simulation complete: {verdict} (P(profit)={prob_profit:.0%}, E[PnL]={expected_pnl:.2f})")
         

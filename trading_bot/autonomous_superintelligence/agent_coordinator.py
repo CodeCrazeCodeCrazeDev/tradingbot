@@ -13,6 +13,11 @@ from dataclasses import dataclass, field
 from enum import Enum
 import uuid
 
+import numpy as np
+
+from ..a2a import A2AMessageBus
+from ..world2agent import World2AgentBridge
+
 logger = logging.getLogger(__name__)
 
 
@@ -85,12 +90,19 @@ class AgentCoordinator:
         self.agents: Dict[str, Agent] = {}
         self.task_queue: List[Task] = []
         self.completed_tasks: List[Task] = []
+        self.a2a_bus = self.config.get("a2a_bus") or A2AMessageBus()
+        self.world_bridge = self.config.get("world_bridge") or World2AgentBridge(self.a2a_bus)
+        self.coordinator_id = "autonomous_superintelligence.agent_coordinator"
         
         self.running = False
         self.coordination_mode = 'autonomous'
         
-        self.storage_path = Path(config.get('storage_path', 'agent_coordination_data'))
+        self.storage_path = Path(self.config.get('storage_path', 'agent_coordination_data'))
         self.storage_path.mkdir(parents=True, exist_ok=True)
+        self.a2a_bus.register_agent(
+            self.coordinator_id,
+            capabilities=["task_coordination", "autonomous_delegation", "interop"],
+        )
         
         logger.info("Agent Coordinator initialized")
     
@@ -191,6 +203,14 @@ class AgentCoordinator:
         )
         
         self.agents[agent.agent_id] = agent
+        self.a2a_bus.register_agent(
+            agent.agent_id,
+            capabilities=capabilities,
+            metadata={
+                "agent_type": agent_type.value,
+                "specialization": specialization,
+            },
+        )
         logger.info("Spawned agent: %s (%s)", agent.agent_id, agent_type.value)
         
         return agent
@@ -212,6 +232,22 @@ class AgentCoordinator:
         )
         
         self.task_queue.append(task)
+        self.a2a_bus.broadcast(
+            sender=self.coordinator_id,
+            intent="task_created",
+            payload=self.world_bridge.build_agent_context(
+                self.coordinator_id,
+                {
+                    "task_id": task.task_id,
+                    "task_type": task.task_type,
+                    "description": task.description,
+                    "priority": task.priority,
+                    "required_capabilities": task.required_capabilities,
+                },
+            ),
+            recipients=list(self.agents.keys()),
+            channel="autonomous_superintelligence",
+        )
         logger.info("Created task: %s (priority: %.2f)", task.task_id, priority)
         
         return task
@@ -264,6 +300,21 @@ class AgentCoordinator:
         agent.last_active = datetime.now()
         
         logger.info("Assigned task %s to agent %s", task.task_id, agent.agent_id)
+        self.a2a_bus.send(
+            sender=self.coordinator_id,
+            recipients=[agent.agent_id],
+            intent="task_assigned",
+            payload=self.world_bridge.build_agent_context(
+                agent.agent_id,
+                {
+                    "task_id": task.task_id,
+                    "task_type": task.task_type,
+                    "description": task.description,
+                    "required_capabilities": task.required_capabilities,
+                },
+            ),
+            channel="autonomous_superintelligence",
+        )
         
         asyncio.create_task(self._execute_task(task, agent))
     
@@ -281,6 +332,20 @@ class AgentCoordinator:
             agent.performance_score = min(agent.performance_score + 0.01, 1.0)
             
             self.completed_tasks.append(task)
+            self.a2a_bus.send(
+                sender=agent.agent_id,
+                recipients=[self.coordinator_id],
+                intent="task_completed",
+                payload=self.world_bridge.build_agent_context(
+                    self.coordinator_id,
+                    {
+                        "task_id": task.task_id,
+                        "task_type": task.task_type,
+                        "result": result,
+                    },
+                ),
+                channel="autonomous_superintelligence",
+            )
             
             logger.info("Task completed: %s by agent %s", task.task_id, agent.agent_id)
             
@@ -290,6 +355,20 @@ class AgentCoordinator:
             agent.status = AgentStatus.IDLE
             agent.tasks_failed += 1
             agent.performance_score = max(agent.performance_score - 0.05, 0.0)
+            self.a2a_bus.send(
+                sender=agent.agent_id,
+                recipients=[self.coordinator_id],
+                intent="task_failed",
+                payload=self.world_bridge.build_agent_context(
+                    self.coordinator_id,
+                    {
+                        "task_id": task.task_id,
+                        "task_type": task.task_type,
+                        "error": str(e),
+                    },
+                ),
+                channel="autonomous_superintelligence",
+            )
     
     async def _simulate_task_execution(self, task: Task, agent: Agent) -> Dict:
         """Simulate task execution (replace with actual execution logic)."""
@@ -435,6 +514,7 @@ class AgentCoordinator:
             if count > 0:
                 status_counts[status.value] = count
         
+        latest_snapshot = self.world_bridge.get_latest_snapshot()
         return {
             'total_agents': len(self.agents),
             'agent_types': agent_stats,
@@ -442,7 +522,26 @@ class AgentCoordinator:
             'pending_tasks': len(self.task_queue),
             'completed_tasks': len(self.completed_tasks),
             'avg_performance': np.mean([a.performance_score for a in self.agents.values()]) if self.agents else 0.0,
+            'a2a_registered_agents': self.a2a_bus.list_agents(),
+            'a2a_message_count': self.a2a_bus.message_count(),
+            'latest_world_context_id': latest_snapshot.context_id if latest_snapshot else None,
         }
+
+    def sync_world_state(
+        self,
+        source: str,
+        world_state: Dict[str, Any],
+        audience: Optional[List[str]] = None,
+        context_type: str = "market",
+    ) -> Dict[str, Any]:
+        """Publish a shared world snapshot for autonomous agents."""
+        snapshot = self.world_bridge.publish_world_state(
+            source=source,
+            world_state=world_state,
+            audience=audience or list(self.agents.keys()),
+            context_type=context_type,
+        )
+        return snapshot.to_dict()
     
     async def shutdown(self):
         """Shutdown coordination system."""

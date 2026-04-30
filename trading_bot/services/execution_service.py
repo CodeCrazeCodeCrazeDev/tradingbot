@@ -13,6 +13,10 @@ from typing import Any, Dict, List, Optional
 
 from trading_bot.core.event_bus import Event, EventPriority, EventTypes
 from trading_bot.core.service_registry import BaseService, ServiceHealth, ServicePriority
+from trading_bot.core.signal_counterintelligence import (
+    CounterintelligenceMode,
+    validate_intelligence_metadata,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +43,9 @@ class ExecutionService(BaseService):
     def __init__(self, config: Optional[Dict] = None):
         super().__init__(config)
         self._task: Optional[asyncio.Task] = None
+        self._counterintelligence_mode = self._coerce_counterintelligence_mode(
+            self.config.get("counterintelligence_mode", CounterintelligenceMode.HARD_GATE)
+        )
         
         # Execution components
         self._smart_router = None
@@ -200,6 +207,10 @@ class ExecutionService(BaseService):
             'take_profit': trade_data.get('take_profit'),
             'created_at': datetime.utcnow().isoformat(),
             'status': 'pending',
+            'metadata': trade_data.get('metadata', {}),
+            'intelligence': trade_data.get('intelligence')
+            or trade_data.get('metadata', {}).get('intelligence')
+            or position_size.get('intelligence'),
         }
         
         # Validate order
@@ -212,6 +223,22 @@ class ExecutionService(BaseService):
     async def submit_order(self, order: Dict[str, Any]) -> Dict[str, Any]:
         """Submit an order for execution"""
         order_id = order['order_id']
+        intelligence_metadata = order.get("intelligence") or order.get("metadata", {}).get("intelligence")
+        gate_passed, gate_reasons = validate_intelligence_metadata(
+            intelligence_metadata,
+            self._counterintelligence_mode,
+        )
+        if not gate_passed:
+            order["status"] = "rejected"
+            order["reject_reason"] = "; ".join(gate_reasons)
+            self._execution_stats["rejected_orders"] += 1
+            if self._event_bus:
+                await self._event_bus.publish(Event(
+                    event_type=EventTypes.ORDER_REJECTED,
+                    payload=order,
+                    source=self.SERVICE_NAME,
+                ))
+            return {"success": False, "reason": order["reject_reason"], "order": order}
         
         # Add to pending
         self._pending_orders[order_id] = order
@@ -354,3 +381,11 @@ class ExecutionService(BaseService):
     def get_execution_stats(self) -> Dict[str, Any]:
         """Get execution statistics"""
         return self._execution_stats.copy()
+
+    def _coerce_counterintelligence_mode(self, value: Any) -> CounterintelligenceMode:
+        if isinstance(value, CounterintelligenceMode):
+            return value
+        try:
+            return CounterintelligenceMode(str(value))
+        except ValueError:
+            return CounterintelligenceMode.HARD_GATE

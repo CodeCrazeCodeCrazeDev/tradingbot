@@ -5,6 +5,9 @@ Agents Module - Under Hivemind Control
 All agents in this module are controlled by the Hivemind.
 """
 
+from ..a2a import A2AMessageBus
+from ..world2agent import World2AgentBridge
+
 # multi_agent_debate
 try:
     from .multi_agent_debate import (
@@ -53,6 +56,12 @@ class HivemindAgentManager:
         self.verifier = None
         self._initialized = False
         self._running = False
+        self.a2a_bus = self.config.get("a2a_bus") or A2AMessageBus()
+        self.world_bridge = self.config.get("world_bridge") or World2AgentBridge(self.a2a_bus)
+        self.a2a_bus.register_agent(
+            "agents.manager",
+            capabilities=["planner_executor_verifier", "interop"],
+        )
     
     async def initialize(self):
         """Initialize all agents under hivemind control."""
@@ -65,16 +74,19 @@ class HivemindAgentManager:
         # Initialize specialized agents
         try:
             self.executor = ExecutorAgent(config=self.config)
+            self.a2a_bus.register_agent("ExecutorAgent", capabilities=["execution"])
         except Exception:
             pass
         
         try:
             self.planner = PlannerAgent(config=self.config)
+            self.a2a_bus.register_agent("PlannerAgent", capabilities=["planning"])
         except Exception:
             pass
         
         try:
             self.verifier = VerifierAgent(config=self.config)
+            self.a2a_bus.register_agent("VerifierAgent", capabilities=["verification"])
         except Exception:
             pass
         
@@ -96,6 +108,8 @@ class HivemindAgentManager:
             'planner_active': self.planner is not None,
             'verifier_active': self.verifier is not None,
             'under_hivemind_control': self.hivemind is not None,
+            'a2a_registered_agents': self.a2a_bus.list_agents(),
+            'a2a_message_count': self.a2a_bus.message_count(),
         }
     
     async def start(self):

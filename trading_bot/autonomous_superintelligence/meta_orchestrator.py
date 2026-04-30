@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
 
+import numpy as np
+
 logger = logging.getLogger(__name__)
 
 

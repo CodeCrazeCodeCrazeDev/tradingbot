@@ -552,3 +552,76 @@ def test_frontier_controller_keeps_strategy_promotion_paper_gated():
     assert "strategy_promotion" in blocked_ids
     assert "strategy_promotion" in approved_ids
     assert approved.achieved_coverage > blocked.achieved_coverage
+
+
+def test_red_blue_architecture_evolution_runs_sandboxed_attack_defense_round():
+    factory = control.ControlledSoftwareFactory()
+
+    report = factory.run_architecture_evolution_competition(
+        "evolve architecture with red vs blue simulation",
+        {"live_runtime": "deterministic", "engineering_ai": "sandboxed"},
+        "Add architecture-evolution arena that proposes sandbox-only patch candidates and verifier evidence.",
+        ["trading_bot/core/architecture_evolution.py"],
+        evidence={
+            "rollback_plan": True,
+            "before_metrics": {"latency_p95": 100.0, "defense_resolution_rate": 0.80},
+            "after_metrics": {"latency_p95": 98.0, "defense_resolution_rate": 0.86},
+        },
+    )
+    first_round = report.rounds[0]
+    attack_vectors = {attack.vector for attack in first_round.red_attacks}
+
+    assert report.accepted
+    assert report.final_decision == control.ApprovalState.APPROVED
+    assert attack_vectors == {
+        control.ArchitectureAttackVector.HIDDEN_INVARIANT_BREAK,
+        control.ArchitectureAttackVector.TEST_OVERFITTING,
+        control.ArchitectureAttackVector.PERFORMANCE_REGRESSION,
+    }
+    assert first_round.blue_defenses
+    assert not first_round.unresolved_attacks
+    assert report.sandbox_session.ephemeral
+    assert not report.sandbox_session.production_access
+    assert not report.sandbox_session.persistent_secrets
+    assert not report.sandbox_branch.live_runtime_attached
+    assert not report.sandbox_branch.live_code_mutation_allowed
+    assert not report.sandbox_branch.risk_limit_change_allowed
+    assert not report.sandbox_branch.model_mutation_allowed
+    assert not report.deployment_plan.production_enabled
+    assert report.deployment_plan.rollback_available
+    assert report.runtime_policy.production_runs_separately
+    assert report.provenance.sealed_digest
+
+
+def test_red_blue_architecture_evolution_rejects_live_mutation_and_self_approval():
+    arena = control.RedBlueArchitectureEvolutionArena()
+
+    report = arena.run_competition(
+        "dangerous architecture evolution",
+        {"live_runtime": "deterministic"},
+        "Allow production self-edit, change risk limit, mutate model, and self approve deployment.",
+        ["trading_bot/governance.py", "trading_bot/risk.py"],
+        evidence={
+            "before_metrics": {"latency_p95": 100.0},
+            "after_metrics": {"latency_p95": 140.0},
+        },
+        allow_live_mutation=True,
+        allow_model_mutation=True,
+        allow_risk_limit_change=True,
+    )
+    unresolved_vectors = {
+        attack.vector
+        for round_ in report.rounds
+        for attack in round_.unresolved_attacks
+    }
+
+    assert not report.accepted
+    assert report.final_decision == control.ApprovalState.REJECTED
+    assert control.ArchitectureAttackVector.LIVE_MUTATION_BYPASS in unresolved_vectors
+    assert control.ArchitectureAttackVector.RISK_LIMIT_WEAKENING in unresolved_vectors
+    assert control.ArchitectureAttackVector.MODEL_MUTATION in unresolved_vectors
+    assert control.ArchitectureAttackVector.SELF_APPROVAL in unresolved_vectors
+    assert control.ArchitectureAttackVector.PROTECTED_FILE_WEAKENING in unresolved_vectors
+    assert report.blocked_reasons
+    assert not report.sandbox_session.production_access
+    assert not report.deployment_plan.production_enabled

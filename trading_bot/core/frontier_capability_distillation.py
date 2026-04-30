@@ -178,7 +178,7 @@ class ModelCapabilityProfile:
 
 @dataclass(frozen=True)
 class BenchmarkTask:
-    """AlphaAlgo-relevant benchmark task."""
+    """AEAN/AlphaAlgo-relevant benchmark task."""
 
     task_id: str
     domain: str
@@ -208,6 +208,17 @@ class BenchmarkResult:
     @property
     def lift(self) -> float:
         return self.score - self.baseline_score
+
+
+@dataclass(frozen=True)
+class AEANGlobalObjective:
+    """Hard objective constraints for retaining distilled frontier advantage."""
+
+    min_long_term_lift: float = 0.0
+    min_stability: float = 0.70
+    max_cost_delta: float = 0.0
+    allowed_risk_side_effects: int = 0
+    require_governance_compatibility: bool = True
 
 
 @dataclass(frozen=True)
@@ -927,6 +938,9 @@ class DistillationGovernanceGate:
 class SandboxValidator:
     """Validates artifacts in replay/simulation/offline/shadow before rollout."""
 
+    def __init__(self, objective: Optional[AEANGlobalObjective] = None):
+        self.objective = objective or AEANGlobalObjective()
+
     def validate(
         self,
         artifact: AlphaAlgoNativeArtifact,
@@ -938,8 +952,20 @@ class SandboxValidator:
         stability = _avg([result.stability for result in relevant])
         cost_delta = _avg([result.cost for result in relevant]) - artifact.budget_cap
         side_effects = tuple(dict.fromkeys(side for result in relevant for side in result.side_effects))
-        compatible = not any("risk_limit" in side.lower() or "live_trade" in side.lower() for side in side_effects)
-        accepted = lift > 0 and stability >= 0.70 and cost_delta <= 0 and compatible and len(modes) >= 2
+        risk_side_effects = tuple(
+            side
+            for side in side_effects
+            if "risk_limit" in side.lower() or "live_trade" in side.lower() or "governance" in side.lower()
+        )
+        compatible = not risk_side_effects if self.objective.require_governance_compatibility else True
+        accepted = (
+            lift > self.objective.min_long_term_lift
+            and stability >= self.objective.min_stability
+            and cost_delta <= self.objective.max_cost_delta
+            and len(risk_side_effects) <= self.objective.allowed_risk_side_effects
+            and compatible
+            and len(modes) >= 2
+        )
         return SandboxValidationReport(
             artifact_id=artifact.artifact_id,
             modes=tuple(modes),
@@ -953,6 +979,7 @@ class SandboxValidator:
                 "lift": round(lift, 4),
                 "stability": round(stability, 4),
                 "cost_delta": round(cost_delta, 4),
+                "risk_side_effect_count": len(risk_side_effects),
             },
         )
 
@@ -1109,6 +1136,256 @@ class FrontierCapabilityDistillationEngine:
         )
 
 
+class AISystemReverseEngineeringEngine:
+    """Reverse engineers observable AI-system behavior into transferable evidence.
+
+    It observes workflows, outputs, and claims; decomposes tool use,
+    architecture pattern, and data flow; classifies real capability versus hype;
+    extracts reusable components; and rejects low-value or dangerous ideas before
+    the distillation compiler sees them.
+    """
+
+    tool_terms = ("tool", "api", "function", "search", "browser", "retrieval", "code", "sandbox", "benchmark")
+    architecture_terms = ("agent", "router", "critic", "verifier", "memory", "context", "planner", "orchestrator")
+    data_flow_terms = ("retrieve", "rank", "summarize", "compress", "validate", "execute", "observe", "feedback")
+    hype_terms = ("magic", "guaranteed", "perfect", "sentient", "infinite", "always", "autonomous profit")
+    danger_terms = (
+        "bypass",
+        "self approve",
+        "self-approve",
+        "credential",
+        "broker",
+        "risk limit",
+        "unguarded write",
+        "live deployment",
+        "copy weights",
+        "proprietary data",
+    )
+
+    def run(self, system_name: str, observations: Sequence[AISystemObservation]) -> AISystemReverseEngineeringReport:
+        decompositions = tuple(self.decompose(observation) for observation in observations)
+        assessments = tuple(
+            self.classify(observation, decomposition)
+            for observation, decomposition in zip(observations, decompositions)
+        )
+        components = tuple(
+            component
+            for observation, decomposition, assessment in zip(observations, decompositions, assessments)
+            for component in self.extract(observation, decomposition, assessment)
+        )
+        rejected = tuple(
+            idea
+            for assessment in assessments
+            for idea in assessment.rejected_ideas
+        )
+        frontier_observations = tuple(
+            self.to_frontier_observation(system_name, observation, decomposition, assessment, component)
+            for observation, decomposition, assessment in zip(observations, decompositions, assessments)
+            for component in self.extract(observation, decomposition, assessment)
+        )
+        return AISystemReverseEngineeringReport(
+            system_name=system_name,
+            observations=tuple(observations),
+            decompositions=decompositions,
+            assessments=assessments,
+            extracted_components=components,
+            rejected_ideas=rejected,
+            frontier_observations=frontier_observations,
+        )
+
+    def decompose(self, observation: AISystemObservation) -> AISystemDecomposition:
+        text = self._text(observation)
+        tools = self._extract_terms(text, self.tool_terms)
+        architecture = self._extract_terms(text, self.architecture_terms)
+        data_flow = self._extract_terms(text, self.data_flow_terms)
+        controls = tuple(
+            token
+            for token in ("critic", "verifier", "sandbox", "approval", "rollback", "budget", "risk")
+            if token in text
+        )
+        evidence_score = min(len(observation.evidence) * 0.15, 0.45)
+        structure_score = min((len(tools) + len(architecture) + len(data_flow)) * 0.06, 0.45)
+        confidence = round(min(1.0, 0.10 + evidence_score + structure_score + _avg(observation.metrics.values()) * 0.20), 4)
+        return AISystemDecomposition(
+            observation_id=observation.observation_id,
+            tools_used=tools,
+            architecture_patterns=architecture,
+            data_flow=data_flow,
+            control_surfaces=controls,
+            claims=observation.claims,
+            confidence=confidence,
+        )
+
+    def classify(
+        self,
+        observation: AISystemObservation,
+        decomposition: AISystemDecomposition,
+    ) -> ReverseEngineeringAssessment:
+        text = self._text(observation)
+        hype_score = min(sum(1 for token in self.hype_terms if token in text) * 0.25, 1.0)
+        danger_score = min(sum(1 for token in self.danger_terms if token in text) * 0.25, 1.0)
+        evidence_strength = min(len(observation.evidence) * 0.18 + _avg(observation.metrics.values()) * 0.40, 1.0)
+        structure_strength = min(
+            (len(decomposition.tools_used) + len(decomposition.architecture_patterns) + len(decomposition.data_flow)) * 0.08,
+            1.0,
+        )
+        capability_score = round(min(1.0, evidence_strength + structure_strength - hype_score * 0.35), 4)
+
+        rejected: List[str] = []
+        if danger_score >= 0.50:
+            classification = ReverseEngineeringClassification.DANGEROUS_POWER
+            rejected.append("dangerous authority is not transferable into AEAN runtime")
+        elif hype_score >= 0.50 and capability_score < 0.55:
+            classification = ReverseEngineeringClassification.FAKE_HYPE
+            rejected.append("claim is hype-heavy and evidence-light")
+        elif capability_score < 0.40:
+            classification = ReverseEngineeringClassification.LOW_VALUE
+            rejected.append("low measurable value for AEAN global objective")
+        elif decomposition.tools_used or decomposition.architecture_patterns or decomposition.data_flow:
+            classification = ReverseEngineeringClassification.REUSABLE_COMPONENT
+        else:
+            classification = ReverseEngineeringClassification.REAL_CAPABILITY
+
+        reusable = ()
+        if classification in {ReverseEngineeringClassification.REAL_CAPABILITY, ReverseEngineeringClassification.REUSABLE_COMPONENT}:
+            reusable = tuple(
+                dict.fromkeys(
+                    list(decomposition.tools_used)
+                    + list(decomposition.architecture_patterns)
+                    + list(decomposition.data_flow)
+                    + list(decomposition.control_surfaces)
+                )
+            )
+
+        return ReverseEngineeringAssessment(
+            observation_id=observation.observation_id,
+            classification=classification,
+            capability_score=capability_score,
+            hype_score=round(hype_score, 4),
+            danger_score=round(danger_score, 4),
+            reusable_components=reusable,
+            rejected_ideas=tuple(rejected),
+            rationale=self._rationale(classification),
+        )
+
+    def extract(
+        self,
+        observation: AISystemObservation,
+        decomposition: AISystemDecomposition,
+        assessment: ReverseEngineeringAssessment,
+    ) -> List[ReusableComponentExtraction]:
+        if assessment.classification not in {
+            ReverseEngineeringClassification.REAL_CAPABILITY,
+            ReverseEngineeringClassification.REUSABLE_COMPONENT,
+        }:
+            return []
+
+        components: List[ReusableComponentExtraction] = []
+        for component in assessment.reusable_components:
+            kind = self._artifact_kind_for(component)
+            if assessment.capability_score < 0.45:
+                continue
+            components.append(
+                ReusableComponentExtraction(
+                    component_id=_stable_id("component", observation.observation_id, component, kind.value),
+                    source_observation_id=observation.observation_id,
+                    component_name=component,
+                    pattern=self._pattern_for(component, decomposition),
+                    artifact_kind=kind,
+                    value_score=assessment.capability_score,
+                    risk_controls=self._risk_controls_for(component),
+                )
+            )
+        return components
+
+    def to_frontier_observation(
+        self,
+        system_name: str,
+        observation: AISystemObservation,
+        decomposition: AISystemDecomposition,
+        assessment: ReverseEngineeringAssessment,
+        component: ReusableComponentExtraction,
+    ) -> FrontierObservation:
+        dimension = self._dimension_for(component)
+        observation_type = {
+            AlphaAlgoArtifactKind.TOOL_USE_PLAYBOOK: FrontierObservationType.TOOL_USE_PATTERN,
+            AlphaAlgoArtifactKind.CONTEXT_STRATEGY: FrontierObservationType.LONG_CONTEXT_BEHAVIOR,
+            AlphaAlgoArtifactKind.CRITIC_POLICY: FrontierObservationType.EVAL_RESULT,
+            AlphaAlgoArtifactKind.GOVERNANCE_INVARIANT: FrontierObservationType.FAILURE_REPORT,
+        }.get(component.artifact_kind, FrontierObservationType.USAGE_TRACE)
+        return FrontierObservation(
+            observation_id=_stable_id("revobs", observation.observation_id, component.component_id),
+            model_name=system_name,
+            observation_type=observation_type,
+            summary=f"Reverse engineered {component.component_name}: {component.pattern}",
+            observed_behavior=component.pattern,
+            conditions=tuple(dict.fromkeys(decomposition.data_flow + decomposition.control_surfaces)),
+            metrics={dimension.value: component.value_score},
+            failure_modes=tuple(component.risk_controls),
+            cost_estimate=float(observation.metrics.get("cost", 0.0)),
+            latency_ms=float(observation.metrics.get("latency_ms", 0.0)),
+        )
+
+    def _text(self, observation: AISystemObservation) -> str:
+        return " ".join(
+            list(observation.workflow_steps)
+            + list(observation.outputs)
+            + list(observation.claims)
+            + list(observation.evidence)
+        ).lower()
+
+    def _extract_terms(self, text: str, candidates: Sequence[str]) -> Tuple[str, ...]:
+        return tuple(token for token in candidates if token in text)
+
+    def _rationale(self, classification: ReverseEngineeringClassification) -> str:
+        return {
+            ReverseEngineeringClassification.REAL_CAPABILITY: "evidence supports real task-relevant capability",
+            ReverseEngineeringClassification.REUSABLE_COMPONENT: "observable structure can be converted into AEAN-native components",
+            ReverseEngineeringClassification.FAKE_HYPE: "claim lacks enough evidence or repeatable mechanism",
+            ReverseEngineeringClassification.LOW_VALUE: "expected value is too small for risk and maintenance cost",
+            ReverseEngineeringClassification.DANGEROUS_POWER: "behavior would weaken governance or runtime safety",
+        }[classification]
+
+    def _artifact_kind_for(self, component: str) -> AlphaAlgoArtifactKind:
+        if component in {"tool", "api", "function", "search", "browser", "retrieval", "code", "sandbox", "benchmark"}:
+            return AlphaAlgoArtifactKind.TOOL_USE_PLAYBOOK
+        if component in {"memory", "context", "compress", "summarize"}:
+            return AlphaAlgoArtifactKind.CONTEXT_STRATEGY
+        if component in {"critic", "verifier", "validate"}:
+            return AlphaAlgoArtifactKind.CRITIC_POLICY
+        if component in {"router", "orchestrator", "agent", "planner"}:
+            return AlphaAlgoArtifactKind.ROUTING_RULE
+        if component in {"approval", "rollback", "budget", "risk"}:
+            return AlphaAlgoArtifactKind.GOVERNANCE_INVARIANT
+        return AlphaAlgoArtifactKind.SKILL_MODULE
+
+    def _pattern_for(self, component: str, decomposition: AISystemDecomposition) -> str:
+        flow = " -> ".join(decomposition.data_flow or ("observe", "validate", "apply"))
+        return f"{component} component used inside flow: {flow}"
+
+    def _risk_controls_for(self, component: str) -> Tuple[str, ...]:
+        controls = {
+            AlphaAlgoArtifactKind.TOOL_USE_PLAYBOOK: ("validate tool output before action", "sandbox write operations"),
+            AlphaAlgoArtifactKind.CONTEXT_STRATEGY: ("detect context drift", "retain audit trace"),
+            AlphaAlgoArtifactKind.CRITIC_POLICY: ("require independent critic pass", "run hidden/adversarial checks"),
+            AlphaAlgoArtifactKind.ROUTING_RULE: ("budget cap", "latency cap", "risk-class escalation"),
+            AlphaAlgoArtifactKind.GOVERNANCE_INVARIANT: ("governance approval required", "rollback trigger required"),
+            AlphaAlgoArtifactKind.SKILL_MODULE: ("sandbox validation required",),
+        }
+        return controls[self._artifact_kind_for(component)]
+
+    def _dimension_for(self, component: ReusableComponentExtraction) -> CapabilityDimension:
+        mapping = {
+            AlphaAlgoArtifactKind.TOOL_USE_PLAYBOOK: CapabilityDimension.TOOL_USE,
+            AlphaAlgoArtifactKind.CONTEXT_STRATEGY: CapabilityDimension.MEMORY_CONTEXT,
+            AlphaAlgoArtifactKind.CRITIC_POLICY: CapabilityDimension.RELIABILITY,
+            AlphaAlgoArtifactKind.ROUTING_RULE: CapabilityDimension.SPEED,
+            AlphaAlgoArtifactKind.GOVERNANCE_INVARIANT: CapabilityDimension.CONTROLLABILITY,
+            AlphaAlgoArtifactKind.SKILL_MODULE: CapabilityDimension.REASONING_DEPTH,
+        }
+        return mapping.get(component.artifact_kind, CapabilityDimension.REASONING_DEPTH)
+
+
 class FrontierDangerNeutralizer:
     """Neutralizes dangerous parts of frontier capability before transfer."""
 
@@ -1242,11 +1519,13 @@ class FrontierMetaIntelligenceLayer:
     def __init__(
         self,
         distillation_engine: Optional[FrontierCapabilityDistillationEngine] = None,
+        reverse_engineer: Optional[AISystemReverseEngineeringEngine] = None,
         neutralizer: Optional[FrontierDangerNeutralizer] = None,
         ledger: Optional[FrontierArbitrageLedger] = None,
         min_advantage_score: float = 0.01,
     ):
         self.distillation_engine = distillation_engine or FrontierCapabilityDistillationEngine()
+        self.reverse_engineer = reverse_engineer or AISystemReverseEngineeringEngine()
         self.neutralizer = neutralizer or FrontierDangerNeutralizer()
         self.ledger = ledger or FrontierArbitrageLedger()
         self.min_advantage_score = min_advantage_score
@@ -1257,6 +1536,7 @@ class FrontierMetaIntelligenceLayer:
         observations: Sequence[FrontierObservation],
         benchmark_tasks: Sequence[BenchmarkTask],
         benchmark_results: Sequence[BenchmarkResult],
+        reverse_engineering: Optional[AISystemReverseEngineeringReport] = None,
     ) -> AlphaAlgoAdvantageReport:
         distillation = self.distillation_engine.run(model_name, observations, benchmark_tasks, benchmark_results)
         neutralized_dangers, killed_lineage_ids = self.neutralizer.neutralize(distillation)
@@ -1290,6 +1570,7 @@ class FrontierMetaIntelligenceLayer:
             kept_lineage_ids=tuple(record.lineage_id for record in active_records),
             killed_lineage_ids=tuple(dict.fromkeys(killed)),
             advantage_score=round(advantage_score, 4),
+            reverse_engineering=reverse_engineering,
             notes=(
                 "frontier outputs are treated as external R&D signals",
                 "useful behavior is converted into AlphaAlgo-native artifacts",
@@ -1298,6 +1579,29 @@ class FrontierMetaIntelligenceLayer:
         )
         self.ledger.add(report)
         return report
+
+    def reverse_engineer_system(
+        self,
+        system_name: str,
+        system_observations: Sequence[AISystemObservation],
+    ) -> AISystemReverseEngineeringReport:
+        return self.reverse_engineer.run(system_name, system_observations)
+
+    def arbitrage_reverse_engineered_system(
+        self,
+        system_name: str,
+        system_observations: Sequence[AISystemObservation],
+        benchmark_tasks: Sequence[BenchmarkTask],
+        benchmark_results: Sequence[BenchmarkResult],
+    ) -> AlphaAlgoAdvantageReport:
+        reverse_report = self.reverse_engineer_system(system_name, system_observations)
+        return self.arbitrage_frontier(
+            system_name,
+            reverse_report.frontier_observations,
+            benchmark_tasks,
+            benchmark_results,
+            reverse_engineering=reverse_report,
+        )
 
     def run_once(
         self,
@@ -1327,14 +1631,24 @@ class FrontierMetaIntelligenceLayer:
             if hasattr(batch, "__await__"):
                 batch = await batch
             for item in batch:
-                reports.append(
-                    self.arbitrage_frontier(
-                        item["model_name"],
-                        item.get("observations", ()),
-                        item.get("benchmark_tasks", ()),
-                        item.get("benchmark_results", ()),
+                if "system_observations" in item:
+                    reports.append(
+                        self.arbitrage_reverse_engineered_system(
+                            item["model_name"],
+                            item.get("system_observations", ()),
+                            item.get("benchmark_tasks", ()),
+                            item.get("benchmark_results", ()),
+                        )
                     )
-                )
+                else:
+                    reports.append(
+                        self.arbitrage_frontier(
+                            item["model_name"],
+                            item.get("observations", ()),
+                            item.get("benchmark_tasks", ()),
+                            item.get("benchmark_results", ()),
+                        )
+                    )
             cycles += 1
             if max_cycles is None or cycles < max_cycles:
                 await asyncio.sleep(sleep_seconds)
@@ -1422,6 +1736,11 @@ def _stable_id(prefix: str, *parts: str) -> str:
 __all__ = [
     "AlphaAlgoArtifactKind",
     "AlphaAlgoNativeArtifact",
+    "AEANGlobalObjective",
+    "AISystemDecomposition",
+    "AISystemObservation",
+    "AISystemReverseEngineeringEngine",
+    "AISystemReverseEngineeringReport",
     "BenchmarkHarness",
     "BenchmarkResult",
     "BenchmarkTask",
@@ -1448,6 +1767,10 @@ __all__ = [
     "ModelCapabilityProfile",
     "ModelProfiler",
     "RegistryDecision",
+    "ReusableComponentExtraction",
+    "ReverseEngineeringAssessment",
+    "ReverseEngineeringClassification",
+    "ReverseEngineeringSignalType",
     "RolloutManager",
     "RolloutPlan",
     "RolloutScope",

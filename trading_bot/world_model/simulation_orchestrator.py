@@ -29,6 +29,8 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import multiprocessing as mp
 
+from ..a2a import A2AMessageBus
+from ..world2agent import World2AgentBridge
 from .self_play_engine import SelfPlayEngine, TradingAgent, create_self_play_engine
 from .counterfactual_engine import CounterfactualEngine, create_counterfactual_engine
 from .synthetic_data import (
@@ -112,11 +114,15 @@ class SimulationOrchestrator:
         self,
         world_model: Optional[WorldModel] = None,
         experience_buffer: Optional[ExperienceReplayBuffer] = None,
-        storage_path: Optional[str] = None
+        storage_path: Optional[str] = None,
+        a2a_bus: Optional[A2AMessageBus] = None,
+        world_bridge: Optional[World2AgentBridge] = None,
     ):
         # Components
         self.world_model = world_model
         self.experience_buffer = experience_buffer or create_experience_replay_buffer()
+        self.a2a_bus = a2a_bus or A2AMessageBus()
+        self.world_bridge = world_bridge or World2AgentBridge(self.a2a_bus)
         
         # Simulation engines
         self.self_play_engine: Optional[SelfPlayEngine] = None
@@ -133,6 +139,10 @@ class SimulationOrchestrator:
         # State
         self.is_running = False
         self.run_history: List[SimulationResult] = []
+        self.a2a_bus.register_agent(
+            "world_model.simulation_orchestrator",
+            capabilities=["simulation", "counterfactuals", "world_modeling"],
+        )
         
         # GPU
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -277,6 +287,35 @@ class SimulationOrchestrator:
             )
             
             self.run_history.append(result)
+            self.world_bridge.publish_simulation_result(
+                source="world_model.simulation_orchestrator",
+                simulation_result={
+                    "run_id": result.run_id,
+                    "mode": result.mode.value,
+                    "metrics": result.metrics,
+                    "duration_seconds": result.duration_seconds,
+                    "simulations_per_second": result.simulations_per_second,
+                    "quality_score": result.quality_score,
+                    "num_filtered": result.num_filtered,
+                },
+                tags=[result.mode.value, "world_model"],
+            )
+            self.a2a_bus.broadcast(
+                sender="world_model.simulation_orchestrator",
+                intent="simulation_completed",
+                payload=self.world_bridge.build_agent_context(
+                    "world_model.simulation_orchestrator",
+                    {
+                        "run_id": result.run_id,
+                        "mode": result.mode.value,
+                        "metrics": result.metrics,
+                        "quality_score": result.quality_score,
+                    },
+                    source="world_model.simulation_orchestrator",
+                    context_type="simulation",
+                ),
+                channel="world_model",
+            )
             
             logger.info(f"✅ Simulation complete: {len(filtered_experiences)} experiences")
             logger.info(f"   Duration: {duration:.1f}s")

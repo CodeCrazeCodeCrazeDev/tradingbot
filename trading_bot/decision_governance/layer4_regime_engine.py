@@ -17,9 +17,9 @@ Asks:
 """
 
 from typing import Dict, List, Optional, Any, Tuple, Set
-from datetime import datetime
-from dataclasses import dataclass
-from collections import defaultdict
+from datetime import datetime, timedelta
+from dataclasses import dataclass, field
+from collections import defaultdict, deque
 import logging
 import numpy as np
 
@@ -28,6 +28,358 @@ from .core_types import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class OntologyGapEvent:
+    """Record of an ontology gap detection"""
+    timestamp: datetime
+    gap_score: float  # 0-1, higher = more unexplained
+    unexplained_dimensions: List[str]
+    market_snapshot: Dict[str, Any]
+    triggered_exploration: bool
+    exploration_duration_minutes: Optional[int] = None
+
+
+class OntologyGapDetector:
+    """
+    Ontology Gap Detector
+    
+    Fix #3: Your Regime Ontology Will Be Incomplete in Novel Market Conditions.
+    
+    Continuously tests whether current market behavior is well-explained 
+    by existing regime dimensions. When gap detection fires, DGS enters 
+    explicit "exploration mode" with:
+    - Loosened gates (more decisions allowed through)
+    - Mandatory post-hoc analysis
+    - Expanded data collection
+    - Reduced position sizes (risk management)
+    
+    The detector tracks which market features are NOT captured by the
+    current regime ontology and flags them for potential new regime dimensions.
+    """
+    
+    def __init__(
+        self,
+        gap_threshold: float = 0.6,
+        exploration_duration_minutes: int = 60,
+        window_size: int = 50
+    ):
+        self.gap_threshold = gap_threshold
+        self.exploration_duration_minutes = exploration_duration_minutes
+        self.window_size = window_size
+        
+        # State
+        self.exploration_mode_active: bool = False
+        self.exploration_start_time: Optional[datetime] = None
+        self.gap_history: deque = deque(maxlen=window_size)
+        self.unexplained_features: Dict[str, int] = defaultdict(int)
+        
+        # Statistics
+        self.gap_events: List[OntologyGapEvent] = []
+        self.total_checks: int = 0
+        self.gap_detections: int = 0
+        
+        # Known regime dimensions for reference
+        self.known_dimensions: Set[str] = {
+            'volatility_state', 'liquidity_state', 'trend_persistence',
+            'correlation_clustering', 'macro_event_density', 'order_flow_toxicity',
+            'spread_impact', 'volume_profile', 'order_book_shape'
+        }
+
+        # Attack 4: Synthetic benchmark tracking
+        self.synthetic_benchmarks: List[Dict[str, Any]] = []
+        self.benchmark_precision_recall: Dict[str, deque] = {
+            "precision": deque(maxlen=50),
+            "recall": deque(maxlen=50),
+        }
+        self._auto_tune_enabled: bool = True
+    
+    def check_ontology_coverage(
+        self,
+        current_regime: MarketRegime,
+        market_features: Dict[str, Any]
+    ) -> Tuple[bool, float, List[str]]:
+        """
+        Check if current market behavior is well-explained by regime ontology.
+        
+        Returns:
+            (gap_detected, gap_score, unexplained_features)
+        """
+        self.total_checks += 1
+        
+        unexplained = []
+        gap_score = 0.0
+        
+        # Check each market feature against regime explanation
+        for feature_name, feature_value in market_features.items():
+            # Check if this feature is captured by regime
+            is_explained = self._is_feature_explained(
+                feature_name, feature_value, current_regime
+            )
+            
+            if not is_explained:
+                unexplained.append(feature_name)
+                self.unexplained_features[feature_name] += 1
+                gap_score += 0.1  # Each unexplained feature adds to gap
+        
+        # Normalize gap score
+        gap_score = min(1.0, gap_score)
+        
+        # Check for gap
+        gap_detected = gap_score > self.gap_threshold
+        
+        if gap_detected:
+            self.gap_detections += 1
+            
+            # Trigger exploration mode
+            if not self.exploration_mode_active:
+                self._enter_exploration_mode()
+            
+            # Record event
+            event = OntologyGapEvent(
+                timestamp=datetime.utcnow(),
+                gap_score=gap_score,
+                unexplained_dimensions=unexplained,
+                market_snapshot=market_features,
+                triggered_exploration=True
+            )
+            self.gap_events.append(event)
+            self.gap_history.append(gap_score)
+            
+            logger.warning(
+                f"Ontology gap detected: score={gap_score:.2f}, "
+                f"unexplained={unexplained}. Entering exploration mode."
+            )
+        else:
+            # Check if we should exit exploration mode
+            if self.exploration_mode_active:
+                self._check_exit_exploration()
+            
+            self.gap_history.append(gap_score)
+        
+        return gap_detected, gap_score, unexplained
+    
+    def _is_feature_explained(
+        self,
+        feature_name: str,
+        feature_value: Any,
+        regime: MarketRegime
+    ) -> bool:
+        """Check if a market feature is explained by the current regime"""
+        # Map feature to regime dimension
+        dimension_mapping = {
+            'vix': 'volatility_state',
+            'realized_vol': 'volatility_state',
+            'bid_ask_spread': 'spread_impact',
+            'order_book_depth': 'liquidity_state',
+            'volume_concentration': 'volume_profile',
+            'correlation_breakdown': 'correlation_clustering',
+            'vpin': 'order_flow_toxicity',
+            'macro_event_risk': 'macro_event_density',
+            'trend_strength': 'trend_persistence'
+        }
+        
+        dimension = dimension_mapping.get(feature_name)
+        if not dimension:
+            # Unknown feature - not explained
+            return False
+        
+        # Check if regime has this dimension
+        regime_dict = regime.__dict__ if hasattr(regime, '__dict__') else {}
+        
+        if dimension not in regime_dict:
+            return False
+        
+        # Check if the regime value reasonably explains the feature
+        # This is a simplified check - real implementation would be more sophisticated
+        regime_value = regime_dict.get(dimension)
+        
+        # For volatility-related features
+        if dimension == 'volatility_state':
+            if isinstance(feature_value, (int, float)):
+                # High VIX should map to high/extreme volatility regime
+                if feature_value > 30 and regime_value in ['low', 'normal']:
+                    return False
+                if feature_value < 15 and regime_value in ['high', 'extreme']:
+                    return False
+        
+        # For liquidity-related features
+        if dimension == 'liquidity_state':
+            if isinstance(feature_value, (int, float)):
+                # Low depth should map to constrained/scarce liquidity
+                if feature_value < 0.3 and regime_value in ['abundant', 'normal']:
+                    return False
+        
+        return True
+    
+    def _enter_exploration_mode(self):
+        """Enter exploration mode due to ontology gap"""
+        self.exploration_mode_active = True
+        self.exploration_start_time = datetime.utcnow()
+        
+        logger.warning(
+            f"DGS ENTERING EXPLORATION MODE. "
+            f"Duration: {self.exploration_duration_minutes} minutes. "
+            f"Gates loosened, position sizes reduced, post-hoc analysis mandatory."
+        )
+    
+    def _check_exit_exploration(self):
+        """Check if we should exit exploration mode"""
+        if not self.exploration_start_time:
+            return
+        
+        elapsed = datetime.utcnow() - self.exploration_start_time
+        if elapsed > timedelta(minutes=self.exploration_duration_minutes):
+            # Also check if gap has been consistently low
+            if len(self.gap_history) >= 10:
+                recent_gaps = list(self.gap_history)[-10:]
+                avg_gap = np.mean(recent_gaps)
+                
+                if avg_gap < self.gap_threshold * 0.7:
+                    self._exit_exploration_mode()
+    
+    def _exit_exploration_mode(self):
+        """Exit exploration mode"""
+        duration = datetime.utcnow() - self.exploration_start_time if self.exploration_start_time else timedelta(0)
+        
+        self.exploration_mode_active = False
+        self.exploration_start_time = None
+        
+        logger.info(
+            f"DGS EXITING EXPLORATION MODE. "
+            f"Duration: {duration.total_seconds()/60:.1f} minutes. "
+            f"Returning to normal governance."
+        )
+    
+    def get_exploration_adjustments(self) -> Dict[str, Any]:
+        """
+        Get governance adjustments for exploration mode.
+        
+        Returns adjustments to:
+        - Loosened gates (lower thresholds)
+        - Reduced position sizes (risk management)
+        - Mandatory post-hoc analysis
+        - Expanded data collection
+        """
+        if not self.exploration_mode_active:
+            return {
+                'active': False,
+                'gate_threshold_multiplier': 1.0,
+                'position_size_multiplier': 1.0,
+                'post_hoc_required': False
+            }
+        
+        return {
+            'active': True,
+            'gate_threshold_multiplier': 0.8,  # Lower thresholds (looser gates)
+            'position_size_multiplier': 0.5,   # Reduce position sizes
+            'post_hoc_required': True,         # Mandatory post-hoc
+            'data_collection_expanded': True,  # Collect more features
+            'unexplained_features': list(self.unexplained_features.keys())
+        }
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get detector statistics"""
+        gap_rate = self.gap_detections / max(1, self.total_checks)
+        
+        exploration_duration = 0
+        if self.exploration_mode_active and self.exploration_start_time:
+            exploration_duration = (datetime.utcnow() - self.exploration_start_time).total_seconds() / 60
+        
+        return {
+            'total_checks': self.total_checks,
+            'gap_detections': self.gap_detections,
+            'gap_rate': gap_rate,
+            'exploration_mode_active': self.exploration_mode_active,
+            'exploration_mode_duration_hours': exploration_duration / 60,
+            'recent_avg_gap': np.mean(list(self.gap_history)[-10:]) if self.gap_history else 0,
+            'top_unexplained_features': sorted(
+                self.unexplained_features.items(),
+                key=lambda x: x[1],
+                reverse=True
+            )[:5]
+        }
+    
+    def get_new_dimension_candidates(self) -> List[Dict[str, Any]]:
+        """
+        Get candidate new regime dimensions based on unexplained features.
+        
+        Returns features that have been frequently unexplained,
+        suggesting they should become new regime dimensions.
+        """
+        candidates = []
+        
+        for feature, count in self.unexplained_features.items():
+            if count > 5:  # Threshold for consideration
+                candidates.append({
+                    'feature_name': feature,
+                    'unexplained_count': count,
+                    'suggested_dimension_name': f'{feature}_state',
+                    'suggestion': f'Add {feature} as new regime dimension'
+                })
+        
+        return sorted(candidates, key=lambda x: x['unexplained_count'], reverse=True)
+
+    # ── Attack 4: Synthetic Regime Shift Benchmarking ─────────────────────
+
+    def load_synthetic_benchmarks(self, benchmarks: List[Dict[str, Any]]):
+        """
+        Attack 4: Load known regime shifts with ground truth.
+        Each benchmark: {shift_id, name, features_before, features_after,
+                         expected_gap_detected, expected_gap_score_range}
+        """
+        self.synthetic_benchmarks = benchmarks
+
+    def run_synthetic_benchmark(self, regime: MarketRegime) -> Dict[str, Any]:
+        """
+        Attack 4: Run the gap detector against synthetic regime shifts
+        where ground truth is known. Measure precision/recall.
+        Auto-tune threshold if enabled.
+        """
+        if not self.synthetic_benchmarks:
+            return {"status": "no_benchmarks",
+                    "recommendation": "Load historical regime shifts (2008 GFC, 2020 COVID, etc.)"}
+
+        tp, fp, fn, tn = 0, 0, 0, 0
+        for bm in self.synthetic_benchmarks:
+            # Run detector on the AFTER state (the shifted regime)
+            _, gap_score, _ = self.check_ontology_coverage(regime, bm["features_after"])
+            detected = gap_score > self.gap_threshold
+            should_detect = bm["expected_gap_detected"]
+
+            if detected and should_detect:
+                tp += 1
+            elif detected and not should_detect:
+                fp += 1
+            elif not detected and should_detect:
+                fn += 1
+            else:
+                tn += 1
+
+        precision = tp / max(1, tp + fp)
+        recall = tp / max(1, tp + fn)
+
+        self.benchmark_precision_recall["precision"].append(precision)
+        self.benchmark_precision_recall["recall"].append(recall)
+
+        # Attack 4: Auto-tune threshold based on benchmark results
+        if self._auto_tune_enabled and (fp > fn * 2):
+            # Too many false alarms — raise threshold
+            self.gap_threshold = min(0.9, self.gap_threshold + 0.05)
+            logger.info(f"Attack 4: Auto-tuned gap threshold UP to {self.gap_threshold:.2f}")
+        elif self._auto_tune_enabled and (fn > fp * 2):
+            # Too many missed gaps — lower threshold
+            self.gap_threshold = max(0.2, self.gap_threshold - 0.05)
+            logger.info(f"Attack 4: Auto-tuned gap threshold DOWN to {self.gap_threshold:.2f}")
+
+        return {
+            "precision": precision,
+            "recall": recall,
+            "tp": tp, "fp": fp, "fn": fn, "tn": tn,
+            "current_threshold": self.gap_threshold,
+            "auto_tuned": self._auto_tune_enabled,
+        }
 
 
 @dataclass
@@ -441,7 +793,8 @@ class RegimeApplicabilityEngine:
         self,
         similarity_threshold: float = 0.7,
         min_historical_trades: int = 10,
-        underrepresentation_threshold: float = 0.1
+        underrepresentation_threshold: float = 0.1,
+        enable_ontology_gap_detection: bool = True
     ):
         self.similarity_threshold = similarity_threshold
         self.min_historical_trades = min_historical_trades
@@ -452,6 +805,11 @@ class RegimeApplicabilityEngine:
         
         # Known regime clusters (for similarity matching)
         self.known_regimes: Dict[str, MarketRegime] = {}
+        
+        # Ontology gap detector (Fix #3)
+        self.ontology_gap_detector: Optional[OntologyGapDetector] = None
+        if enable_ontology_gap_detection:
+            self.ontology_gap_detector = OntologyGapDetector()
         
     def evaluate_regime_fit(
         self,
