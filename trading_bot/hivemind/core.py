@@ -181,6 +181,7 @@ class CollectiveDecision:
     timestamp: datetime = field(default_factory=datetime.utcnow)
     processing_time_ms: float = 0.0
     consensus_method: ConsensusMethod = ConsensusMethod.WEIGHTED_VOTE
+    governance_report: Dict[str, Any] = field(default_factory=dict)
     
     def get_summary(self) -> str:
         """Get human-readable summary"""
@@ -238,6 +239,7 @@ class CollectiveDecision:
             'position_size': self.position_size,
             'timestamp': self.timestamp.isoformat(),
             'processing_time_ms': self.processing_time_ms,
+            'governance_report': self.governance_report,
         }
 
 

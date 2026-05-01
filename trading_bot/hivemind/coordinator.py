@@ -28,6 +28,7 @@ from .core import (
 from .swarm import Swarm, SwarmType, SwarmConfig, SwarmManager
 from .consensus import ConsensusEngine
 from .collective_memory import CollectiveMemory, SharedKnowledge, EmergentPattern
+from .governed_hivemind import HivemindGovernanceConfig, create_governed_hivemind
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,11 @@ class HiveMindConfig:
     # Risk settings
     require_risk_approval: bool = True
     max_position_without_consensus: float = 0.0
+
+    # Governance settings
+    enable_hivemind_governance: bool = True
+    strict_signal_diversity: bool = False
+    require_hivemind_proof_trace: bool = True
 
 
 class TradingHiveMind:
@@ -96,6 +102,11 @@ class TradingHiveMind:
         self.swarm_manager = SwarmManager(filtered_config)
         self.consensus_engine = ConsensusEngine(filtered_config)
         self.collective_memory = CollectiveMemory(self.config.memory_db_path, filtered_config)
+        self.hivemind_governance = raw_config.get("hivemind_governance_engine") or create_governed_hivemind(
+            HivemindGovernanceConfig(
+                strict_missing_measurements=self.config.strict_signal_diversity,
+            )
+        )
         
         # State
         self.initialized = False
@@ -226,6 +237,10 @@ class TradingHiveMind:
             # Step 8: Apply risk checks
             if self.config.require_risk_approval:
                 decision = self._apply_risk_checks(decision, market_data)
+
+            # Step 8b: Apply anti-groupthink/proof governance
+            if self.config.enable_hivemind_governance:
+                decision = self._apply_hivemind_governance(decision, all_votes, market_data)
             
             # Step 9: Record in collective memory
             if self.config.enable_learning:
@@ -466,6 +481,43 @@ class TradingHiveMind:
                 decision.action = "HOLD"
                 decision.direction = SignalDirection.NEUTRAL
         
+        return decision
+
+    def _apply_hivemind_governance(
+        self,
+        decision: CollectiveDecision,
+        votes: List[NodeVote],
+        market_data: Dict[str, Any],
+    ) -> CollectiveDecision:
+        """Apply anti-groupthink checks and proof-trace requirements."""
+        governance_context = market_data.get("governance", {}) or {}
+        proof_trace_id = (
+            market_data.get("proof_trace_id")
+            or governance_context.get("proof_trace_id")
+            or decision.governance_report.get("proof_trace_id")
+        )
+        if not self.config.require_hivemind_proof_trace:
+            proof_trace_id = proof_trace_id or "proof_trace_not_required_by_config"
+
+        profiles = self.hivemind_governance.profiles_from_votes(votes)
+        guard = self.hivemind_governance.guard_collective_vote(
+            profiles,
+            proposed_action=decision.action,
+            proof_trace_id=proof_trace_id,
+        )
+        decision.governance_report = guard.to_dict()
+
+        if guard.final_action != decision.action:
+            logger.warning(
+                "Hivemind governance downgraded %s to %s: %s",
+                decision.action,
+                guard.final_action,
+                "; ".join(guard.reasons),
+            )
+            decision.action = guard.final_action
+            decision.direction = SignalDirection.NEUTRAL
+            decision.position_size = 0.0
+
         return decision
     
     def record_outcome(self, was_correct: bool, profit: float) -> None:

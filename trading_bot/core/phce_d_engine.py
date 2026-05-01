@@ -261,6 +261,7 @@ class PHCEDDecisionRecord:
     credal_probabilities: Optional[CredalProbabilityReport]
     gateway_result: Optional[GatewayResult]
     paper_trade_intent: Optional[PaperTradeIntent]
+    proof_trace: Dict[str, Any]
     reason_codes: List[str]
     rationale: str
     required_next_step: str
@@ -948,6 +949,23 @@ class ParallelHypothesisCorrectionEngine:
             credal_probabilities=credal_probabilities,
             gateway_result=gateway_result,
             paper_trade_intent=paper_trade_intent,
+            proof_trace=self._build_proof_trace(
+                decision_id=decision_id,
+                packet=packet,
+                policy_output=policy_output,
+                final_output=final_output,
+                evidence_report=evidence_report,
+                hypothesis=hypothesis,
+                verification=verification,
+                scenarios=scenarios,
+                contradiction=contradiction,
+                credal_probabilities=credal_probabilities,
+                gateway_result=gateway_result,
+                paper_trade_intent=paper_trade_intent,
+                reason_codes=reason_codes,
+                rationale=rationale,
+                created_at=created_at,
+            ),
             reason_codes=reason_codes,
             rationale=rationale,
             required_next_step=required_next_step,
@@ -957,6 +975,141 @@ class ParallelHypothesisCorrectionEngine:
     def _remember(self, record: PHCEDDecisionRecord) -> PHCEDDecisionRecord:
         self.decisions.append(record)
         return record
+
+    def _build_proof_trace(
+        self,
+        decision_id: str,
+        packet: EvidencePacket,
+        policy_output: PHCEDOutput,
+        final_output: PHCEDOutput,
+        evidence_report: EvidenceReport,
+        hypothesis: Optional[Hypothesis],
+        verification: Optional[VerificationReport],
+        scenarios: List[ScenarioCondition],
+        contradiction: ContradictionReport,
+        credal_probabilities: Optional[CredalProbabilityReport],
+        gateway_result: Optional[GatewayResult],
+        paper_trade_intent: Optional[PaperTradeIntent],
+        reason_codes: List[str],
+        rationale: str,
+        created_at: float,
+    ) -> Dict[str, Any]:
+        """Build the claim -> evidence -> proof -> action trace for PHCE-D."""
+
+        trace_id = f"proof-{decision_id}"
+        action_candidate = {
+            "decision_id": decision_id,
+            "symbol": packet.symbol.upper(),
+            "policy_output": policy_output.value,
+            "final_output": final_output.value,
+            "capital_allowed": False,
+        }
+
+        evidence_id = evidence_report.lineage_hash or self._make_id("phced-evidence", packet, created_at)
+        claims: List[Dict[str, Any]] = []
+        assumptions: List[Dict[str, Any]] = []
+
+        if hypothesis is not None:
+            thesis = {
+                "claim_id": f"{decision_id}:thesis",
+                "kind": "thesis",
+                "statement": (
+                    f"{hypothesis.direction.value} hypothesis for {hypothesis.symbol} over "
+                    f"{hypothesis.horizon_seconds}s expects {hypothesis.expected_edge_bps:.4f} bps gross edge"
+                ),
+                "confidence": verification.confidence if verification else 0.0,
+                "critical": True,
+                "evidence_refs": [evidence_id],
+                "invalidation_conditions": list(hypothesis.invalidation_conditions),
+            }
+            claims.append(thesis)
+            assumption = {
+                "claim_id": f"{decision_id}:cost-assumption",
+                "kind": "assumption",
+                "statement": "cost, slippage, spread, and market impact estimates are representative for paper-only evaluation",
+                "confidence": 0.5,
+                "critical": True,
+                "evidence_refs": [evidence_id],
+            }
+            assumptions.append(assumption)
+            claims.append(assumption)
+
+        verifier_results: List[Dict[str, Any]] = []
+        if verification is not None:
+            verifier_results.append(
+                {
+                    "check_id": f"{decision_id}:deterministic-verifier",
+                    "check_type": "deterministic_statistical_verifier",
+                    "passed": verification.status == VerificationStatus.PASSED,
+                    "severity": 0.0 if verification.status == VerificationStatus.PASSED else 0.8,
+                    "passed_checks": list(verification.passed_checks),
+                    "failed_checks": list(verification.failed_checks),
+                    "unknown_checks": list(verification.unknown_checks),
+                    "cost_adjusted_edge_bps": verification.cost_adjusted_edge_bps,
+                    "cost_stress": _to_jsonable(verification.cost_report),
+                }
+            )
+
+        if gateway_result is not None:
+            verifier_results.append(
+                {
+                    "check_id": f"{decision_id}:validation-gateway",
+                    "check_type": "validation_gateway",
+                    "passed": gateway_result.approved,
+                    "severity": gateway_result.residual_risk_score / 100.0,
+                    "reasons": list(gateway_result.reasons),
+                    "warnings": list(gateway_result.warnings),
+                }
+            )
+
+        adversarial_challenges = []
+        if contradiction.contradiction_type != ContradictionType.NONE:
+            adversarial_challenges.append(
+                {
+                    "check_id": f"{decision_id}:contradiction",
+                    "check_type": contradiction.contradiction_type.value,
+                    "passed": contradiction.severity < 0.70,
+                    "severity": contradiction.severity,
+                    "details": list(contradiction.reasons),
+                }
+            )
+
+        missing_evidence = list(evidence_report.missing_fields)
+        missing_evidence.extend(evidence_report.kill_reasons)
+        contradictions = [] if contradiction.contradiction_type == ContradictionType.NONE else list(contradiction.reasons)
+
+        proof_status = "sufficient"
+        if final_output in {PHCEDOutput.REJECTED, PHCEDOutput.NO_TRADE, PHCEDOutput.NEEDS_MORE_EVIDENCE, PHCEDOutput.RESEARCH_ONLY}:
+            proof_status = "insufficient"
+        if contradictions and contradiction.severity >= 0.70:
+            proof_status = "contradicted"
+        if verification is None:
+            proof_status = "unverified"
+
+        graph_sufficient = final_output == PHCEDOutput.PAPER_TRADE_CANDIDATE and proof_status == "sufficient"
+        trace = {
+            "trace_id": trace_id,
+            "action_candidate": action_candidate,
+            "claims": claims,
+            "assumptions": assumptions,
+            "evidence_refs": [evidence_id],
+            "missing_evidence": missing_evidence,
+            "contradictions": contradictions,
+            "adversarial_challenges": adversarial_challenges,
+            "verifier_results": verifier_results,
+            "uncertainty_profile": _to_jsonable(credal_probabilities) if credal_probabilities else {},
+            "refusal_or_approval_reason": rationale,
+            "final_decision": final_output.value,
+            "downstream_action": "paper_trade_log" if paper_trade_intent else "refuse_or_observe",
+            "outcome_ref": paper_trade_intent.intent_id if paper_trade_intent else None,
+            "proof_status": proof_status,
+            "graph_sufficient": graph_sufficient,
+            "reason_codes": list(reason_codes),
+            "scenario_conditions": [_to_jsonable(scenario) for scenario in scenarios],
+            "created_at": created_at,
+        }
+        trace["trace_hash"] = _stable_hash(trace)
+        return trace
 
     def _make_id(self, prefix: str, packet: EvidencePacket, timestamp: float) -> str:
         digest = _stable_hash(

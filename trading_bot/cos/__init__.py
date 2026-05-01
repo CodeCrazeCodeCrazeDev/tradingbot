@@ -62,6 +62,25 @@ from .simulation_engine import CalibratedSimulationEngine
 from .decision_support import DecisionSupportSystem
 from .feedback_loop import RealityCalibrationLoop
 from .cos_core import CognitiveOperatingSystem
+from .system_cognitive_os import (
+    COSEdgeType,
+    COSNodeType,
+    COSActionMode,
+    COSOutcomeStatus,
+    DecisionMemory,
+    DecisionRecord,
+    EvolutionLayer,
+    FailureMemory,
+    FailureRecord,
+    IntegrationLayer,
+    PropertyKnowledgeGraph,
+    RetrievalBundle,
+    RetrievalEngine,
+    Strategy,
+    StrategyLibrary,
+    SystemCognitiveOperatingSystem,
+    create_system_cos,
+)
 
 __all__ = [
     "CognitiveOperatingSystem",
@@ -81,4 +100,21 @@ __all__ = [
     "IdeaStatus",
     "DecisionConfidence",
     "SimulationFidelity",
+    "COSEdgeType",
+    "COSNodeType",
+    "COSActionMode",
+    "COSOutcomeStatus",
+    "DecisionMemory",
+    "DecisionRecord",
+    "EvolutionLayer",
+    "FailureMemory",
+    "FailureRecord",
+    "IntegrationLayer",
+    "PropertyKnowledgeGraph",
+    "RetrievalBundle",
+    "RetrievalEngine",
+    "Strategy",
+    "StrategyLibrary",
+    "SystemCognitiveOperatingSystem",
+    "create_system_cos",
 ]

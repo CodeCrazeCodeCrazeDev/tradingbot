@@ -1253,11 +1253,18 @@ Hard placement rule:
 
 PHCE-D should reuse the existing substrate instead of inventing parallel infrastructure.
 
+For the broader claim -> evidence -> proof -> action governance map, see
+`docs/architecture/EPISTEMIC_GOVERNANCE_PLACEMENT_MAP.md`.
+
 Recommended anchors:
 
 - PHCE-D MVP AI:
   - `trading_bot/core/phce_d_engine.py`
-  - implements the conservative one-hypothesis engine, deterministic verifier, cost stress ladder, gateway validation, and paper-only promotion path
+  - implements the conservative one-hypothesis engine, deterministic verifier, cost stress ladder, gateway validation, paper-only promotion path, and per-decision proof traces
+
+- Epistemic proof trace governance:
+  - `trading_bot/decision_governance/epistemic_governance.py`
+  - standardizes claim -> evidence -> proof -> action traces and refuses insufficient reasoning graphs
 
 - Evidence Intake:
   - `trading_bot/core/research_mvp_pipeline.py`

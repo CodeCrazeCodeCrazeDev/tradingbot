@@ -223,6 +223,25 @@ try:
         InputValidator,
         ThreadSafeState,
         create_safety_orchestrator,
+)
+except ImportError:
+    pass
+
+# Governed advanced hivemind patterns
+try:
+    from .governed_hivemind import (
+        AgentEvolutionGateReport,
+        AgentSignalProfile,
+        GovernedHivemindEngine,
+        HivemindCapabilityFamily,
+        HivemindCapabilitySpec,
+        HivemindCapabilityStatus,
+        HivemindGateDecision,
+        HivemindGovernanceConfig,
+        HivemindValidationReport,
+        HivemindVoteGuardReport,
+        SignalDiversityAudit,
+        create_governed_hivemind,
     )
 except ImportError:
     pass
@@ -332,6 +351,20 @@ __all__ = [
     'InputValidator',
     'ThreadSafeState',
     'create_safety_orchestrator',
+
+    # Governed advanced hivemind patterns
+    'AgentEvolutionGateReport',
+    'AgentSignalProfile',
+    'GovernedHivemindEngine',
+    'HivemindCapabilityFamily',
+    'HivemindCapabilitySpec',
+    'HivemindCapabilityStatus',
+    'HivemindGateDecision',
+    'HivemindGovernanceConfig',
+    'HivemindValidationReport',
+    'HivemindVoteGuardReport',
+    'SignalDiversityAudit',
+    'create_governed_hivemind',
 ]
 
 __version__ = '2.0.0'

@@ -4,6 +4,16 @@
 
 The **Hivemind** is a swarm intelligence system where multiple specialized AI nodes work together to make trading decisions through consensus. Inspired by biological swarm behavior, the system exhibits emergent intelligence that exceeds any individual node's capabilities.
 
+Important correction:
+
+Many bots voting is not enough. A hundred weak, correlated agents are still one weak signal repeated a hundred times. The governed hivemind layer treats swarm output as decision evidence only after it passes anti-groupthink, validation, proof-trace, cost, risk, and paper-trade controls.
+
+Implementation anchor:
+
+- `trading_bot/hivemind/governed_hivemind.py`
+
+The coordinator now attaches a governance report to each collective decision and downgrades trade-like outputs to `HOLD` when proof/diversity requirements are insufficient.
+
 ## Architecture Diagram
 
 ```
@@ -72,6 +82,63 @@ Shared knowledge base across all nodes:
 - Historical performance
 - Market regimes
 - Successful strategies
+
+### 6. Governed Advanced Hivemind
+
+Advanced hivemind ideas are tracked as governed capabilities, not marketing claims. Each capability has:
+
+- status: `production_guarded`, `shadow_only`, `research_only`, `external_input_only`, `rejected`, or `prohibited`
+- allowed lane
+- inputs and outputs
+- validation requirements
+- kill criteria
+- anti-patterns
+- capital eligibility flag
+
+The default registry includes:
+
+- Federated Learning Hivemind
+- Evolutionary Ecosystem with Niches
+- Ant Colony Optimization for Trade Execution
+- Artificial Immune System Risk Manager
+- Internal Prediction Market
+- Swarm Reinforcement Learning
+- Simulated Market Microstructure Mimicry
+- Mycelial Network Intelligence
+- Fractal Timeframe Consensus
+- Historical-Hivemind via Massive Nearest-Neighbors
+- Anomaly-Focused Hivemind for Manipulation Detection
+- Cross-Asset Sentient Network
+- Quantum-Inspired Superposition
+- Oracle Hivemind
+- Zero-Knowledge Proof Strategy Blending
+- Neural Embedding Alignment Hivemind
+- Self-Replicating Autopoietic Bot
+- Adversarial Hivemind for Regime Detection
+- Crowd-Sourced Genetic Programming Hivemind
+- Whisper Network P2P Gossip Protocol
+
+Brutal rules:
+
+- `Self-Replicating Autopoietic Bot` is prohibited outside sandboxed governance research.
+- Social sentiment is an input, not a trading brain.
+- DAO-style trade voting is rejected for live trade control.
+- Manipulation detection can avoid, hedge, reduce, or no-trade; it must not become manipulation participation.
+- Quantum-inspired language is only a metaphor for calibrated probability aggregation.
+- Oracle and whisper networks are evidence inputs, not execution authority.
+- Evolutionary agents are quarantined or degraded through formal gates, not casually culled after recent underperformance.
+
+Anti-groupthink measurements required before trusting a hive vote:
+
+- signal correlation matrix
+- feature overlap score
+- regime-specific performance
+- drawdown co-movement
+- failure clustering
+- exposure overlap
+- causal independence score
+
+If these are missing, the governance report records warnings. In strict mode, missing measurements block trade-like outputs.
 
 ## Components
 

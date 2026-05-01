@@ -53,6 +53,9 @@ def test_positive_signal_becomes_paper_trade_candidate_only():
     assert decision.capital_allowed is False
     assert decision.gateway_result.approved is True
     assert decision.paper_trade_intent is not None
+    assert decision.proof_trace["graph_sufficient"] is True
+    assert decision.proof_trace["final_decision"] == "PAPER_TRADE_CANDIDATE"
+    assert decision.proof_trace["downstream_action"] == "paper_trade_log"
     assert len(engine.paper_logger.intents) == 1
 
 
@@ -64,6 +67,8 @@ def test_cost_stress_failure_abstains_without_paper_log():
     assert decision.final_output == phce_d.PHCEDOutput.NO_TRADE
     assert "COST_STRESS_FAILED" in decision.reason_codes or "VERIFIER_FAILED" in decision.reason_codes
     assert decision.paper_trade_intent is None
+    assert decision.proof_trace["graph_sufficient"] is False
+    assert decision.proof_trace["downstream_action"] == "refuse_or_observe"
     assert engine.paper_logger.intents == []
 
 
@@ -75,6 +80,7 @@ def test_temporal_leakage_rejects_evidence():
     assert decision.final_output == phce_d.PHCEDOutput.REJECTED
     assert "EVIDENCE_REJECTED" in decision.reason_codes
     assert "lookahead" in decision.rationale
+    assert decision.proof_trace["proof_status"] == "unverified"
 
 
 def test_vendor_disagreement_routes_to_no_trade():
@@ -85,6 +91,7 @@ def test_vendor_disagreement_routes_to_no_trade():
     assert decision.final_output == phce_d.PHCEDOutput.NO_TRADE
     assert decision.contradiction.contradiction_type == phce_d.ContradictionType.MEASUREMENT_CONFLICT
     assert "CONTRADICTION_TOO_SEVERE" in decision.reason_codes
+    assert decision.proof_trace["proof_status"] == "contradicted"
 
 
 def test_validation_gateway_blocks_market_hostility():
@@ -96,4 +103,6 @@ def test_validation_gateway_blocks_market_hostility():
     assert decision.final_output == phce_d.PHCEDOutput.REJECTED
     assert decision.gateway_result.approved is False
     assert "VALIDATION_GATEWAY_REJECTED" in decision.reason_codes
+    assert decision.proof_trace["graph_sufficient"] is False
+    assert any(result["check_type"] == "validation_gateway" for result in decision.proof_trace["verifier_results"])
     assert engine.paper_logger.intents == []

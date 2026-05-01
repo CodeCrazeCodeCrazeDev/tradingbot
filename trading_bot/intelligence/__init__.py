@@ -32,10 +32,66 @@ except ImportError as e:
     # self_learning_engine not available
     pass
 
+# reverse_engineering_engine
+try:
+    from .reverse_engineering_engine import (
+        AISystemReverseEngineeringEngine,
+        CapabilityClass,
+        CapabilityGraph,
+        CapabilityGraphEdge,
+        CapabilityGraphNode,
+        CreatorIntelligenceEngine,
+        CreatorScanReport,
+        DecomposedSystem,
+        ExtractedPattern,
+        HypeDetectionReport,
+        ProfitabilityTestResult,
+        ProfitabilityVerdict,
+        PromotionDecisionRecord,
+        ResearchMemoryRecord,
+        ReusableComponent,
+        ReverseEngineeringReport,
+        ReverseEngineeringDecision,
+        SandboxExperiment,
+        ScalingCliff,
+        SourceArtifact,
+        SourceType,
+        StructuredClaim,
+        create_creator_intelligence_engine,
+        create_reverse_engineering_engine,
+    )
+except ImportError as e:
+    # reverse_engineering_engine not available
+    pass
+
 __all__ = [
     'DisciplineEngine',
     'ProfitabilityEngine',
     'SelfLearningEngine',
+    'AISystemReverseEngineeringEngine',
+    'CapabilityClass',
+    'CapabilityGraph',
+    'CapabilityGraphEdge',
+    'CapabilityGraphNode',
+    'CreatorIntelligenceEngine',
+    'CreatorScanReport',
+    'DecomposedSystem',
+    'ExtractedPattern',
+    'HypeDetectionReport',
+    'ProfitabilityTestResult',
+    'ProfitabilityVerdict',
+    'PromotionDecisionRecord',
+    'ResearchMemoryRecord',
+    'ReusableComponent',
+    'ReverseEngineeringReport',
+    'ReverseEngineeringDecision',
+    'SandboxExperiment',
+    'ScalingCliff',
+    'SourceArtifact',
+    'SourceType',
+    'StructuredClaim',
+    'create_creator_intelligence_engine',
+    'create_reverse_engineering_engine',
 ]
 
 

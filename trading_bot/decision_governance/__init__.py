@@ -74,6 +74,21 @@ from .core_types import (
     GovernanceRejection
 )
 
+# Epistemic proof-trace governance
+from .epistemic_governance import (
+    ClaimKind,
+    EpistemicGovernanceConfig,
+    EpistemicGovernanceEngine,
+    EvidenceState,
+    GovernanceClaim,
+    GovernanceEvidence,
+    ProofCheck,
+    ProofDecision,
+    ProofStatus,
+    ProofTrace,
+    create_epistemic_governance_engine,
+)
+
 # Layer 1: Claim Graph Constructor
 from .layer1_claim_graph import ClaimGraphConstructor
 
