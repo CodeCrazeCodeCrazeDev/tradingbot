@@ -95,12 +95,12 @@ class PolicyNetwork:
         ]
         
         # Learning parameters
-        self.learning_rate = config.get('learning_rate', 0.001)
-        self.temperature = config.get('temperature', 1.0)  # For softmax
+        self.learning_rate = self.config.get('learning_rate', 0.001)
+        self.temperature = self.config.get('temperature', 1.0)  # For softmax
         
         # Experience replay
         self.experience_buffer: List[Dict] = []
-        self.max_buffer_size = config.get('max_buffer_size', 10000)
+        self.max_buffer_size = self.config.get('max_buffer_size', 10000)
         
         # Policy weights (simplified - would be neural network weights)
         self.action_weights: Dict[str, float] = {
@@ -519,7 +519,7 @@ class ValueNetwork:
         self.config = config or {}
         
         # Learning parameters
-        self.learning_rate = config.get('learning_rate', 0.001)
+        self.learning_rate = self.config.get('learning_rate', 0.001)
         
         # Value estimation weights (simplified)
         self.feature_weights: Dict[str, float] = {
@@ -533,7 +533,7 @@ class ValueNetwork:
         
         # Experience for learning
         self.value_history: List[Dict] = []
-        self.max_history = config.get('max_history', 10000)
+        self.max_history = self.config.get('max_history', 10000)
         
         # Running statistics for normalization
         self.value_mean = 0.0
@@ -788,7 +788,7 @@ class DualNetwork:
     
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
-        
+        self.config = config or {}
         self.policy_network = PolicyNetwork(config)
         self.value_network = ValueNetwork(config)
         

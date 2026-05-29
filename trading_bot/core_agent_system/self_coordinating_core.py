@@ -162,7 +162,7 @@ class SelfCoordinatingCore:
         # Initialize coordination components
         self.task_decomposer = TaskDecomposer()
         self.agent_negotiator = AgentNegotiator()
-        self.resource_allocator = ResourceAllocator(config.get('resources', {}))
+        self.resource_allocator = ResourceAllocator(self.config.get('resources', {}))
         self.failure_recovery = FailureRecoverySystem()
         self.coordination_layer = CoordinationLayer()
         self.shared_memory = SharedMemory()

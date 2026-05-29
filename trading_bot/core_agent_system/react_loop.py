@@ -393,26 +393,31 @@ class ReActLoop:
         return f"Task '{task}' has been completed. Final result: {result}"
     
     def _is_task_complete(self, task: str, context: Dict[str, Any]) -> bool:
-        """Check if task is complete based on context"""
         # Check for explicit completion flag
-        if context.get('task_complete', False):
+        if context.get("task_complete", False):
             return True
         
-        # Check for successful result
-        if context.get('last_result') and context.get('goal_achieved', False):
-            return True
+        # Check for successful result or recommendation obtained
+        last_result = context.get("last_result")
+        if last_result:
+            if context.get("goal_achieved", False):
+                return True
+
+            # If we have a signal or recommendation from analysis, consider it done
+            if isinstance(last_result, dict):
+                if last_result.get("signal") or last_result.get("recommendation"):
+                    return True
         
         return False
-    
+
     def _calculate_thought_confidence(
         self,
         reasoning_type: str,
         context: Dict[str, Any],
-        last_observation: Optional[Observation]
+        last_observation: Optional[Observation] ,
     ) -> float:
         """Calculate confidence in the thought"""
         base_confidence = 0.7
-        
         # Reduce confidence after errors
         if last_observation and not last_observation.success:
             base_confidence -= 0.2
@@ -473,8 +478,8 @@ class ReActLoop:
             # Initial assessment -> gather more information
             return {
                 'type': 'information_gathering',
-                'tool': 'market_analyzer',
-                'parameters': {'depth': 'full', 'include_sentiment': True},
+                'tool': 'market_data',
+                'parameters': {'symbol': 'EURUSD', 'data_type': 'state'},
                 'expected_outcome': 'Comprehensive market analysis'
             }
         
@@ -491,7 +496,7 @@ class ReActLoop:
                 return {
                     'type': 'analysis',
                     'tool': 'strategy_analyzer',
-                    'parameters': {'context': context},
+                    'parameters': {'analysis_type': 'signal', 'context': context},
                     'expected_outcome': 'Strategy analysis complete'
                 }
         
