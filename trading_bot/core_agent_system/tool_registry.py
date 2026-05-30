@@ -71,7 +71,7 @@ class ToolSchema:
             }
         }
     
-    def validate(self, params: Dict[str, Any]) -> Tuple[bool, List[str]]:
+    def validate(self, params: Dict[str, Any]) -> "Tuple[bool, List[str]]":
         """Validate parameters against schema"""
         errors = []
         

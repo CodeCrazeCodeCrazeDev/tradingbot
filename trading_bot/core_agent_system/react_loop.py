@@ -402,6 +402,10 @@ class ReActLoop:
         if context.get('last_result') and context.get('goal_achieved', False):
             return True
         
+        # Research Lab Grade: Check for signals or recommendations
+        if 'signal' in context or 'recommendation' in context:
+            return True
+
         return False
     
     def _calculate_thought_confidence(
@@ -491,7 +495,10 @@ class ReActLoop:
                 return {
                     'type': 'analysis',
                     'tool': 'strategy_analyzer',
-                    'parameters': {'context': context},
+                    'parameters': {
+                        'context': context,
+                        'analysis_type': 'signal'
+                    },
                     'expected_outcome': 'Strategy analysis complete'
                 }
         
