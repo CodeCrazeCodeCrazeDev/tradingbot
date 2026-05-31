@@ -17,7 +17,7 @@ Key Features:
 import asyncio
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Callable, Type
+from typing import Any, Dict, List, Optional, Callable, Type, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC, abstractmethod
@@ -125,9 +125,6 @@ class ToolMetrics:
         self.total_execution_time += execution_time
         self.average_execution_time = self.total_execution_time / self.total_calls
         self.last_used = datetime.now()
-
-
-from typing import Tuple
 
 
 class BaseTool(ABC):

@@ -20,7 +20,9 @@ Patterns:
 import asyncio
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set, Callable
+from typing import Any, Dict, List, Optional, Set, Callable, TYPE_CHECKING
+if TYPE_CHECKING:
+    from .agent_registry import AgentRole, AgentMetrics, AgentStatus
 from dataclasses import dataclass, field
 from enum import Enum
 import uuid
@@ -75,6 +77,7 @@ class SubAgent:
     agent_id: str
     name: str
     archetype: AgentArchetype
+    role: "AgentRole"
     parent_agent_id: Optional[str]
     
     # Capabilities
@@ -102,8 +105,27 @@ class SubAgent:
     # Metadata
     created_at: datetime = field(default_factory=datetime.now)
     last_active: datetime = field(default_factory=datetime.now)
+    metrics: "AgentMetrics" = field(default_factory=lambda: None)  # Will be initialized in factory
+    status: "AgentStatus" = "ready"
     metadata: Dict[str, Any] = field(default_factory=dict)
     
+    async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute an action (compatibility with BaseAgent)"""
+        operation = action.get('operation', 'propose')
+        if operation == 'propose':
+            # Create a mock task for execute_task
+            from .coordination_core import Task, TaskType, TaskPriority
+            task = Task(
+                task_id=str(uuid.uuid4()),
+                name="proposal_task",
+                task_type=TaskType.ANALYSIS,
+                priority=TaskPriority.MEDIUM,
+                description="Generate action proposal",
+                metadata=action.get('context', {})
+            )
+            return await self.execute_task(task)
+        return {'success': False, 'error': f'Unknown operation: {operation}'}
+
     async def execute_task(self, task: Any) -> Dict[str, Any]:
         """
         Execute a task using this agent's capabilities.
@@ -112,12 +134,23 @@ class SubAgent:
         """
         self.last_active = datetime.now()
         
+        # Extract context if task is from MasterOrchestrator proposal
+        context = task.metadata
+        if hasattr(context, 'market_state'):
+            # Convert SystemContext to dict
+            context = {
+                'market_state': context.market_state,
+                'portfolio_state': context.portfolio_state,
+                'agent_states': context.agent_states,
+                'risk_metrics': context.risk_metrics
+            }
+
         try:
             # Add to current tasks
             self.current_tasks.append(task.task_id)
             
-            # Execute based on archetype
-            if self.archetype == AgentArchetype.REACT_REASONER and self.react_loop:
+            # Execute based on archetype/capabilities
+            if self.react_loop and (self.archetype == AgentArchetype.REACT_REASONER or self.archetype == AgentArchetype.ANALYST or self.archetype == AgentArchetype.RESEARCHER or self.archetype == AgentArchetype.COORDINATOR):
                 # Use ReAct loop (OpenAI pattern)
                 result = await self._execute_with_react(task)
             
@@ -155,9 +188,20 @@ class SubAgent:
         if not self.react_loop:
             return {'success': False, 'error': 'ReAct loop not available'}
         
+        # Extract context if task is from MasterOrchestrator proposal
+        context = task.metadata
+        if hasattr(context, 'market_state'):
+            # Convert SystemContext to dict
+            context = {
+                'market_state': context.market_state,
+                'portfolio_state': context.portfolio_state,
+                'agent_states': context.agent_states,
+                'risk_metrics': context.risk_metrics
+            }
+
         trace = await self.react_loop.run(
             task=task.description,
-            context={'task_id': task.task_id, 'metadata': task.metadata},
+            context={'task_id': task.task_id, 'metadata': context},
             available_tools=self.tools
         )
         
@@ -203,16 +247,17 @@ class SubAgent:
         # Critique
         critique = await self.constitutional_layer.critique(action)
         
-        if not critique.is_safe:
+        if not critique.can_proceed:
             # Revise
-            revision = await self.constitutional_layer.revise(action, critique)
-            return {
-                'success': True,
-                'safe': False,
-                'violations': [v.principle for v in critique.violations],
-                'revised_action': revision.revised_action,
-                'changes': revision.changes_made
-            }
+            revision = await self.constitutional_layer.revise(action, [str(v) for v in critique.violations])
+            if revision:
+                return {
+                    'success': True,
+                    'safe': False,
+                    'violations': [str(v) for v in critique.violations],
+                    'revised_action': revision,
+                    'changes': revision.get('revision_notes', [])
+                }
         
         return {
             'success': True,
@@ -228,8 +273,12 @@ class SubAgent:
             for tool_name in self.tools:
                 tool = await self.tool_registry.get_tool(tool_name)
                 if tool:
-                    result = await tool.execute(task.metadata.get('params', {}))
-                    if result.get('success'):
+                    params = {}
+                    if isinstance(task.metadata, dict):
+                        params = task.metadata.get('params', {})
+
+                    result = await tool.execute(params)
+                    if result and result.get('success'):
                         return result
         
         return {
@@ -246,9 +295,9 @@ class SubAgent:
         
         # Check capabilities
         required_capabilities = set(task.required_capabilities)
-        agent_capabilities = set(self.capabilities)
+        agent_capability_names = set(c.name for c in self.capabilities)
         
-        return required_capabilities.issubset(agent_capabilities)
+        return required_capabilities.issubset(agent_capability_names)
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
@@ -256,13 +305,23 @@ class SubAgent:
             'agent_id': self.agent_id,
             'name': self.name,
             'archetype': self.archetype.value,
-            'capabilities': self.capabilities,
-            'status': self.status,
+            'role': self.role.value if hasattr(self.role, 'value') else str(self.role),
+            'capabilities': [c.name for c in self.capabilities],
+            'status': self.status.value if hasattr(self.status, 'value') else str(self.status),
             'current_tasks': len(self.current_tasks),
             'tasks_completed': self.tasks_completed,
             'success_rate': self.success_rate,
             'created_at': self.created_at.isoformat()
         }
+
+    async def initialize(self):
+        pass
+
+    async def shutdown(self):
+        self.status = "terminated"
+
+    def get_status(self) -> Dict[str, Any]:
+        return self.to_dict()
 
 
 class DynamicAgentFactory:
@@ -336,6 +395,7 @@ class DynamicAgentFactory:
         logger.info("Dynamic Agent Factory initialized")
     
     def _initialize_templates(self):
+        from .agent_registry import AgentRole
         """Initialize agent templates"""
         
         # AlphaGo Player (DeepMind pattern)
@@ -348,6 +408,7 @@ class DynamicAgentFactory:
             has_policy_network=True,
             has_value_network=True,
             has_react_loop=False,
+            config_template={'role': AgentRole.PLANNER},
             description='Agent using policy and value networks for decision making'
         )
         
@@ -361,6 +422,7 @@ class DynamicAgentFactory:
             has_policy_network=False,
             has_value_network=False,
             has_react_loop=True,
+            config_template={'role': AgentRole.PLANNER},
             description='Agent using thought-action-observation reasoning loop'
         )
         
@@ -374,6 +436,7 @@ class DynamicAgentFactory:
             has_policy_network=False,
             has_value_network=False,
             has_react_loop=False,
+            config_template={'role': AgentRole.SAFETY},
             description='Agent ensuring safety and constitutional compliance'
         )
         
@@ -385,6 +448,7 @@ class DynamicAgentFactory:
             base_capabilities=['research', 'experimentation', 'analysis'],
             required_tools=['backtester', 'strategy_analyzer', 'market_data'],
             has_react_loop=True,
+            config_template={'role': AgentRole.RESEARCHER},
             description='Agent conducting research and experiments'
         )
         
@@ -397,6 +461,7 @@ class DynamicAgentFactory:
             required_tools=['backtester', 'strategy_analyzer'],
             has_policy_network=True,
             has_value_network=True,
+            config_template={'role': AgentRole.OPTIMIZER},
             description='Agent optimizing strategies and parameters'
         )
         
@@ -408,6 +473,7 @@ class DynamicAgentFactory:
             base_capabilities=['analysis', 'data_processing', 'reporting'],
             required_tools=['market_data', 'strategy_analyzer'],
             has_react_loop=True,
+            config_template={'role': AgentRole.PLANNER},
             description='Agent analyzing data and generating insights'
         )
         
@@ -419,6 +485,7 @@ class DynamicAgentFactory:
             base_capabilities=['execution', 'validation', 'verification'],
             required_tools=['trade_executor', 'portfolio'],
             has_constitutional_check=True,
+            config_template={'role': AgentRole.EXECUTOR},
             description='Agent executing actions with safety checks'
         )
         
@@ -429,6 +496,7 @@ class DynamicAgentFactory:
             archetype=AgentArchetype.MONITOR,
             base_capabilities=['monitoring', 'alerting', 'tracking'],
             required_tools=['status_checker', 'portfolio', 'risk_calculator'],
+            config_template={'role': AgentRole.MONITOR},
             description='Agent monitoring system and market conditions'
         )
         
@@ -440,6 +508,7 @@ class DynamicAgentFactory:
             base_capabilities=['coordination', 'task_management', 'resource_allocation'],
             required_tools=['status_checker'],
             has_react_loop=True,
+            config_template={'role': AgentRole.COORDINATOR},
             description='Agent coordinating multiple sub-agents'
         )
     
@@ -475,13 +544,25 @@ class DynamicAgentFactory:
             capabilities.extend(additional_capabilities)
         
         # Create agent
+        from .agent_registry import AgentRole, AgentMetrics, AgentStatus, AgentCapability
+        role = template.config_template.get('role', AgentRole.EXECUTOR)
+
+        # Convert string capabilities to AgentCapability objects
+        agent_capabilities = [
+            AgentCapability(name=cap, description=f"Capability: {cap}", input_schema={}, output_schema={})
+            for cap in capabilities
+        ]
+
         agent = SubAgent(
             agent_id=agent_id,
             name=agent_name,
             archetype=archetype,
+            role=role,
             parent_agent_id=parent_agent_id,
-            capabilities=capabilities,
-            tools=template.required_tools.copy()
+            capabilities=agent_capabilities,
+            tools=template.required_tools.copy(),
+            metrics=AgentMetrics(),
+            status=AgentStatus.READY
         )
         
         # Inject components based on template
@@ -545,7 +626,7 @@ class DynamicAgentFactory:
         # Critique with Constitutional AI
         critique = await self.constitutional_layer.critique(action)
         
-        return critique.is_safe
+        return critique.can_proceed
     
     async def create_agent_for_task(
         self,
@@ -625,7 +706,7 @@ class DynamicAgentFactory:
         """Get agents with specific capability"""
         return [
             agent for agent in self.agents.values()
-            if capability in agent.capabilities and agent.status == "active"
+            if any(c.name == capability for c in agent.capabilities) and agent.status == "active"
         ]
     
     def get_best_agent_for_task(self, task: Any) -> Optional[SubAgent]:
@@ -633,7 +714,7 @@ class DynamicAgentFactory:
         # Find agents that can handle the task
         capable_agents = [
             agent for agent in self.agents.values()
-            if agent.can_handle_task(task) and agent.status == "active"
+            if agent.can_handle_task(task) and (agent.status == "active" or agent.status == "ready" or (hasattr(agent.status, 'value') and agent.status.value in ["active", "ready"]))
         ]
         
         if not capable_agents:
