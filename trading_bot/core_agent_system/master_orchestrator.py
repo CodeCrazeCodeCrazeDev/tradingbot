@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC, abstractmethod
 import uuid
+import torch
 
 logger = logging.getLogger(__name__)
 
@@ -98,21 +99,26 @@ class SystemContext:
         features = []
         # Market features
         features.extend([
-            self.market_state.get('price', 0),
-            self.market_state.get('volatility', 0),
-            self.market_state.get('trend', 0),
+            self.market_state.get('price', 1.0),
+            self.market_state.get('volatility', 0.01),
+            self.market_state.get('momentum', 0.0),
         ])
         # Portfolio features
         features.extend([
-            self.portfolio_state.get('equity', 0),
-            self.portfolio_state.get('exposure', 0),
-            self.portfolio_state.get('pnl', 0),
+            self.portfolio_state.get('equity', 10000.0) / 10000.0,
+            self.portfolio_state.get('exposure', 0.0),
+            self.portfolio_state.get('pnl', 0.0) / 1000.0,
         ])
         # Risk features
         features.extend([
-            self.risk_metrics.get('var', 0),
-            self.risk_metrics.get('sharpe', 0),
+            self.risk_metrics.get('var', 0.02),
+            self.risk_metrics.get('sharpe', 0.0),
         ])
+
+        # Pad to 20 dimensions if needed (default WorldModel input_dim)
+        while len(features) < 20:
+            features.append(0.0)
+
         return features
 
 
@@ -159,6 +165,7 @@ class MasterOrchestrator:
         self.agent_registry = None      # All agents
         self.tool_registry = None       # All tools
         self.memory_system = None       # Unified memory
+        self.world_model = None         # Latent dynamics (B1 Ceiling-Pushed)
         
         # State management
         self.state = SystemState.INITIALIZING
@@ -192,7 +199,8 @@ class MasterOrchestrator:
         react_loop,
         agent_registry,
         tool_registry,
-        memory_system
+        memory_system,
+        world_model=None
     ):
         """Inject all dependencies - enables testing and modularity"""
         self.policy_network = policy_network
@@ -202,6 +210,7 @@ class MasterOrchestrator:
         self.agent_registry = agent_registry
         self.tool_registry = tool_registry
         self.memory_system = memory_system
+        self.world_model = world_model
         
         logger.info("Dependencies injected into Master Orchestrator")
     
@@ -274,7 +283,7 @@ class MasterOrchestrator:
         decision = Decision(
             decision_id=str(uuid.uuid4()),
             decision_type=verified_action['type'],
-            action=verified_action['action'],
+            action=verified_action.get('action', {'operation': 'hold'}),
             action_probabilities=verified_action.get('probabilities', {}),
             expected_value=verified_action['value'],
             confidence=verified_action['confidence'],
@@ -307,7 +316,7 @@ class MasterOrchestrator:
         # Get policy network suggestions
         if self.policy_network:
             policy_output = await self.policy_network.predict(context)
-            candidates.extend(policy_output['actions'])
+            candidates.extend(policy_output.actions)
         
         # Get suggestions from registered agents
         if self.agent_registry:
@@ -383,10 +392,60 @@ class MasterOrchestrator:
         """
         Simulate an action to predict next state.
         
-        Inspired by MuZero's learned dynamics model that predicts
-        the next state given current state and action.
+        Grounded in WorldModel's latent dynamics (DreamerV3/MuZero pattern).
         """
-        # Create a copy of context
+        if self.world_model:
+            try:
+                # Convert context to features and then to tensor
+                features = context.to_feature_vector()
+                state_tensor = torch.tensor([features], dtype=torch.float32)
+
+                # Encode state into latent
+                latent_mean, latent_logvar = self.world_model.encoder(state_tensor)
+                latent = self.world_model.encoder.sample(latent_mean, latent_logvar)
+
+                # Prepare action tensor (simplified mapping)
+                action_tensor = torch.zeros(1, 5) # Default 5-dim action space
+                action_type = action.get('type', 'hold')
+                if action_type == 'buy': action_tensor[0, 0] = 1.0
+                elif action_type == 'sell': action_tensor[0, 1] = 1.0
+
+                # Predict next latent state
+                # predict_next returns (next_state, reward, hidden, info)
+                next_latent, pred_reward, _, info = self.world_model.predict_next(
+                    latent, action_tensor
+                )
+
+                # Decode back to features
+                next_features = self.world_model.decoder(next_latent).detach().numpy()[0]
+
+                # Map features back to SystemContext
+                simulated = SystemContext(
+                    timestamp=datetime.now(),
+                    market_state={
+                        'price': float(next_features[0]),
+                        'volatility': float(next_features[1]),
+                        'momentum': float(next_features[2]),
+                        'trend': 'bullish' if next_features[0] > features[0] else 'bearish'
+                    },
+                    portfolio_state={
+                        'equity': float(next_features[3] * 10000.0),
+                        'exposure': float(next_features[4]),
+                        'pnl': float(next_features[5] * 1000.0)
+                    },
+                    agent_states=context.agent_states.copy(),
+                    pending_decisions=context.pending_decisions.copy(),
+                    recent_outcomes=context.recent_outcomes.copy(),
+                    risk_metrics={
+                        'var': float(next_features[6]),
+                        'sharpe': float(next_features[7])
+                    }
+                )
+                return simulated
+            except Exception as e:
+                logger.warning(f"WorldModel simulation failed, falling back to heuristic: {e}")
+
+        # Fallback to heuristic simulation (Legacy)
         simulated = SystemContext(
             timestamp=datetime.now(),
             market_state=context.market_state.copy(),
@@ -397,17 +456,12 @@ class MasterOrchestrator:
             risk_metrics=context.risk_metrics.copy()
         )
         
-        # Apply action effects (simplified simulation)
         action_type = action.get('type', 'unknown')
-        
-        if action_type == 'trade':
-            # Simulate trade impact
-            trade_size = action.get('action', {}).get('size', 0)
+        if action_type in ['buy', 'trade']:
+            trade_size = action.get('action', {}).get('size', 0.01)
             simulated.portfolio_state['exposure'] += trade_size
             simulated.risk_metrics['var'] *= (1 + abs(trade_size) * 0.1)
-            
         elif action_type == 'risk_adjustment':
-            # Simulate risk adjustment
             adjustment = action.get('action', {}).get('adjustment', 0)
             simulated.risk_metrics['var'] *= (1 - adjustment)
             

@@ -82,6 +82,7 @@ from trading_bot.agents2.specialized_agents import (
 from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
+from trading_bot.world_model.latent_dynamics import WorldModel
 
 logger = logging.getLogger(__name__)
 
@@ -148,6 +149,13 @@ class IntegratedAgentSystem:
             'learning_rate': self.config.get('value_lr', 0.001)
         })
         
+        # 5b. World Model (DreamerV3/JEPA - imagination)
+        self.world_model = WorldModel({
+            'input_dim': self.config.get('market_input_dim', 20),
+            'latent_dim': self.config.get('latent_dim', 64),
+            'hidden_dim': self.config.get('hidden_dim', 128)
+        })
+
         # 6. Constitutional Layer (Anthropic - safety)
         self.constitutional_layer = ConstitutionalAI({
             'safety_threshold': self.config.get('safety_threshold', 0.7),
@@ -214,6 +222,9 @@ class IntegratedAgentSystem:
         logger.info("7. Initializing ReAct Loop...")
         await self.react_loop.initialize()
         
+        logger.info("7b. Initializing World Model...")
+        # Note: WorldModel doesn't have an async initialize, but it's good practice
+
         logger.info("8. Initializing Master Orchestrator...")
         # Inject dependencies into orchestrator
         self.orchestrator.inject_dependencies(
@@ -223,7 +234,8 @@ class IntegratedAgentSystem:
             react_loop=self.react_loop,
             agent_registry=self.agent_registry,
             tool_registry=self.tool_registry,
-            memory_system=self.memory_system
+            memory_system=self.memory_system,
+            world_model=self.world_model
         )
         await self.orchestrator.initialize()
         
