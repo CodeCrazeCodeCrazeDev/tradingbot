@@ -477,28 +477,26 @@ class ReActLoop:
             # Initial assessment -> gather more information
             return {
                 'type': 'information_gathering',
-                'tool': 'market_analyzer',
-                'parameters': {'depth': 'full', 'include_sentiment': True},
+                'tool': 'market_data',
+                'parameters': {'symbol': context.get('symbol', 'EURUSD'), 'data_type': 'state'},
+                'parameters': {'symbol': context.get('market_state', {}).get('symbol', 'EURUSD')},
                 'expected_outcome': 'Comprehensive market analysis'
             }
         
         elif reasoning_type == 'planning':
             # Planning -> execute planned action
-            if 'trade' in thought.content.lower():
+            if 'trade' in thought.content.lower() and 'planned_trade' in context:
                 return {
                     'type': 'trade_execution',
                     'tool': 'trade_executor',
-                    'parameters': context.get('planned_trade', {}),
+                    'parameters': context.get('planned_trade', {'operation': 'buy', 'symbol': context.get('symbol', 'EURUSD')}),
                     'expected_outcome': 'Trade executed successfully'
                 }
             else:
                 return {
                     'type': 'analysis',
                     'tool': 'strategy_analyzer',
-                    'parameters': {
-                        'context': context,
-                        'analysis_type': 'signal'
-                    },
+                    'parameters': {'analysis_type': 'signal', 'market_data': context.get('market_state', {})},
                     'expected_outcome': 'Strategy analysis complete'
                 }
         
@@ -625,6 +623,10 @@ class ReActLoop:
                 if content.get('complete', False):
                     return True
                 if content.get('status') == 'completed':
+                    return True
+                if 'signal' in content or 'recommendation' in content or 'order_id' in content or 'status' in content:
+                # Heuristic for rule-based completion
+                if 'signal' in content or 'recommendation' in content or 'order_id' in content:
                     return True
         
         return False

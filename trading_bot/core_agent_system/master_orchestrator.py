@@ -264,6 +264,12 @@ class MasterOrchestrator:
         
         # Step 4: Constitutional AI verification
         # (Like Anthropic's multi-stage safety checks)
+        # Ensure best_action has required fields for verification
+        if 'type' not in best_action:
+            best_action['type'] = best_action.get('decision_type', 'unknown')
+        if 'action' not in best_action:
+            best_action['action'] = {}
+
         verified_action = await self._constitutional_verify(best_action)
         
         # Step 5: Generate reasoning trace (ReAct pattern)
@@ -273,12 +279,13 @@ class MasterOrchestrator:
         # Create final decision
         decision = Decision(
             decision_id=str(uuid.uuid4()),
-            decision_type=verified_action['type'],
-            action=verified_action['action'],
+            decision_type=verified_action.get('type', 'unknown'),
+            action=verified_action.get('action', {}),
             action_probabilities=verified_action.get('probabilities', {}),
-            expected_value=verified_action['value'],
-            confidence=verified_action['confidence'],
-            safety_score=verified_action['safety_score'],
+            expected_value=verified_action.get('value', 0.5),
+            confidence=verified_action.get('confidence', 0.5),
+            safety_score=verified_action.get('safety_score', 0.5),
+            safety_score=verified_action.get('safety_score', 0.8),
             constitutional_violations=verified_action.get('violations', []),
             reasoning_chain=reasoning_chain,
             source_agent=verified_action.get('source_agent'),
@@ -307,7 +314,11 @@ class MasterOrchestrator:
         # Get policy network suggestions
         if self.policy_network:
             policy_output = await self.policy_network.predict(context)
-            candidates.extend(policy_output['actions'])
+            # Handle both object (PolicyOutput) and dictionary formats
+            if hasattr(policy_output, 'actions'):
+                candidates.extend(policy_output.actions)
+            elif isinstance(policy_output, dict) and 'actions' in policy_output:
+                candidates.extend(policy_output['actions'])
         
         # Get suggestions from registered agents
         if self.agent_registry:
@@ -316,15 +327,21 @@ class MasterOrchestrator:
         
         # Retrieve relevant past actions from memory
         if self.memory_system:
-            similar_situations = await self.memory_system.retrieve_similar(context, k=5)
-            for situation in similar_situations:
-                if situation.get('outcome', {}).get('success', False):
-                    candidates.append({
-                        'type': 'memory_replay',
-                        'action': situation['action'],
-                        'source': 'episodic_memory',
-                        'historical_success': situation['outcome']['value']
-                    })
+            try:
+                similar_situations = await self.memory_system.retrieve_similar(context, k=5)
+                for situation in similar_situations:
+                    if not isinstance(situation, dict):
+                        continue
+                    outcome = situation.get('outcome')
+                    if outcome and outcome.get('success', False):
+                        candidates.append({
+                            'type': 'memory_replay',
+                            'action': situation.get('action', {}),
+                            'source': 'episodic_memory',
+                            'historical_success': outcome.get('value', 0.5)
+                        })
+            except Exception as e:
+                logger.error(f"Error retrieving similar situations: {e}")
         
         # Always include a "do nothing" option (important for safety)
         candidates.append({
@@ -351,6 +368,8 @@ class MasterOrchestrator:
         evaluated = []
         
         for candidate in candidates:
+            if candidate is None:
+                continue
             # Simulate the action to get next state
             simulated_state = await self._simulate_action(context, candidate)
             
@@ -756,6 +775,7 @@ class MasterOrchestrator:
                         await self.learn({
                             'decision': decision,
                             'result': result,
+                            'success': result.get('success', False),
                             'actual_value': result.get('value', decision.expected_value)
                         })
                 
@@ -783,7 +803,9 @@ class MasterOrchestrator:
         if self.tool_registry:
             market_tool = await self.tool_registry.get_tool('market_data')
             if market_tool:
-                return await market_tool.execute({'operation': 'get_state'})
+                # Use default symbol from config or fallback to EURUSD
+                symbol = self.config.get('default_symbol', 'EURUSD')
+                return await market_tool.execute({'symbol': symbol})
         return {'price': 0, 'volatility': 0, 'trend': 'unknown'}
     
     async def _get_portfolio_state(self) -> Dict[str, Any]:
