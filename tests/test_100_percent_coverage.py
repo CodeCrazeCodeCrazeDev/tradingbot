@@ -701,7 +701,6 @@ class TestWealthModules(unittest.TestCase):
         from trading_bot.wealth.free_wealth_manager import FreeWealthManager
 import numpy
 import pandas
-self.assertTrue(True)
 
 
 

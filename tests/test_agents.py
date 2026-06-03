@@ -5,14 +5,14 @@ Tests for Multi-Agent System (Phase 2)
 import unittest
 import torch
 import numpy as np
-from agents.base_agent import BaseAgent, AgentType, AgentProposal
-from agents.specialized_agents import (
+from trading_bot.agents2.base_agent import BaseAgent, AgentType, AgentProposal
+from trading_bot.agents2.specialized_agents import (
     TrendFollowingAgent,
     MeanReversionAgent,
     VolatilityAgent,
     RiskManagerAgent
 )
-from agents.coordinator import MultiAgentCoordinator
+from trading_bot.agents2.coordinator import MultiAgentCoordinator
 import numpy
 
 

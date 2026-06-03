@@ -69,7 +69,15 @@ from .agent_registry import (
     ExecutorAgent, 
     EvaluatorAgent,
     ResearchAgent,
-    SafetyAgent
+    SafetyAgent,
+    LegacyAgentWrapper
+)
+from trading_bot.agents2.specialized_agents import (
+    TrendFollowingAgent,
+    MeanReversionAgent,
+    VolatilityAgent,
+    RiskManagerAgent,
+    MarketMakerAgent
 )
 from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
@@ -231,7 +239,7 @@ class IntegratedAgentSystem:
         self._print_system_status()
     
     async def _register_default_agents(self):
-        """Register default agents"""
+        """Register default agents including legacy ones"""
         default_agents = [
             PlannerAgent({'name': 'MainPlanner'}),
             ExecutorAgent({'name': 'MainExecutor'}),
@@ -240,10 +248,23 @@ class IntegratedAgentSystem:
             SafetyAgent({'name': 'MainSafety'}),
         ]
         
+        # Register standard agents
         for agent in default_agents:
             await self.agent_registry.register_agent(agent)
+
+        # Register legacy specialized agents via wrapper
+        legacy_agents = [
+            LegacyAgentWrapper(TrendFollowingAgent()),
+            LegacyAgentWrapper(MeanReversionAgent()),
+            LegacyAgentWrapper(VolatilityAgent()),
+            LegacyAgentWrapper(RiskManagerAgent()),
+            LegacyAgentWrapper(MarketMakerAgent()),
+        ]
+
+        for agent in legacy_agents:
+            await self.agent_registry.register_agent(agent)
         
-        logger.info(f"Registered {len(default_agents)} default agents")
+        logger.info(f"Registered {len(default_agents)} standard and {len(legacy_agents)} legacy agents")
     
     async def start(self):
         """Start the integrated system"""

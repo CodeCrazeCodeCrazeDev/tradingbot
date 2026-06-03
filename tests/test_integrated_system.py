@@ -40,7 +40,7 @@ logging.basicConfig(
 logger = logging.getLogger("test_integrated_system")
 
 
-class TestIntegratedSystem(unittest.TestCase):
+class TestIntegratedSystem(unittest.IsolatedAsyncioTestCase):
     """Test case for the integrated trading system"""
     
     @classmethod
@@ -365,7 +365,6 @@ async def run_async_tests():
         logger.error(f"Test failed: {e}")
         raise
     finally:
-    pass
         # Clean up
         await test.async_tearDown()
 
