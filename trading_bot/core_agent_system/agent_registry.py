@@ -108,6 +108,7 @@ class BaseAgent(ABC):
         role: AgentRole = AgentRole.EXECUTOR,
         config: Optional[Dict] = None
     ):
+        self.config = config or {}
         self.agent_id = agent_id or str(uuid.uuid4())
         self.name = name
         self.role = role
@@ -228,7 +229,8 @@ class AgentRegistry:
     """
     
     def __init__(self, config: Optional[Dict] = None):
-        self.config = config or {}
+        config = config or {}
+        self.config = config
         
         # Agent storage
         self.agents: Dict[str, BaseAgent] = {}
@@ -379,7 +381,7 @@ class AgentRegistry:
         
         return None
     
-    def get_agents_by_role(self, role: Any) -> List[BaseAgent]:
+    def get_agents_by_role(self, role: AgentRole) -> List[BaseAgent]:
         """Get all agents with a specific role"""
         if isinstance(role, str):
             try:
@@ -413,19 +415,26 @@ class AgentRegistry:
         proposals = []
         
         for agent in self.get_agents_by_role(AgentRole.PLANNER):
-            if agent.status == AgentStatus.READY:
+            status = agent.status.value if hasattr(agent.status, 'value') else agent.status
+            if status in [AgentStatus.READY.value, "ready", "active"]:
                 try:
-                    agent.status = AgentStatus.BUSY
+                    if hasattr(agent, 'status'):
+                        agent.status = AgentStatus.BUSY
+
                     proposal = await agent.execute({
                         'operation': 'propose',
                         'context': context
                     })
                     if proposal:
-                        proposals.append({
-                            **proposal,
-                            'source_agent': agent.agent_id
-                        })
-                    agent.status = AgentStatus.READY
+                        # Ensure proposal is a dict and has required fields
+                        if isinstance(proposal, dict):
+                            proposals.append({
+                                **proposal,
+                                'source_agent': agent.agent_id
+                            })
+
+                    if hasattr(agent, 'status'):
+                        agent.status = AgentStatus.READY
                 except Exception as e:
                     logger.error(f"Error getting proposal from {agent.name}: {e}")
                     agent.status = AgentStatus.ERROR
@@ -526,6 +535,7 @@ class PlannerAgent(BaseAgent):
             role=AgentRole.PLANNER,
             config=config
         )
+        self.config = config or {}
     
     def _register_capabilities(self):
         self.add_capability(AgentCapability(
@@ -610,7 +620,7 @@ class ExecutorAgent(BaseAgent):
             role=AgentRole.EXECUTOR,
             config=config
         )
-        self.executor = TradeExecutor(config)
+        self.config = config or {}
     
     def _register_capabilities(self):
         self.add_capability(AgentCapability(
@@ -711,6 +721,7 @@ class EvaluatorAgent(BaseAgent):
             role=AgentRole.EVALUATOR,
             config=config
         )
+        self.config = config or {}
     
     def _register_capabilities(self):
         self.add_capability(AgentCapability(
@@ -779,6 +790,7 @@ class ResearchAgent(BaseAgent):
             role=AgentRole.RESEARCHER,
             config=config
         )
+        self.config = config or {}
     
     def _register_capabilities(self):
         self.add_capability(AgentCapability(
@@ -842,6 +854,7 @@ class SafetyAgent(BaseAgent):
             role=AgentRole.SAFETY,
             config=config
         )
+        self.config = config or {}
     
     def _register_capabilities(self):
         self.add_capability(AgentCapability(

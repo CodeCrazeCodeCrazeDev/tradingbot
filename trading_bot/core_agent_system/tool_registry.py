@@ -71,7 +71,7 @@ class ToolSchema:
             }
         }
     
-    def validate(self, params: Dict[str, Any]) -> Tuple[bool, List[str]]:
+    def validate(self, params: Dict[str, Any]) -> "Tuple[bool, List[str]]":
         """Validate parameters against schema"""
         errors = []
         
@@ -125,9 +125,6 @@ class ToolMetrics:
         self.total_execution_time += execution_time
         self.average_execution_time = self.total_execution_time / self.total_calls
         self.last_used = datetime.now()
-
-
-from typing import Tuple
 
 
 class BaseTool(ABC):
@@ -446,6 +443,7 @@ class MarketDataTool(BaseTool):
         data_type = params.get('data_type', 'state')
         
         # Simulated market data (would connect to real data source)
+        # Providing standard indicators for planners
         return {
             'success': True,
             'symbol': symbol,
@@ -457,6 +455,8 @@ class MarketDataTool(BaseTool):
             'momentum': 0.3,
             'rsi': 55,
             'macd': 0.0002,
+            'sma_20': 1.0820,
+            'sma_50': 1.0780,
             'timestamp': datetime.now().isoformat()
         }
 
@@ -581,11 +581,16 @@ class StrategyAnalyzerTool(BaseTool):
         analysis_type = params.get('analysis_type', 'signal')
         
         if analysis_type == 'signal':
+            # Use market_data if provided in params
+            market_data = params.get('market_data', {})
+            symbol = market_data.get('symbol', 'Unknown')
+
             return {
                 'success': True,
+                'symbol': symbol,
                 'signal': 'buy',
                 'confidence': 0.7,
-                'reasoning': 'Bullish trend with momentum confirmation'
+                'reasoning': f'Bullish trend with momentum confirmation for {symbol}'
             }
         elif analysis_type == 'performance':
             return {

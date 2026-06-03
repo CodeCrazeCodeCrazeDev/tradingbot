@@ -393,26 +393,35 @@ class ReActLoop:
         return f"Task '{task}' has been completed. Final result: {result}"
     
     def _is_task_complete(self, task: str, context: Dict[str, Any]) -> bool:
-        """Check if task is complete based on context"""
         # Check for explicit completion flag
-        if context.get('task_complete', False):
+        if context.get("task_complete", False):
             return True
         
-        # Check for successful result
-        if context.get('last_result') and context.get('goal_achieved', False):
-            return True
+        # Check for successful result or recommendation obtained
+        last_result = context.get("last_result")
+        if last_result:
+            if context.get("goal_achieved", False):
+                return True
+
+            # If we have a signal or recommendation from analysis, consider it done
+            if isinstance(last_result, dict):
+                if last_result.get("signal") or last_result.get("recommendation"):
+                    return True
         
+        # Research Lab Grade: Check for signals or recommendations
+        if 'signal' in context or 'recommendation' in context:
+            return True
+
         return False
-    
+
     def _calculate_thought_confidence(
         self,
         reasoning_type: str,
         context: Dict[str, Any],
-        last_observation: Optional[Observation]
+        last_observation: Optional[Observation] ,
     ) -> float:
         """Calculate confidence in the thought"""
         base_confidence = 0.7
-        
         # Reduce confidence after errors
         if last_observation and not last_observation.success:
             base_confidence -= 0.2
@@ -473,25 +482,26 @@ class ReActLoop:
             # Initial assessment -> gather more information
             return {
                 'type': 'information_gathering',
-                'tool': 'market_analyzer',
-                'parameters': {'depth': 'full', 'include_sentiment': True},
+                'tool': 'market_data',
+                'parameters': {'symbol': context.get('symbol', 'EURUSD'), 'data_type': 'state'},
+                'parameters': {'symbol': context.get('market_state', {}).get('symbol', 'EURUSD')},
                 'expected_outcome': 'Comprehensive market analysis'
             }
         
         elif reasoning_type == 'planning':
             # Planning -> execute planned action
-            if 'trade' in thought.content.lower():
+            if 'trade' in thought.content.lower() and 'planned_trade' in context:
                 return {
                     'type': 'trade_execution',
                     'tool': 'trade_executor',
-                    'parameters': context.get('planned_trade', {}),
+                    'parameters': context.get('planned_trade', {'operation': 'buy', 'symbol': context.get('symbol', 'EURUSD')}),
                     'expected_outcome': 'Trade executed successfully'
                 }
             else:
                 return {
                     'type': 'analysis',
                     'tool': 'strategy_analyzer',
-                    'parameters': {'context': context},
+                    'parameters': {'analysis_type': 'signal', 'market_data': context.get('market_state', {})},
                     'expected_outcome': 'Strategy analysis complete'
                 }
         
@@ -618,6 +628,10 @@ class ReActLoop:
                 if content.get('complete', False):
                     return True
                 if content.get('status') == 'completed':
+                    return True
+                if 'signal' in content or 'recommendation' in content or 'order_id' in content or 'status' in content:
+                # Heuristic for rule-based completion
+                if 'signal' in content or 'recommendation' in content or 'order_id' in content:
                     return True
         
         return False

@@ -79,10 +79,15 @@ from trading_bot.agents2.specialized_agents import (
     RiskManagerAgent,
     MarketMakerAgent
 )
+from .specialized_planners import (
+    TrendFollowingPlanner,
+    MeanReversionPlanner,
+    VolatilityPlanner
+)
 from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
-from trading_bot.world_model.latent_dynamics import WorldModel
+from .self_coordinating_core import SelfCoordinatingCore
 
 logger = logging.getLogger(__name__)
 
@@ -190,6 +195,18 @@ class IntegratedAgentSystem:
                 'improvement_threshold': 0.55
             }
         )
+
+        # 10. Self-Coordinating Core (Advanced Multi-Agent Coordination)
+        self.coordination_core = SelfCoordinatingCore(
+            policy_network=self.policy_network,
+            value_network=self.value_network,
+            react_loop=self.react_loop,
+            constitutional_layer=self.constitutional_layer,
+            memory_system=self.memory_system,
+            tool_registry=self.tool_registry,
+            agent_registry=self.agent_registry,
+            config=self.config
+        )
     
     async def initialize(self):
         """Initialize all components"""
@@ -242,6 +259,9 @@ class IntegratedAgentSystem:
         logger.info("9. Initializing Self-Play Loop...")
         await self.self_play_loop.initialize()
         
+        logger.info("10. Initializing Self-Coordinating Core...")
+        await self.coordination_core.initialize()
+
         self.initialized = True
         
         logger.info("=" * 60)
@@ -253,11 +273,14 @@ class IntegratedAgentSystem:
     async def _register_default_agents(self):
         """Register default agents including legacy ones"""
         default_agents = [
-            PlannerAgent({'name': 'MainPlanner'}),
-            ExecutorAgent({'name': 'MainExecutor'}),
-            EvaluatorAgent({'name': 'MainEvaluator'}),
-            ResearchAgent({'name': 'MainResearcher'}),
-            SafetyAgent({'name': 'MainSafety'}),
+            PlannerAgent(config={'name': 'MainPlanner'}),
+            TrendFollowingPlanner(config={'name': 'TrendPlanner'}),
+            MeanReversionPlanner(config={'name': 'MeanReversionPlanner'}),
+            VolatilityPlanner(config={'name': 'VolatilityPlanner'}),
+            ExecutorAgent(config={'name': 'MainExecutor'}),
+            EvaluatorAgent(config={'name': 'MainEvaluator'}),
+            ResearchAgent(config={'name': 'MainResearcher'}),
+            SafetyAgent(config={'name': 'MainSafety'}),
         ]
         
         # Register standard agents
@@ -332,7 +355,8 @@ class IntegratedAgentSystem:
                     await self.orchestrator.learn({
                         'decision': decision,
                         'trace': trace,
-                        'success': trace.success
+                        'success': trace.success,
+                        'actual_value': decision.expected_value if trace.success else 0.0
                     })
                 
                 await asyncio.sleep(1)
@@ -391,7 +415,7 @@ class IntegratedAgentSystem:
         market_tool = await self.tool_registry.get_tool('market_data')
         if market_tool:
             market_result = await market_tool.execute({'symbol': 'EURUSD'})
-            market_state = market_result if market_result.get('success') else {}
+            market_state = market_result if (market_result and market_result.get('success')) else {}
         else:
             market_state = {}
         
@@ -399,7 +423,7 @@ class IntegratedAgentSystem:
         portfolio_tool = await self.tool_registry.get_tool('portfolio')
         if portfolio_tool:
             portfolio_result = await portfolio_tool.execute({'operation': 'get_state'})
-            portfolio_state = portfolio_result if portfolio_result.get('success') else {}
+            portfolio_state = portfolio_result if (portfolio_result and portfolio_result.get('success')) else {}
         else:
             portfolio_state = {}
         
@@ -407,7 +431,7 @@ class IntegratedAgentSystem:
         risk_tool = await self.tool_registry.get_tool('risk_calculator')
         if risk_tool:
             risk_result = await risk_tool.execute({'operation': 'get_metrics'})
-            risk_metrics = risk_result if risk_result.get('success') else {}
+            risk_metrics = risk_result if (risk_result and risk_result.get('success')) else {}
         else:
             risk_metrics = {}
         
@@ -506,6 +530,9 @@ class IntegratedAgentSystem:
         self.running = False
         
         # Shutdown in reverse order
+        logger.info("Shutting down Self-Coordinating Core...")
+        await self.coordination_core.shutdown()
+
         logger.info("Shutting down Self-Play Loop...")
         await self.self_play_loop.shutdown()
         

@@ -307,8 +307,6 @@ class SemanticMemory:
         self.storage_path = storage_path
         self.knowledge: Dict[str, MemoryEntry] = {}
         self.concept_graph: Dict[str, List[str]] = {}  # Concept -> related concepts
-        
-        logger.info("Semantic Memory initialized")
     
     def store_knowledge(
         self,
@@ -423,7 +421,7 @@ class ProceduralMemory:
         self.execution_history: Dict[str, List[Dict]] = {}
         
         logger.info("Procedural Memory initialized")
-    
+
     def store_procedure(
         self,
         name: str,
@@ -431,7 +429,6 @@ class ProceduralMemory:
         conditions: Optional[Dict[str, Any]] = None,
         success_rate: float = 0.5
     ):
-        """Store a procedure"""
         self.procedures[name] = {
             'steps': steps,
             'conditions': conditions or {},
@@ -553,22 +550,22 @@ class MemorySystem:
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
         
-        storage_path = Path(config.get('storage_path', 'memory_data'))
+        storage_path = Path(self.config.get('storage_path', 'memory_data'))
         storage_path.mkdir(parents=True, exist_ok=True)
         self.storage_path = storage_path
         
         # Initialize memory components
         self.working = WorkingMemory(
-            capacity=config.get('working_memory_capacity', 10)
+            capacity=self.config.get('working_memory_capacity', 10)
         )
         self.episodic = EpisodicMemory(
-            max_episodes=config.get('max_episodes', 10000)
+            max_episodes=self.config.get('max_episodes', 10000)
         )
         self.semantic = SemanticMemory(storage_path=storage_path)
         self.procedural = ProceduralMemory()
         
         # Consolidation settings
-        self.consolidation_interval = config.get('consolidation_interval', 3600)
+        self.consolidation_interval = self.config.get('consolidation_interval', 3600)
         self.last_consolidation = datetime.now()
         
         self.running = False
