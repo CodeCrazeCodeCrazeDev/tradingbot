@@ -474,6 +474,7 @@ class ReActLoop:
             return {
                 'type': 'information_gathering',
                 'tool': 'market_data',
+                'parameters': {'symbol': context.get('symbol', 'EURUSD'), 'data_type': 'state'},
                 'parameters': {'symbol': context.get('market_state', {}).get('symbol', 'EURUSD')},
                 'expected_outcome': 'Comprehensive market analysis'
             }
@@ -484,7 +485,7 @@ class ReActLoop:
                 return {
                     'type': 'trade_execution',
                     'tool': 'trade_executor',
-                    'parameters': context.get('planned_trade', {}),
+                    'parameters': context.get('planned_trade', {'operation': 'buy', 'symbol': context.get('symbol', 'EURUSD')}),
                     'expected_outcome': 'Trade executed successfully'
                 }
             else:
@@ -619,6 +620,7 @@ class ReActLoop:
                     return True
                 if content.get('status') == 'completed':
                     return True
+                if 'signal' in content or 'recommendation' in content or 'order_id' in content or 'status' in content:
                 # Heuristic for rule-based completion
                 if 'signal' in content or 'recommendation' in content or 'order_id' in content:
                     return True

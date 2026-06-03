@@ -127,9 +127,6 @@ class ToolMetrics:
         self.last_used = datetime.now()
 
 
-from typing import Tuple
-
-
 class BaseTool(ABC):
     """
     Base class for all tools in the system.
