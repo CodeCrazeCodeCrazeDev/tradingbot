@@ -70,7 +70,15 @@ from .agent_registry import (
     ExecutorAgent, 
     EvaluatorAgent,
     ResearchAgent,
-    SafetyAgent
+    SafetyAgent,
+    LegacyAgentWrapper
+)
+from trading_bot.agents2.specialized_agents import (
+    TrendFollowingAgent,
+    MeanReversionAgent,
+    VolatilityAgent,
+    RiskManagerAgent,
+    MarketMakerAgent
 )
 from .specialized_planners import (
     TrendFollowingPlanner,
@@ -147,6 +155,13 @@ class IntegratedAgentSystem:
             'learning_rate': self.config.get('value_lr', 0.001)
         })
         
+        # 5b. World Model (DreamerV3/JEPA - imagination)
+        self.world_model = WorldModel({
+            'input_dim': self.config.get('market_input_dim', 20),
+            'latent_dim': self.config.get('latent_dim', 64),
+            'hidden_dim': self.config.get('hidden_dim', 128)
+        })
+
         # 6. Constitutional Layer (Anthropic - safety)
         self.constitutional_layer = ConstitutionalAI({
             'safety_threshold': self.config.get('safety_threshold', 0.7),
@@ -225,6 +240,9 @@ class IntegratedAgentSystem:
         logger.info("7. Initializing ReAct Loop...")
         await self.react_loop.initialize()
         
+        logger.info("7b. Initializing World Model...")
+        # Note: WorldModel doesn't have an async initialize, but it's good practice
+
         logger.info("8. Initializing Master Orchestrator...")
         # Inject dependencies into orchestrator
         self.orchestrator.inject_dependencies(
@@ -234,7 +252,8 @@ class IntegratedAgentSystem:
             react_loop=self.react_loop,
             agent_registry=self.agent_registry,
             tool_registry=self.tool_registry,
-            memory_system=self.memory_system
+            memory_system=self.memory_system,
+            world_model=self.world_model
         )
         await self.orchestrator.initialize()
         
@@ -256,8 +275,8 @@ class IntegratedAgentSystem:
         self._print_system_status()
     
     async def _register_default_agents(self):
-        """Register default agents"""
-        self.default_agents = [
+        """Register default agents including legacy ones"""
+        default_agents = [
             PlannerAgent(config={'name': 'MainPlanner'}),
             TrendFollowingPlanner(config={'name': 'TrendPlanner'}),
             MeanReversionPlanner(config={'name': 'MeanReversionPlanner'}),
@@ -268,29 +287,23 @@ class IntegratedAgentSystem:
             SafetyAgent(config={'name': 'MainSafety'}),
         ]
         
-        for agent in self.default_agents:
+        # Register standard agents
+        for agent in default_agents:
+            await self.agent_registry.register_agent(agent)
+
+        # Register legacy specialized agents via wrapper
+        legacy_agents = [
+            LegacyAgentWrapper(TrendFollowingAgent()),
+            LegacyAgentWrapper(MeanReversionAgent()),
+            LegacyAgentWrapper(VolatilityAgent()),
+            LegacyAgentWrapper(RiskManagerAgent()),
+            LegacyAgentWrapper(MarketMakerAgent()),
+        ]
+
+        for agent in legacy_agents:
             await self.agent_registry.register_agent(agent)
         
-        logger.info(f"Registered {len(self.default_agents)} default agents")
-
-    async def _assign_agents_to_teams(self):
-        """Assign registered agents to teams in coordination core"""
-        if not hasattr(self, 'default_agents'):
-            return
-
-        for agent in self.default_agents:
-            # Map role to team
-            team_name = None
-            if agent.role == AgentRole.PLANNER or agent.role == AgentRole.EXECUTOR:
-                team_name = 'trading_team'
-            elif agent.role == AgentRole.RESEARCHER or agent.role == AgentRole.EVALUATOR or agent.role == AgentRole.OPTIMIZER:
-                team_name = 'research_team'
-            elif agent.role == AgentRole.SAFETY or agent.role == AgentRole.MONITOR:
-                team_name = 'safety_team'
-
-            if team_name:
-                self.coordination_core.shared_memory.add_to_team(team_name, agent.agent_id)
-                logger.debug(f"Assigned {agent.name} to {team_name}")
+        logger.info(f"Registered {len(default_agents)} standard and {len(legacy_agents)} legacy agents")
     
     async def start(self):
         """Start the integrated system"""
