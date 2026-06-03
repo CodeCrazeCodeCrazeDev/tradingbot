@@ -264,6 +264,12 @@ class MasterOrchestrator:
         
         # Step 4: Constitutional AI verification
         # (Like Anthropic's multi-stage safety checks)
+        # Ensure best_action has required fields for verification
+        if 'type' not in best_action:
+            best_action['type'] = best_action.get('decision_type', 'unknown')
+        if 'action' not in best_action:
+            best_action['action'] = {}
+
         verified_action = await self._constitutional_verify(best_action)
         
         # Step 5: Generate reasoning trace (ReAct pattern)
@@ -278,6 +284,7 @@ class MasterOrchestrator:
             action_probabilities=verified_action.get('probabilities', {}),
             expected_value=verified_action.get('value', 0.5),
             confidence=verified_action.get('confidence', 0.5),
+            safety_score=verified_action.get('safety_score', 0.5),
             safety_score=verified_action.get('safety_score', 0.8),
             constitutional_violations=verified_action.get('violations', []),
             reasoning_chain=reasoning_chain,
@@ -320,15 +327,21 @@ class MasterOrchestrator:
         
         # Retrieve relevant past actions from memory
         if self.memory_system:
-            similar_situations = await self.memory_system.retrieve_similar(context, k=5)
-            for situation in similar_situations:
-                if situation.get('outcome', {}).get('success', False):
-                    candidates.append({
-                        'type': 'memory_replay',
-                        'action': situation['action'],
-                        'source': 'episodic_memory',
-                        'historical_success': situation['outcome']['value']
-                    })
+            try:
+                similar_situations = await self.memory_system.retrieve_similar(context, k=5)
+                for situation in similar_situations:
+                    if not isinstance(situation, dict):
+                        continue
+                    outcome = situation.get('outcome')
+                    if outcome and outcome.get('success', False):
+                        candidates.append({
+                            'type': 'memory_replay',
+                            'action': situation.get('action', {}),
+                            'source': 'episodic_memory',
+                            'historical_success': outcome.get('value', 0.5)
+                        })
+            except Exception as e:
+                logger.error(f"Error retrieving similar situations: {e}")
         
         # Always include a "do nothing" option (important for safety)
         candidates.append({
@@ -355,6 +368,8 @@ class MasterOrchestrator:
         evaluated = []
         
         for candidate in candidates:
+            if candidate is None:
+                continue
             # Simulate the action to get next state
             simulated_state = await self._simulate_action(context, candidate)
             
@@ -760,6 +775,7 @@ class MasterOrchestrator:
                         await self.learn({
                             'decision': decision,
                             'result': result,
+                            'success': result.get('success', False),
                             'actual_value': result.get('value', decision.expected_value)
                         })
                 

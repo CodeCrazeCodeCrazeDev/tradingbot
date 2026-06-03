@@ -71,7 +71,7 @@ class ToolSchema:
             }
         }
     
-    def validate(self, params: Dict[str, Any]) -> Tuple[bool, List[str]]:
+    def validate(self, params: Dict[str, Any]) -> "Tuple[bool, List[str]]":
         """Validate parameters against schema"""
         errors = []
         
@@ -125,9 +125,6 @@ class ToolMetrics:
         self.total_execution_time += execution_time
         self.average_execution_time = self.total_execution_time / self.total_calls
         self.last_used = datetime.now()
-
-
-from typing import Tuple
 
 
 class BaseTool(ABC):
