@@ -167,16 +167,16 @@ class MasterOrchestrator:
         # Decision tracking
         self.decision_queue: List[Decision] = []
         self.decision_history: List[Decision] = []
-        self.max_history = config.get('max_history', 10000)
+        self.max_history = self.config.get('max_history', 10000)
         
         # MCTS-style search parameters (AlphaGo pattern)
-        self.search_depth = config.get('search_depth', 5)
-        self.exploration_constant = config.get('exploration_constant', 1.41)  # sqrt(2)
-        self.num_simulations = config.get('num_simulations', 100)
+        self.search_depth = self.config.get('search_depth', 5)
+        self.exploration_constant = self.config.get('exploration_constant', 1.41)  # sqrt(2)
+        self.num_simulations = self.config.get('num_simulations', 100)
         
         # Safety thresholds (Constitutional AI pattern)
-        self.safety_threshold = config.get('safety_threshold', 0.7)
-        self.max_risk_per_decision = config.get('max_risk', 0.02)  # 2% max risk
+        self.safety_threshold = self.config.get('safety_threshold', 0.7)
+        self.max_risk_per_decision = self.config.get('max_risk', 0.02)  # 2% max risk
         
         # Async coordination
         self.running = False

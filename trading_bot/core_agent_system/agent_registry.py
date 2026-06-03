@@ -246,8 +246,8 @@ class AgentRegistry:
         self.agent_factories: Dict[str, Type[BaseAgent]] = {}
         
         # Health monitoring
-        self.health_check_interval = config.get('health_check_interval', 30)
-        self.auto_restart = config.get('auto_restart', True)
+        self.health_check_interval = self.config.get('health_check_interval', 30)
+        self.auto_restart = self.config.get('auto_restart', True)
         
         self.running = False
         

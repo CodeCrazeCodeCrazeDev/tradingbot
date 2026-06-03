@@ -153,14 +153,14 @@ class SelfPlayLoop:
         self.best_value_version = 0
         
         # Self-play parameters
-        self.games_per_iteration = config.get('games_per_iteration', 100)
-        self.training_batch_size = config.get('training_batch_size', 32)
-        self.evaluation_games = config.get('evaluation_games', 50)
-        self.improvement_threshold = config.get('improvement_threshold', 0.55)
+        self.games_per_iteration = self.config.get('games_per_iteration', 100)
+        self.training_batch_size = self.config.get('training_batch_size', 32)
+        self.evaluation_games = self.config.get('evaluation_games', 50)
+        self.improvement_threshold = self.config.get('improvement_threshold', 0.55)
         
         # Experience buffer
         self.experience_buffer: List[Dict] = []
-        self.max_buffer_size = config.get('max_buffer_size', 100000)
+        self.max_buffer_size = self.config.get('max_buffer_size', 100000)
         
         self.running = False
         self.iteration = 0

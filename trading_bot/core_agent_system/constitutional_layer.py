@@ -175,12 +175,12 @@ class ConstitutionalAI:
         self.violation_history: List[Violation] = []
         
         # Red team agents
-        self.red_team_enabled = config.get('red_team_enabled', True)
-        self.red_team_iterations = config.get('red_team_iterations', 3)
+        self.red_team_enabled = self.config.get('red_team_enabled', True)
+        self.red_team_iterations = self.config.get('red_team_iterations', 3)
         
         # Thresholds
-        self.safety_threshold = config.get('safety_threshold', 0.7)
-        self.critical_block = config.get('critical_block', True)
+        self.safety_threshold = self.config.get('safety_threshold', 0.7)
+        self.critical_block = self.config.get('critical_block', True)
         
         # Initialize default principles
         self._initialize_default_principles()
@@ -789,6 +789,7 @@ class RedTeamAgent:
     
     def __init__(self, constitutional_layer: ConstitutionalAI):
         self.constitutional_layer = constitutional_layer
+        self.config = config or {}
         self.attacks_attempted = 0
         self.vulnerabilities_found = 0
     
@@ -881,6 +882,7 @@ class BlueTeamAgent:
     
     def __init__(self, constitutional_layer: ConstitutionalAI):
         self.constitutional_layer = constitutional_layer
+        self.config = config or {}
         self.defenses_added = 0
     
     async def defend(self, vulnerability: Dict[str, Any]) -> bool:
