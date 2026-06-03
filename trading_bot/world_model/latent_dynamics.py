@@ -40,6 +40,8 @@ import numpy as np
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
+from .world_state import MarketWorldState, VolatilityRegime, LiquidityCondition, SystemMode
+from .ignorance_score import IgnoranceScoreEngine
 from collections import deque
 
 logger = logging.getLogger(__name__)
@@ -996,6 +998,9 @@ class WorldModel:
             hidden_dim=hidden_dim
         )
 
+        # Ignorance Score Engine for governance
+        self.ignorance_engine = IgnoranceScoreEngine()
+
         # Training mode
         self.training = True
 
@@ -1004,6 +1009,12 @@ class WorldModel:
         self._fast_hidden = None
         self._jump_active = False
         self._rollout_step = 0  # For uncertainty-horizon gating
+
+        # Governance mapping heads (Linear probes)
+        self.volatility_probe = nn.Linear(latent_dim, len(VolatilityRegime))
+        self.liquidity_probe = nn.Linear(latent_dim, len(LiquidityCondition))
+        self.stability_probe = nn.Linear(latent_dim, 1)
+        self.pressure_probe = nn.Linear(latent_dim, 1)
 
         logger.info("✅ Hierarchical World Model (L1+L3) initialized")
         logger.info(f"   Latent dim: {latent_dim}")
@@ -1032,6 +1043,55 @@ class WorldModel:
     def decode(self, latent_state: torch.Tensor) -> torch.Tensor:
         """Decode latent to market state."""
         return self.decoder(latent_state)
+
+    def get_world_state(self, latent_state: torch.Tensor, symbol: str = "EURUSD") -> MarketWorldState:
+        """
+        Bridge Latent Z-Space to Structured Reality.
+        Standardized mandatory output for governance.
+        """
+        with torch.no_grad():
+            # Get ensemble disagreement for Epistemic Uncertainty
+            # Using dummy action for static state probe
+            dummy_action = torch.zeros(latent_state.size(0), 5, device=latent_state.device)
+            _, ens_logvar, _, disagreement = self.ensemble(latent_state, dummy_action, self._ensemble_hiddens)
+
+            # Predict structured fields via probes
+            vol_logits = self.volatility_probe(latent_state)
+            liq_logits = self.liquidity_probe(latent_state)
+            stability = torch.sigmoid(self.stability_probe(latent_state))
+            pressure = torch.tanh(self.pressure_probe(latent_state))
+
+            # Classification
+            vol_idx = torch.argmax(vol_logits, dim=-1).item()
+            liq_idx = torch.argmax(liq_logits, dim=-1).item()
+
+            vol_regime = list(VolatilityRegime)[vol_idx]
+            liq_condition = list(LiquidityCondition)[liq_idx]
+
+            # Entropy of regime classification
+            regime_entropy = F.cross_entropy(vol_logits, torch.tensor([vol_idx], device=latent_state.device)).item()
+
+            # Epistemic vs Aleatoric
+            epistemic = disagreement.mean().item()
+            aleatoric = torch.exp(ens_logvar).mean().item()
+
+            # Overall confidence
+            confidence = 1.0 - min(1.0, epistemic * 0.5 + regime_entropy * 0.2)
+
+            state = MarketWorldState(
+                symbol=symbol,
+                volatility_regime=vol_regime,
+                liquidity_condition=liq_condition,
+                trend_stability=stability.mean().item(),
+                participation_pressure=pressure.mean().item(),
+                regime_entropy=regime_entropy,
+                epistemic_uncertainty=epistemic,
+                aleatoric_uncertainty=aleatoric,
+                state_confidence=confidence
+            )
+
+            # Enrich with ignorance score and recommended mode
+            return self.ignorance_engine.process_world_state(state)
 
     def predict_next(
         self,
