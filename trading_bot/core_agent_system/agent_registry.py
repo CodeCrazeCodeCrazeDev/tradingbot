@@ -228,7 +228,8 @@ class AgentRegistry:
     """
     
     def __init__(self, config: Optional[Dict] = None):
-        self.config = config or {}
+        config = config or {}
+        self.config = config
         
         # Agent storage
         self.agents: Dict[str, BaseAgent] = {}

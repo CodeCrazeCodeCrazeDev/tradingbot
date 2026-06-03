@@ -402,6 +402,10 @@ class ReActLoop:
         if context.get('last_result') and context.get('goal_achieved', False):
             return True
         
+        # Research Lab Grade: Check for signals or recommendations
+        if 'signal' in context or 'recommendation' in context:
+            return True
+
         return False
     
     def _calculate_thought_confidence(
