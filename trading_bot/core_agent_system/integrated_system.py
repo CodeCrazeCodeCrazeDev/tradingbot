@@ -65,11 +65,20 @@ from .constitutional_layer import ConstitutionalAI
 from .policy_value_network import PolicyNetwork, ValueNetwork, DualNetwork
 from .agent_registry import (
     AgentRegistry, 
+    AgentRole,
     PlannerAgent, 
     ExecutorAgent, 
     EvaluatorAgent,
     ResearchAgent,
-    SafetyAgent
+    SafetyAgent,
+    LegacyAgentWrapper
+)
+from trading_bot.agents2.specialized_agents import (
+    TrendFollowingAgent,
+    MeanReversionAgent,
+    VolatilityAgent,
+    RiskManagerAgent,
+    MarketMakerAgent
 )
 from .specialized_planners import (
     TrendFollowingPlanner,
@@ -146,6 +155,13 @@ class IntegratedAgentSystem:
             'learning_rate': self.config.get('value_lr', 0.001)
         })
         
+        # 5b. World Model (DreamerV3/JEPA - imagination)
+        self.world_model = WorldModel({
+            'input_dim': self.config.get('market_input_dim', 20),
+            'latent_dim': self.config.get('latent_dim', 64),
+            'hidden_dim': self.config.get('hidden_dim', 128)
+        })
+
         # 6. Constitutional Layer (Anthropic - safety)
         self.constitutional_layer = ConstitutionalAI({
             'safety_threshold': self.config.get('safety_threshold', 0.7),
@@ -224,6 +240,9 @@ class IntegratedAgentSystem:
         logger.info("7. Initializing ReAct Loop...")
         await self.react_loop.initialize()
         
+        logger.info("7b. Initializing World Model...")
+        # Note: WorldModel doesn't have an async initialize, but it's good practice
+
         logger.info("8. Initializing Master Orchestrator...")
         # Inject dependencies into orchestrator
         self.orchestrator.inject_dependencies(
@@ -233,7 +252,8 @@ class IntegratedAgentSystem:
             react_loop=self.react_loop,
             agent_registry=self.agent_registry,
             tool_registry=self.tool_registry,
-            memory_system=self.memory_system
+            memory_system=self.memory_system,
+            world_model=self.world_model
         )
         await self.orchestrator.initialize()
         
@@ -242,6 +262,9 @@ class IntegratedAgentSystem:
         
         logger.info("10. Initializing Self-Coordinating Core...")
         await self.coordination_core.initialize()
+
+        # 11. Assign default agents to teams for teamwork
+        await self._assign_agents_to_teams()
 
         self.initialized = True
         
@@ -252,7 +275,7 @@ class IntegratedAgentSystem:
         self._print_system_status()
     
     async def _register_default_agents(self):
-        """Register default agents"""
+        """Register default agents including legacy ones"""
         default_agents = [
             PlannerAgent(config={'name': 'MainPlanner'}),
             TrendFollowingPlanner(config={'name': 'TrendPlanner'}),
@@ -264,10 +287,23 @@ class IntegratedAgentSystem:
             SafetyAgent(config={'name': 'MainSafety'}),
         ]
         
+        # Register standard agents
         for agent in default_agents:
             await self.agent_registry.register_agent(agent)
+
+        # Register legacy specialized agents via wrapper
+        legacy_agents = [
+            LegacyAgentWrapper(TrendFollowingAgent()),
+            LegacyAgentWrapper(MeanReversionAgent()),
+            LegacyAgentWrapper(VolatilityAgent()),
+            LegacyAgentWrapper(RiskManagerAgent()),
+            LegacyAgentWrapper(MarketMakerAgent()),
+        ]
+
+        for agent in legacy_agents:
+            await self.agent_registry.register_agent(agent)
         
-        logger.info(f"Registered {len(default_agents)} default agents")
+        logger.info(f"Registered {len(default_agents)} standard and {len(legacy_agents)} legacy agents")
     
     async def start(self):
         """Start the integrated system"""
@@ -309,22 +345,23 @@ class IntegratedAgentSystem:
                 
                 # Execute if safe and valuable
                 if decision.is_safe() and decision.expected_value > 0.5:
-                    # Use ReAct loop for execution
-                    trace = await self.react_loop.run(
+                    # Use coordinated teamwork for execution
+                    result = await self.execute_task(
                         task=f"Execute {decision.decision_type}",
                         context={
                             'decision': decision,
                             'market_state': context.market_state,
-                            'portfolio_state': context.portfolio_state
+                            'portfolio_state': context.portfolio_state,
+                            'use_coordination': True
                         }
                     )
                     
                     # Learn from outcome
                     await self.orchestrator.learn({
                         'decision': decision,
-                        'trace': trace,
-                        'success': trace.success,
-                        'actual_value': decision.expected_value if trace.success else 0.0
+                        'result': result,
+                        'success': result.get('success', False),
+                        'actual_value': decision.expected_value if result.get('success') else 0.0
                     })
                 
                 await asyncio.sleep(1)
@@ -418,25 +455,63 @@ class IntegratedAgentSystem:
     
     async def execute_task(self, task: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         """
-        Execute a task using the full system.
+        Execute a task using the full system with multi-agent coordination.
         
         This is the main entry point for external requests.
+        It uses the Self-Coordinating Core to leverage teamwork.
         """
         context = context or {}
         
-        # Use ReAct loop for task execution
-        trace = await self.react_loop.run(
-            task=task,
-            context=context,
-            available_tools=list(self.tool_registry.tools.keys())
-        )
+        logger.info(f"Integrated System executing task: {task}")
         
-        return {
-            'success': trace.success,
-            'answer': trace.final_answer,
-            'reasoning': trace.to_string(),
-            'iterations': len(trace.steps)
-        }
+        # For complex tasks, use the Self-Coordinating Core to enable teamwork
+        from .coordination_core import TaskType, TaskPriority
+
+        # Determine if we should use coordination core or simple ReAct
+        # Heuristic: if task contains multiple keywords, or explicitly requested
+        use_coordination = context.get('use_coordination', True)
+
+        if use_coordination:
+            result = await self.coordination_core.execute_task(
+                task_name=f"Request: {task[:30]}...",
+                task_type=TaskType.ANALYSIS,
+                description=task,
+                priority=TaskPriority.MEDIUM,
+                metadata=context
+            )
+
+            # Extract final answer from results
+            final_answer = "Task completed by coordinated team."
+            if result.get('results'):
+                # Try to find the most relevant result
+                for r in reversed(result['results']):
+                    if r.get('result'):
+                        final_answer = r['result']
+                        break
+                    elif r.get('answer'):
+                        final_answer = r['answer']
+                        break
+
+            return {
+                'success': result.get('success', False),
+                'answer': final_answer,
+                'coordination_report': result,
+                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved."
+            }
+        else:
+            # Fallback to simple ReAct loop for simpler tasks
+            trace = await self.react_loop.run(
+                task=task,
+                context=context,
+                available_tools=list(self.tool_registry.tools.keys())
+            )
+
+            return {
+                'success': trace.success,
+                'answer': trace.final_answer,
+                'reasoning': trace.to_string(),
+                'iterations': len(trace.steps)
+            }
     
     def get_comprehensive_status(self) -> Dict[str, Any]:
         """Get comprehensive system status"""

@@ -177,7 +177,9 @@ class SelfCoordinatingCore:
             constitutional_layer=constitutional_layer,
             memory_system=memory_system,
             tool_registry=tool_registry,
-            agent_registry=agent_registry
+            agent_registry=agent_registry,
+            shared_memory=self.shared_memory,
+            coordination_layer=self.coordination_layer
         )
         
         # State
@@ -272,10 +274,24 @@ class SelfCoordinatingCore:
             
             # Step 2: Process subtasks
             results = []
-            for subtask in subtasks:
-                if subtask.is_leaf():
-                    result = await self._execute_atomic_task(subtask)
-                    results.append(result)
+
+            # Simple scheduler that respects dependencies
+            pending_subtasks = list(subtasks)
+            while pending_subtasks:
+                ready_subtasks = [st for st in pending_subtasks if st.is_ready()]
+
+                if not ready_subtasks and pending_subtasks:
+                    logger.error("Deadlock detected in subtasks or all remaining subtasks failed")
+                    break
+
+                # Execute ready subtasks (could be done in parallel)
+                tasks_to_run = []
+                for st in ready_subtasks:
+                    pending_subtasks.remove(st)
+                    tasks_to_run.append(self._execute_atomic_task(st))
+
+                batch_results = await asyncio.gather(*tasks_to_run)
+                results.extend(batch_results)
             
             # Aggregate results
             success = all(r.get('success', False) for r in results)

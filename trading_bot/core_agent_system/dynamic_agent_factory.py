@@ -81,7 +81,7 @@ class SubAgent(BaseAgent):
         agent_id: str,
         name: str,
         archetype: AgentArchetype,
-        role: Any = None,
+        role: AgentRole = AgentRole.EXECUTOR,
         parent_agent_id: Optional[str] = None,
         capabilities: Optional[List[str]] = None,
         tools: Optional[List[str]] = None,
@@ -91,13 +91,24 @@ class SubAgent(BaseAgent):
         super().__init__(
             agent_id=agent_id,
             name=name,
-            role=role or AgentRole.EXECUTOR,
+            role=role,
             config=config
         )
         self.archetype = archetype
         self.parent_agent_id = parent_agent_id
-        self.capabilities = capabilities or []
         self.tools = tools or []
+
+        # Convert string capabilities to AgentCapability objects
+        if capabilities:
+            from .agent_registry import AgentCapability
+            for cap_name in capabilities:
+                if isinstance(cap_name, str):
+                    self.add_capability(AgentCapability(
+                        name=cap_name,
+                        description=f"Dynamic capability: {cap_name}",
+                        input_schema={},
+                        output_schema={}
+                    ))
 
         # Components (injected from core system)
         self.policy_network = None
@@ -106,6 +117,8 @@ class SubAgent(BaseAgent):
         self.constitutional_layer = None
         self.memory_system = None
         self.tool_registry = None
+        self.shared_memory = None
+        self.coordination_layer = None
 
         # State
         self.status = "active"  # active, idle, terminated
@@ -128,31 +141,35 @@ class SubAgent(BaseAgent):
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute an action for compatibility with AgentRegistry"""
         operation = action.get("operation", "execute")
+
         if operation == "propose":
+            # Attempt to use execute_task to get a proposal if appropriate
+            try:
+                from .coordination_core import Task, TaskType, TaskPriority
+                task = Task(
+                    task_id=str(uuid.uuid4()),
+                    name="proposal_task",
+                    task_type=TaskType.ANALYSIS,
+                    priority=TaskPriority.MEDIUM,
+                    description="Generate action proposal",
+                    metadata=action.get('context', {})
+                )
+                # Some agents might handle this task specifically
+                proposal_result = await self.execute_task(task)
+                if proposal_result.get('success') and 'type' in proposal_result:
+                    return proposal_result
+            except Exception as e:
+                logger.debug(f"Could not use execute_task for proposal: {e}")
+
+            # Default proposal
             return {
                 "type": "hold",
                 "action": {"operation": "no_action"},
                 "confidence": 0.5,
                 "reasoning": f"Dynamic agent {self.name} ({self.archetype.value})"
             }
+
         return await self._execute_default(action)
-    
-    async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute an action (compatibility with BaseAgent)"""
-        operation = action.get('operation', 'propose')
-        if operation == 'propose':
-            # Create a mock task for execute_task
-            from .coordination_core import Task, TaskType, TaskPriority
-            task = Task(
-                task_id=str(uuid.uuid4()),
-                name="proposal_task",
-                task_type=TaskType.ANALYSIS,
-                priority=TaskPriority.MEDIUM,
-                description="Generate action proposal",
-                metadata=action.get('context', {})
-            )
-            return await self.execute_task(task)
-        return {'success': False, 'error': f'Unknown operation: {operation}'}
 
     async def execute_task(self, task: Any) -> Dict[str, Any]:
         """
@@ -398,7 +415,9 @@ class DynamicAgentFactory:
         constitutional_layer=None,
         memory_system=None,
         tool_registry=None,
-        agent_registry=None
+        agent_registry=None,
+        shared_memory=None,
+        coordination_layer=None
     ):
         # Core components (injected)
         self.policy_network = policy_network
@@ -408,6 +427,8 @@ class DynamicAgentFactory:
         self.memory_system = memory_system
         self.tool_registry = tool_registry
         self.agent_registry = agent_registry
+        self.shared_memory = shared_memory
+        self.coordination_layer = coordination_layer
         
         # Templates
         self.templates: Dict[str, AgentTemplate] = {}
@@ -607,6 +628,8 @@ class DynamicAgentFactory:
         # Always inject memory and tools
         agent.memory_system = self.memory_system
         agent.tool_registry = self.tool_registry
+        agent.shared_memory = self.shared_memory
+        agent.coordination_layer = self.coordination_layer
         
         # Apply custom config to metadata
         if custom_config:
@@ -735,25 +758,48 @@ class DynamicAgentFactory:
             if any(c.name == capability for c in agent.capabilities) and agent.status == "active"
         ]
     
-    def get_best_agent_for_task(self, task: Any) -> Optional[SubAgent]:
+    def get_best_agent_for_task(self, task: Any) -> Optional[BaseAgent]:
         """Get best existing agent for a task"""
-        # Find agents that can handle the task
-        capable_agents = [
-            agent for agent in self.agents.values()
-            if agent.can_handle_task(task) and (agent.status == "active" or agent.status == "ready" or (hasattr(agent.status, 'value') and agent.status.value in ["active", "ready"]))
-        ]
+        capable_agents = []
+
+        # 1. Look in dynamic agents
+        for agent in self.agents.values():
+            status = agent.status.value if hasattr(agent.status, 'value') else str(agent.status)
+            if status in ["active", "ready"] and agent.can_handle_task(task):
+                capable_agents.append(agent)
         
+        # 2. Look in main agent registry if available
+        if self.agent_registry:
+            # If task has required capabilities, use them for lookup
+            if task.required_capabilities:
+                # Get agents that have the first required capability
+                reg_agents = self.agent_registry.get_agents_by_capability(task.required_capabilities[0])
+                for agent in reg_agents:
+                    # Check if agent has ALL required capabilities
+                    if all(agent.has_capability(c) for c in task.required_capabilities):
+                        if agent not in capable_agents:
+                            capable_agents.append(agent)
+            else:
+                # If no specific capabilities required, look at all agents
+                for agent in self.agent_registry.agents.values():
+                    if agent not in capable_agents:
+                        capable_agents.append(agent)
+
         if not capable_agents:
             return None
         
         # Select agent with best success rate and lowest load
-        best_agent = max(
-            capable_agents,
-            key=lambda a: (
-                a.success_rate * 0.6 +
-                (1.0 - len(a.current_tasks) / a.max_concurrent_tasks) * 0.4
-            )
-        )
+        def get_agent_score(a):
+            success_rate = getattr(a, 'success_rate', 1.0)
+            if hasattr(a, 'metrics'):
+                success_rate = a.metrics.success_rate
+
+            current_tasks_count = len(getattr(a, 'current_tasks', []))
+            max_tasks = getattr(a, 'max_concurrent_tasks', 5)
+
+            return (success_rate * 0.6 + (1.0 - current_tasks_count / max_tasks) * 0.4)
+
+        best_agent = max(capable_agents, key=get_agent_score)
         
         return best_agent
     

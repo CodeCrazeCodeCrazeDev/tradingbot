@@ -19,6 +19,7 @@ import threading
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum, auto
+from ..world_model.world_state import SystemMode
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
@@ -416,6 +417,14 @@ class GovernanceSystem:
             """, (change_id, action, actor, datetime.now().isoformat(), details))
             conn.commit()
     
+    def set_system_mode(self, mode: SystemMode, reason: str = ""):
+        """
+        Enforce system mode from governance.
+        """
+        logger.warning(f"[Governance] SYSTEM MODE SHIFT -> {mode.value} | Reason: {reason}")
+        self._current_mode = mode
+        # In a real system, this would propagate to all execution modules
+
     def generate_change_report(self) -> str:
         """Generate a human-readable change report"""
         pending = self.get_pending_changes()

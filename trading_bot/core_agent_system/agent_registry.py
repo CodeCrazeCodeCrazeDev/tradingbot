@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC, abstractmethod
 import uuid
+from trading_bot.execution.trade_executor import TradeExecutor, Order, OrderType, OrderSide
 
 logger = logging.getLogger(__name__)
 
@@ -382,9 +383,15 @@ class AgentRegistry:
     
     def get_agents_by_role(self, role: AgentRole) -> List[BaseAgent]:
         """Get all agents with a specific role"""
+        if isinstance(role, str):
+            try:
+                role = AgentRole(role)
+            except ValueError:
+                return []
+
         return [
             self.agents[agent_id]
-            for agent_id in self.role_index[role]
+            for agent_id in self.role_index.get(role, [])
             if agent_id in self.agents
         ]
     
@@ -488,7 +495,7 @@ class AgentRegistry:
         
         role_counts = {}
         for role in AgentRole:
-            count = len(self.role_index[role])
+            count = len(self.role_index.get(role, self.role_index.get(AgentRole(role), [])) if isinstance(role, str) else self.role_index[role])
             if count > 0:
                 role_counts[role.value] = count
         
@@ -524,7 +531,7 @@ class PlannerAgent(BaseAgent):
     
     def __init__(self, config: Optional[Dict] = None):
         super().__init__(
-            name="PlannerAgent",
+            name=config.get("name", "PlannerAgent"),
             role=AgentRole.PLANNER,
             config=config
         )
@@ -656,21 +663,42 @@ class ExecutorAgent(BaseAgent):
             return {'success': False, 'error': str(e)}
     
     async def _execute_trade(self, action: Dict) -> Dict[str, Any]:
-        """Execute a trade"""
-        # In production: connect to broker API
-        return {
-            'success': True,
-            'order_id': str(uuid.uuid4()),
-            'executed_at': datetime.now().isoformat(),
-            'action': action
-        }
+        """Execute a trade using real/paper executor"""
+        try:
+            # Map action to Order object
+            symbol = action.get('symbol', 'EURUSD')
+            side_str = action.get('side', 'BUY').upper()
+            side = OrderSide.BUY if side_str == 'BUY' else OrderSide.SELL
+
+            type_str = action.get('order_type', 'MARKET').upper()
+            order_type = OrderType.MARKET
+            if type_str == 'LIMIT': order_type = OrderType.LIMIT
+            elif type_str == 'STOP': order_type = OrderType.STOP
+
+            order = Order(
+                symbol=symbol,
+                side=side,
+                order_type=order_type,
+                quantity=action.get('size', 0.01),
+                price=action.get('price'),
+                stop_loss=action.get('stop_loss'),
+                take_profit=action.get('take_profit')
+            )
+
+            # Execute via TradeExecutor
+            result = self.executor.execute_trade(order)
+            return result
+        except Exception as e:
+            logger.error(f"Trade execution failed in ExecutorAgent: {e}")
+            return {'success': False, 'error': str(e)}
     
     async def _cancel_order(self, action: Dict) -> Dict[str, Any]:
         """Cancel an order"""
-        return {
-            'success': True,
-            'cancelled_order_id': action.get('order_id')
-        }
+        order_id = action.get('order_id')
+        if not order_id:
+            return {'success': False, 'error': 'No order_id provided'}
+
+        return self.executor.cancel_order(order_id)
     
     async def _modify_order(self, action: Dict) -> Dict[str, Any]:
         """Modify an order"""
@@ -877,3 +905,54 @@ class SafetyAgent(BaseAgent):
             'compliant': True,
             'violations': []
         }
+
+class LegacyAgentWrapper(BaseAgent):
+    """
+    Wrapper for legacy agents from agents2 system.
+
+    Allows legacy agents that implement analyze_market(market_data)
+    to be used in the new core_agent_system.
+    """
+
+    def __init__(self, legacy_agent, config: Optional[Dict] = None):
+        super().__init__(
+            agent_id=legacy_agent.agent_id,
+            name=f"Legacy_{legacy_agent.get_strategy_name()}",
+            role=AgentRole.PLANNER,
+            config=config
+        )
+        self.legacy_agent = legacy_agent
+
+    def _register_capabilities(self):
+        self.add_capability(AgentCapability(
+            name="legacy_planning",
+            description="Analyze market using legacy strategy",
+            input_schema={"market_data": "Dict"},
+            output_schema={"proposal": "Dict"}
+        ))
+
+    async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute legacy agent logic"""
+        operation = action.get('operation', 'propose')
+
+        if operation == 'propose':
+            # Handle both SystemContext and raw Dict
+            context = action.get('context', {})
+            market_data = getattr(context, 'market_state', context)
+            if not isinstance(market_data, dict):
+                market_data = {}
+
+            proposal = self.legacy_agent.analyze_market(market_data)
+
+            # Convert AgentProposal dataclass to Dict
+            return {
+                'success': True,
+                'type': proposal.action.lower(),
+                'action': {'operation': proposal.action.lower()},
+                'confidence': proposal.confidence,
+                'reasoning': proposal.reasoning,
+                'expected_return': proposal.expected_return,
+                'risk_score': proposal.risk_score
+            }
+
+        return {'success': False, 'error': f'Operation {operation} not supported by LegacyAgentWrapper'}
