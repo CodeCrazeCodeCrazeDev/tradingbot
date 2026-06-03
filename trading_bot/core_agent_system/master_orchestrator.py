@@ -307,7 +307,7 @@ class MasterOrchestrator:
         # Get policy network suggestions
         if self.policy_network:
             policy_output = await self.policy_network.predict(context)
-            candidates.extend(policy_output['actions'])
+            candidates.extend(policy_output.actions)
         
         # Get suggestions from registered agents
         if self.agent_registry:

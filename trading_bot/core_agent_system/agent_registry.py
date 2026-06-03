@@ -92,7 +92,7 @@ class AgentMetrics:
         self.last_active = datetime.now()
 
 
-class BaseResearchAgent(ABC):
+class BaseAgent(ABC):
     """
     Base class for all agents in the system.
     
@@ -230,7 +230,7 @@ class AgentRegistry:
         self.config = config or {}
         
         # Agent storage
-        self.agents: Dict[str, BaseResearchAgent] = {}
+        self.agents: Dict[str, BaseAgent] = {}
         
         # Capability index for fast lookup
         self.capability_index: Dict[str, List[str]] = {}  # capability -> [agent_ids]
@@ -241,7 +241,7 @@ class AgentRegistry:
         }
         
         # Agent factories for dynamic spawning
-        self.agent_factories: Dict[str, Type[BaseResearchAgent]] = {}
+        self.agent_factories: Dict[str, Type[BaseAgent]] = {}
         
         # Health monitoring
         self.health_check_interval = config.get('health_check_interval', 30)
@@ -264,13 +264,13 @@ class AgentRegistry:
     def register_factory(
         self, 
         agent_type: str, 
-        factory: Type[BaseResearchAgent]
+        factory: Type[BaseAgent]
     ):
         """Register an agent factory for dynamic spawning"""
         self.agent_factories[agent_type] = factory
         logger.debug(f"Registered factory for agent type: {agent_type}")
     
-    async def register_agent(self, agent: BaseResearchAgent) -> str:
+    async def register_agent(self, agent: BaseAgent) -> str:
         """
         Register an agent with the registry.
         
@@ -328,7 +328,7 @@ class AgentRegistry:
         self, 
         agent_type: str, 
         config: Optional[Dict] = None
-    ) -> Optional[BaseResearchAgent]:
+    ) -> Optional[BaseAgent]:
         """
         Spawn a new agent of the given type.
         
@@ -352,11 +352,11 @@ class AgentRegistry:
         
         return agent
     
-    def get_agent(self, agent_id: str) -> Optional[BaseResearchAgent]:
+    def get_agent(self, agent_id: str) -> Optional[BaseAgent]:
         """Get an agent by ID"""
         return self.agents.get(agent_id)
     
-    async def get_executor(self, action_type: str) -> Optional[BaseResearchAgent]:
+    async def get_executor(self, action_type: str) -> Optional[BaseAgent]:
         """
         Get an executor agent for a given action type.
         
@@ -378,7 +378,7 @@ class AgentRegistry:
         
         return None
     
-    def get_agents_by_role(self, role: AgentRole) -> List[BaseResearchAgent]:
+    def get_agents_by_role(self, role: AgentRole) -> List[BaseAgent]:
         """Get all agents with a specific role"""
         return [
             self.agents[agent_id]
@@ -386,7 +386,7 @@ class AgentRegistry:
             if agent_id in self.agents
         ]
     
-    def get_agents_by_capability(self, capability: str) -> List[BaseResearchAgent]:
+    def get_agents_by_capability(self, capability: str) -> List[BaseAgent]:
         """Get all agents with a specific capability"""
         if capability not in self.capability_index:
             return []
@@ -458,7 +458,7 @@ class AgentRegistry:
                 logger.error(f"Error in health monitor: {e}")
                 await asyncio.sleep(self.health_check_interval)
     
-    async def _restart_agent(self, agent: BaseResearchAgent):
+    async def _restart_agent(self, agent: BaseAgent):
         """Restart a failed agent"""
         logger.info(f"Restarting agent: {agent.name}")
         
@@ -506,7 +506,7 @@ class AgentRegistry:
 
 # ==================== CONCRETE AGENT IMPLEMENTATIONS ====================
 
-class PlannerAgent(BaseResearchAgent):
+class PlannerAgent(BaseAgent):
     """
     Planner Agent - Analyzes situations and proposes actions.
     
@@ -590,7 +590,7 @@ class PlannerAgent(BaseResearchAgent):
         }
 
 
-class ExecutorAgent(BaseResearchAgent):
+class ExecutorAgent(BaseAgent):
     """
     Executor Agent - Executes approved actions.
     
@@ -669,7 +669,7 @@ class ExecutorAgent(BaseResearchAgent):
         }
 
 
-class EvaluatorAgent(BaseResearchAgent):
+class EvaluatorAgent(BaseAgent):
     """
     Evaluator Agent - Evaluates outcomes and provides feedback.
     
@@ -737,7 +737,7 @@ class EvaluatorAgent(BaseResearchAgent):
         }
 
 
-class ResearchAgent(BaseResearchAgent):
+class ResearchAgent(BaseAgent):
     """
     Research Agent - Conducts research and discovers patterns.
     
@@ -800,7 +800,7 @@ class ResearchAgent(BaseResearchAgent):
         }
 
 
-class SafetyAgent(BaseResearchAgent):
+class SafetyAgent(BaseAgent):
     """
     Safety Agent - Performs safety checks and verification.
     
