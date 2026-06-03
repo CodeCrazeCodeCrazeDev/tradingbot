@@ -26,6 +26,8 @@ from enum import Enum
 import uuid
 import json
 
+from .agent_registry import BaseAgent, AgentRole
+
 logger = logging.getLogger(__name__)
 
 
@@ -69,40 +71,67 @@ class AgentTemplate:
     created_at: datetime = field(default_factory=datetime.now)
 
 
-@dataclass
-class SubAgent:
+class SubAgent(BaseAgent):
     """A dynamically created sub-agent"""
-    agent_id: str
-    name: str
-    archetype: AgentArchetype
-    parent_agent_id: Optional[str]
     
-    # Capabilities
-    capabilities: List[str]
-    tools: List[str]
-    
-    # Components (injected from core system)
-    policy_network: Optional[Any] = None
-    value_network: Optional[Any] = None
-    react_loop: Optional[Any] = None
-    constitutional_layer: Optional[Any] = None
-    memory_system: Optional[Any] = None
-    tool_registry: Optional[Any] = None
-    
-    # State
-    status: str = "active"  # active, idle, terminated
-    current_tasks: List[str] = field(default_factory=list)
-    max_concurrent_tasks: int = 3
-    
-    # Performance
-    tasks_completed: int = 0
-    tasks_failed: int = 0
-    success_rate: float = 1.0
-    
-    # Metadata
-    created_at: datetime = field(default_factory=datetime.now)
-    last_active: datetime = field(default_factory=datetime.now)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    def __init__(
+        self,
+        agent_id: str,
+        name: str,
+        archetype: AgentArchetype,
+        parent_agent_id: Optional[str] = None,
+        capabilities: Optional[List[str]] = None,
+        tools: Optional[List[str]] = None,
+        config: Optional[Dict] = None
+    ):
+        super().__init__(
+            agent_id=agent_id,
+            name=name,
+            role=AgentRole.EXECUTOR,
+            config=config
+        )
+        self.archetype = archetype
+        self.parent_agent_id = parent_agent_id
+        self.capabilities = capabilities or []
+        self.tools = tools or []
+
+        # Components (injected from core system)
+        self.policy_network = None
+        self.value_network = None
+        self.react_loop = None
+        self.constitutional_layer = None
+        self.memory_system = None
+        self.tool_registry = None
+
+        # State
+        self.status = "active"  # active, idle, terminated
+        self.current_tasks = []
+        self.max_concurrent_tasks = 3
+
+        # Performance
+        self.tasks_completed = 0
+        self.tasks_failed = 0
+        self.success_rate = 1.0
+
+        # Metadata
+        self.last_active = datetime.now()
+        self.metadata = {}
+
+    def _register_capabilities(self):
+        """SubAgent capabilities are managed dynamically"""
+        pass
+
+    async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute an action for compatibility with AgentRegistry"""
+        operation = action.get("operation", "execute")
+        if operation == "propose":
+            return {
+                "type": "hold",
+                "action": {"operation": "no_action"},
+                "confidence": 0.5,
+                "reasoning": f"Dynamic agent {self.name} ({self.archetype.value})"
+            }
+        return await self._execute_default(action)
     
     # Add compatibility with BaseResearchAgent interface
     @property
@@ -275,13 +304,16 @@ class SubAgent:
             for tool_name in self.tools:
                 tool = await self.tool_registry.get_tool(tool_name)
                 if tool:
-                    result = await tool.execute(task.metadata.get('params', {}))
+                    # Handle both dictionary actions and task objects
+                    params = task.metadata.get('params', {}) if hasattr(task, 'metadata') else task.get('params', {})
+                    result = await tool.execute(params)
                     if result.get('success'):
                         return result
         
+        task_name = task.name if hasattr(task, 'name') else "unnamed_task"
         return {
             'success': True,
-            'result': f"Task {task.name} processed by {self.name}",
+            'result': f"Task {task_name} processed by {self.name}",
             'agent': self.name
         }
     
@@ -528,7 +560,8 @@ class DynamicAgentFactory:
             archetype=archetype,
             parent_agent_id=parent_agent_id,
             capabilities=capabilities,
-            tools=template.required_tools.copy()
+            tools=template.required_tools.copy(),
+            config=custom_config
         )
         
         # Inject components based on template
@@ -548,7 +581,7 @@ class DynamicAgentFactory:
         agent.memory_system = self.memory_system
         agent.tool_registry = self.tool_registry
         
-        # Apply custom config
+        # Apply custom config to metadata
         if custom_config:
             agent.metadata.update(custom_config)
         
