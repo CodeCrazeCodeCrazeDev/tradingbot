@@ -143,6 +143,17 @@ from .simulation_orchestrator import (
     create_runtime_shield,
 )
 
+from .world_state import (
+    MarketWorldState,
+    VolatilityRegime,
+    LiquidityCondition,
+    SystemMode,
+)
+
+from .ignorance_score import (
+    IgnoranceScoreEngine,
+)
+
 __all__ = [
     # Legacy
     'WorldModel',
@@ -226,6 +237,12 @@ __all__ = [
     'LTLFormula',
     'RuntimeShield',
     'create_runtime_shield',
+    # Governance
+    'MarketWorldState',
+    'VolatilityRegime',
+    'LiquidityCondition',
+    'SystemMode',
+    'IgnoranceScoreEngine',
     # B1 Ceiling-Pushed: Triangulated Consistency
     'ObservationReAnchorer',
     'UncertaintyHorizonGate',
