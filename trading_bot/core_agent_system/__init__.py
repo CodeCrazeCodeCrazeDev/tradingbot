@@ -49,6 +49,11 @@ from .agent_registry import (
     ResearchAgent,
     SafetyAgent
 )
+from .specialized_planners import (
+    TrendFollowingPlanner,
+    MeanReversionPlanner,
+    VolatilityPlanner
+)
 from .tool_registry import (
     ToolRegistry,
     BaseTool,
@@ -184,6 +189,9 @@ __all__ = [
     'AgentStatus',
     'BaseAgent',
     'PlannerAgent',
+    'TrendFollowingPlanner',
+    'MeanReversionPlanner',
+    'VolatilityPlanner',
     'ExecutorAgent',
     'EvaluatorAgent',
     'ResearchAgent',

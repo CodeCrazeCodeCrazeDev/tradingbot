@@ -104,6 +104,53 @@ class SubAgent:
     last_active: datetime = field(default_factory=datetime.now)
     metadata: Dict[str, Any] = field(default_factory=dict)
     
+    # Add compatibility with BaseResearchAgent interface
+    @property
+    def role(self):
+        """Map archetype to AgentRole"""
+        from .agent_registry import AgentRole
+        mapping = {
+            AgentArchetype.ALPHAGO_PLAYER: AgentRole.PLANNER,
+            AgentArchetype.REACT_REASONER: AgentRole.PLANNER,
+            AgentArchetype.RESEARCHER: AgentRole.RESEARCHER,
+            AgentArchetype.OPTIMIZER: AgentRole.OPTIMIZER,
+            AgentArchetype.ANALYST: AgentRole.PLANNER,
+            AgentArchetype.EXECUTOR: AgentRole.EXECUTOR,
+            AgentArchetype.MONITOR: AgentRole.MONITOR,
+            AgentArchetype.COORDINATOR: AgentRole.COORDINATOR,
+            AgentArchetype.CONSTITUTIONAL_GUARDIAN: AgentRole.SAFETY
+        }
+        return mapping.get(self.archetype, AgentRole.EXECUTOR)
+
+    async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
+        """Standard execution interface for AgentRegistry"""
+        from .coordination_core import Task, TaskType, TaskPriority
+
+        operation = action.get('operation', 'execute')
+
+        if operation == 'propose':
+            # Create a temporary task for the proposal
+            task = Task(
+                task_id=f"prop_{uuid.uuid4().hex[:8]}",
+                name=f"Proposal Task",
+                task_type=TaskType.ANALYSIS,
+                priority=TaskPriority.MEDIUM,
+                description="Generate action proposal",
+                metadata={'context': action.get('context')}
+            )
+            return await self.execute_task(task)
+        else:
+            # Create a task for standard execution
+            task = Task(
+                task_id=f"exec_{uuid.uuid4().hex[:8]}",
+                name=f"Execution Task",
+                task_type=TaskType.EXECUTION,
+                priority=TaskPriority.MEDIUM,
+                description=action.get('description', 'Dynamic execution'),
+                metadata=action
+            )
+            return await self.execute_task(task)
+
     async def execute_task(self, task: Any) -> Dict[str, Any]:
         """
         Execute a task using this agent's capabilities.
