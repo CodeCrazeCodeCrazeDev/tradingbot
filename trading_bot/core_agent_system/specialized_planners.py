@@ -36,8 +36,23 @@ class TrendFollowingPlanner(BaseAgent):
 
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         operation = action.get('operation', 'propose')
+
+        # Handle message notifications from team
+        if operation == 'notify':
+            message = action.get('message')
+            if message and 'market_state' in message.content:
+                self.store_memory('last_team_market_state', message.content['market_state'])
+            return {'success': True}
+
         if operation == 'propose':
-            return await self._generate_proposal(action.get('context'))
+            # Prefer team-shared market state if available
+            context = action.get('context')
+            team_market_state = self.recall_memory('last_team_market_state')
+            if team_market_state and context:
+                # Merge or override context for better decision
+                context.market_state.update(team_market_state)
+
+            return await self._generate_proposal(context)
         return {'success': False, 'error': f"Unknown operation: {operation}"}
 
     async def _generate_proposal(self, context: Any) -> Dict[str, Any]:
@@ -95,6 +110,11 @@ class MeanReversionPlanner(BaseAgent):
 
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         operation = action.get('operation', 'propose')
+
+        # Handle team notification
+        if operation == 'notify':
+            return {'success': True}
+
         if operation == 'propose':
             return await self._generate_proposal(action.get('context'))
         return {'success': False, 'error': f"Unknown operation: {operation}"}
@@ -154,6 +174,11 @@ class VolatilityPlanner(BaseAgent):
 
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         operation = action.get('operation', 'propose')
+
+        # Handle team notification
+        if operation == 'notify':
+            return {'success': True}
+
         if operation == 'propose':
             return await self._generate_proposal(action.get('context'))
         return {'success': False, 'error': f"Unknown operation: {operation}"}

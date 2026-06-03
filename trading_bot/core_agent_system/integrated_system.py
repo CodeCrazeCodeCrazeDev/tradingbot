@@ -79,6 +79,7 @@ from .specialized_planners import (
 from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
+from .self_coordinating_core import SelfCoordinatingCore
 
 logger = logging.getLogger(__name__)
 
@@ -179,6 +180,18 @@ class IntegratedAgentSystem:
                 'improvement_threshold': 0.55
             }
         )
+
+        # 10. Self-Coordinating Core (Hierarchical Team Coordination)
+        self.coordination_core = SelfCoordinatingCore(
+            policy_network=self.policy_network,
+            value_network=self.value_network,
+            react_loop=self.react_loop,
+            constitutional_layer=self.constitutional_layer,
+            memory_system=self.memory_system,
+            tool_registry=self.tool_registry,
+            agent_registry=self.agent_registry,
+            config=self.config.get('coordination', {})
+        )
     
     async def initialize(self):
         """Initialize all components"""
@@ -227,6 +240,9 @@ class IntegratedAgentSystem:
         logger.info("9. Initializing Self-Play Loop...")
         await self.self_play_loop.initialize()
         
+        logger.info("10. Initializing Coordination Core...")
+        await self.coordination_core.initialize()
+
         self.initialized = True
         
         logger.info("=" * 60)
@@ -236,20 +252,30 @@ class IntegratedAgentSystem:
         self._print_system_status()
     
     async def _register_default_agents(self):
-        """Register default agents"""
+        """Register default agents and assign to teams"""
         default_agents = [
-            PlannerAgent(config={'name': 'MainPlanner'}),
-            TrendFollowingPlanner(config={'name': 'TrendPlanner'}),
-            MeanReversionPlanner(config={'name': 'MeanReversionPlanner'}),
-            VolatilityPlanner(config={'name': 'VolatilityPlanner'}),
-            ExecutorAgent(config={'name': 'MainExecutor'}),
-            EvaluatorAgent(config={'name': 'MainEvaluator'}),
-            ResearchAgent(config={'name': 'MainResearcher'}),
-            SafetyAgent(config={'name': 'MainSafety'}),
+            (PlannerAgent(config={'name': 'MainPlanner'}), 'trading_team'),
+            (TrendFollowingPlanner(config={'name': 'TrendPlanner'}), 'trading_team'),
+            (MeanReversionPlanner(config={'name': 'MeanReversionPlanner'}), 'trading_team'),
+            (VolatilityPlanner(config={'name': 'VolatilityPlanner'}), 'trading_team'),
+            (ExecutorAgent(config={'name': 'MainExecutor'}), 'trading_team'),
+            (EvaluatorAgent(config={'name': 'MainEvaluator'}), 'research_team'),
+            (ResearchAgent(config={'name': 'MainResearcher'}), 'research_team'),
+            (SafetyAgent(config={'name': 'MainSafety'}), 'safety_team'),
         ]
         
-        for agent in default_agents:
+        for agent, team in default_agents:
             await self.agent_registry.register_agent(agent)
+
+            # Register in coordination core's shared memory team
+            if hasattr(self, 'coordination_core'):
+                self.coordination_core.shared_memory.add_to_team(team, agent.agent_id)
+
+                # Subscribe to relevant topics
+                if team == 'trading_team':
+                    self.coordination_core.coordination_layer.subscribe(agent.agent_id, 'market_update')
+                elif team == 'safety_team':
+                    self.coordination_core.coordination_layer.subscribe(agent.agent_id, 'risk_alert')
         
         logger.info(f"Registered {len(default_agents)} default agents")
     
@@ -280,7 +306,7 @@ class IntegratedAgentSystem:
             await self.shutdown()
     
     async def _main_loop(self):
-        """Main orchestration loop"""
+        """Main orchestration loop with team coordination"""
         logger.info("Starting main orchestration loop")
         
         while self.running:
@@ -293,22 +319,38 @@ class IntegratedAgentSystem:
                 
                 # Execute if safe and valuable
                 if decision.is_safe() and decision.expected_value > 0.5:
-                    # Use ReAct loop for execution
-                    trace = await self.react_loop.run(
-                        task=f"Execute {decision.decision_type}",
-                        context={
+                    # For complex actions, use team coordination
+                    if decision.priority.value <= 2:  # HIGH or CRITICAL
+                         await self.coordinate_team_task(
+                             objective=f"Execute high-priority decision: {decision.decision_type}",
+                             team_name='trading_team',
+                             priority=decision.priority.name
+                         )
+                    else:
+                        # Use standard ReAct loop for standard execution
+                        trace = await self.react_loop.run(
+                            task=f"Execute {decision.decision_type}",
+                            context={
+                                'decision': decision,
+                                'market_state': context.market_state,
+                                'portfolio_state': context.portfolio_state
+                            }
+                        )
+
+                        # Learn from outcome
+                        await self.orchestrator.learn({
                             'decision': decision,
-                            'market_state': context.market_state,
-                            'portfolio_state': context.portfolio_state
-                        }
+                            'trace': trace,
+                            'success': trace.success
+                        })
+
+                # Broadcast market update to team
+                if hasattr(self, 'coordination_core'):
+                    await self.coordination_core.coordination_layer.broadcast(
+                        sender_id='integrated_system',
+                        topic='market_update',
+                        content={'market_state': context.market_state}
                     )
-                    
-                    # Learn from outcome
-                    await self.orchestrator.learn({
-                        'decision': decision,
-                        'trace': trace,
-                        'success': trace.success
-                    })
                 
                 await asyncio.sleep(1)
                 
@@ -420,6 +462,45 @@ class IntegratedAgentSystem:
             'reasoning': trace.to_string(),
             'iterations': len(trace.steps)
         }
+
+    async def coordinate_team_task(
+        self,
+        objective: str,
+        team_name: str = 'trading_team',
+        priority: str = 'MEDIUM'
+    ) -> Dict[str, Any]:
+        """
+        Coordinate a high-level objective across a team of agents.
+
+        Utilizes the Self-Coordinating Core for task decomposition and agent negotiation.
+        """
+        from .coordination_core import TaskType, TaskPriority
+
+        logger.info(f"Coordinating team task: {objective} for {team_name}")
+
+        # Map parameters
+        task_type = TaskType.COORDINATION
+        if 'analyze' in objective.lower():
+            task_type = TaskType.ANALYSIS
+        elif 'execute' in objective.lower() or 'trade' in objective.lower():
+            task_type = TaskType.EXECUTION
+
+        prio_obj = TaskPriority.MEDIUM
+        try:
+            prio_obj = TaskPriority[priority.upper()]
+        except (KeyError, AttributeError):
+            pass
+
+        # Execute via coordination core
+        result = await self.coordination_core.execute_task(
+            task_name=f"Team_{objective[:20]}",
+            task_type=task_type,
+            description=objective,
+            priority=prio_obj,
+            metadata={'team': team_name}
+        )
+
+        return result
     
     def get_comprehensive_status(self) -> Dict[str, Any]:
         """Get comprehensive system status"""
@@ -481,6 +562,9 @@ class IntegratedAgentSystem:
         self.running = False
         
         # Shutdown in reverse order
+        logger.info("Shutting down Coordination Core...")
+        await self.coordination_core.shutdown()
+
         logger.info("Shutting down Self-Play Loop...")
         await self.self_play_loop.shutdown()
         

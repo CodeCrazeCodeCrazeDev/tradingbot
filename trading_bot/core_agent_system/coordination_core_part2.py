@@ -66,10 +66,11 @@ class CoordinationLayer:
     └─────────────────────────────────────────────────────┘
     """
     
-    def __init__(self):
+    def __init__(self, agent_registry=None):
         self.message_queue: List[Message] = []
         self.subscriptions: Dict[str, Set[str]] = defaultdict(set)  # topic -> agent_ids
         self.message_handlers: Dict[str, Callable] = {}  # agent_id -> handler
+        self.agent_registry = agent_registry
         
         logger.info("Coordination Layer initialized")
     
@@ -100,6 +101,15 @@ class CoordinationLayer:
         if receiver_id in self.message_handlers:
             await self._deliver_message(message)
         
+        # Also try delivering to BaseAgent.execute if registered in registry
+        if self.agent_registry:
+            agent = self.agent_registry.get_agent(receiver_id)
+            if agent:
+                try:
+                    await agent.execute({'operation': 'notify', 'message': message})
+                except Exception as e:
+                    logger.error(f"Error notifying agent {receiver_id} via execute: {e}")
+
         return message.message_id
     
     async def broadcast(
@@ -431,8 +441,17 @@ class GovernanceSystem:
             if policy.rule == GovernanceRule.SAFETY_CHECK:
                 # Use Constitutional AI
                 if self.constitutional_layer:
-                    critique = await self.constitutional_layer.critique(action)
-                    if not critique.is_safe:
+                    # Add required fields to action for compliance
+                    governance_action = action.copy()
+                    if 'reasoning' not in governance_action:
+                        governance_action['reasoning'] = f"Governance check for task {task.name if task else 'unknown'}"
+                    if 'id' not in governance_action:
+                        governance_action['id'] = str(uuid.uuid4())
+                    if 'timestamp' not in governance_action:
+                        governance_action['timestamp'] = datetime.now().isoformat()
+
+                    critique = await self.constitutional_layer.critique(governance_action)
+                    if not critique.can_proceed:
                         violations.append(f"Safety check failed: {critique.violations}")
             
             elif policy.rule == GovernanceRule.RESOURCE_LIMIT:

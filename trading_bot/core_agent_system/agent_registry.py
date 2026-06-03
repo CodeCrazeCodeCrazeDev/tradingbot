@@ -18,7 +18,7 @@ Key Features:
 import asyncio
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Callable, Type
+from typing import Any, Dict, List, Optional, Callable, Type, Union
 from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC, abstractmethod
@@ -292,9 +292,10 @@ class AgentRegistry:
         
         # Index by capabilities
         for capability in agent.capabilities:
-            if capability.name not in self.capability_index:
-                self.capability_index[capability.name] = []
-            self.capability_index[capability.name].append(agent.agent_id)
+            cap_name = capability.name if hasattr(capability, 'name') else str(capability)
+            if cap_name not in self.capability_index:
+                self.capability_index[cap_name] = []
+            self.capability_index[cap_name].append(agent.agent_id)
         
         logger.info(f"Registered agent: {agent.name} ({agent.agent_id})")
         
@@ -315,9 +316,10 @@ class AgentRegistry:
             self.role_index[agent.role].remove(agent_id)
         
         for capability in agent.capabilities:
-            if capability.name in self.capability_index:
-                if agent_id in self.capability_index[capability.name]:
-                    self.capability_index[capability.name].remove(agent_id)
+            cap_name = capability.name if hasattr(capability, 'name') else str(capability)
+            if cap_name in self.capability_index:
+                if agent_id in self.capability_index[cap_name]:
+                    self.capability_index[cap_name].remove(agent_id)
         
         # Remove from storage
         del self.agents[agent_id]
@@ -378,8 +380,15 @@ class AgentRegistry:
         
         return None
     
-    def get_agents_by_role(self, role: AgentRole) -> List[BaseAgent]:
+    def get_agents_by_role(self, role: Union[AgentRole, str]) -> List[BaseAgent]:
         """Get all agents with a specific role"""
+        if isinstance(role, str):
+            try:
+                role = AgentRole(role.lower())
+            except ValueError:
+                logger.error(f"Invalid agent role: {role}")
+                return []
+
         return [
             self.agents[agent_id]
             for agent_id in self.role_index[role]

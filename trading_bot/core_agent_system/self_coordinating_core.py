@@ -164,7 +164,7 @@ class SelfCoordinatingCore:
         self.agent_negotiator = AgentNegotiator()
         self.resource_allocator = ResourceAllocator(config.get('resources', {}))
         self.failure_recovery = FailureRecoverySystem()
-        self.coordination_layer = CoordinationLayer()
+        self.coordination_layer = CoordinationLayer(agent_registry)
         self.shared_memory = SharedMemory()
         self.governance = GovernanceSystem(constitutional_layer)
         self.learning_loop = CoordinationLearningLoop(memory_system)
