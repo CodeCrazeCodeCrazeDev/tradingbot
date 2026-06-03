@@ -71,6 +71,11 @@ from .agent_registry import (
     ResearchAgent,
     SafetyAgent
 )
+from .specialized_planners import (
+    TrendFollowingPlanner,
+    MeanReversionPlanner,
+    VolatilityPlanner
+)
 from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
@@ -249,11 +254,14 @@ class IntegratedAgentSystem:
     async def _register_default_agents(self):
         """Register default agents"""
         default_agents = [
-            PlannerAgent({'name': 'MainPlanner'}),
-            ExecutorAgent({'name': 'MainExecutor'}),
-            EvaluatorAgent({'name': 'MainEvaluator'}),
-            ResearchAgent({'name': 'MainResearcher'}),
-            SafetyAgent({'name': 'MainSafety'}),
+            PlannerAgent(config={'name': 'MainPlanner'}),
+            TrendFollowingPlanner(config={'name': 'TrendPlanner'}),
+            MeanReversionPlanner(config={'name': 'MeanReversionPlanner'}),
+            VolatilityPlanner(config={'name': 'VolatilityPlanner'}),
+            ExecutorAgent(config={'name': 'MainExecutor'}),
+            EvaluatorAgent(config={'name': 'MainEvaluator'}),
+            ResearchAgent(config={'name': 'MainResearcher'}),
+            SafetyAgent(config={'name': 'MainSafety'}),
         ]
         
         for agent in default_agents:

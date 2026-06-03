@@ -285,6 +285,7 @@ class MasterOrchestrator:
             expected_value=verified_action.get('value', 0.5),
             confidence=verified_action.get('confidence', 0.5),
             safety_score=verified_action.get('safety_score', 0.5),
+            safety_score=verified_action.get('safety_score', 0.8),
             constitutional_violations=verified_action.get('violations', []),
             reasoning_chain=reasoning_chain,
             source_agent=verified_action.get('source_agent'),
@@ -313,6 +314,7 @@ class MasterOrchestrator:
         # Get policy network suggestions
         if self.policy_network:
             policy_output = await self.policy_network.predict(context)
+            # Handle both object (PolicyOutput) and dictionary formats
             if hasattr(policy_output, 'actions'):
                 candidates.extend(policy_output.actions)
             elif isinstance(policy_output, dict) and 'actions' in policy_output:
@@ -801,7 +803,9 @@ class MasterOrchestrator:
         if self.tool_registry:
             market_tool = await self.tool_registry.get_tool('market_data')
             if market_tool:
-                return await market_tool.execute({'operation': 'get_state'})
+                # Use default symbol from config or fallback to EURUSD
+                symbol = self.config.get('default_symbol', 'EURUSD')
+                return await market_tool.execute({'symbol': symbol})
         return {'price': 0, 'volatility': 0, 'trend': 'unknown'}
     
     async def _get_portfolio_state(self) -> Dict[str, Any]:
