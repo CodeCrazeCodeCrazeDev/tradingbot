@@ -83,6 +83,7 @@ class PolicyNetwork:
     """
     
     def __init__(self, config: Optional[Dict] = None):
+        config = config or {}
         self.config = config or {}
         
         # Action space definition
@@ -516,6 +517,7 @@ class ValueNetwork:
     """
     
     def __init__(self, config: Optional[Dict] = None):
+        config = config or {}
         self.config = config or {}
         
         # Learning parameters
@@ -787,6 +789,7 @@ class DualNetwork:
     """
     
     def __init__(self, config: Optional[Dict] = None):
+        config = config or {}
         self.config = config or {}
         self.config = config or {}
         self.policy_network = PolicyNetwork(config)
