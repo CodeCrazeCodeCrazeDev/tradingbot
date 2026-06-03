@@ -432,8 +432,10 @@ class GovernanceSystem:
                 # Use Constitutional AI
                 if self.constitutional_layer:
                     critique = await self.constitutional_layer.critique(action)
-                    if not critique.is_safe:
-                        violations.append(f"Safety check failed: {critique.violations}")
+                    # Support both is_safe and can_proceed attributes
+                    is_safe = getattr(critique, 'is_safe', getattr(critique, 'can_proceed', True))
+                    if not is_safe:
+                        violations.append(f"Safety check failed: {getattr(critique, 'violations', [])}")
             
             elif policy.rule == GovernanceRule.RESOURCE_LIMIT:
                 # Check resource limits

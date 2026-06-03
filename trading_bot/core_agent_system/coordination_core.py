@@ -111,6 +111,7 @@ class Task:
     
     def is_ready(self) -> bool:
         """Check if task is ready to execute (all dependencies met)"""
+        # A task is ready if it's pending and all its dependencies are COMPLETED
         return self.status == TaskStatus.PENDING and len(self.dependencies) == 0
     
     def to_dict(self) -> Dict[str, Any]:

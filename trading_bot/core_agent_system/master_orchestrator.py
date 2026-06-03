@@ -284,7 +284,6 @@ class MasterOrchestrator:
             action_probabilities=verified_action.get('probabilities', {}),
             expected_value=verified_action.get('value', 0.5),
             confidence=verified_action.get('confidence', 0.5),
-            safety_score=verified_action.get('safety_score', 0.5),
             safety_score=verified_action.get('safety_score', 0.8),
             constitutional_violations=verified_action.get('violations', []),
             reasoning_chain=reasoning_chain,

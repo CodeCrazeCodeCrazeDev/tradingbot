@@ -629,7 +629,6 @@ class ReActLoop:
                     return True
                 if content.get('status') == 'completed':
                     return True
-                if 'signal' in content or 'recommendation' in content or 'order_id' in content or 'status' in content:
                 # Heuristic for rule-based completion
                 if 'signal' in content or 'recommendation' in content or 'order_id' in content:
                     return True
