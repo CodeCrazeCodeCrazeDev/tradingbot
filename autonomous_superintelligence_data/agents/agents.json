@@ -1,0 +1,139 @@
+[
+  {
+    "agent_id": "dfdafedd-ec6a-48f7-9936-6007d535dd78",
+    "agent_type": "market_scanner",
+    "status": "idle",
+    "capabilities": [
+      "market_analysis",
+      "data_collection"
+    ],
+    "performance_score": 0.5,
+    "tasks_completed": 0,
+    "tasks_failed": 0,
+    "created_at": "2026-06-03T13:35:36.907395",
+    "last_active": "2026-06-03T13:35:36.907397",
+    "specialization": null,
+    "knowledge": {},
+    "resources_allocated": {}
+  },
+  {
+    "agent_id": "26452986-6d33-40a7-896b-241b5e6e08d4",
+    "agent_type": "pattern_detector",
+    "status": "idle",
+    "capabilities": [
+      "pattern_recognition",
+      "ml_analysis"
+    ],
+    "performance_score": 0.5,
+    "tasks_completed": 0,
+    "tasks_failed": 0,
+    "created_at": "2026-06-03T13:35:36.907586",
+    "last_active": "2026-06-03T13:35:36.907588",
+    "specialization": null,
+    "knowledge": {},
+    "resources_allocated": {}
+  },
+  {
+    "agent_id": "ffe6d4c1-68d9-4158-9cd1-08906b6037cf",
+    "agent_type": "risk_optimizer",
+    "status": "idle",
+    "capabilities": [
+      "risk_management",
+      "optimization"
+    ],
+    "performance_score": 0.5,
+    "tasks_completed": 0,
+    "tasks_failed": 0,
+    "created_at": "2026-06-03T13:35:36.907666",
+    "last_active": "2026-06-03T13:35:36.907666",
+    "specialization": null,
+    "knowledge": {},
+    "resources_allocated": {}
+  },
+  {
+    "agent_id": "6675ae4f-8504-4b78-94b7-15abd7575f93",
+    "agent_type": "strategy_developer",
+    "status": "idle",
+    "capabilities": [
+      "strategy_creation",
+      "backtesting"
+    ],
+    "performance_score": 0.5,
+    "tasks_completed": 0,
+    "tasks_failed": 0,
+    "created_at": "2026-06-03T13:35:36.907743",
+    "last_active": "2026-06-03T13:35:36.907744",
+    "specialization": null,
+    "knowledge": {},
+    "resources_allocated": {}
+  },
+  {
+    "agent_id": "db1e8aa1-85fc-419e-9a93-a3964d328bb0",
+    "agent_type": "research_scientist",
+    "status": "idle",
+    "capabilities": [
+      "research",
+      "experimentation",
+      "discovery"
+    ],
+    "performance_score": 0.5,
+    "tasks_completed": 0,
+    "tasks_failed": 0,
+    "created_at": "2026-06-03T13:35:36.907913",
+    "last_active": "2026-06-03T13:35:36.907915",
+    "specialization": null,
+    "knowledge": {},
+    "resources_allocated": {}
+  },
+  {
+    "agent_id": "4abd6a7c-1485-4f4a-b9d5-9101873d122a",
+    "agent_type": "opportunity_hunter",
+    "status": "idle",
+    "capabilities": [
+      "opportunity_detection",
+      "market_scanning"
+    ],
+    "performance_score": 0.5,
+    "tasks_completed": 0,
+    "tasks_failed": 0,
+    "created_at": "2026-06-03T13:35:36.907993",
+    "last_active": "2026-06-03T13:35:36.907993",
+    "specialization": null,
+    "knowledge": {},
+    "resources_allocated": {}
+  },
+  {
+    "agent_id": "98a3c385-2bc7-4a6d-8686-7d0af420f671",
+    "agent_type": "resource_allocator",
+    "status": "idle",
+    "capabilities": [
+      "resource_management",
+      "optimization"
+    ],
+    "performance_score": 0.5,
+    "tasks_completed": 0,
+    "tasks_failed": 0,
+    "created_at": "2026-06-03T13:35:36.908060",
+    "last_active": "2026-06-03T13:35:36.908061",
+    "specialization": null,
+    "knowledge": {},
+    "resources_allocated": {}
+  },
+  {
+    "agent_id": "e81a58d6-f018-4bf6-ba20-4eb6f7202a82",
+    "agent_type": "model_trainer",
+    "status": "idle",
+    "capabilities": [
+      "ml_training",
+      "model_optimization"
+    ],
+    "performance_score": 0.5,
+    "tasks_completed": 0,
+    "tasks_failed": 0,
+    "created_at": "2026-06-03T13:35:36.908125",
+    "last_active": "2026-06-03T13:35:36.908126",
+    "specialization": null,
+    "knowledge": {},
+    "resources_allocated": {}
+  }
+]

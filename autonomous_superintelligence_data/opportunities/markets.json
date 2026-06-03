@@ -1,0 +1,122 @@
+[
+  {
+    "market_id": "forex_eurusd",
+    "name": "EUR/USD",
+    "region": "Global",
+    "asset_class": "Forex",
+    "liquidity": 0.95,
+    "volatility": 0.15,
+    "growth_rate": 0.02,
+    "maturity": "mature",
+    "last_scanned": "2026-06-03T13:35:36.909012",
+    "opportunities_found": 0
+  },
+  {
+    "market_id": "forex_gbpusd",
+    "name": "GBP/USD",
+    "region": "Global",
+    "asset_class": "Forex",
+    "liquidity": 0.9,
+    "volatility": 0.18,
+    "growth_rate": 0.01,
+    "maturity": "mature",
+    "last_scanned": "2026-06-03T13:35:36.909023",
+    "opportunities_found": 0
+  },
+  {
+    "market_id": "forex_usdjpy",
+    "name": "USD/JPY",
+    "region": "Global",
+    "asset_class": "Forex",
+    "liquidity": 0.92,
+    "volatility": 0.16,
+    "growth_rate": 0.015,
+    "maturity": "mature",
+    "last_scanned": "2026-06-03T13:35:36.909027",
+    "opportunities_found": 0
+  },
+  {
+    "market_id": "crypto_btcusd",
+    "name": "BTC/USD",
+    "region": "Global",
+    "asset_class": "Crypto",
+    "liquidity": 0.85,
+    "volatility": 0.45,
+    "growth_rate": 0.25,
+    "maturity": "emerging",
+    "last_scanned": "2026-06-03T13:35:36.909030",
+    "opportunities_found": 0
+  },
+  {
+    "market_id": "crypto_ethusd",
+    "name": "ETH/USD",
+    "region": "Global",
+    "asset_class": "Crypto",
+    "liquidity": 0.8,
+    "volatility": 0.5,
+    "growth_rate": 0.3,
+    "maturity": "emerging",
+    "last_scanned": "2026-06-03T13:35:36.909032",
+    "opportunities_found": 0
+  },
+  {
+    "market_id": "equity_sp500",
+    "name": "S&P 500",
+    "region": "US",
+    "asset_class": "Equity",
+    "liquidity": 0.98,
+    "volatility": 0.12,
+    "growth_rate": 0.08,
+    "maturity": "mature",
+    "last_scanned": "2026-06-03T13:35:36.909034",
+    "opportunities_found": 0
+  },
+  {
+    "market_id": "equity_nasdaq",
+    "name": "NASDAQ",
+    "region": "US",
+    "asset_class": "Equity",
+    "liquidity": 0.95,
+    "volatility": 0.15,
+    "growth_rate": 0.12,
+    "maturity": "mature",
+    "last_scanned": "2026-06-03T13:35:36.909037",
+    "opportunities_found": 0
+  },
+  {
+    "market_id": "commodity_gold",
+    "name": "Gold",
+    "region": "Global",
+    "asset_class": "Commodity",
+    "liquidity": 0.9,
+    "volatility": 0.1,
+    "growth_rate": 0.05,
+    "maturity": "mature",
+    "last_scanned": "2026-06-03T13:35:36.909039",
+    "opportunities_found": 0
+  },
+  {
+    "market_id": "commodity_oil",
+    "name": "Crude Oil",
+    "region": "Global",
+    "asset_class": "Commodity",
+    "liquidity": 0.88,
+    "volatility": 0.25,
+    "growth_rate": 0.03,
+    "maturity": "mature",
+    "last_scanned": "2026-06-03T13:35:36.909041",
+    "opportunities_found": 0
+  },
+  {
+    "market_id": "defi_uniswap",
+    "name": "Uniswap",
+    "region": "DeFi",
+    "asset_class": "Crypto",
+    "liquidity": 0.7,
+    "volatility": 0.6,
+    "growth_rate": 0.5,
+    "maturity": "emerging",
+    "last_scanned": "2026-06-03T13:35:36.909043",
+    "opportunities_found": 0
+  }
+]

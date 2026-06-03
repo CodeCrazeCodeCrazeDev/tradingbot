@@ -87,6 +87,7 @@ class SubAgent(BaseAgent):
         tools: Optional[List[str]] = None,
         config: Optional[Dict] = None
     ):
+        from .agent_registry import AgentRole
         super().__init__(
             agent_id=agent_id,
             name=name,
@@ -606,7 +607,7 @@ class DynamicAgentFactory:
             archetype=archetype,
             role=role,
             parent_agent_id=parent_agent_id,
-            capabilities=capabilities,
+            capabilities=agent_capabilities,
             tools=template.required_tools.copy(),
             config=custom_config
         )

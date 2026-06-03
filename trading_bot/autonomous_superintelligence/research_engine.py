@@ -32,7 +32,7 @@ class ResearchDomain(Enum):
     TRADING = "trading"
 
 
-    dataclass
+@dataclass
 class ResearchQuestion:
     question_id: str
     domain: ResearchDomain

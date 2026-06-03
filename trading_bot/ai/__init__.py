@@ -1,4 +1,8 @@
-"""AI module - Autonomous tuning and self-optimization."""
+"""
+AI module - MetaTrader Alpha Superintelligence Hub (MTASH).
+
+This module unifies all autonomous intelligence systems into a single hub.
+"""
 
 from .autonomous_tuner import (
     ParameterType,
@@ -13,8 +17,15 @@ from .self_optimizer import (
     AIOptimizer,
     ModelOptimizer,
 )
+from .hub import (
+    MTASH,
+    create_hub,
+)
 
 __all__ = [
+    # MetaTrader Alpha Superintelligence Hub
+    "MTASH",
+    "create_hub",
     # Autonomous Tuner
     "ParameterType",
     "Parameter",
@@ -28,22 +39,5 @@ __all__ = [
     "ModelOptimizer",
 ]
 
-class AIOrchestrator:
-    """Auto-generated stub orchestrator for module integration."""
-    def __init__(self, config=None):
-        self.config = config or {}
-        self.running = False
-        self._initialized = True
-    
-    async def start(self):
-        """Start the orchestrator."""
-        self.running = True
-    
-    async def stop(self):
-        """Stop the orchestrator."""
-        self.running = False
-    
-    def get_status(self):
-        """Get orchestrator status."""
-        return {"running": self.running, "initialized": self._initialized}
-
+# Alias for legacy code compatibility
+AIOrchestrator = MTASH
