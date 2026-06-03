@@ -81,15 +81,17 @@ class SubAgent(BaseAgent):
         agent_id: str,
         name: str,
         archetype: AgentArchetype,
+        role: Any = None,
         parent_agent_id: Optional[str] = None,
         capabilities: Optional[List[str]] = None,
         tools: Optional[List[str]] = None,
         config: Optional[Dict] = None
     ):
+        from .agent_registry import AgentRole
         super().__init__(
             agent_id=agent_id,
             name=name,
-            role=AgentRole.EXECUTOR,
+            role=role or AgentRole.EXECUTOR,
             config=config
         )
         self.archetype = archetype
@@ -584,7 +586,7 @@ class DynamicAgentFactory:
             archetype=archetype,
             role=role,
             parent_agent_id=parent_agent_id,
-            capabilities=capabilities,
+            capabilities=agent_capabilities,
             tools=template.required_tools.copy(),
             config=custom_config
         )

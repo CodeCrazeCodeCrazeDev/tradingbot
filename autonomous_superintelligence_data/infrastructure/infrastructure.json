@@ -1,0 +1,57 @@
+[
+  {
+    "component_id": "infra_1780493736.909692",
+    "component_type": "compute_cluster",
+    "name": "Primary Compute",
+    "region": "US-East",
+    "capacity": 100.0,
+    "utilization": 0.0,
+    "cost": 50.0,
+    "created_at": "2026-06-03T13:35:36.909698",
+    "status": "active"
+  },
+  {
+    "component_id": "infra_1780493736.909737",
+    "component_type": "data_pipeline",
+    "name": "Market Data Pipeline",
+    "region": "Global",
+    "capacity": 1000.0,
+    "utilization": 0.0,
+    "cost": 100.0,
+    "created_at": "2026-06-03T13:35:36.909741",
+    "status": "active"
+  },
+  {
+    "component_id": "infra_1780493736.909771",
+    "component_type": "trading_venue",
+    "name": "Primary Trading",
+    "region": "US-East",
+    "capacity": 50.0,
+    "utilization": 0.0,
+    "cost": 200.0,
+    "created_at": "2026-06-03T13:35:36.909774",
+    "status": "active"
+  },
+  {
+    "component_id": "infra_1780493736.909801",
+    "component_type": "research_lab",
+    "name": "Research Lab Alpha",
+    "region": "US-West",
+    "capacity": 80.0,
+    "utilization": 0.0,
+    "cost": 150.0,
+    "created_at": "2026-06-03T13:35:36.909803",
+    "status": "active"
+  },
+  {
+    "component_id": "infra_1780493736.909837",
+    "component_type": "model_registry",
+    "name": "Model Registry",
+    "region": "US-East",
+    "capacity": 200.0,
+    "utilization": 0.0,
+    "cost": 20.0,
+    "created_at": "2026-06-03T13:35:36.909841",
+    "status": "active"
+  }
+]
