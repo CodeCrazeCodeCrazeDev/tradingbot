@@ -62,6 +62,12 @@ class MarketWorldState:
     epistemic_uncertainty: float = 0.0  # Model ignorance (knowledge gap)
     aleatoric_uncertainty: float = 0.0  # Market randomness (noise)
 
+    # Institutional-Grade Metrics
+    tail_risk_probability: float = 0.01  # Estimated prob of >3-sigma move
+    correlation_regime: float = 0.0  # Average cross-asset correlation (0 to 1)
+    sentiment_drift: float = 0.0  # Rate of change in market sentiment
+    causal_attribution: Dict[str, float] = field(default_factory=dict)  # Key drivers
+
     # Governance Integration
     ignorance_score: float = 0.0  # Unified 0.0 to 1.0 ignorance score
     recommended_mode: SystemMode = SystemMode.NORMAL

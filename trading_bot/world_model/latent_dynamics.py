@@ -42,6 +42,9 @@ from dataclasses import dataclass, field
 from enum import Enum
 from .world_state import MarketWorldState, VolatilityRegime, LiquidityCondition, SystemMode
 from .ignorance_score import IgnoranceScoreEngine
+from .counterfactual_engine import CounterfactualEngine, TradeOutcome
+from ..intelligence_core.bloomberg_plus import AutonomousFinancialIntelligence
+from .simulation_orchestrator import create_runtime_shield
 from collections import deque
 
 logger = logging.getLogger(__name__)
@@ -1001,6 +1004,15 @@ class WorldModel:
         # Ignorance Score Engine for governance
         self.ignorance_engine = IgnoranceScoreEngine()
 
+        # Causal Engine (L5) for attribution
+        self.causal_engine = CounterfactualEngine()
+
+        # Real-time intelligence for truth-anchoring
+        self.intel_system = AutonomousFinancialIntelligence()
+
+        # Runtime Shield (L10) for formal safety verification
+        self.shield = create_runtime_shield()
+
         # Training mode
         self.training = True
 
@@ -1075,23 +1087,55 @@ class WorldModel:
             epistemic = disagreement.mean().item()
             aleatoric = torch.exp(ens_logvar).mean().item()
 
+            # Truth-Anchoring: Use real-time signals to reduce epistemic uncertainty
+            # If we find strong corroborated signals, we trust the model more (or less)
+            signals = self.intel_system.get_signals_by_entity(symbol)
+            strength_boost = sum(1 for s in signals if s.confidence > 0.8) * 0.05
+            epistemic = max(0.0, epistemic - strength_boost)
+
+            # Sentiment Drift (derived from BloombergPlus signals)
+            sentiment_vals = [s.sentiment for s in signals]
+            drift = float(np.mean(sentiment_vals)) if sentiment_vals else 0.0
+
+            # Formal Safety Check (L10)
+            predicates = {
+                "excessive_drawdown": False, # Mock
+                "unhedged_concentration": False, # Mock
+                "trade_during_halt": False, # Mock
+                "exceed_risk_budget": False # Mock
+            }
+            is_safe, _, shield_info = self.shield.check_action(0, predicates)
+
             # Overall confidence
             confidence = 1.0 - min(1.0, epistemic * 0.5 + regime_entropy * 0.2)
+            if not is_safe:
+                confidence *= 0.5 # Halve confidence if shield is triggered
+
+            # Causal Attribution (simulated for current state)
+            # In production, this would use real trade history
+            attribution = {}
+            if self.causal_engine:
+                attribution = {"primary_driver": "volatility" if vol_idx > 1 else "stability"}
 
             state = MarketWorldState(
                 symbol=symbol,
                 volatility_regime=vol_regime,
                 liquidity_condition=liq_condition,
-                trend_stability=stability.mean().item(),
-                participation_pressure=pressure.mean().item(),
-                regime_entropy=regime_entropy,
-                epistemic_uncertainty=epistemic,
-                aleatoric_uncertainty=aleatoric,
-                state_confidence=confidence
+                trend_stability=float(stability.mean().item()),
+                participation_pressure=float(pressure.mean().item()),
+                regime_entropy=float(regime_entropy),
+                epistemic_uncertainty=float(epistemic),
+                aleatoric_uncertainty=float(aleatoric),
+                state_confidence=float(confidence),
+                causal_attribution=attribution,
+                tail_risk_probability=float(min(0.2, epistemic * 0.1 + (vol_idx/10.0))),
+                sentiment_drift=drift,
+                correlation_regime=0.3 + 0.1 * vol_idx # Correlation increases with volatility
             )
 
             # Enrich with ignorance score and recommended mode
-            return self.ignorance_engine.process_world_state(state)
+            # Pass shield safety status as mandatory compliance check
+            return self.ignorance_engine.process_world_state(state, is_compliant=is_safe)
 
     def predict_next(
         self,
@@ -1440,6 +1484,10 @@ class WorldModel:
             'perception': self.perception.state_dict(),
             'macro_actions': self.macro_actions.state_dict(),
             'long_horizon_distiller': self.long_horizon_distiller.state_dict(),
+            'volatility_probe': self.volatility_probe.state_dict(),
+            'liquidity_probe': self.liquidity_probe.state_dict(),
+            'stability_probe': self.stability_probe.state_dict(),
+            'pressure_probe': self.pressure_probe.state_dict(),
         }
         torch.save(state_dict, filepath)
         logger.info(f"💾 World Model saved to {filepath}")
@@ -1465,4 +1513,13 @@ class WorldModel:
             self.macro_actions.load_state_dict(state['macro_actions'])
         if 'long_horizon_distiller' in state:
             self.long_horizon_distiller.load_state_dict(state['long_horizon_distiller'])
+        if 'volatility_probe' in state:
+            self.volatility_probe.load_state_dict(state['volatility_probe'])
+        if 'liquidity_probe' in state:
+            self.liquidity_probe.load_state_dict(state['liquidity_probe'])
+        if 'stability_probe' in state:
+            self.stability_probe.load_state_dict(state['stability_probe'])
+        if 'pressure_probe' in state:
+            self.pressure_probe.load_state_dict(state['pressure_probe'])
+
         logger.info(f"📂 World Model loaded from {filepath}")

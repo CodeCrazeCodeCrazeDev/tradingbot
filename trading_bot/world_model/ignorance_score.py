@@ -90,12 +90,16 @@ class IgnoranceScoreEngine:
         if len(self.error_history) > 100:
             self.error_history.pop(0)
 
-    def process_world_state(self, world_state: MarketWorldState) -> MarketWorldState:
+    def process_world_state(self, world_state: MarketWorldState, is_compliant: bool = True) -> MarketWorldState:
         """
         Enrich a WorldState with ignorance score and recommended mode.
         """
         score = self.compute_ignorance(world_state)
         mode = self.get_recommended_mode(score)
+
+        # Override mode if safety compliance check fails
+        if not is_compliant:
+            mode = SystemMode.HALT
 
         # Create new state with updated governance fields
         from dataclasses import replace
