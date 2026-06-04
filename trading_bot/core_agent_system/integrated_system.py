@@ -89,6 +89,7 @@ from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
 from .self_coordinating_core import SelfCoordinatingCore
+from trading_bot.world_model.latent_dynamics import WorldModel
 
 logger = logging.getLogger(__name__)
 
@@ -274,6 +275,28 @@ class IntegratedAgentSystem:
         
         self._print_system_status()
     
+    async def _assign_agents_to_teams(self):
+        """Assign agents to functional teams based on their roles"""
+        logger.info("Assigning agents to functional teams...")
+
+        all_agents = list(self.agent_registry.agents.values())
+
+        for agent in all_agents:
+            # Assign to trading team
+            if agent.role in [AgentRole.PLANNER, AgentRole.EXECUTOR]:
+                self.coordination_core.shared_memory.add_to_team('trading_team', agent.agent_id)
+                logger.debug(f"Assigned {agent.name} to trading_team")
+
+            # Assign to research team
+            elif agent.role in [AgentRole.RESEARCHER, AgentRole.EVALUATOR]:
+                self.coordination_core.shared_memory.add_to_team('research_team', agent.agent_id)
+                logger.debug(f"Assigned {agent.name} to research_team")
+
+            # Assign to safety team
+            elif agent.role in [AgentRole.SAFETY]:
+                self.coordination_core.shared_memory.add_to_team('safety_team', agent.agent_id)
+                logger.debug(f"Assigned {agent.name} to safety_team")
+
     async def _register_default_agents(self):
         """Register default agents including legacy ones"""
         default_agents = [
@@ -481,22 +504,30 @@ class IntegratedAgentSystem:
             )
 
             # Extract final answer from results
-            final_answer = "Task completed by coordinated team."
+            answer_part = "No specific result returned."
+            total_iterations = 0
             if result.get('results'):
                 # Try to find the most relevant result
                 for r in reversed(result['results']):
                     if r.get('result'):
-                        final_answer = r['result']
+                        answer_part = r['result']
                         break
                     elif r.get('answer'):
-                        final_answer = r['answer']
+                        answer_part = r['answer']
                         break
+
+                # Sum up iterations if available from subtasks
+                for r in result['results']:
+                    total_iterations += r.get('iterations', 0)
+
+            final_answer = f"Task completed by coordinated team. Result: {answer_part}"
 
             return {
                 'success': result.get('success', False),
                 'answer': final_answer,
                 'coordination_report': result,
-                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved."
+                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
+                'iterations': max(total_iterations, 1) # Ensure at least 1 if successful
             }
         else:
             # Fallback to simple ReAct loop for simpler tasks
