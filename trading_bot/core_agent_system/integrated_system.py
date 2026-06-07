@@ -89,6 +89,7 @@ from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
 from .self_coordinating_core import SelfCoordinatingCore
+from trading_bot.world_model.latent_dynamics import WorldModel
 
 logger = logging.getLogger(__name__)
 
@@ -267,6 +268,23 @@ class IntegratedAgentSystem:
         await self._assign_agents_to_teams()
 
         self.initialized = True
+
+    async def _assign_agents_to_teams(self):
+        """Assign default agents to teams in shared memory"""
+        for agent_id, agent in self.agent_registry.agents.items():
+            team = None
+            if agent.role == AgentRole.PLANNER:
+                team = 'trading_team'
+            elif agent.role == AgentRole.EXECUTOR:
+                team = 'trading_team'
+            elif agent.role == AgentRole.RESEARCHER:
+                team = 'research_team'
+            elif agent.role == AgentRole.SAFETY:
+                team = 'safety_team'
+
+            if team:
+                self.coordination_core.shared_memory.add_to_team(team, agent_id)
+                logger.info(f"Assigned agent {agent.name} ({agent_id}) to {team}")
         
         logger.info("=" * 60)
         logger.info("INTEGRATED AGENT SYSTEM READY")
@@ -496,7 +514,8 @@ class IntegratedAgentSystem:
                 'success': result.get('success', False),
                 'answer': final_answer,
                 'coordination_report': result,
-                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved."
+                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
+                'iterations': len(result.get('results', []))
             }
         else:
             # Fallback to simple ReAct loop for simpler tasks

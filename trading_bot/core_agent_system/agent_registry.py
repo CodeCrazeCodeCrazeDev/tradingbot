@@ -187,6 +187,17 @@ class BaseAgent(ABC):
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.agent_id}, name={self.name}, role={self.role.value})"
 
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """Execute a task - default implementation uses execute()"""
+        task_dict = task.to_dict() if hasattr(task, 'to_dict') else task
+        result = await self.execute(task_dict)
+
+        # Ensure result has success key for coordination core
+        if isinstance(result, dict) and 'success' not in result:
+            result['success'] = True
+
+        return result
+
 
 class AgentRegistry:
     """
