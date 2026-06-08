@@ -89,6 +89,7 @@ from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
 from .self_coordinating_core import SelfCoordinatingCore
+from trading_bot.world_model.latent_dynamics import WorldModel
 
 logger = logging.getLogger(__name__)
 
@@ -304,6 +305,35 @@ class IntegratedAgentSystem:
             await self.agent_registry.register_agent(agent)
         
         logger.info(f"Registered {len(default_agents)} standard and {len(legacy_agents)} legacy agents")
+
+    async def _assign_agents_to_teams(self):
+        """Assign registered agents to functional teams in the coordination core"""
+        logger.info("Assigning agents to teams...")
+
+        # Get all registered agents
+        agents = self.agent_registry.get_all_agents()
+
+        for agent in agents:
+            team = None
+
+            # Assign based on role or name
+            role = getattr(agent, 'role', None)
+            name = getattr(agent, 'name', '').lower()
+
+            if role == AgentRole.PLANNER or 'planner' in name:
+                team = 'trading_team'
+            elif role == AgentRole.EXECUTOR or 'executor' in name or 'marketmaker' in name:
+                team = 'trading_team'
+            elif role == AgentRole.RESEARCHER or 'research' in name:
+                team = 'research_team'
+            elif role == AgentRole.SAFETY or 'safety' in name or 'risk' in name:
+                team = 'safety_team'
+            elif role == AgentRole.EVALUATOR or 'evaluator' in name:
+                team = 'research_team'
+
+            if team:
+                self.coordination_core.shared_memory.add_to_team(team, agent.agent_id)
+                logger.debug(f"Assigned agent {agent.name} ({agent.agent_id}) to {team}")
     
     async def start(self):
         """Start the integrated system"""
@@ -496,7 +526,8 @@ class IntegratedAgentSystem:
                 'success': result.get('success', False),
                 'answer': final_answer,
                 'coordination_report': result,
-                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved."
+                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
+                'iterations': len(result.get('results', []))
             }
         else:
             # Fallback to simple ReAct loop for simpler tasks
