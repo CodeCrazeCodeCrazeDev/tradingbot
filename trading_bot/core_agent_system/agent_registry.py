@@ -167,6 +167,46 @@ class BaseAgent(ABC):
         """Recall something from agent memory"""
         return self.memory.get(key, default)
     
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """
+        Execute a task using the agent's capabilities.
+
+        This is a higher-level interface used by the coordination core.
+        Standard implementation uses the agent's primary execute method.
+        """
+        # Convert task to action
+        description = getattr(task, 'description', str(task))
+
+        # Determine operation based on role
+        operation = 'execute'
+        if self.role == AgentRole.PLANNER:
+            operation = 'analyze'
+        elif self.role == AgentRole.RESEARCHER:
+            operation = 'research'
+        elif self.role == AgentRole.EVALUATOR:
+            operation = 'evaluate'
+        elif self.role == AgentRole.SAFETY:
+            operation = 'check'
+
+        # Execute using standard interface
+        result = await self.execute({
+            'operation': operation,
+            'description': description,
+            'task_id': getattr(task, 'task_id', None),
+            'data': getattr(task, 'metadata', {})
+        })
+
+        # Ensure result is a dictionary
+        if not isinstance(result, dict):
+            result = {'result': result}
+
+        # Ensure success key exists
+        if 'success' not in result:
+            # If no error, assume success
+            result['success'] = 'error' not in result
+
+        return result
+
     def get_status(self) -> Dict[str, Any]:
         """Get agent status"""
         return {
@@ -359,6 +399,10 @@ class AgentRegistry:
         """Get an agent by ID"""
         return self.agents.get(agent_id)
     
+    def get_all_agents(self) -> List[BaseAgent]:
+        """Get all registered agents"""
+        return list(self.agents.values())
+
     async def get_executor(self, action_type: str) -> Optional[BaseAgent]:
         """
         Get an executor agent for a given action type.
@@ -550,6 +594,12 @@ class PlannerAgent(BaseAgent):
             input_schema={"market_data": "Dict"},
             output_schema={"analysis": "Dict"}
         ))
+        self.add_capability(AgentCapability(
+            name="data_access",
+            description="Access market and system data",
+            input_schema={"query": "Dict"},
+            output_schema={"data": "Dict"}
+        ))
     
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute planning action"""
@@ -736,6 +786,12 @@ class EvaluatorAgent(BaseAgent):
             input_schema={"strategy": "Strategy", "data": "HistoricalData"},
             output_schema={"backtest_result": "BacktestResult"}
         ))
+        self.add_capability(AgentCapability(
+            name="reporting",
+            description="Generate evaluation reports",
+            input_schema={"data": "Dict"},
+            output_schema={"report": "Dict"}
+        ))
     
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute evaluation"""
@@ -804,6 +860,12 @@ class ResearchAgent(BaseAgent):
             description="Discover new patterns",
             input_schema={"data": "MarketData"},
             output_schema={"patterns": "List[Pattern]"}
+        ))
+        self.add_capability(AgentCapability(
+            name="analysis",
+            description="Analyze research findings",
+            input_schema={"data": "Dict"},
+            output_schema={"analysis": "Dict"}
         ))
     
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
