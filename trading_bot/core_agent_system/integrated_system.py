@@ -89,6 +89,7 @@ from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
 from .self_coordinating_core import SelfCoordinatingCore
+from trading_bot.world_model.latent_dynamics import WorldModel
 
 logger = logging.getLogger(__name__)
 
@@ -304,6 +305,26 @@ class IntegratedAgentSystem:
             await self.agent_registry.register_agent(agent)
         
         logger.info(f"Registered {len(default_agents)} standard and {len(legacy_agents)} legacy agents")
+
+    async def _assign_agents_to_teams(self):
+        """Assign registered agents to functional teams"""
+        logger.info("Assigning agents to functional teams...")
+
+        # We'll use the agents from the registry
+        for agent in self.agent_registry.get_all_agents():
+            team = None
+
+            # Map roles to teams
+            if agent.role in [AgentRole.PLANNER, AgentRole.EXECUTOR]:
+                team = 'trading_team'
+            elif agent.role in [AgentRole.RESEARCHER, AgentRole.OPTIMIZER, AgentRole.EVALUATOR]:
+                team = 'research_team'
+            elif agent.role in [AgentRole.SAFETY, AgentRole.MONITOR]:
+                team = 'safety_team'
+
+            if team:
+                self.coordination_core.shared_memory.add_to_team(team, agent.agent_id)
+                logger.debug(f"Assigned agent {agent.name} to {team}")
     
     async def start(self):
         """Start the integrated system"""
@@ -496,7 +517,8 @@ class IntegratedAgentSystem:
                 'success': result.get('success', False),
                 'answer': final_answer,
                 'coordination_report': result,
-                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved."
+                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
+                'iterations': len(result.get('results', []))
             }
         else:
             # Fallback to simple ReAct loop for simpler tasks
