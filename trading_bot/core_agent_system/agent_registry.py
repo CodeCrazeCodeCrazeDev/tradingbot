@@ -166,6 +166,63 @@ class BaseAgent(ABC):
     def recall_memory(self, key: str, default: Any = None) -> Any:
         """Recall something from agent memory"""
         return self.memory.get(key, default)
+
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """
+        Execute a task using this agent.
+        Standardized entry point for the Self-Coordinating Core.
+        """
+        self.status = AgentStatus.BUSY
+        start_time = datetime.now()
+
+        try:
+            # Map task to action for execute()
+            # Most agents expect an 'operation' or 'type' in the action dict
+            operation = 'execute'
+
+            # Intelligent operation mapping based on role
+            if self.role == AgentRole.PLANNER:
+                operation = 'analyze'
+            elif self.role == AgentRole.RESEARCHER:
+                operation = 'research'
+            elif self.role == AgentRole.EVALUATOR:
+                operation = 'evaluate'
+            elif self.role == AgentRole.SAFETY:
+                operation = 'check'
+
+            # If task metadata specifies an operation, use it
+            if hasattr(task, 'metadata') and isinstance(task.metadata, dict):
+                operation = task.metadata.get('operation', operation)
+
+            action = {
+                'operation': operation,
+                'task_name': task.name if hasattr(task, 'name') else str(task),
+                'description': task.description if hasattr(task, 'description') else '',
+                'metadata': task.metadata if hasattr(task, 'metadata') else {}
+            }
+
+            result = await self.execute(action)
+
+            # Ensure result has success flag
+            if not isinstance(result, dict):
+                result = {'result': result, 'success': True}
+
+            if 'success' not in result:
+                result['success'] = True
+
+            execution_time = (datetime.now() - start_time).total_seconds()
+            self.metrics.update(result['success'], execution_time)
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error executing task in {self.name}: {e}")
+            execution_time = (datetime.now() - start_time).total_seconds()
+            self.metrics.update(False, execution_time)
+            return {'success': False, 'error': str(e)}
+
+        finally:
+            self.status = AgentStatus.READY
     
     def get_status(self) -> Dict[str, Any]:
         """Get agent status"""
@@ -358,6 +415,10 @@ class AgentRegistry:
     def get_agent(self, agent_id: str) -> Optional[BaseAgent]:
         """Get an agent by ID"""
         return self.agents.get(agent_id)
+
+    def get_all_agents(self) -> List[BaseAgent]:
+        """Get all registered agents"""
+        return list(self.agents.values())
     
     async def get_executor(self, action_type: str) -> Optional[BaseAgent]:
         """
