@@ -167,6 +167,43 @@ class BaseAgent(ABC):
         """Recall something from agent memory"""
         return self.memory.get(key, default)
     
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """
+        Execute a task.
+        Ensures compatibility with SelfCoordinatingCore.
+        """
+        # Map task to action based on role
+        operation = 'execute'
+        if self.role == AgentRole.PLANNER:
+            operation = 'propose'
+        elif self.role == AgentRole.RESEARCHER:
+            operation = 'research'
+        elif self.role == AgentRole.EVALUATOR:
+            operation = 'evaluate'
+        elif self.role == AgentRole.SAFETY:
+            operation = 'check'
+
+        action = {
+            'operation': operation,
+            'task_id': task.task_id,
+            'description': task.description,
+            'context': task.metadata
+        }
+
+        try:
+            result = await self.execute(action)
+
+            # Ensure success flag is present
+            if isinstance(result, dict) and 'success' not in result:
+                result['success'] = True
+            elif not isinstance(result, dict):
+                result = {'success': True, 'result': result}
+
+            return result
+        except Exception as e:
+            logger.error(f"Error executing task {task.task_id} in {self.name}: {e}")
+            return {'success': False, 'error': str(e)}
+
     def get_status(self) -> Dict[str, Any]:
         """Get agent status"""
         return {
