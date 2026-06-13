@@ -44,7 +44,6 @@ from .world_state import MarketWorldState, VolatilityRegime, LiquidityCondition,
 from .ignorance_score import IgnoranceScoreEngine
 from .counterfactual_engine import CounterfactualEngine, TradeOutcome
 from ..intelligence_core.bloomberg_plus import AutonomousFinancialIntelligence
-from .simulation_orchestrator import create_runtime_shield
 from collections import deque
 
 logger = logging.getLogger(__name__)
@@ -1011,6 +1010,7 @@ class WorldModel:
         self.intel_system = AutonomousFinancialIntelligence()
 
         # Runtime Shield (L10) for formal safety verification
+        from .simulation_orchestrator import create_runtime_shield
         self.shield = create_runtime_shield()
 
         # Training mode

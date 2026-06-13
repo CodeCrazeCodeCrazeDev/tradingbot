@@ -134,6 +134,50 @@ class BaseAgent(ABC):
         """Execute an action - must be implemented by subclasses"""
         pass
     
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """
+        Execute a task using this agent.
+        Standardized mapping for SelfCoordinatingCore.
+        """
+        self.metrics.last_active = datetime.now()
+
+        # Extract operation from task
+        operation_map = {
+            AgentRole.PLANNER: 'propose',
+            AgentRole.RESEARCHER: 'research',
+            AgentRole.EVALUATOR: 'evaluate',
+            AgentRole.SAFETY: 'check',
+            AgentRole.EXECUTOR: 'execute',
+            AgentRole.MONITOR: 'monitor'
+        }
+        operation = operation_map.get(self.role, 'execute')
+
+        start_time = datetime.now()
+        try:
+            # Map task to action dict
+            action = {
+                'operation': operation,
+                'context': getattr(task, 'metadata', {}),
+                'description': getattr(task, 'description', ''),
+                'task_id': getattr(task, 'task_id', None)
+            }
+
+            result = await self.execute(action)
+
+            execution_time = (datetime.now() - start_time).total_seconds()
+            # Ensure result has success flag for coordination core
+            if 'success' not in result:
+                result['success'] = True
+
+            self.metrics.update(result.get('success', False), execution_time)
+            return result
+
+        except Exception as e:
+            execution_time = (datetime.now() - start_time).total_seconds()
+            self.metrics.update(False, execution_time)
+            logger.error(f"Agent {self.name} failed task: {e}")
+            return {'success': False, 'error': str(e)}
+
     async def initialize(self):
         """Initialize the agent"""
         self.status = AgentStatus.READY
