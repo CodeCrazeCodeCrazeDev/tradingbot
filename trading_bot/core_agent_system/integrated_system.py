@@ -63,6 +63,7 @@ from .master_orchestrator import MasterOrchestrator, SystemContext
 from .react_loop import ReActLoop
 from .constitutional_layer import ConstitutionalAI
 from .policy_value_network import PolicyNetwork, ValueNetwork, DualNetwork
+from trading_bot.world_model.latent_dynamics import WorldModel
 from .agent_registry import (
     AgentRegistry, 
     AgentRole,
@@ -496,7 +497,8 @@ class IntegratedAgentSystem:
                 'success': result.get('success', False),
                 'answer': final_answer,
                 'coordination_report': result,
-                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved."
+                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
+                'iterations': len(result.get('results', []))
             }
         else:
             # Fallback to simple ReAct loop for simpler tasks
@@ -564,6 +566,28 @@ class IntegratedAgentSystem:
         
         print("\n" + "=" * 60)
     
+    async def _assign_agents_to_teams(self):
+        """Assign registered agents to functional teams in coordination core"""
+        if not hasattr(self, 'coordination_core'):
+            return
+
+        # Map agent roles to teams
+        role_to_team = {
+            AgentRole.PLANNER: 'trading_team',
+            AgentRole.EXECUTOR: 'trading_team',
+            AgentRole.EVALUATOR: 'research_team',
+            AgentRole.RESEARCHER: 'research_team',
+            AgentRole.SAFETY: 'safety_team',
+            AgentRole.COORDINATOR: 'trading_team'
+        }
+
+        # Assign all registered agents
+        for agent_id, agent in self.agent_registry.agents.items():
+            team = role_to_team.get(agent.role)
+            if team:
+                self.coordination_core.shared_memory.add_to_team(team, agent_id)
+                logger.info(f"Assigned agent {agent.name} to team {team}")
+
     async def shutdown(self):
         """Graceful shutdown"""
         logger.info("=" * 60)
