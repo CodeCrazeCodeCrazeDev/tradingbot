@@ -134,6 +134,45 @@ class BaseAgent(ABC):
         """Execute an action - must be implemented by subclasses"""
         pass
     
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """
+        Execute a task using this agent's capabilities.
+        Standard implementation for the Self-Coordinating Core.
+        """
+        self.metrics.last_active = datetime.now()
+
+        # Simple mapping of tasks to standard operations
+        operation_map = {
+            'planner': 'propose',
+            'researcher': 'research',
+            'evaluator': 'evaluate',
+            'safety': 'check',
+            'executor': 'execute'
+        }
+
+        operation = operation_map.get(self.role.value, 'execute')
+
+        try:
+            # Prepare action based on task
+            action = {
+                'operation': operation,
+                'task': task.name,
+                'description': task.description,
+                'context': task.metadata
+            }
+
+            result = await self.execute(action)
+
+            # Ensure result contains success flag for coordination core
+            if 'success' not in result:
+                result['success'] = True
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error executing task {task.name} in agent {self.name}: {e}")
+            return {'success': False, 'error': str(e)}
+
     async def initialize(self):
         """Initialize the agent"""
         self.status = AgentStatus.READY
@@ -495,7 +534,7 @@ class AgentRegistry:
         
         role_counts = {}
         for role in AgentRole:
-            count = len(self.role_index.get(role, self.role_index.get(AgentRole(role), [])) if isinstance(role, str) else self.role_index[role])
+            count = len(self.role_index.get(role, []))
             if count > 0:
                 role_counts[role.value] = count
         
@@ -614,13 +653,14 @@ class ExecutorAgent(BaseAgent):
     Handles the actual execution of trades and other operations.
     """
     
-    def __init__(self, config: Optional[Dict] = None):
+    def __init__(self, executor: TradeExecutor, config: Optional[Dict] = None):
         super().__init__(
             name="ExecutorAgent",
             role=AgentRole.EXECUTOR,
             config=config
         )
         self.config = config or {}
+        self.executor = executor
     
     def _register_capabilities(self):
         self.add_capability(AgentCapability(
