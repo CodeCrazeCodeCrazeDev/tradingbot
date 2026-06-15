@@ -124,6 +124,8 @@ class IntegratedAgentSystem:
     
     def _init_components(self):
         """Initialize all system components"""
+        # Local import to prevent circular dependencies
+        from trading_bot.world_model.latent_dynamics import WorldModel
         
         # 1. Memory System (foundation for all learning)
         self.memory_system = MemorySystem({
@@ -274,6 +276,23 @@ class IntegratedAgentSystem:
         
         self._print_system_status()
     
+    async def _assign_agents_to_teams(self):
+        """Assign agents to functional teams based on their roles"""
+        logger.info("Assigning agents to functional teams...")
+
+        for agent_id, agent in self.agent_registry.agents.items():
+            # Standard mapping: Planner/Executor/Coordinator to trading_team
+            if agent.role in [AgentRole.PLANNER, AgentRole.EXECUTOR, AgentRole.COORDINATOR]:
+                self.coordination_core.shared_memory.add_to_team('trading_team', agent_id)
+
+            # Researcher/Evaluator to research_team
+            elif agent.role in [AgentRole.RESEARCHER, AgentRole.EVALUATOR]:
+                self.coordination_core.shared_memory.add_to_team('research_team', agent_id)
+
+            # Safety to safety_team
+            elif agent.role == AgentRole.SAFETY:
+                self.coordination_core.shared_memory.add_to_team('safety_team', agent_id)
+
     async def _register_default_agents(self):
         """Register default agents including legacy ones"""
         default_agents = [
@@ -496,7 +515,8 @@ class IntegratedAgentSystem:
                 'success': result.get('success', False),
                 'answer': final_answer,
                 'coordination_report': result,
-                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved."
+                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
+                'iterations': len(result.get('results', []))
             }
         else:
             # Fallback to simple ReAct loop for simpler tasks

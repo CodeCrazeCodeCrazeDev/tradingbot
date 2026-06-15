@@ -134,6 +134,58 @@ class BaseAgent(ABC):
         """Execute an action - must be implemented by subclasses"""
         pass
     
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """
+        Execute a task using this agent's specific operations.
+
+        This bridges the Self-Coordinating Core with the BaseAgent interface.
+        """
+        self.metrics.last_active = datetime.now()
+
+        # Determine operation based on role
+        operation = 'execute'
+        if self.role == AgentRole.PLANNER:
+            operation = 'propose'
+        elif self.role == AgentRole.RESEARCHER:
+            operation = 'research'
+        elif self.role == AgentRole.EVALUATOR:
+            operation = 'evaluate'
+        elif self.role == AgentRole.SAFETY:
+            operation = 'check'
+
+        try:
+            # Map task to action
+            action = {
+                'operation': operation,
+                'task_name': getattr(task, 'name', 'unnamed'),
+                'description': getattr(task, 'description', ''),
+                'context': getattr(task, 'metadata', {}),
+                'data': getattr(task, 'metadata', {})
+            }
+
+            # Add specific fields for specific operations
+            if operation == 'propose':
+                action['context'] = getattr(task, 'metadata', {})
+            elif operation == 'research':
+                action['topic'] = getattr(task, 'name', 'general')
+            elif operation == 'evaluate':
+                action['outcome'] = getattr(task, 'metadata', {})
+            elif operation == 'check':
+                action['target_action'] = getattr(task, 'metadata', {})
+
+            # Execute
+            result = await self.execute(action)
+
+            # Ensure result has success flag
+            if 'success' not in result:
+                result['success'] = True
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error in {self.name}.execute_task: {e}")
+            return {'success': False, 'error': str(e)}
+
     async def initialize(self):
         """Initialize the agent"""
         self.status = AgentStatus.READY
@@ -621,6 +673,8 @@ class ExecutorAgent(BaseAgent):
             config=config
         )
         self.config = config or {}
+        # Initialize trade executor
+        self.executor = TradeExecutor(config=self.config)
     
     def _register_capabilities(self):
         self.add_capability(AgentCapability(
