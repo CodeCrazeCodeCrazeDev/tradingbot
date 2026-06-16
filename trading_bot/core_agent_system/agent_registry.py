@@ -133,6 +133,58 @@ class BaseAgent(ABC):
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute an action - must be implemented by subclasses"""
         pass
+
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """
+        Execute a task.
+
+        Default implementation delegates to execute() with task details.
+        Can be overridden by specialized agents.
+        """
+        self.metrics.last_active = datetime.now()
+
+        # Map task to agent-specific operation based on role
+        operation = 'execute'
+        if self.role == AgentRole.PLANNER:
+            operation = 'propose'
+        elif self.role == AgentRole.RESEARCHER:
+            operation = 'research'
+        elif self.role == AgentRole.EVALUATOR:
+            operation = 'evaluate'
+        elif self.role == AgentRole.SAFETY:
+            operation = 'check'
+
+        # Prepare action from task
+        action = {
+            'operation': operation,
+            'task_id': getattr(task, 'task_id', None),
+            'task_name': getattr(task, 'name', None),
+            'description': getattr(task, 'description', None),
+            'metadata': getattr(task, 'metadata', {}),
+            'context': getattr(task, 'metadata', {})  # Some agents expect 'context'
+        }
+
+        # Execute
+        start_time = datetime.now()
+        try:
+            result = await self.execute(action)
+            execution_time = (datetime.now() - start_time).total_seconds()
+
+            # Update metrics and ensure success flag
+            if not result or not isinstance(result, dict):
+                result = {'success': True, 'result': result}
+
+            if 'success' not in result:
+                result['success'] = True
+
+            success = result.get('success', False)
+            self.metrics.update(success, execution_time)
+            return result
+        except Exception as e:
+            execution_time = (datetime.now() - start_time).total_seconds()
+            self.metrics.update(False, execution_time)
+            logger.error(f"Agent {self.name} failed task execution: {e}")
+            return {'success': False, 'error': str(e)}
     
     async def initialize(self):
         """Initialize the agent"""
@@ -507,6 +559,10 @@ class AgentRegistry:
             'factories_registered': list(self.agent_factories.keys())
         }
     
+    async def get_all_agents(self) -> List[BaseAgent]:
+        """Get all registered agents"""
+        return list(self.agents.values())
+
     async def shutdown(self):
         """Shutdown the registry and all agents"""
         logger.info("Shutting down Agent Registry")
