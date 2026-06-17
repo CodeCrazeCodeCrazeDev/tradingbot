@@ -133,6 +133,43 @@ class BaseAgent(ABC):
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute an action - must be implemented by subclasses"""
         pass
+
+    async def execute_task(self, task) -> Dict[str, Any]:
+        """
+        Execute a Task object - bridge to the coordination core.
+        Maps task types to specific agent operations.
+        """
+        # Map task type to operation
+        role_to_op = {
+            AgentRole.PLANNER: 'propose',
+            AgentRole.EXECUTOR: 'execute',
+            AgentRole.RESEARCHER: 'research',
+            AgentRole.EVALUATOR: 'evaluate',
+            AgentRole.SAFETY: 'check',
+            AgentRole.COORDINATOR: 'notify'
+        }
+
+        operation = role_to_op.get(self.role, 'execute')
+
+        # Prepare action dictionary
+        action = {
+            'operation': operation,
+            'task_id': task.task_id,
+            'description': task.description,
+            'metadata': task.metadata
+        }
+
+        # Merge task metadata into action
+        if isinstance(task.metadata, dict):
+            action.update(task.metadata)
+
+        # Execute and ensure success key exists
+        result = await self.execute(action)
+
+        if 'success' not in result:
+            result['success'] = True
+
+        return result
     
     async def initialize(self):
         """Initialize the agent"""
@@ -495,7 +532,7 @@ class AgentRegistry:
         
         role_counts = {}
         for role in AgentRole:
-            count = len(self.role_index.get(role, self.role_index.get(AgentRole(role), [])) if isinstance(role, str) else self.role_index[role])
+            count = len(self.role_index.get(role, []))
             if count > 0:
                 role_counts[role.value] = count
         
