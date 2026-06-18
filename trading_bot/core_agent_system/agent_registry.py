@@ -134,6 +134,32 @@ class BaseAgent(ABC):
         """Execute an action - must be implemented by subclasses"""
         pass
     
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """Execute a task - default implementation uses execute"""
+        operation = 'execute'
+        if hasattr(task, 'task_type'):
+            from .coordination_core import TaskType
+            if task.task_type == TaskType.ANALYSIS:
+                operation = 'propose'
+            elif task.task_type == TaskType.RESEARCH:
+                operation = 'research'
+            elif task.task_type == TaskType.EVALUATION:
+                operation = 'evaluate'
+            elif task.task_type == TaskType.SAFETY:
+                operation = 'check'
+
+        result = await self.execute({
+            'operation': operation,
+            'context': task.metadata if hasattr(task, 'metadata') else {},
+            'task': task
+        })
+
+        # Ensure result has success flag to prevent deadlocks
+        if isinstance(result, dict) and 'success' not in result:
+            result['success'] = True
+
+        return result
+
     async def initialize(self):
         """Initialize the agent"""
         self.status = AgentStatus.READY
@@ -359,6 +385,10 @@ class AgentRegistry:
         """Get an agent by ID"""
         return self.agents.get(agent_id)
     
+    def get_all_agents(self) -> List[BaseAgent]:
+        """Get all registered agents"""
+        return list(self.agents.values())
+
     async def get_executor(self, action_type: str) -> Optional[BaseAgent]:
         """
         Get an executor agent for a given action type.

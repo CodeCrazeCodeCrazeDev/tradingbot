@@ -124,6 +124,8 @@ class IntegratedAgentSystem:
     
     def _init_components(self):
         """Initialize all system components"""
+        # Local import to prevent circular dependency
+        from trading_bot.world_model.latent_dynamics import WorldModel
         
         # 1. Memory System (foundation for all learning)
         self.memory_system = MemorySystem({
@@ -267,6 +269,31 @@ class IntegratedAgentSystem:
         await self._assign_agents_to_teams()
 
         self.initialized = True
+
+    async def _assign_agents_to_teams(self):
+        """Assign agents to functional teams for collaborative work"""
+        logger.info("Assigning agents to functional teams...")
+
+        # Define roles for each team
+        trading_roles = [AgentRole.PLANNER, AgentRole.EXECUTOR, AgentRole.COORDINATOR]
+        research_roles = [AgentRole.RESEARCHER, AgentRole.EVALUATOR]
+        safety_roles = [AgentRole.SAFETY]
+
+        # Get all registered agents
+        all_agents = self.agent_registry.get_all_agents()
+
+        for agent in all_agents:
+            agent_id = agent.agent_id
+            role = agent.role
+
+            if role in trading_roles:
+                self.coordination_core.shared_memory.add_to_team("trading_team", agent_id)
+            elif role in research_roles:
+                self.coordination_core.shared_memory.add_to_team("research_team", agent_id)
+            elif role in safety_roles:
+                self.coordination_core.shared_memory.add_to_team("safety_team", agent_id)
+
+        logger.info("Agent team assignments complete")
         
         logger.info("=" * 60)
         logger.info("INTEGRATED AGENT SYSTEM READY")
@@ -416,6 +443,17 @@ class IntegratedAgentSystem:
     
     async def _gather_context(self) -> SystemContext:
         """Gather current system context"""
+        if not hasattr(self, 'tool_registry'):
+            return SystemContext(
+                timestamp=datetime.now(),
+                market_state={},
+                portfolio_state={},
+                agent_states={},
+                pending_decisions=[],
+                recent_outcomes=[],
+                risk_metrics={}
+            )
+
         # Get market state from tools
         market_tool = await self.tool_registry.get_tool('market_data')
         if market_tool:
@@ -496,7 +534,8 @@ class IntegratedAgentSystem:
                 'success': result.get('success', False),
                 'answer': final_answer,
                 'coordination_report': result,
-                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved."
+                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
+                'iterations': len(result.get('results', []))
             }
         else:
             # Fallback to simple ReAct loop for simpler tasks

@@ -1,0 +1,347 @@
+{
+  "agent_react_reasoner_1_d6b80630": {
+    "memory_id": "189a6fa8-6cbc-499e-8558-54db0345970e",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "react_reasoner_1_d6b80630",
+      "name": "MainReasoner",
+      "archetype": "react_reasoner",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-18T01:05:14.921664"
+    },
+    "metadata": {
+      "key": "agent_react_reasoner_1_d6b80630",
+      "related": [
+        "dynamic_agents",
+        "react_reasoner"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-18T01:05:14.922183",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_constitutional_guardian_1_7a6286cf": {
+    "memory_id": "debc7697-a9f2-4a8a-8a2b-d9dc2df9a64a",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "constitutional_guardian_1_7a6286cf",
+      "name": "SafetyGuardian",
+      "archetype": "constitutional_guardian",
+      "role": "safety",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-18T01:05:14.922540"
+    },
+    "metadata": {
+      "key": "agent_constitutional_guardian_1_7a6286cf",
+      "related": [
+        "dynamic_agents",
+        "constitutional_guardian"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-18T01:05:14.922894",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_analyst_1_57c80e48": {
+    "memory_id": "1525a957-4793-45b0-81c9-46285e75cc20",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "analyst_1_57c80e48",
+      "name": "MarketAnalyst",
+      "archetype": "analyst",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-18T01:05:14.923114"
+    },
+    "metadata": {
+      "key": "agent_analyst_1_57c80e48",
+      "related": [
+        "dynamic_agents",
+        "analyst"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-18T01:05:14.923318",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_monitor_1_070bdf8a": {
+    "memory_id": "69071959-b9ef-4f30-9cf4-fe9d0152a528",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "monitor_1_070bdf8a",
+      "name": "SystemMonitor",
+      "archetype": "monitor",
+      "role": "monitor",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-18T01:05:14.923542"
+    },
+    "metadata": {
+      "key": "agent_monitor_1_070bdf8a",
+      "related": [
+        "dynamic_agents",
+        "monitor"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-18T01:05:14.923738",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_analyst_2_eeb09fb2": {
+    "memory_id": "e9257134-11f8-47a4-b3f0-a80c4b7f08db",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "analyst_2_eeb09fb2",
+      "name": "Request: Analyze market and provide a c... - Data Collection_Agent",
+      "archetype": "analyst",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-18T01:05:14.925804"
+    },
+    "metadata": {
+      "key": "agent_analyst_2_eeb09fb2",
+      "related": [
+        "dynamic_agents",
+        "analyst"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-18T01:05:14.926056",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_analyst_3_909a7ed8": {
+    "memory_id": "da81a31b-15c2-418f-b2bd-0620257895c8",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "analyst_3_909a7ed8",
+      "name": "Request: Analyze market and provide a c... - Reporting_Agent",
+      "archetype": "analyst",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-18T01:05:14.928024"
+    },
+    "metadata": {
+      "key": "agent_analyst_3_909a7ed8",
+      "related": [
+        "dynamic_agents",
+        "analyst"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-18T01:05:14.928227",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "coordination_pattern_hierarchical": {
+    "memory_id": "b09b0d17-96a6-4ccf-9450-d2a47b7be446",
+    "memory_type": "semantic",
+    "content": {
+      "total_uses": 1,
+      "successes": 1,
+      "avg_duration": 0.004272,
+      "avg_efficiency": 1.0,
+      "avg_quality": 0.8000000000000002
+    },
+    "metadata": {
+      "key": "coordination_pattern_hierarchical",
+      "related": [
+        "task_type_<Task pending name='Task-11' coro=<test_integrated_system_flow() running at /app/tests/core_agent_system/test_integration.py:19> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-18T01:06:10.462667",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_react_reasoner_1_e120e41c": {
+    "memory_id": "2ae91b46-7d82-43bf-9484-2b49f6522aca",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "react_reasoner_1_e120e41c",
+      "name": "MainReasoner",
+      "archetype": "react_reasoner",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-18T01:06:10.455564"
+    },
+    "metadata": {
+      "key": "agent_react_reasoner_1_e120e41c",
+      "related": [
+        "dynamic_agents",
+        "react_reasoner"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-18T01:06:10.455859",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_constitutional_guardian_1_84973bd5": {
+    "memory_id": "1beca16f-5e15-4c07-b49a-fa98d2b38fa3",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "constitutional_guardian_1_84973bd5",
+      "name": "SafetyGuardian",
+      "archetype": "constitutional_guardian",
+      "role": "safety",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-18T01:06:10.456098"
+    },
+    "metadata": {
+      "key": "agent_constitutional_guardian_1_84973bd5",
+      "related": [
+        "dynamic_agents",
+        "constitutional_guardian"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-18T01:06:10.456322",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_analyst_1_745ef6a1": {
+    "memory_id": "3cb3be5c-1b18-4d3f-9faf-76ae1d81c388",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "analyst_1_745ef6a1",
+      "name": "MarketAnalyst",
+      "archetype": "analyst",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-18T01:06:10.456552"
+    },
+    "metadata": {
+      "key": "agent_analyst_1_745ef6a1",
+      "related": [
+        "dynamic_agents",
+        "analyst"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-18T01:06:10.456744",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_monitor_1_02d18781": {
+    "memory_id": "4371558b-299b-4080-87ef-26dbbdf8d5a1",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "monitor_1_02d18781",
+      "name": "SystemMonitor",
+      "archetype": "monitor",
+      "role": "monitor",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-18T01:06:10.456931"
+    },
+    "metadata": {
+      "key": "agent_monitor_1_02d18781",
+      "related": [
+        "dynamic_agents",
+        "monitor"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-18T01:06:10.457161",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_analyst_2_594755ad": {
+    "memory_id": "c24ac0c8-a045-4b43-b24d-9786022f29c8",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "analyst_2_594755ad",
+      "name": "Request: Analyze market and provide a c... - Data Collection_Agent",
+      "archetype": "analyst",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-18T01:06:10.459176"
+    },
+    "metadata": {
+      "key": "agent_analyst_2_594755ad",
+      "related": [
+        "dynamic_agents",
+        "analyst"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-18T01:06:10.459393",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_analyst_3_28627a81": {
+    "memory_id": "a74b6edd-ba59-46c3-84bd-5af975471881",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "analyst_3_28627a81",
+      "name": "Request: Analyze market and provide a c... - Reporting_Agent",
+      "archetype": "analyst",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-18T01:06:10.461330"
+    },
+    "metadata": {
+      "key": "agent_analyst_3_28627a81",
+      "related": [
+        "dynamic_agents",
+        "analyst"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-18T01:06:10.461546",
+    "access_count": 0,
+    "last_accessed": null
+  }
+}
