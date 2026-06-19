@@ -134,6 +134,44 @@ class BaseAgent(ABC):
         """Execute an action - must be implemented by subclasses"""
         pass
     
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """
+        Execute a task. Maps task types to agent-specific operations.
+        Ensures results contain a 'success' flag.
+        """
+        self.metrics.last_active = datetime.now()
+
+        # Map task types to operations
+        operation_map = {
+            AgentRole.PLANNER: 'propose',
+            AgentRole.RESEARCHER: 'research',
+            AgentRole.EVALUATOR: 'evaluate',
+            AgentRole.SAFETY: 'check',
+            AgentRole.EXECUTOR: 'execute'
+        }
+
+        operation = operation_map.get(self.role, 'execute')
+
+        # Prepare action from task
+        action = {
+            'operation': operation,
+            'task_id': getattr(task, 'task_id', str(uuid.uuid4())),
+            'description': getattr(task, 'description', ''),
+            'data': getattr(task, 'metadata', {})
+        }
+
+        try:
+            result = await self.execute(action)
+
+            # Ensure success flag exists
+            if 'success' not in result:
+                result['success'] = True
+
+            return result
+        except Exception as e:
+            logger.error(f"Error executing task in {self.name}: {e}")
+            return {'success': False, 'error': str(e)}
+
     async def initialize(self):
         """Initialize the agent"""
         self.status = AgentStatus.READY
@@ -621,6 +659,7 @@ class ExecutorAgent(BaseAgent):
             config=config
         )
         self.config = config or {}
+        self.executor = TradeExecutor()
     
     def _register_capabilities(self):
         self.add_capability(AgentCapability(

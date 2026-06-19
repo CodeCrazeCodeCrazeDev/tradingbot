@@ -156,6 +156,7 @@ class IntegratedAgentSystem:
         })
         
         # 5b. World Model (DreamerV3/JEPA - imagination)
+        from trading_bot.world_model.latent_dynamics import WorldModel
         self.world_model = WorldModel({
             'input_dim': self.config.get('market_input_dim', 20),
             'latent_dim': self.config.get('latent_dim', 64),
@@ -267,6 +268,29 @@ class IntegratedAgentSystem:
         await self._assign_agents_to_teams()
 
         self.initialized = True
+
+    async def _assign_agents_to_teams(self):
+        """Assign agents to functional teams for coordination"""
+        logger.info("Assigning agents to teams...")
+
+        # Define roles for each team
+        trading_roles = [AgentRole.PLANNER, AgentRole.EXECUTOR, AgentRole.COORDINATOR]
+        research_roles = [AgentRole.RESEARCHER, AgentRole.EVALUATOR]
+        safety_roles = [AgentRole.SAFETY]
+
+        # Get all agents from registry
+        all_agents = self.agent_registry.agents.values()
+
+        for agent in all_agents:
+            # Map role to team
+            if agent.role in trading_roles:
+                self.coordination_core.shared_memory.add_to_team('trading_team', agent.agent_id)
+            elif agent.role in research_roles:
+                self.coordination_core.shared_memory.add_to_team('research_team', agent.agent_id)
+            elif agent.role in safety_roles:
+                self.coordination_core.shared_memory.add_to_team('safety_team', agent.agent_id)
+
+        logger.info("Agent team assignments complete")
         
         logger.info("=" * 60)
         logger.info("INTEGRATED AGENT SYSTEM READY")
@@ -496,7 +520,8 @@ class IntegratedAgentSystem:
                 'success': result.get('success', False),
                 'answer': final_answer,
                 'coordination_report': result,
-                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved."
+                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
+                'iterations': len(result.get('results', []))
             }
         else:
             # Fallback to simple ReAct loop for simpler tasks
