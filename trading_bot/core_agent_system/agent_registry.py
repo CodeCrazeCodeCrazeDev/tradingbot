@@ -134,6 +134,37 @@ class BaseAgent(ABC):
         """Execute an action - must be implemented by subclasses"""
         pass
     
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """
+        Execute a task using this agent.
+        Standard interface for multi-agent coordination.
+        """
+        # Map task to operation
+        operation = "execute"
+        from .coordination_core import TaskType
+        if hasattr(task, 'task_type'):
+            if task.task_type == TaskType.ANALYSIS:
+                operation = "propose"
+            elif task.task_type == TaskType.RESEARCH:
+                operation = "research"
+            elif task.task_type == TaskType.EXECUTION:
+                operation = "execute"
+            elif task.task_type == TaskType.OPTIMIZATION:
+                operation = "evaluate"
+            elif task.task_type == TaskType.MONITORING:
+                operation = "check"
+
+        result = await self.execute({
+            'operation': operation,
+            'task': task.to_dict() if hasattr(task, 'to_dict') else task,
+            'context': getattr(task, 'metadata', {})
+        })
+
+        if 'success' not in result:
+            result['success'] = True
+
+        return result
+
     async def initialize(self):
         """Initialize the agent"""
         self.status = AgentStatus.READY
@@ -621,6 +652,7 @@ class ExecutorAgent(BaseAgent):
             config=config
         )
         self.config = config or {}
+        self.executor = TradeExecutor(config)
     
     def _register_capabilities(self):
         self.add_capability(AgentCapability(
