@@ -166,6 +166,40 @@ class BaseAgent(ABC):
     def recall_memory(self, key: str, default: Any = None) -> Any:
         """Recall something from agent memory"""
         return self.memory.get(key, default)
+
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """
+        Execute a task using the agent's execute method.
+        Provides compatibility with SelfCoordinatingCore.
+        """
+        # Map task to operation
+        operation = "execute"
+        if hasattr(task, 'task_type'):
+            from .coordination_core import TaskType
+            if task.task_type == TaskType.ANALYSIS:
+                operation = "propose"
+            elif task.task_type == TaskType.RESEARCH:
+                operation = "research"
+            elif task.task_type == TaskType.MONITORING:
+                operation = "check"
+
+        # Convert task to action for compatibility
+        action = {
+            'operation': operation,
+            'task_id': getattr(task, 'task_id', str(uuid.uuid4())),
+            'name': getattr(task, 'name', 'unnamed_task'),
+            'description': getattr(task, 'description', ''),
+            'context': getattr(task, 'metadata', {}),
+            'metadata': getattr(task, 'metadata', {})
+        }
+
+        result = await self.execute(action)
+
+        # Ensure result has success flag for coordination core
+        if isinstance(result, dict) and 'success' not in result:
+            result['success'] = True
+
+        return result
     
     def get_status(self) -> Dict[str, Any]:
         """Get agent status"""
@@ -536,6 +570,7 @@ class PlannerAgent(BaseAgent):
             config=config
         )
         self.config = config or {}
+        self.executor = TradeExecutor(self.config)
     
     def _register_capabilities(self):
         self.add_capability(AgentCapability(
