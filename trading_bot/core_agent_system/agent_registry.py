@@ -167,6 +167,42 @@ class BaseAgent(ABC):
         """Recall something from agent memory"""
         return self.memory.get(key, default)
     
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """Execute a task using this agent's capabilities"""
+        # Mapping task type to operation
+        operation = 'execute'
+        if hasattr(task, 'task_type'):
+            try:
+                from .coordination_core import TaskType
+                # Check for ANALYSIS since PLANNING might not exist
+                if hasattr(TaskType, 'PLANNING') and task.task_type == TaskType.PLANNING:
+                    operation = 'propose'
+                elif task.task_type == TaskType.ANALYSIS:
+                    operation = 'propose'
+                elif task.task_type == TaskType.RESEARCH:
+                    operation = 'research'
+                elif hasattr(TaskType, 'EVALUATION') and task.task_type == TaskType.EVALUATION:
+                    operation = 'evaluate'
+                elif hasattr(TaskType, 'SAFETY') and task.task_type == TaskType.SAFETY:
+                    operation = 'check'
+            except ImportError:
+                pass
+
+        # Convert task to action for backward compatibility with execute()
+        action = {
+            'operation': operation,
+            'task': task.to_dict() if hasattr(task, 'to_dict') else task,
+            'context': getattr(task, 'metadata', {})
+        }
+
+        result = await self.execute(action)
+
+        # Ensure result has success flag to avoid coordination deadlocks
+        if 'success' not in result:
+            result['success'] = 'error' not in result
+
+        return result
+
     def get_status(self) -> Dict[str, Any]:
         """Get agent status"""
         return {
@@ -495,7 +531,8 @@ class AgentRegistry:
         
         role_counts = {}
         for role in AgentRole:
-            count = len(self.role_index.get(role, self.role_index.get(AgentRole(role), [])) if isinstance(role, str) else self.role_index[role])
+            # Handle both Enum and string if necessary, but consistently index with AgentRole
+            count = len(self.role_index.get(role, []))
             if count > 0:
                 role_counts[role.value] = count
         
@@ -536,6 +573,7 @@ class PlannerAgent(BaseAgent):
             config=config
         )
         self.config = config or {}
+        self.executor = TradeExecutor(config)
     
     def _register_capabilities(self):
         self.add_capability(AgentCapability(

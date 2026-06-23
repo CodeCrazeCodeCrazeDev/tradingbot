@@ -156,6 +156,7 @@ class IntegratedAgentSystem:
         })
         
         # 5b. World Model (DreamerV3/JEPA - imagination)
+        from trading_bot.world_model.latent_dynamics import WorldModel
         self.world_model = WorldModel({
             'input_dim': self.config.get('market_input_dim', 20),
             'latent_dim': self.config.get('latent_dim', 64),
@@ -274,6 +275,23 @@ class IntegratedAgentSystem:
         
         self._print_system_status()
     
+    async def _assign_agents_to_teams(self):
+        """Assign registered agents to functional teams for teamwork"""
+        logger.info("Assigning agents to functional teams...")
+
+        for agent_id, agent in self.agent_registry.agents.items():
+            role = agent.role
+
+            # Map roles to teams
+            if role in [AgentRole.PLANNER, AgentRole.EXECUTOR, AgentRole.COORDINATOR]:
+                self.coordination_core.shared_memory.add_to_team(agent_id, "trading_team")
+            elif role in [AgentRole.RESEARCHER, AgentRole.EVALUATOR]:
+                self.coordination_core.shared_memory.add_to_team(agent_id, "research_team")
+            elif role == AgentRole.SAFETY:
+                self.coordination_core.shared_memory.add_to_team(agent_id, "safety_team")
+
+        logger.info("Agent team assignments complete")
+
     async def _register_default_agents(self):
         """Register default agents including legacy ones"""
         default_agents = [
@@ -496,7 +514,8 @@ class IntegratedAgentSystem:
                 'success': result.get('success', False),
                 'answer': final_answer,
                 'coordination_report': result,
-                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved."
+                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
+                'iterations': len(result.get('results', []))
             }
         else:
             # Fallback to simple ReAct loop for simpler tasks

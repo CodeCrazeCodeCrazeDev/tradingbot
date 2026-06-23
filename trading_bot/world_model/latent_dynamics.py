@@ -44,7 +44,6 @@ from .world_state import MarketWorldState, VolatilityRegime, LiquidityCondition,
 from .ignorance_score import IgnoranceScoreEngine
 from .counterfactual_engine import CounterfactualEngine, TradeOutcome
 from ..intelligence_core.bloomberg_plus import AutonomousFinancialIntelligence
-from .simulation_orchestrator import create_runtime_shield
 from collections import deque
 
 logger = logging.getLogger(__name__)
@@ -922,6 +921,7 @@ class WorldModel:
         n_macro_actions: int = 16,
         macro_action_length: int = 5
     ):
+        from .simulation_orchestrator import create_runtime_shield
         if config is not None and isinstance(config, dict):
             wm_cfg = config.get('world_model', {})
             input_dim = wm_cfg.get('input_dim', input_dim)
