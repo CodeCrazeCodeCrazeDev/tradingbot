@@ -133,6 +133,41 @@ class BaseAgent(ABC):
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute an action - must be implemented by subclasses"""
         pass
+
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """
+        Execute a task for coordination core compatibility.
+        Maps task types to appropriate agent operations.
+        """
+        from .coordination_core import TaskType
+
+        # Determine operation based on task type and role
+        operation = 'execute'
+        if task.task_type == TaskType.ANALYSIS:
+            if self.role == AgentRole.PLANNER:
+                operation = 'propose'
+            else:
+                operation = 'analyze'
+        elif task.task_type == TaskType.RESEARCH:
+            operation = 'research'
+
+        # Prepare action for execute method
+        action = {
+            'operation': operation,
+            'task_id': task.task_id,
+            'description': task.description,
+            'context': task.metadata,
+            'data': task.metadata
+        }
+
+        # Execute and return result
+        result = await self.execute(action)
+
+        # Ensure result has success flag for coordination core
+        if 'success' not in result:
+            result['success'] = 'error' not in result
+
+        return result
     
     async def initialize(self):
         """Initialize the agent"""

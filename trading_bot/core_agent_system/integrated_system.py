@@ -156,6 +156,7 @@ class IntegratedAgentSystem:
         })
         
         # 5b. World Model (DreamerV3/JEPA - imagination)
+        from trading_bot.world_model.latent_dynamics import WorldModel
         self.world_model = WorldModel({
             'input_dim': self.config.get('market_input_dim', 20),
             'latent_dim': self.config.get('latent_dim', 64),
@@ -267,6 +268,25 @@ class IntegratedAgentSystem:
         await self._assign_agents_to_teams()
 
         self.initialized = True
+
+    async def _assign_agents_to_teams(self):
+        """Assign registered agents to functional teams"""
+        logger.info("Assigning agents to teams...")
+
+        team_mapping = {
+            AgentRole.PLANNER: 'trading_team',
+            AgentRole.EXECUTOR: 'trading_team',
+            AgentRole.COORDINATOR: 'trading_team',
+            AgentRole.RESEARCHER: 'research_team',
+            AgentRole.EVALUATOR: 'research_team',
+            AgentRole.SAFETY: 'safety_team'
+        }
+
+        for agent_id, agent in self.agent_registry.agents.items():
+            team = team_mapping.get(agent.role)
+            if team:
+                self.coordination_core.shared_memory.add_to_team(team, agent_id)
+                logger.debug(f"Assigned agent {agent.name} ({agent.role.value}) to team {team}")
         
         logger.info("=" * 60)
         logger.info("INTEGRATED AGENT SYSTEM READY")
@@ -496,7 +516,8 @@ class IntegratedAgentSystem:
                 'success': result.get('success', False),
                 'answer': final_answer,
                 'coordination_report': result,
-                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved."
+                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
+                'iterations': len(result.get('results', []))
             }
         else:
             # Fallback to simple ReAct loop for simpler tasks
