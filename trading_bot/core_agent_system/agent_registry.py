@@ -167,6 +167,48 @@ class BaseAgent(ABC):
         """Recall something from agent memory"""
         return self.memory.get(key, default)
     
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """
+        Execute a coordination task.
+
+        Maps task types to agent-specific operations.
+        """
+        # Map task to operation
+        task_type_str = task.task_type.value if hasattr(task.task_type, 'value') else str(task.task_type)
+
+        # Default mapping
+        operation_map = {
+            'analysis': 'analyze',
+            'execution': 'execute',
+            'research': 'research',
+            'monitoring': 'monitor',
+            'optimization': 'optimize',
+            'coordination': 'coordinate'
+        }
+
+        # Role-specific overrides
+        if self.role == AgentRole.PLANNER:
+            operation_map['analysis'] = 'propose'
+
+        operation = operation_map.get(task_type_str, 'execute')
+
+        # Prepare action
+        action = {
+            'operation': operation,
+            'task_id': task.task_id,
+            'data': task.metadata,
+            'context': task.metadata
+        }
+
+        # Execute
+        result = await self.execute(action)
+
+        # Ensure success flag based on absence of error
+        if 'success' not in result:
+            result['success'] = 'error' not in result
+
+        return result
+
     def get_status(self) -> Dict[str, Any]:
         """Get agent status"""
         return {
@@ -495,7 +537,7 @@ class AgentRegistry:
         
         role_counts = {}
         for role in AgentRole:
-            count = len(self.role_index.get(role, self.role_index.get(AgentRole(role), [])) if isinstance(role, str) else self.role_index[role])
+            count = len(self.role_index.get(role, []))
             if count > 0:
                 role_counts[role.value] = count
         
