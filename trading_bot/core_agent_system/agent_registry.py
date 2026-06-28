@@ -133,6 +133,66 @@ class BaseAgent(ABC):
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute an action - must be implemented by subclasses"""
         pass
+
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """
+        Execute a task using this agent's capabilities.
+        Default implementation intelligently maps task types to execute() operations.
+        """
+        start_time = datetime.now()
+
+        # Map TaskType to operation
+        from .coordination_core import TaskType
+
+        operation = "execute"
+        if task.task_type == TaskType.ANALYSIS:
+            operation = "propose" if self.role == AgentRole.PLANNER else "analyze"
+        elif task.task_type == TaskType.RESEARCH:
+            operation = "research"
+        elif task.task_type == TaskType.OPTIMIZATION:
+            operation = "evaluate"
+
+        # Override based on role if operation is still default
+        if operation == "execute":
+            if self.role == AgentRole.PLANNER:
+                operation = "propose"
+            elif self.role == AgentRole.RESEARCHER:
+                operation = "research"
+            elif self.role == AgentRole.EVALUATOR:
+                operation = "evaluate"
+            elif self.role == AgentRole.SAFETY:
+                operation = "check"
+
+        try:
+            # Prepare action payload
+            action_payload = {
+                'operation': operation,
+                'context': task.metadata,
+                'data': task.metadata,
+                'task_id': task.task_id,
+                'description': task.description
+            }
+
+            # Execute standard operation
+            result = await self.execute(action_payload)
+
+            # Record metrics
+            execution_time = (datetime.now() - start_time).total_seconds()
+            # Success is determined by 'success' key or absence of 'error'
+            success = result.get('success', 'error' not in result)
+            self.metrics.update(success, execution_time)
+
+            # Ensure result has success flag
+            if 'success' not in result:
+                result['success'] = success
+
+            return result
+
+        except Exception as e:
+            execution_time = (datetime.now() - start_time).total_seconds()
+            self.metrics.update(False, execution_time)
+            logger.error(f"Agent {self.name} failed task execution: {e}")
+            return {'success': False, 'error': str(e)}
     
     async def initialize(self):
         """Initialize the agent"""
@@ -358,6 +418,10 @@ class AgentRegistry:
     def get_agent(self, agent_id: str) -> Optional[BaseAgent]:
         """Get an agent by ID"""
         return self.agents.get(agent_id)
+
+    def get_all_agents(self) -> List[BaseAgent]:
+        """Get all registered agents"""
+        return list(self.agents.values())
     
     async def get_executor(self, action_type: str) -> Optional[BaseAgent]:
         """

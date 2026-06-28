@@ -124,6 +124,8 @@ class IntegratedAgentSystem:
     
     def _init_components(self):
         """Initialize all system components"""
+        # Local import to avoid circular dependencies
+        from trading_bot.world_model.latent_dynamics import WorldModel
         
         # 1. Memory System (foundation for all learning)
         self.memory_system = MemorySystem({
@@ -267,6 +269,24 @@ class IntegratedAgentSystem:
         await self._assign_agents_to_teams()
 
         self.initialized = True
+
+    async def _assign_agents_to_teams(self):
+        """Assign agents to functional teams for coordination"""
+        logger.info("Assigning agents to functional teams...")
+
+        # Get all agents
+        agents = list(self.agent_registry.get_all_agents())
+
+        for agent in agents:
+            # Map roles to teams
+            if agent.role in [AgentRole.PLANNER, AgentRole.EXECUTOR, AgentRole.COORDINATOR]:
+                self.coordination_core.shared_memory.add_to_team("trading_team", agent.agent_id)
+            elif agent.role in [AgentRole.RESEARCHER, AgentRole.EVALUATOR]:
+                self.coordination_core.shared_memory.add_to_team("research_team", agent.agent_id)
+            elif agent.role == AgentRole.SAFETY:
+                self.coordination_core.shared_memory.add_to_team("safety_team", agent.agent_id)
+
+        logger.info("Agent team assignment complete")
         
         logger.info("=" * 60)
         logger.info("INTEGRATED AGENT SYSTEM READY")
@@ -496,7 +516,8 @@ class IntegratedAgentSystem:
                 'success': result.get('success', False),
                 'answer': final_answer,
                 'coordination_report': result,
-                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved."
+                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
+                'iterations': len(result.get('results', []))
             }
         else:
             # Fallback to simple ReAct loop for simpler tasks
