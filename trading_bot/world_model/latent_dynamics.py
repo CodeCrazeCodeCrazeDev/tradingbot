@@ -921,6 +921,7 @@ class WorldModel:
         n_macro_actions: int = 16,
         macro_action_length: int = 5
     ):
+        from .simulation_orchestrator import create_runtime_shield
         if config is not None and isinstance(config, dict):
             wm_cfg = config.get('world_model', {})
             input_dim = wm_cfg.get('input_dim', input_dim)

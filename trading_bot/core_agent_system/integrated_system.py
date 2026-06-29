@@ -125,6 +125,7 @@ class IntegratedAgentSystem:
     
     def _init_components(self):
         """Initialize all system components"""
+        from trading_bot.world_model.latent_dynamics import WorldModel
         
         # 1. Memory System (foundation for all learning)
         self.memory_system = MemorySystem({
@@ -157,6 +158,7 @@ class IntegratedAgentSystem:
         })
         
         # 5b. World Model (DreamerV3/JEPA - imagination)
+        from trading_bot.world_model.latent_dynamics import WorldModel
         self.world_model = WorldModel({
             'input_dim': self.config.get('market_input_dim', 20),
             'latent_dim': self.config.get('latent_dim', 64),
@@ -242,7 +244,13 @@ class IntegratedAgentSystem:
         await self.react_loop.initialize()
         
         logger.info("7b. Initializing World Model...")
-        # Note: WorldModel doesn't have an async initialize, but it's good practice
+        # Delayed import to avoid circular dependencies
+        from trading_bot.world_model.latent_dynamics import WorldModel
+        self.world_model = WorldModel({
+            'input_dim': self.config.get('market_input_dim', 20),
+            'latent_dim': self.config.get('latent_dim', 64),
+            'hidden_dim': self.config.get('hidden_dim', 128)
+        })
 
         logger.info("8. Initializing Master Orchestrator...")
         # Inject dependencies into orchestrator
@@ -268,6 +276,25 @@ class IntegratedAgentSystem:
         await self._assign_agents_to_teams()
 
         self.initialized = True
+
+    async def _assign_agents_to_teams(self):
+        """Assign registered agents to functional teams"""
+        logger.info("Assigning agents to teams...")
+
+        team_mapping = {
+            AgentRole.PLANNER: 'trading_team',
+            AgentRole.EXECUTOR: 'trading_team',
+            AgentRole.COORDINATOR: 'trading_team',
+            AgentRole.RESEARCHER: 'research_team',
+            AgentRole.EVALUATOR: 'research_team',
+            AgentRole.SAFETY: 'safety_team'
+        }
+
+        for agent_id, agent in self.agent_registry.agents.items():
+            team = team_mapping.get(agent.role)
+            if team:
+                self.coordination_core.shared_memory.add_to_team(team, agent_id)
+                logger.debug(f"Assigned agent {agent.name} ({agent.role.value}) to team {team}")
         
         logger.info("=" * 60)
         logger.info("INTEGRATED AGENT SYSTEM READY")
@@ -275,6 +302,28 @@ class IntegratedAgentSystem:
         
         self._print_system_status()
     
+    async def _assign_agents_to_teams(self):
+        """Assign agents to functional teams based on their roles"""
+        logger.info("Assigning agents to functional teams...")
+
+        all_agents = list(self.agent_registry.agents.values())
+
+        for agent in all_agents:
+            # Assign to trading team
+            if agent.role in [AgentRole.PLANNER, AgentRole.EXECUTOR]:
+                self.coordination_core.shared_memory.add_to_team('trading_team', agent.agent_id)
+                logger.debug(f"Assigned {agent.name} to trading_team")
+
+            # Assign to research team
+            elif agent.role in [AgentRole.RESEARCHER, AgentRole.EVALUATOR]:
+                self.coordination_core.shared_memory.add_to_team('research_team', agent.agent_id)
+                logger.debug(f"Assigned {agent.name} to research_team")
+
+            # Assign to safety team
+            elif agent.role in [AgentRole.SAFETY]:
+                self.coordination_core.shared_memory.add_to_team('safety_team', agent.agent_id)
+                logger.debug(f"Assigned {agent.name} to safety_team")
+
     async def _register_default_agents(self):
         """Register default agents including legacy ones"""
         default_agents = [
@@ -446,6 +495,17 @@ class IntegratedAgentSystem:
     
     async def _gather_context(self) -> SystemContext:
         """Gather current system context"""
+        if not hasattr(self, 'tool_registry'):
+            return SystemContext(
+                timestamp=datetime.now(),
+                market_state={},
+                portfolio_state={},
+                agent_states={},
+                pending_decisions=[],
+                recent_outcomes=[],
+                risk_metrics={}
+            )
+
         # Get market state from tools
         market_tool = await self.tool_registry.get_tool('market_data')
         if market_tool:
@@ -511,16 +571,23 @@ class IntegratedAgentSystem:
             )
 
             # Extract final answer from results
-            final_answer = "Task completed by coordinated team."
+            answer_part = "No specific result returned."
+            total_iterations = 0
             if result.get('results'):
                 # Try to find the most relevant result
                 for r in reversed(result['results']):
                     if r.get('result'):
-                        final_answer = r['result']
+                        answer_part = r['result']
                         break
                     elif r.get('answer'):
-                        final_answer = r['answer']
+                        answer_part = r['answer']
                         break
+
+                # Sum up iterations if available from subtasks
+                for r in result['results']:
+                    total_iterations += r.get('iterations', 0)
+
+            final_answer = f"Task completed by coordinated team. Result: {answer_part}"
 
             return {
                 'success': result.get('success', False),
@@ -544,6 +611,22 @@ class IntegratedAgentSystem:
                 'iterations': len(trace.steps)
             }
     
+    async def _assign_agents_to_teams(self):
+        """Assign default agents to functional teams for coordination"""
+        if not hasattr(self, 'agent_registry') or not hasattr(self, 'coordination_core'):
+            return
+
+        # Use a list to avoid issues with dictionary iteration during potential modifications
+        agents = list(self.agent_registry.agents.values())
+        for agent in agents:
+            role = agent.role
+            if role in [AgentRole.PLANNER, AgentRole.EXECUTOR, AgentRole.COORDINATOR]:
+                self.coordination_core.shared_memory.add_to_team('trading_team', agent.agent_id)
+            elif role in [AgentRole.RESEARCHER, AgentRole.EVALUATOR]:
+                self.coordination_core.shared_memory.add_to_team('research_team', agent.agent_id)
+            elif role == AgentRole.SAFETY:
+                self.coordination_core.shared_memory.add_to_team('safety_team', agent.agent_id)
+
     def get_comprehensive_status(self) -> Dict[str, Any]:
         """Get comprehensive system status"""
         return {
