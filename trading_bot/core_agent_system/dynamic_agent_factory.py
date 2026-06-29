@@ -177,10 +177,15 @@ class SubAgent(BaseAgent):
         
         Follows the appropriate pattern based on archetype.
         """
+        # Note: We don't call super().execute_task() here to avoid infinite recursion
+        # as BaseAgent.execute_task() calls self.execute(), which for SubAgent
+        # might call back into execute_task() for proposals.
+        # Instead, we implement the logic directly and update metrics.
+
         self.last_active = datetime.now()
         
         # Extract context if task is from MasterOrchestrator proposal
-        context = task.metadata
+        context = task.metadata if hasattr(task, 'metadata') else {}
         if hasattr(context, 'market_state'):
             # Convert SystemContext to dict
             context = {

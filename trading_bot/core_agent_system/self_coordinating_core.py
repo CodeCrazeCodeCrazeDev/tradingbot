@@ -30,8 +30,9 @@ from .coordination_core import (
 )
 from .coordination_core_part2 import (
     CoordinationLayer, SharedMemory, SharedMemoryScope,
-    GovernanceSystem, CoordinationLearningLoop
+    CoordinationLearningLoop
 )
+from .governance_system import GovernanceSystem
 from .dynamic_agent_factory import (
     DynamicAgentFactory, AgentArchetype, SubAgent
 )
@@ -166,7 +167,10 @@ class SelfCoordinatingCore:
         self.failure_recovery = FailureRecoverySystem()
         self.coordination_layer = CoordinationLayer()
         self.shared_memory = SharedMemory()
-        self.governance = GovernanceSystem(constitutional_layer)
+        self.governance = GovernanceSystem(
+            constitutional_layer=constitutional_layer,
+            boundary_config=self.config.get('trust_boundary')
+        )
         self.learning_loop = CoordinationLearningLoop(memory_system)
         
         # Dynamic agent factory
@@ -294,7 +298,7 @@ class SelfCoordinatingCore:
                 results.extend(batch_results)
             
             # Aggregate results
-            success = all(r.get('success', False) for r in results)
+            success = all(r.get('success', False) if isinstance(r, dict) else False for r in results)
             
             # Update metrics
             duration = (datetime.now() - self.task_start_times[task.task_id]).total_seconds()

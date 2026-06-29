@@ -249,14 +249,23 @@ class EnhancedCorrelationManager:
         try:
             # Build price DataFrame
             data = {}
+            min_len = 999999
+
+            # Find the minimum length among symbols to ensure same length for DataFrame
+            active_symbols = []
             for symbol in symbols:
                 if symbol in self.price_history and len(self.price_history[symbol]) > 10:
-                    data[symbol] = self.price_history[symbol]
+                    active_symbols.append(symbol)
+                    min_len = min(min_len, len(self.price_history[symbol]))
             
-            if len(data) < 2:
+            if len(active_symbols) < 2:
                 logger.warning("Not enough data to calculate correlation")
                 return None
             
+            # Slice all histories to the minimum length
+            for symbol in active_symbols:
+                data[symbol] = self.price_history[symbol][-min_len:]
+
             df = pd.DataFrame(data)
             self.correlation_matrix = df.corr()
             self.last_update = datetime.now()

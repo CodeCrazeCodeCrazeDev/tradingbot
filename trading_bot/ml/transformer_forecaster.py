@@ -7,8 +7,10 @@ Implements state-of-the-art transformer architecture for financial time series p
 import numpy as np
 try:
     import torch
+    from trading_bot.ml.recurrent_transformer import RecurrentDepthTransformerBase
 except ImportError:
     torch = None
+    RecurrentDepthTransformerBase = object
 import torch.nn as nn
 import torch.optim as optim
 from typing import Dict, List, Optional, Tuple
@@ -29,8 +31,8 @@ class PositionalEncoding(nn.Module):
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-np.log(10000.0) / d_model))
         
-        pe[:, 0:2] = torch.sin(position * div_term)
-        pe[:, 1:2] = torch.cos(position * div_term)
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0)
         
         self.register_buffer('pe', pe)
@@ -41,9 +43,9 @@ class PositionalEncoding(nn.Module):
 
 class TimeSeriesTransformer(nn.Module):
     """
-    Transformer model for time series forecasting
+    Recurrent-Depth Transformer model for time series forecasting
     
-    Uses multi-head attention to capture long-range dependencies in price data.
+    Uses iterative multi-head attention to capture long-range dependencies.
     """
     
     def __init__(
@@ -55,7 +57,8 @@ class TimeSeriesTransformer(nn.Module):
         num_decoder_layers: int = 6,
         dim_feedforward: int = 1024,
         dropout: float = 0.1,
-        forecast_horizon: int = 10
+        forecast_horizon: int = 10,
+        use_act: bool = False
     ):
         super(TimeSeriesTransformer, self).__init__()
         
@@ -66,29 +69,25 @@ class TimeSeriesTransformer(nn.Module):
         self.input_embedding = nn.Linear(input_dim, d_model)
         self.pos_encoder = PositionalEncoding(d_model)
         
-        # Transformer
-        encoder_layer = nn.TransformerEncoderLayer(
+        # Recurrent-Depth Blocks
+        from trading_bot.ml.recurrent_transformer import RecurrentDepthTransformerEncoder, RecurrentDepthTransformerDecoder
+
+        self.encoder = RecurrentDepthTransformerEncoder(
             d_model=d_model,
             nhead=nhead,
             dim_feedforward=dim_feedforward,
             dropout=dropout,
-            batch_first=True
-        )
-        self.transformer_encoder = nn.TransformerEncoder(
-            encoder_layer,
-            num_layers=num_encoder_layers
+            recurrent_depth=num_encoder_layers,
+            use_act=use_act
         )
         
-        decoder_layer = nn.TransformerDecoderLayer(
+        self.decoder = RecurrentDepthTransformerDecoder(
             d_model=d_model,
             nhead=nhead,
             dim_feedforward=dim_feedforward,
             dropout=dropout,
-            batch_first=True
-        )
-        self.transformer_decoder = nn.TransformerDecoder(
-            decoder_layer,
-            num_layers=num_decoder_layers
+            recurrent_depth=num_decoder_layers,
+            use_act=use_act
         )
         
         # Output layers
@@ -117,7 +116,7 @@ class TimeSeriesTransformer(nn.Module):
     
     def forward(self, src, tgt=None):
         """
-        Forward pass
+        Forward pass with iterative reasoning
         
         Args:
             src: Source sequence (batch, seq_len, input_dim)
@@ -130,8 +129,8 @@ class TimeSeriesTransformer(nn.Module):
         src = self.input_embedding(src) * np.sqrt(self.d_model)
         src = self.pos_encoder(src)
         
-        # Encode
-        memory = self.transformer_encoder(src)
+        # Encode (Iterative)
+        memory, enc_stats = self.encoder(src)
         
         # Decode
         if tgt is None:
@@ -141,7 +140,9 @@ class TimeSeriesTransformer(nn.Module):
             tgt = self.input_embedding(tgt) * np.sqrt(self.d_model)
         
         tgt = self.pos_encoder(tgt)
-        output = self.transformer_decoder(tgt, memory)
+
+        # Decode (Iterative)
+        output, dec_stats = self.decoder(tgt, memory)
         
         # Project to predictions
         predictions = self.output_projection(output).squeeze(-1)
