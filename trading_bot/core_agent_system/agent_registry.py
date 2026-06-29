@@ -133,37 +133,42 @@ class BaseAgent(ABC):
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute an action - must be implemented by subclasses"""
         pass
-    
+
     async def execute_task(self, task: Any) -> Dict[str, Any]:
         """
-        Execute a Task object (from SelfCoordinatingCore).
-        Provides a bridge between the coordination layer and agent execution.
+        Execute a task for the coordination core.
+        Maps task types to specific agent operations.
         """
-        # Determine the operation based on task type or name
+        # Local import to prevent circularity during orchestration
         from .coordination_core import TaskType
 
-        operation = 'execute'
+        operation = "execute"
+        if self.role == AgentRole.PLANNER:
+            operation = "propose"
+        elif self.role == AgentRole.RESEARCHER:
+            operation = "research"
+        elif self.role == AgentRole.EVALUATOR:
+            operation = "evaluate"
+        elif self.role == AgentRole.SAFETY:
+            operation = "check"
+
+        # Special mapping for coordination tasks
         if hasattr(task, 'task_type'):
             if task.task_type == TaskType.ANALYSIS:
-                operation = 'analyze' if self.role == AgentRole.PLANNER else 'propose'
-            elif task.task_type == TaskType.RESEARCH:
-                operation = 'research'
-            elif task.task_type == TaskType.EXECUTION:
-                operation = 'execute'
+                if self.role == AgentRole.PLANNER:
+                    operation = "propose"
+                elif self.role == AgentRole.RESEARCHER:
+                    operation = "research"
+                # Analysts and other roles can use execute (default)
 
-        # Prepare action from task
-        action = {
+        result = await self.execute({
             'operation': operation,
-            'task_id': getattr(task, 'task_id', 'unknown'),
-            'description': getattr(task, 'description', ''),
-            'data': getattr(task, 'metadata', {})
-        }
+            'context': task.metadata if hasattr(task, 'metadata') else {},
+            'task': task
+        })
 
-        # Execute and return result
-        result = await self.execute(action)
-
-        # Ensure 'success' flag exists for coordination core
-        if 'success' not in result:
+        # Ensure result has success flag for coordination core
+        if result and 'success' not in result:
             result['success'] = 'error' not in result
 
         return result
@@ -570,7 +575,7 @@ class PlannerAgent(BaseAgent):
             config=config
         )
         self.config = config or {}
-    
+
     def _register_capabilities(self):
         self.add_capability(AgentCapability(
             name="planning",
@@ -668,7 +673,7 @@ class ExecutorAgent(BaseAgent):
         )
         self.config = config or {}
         self.executor = TradeExecutor(self.config)
-    
+
     def _register_capabilities(self):
         self.add_capability(AgentCapability(
             name="trade_execution",
