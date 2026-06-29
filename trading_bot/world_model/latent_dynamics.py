@@ -1011,6 +1011,7 @@ class WorldModel:
         self.intel_system = AutonomousFinancialIntelligence()
 
         # Runtime Shield (L10) for formal safety verification
+        from .simulation_orchestrator import create_runtime_shield
         self.shield = create_runtime_shield()
 
         # Training mode

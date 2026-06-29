@@ -27,10 +27,12 @@ try:
     import torch.nn as nn
     import torch.nn.functional as F
     from torch.utils.data import Dataset, DataLoader
+    from trading_bot.ml.recurrent_transformer import RecurrentDepthTransformerBase
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
-    logger.warning("PyTorch not available. Deep learning features will be limited.")
+    RecurrentDepthTransformerBase = object
+    logger.warning("PyTorch or recurrent_transformer not available. Deep learning features will be limited.")
 
 try:
     from sklearn.preprocessing import StandardScaler, MinMaxScaler
@@ -414,43 +416,57 @@ import pandas
             return out, attn_weights
     
     
-    class TransformerPricePredictor(nn.Module):
+    class TransformerPricePredictor(RecurrentDepthTransformerBase):
         """
-        Transformer-based price prediction model
+        Recurrent-Depth Transformer for price prediction.
+
+        Replaces stacked layers with iterative reasoning over a shared block.
         """
         
         def __init__(self,
                      input_size: int = 64,
                      d_model: int = 256,
                      nhead: int = 8,
-                     num_layers: int = 6,
+                     num_layers: int = 6,  # Used as recurrent_depth
                      dim_feedforward: int = 1024,
-                     num_classes: int = 3):
-            super().__init__()
-            
-            self.input_projection = nn.Linear(input_size, d_model)
-            
-            encoder_layer = nn.TransformerEncoderLayer(
+                     num_classes: int = 3,
+                     use_act: bool = False):
+            # Initialize the recurrent base
+            super().__init__(
                 d_model=d_model,
                 nhead=nhead,
                 dim_feedforward=dim_feedforward,
-                dropout=0.1,
-                batch_first=True
+                recurrent_depth=num_layers,
+                use_act=use_act
             )
-            self.transformer = nn.TransformerEncoder(encoder_layer, num_layers)
+
+            self.input_projection = nn.Linear(input_size, d_model)
             
             self.fc1 = nn.Linear(d_model, 128)
             self.fc2 = nn.Linear(128, num_classes)
             self.fc_confidence = nn.Linear(128, 1)
             
         def forward(self, x, mask=None):
-            # x shape: (batch, seq, features)
+            """
+            Forward pass with iterative reasoning.
+
+            Args:
+                x: Input features [batch, seq, features]
+                mask: Optional attention mask (padding mask)
+            """
+            # Project inputs to model dimension
             x = self.input_projection(x)
-            x = self.transformer(x, src_key_padding_mask=mask)
             
-            # Global average pooling
+            # Iterative reasoning steps (recurrent forward)
+            # RecurrentDepthTransformerBase._recurrent_forward is used here
+            # but we called it from forward() in the base class.
+            # We need to make sure we handle the return tuple (state, stats)
+            x, stats = self._recurrent_forward(x, padding_mask=mask)
+
+            # Global average pooling across time
             x = x.mean(dim=1)
             
+            # Output heads
             x = F.relu(self.fc1(x))
             probs = F.softmax(self.fc2(x), dim=1)
             confidence = torch.sigmoid(self.fc_confidence(x))
