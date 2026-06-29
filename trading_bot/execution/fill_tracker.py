@@ -185,22 +185,44 @@ class FillTracker:
                 if order_response:
                     record = self.fill_records[order_id]
                     
+                    # Unified access for both objects and dictionaries
+                    def get_val(obj, attr, default=None):
+                        if isinstance(obj, dict):
+                            return obj.get(attr, default)
+                        return getattr(obj, attr, default)
+
+                    filled_qty = get_val(order_response, 'filled_quantity') or get_val(order_response, 'volume', 0.0)
+                    avg_price = get_val(order_response, 'average_fill_price') or get_val(order_response, 'price', 0.0)
+                    commission = get_val(order_response, 'commission') or get_val(order_response, 'total_commission', 0.0)
+                    resp_order_id = str(get_val(order_response, 'order_id', order_id))
+                    metadata = get_val(order_response, 'metadata', {})
+
+                    # Handle timestamp which might be string or datetime
+                    ts = get_val(order_response, 'timestamp') or get_val(order_response, 'time')
+                    if isinstance(ts, str):
+                        try:
+                            ts = datetime.fromisoformat(ts)
+                        except ValueError:
+                            ts = datetime.now()
+                    elif not isinstance(ts, datetime):
+                        ts = datetime.now()
+
                     # Update fill record
-                    record.filled_quantity = order_response.filled_quantity
-                    record.average_fill_price = order_response.average_fill_price
-                    record.total_commission = order_response.commission
+                    record.filled_quantity = filled_qty
+                    record.average_fill_price = avg_price
+                    record.total_commission = commission
                     
                     # Create fill entry
                     fill = Fill(
                         order_id=order_id,
                         symbol=record.symbol,
                         side=record.side,
-                        quantity=order_response.filled_quantity,
-                        price=order_response.average_fill_price,
-                        commission=order_response.commission,
-                        timestamp=order_response.timestamp,
-                        fill_id=order_response.order_id,
-                        metadata=order_response.metadata
+                        quantity=filled_qty,
+                        price=avg_price,
+                        commission=commission,
+                        timestamp=ts,
+                        fill_id=resp_order_id,
+                        metadata=metadata
                     )
                     record.fills.append(fill)
                     
