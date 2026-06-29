@@ -38,7 +38,7 @@ from .synthetic_data import (
     SyntheticDataQualityScorer, MarketRegime, MarketScenario
 )
 from .experience_replay import ExperienceReplayBuffer, Experience, create_experience_replay_buffer
-from .latent_dynamics import WorldModel
+# from .latent_dynamics import WorldModel  # Avoid circular import
 from .imagination import ImaginationPlanner
 
 logger = logging.getLogger(__name__)
@@ -112,7 +112,7 @@ class SimulationOrchestrator:
     
     def __init__(
         self,
-        world_model: Optional[WorldModel] = None,
+        world_model: Optional[Any] = None,
         experience_buffer: Optional[ExperienceReplayBuffer] = None,
         storage_path: Optional[str] = None,
         a2a_bus: Optional[A2AMessageBus] = None,
@@ -684,7 +684,7 @@ class SimulationOrchestrator:
 
 # Factory function
 def create_simulation_orchestrator(
-    world_model: Optional[WorldModel] = None,
+    world_model: Optional[Any] = None,
     storage_path: Optional[str] = None
 ) -> SimulationOrchestrator:
     """Create unified simulation orchestrator"""

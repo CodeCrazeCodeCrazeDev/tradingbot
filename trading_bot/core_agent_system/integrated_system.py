@@ -243,7 +243,13 @@ class IntegratedAgentSystem:
         await self.react_loop.initialize()
         
         logger.info("7b. Initializing World Model...")
-        # Note: WorldModel doesn't have an async initialize, but it's good practice
+        # Delayed import to avoid circular dependencies
+        from trading_bot.world_model.latent_dynamics import WorldModel
+        self.world_model = WorldModel({
+            'input_dim': self.config.get('market_input_dim', 20),
+            'latent_dim': self.config.get('latent_dim', 64),
+            'hidden_dim': self.config.get('hidden_dim', 128)
+        })
 
         logger.info("8. Initializing Master Orchestrator...")
         # Inject dependencies into orchestrator
@@ -293,6 +299,27 @@ class IntegratedAgentSystem:
         
         self._print_system_status()
     
+    async def _assign_agents_to_teams(self):
+        """Assign agents to functional teams for better coordination"""
+        logger.info("Assigning agents to teams...")
+
+        # Define role to team mapping
+        role_to_team = {
+            AgentRole.PLANNER: 'trading_team',
+            AgentRole.EXECUTOR: 'trading_team',
+            AgentRole.COORDINATOR: 'trading_team',
+            AgentRole.RESEARCHER: 'research_team',
+            AgentRole.EVALUATOR: 'research_team',
+            AgentRole.SAFETY: 'safety_team'
+        }
+
+        # Assign each agent based on their role
+        for agent_id, agent in self.agent_registry.agents.items():
+            team = role_to_team.get(agent.role)
+            if team:
+                self.coordination_core.shared_memory.add_to_team(team, agent_id)
+                logger.debug(f"Assigned {agent.name} to {team}")
+
     async def _register_default_agents(self):
         """Register default agents including legacy ones"""
         default_agents = [
