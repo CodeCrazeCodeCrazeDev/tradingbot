@@ -661,7 +661,7 @@ class AgentRegistry:
         
         role_counts = {}
         for role in AgentRole:
-            count = len(self.role_index.get(role, self.role_index.get(AgentRole(role), [])) if isinstance(role, str) else self.role_index[role])
+            count = len(self.role_index.get(role, []))
             if count > 0:
                 role_counts[role.value] = count
         
@@ -795,7 +795,7 @@ class ExecutorAgent(BaseAgent):
     Handles the actual execution of trades and other operations.
     """
     
-    def __init__(self, config: Optional[Dict] = None):
+    def __init__(self, executor: TradeExecutor, config: Optional[Dict] = None):
         super().__init__(
             name="ExecutorAgent",
             role=AgentRole.EXECUTOR,

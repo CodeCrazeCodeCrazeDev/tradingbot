@@ -62,6 +62,7 @@ from pathlib import Path
 from .master_orchestrator import MasterOrchestrator, SystemContext
 from .react_loop import ReActLoop
 from .constitutional_layer import ConstitutionalAI
+from trading_bot.execution.trade_executor import TradeExecutor
 from .policy_value_network import PolicyNetwork, ValueNetwork, DualNetwork
 from trading_bot.world_model.latent_dynamics import WorldModel
 from .agent_registry import (
@@ -354,12 +355,15 @@ class IntegratedAgentSystem:
 
     async def _register_default_agents(self):
         """Register default agents including legacy ones"""
+        # Initialize trade executor for ExecutorAgent
+        trade_executor = TradeExecutor(self.config.get('executor', {}))
+
         default_agents = [
             PlannerAgent(config={'name': 'MainPlanner'}),
             TrendFollowingPlanner(config={'name': 'TrendPlanner'}),
             MeanReversionPlanner(config={'name': 'MeanReversionPlanner'}),
             VolatilityPlanner(config={'name': 'VolatilityPlanner'}),
-            ExecutorAgent(config={'name': 'MainExecutor'}),
+            ExecutorAgent(executor=trade_executor, config={'name': 'MainExecutor'}),
             EvaluatorAgent(config={'name': 'MainEvaluator'}),
             ResearchAgent(config={'name': 'MainResearcher'}),
             SafetyAgent(config={'name': 'MainSafety'}),
