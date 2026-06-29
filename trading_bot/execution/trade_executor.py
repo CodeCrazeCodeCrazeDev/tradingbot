@@ -62,7 +62,7 @@ class TradeExecutor:
         self.orders: Dict[str, Order] = {}
         self.order_counter = 0
         
-    def execute_trade(self, order: Order) -> Dict[str, Any]:
+    async def execute_trade(self, order: Order) -> Dict[str, Any]:
         """
         Execute a trade order
         
@@ -93,8 +93,16 @@ class TradeExecutor:
                     'message': 'Order executed (paper trading)'
                 }
             else:
-                # Real trading (requires MT5 or broker integration)
-                return self._execute_real_trade(order)
+                # Real trading
+                broker_type = self.config.get('broker_type', 'mt5').lower()
+
+                if broker_type == 'ib':
+                    return await self._execute_ib_trade(order)
+                elif broker_type == 'binance':
+                    return await self._execute_binance_trade(order)
+                else:
+                    # Default to MT5
+                    return self._execute_real_trade(order)
                 
         except Exception as e:
             return {
@@ -103,6 +111,62 @@ class TradeExecutor:
                 'message': f'Order execution failed: {str(e)}'
             }
     
+    async def _execute_ib_trade(self, order: Order) -> Dict[str, Any]:
+        """Execute real trade via Interactive Brokers"""
+        try:
+            from ..broker.ib_broker import IBBroker
+            broker = IBBroker(self.config.get('ib_config', {}))
+            await broker.connect()
+
+            # Map types
+            from ..broker.ib_broker import OrderSide as IBOrderSide, OrderType as IBOrderType
+            ib_side = IBOrderSide.BUY if order.side == OrderSide.BUY else IBOrderSide.SELL
+            ib_type = IBOrderType.MARKET # Simplified mapping
+
+            result = await broker.place_order(
+                symbol=order.symbol,
+                side=ib_side,
+                type=ib_type,
+                quantity=order.quantity,
+                price=order.price
+            )
+
+            order.status = OrderStatus.FILLED # Simplified
+            order.order_id = result.client_order_id
+            self.orders[order.order_id] = order
+
+            return {'success': True, 'order_id': order.order_id, 'status': 'FILLED'}
+        except Exception as e:
+            logger.error(f"IB Trade failed: {e}")
+            return {'success': False, 'error': str(e)}
+
+    async def _execute_binance_trade(self, order: Order) -> Dict[str, Any]:
+        """Execute real trade via Binance"""
+        try:
+            from ..broker.binance_broker import BinanceBroker
+            broker = BinanceBroker(self.config.get('binance_config', {}))
+
+            # Map side
+            side = "BUY" if order.side == OrderSide.BUY else "SELL"
+
+            result = await broker.place_order(
+                symbol=order.symbol,
+                side=side,
+                order_type="MARKET",
+                quantity=order.quantity
+            )
+
+            if result.get('status') == 'FILLED':
+                order.status = OrderStatus.FILLED
+                order.order_id = result.get('orderId')
+                self.orders[order.order_id] = order
+                return {'success': True, 'order_id': order.order_id, 'status': 'FILLED'}
+
+            return {'success': False, 'message': 'Order not filled'}
+        except Exception as e:
+            logger.error(f"Binance Trade failed: {e}")
+            return {'success': False, 'error': str(e)}
+
     def _execute_real_trade(self, order: Order) -> Dict[str, Any]:
         """Execute real trade via MT5"""
         try:

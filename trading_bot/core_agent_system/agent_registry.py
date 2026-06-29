@@ -886,7 +886,7 @@ class ExecutorAgent(BaseAgent):
             )
 
             # Execute via TradeExecutor
-            result = self.executor.execute_trade(order)
+            result = await self.executor.execute_trade(order)
             return result
         except Exception as e:
             logger.error(f"Trade execution failed in ExecutorAgent: {e}")
