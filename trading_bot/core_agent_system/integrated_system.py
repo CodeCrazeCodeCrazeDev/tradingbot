@@ -26,6 +26,7 @@ from .agent_registry import (
     SafetyAgent,
     LegacyAgentWrapper
 )
+from .migrated_agents.planner import MigratedPlannerAgent
 from .multidimensional_intelligence.agent import MultidimensionalResearchAgent
 from trading_bot.agents2.specialized_agents import (
     TrendFollowingAgent,
@@ -44,6 +45,8 @@ from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
 from .self_coordinating_core import SelfCoordinatingCore
 from .meta_orchestrator import MetaOrchestrator
+from .swarm.usis import UnifiedSwarmIntelligenceSystem
+from .swarm.experts import MarketScientist, QuantAnalyst, SwarmRiskManager
 
 logger = logging.getLogger(__name__)
 
@@ -216,6 +219,7 @@ class IntegratedAgentSystem:
         trade_executor = TradeExecutor(self.config.get('executor', {}))
 
         default_agents = [
+            MigratedPlannerAgent(config={'name': 'ComprehensivePlanner'}),
             PlannerAgent(config={'name': 'MainPlanner'}),
             TrendFollowingPlanner(config={'name': 'TrendPlanner'}),
             MeanReversionPlanner(config={'name': 'MeanReversionPlanner'}),
@@ -442,7 +446,7 @@ class IntegratedAgentSystem:
             metadata=meta_result.get('metrics', {})
         )
 
-        formatted_response = ResponseFormatter.format_reasoning(trace)
+        formatted_response = ResponseFormatter.format_response(trace, [])
 
         if context.get('use_coordination'):
              # If using multi-agent coordination explicitly
@@ -476,7 +480,7 @@ class IntegratedAgentSystem:
             }
 
         # Format standardized response
-        formatted_response = ResponseFormatter.format_react_trace(trace)
+        formatted_response = ResponseFormatter.format_response(trace, [])
 
         return {
             'success': meta_result.get('success', False),
