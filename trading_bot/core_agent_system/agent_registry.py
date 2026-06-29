@@ -169,6 +169,21 @@ class BaseAgent(ABC):
 
         return result
     
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """
+        Execute a task. Default implementation wraps execute().
+        Subclasses can override this for more complex task handling.
+        """
+        # Try to extract description from task object or use task itself
+        description = getattr(task, 'description', getattr(task, 'name', str(task)))
+
+        return await self.execute({
+            'operation': 'execute_task',
+            'task': task,
+            'description': description,
+            'metadata': getattr(task, 'metadata', {})
+        })
+
     async def initialize(self):
         """Initialize the agent"""
         self.status = AgentStatus.READY
@@ -608,8 +623,17 @@ class PlannerAgent(BaseAgent):
         elif operation == 'analyze':
             data = action.get('data', {})
             return await self._analyze(data)
+        elif operation == 'execute_task':
+            # For general tasks, we can try to propose based on metadata
+            context = action.get('metadata', {})
+            proposal = await self._generate_proposal(context)
+            return {
+                'success': True,
+                'result': proposal.get('reasoning', 'Task completed'),
+                'proposal': proposal
+            }
         
-        return {'success': False, 'error': 'Unknown operation'}
+        return {'success': False, 'error': f'Unknown operation: {operation}'}
     
     async def _generate_proposal(self, context) -> Dict[str, Any]:
         """Generate action proposal"""
@@ -668,8 +692,8 @@ class ExecutorAgent(BaseAgent):
             config=config
         )
         self.config = config or {}
-        self.executor = TradeExecutor(self.config)
-
+        self.executor = TradeExecutor(config)
+    
     def _register_capabilities(self):
         self.add_capability(AgentCapability(
             name="trade_execution",
@@ -709,8 +733,10 @@ class ExecutorAgent(BaseAgent):
                 result = await self._cancel_order(action)
             elif operation == 'modify':
                 result = await self._modify_order(action)
+            elif operation == 'execute_task':
+                result = await self._execute_trade(action.get('metadata', {}))
             else:
-                result = {'success': False, 'error': 'Unknown operation'}
+                result = {'success': False, 'error': f'Unknown operation: {operation}'}
             
             execution_time = (datetime.now() - start_time).total_seconds()
             self.metrics.update(result.get('success', False), execution_time)
@@ -817,8 +843,10 @@ class EvaluatorAgent(BaseAgent):
             return await self._evaluate(action)
         elif operation == 'backtest':
             return await self._backtest(action)
+        elif operation == 'execute_task':
+            return await self._evaluate(action.get('metadata', {}))
         
-        return {'success': False, 'error': 'Unknown operation'}
+        return {'success': False, 'error': f'Unknown operation: {operation}'}
     
     async def _evaluate(self, action: Dict) -> Dict[str, Any]:
         """Evaluate an outcome"""
@@ -898,8 +926,10 @@ class ResearchAgent(BaseAgent):
             return await self._research(action)
         elif operation == 'discover':
             return await self._discover(action)
+        elif operation == 'execute_task':
+            return await self._research(action.get('metadata', {}))
         
-        return {'success': False, 'error': 'Unknown operation'}
+        return {'success': False, 'error': f'Unknown operation: {operation}'}
     
     async def _research(self, action: Dict) -> Dict[str, Any]:
         """Conduct research"""
@@ -962,8 +992,10 @@ class SafetyAgent(BaseAgent):
             return await self._safety_check(action)
         elif operation == 'verify':
             return await self._verify(action)
+        elif operation == 'execute_task':
+            return await self._safety_check(action.get('metadata', {}))
         
-        return {'success': False, 'error': 'Unknown operation'}
+        return {'success': False, 'error': f'Unknown operation: {operation}'}
     
     async def _safety_check(self, action: Dict) -> Dict[str, Any]:
         """Perform safety check"""
@@ -1019,7 +1051,7 @@ class LegacyAgentWrapper(BaseAgent):
         """Execute legacy agent logic"""
         operation = action.get('operation', 'propose')
 
-        if operation == 'propose':
+        if operation in ['propose', 'execute_task']:
             # Handle both SystemContext and raw Dict
             context = action.get('context', {})
             market_data = getattr(context, 'market_state', context)
