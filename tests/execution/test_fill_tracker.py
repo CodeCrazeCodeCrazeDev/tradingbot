@@ -9,14 +9,15 @@ import pytest
 import asyncio
 import logging
 from unittest.mock import Mock, patch, MagicMock
+from pathlib import Path
 
 try:
-    from trading_bot.fill_tracker import *
+    from trading_bot.execution.fill_tracker import *
 except ImportError:
     # Fallback import
     import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.fill_tracker import *
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+    from trading_bot.execution.fill_tracker import *
 
 logger = logging.getLogger(__name__)
 
