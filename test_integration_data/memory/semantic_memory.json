@@ -1,9 +1,9 @@
 {
-  "agent_react_reasoner_1_0fa651d5": {
-    "memory_id": "1132cf49-bf4a-4617-ac14-aebe28b5f16e",
+  "agent_react_reasoner_1_19eee20c": {
+    "memory_id": "6485335e-07b8-45cf-86b1-33fc61b6ceb4",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "react_reasoner_1_0fa651d5",
+      "agent_id": "react_reasoner_1_19eee20c",
       "name": "MainReasoner",
       "archetype": "react_reasoner",
       "role": "planner",
@@ -12,25 +12,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-21T01:17:45.524147"
+      "created_at": "2026-06-08T01:13:21.252024"
     },
     "metadata": {
-      "key": "agent_react_reasoner_1_0fa651d5",
+      "key": "agent_react_reasoner_1_e3779727",
       "related": [
         "dynamic_agents",
         "react_reasoner"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-21T01:17:45.524396",
+    "timestamp": "2026-06-07T01:12:01.968471",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_constitutional_guardian_1_8faa6306": {
-    "memory_id": "1adadd32-f9e8-4453-b812-818d304cc534",
+  "agent_constitutional_guardian_1_5d3f36b3": {
+    "memory_id": "613d588b-49c3-4a76-b054-06cd00e8d3ca",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "constitutional_guardian_1_8faa6306",
+      "agent_id": "constitutional_guardian_1_5d3f36b3",
       "name": "SafetyGuardian",
       "archetype": "constitutional_guardian",
       "role": "safety",
@@ -39,25 +39,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-21T01:17:45.524530"
+      "created_at": "2026-06-07T01:12:01.968597"
     },
     "metadata": {
-      "key": "agent_constitutional_guardian_1_8faa6306",
+      "key": "agent_constitutional_guardian_1_5d3f36b3",
       "related": [
         "dynamic_agents",
         "constitutional_guardian"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-21T01:17:45.524696",
+    "timestamp": "2026-06-07T01:12:01.968764",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_1_c0e39188": {
-    "memory_id": "51aab631-f4d8-47ec-9b64-ae250381aa1b",
+  "agent_analyst_1_cf5f3f4d": {
+    "memory_id": "2eb66ab2-d8ce-4410-8d3f-0fde09cc7ce7",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_1_c0e39188",
+      "agent_id": "analyst_1_cf5f3f4d",
       "name": "MarketAnalyst",
       "archetype": "analyst",
       "role": "planner",
@@ -66,25 +66,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-21T01:17:45.524855"
+      "created_at": "2026-06-07T01:12:01.968857"
     },
     "metadata": {
-      "key": "agent_analyst_1_c0e39188",
+      "key": "agent_analyst_1_cf5f3f4d",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-21T01:17:45.525029",
+    "timestamp": "2026-06-07T01:12:01.969072",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_monitor_1_91f04ed1": {
-    "memory_id": "aa43262f-e707-4d08-8d16-c03f55906807",
+  "agent_monitor_1_9a932603": {
+    "memory_id": "82082ee7-5691-4aa7-9547-4b023558f41b",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "monitor_1_91f04ed1",
+      "agent_id": "monitor_1_9a932603",
       "name": "SystemMonitor",
       "archetype": "monitor",
       "role": "monitor",
@@ -93,25 +93,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-21T01:17:45.525119"
+      "created_at": "2026-06-07T01:12:01.969167"
     },
     "metadata": {
-      "key": "agent_monitor_1_91f04ed1",
+      "key": "agent_monitor_1_9a932603",
       "related": [
         "dynamic_agents",
         "monitor"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-21T01:17:45.525259",
+    "timestamp": "2026-06-07T01:12:01.969309",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_2_1e13d84d": {
-    "memory_id": "221c6488-5997-4e52-adff-d3c4451b24ea",
+  "agent_analyst_2_27cddfc6": {
+    "memory_id": "c365501a-f412-43dc-ba17-336de716a96c",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_2_1e13d84d",
+      "agent_id": "analyst_2_27cddfc6",
       "name": "Request: Analyze market and provide a c... - Data Collection_Agent",
       "archetype": "analyst",
       "role": "planner",
@@ -120,25 +120,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-21T01:17:45.526455"
+      "created_at": "2026-06-07T01:12:01.971295"
     },
     "metadata": {
-      "key": "agent_analyst_2_1e13d84d",
+      "key": "agent_analyst_2_27cddfc6",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-21T01:17:45.526683",
+    "timestamp": "2026-06-07T01:12:01.971491",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_3_add46de1": {
-    "memory_id": "56b9a519-5b68-4718-b6a9-4362a3b66acf",
+  "agent_analyst_3_fa7d0c48": {
+    "memory_id": "b7b48174-8dac-470a-8fab-419575aa027f",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_3_add46de1",
+      "agent_id": "analyst_3_fa7d0c48",
       "name": "Request: Analyze market and provide a c... - Reporting_Agent",
       "archetype": "analyst",
       "role": "planner",
@@ -147,46 +147,46 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-21T01:17:45.528204"
+      "created_at": "2026-06-07T01:12:01.973014"
     },
     "metadata": {
-      "key": "agent_analyst_3_add46de1",
+      "key": "agent_analyst_3_fa7d0c48",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-21T01:17:45.528364",
+    "timestamp": "2026-06-07T01:12:01.973179",
     "access_count": 0,
     "last_accessed": null
   },
   "coordination_pattern_hierarchical": {
-    "memory_id": "4b36f09c-2bca-45a6-8fd6-325b563b4623",
+    "memory_id": "29e21c5c-7012-4875-91d7-62e7fb8bce04",
     "memory_type": "semantic",
     "content": {
       "total_uses": 1,
       "successes": 1,
-      "avg_duration": 0.003024,
+      "avg_duration": 0.003955,
       "avg_efficiency": 1.0,
       "avg_quality": 0.8000000000000002
     },
     "metadata": {
       "key": "coordination_pattern_hierarchical",
       "related": [
-        "task_type_<Task pending name='Task-1' coro=<run_all() running at /app/tests/core_agent_system/run.py:22> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>"
+        "task_type_<Task pending name='Task-1' coro=<test_integrated_system_flow() running at /app/tests/core_agent_system/test_integration.py:19> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-21T01:19:26.760020",
+    "timestamp": "2026-06-07T01:13:11.313082",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_react_reasoner_1_61c65694": {
-    "memory_id": "7a1f55b8-dac0-471f-94a7-ec6079530475",
+  "agent_react_reasoner_1_0bcf9afa": {
+    "memory_id": "f808846d-310e-4afb-b22c-aa983f1a3388",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "react_reasoner_1_61c65694",
+      "agent_id": "react_reasoner_1_0bcf9afa",
       "name": "MainReasoner",
       "archetype": "react_reasoner",
       "role": "planner",
@@ -195,25 +195,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-21T01:19:26.755167"
+      "created_at": "2026-06-07T01:13:11.304688"
     },
     "metadata": {
-      "key": "agent_react_reasoner_1_61c65694",
+      "key": "agent_react_reasoner_1_0bcf9afa",
       "related": [
         "dynamic_agents",
         "react_reasoner"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-21T01:19:26.755419",
+    "timestamp": "2026-06-07T01:13:11.306103",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_constitutional_guardian_1_07aa00c4": {
-    "memory_id": "2109ce01-1879-444f-9e30-d2a3f4f1f60f",
+  "agent_constitutional_guardian_1_66eea0dd": {
+    "memory_id": "e68fded4-e1db-4628-bc30-3717d392a6fa",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "constitutional_guardian_1_07aa00c4",
+      "agent_id": "constitutional_guardian_1_66eea0dd",
       "name": "SafetyGuardian",
       "archetype": "constitutional_guardian",
       "role": "safety",
@@ -222,25 +222,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-21T01:19:26.755522"
+      "created_at": "2026-06-07T01:13:11.306348"
     },
     "metadata": {
-      "key": "agent_constitutional_guardian_1_07aa00c4",
+      "key": "agent_constitutional_guardian_1_66eea0dd",
       "related": [
         "dynamic_agents",
         "constitutional_guardian"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-21T01:19:26.755679",
+    "timestamp": "2026-06-07T01:13:11.306574",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_1_95b277cd": {
-    "memory_id": "b6bffedc-4c79-46d7-b98c-303376acc213",
+  "agent_analyst_1_2c3056ef": {
+    "memory_id": "41624367-35fc-4aa6-84f1-40e2462ba5c7",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_1_95b277cd",
+      "agent_id": "analyst_1_2c3056ef",
       "name": "MarketAnalyst",
       "archetype": "analyst",
       "role": "planner",
@@ -249,25 +249,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-21T01:19:26.755768"
+      "created_at": "2026-06-07T01:13:11.306739"
     },
     "metadata": {
-      "key": "agent_analyst_1_95b277cd",
+      "key": "agent_analyst_1_2c3056ef",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-21T01:19:26.755978",
+    "timestamp": "2026-06-07T01:13:11.306919",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_monitor_1_f53923df": {
-    "memory_id": "f0d3cdb8-1b83-4361-b0a3-dfb18112356d",
+  "agent_monitor_1_0c851fda": {
+    "memory_id": "e2d4fcef-e540-4270-bdb8-078439399c42",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "monitor_1_f53923df",
+      "agent_id": "monitor_1_0c851fda",
       "name": "SystemMonitor",
       "archetype": "monitor",
       "role": "monitor",
@@ -276,25 +276,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-21T01:19:26.756079"
+      "created_at": "2026-06-07T01:13:11.307065"
     },
     "metadata": {
-      "key": "agent_monitor_1_f53923df",
+      "key": "agent_monitor_1_0c851fda",
       "related": [
         "dynamic_agents",
         "monitor"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-21T01:19:26.756238",
+    "timestamp": "2026-06-07T01:13:11.307310",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_2_0c1a409a": {
-    "memory_id": "9c803011-6bfa-4026-ada0-246b327803e2",
+  "agent_analyst_2_ab586503": {
+    "memory_id": "9f51ae08-bd73-4cb7-bf8a-c79a42263488",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_2_0c1a409a",
+      "agent_id": "analyst_2_ab586503",
       "name": "Request: Analyze market and provide a c... - Data Collection_Agent",
       "archetype": "analyst",
       "role": "planner",
@@ -303,25 +303,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-21T01:19:26.757465"
+      "created_at": "2026-06-07T01:13:11.309784"
     },
     "metadata": {
-      "key": "agent_analyst_2_0c1a409a",
+      "key": "agent_analyst_2_ab586503",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-21T01:19:26.757646",
+    "timestamp": "2026-06-07T01:13:11.310074",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_3_12f868ee": {
-    "memory_id": "eb18f7a6-418e-4b92-9ec1-0282e44b3e8f",
+  "agent_analyst_3_46d722e1": {
+    "memory_id": "9ad766ce-540c-4f02-976f-fa8aab4b45e0",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_3_12f868ee",
+      "agent_id": "analyst_3_46d722e1",
       "name": "Request: Analyze market and provide a c... - Reporting_Agent",
       "archetype": "analyst",
       "role": "planner",
@@ -330,17 +330,17 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-21T01:19:26.759189"
+      "created_at": "2026-06-07T01:13:11.311895"
     },
     "metadata": {
-      "key": "agent_analyst_3_12f868ee",
+      "key": "agent_analyst_3_46d722e1",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-21T01:19:26.759355",
+    "timestamp": "2026-06-07T01:13:11.312250",
     "access_count": 0,
     "last_accessed": null
   }

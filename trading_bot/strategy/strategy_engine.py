@@ -19,6 +19,7 @@ from trading_bot.analysis.market_structure import MarketStructureAnalyzer, Struc
 from trading_bot.analysis.fvg import FVGDetector, FairValueGap
 from trading_bot.analysis.order_block import OrderBlockDetector, OrderBlock
 from trading_bot.analysis.wyckoff import WyckoffAnalyzer, WyckoffPhase
+from trading_bot.analysis.technical_indicators import TechnicalIndicatorAnalyzer
 from trading_bot.data import MT5Interface
 from trading_bot.risk import RiskManager
 
@@ -62,6 +63,7 @@ class StrategyEngine:  # noqa: B024 – not for subclassing yet
         self.fvg = FVGDetector()
         self.obd = OrderBlockDetector()
         self.wyckoff = WyckoffAnalyzer(lookback=50)
+        self.tia = TechnicalIndicatorAnalyzer()
         self.risk = RiskManager(mt5i)
 
     # ------------------------------------------------------------------
@@ -97,8 +99,23 @@ class StrategyEngine:  # noqa: B024 – not for subclassing yet
         except Exception:
             return datetime.now()
 
+    def _is_volume_confirmed(self, bars, lookback=20):
+        """Confirm entry with volume (above average)."""
+        if 'volume' not in bars.columns or len(bars) < lookback:
+            return True
+        avg_vol = bars['volume'].iloc[-lookback:].mean()
+        curr_vol = bars['volume'].iloc[-1]
+        return curr_vol > avg_vol
+
     def analyse(self, bars) -> List[Signal]:  # noqa: ANN001 – dynamic type
         """Run analyzers on *bars* (DataFrame) and return list of *Signal* objects."""
+        # Calculate technical indicators
+        bars_with_ind = self.tia.calculate_all(bars)
+        tech_signal = self.tia.get_signal(bars_with_ind)
+
+        # Volume confirmation
+        vol_confirmed = self._is_volume_confirmed(bars)
+
         # Market structure
         structure_events: List[StructureEvent] = self.msa.detect_structure(bars)
         # Liquidity pools & grabs
@@ -121,8 +138,15 @@ class StrategyEngine:  # noqa: B024 – not for subclassing yet
         for ev in structure_events[-3:]:  # look at latest few events
             if ev.event.name == "BOS" and ev.event.value == "BOS":
                 direction = "buy" if ev.broken_swing.kind == "high" else "sell"
-                rationale = f"BOS after {ev.broken_swing.kind} break"
-                sl_pips = 15 if direction == "buy" else 20
+
+                # Indicator and Volume Confirmation
+                if tech_signal['signal'].lower() != direction and tech_signal['signal'] != 'NEUTRAL':
+                    continue
+                if not vol_confirmed:
+                    continue
+
+                rationale = f"BOS after {ev.broken_swing.kind} break (Vol/Tech confirmed)"
+                sl_pips = 15 # Tightened from 20
                 signals.append(
                     Signal(
                         self._get_bar_time(bars, ev.idx),
@@ -130,8 +154,8 @@ class StrategyEngine:  # noqa: B024 – not for subclassing yet
                         direction,
                         rationale,
                         stop_loss_pips=sl_pips,
-                        take_profit_rr=2,
-                        confidence=70.0,
+                        take_profit_rr=2, # Target 2:1
+                        confidence=75.0,
                     )
                 )
         # FVG reaction trade – anticipate price returning into bullish/bearish gap boundary
@@ -203,6 +227,11 @@ class StrategyEngine:  # noqa: B024 – not for subclassing yet
         # Liquidity grabs as contrarian scalp example
         for grab in grabs[-2:]:
             direction = "sell" if grab.pool.kind == "buy" else "buy"
+
+            # Confluence check
+            if tech_signal['signal'].lower() != direction and tech_signal['signal'] != 'NEUTRAL':
+                continue
+
             rationale = f"Liquidity grab of {grab.pool.kind}-side pool"
             sl_pips = 10
             signals.append(
@@ -212,8 +241,8 @@ class StrategyEngine:  # noqa: B024 – not for subclassing yet
                     direction,
                     rationale,
                     stop_loss_pips=sl_pips,
-                    take_profit_rr=1.5,
-                    confidence=60.0,
+                    take_profit_rr=2.0, # Increased from 1.5
+                    confidence=65.0,
                 )
             )
 
