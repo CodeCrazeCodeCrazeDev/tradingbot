@@ -161,6 +161,12 @@ class IntegratedAgentSystem:
 
         # 11. Meta-Orchestrator
         self.meta_orchestrator = MetaOrchestrator(self.config)
+
+        # 12. Unified Swarm Intelligence System (USIS)
+        self.swarm_system = UnifiedSwarmIntelligenceSystem(
+            self.agent_registry,
+            self.config.get('swarm', {})
+        )
     
     async def initialize(self):
         """Initialize all components"""
@@ -219,6 +225,11 @@ class IntegratedAgentSystem:
             ResearchAgent(config={'name': 'MainResearcher'}),
             MultidimensionalResearchAgent(config={'name': 'MultidimensionalResearcher'}),
             SafetyAgent(config={'name': 'MainSafety'}),
+
+            # Swarm Experts
+            MarketScientist(config={'name': 'SwarmMarketScientist'}),
+            QuantAnalyst(config={'name': 'SwarmQuantAnalyst'}),
+            SwarmRiskManager(config={'name': 'SwarmRiskManager'}),
         ]
         
         for agent in default_agents:
@@ -403,10 +414,15 @@ class IntegratedAgentSystem:
     
     async def execute_task(self, task: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         """
-        Execute a task using the research-grade Meta-Orchestrator.
+        Execute a task using the research-grade Meta-Orchestrator or USIS.
         """
         context = context or {}
         
+        # Check for swarm-specific tasks
+        if context.get('use_swarm') or 'swarm' in task.lower():
+            logger.info(f"Integrated System routing task to USIS: {task}")
+            return await self.swarm_system.analyze(task, context)
+
         logger.info(f"Integrated System executing task via Meta-Orchestrator: {task}")
 
         # Use Meta-Orchestrator for self-scaffolding workflow
@@ -458,6 +474,9 @@ class IntegratedAgentSystem:
                 'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
                 'iterations': len(result.get('results', []))
             }
+
+        # Format standardized response
+        formatted_response = ResponseFormatter.format_react_trace(trace)
 
         return {
             'success': meta_result.get('success', False),
