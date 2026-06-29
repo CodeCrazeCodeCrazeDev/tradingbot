@@ -216,6 +216,10 @@ class SubAgent(BaseAgent):
                 # Default execution
                 result = await self._execute_default(task)
             
+            # Ensure success flag exists
+            if 'success' not in result:
+                result['success'] = True
+
             # Update performance
             self.tasks_completed += 1
             self.success_rate = self.tasks_completed / (self.tasks_completed + self.tasks_failed)
