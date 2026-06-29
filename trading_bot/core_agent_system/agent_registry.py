@@ -133,7 +133,46 @@ class BaseAgent(ABC):
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute an action - must be implemented by subclasses"""
         pass
-    
+
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """
+        Execute a task for the coordination core.
+        Maps task types to specific agent operations.
+        """
+        # Local import to prevent circularity during orchestration
+        from .coordination_core import TaskType
+
+        operation = "execute"
+        if self.role == AgentRole.PLANNER:
+            operation = "propose"
+        elif self.role == AgentRole.RESEARCHER:
+            operation = "research"
+        elif self.role == AgentRole.EVALUATOR:
+            operation = "evaluate"
+        elif self.role == AgentRole.SAFETY:
+            operation = "check"
+
+        # Special mapping for coordination tasks
+        if hasattr(task, 'task_type'):
+            if task.task_type == TaskType.ANALYSIS:
+                if self.role == AgentRole.PLANNER:
+                    operation = "propose"
+                elif self.role == AgentRole.RESEARCHER:
+                    operation = "research"
+                # Analysts and other roles can use execute (default)
+
+        result = await self.execute({
+            'operation': operation,
+            'context': task.metadata if hasattr(task, 'metadata') else {},
+            'task': task
+        })
+
+        # Ensure result has success flag for coordination core
+        if result and 'success' not in result:
+            result['success'] = 'error' not in result
+
+        return result
+
     async def initialize(self):
         """Initialize the agent"""
         self.status = AgentStatus.READY
@@ -536,7 +575,7 @@ class PlannerAgent(BaseAgent):
             config=config
         )
         self.config = config or {}
-    
+
     def _register_capabilities(self):
         self.add_capability(AgentCapability(
             name="planning",
@@ -621,7 +660,8 @@ class ExecutorAgent(BaseAgent):
             config=config
         )
         self.config = config or {}
-    
+        self.executor = TradeExecutor(self.config)
+
     def _register_capabilities(self):
         self.add_capability(AgentCapability(
             name="trade_execution",
