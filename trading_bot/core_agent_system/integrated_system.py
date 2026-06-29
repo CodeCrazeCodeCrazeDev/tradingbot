@@ -85,6 +85,7 @@ from .specialized_planners import (
     MeanReversionPlanner,
     VolatilityPlanner
 )
+from trading_bot.world_model.latent_dynamics import WorldModel
 from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
@@ -308,6 +309,25 @@ class IntegratedAgentSystem:
         logger.info("=" * 60)
         
         self._print_system_status()
+
+    async def _assign_agents_to_teams(self):
+        """Assign registered agents to functional teams in coordination core"""
+        logger.info("Assigning agents to functional teams...")
+
+        for agent_id, agent in self.agent_registry.agents.items():
+            team = None
+
+            # Map roles to teams
+            if agent.role in [AgentRole.PLANNER, AgentRole.EXECUTOR, AgentRole.MONITOR]:
+                team = 'trading_team'
+            elif agent.role in [AgentRole.RESEARCHER, AgentRole.OPTIMIZER]:
+                team = 'research_team'
+            elif agent.role in [AgentRole.SAFETY, AgentRole.EVALUATOR]:
+                team = 'safety_team'
+
+            if team:
+                self.coordination_core.shared_memory.add_to_team(team, agent_id)
+                logger.debug(f"Assigned agent {agent.name} ({agent_id}) to {team}")
     
     async def _assign_agents_to_teams(self):
         """Assign agents to functional teams based on their roles"""
