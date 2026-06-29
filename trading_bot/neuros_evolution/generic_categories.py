@@ -173,7 +173,7 @@ class GenericCategoryManager:
     def detect_category(self, 
                        task_type: str,
                        input_data: Dict[str, Any],
-                       description: Optional[str] = None) -> List[Tuple[str, float]]:
+                       description: Optional[str] = None) -> List[tuple[str, float]]:
         """
         Auto-detect category from task content.
         
@@ -241,7 +241,7 @@ class GenericCategoryManager:
         """Record category usage"""
         self._usage_counts[category] += 1
     
-    def get_popular_categories(self, n: int = 10) -> List[Tuple[str, int]]:
+    def get_popular_categories(self, n: int = 10) -> List[tuple[str, int]]:
         """Get most frequently used categories"""
         return sorted(
             self._usage_counts.items(),
@@ -449,6 +449,6 @@ def register_category(category: TaskCategory, parent: Optional[str] = None):
 
 def detect_category(task_type: str, 
                    input_data: Dict[str, Any],
-                   description: Optional[str] = None) -> List[Tuple[str, float]]:
+                   description: Optional[str] = None) -> List[tuple[str, float]]:
     """Convenience function to detect category"""
     return get_category_manager().detect_category(task_type, input_data, description)

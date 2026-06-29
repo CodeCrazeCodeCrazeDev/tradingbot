@@ -3,66 +3,20 @@ Integrated Agent System - Research Lab Grade Architecture
 
 This module integrates all components into a unified system following
 patterns from DeepMind, OpenAI, and Anthropic.
-
-Architecture Overview:
-┌─────────────────────────────────────────────────────────────────────┐
-│                    INTEGRATED AGENT SYSTEM                           │
-│                                                                      │
-│  ┌────────────────────────────────────────────────────────────────┐ │
-│  │                   MASTER ORCHESTRATOR                          │ │
-│  │  - Hierarchical control (DeepMind)                             │ │
-│  │  - Decision fusion with MCTS                                   │ │
-│  │  - Safety verification (Anthropic)                             │ │
-│  └────────────────────────────────────────────────────────────────┘ │
-│                              │                                       │
-│         ┌────────────────────┼────────────────────┐                 │
-│         ▼                    ▼                    ▼                 │
-│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐           │
-│  │   Policy    │     │   Value     │     │Constitutional│           │
-│  │   Network   │     │   Network   │     │    Layer    │           │
-│  │ (AlphaGo)   │     │ (AlphaGo)   │     │ (Anthropic) │           │
-│  └─────────────┘     └─────────────┘     └─────────────┘           │
-│         │                    │                    │                 │
-│         └────────────────────┼────────────────────┘                 │
-│                              ▼                                       │
-│  ┌────────────────────────────────────────────────────────────────┐ │
-│  │                      ReAct LOOP                                │ │
-│  │  Thought → Action → Observation (OpenAI GPT-4)                 │ │
-│  └────────────────────────────────────────────────────────────────┘ │
-│                              │                                       │
-│         ┌────────────────────┼────────────────────┐                 │
-│         ▼                    ▼                    ▼                 │
-│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐           │
-│  │   Agent     │     │    Tool     │     │   Memory    │           │
-│  │  Registry   │     │  Registry   │     │   System    │           │
-│  └─────────────┘     └─────────────┘     └─────────────┘           │
-│         │                    │                    │                 │
-│         └────────────────────┼────────────────────┘                 │
-│                              ▼                                       │
-│  ┌────────────────────────────────────────────────────────────────┐ │
-│  │                   SELF-PLAY LOOP                               │ │
-│  │  Continuous improvement through self-play (DeepMind)           │ │
-│  └────────────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────────┘
-
-Usage:
-    from trading_bot.core_agent_system import IntegratedAgentSystem
-    
-    system = IntegratedAgentSystem(config)
-    await system.initialize()
-    await system.start()
 """
 
 import asyncio
 import logging
+import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from pathlib import Path
 
 from .master_orchestrator import MasterOrchestrator, SystemContext
+from .meta_orchestrator import MetaOrchestrator
 from .react_loop import ReActLoop
 from .constitutional_layer import ConstitutionalAI
-from .policy_value_network import PolicyNetwork, ValueNetwork, DualNetwork
+from .policy_value_network import PolicyNetwork, ValueNetwork
 from trading_bot.world_model.latent_dynamics import WorldModel
 from .agent_registry import (
     AgentRegistry, 
@@ -72,8 +26,10 @@ from .agent_registry import (
     EvaluatorAgent,
     ResearchAgent,
     SafetyAgent,
+    OptimizerAgent,
     LegacyAgentWrapper
 )
+from trading_bot.neuros_evolution.controlled_objects import ControlledObjectRegistry
 from trading_bot.agents2.specialized_agents import (
     TrendFollowingAgent,
     MeanReversionAgent,
@@ -86,12 +42,11 @@ from .specialized_planners import (
     MeanReversionPlanner,
     VolatilityPlanner
 )
-from trading_bot.world_model.latent_dynamics import WorldModel
 from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
 from .self_coordinating_core import SelfCoordinatingCore
-from trading_bot.world_model.latent_dynamics import WorldModel
+from .rl_training import ExperienceBuffer
 
 logger = logging.getLogger(__name__)
 
@@ -108,10 +63,15 @@ class IntegratedAgentSystem:
         self.config = config or {}
         
         # Storage path
-        storage_base = Path(config.get('storage_path', 'core_agent_data'))
+        storage_base = Path(self.config.get('storage_path', 'core_agent_data'))
         storage_base.mkdir(parents=True, exist_ok=True)
         self.storage_path = storage_base
         
+        # 0. Unified Registry (Section 4)
+        self.object_registry = ControlledObjectRegistry(
+            str(self.storage_path / 'controlled_objects.json')
+        )
+
         # Initialize components
         self._init_components()
         
@@ -127,7 +87,6 @@ class IntegratedAgentSystem:
     
     def _init_components(self):
         """Initialize all system components"""
-        from trading_bot.world_model.latent_dynamics import WorldModel
         
         # 1. Memory System (foundation for all learning)
         self.memory_system = MemorySystem({
@@ -137,16 +96,20 @@ class IntegratedAgentSystem:
         })
         
         # 2. Tool Registry (standardized tool interface)
-        self.tool_registry = ToolRegistry({
-            'storage_path': str(self.storage_path / 'tools')
-        })
+        self.tool_registry = ToolRegistry(
+            config={'storage_path': str(self.storage_path / 'tools')},
+            object_registry=self.object_registry
+        )
         
         # 3. Agent Registry (unified agent management)
-        self.agent_registry = AgentRegistry({
-            'storage_path': str(self.storage_path / 'agents'),
-            'health_check_interval': 30,
-            'auto_restart': True
-        })
+        self.agent_registry = AgentRegistry(
+            config={
+                'storage_path': str(self.storage_path / 'agents'),
+                'health_check_interval': 30,
+                'auto_restart': True
+            },
+            object_registry=self.object_registry
+        )
         
         # 4. Policy Network (DeepMind - what to do)
         self.policy_network = PolicyNetwork({
@@ -216,6 +179,23 @@ class IntegratedAgentSystem:
 
         # 11. Meta-Orchestrator (Self-Scaffolding Research Layer)
         self.meta_orchestrator = MetaOrchestrator(self.config)
+
+        # 12. Experience Buffer for RL (shared with orchestrator)
+        self.experience_buffer = ExperienceBuffer(capacity=self.config.get('buffer_capacity', 1000))
+
+        # 13. Evolution System integration
+        import pandas as pd
+        from trading_bot.alpha_evolve.integrated_evolution import IntegratedEvolutionSystem, IntegratedEvolutionConfig
+        evo_config = IntegratedEvolutionConfig(
+            population_size=self.config.get('evo_pop_size', 20),
+            max_generations=self.config.get('evo_generations', 50)
+        )
+        # Provide dummy data if none exists
+        dummy_data = pd.DataFrame(
+            columns=['open', 'high', 'low', 'close', 'volume'],
+            index=pd.to_datetime([])
+        )
+        self.evolution_system = IntegratedEvolutionSystem(evo_config, dummy_data)
     
     async def initialize(self):
         """Initialize all components"""
@@ -249,13 +229,9 @@ class IntegratedAgentSystem:
         await self.react_loop.initialize()
         
         logger.info("7b. Initializing World Model...")
-        # Delayed import to avoid circular dependencies
-        from trading_bot.world_model.latent_dynamics import WorldModel
-        self.world_model = WorldModel({
-            'input_dim': self.config.get('market_input_dim', 20),
-            'latent_dim': self.config.get('latent_dim', 64),
-            'hidden_dim': self.config.get('hidden_dim', 128)
-        })
+        # (Already instantiated, ensure ready)
+        if hasattr(self.world_model, 'initialize'):
+            await self.world_model.initialize()
 
         logger.info("8. Initializing Master Orchestrator...")
         # Inject dependencies into orchestrator
@@ -272,7 +248,6 @@ class IntegratedAgentSystem:
         await self.orchestrator.initialize()
         
         logger.info("9. Initializing Self-Play Loop...")
-        # Inject audit system (governance) into self-play for RL training
         self.self_play_loop.audit_system = self.coordination_core.governance
         await self.self_play_loop.initialize()
         
@@ -287,82 +262,50 @@ class IntegratedAgentSystem:
         self.initialized = True
 
     async def _assign_agents_to_teams(self):
-        """Assign registered agents to functional teams"""
-        logger.info("Assigning agents to teams...")
+        """Assign registered agents to functional teams in coordination core"""
+        if not hasattr(self, 'coordination_core'):
+            return
 
-        team_mapping = {
+        logger.info("Assigning agents to functional teams (Unified)...")
+
+        # Map agent roles to teams
+        role_to_team = {
             AgentRole.PLANNER: 'trading_team',
             AgentRole.EXECUTOR: 'trading_team',
             AgentRole.COORDINATOR: 'trading_team',
+            AgentRole.MONITOR: 'trading_team',
             AgentRole.RESEARCHER: 'research_team',
             AgentRole.EVALUATOR: 'research_team',
+            AgentRole.OPTIMIZER: 'research_team',
             AgentRole.SAFETY: 'safety_team'
         }
 
-        for agent_id, agent in self.agent_registry.agents.items():
-            team = team_mapping.get(agent.role)
+        # Use a list to avoid issues with dictionary iteration
+        agents = list(self.agent_registry.agents.values())
+        for agent in agents:
+            team = role_to_team.get(agent.role)
             if team:
-                self.coordination_core.shared_memory.add_to_team(team, agent_id)
-                logger.debug(f"Assigned agent {agent.name} ({agent.role.value}) to team {team}")
-        
+                self.coordination_core.shared_memory.add_to_team(team, agent.agent_id)
+                logger.info(f"Assigned agent {agent.name} ({agent.role.value}) to team {team}")
+
         logger.info("=" * 60)
         logger.info("INTEGRATED AGENT SYSTEM READY")
         logger.info("=" * 60)
         
         self._print_system_status()
 
-    async def _assign_agents_to_teams(self):
-        """Assign registered agents to functional teams in coordination core"""
-        logger.info("Assigning agents to functional teams...")
-
-        for agent_id, agent in self.agent_registry.agents.items():
-            team = None
-
-            # Map roles to teams
-            if agent.role in [AgentRole.PLANNER, AgentRole.EXECUTOR, AgentRole.MONITOR]:
-                team = 'trading_team'
-            elif agent.role in [AgentRole.RESEARCHER, AgentRole.OPTIMIZER]:
-                team = 'research_team'
-            elif agent.role in [AgentRole.SAFETY, AgentRole.EVALUATOR]:
-                team = 'safety_team'
-
-            if team:
-                self.coordination_core.shared_memory.add_to_team(team, agent_id)
-                logger.debug(f"Assigned agent {agent.name} ({agent_id}) to {team}")
-    
-    async def _assign_agents_to_teams(self):
-        """Assign agents to functional teams based on their roles"""
-        logger.info("Assigning agents to functional teams...")
-
-        all_agents = list(self.agent_registry.agents.values())
-
-        for agent in all_agents:
-            # Assign to trading team
-            if agent.role in [AgentRole.PLANNER, AgentRole.EXECUTOR]:
-                self.coordination_core.shared_memory.add_to_team('trading_team', agent.agent_id)
-                logger.debug(f"Assigned {agent.name} to trading_team")
-
-            # Assign to research team
-            elif agent.role in [AgentRole.RESEARCHER, AgentRole.EVALUATOR]:
-                self.coordination_core.shared_memory.add_to_team('research_team', agent.agent_id)
-                logger.debug(f"Assigned {agent.name} to research_team")
-
-            # Assign to safety team
-            elif agent.role in [AgentRole.SAFETY]:
-                self.coordination_core.shared_memory.add_to_team('safety_team', agent.agent_id)
-                logger.debug(f"Assigned {agent.name} to safety_team")
-
     async def _register_default_agents(self):
         """Register default agents including legacy ones"""
         default_agents = [
             PlannerAgent(config={'name': 'MainPlanner'}),
-            TrendFollowingPlanner(config={'name': 'TrendPlanner'}),
+            TrendFollowingPlanner(config={'name': 'TrendFollowingPlanner'}),
             MeanReversionPlanner(config={'name': 'MeanReversionPlanner'}),
             VolatilityPlanner(config={'name': 'VolatilityPlanner'}),
-            ExecutorAgent(config={'name': 'MainExecutor'}),
-            EvaluatorAgent(config={'name': 'MainEvaluator'}),
-            ResearchAgent(config={'name': 'MainResearcher'}),
-            SafetyAgent(config={'name': 'MainSafety'}),
+            ExecutorAgent(config={'name': 'ExecutorAgent'}),
+            EvaluatorAgent(config={'name': 'EvaluatorAgent'}),
+            ResearchAgent(config={'name': 'ResearchAgent'}),
+            SafetyAgent(config={'name': 'SafetyAgent'}),
+            OptimizerAgent(config={'name': 'OptimizerAgent'}),
         ]
         
         # Register standard agents
@@ -383,35 +326,6 @@ class IntegratedAgentSystem:
         
         logger.info(f"Registered {len(default_agents)} standard and {len(legacy_agents)} legacy agents")
 
-    async def _assign_agents_to_teams(self):
-        """Assign registered agents to functional teams in the coordination core"""
-        logger.info("Assigning agents to teams...")
-
-        # Get all registered agents
-        agents = self.agent_registry.get_all_agents()
-
-        for agent in agents:
-            team = None
-
-            # Assign based on role or name
-            role = getattr(agent, 'role', None)
-            name = getattr(agent, 'name', '').lower()
-
-            if role == AgentRole.PLANNER or 'planner' in name:
-                team = 'trading_team'
-            elif role == AgentRole.EXECUTOR or 'executor' in name or 'marketmaker' in name:
-                team = 'trading_team'
-            elif role == AgentRole.RESEARCHER or 'research' in name:
-                team = 'research_team'
-            elif role == AgentRole.SAFETY or 'safety' in name or 'risk' in name:
-                team = 'safety_team'
-            elif role == AgentRole.EVALUATOR or 'evaluator' in name:
-                team = 'research_team'
-
-            if team:
-                self.coordination_core.shared_memory.add_to_team(team, agent.agent_id)
-                logger.debug(f"Assigned agent {agent.name} ({agent.agent_id}) to {team}")
-    
     async def start(self):
         """Start the integrated system"""
         if not self.initialized:
@@ -524,15 +438,8 @@ class IntegratedAgentSystem:
     async def _gather_context(self) -> SystemContext:
         """Gather current system context"""
         if not hasattr(self, 'tool_registry'):
-            return SystemContext(
-                timestamp=datetime.now(),
-                market_state={},
-                portfolio_state={},
-                agent_states={},
-                pending_decisions=[],
-                recent_outcomes=[],
-                risk_metrics={}
-            )
+            # Empty context
+            return SystemContext(datetime.now(), {}, {}, {}, [], [], {})
 
         # Get market state from tools
         market_tool = await self.tool_registry.get_tool('market_data')
@@ -573,87 +480,77 @@ class IntegratedAgentSystem:
     
     async def execute_task(self, task: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         """
-        Execute a task using the research-grade Meta-Orchestrator.
+        Execute a task with deep observability and full trace recording.
         """
         context = context or {}
+        start_time = datetime.now()
         
+        # Deep Observability Trace
+        obs_trace = {
+            "input_state": {
+                "task": task,
+                "context": context,
+                "timestamp": start_time.isoformat()
+            }
+        }
+
         logger.info(f"Integrated System executing task via Meta-Orchestrator: {task}")
 
-        # Use Meta-Orchestrator for self-scaffolding workflow
+        # 1. Use Meta-Orchestrator for self-scaffolding workflow
         meta_result = await self.meta_orchestrator.execute_task(
             task=task,
             context=context,
             core_system=self
         )
 
-        # Use our new adapters for standardized reasoning and tool calls
-        from .adapters import ReasoningTrace, ResponseFormatter
+        # 2. Record deep observability data
+        duration = (datetime.now() - start_time).total_seconds()
 
-        trace = ReasoningTrace(
-            goal=task,
-            analysis_summary=f"Task executed via Meta-Orchestrator policy: {meta_result.get('policy_id')}",
-            plan=[step.get('type') for step in meta_result.get('trace', [])],
-            metadata=meta_result.get('metrics', {})
+        obs_trace["selected_workflow"] = meta_result.get('policy_id')
+        obs_trace["workflow_trace"] = meta_result.get('trace', [])
+
+        # Extract activated agents and tools from the trace
+        activated_agents = []
+        tools_used = []
+        for step in obs_trace["workflow_trace"]:
+            res = step.get('result', {})
+            if 'agents' in res:
+                activated_agents.extend(res['agents'])
+            if step.get('type') == 'call_tool':
+                tools_used.append(step.get('node'))
+
+        obs_trace["activated_agents"] = list(set(activated_agents))
+        obs_trace["tools_used"] = list(set(tools_used))
+        obs_trace["duration"] = duration
+        obs_trace["success"] = meta_result.get('success', False)
+
+        # 3. Store in Semantic Memory
+        await self.memory_system.store_knowledge(
+            f"obs_trace_{uuid.uuid4().hex[:8]}",
+            obs_trace,
+            tags=["observability", "execution_trace", meta_result.get('policy_id')]
         )
 
-            # Extract final answer from results
-            answer_part = "No specific result returned."
-            total_iterations = 0
-            if result.get('results'):
-                # Try to find the most relevant result
-                for r in reversed(result['results']):
-                    if r.get('result'):
-                        answer_part = r['result']
-                        break
-                    elif r.get('answer'):
-                        answer_part = r['answer']
-                        break
+        # Standardized Response Formatting
+        from .adapters import ReasoningTrace, ResponseFormatter
 
-                # Sum up iterations if available from subtasks
-                for r in result['results']:
-                    total_iterations += r.get('iterations', 0)
+        # Extract results from trace
+        answer_part = "No specific result returned."
+        if meta_result.get('result'):
+            if isinstance(meta_result['result'], dict):
+                answer_part = meta_result['result'].get('result', meta_result['result'].get('answer', str(meta_result['result'])))
+            else:
+                answer_part = str(meta_result['result'])
 
-            final_answer = f"Task completed by coordinated team. Result: {answer_part}"
-
-            return {
-                'success': result.get('success', False),
-                'answer': final_answer,
-                'coordination_report': result,
-                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
-                'iterations': len(result.get('results', []))
-            }
-        else:
-            # Fallback to simple ReAct loop for simpler tasks
-            trace = await self.react_loop.run(
-                task=task,
-                context=context,
-                available_tools=list(self.tool_registry.tools.keys())
-            )
+        final_answer = f"Task completed by Meta-Orchestrator. Result: {answer_part}"
 
         return {
             'success': meta_result.get('success', False),
-            'answer': f"Task '{task}' has been completed by Meta-Orchestrator. Status: SUCCESS",
-            'reasoning': formatted_response['reasoning'],
-            'tool_calls': formatted_response['tool_calls'],
+            'answer': final_answer,
+            'reasoning': f"Workflow policy '{meta_result.get('policy_id')}' executed with {len(meta_result.get('trace', []))} steps.",
             'coordination_report': meta_result,
             'iterations': len(meta_result.get('trace', []))
         }
-    
-    async def _assign_agents_to_teams(self):
-        """Assign default agents to functional teams for coordination"""
-        if not hasattr(self, 'agent_registry') or not hasattr(self, 'coordination_core'):
-            return
-
-        # Use a list to avoid issues with dictionary iteration during potential modifications
-        agents = list(self.agent_registry.agents.values())
-        for agent in agents:
-            role = agent.role
-            if role in [AgentRole.PLANNER, AgentRole.EXECUTOR, AgentRole.COORDINATOR]:
-                self.coordination_core.shared_memory.add_to_team('trading_team', agent.agent_id)
-            elif role in [AgentRole.RESEARCHER, AgentRole.EVALUATOR]:
-                self.coordination_core.shared_memory.add_to_team('research_team', agent.agent_id)
-            elif role == AgentRole.SAFETY:
-                self.coordination_core.shared_memory.add_to_team('safety_team', agent.agent_id)
 
     def get_comprehensive_status(self) -> Dict[str, Any]:
         """Get comprehensive system status"""
@@ -706,28 +603,6 @@ class IntegratedAgentSystem:
         
         print("\n" + "=" * 60)
     
-    async def _assign_agents_to_teams(self):
-        """Assign registered agents to functional teams in coordination core"""
-        if not hasattr(self, 'coordination_core'):
-            return
-
-        # Map agent roles to teams
-        role_to_team = {
-            AgentRole.PLANNER: 'trading_team',
-            AgentRole.EXECUTOR: 'trading_team',
-            AgentRole.EVALUATOR: 'research_team',
-            AgentRole.RESEARCHER: 'research_team',
-            AgentRole.SAFETY: 'safety_team',
-            AgentRole.COORDINATOR: 'trading_team'
-        }
-
-        # Assign all registered agents
-        for agent_id, agent in self.agent_registry.agents.items():
-            team = role_to_team.get(agent.role)
-            if team:
-                self.coordination_core.shared_memory.add_to_team(team, agent_id)
-                logger.info(f"Assigned agent {agent.name} to team {team}")
-
     async def shutdown(self):
         """Graceful shutdown"""
         logger.info("=" * 60)

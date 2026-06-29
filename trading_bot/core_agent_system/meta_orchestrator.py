@@ -59,28 +59,92 @@ class StrategyLibrary:
 
     def _load_default_policies(self):
         """Seed the library with initial human-designed strategies"""
-        default_id = "standard_analysis_v1"
-        nodes = {
-            "start": WorkflowNode("start", WorkflowNodeType.DECOMPOSE, {"depth": 1}, ["end"]),
-            # "select": WorkflowNode("select", WorkflowNodeType.SELECT_AGENT, {"role": "researcher"}, ["execute"]),
-            # "execute": WorkflowNode("execute", WorkflowNodeType.CALL_TOOL, {"tool": "market_data"}, ["verify"]),
-            # "verify": WorkflowNode("verify", WorkflowNodeType.VERIFY, {"threshold": 0.7}, ["end"]),
+
+        # 1. Standard Analysis Workflow
+        analysis_id = "standard_analysis_v1"
+        analysis_nodes = {
+            "decompose": WorkflowNode("decompose", WorkflowNodeType.DECOMPOSE, {"depth": 1}, ["end"]),
             "end": WorkflowNode("end", WorkflowNodeType.CONCLUDE, {})
         }
-        self.policies[default_id] = WorkflowPolicy(
-            default_id, "Standard Analysis", "Standard sequential analysis workflow",
-            nodes, "start"
+        self.policies[analysis_id] = WorkflowPolicy(
+            analysis_id, "Standard Analysis", "Standard sequential analysis workflow using Coordination Core",
+            analysis_nodes, "decompose",
+            performance_metrics={"success_rate": 0.8, "avg_duration": 10.0, "resource_efficiency": 0.7}
+        )
+
+        # 2. Research & Discovery Workflow
+        research_id = "research_discovery_v1"
+        research_nodes = {
+            "select_researcher": WorkflowNode("select_researcher", WorkflowNodeType.SELECT_AGENT, {"role": "researcher"}, ["research_task"]),
+            "research_task": WorkflowNode("research_task", WorkflowNodeType.DECOMPOSE, {"type": "research"}, ["verify"]),
+            "verify": WorkflowNode("verify", WorkflowNodeType.VERIFY, {"threshold": 0.8}, ["end"]),
+            "end": WorkflowNode("end", WorkflowNodeType.CONCLUDE, {})
+        }
+        self.policies[research_id] = WorkflowPolicy(
+            research_id, "Research & Discovery", "Deep research workflow for new market patterns",
+            research_nodes, "select_researcher",
+            performance_metrics={"success_rate": 0.7, "avg_duration": 30.0, "resource_efficiency": 0.6}
+        )
+
+        # 3. High-Confidence Execution Workflow
+        execution_id = "safe_execution_v1"
+        exec_nodes = {
+            "safety_check": WorkflowNode("safety_check", WorkflowNodeType.VERIFY, {"threshold": 0.9}, ["select_executor"]),
+            "select_executor": WorkflowNode("select_executor", WorkflowNodeType.SELECT_AGENT, {"role": "executor"}, ["execute"]),
+            "execute": WorkflowNode("execute", WorkflowNodeType.DECOMPOSE, {"type": "execution"}, ["verify_outcome"]),
+            "verify_outcome": WorkflowNode("verify_outcome", WorkflowNodeType.VERIFY, {"threshold": 0.7}, ["end"]),
+            "end": WorkflowNode("end", WorkflowNodeType.CONCLUDE, {})
+        }
+        self.policies[execution_id] = WorkflowPolicy(
+            execution_id, "Safe Execution", "Execution workflow with pre-safety and post-verification",
+            exec_nodes, "safety_check",
+            performance_metrics={"success_rate": 0.95, "avg_duration": 5.0, "resource_efficiency": 0.9}
+        )
+
+        # 4. Adaptive Recovery Workflow
+        recovery_id = "adaptive_recovery_v1"
+        recovery_nodes = {
+            "analyze_failure": WorkflowNode("analyze_failure", WorkflowNodeType.DECOMPOSE, {"type": "analysis"}, ["select_optimizer"]),
+            "select_optimizer": WorkflowNode("select_optimizer", WorkflowNodeType.SELECT_AGENT, {"role": "optimizer"}, ["propose_fix"]),
+            "propose_fix": WorkflowNode("propose_fix", WorkflowNodeType.DECOMPOSE, {"type": "planning"}, ["end"]),
+            "end": WorkflowNode("end", WorkflowNodeType.CONCLUDE, {})
+        }
+        self.policies[recovery_id] = WorkflowPolicy(
+            recovery_id, "Adaptive Recovery", "Workflow for recovering from system or strategy failures",
+            recovery_nodes, "analyze_failure",
+            performance_metrics={"success_rate": 0.6, "avg_duration": 15.0, "resource_efficiency": 0.5}
         )
 
     def add_policy(self, policy: WorkflowPolicy):
         self.policies[policy.policy_id] = policy
 
-    def get_best_policy_for_task(self, task_type: str) -> Optional[WorkflowPolicy]:
-        """Select best policy based on historical performance"""
+    def get_best_policy_for_task(self, task: str) -> Optional[WorkflowPolicy]:
+        """Select best policy based on task context and historical performance"""
         if not self.policies:
             return None
-        # Heuristic: return the one with highest success_rate
-        return max(self.policies.values(), key=lambda p: p.performance_metrics["success_rate"])
+
+        task_lower = task.lower()
+
+        # 1. Keyword-based matching for specific domains
+        candidate_ids = []
+        if any(kw in task_lower for kw in ["execute", "trade", "buy", "sell", "order"]):
+            candidate_ids.append("safe_execution_v1")
+        if any(kw in task_lower for kw in ["research", "discover", "pattern", "alpha"]):
+            candidate_ids.append("research_discovery_v1")
+        if any(kw in task_lower for kw in ["recover", "fix", "fail", "error", "optimize"]):
+            candidate_ids.append("adaptive_recovery_v1")
+        if any(kw in task_lower for kw in ["analyze", "plan", "forecast", "predict"]):
+            candidate_ids.append("standard_analysis_v1")
+
+        # 2. Filter candidates
+        candidates = [self.policies[pid] for pid in candidate_ids if pid in self.policies]
+
+        # 3. Fallback to all policies if no specific domain matched
+        if not candidates:
+            candidates = list(self.policies.values())
+
+        # 4. Select best by performance within candidates
+        return max(candidates, key=lambda p: p.performance_metrics["success_rate"])
 
 class WorkflowMemory:
     """Episodic memory for workflow executions"""
@@ -227,9 +291,13 @@ class MetaOrchestrator:
 
         elif node.node_type == WorkflowNodeType.VERIFY:
             # Delegate to GovernanceSystem
+            # Merge context into action to allow governance to inspect parameters
+            check_action = {"type": "workflow_step", "node": node.node_id}
+            check_action.update(context)
+
             is_compliant, violations = await system.coordination_core.governance.check_compliance(
                 agent_id="meta_orchestrator",
-                action={"type": "workflow_step", "node": node.node_id},
+                action=check_action,
                 context=context
             )
             return {"success": is_compliant, "violations": violations}

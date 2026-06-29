@@ -226,6 +226,10 @@ class SearchSpace:
             'percentile': np.random.uniform(0.1, 0.9),
         }
     
+    def create_random_genome(self) -> StrategyGenome:
+        """Generate a completely random genome"""
+        return self.random_genome()
+
     def random_genome(self) -> StrategyGenome:
         """Generate a completely random genome"""
         num_signals = np.random.randint(self.min_signals, self.max_signals + 1)

@@ -162,23 +162,23 @@
     "last_accessed": null
   },
   "coordination_pattern_hierarchical": {
-    "memory_id": "29e21c5c-7012-4875-91d7-62e7fb8bce04",
+    "memory_id": "005acaa6-c173-4fef-9ab5-6ef114cadf09",
     "memory_type": "semantic",
     "content": {
       "total_uses": 1,
       "successes": 1,
-      "avg_duration": 0.003955,
+      "avg_duration": 0.00121,
       "avg_efficiency": 1.0,
-      "avg_quality": 0.8000000000000002
+      "avg_quality": 0.8
     },
     "metadata": {
       "key": "coordination_pattern_hierarchical",
       "related": [
-        "task_type_<Task pending name='Task-1' coro=<test_integrated_system_flow() running at /app/tests/core_agent_system/test_integration.py:19> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>"
+        "task_type_<Task pending name='Task-1' coro=<run_all() running at /app/tests/core_agent_system/run.py:22> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-07T01:13:11.313082",
+    "timestamp": "2026-06-29T18:47:09.899912",
     "access_count": 0,
     "last_accessed": null
   },
@@ -341,6 +341,198 @@
     },
     "importance": 0.5,
     "timestamp": "2026-06-07T01:13:11.312250",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_react_reasoner_1_76085775": {
+    "memory_id": "36802f0c-69b1-453b-b6be-cb22d801e947",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "react_reasoner_1_76085775",
+      "name": "MainReasoner",
+      "archetype": "react_reasoner",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-29T18:47:09.896108"
+    },
+    "metadata": {
+      "key": "agent_react_reasoner_1_76085775",
+      "related": [
+        "dynamic_agents",
+        "react_reasoner"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-29T18:47:09.896481",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_constitutional_guardian_1_989c5a3e": {
+    "memory_id": "f5539edd-7765-4901-ae74-e54cf737df54",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "constitutional_guardian_1_989c5a3e",
+      "name": "SafetyGuardian",
+      "archetype": "constitutional_guardian",
+      "role": "safety",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-29T18:47:09.896592"
+    },
+    "metadata": {
+      "key": "agent_constitutional_guardian_1_989c5a3e",
+      "related": [
+        "dynamic_agents",
+        "constitutional_guardian"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-29T18:47:09.896758",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_analyst_1_cd63f377": {
+    "memory_id": "728e3afa-73d3-409e-b254-7f2700463fbd",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "analyst_1_cd63f377",
+      "name": "MarketAnalyst",
+      "archetype": "analyst",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-29T18:47:09.896850"
+    },
+    "metadata": {
+      "key": "agent_analyst_1_cd63f377",
+      "related": [
+        "dynamic_agents",
+        "analyst"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-29T18:47:09.896994",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_monitor_1_be32abb7": {
+    "memory_id": "24f2c7d6-9c03-4e51-bd7d-e9929fd33025",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "monitor_1_be32abb7",
+      "name": "SystemMonitor",
+      "archetype": "monitor",
+      "role": "monitor",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-29T18:47:09.897145"
+    },
+    "metadata": {
+      "key": "agent_monitor_1_be32abb7",
+      "related": [
+        "dynamic_agents",
+        "monitor"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-29T18:47:09.897301",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "obs_trace_7beb2589": {
+    "memory_id": "7e6e82b5-1101-49f2-965a-7717c977f77d",
+    "memory_type": "semantic",
+    "content": {
+      "input_state": {
+        "task": "Analyze market and provide a clear buy/sell/hold signal with reasoning",
+        "context": {},
+        "timestamp": "2026-06-29T18:47:09.898229"
+      },
+      "selected_workflow": "safe_execution_v1",
+      "workflow_trace": [
+        {
+          "node": "safety_check",
+          "type": "verify",
+          "result": {
+            "success": true,
+            "violations": []
+          }
+        },
+        {
+          "node": "select_executor",
+          "type": "select_agent",
+          "result": {
+            "success": true,
+            "agents": [
+              "66c939ab-7449-4b69-85d0-f44f27e4830f"
+            ]
+          }
+        },
+        {
+          "node": "execute",
+          "type": "decompose",
+          "result": {
+            "success": true,
+            "task_id": "<Task pending name='Task-1' coro=<run_all() running at /app/tests/core_agent_system/run.py:22> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>",
+            "subtasks_completed": 1,
+            "duration": 0.00121,
+            "efficiency": 1.0,
+            "results": [
+              {
+                "success": true,
+                "result": null,
+                "reasoning": "=== ReAct Trace: Analyze market and provide a clear buy/sell/hold signal with reasoning ===\nStep 1: THOUGHT [assessment]: Task: Analyze market and provide a clear buy/sell/hold signal with reasoning. Current market shows price=unknown, volatility=unknown. Portfolio has equity=unknown, exposure=unknown. I need to analyze the situation and determine the best course of action.\nStep 2: ACTION [market_data]: {'symbol': 'EURUSD'}\nStep 3: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-06-29T18:47:09.899519'}\nStep 4: THOUGHT [planning]: Previous action succeeded with result: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-06-29T18:47:09.899519'}. Based on this, I should proceed with the next step towards: Analyze market and provide a clear buy/sell/hold signal with reasoning.\nStep 5: ACTION [strategy_analyzer]: {'analysis_type': 'signal', 'market_data': {}}\nStep 6: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'Unknown', 'signal': 'buy', 'confidence': 0.7, 'reasoning': 'Bullish trend with momentum confirmation for Unknown'}",
+                "iterations": 6,
+                "agent_id": "react_reasoner_1_76085775",
+                "agent_name": "MainReasoner",
+                "quality": 0.8
+              }
+            ]
+          }
+        },
+        {
+          "node": "verify_outcome",
+          "type": "verify",
+          "result": {
+            "success": true,
+            "violations": []
+          }
+        },
+        {
+          "node": "end",
+          "type": "conclude",
+          "result": {
+            "success": true,
+            "concluded": true
+          }
+        }
+      ],
+      "activated_agents": [
+        "66c939ab-7449-4b69-85d0-f44f27e4830f"
+      ],
+      "tools_used": [],
+      "duration": 0.002284,
+      "success": true
+    },
+    "metadata": {
+      "key": "obs_trace_7beb2589",
+      "related": []
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-29T18:47:09.900548",
     "access_count": 0,
     "last_accessed": null
   }
