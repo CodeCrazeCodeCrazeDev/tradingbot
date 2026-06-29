@@ -589,6 +589,18 @@ class PlannerAgent(BaseAgent):
             input_schema={"market_data": "Dict"},
             output_schema={"analysis": "Dict"}
         ))
+        self.add_capability(AgentCapability(
+            name="data_access",
+            description="Access required data",
+            input_schema={"query": "Dict"},
+            output_schema={"data": "Dict"}
+        ))
+        self.add_capability(AgentCapability(
+            name="reporting",
+            description="Generate analysis reports",
+            input_schema={"analysis": "Dict"},
+            output_schema={"report": "Dict"}
+        ))
     
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute planning action"""
@@ -670,10 +682,22 @@ class ExecutorAgent(BaseAgent):
             output_schema={"result": "ExecutionResult"}
         ))
         self.add_capability(AgentCapability(
+            name="execution",
+            description="Execute general actions",
+            input_schema={"action": "Dict"},
+            output_schema={"result": "Dict"}
+        ))
+        self.add_capability(AgentCapability(
             name="order_management",
             description="Manage open orders",
             input_schema={"operation": "str", "order_id": "str"},
             output_schema={"result": "Dict"}
+        ))
+        self.add_capability(AgentCapability(
+            name="validation",
+            description="Validate execution parameters",
+            input_schema={"parameters": "Dict"},
+            output_schema={"valid": "bool", "errors": "List"}
         ))
     
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
@@ -776,6 +800,18 @@ class EvaluatorAgent(BaseAgent):
             input_schema={"strategy": "Strategy", "data": "HistoricalData"},
             output_schema={"backtest_result": "BacktestResult"}
         ))
+        self.add_capability(AgentCapability(
+            name="monitoring",
+            description="Monitor system performance",
+            input_schema={"metrics": "List"},
+            output_schema={"status": "Dict"}
+        ))
+        self.add_capability(AgentCapability(
+            name="optimization",
+            description="Optimize strategy parameters",
+            input_schema={"parameters": "Dict", "data": "Dict"},
+            output_schema={"optimal_parameters": "Dict"}
+        ))
     
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute evaluation"""
@@ -844,6 +880,18 @@ class ResearchAgent(BaseAgent):
             description="Discover new patterns",
             input_schema={"data": "MarketData"},
             output_schema={"patterns": "List[Pattern]"}
+        ))
+        self.add_capability(AgentCapability(
+            name="experimentation",
+            description="Run research experiments",
+            input_schema={"experiment": "Dict"},
+            output_schema={"results": "Dict"}
+        ))
+        self.add_capability(AgentCapability(
+            name="analysis",
+            description="Analyze research data",
+            input_schema={"data": "Dict"},
+            output_schema={"insights": "List"}
         ))
     
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
