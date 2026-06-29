@@ -38,7 +38,6 @@ from .synthetic_data import (
     SyntheticDataQualityScorer, MarketRegime, MarketScenario
 )
 from .experience_replay import ExperienceReplayBuffer, Experience, create_experience_replay_buffer
-# from .latent_dynamics import WorldModel  # Avoid circular import
 from .imagination import ImaginationPlanner
 
 logger = logging.getLogger(__name__)
