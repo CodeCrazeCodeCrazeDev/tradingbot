@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 class TaskType(Enum):
     """Types of tasks"""
     ANALYSIS = "analysis"
+    PLANNING = "planning"
     EXECUTION = "execution"
     RESEARCH = "research"
     MONITORING = "monitoring"

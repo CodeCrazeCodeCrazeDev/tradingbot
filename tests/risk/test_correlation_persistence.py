@@ -9,14 +9,15 @@ import pytest
 import asyncio
 import logging
 from unittest.mock import Mock, patch, MagicMock
+from pathlib import Path
 
 try:
-    from trading_bot.correlation_persistence import *
+    from trading_bot.risk.correlation_persistence import *
 except ImportError:
     # Fallback import
     import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.correlation_persistence import *
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+    from trading_bot.risk.correlation_persistence import *
 
 logger = logging.getLogger(__name__)
 
