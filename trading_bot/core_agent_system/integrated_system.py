@@ -124,6 +124,7 @@ class IntegratedAgentSystem:
     
     def _init_components(self):
         """Initialize all system components"""
+        from trading_bot.world_model.latent_dynamics import WorldModel
         
         # 1. Memory System (foundation for all learning)
         self.memory_system = MemorySystem({
@@ -322,6 +323,16 @@ class IntegratedAgentSystem:
             await self.agent_registry.register_agent(agent)
         
         logger.info(f"Registered {len(default_agents)} standard and {len(legacy_agents)} legacy agents")
+
+    async def _assign_agents_to_teams(self):
+        """Assign registered agents to functional teams"""
+        for agent_id, agent in self.agent_registry.agents.items():
+            if agent.role in [AgentRole.PLANNER, AgentRole.EXECUTOR, AgentRole.COORDINATOR]:
+                self.coordination_core.shared_memory.add_to_team('trading_team', agent_id)
+            elif agent.role in [AgentRole.RESEARCHER, AgentRole.EVALUATOR]:
+                self.coordination_core.shared_memory.add_to_team('research_team', agent_id)
+            elif agent.role == AgentRole.SAFETY:
+                self.coordination_core.shared_memory.add_to_team('safety_team', agent_id)
     
     async def start(self):
         """Start the integrated system"""
