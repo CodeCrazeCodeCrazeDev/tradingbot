@@ -416,6 +416,30 @@ class IntegratedAgentSystem:
                 self.coordination_core.shared_memory.add_to_team(team, agent.agent_id)
                 logger.debug(f"Assigned agent {agent.name} ({agent.agent_id}) to {team}")
     
+    async def _assign_agents_to_teams(self):
+        """Assign registered agents to teams for coordinated teamwork"""
+        logger.info("Assigning agents to teams...")
+
+        # Get all registered agents
+        agents = await self.agent_registry.get_all_agents()
+
+        for agent in agents:
+            # Map roles to teams
+            if agent.role in [AgentRole.PLANNER, AgentRole.EXECUTOR, AgentRole.COORDINATOR]:
+                self.coordination_core.shared_memory.add_to_team('trading_team', agent.agent_id)
+                logger.debug(f"Assigned {agent.name} to trading_team")
+
+            elif agent.role in [AgentRole.RESEARCHER, AgentRole.EVALUATOR]:
+                self.coordination_core.shared_memory.add_to_team('research_team', agent.agent_id)
+                logger.debug(f"Assigned {agent.name} to research_team")
+
+            elif agent.role == AgentRole.SAFETY:
+                self.coordination_core.shared_memory.add_to_team('safety_team', agent.agent_id)
+                logger.debug(f"Assigned {agent.name} to safety_team")
+
+        status = self.coordination_core.shared_memory.get_status()
+        logger.info(f"Team assignment complete. Teams: {status['teams']}")
+
     async def start(self):
         """Start the integrated system"""
         if not self.initialized:

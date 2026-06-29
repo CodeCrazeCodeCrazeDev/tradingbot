@@ -673,6 +673,10 @@ class AgentRegistry:
             'factories_registered': list(self.agent_factories.keys())
         }
     
+    async def get_all_agents(self) -> List[BaseAgent]:
+        """Get all registered agents"""
+        return list(self.agents.values())
+
     async def shutdown(self):
         """Shutdown the registry and all agents"""
         logger.info("Shutting down Agent Registry")
