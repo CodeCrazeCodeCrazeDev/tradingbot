@@ -163,12 +163,12 @@ class InterpretableMultiHeadAttention(nn.Module):
 
 class TemporalFusionTransformer(nn.Module):
     """
-    Temporal Fusion Transformer for multi-horizon forecasting.
+    Recurrent-Depth Temporal Fusion Transformer for multi-horizon forecasting.
     
     Architecture:
     1. Variable selection networks (static, historical, future)
     2. LSTM encoder for historical context
-    3. Multi-head attention for temporal dependencies
+    3. Recurrent Temporal self-attention (iterative refinement)
     4. Quantile outputs for uncertainty
     """
     
@@ -181,7 +181,9 @@ class TemporalFusionTransformer(nn.Module):
         num_heads: int = 4,
         num_quantiles: int = 3,
         dropout: float = 0.1,
-        horizon: int = 10
+        horizon: int = 10,
+        recurrent_depth: int = 4,
+        use_act: bool = False
     ):
         super().__init__()
         
@@ -189,6 +191,8 @@ class TemporalFusionTransformer(nn.Module):
         self.num_heads = num_heads
         self.num_quantiles = num_quantiles
         self.horizon = horizon
+        self.recurrent_depth = recurrent_depth
+        self.use_act = use_act
         
         # Variable selection networks
         self.static_vsn = VariableSelectionNetwork(
@@ -198,7 +202,7 @@ class TemporalFusionTransformer(nn.Module):
             1, hidden_dim, num_historical_vars, dropout
         )
         self.future_vsn = VariableSelectionNetwork(
-            1, hidden_dim, num_future_vars, dropout
+            1, hidden_dim, num_historical_vars if num_future_vars == 0 else num_future_vars, dropout
         )
         
         # LSTM encoder
@@ -211,8 +215,11 @@ class TemporalFusionTransformer(nn.Module):
             hidden_dim, hidden_dim, batch_first=True, dropout=dropout
         )
         
-        # Self-attention
+        # Recurrent Self-attention Block
         self.attention = InterpretableMultiHeadAttention(hidden_dim, num_heads, dropout)
+        from trading_bot.ml.recurrent_transformer import ACTController
+        if use_act:
+            self.act_controller = ACTController(hidden_dim)
         
         # Gated residual networks
         self.grn_encoder = GatedResidualNetwork(hidden_dim, hidden_dim, hidden_dim, dropout)
@@ -288,13 +295,23 @@ class TemporalFusionTransformer(nn.Module):
         decoder_input = future_selected
         decoder_output, _ = self.lstm_decoder(decoder_input, (h_n, c_n))
         
-        # 5. Self-attention
-        attention_output, attention_weights = self.attention(
-            decoder_output, encoder_output, encoder_output
-        )
+        # 5. Recurrent Self-attention (Iterative Reasoning)
+        current_attn_state = decoder_output
+        attention_weights = None
         
-        # 6. Gated residual network
-        grn_output = self.grn_decoder(attention_output)
+        depth = 0
+        while depth < self.recurrent_depth:
+            # Shared attention block
+            step_attn_output, step_attn_weights = self.attention(
+                current_attn_state, encoder_output, encoder_output
+            )
+            # Residual connection and normalization (skipped here as InterpretableMultiHeadAttention doesn't have it internally,
+            # but we follow UT pattern where we add then norm)
+            current_attn_state = self.grn_decoder(current_attn_state + step_attn_output)
+            attention_weights = step_attn_weights # Track last step attention
+            depth += 1
+
+        grn_output = current_attn_state
         
         # 7. Quantile predictions
         quantile_outputs = []

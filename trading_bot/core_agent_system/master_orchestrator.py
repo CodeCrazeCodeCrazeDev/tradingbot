@@ -325,8 +325,11 @@ class MasterOrchestrator:
             # Handle both object (PolicyOutput) and dictionary formats
             if hasattr(policy_output, 'actions'):
                 candidates.extend(policy_output.actions)
-            elif isinstance(policy_output, dict) and 'actions' in policy_output:
-                candidates.extend(policy_output['actions'])
+            elif isinstance(policy_output, dict):
+                if 'actions' in policy_output:
+                    candidates.extend(policy_output['actions'])
+                elif hasattr(policy_output, 'actions'):
+                    candidates.extend(policy_output.actions)
         
         # Get suggestions from registered agents
         if self.agent_registry:
