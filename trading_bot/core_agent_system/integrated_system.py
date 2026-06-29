@@ -92,6 +92,9 @@ from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
 from .self_coordinating_core import SelfCoordinatingCore
+from .meta_orchestrator import MetaOrchestrator
+from .swarm.usis import UnifiedSwarmIntelligenceSystem
+from .swarm.experts import MarketScientist, QuantAnalyst, SwarmRiskManager
 from trading_bot.world_model.latent_dynamics import WorldModel
 
 logger = logging.getLogger(__name__)
@@ -217,6 +220,12 @@ class IntegratedAgentSystem:
 
         # 11. Meta-Orchestrator (Self-Scaffolding Research Layer)
         self.meta_orchestrator = MetaOrchestrator(self.config)
+
+        # 12. Unified Swarm Intelligence System (USIS)
+        self.swarm_system = UnifiedSwarmIntelligenceSystem(
+            self.agent_registry,
+            self.config.get('swarm', {})
+        )
     
     async def initialize(self):
         """Initialize all components"""
@@ -367,6 +376,11 @@ class IntegratedAgentSystem:
             EvaluatorAgent(config={'name': 'MainEvaluator'}),
             ResearchAgent(config={'name': 'MainResearcher'}),
             SafetyAgent(config={'name': 'MainSafety'}),
+
+            # Swarm Experts
+            MarketScientist(config={'name': 'SwarmMarketScientist'}),
+            QuantAnalyst(config={'name': 'SwarmQuantAnalyst'}),
+            SwarmRiskManager(config={'name': 'SwarmRiskManager'}),
         ]
         
         # Register standard agents
@@ -601,10 +615,15 @@ class IntegratedAgentSystem:
     
     async def execute_task(self, task: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         """
-        Execute a task using the research-grade Meta-Orchestrator.
+        Execute a task using the research-grade Meta-Orchestrator or USIS.
         """
         context = context or {}
         
+        # Check for swarm-specific tasks
+        if context.get('use_swarm') or 'swarm' in task.lower():
+            logger.info(f"Integrated System routing task to USIS: {task}")
+            return await self.swarm_system.analyze(task, context)
+
         logger.info(f"Integrated System executing task via Meta-Orchestrator: {task}")
 
         # Use Meta-Orchestrator for self-scaffolding workflow
@@ -623,6 +642,16 @@ class IntegratedAgentSystem:
             plan=[step.get('type') for step in meta_result.get('trace', [])],
             metadata=meta_result.get('metrics', {})
         )
+
+        # Check if meta-orchestrator successfully used coordination
+        # or if we need to fall back to a direct loop
+        if meta_result.get('success') and any(n.get('type') == 'decompose' for n in meta_result.get('trace', [])):
+            # Extract the actual result from the coordination node
+            result = {}
+            for node in meta_result.get('trace', []):
+                if node.get('type') == 'decompose':
+                    result = node.get('result', {})
+                    break
 
             # Extract final answer from results
             answer_part = "No specific result returned."
@@ -657,6 +686,9 @@ class IntegratedAgentSystem:
                 context=context,
                 available_tools=list(self.tool_registry.tools.keys())
             )
+
+        # Format standardized response
+        formatted_response = ResponseFormatter.format_react_trace(trace)
 
         return {
             'success': meta_result.get('success', False),
