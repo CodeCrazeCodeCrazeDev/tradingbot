@@ -111,7 +111,7 @@ class SimulationOrchestrator:
     
     def __init__(
         self,
-        world_model: Optional['WorldModel'] = None,
+        world_model: Optional[Any] = None,
         experience_buffer: Optional[ExperienceReplayBuffer] = None,
         storage_path: Optional[str] = None,
         a2a_bus: Optional[A2AMessageBus] = None,
@@ -683,7 +683,7 @@ class SimulationOrchestrator:
 
 # Factory function
 def create_simulation_orchestrator(
-    world_model: Optional['WorldModel'] = None,
+    world_model: Optional[Any] = None,
     storage_path: Optional[str] = None
 ) -> SimulationOrchestrator:
     """Create unified simulation orchestrator"""

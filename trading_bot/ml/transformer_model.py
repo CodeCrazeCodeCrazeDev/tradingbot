@@ -5,8 +5,10 @@ Replaces placeholder training with actual deep learning.
 
 try:
     import torch
+    from trading_bot.ml.recurrent_transformer import RecurrentDepthTransformerBase
 except ImportError:
     torch = None
+    RecurrentDepthTransformerBase = object
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, TensorDataset
@@ -33,8 +35,8 @@ class PositionalEncoding(nn.Module):
         position = torch.arange(max_len).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, d_model, 2) * (-np.log(10000.0) / d_model))
         pe = torch.zeros(max_len, 1, d_model)
-        pe[:, 0, 0:2] = torch.sin(position * div_term)
-        pe[:, 0, 1:2] = torch.cos(position * div_term)
+        pe[:, 0, 0::2] = torch.sin(position * div_term)
+        pe[:, 0, 1::2] = torch.cos(position * div_term)
         self.register_buffer('pe', pe)
     
     def forward(self, x):
@@ -42,24 +44,23 @@ class PositionalEncoding(nn.Module):
         return self.dropout(x)
 
 
-class TimeSeriesTransformer(nn.Module):
-    """Transformer model for time series price prediction."""
+class TimeSeriesTransformer(RecurrentDepthTransformerBase):
+    """Recurrent-Depth Transformer model for time series price prediction."""
     
     def __init__(self, input_dim: int, d_model: int = 128, nhead: int = 8, 
-                 num_layers: int = 4, dropout: float = 0.1):
-        super().__init__()
-        
-        self.input_projection = nn.Linear(input_dim, d_model)
-        self.positional_encoding = PositionalEncoding(d_model, dropout)
-        
-        encoder_layer = nn.TransformerEncoderLayer(
+                 num_layers: int = 4, dropout: float = 0.1, use_act: bool = False):
+        # Initialize recurrent base
+        super().__init__(
             d_model=d_model,
             nhead=nhead,
             dim_feedforward=d_model * 4,
             dropout=dropout,
-            batch_first=True
+            recurrent_depth=num_layers,
+            use_act=use_act
         )
-        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers)
+
+        self.input_projection = nn.Linear(input_dim, d_model)
+        self.positional_encoding = PositionalEncoding(d_model, dropout)
         
         self.output_projection = nn.Sequential(
             nn.Linear(d_model, d_model // 2),
@@ -71,7 +72,10 @@ class TimeSeriesTransformer(nn.Module):
     def forward(self, x):
         x = self.input_projection(x)
         x = self.positional_encoding(x)
-        x = self.transformer(x)
+
+        # Iterative reasoning
+        x, stats = self._recurrent_forward(x)
+
         x = x[:, -1, :]  # Take last time step
         return self.output_projection(x)
 
