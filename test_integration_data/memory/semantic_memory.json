@@ -1,9 +1,9 @@
 {
-  "agent_react_reasoner_1_e3779727": {
-    "memory_id": "3bea9836-6bce-409f-9526-20713828c15b",
+  "agent_react_reasoner_1_92b8bc4c": {
+    "memory_id": "65fbd14c-85ab-4472-991a-9c8737ff05cb",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "react_reasoner_1_e3779727",
+      "agent_id": "react_reasoner_1_92b8bc4c",
       "name": "MainReasoner",
       "archetype": "react_reasoner",
       "role": "planner",
