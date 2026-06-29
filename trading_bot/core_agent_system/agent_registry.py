@@ -217,6 +217,46 @@ class BaseAgent(ABC):
         """Recall something from agent memory"""
         return self.memory.get(key, default)
     
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """
+        Execute a task using the agent's capabilities.
+
+        This is a higher-level interface used by the coordination core.
+        Standard implementation uses the agent's primary execute method.
+        """
+        # Convert task to action
+        description = getattr(task, 'description', str(task))
+
+        # Determine operation based on role
+        operation = 'execute'
+        if self.role == AgentRole.PLANNER:
+            operation = 'analyze'
+        elif self.role == AgentRole.RESEARCHER:
+            operation = 'research'
+        elif self.role == AgentRole.EVALUATOR:
+            operation = 'evaluate'
+        elif self.role == AgentRole.SAFETY:
+            operation = 'check'
+
+        # Execute using standard interface
+        result = await self.execute({
+            'operation': operation,
+            'description': description,
+            'task_id': getattr(task, 'task_id', None),
+            'data': getattr(task, 'metadata', {})
+        })
+
+        # Ensure result is a dictionary
+        if not isinstance(result, dict):
+            result = {'result': result}
+
+        # Ensure success key exists
+        if 'success' not in result:
+            # If no error, assume success
+            result['success'] = 'error' not in result
+
+        return result
+
     def get_status(self) -> Dict[str, Any]:
         """Get agent status"""
         return {
@@ -409,6 +449,10 @@ class AgentRegistry:
         """Get an agent by ID"""
         return self.agents.get(agent_id)
     
+    def get_all_agents(self) -> List[BaseAgent]:
+        """Get all registered agents"""
+        return list(self.agents.values())
+
     async def get_executor(self, action_type: str) -> Optional[BaseAgent]:
         """
         Get an executor agent for a given action type.
@@ -602,15 +646,9 @@ class PlannerAgent(BaseAgent):
         ))
         self.add_capability(AgentCapability(
             name="data_access",
-            description="Access required data",
+            description="Access market and system data",
             input_schema={"query": "Dict"},
             output_schema={"data": "Dict"}
-        ))
-        self.add_capability(AgentCapability(
-            name="reporting",
-            description="Generate analysis reports",
-            input_schema={"analysis": "Dict"},
-            output_schema={"report": "Dict"}
         ))
     
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
@@ -823,16 +861,10 @@ class EvaluatorAgent(BaseAgent):
             output_schema={"backtest_result": "BacktestResult"}
         ))
         self.add_capability(AgentCapability(
-            name="monitoring",
-            description="Monitor system performance",
-            input_schema={"metrics": "List"},
-            output_schema={"status": "Dict"}
-        ))
-        self.add_capability(AgentCapability(
-            name="optimization",
-            description="Optimize strategy parameters",
-            input_schema={"parameters": "Dict", "data": "Dict"},
-            output_schema={"optimal_parameters": "Dict"}
+            name="reporting",
+            description="Generate evaluation reports",
+            input_schema={"data": "Dict"},
+            output_schema={"report": "Dict"}
         ))
     
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
@@ -906,16 +938,10 @@ class ResearchAgent(BaseAgent):
             output_schema={"patterns": "List[Pattern]"}
         ))
         self.add_capability(AgentCapability(
-            name="experimentation",
-            description="Run research experiments",
-            input_schema={"experiment": "Dict"},
-            output_schema={"results": "Dict"}
-        ))
-        self.add_capability(AgentCapability(
             name="analysis",
-            description="Analyze research data",
+            description="Analyze research findings",
             input_schema={"data": "Dict"},
-            output_schema={"insights": "List"}
+            output_schema={"analysis": "Dict"}
         ))
     
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
