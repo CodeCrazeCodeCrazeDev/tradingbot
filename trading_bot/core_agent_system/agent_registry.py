@@ -133,32 +133,43 @@ class BaseAgent(ABC):
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute an action - must be implemented by subclasses"""
         pass
-    
+
     async def execute_task(self, task: Any) -> Dict[str, Any]:
-        """Execute a coordinated task"""
-        # Map task to operation
-        from trading_bot.core_agent_system.coordination_core import TaskType
+        """
+        Execute a task for the coordination core.
+        Maps task types to specific agent operations.
+        """
+        # Local import to prevent circularity during orchestration
+        from .coordination_core import TaskType
 
-        operation = 'execute'
-        if task.task_type == TaskType.PLANNING:
-            operation = 'propose'
-        elif task.task_type == TaskType.RESEARCH:
-            operation = 'research'
-        elif task.task_type == TaskType.ANALYSIS:
-            operation = 'analyze'
+        operation = "execute"
+        if self.role == AgentRole.PLANNER:
+            operation = "propose"
+        elif self.role == AgentRole.RESEARCHER:
+            operation = "research"
+        elif self.role == AgentRole.EVALUATOR:
+            operation = "evaluate"
+        elif self.role == AgentRole.SAFETY:
+            operation = "check"
 
-        # Execute action
+        # Special mapping for coordination tasks
+        if hasattr(task, 'task_type'):
+            if task.task_type == TaskType.ANALYSIS:
+                if self.role == AgentRole.PLANNER:
+                    operation = "propose"
+                elif self.role == AgentRole.RESEARCHER:
+                    operation = "research"
+                # Analysts and other roles can use execute (default)
+
         result = await self.execute({
             'operation': operation,
-            'task_id': task.task_id,
-            'description': task.description,
-            'metadata': getattr(task, 'metadata', {})
+            'context': task.metadata if hasattr(task, 'metadata') else {},
+            'task': task
         })
 
-        # Update metrics
-        success = result.get('success', 'error' not in result)
-        if 'success' not in result:
-            result['success'] = success
+        # Ensure result has success flag for coordination core
+        if result and 'success' not in result:
+            result['success'] = 'error' not in result
 
         return result
 
@@ -564,8 +575,7 @@ class PlannerAgent(BaseAgent):
             config=config
         )
         self.config = config or {}
-        self.executor = TradeExecutor(self.config)
-    
+
     def _register_capabilities(self):
         self.add_capability(AgentCapability(
             name="planning",
@@ -578,6 +588,18 @@ class PlannerAgent(BaseAgent):
             description="Analyze market conditions",
             input_schema={"market_data": "Dict"},
             output_schema={"analysis": "Dict"}
+        ))
+        self.add_capability(AgentCapability(
+            name="data_access",
+            description="Access required data",
+            input_schema={"query": "Dict"},
+            output_schema={"data": "Dict"}
+        ))
+        self.add_capability(AgentCapability(
+            name="reporting",
+            description="Generate analysis reports",
+            input_schema={"analysis": "Dict"},
+            output_schema={"report": "Dict"}
         ))
     
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
@@ -650,7 +672,8 @@ class ExecutorAgent(BaseAgent):
             config=config
         )
         self.config = config or {}
-    
+        self.executor = TradeExecutor(self.config)
+
     def _register_capabilities(self):
         self.add_capability(AgentCapability(
             name="trade_execution",
@@ -659,10 +682,22 @@ class ExecutorAgent(BaseAgent):
             output_schema={"result": "ExecutionResult"}
         ))
         self.add_capability(AgentCapability(
+            name="execution",
+            description="Execute general actions",
+            input_schema={"action": "Dict"},
+            output_schema={"result": "Dict"}
+        ))
+        self.add_capability(AgentCapability(
             name="order_management",
             description="Manage open orders",
             input_schema={"operation": "str", "order_id": "str"},
             output_schema={"result": "Dict"}
+        ))
+        self.add_capability(AgentCapability(
+            name="validation",
+            description="Validate execution parameters",
+            input_schema={"parameters": "Dict"},
+            output_schema={"valid": "bool", "errors": "List"}
         ))
     
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
@@ -765,6 +800,18 @@ class EvaluatorAgent(BaseAgent):
             input_schema={"strategy": "Strategy", "data": "HistoricalData"},
             output_schema={"backtest_result": "BacktestResult"}
         ))
+        self.add_capability(AgentCapability(
+            name="monitoring",
+            description="Monitor system performance",
+            input_schema={"metrics": "List"},
+            output_schema={"status": "Dict"}
+        ))
+        self.add_capability(AgentCapability(
+            name="optimization",
+            description="Optimize strategy parameters",
+            input_schema={"parameters": "Dict", "data": "Dict"},
+            output_schema={"optimal_parameters": "Dict"}
+        ))
     
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute evaluation"""
@@ -833,6 +880,18 @@ class ResearchAgent(BaseAgent):
             description="Discover new patterns",
             input_schema={"data": "MarketData"},
             output_schema={"patterns": "List[Pattern]"}
+        ))
+        self.add_capability(AgentCapability(
+            name="experimentation",
+            description="Run research experiments",
+            input_schema={"experiment": "Dict"},
+            output_schema={"results": "Dict"}
+        ))
+        self.add_capability(AgentCapability(
+            name="analysis",
+            description="Analyze research data",
+            input_schema={"data": "Dict"},
+            output_schema={"insights": "List"}
         ))
     
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
