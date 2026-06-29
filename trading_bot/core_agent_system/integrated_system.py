@@ -278,7 +278,9 @@ class IntegratedAgentSystem:
 
     async def _assign_agents_to_teams(self):
         """Assign registered agents to functional teams"""
-        role_to_team = {
+        logger.info("Assigning agents to teams...")
+
+        team_mapping = {
             AgentRole.PLANNER: 'trading_team',
             AgentRole.EXECUTOR: 'trading_team',
             AgentRole.COORDINATOR: 'trading_team',
@@ -288,10 +290,10 @@ class IntegratedAgentSystem:
         }
 
         for agent_id, agent in self.agent_registry.agents.items():
-            team = role_to_team.get(agent.role)
+            team = team_mapping.get(agent.role)
             if team:
                 self.coordination_core.shared_memory.add_to_team(team, agent_id)
-                logger.debug(f"Assigned agent {agent.name} ({agent_id}) to {team}")
+                logger.debug(f"Assigned agent {agent.name} ({agent.role.value}) to team {team}")
         
         logger.info("=" * 60)
         logger.info("INTEGRATED AGENT SYSTEM READY")
