@@ -42,6 +42,7 @@ class TaskType(Enum):
     MONITORING = "monitoring"
     OPTIMIZATION = "optimization"
     COORDINATION = "coordination"
+    PLANNING = "planning"
 
 
 class TaskPriority(Enum):

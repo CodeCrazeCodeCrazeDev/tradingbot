@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 import uuid
 import numpy as np
+from .rl_training import SelfImprovingRLFramework, Trajectory
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +82,7 @@ class SelfPlayGame:
 
 class SelfPlayLoop:
     """
-    Self-Play Improvement Loop - DeepMind Pattern
+    Self-Play Improvement Loop - Enhanced with RL Training Framework
     
     Implements continuous self-improvement through:
     
@@ -133,6 +134,7 @@ class SelfPlayLoop:
         policy_network=None,
         value_network=None,
         memory_system=None,
+        audit_system=None,
         config: Optional[Dict] = None
     ):
         self.config = config or {}
@@ -140,6 +142,24 @@ class SelfPlayLoop:
         self.policy_network = policy_network
         self.value_network = value_network
         self.memory_system = memory_system
+        self._audit_system = audit_system
+
+        # RL Framework
+        self.rl_framework = SelfImprovingRLFramework(
+            policy_network=policy_network,
+            value_network=value_network,
+            audit_system=audit_system
+        )
+
+    @property
+    def audit_system(self):
+        return self._audit_system
+
+    @audit_system.setter
+    def audit_system(self, value):
+        self._audit_system = value
+        if hasattr(self, 'rl_framework'):
+            self.rl_framework.audit_system = value
         
         # Hypothesis and experiment tracking
         self.hypotheses: List[Hypothesis] = []
@@ -165,7 +185,7 @@ class SelfPlayLoop:
         self.running = False
         self.iteration = 0
         
-        logger.info("Self-Play Loop initialized")
+        logger.info("Self-Play Loop initialized with RL Framework")
     
     async def initialize(self):
         """Initialize the self-play loop"""

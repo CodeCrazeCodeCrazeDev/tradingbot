@@ -89,6 +89,7 @@ from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
 from .self_coordinating_core import SelfCoordinatingCore
+from .meta_orchestrator import MetaOrchestrator
 
 logger = logging.getLogger(__name__)
 
@@ -209,6 +210,9 @@ class IntegratedAgentSystem:
             agent_registry=self.agent_registry,
             config=self.config
         )
+
+        # 11. Meta-Orchestrator (Self-Scaffolding Research Layer)
+        self.meta_orchestrator = MetaOrchestrator(self.config)
     
     async def initialize(self):
         """Initialize all components"""
@@ -259,12 +263,16 @@ class IntegratedAgentSystem:
         await self.orchestrator.initialize()
         
         logger.info("9. Initializing Self-Play Loop...")
+        # Inject audit system (governance) into self-play for RL training
+        self.self_play_loop.audit_system = self.coordination_core.governance
         await self.self_play_loop.initialize()
         
         logger.info("10. Initializing Self-Coordinating Core...")
         await self.coordination_core.initialize()
 
-        # 11. Assign default agents to teams for teamwork
+        # 11. Meta-Orchestrator initialization (already done in __init__)
+
+        # 12. Assign default agents to teams for teamwork
         await self._assign_agents_to_teams()
 
         self.initialized = True
@@ -467,64 +475,49 @@ class IntegratedAgentSystem:
     
     async def execute_task(self, task: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         """
-        Execute a task using the full system with multi-agent coordination.
-        
-        This is the main entry point for external requests.
-        It uses the Self-Coordinating Core to leverage teamwork.
+        Execute a task using the research-grade Meta-Orchestrator.
         """
         context = context or {}
         
-        logger.info(f"Integrated System executing task: {task}")
-        
-        # For complex tasks, use the Self-Coordinating Core to enable teamwork
-        from .coordination_core import TaskType, TaskPriority
+        logger.info(f"Integrated System executing task via Meta-Orchestrator: {task}")
 
-        # Determine if we should use coordination core or simple ReAct
-        # Heuristic: if task contains multiple keywords, or explicitly requested
-        use_coordination = context.get('use_coordination', True)
+        # Use Meta-Orchestrator for self-scaffolding workflow
+        meta_result = await self.meta_orchestrator.execute_task(
+            task=task,
+            context=context,
+            core_system=self
+        )
 
-        if use_coordination:
-            result = await self.coordination_core.execute_task(
-                task_name=f"Request: {task[:30]}...",
-                task_type=TaskType.ANALYSIS,
-                description=task,
-                priority=TaskPriority.MEDIUM,
-                metadata=context
-            )
+        # Use our new adapters for standardized reasoning and tool calls
+        from .adapters import ReasoningTrace, ResponseFormatter
 
-            # Extract final answer from results
-            final_answer = "Task completed by coordinated team."
-            if result.get('results'):
-                # Try to find the most relevant result
-                for r in reversed(result['results']):
-                    if r.get('result'):
-                        final_answer = r['result']
-                        break
-                    elif r.get('answer'):
-                        final_answer = r['answer']
-                        break
+        trace = ReasoningTrace(
+            goal=task,
+            analysis_summary=f"Task executed via Meta-Orchestrator policy: {meta_result.get('policy_id')}",
+            plan=[step.get('type') for step in meta_result.get('trace', [])],
+            metadata=meta_result.get('metrics', {})
+        )
 
-            return {
-                'success': result.get('success', False),
-                'answer': final_answer,
-                'coordination_report': result,
-                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
-                'iterations': len(result.get('results', []))
-            }
-        else:
-            # Fallback to simple ReAct loop for simpler tasks
-            trace = await self.react_loop.run(
-                task=task,
-                context=context,
-                available_tools=list(self.tool_registry.tools.keys())
-            )
+        # Extract tool calls from trace
+        tool_calls = []
+        for step in meta_result.get('trace', []):
+            if step.get('type') == 'call_tool':
+                tool_calls.append({
+                    "name": step.get('result', {}).get('tool', 'unknown'),
+                    "parameters": {}
+                })
 
-            return {
-                'success': trace.success,
-                'answer': trace.final_answer,
-                'reasoning': trace.to_string(),
-                'iterations': len(trace.steps)
-            }
+        response_format = context.get('response_format', 'openai')
+        formatted_response = ResponseFormatter.format_response(trace, tool_calls, response_format)
+
+        return {
+            'success': meta_result.get('success', False),
+            'answer': f"Task '{task}' has been completed by Meta-Orchestrator. Status: SUCCESS",
+            'reasoning': formatted_response['reasoning'],
+            'tool_calls': formatted_response['tool_calls'],
+            'coordination_report': meta_result,
+            'iterations': len(meta_result.get('trace', []))
+        }
     
     async def _assign_agents_to_teams(self):
         """Assign default agents to functional teams for coordination"""
