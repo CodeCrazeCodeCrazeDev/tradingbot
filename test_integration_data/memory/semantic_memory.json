@@ -115,7 +115,7 @@
       "successes": 1,
       "avg_duration": 0.002783,
       "avg_efficiency": 1.0,
-      "avg_quality": 0.8000000000000002
+      "avg_quality": 0.8
     },
     "metadata": {
       "key": "coordination_pattern_hierarchical",
