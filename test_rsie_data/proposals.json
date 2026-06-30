@@ -1,0 +1,12 @@
+{
+  "test_persist": {
+    "proposal_id": "test_persist",
+    "dimension": "feature",
+    "level": 1,
+    "description": "Test",
+    "status": "PENDING",
+    "created_at": "2026-06-30T10:44:40.196157",
+    "proposed_changes": {},
+    "metrics": {}
+  }
+}

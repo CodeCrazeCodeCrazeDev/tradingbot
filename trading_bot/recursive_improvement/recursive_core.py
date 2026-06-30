@@ -1,5 +1,5 @@
 """
-Recursive Self-Improvement Core
+Recursive Self-Improvement Engine (RSIE) Core
 
 The foundational system that enables recursive self-improvement across all dimensions.
 Each improvement cycle learns from previous cycles and generates better improvements.
@@ -7,15 +7,21 @@ Each improvement cycle learns from previous cycles and generates better improvem
 
 import asyncio
 import logging
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Any, Optional, Callable
+from typing import Dict, List, Any, Optional, Tuple, Protocol
 import json
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+class ImprovementTier(Enum):
+    TIER_0 = 0  # Critical to profitability
+    TIER_1 = 1  # Critical to intelligence
+    TIER_2 = 2  # Critical to scalability
+    TIER_3 = 3  # Experimental research
 
 class ImprovementDimension(Enum):
     """Dimensions where recursive improvement can occur"""
@@ -29,7 +35,79 @@ class ImprovementDimension(Enum):
     PERFORMANCE = "performance"
     INTEGRATION = "integration"
     META_IMPROVEMENT = "meta_improvement"
+    EVALUATION = "evaluation"
+    FEATURE = "feature"
+    AGENT = "agent"
+    WORKFLOW = "workflow"
+    WORLD_MODEL = "world_model"
 
+@dataclass
+class ImprovementProposal:
+    """Proposal for a specific improvement"""
+    proposal_id: str
+    dimension: ImprovementDimension
+    level: int  # 0-7
+    description: str
+    proposed_changes: Dict[str, Any]
+    reasoning: str
+    expected_benefit: Dict[str, float]
+    risk_analysis: Dict[str, Any]
+    rollback_plan: str
+    status: str = "PENDING"
+    created_at: datetime = field(default_factory=datetime.utcnow)
+    validation_results: Dict[str, Any] = field(default_factory=dict)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+@dataclass
+class ImprovementCapability:
+    """Definition of a self-improvable subsystem"""
+    subsystem: str
+    dimension: ImprovementDimension
+    tier: ImprovementTier
+    max_level: int
+    required_validation: List[str]
+    owner_loop: str
+
+class ImprovementRegistry:
+    """Registry of all self-improvable subsystems"""
+
+    def __init__(self):
+        self.capabilities: Dict[str, ImprovementCapability] = {}
+        self._register_defaults()
+
+    def _register_defaults(self):
+        """Register the baseline capabilities from the subsystem map"""
+        defaults = [
+            ImprovementCapability("Validation Reliability", ImprovementDimension.EVALUATION, ImprovementTier.TIER_0, 5, ["Leakage Check", "Walk-Forward"], "EvaluationLoop"),
+            ImprovementCapability("Trading Strategies", ImprovementDimension.STRATEGY, ImprovementTier.TIER_0, 5, ["OOS", "Sharpe", "MaxDD"], "StrategyLoop"),
+            ImprovementCapability("Risk Management", ImprovementDimension.RISK_MANAGEMENT, ImprovementTier.TIER_0, 4, ["Robustness", "Drawdown", "VaR"], "RiskLoop"),
+            ImprovementCapability("Feature Engineering", ImprovementDimension.FEATURE, ImprovementTier.TIER_0, 5, ["Stat Significance", "Stability"], "FeatureLoop"),
+            ImprovementCapability("Agent Coordination", ImprovementDimension.AGENT, ImprovementTier.TIER_1, 4, ["Latency", "Accuracy"], "AgentLoop"),
+            ImprovementCapability("Workflow Policies", ImprovementDimension.WORKFLOW, ImprovementTier.TIER_1, 3, ["Process Efficiency"], "WorkflowLoop"),
+            ImprovementCapability("Model Architecture", ImprovementDimension.ARCHITECTURE, ImprovementTier.TIER_1, 6, ["Loss", "Accuracy"], "ModelLoop"),
+            ImprovementCapability("World Model", ImprovementDimension.WORLD_MODEL, ImprovementTier.TIER_2, 5, ["Predictive Error"], "ResearchLoop"),
+            ImprovementCapability("Discovery Mechanism", ImprovementDimension.META_IMPROVEMENT, ImprovementTier.TIER_1, 4, ["Meta-Hypothesis Success"], "MetaLoop"),
+        ]
+        for cap in defaults:
+            self.capabilities[cap.subsystem] = cap
+
+    def get_capability(self, subsystem: str) -> Optional[ImprovementCapability]:
+        return self.capabilities.get(subsystem)
+
+    def list_by_tier(self, tier: ImprovementTier) -> List[ImprovementCapability]:
+        return [c for c in self.capabilities.values() if c.tier == tier]
+
+class ImprovementMemoryInterface(Protocol):
+    """Protocol for storing and retrieving improvement data"""
+    async def store_proposal(self, proposal: ImprovementProposal): ...
+    async def get_proposal(self, proposal_id: str) -> Optional[ImprovementProposal]: ...
+    async def store_result(self, proposal_id: str, results: Dict[str, Any]): ...
+    async def get_successful_patterns(self, dimension: ImprovementDimension) -> List[Dict[str, Any]]: ...
+
+class KnowledgeGraphInterface(Protocol):
+    """Protocol for interacting with the system knowledge graph"""
+    async def store_insight(self, source: str, insight: Dict[str, Any]): ...
+    async def query_insights(self, query: str) -> List[Dict[str, Any]]: ...
 
 @dataclass
 class ImprovementMetrics:
@@ -64,6 +142,24 @@ class ImprovementMetrics:
             'metadata': self.metadata,
         }
 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'ImprovementProposal':
+        """Reconstruct proposal from dictionary"""
+        return ImprovementProposal(
+            proposal_id=data['proposal_id'],
+            dimension=ImprovementDimension(data['dimension']),
+            level=data['level'],
+            description=data['description'],
+            proposed_changes=data['proposed_changes'],
+            reasoning=data.get('reasoning', ''),
+            expected_benefit=data.get('expected_benefit', {}),
+            risk_analysis=data.get('risk_analysis', {}),
+            rollback_plan=data.get('rollback_plan', ''),
+            status=data.get('status', 'PENDING'),
+            created_at=datetime.fromisoformat(data['submitted_at']) if 'submitted_at' in data else datetime.utcnow(),
+            validation_results=data.get('metrics', {}),
+            metadata=data.get('metadata', {})
+        )
 
 @dataclass
 class ImprovementCycle:
@@ -90,7 +186,6 @@ class ImprovementCycle:
         self.end_time = datetime.utcnow()
         self.status = f"failed: {reason}"
 
-
 class RecursiveImprovementCore:
     """
     Core recursive self-improvement engine.
@@ -109,6 +204,7 @@ class RecursiveImprovementCore:
         self.convergence_threshold = self.config.get('convergence_threshold', 0.01)
         self.min_improvement_delta = self.config.get('min_improvement_delta', 0.001)
         
+        self.registry = ImprovementRegistry()
         self.cycles: Dict[str, ImprovementCycle] = {}
         self.metrics_history: List[ImprovementMetrics] = []
         self.improvement_patterns: Dict[ImprovementDimension, List[Dict]] = {}
@@ -118,7 +214,7 @@ class RecursiveImprovementCore:
         self.storage_path.mkdir(exist_ok=True)
         
         self._initialize_improvement_patterns()
-        logger.info("RecursiveImprovementCore initialized")
+        logger.info("RecursiveImprovementCore initialized with RSIE Architecture")
     
     def _initialize_improvement_patterns(self):
         """Initialize improvement patterns for each dimension"""
@@ -134,15 +230,6 @@ class RecursiveImprovementCore:
     ) -> str:
         """
         Start a new improvement cycle.
-        
-        Args:
-            dimension: Which dimension to improve
-            depth: Current recursion depth
-            parent_cycle_id: ID of parent cycle if this is a recursive call
-            context: Additional context for improvement
-            
-        Returns:
-            Cycle ID
         """
         if depth >= self.max_recursion_depth:
             logger.warning(f"Max recursion depth {self.max_recursion_depth} reached")
@@ -164,347 +251,7 @@ class RecursiveImprovementCore:
         
         logger.info(f"Started improvement cycle {cycle_id} at depth {depth}")
         
-        try:
-            await self._execute_improvement_cycle(cycle, context or {})
-        except Exception as e:
-            logger.error(f"Improvement cycle {cycle_id} failed: {e}")
-            cycle.fail(str(e))
-        
         return cycle_id
-    
-    async def _execute_improvement_cycle(
-        self,
-        cycle: ImprovementCycle,
-        context: Dict[str, Any]
-    ):
-        """Execute one improvement cycle"""
-        
-        # Step 1: Analyze current performance
-        performance_before = await self._measure_performance(cycle.dimension, context)
-        
-        # Step 2: Learn from historical patterns
-        patterns = self._learn_from_history(cycle.dimension)
-        
-        # Step 3: Generate improvements using learned patterns
-        improvements = await self._generate_improvements(
-            cycle.dimension,
-            patterns,
-            context
-        )
-        
-        # Step 4: Apply improvements
-        applied_improvements = await self._apply_improvements(
-            cycle.dimension,
-            improvements,
-            context
-        )
-        cycle.improvements_applied = applied_improvements
-        
-        # Step 5: Measure new performance
-        performance_after = await self._measure_performance(cycle.dimension, context)
-        
-        # Step 6: Calculate metrics
-        metrics = ImprovementMetrics(
-            dimension=cycle.dimension,
-            cycle_number=len([c for c in self.cycles.values() 
-                            if c.dimension == cycle.dimension]),
-            timestamp=datetime.utcnow(),
-            performance_before=performance_before,
-            performance_after=performance_after,
-            improvement_delta=performance_after - performance_before,
-            convergence_score=self._calculate_convergence(cycle.dimension),
-            stability_score=self._calculate_stability(cycle.dimension),
-            generalization_score=self._calculate_generalization(cycle.dimension),
-            metadata=context
-        )
-        
-        cycle.complete(metrics)
-        self.metrics_history.append(metrics)
-        
-        # Step 7: Store successful patterns
-        if metrics.is_successful():
-            self._store_improvement_pattern(cycle.dimension, {
-                'improvements': applied_improvements,
-                'delta': metrics.improvement_delta,
-                'context': context,
-                'timestamp': datetime.utcnow().isoformat()
-            })
-        
-        # Step 8: Decide if we should recurse deeper
-        if await self._should_recurse(cycle, metrics):
-            await self._spawn_child_cycles(cycle, context)
-        
-        # Step 9: Meta-learning - improve the improvement process
-        await self._meta_improve(cycle, metrics)
-        
-        logger.info(f"Cycle {cycle.cycle_id} completed with delta {metrics.improvement_delta}")
-    
-    async def _measure_performance(
-        self,
-        dimension: ImprovementDimension,
-        context: Dict[str, Any]
-    ) -> float:
-        """Measure current performance for a dimension"""
-        # This would integrate with actual performance measurement systems
-        # For now, return a placeholder
-        return context.get('current_performance', 0.5)
-    
-    def _learn_from_history(
-        self,
-        dimension: ImprovementDimension
-    ) -> List[Dict]:
-        """Learn patterns from historical improvements"""
-        patterns = self.improvement_patterns.get(dimension, [])
-        
-        # Sort by effectiveness
-        sorted_patterns = sorted(
-            patterns,
-            key=lambda p: p.get('delta', 0),
-            reverse=True
-        )
-        
-        return sorted_patterns[:10]  # Top 10 patterns
-    
-    async def _generate_improvements(
-        self,
-        dimension: ImprovementDimension,
-        patterns: List[Dict],
-        context: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
-        """Generate improvements based on learned patterns"""
-        improvements = []
-        
-        # Use historical patterns to generate new improvements
-        for pattern in patterns:
-            # Adapt pattern to current context
-            adapted = self._adapt_pattern_to_context(pattern, context)
-            if adapted:
-                improvements.append(adapted)
-        
-        # Generate novel improvements
-        novel = await self._generate_novel_improvements(dimension, context)
-        improvements.extend(novel)
-        
-        return improvements
-    
-    def _adapt_pattern_to_context(
-        self,
-        pattern: Dict,
-        context: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
-        """Adapt a historical pattern to current context"""
-        # Simple adaptation - in production this would be more sophisticated
-        return {
-            'type': 'adapted_pattern',
-            'original_pattern': pattern,
-            'context': context,
-            'timestamp': datetime.utcnow().isoformat()
-        }
-    
-    async def _generate_novel_improvements(
-        self,
-        dimension: ImprovementDimension,
-        context: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
-        """Generate novel improvements through exploration"""
-        # This would use ML/optimization to generate new improvements
-        return [
-            {
-                'type': 'novel_improvement',
-                'dimension': dimension.value,
-                'context': context,
-                'timestamp': datetime.utcnow().isoformat()
-            }
-        ]
-    
-    async def _apply_improvements(
-        self,
-        dimension: ImprovementDimension,
-        improvements: List[Dict[str, Any]],
-        context: Dict[str, Any]
-    ) -> List[str]:
-        """Apply improvements and return list of what was applied"""
-        applied = []
-        
-        for improvement in improvements:
-            try:
-                # Apply improvement (would integrate with actual systems)
-                improvement_id = f"{dimension.value}_{len(applied)}"
-                applied.append(improvement_id)
-                logger.info(f"Applied improvement {improvement_id}")
-            except Exception as e:
-                logger.error(f"Failed to apply improvement: {e}")
-        
-        return applied
-    
-    def _calculate_convergence(self, dimension: ImprovementDimension) -> float:
-        """Calculate convergence score (how close to optimal)"""
-        recent_metrics = [m for m in self.metrics_history[-10:] 
-                         if m.dimension == dimension]
-        
-        if len(recent_metrics) < 2:
-            return 0.0
-        
-        # Check if improvements are getting smaller (converging)
-        deltas = [m.improvement_delta for m in recent_metrics]
-        if all(abs(d) < self.convergence_threshold for d in deltas[-3:]):
-            return 1.0
-        
-        return 0.5
-    
-    def _calculate_stability(self, dimension: ImprovementDimension) -> float:
-        """Calculate stability score (consistency of improvements)"""
-        recent_metrics = [m for m in self.metrics_history[-10:] 
-                         if m.dimension == dimension]
-        
-        if len(recent_metrics) < 2:
-            return 0.5
-        
-        # Check variance in improvements
-        deltas = [m.improvement_delta for m in recent_metrics]
-        variance = sum((d - sum(deltas)/len(deltas))**2 for d in deltas) / len(deltas)
-        
-        # Lower variance = higher stability
-        return max(0.0, 1.0 - variance)
-    
-    def _calculate_generalization(self, dimension: ImprovementDimension) -> float:
-        """Calculate generalization score (works across contexts)"""
-        # Would measure performance across different market conditions
-        return 0.7  # Placeholder
-    
-    def _store_improvement_pattern(
-        self,
-        dimension: ImprovementDimension,
-        pattern: Dict[str, Any]
-    ):
-        """Store a successful improvement pattern"""
-        if dimension not in self.improvement_patterns:
-            self.improvement_patterns[dimension] = []
-        
-        self.improvement_patterns[dimension].append(pattern)
-        
-        # Keep only top 100 patterns
-        self.improvement_patterns[dimension] = sorted(
-            self.improvement_patterns[dimension],
-            key=lambda p: p.get('delta', 0),
-            reverse=True
-        )[:100]
-    
-    async def _should_recurse(
-        self,
-        cycle: ImprovementCycle,
-        metrics: ImprovementMetrics
-    ) -> bool:
-        """Decide if we should spawn child cycles for deeper optimization"""
-        # Recurse if:
-        # 1. We haven't hit max depth
-        # 2. Improvement was successful
-        # 3. Haven't converged yet
-        return (
-            cycle.depth < self.max_recursion_depth - 1 and
-            metrics.is_successful() and
-            metrics.convergence_score < 0.9
-        )
-    
-    async def _spawn_child_cycles(
-        self,
-        parent_cycle: ImprovementCycle,
-        context: Dict[str, Any]
-    ):
-        """Spawn child improvement cycles for deeper optimization"""
-        # Spawn cycles for related dimensions
-        related_dimensions = self._get_related_dimensions(parent_cycle.dimension)
-        
-        tasks = []
-        for dimension in related_dimensions:
-            task = self.start_improvement_cycle(
-                dimension=dimension,
-                depth=parent_cycle.depth + 1,
-                parent_cycle_id=parent_cycle.cycle_id,
-                context=context
-            )
-            tasks.append(task)
-        
-        if tasks:
-            await asyncio.gather(*tasks)
-    
-    def _get_related_dimensions(
-        self,
-        dimension: ImprovementDimension
-    ) -> List[ImprovementDimension]:
-        """Get dimensions related to the given dimension"""
-        relations = {
-            ImprovementDimension.STRATEGY: [
-                ImprovementDimension.SIGNAL_GENERATION,
-                ImprovementDimension.RISK_MANAGEMENT
-            ],
-            ImprovementDimension.EXECUTION: [
-                ImprovementDimension.PERFORMANCE,
-                ImprovementDimension.RISK_MANAGEMENT
-            ],
-            ImprovementDimension.LEARNING: [
-                ImprovementDimension.META_IMPROVEMENT,
-                ImprovementDimension.STRATEGY
-            ],
-        }
-        
-        return relations.get(dimension, [])
-    
-    async def _meta_improve(
-        self,
-        cycle: ImprovementCycle,
-        metrics: ImprovementMetrics
-    ):
-        """
-        Meta-improvement: Improve the improvement process itself.
-        
-        This is the recursive part - we analyze how well the improvement
-        process worked and improve it.
-        """
-        meta_learning = {
-            'cycle_id': cycle.cycle_id,
-            'dimension': cycle.dimension.value,
-            'depth': cycle.depth,
-            'success': metrics.is_successful(),
-            'improvement_delta': metrics.improvement_delta,
-            'timestamp': datetime.utcnow().isoformat(),
-            'insights': []
-        }
-        
-        # Analyze what worked and what didn't
-        if metrics.is_successful():
-            meta_learning['insights'].append({
-                'type': 'success_pattern',
-                'pattern': 'improvements_applied',
-                'value': cycle.improvements_applied
-            })
-        else:
-            meta_learning['insights'].append({
-                'type': 'failure_pattern',
-                'reason': 'low_improvement_delta',
-                'value': metrics.improvement_delta
-            })
-        
-        self.meta_learnings.append(meta_learning)
-        
-        # Use meta-learnings to adjust improvement parameters
-        await self._adjust_improvement_parameters()
-    
-    async def _adjust_improvement_parameters(self):
-        """Adjust improvement parameters based on meta-learnings"""
-        if len(self.meta_learnings) < 10:
-            return
-        
-        recent_learnings = self.meta_learnings[-10:]
-        success_rate = sum(1 for l in recent_learnings if l['success']) / len(recent_learnings)
-        
-        # Adjust recursion depth based on success rate
-        if success_rate > 0.8:
-            self.max_recursion_depth = min(10, self.max_recursion_depth + 1)
-        elif success_rate < 0.3:
-            self.max_recursion_depth = max(2, self.max_recursion_depth - 1)
-        
-        logger.info(f"Adjusted max_recursion_depth to {self.max_recursion_depth}")
     
     def get_improvement_summary(self) -> Dict[str, Any]:
         """Get summary of all improvements"""
@@ -518,7 +265,7 @@ class RecursiveImprovementCore:
             'meta_learnings_count': len(self.meta_learnings),
             'current_recursion_depth': self.max_recursion_depth,
         }
-    
+
     def save_state(self):
         """Save improvement state to disk"""
         state = {
@@ -530,9 +277,6 @@ class RecursiveImprovementCore:
                 'improvements_applied': v.improvements_applied,
             } for k, v in self.cycles.items()},
             'metrics_history': [m.to_dict() for m in self.metrics_history],
-            'improvement_patterns': {
-                k.value: v for k, v in self.improvement_patterns.items()
-            },
             'meta_learnings': self.meta_learnings,
         }
         
@@ -541,7 +285,7 @@ class RecursiveImprovementCore:
             json.dump(state, f, indent=2)
         
         logger.info(f"Saved state to {state_file}")
-    
+
     def load_state(self):
         """Load improvement state from disk"""
         state_file = self.storage_path / 'recursive_improvement_state.json'
@@ -552,5 +296,4 @@ class RecursiveImprovementCore:
             state = json.load(f)
         
         self.meta_learnings = state.get('meta_learnings', [])
-        
         logger.info(f"Loaded state from {state_file}")

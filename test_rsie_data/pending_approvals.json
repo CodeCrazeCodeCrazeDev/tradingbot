@@ -1,0 +1,22 @@
+{
+  "test_prop_l7": {
+    "proposal_id": "test_prop_l7",
+    "dimension": "architecture",
+    "level": 7,
+    "description": "Core architecture change",
+    "reasoning": "Better scalability",
+    "expected_benefit": {
+      "speed": 0.2
+    },
+    "risk_analysis": {
+      "global": "high"
+    },
+    "governance_violations": [],
+    "proposed_changes": {
+      "refactor": true
+    },
+    "status": "PENDING",
+    "submitted_at": "2026-06-30T10:44:40.189884",
+    "instructions": "Set status to 'APPROVED' or 'REJECTED' to proceed."
+  }
+}
