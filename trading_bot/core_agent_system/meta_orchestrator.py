@@ -1,16 +1,11 @@
 """
 Meta-Orchestrator - Self-Scaffolding Research Architecture
-
-The Meta-Orchestrator learns to construct its own orchestration framework
-by optimizing workflow policies: task decomposition, agent selection,
-tool selection, and execution order.
-
-It does NOT modify source code; instead, it manages a "Strategy Library"
-of optimized workflow graphs.
+Enhanced with basic strategy evolution.
 """
 
 import logging
 import uuid
+import random
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Tuple
 from dataclasses import dataclass, field
@@ -62,15 +57,14 @@ class StrategyLibrary:
         default_id = "standard_analysis_v1"
         nodes = {
             "start": WorkflowNode("start", WorkflowNodeType.DECOMPOSE, {"depth": 1}, ["end"]),
-            # "select": WorkflowNode("select", WorkflowNodeType.SELECT_AGENT, {"role": "researcher"}, ["execute"]),
-            # "execute": WorkflowNode("execute", WorkflowNodeType.CALL_TOOL, {"tool": "market_data"}, ["verify"]),
-            # "verify": WorkflowNode("verify", WorkflowNodeType.VERIFY, {"threshold": 0.7}, ["end"]),
             "end": WorkflowNode("end", WorkflowNodeType.CONCLUDE, {})
         }
         self.policies[default_id] = WorkflowPolicy(
             default_id, "Standard Analysis", "Standard sequential analysis workflow",
             nodes, "start"
         )
+        # Force initial success rate to allow selection
+        self.policies[default_id].performance_metrics["success_rate"] = 0.5
 
     def add_policy(self, policy: WorkflowPolicy):
         self.policies[policy.policy_id] = policy
@@ -110,9 +104,7 @@ class ExperimentTracker:
 class MetaOrchestrator:
     """
     Meta-Orchestrator
-
-    The high-level controller that manages how the system organizes itself.
-    It utilizes the StrategyLibrary and WorkflowMemory to optimize execution.
+    Enhanced with strategy evolution (Self-Scaffolding).
     """
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
@@ -144,7 +136,6 @@ class MetaOrchestrator:
             node = policy.nodes[current_node_id]
             execution_trace.append({"node": node.node_id, "type": node.node_type.value})
 
-            # Dispatch to core system components
             try:
                 node_result = await self._execute_node(node, task, context, core_system)
             except Exception as e:
@@ -156,13 +147,10 @@ class MetaOrchestrator:
             if not node_result.get("success", False):
                 if node.node_type != WorkflowNodeType.RETRY:
                     success = False
-                    # Don't break here if we want to allow partial success or fallback
-                    # For now, break as per original logic
                     break
 
-            # Determine next node
             if node.next_nodes:
-                current_node_id = node.next_nodes[0] # Simplified logic
+                current_node_id = node.next_nodes[0]
             else:
                 break
 
@@ -170,12 +158,16 @@ class MetaOrchestrator:
         metrics = {"success": success, "steps": len(execution_trace)}
         self.memory.record_execution(policy.policy_id, execution_trace, metrics)
 
-        # Update policy metrics (simple moving average)
+        # Update policy metrics
         policy.usage_count += 1
         alpha = 0.1
         policy.performance_metrics["success_rate"] = (
             (1-alpha) * policy.performance_metrics["success_rate"] + alpha * (1.0 if success else 0.0)
         )
+
+        # Periodic Evolution
+        if policy.usage_count % 5 == 0:
+            self.evolve_strategies()
 
         return {
             "success": success,
@@ -189,8 +181,6 @@ class MetaOrchestrator:
         from .coordination_core import TaskType, TaskPriority
 
         if node.node_type == WorkflowNodeType.DECOMPOSE:
-            # Delegate to SelfCoordinatingCore
-            # Check if coordination_core is already executing to avoid nested wait
             result = await system.coordination_core.execute_task(
                 task_name=f"Decomposition: {task[:20]}",
                 task_type=TaskType.PLANNING,
@@ -201,10 +191,8 @@ class MetaOrchestrator:
             return result
 
         elif node.node_type == WorkflowNodeType.SELECT_AGENT:
-            # Delegate to AgentRegistry via system
             role_name = node.config.get("role")
             if role_name:
-                # Find the enum member by name
                 from .agent_registry import AgentRole
                 try:
                     role = AgentRole(role_name.lower())
@@ -215,7 +203,6 @@ class MetaOrchestrator:
             return {"success": False, "error": "No role specified"}
 
         elif node.node_type == WorkflowNodeType.CALL_TOOL:
-            # Delegate to ToolRegistry via system
             tool_name = node.config.get("tool")
             tool_params = node.config.get("parameters", {})
             if tool_name:
@@ -226,7 +213,6 @@ class MetaOrchestrator:
             return {"success": False, "error": f"Tool {tool_name} not found"}
 
         elif node.node_type == WorkflowNodeType.VERIFY:
-            # Delegate to GovernanceSystem
             is_compliant, violations = await system.coordination_core.governance.check_compliance(
                 agent_id="meta_orchestrator",
                 action={"type": "workflow_step", "node": node.node_id},
@@ -241,8 +227,28 @@ class MetaOrchestrator:
 
     def evolve_strategies(self):
         """Self-scaffolding: Create new workflow variations based on performance memory"""
-        # This is where the model "learns to construct its own framework"
-        # In a real implementation, this would use the PolicyNetwork to propose
-        # new WorkflowNode configurations.
-        logger.info("Evolving orchestration strategies...")
-        pass
+        logger.info("Meta-Orchestrator: Evolving orchestration strategies...")
+
+        # Select a parent policy to mutate
+        parent_id = random.choice(list(self.strategy_library.policies.keys()))
+        parent = self.strategy_library.policies[parent_id]
+
+        # Create variation
+        variation_id = f"evolved_{uuid.uuid4().hex[:6]}"
+        new_nodes = {k: WorkflowNode(v.node_id, v.node_type, v.config.copy(), v.next_nodes.copy())
+                     for k, v in parent.nodes.items()}
+
+        # Simple mutation: Insert a verification step if not present
+        if "verify" not in new_nodes and "start" in new_nodes:
+            new_nodes["verify"] = WorkflowNode("verify", WorkflowNodeType.VERIFY, {"threshold": 0.8}, ["end"])
+            new_nodes["start"].next_nodes = ["verify"]
+
+        new_policy = WorkflowPolicy(
+            variation_id, f"Evolved {parent.name}", f"Evolved variation of {parent_id}",
+            new_nodes, parent.start_node
+        )
+        # Give it a baseline success rate to be competitive
+        new_policy.performance_metrics["success_rate"] = parent.performance_metrics["success_rate"] * 0.95
+
+        self.strategy_library.add_policy(new_policy)
+        logger.info(f"New strategy scaffolded: {variation_id}")

@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "experiment_id": "exp_1782811461.802166",
+    "experiment_type": "strategy_testing",
+    "name": "Auto-generated strategy_testing experiment",
+    "description": "Automatically generated experiment for continuous improvement",
+    "parameters": {
+      "auto_generated": true
+    },
+    "created_at": "2026-06-30T09:24:21.802173",
+    "status": "pending",
+    "results": null,
+    "metrics": {},
+    "artifacts": []
+  }
+]

@@ -17,13 +17,13 @@ class MultidimensionalResearchAgent(BaseAgent):
     Discovers new cross-domain concepts and manages the scientific self-improvement loop.
     """
 
-    def __init__(self, config: Optional[Dict] = None):
+    def __init__(self, config: Optional[Dict] = None, improvement_registry: Any = None):
         super().__init__(
             name="MultidimensionalResearchAgent",
             role=AgentRole.RESEARCHER,
             config=config
         )
-        self.intelligence_layer = MultidimensionalIntelligenceLayer(config)
+        self.intelligence_layer = MultidimensionalIntelligenceLayer(config, improvement_registry)
 
     def _register_capabilities(self):
         self.add_capability(AgentCapability(

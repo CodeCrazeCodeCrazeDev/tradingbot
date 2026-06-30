@@ -47,6 +47,10 @@ from .self_coordinating_core import SelfCoordinatingCore
 from .meta_orchestrator import MetaOrchestrator
 from .swarm.usis import UnifiedSwarmIntelligenceSystem
 from .swarm.experts import MarketScientist, QuantAnalyst, SwarmRiskManager
+from .improvement.registry import ImprovementRegistry
+from .improvement.evaluator import ImprovementEvaluator
+from .improvement.orchestrator import ImprovementOrchestrator
+from .improvement.gatekeeper import ImprovementGatekeeper
 
 logger = logging.getLogger(__name__)
 
@@ -170,6 +174,19 @@ class IntegratedAgentSystem:
             self.agent_registry,
             self.config.get('swarm', {})
         )
+
+        # 13. Unified Self-Improvement Hub (USIH)
+        self.improvement_registry = ImprovementRegistry(self.storage_path / 'improvements')
+        self.improvement_evaluator = ImprovementEvaluator(self.config)
+        self.improvement_orchestrator = ImprovementOrchestrator(
+            self.improvement_registry,
+            self.improvement_evaluator,
+            self.config
+        )
+        self.improvement_gatekeeper = ImprovementGatekeeper(
+            self.improvement_registry,
+            self.config
+        )
     
     async def initialize(self):
         """Initialize all components"""
@@ -202,7 +219,8 @@ class IntegratedAgentSystem:
             agent_registry=self.agent_registry,
             tool_registry=self.tool_registry,
             memory_system=self.memory_system,
-            world_model=self.world_model
+            world_model=self.world_model,
+            improvement_orchestrator=self.improvement_orchestrator
         )
         await self.orchestrator.initialize()
         
@@ -227,7 +245,10 @@ class IntegratedAgentSystem:
             ExecutorAgent(executor=trade_executor, config={'name': 'MainExecutor'}),
             EvaluatorAgent(config={'name': 'MainEvaluator'}),
             ResearchAgent(config={'name': 'MainResearcher'}),
-            MultidimensionalResearchAgent(config={'name': 'MultidimensionalResearcher'}),
+            MultidimensionalResearchAgent(
+                config={'name': 'MultidimensionalResearcher'},
+                improvement_registry=self.improvement_registry
+            ),
             SafetyAgent(config={'name': 'MainSafety'}),
 
             # Swarm Experts
@@ -323,12 +344,18 @@ class IntegratedAgentSystem:
                 await asyncio.sleep(5)
     
     async def _self_improvement_loop(self):
-        """Self-improvement through self-play"""
+        """Self-improvement through self-play and Unified Hub"""
         while self.running:
             try:
+                # 1. RL Self-Play Loop (Weights improvement)
                 results = await self.self_play_loop.run_iteration()
                 if results['improved']:
                     await self.memory_system.store_knowledge(f"improvement_{results['iteration']}", results)
+
+                # 2. Unified Improvement Hub (Structural/Meta improvement)
+                context = await self._gather_context()
+                await self.improvement_orchestrator.run_cycle(context.__dict__)
+
                 await asyncio.sleep(60)
             except Exception as e:
                 logger.error(f"Error in self-improvement loop: {e}")

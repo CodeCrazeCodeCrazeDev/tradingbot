@@ -200,7 +200,8 @@ class MasterOrchestrator:
         agent_registry,
         tool_registry,
         memory_system,
-        world_model=None
+        world_model=None,
+        improvement_orchestrator=None
     ):
         """Inject all dependencies - enables testing and modularity"""
         self.policy_network = policy_network
@@ -211,6 +212,7 @@ class MasterOrchestrator:
         self.tool_registry = tool_registry
         self.memory_system = memory_system
         self.world_model = world_model
+        self.improvement_orchestrator = improvement_orchestrator
         
         logger.info("Dependencies injected into Master Orchestrator")
     
@@ -285,6 +287,21 @@ class MasterOrchestrator:
         # (Like GPT-4's chain-of-thought reasoning)
         reasoning_chain = await self._generate_reasoning(context, verified_action)
         
+        # Step 6: Self-Improvement Feedback (Meta-Intelligence)
+        if self.improvement_orchestrator:
+            try:
+                # Propose improvement based on reasoning quality
+                # If safety score is low or confidence is low, it's a candidate for refinement
+                if verified_action.get('safety_score', 1.0) < 0.8 or verified_action.get('confidence', 1.0) < 0.6:
+                    await self.improvement_orchestrator.propose_meta_improvement(
+                        domain="reasoning",
+                        source="MasterOrchestrator",
+                        trace=reasoning_chain,
+                        suggestion="Reasoning produced low confidence or safety score. Re-evaluate planning logic."
+                    )
+            except Exception as e:
+                logger.error(f"Error proposing meta-improvement: {e}")
+
         # Create final decision
         decision = Decision(
             decision_id=str(uuid.uuid4()),

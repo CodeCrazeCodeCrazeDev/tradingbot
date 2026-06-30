@@ -1,1 +1,102 @@
-[]
+[
+  {
+    "improvement_id": "imp_1782810427.805895",
+    "target_metric": "sharpe_ratio",
+    "method": "Optimize strategy parameters and risk management",
+    "description": "Improve Sharpe Ratio from 0.00 to 3.00",
+    "expected_gain": 0.8999999999999999,
+    "implemented": true,
+    "actual_gain": 0.8620628164005735,
+    "created_at": "2026-06-30T09:07:07.805906"
+  },
+  {
+    "improvement_id": "imp_1782810429.673415",
+    "target_metric": "win_rate",
+    "method": "Improve entry/exit signal quality",
+    "description": "Improve Win Rate from 0.00 to 0.65",
+    "expected_gain": 0.195,
+    "implemented": true,
+    "actual_gain": 0.19185596933316842,
+    "created_at": "2026-06-30T09:07:09.673428"
+  },
+  {
+    "improvement_id": "imp_1782810755.629562",
+    "target_metric": "sharpe_ratio",
+    "method": "Optimize strategy parameters and risk management",
+    "description": "Improve Sharpe Ratio from 0.00 to 3.00",
+    "expected_gain": 0.8999999999999999,
+    "implemented": true,
+    "actual_gain": 1.1287002276333855,
+    "created_at": "2026-06-30T09:12:35.629573"
+  },
+  {
+    "improvement_id": "imp_1782810757.024294",
+    "target_metric": "win_rate",
+    "method": "Improve entry/exit signal quality",
+    "description": "Improve Win Rate from 0.00 to 0.65",
+    "expected_gain": 0.195,
+    "implemented": true,
+    "actual_gain": 0.17611063403755103,
+    "created_at": "2026-06-30T09:12:37.024307"
+  },
+  {
+    "improvement_id": "imp_1782811101.057837",
+    "target_metric": "sharpe_ratio",
+    "method": "Optimize strategy parameters and risk management",
+    "description": "Improve Sharpe Ratio from 0.00 to 3.00",
+    "expected_gain": 0.8999999999999999,
+    "implemented": true,
+    "actual_gain": 0.870658053047647,
+    "created_at": "2026-06-30T09:18:21.057849"
+  },
+  {
+    "improvement_id": "imp_1782811102.412339",
+    "target_metric": "win_rate",
+    "method": "Improve entry/exit signal quality",
+    "description": "Improve Win Rate from 0.00 to 0.65",
+    "expected_gain": 0.195,
+    "implemented": true,
+    "actual_gain": 0.24315050802541294,
+    "created_at": "2026-06-30T09:18:22.412351"
+  },
+  {
+    "improvement_id": "imp_1782811284.934188",
+    "target_metric": "sharpe_ratio",
+    "method": "Optimize strategy parameters and risk management",
+    "description": "Improve Sharpe Ratio from 0.00 to 3.00",
+    "expected_gain": 0.8999999999999999,
+    "implemented": true,
+    "actual_gain": 0.9624122809635384,
+    "created_at": "2026-06-30T09:21:24.934209"
+  },
+  {
+    "improvement_id": "imp_1782811287.829729",
+    "target_metric": "win_rate",
+    "method": "Improve entry/exit signal quality",
+    "description": "Improve Win Rate from 0.00 to 0.65",
+    "expected_gain": 0.195,
+    "implemented": true,
+    "actual_gain": 0.24688329751703847,
+    "created_at": "2026-06-30T09:21:27.829741"
+  },
+  {
+    "improvement_id": "imp_1782811461.804227",
+    "target_metric": "sharpe_ratio",
+    "method": "Optimize strategy parameters and risk management",
+    "description": "Improve Sharpe Ratio from 0.00 to 3.00",
+    "expected_gain": 0.8999999999999999,
+    "implemented": true,
+    "actual_gain": 0.8198435773344044,
+    "created_at": "2026-06-30T09:24:21.804237"
+  },
+  {
+    "improvement_id": "imp_1782811463.224451",
+    "target_metric": "win_rate",
+    "method": "Improve entry/exit signal quality",
+    "description": "Improve Win Rate from 0.00 to 0.65",
+    "expected_gain": 0.195,
+    "implemented": false,
+    "actual_gain": null,
+    "created_at": "2026-06-30T09:24:23.224464"
+  }
+]

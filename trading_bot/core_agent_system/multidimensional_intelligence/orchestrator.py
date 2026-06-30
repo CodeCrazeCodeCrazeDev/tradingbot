@@ -23,7 +23,7 @@ class MultidimensionalIntelligenceLayer:
     Integrates Biology, Physics, Chemistry, Mathematics, and Nature modules.
     """
 
-    def __init__(self, config: Optional[Dict] = None):
+    def __init__(self, config: Optional[Dict] = None, improvement_registry: Any = None):
         self.config = config or {}
         self.modules: Dict[IntelligenceDomain, MultidimensionalModule] = {}
 
@@ -33,6 +33,7 @@ class MultidimensionalIntelligenceLayer:
         self.memory = MultidimensionalKnowledgeMemory(self.storage_path)
         self.hypothesis_engine = HypothesisEngine(config)
         self.experiments: List[MultidimensionalExperiment] = []
+        self.improvement_registry = improvement_registry
 
         logger.info("Multidimensional Intelligence Layer initialized")
 
@@ -114,9 +115,26 @@ class MultidimensionalIntelligenceLayer:
             if experiment.status == "completed":
                 hypothesis = next((h for h in all_hypotheses if h.hypothesis_id == experiment.hypothesis_id), None)
                 if hypothesis and hypothesis.status == "pending":
-                    if experiment.performance_metrics.get("sharpe_improvement", 0) > 0.02:
+                    sharpe_imp = experiment.performance_metrics.get("sharpe_improvement", 0)
+                    if sharpe_imp > 0.02:
                         self.hypothesis_engine.update_hypothesis_status(hypothesis.hypothesis_id, "validated")
                         await self._add_to_knowledge_graph(hypothesis, experiment)
+
+                        # Bridge to Unified Improvement Registry
+                        if self.improvement_registry:
+                            from ..improvement.registry import ImprovementType
+                            self.improvement_registry.register_proposal(
+                                type=ImprovementType.TRADING,
+                                domain=hypothesis.domain.value,
+                                source="MultidimensionalResearchAgent",
+                                proposal={
+                                    "hypothesis_id": hypothesis.hypothesis_id,
+                                    "concept": hypothesis.concept,
+                                    "math_rep": hypothesis.mathematical_representation,
+                                    "experiment_id": experiment.experiment_id,
+                                    "sharpe_improvement": sharpe_imp
+                                }
+                            )
                     else:
                         self.hypothesis_engine.update_hypothesis_status(hypothesis.hypothesis_id, "rejected")
 

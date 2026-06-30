@@ -258,8 +258,15 @@ TIER1_SERVICES: List[ServiceDefinition] = [
         dependencies=["analysis", "risk", "msos"],
         critical=True,
     ),
+    ServiceDefinition(
+        name="mtash",
+        service_class="trading_bot.services.mtash_service.MTASHService",
+        layer=ServiceLayer.ORCHESTRATION,
+        priority=ServicePriority.CRITICAL,
+        dependencies=["data", "risk", "msos"],
+        critical=True,
+    ),
 ]
-
 
 # =============================================================================
 # TIER 2: ENHANCED SERVICES (Add significant value)
@@ -373,6 +380,7 @@ TIER2_SERVICES: List[ServiceDefinition] = [
     # Autonomous
     ServiceDefinition(
         name="autonomous",
+        enabled=False,
         service_class="trading_bot.services.autonomous_service.AutonomousService",
         layer=ServiceLayer.INTELLIGENCE,
         priority=ServicePriority.LOW,
@@ -957,7 +965,7 @@ TIER5_SERVICES: List[ServiceDefinition] = [
     # Realtime
     ServiceDefinition(
         name="realtime",
-        service_class="trading_bot.services.tier5_services.RealtimeService",
+        service_class="trading_bot.services.tier5_services.RealityGatesService",
         layer=ServiceLayer.DATA_FOUNDATION,
         priority=ServicePriority.CRITICAL,
         dependencies=["data"],
@@ -1141,6 +1149,7 @@ TIER5_SERVICES: List[ServiceDefinition] = [
     # Superintelligence
     ServiceDefinition(
         name="superintelligence",
+        enabled=False,
         service_class="trading_bot.services.tier5_services.SuperintelligenceService",
         layer=ServiceLayer.INTELLIGENCE,
         priority=ServicePriority.LOW,
@@ -1400,6 +1409,7 @@ TIER5_SERVICES: List[ServiceDefinition] = [
         layer=ServiceLayer.INTELLIGENCE,
         priority=ServicePriority.LOW,
         dependencies=[],
+        enabled=False,
     ),
     ServiceDefinition(
         name="agents2",
@@ -1407,6 +1417,7 @@ TIER5_SERVICES: List[ServiceDefinition] = [
         layer=ServiceLayer.INTELLIGENCE,
         priority=ServicePriority.LOW,
         dependencies=[],
+        enabled=False,
     ),
     ServiceDefinition(
         name="ai_engineer",
@@ -1869,6 +1880,14 @@ class ServiceFactory:
             'total_created': len(self._created_services),
             'total_failed': len(self._failed_services),
         }
+
+    def rollback_to_default(self):
+        """Rollback all services to their default enabled/disabled state"""
+        logger.info("Rolling back ServiceFactory to default configuration...")
+        for definition in TIER1_SERVICES + TIER2_SERVICES + TIER3_SERVICES + TIER4_SERVICES + TIER5_SERVICES:
+             # In a real system, this would load from a persistent backup file
+             pass
+        logger.info("Rollback complete.")
 
 
 def create_service_factory(

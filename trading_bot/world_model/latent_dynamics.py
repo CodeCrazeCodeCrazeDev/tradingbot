@@ -39,6 +39,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import logging
 from dataclasses import dataclass, field
+from ..ml.information.bottleneck import InformationBottleneck
 from enum import Enum
 from .world_state import MarketWorldState, VolatilityRegime, LiquidityCondition, SystemMode
 from .ignorance_score import IgnoranceScoreEngine
@@ -466,29 +467,29 @@ class EnsembleWorldModel(nn.Module):
 
 
 class MarketStateEncoder(nn.Module):
-    """Encodes market state into latent representation."""
+    """
+    Encodes market state into latent representation.
+    Enhanced with Information Bottleneck for noise robustness.
+    """
     
-    def __init__(self, input_dim: int = 20, latent_dim: int = 32):
+    def __init__(self, input_dim: int = 20, latent_dim: int = 32, beta: float = 0.01):
         super().__init__()
         
-        self.encoder = nn.Sequential(
-            nn.Linear(input_dim, 64),
-            nn.ReLU(),
-            nn.Linear(64, 64),
-            nn.ReLU(),
-            nn.Linear(64, latent_dim * 2)  # Mean and logvar
-        )
-        
+        # Core Information Bottleneck layer
+        self.ib = InformationBottleneck(input_dim, latent_dim, beta)
         self.latent_dim = latent_dim
     
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Encode market state into latent distribution.
+        Encode market state into latent distribution via IB.
         Returns mean and logvar for reparameterization.
         """
-        x = self.encoder(x)
-        mean, logvar = torch.chunk(x, 2, dim=-1)
-        return mean, logvar
+        mu, logvar = self.ib.encode(x)
+        return mu, logvar
+
+    def get_kl_loss(self, mu: torch.Tensor, logvar: torch.Tensor) -> torch.Tensor:
+        """Access IB rate term for loss calculation."""
+        return self.ib.kl_divergence(mu, logvar)
     
     def sample(self, mean: torch.Tensor, logvar: torch.Tensor) -> torch.Tensor:
         """Sample from latent distribution using reparameterization."""
@@ -592,6 +593,28 @@ class RewardPredictor(nn.Module):
         """Predict expected reward."""
         return self.predictor(latent_state)
 
+
+# =============================================================================
+# Regime Transition and Stability Modeling
+# =============================================================================
+
+class RegimeTransitionModel(nn.Module):
+    """
+    Predicts transitions between market regimes (Volatility/Liquidity).
+    Learns the 'hidden' dynamics of market state shifts.
+    """
+    def __init__(self, latent_dim: int, n_regimes: int = 5, hidden_dim: int = 64):
+        super().__init__()
+        self.network = nn.Sequential(
+            nn.Linear(latent_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, n_regimes),
+            nn.Softmax(dim=-1)
+        )
+
+    def forward(self, z: torch.Tensor) -> torch.Tensor:
+        """Predict regime probabilities."""
+        return self.network(z)
 
 # =============================================================================
 # B1 Ceiling-Pushed: Triangulated Consistency Support Classes
@@ -935,9 +958,12 @@ class WorldModel:
             hidden_dim=hidden_dim
         )
 
-        # L3: Legacy encoder/decoder for backward compatibility
-        self.encoder = MarketStateEncoder(input_dim, latent_dim)
+        # L3: Information Bottleneck Encoder (Enhanced Robustness)
+        self.encoder = MarketStateEncoder(input_dim, latent_dim, beta=config.get('ib_beta', 0.01) if config else 0.01)
         self.decoder = MarketStateDecoder(latent_dim, input_dim)
+
+        # Regime Transition Model
+        self.regime_transition = RegimeTransitionModel(latent_dim, n_regimes=5)
 
         # L3: Ensemble World Model (epistemic uncertainty)
         self.ensemble = EnsembleWorldModel(
@@ -1070,6 +1096,11 @@ class WorldModel:
 
             # Predict structured fields via probes
             vol_logits = self.volatility_probe(latent_state)
+
+            # Enhanced Regime Transition Prediction
+            regime_probs = self.regime_transition(latent_state)
+            vol_logits = 0.7 * vol_logits + 0.3 * regime_probs # Fuse probe with transition model
+
             liq_logits = self.liquidity_probe(latent_state)
             stability = torch.sigmoid(self.stability_probe(latent_state))
             pressure = torch.tanh(self.pressure_probe(latent_state))
@@ -1411,10 +1442,8 @@ class WorldModel:
         decoded_states = self.decoder(latent_states)
         recon_loss = F.mse_loss(decoded_states, market_states)
 
-        # KL divergence loss
-        kl_loss = -0.5 * torch.sum(
-            1 + logvar - mean.pow(2) - logvar.exp()
-        ) / batch_size
+        # Information Bottleneck (KL divergence) loss
+        kl_loss = self.encoder.get_kl_loss(mean, logvar)
 
         # Dynamics loss
         hidden_state = None
@@ -1486,6 +1515,7 @@ class WorldModel:
             'macro_actions': self.macro_actions.state_dict(),
             'long_horizon_distiller': self.long_horizon_distiller.state_dict(),
             'volatility_probe': self.volatility_probe.state_dict(),
+            'regime_transition': self.regime_transition.state_dict(),
             'liquidity_probe': self.liquidity_probe.state_dict(),
             'stability_probe': self.stability_probe.state_dict(),
             'pressure_probe': self.pressure_probe.state_dict(),
@@ -1516,6 +1546,8 @@ class WorldModel:
             self.long_horizon_distiller.load_state_dict(state['long_horizon_distiller'])
         if 'volatility_probe' in state:
             self.volatility_probe.load_state_dict(state['volatility_probe'])
+        if 'regime_transition' in state:
+            self.regime_transition.load_state_dict(state['regime_transition'])
         if 'liquidity_probe' in state:
             self.liquidity_probe.load_state_dict(state['liquidity_probe'])
         if 'stability_probe' in state:

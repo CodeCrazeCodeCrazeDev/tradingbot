@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 from .models import SwarmSignal, SwarmConsensus, SwarmLayer, SwarmTaskType
 from .layers import MicroLayer, ExpertLayer
 from .memory import AgentPerformanceMemory, EvolutionLayer
+from .prediction_market import AlphaPredictionMarket
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ class SwarmController:
         self.performance_memory = AgentPerformanceMemory()
         self.evolution_layer = EvolutionLayer(self.performance_memory)
         self.micro_layer = MicroLayer()
+        self.prediction_market = AlphaPredictionMarket()
         self.expert_layer = ExpertLayer(self.registry)
 
         logger.info("Swarm Controller initialized")
@@ -48,6 +50,9 @@ class SwarmController:
         total_weight = 0.0
 
         for signal in all_signals:
+            # Prediction Market Betting (Frontier research)
+            self.prediction_market.place_bet(signal.source_id, signal.direction, signal.confidence)
+
             # Get historical accuracy weight
             perf_weight = self.performance_memory.get_agent_weight(
                 signal.source_id,
@@ -62,6 +67,10 @@ class SwarmController:
 
             weighted_direction += signal.direction * weight
             total_weight += weight
+
+        # Fuse with Prediction Market results
+        market_signal = self.prediction_market.get_weighted_signal()
+        weighted_direction = 0.8 * weighted_direction + 0.2 * market_signal * total_weight
 
         final_direction = np.sign(weighted_direction)
         final_confidence = abs(weighted_direction) / total_weight if total_weight > 0 else 0
@@ -143,6 +152,9 @@ class SwarmController:
                 reward=reward
             )
             self.performance_memory.record_experience(experience)
+
+        # Resolve Prediction Market (payouts)
+        self.prediction_market.resolve_market(outcome)
 
         # Trigger evolution check periodically
         if len(self.performance_memory.experiences) % 100 == 0:

@@ -1,1 +1,57 @@
-[]
+[
+  {
+    "agent_id": "agent_general_purpose_1782810427.804048",
+    "agent_type": "general_purpose",
+    "stage": "active",
+    "spawned_at": "2026-06-30T09:07:07.804058",
+    "health": 1.0,
+    "performance": 0.5,
+    "age_hours": 0.2872218586111111,
+    "tasks_completed": 0,
+    "last_activity": "2026-06-30T09:07:09.672274"
+  },
+  {
+    "agent_id": "agent_general_purpose_1782810429.672322",
+    "agent_type": "general_purpose",
+    "stage": "active",
+    "spawned_at": "2026-06-30T09:07:09.672332",
+    "health": 1.0,
+    "performance": 0.5,
+    "age_hours": 0.2867028975,
+    "tasks_completed": 0,
+    "last_activity": "2026-06-30T09:07:10.779307"
+  },
+  {
+    "agent_id": "agent_general_purpose_1782810430.77935",
+    "agent_type": "general_purpose",
+    "stage": "active",
+    "spawned_at": "2026-06-30T09:07:10.779356",
+    "health": 1.0,
+    "performance": 0.5,
+    "age_hours": 0.2863953922222222,
+    "tasks_completed": 0,
+    "last_activity": "2026-06-30T09:07:11.280769"
+  },
+  {
+    "agent_id": "agent_general_purpose_1782810431.280924",
+    "agent_type": "general_purpose",
+    "stage": "active",
+    "spawned_at": "2026-06-30T09:07:11.280935",
+    "health": 1.0,
+    "performance": 0.5,
+    "age_hours": 0.28625606555555555,
+    "tasks_completed": 0,
+    "last_activity": "2026-06-30T09:07:12.792383"
+  },
+  {
+    "agent_id": "agent_general_purpose_1782810432.792446",
+    "agent_type": "general_purpose",
+    "stage": "active",
+    "spawned_at": "2026-06-30T09:07:12.792452",
+    "health": 1.0,
+    "performance": 0.5,
+    "age_hours": 0.2858362005555556,
+    "tasks_completed": 0,
+    "last_activity": "2026-06-30T09:07:13.293541"
+  }
+]

@@ -1,1 +1,15 @@
-[]
+[
+  {
+    "task_id": "7cb83a04-3c21-4dc2-8b83-fe5391e2dd3f",
+    "task_type": "research",
+    "description": "Accelerate discovery process",
+    "priority": 0.9,
+    "required_capabilities": [
+      "research",
+      "experimentation"
+    ],
+    "assigned_agent": null,
+    "status": "pending",
+    "created_at": "2026-06-30T09:24:21.804826"
+  }
+]

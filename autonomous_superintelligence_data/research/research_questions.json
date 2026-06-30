@@ -6,8 +6,10 @@
     "hypothesis": "Large institutional orders leave detectable footprints in order flow",
     "priority": 0.9,
     "created_at": "2026-06-03T13:35:36.908382",
-    "status": "active",
-    "experiments": [],
+    "status": "completed",
+    "experiments": [
+      "exp_1782810427.79965"
+    ],
     "findings": []
   },
   {
@@ -17,8 +19,10 @@
     "hypothesis": "Attention mechanisms capture regime transitions more effectively",
     "priority": 0.85,
     "created_at": "2026-06-03T13:35:36.908723",
-    "status": "active",
-    "experiments": [],
+    "status": "completed",
+    "experiments": [
+      "exp_1782811101.052828"
+    ],
     "findings": []
   },
   {
@@ -29,7 +33,9 @@
     "priority": 0.8,
     "created_at": "2026-06-03T13:35:36.908768",
     "status": "active",
-    "experiments": [],
+    "experiments": [
+      "exp_1782811461.798918"
+    ],
     "findings": []
   },
   {
@@ -50,6 +56,65 @@
     "hypothesis": "Sentiment acceleration is more predictive than absolute sentiment",
     "priority": 0.7,
     "created_at": "2026-06-03T13:35:36.908831",
+    "status": "active",
+    "experiments": [],
+    "findings": []
+  },
+  {
+    "question_id": "rq_1782810427.693517",
+    "domain": "market_microstructure",
+    "question": "What hidden patterns exist in order flow that predict price movements?",
+    "hypothesis": "Large institutional orders leave detectable footprints in order flow",
+    "priority": 0.9,
+    "created_at": "2026-06-30T09:07:07.693527",
+    "status": "completed",
+    "experiments": [
+      "exp_1782810755.624741"
+    ],
+    "findings": []
+  },
+  {
+    "question_id": "rq_1782810427.693717",
+    "domain": "machine_learning",
+    "question": "Can transformer models predict market regimes better than traditional methods?",
+    "hypothesis": "Attention mechanisms capture regime transitions more effectively",
+    "priority": 0.85,
+    "created_at": "2026-06-30T09:07:07.693724",
+    "status": "completed",
+    "experiments": [
+      "exp_1782811284.924007"
+    ],
+    "findings": []
+  },
+  {
+    "question_id": "rq_1782810427.693769",
+    "domain": "risk_management",
+    "question": "What is the optimal dynamic position sizing algorithm for volatile markets?",
+    "hypothesis": "Volatility-adjusted Kelly criterion outperforms fixed sizing",
+    "priority": 0.8,
+    "created_at": "2026-06-30T09:07:07.693772",
+    "status": "active",
+    "experiments": [],
+    "findings": []
+  },
+  {
+    "question_id": "rq_1782810427.693805",
+    "domain": "algorithmic_trading",
+    "question": "Do market inefficiencies persist across different market regimes?",
+    "hypothesis": "Some inefficiencies are regime-dependent while others are universal",
+    "priority": 0.75,
+    "created_at": "2026-06-30T09:07:07.693808",
+    "status": "active",
+    "experiments": [],
+    "findings": []
+  },
+  {
+    "question_id": "rq_1782810427.693836",
+    "domain": "behavioral_finance",
+    "question": "How do social media sentiment waves predict market movements?",
+    "hypothesis": "Sentiment acceleration is more predictive than absolute sentiment",
+    "priority": 0.7,
+    "created_at": "2026-06-30T09:07:07.693839",
     "status": "active",
     "experiments": [],
     "findings": []

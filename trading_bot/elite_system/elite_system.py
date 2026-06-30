@@ -108,7 +108,7 @@ try:
 except ImportError:
     AIMLCortex = None
     ModelType = None
-    PredictionHorizon = None
+    from .ai_ml_cortex import PredictionHorizon
     EconomicData = None
     EconomicIndicator = None
     ModelPrediction = None
@@ -126,7 +126,7 @@ except ImportError:
     RiskCommandCenter = None
     Position = None
     RiskLevel = None
-    PositionSizeMethod = None
+    from .risk_command_center import PositionSizeMethod
     RiskParameters = None
     RiskAssessment = None
     PositionSizeRecommendation = None

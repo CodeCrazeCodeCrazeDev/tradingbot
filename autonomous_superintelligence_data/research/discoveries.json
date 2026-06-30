@@ -1,1 +1,86 @@
-[]
+[
+  {
+    "discovery_id": "disc_1782810430.800932",
+    "domain": "market_microstructure",
+    "title": "Validated: Large institutional orders leave detectable footprints in order flow",
+    "description": "Research question 'What hidden patterns exist in order flow that predict price movements?' has been validated through 1 experiments",
+    "significance": 1.0,
+    "evidence": [
+      {
+        "evaluation": {
+          "hypothesis_supported": true,
+          "confidence": 1.0,
+          "supporting_experiments": 1,
+          "total_experiments": 1,
+          "reason": "1/1 experiments support hypothesis"
+        }
+      }
+    ],
+    "discovered_at": "2026-06-30T09:07:10.800941",
+    "validated": false,
+    "published": false
+  },
+  {
+    "discovery_id": "disc_1782810757.023129",
+    "domain": "market_microstructure",
+    "title": "Validated: Large institutional orders leave detectable footprints in order flow",
+    "description": "Research question 'What hidden patterns exist in order flow that predict price movements?' has been validated through 1 experiments",
+    "significance": 1.0,
+    "evidence": [
+      {
+        "evaluation": {
+          "hypothesis_supported": true,
+          "confidence": 1.0,
+          "supporting_experiments": 1,
+          "total_experiments": 1,
+          "reason": "1/1 experiments support hypothesis"
+        }
+      }
+    ],
+    "discovered_at": "2026-06-30T09:12:37.023136",
+    "validated": false,
+    "published": false
+  },
+  {
+    "discovery_id": "disc_1782811104.053996",
+    "domain": "machine_learning",
+    "title": "Validated: Attention mechanisms capture regime transitions more effectively",
+    "description": "Research question 'Can transformer models predict market regimes better than traditional methods?' has been validated through 1 experiments",
+    "significance": 1.0,
+    "evidence": [
+      {
+        "evaluation": {
+          "hypothesis_supported": true,
+          "confidence": 1.0,
+          "supporting_experiments": 1,
+          "total_experiments": 1,
+          "reason": "1/1 experiments support hypothesis"
+        }
+      }
+    ],
+    "discovered_at": "2026-06-30T09:18:24.054006",
+    "validated": false,
+    "published": false
+  },
+  {
+    "discovery_id": "disc_1782811287.829945",
+    "domain": "machine_learning",
+    "title": "Validated: Attention mechanisms capture regime transitions more effectively",
+    "description": "Research question 'Can transformer models predict market regimes better than traditional methods?' has been validated through 1 experiments",
+    "significance": 1.0,
+    "evidence": [
+      {
+        "evaluation": {
+          "hypothesis_supported": true,
+          "confidence": 1.0,
+          "supporting_experiments": 1,
+          "total_experiments": 1,
+          "reason": "1/1 experiments support hypothesis"
+        }
+      }
+    ],
+    "discovered_at": "2026-06-30T09:21:27.829949",
+    "validated": false,
+    "published": false
+  }
+]

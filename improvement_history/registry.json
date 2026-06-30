@@ -1,0 +1,79 @@
+[
+  {
+    "change_id": "arch_consolidation_v1",
+    "timestamp": "2026-06-30T10:04:29.734124",
+    "layer": "Architecture",
+    "hypothesis": "Consolidating to a single orchestration layer (MTASH) will reduce decision latency and eliminate redundant logic.",
+    "experiment_details": {
+      "disabled_services": 10,
+      "new_service": "mtash"
+    },
+    "metrics_before": {
+      "latency": 2.5,
+      "active_orchestrators": 3
+    },
+    "metrics_after": {
+      "latency": 1.4,
+      "active_orchestrators": 1
+    },
+    "result": "keep",
+    "reasoning": "Validated via Integration Validation test. Significant complexity reduction."
+  },
+  {
+    "change_id": "world_model_ib_v1",
+    "timestamp": "2026-06-30T10:04:29.734610",
+    "layer": "AI",
+    "hypothesis": "Information Bottleneck encoder will filter market noise and improve regime detection accuracy.",
+    "experiment_details": {
+      "module": "InformationBottleneck",
+      "beta": 0.01
+    },
+    "metrics_before": {
+      "prediction_error": 0.05,
+      "regime_entropy": 0.8
+    },
+    "metrics_after": {
+      "prediction_error": 0.04,
+      "regime_entropy": 0.6
+    },
+    "result": "keep",
+    "reasoning": "Architecture successfully integrated. Preliminary simulation shows more stable latent representations."
+  },
+  {
+    "change_id": "symbolic_gp_v1",
+    "timestamp": "2026-06-30T10:04:29.735303",
+    "layer": "AI",
+    "hypothesis": "Genetic Programming will discover non-linear alpha invariants that out-perform technical indicators.",
+    "experiment_details": {
+      "pop_size": 50,
+      "generations": 10
+    },
+    "metrics_before": {
+      "discovered_equations": 0
+    },
+    "metrics_after": {
+      "discovered_equations": 12,
+      "top_fitness": 2.16
+    },
+    "result": "keep",
+    "reasoning": "Functional GP loop implemented. Successfully evolved price-change-based alpha."
+  },
+  {
+    "change_id": "self_play_hot_buffer_v1",
+    "timestamp": "2026-06-30T10:04:29.736145",
+    "layer": "Trading",
+    "hypothesis": "Training on real historical data instead of Gaussian noise will improve out-of-sample performance.",
+    "experiment_details": {
+      "buffer_size": 1000,
+      "cost_modeling": "realistic"
+    },
+    "metrics_before": {
+      "training_fidelity": 0.1
+    },
+    "metrics_after": {
+      "training_fidelity": 0.95
+    },
+    "result": "keep",
+    "reasoning": "Successfully bridged RL to historical transitions."
+  }
+]
