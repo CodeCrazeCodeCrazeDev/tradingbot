@@ -37,8 +37,8 @@ class ExperimentNode:
     motivation: str
     program: str  # Generated code/experiment
     results: Dict[str, Any]  # Structured evaluation metrics
-    analysis: Optional[str] = None  # Analyzer insights
     score: float  # Primary fitness score
+    analysis: Optional[str] = None  # Analyzer insights
     metadata: Dict[str, Any] = field(default_factory=dict)
     parent_id: Optional[str] = None  # For evolutionary tracking
     generation_method: str = "llm_conditional"  # How this was generated

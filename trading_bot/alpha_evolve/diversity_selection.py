@@ -53,7 +53,21 @@ class DiversitySelector:
         
         logger.info(f"DiversitySelector initialized: threshold={diversity_threshold}, "
                    f"weight={diversity_weight}")
+
+    def calculate_diversity(self, population: List[Individual]) -> float:
+        """Calculate and return population genotypic diversity"""
+        if self.custom_diversity_fn:
+            return self.custom_diversity_fn(population)
+
+        metrics = self._calculate_diversity_metrics(population)
+        return metrics.genotypic_diversity
     
+    def select(self,
+               population: List[Individual],
+               num_to_select: int) -> List[Individual]:
+        """Alias for select_with_diversity"""
+        return self.select_with_diversity(population, num_to_select)
+
     def select_with_diversity(self,
                              population: List[Individual],
                              num_to_select: int) -> List[Individual]:
@@ -303,6 +317,12 @@ class AgeBasedSelector:
         
         return adjusted_fitness
     
+    def select_with_decay(self,
+                          population: List[Individual],
+                          num_to_select: int) -> List[Individual]:
+        """Alias for select_survivors"""
+        return self.select_survivors(population, num_to_select)
+
     def select_survivors(self,
                          population: List[Individual],
                          num_survivors: int) -> List[Individual]:

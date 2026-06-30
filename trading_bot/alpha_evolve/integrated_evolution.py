@@ -260,20 +260,28 @@ class IntegratedEvolutionSystem:
     def _init_execution_components(self) -> None:
         """Initialize execution optimization components"""
         if self.config.enable_liquidity_sizing:
+            from ..execution.liquidity_aware_sizer import OrderBookLevel
             # Create sample order book (would be real in production)
             sample_depth = MarketDepth(
-                bids=[(1.1000, 100000), (1.0999, 150000), (1.0998, 200000)],
-                asks=[(1.1001, 100000), (1.1002, 150000), (1.1003, 200000)]
-            )
-            
-            constraints = LiquidityConstraints(
-                max_participation_rate=self.config.max_participation_rate,
-                max_market_impact_bps=self.config.max_market_impact_bps
+                symbol="EURUSD",
+                timestamp=datetime.now(),
+                bids=[
+                    OrderBookLevel(1.1000, 100000, 'bid'),
+                    OrderBookLevel(1.0999, 150000, 'bid'),
+                    OrderBookLevel(1.0998, 200000, 'bid')
+                ],
+                asks=[
+                    OrderBookLevel(1.1001, 100000, 'ask'),
+                    OrderBookLevel(1.1002, 150000, 'ask'),
+                    OrderBookLevel(1.1003, 200000, 'ask')
+                ],
+                spread=0.0001,
+                mid_price=1.10005
             )
             
             self.liquidity_sizer = LiquidityAwareSizer(
-                market_depth=sample_depth,
-                constraints=constraints
+                max_participation_rate=self.config.max_participation_rate,
+                max_impact_bps=self.config.max_market_impact_bps
             )
             
             self.adaptive_execution = AdaptiveExecutionEngine()
@@ -309,7 +317,8 @@ class IntegratedEvolutionSystem:
         
         # Calculate fitness
         if self.config.enable_tail_risk:
-            fitness = self.fitness_evaluator.evaluate(backtest_result, individual.genome)
+            complexity = getattr(individual.genome, 'get_complexity', lambda: 1)()
+            fitness = self.fitness_evaluator.evaluate(backtest_result, complexity)
         else:
             fitness = self.fitness_evaluator.evaluate(
                 sharpe=backtest_result.metrics.get('sharpe_ratio', 0),

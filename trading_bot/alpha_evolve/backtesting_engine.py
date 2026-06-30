@@ -369,7 +369,8 @@ class LeakageFreeBacktester:
         positions['strategy_return'] = positions['actual_position'].shift(1) * positions['market_return']
         
         total_costs = sum(t.total_cost for t in trades)
-        cost_per_period = total_costs / len(positions)
+        num_periods = len(positions)
+        cost_per_period = total_costs / num_periods if num_periods > 0 else 0
         positions['cost_drag'] = -cost_per_period / self.initial_capital
         
         positions['net_return'] = positions['strategy_return'] + positions['cost_drag']

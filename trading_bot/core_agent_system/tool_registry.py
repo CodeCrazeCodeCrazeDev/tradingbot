@@ -256,8 +256,9 @@ class ToolRegistry:
     └─────────────────────────────────────────────────────────────┘
     """
     
-    def __init__(self, config: Optional[Dict] = None):
+    def __init__(self, config: Optional[Dict] = None, object_registry: Any = None):
         self.config = config or {}
+        self.object_registry = object_registry
         
         # Tool storage
         self.tools: Dict[str, BaseTool] = {}

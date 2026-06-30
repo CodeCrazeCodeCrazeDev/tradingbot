@@ -1,0 +1,67 @@
+{
+  "generation": 0,
+  "config": {
+    "population_size": 10,
+    "max_generations": 5,
+    "elite_size": 10,
+    "enable_speciation": true,
+    "compatibility_threshold": 3.0,
+    "target_species_count": 5,
+    "enable_diversity_preservation": true,
+    "diversity_weight": 0.3,
+    "niche_radius": 0.1,
+    "enable_age_based_selection": true,
+    "max_age": 20,
+    "age_fitness_decay": 0.95,
+    "enable_regime_evaluation": true,
+    "min_regime_samples": 30,
+    "enable_tail_risk": true,
+    "var_confidence": 0.95,
+    "use_cvar": true,
+    "enable_liquidity_sizing": true,
+    "max_participation_rate": 0.05,
+    "max_market_impact_bps": 10.0,
+    "track_pareto_frontier": true,
+    "save_checkpoints": true,
+    "checkpoint_frequency": 10,
+    "convergence_threshold": 0.001,
+    "convergence_generations": 15,
+    "parallel_workers": 4,
+    "use_parallel": true
+  },
+  "stats": {
+    "generations": 0,
+    "evaluations": 10,
+    "cache_hits": 0,
+    "convergence_detected": false
+  },
+  "snapshots": [
+    {
+      "generation": 0,
+      "timestamp": "2026-06-29 17:57:19.636629",
+      "population_size": 10,
+      "best_fitness": 0.4928112417513179,
+      "avg_fitness": 0.049281124175131794,
+      "diversity_score": 1.0,
+      "species_count": 0,
+      "species_sizes": {},
+      "regime_performance": {},
+      "avg_var": 0,
+      "avg_cvar": 0,
+      "best_genome_id": "58d1cfde4a0018ea",
+      "best_genome": "StrategyGenome(signals=[Signal(signal_type=<SignalType.CROSS_ASSET: 'cross_asset'>, lookback_period=206, threshold=-0.50877318911555, weight=-0.5723759848208914, parameters={'ema_alpha': 0.4864780404233655, 'zscore_window': 51, 'percentile': 0.45478936218214494})], aggregation_type=<AggregationType.LINEAR: 'linear'>, position_sizing=<PositionSizingType.FIXED: 'fixed'>, risk_control=RiskControl(max_position_size=0.1938310991825584, max_leverage=2.3166643630976185, stop_loss_pct=0.015041401737048182, take_profit_pct=0.11147114241830548, max_drawdown_limit=0.15, max_correlation=0.7, var_limit=0.05), execution_params=ExecutionParams(slippage_bps=5.0, commission_bps=1.0, market_impact_factor=0.1, min_order_size=100.0, max_order_size=1000000.0, execution_delay_ms=100), rebalance_frequency=16, universe_size=452, metadata={'generation': 0, 'parent_ids': [], 'mutation_history': []})"
+    }
+  ],
+  "pareto_frontier_ids": [
+    "542d817e7fc921b7",
+    "de2aa1d0fdea9cdd",
+    "acd3c60291954b4a",
+    "6db431fdcdeb1b17",
+    "9e42f4f8d65bab04",
+    "2e7da80ac9fa980c",
+    "15d0f2d151e3d1f2",
+    "f51de68f1b284758",
+    "ca2a3f4a8f17e96e",
+    "58d1cfde4a0018ea"
+  ]
+}

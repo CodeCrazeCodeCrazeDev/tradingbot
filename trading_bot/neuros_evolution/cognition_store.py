@@ -26,11 +26,11 @@ class CognitionItem:
     """Knowledge item in cognition store"""
     id: str
     content: str
-    embedding_vector: Optional[List[float]] = None
     source_domain: str
+    created_at: datetime
+    embedding_vector: Optional[List[float]] = None
     novelty_score: float = 0.0
     actionability_score: float = 0.0
-    created_at: datetime
     access_count: int = 0
     last_accessed: Optional[datetime] = None
     

@@ -7,13 +7,14 @@ patterns from DeepMind, OpenAI, and Anthropic.
 
 import asyncio
 import logging
-import multiprocessing
+import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from pathlib import Path
 import redis
 
-from .master_orchestrator import MasterOrchestrator, SystemContext, Decision
+from .master_orchestrator import MasterOrchestrator, SystemContext
+from .meta_orchestrator import MetaOrchestrator
 from .react_loop import ReActLoop
 from .constitutional_layer import ConstitutionalAI
 from trading_bot.execution.trade_executor import TradeExecutor
@@ -26,6 +27,7 @@ from .agent_registry import (
     EvaluatorAgent,
     ResearchAgent,
     SafetyAgent,
+    OptimizerAgent,
     LegacyAgentWrapper
 )
 from .migrated_agents.planner import MigratedPlannerAgent
@@ -66,10 +68,10 @@ class IntegratedAgentSystem:
         storage_base.mkdir(parents=True, exist_ok=True)
         self.storage_path = storage_base
         
-        # Multi-process management
-        self.redis_client = None
-        self.background_processes: Dict[str, multiprocessing.Process] = {}
-        self._init_redis()
+        # 0. Unified Registry (Section 4)
+        self.object_registry = ControlledObjectRegistry(
+            str(self.storage_path / 'controlled_objects.json')
+        )
 
         # Initialize components
         self._init_components()
@@ -243,7 +245,7 @@ class IntegratedAgentSystem:
         default_agents = [
             MigratedPlannerAgent(config={'name': 'ComprehensivePlanner'}),
             PlannerAgent(config={'name': 'MainPlanner'}),
-            TrendFollowingPlanner(config={'name': 'TrendPlanner'}),
+            TrendFollowingPlanner(config={'name': 'TrendFollowingPlanner'}),
             MeanReversionPlanner(config={'name': 'MeanReversionPlanner'}),
             VolatilityPlanner(config={'name': 'VolatilityPlanner'}),
             ExecutorAgent(executor=trade_executor, config={'name': 'MainExecutor'}),
@@ -434,15 +436,8 @@ class IntegratedAgentSystem:
     async def _gather_context(self) -> SystemContext:
         """Gather current system context"""
         if not hasattr(self, 'tool_registry'):
-            return SystemContext(
-                timestamp=datetime.now(),
-                market_state={},
-                portfolio_state={},
-                agent_states={},
-                pending_decisions=[],
-                recent_outcomes=[],
-                risk_metrics={}
-            )
+            # Empty context
+            return SystemContext(datetime.now(), {}, {}, {}, [], [], {})
 
         # Get market state from tools
         market_tool = await self.tool_registry.get_tool('market_data')
@@ -499,26 +494,71 @@ class IntegratedAgentSystem:
 
         logger.info(f"IAS executing task: {task}")
 
-        # Use Meta-Orchestrator for self-scaffolding workflow
+        # 1. Use Meta-Orchestrator for self-scaffolding workflow
         meta_result = await self.meta_orchestrator.execute_task(
             task=task,
             context=context,
             core_system=self
         )
 
-        # Use our new adapters for standardized reasoning and tool calls
-        from .adapters import ReasoningTrace, ResponseFormatter
+        # 2. Record deep observability data
+        duration = (datetime.now() - start_time).total_seconds()
 
-        trace = ReasoningTrace(
-            goal=task,
-            analysis_summary=f"Task executed via Meta-Orchestrator policy: {meta_result.get('policy_id')}",
-            plan=[step.get('type') for step in meta_result.get('trace', [])],
-            metadata=meta_result.get('metrics', {})
+        obs_trace["selected_workflow"] = meta_result.get('policy_id')
+        obs_trace["workflow_trace"] = meta_result.get('trace', [])
+
+        # Extract activated agents and tools from the trace
+        activated_agents = []
+        tools_used = []
+        for step in obs_trace["workflow_trace"]:
+            res = step.get('result', {})
+            if 'agents' in res:
+                activated_agents.extend(res['agents'])
+            if step.get('type') == 'call_tool':
+                tools_used.append(step.get('node'))
+
+        obs_trace["activated_agents"] = list(set(activated_agents))
+        obs_trace["tools_used"] = list(set(tools_used))
+        obs_trace["duration"] = duration
+        obs_trace["success"] = meta_result.get('success', False)
+
+        # 3. Store in Semantic Memory
+        await self.memory_system.store_knowledge(
+            f"obs_trace_{uuid.uuid4().hex[:8]}",
+            obs_trace,
+            tags=["observability", "execution_trace", meta_result.get('policy_id')]
         )
 
+        # Standardized Response Formatting
+        from .adapters import ReasoningTrace, ResponseFormatter
+
+        # Extract results from trace
+        answer_part = "No specific result returned."
+        if meta_result.get('result'):
+            if isinstance(meta_result['result'], dict):
+                answer_part = meta_result['result'].get('result', meta_result['result'].get('answer', str(meta_result['result'])))
+            else:
+                answer_part = str(meta_result['result'])
+
         if context.get('use_coordination'):
-             # If using multi-agent coordination explicitly
-            result = await self.coordination_core.execute_task(task, context)
+            # If using multi-agent coordination explicitly
+            from .coordination_core import TaskType, TaskPriority
+
+            # Determine task type from context or task string
+            task_type = context.get('task_type', TaskType.ANALYSIS)
+            if isinstance(task_type, str):
+                try:
+                    task_type = TaskType(task_type.lower())
+                except ValueError:
+                    task_type = TaskType.ANALYSIS
+
+            result = await self.coordination_core.execute_task(
+                task_name=f"Task: {task[:30]}",
+                task_type=task_type,
+                description=task,
+                priority=context.get('priority', TaskPriority.MEDIUM),
+                metadata=context
+            )
 
             # Extract final answer from results
             answer_part = "No specific result returned."
@@ -544,9 +584,8 @@ class IntegratedAgentSystem:
 
         return {
             'success': meta_result.get('success', False),
-            'answer': f"Task '{task}' has been completed by the Brain. Status: SUCCESS",
-            'reasoning': formatted_response['reasoning'],
-            'tool_calls': formatted_response['tool_calls'],
+            'answer': final_answer,
+            'reasoning': f"Workflow policy '{meta_result.get('policy_id')}' executed with {len(meta_result.get('trace', []))} steps.",
             'coordination_report': meta_result,
             'iterations': len(meta_result.get('trace', []))
         }
