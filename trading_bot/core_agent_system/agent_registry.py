@@ -136,53 +136,77 @@ class BaseAgent(ABC):
 
     async def execute_task(self, task: Any) -> Dict[str, Any]:
         """
-        Execute a task for coordination core compatibility.
-        Maps task types to appropriate agent operations.
-        """
-        from .coordination_core import TaskType
-
-        # Determine operation based on task type and role
-        operation = 'execute'
-        if task.task_type == TaskType.ANALYSIS:
-            if self.role == AgentRole.PLANNER:
-                operation = 'propose'
-            else:
-                operation = 'analyze'
-        elif task.task_type == TaskType.RESEARCH:
-            operation = 'research'
-
-        # Prepare action for execute method
-        action = {
-            'operation': operation,
-            'task_id': task.task_id,
-            'description': task.description,
-            'context': task.metadata,
-            'data': task.metadata
-        }
-
-        # Execute and return result
-        result = await self.execute(action)
-
-        # Ensure result has success flag for coordination core
-        if 'success' not in result:
-            result['success'] = 'error' not in result
-
-        return result
-    
-    async def execute_task(self, task: Any) -> Dict[str, Any]:
-        """
         Execute a task. Default implementation wraps execute().
         Subclasses can override this for more complex task handling.
         """
-        # Try to extract description from task object or use task itself
-        description = getattr(task, 'description', getattr(task, 'name', str(task)))
+        from .coordination_core import TaskType
 
-        return await self.execute({
-            'operation': 'execute_task',
-            'task': task,
-            'description': description,
-            'metadata': getattr(task, 'metadata', {})
-        })
+        self.status = AgentStatus.BUSY
+        start_time = datetime.now()
+
+        try:
+            # Map task to action for execute()
+            operation = 'execute'
+            task_id = getattr(task, 'task_id', str(uuid.uuid4()))
+            description = getattr(task, 'description', getattr(task, 'name', str(task)))
+            metadata = getattr(task, 'metadata', {})
+
+            # Intelligent operation mapping based on role and task type
+            if hasattr(task, 'task_type'):
+                if task.task_type == TaskType.ANALYSIS:
+                    operation = 'propose' if self.role == AgentRole.PLANNER else 'analyze'
+                elif task.task_type == TaskType.RESEARCH:
+                    operation = 'research'
+                elif task.task_type == TaskType.PLANNING:
+                    operation = 'propose'
+                elif task.task_type == TaskType.EXECUTION:
+                    operation = 'execute'
+            else:
+                # Fallback to role-based mapping if task_type is not present
+                if self.role == AgentRole.PLANNER:
+                    operation = 'analyze'
+                elif self.role == AgentRole.RESEARCHER:
+                    operation = 'research'
+                elif self.role == AgentRole.EVALUATOR:
+                    operation = 'evaluate'
+                elif self.role == AgentRole.SAFETY:
+                    operation = 'check'
+
+            # If task metadata specifies an operation, use it
+            if isinstance(metadata, dict):
+                operation = metadata.get('operation', operation)
+
+            action = {
+                'operation': operation,
+                'task_id': task_id,
+                'description': description,
+                'context': metadata,
+                'data': metadata,
+                'metadata': metadata
+            }
+
+            result = await self.execute(action)
+
+            # Ensure result has success flag
+            if not isinstance(result, dict):
+                result = {'result': result, 'success': True}
+
+            if 'success' not in result:
+                result['success'] = 'error' not in result
+
+            execution_time = (datetime.now() - start_time).total_seconds()
+            self.metrics.update(result.get('success', False), execution_time)
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error executing task in {self.name}: {e}")
+            execution_time = (datetime.now() - start_time).total_seconds()
+            self.metrics.update(False, execution_time)
+            return {'success': False, 'error': str(e)}
+
+        finally:
+            self.status = AgentStatus.READY
 
     async def initialize(self):
         """Initialize the agent"""
@@ -217,102 +241,6 @@ class BaseAgent(ABC):
         """Recall something from agent memory"""
         return self.memory.get(key, default)
 
-    async def execute_task(self, task: Any) -> Dict[str, Any]:
-        """
-        Execute a task using this agent.
-        Standardized entry point for the Self-Coordinating Core.
-        """
-        self.status = AgentStatus.BUSY
-        start_time = datetime.now()
-
-        try:
-            # Map task to action for execute()
-            # Most agents expect an 'operation' or 'type' in the action dict
-            operation = 'execute'
-
-            # Intelligent operation mapping based on role
-            if self.role == AgentRole.PLANNER:
-                operation = 'analyze'
-            elif self.role == AgentRole.RESEARCHER:
-                operation = 'research'
-            elif self.role == AgentRole.EVALUATOR:
-                operation = 'evaluate'
-            elif self.role == AgentRole.SAFETY:
-                operation = 'check'
-
-            # If task metadata specifies an operation, use it
-            if hasattr(task, 'metadata') and isinstance(task.metadata, dict):
-                operation = task.metadata.get('operation', operation)
-
-            action = {
-                'operation': operation,
-                'task_name': task.name if hasattr(task, 'name') else str(task),
-                'description': task.description if hasattr(task, 'description') else '',
-                'metadata': task.metadata if hasattr(task, 'metadata') else {}
-            }
-
-            result = await self.execute(action)
-
-            # Ensure result has success flag
-            if not isinstance(result, dict):
-                result = {'result': result, 'success': True}
-
-            if 'success' not in result:
-                result['success'] = True
-
-            execution_time = (datetime.now() - start_time).total_seconds()
-            self.metrics.update(result['success'], execution_time)
-
-            return result
-
-        except Exception as e:
-            logger.error(f"Error executing task in {self.name}: {e}")
-            execution_time = (datetime.now() - start_time).total_seconds()
-            self.metrics.update(False, execution_time)
-            return {'success': False, 'error': str(e)}
-
-        finally:
-            self.status = AgentStatus.READY
-    
-    async def execute_task(self, task: Any) -> Dict[str, Any]:
-        """
-        Execute a task using the agent's capabilities.
-
-        This is a higher-level interface used by the coordination core.
-        Standard implementation uses the agent's primary execute method.
-        """
-        # Convert task to action
-        description = getattr(task, 'description', str(task))
-
-        # Determine operation based on role
-        operation = 'execute'
-        if self.role == AgentRole.PLANNER:
-            operation = 'analyze'
-        elif self.role == AgentRole.RESEARCHER:
-            operation = 'research'
-        elif self.role == AgentRole.EVALUATOR:
-            operation = 'evaluate'
-        elif self.role == AgentRole.SAFETY:
-            operation = 'check'
-
-        # Execute using standard interface
-        result = await self.execute({
-            'operation': operation,
-            'description': description,
-            'task_id': getattr(task, 'task_id', None),
-            'data': getattr(task, 'metadata', {})
-        })
-
-        # Ensure result is a dictionary
-        if not isinstance(result, dict):
-            result = {'result': result}
-
-        # Ensure success key exists
-        if 'success' not in result:
-            # If no error, assume success
-            result['success'] = 'error' not in result
-
-        return result
 
     def get_status(self) -> Dict[str, Any]:
         """Get agent status"""
@@ -334,16 +262,6 @@ class BaseAgent(ABC):
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.agent_id}, name={self.name}, role={self.role.value})"
 
-    async def execute_task(self, task: Any) -> Dict[str, Any]:
-        """Execute a task - default implementation uses execute()"""
-        task_dict = task.to_dict() if hasattr(task, 'to_dict') else task
-        result = await self.execute(task_dict)
-
-        # Ensure result has success key for coordination core
-        if isinstance(result, dict) and 'success' not in result:
-            result['success'] = True
-
-        return result
 
 
 class AgentRegistry:
@@ -662,7 +580,7 @@ class AgentRegistry:
         
         role_counts = {}
         for role in AgentRole:
-            count = len(self.role_index.get(role, self.role_index.get(AgentRole(role), [])) if isinstance(role, str) else self.role_index[role])
+            count = len(self.role_index.get(role, []))
             if count > 0:
                 role_counts[role.value] = count
         
@@ -674,6 +592,10 @@ class AgentRegistry:
             'factories_registered': list(self.agent_factories.keys())
         }
     
+    async def get_all_agents(self) -> List[BaseAgent]:
+        """Get all registered agents"""
+        return list(self.agents.values())
+
     async def shutdown(self):
         """Shutdown the registry and all agents"""
         logger.info("Shutting down Agent Registry")
@@ -796,7 +718,7 @@ class ExecutorAgent(BaseAgent):
     Handles the actual execution of trades and other operations.
     """
     
-    def __init__(self, config: Optional[Dict] = None):
+    def __init__(self, executor: TradeExecutor, config: Optional[Dict] = None):
         super().__init__(
             name="ExecutorAgent",
             role=AgentRole.EXECUTOR,
@@ -838,16 +760,22 @@ class ExecutorAgent(BaseAgent):
         start_time = datetime.now()
         
         try:
-            if operation == 'execute':
+            if operation in ['execute', 'trade_execution']:
                 result = await self._execute_trade(action)
             elif operation == 'cancel':
                 result = await self._cancel_order(action)
             elif operation == 'modify':
                 result = await self._modify_order(action)
+            elif operation == 'validate':
+                result = {'success': True, 'valid': True}
             elif operation == 'execute_task':
                 result = await self._execute_trade(action.get('metadata', {}))
             else:
-                result = {'success': False, 'error': f'Unknown operation: {operation}'}
+                # Fallback to trade execution for unknown operations if it looks like a trade
+                if any(k in action for k in ['symbol', 'side', 'size']):
+                    result = await self._execute_trade(action)
+                else:
+                    result = {'success': False, 'error': f'Unknown operation: {operation}'}
             
             execution_time = (datetime.now() - start_time).total_seconds()
             self.metrics.update(result.get('success', False), execution_time)
@@ -883,7 +811,7 @@ class ExecutorAgent(BaseAgent):
             )
 
             # Execute via TradeExecutor
-            result = self.executor.execute_trade(order)
+            result = await self.executor.execute_trade(order)
             return result
         except Exception as e:
             logger.error(f"Trade execution failed in ExecutorAgent: {e}")
@@ -944,9 +872,9 @@ class EvaluatorAgent(BaseAgent):
         """Execute evaluation"""
         operation = action.get('operation', 'evaluate')
         
-        if operation == 'evaluate':
+        if operation in ['evaluate', 'evaluation', 'analyze', 'reporting', 'report']:
             return await self._evaluate(action)
-        elif operation == 'backtest':
+        elif operation in ['backtest', 'backtesting']:
             return await self._backtest(action)
         elif operation == 'execute_task':
             return await self._evaluate(action.get('metadata', {}))
@@ -1021,9 +949,9 @@ class ResearchAgent(BaseAgent):
         """Execute research"""
         operation = action.get('operation', 'research')
         
-        if operation == 'research':
+        if operation in ['research', 'analyze', 'analysis']:
             return await self._research(action)
-        elif operation == 'discover':
+        elif operation in ['discover', 'discovery']:
             return await self._discover(action)
         elif operation == 'execute_task':
             return await self._research(action.get('metadata', {}))

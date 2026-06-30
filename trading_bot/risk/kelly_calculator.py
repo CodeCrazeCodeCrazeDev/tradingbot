@@ -70,8 +70,33 @@ class KellyCalculator:
     
     def _process_internal(self, data: Any) -> Any:
         """Internal processing logic"""
-        # Implement specific processing logic
-        return data
+        return self.calculate_kelly(
+            win_prob=data.get('win_prob', 0.5),
+            risk_reward=data.get('risk_reward', 2.0),
+            uncertainty=data.get('epistemic_uncertainty', 0.0)
+        )
+
+    def calculate_kelly(self, win_prob: float, risk_reward: float, uncertainty: float = 0.0) -> float:
+        """
+        Calculate dynamic Kelly fraction adjusted by model uncertainty.
+
+        Formula: Kelly % = W - [(1 - W) / R]
+        Adjustment: Kelly_adjusted = Kelly * (1 - Uncertainty)
+        """
+        if risk_reward <= 0: return 0.0
+
+        b = risk_reward
+        p = win_prob
+        q = 1 - p
+
+        kelly = p - (q / b)
+
+        # Apply uncertainty penalty (Epistemic Uncertainty from WorldModel)
+        # If uncertainty is 1.0 (total ignorance), position size becomes 0.
+        uncertainty_factor = max(0.0, 1.0 - uncertainty)
+        adjusted_kelly = max(0, kelly * uncertainty_factor)
+
+        return adjusted_kelly
     
     def get_status(self) -> Dict:
         """Get current status"""
