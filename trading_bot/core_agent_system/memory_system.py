@@ -771,10 +771,20 @@ class MemorySystem:
         self,
         key: str,
         content: Any,
-        related: Optional[List[str]] = None
+        related: Optional[List[str]] = None,
+        tags: Optional[List[str]] = None
     ):
         """Store knowledge in semantic memory"""
+        # Store in semantic memory
         self.semantic.store_knowledge(key, content, related)
+
+        # Also store as an episode if tags are provided, to enable better retrieval
+        if tags:
+            self.episodic.store_episode(
+                content={'key': key, 'content': content},
+                importance=0.7,
+                tags=tags
+            )
     
     async def retrieve_knowledge(self, key: str) -> Optional[Any]:
         """Retrieve knowledge from semantic memory"""

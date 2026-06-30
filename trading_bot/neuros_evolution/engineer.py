@@ -283,7 +283,7 @@ class ExperimentEngineer:
         # Simplified quality assessment
         quality_indicators = {
             'modular': 0.8 if 'def ' in logic and len(logic.split()) > 1 else 0.3,
-            'documented': 0.6 if '""" in logic else 0.2,
+            'documented': 0.6 if '"""' in logic else 0.2,
             'efficient': 0.7 if 'pass' in logic and 'return' in logic else 0.3,
         }
         

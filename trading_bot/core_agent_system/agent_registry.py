@@ -304,9 +304,10 @@ class AgentRegistry:
     └─────────────────────────────────────────────────────────────┘
     """
     
-    def __init__(self, config: Optional[Dict] = None):
+    def __init__(self, config: Optional[Dict] = None, object_registry: Any = None):
         config = config or {}
         self.config = config
+        self.object_registry = object_registry
         
         # Agent storage
         self.agents: Dict[str, BaseAgent] = {}
@@ -1046,6 +1047,35 @@ class SafetyAgent(BaseAgent):
             'success': True,
             'compliant': True,
             'violations': []
+        }
+
+class OptimizerAgent(BaseAgent):
+    """
+    Optimizer Agent - Optimizes system and strategy performance.
+    """
+
+    def __init__(self, config: Optional[Dict] = None):
+        super().__init__(
+            name=config.get("name", "OptimizerAgent"),
+            role=AgentRole.OPTIMIZER,
+            config=config
+        )
+        self.config = config or {}
+
+    def _register_capabilities(self):
+        self.add_capability(AgentCapability(
+            name="optimization",
+            description="Optimize system parameters",
+            input_schema={"target": "str", "metrics": "Dict"},
+            output_schema={"optimized_params": "Dict"}
+        ))
+
+    async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute optimization"""
+        return {
+            'success': True,
+            'result': 'Optimization completed',
+            'optimized_params': {'rebalance_frequency': 1}
         }
 
 class LegacyAgentWrapper(BaseAgent):

@@ -266,9 +266,13 @@ class MetaOrchestrator:
 
         elif node.node_type == WorkflowNodeType.VERIFY:
             # Delegate to GovernanceSystem
+            # Merge context into action to allow governance to inspect parameters
+            check_action = {"type": "workflow_step", "node": node.node_id}
+            check_action.update(context)
+
             is_compliant, violations = await system.coordination_core.governance.check_compliance(
                 agent_id="meta_orchestrator",
-                action={"type": "workflow_step", "node": node.node_id},
+                action=check_action,
                 context=context
             )
             return {"success": is_compliant, "violations": violations}
