@@ -449,8 +449,24 @@ class IntegratedAgentSystem:
         formatted_response = ResponseFormatter.format_response(trace, [])
 
         if context.get('use_coordination'):
-             # If using multi-agent coordination explicitly
-            result = await self.coordination_core.execute_task(task, context)
+            # If using multi-agent coordination explicitly
+            from .coordination_core import TaskType, TaskPriority
+
+            # Determine task type from context or task string
+            task_type = context.get('task_type', TaskType.ANALYSIS)
+            if isinstance(task_type, str):
+                try:
+                    task_type = TaskType(task_type.lower())
+                except ValueError:
+                    task_type = TaskType.ANALYSIS
+
+            result = await self.coordination_core.execute_task(
+                task_name=f"Task: {task[:30]}",
+                task_type=task_type,
+                description=task,
+                priority=context.get('priority', TaskPriority.MEDIUM),
+                metadata=context
+            )
 
             # Extract final answer from results
             answer_part = "No specific result returned."

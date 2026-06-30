@@ -59,27 +59,66 @@ class StrategyLibrary:
 
     def _load_default_policies(self):
         """Seed the library with initial human-designed strategies"""
+        # 1. Standard Analysis Policy
         default_id = "standard_analysis_v1"
         nodes = {
             "start": WorkflowNode("start", WorkflowNodeType.DECOMPOSE, {"depth": 1}, ["end"]),
-            # "select": WorkflowNode("select", WorkflowNodeType.SELECT_AGENT, {"role": "researcher"}, ["execute"]),
-            # "execute": WorkflowNode("execute", WorkflowNodeType.CALL_TOOL, {"tool": "market_data"}, ["verify"]),
-            # "verify": WorkflowNode("verify", WorkflowNodeType.VERIFY, {"threshold": 0.7}, ["end"]),
             "end": WorkflowNode("end", WorkflowNodeType.CONCLUDE, {})
         }
         self.policies[default_id] = WorkflowPolicy(
             default_id, "Standard Analysis", "Standard sequential analysis workflow",
-            nodes, "start"
+            nodes, "start", performance_metrics={"success_rate": 0.8, "avg_duration": 5.0, "resource_efficiency": 0.8}
+        )
+
+        # 2. Research & Discovery Policy
+        research_id = "research_discovery_v1"
+        nodes = {
+            "start": WorkflowNode("start", WorkflowNodeType.SELECT_AGENT, {"role": "researcher"}, ["execute"]),
+            "execute": WorkflowNode("execute", WorkflowNodeType.CALL_TOOL, {"tool": "market_data"}, ["verify"]),
+            "verify": WorkflowNode("verify", WorkflowNodeType.VERIFY, {"threshold": 0.7}, ["end"]),
+            "end": WorkflowNode("end", WorkflowNodeType.CONCLUDE, {})
+        }
+        self.policies[research_id] = WorkflowPolicy(
+            research_id, "Research & Discovery", "Workflow optimized for research tasks",
+            nodes, "start", performance_metrics={"success_rate": 0.7, "avg_duration": 10.0, "resource_efficiency": 0.7}
+        )
+
+        # 3. Safe Execution Policy
+        execution_id = "safe_execution_v1"
+        nodes = {
+            "start": WorkflowNode("start", WorkflowNodeType.SELECT_AGENT, {"role": "executor"}, ["verify"]),
+            "verify": WorkflowNode("verify", WorkflowNodeType.VERIFY, {"threshold": 0.9}, ["execute"]),
+            "execute": WorkflowNode("execute", WorkflowNodeType.CALL_TOOL, {"tool": "trade_executor"}, ["end"]),
+            "end": WorkflowNode("end", WorkflowNodeType.CONCLUDE, {})
+        }
+        self.policies[execution_id] = WorkflowPolicy(
+            execution_id, "Safe Execution", "High-safety execution workflow",
+            nodes, "start", performance_metrics={"success_rate": 0.9, "avg_duration": 2.0, "resource_efficiency": 0.9}
         )
 
     def add_policy(self, policy: WorkflowPolicy):
         self.policies[policy.policy_id] = policy
 
-    def get_best_policy_for_task(self, task_type: str) -> Optional[WorkflowPolicy]:
-        """Select best policy based on historical performance"""
+    def get_best_policy_for_task(self, task: str) -> Optional[WorkflowPolicy]:
+        """Select best policy based on task classification and historical performance"""
         if not self.policies:
             return None
-        # Heuristic: return the one with highest success_rate
+
+        # 1. Classify task by keywords
+        task_lower = task.lower()
+        target_policy_id = "standard_analysis_v1"
+
+        if any(kw in task_lower for kw in ["research", "discover", "pattern", "scientific"]):
+            target_policy_id = "research_discovery_v1"
+        elif any(kw in task_lower for kw in ["execute", "trade", "buy", "sell", "order"]) and "analyze" not in task_lower:
+            target_policy_id = "safe_execution_v1"
+
+        # 2. Return the targeted policy if it exists and has good performance
+        policy = self.policies.get(target_policy_id)
+        if policy and policy.performance_metrics["success_rate"] > 0.5:
+            return policy
+
+        # 3. Fallback to highest success rate
         return max(self.policies.values(), key=lambda p: p.performance_metrics["success_rate"])
 
 class WorkflowMemory:
