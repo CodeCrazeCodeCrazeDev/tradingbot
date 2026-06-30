@@ -30,6 +30,7 @@ from trading_bot.core.service_registry import (
     ServiceRegistry, BaseService, ServicePriority
 )
 from trading_bot.core.event_bus import EventBus
+from trading_bot.core_agent_system import IntegratedAgentSystem
 
 logger = logging.getLogger(__name__)
 
@@ -251,11 +252,19 @@ TIER1_SERVICES: List[ServiceDefinition] = [
     # LAYER 7: ORCHESTRATION
     # -------------------------------------------------------------------------
     ServiceDefinition(
+        name="integrated_brain",
+        service_class="trading_bot.services.integrated_brain_service.IntegratedBrainService",
+        layer=ServiceLayer.ORCHESTRATION,
+        priority=ServicePriority.CRITICAL,
+        dependencies=["analysis", "risk", "msos"],
+        critical=True,
+    ),
+    ServiceDefinition(
         name="decision_layer",
         service_class="trading_bot.services.decision_layer_service.DecisionLayerService",
         layer=ServiceLayer.ORCHESTRATION,
         priority=ServicePriority.CRITICAL,
-        dependencies=["analysis", "risk", "msos"],
+        dependencies=["integrated_brain"],
         critical=True,
     ),
 ]

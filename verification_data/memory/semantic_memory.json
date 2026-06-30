@@ -1,0 +1,177 @@
+{
+  "agent_react_reasoner_1_d315b5eb": {
+    "memory_id": "c554c2ce-13de-4718-ae7f-e1126f71644c",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "react_reasoner_1_d315b5eb",
+      "name": "MainReasoner",
+      "archetype": "react_reasoner",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-30T11:13:45.050331"
+    },
+    "metadata": {
+      "key": "agent_react_reasoner_1_d315b5eb",
+      "related": [
+        "dynamic_agents",
+        "react_reasoner"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-30T11:13:45.050577",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_constitutional_guardian_1_38eceb9b": {
+    "memory_id": "b7669a2e-1d03-4854-a01b-eb7a60f00415",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "constitutional_guardian_1_38eceb9b",
+      "name": "SafetyGuardian",
+      "archetype": "constitutional_guardian",
+      "role": "safety",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-30T11:13:45.050747"
+    },
+    "metadata": {
+      "key": "agent_constitutional_guardian_1_38eceb9b",
+      "related": [
+        "dynamic_agents",
+        "constitutional_guardian"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-30T11:13:45.050934",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_analyst_1_b39627e0": {
+    "memory_id": "54f438b7-9346-4fa2-9166-411c5b1334aa",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "analyst_1_b39627e0",
+      "name": "MarketAnalyst",
+      "archetype": "analyst",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-30T11:13:45.051023"
+    },
+    "metadata": {
+      "key": "agent_analyst_1_b39627e0",
+      "related": [
+        "dynamic_agents",
+        "analyst"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-30T11:13:45.051187",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_monitor_1_672bea27": {
+    "memory_id": "32f15868-ffe2-4f92-a942-0d6b3894c429",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "monitor_1_672bea27",
+      "name": "SystemMonitor",
+      "archetype": "monitor",
+      "role": "monitor",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-06-30T11:13:45.051284"
+    },
+    "metadata": {
+      "key": "agent_monitor_1_672bea27",
+      "related": [
+        "dynamic_agents",
+        "monitor"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-30T11:13:45.051524",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "best_policy_version": {
+    "memory_id": "21439dce-24ca-47ba-8133-87b014598799",
+    "memory_type": "semantic",
+    "content": 1,
+    "metadata": {
+      "key": "best_policy_version",
+      "related": []
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-30T11:13:47.065494",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "best_value_version": {
+    "memory_id": "110d0f28-82f2-4204-801e-faf201d0dd8c",
+    "memory_type": "semantic",
+    "content": 1,
+    "metadata": {
+      "key": "best_value_version",
+      "related": []
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-30T11:13:47.065515",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "improvement_1": {
+    "memory_id": "378130bd-be1f-40d9-bcdf-f2b0b7492a22",
+    "memory_type": "semantic",
+    "content": {
+      "iteration": 1,
+      "games_played": 50,
+      "experiences_collected": 4950,
+      "training_loss": 0.0,
+      "evaluation_win_rate": 0.6,
+      "improved": true
+    },
+    "metadata": {
+      "key": "improvement_1",
+      "related": []
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-30T11:13:47.065723",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "coordination_pattern_hierarchical": {
+    "memory_id": "19a39e1e-c543-4f4c-9e62-bfc98fa0775f",
+    "memory_type": "semantic",
+    "content": {
+      "total_uses": 2,
+      "successes": 2,
+      "avg_duration": 0.302443,
+      "avg_efficiency": 1.0,
+      "avg_quality": 0.8
+    },
+    "metadata": {
+      "key": "coordination_pattern_hierarchical",
+      "related": [
+        "task_type_<Task pending name='Task-1' coro=<verify_system() running at /app/verify_phase1.py:41> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-06-30T11:13:48.273670",
+    "access_count": 0,
+    "last_accessed": null
+  }
+}
