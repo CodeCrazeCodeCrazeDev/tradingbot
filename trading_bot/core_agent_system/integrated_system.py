@@ -14,6 +14,7 @@ from pathlib import Path
 
 from .master_orchestrator import MasterOrchestrator, SystemContext
 from .meta_orchestrator import MetaOrchestrator
+from trading_bot.neuros_evolution.controlled_objects import ControlledObjectRegistry
 from .react_loop import ReActLoop
 from .constitutional_layer import ConstitutionalAI
 from trading_bot.execution.trade_executor import TradeExecutor
@@ -422,6 +423,9 @@ class IntegratedAgentSystem:
         Execute a task using the research-grade Meta-Orchestrator or USIS.
         """
         context = context or {}
+        start_time = datetime.now()
+        answer_part = "No specific result returned."
+        final_answer = "Task execution failed or returned no result."
         
         # Check for swarm-specific tasks
         if context.get('use_swarm') or 'swarm' in task.lower():
@@ -439,6 +443,7 @@ class IntegratedAgentSystem:
 
         # 2. Record deep observability data
         duration = (datetime.now() - start_time).total_seconds()
+        obs_trace = {}
 
         obs_trace["selected_workflow"] = meta_result.get('policy_id')
         obs_trace["workflow_trace"] = meta_result.get('trace', [])
@@ -469,14 +474,21 @@ class IntegratedAgentSystem:
         from .adapters import ReasoningTrace, ResponseFormatter
 
         # Extract results from trace
-        answer_part = "No specific result returned."
         if meta_result.get('result'):
             if isinstance(meta_result['result'], dict):
                 answer_part = meta_result['result'].get('result', meta_result['result'].get('answer', str(meta_result['result'])))
             else:
                 answer_part = str(meta_result['result'])
 
-        formatted_response = ResponseFormatter.format_response(trace, [])
+        trace_data = meta_result.get('trace', [])
+        # We need a ReasoningTrace object for format_response
+        trace_obj = ReasoningTrace(
+            goal=task,
+            analysis_summary=f"Executed workflow {meta_result.get('policy_id')}",
+            plan=[step.get('node', 'step') for step in trace_data],
+            reflection=meta_result.get('reflection')
+        )
+        formatted_response = ResponseFormatter.format_response(trace_obj, [])
 
         if context.get('use_coordination'):
             # If using multi-agent coordination explicitly
@@ -526,7 +538,7 @@ class IntegratedAgentSystem:
             }
 
         # Format standardized response
-        formatted_response = ResponseFormatter.format_response(trace, [])
+        final_answer = f"Task completed by Meta-Orchestrator. Result: {answer_part}"
 
         return {
             'success': meta_result.get('success', False),
