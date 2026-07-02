@@ -150,6 +150,20 @@ from .world_state import (
     SystemMode,
 )
 
+# WM-V2: Institutional Predictive Planning World Model
+from .v2_core import (
+    WorldModelV2,
+    MarketScenario as V2MarketScenario,
+    PredictiveMarketCore,
+    UnifiedCrossAssetEncoder,
+)
+from .v2_training import (
+    WorldModelTrainer as V2WorldModelTrainer,
+)
+from .v2_adapter import (
+    LegacyWorldModelAdapter,
+)
+
 from .ignorance_score import (
     IgnoranceScoreEngine,
 )
@@ -243,6 +257,13 @@ __all__ = [
     'LiquidityCondition',
     'SystemMode',
     'IgnoranceScoreEngine',
+    # WM-V2
+    'WorldModelV2',
+    'V2MarketScenario',
+    'PredictiveMarketCore',
+    'UnifiedCrossAssetEncoder',
+    'V2WorldModelTrainer',
+    'LegacyWorldModelAdapter',
     # B1 Ceiling-Pushed: Triangulated Consistency
     'ObservationReAnchorer',
     'UncertaintyHorizonGate',

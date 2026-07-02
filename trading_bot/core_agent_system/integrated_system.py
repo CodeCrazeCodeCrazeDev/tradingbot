@@ -116,13 +116,15 @@ class IntegratedAgentSystem:
             'learning_rate': self.config.get('value_lr', 0.001)
         })
         
-        # 5b. World Model
-        from trading_bot.world_model.latent_dynamics import WorldModel
-        self.world_model = WorldModel({
-            'input_dim': self.config.get('market_input_dim', 20),
-            'latent_dim': self.config.get('latent_dim', 64),
-            'hidden_dim': self.config.get('hidden_dim', 128)
-        })
+        # 5b. World Model (V2 - Institutional Predictive Planning)
+        from trading_bot.world_model import WorldModelV2, LegacyWorldModelAdapter
+        asset_dims = self.config.get('asset_dims', {'equities': 20, 'fx': 10, 'macro': 5})
+        latent_dim = self.config.get('latent_dim', 256)
+
+        self.world_model_v2 = WorldModelV2(asset_dims, latent_dim=latent_dim)
+
+        # Use Adapter for legacy compatibility with agents expecting JEPA API
+        self.world_model = LegacyWorldModelAdapter(self.world_model_v2)
 
         # 6. Constitutional Layer
         self.constitutional_layer = ConstitutionalAI({
@@ -196,12 +198,7 @@ class IntegratedAgentSystem:
         await self.constitutional_layer.initialize()
         await self.react_loop.initialize()
         
-        from trading_bot.world_model.latent_dynamics import WorldModel
-        self.world_model = WorldModel({
-            'input_dim': self.config.get('market_input_dim', 20),
-            'latent_dim': self.config.get('latent_dim', 64),
-            'hidden_dim': self.config.get('hidden_dim', 128)
-        })
+        # World Model V2 already initialized in _init_components
 
         self.orchestrator.inject_dependencies(
             policy_network=self.policy_network,
