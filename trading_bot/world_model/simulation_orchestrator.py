@@ -1092,3 +1092,26 @@ def create_runtime_shield(
     )
 
     return shield
+
+# =============================================================================
+# Upgraded AI Immune System Integration
+# =============================================================================
+
+from .immune_system import ImmuneSystem, ImmunityStatus
+
+class AIImmuneSystem(RuntimeShield):
+    """
+    Upgraded Runtime Shield (L10) that acts as an Immune System.
+    """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.immune_core = ImmuneSystem()
+
+    def check_system_integrity(self, context: Dict[str, Any]) -> Tuple[bool, str]:
+        # Wraps the ImmuneSystem.validate_all logic
+        return self.immune_core.validate_all(
+            obs=context.get('obs', {}),
+            latent=context.get('latent', torch.zeros(1, 64)),
+            prediction=context.get('prediction', {}),
+            action=context.get('action')
+        )
