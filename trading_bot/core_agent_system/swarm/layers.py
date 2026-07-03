@@ -139,7 +139,8 @@ class ExpertLayer:
                 try:
                     result = await agent.execute({
                         'operation': 'analyze',
-                        'context': context
+                        'context': context,
+                        'data': context.get('market_state', context)
                     })
 
                     if result.get('success'):

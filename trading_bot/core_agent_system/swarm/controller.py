@@ -3,6 +3,7 @@ import numpy as np
 from typing import Any, Dict, List, Optional
 from .models import SwarmSignal, SwarmConsensus, SwarmLayer, SwarmTaskType
 from .layers import MicroLayer, ExpertLayer
+from ..agent_registry import AgentRole
 from .memory import AgentPerformanceMemory, EvolutionLayer
 
 logger = logging.getLogger(__name__)
@@ -94,10 +95,12 @@ class SwarmController:
 
     async def _validate_risk(self, consensus: SwarmConsensus, context: Dict[str, Any]) -> SwarmConsensus:
         """Mandatory risk validation step"""
-        risk_managers = self.registry.get_agents_by_role('safety')
+        risk_managers = self.registry.get_agents_by_role(AgentRole.SAFETY)
         if not risk_managers:
-            logger.warning("No risk managers found! Defaulting to cautious confidence.")
-            consensus.confidence *= 0.5
+            logger.warning("No risk managers found in swarm controller! Defaulting to cautious confidence.")
+            # Fallback: Apply a dynamic penalty if no safety agents are available
+            safety_penalty = self.config.get('missing_safety_penalty', 0.5)
+            consensus.confidence *= safety_penalty
             return consensus
 
         for rm in risk_managers:
