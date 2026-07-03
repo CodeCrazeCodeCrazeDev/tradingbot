@@ -195,13 +195,6 @@ class IntegratedAgentSystem:
         await self.value_network.initialize()
         await self.constitutional_layer.initialize()
         await self.react_loop.initialize()
-        
-        from trading_bot.world_model.latent_dynamics import WorldModel
-        self.world_model = WorldModel({
-            'input_dim': self.config.get('market_input_dim', 20),
-            'latent_dim': self.config.get('latent_dim', 64),
-            'hidden_dim': self.config.get('hidden_dim', 128)
-        })
 
         self.orchestrator.inject_dependencies(
             policy_network=self.policy_network,
