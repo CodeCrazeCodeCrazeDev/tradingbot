@@ -19,11 +19,11 @@ from typing import Any, Dict, List, Optional
 import redis
 
 try:
-    from trading_bot.autonomous_superintelligence import AutonomousSuperintelligence
-    SUPERINTELLIGENCE_AVAILABLE = True
+    from trading_bot.core_agent_system import IntegratedAgentSystem
+    IAS_AVAILABLE = True
 except ImportError:
-    SUPERINTELLIGENCE_AVAILABLE = False
-    logging.warning("Autonomous Superintelligence not available")
+    IAS_AVAILABLE = False
+    logging.warning("Integrated Agent System not available")
 
 # Configure logging
 logging.basicConfig(
@@ -39,32 +39,29 @@ logger = logging.getLogger(__name__)
 
 class MasterOrchestrator:
     """
-    Master Orchestrator - Coordinates all 5 layers of the trading bot.
-    
-    Layer 1: Core Systems (in main.py)
-    Layer 2: Background Services (separate processes)
-    Layer 3: Scheduled Jobs (nightly/weekly)
-    Layer 4: Coordination (on-demand)
-    Layer 5: Autonomous Superintelligence (self-managing AI)
+    Master Orchestrator - DEPRECATED.
+    Now acts as a lightweight delegator to IntegratedAgentSystem.
     """
     
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
-        self.redis_client = None
-        self.background_processes: Dict[str, multiprocessing.Process] = {}
         self.running = False
         
-        self.superintelligence = None
-        self.superintelligence_enabled = config.get('enable_superintelligence', False)
-        
-        # Initialize Redis connection
-        self._init_redis()
+        # New unified brain
+        if IAS_AVAILABLE:
+            self.ias = IntegratedAgentSystem(config)
+            self.superintelligence = self.ias # Compatibility
+        else:
+            self.ias = None
+            self.superintelligence = None
         
         logger.info("=" * 70)
-        logger.info("MASTER ORCHESTRATOR INITIALIZED")
-        if self.superintelligence_enabled and SUPERINTELLIGENCE_AVAILABLE:
-            logger.info("AUTONOMOUS SUPERINTELLIGENCE: ENABLED")
+        logger.info("MASTER ORCHESTRATOR (DELEGATED) INITIALIZED")
         logger.info("=" * 70)
+
+    def _init_redis(self):
+        """Deprecated."""
+        pass
     
     def _init_redis(self):
         """Initialize Redis connection for IPC."""
@@ -112,38 +109,13 @@ class MasterOrchestrator:
         return systems
     
     # ========================================================================
-    # LAYER 2: BACKGROUND SERVICES
+    # LAYER 2: BACKGROUND SERVICES - Delegated to IAS
     # ========================================================================
     
     def start_background_services(self):
-        """Start Layer 2 background intelligence services."""
-        logger.info("=" * 70)
-        logger.info("LAYER 2: STARTING BACKGROUND SERVICES")
-        logger.info("=" * 70)
-        
-        if not self.redis_client:
-            logger.error("Redis not available - background services disabled")
-            return
-        
-        services = [
-            ('market_student', self._run_market_student),
-            ('eternal_evolution', self._run_eternal_evolution),
-            ('sentiment_analysis', self._run_sentiment_analysis),
-            ('market_monitor', self._run_market_monitor),
-        ]
-        
-        for name, func in services:
-            try:
-                process = multiprocessing.Process(target=func, name=name)
-                process.daemon = True
-                process.start()
-                self.background_processes[name] = process
-                logger.info(f"✓ Started: {name} (PID: {process.pid})")
-            except Exception as e:
-                logger.error(f"✗ Failed to start {name}: {e}")
-        
-        logger.info(f"Background services started: {len(self.background_processes)}")
-        logger.info("=" * 70)
+        """Start background services via IAS."""
+        if self.ias:
+            self.ias.start_background_services()
     
     def _run_market_student(self):
         """Background service: Market Student."""
@@ -460,37 +432,19 @@ class MasterOrchestrator:
     # ========================================================================
     
     async def start_all_async(self, args=None):
-        """Start all layers of the trading bot asynchronously."""
+        """Start all systems via IntegratedAgentSystem."""
         logger.info("\n" + "=" * 70)
-        logger.info("STARTING FULL STACK TRADING BOT")
+        logger.info("STARTING UNIFIED INTEGRATED AGENT SYSTEM")
         logger.info("=" * 70)
         
         self.running = True
-        
-        # Layer 2: Background Services
-        self.start_background_services()
-        
-        # Layer 3: Scheduled Jobs (just setup, actual scheduling via Task Scheduler)
-        self.setup_scheduled_jobs()
-        
-        # Layer 4: Coordination (standby)
-        self.activate_coordination_layer()
-        
-        # Layer 5: Autonomous Superintelligence
-        if self.superintelligence_enabled:
-            await self.start_superintelligence()
+        if self.ias:
+            await self.ias.initialize()
+            asyncio.create_task(self.ias.start())
         
         logger.info("\n" + "=" * 70)
-        logger.info("FULL STACK STARTUP COMPLETE")
+        logger.info("UNIFIED STARTUP INITIATED")
         logger.info("=" * 70)
-        logger.info("\nAll systems operational. Ready for trading.")
-        logger.info("Layer 1 (Core): Start with main.py --use-all-systems")
-        logger.info("Layer 2 (Background): Running")
-        logger.info("Layer 3 (Scheduled): Configured")
-        logger.info("Layer 4 (Coordination): Standby")
-        if self.superintelligence_enabled:
-            logger.info("Layer 5 (Superintelligence): ACTIVE")
-        logger.info("=" * 70 + "\n")
     
     def start_all(self, args=None):
         """Start all layers of the trading bot (synchronous wrapper)."""
@@ -520,17 +474,13 @@ class MasterOrchestrator:
     async def stop_all_async(self):
         """Stop all layers gracefully (async)."""
         logger.info("\n" + "=" * 70)
-        logger.info("SHUTTING DOWN FULL STACK")
+        logger.info("SHUTTING DOWN UNIFIED STACK")
         logger.info("=" * 70)
         
         self.running = False
         
-        # Stop superintelligence first
-        if self.superintelligence:
-            await self.stop_superintelligence()
-        
-        # Stop background services
-        self.stop_background_services()
+        if self.ias:
+            await self.ias.shutdown()
         
         logger.info("=" * 70)
         logger.info("SHUTDOWN COMPLETE")

@@ -11,6 +11,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from pathlib import Path
+import redis
 
 from .master_orchestrator import MasterOrchestrator, SystemContext
 from .meta_orchestrator import MetaOrchestrator
@@ -83,6 +84,21 @@ class IntegratedAgentSystem:
         logger.info("=" * 60)
         logger.info("INTEGRATED AGENT SYSTEM - RESEARCH LAB GRADE")
         logger.info("=" * 60)
+
+    def _init_redis(self):
+        """Initialize Redis connection for IPC."""
+        try:
+            self.redis_client = redis.Redis(
+                host=self.config.get('redis_host', 'localhost'),
+                port=self.config.get('redis_port', 6379),
+                db=0,
+                decode_responses=True
+            )
+            self.redis_client.ping()
+            logger.info("✓ Redis connection established")
+        except Exception as e:
+            logger.warning(f"✗ Redis connection failed: {e}. Background services may be restricted.")
+            self.redis_client = None
     
     def _init_components(self):
         """Initialize all system components"""
@@ -280,6 +296,9 @@ class IntegratedAgentSystem:
         
         logger.info("STARTING INTEGRATED AGENT SYSTEM")
         self.running = True
+
+        # Start Layer 2: Background Services
+        self.start_background_services()
         
         tasks = [
             asyncio.create_task(self._main_loop(), name="main_loop"),
@@ -293,6 +312,46 @@ class IntegratedAgentSystem:
         except Exception as e:
             logger.error(f"Error in system operation: {e}")
             await self.shutdown()
+
+    def start_background_services(self):
+        """Start Layer 2 background intelligence services."""
+        logger.info("Starting background services...")
+
+        services = [
+            ('market_student', run_market_student_service),
+            ('eternal_evolution', run_eternal_evolution_service),
+            ('sentiment_analysis', run_sentiment_analysis_service),
+            ('market_monitor', run_market_monitor_service),
+        ]
+
+        for name, func in services:
+            try:
+                # Use standalone functions to avoid pickling 'self'
+                process = multiprocessing.Process(
+                    target=func,
+                    args=(self.config,),
+                    name=name
+                )
+                process.daemon = True
+                process.start()
+                self.background_processes[name] = process
+                logger.info(f"✓ Started: {name} (PID: {process.pid})")
+            except Exception as e:
+                logger.error(f"✗ Failed to start {name}: {e}")
+
+    def stop_background_services(self):
+        """Stop all background services."""
+        logger.info("Stopping background services...")
+
+        for name, process in self.background_processes.items():
+            if process.is_alive():
+                process.terminate()
+                process.join(timeout=5)
+                if process.is_alive():
+                    process.kill()
+                logger.info(f"✓ Stopped: {name}")
+
+        self.background_processes.clear()
     
     async def _main_loop(self):
         """Main orchestration loop"""
@@ -411,9 +470,14 @@ class IntegratedAgentSystem:
             risk_metrics=risk_metrics
         )
     
+    # ========================================================================
+    # EXECUTION INTERFACE (Standardized)
+    # ========================================================================
+
     async def execute_task(self, task: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         """
-        Execute a task using the research-grade Meta-Orchestrator or USIS.
+        Execute a high-level task using the unified brain.
+        Primary entry point for external callers.
         """
         context = context or {}
         start_time = datetime.now()
@@ -422,10 +486,10 @@ class IntegratedAgentSystem:
         
         # Check for swarm-specific tasks
         if context.get('use_swarm') or 'swarm' in task.lower():
-            logger.info(f"Integrated System routing task to USIS: {task}")
+            logger.info(f"IAS routing task to USIS: {task}")
             return await self.swarm_system.analyze(task, context)
 
-        logger.info(f"Integrated System executing task via Meta-Orchestrator: {task}")
+        logger.info(f"IAS executing task: {task}")
 
         # 1. Use Meta-Orchestrator for self-scaffolding workflow
         meta_result = await self.meta_orchestrator.execute_task(
@@ -505,9 +569,7 @@ class IntegratedAgentSystem:
 
             # Extract final answer from results
             answer_part = "No specific result returned."
-            total_iterations = 0
             if result.get('results'):
-                # Try to find the most relevant result
                 for r in reversed(result['results']):
                     if r.get('result'):
                         answer_part = r['result']
@@ -516,15 +578,9 @@ class IntegratedAgentSystem:
                         answer_part = r['answer']
                         break
 
-                # Sum up iterations if available from subtasks
-                for r in result['results']:
-                    total_iterations += r.get('iterations', 0)
-
-            final_answer = f"Task completed by coordinated team. Result: {answer_part}"
-
             return {
                 'success': result.get('success', False),
-                'answer': final_answer,
+                'answer': f"Task completed by coordinated team. Result: {answer_part}",
                 'coordination_report': result,
                 'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
                 'iterations': len(result.get('results', []))
@@ -540,6 +596,38 @@ class IntegratedAgentSystem:
             'coordination_report': meta_result,
             'iterations': len(meta_result.get('trace', []))
         }
+
+    async def think(self, context: Optional[SystemContext] = None) -> Decision:
+        """
+        Perform a reasoning cycle based on the current context.
+        Returns a strategic Decision object.
+        """
+        if not context:
+            context = await self._gather_context()
+
+        return await self.orchestrator.think(context)
+
+    async def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Process a structured request (JSON/Dict).
+        Maps requests to either execute_task or think based on content.
+        """
+        task = request.get('task') or request.get('instruction')
+        context = request.get('context', {})
+
+        if task:
+            return await self.execute_task(task, context)
+
+        # If no explicit task, perform a general reasoning cycle
+        decision = await self.think()
+        return {
+            'success': True,
+            'decision': decision.to_dict() if hasattr(decision, 'to_dict') else str(decision)
+        }
+
+    # ========================================================================
+    # UTILITIES
+    # ========================================================================
 
     def get_comprehensive_status(self) -> Dict[str, Any]:
         """Get comprehensive system status"""
@@ -595,6 +683,7 @@ class IntegratedAgentSystem:
     async def shutdown(self):
         """Graceful shutdown"""
         self.running = False
+        self.stop_background_services()
         await self.coordination_core.shutdown()
         await self.self_play_loop.shutdown()
         await self.react_loop.shutdown()
@@ -602,6 +691,154 @@ class IntegratedAgentSystem:
         await self.agent_registry.shutdown()
         await self.tool_registry.shutdown()
         await self.memory_system.shutdown()
+
+# ============================================================================
+# STANDALONE BACKGROUND SERVICES (Async Robust)
+# ============================================================================
+
+def _init_redis_for_service(config):
+    """Initialize Redis in child process."""
+    try:
+        import redis
+        client = redis.Redis(
+            host=config.get('redis_host', 'localhost'),
+            port=config.get('redis_port', 6379),
+            db=0,
+            decode_responses=True
+        )
+        client.ping()
+        return client
+    except Exception:
+        return None
+
+def run_market_student_service(config):
+    """Background service: Market Student."""
+    logging.basicConfig(level=logging.INFO)
+    srv_logger = logging.getLogger("Background.MarketStudent")
+
+    async def run_loop():
+        redis_client = _init_redis_for_service(config)
+        try:
+            from trading_bot.market_student import MarketStudentOrchestrator
+            orchestrator = MarketStudentOrchestrator({})
+
+            while True:
+                try:
+                    if redis_client:
+                        trade_data = redis_client.lpop('trade_results')
+                        if trade_data:
+                            import json
+                            trade = json.loads(trade_data)
+                            lesson = await orchestrator.learn_from_trade(trade)
+                            if lesson:
+                                srv_logger.info(f"Insight: {lesson.get('insight', 'Learned')}")
+
+                    await asyncio.sleep(10)
+                except Exception as e:
+                    srv_logger.error(f"Loop error: {e}")
+                    await asyncio.sleep(30)
+        except ImportError:
+            srv_logger.error("Market Student not available")
+
+    try:
+        asyncio.run(run_loop())
+    except KeyboardInterrupt:
+        pass
+
+def run_eternal_evolution_service(config):
+    """Background service: Eternal Evolution."""
+    logging.basicConfig(level=logging.INFO)
+    srv_logger = logging.getLogger("Background.EternalEvolution")
+
+    async def run_loop():
+        redis_client = _init_redis_for_service(config)
+        try:
+            from trading_bot.eternal_evolution import EternalEvolutionOrchestrator
+            orchestrator = EternalEvolutionOrchestrator({})
+            await orchestrator.start()
+
+            while True:
+                try:
+                    await asyncio.sleep(3600)
+                except Exception as e:
+                    srv_logger.error(f"Loop error: {e}")
+                    await asyncio.sleep(300)
+        except ImportError:
+            srv_logger.error("Eternal Evolution not available")
+        except Exception as e:
+            srv_logger.error(f"Initialization error: {e}")
+
+    try:
+        asyncio.run(run_loop())
+    except KeyboardInterrupt:
+        pass
+
+def run_sentiment_analysis_service(config):
+    """Background service: Sentiment Analysis."""
+    logging.basicConfig(level=logging.INFO)
+    srv_logger = logging.getLogger("Background.Sentiment")
+
+    async def run_loop():
+        redis_client = _init_redis_for_service(config)
+        try:
+            from trading_bot.sentiment import SentimentAnalyzer
+            analyzer = SentimentAnalyzer()
+
+            while True:
+                try:
+                    symbols = config.get('trading', {}).get('symbols', ['EURUSD', 'GBPUSD', 'USDJPY'])
+                    for symbol in symbols:
+                        sentiment = analyzer.analyze_symbol(symbol)
+                        if sentiment and redis_client:
+                            import json
+                            redis_client.setex(f'sentiment:{symbol}', 300, json.dumps(sentiment))
+
+                    await asyncio.sleep(300)
+                except Exception as e:
+                    srv_logger.error(f"Loop error: {e}")
+                    await asyncio.sleep(60)
+        except ImportError:
+            srv_logger.error("Sentiment Analyzer not available")
+
+    try:
+        asyncio.run(run_loop())
+    except KeyboardInterrupt:
+        pass
+
+def run_market_monitor_service(config):
+    """Background service: Market Intelligence Monitor."""
+    logging.basicConfig(level=logging.INFO)
+    srv_logger = logging.getLogger("Background.MarketMonitor")
+
+    async def run_loop():
+        redis_client = _init_redis_for_service(config)
+        try:
+            from trading_bot.market_intelligence import MarketDataMonitor
+            monitor = MarketDataMonitor()
+
+            symbols = config.get('trading', {}).get('symbols', ['EURUSD', 'GBPUSD', 'USDJPY'])
+            for symbol in symbols:
+                monitor.start_monitoring(symbol=symbol, timeframe='M15')
+
+            while True:
+                try:
+                    for symbol in symbols:
+                        state = monitor.get_current_state(symbol)
+                        if state and redis_client:
+                            import json
+                            redis_client.setex(f'market_state:{symbol}', 60, json.dumps(state))
+
+                    await asyncio.sleep(60)
+                except Exception as e:
+                    srv_logger.error(f"Loop error: {e}")
+                    await asyncio.sleep(30)
+        except ImportError:
+            srv_logger.error("Market Intelligence not available")
+
+    try:
+        asyncio.run(run_loop())
+    except KeyboardInterrupt:
+        pass
 
 async def main():
     import signal
