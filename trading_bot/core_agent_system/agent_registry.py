@@ -180,9 +180,9 @@ class BaseAgent(ABC):
                 'operation': operation,
                 'task_id': task_id,
                 'description': description,
-                'context': metadata,
-                'data': metadata,
-                'metadata': metadata
+                'context': metadata if isinstance(metadata, dict) else {'task_data': metadata},
+                'data': metadata if isinstance(metadata, dict) else {'task_data': metadata},
+                'metadata': metadata if isinstance(metadata, dict) else {'task_data': metadata}
             }
 
             result = await self.execute(action)
@@ -647,6 +647,8 @@ class PlannerAgent(BaseAgent):
             return await self._generate_proposal(context)
         elif operation == 'analyze':
             data = action.get('data', {})
+            if not data or len(data) <= 1: # Might only have task_id or similar
+                data = action.get('context', {}).get('market_state', action.get('context', {}))
             return await self._analyze(data)
         elif operation == 'execute_task':
             # For general tasks, we can try to propose based on metadata
@@ -865,6 +867,12 @@ class EvaluatorAgent(BaseAgent):
         operation = action.get('operation', 'evaluate')
         
         if operation in ['evaluate', 'evaluation', 'analyze', 'reporting', 'report']:
+            # Robust data gathering for evaluation
+            if operation == 'analyze' and (not action.get('trade') or not action.get('outcome')):
+                data = action.get('data', {})
+                if not data or len(data) <= 1:
+                    data = action.get('context', {})
+                return await self._evaluate(data)
             return await self._evaluate(action)
         elif operation in ['backtest', 'backtesting']:
             return await self._backtest(action)
@@ -942,6 +950,12 @@ class ResearchAgent(BaseAgent):
         operation = action.get('operation', 'research')
         
         if operation in ['research', 'analyze', 'analysis']:
+            # Robust data gathering for research/analysis
+            if operation == 'analyze' and not action.get('topic'):
+                data = action.get('data', {})
+                if not data or len(data) <= 1:
+                    data = action.get('context', {})
+                return await self._research(data)
             return await self._research(action)
         elif operation in ['discover', 'discovery']:
             return await self._discover(action)
@@ -1007,7 +1021,7 @@ class SafetyAgent(BaseAgent):
         """Execute safety check"""
         operation = action.get('operation', 'check')
         
-        if operation == 'check':
+        if operation in ['check', 'analyze']:
             return await self._safety_check(action)
         elif operation == 'verify':
             return await self._verify(action)

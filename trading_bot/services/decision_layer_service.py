@@ -27,19 +27,24 @@ class DecisionLayerService(BaseService):
     SERVICE_NAME = "decision_layer"
     SERVICE_TYPE = "decision"
     PRIORITY = ServicePriority.HIGH
-    DEPENDENCIES = ["analysis", "risk", "msos"]
+    DEPENDENCIES = ["integrated_brain"]
     
     def __init__(self, config: Optional[Dict] = None):
         super().__init__(config)
         self._interval: float = config.get('interval', 30.0) if config else 30.0
         self._task: Optional[asyncio.Task] = None
-        self._decision_engine = None
+        self._brain_service = None
         
     async def start(self) -> None:
         self._running = True
-        await self._load_components()
+
+        # Get reference to the brain service
+        registry = self.get_registry()
+        if registry:
+            self._brain_service = registry.get_service("integrated_brain")
+
         self._task = asyncio.create_task(self._run_loop())
-        logger.info("DecisionLayerService started")
+        logger.info("DecisionLayerService started (Consolidated to IntegratedBrain)")
     
     async def stop(self) -> None:
         self._running = False
@@ -70,6 +75,15 @@ class DecisionLayerService(BaseService):
     async def _run_loop(self) -> None:
         while self._running:
             try:
+                if self._brain_service:
+                    # Periodically request top-level decision from the brain
+                    task_desc = "Evaluate overall market state and propose next strategic action"
+                    result = await self._brain_service.execute_task(task_desc)
+                    logger.debug(f"Strategic update: {result.get('success')}")
+
                 await asyncio.sleep(self._interval)
             except asyncio.CancelledError:
                 break
+            except Exception as e:
+                logger.error(f"Decision loop error: {e}")
+                await asyncio.sleep(self._interval)

@@ -62,6 +62,7 @@ from trading_bot.background import (
     AdaptiveLearningService, SystemHealthService,
     WorkflowEngine, Workflow, WorkflowStep
 )
+from trading_bot.core_agent_system import IntegratedAgentSystem
 
 logger = logging.getLogger(__name__)
 
@@ -211,8 +212,13 @@ class TradingBot:
         """Initialize all components and services"""
         self.logger.info("=" * 60)
         self.logger.info("INITIALIZING ALPHAALGO TRADING BOT")
-        self.logger.info("Event-Driven Service Architecture")
+        self.logger.info("Unified Integrated Agent Architecture")
         self.logger.info("=" * 60)
+
+        # Initialize the Integrated Agent System (Main Brain)
+        self.ias = IntegratedAgentSystem(self.config)
+        await self.ias.initialize()
+        self.logger.info("✓ Integrated Agent System (Brain) ready")
         
         # Initialize event bus
         self.logger.info("Initializing Event Bus...")
@@ -280,6 +286,9 @@ class TradingBot:
         self.logger.info("Initializing Background Services...")
         self.background_manager = create_background_manager(self._get_service_config())
         
+        # Inject IAS into background manager for unified orchestration
+        self.background_manager.ias = self.ias
+
         # Subscribe to critical events
         self._setup_event_handlers()
         
@@ -385,7 +394,7 @@ class TradingBot:
         self.logger.info("=" * 60)
         self.logger.info(f"STARTING TRADING BOT - {mode.upper()} MODE")
         self.logger.info(f"Symbols: {', '.join(symbols)}")
-        self.logger.info("Architecture: Event-Driven Services")
+        self.logger.info("Architecture: Unified Integrated Agent System")
         self.logger.info("=" * 60)
         
         if mode == 'live':
@@ -393,6 +402,9 @@ class TradingBot:
             await asyncio.sleep(5)
         
         try:
+            # Start Integrated Agent System
+            asyncio.create_task(self.ias.start())
+
             # Start background services
             await self.background_manager.start()
             
