@@ -8,12 +8,13 @@ patterns from DeepMind, OpenAI, and Anthropic.
 import asyncio
 import logging
 import uuid
+import multiprocessing
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from pathlib import Path
 import redis
 
-from .master_orchestrator import MasterOrchestrator, SystemContext
+from .master_orchestrator import MasterOrchestrator, SystemContext, Decision
 from .meta_orchestrator import MetaOrchestrator
 from trading_bot.neuros_evolution.controlled_objects import ControlledObjectRegistry
 from .react_loop import ReActLoop
@@ -80,6 +81,7 @@ class IntegratedAgentSystem:
         # State
         self.running = False
         self.initialized = False
+        self.background_processes = {}
         
         logger.info("=" * 60)
         logger.info("INTEGRATED AGENT SYSTEM - RESEARCH LAB GRADE")
