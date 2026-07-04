@@ -497,12 +497,15 @@ class AutonomousController:
 
 class MasterOrchestrator:
     """
-    Master coordinator for Layer 6: Orchestration
+    DEPRECATED - UCA-2026 MANDATE.
+    This Layer 6 Orchestrator is part of the fragmented legacy system.
+    All orchestration must be centralized in the Cognitive System Controller (CSC).
     
     Coordinates all layers and manages the complete trading system
     """
     
     def __init__(self, config: Optional[Dict] = None):
+        logger.warning("DEPRECATION WARNING: Layer 6 MasterOrchestrator is deprecated. Use IntegratedAgentSystem (CSC).")
         self.config = config or {}
         
         # Initialize components

@@ -56,7 +56,10 @@ class Position:
 
 class TradingOrchestrator:
     """
-    Central orchestrator for trading operations
+    DEPRECATED - UCA-2026 MANDATE.
+    This class is part of the fragmented legacy orchestration layer.
+    All trading operations must be routed through the Cognitive System Controller (CSC)
+    in trading_bot/core_agent_system/integrated_system.py.
     
     Coordinates:
     - Signal generation
@@ -67,6 +70,7 @@ class TradingOrchestrator:
     """
     
     def __init__(self, config: Dict[str, Any]):
+        logger.warning("DEPRECATION WARNING: TradingOrchestrator is deprecated. Use IntegratedAgentSystem (CSC).")
         self.config = config
         self.mode = TradingMode(config.get('trading', {}).get('mode', 'paper'))
         

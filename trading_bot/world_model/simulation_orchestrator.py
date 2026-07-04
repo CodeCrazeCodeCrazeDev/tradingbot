@@ -32,7 +32,7 @@ import multiprocessing as mp
 from ..a2a import A2AMessageBus
 from ..world2agent import World2AgentBridge
 from .self_play_engine import SelfPlayEngine, TradingAgent, create_self_play_engine
-from .counterfactual_engine import CounterfactualEngine, create_counterfactual_engine
+from .counterfactual_engine import CounterfactualEngine
 from .synthetic_data import (
     SyntheticMarketGenerator, MultiAgentMarketSimulator,
     SyntheticDataQualityScorer, MarketRegime, MarketScenario

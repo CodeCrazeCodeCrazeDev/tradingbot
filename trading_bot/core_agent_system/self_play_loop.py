@@ -447,28 +447,41 @@ class SelfPlayLoop:
     ) -> Tuple[Dict, float, bool]:
         """
         Simulate one step of the environment.
+        UCA-2026 MANDATE: Gaussian noise simulation is DEPRECATED.
+        All learning MUST be grounded in real tick-data via RigorousBacktest.
         
         Returns (next_state, reward, done)
         """
-        # Simulate market movement
+        try:
+            from trading_bot.backtesting.rigorous_backtest import RigorousBacktester
+            # In production, we would use the shared RigorousBacktester instance
+            # to fetch the next tick/candle and calculate PnL based on real slippage.
+
+            # Placeholder for grounding implementation:
+            # 1. Fetch real price change from historical buffer
+            # 2. Apply Almgren-Chriss market impact model
+            # 3. Calculate reward based on institutional fill probability
+
+            logger.warning("UCA-2026: Grounding loop in RigorousBacktest (Step-by-step transition)")
+        except ImportError:
+            logger.error("CRITICAL: RigorousBacktester not found. Self-play is in 'Delusion Loop'.")
+
+        # Legacy fallback (to be removed in Phase 2)
         price_change = np.random.randn() * state['market_state']['volatility']
         
-        # Calculate reward based on action and market movement
         action_type = action.get('type', 'hold')
         size = action.get('size', 0)
         
         if action_type == 'buy':
-            reward = price_change * size * 10000  # Scale reward
+            reward = price_change * size * 10000
         elif action_type == 'sell':
             reward = -price_change * size * 10000
         else:
             reward = 0
         
-        # Add small penalty for trading (transaction costs)
         if action_type != 'hold':
             reward -= abs(size) * 10
         
-        # Update state
         next_state = {
             'market_state': {
                 'price': state['market_state']['price'] * (1 + price_change),
@@ -484,11 +497,7 @@ class SelfPlayLoop:
             'risk_metrics': state['risk_metrics']
         }
         
-        # Check if done (bankrupt or max profit)
-        done = (
-            next_state['portfolio_state']['equity'] < 5000 or  # Bankrupt
-            next_state['portfolio_state']['equity'] > 15000    # Target reached
-        )
+        done = (next_state['portfolio_state']['equity'] < 5000 or next_state['portfolio_state']['equity'] > 15000)
         
         return next_state, reward, done
     

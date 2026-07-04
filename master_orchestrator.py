@@ -40,18 +40,21 @@ logger = logging.getLogger(__name__)
 class MasterOrchestrator:
     """
     Master Orchestrator - DEPRECATED.
-    Now acts as a lightweight delegator to IntegratedAgentSystem.
+    UCA-2026 MANDATE: This legacy class acts as a lightweight shim for backward
+    compatibility. All core operations MUST delegate to IntegratedAgentSystem (CSC).
     """
     
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
         self.running = False
+        self.background_processes = {} # Initialize for compatibility
         
-        # New unified brain
+        # Unified Brain (CSC)
         if IAS_AVAILABLE:
             self.ias = IntegratedAgentSystem(config)
             self.superintelligence = self.ias # Compatibility
         else:
+            logger.error("CRITICAL: IntegratedAgentSystem (CSC) missing. UCA-2026 REQUIRES IAS.")
             self.ias = None
             self.superintelligence = None
         

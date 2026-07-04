@@ -24,22 +24,27 @@ from .latent_dynamics import (
     LatentDynamicsModel,
     RewardPredictor,
     # L1: Multimodal Perception
-    StreamModality,
-    MultimodalFrame,
-    TemporalSegmentNetwork,
-    SurpriseReservoir,
-    MultimodalPerceptionEncoder,
+    # StreamModality, # Removed
+    # MultimodalFrame, # Removed
+    # TemporalSegmentNetwork, # Removed
+    # SurpriseReservoir, # Removed
+    # MultimodalPerceptionEncoder, # Removed
     # L3: World Model Ensemble
-    JEPALatentPredictor,
-    FastRSSMModel,
-    JumpMacroTransitionModel,
-    MoEGatingNetwork,
-    EnsembleWorldModel,
+    # JEPALatentPredictor, # Removed
+    # FastRSSMModel, # Moved to latent_dynamics_utils
+    # JumpMacroTransitionModel, # Removed
+    # MoEGatingNetwork, # Removed
+    # EnsembleWorldModel, # Moved to latent_dynamics_utils
     # B1 Ceiling-Pushed: Triangulated Consistency
     ObservationReAnchorer,
     UncertaintyHorizonGate,
     MacroActionHierarchy,
     LongHorizonDistiller,
+)
+
+from .latent_dynamics_utils import (
+    FastRSSMModel,
+    EnsembleWorldModel,
 )
 
 # L7 + L8: Imagination-Based Planning
@@ -75,21 +80,21 @@ from .imagination import (
 from .counterfactual_engine import (
     CounterfactualEngine,
     # L2: Object-Centric Scene State
-    EdgeType,
-    ProbabilisticEdge,
-    InterventionOperator,
-    ObjectSlot,
-    ObjectSceneGraph,
-    SlotAttentionEncoder,
-    RelationalGraphNetwork,
+    # EdgeType, # Removed
+    # ProbabilisticEdge, # Removed
+    # InterventionOperator, # Removed
+    # ObjectSlot, # Removed
+    # ObjectSceneGraph, # Removed
+    # SlotAttentionEncoder, # Removed
+    # RelationalGraphNetwork, # Removed
     # L5: Counterfactual Simulator
-    RolloutOutput,
-    CounterfactualSimulator,
-    CausalReasoningModule,
+    # RolloutOutput, # Removed
+    # CounterfactualSimulator, # Removed
+    # CausalReasoningModule, # Removed
     # B2 Ceiling-Pushed: Intervention Targets, Invariance, Active Probing
-    InterventionTargetSelector,
-    EnvironmentInvarianceTester,
-    ActiveProbingLoop,
+    # InterventionTargetSelector, # Removed
+    # EnvironmentInvarianceTester, # Removed
+    # ActiveProbingLoop, # Removed
 )
 
 # L4 + L6: Experience Replay (Belief State + Value/Curiosity)
@@ -187,7 +192,7 @@ __all__ = [
     'SimulationMode',
     'SimulationResult',
     # L1: Multimodal Perception
-    'StreamModality',
+    # 'StreamModality',
     'MultimodalFrame',
     'TemporalSegmentNetwork',
     'SurpriseReservoir',

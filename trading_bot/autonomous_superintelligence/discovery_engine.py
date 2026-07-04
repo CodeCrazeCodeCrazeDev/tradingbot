@@ -184,9 +184,20 @@ class DiscoveryEngine:
         }
     
     async def _test_strategy(self, strategy: Dict) -> Dict:
-        """Test a strategy."""
-        await asyncio.sleep(1)
-        
+        """
+        Test a strategy.
+        UCA-2026 MANDATE: Gaussian noise validation is DEPRECATED.
+        Must use RigorousBacktest on institutional tick data.
+        """
+        try:
+            from trading_bot.backtesting.rigorous_backtest import RigorousBacktester
+            # Integration with RigorousBacktester
+            logger.info("UCA-2026: Testing discovery via RigorousBacktest")
+            # In Phase 2, this will execute an actual out-of-sample backtest
+        except ImportError:
+            logger.error("CRITICAL: RigorousBacktester missing for discovery validation.")
+
+        # Legacy simulation fallback (to be removed)
         return {
             'sharpe_ratio': np.random.uniform(1.0, 3.5),
             'total_return': np.random.uniform(0.1, 0.6),

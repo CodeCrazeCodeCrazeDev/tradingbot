@@ -3,7 +3,10 @@ CoreOrchestrator - Auto-generated stub module.
 """
 
 class CoreOrchestrator:
-    """Stub implementation of CoreOrchestrator."""
+    """
+    DEPRECATED - UCA-2026 MANDATE.
+    Legacy stub orchestrator.
+    """
     
     def __init__(self, *args, **kwargs):
         """Initialize CoreOrchestrator."""
