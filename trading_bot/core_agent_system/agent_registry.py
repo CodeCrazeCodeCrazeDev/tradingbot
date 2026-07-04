@@ -24,6 +24,7 @@ from enum import Enum
 from abc import ABC, abstractmethod
 import uuid
 from trading_bot.execution.trade_executor import TradeExecutor, Order, OrderType, OrderSide
+from trading_bot.core.unified_registry import registry
 
 logger = logging.getLogger(__name__)
 
@@ -309,7 +310,10 @@ class AgentRegistry:
         self.config = config
         self.object_registry = object_registry
         
-        # Agent storage
+        # Use Unified Registry for storage
+        self.unified_registry = registry
+
+        # Internal cache for fast lookup (subset of Unified Registry)
         self.agents: Dict[str, BaseAgent] = {}
         
         # Capability index for fast lookup
@@ -329,7 +333,7 @@ class AgentRegistry:
         
         self.running = False
         
-        logger.info("Agent Registry initialized")
+        logger.info("Agent Registry initialized (bridged to Unified Registry)")
     
     async def initialize(self):
         """Initialize the registry"""
@@ -364,7 +368,19 @@ class AgentRegistry:
         if agent.status == AgentStatus.INITIALIZING:
             await agent.initialize()
         
-        # Store agent
+        # Store in Unified Registry
+        self.unified_registry.register(
+            name=agent.agent_id,
+            component=agent,
+            component_type="agent",
+            metadata={
+                "name": agent.name,
+                "role": agent.role.value,
+                "capabilities": [c.name for c in agent.capabilities]
+            }
+        )
+
+        # Update local cache for backward compatibility
         self.agents[agent.agent_id] = agent
         
         # Index by role

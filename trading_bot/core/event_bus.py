@@ -19,6 +19,7 @@ from enum import Enum
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Set
 from uuid import uuid4
 import json
+from trading_bot.core.unified_event_bus import decision_bus, UnifiedEvent, EventPriority as UnifiedEventPriority
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +92,7 @@ class EventBus:
     
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
+        self.unified_bus = decision_bus
         self._subscribers: Dict[str, List[Subscription]] = defaultdict(list)
         self._event_queue: asyncio.PriorityQueue = asyncio.PriorityQueue()
         self._dead_letter_queue: List[Event] = []
@@ -100,7 +102,7 @@ class EventBus:
         self._processor_task: Optional[asyncio.Task] = None
         self._lock = asyncio.Lock()
         
-        logger.info("EventBus initialized")
+        logger.info("EventBus initialized (bridged to UnifiedDecisionBus)")
     
     async def start(self) -> None:
         """Start event processing"""
@@ -156,7 +158,20 @@ class EventBus:
     
     async def publish(self, event: Event) -> None:
         """Publish an event"""
-        # Add to queue with priority (negative for max-heap behavior)
+        # Forward to Unified Decision Bus
+        unified_event = UnifiedEvent(
+            event_type=event.event_type,
+            payload=event.payload,
+            source=event.source,
+            event_id=event.event_id,
+            timestamp=event.timestamp,
+            priority=UnifiedEventPriority[event.priority.name],
+            correlation_id=event.correlation_id,
+            metadata=event.metadata
+        )
+        await self.unified_bus.publish(unified_event)
+
+        # Local processing for legacy compatibility
         await self._event_queue.put((-event.priority.value, event.timestamp, event))
         logger.debug(f"Event published: {event.event_type} from {event.source}")
     
