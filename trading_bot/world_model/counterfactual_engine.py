@@ -100,3 +100,7 @@ class CounterfactualEngine:
         ]
         return [self.simulate_what_if(trade, i) for i in interventions]
 
+
+def create_counterfactual_engine(causal_model=None) -> CounterfactualEngine:
+    """Factory function for CounterfactualEngine"""
+    return CounterfactualEngine(causal_model=causal_model)
