@@ -32,33 +32,12 @@ from .world_state import (
     LiquidityCondition,
     SystemMode,
 )
-from .ignorance_score import (
-    IgnoranceScoreEngine,
-)
-from .uncertainty_engine import (
-    UncertaintyEngine,
-)
 
 # Simulation and Planning (Canonical V2-compatible)
 from .imagination import (
     ImaginationPlanner,
     PlanResult,
     CEMPlanner,
-)
-from .simulation_orchestrator import (
-    SimulationOrchestrator,
-    SimulationConfig,
-    SimulationMode,
-    SimulationResult,
-)
-
-# Synthetic Data Generation
-from .synthetic_data import (
-    SyntheticMarketGenerator,
-    MarketRegime,
-    WorldFabricSimulator,
-    CurriculumLevel,
-    DomainRandomizationConfig,
 )
 
 # Experience and Memory
@@ -87,24 +66,11 @@ __all__ = [
     'VolatilityRegime',
     'LiquidityCondition',
     'SystemMode',
-    'IgnoranceScoreEngine',
-    'UncertaintyEngine',
 
     # Planning and Orchestration
     'ImaginationPlanner',
     'PlanResult',
     'CEMPlanner',
-    'SimulationOrchestrator',
-    'SimulationConfig',
-    'SimulationMode',
-    'SimulationResult',
-
-    # Environment and Data
-    'SyntheticMarketGenerator',
-    'MarketRegime',
-    'WorldFabricSimulator',
-    'CurriculumLevel',
-    'DomainRandomizationConfig',
 
     # Learning and Memory
     'ExperienceReplayBuffer',
