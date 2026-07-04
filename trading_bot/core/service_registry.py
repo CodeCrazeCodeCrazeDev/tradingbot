@@ -17,6 +17,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Type
 from uuid import uuid4
+from trading_bot.core.unified_registry import registry
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +120,7 @@ class ServiceRegistry:
     
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
+        self.unified_registry = registry
         self._services: Dict[str, ServiceInfo] = {}
         self._service_types: Dict[str, List[str]] = {}
         self._event_bus = None
@@ -126,7 +128,7 @@ class ServiceRegistry:
         self._health_task: Optional[asyncio.Task] = None
         self._lock = asyncio.Lock()
         
-        logger.info("ServiceRegistry initialized")
+        logger.info("ServiceRegistry initialized (bridged to Unified Registry)")
     
     def set_event_bus(self, event_bus) -> None:
         """Set event bus for service communication"""
@@ -147,6 +149,18 @@ class ServiceRegistry:
             instance=service,
         )
         
+        # Store in Unified Registry
+        self.unified_registry.register(
+            name=service.SERVICE_NAME,
+            component=service,
+            component_type="service",
+            dependencies=dependencies or service.DEPENDENCIES,
+            metadata={
+                "type": service.SERVICE_TYPE,
+                "priority": service.PRIORITY.name
+            }
+        )
+
         self._services[service.SERVICE_NAME] = service_info
         
         # Track by type

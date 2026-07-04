@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 import json
 from datetime import datetime
+from trading_bot.core.unified_registry import registry
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,7 @@ class ModuleRegistry:
     
     def __init__(self, base_path: Optional[str] = None):
         self.base_path = Path(base_path) if base_path else Path(__file__).parent.parent
+        self.unified_registry = registry
         self.modules: Dict[str, ModuleInfo] = {}
         self.category_map = self._build_category_map()
         self._discovery_complete = False
@@ -214,6 +216,18 @@ class ModuleRegistry:
                         module_info.import_error = str(e)
                     
                     self.modules[item.name] = module_info
+
+                    # Store in Unified Registry
+                    self.unified_registry.register(
+                        name=item.name,
+                        component=module_info,
+                        component_type="module",
+                        dependencies=list(module_info.dependencies),
+                        metadata={
+                            "category": category.value,
+                            "path": str(item)
+                        }
+                    )
         
         self._discovery_complete = True
         logger.info(f"Discovered {discovered_count} modules total")
