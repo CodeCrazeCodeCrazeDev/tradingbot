@@ -55,6 +55,15 @@ class TradeAction(Enum):
 
 
 @dataclass
+class DebateTopic:
+    """Topic for debate."""
+    id: str
+    content: str
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    timestamp: datetime = field(default_factory=datetime.now)
+
+
+@dataclass
 class MarketContext:
     """Market context for agent analysis."""
     symbol: str
@@ -792,23 +801,32 @@ class MultiAgentDebateSystem:
             logger.error(f"Error in __init__: {e}")
             raise
     
-    def debate(self, context: MarketContext) -> FinalDecision:
+    async def debate(self, topic: Any, context: Optional[MarketContext] = None) -> FinalDecision:
         """
         Run debate and produce final decision.
         
         Args:
+            topic: Debate topic
             context: Market context
             
         Returns:
             FinalDecision from Head AI
         """
         try:
+            # Handle case where only context is provided (backward compatibility)
+            if context is None and isinstance(topic, MarketContext):
+                context = topic
+
+            if context is None:
+                raise ValueError("MarketContext is required for debate")
+
             debate_rounds = []
             all_arguments = []
         
             # Initial arguments
             round_args = []
             for agent in self.agents:
+                # Wrap analyze in a way that could be async in the future
                 arg = agent.analyze(context)
                 round_args.append(arg)
                 all_arguments.append(arg)
@@ -921,6 +939,11 @@ class MultiAgentDebateSystem:
         }
 
 
+# Aliases for Hivemind compatibility
+DebateResult = FinalDecision
+DebateAgent = TradingAgent
+
+
 # Factory function
 def create_debate_system(config: Optional[Dict] = None) -> MultiAgentDebateSystem:
     """Create MultiAgentDebateSystem instance."""
@@ -928,7 +951,7 @@ def create_debate_system(config: Optional[Dict] = None) -> MultiAgentDebateSyste
 
 
 # Example usage
-if __name__ == "__main__":
+async def run_example():
     system = create_debate_system()
     
     print("=" * 60)
@@ -965,7 +988,7 @@ if __name__ == "__main__":
     print("DEBATE IN PROGRESS...")
     print("=" * 60)
     
-    decision = system.debate(context)
+    decision = await system.debate(context)
     
     print("\n" + "=" * 60)
     print("FINAL DECISION")
@@ -993,3 +1016,7 @@ if __name__ == "__main__":
             print(f"  - {view}")
     
     print(f"\nReasoning: {decision.reasoning}")
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(run_example())
