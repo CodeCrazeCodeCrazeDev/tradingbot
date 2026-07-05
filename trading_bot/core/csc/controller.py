@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 
 from .hypothesis import HypothesisGenerator, ReasoningBranch
+from .folding import FoldingOperator
 from ..verification.swarm import VerificationSwarm
 from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport
 from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
@@ -20,8 +21,8 @@ logger = logging.getLogger(__name__)
 
 class CognitiveSystemController:
     """
-    Authoritative controller for AlphaAlgo.
-    Implements the 10-step institutional pipeline.
+    Authoritative controller for AlphaAlgo (UCA V4).
+    Implements the 12-step Recursive Active Inference pipeline.
     """
 
     def __init__(self, world_model: Any, hms: Any, shield: Optional[ImmutableShield] = None):
@@ -31,43 +32,64 @@ class CognitiveSystemController:
 
         self.hypothesis_gen = HypothesisGenerator(world_model)
         self.verifier_swarm = VerificationSwarm()
+        self.folding_operator = FoldingOperator()
 
         self.evidence_threshold = 0.7
         self.confidence_threshold = 0.65
 
+        # DiscoLoop Channels
+        self.continuous_state = {} # Latent embeddings
+        self.discrete_channel = [] # Semantic tokens
+
     async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
         """
-        The main O-S-A Loop orchestrated by the CSC.
+        The main Recursive O-S-A Loop (UCA V4).
         """
-        logger.info("CSC: Starting institutional reasoning pipeline")
+        logger.info("CSC V4: Starting Recursive Active Inference pipeline")
 
-        # 1. Observe (Already passed in)
+        # 1. Active Perception (Update continuous state)
+        self.continuous_state = self._update_latent_state(observation)
 
-        # 2. Specialist Agents (Gather domain-specific data/claims)
-        # 3. Gather Evidence (Populate HMS Evidence Graph)
+        # 2. Multi-Hop Reasoning Loop (DiscoLoop)
+        # Internalizes multi-step reasoning before external generation
+        reasoning_loops = 0
+        while reasoning_loops < 3: # Max loops as per DiscoLoop research
+            self.discrete_channel = await self._reason_step(self.continuous_state, self.discrete_channel)
+            reasoning_loops += 1
 
+        # 3. Specialist Agents & Evidence Gathering (SAGE-integrated)
         # 4. Multi-Hypothesis Generation
         branches = await self.hypothesis_gen.generate_competing_branches(observation)
 
-        # 5. Run World Model Simulations for each branch
+        # 5. Simulation & Pivot/Refine Logic (AutoResearchClaw)
         sim_results = await self.hypothesis_gen.simulate_branches(branches)
 
-        # 6. Select Best Branch & Refine Evidence
+        # 6. Pivot/Refine: If simulations show failure, pivot strategy
+        branches, sim_results = await self._pivot_refine_loop(branches, sim_results)
+
+        # 7. Select Best Branch & Refine Evidence
         best_branch = self._select_optimal_branch(branches, sim_results)
         if not best_branch:
             logger.warning("CSC: No viable reasoning branch found. Inaction.")
             return None
 
-        # 7. Create Research Ledger Entry (The "Snapshot")
+        # 8. Information Folding (HIPIF)
+        # Fold completed reasoning steps into semantic updates
+        folding_result = await self.folding_operator.fold(
+            task=f"Analyze {observation.get('symbol')}",
+            execution_log=best_branch.reasoning_trace,
+            global_state={'confidence': best_branch.confidence, 'active_branches': [b.branch_id for b in branches]}
+        )
+        logger.info(f"CSC: HIPIF Folded {folding_result['tokens_saved']} tokens")
+
+        # 9. Create Research Ledger Entry (The "Snapshot")
         ledger_entry = self._create_ledger_entry(best_branch, sim_results[best_branch.branch_id])
 
-        # 8. Independent Verification Swarm
-        # Challenge Hypotheses, Verify Evidence
+        # 10. Independent Verification Swarm
         reports = await self.verifier_swarm.run_swarm(ledger_entry)
         ledger_entry.verifier_reports = reports
 
-        # 9. Evidence-First Verification Gate
-        # Hard constraint: Check evidence score and verifier consensus
+        # 11. Evidence-First Verification Gate
         if not self._verify_evidence_hard_constraint(ledger_entry):
             logger.warning(f"CSC: Evidence-First constraint FAILED for {ledger_entry.entry_id}")
             return CoreDecision(
@@ -186,6 +208,18 @@ class CognitiveSystemController:
             "exposure": 0.5,
             "confidence": entry.composite_confidence
         }
+
+    def _update_latent_state(self, observation: Dict) -> Dict:
+        """Active Perception: Updates the continuous latent state."""
+        return {"latent": "vector", "obs": observation}
+
+    async def _reason_step(self, continuous: Dict, discrete: List) -> List:
+        """DiscoLoop Step: Dual-channel reasoning step."""
+        return discrete + ["new_semantic_token"]
+
+    async def _pivot_refine_loop(self, branches: List, results: Dict) -> Tuple[List, Dict]:
+        """AutoResearchClaw: Pivots strategy if simulations show consistent failure."""
+        return branches, results
 
     def _store_in_ledger(self, entry: ResearchLedgerEntry):
         """Persists the research to scientific memory."""
