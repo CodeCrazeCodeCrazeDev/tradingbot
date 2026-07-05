@@ -25,6 +25,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC, abstractmethod
 import uuid
+from trading_bot.core.csc.folding import FoldingOperator
 
 logger = logging.getLogger(__name__)
 
@@ -189,6 +190,9 @@ class ReActLoop:
         self.max_iterations = max_iterations
         self.reflection_threshold = reflection_threshold
         
+        # HIPIF: Information Folding Operator
+        self.folding_operator = FoldingOperator()
+
         # Trace storage
         self.traces: List[ReActTrace] = []
         self.current_trace: Optional[ReActTrace] = None
@@ -201,7 +205,7 @@ class ReActLoop:
             'reflection': "The previous attempt failed because {reason}. I should try {alternative}."
         }
         
-        logger.info("ReAct Loop initialized")
+        logger.info("ReAct Loop initialized with HIPIF Folding")
     
     async def initialize(self):
         """Initialize the ReAct loop"""
@@ -282,6 +286,10 @@ class ReActLoop:
             
             # Check if task is complete
             done = await self._check_completion(task, context, observation)
+
+            # HIPIF: Fold the current iteration history if successful
+            if observation.success:
+                await self.folding_operator.fold(task, observation.content, context)
         
         # Finalize trace
         trace.end_time = datetime.now()

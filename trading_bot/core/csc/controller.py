@@ -1,6 +1,5 @@
 """
 Cognitive System Controller (CSC) - UCA-2026 Core
-================================================
 
 The "One Brain" authoritative controller orchestrating the superior
 institutional financial intelligence pipeline.
