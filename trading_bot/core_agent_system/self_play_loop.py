@@ -23,7 +23,9 @@ from dataclasses import dataclass, field
 from enum import Enum
 import uuid
 import numpy as np
+import pandas as pd
 from .rl_training import SelfImprovingRLFramework, Trajectory
+from backtesting.backtest_engine import BacktestEngine, BacktestMode
 
 logger = logging.getLogger(__name__)
 
@@ -143,6 +145,12 @@ class SelfPlayLoop:
         self.value_network = value_network
         self.memory_system = memory_system
         self._audit_system = audit_system
+
+        # UCA-2026: Grounded Backtest Engine
+        self.backtest_engine = BacktestEngine(
+            initial_capital=self.config.get('initial_capital', 100000.0),
+            mode=BacktestMode.REALISTIC
+        )
 
         # RL Framework
         self.rl_framework = SelfImprovingRLFramework(
@@ -413,13 +421,37 @@ class SelfPlayLoop:
         return await self._play_game()
     
     def _get_initial_state(self) -> Dict[str, Any]:
-        """Get initial state for a game"""
+        """Get initial state for a game - Grounded in Real Data (UCA-2026)"""
+        if hasattr(self.backtest_engine, 'data') and self.backtest_engine.data:
+            symbol = list(self.backtest_engine.data.keys())[0]
+            df = self.backtest_engine.data[symbol]
+            current_idx = np.random.randint(0, len(df) - 10)
+            row = df.iloc[current_idx]
+
+            return {
+                'market_state': {
+                    'price': row['close'],
+                    'volatility': (row['high'] - row['low']) / row['close'],
+                    'trend': 'bullish' if row['close'] > row['open'] else 'bearish',
+                    'momentum': row['close'] - row['open']
+                },
+                'portfolio_state': {
+                    'equity': self.backtest_engine.initial_capital,
+                    'exposure': 0.0,
+                    'pnl': 0.0
+                },
+                'risk_metrics': {
+                    'var': 0.02,
+                    'sharpe': 0
+                }
+            }
+
         return {
             'market_state': {
-                'price': 1.0 + np.random.randn() * 0.01,
-                'volatility': 0.01 + np.random.rand() * 0.02,
-                'trend': np.random.choice(['bullish', 'bearish', 'neutral']),
-                'momentum': np.random.randn() * 0.5
+                'price': 1.0,
+                'volatility': 0.01,
+                'trend': 'neutral',
+                'momentum': 0.0
             },
             'portfolio_state': {
                 'equity': 10000,

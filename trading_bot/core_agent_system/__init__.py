@@ -22,7 +22,7 @@ Architecture Overview:
 │   └── EvaluatorAgents
 """
 
-from .master_orchestrator import MasterOrchestrator, SystemContext, Decision
+# from .master_orchestrator import MasterOrchestrator, SystemContext, Decision
 from .react_loop import ReActLoop, Thought, Action, Observation, ReActTrace
 from .constitutional_layer import (
     ConstitutionalAI,
