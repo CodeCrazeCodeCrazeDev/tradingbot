@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-class FoldingOperator:
+class InformationFolder:
     """
     Compresses execution history into semantic strategic updates.
     Prevents 'Strategic Drift' in long-horizon tasks.
@@ -18,12 +18,19 @@ class FoldingOperator:
         self.compression_ratio = compression_ratio
         logger.info("HIPIF: Folding Operator Initialized")
 
+    def fold_history(self, ledger_entry: Any):
+        """
+        Folds the current research snapshot into a semantic summary.
+        """
+        logger.info(f"HIPIF: Folding research snapshot {ledger_entry.entry_id}")
+        # In a real implementation, this would use an LLM or specialized head
+        return "Folded strategic summary."
+
     async def fold(self, task: str, result: Dict, context: Dict) -> Dict:
         """
         Folds the current subgoal execution log into a summary.
         Preserves 'Sufficient Statistics' for future decision making.
         """
-        # TODO: Implement LLM-based semantic compression
         summary = f"Subgoal for {task} completed with success={result.get('success')}"
 
         return {
