@@ -131,7 +131,7 @@ class EventBus:
         filter_fn: Optional[Callable[[Event], bool]] = None,
         priority: int = 0
     ) -> None:
-        """Subscribe to events"""
+        """Subscribe to events (Thread-Safe)"""
         subscription = Subscription(
             subscriber_id=subscriber_id,
             event_types=set(event_types),
@@ -140,20 +140,31 @@ class EventBus:
             priority=priority
         )
         
-        for event_type in event_types:
-            self._subscribers[event_type].append(subscription)
-            # Sort by priority (higher first)
-            self._subscribers[event_type].sort(key=lambda s: -s.priority)
+        import threading
+        # Fallback to threading.Lock for synchronous registration compatibility
+        if not hasattr(self, '_sync_lock'):
+            self._sync_lock = threading.Lock()
+
+        with self._sync_lock:
+            for event_type in event_types:
+                self._subscribers[event_type].append(subscription)
+                # Sort by priority (higher first)
+                self._subscribers[event_type].sort(key=lambda s: -s.priority)
         
         logger.debug(f"Subscriber {subscriber_id} registered for {event_types}")
     
     def unsubscribe(self, subscriber_id: str) -> None:
-        """Unsubscribe from all events"""
-        for event_type in list(self._subscribers.keys()):
-            self._subscribers[event_type] = [
-                s for s in self._subscribers[event_type]
-                if s.subscriber_id != subscriber_id
-            ]
+        """Unsubscribe from all events (Thread-Safe)"""
+        import threading
+        if not hasattr(self, '_sync_lock'):
+            self._sync_lock = threading.Lock()
+
+        with self._sync_lock:
+            for event_type in list(self._subscribers.keys()):
+                self._subscribers[event_type] = [
+                    s for s in self._subscribers[event_type]
+                    if s.subscriber_id != subscriber_id
+                ]
         logger.debug(f"Subscriber {subscriber_id} unsubscribed")
     
     async def publish(self, event: Event) -> None:
