@@ -126,7 +126,7 @@ class BacktestEngine:
             self.data = data
             
             # Set time range
-            times = pd.concat([df.index for df in data.values()])
+            times = pd.DatetimeIndex([t for df in data.values() for t in df.index])
             self.start_time = start_time or times.min()
             self.end_time = end_time or times.max()
             self.current_time = self.start_time

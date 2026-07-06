@@ -121,23 +121,25 @@ class AsyncQueueWithBackpressure:
 
 # ============= PERSISTENT CHECKPOINTS FOR RESTART (10% gap) =============
 class CheckpointManager:
-    """Persistent checkpoints for crash recovery"""
+    """Persistent checkpoints for crash recovery (Grounded/Secure)"""
     def __init__(self, checkpoint_dir: str = "checkpoints"):
         self.checkpoint_dir = checkpoint_dir
         
     def save_checkpoint(self, state: Dict, checkpoint_id: str):
-        """Save state checkpoint"""
-        path = f"{self.checkpoint_dir}/{checkpoint_id}.pkl"
-        with open(path, 'wb') as f:
-            pickle.dump(state, f)
+        """Save state checkpoint (JSON)"""
+        import json
+        path = f"{self.checkpoint_dir}/{checkpoint_id}.json"
+        with open(path, 'w') as f:
+            json.dump(state, f, default=str)
         logger.info(f"Checkpoint saved: {checkpoint_id}")
     
     def load_checkpoint(self, checkpoint_id: str) -> Optional[Dict]:
-        """Load state checkpoint"""
-        path = f"{self.checkpoint_dir}/{checkpoint_id}.pkl"
+        """Load state checkpoint (JSON)"""
+        import json
+        path = f"{self.checkpoint_dir}/{checkpoint_id}.json"
         try:
-            with open(path, 'rb') as f:
-                return pickle.load(f)
+            with open(path, 'r') as f:
+                return json.load(f)
         except FileNotFoundError:
             return None
 
