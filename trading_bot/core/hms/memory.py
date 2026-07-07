@@ -1,5 +1,13 @@
 """
 
+Implements the 6-tier architecture:
+1. Working (Hot/RAM)
+2. Episodic (Recent Events)
+3. Semantic (Facts/Knowledge)
+4. Procedural (Skills/LoRA)
+5. Research (Evidence/Snapshots)
+6. Institutional (Priors/Governance)
+
 Authoritative memory system integrating SAGE (Self-evolving Agentic Graph-Memory)
 and QKG (Quantum Knowledge Graph) for context-dependent research persistence.
 Implements the 'SAGE' (2026) feedback loop between Memory Writers and Readers.
@@ -9,7 +17,6 @@ Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
 """
 
 import logging
-import json
 import os
 import networkx as nx
 from typing import Any, Dict, List, Optional
@@ -54,6 +61,8 @@ class HierarchicalMemorySystem:
     - SAGE: Self-evolving Agentic Graph-Memory.
     - AutoMem: Automated Learning of Memory as a Cognitive Skill.
     """
+    def __init__(self, storage_root: str = "alphaalgo_data/hms_v3"):
+        self.storage_root = storage_root
 
     def __init__(self, base_path: str = "alphaalgo_data/hms"):
         self.base_path = base_path
@@ -143,8 +152,10 @@ class HierarchicalMemorySystem:
             "sage_sync": True
         }
 
-        with open(file_path, 'w') as f:
-            json.dump(entry_data, f, indent=2)
+        # Setup persistence
+        for tier_name, tier in self.tiers.items():
+            if tier.persistent:
+                os.makedirs(os.path.join(self.storage_root, tier_name), exist_ok=True)
 
     def retrieve_evidence_chain(self, query: str) -> List[EvidenceNode]:
         """

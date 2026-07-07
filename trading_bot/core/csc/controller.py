@@ -1,5 +1,8 @@
 """
 
+Implements the Active Inference (VFE minimization) loop and
+HIPIF (Hierarchical Planning with Information Folding).
+
 The "One Brain" authoritative controller orchestrating the LogAct pipeline.
 Implements Active Inference (surpise minimization) and DiscoLoop reasoning.
 Cognitive System Controller (CSC) - UCA V5 (July 2026)
@@ -42,7 +45,8 @@ class CognitiveSystemController:
             return
         self.world_model = world_model
         self.hms = hms
-        self.shield = shield or ImmutableShield()
+        self.shield = shield
+        self.folding_operator = FoldingOperator(hms)
 
         self.hypothesis_gen = HypothesisGenerator(world_model)
         self.verifier_swarm = VerificationSwarm()
