@@ -1,35 +1,29 @@
-# Scientific Reasoning Engine: Validation Framework
+# Scientific Validation Framework - SRE 2026
 
-## 1. Quality Metrics (KPIs)
+## 1. Metrics of Success
 
-To measure the success of the SRE, we track the following metrics:
+### Hypothesis Quality (HQ)
+$$HQ = \frac{Accuracy \times Robustness}{Uncertainty}$$
 
-### Scientific KPIs
-- **Hypothesis Survival Rate:** % of hypotheses that graduate to Institutionalized vs. total generated.
-- **Falsification Velocity:** Average time from hypothesis creation to first falsification attempt.
-- **Evidence Density:** Average number of unique evidence sources per hypothesis.
-- **Reasoning Depth:** Average number of steps in the provenance/lineage chain.
-- **Information Gain:** Cumulative reduction in entropy across the hypothesis ecosystem.
+### Research Efficiency (RE)
+$$RE = \frac{ConfirmedHypotheses}{ComputeHours}$$
 
-### Economic KPIs
-- **Alpha Decay Rate:** Time taken for a "Confirmed" hypothesis to lose its predictive edge.
-- **Research Efficiency:** Cost (compute/time) per Institutionalized hypothesis.
-- **Regime Robustness:** Performance of hypotheses in out-of-sample (unseen) regimes.
+### Economic Value (EV)
+$$EV = TotalPnL(h) - CostOfExecution(h)$$
 
-## 2. Validation Gates
+## 2. Validation Layers
 
-### G1: Static Falsification Gate
-- Every hypothesis MUST have at least 3 defined `falsification_triggers` before investigation.
-- **Test:** `assert len(hypothesis.falsification_triggers) >= 3`
+### Layer 1: Deterministic Consistency
+- Code-level checks for falsifiability.
+- Mandatory definition of "Failure Conditions".
 
-### G2: Adversarial Verification Gate
-- Requires at least 2 independent verifiers to "approve" the evidence graph.
-- **Test:** `assert len([r for r in reports if r.is_valid]) >= 2`
+### Layer 2: Adversarial Stress
+- Hypothesis must survive a "Red Team" session in Step 8 (Adversarial Debate).
+- Veto rights for the `ImmutableShield`.
 
-### G3: Counterfactual Consistency Gate
-- The hypothesis must yield consistent results in at least 5 different counterfactual simulations.
+### Layer 3: Empirical Grounding
+- Out-of-sample performance consistency.
+- Calibration Score (Expected vs. Observed accuracy).
 
-## 3. Continuous Self-Improvement
-
-The SRE monitors its own failures:
-- If a "Confirmed" hypothesis is later "Rejected" with high loss, a **Post-Mortem Hypothesis** is automatically generated to explain the failure in the validation process itself.
+## 3. Automated Bottleneck Detection
+The SRE continuously monitors its own efficiency. If the `HQ` score for a specific domain (e.g., Sentiment) drops, it triggers a **Redesign Event** (Step 19) for that specific discovery sub-engine.
