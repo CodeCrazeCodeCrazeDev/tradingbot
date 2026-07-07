@@ -14,7 +14,7 @@ def test_singleton_csc():
     csc1 = CognitiveSystemController()
     csc2 = CognitiveSystemController()
     assert csc1 is csc2
-    assert csc1.get_status()['version'] == 'UCA-2026-V1'
+    assert csc1.get_status()['version'] == 'UCA-2026-V5'
 
 def test_unified_registry_exists():
     """Ensure the Unified Registry is initialized."""

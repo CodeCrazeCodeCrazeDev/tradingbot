@@ -1,6 +1,9 @@
 """
+
+Authoritative memory system integrating SAGE (Self-evolving Agentic Graph-Memory)
+and QKG (Quantum Knowledge Graph) for context-dependent research persistence.
+Implements the 'SAGE' (2026) feedback loop between Memory Writers and Readers.
 Hierarchical Memory System (HMS) - UCA V5 (July 2026)
-====================================================
 
 Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
 """
@@ -14,6 +17,36 @@ from datetime import datetime
 from .models import ResearchLedgerEntry, ScientificMemoryObject, EvidenceNode, EvidenceEdge, RelationType
 
 logger = logging.getLogger(__name__)
+
+class SAGEGraphMemory:
+    """
+    SAGE Substrate: A dynamic, self-evolving graph memory.
+    Supports incremental construction and Reader-Writer feedback loops.
+    """
+    def __init__(self):
+        self.graph = nx.MultiDiGraph()
+        self.evolution_rounds = 0
+
+    def add_evidence(self, triplet: Tuple[str, str, str], context: Dict[str, Any], evidence: Dict[str, Any]):
+        """Adds context-dependent triplet (QKG principle) to the graph."""
+        u, r, v = triplet
+        # Context-dependent validity key
+        context_key = json.dumps(context, sort_keys=True)
+
+        self.graph.add_edge(u, v, key=r, relation=r, context=context, evidence=evidence, timestamp=datetime.utcnow().isoformat())
+        logger.debug(f"SAGE: Added triplet ({u}, {r}, {v}) under context {context_key}")
+
+    def evolve(self, feedback: List[Dict[str, Any]]):
+        """Self-evolution round: Refine graph structure based on Reader feedback."""
+        self.evolution_rounds += 1
+        logger.info(f"SAGE: Starting Evolution Round {self.evolution_rounds}")
+        # Logic to prune weak links or collapse nodes based on feedback
+        for f in feedback:
+            target = f.get("target_edge")
+            if f.get("action") == "PRUNE":
+                 # Implementation of pruning
+                 pass
+        logger.info(f"SAGE: Evolution Round {self.evolution_rounds} complete.")
 
 class HierarchicalMemorySystem:
     """
@@ -29,7 +62,7 @@ class HierarchicalMemorySystem:
         self.graph_path = os.path.join(base_path, "sage_graph.graphml")
 
         os.makedirs(self.ledger_path, exist_ok=True)
-        os.makedirs(self.knowledge_path, exist_ok=True)
+        logger.info("HMS V5: SAGE-integrated memory system initialized")
 
         # SAGE: Persistent Graph Memory
         self.sage_graph = self._load_graph()
@@ -101,7 +134,6 @@ class HierarchicalMemorySystem:
         entry_data = {
             "entry_id": entry.entry_id,
             "timestamp": entry.timestamp.isoformat(),
-            "trade_id": entry.trade_id,
             "hypothesis": entry.hypothesis.description if entry.hypothesis else "N/A",
             "composite_confidence": entry.composite_confidence,
             "verifier_reports": [

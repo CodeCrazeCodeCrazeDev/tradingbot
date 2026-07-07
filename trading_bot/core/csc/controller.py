@@ -1,6 +1,8 @@
 """
+
+The "One Brain" authoritative controller orchestrating the LogAct pipeline.
+Implements Active Inference (surpise minimization) and DiscoLoop reasoning.
 Cognitive System Controller (CSC) - UCA V5 (July 2026)
-=====================================================
 
 Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
 """
@@ -10,6 +12,7 @@ import asyncio
 import copy
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
+from uuid import uuid4
 
 from .hypothesis import HypothesisGenerator, ReasoningBranch
 from .folding import InformationFolder
@@ -17,6 +20,7 @@ from ..verification.swarm import VerificationSwarm
 from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport
 from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
 from ..immutable_shield import ImmutableShield
+from ..unified_event_bus import decision_bus, LogAction, ActionStatus
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +28,18 @@ class CognitiveSystemController:
     """
     UCA V5 Controller integrating DiscoLoop, HASP, and Pivot/Refine.
     """
+    _instance = None
+    _lock = asyncio.Lock()
 
-    def __init__(self, world_model: Any, hms: Any, shield: Optional[ImmutableShield] = None):
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(CognitiveSystemController, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
+    def __init__(self, world_model: Any = None, hms: Any = None, shield: Optional[ImmutableShield] = None):
+        if self._initialized:
+            return
         self.world_model = world_model
         self.hms = hms
         self.shield = shield or ImmutableShield()
