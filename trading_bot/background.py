@@ -329,11 +329,14 @@ class AIAnalysisService(BaseService):
     async def _load_ai_components(self) -> None:
         """Load AI components"""
         try:
-            from trading_bot.aamis_v3 import AAMISMasterOrchestrator
-            self._aamis = AAMISMasterOrchestrator()
-            logger.info("AAMIS V3 loaded")
+            from trading_bot.core_agent_system.legacy_adapter import LegacyOrchestratorAdapter
+            from trading_bot.core_agent_system import IntegratedAgentSystem
+            # ARCH-01: AAMIS functionality consolidated into IAS
+            ias = IntegratedAgentSystem(self.config)
+            self._aamis = LegacyOrchestratorAdapter(ias, self.config)
+            logger.info("AAMIS (IAS Adapter) loaded")
         except ImportError as e:
-            logger.warning(f"AAMIS V3 not available: {e}")
+            logger.warning(f"Canonical brain not available for AAMIS adapter: {e}")
         
         try:
             from trading_bot.adaptive_systems import AdaptiveLearningEngine

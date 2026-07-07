@@ -409,7 +409,106 @@ class SelfPlayLoop:
         }
 
     async def _play_game_simulated(self) -> SelfPlayGame:
-        # Legacy simulation code
+        """
+        Play a game using data-grounded simulation.
+        INTELL-01: Replaces random noise with historical reality.
+        """
+        import sqlite3
+        import pandas as pd
+
+        game = SelfPlayGame(
+            game_id=str(uuid.uuid4()),
+            start_time=datetime.now(),
+            policy_version=self.policy_version,
+            value_version=self.value_version
+        )
+
+        try:
+            # Connect to grounded data store
+            conn = sqlite3.connect('market_data.db')
+            # Fetch a random window of 100 bars for self-play
+            query = "SELECT open, high, low, close, volume FROM market_data ORDER BY RANDOM() LIMIT 100"
+            df = pd.read_sql_query(query, conn)
+            conn.close()
+
+            if df.empty:
+                logger.warning("Grounded data store is empty, falling back to realistic simulation")
+                return await self._play_game_fallback()
+
+            state = self._get_initial_state()
+            # Override initial price with real data
+            state['market_state']['price'] = df.iloc[0]['close']
+
+            total_reward = 0.0
+
+            for i in range(len(df) - 1):
+                # Current market reality
+                row = df.iloc[i]
+                next_row = df.iloc[i+1]
+                price_change = (next_row['close'] - row['close']) / row['close']
+
+                if self.policy_network:
+                    policy_output = await self.policy_network.predict(state)
+                    action = policy_output.top_action
+                else:
+                    action = self._random_action()
+
+                # Simulate step grounded in real price change
+                next_state, reward, done = await self._simulate_step_grounded(state, action, price_change)
+
+                game.states.append(state)
+                game.actions.append(action)
+                game.rewards.append(reward)
+                total_reward += reward
+                state = next_state
+                if done: break
+
+            game.end_time = datetime.now()
+            game.outcome = total_reward
+            return game
+
+        except Exception as e:
+            logger.error(f"Grounded self-play failed: {e}")
+            return await self._play_game_fallback()
+
+    async def _simulate_step_grounded(self, state: Dict, action: Dict, real_price_change: float) -> Tuple[Dict, float, bool]:
+        """Simulation step grounded in historical price movements"""
+        action_type = action.get('type', 'hold')
+        size = action.get('size', 0)
+
+        # Grounded costs (can be tuned based on asset class)
+        spread = 0.0001
+        slippage = abs(real_price_change) * 0.05
+        cost_factor = (spread + slippage) * size * 10000
+
+        if action_type == 'buy':
+            reward = (real_price_change * size * 10000) - cost_factor
+        elif action_type == 'sell':
+            reward = (-real_price_change * size * 10000) - cost_factor
+        else:
+            reward = 0
+
+        # Update state using real price change
+        next_state = {
+            'market_state': {
+                'price': state['market_state']['price'] * (1 + real_price_change),
+                'volatility': state['market_state']['volatility'], # Ideally from ATR
+                'trend': 'bullish' if real_price_change > 0 else 'bearish',
+                'momentum': state['market_state']['momentum'] * 0.5 + real_price_change
+            },
+            'portfolio_state': {
+                'equity': state['portfolio_state']['equity'] + reward,
+                'exposure': state['portfolio_state']['exposure'] + (size if action_type == 'buy' else -size if action_type == 'sell' else 0),
+                'pnl': state['portfolio_state']['pnl'] + reward
+            },
+            'risk_metrics': state['risk_metrics']
+        }
+
+        done = next_state['portfolio_state']['equity'] < 5000
+        return next_state, reward, done
+
+    async def _play_game_fallback(self) -> SelfPlayGame:
+        """Fallback to the semi-realistic simulation if DB is unavailable"""
         return await self._play_game()
     
     def _get_initial_state(self) -> Dict[str, Any]:

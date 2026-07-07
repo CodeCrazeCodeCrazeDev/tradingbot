@@ -56,7 +56,8 @@ class Position:
 
 class TradingOrchestrator:
     """
-    Central orchestrator for trading operations
+    DEPRECATED: Central orchestrator for trading operations
+    ARCH-01: Consolidated into IntegratedAgentSystem.
     
     Coordinates:
     - Signal generation
@@ -106,13 +107,17 @@ class TradingOrchestrator:
             logger.info("  Signal generator initialized")
         except ImportError:
             logger.warning("  Signal generator not available")
-        # Initialize risk manager
+
+        try:
+            # Initialize risk manager
             from trading_bot.risk import RiskManager
             self._risk_manager = RiskManager(self.config.get('risk', {}))
             logger.info("  Risk manager initialized")
         except ImportError:
             logger.warning("  Risk manager not available")
-        # Initialize executor
+
+        try:
+            # Initialize executor
             from trading_bot.execution import OrderExecutor
             self._executor = OrderExecutor(self.config)
             logger.info("  Order executor initialized")

@@ -1107,9 +1107,10 @@ class UnifiedAIBrain:
             
             try:
                 # Create thought ID
-                thought_id = hashlib.md5(
+                # SEC-04: Upgrade from MD5 to SHA-256
+                thought_id = hashlib.sha256(
                     f"{symbol}_{datetime.now().isoformat()}".encode()
-                ).hexdigest()[:12]
+                ).hexdigest()[:16]
                 
                 # Initialize thought
                 thought = Thought(

@@ -13,7 +13,40 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime
 
 from trading_bot.core_agent_system import IntegratedAgentSystem
-from trading_bot.core.orchestrator import TradingSignal, SignalType, Position
+# Phase 5.4: Redirecting from archived module to the shim-compatible definitions
+# In a real system, these dataclasses should be moved to a shared 'schemas' or 'interfaces' module.
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, Dict, List, Optional
+from datetime import datetime
+
+class SignalType(Enum):
+    BUY = "buy"
+    SELL = "sell"
+    HOLD = "hold"
+    CLOSE = "close"
+
+@dataclass
+class TradingSignal:
+    symbol: str
+    signal_type: SignalType
+    confidence: float
+    price: float
+    timestamp: datetime
+    reasons: List[str] = field(default_factory=list)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+@dataclass
+class Position:
+    symbol: str
+    side: str
+    entry_price: float
+    quantity: float
+    entry_time: datetime
+    stop_loss: Optional[float] = None
+    take_profit: Optional[float] = None
+    current_price: Optional[float] = None
+    unrealized_pnl: float = 0.0
 
 logger = logging.getLogger(__name__)
 

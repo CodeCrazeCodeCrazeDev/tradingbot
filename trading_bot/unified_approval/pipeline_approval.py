@@ -176,7 +176,10 @@ class CLIApprovalInterface:
         
     def _clear_screen(self):
         """Clear terminal screen"""
-        os.system('cls' if os.name == 'nt' else 'clear')
+        # PROD-01: Avoid os.system for platform-independent production
+        # In headless environments, clearing screen is unnecessary.
+        if os.environ.get('TERM'):
+            print("\033[H\033[J", end="")
     
     def _print_header(self):
         """Print header"""

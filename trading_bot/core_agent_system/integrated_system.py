@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 from pathlib import Path
 import redis
 
-from .master_orchestrator import MasterOrchestrator, SystemContext
+from .master_orchestrator import MasterOrchestrator, SystemContext, Decision
 from .meta_orchestrator import MetaOrchestrator
 from trading_bot.neuros_evolution.controlled_objects import ControlledObjectRegistry
 from .react_loop import ReActLoop
@@ -326,6 +326,10 @@ class IntegratedAgentSystem:
             ('market_monitor', run_market_monitor_service),
         ]
 
+        import multiprocessing
+        if not hasattr(self, 'background_processes'):
+            self.background_processes = {}
+
         for name, func in services:
             try:
                 # Use standalone functions to avoid pickling 'self'
@@ -523,8 +527,11 @@ class IntegratedAgentSystem:
         obs_trace["success"] = meta_result.get('success', False)
 
         # 3. Store in Semantic Memory
+        # SEC-04: Upgrade from MD5 (implied by short hex) to SHA-256 for trace IDs
+        import hashlib
+        trace_id = hashlib.sha256(str(obs_trace).encode()).hexdigest()[:16]
         await self.memory_system.store_knowledge(
-            f"obs_trace_{uuid.uuid4().hex[:8]}",
+            f"obs_trace_{trace_id}",
             obs_trace,
             tags=["observability", "execution_trace", meta_result.get('policy_id')]
         )

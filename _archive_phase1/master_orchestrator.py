@@ -40,7 +40,8 @@ logger = logging.getLogger(__name__)
 class MasterOrchestrator:
     """
     Master Orchestrator - DEPRECATED.
-    Now acts as a lightweight delegator to IntegratedAgentSystem.
+    ARCH-01: Consolidated into IntegratedAgentSystem.
+    Now acts as a thin legacy shim delegating to IAS.
     """
     
     def __init__(self, config: Optional[Dict] = None):
@@ -52,8 +53,9 @@ class MasterOrchestrator:
             self.ias = IntegratedAgentSystem(config)
             self.superintelligence = self.ias # Compatibility
         else:
-            self.ias = None
-            self.superintelligence = None
+            # RELI-02: Fail fast if canonical brain is missing
+            raise RuntimeError("CRITICAL: IntegratedAgentSystem (IAS) not found. "
+                               "System cannot start without its canonical brain.")
         
         logger.info("=" * 70)
         logger.info("MASTER ORCHESTRATOR (DELEGATED) INITIALIZED")

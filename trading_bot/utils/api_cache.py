@@ -77,7 +77,8 @@ class APICache:
         """Generate cache key from function arguments"""
         # Create a unique key from arguments
         key_data = f"{prefix}:{str(args)}:{str(sorted(kwargs.items()))}"
-        key_hash = hashlib.md5(key_data.encode()).hexdigest()
+        # SEC-04: Upgrade from MD5 to SHA-256
+        key_hash = hashlib.sha256(key_data.encode()).hexdigest()
         return f"api_cache:{prefix}:{key_hash}"
     
     def get(self, key: str) -> Optional[Any]:
@@ -106,7 +107,13 @@ class APICache:
             try:
                 cached = self.redis_client.get(key)
                 if cached:
-                    value = pickle.loads(cached)
+                    # SEC-01: Use JSON instead of unsafe Pickle
+                    try:
+                        value = json.loads(cached)
+                    except (json.JSONDecodeError, TypeError):
+                        # If legacy data exists, we might need a migration or just miss
+                        return None
+
                     # Promote to memory cache
                     ttl = self.redis_client.ttl(key)
                     if ttl > 0:
@@ -143,7 +150,7 @@ class APICache:
                 self.redis_client.setex(
                     key,
                     ttl,
-                    pickle.dumps(value)
+                    json.dumps(value)
                 )
             except Exception as e:
                 print(f"Redis set error: {e}")
