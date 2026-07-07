@@ -153,5 +153,14 @@ class UnifiedDecisionBus:
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
 
+    def get_stats(self) -> Dict[str, Any]:
+        """Get decision bus statistics."""
+        return {
+            "queue_size": self._event_queue.qsize() if self._event_queue else 0,
+            "running": self._running,
+            "subscriber_count": sum(len(h) for h in self._subscribers.values()),
+            "event_types": list(self._subscribers.keys())
+        }
+
 # Global access point
 decision_bus = UnifiedDecisionBus()

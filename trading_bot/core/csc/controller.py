@@ -11,8 +11,9 @@ from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 
 from .hypothesis import HypothesisGenerator, ReasoningBranch
+from .router import router as capability_router, SkillDomain
 from ..verification.swarm import VerificationSwarm
-from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport
+from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport, EvidenceNode, EvidenceEdge, RelationType
 from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
 from ..immutable_shield import ImmutableShield
 
@@ -24,16 +25,37 @@ class CognitiveSystemController:
     Implements the 10-step institutional pipeline.
     """
 
-    def __init__(self, world_model: Any, hms: Any, shield: Optional[ImmutableShield] = None):
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(CognitiveSystemController, cls).__new__(cls)
+        return cls._instance
+
+    def __init__(self, world_model: Any = None, hms: Any = None, shield: Optional[ImmutableShield] = None):
+        if hasattr(self, '_initialized') and self._initialized:
+            return
+
         self.world_model = world_model
         self.hms = hms
         self.shield = shield or ImmutableShield()
 
         self.hypothesis_gen = HypothesisGenerator(world_model)
         self.verifier_swarm = VerificationSwarm()
+        self.router = capability_router
 
         self.evidence_threshold = 0.7
         self.confidence_threshold = 0.65
+        self._initialized = True
+
+    def get_status(self) -> Dict[str, Any]:
+        """Get the status of the CSC."""
+        return {
+            'version': 'UCA-2026-V1',
+            'initialized': self._initialized,
+            'world_model_active': self.world_model is not None,
+            'hms_active': self.hms is not None
+        }
 
     async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
         """
@@ -43,10 +65,14 @@ class CognitiveSystemController:
 
         # 1. Observe (Already passed in)
 
-        # 2. Specialist Agents (Gather domain-specific data/claims)
-        # 3. Gather Evidence (Populate HMS Evidence Graph)
+        # 2. Dynamic Specialist Selection (Capability Router)
+        required_domains = [SkillDomain.MARKET_STRUCTURE, SkillDomain.LIQUIDITY]
+        specialists = await self.router.select_specialists("Market analysis", required_domains)
 
-        # 4. Multi-Hypothesis Generation
+        # 3. Specialist Agents (Gather domain-specific data/claims)
+        # 4. Gather Evidence (Populate HMS Evidence Graph)
+
+        # 5. Multi-Hypothesis Generation
         branches = await self.hypothesis_gen.generate_competing_branches(observation)
 
         # 5. Run World Model Simulations for each branch
@@ -121,11 +147,45 @@ class CognitiveSystemController:
         return branches[0] # Mock: return the first one
 
     def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
+        """
+        Creates a structured Research Ledger Entry including an auditable Evidence Graph.
+        Ensures every decision has a persistent chain of causality and verification.
+        """
+        # 1. Populate Evidence Graph from Branch + Context
+        graph = branch.evidence_graph
+
+        # Ensure we have the causal chain represented in the graph
+        if branch.hypotheses:
+            hyp_node_id = f"hyp_{branch.branch_id}"
+
+            # Add nodes for causal explanation components
+            explanation_node_id = f"causal_{branch.branch_id}"
+            graph.add_node(EvidenceNode(
+                node_id=explanation_node_id,
+                content=branch.causal_explanation,
+                node_type="CLAIM"
+            ))
+
+            # Link explanation to hypothesis
+            graph.add_edge(EvidenceEdge(
+                source_id=explanation_node_id,
+                target_id=hyp_node_id,
+                relation=RelationType.SUPPORTS,
+                weight=0.9
+            ))
+
         return ResearchLedgerEntry(
             hypothesis=branch.hypotheses[0] if branch.hypotheses else None,
             reasoning_steps=branch.reasoning_trace,
-            evidence_graph_snapshot=branch.evidence_graph,
-            multi_path_scenarios=[{"name": s.name} for s in scenarios] if scenarios else []
+            evidence_graph_snapshot=graph,
+            multi_path_scenarios=[{
+                "name": branch.name,
+                "probability": branch.probability,
+                "uncertainty": branch.uncertainty,
+                "explanation": branch.causal_explanation
+            }],
+            uncertainty_estimate=branch.uncertainty,
+            composite_confidence=branch.probability
         )
 
     def _verify_evidence_hard_constraint(self, entry: ResearchLedgerEntry) -> bool:
