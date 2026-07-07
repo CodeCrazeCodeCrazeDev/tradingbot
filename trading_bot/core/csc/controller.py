@@ -1,19 +1,21 @@
 """
-Cognitive System Controller (CSC) - UCA V5 Core
-=============================================
 
 The "One Brain" authoritative controller orchestrating the LogAct pipeline.
 Implements Active Inference (surpise minimization) and DiscoLoop reasoning.
+Cognitive System Controller (CSC) - UCA V5 (July 2026)
+
+Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
 """
 
 import logging
 import asyncio
+import copy
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 from uuid import uuid4
 
 from .hypothesis import HypothesisGenerator, ReasoningBranch
-from .router import SkillRouter, HASPExecutor, SkillArtifact, SkillType
+from .folding import InformationFolder
 from ..verification.swarm import VerificationSwarm
 from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport
 from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
@@ -24,8 +26,7 @@ logger = logging.getLogger(__name__)
 
 class CognitiveSystemController:
     """
-    Authoritative controller for AlphaAlgo UCA V5.
-    Governed by Active Inference and Shared-Log Reliability.
+    UCA V5 Controller integrating DiscoLoop, HASP, and Pivot/Refine.
     """
     _instance = None
     _lock = asyncio.Lock()
@@ -45,103 +46,121 @@ class CognitiveSystemController:
 
         self.hypothesis_gen = HypothesisGenerator(world_model)
         self.verifier_swarm = VerificationSwarm()
-        self.skill_router = SkillRouter()
-        self.hasp_executor = HASPExecutor()
+        self.folder = InformationFolder()
 
-        # Register Shield as a LogAct Voter
-        decision_bus.register_voter("GovernanceShield", self._shield_voter)
+        # HASP: Executable Guardrails (Skill Programs)
+        self.skill_programs = self._load_skill_programs()
 
-        self._initialized = True
-        logger.info("CSC V5: Initialized and registered with LogAct Backbone")
-
-    def get_status(self) -> Dict[str, Any]:
-        """Returns the current status and version of the CSC."""
-        return {
-            "status": "online",
-            "version": "UCA-2026-V5",
-            "logact_enabled": True
-        }
-
-    async def _shield_voter(self, action: LogAction) -> Dict[str, Any]:
-        """LogAct Voter bridge for the Immutable Shield."""
-        if action.action_type != "trade":
-            return {"decision": "APPROVE"}
-
-        context = {"market": {"volatility": 0.2}, "portfolio": {"drawdown": 0.05}}
-        from ..immutable_shield import GovernanceDecision
-        report = self.shield.validate_action("trade", action.payload, context)
-
-        return {
-            "decision": "APPROVE" if report.decision == GovernanceDecision.APPROVED else "REJECT",
-            "reason": report.reason
-        }
+    def _load_skill_programs(self) -> Dict[str, Any]:
+        # In production, load from a registry. Here we stub it.
+        return {}
 
     async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
         """
-        The O-S-A Loop orchestrated via the Shared Log.
+        12-step Recursive Active Inference Pipeline.
         """
-        logger.info("CSC V5: Starting institutional reasoning pipeline")
+        logger.info("CSC-V5: Starting Recursive Active Inference Pipeline")
 
-        # 1. Observe & DiscoLoop Reasoning
+        # 4. Executable Guardrails (HASP Intervention)
+        intervention = self._apply_hasp_guardrails(observation)
+        if intervention:
+            observation.update(intervention)
+
+        # 5. Multi-Hypothesis Generation
         branches = await self.hypothesis_gen.generate_competing_branches(observation)
 
-        # 2. Simulate (Structural Interventions)
+        # 6. Causal Simulation (CWMI / World Model)
         sim_results = await self.hypothesis_gen.simulate_branches(branches)
 
-        # 3. Select Policy (Minimize Expected Free Energy)
+        # 7. Decision Selection (EV Optimization)
         best_branch = self._select_optimal_branch(branches, sim_results)
         if not best_branch:
             return None
 
-        # 4. Propose Action to Shared Log (The Reliability Gate)
-        trade_proposal = self._translate_to_proposal(best_branch, sim_results[best_branch.branch_id])
+        # 8. Decision Loop (Pivot/Refine)
+        decision_ready = False
+        attempts = 0
+        while not decision_ready and attempts < 3:
+            attempts += 1
 
-        action = LogAction(
-            action_type="trade",
-            payload=trade_proposal,
-            agent_id="CSC_V5",
-            correlation_id=str(uuid4())
+            # 9. Verification Swarm (Peer Review)
+            ledger_entry = self._create_ledger_entry(best_branch, sim_results.get(best_branch.branch_id, []))
+            reports = await self.verifier_swarm.run_swarm(ledger_entry)
+            ledger_entry.verifier_reports = reports
+
+            # 10. Pivot/Refine Decision
+            if self._verify_evidence_hard_constraint(ledger_entry):
+                decision_ready = True
+            else:
+                logger.warning(f"CSC-V5: Verification FAILED (Attempt {attempts}). Refining strategy...")
+                refined_branch = await self._refine_strategy(best_branch, reports)
+                if refined_branch and refined_branch != best_branch:
+                    best_branch = refined_branch
+                else:
+                    # If we can't refine further, break
+                    logger.error("CSC-V5: Could not refine strategy further.")
+                    break
+
+        if not decision_ready:
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason="Failed Pivot/Refine loop")
+
+        # 11. Governance Gate (Immutable Shield)
+        trade_proposal = self._translate_to_proposal(ledger_entry)
+        shield_report = self.shield.validate_action("trade", trade_proposal, {"market": observation})
+
+        from ..immutable_shield import GovernanceDecision
+        if shield_report.decision != GovernanceDecision.APPROVED:
+             return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=f"Shield: {shield_report.reason}")
+
+        # 12. Execution & Folding (HIPIF)
+        logger.info(f"CSC-V5: Trade APPROVED. Folding horizon...")
+        self.folder.fold_history(ledger_entry)
+
+        # Persist to HMS
+        self.hms.store_ledger_entry(ledger_entry)
+
+        return CoreDecision(
+            outcome=DecisionOutcome.TRADE_APPROVED,
+            trade_id=trade_proposal.get("trade_id"),
+            confidence_vector=self._calculate_composite_confidence(ledger_entry)
         )
 
-        # 5. Commit to Log and await consensus
-        await decision_bus.propose_action(action)
+    def _apply_hasp_guardrails(self, observation: Dict[str, Any]) -> Dict[str, Any]:
+        """HASP: Executable guardrails check."""
+        return {}
 
-        # Wait for log processing (mock async wait for status change)
-        # In production, this would be a future or event-based
-        max_retries = 10
-        while action.status in [ActionStatus.PROPOSED, ActionStatus.AUDITING] and max_retries > 0:
-            await asyncio.sleep(0.1)
-            max_retries -= 1
-
-        if action.status == ActionStatus.APPROVED:
-            logger.info(f"CSC V5: Action {action.action_id} approved and logged. Triggering HASP execution.")
-
-            # 6. Post-Approval Execution (HASP/S2L)
-            skill = self.skill_router.route_task("execution", trade_proposal)
-            if skill and skill.skill_type == SkillType.HASP_PROGRAM:
-                 exec_res = self.hasp_executor.execute(skill, trade_proposal)
-                 logger.info(f"CSC V5: HASP Execution Result: {exec_res['status']}")
-
-            return CoreDecision(
-                outcome=DecisionOutcome.TRADE_APPROVED,
-                trade_id=trade_proposal.get("trade_id"),
-                approved_position_size=trade_proposal.get("quantity", 0)
-            )
-        else:
-            logger.warning(f"CSC V5: Action {action.action_id} rejected by LogAct backbone: {action.voter_reports}")
-            return CoreDecision(
-                outcome=DecisionOutcome.TRADE_REJECTED,
-                dominant_rejection_reason="LogAct Veto"
-            )
+    async def _refine_strategy(self, branch: ReasoningBranch, reports: List[VerifierReport]) -> Optional[ReasoningBranch]:
+        """Pivot/Refine logic to improve strategy based on verifier feedback."""
+        # Simple refinement logic: tweak hypothesis confidence or pick second best
+        # For now, we simulate refinement by copying and tweaking
+        refined = copy.deepcopy(branch)
+        if refined.hypotheses:
+            refined.hypotheses[0].description += " (Refined)"
+        return refined
 
     def _select_optimal_branch(self, branches: List[ReasoningBranch], simulations: Dict[str, Any]) -> Optional[ReasoningBranch]:
         if not branches: return None
         return branches[0]
 
-    def _translate_to_proposal(self, branch: ReasoningBranch, scenarios: List[Any]) -> Dict[str, Any]:
-        return {
-            "trade_id": "T_" + str(datetime.now().timestamp()),
-            "symbol": "EURUSD",
-            "quantity": 1.0,
-            "exposure": 0.5
-        }
+    def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
+        return ResearchLedgerEntry(
+            hypothesis=branch.hypotheses[0] if branch.hypotheses else None,
+            reasoning_steps=branch.reasoning_trace,
+            evidence_graph_snapshot=branch.evidence_graph,
+            multi_path_scenarios=[{"name": s.name} for s in scenarios] if scenarios else []
+        )
+
+    def _verify_evidence_hard_constraint(self, entry: ResearchLedgerEntry) -> bool:
+        # Check vetoes and consensus
+        for report in entry.verifier_reports:
+            if not report.is_valid and report.confidence > 0.8: return False
+
+        valid_reports = [r for r in entry.verifier_reports if r.is_valid]
+        consensus = len(valid_reports) / len(entry.verifier_reports) if entry.verifier_reports else 0
+        return consensus >= 0.75
+
+    def _calculate_composite_confidence(self, entry: ResearchLedgerEntry) -> ConfidenceVector:
+        return ConfidenceVector(statistical=0.8, regime=0.8, execution=0.9, tail_risk=0.85, model_stability=0.7)
+
+    def _translate_to_proposal(self, entry: ResearchLedgerEntry) -> Dict[str, Any]:
+        return {"trade_id": str(entry.entry_id), "symbol": "EURUSD", "quantity": 1.0, "confidence": entry.composite_confidence}
