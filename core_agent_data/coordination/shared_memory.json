@@ -1,0 +1,365 @@
+{
+  "checksum": "dde9eba74a573664d2bda4f9067a7cf94dffeb235137651022ebe4fa3e4c7951",
+  "memory": {
+    "audit_csc_1783409972_4e4f93": {
+      "allowed_agents": [],
+      "created_at": "2026-07-07T07:39:33.211321",
+      "key": "audit_csc_1783409972_4e4f93",
+      "metadata": {},
+      "owner_id": "CSC_HUB",
+      "scope": "global",
+      "updated_at": "2026-07-07T07:39:33.211322",
+      "value": {
+        "architectural_invariants": {
+          "hub_implementation": "MTASH",
+          "one_brain_pattern": true,
+          "orchestrator_type": "MasterOrchestrator"
+        },
+        "consensus_outcome": {
+          "action": {
+            "operation": "no_action"
+          },
+          "score": 0.7772020725388601,
+          "total_votes": 11,
+          "weighted_winner": true
+        },
+        "decision_id": "csc_1783409972_4e4f93",
+        "hypothesis": {
+          "attribution": {},
+          "confidence": 0.04123711340206186,
+          "direction": "SignalDirection.FLAT"
+        },
+        "input_evidence": {
+          "market_state": {
+            "ask": 1.0851,
+            "bid": 1.0849,
+            "macd": 0.0002,
+            "momentum": 0.2,
+            "price": 1.085,
+            "rsi": -0.5,
+            "sma_20": 1.082,
+            "sma_50": 1.078,
+            "success": true,
+            "symbol": "EURUSD",
+            "timestamp": "2026-07-07T07:39:32.260969",
+            "trend": "bullish",
+            "volatility": 0.1
+          },
+          "portfolio_equity": 10000,
+          "risk_metrics": {
+            "exposure": 0.3,
+            "max_drawdown": 0.05,
+            "risk_score": 0.4,
+            "sharpe": 1.5,
+            "success": true,
+            "var": 0.02
+          }
+        },
+        "planner_output": {
+          "expected_value": 0.03932984867775827,
+          "final_action": {
+            "operation": "no_action"
+          },
+          "reasoning": "No clear signal"
+        },
+        "production_gate_verdict": {
+          "details": {
+            "deterministic_replay_pass": true,
+            "governance_bypass_check": true,
+            "performance_target_met": true,
+            "persistence_integrity": true,
+            "risk_limit_compliance": false,
+            "scientific_calibration_pass": false,
+            "unresolved_circular_dependencies": true,
+            "zero_critical_vulnerabilities": true
+          },
+          "passed": false,
+          "verdict": "FAIL"
+        },
+        "symbol": "EURUSD",
+        "timestamp": "2026-07-07T07:39:33.211253",
+        "world_model_simulation": {
+          "horizon_stability": -0.0014754682779312134,
+          "projected_pnl": 157.37841796875,
+          "projected_var": -0.14870142936706543
+        }
+      },
+      "version": 1
+    },
+    "audit_csc_1783410789_3f5058": {
+      "allowed_agents": [],
+      "created_at": "2026-07-07T07:53:10.331237",
+      "key": "audit_csc_1783410789_3f5058",
+      "metadata": {},
+      "owner_id": "CSC_HUB",
+      "scope": "global",
+      "updated_at": "2026-07-07T07:53:10.331237",
+      "value": {
+        "architectural_invariants": {
+          "hub_implementation": "MTASH",
+          "one_brain_pattern": true,
+          "orchestrator_type": "MasterOrchestrator"
+        },
+        "consensus_outcome": {
+          "action": {
+            "operation": "no_action"
+          },
+          "score": 0.7772020725388601,
+          "total_votes": 11,
+          "weighted_winner": true
+        },
+        "decision_id": "csc_1783410789_3f5058",
+        "hypothesis": {
+          "attribution": {},
+          "confidence": 0.04123711340206186,
+          "direction": "SignalDirection.FLAT"
+        },
+        "input_evidence": {
+          "market_state": {
+            "ask": 1.0851,
+            "bid": 1.0849,
+            "macd": 0.0002,
+            "momentum": 0.2,
+            "price": 1.085,
+            "rsi": -0.5,
+            "sma_20": 1.082,
+            "sma_50": 1.078,
+            "success": true,
+            "symbol": "EURUSD",
+            "timestamp": "2026-07-07T07:53:09.821386",
+            "trend": "bullish",
+            "volatility": 0.1
+          },
+          "portfolio_equity": 10000,
+          "risk_metrics": {
+            "exposure": 0.3,
+            "max_drawdown": 0.05,
+            "risk_score": 0.4,
+            "sharpe": 1.5,
+            "success": true,
+            "var": 0.02
+          }
+        },
+        "planner_output": {
+          "expected_value": 0.13866924257493296,
+          "final_action": {
+            "operation": "no_action"
+          },
+          "reasoning": "Consensus reached on {'operation': 'no_action'} with score 0.78. MCTS search value: 0.139"
+        },
+        "production_gate_verdict": {
+          "details": {
+            "dependency_dag_verified": true,
+            "deterministic_replay_pass": true,
+            "governance_bypass_check": true,
+            "performance_target_met": true,
+            "persistence_integrity": true,
+            "risk_limit_compliance": true,
+            "scientific_calibration_pass": true,
+            "zero_critical_vulnerabilities": true
+          },
+          "passed": true,
+          "verdict": "PASS"
+        },
+        "symbol": "EURUSD",
+        "timestamp": "2026-07-07T07:53:10.331194",
+        "world_model_simulation": {
+          "horizon_stability": 0.0003297440707683563,
+          "projected_pnl": 170.5886993408203,
+          "projected_var": -0.02600947767496109
+        }
+      },
+      "version": 1
+    },
+    "release_check_0314ab": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:40:14.450937",
+      "key": "release_check_0314ab",
+      "metadata": {},
+      "owner_id": "RELEASE_BOT",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:40:14.450938",
+      "value": {
+        "status": "verified",
+        "timestamp": "2026-07-05T21:40:14.450917"
+      },
+      "version": 1
+    },
+    "release_check_34fa15": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:55:05.386913",
+      "key": "release_check_34fa15",
+      "metadata": {},
+      "owner_id": "RELEASE_BOT",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:55:05.386914",
+      "value": {
+        "status": "verified",
+        "timestamp": "2026-07-05T21:55:05.386891"
+      },
+      "version": 1
+    },
+    "release_check_448897": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:48:10.695484",
+      "key": "release_check_448897",
+      "metadata": {},
+      "owner_id": "RELEASE_BOT",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:48:10.695485",
+      "value": {
+        "status": "verified",
+        "timestamp": "2026-07-05T21:48:10.695419"
+      },
+      "version": 1
+    },
+    "release_check_7776b6": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:52:32.629843",
+      "key": "release_check_7776b6",
+      "metadata": {},
+      "owner_id": "RELEASE_BOT",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:52:32.629844",
+      "value": {
+        "status": "verified",
+        "timestamp": "2026-07-05T21:52:32.629826"
+      },
+      "version": 1
+    },
+    "release_check_84e574": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:38:00.045502",
+      "key": "release_check_84e574",
+      "metadata": {},
+      "owner_id": "RELEASE_BOT",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:38:00.045503",
+      "value": {
+        "status": "verified",
+        "timestamp": "2026-07-05T21:38:00.045480"
+      },
+      "version": 1
+    },
+    "release_check_8e52f9": {
+      "allowed_agents": [],
+      "created_at": "2026-07-07T07:39:32.256695",
+      "key": "release_check_8e52f9",
+      "metadata": {},
+      "owner_id": "RELEASE_BOT",
+      "scope": "global",
+      "updated_at": "2026-07-07T07:39:32.256696",
+      "value": {
+        "status": "verified",
+        "timestamp": "2026-07-07T07:39:32.256675"
+      },
+      "version": 1
+    },
+    "release_check_dc90cc": {
+      "allowed_agents": [],
+      "created_at": "2026-07-07T07:53:09.816235",
+      "key": "release_check_dc90cc",
+      "metadata": {},
+      "owner_id": "RELEASE_BOT",
+      "scope": "global",
+      "updated_at": "2026-07-07T07:53:09.816236",
+      "value": {
+        "status": "verified",
+        "timestamp": "2026-07-07T07:53:09.816217"
+      },
+      "version": 1
+    }
+  },
+  "teams": {
+    "research_team": [
+      "b2efcfd4-d957-4441-b020-e5bea129cf61",
+      "e8501174-c69d-4e62-bf95-3e8d93e66db3",
+      "9ed1e54e-8f8a-485e-bccc-8c07e0b25337",
+      "4cd31949-2e6b-4dec-ba10-b5e2912eb0d9",
+      "b4df7bf6-13b8-4893-b9d6-fa331b597849",
+      "fe864ab9-92cb-47e9-814f-1102bdf0588d",
+      "9f8de17a-c93e-4fdd-93c3-32559abc77ea"
+    ],
+    "safety_team": [
+      "170bef78-8983-40ad-909a-3b3c2de827d9",
+      "4123c69c-4ff3-4783-b003-b9bb04cfa5ff",
+      "58acc9c3-2c2f-4247-97c6-29ebae68dba6",
+      "constitutional_guardian_1_e808d755",
+      "ca77a530-abe4-4bf7-b939-d4e93690fb29",
+      "fb91ce98-bb28-42c1-9c02-447694b8ca20",
+      "constitutional_guardian_1_027999c3",
+      "ad23bb8e-f855-4a95-ac00-dbdc74ea37ef",
+      "constitutional_guardian_1_0a306a6e",
+      "fb46440f-12f1-48a9-b78f-de0f4d3b88cb",
+      "c38d3449-27d0-4971-a7be-32519add2542",
+      "78440512-25c2-405a-9a59-e19965f2c054",
+      "93638173-4c89-4501-8bb4-5ab41fe1e438",
+      "d95cb048-1247-4f8f-a062-3a52c7d619f8",
+      "constitutional_guardian_1_ba7897d8",
+      "constitutional_guardian_1_e4ae7ffe",
+      "a66dfcd0-5920-4edb-abbc-cd55e89db33b",
+      "constitutional_guardian_1_807bba7a",
+      "1861dc1b-b128-4e4f-98f4-8f317fd2ba12",
+      "constitutional_guardian_1_8c1c0be8",
+      "8d847897-519e-4946-8f40-bfa7bb95d0d3"
+    ],
+    "trading_team": [
+      "react_reasoner_1_81e979e6",
+      "5e526243-db9d-4fb3-89db-30ce45988df3",
+      "249d29c8-22ea-4a6d-aadb-d33d747a808e",
+      "0f0c8464-9de8-498e-80fc-b30d364276aa",
+      "react_reasoner_1_a80e4710",
+      "89bc45e8-8de0-4e8d-ac4e-956a368852ec",
+      "066afdeb-6d0f-4fde-a5f1-b3502aefd84d",
+      "mean_reversion_agent",
+      "market_maker",
+      "28022a87-4d17-4769-8db0-c8cf828d5390",
+      "5c748044-1b0c-4428-97d2-4b467149f65b",
+      "230c0da6-c308-4cd6-a816-862b1dcabf18",
+      "49dad6d6-73f3-4bdf-b533-19ba5d50be09",
+      "analyst_1_a2a7e0d2",
+      "93a9296f-ca99-4fc0-a45c-af6ba3b02a92",
+      "15fae868-47eb-4a02-8f93-889732582305",
+      "f55bd3ff-a112-4d81-9f63-8009d865864b",
+      "b987c916-36da-4115-bfc7-30a58ebbfe08",
+      "e0f4be4a-df92-48ae-b4e8-660867c67553",
+      "8c522ead-bbbb-47be-b089-7eefc85f8f20",
+      "1158c5ed-5dda-48bd-83c1-9199b18bae6d",
+      "c016b9e6-d95a-434d-8793-6a7ed1004af9",
+      "analyst_1_7c514eb7",
+      "react_reasoner_1_6a52db66",
+      "analyst_1_c35c7db4",
+      "8957d612-3c0b-4529-9673-eca9033d752e",
+      "risk_manager",
+      "react_reasoner_1_ecca10fa",
+      "analyst_1_c7af8d5e",
+      "analyst_1_bf368722",
+      "react_reasoner_1_6abbee8d",
+      "react_reasoner_1_e0bc3844",
+      "analyst_1_39df2c4a",
+      "40512d17-7ce6-434c-bb24-f3c7f1e06d9b",
+      "e6ecd856-2099-4b97-a347-fa9815780e1c",
+      "17f2c822-af97-4c74-8ba5-9013fab296d6",
+      "4eeeaf0d-631d-4399-b641-a2b501a4e000",
+      "ad85c052-d9a9-4e50-b3a3-a1b9774eb258",
+      "64e62b45-3700-4613-b20a-4cf4f512f551",
+      "analyst_1_d27f717a",
+      "f1910ac3-2d57-469c-918b-b9362c8def38",
+      "7d9774be-731c-436d-b6ea-4cd1fed95530",
+      "5f52be68-3520-4f7f-8eff-9c86e02098c7",
+      "ac0a30a5-b768-43d2-b940-5480285593cd",
+      "dd46de5b-0c9a-4e66-8c9d-b9859a266915",
+      "7384b506-03b5-4519-8327-86ea1f17ccb8",
+      "volatility_agent",
+      "0506a903-b925-44d4-98c8-44fd60568bbf",
+      "react_reasoner_1_d69f0e20",
+      "524b5b43-504b-4691-91d8-3b2e57efe856",
+      "1b676c9f-5118-4a48-9232-ba487e3a08d3",
+      "d048fad1-ce7d-47c2-84aa-0c8fb1685bae",
+      "33581c99-c112-4f9d-be10-b00f1d12d119",
+      "trend_agent"
+    ]
+  },
+  "timestamp": "2026-07-07T07:53:10.355863",
+  "version": "2.0"
+}

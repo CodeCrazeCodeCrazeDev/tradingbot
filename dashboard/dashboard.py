@@ -374,6 +374,37 @@ app.layout = dbc.Container(
             ]
         ),
         
+        # Coordination and Team Metrics
+        dbc.Row(
+            [
+                dbc.Col(
+                    dbc.Card(
+                        [
+                            dbc.CardHeader("Multi-Agent Coordination"),
+                            dbc.CardBody(
+                                [
+                                    dbc.Row(
+                                        [
+                                            dbc.Col(dcc.Graph(id="task-decomposition-chart"), width=6),
+                                            dbc.Col(dcc.Graph(id="agent-load-chart"), width=6)
+                                        ]
+                                    ),
+                                    dbc.Row(
+                                        [
+                                            dbc.Col(dcc.Graph(id="consensus-score-chart"), width=12)
+                                        ],
+                                        className="mt-4"
+                                    )
+                                ]
+                            )
+                        ],
+                        className="mb-4"
+                    ),
+                    width=12
+                )
+            ]
+        ),
+
         # Symbol Analysis
         dbc.Row(
             [
@@ -588,6 +619,62 @@ def update_recent_trades(n):
     )
     
     return table
+
+@app.callback(
+    [
+        Output("task-decomposition-chart", "figure"),
+        Output("agent-load-chart", "figure"),
+        Output("consensus-score-chart", "figure")
+    ],
+    [Input("interval-component", "n_intervals")]
+)
+def update_coordination_metrics(n):
+    """Update coordination-specific charts."""
+    status_data = get_api_data("system/status")
+    if not status_data or 'coordination_core' not in status_data:
+        return go.Figure(), go.Figure(), go.Figure()
+
+    coord = status_data['coordination_core']
+    metrics = coord.get('metrics', {})
+
+    # 1. Task Decomposition Bar Chart
+    task_fig = go.Figure(go.Bar(
+        x=['Total', 'Completed', 'Failed', 'Active'],
+        y=[metrics.get('total_tasks', 0), metrics.get('completed_tasks', 0),
+           metrics.get('failed_tasks', 0), metrics.get('active_tasks', 0)],
+        marker_color=['#636efa', '#00cc96', '#ef553b', '#ffa15a']
+    ))
+    task_fig.update_layout(title="Task Pipeline", template='plotly_dark', height=300)
+
+    # 2. Agent Load Distribution (Pie)
+    agent_status = status_data.get('agents', {})
+    role_counts = agent_status.get('role_distribution', {})
+
+    if not role_counts:
+        # Fallback to dynamic agents
+        agent_stats = coord.get('agent_factory', {}).get('agents', [])
+        roles = [a.get('role', 'unknown') for a in (agent_stats if isinstance(agent_stats, list) else agent_stats.values())]
+        role_counts = pd.Series(roles).value_counts().to_dict()
+
+    load_fig = px.pie(
+        names=list(role_counts.keys()),
+        values=list(role_counts.values()),
+        title="Agent Role Distribution",
+        color_discrete_sequence=px.colors.qualitative.Pastel
+    )
+    load_fig.update_layout(template='plotly_dark', height=300)
+
+    # 3. Consensus Scores over time (Mocked or from history if available)
+    # Since we don't have historical consensus in the basic status, we show a gauge for success rate
+    consensus_fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=metrics.get('success_rate', 1.0) * 100,
+        title={'text': "Coordination Success Rate (%)"},
+        gauge={'axis': {'range': [0, 100]}, 'bar': {'color': "#00cc96"}}
+    ))
+    consensus_fig.update_layout(template='plotly_dark', height=300)
+
+    return task_fig, load_fig, consensus_fig
 
 @app.callback(
     Output("symbol-analysis", "children"),

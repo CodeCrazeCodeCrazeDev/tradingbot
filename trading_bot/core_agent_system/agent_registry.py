@@ -133,6 +133,37 @@ class BaseAgent(ABC):
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute an action - must be implemented by subclasses"""
         pass
+
+    async def execute_task(self, task: Any) -> Dict[str, Any]:
+        """Execute a task - for compatibility with SelfCoordinatingCore"""
+        # Map task to execute call
+
+        # Determine operation based on task type
+        task_type_val = task.task_type.value if hasattr(task.task_type, 'value') else str(task.task_type)
+
+        operation = 'execute'
+        if task_type_val == 'analysis':
+            operation = 'analyze'
+        elif task_type_val == 'research':
+            operation = 'research'
+        elif task_type_val == 'optimization':
+            operation = 'optimize'
+
+        action = {
+            'operation': operation,
+            'task': task.to_dict() if hasattr(task, 'to_dict') else str(task),
+            'context': task.metadata if hasattr(task, 'metadata') else {},
+            'data': task.metadata.get('market_state', {}) if hasattr(task, 'metadata') else {}
+        }
+
+        try:
+            result = await self.execute(action)
+            if 'success' not in result:
+                result['success'] = True
+            return result
+        except Exception as e:
+            logger.error(f"Error in {self.name} executing task {task.task_id}: {e}")
+            return {'success': False, 'error': str(e)}
     
     async def initialize(self):
         """Initialize the agent"""
@@ -381,6 +412,10 @@ class AgentRegistry:
         
         return None
     
+    def get_all_agents(self) -> List[BaseAgent]:
+        """Get all registered agent instances"""
+        return list(self.agents.values())
+
     def get_agents_by_role(self, role: AgentRole) -> List[BaseAgent]:
         """Get all agents with a specific role"""
         if isinstance(role, str):

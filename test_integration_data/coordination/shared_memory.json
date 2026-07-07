@@ -1,0 +1,138 @@
+{
+  "checksum": "10cbdcbcc8c4ee53b83a0d0d06f93edcdb4e7ea3ae03e06e03468b8d9ec0fefa",
+  "memory": {
+    "task_result_2f4d87ca-1163-4b1b-bb9a-a6410b2a522d": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:22.646712",
+      "key": "task_result_2f4d87ca-1163-4b1b-bb9a-a6410b2a522d",
+      "metadata": {},
+      "owner_id": "5f25f4e7-b0a6-4102-9ee9-0f28c65fb574",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:22.646713",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_67314a81-c657-4643-8a38-18d9cc6ee48b": {
+      "allowed_agents": [],
+      "created_at": "2026-07-07T07:56:52.734328",
+      "key": "task_result_67314a81-c657-4643-8a38-18d9cc6ee48b",
+      "metadata": {},
+      "owner_id": "0e5abbe0-06be-400e-9fca-5c0aea166b32",
+      "scope": "global",
+      "updated_at": "2026-07-07T07:56:52.734329",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_a727574a-1f58-4dd3-9a49-d8e33afb2cd8": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:22.646021",
+      "key": "task_result_a727574a-1f58-4dd3-9a49-d8e33afb2cd8",
+      "metadata": {},
+      "owner_id": "5f25f4e7-b0a6-4102-9ee9-0f28c65fb574",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:22.646022",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_d20af51f-a40f-4c94-983a-1409eaf5ac02": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:22.647170",
+      "key": "task_result_d20af51f-a40f-4c94-983a-1409eaf5ac02",
+      "metadata": {},
+      "owner_id": "5f25f4e7-b0a6-4102-9ee9-0f28c65fb574",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:22.647171",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_d6960df3-69f6-4161-9eb3-76f1353dade1": {
+      "allowed_agents": [],
+      "created_at": "2026-07-07T07:56:52.733763",
+      "key": "task_result_d6960df3-69f6-4161-9eb3-76f1353dade1",
+      "metadata": {},
+      "owner_id": "0e5abbe0-06be-400e-9fca-5c0aea166b32",
+      "scope": "global",
+      "updated_at": "2026-07-07T07:56:52.733764",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_d839681b-29f3-411a-8a9a-845e267bc2b7": {
+      "allowed_agents": [],
+      "created_at": "2026-07-07T07:56:52.734913",
+      "key": "task_result_d839681b-29f3-411a-8a9a-845e267bc2b7",
+      "metadata": {},
+      "owner_id": "0e5abbe0-06be-400e-9fca-5c0aea166b32",
+      "scope": "global",
+      "updated_at": "2026-07-07T07:56:52.734913",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    }
+  },
+  "teams": {
+    "research_team": [
+      "63813199-b536-4c49-9bf4-fb82b33f020c",
+      "9d26e7e5-31f8-48c1-a892-3cbbb496101b"
+    ],
+    "safety_team": [
+      "cd60e49b-1d3e-4eb9-9241-3427e8025b01",
+      "constitutional_guardian_1_cd5af4ae",
+      "7bb746ff-7272-409e-846f-94fb823b85be",
+      "405b322c-0fb7-40ea-9efc-5ae939574752",
+      "constitutional_guardian_1_ac5bcabe",
+      "5ef4f785-6857-4009-8747-8bc8f340ae3d"
+    ],
+    "trading_team": [
+      "5f25f4e7-b0a6-4102-9ee9-0f28c65fb574",
+      "bbed7b80-fdb2-4af8-8ec6-629d7ca54970",
+      "trend_agent",
+      "react_reasoner_1_66dca258",
+      "afa5d2d5-12ad-4821-9b3a-e6f18d23d93f",
+      "mean_reversion_agent",
+      "8e0e3fda-2444-491b-8da8-a77bb5dfddb4",
+      "cd47d88b-4d0c-4318-9ea7-7f3f5859a806",
+      "react_reasoner_1_362cfa3c",
+      "volatility_agent",
+      "a2561965-748e-4ac6-8862-5c674b94c10e",
+      "market_maker",
+      "0e5abbe0-06be-400e-9fca-5c0aea166b32",
+      "analyst_1_5d2f26fe",
+      "710d8f6e-d1f6-4905-a202-7ddd01dce627",
+      "risk_manager",
+      "analyst_1_cf8c0c5d",
+      "21882c34-3491-4652-bb78-bfdf132c2693",
+      "940e441d-5bdd-4308-a3f9-a386ad048a91"
+    ]
+  },
+  "timestamp": "2026-07-07T07:56:52.735606",
+  "version": "2.0"
+}

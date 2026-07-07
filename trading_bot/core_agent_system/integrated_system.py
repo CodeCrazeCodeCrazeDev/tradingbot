@@ -55,6 +55,7 @@ Usage:
 
 import asyncio
 import logging
+import psutil
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from pathlib import Path
@@ -89,8 +90,48 @@ from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
 from .self_coordinating_core import SelfCoordinatingCore
+from trading_bot.world_model.latent_dynamics import WorldModel
 
 logger = logging.getLogger(__name__)
+
+
+class MetricsCollector:
+    """
+    Metrics Collector - Aggregates real-time telemetry from the agent system.
+    """
+
+    def __init__(self, system):
+        self.system = system
+        self.start_time = datetime.now()
+        self.process = psutil.Process()
+
+    def get_all_metrics(self) -> Dict[str, Any]:
+        """Collect all metrics from the system"""
+        status = self.system.get_comprehensive_status()
+        uptime = datetime.now() - self.start_time
+
+        # System resource metrics
+        cpu_usage = self.process.cpu_percent()
+        memory_info = self.process.memory_info()
+
+        return {
+            'timestamp': datetime.now().isoformat(),
+            'uptime': str(uptime),
+            'uptime_seconds': uptime.total_seconds(),
+            'status': 'running' if self.system.running else 'stopped',
+            'cpu_usage': cpu_usage,
+            'memory_usage': memory_info.rss / (1024 * 1024),  # MB
+            'active_connections': len(self.process.connections()),
+            'error_rate': status.get('coordination_core', {}).get('metrics', {}).get('failed_tasks', 0) /
+                         max(status.get('coordination_core', {}).get('metrics', {}).get('total_tasks', 1), 1),
+            'components': {
+                'coordination': 'active' if status.get('coordination_core', {}).get('running') else 'inactive',
+                'memory': 'healthy',
+                'agents': 'healthy' if status.get('agents', {}).get('total_agents', 0) > 0 else 'warning',
+                'tools': 'healthy'
+            },
+            **status
+        }
 
 
 class IntegratedAgentSystem:
@@ -104,6 +145,9 @@ class IntegratedAgentSystem:
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
         
+        # Metrics
+        self.metrics_collector = MetricsCollector(self)
+
         # Storage path
         storage_base = Path(config.get('storage_path', 'core_agent_data'))
         storage_base.mkdir(parents=True, exist_ok=True)
@@ -206,7 +250,10 @@ class IntegratedAgentSystem:
             memory_system=self.memory_system,
             tool_registry=self.tool_registry,
             agent_registry=self.agent_registry,
-            config=self.config
+            config={
+                **self.config,
+                'coordination_storage_path': str(self.storage_path / 'coordination')
+            }
         )
     
     async def initialize(self):
@@ -304,6 +351,28 @@ class IntegratedAgentSystem:
             await self.agent_registry.register_agent(agent)
         
         logger.info(f"Registered {len(default_agents)} standard and {len(legacy_agents)} legacy agents")
+
+    async def _assign_agents_to_teams(self):
+        """Assign agents to functional teams"""
+        # Find agents by role or name and add them to teams in shared memory
+        trading_team = self.agent_registry.get_agents_by_role(AgentRole.PLANNER)
+        trading_team.extend(self.agent_registry.get_agents_by_role(AgentRole.EXECUTOR))
+
+        research_team = self.agent_registry.get_agents_by_role(AgentRole.RESEARCHER)
+
+        safety_team = self.agent_registry.get_agents_by_role(AgentRole.SAFETY)
+        safety_team.extend(self.agent_registry.get_agents_by_role(AgentRole.EVALUATOR))
+
+        for agent in trading_team:
+            self.coordination_core.shared_memory.add_to_team('trading_team', agent.agent_id)
+
+        for agent in research_team:
+            self.coordination_core.shared_memory.add_to_team('research_team', agent.agent_id)
+
+        for agent in safety_team:
+            self.coordination_core.shared_memory.add_to_team('safety_team', agent.agent_id)
+
+        logger.info(f"Assigned agents to teams: trading={len(trading_team)}, research={len(research_team)}, safety={len(safety_team)}")
     
     async def start(self):
         """Start the integrated system"""
@@ -496,7 +565,8 @@ class IntegratedAgentSystem:
                 'success': result.get('success', False),
                 'answer': final_answer,
                 'coordination_report': result,
-                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved."
+                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
+                'iterations': len(result.get('results', []))
             }
         else:
             # Fallback to simple ReAct loop for simpler tasks
@@ -525,6 +595,7 @@ class IntegratedAgentSystem:
             'policy_network': self.policy_network.get_status(),
             'value_network': self.value_network.get_status(),
             'self_play': self.self_play_loop.get_status(),
+            'coordination_core': self.coordination_core.get_comprehensive_status(),
             'timestamp': datetime.now().isoformat()
         }
     
