@@ -1,50 +1,55 @@
 """
-Evolution Gate - Implements RSEA (Recursive Self-Evolving Agents).
-Justified by the Monotone-Safe update principle.
+Evolution Gate - UCA V5 Governance
+==================================
+
+Monotone-safe gate for recursive agent self-evolution.
 """
 
 import logging
-import uuid
+from typing import Any, Dict, List, Optional
 from datetime import datetime
-from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
 class EvolutionGate:
     """
-    Strict 'Keep-Better' gate for self-modification.
-    Ensures that every change improves performance over a stateless baseline.
+    RSEA: Recursive Self-Evolving Agents Gate.
+    Enforces the 'Monotone-Safe' update rule.
     """
 
-    def __init__(self, gain_threshold: float = 0.05):
-        self.gain_threshold = gain_threshold
-        logger.info("RSEA: Evolution Gate Initialized")
+    def __init__(self, validation_engine: Any, improvement_threshold: float = 0.05):
+        self.validation_engine = validation_engine
+        self.threshold = improvement_threshold
+        self.evolution_history = []
 
-    async def validate_improvement(
-        self,
-        candidate_id: str,
-        metrics: Dict[str, float],
-        baseline_metrics: Dict[str, float]
-    ) -> bool:
+    def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
         """
-        Validates if a candidate improvement meets the monotone-safe criteria.
-        Gain Metric: G = Perf(online) - Perf(stateless)
+        Gate: Only commit a rewrite if it improves on a held-out validation set.
         """
-        perf_candidate = metrics.get('sharpe_ratio', 0.0)
-        perf_baseline = baseline_metrics.get('sharpe_ratio', 0.0)
+        logger.info(f"EvolutionGate: Validating candidate {candidate_id}")
 
-        gain = perf_candidate - perf_baseline
+        # 1. Run baseline on validation set
+        baseline_perf = self.validation_engine.run_benchmark(baseline_config)
 
-        is_safe = gain >= self.gain_threshold
+        # 2. Run candidate on validation set
+        candidate_perf = self.validation_engine.run_benchmark(candidate_config)
+
+        # 3. Monotone-Safe Check: candidate > baseline + epsilon
+        gain = candidate_perf - baseline_perf
+        is_safe = gain >= self.threshold
 
         if is_safe:
-            logger.info(f"Evolution Gate: Candidate {candidate_id} PASSED with gain {gain:.4f}")
+            logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain: {gain:.4f}")
+            self.evolution_history.append({
+                "timestamp": datetime.utcnow().isoformat(),
+                "candidate_id": candidate_id,
+                "gain": gain,
+                "status": "COMMITTED"
+            })
+            return True
         else:
-            logger.warning(f"Evolution Gate: Candidate {candidate_id} REJECTED with gain {gain:.4f}")
+            logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED. Gain: {gain:.4f} < {self.threshold}")
+            return False
 
-        return is_safe
-
-    def record_evolution(self, candidate_id: str, success: bool, metadata: Dict):
-        """Record the evolution attempt in the immutable audit log."""
-        # TODO: Implement write-once audit logging
-        pass
+    def get_evolution_report(self) -> List[Dict[str, Any]]:
+        return self.evolution_history
