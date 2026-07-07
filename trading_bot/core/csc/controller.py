@@ -59,6 +59,10 @@ class CognitiveSystemController:
         # In production, load from a registry. Here we stub it.
         return {}
 
+        # DiscoLoop Channels
+        self.continuous_state = {} # Latent embeddings
+        self.discrete_channel = [] # Semantic tokens
+
     async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
         """
         12-step Recursive Active Inference Pipeline.

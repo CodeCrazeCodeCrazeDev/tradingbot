@@ -30,7 +30,7 @@ class InformationFolder:
         # In a real implementation, this would use an LLM or specialized head
         return "Folded strategic summary."
 
-    async def fold(self, task: str, result: Dict, context: Dict) -> Dict:
+    async def fold(self, task: str, execution_log: List[Dict], global_state: Dict) -> Dict:
         """
         Implements Information Folding:
         1. Fetch last N episodic entries.
@@ -41,7 +41,11 @@ class InformationFolder:
         summary = f"Subgoal for {task} completed with success={result.get('success')}"
 
         return {
-            'semantic_summary': summary,
-            'compressed_tokens': len(summary), # Simplified
+            'semantic_update': summary,
+            'sufficient_statistics': {
+                'final_confidence': global_state.get('confidence', 0.5),
+                'active_hypotheses': global_state.get('active_branches', [])
+            },
+            'tokens_saved': sum(len(str(s)) for s in execution_log) - len(summary),
             'status': 'folded'
         }
