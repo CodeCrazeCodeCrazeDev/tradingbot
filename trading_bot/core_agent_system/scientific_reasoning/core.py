@@ -3,14 +3,18 @@ Unified Scientific Reasoning Engine (SRE) - Core Interface
 ==========================================================
 
 The SRE unifies all hypothesis management into a single logical source of truth.
-It implements a 16-state adaptive state machine grounded in Bayesian evidence synthesis.
+It implements an 18-step adaptive reasoning loop (plus a 19th discovery step)
+grounded in Bayesian evidence synthesis and Active Inference (VFE minimization).
 """
 
 from enum import Enum, auto
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional, Any, Set, Union
+from typing import Dict, List, Optional, Any, Set, Union, Tuple
 import uuid
+import logging
+
+logger = logging.getLogger(__name__)
 
 class HypothesisState(Enum):
     # Active States (Lifecycle Steps)
@@ -54,13 +58,14 @@ class PromotionLevel(Enum):
 
 @dataclass
 class ScientificEvidence:
-    evidence_id: str
-    source: str
-    content: Dict[str, Any]
-    confidence: float
+    evidence_id: str = field(default_factory=lambda: f"ev-{uuid.uuid4().hex[:8]}")
+    source: str = ""
+    content: Dict[str, Any] = field(default_factory=dict)
+    confidence: float = 0.5
     timestamp: datetime = field(default_factory=datetime.now)
     provenance: Dict[str, Any] = field(default_factory=dict)
     causal_impact: float = 0.0
+    is_contradicting: bool = False
 
 @dataclass
 class HypothesisLineage:
@@ -98,6 +103,10 @@ class ScientificHypothesis:
     expected_value: float = 0.0
     novelty_score: float = 0.0
     falsification_triggers: List[str] = field(default_factory=list)
+
+    # Validation results
+    falsification_attempts: int = 0
+    validation_score: float = 0.0
 
 class ScientificReasoningEngine:
     """
