@@ -18,7 +18,7 @@ from datetime import datetime
 from uuid import uuid4
 
 from .hypothesis import HypothesisGenerator, ReasoningBranch
-from .folding import InformationFolder
+from .folding import InformationFolder, FoldingOperator
 from ..verification.swarm import VerificationSwarm
 from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport
 from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector

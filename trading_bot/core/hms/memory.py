@@ -18,8 +18,8 @@ Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
 
 import logging
 import os
+from typing import Dict, List, Optional, Any, Tuple, Set, Union
 import networkx as nx
-from typing import Any, Dict, List, Optional
 from datetime import datetime
 from .models import ResearchLedgerEntry, ScientificMemoryObject, EvidenceNode, EvidenceEdge, RelationType
 
