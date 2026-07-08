@@ -6,7 +6,7 @@ Uses Redis for task queue and result storage.
 """
 
 from typing import List, Dict, Optional, Any, Callable, Tuple
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from datetime import datetime
 import pickle
 import hashlib
@@ -39,7 +39,7 @@ class EvaluationTask:
         """Serialize task to dictionary"""
         return {
             'task_id': self.task_id,
-            'genome': pickle.dumps(self.genome).hex(),
+            'genome': json.dumps(asdict(self.genome), default=str),
             'market_data_hash': self.market_data_hash,
             'config_hash': self.config_hash,
             'priority': self.priority,
@@ -49,9 +49,10 @@ class EvaluationTask:
     @classmethod
     def from_dict(cls, data: Dict) -> 'EvaluationTask':
         """Deserialize task from dictionary"""
+        genome_data = json.loads(data['genome'])
         return cls(
             task_id=data['task_id'],
-            genome=pickle.loads(bytes.fromhex(data['genome'])),
+            genome=StrategyGenome(**genome_data) if isinstance(genome_data, dict) else genome_data,
             market_data_hash=data['market_data_hash'],
             config_hash=data['config_hash'],
             priority=data.get('priority', 0),
@@ -76,8 +77,8 @@ class EvaluationResult:
         return {
             'task_id': self.task_id,
             'success': self.success,
-            'backtest_result': pickle.dumps(self.backtest_result).hex() if self.backtest_result else None,
-            'fitness_score': pickle.dumps(self.fitness_score).hex() if self.fitness_score else None,
+            'backtest_result': json.dumps(asdict(self.backtest_result), default=str) if self.backtest_result else None,
+            'fitness_score': json.dumps(asdict(self.fitness_score), default=str) if self.fitness_score else None,
             'error_message': self.error_message,
             'execution_time_ms': self.execution_time_ms,
             'worker_id': self.worker_id,
@@ -87,11 +88,13 @@ class EvaluationResult:
     @classmethod
     def from_dict(cls, data: Dict) -> 'EvaluationResult':
         """Deserialize result from dictionary"""
+        bt_data = json.loads(data['backtest_result']) if data.get('backtest_result') else None
+        fit_data = json.loads(data['fitness_score']) if data.get('fitness_score') else None
         return cls(
             task_id=data['task_id'],
             success=data['success'],
-            backtest_result=pickle.loads(bytes.fromhex(data['backtest_result'])) if data.get('backtest_result') else None,
-            fitness_score=pickle.loads(bytes.fromhex(data['fitness_score'])) if data.get('fitness_score') else None,
+            backtest_result=BacktestResult(**bt_data) if isinstance(bt_data, dict) else bt_data,
+            fitness_score=FitnessScore(**fit_data) if isinstance(fit_data, dict) else fit_data,
             error_message=data.get('error_message'),
             execution_time_ms=data.get('execution_time_ms', 0.0),
             worker_id=data.get('worker_id', ''),
