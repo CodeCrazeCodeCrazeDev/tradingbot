@@ -15,7 +15,16 @@ from trading_bot.core.hms.memory import HierarchicalMemorySystem
 async def test_logact_reliability_backbone():
     """Verify LogAct Shared-Log Backbone and Voter consensus."""
     csc = CognitiveSystemController()
-    await decision_bus.start()
+
+    # Register a mock voter to simulate GovernanceShield
+    async def mock_voter(action):
+        return {"decision": "APPROVE", "reason": "Test approval"}
+
+    # We must ensure the bus is started
+    if not decision_bus._running:
+        await decision_bus.start()
+
+    decision_bus.register_voter("GovernanceShield", mock_voter)
 
     action = LogAction(
         action_type="trade",
@@ -31,7 +40,7 @@ async def test_logact_reliability_backbone():
             break
         await asyncio.sleep(0.1)
 
-    assert action.status in [ActionStatus.APPROVED, ActionStatus.VETOED]
+    assert action.status == ActionStatus.APPROVED
     assert action.sequence_number is not None
     assert "GovernanceShield" in action.voter_reports
 
@@ -46,11 +55,15 @@ async def test_sage_memory_evolution_gain():
     hms = HierarchicalMemorySystem()
 
     # Simulate experience (Stateful)
-    feedback = [{"target_edge": "E1", "action": "PRUNE", "reason": "Low reliability"}]
+    # Add a mock edge first to prune it
+    hms.graph_memory.graph.add_edge("E1", "E2", relation="REASONING_GAP")
+
+    feedback = [{"action": "PRUNE", "u": "E1", "v": "E2", "key": "REASONING_GAP"}]
     hms.submit_feedback(feedback)
 
     # Verify evolution
     assert hms.graph_memory.evolution_rounds > 0
+    assert not hms.graph_memory.graph.has_edge("E1", "E2")
 
     # Gain Metric Calculation (Mocked for architectural verification)
     perf_stateful = 0.85

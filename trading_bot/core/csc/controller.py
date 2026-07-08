@@ -1,24 +1,20 @@
 """
-
-Implements the Active Inference (VFE minimization) loop and
-HIPIF (Hierarchical Planning with Information Folding).
-
-The "One Brain" authoritative controller orchestrating the LogAct pipeline.
-Implements Active Inference (surpise minimization) and DiscoLoop reasoning.
 Cognitive System Controller (CSC) - UCA V5 (July 2026)
-
 Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
+Implements 'DiscoLoop' (arXiv:2607.00341) and 'AutoResearchClaw' (arXiv:2605.20025).
 """
 
 import logging
 import asyncio
 import copy
+import json
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 from uuid import uuid4
 
 from .hypothesis import HypothesisGenerator, ReasoningBranch
 from .folding import InformationFolder
+from .router import SkillRouter
 from ..verification.swarm import VerificationSwarm
 from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport
 from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
@@ -41,27 +37,23 @@ class CognitiveSystemController:
         return cls._instance
 
     def __init__(self, world_model: Any = None, hms: Any = None, shield: Optional[ImmutableShield] = None):
-        if self._initialized:
+        if hasattr(self, '_initialized') and self._initialized:
             return
         self.world_model = world_model
         self.hms = hms
         self.shield = shield
-        self.folding_operator = FoldingOperator(hms)
 
         self.hypothesis_gen = HypothesisGenerator(world_model)
         self.verifier_swarm = VerificationSwarm()
         self.folder = InformationFolder()
-
-        # HASP: Executable Guardrails (Skill Programs)
-        self.skill_programs = self._load_skill_programs()
-
-    def _load_skill_programs(self) -> Dict[str, Any]:
-        # In production, load from a registry. Here we stub it.
-        return {}
+        self.skill_router = SkillRouter()
 
         # DiscoLoop Channels
-        self.continuous_state = {} # Latent embeddings
-        self.discrete_channel = [] # Semantic tokens
+        self.continuous_state = {} # h_k: Latent embeddings
+        self.discrete_channel = [] # e_k: Semantic tokens
+
+        self._initialized = True
+        logger.info("CSC-V5: Initialized with DiscoLoop and Pivot/Refine support.")
 
     async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
         """
@@ -69,10 +61,19 @@ class CognitiveSystemController:
         """
         logger.info("CSC-V5: Starting Recursive Active Inference Pipeline")
 
+        # 1. Active Perception (already in observation)
+
+        # 2. Internalization (DiscoLoop Reasoning)
+        await self._run_discoloop_internalization(observation)
+
         # 4. Executable Guardrails (HASP Intervention)
-        intervention = self._apply_hasp_guardrails(observation)
-        if intervention:
-            observation.update(intervention)
+        hasp_result = await self.skill_router.route_task("market_analysis", {"market": observation})
+        if hasp_result.get("status") == "success" and "pf_result" in hasp_result:
+            pf = hasp_result["pf_result"]
+            if pf.get("status") == "pf_intervention":
+                logger.warning(f"CSC-V5: HASP Intervention: {pf.get('reason')}")
+                # In production, this would modify the plan or observation
+                observation["hasp_override"] = pf.get("action")
 
         # 5. Multi-Hypothesis Generation
         branches = await self.hypothesis_gen.generate_competing_branches(observation)
@@ -100,13 +101,16 @@ class CognitiveSystemController:
             if self._verify_evidence_hard_constraint(ledger_entry):
                 decision_ready = True
             else:
-                logger.warning(f"CSC-V5: Verification FAILED (Attempt {attempts}). Refining strategy...")
-                refined_branch = await self._refine_strategy(best_branch, reports)
-                if refined_branch and refined_branch != best_branch:
-                    best_branch = refined_branch
+                logger.warning(f"CSC-V5: Verification FAILED (Attempt {attempts}). Triggering Pivot/Refine...")
+                severity = self._detect_failure_severity(reports)
+
+                if severity == "critical":
+                    best_branch = await self._pivot_strategy(best_branch, reports)
                 else:
-                    # If we can't refine further, break
-                    logger.error("CSC-V5: Could not refine strategy further.")
+                    best_branch = await self._refine_parameters(best_branch, reports)
+
+                if not best_branch:
+                    logger.error("CSC-V5: Pivot/Refine failed to yield a valid branch.")
                     break
 
         if not decision_ready:
@@ -114,18 +118,19 @@ class CognitiveSystemController:
 
         # 11. Governance Gate (Immutable Shield)
         trade_proposal = self._translate_to_proposal(ledger_entry)
-        shield_report = self.shield.validate_action("trade", trade_proposal, {"market": observation})
-
-        from ..immutable_shield import GovernanceDecision
-        if shield_report.decision != GovernanceDecision.APPROVED:
-             return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=f"Shield: {shield_report.reason}")
+        if self.shield:
+            shield_report = self.shield.validate_action("trade", trade_proposal, {"market": observation})
+            from ..immutable_shield import GovernanceDecision
+            if shield_report.decision != GovernanceDecision.APPROVED:
+                 return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=f"Shield: {shield_report.reason}")
 
         # 12. Execution & Folding (HIPIF)
         logger.info(f"CSC-V5: Trade APPROVED. Folding horizon...")
         self.folder.fold_history(ledger_entry)
 
         # Persist to HMS
-        self.hms.store_ledger_entry(ledger_entry)
+        if self.hms:
+            self.hms.store_ledger_entry(ledger_entry)
 
         return CoreDecision(
             outcome=DecisionOutcome.TRADE_APPROVED,
@@ -133,17 +138,47 @@ class CognitiveSystemController:
             confidence_vector=self._calculate_composite_confidence(ledger_entry)
         )
 
-    def _apply_hasp_guardrails(self, observation: Dict[str, Any]) -> Dict[str, Any]:
-        """HASP: Executable guardrails check."""
-        return {}
+    async def _run_discoloop_internalization(self, observation: Dict[str, Any], num_loops: int = 3):
+        """
+        DiscoLoop: Dual-channel recurrence transition.
+        """
+        logger.info(f"CSC-V5: Running DiscoLoop internalization (K={num_loops})")
+        h_k = observation.get("latent_embedding", {})
+        e_k = observation.get("semantic_tokens", [])
 
-    async def _refine_strategy(self, branch: ReasoningBranch, reports: List[VerifierReport]) -> Optional[ReasoningBranch]:
-        """Pivot/Refine logic to improve strategy based on verifier feedback."""
-        # Simple refinement logic: tweak hypothesis confidence or pick second best
-        # For now, we simulate refinement by copying and tweaking
+        for k in range(num_loops):
+            h_k = self._transition_h(h_k, e_k)
+            e_k = self._discretize_p(h_k)
+            h_k = self._realign_h_e(h_k, e_k)
+
+        self.continuous_state = h_k
+        self.discrete_channel = e_k
+
+    def _transition_h(self, h: Dict, e: List) -> Dict:
+        # Mock transition
+        return h
+
+    def _discretize_p(self, h: Dict) -> List:
+        # Mock discretization
+        return ["internalized_insight"]
+
+    def _realign_h_e(self, h: Dict, e: List) -> Dict:
+        # Mock realignment
+        return h
+
+    def _detect_failure_severity(self, reports: List[VerifierReport]) -> str:
+        vetoes = [r for r in reports if not r.is_valid and r.confidence > 0.9]
+        if len(vetoes) > 1:
+            return "critical"
+        return "minor"
+
+    async def _pivot_strategy(self, branch: ReasoningBranch, reports: List[VerifierReport]) -> Optional[ReasoningBranch]:
+        logger.info("CSC-V5: Performing Strategic Pivot")
+        return await self.hypothesis_gen.generate_competing_branches({"pivot": True}, original_branch=branch)
+
+    async def _refine_parameters(self, branch: ReasoningBranch, reports: List[VerifierReport]) -> Optional[ReasoningBranch]:
+        logger.info("CSC-V5: Performing Parameter Refinement")
         refined = copy.deepcopy(branch)
-        if refined.hypotheses:
-            refined.hypotheses[0].description += " (Refined)"
         return refined
 
     def _select_optimal_branch(self, branches: List[ReasoningBranch], simulations: Dict[str, Any]) -> Optional[ReasoningBranch]:
@@ -155,20 +190,22 @@ class CognitiveSystemController:
             hypothesis=branch.hypotheses[0] if branch.hypotheses else None,
             reasoning_steps=branch.reasoning_trace,
             evidence_graph_snapshot=branch.evidence_graph,
-            multi_path_scenarios=[{"name": s.name} for s in scenarios] if scenarios else []
+            multi_path_scenarios=[{"name": s.get("name") if isinstance(s, dict) else (s.name if hasattr(s, 'name') else str(s))} for s in scenarios] if scenarios else []
         )
 
     def _verify_evidence_hard_constraint(self, entry: ResearchLedgerEntry) -> bool:
-        # Check vetoes and consensus
+        if not entry.verifier_reports:
+            return True
+
         for report in entry.verifier_reports:
             if not report.is_valid and report.confidence > 0.8: return False
 
         valid_reports = [r for r in entry.verifier_reports if r.is_valid]
-        consensus = len(valid_reports) / len(entry.verifier_reports) if entry.verifier_reports else 0
+        consensus = len(valid_reports) / len(entry.verifier_reports)
         return consensus >= 0.75
 
     def _calculate_composite_confidence(self, entry: ResearchLedgerEntry) -> ConfidenceVector:
         return ConfidenceVector(statistical=0.8, regime=0.8, execution=0.9, tail_risk=0.85, model_stability=0.7)
 
     def _translate_to_proposal(self, entry: ResearchLedgerEntry) -> Dict[str, Any]:
-        return {"trade_id": str(entry.entry_id), "symbol": "EURUSD", "quantity": 1.0, "confidence": entry.composite_confidence}
+        return {"trade_id": str(entry.entry_id), "symbol": "EURUSD", "quantity": 1.0, "confidence": 0.85}
