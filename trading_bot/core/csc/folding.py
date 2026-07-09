@@ -16,17 +16,26 @@ class InformationFolder:
     Compresses execution history into semantic strategic updates.
     Prevents 'Strategic Drift' in long-horizon tasks.
     """
+    def __init__(self, fold_interval: int = 10):
+        self.step_counter = 0
+        self.fold_interval = fold_interval
 
     async def fold_step(self):
         self.step_counter += 1
         if self.step_counter % self.fold_interval == 0:
             await self.perform_folding()
 
+    async def perform_folding(self):
+        """Internal folding logic."""
+        logger.info("HIPIF: Performing scheduled folding.")
+        # Logic here
+        pass
+
     def fold_history(self, ledger_entry: Any):
         """
         Folds the current research snapshot into a semantic summary.
         """
-        logger.info(f"HIPIF: Folding research snapshot {ledger_entry.entry_id}")
+        logger.info(f"HIPIF: Folding research snapshot {ledger_entry.entry_id if hasattr(ledger_entry, 'entry_id') else 'N/A'}")
         # In a real implementation, this would use an LLM or specialized head
         return "Folded strategic summary."
 
@@ -38,7 +47,8 @@ class InformationFolder:
         3. Write to Semantic/Research tiers.
         4. Prune source Episodic entries.
         """
-        summary = f"Subgoal for {task} completed with success={result.get('success')}"
+        success = global_state.get('success', False)
+        summary = f"Subgoal for {task} completed with success={success}"
 
         return {
             'semantic_update': summary,

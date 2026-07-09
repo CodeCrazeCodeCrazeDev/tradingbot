@@ -169,7 +169,7 @@ class SentimentAnalyzer:
         self.max_history = self.config.get('max_history', 1000)
         
         # Sentiment cache path
-        self.cache_path = self.config.get('cache_path', 'sentiment_history.db')
+        self.cache_path = self.config.get('cache_path', 'sentiment_history.json')
         
         # Load cached history if available
         self._load_cache()
@@ -642,8 +642,13 @@ class SentimentAnalyzer:
     def _save_cache(self):
         """Save sentiment history to cache"""
         try:
-            with open(self.cache_path, 'wb') as f:
-                pickle.dump(self.sentiment_history, f)
+            # Convert SentimentResult objects to dicts for JSON serialization
+            serializable_history = {
+                ticker: [result.to_dict() for result in results]
+                for ticker, results in self.sentiment_history.items()
+            }
+            with open(self.cache_path, 'w') as f:
+                json.dump(serializable_history, f, indent=2)
             logger.debug(f"Saved sentiment history to {self.cache_path}")
         except Exception as e:
             logger.warning(f"Error saving sentiment cache: {e}")
@@ -652,8 +657,25 @@ class SentimentAnalyzer:
         """Load sentiment history from cache"""
         if os.path.exists(self.cache_path):
             try:
-                with open(self.cache_path, 'rb') as f:
-                    self.sentiment_history = pickle.load(f)
+                with open(self.cache_path, 'r') as f:
+                    data = json.load(f)
+
+                for ticker, results_data in data.items():
+                    self.sentiment_history[ticker] = [
+                        SentimentResult(
+                            text=r['text'],
+                            score=r['score'],
+                            magnitude=r['magnitude'],
+                            compound=r['compound'],
+                            polarity=r['polarity'],
+                            subjectivity=r['subjectivity'],
+                            entities=r['entities'],
+                            topics=r['topics'],
+                            timestamp=datetime.fromisoformat(r['timestamp']),
+                            source=r['source']
+                        )
+                        for r in results_data
+                    ]
                 logger.info(f"Loaded sentiment history from {self.cache_path}")
             except Exception as e:
                 logger.warning(f"Error loading sentiment cache: {e}")
