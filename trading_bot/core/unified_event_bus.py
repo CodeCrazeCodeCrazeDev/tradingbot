@@ -116,6 +116,20 @@ class UnifiedDecisionBus:
         self._processor_task: Optional[asyncio.Task] = None
         self._initialized = True
         logger.info("LogAct Shared-Log Backbone initialized with Legacy Support")
+        self._register_default_voters()
+
+    def _register_default_voters(self):
+        """Registers institutional voters mandated by UCA V5."""
+        from .immutable_shield import shield
+        async def governance_shield_voter(action: LogAction) -> Dict[str, Any]:
+            report = await shield.validate_action(action.action_type, action.payload, {"market": {}, "portfolio": {}})
+            from .immutable_shield import GovernanceDecision
+            return {
+                "decision": "APPROVED" if report.decision == GovernanceDecision.APPROVED else "REJECT",
+                "reason": report.reason,
+                "risk_score": report.risk_score
+            }
+        self.register_voter("GovernanceShield", governance_shield_voter)
 
     async def start(self):
         if self._running:

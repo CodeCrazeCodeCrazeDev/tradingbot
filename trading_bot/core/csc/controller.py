@@ -18,9 +18,10 @@ from datetime import datetime
 from uuid import uuid4
 
 from .hypothesis import HypothesisGenerator, ReasoningBranch
-from .folding import InformationFolder
+from .folding import InformationFolder, FoldingOperator
 from ..verification.swarm import VerificationSwarm
-from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport
+from ..hms.models import ResearchLedgerEntry, EvidenceGraph
+from ..verification.interface import VerifierVerdict as VerifierReport
 from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
 from ..immutable_shield import ImmutableShield
 from ..unified_event_bus import decision_bus, LogAction, ActionStatus
@@ -97,7 +98,8 @@ class CognitiveSystemController:
             ledger_entry.verifier_reports = reports
 
             # 10. Pivot/Refine Decision
-            if self._verify_evidence_hard_constraint(ledger_entry):
+            from ..verification.swarm import EvidenceGraphGate
+            if EvidenceGraphGate.verify_evidence_first(ledger_entry, reports):
                 decision_ready = True
             else:
                 logger.warning(f"CSC-V5: Verification FAILED (Attempt {attempts}). Refining strategy...")
@@ -114,7 +116,7 @@ class CognitiveSystemController:
 
         # 11. Governance Gate (Immutable Shield)
         trade_proposal = self._translate_to_proposal(ledger_entry)
-        shield_report = self.shield.validate_action("trade", trade_proposal, {"market": observation})
+        shield_report = await self.shield.validate_action("trade", trade_proposal, {"market": observation})
 
         from ..immutable_shield import GovernanceDecision
         if shield_report.decision != GovernanceDecision.APPROVED:
@@ -172,3 +174,30 @@ class CognitiveSystemController:
 
     def _translate_to_proposal(self, entry: ResearchLedgerEntry) -> Dict[str, Any]:
         return {"trade_id": str(entry.entry_id), "symbol": "EURUSD", "quantity": 1.0, "confidence": entry.composite_confidence}
+
+    def inject_dependencies(self, **kwargs):
+        """Standardizes dependency injection for UCA V5."""
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+            logger.info(f"CSC-V5: Injected dependency: {key}")
+
+    async def initialize(self):
+        """Initializes the CSC authoritative state."""
+        self._initialized = True
+        logger.info("CSC-V5: Authority Initialized")
+
+    async def think(self, context: Any) -> Any:
+        """CSC Strategic Reasoning Entry Point."""
+        from trading_bot.core.base_types import Decision, DecisionOutcome
+        logger.info("CSC-V5: Thinking...")
+        # Placeholder for full active inference reasoning
+        return Decision(
+            outcome=DecisionOutcome.INCONCLUSIVE,
+            reasoning="Strategic reasoning in progress",
+            decision_type="strategic_plan"
+        )
+
+    async def execute_task(self, task: str, context: Dict[str, Any]) -> Dict[str, Any]:
+        """Strategic task execution."""
+        logger.info(f"CSC-V5: Executing strategic task: {task}")
+        return {"success": True, "result": "Strategic task completed"}

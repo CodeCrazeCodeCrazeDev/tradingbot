@@ -49,3 +49,15 @@ class InformationFolder:
             'tokens_saved': sum(len(str(s)) for s in execution_log) - len(summary),
             'status': 'folded'
         }
+
+class FoldingOperator:
+    """HIPIF Folding Operator."""
+    def __init__(self, hms: Any = None):
+        self.hms = hms
+        self.step_counter = 0
+        self.fold_interval = 10
+
+    async def fold_step(self):
+        self.step_counter += 1
+        if self.step_counter % self.fold_interval == 0:
+            logger.info("FoldingOperator: Triggering periodic folding")
