@@ -661,3 +661,59 @@ This document provides a rigorous scientific synthesis of the 24 highest-impact 
 * **Production Readiness**: High (For portfolio desks).
 * **Financial Adaptation**: Real-time portfolio rebalancing; Multi-asset efficient frontier discovery.
 * **Components Affected**: `PortfolioManager`, `OptimizationEngine`.
+
+---
+
+## 25. Meta-Harness (Harness Optimization)
+
+### Paper Information
+* **Title**: Meta-Harness: End-to-End Optimization of Model Harnesses
+* **Authors**: Yoonho Lee, et al.
+* **Publication**: arXiv:2603.28052
+* **Year**: 2026
+
+### Core Synthesis
+* **Problem Addressed**: The deployment harness (context management, storage, retrieval) is as critical as the model itself but remains manually engineered.
+* **Core Contribution**: An autonomous system that optimizes the code surrounding the model using an agentic proposer and trace-led optimization.
+* **Mathematical Foundation**: Black-box optimization over computable wrappers.
+* **Learning Algorithm**: Trace-Ledger Optimization using historical execution logs.
+* **Planning Algorithm**: Agentic proposal of new harness code.
+* **Memory Architecture**: Trace-ledger and filesystem-based memory.
+* **Agent Architecture**: Meta-agent optimizing the task-agent interface.
+* **Self-Improvement Mechanism**: Continuous refinement of the "Harness" code.
+* **Engineering Mechanisms**: Proposer-evaluator loop; source code mutation.
+* **Failure Modes**: Overfitting to specific traces; bypass of safety logic if not sandboxed.
+* **Limitations**: High evaluation cost per iteration.
+* **Computational Complexity**: $\mathcal{O}(E)$ where $E$ is evaluation complexity.
+* **Scalability**: High (freeze model, optimize wrapper).
+* **Production Readiness**: High (Essential for agent efficiency).
+* **Financial Adaptation**: Optimizing the mapping between high-frequency market data and agent context windows.
+* **Components Affected**: `IntegratedAgentSystem`, `SkillRouter`.
+
+---
+
+## 26. HyEvo (Hybrid Agentic Evolution)
+
+### Paper Information
+* **Title**: HyEvo: Self-Evolving Hybrid Agentic Workflows for Efficient Reasoning
+* **Authors**: Beibei Xu, et al.
+* **Publication**: arXiv:2603.19639
+* **Year**: 2026
+
+### Core Synthesis
+* **Problem Addressed**: Homogeneous LLM-only workflows are inefficient for rule-based or predictable tasks.
+* **Core Contribution**: Automated generation of hybrid workflows (LLM nodes + Code nodes) using an evolutionary strategy.
+* **Mathematical Foundation**: Multi-island Evolutionary Strategies; Graph Topology optimization.
+* **Learning Algorithm**: Reflect-then-generate iterative refinement.
+* **Planning Algorithm**: Evolutionary search over workflow topologies.
+* **Memory Architecture**: Multi-island population storage.
+* **Agent Architecture**: Hybrid (Reasoning + Execution) workflow.
+* **Self-Improvement Mechanism**: Iterative refinement of topology and node logic.
+* **Engineering Mechanisms**: Deterministic code node synthesis; reflection-guided mutation.
+* **Failure Modes**: Local optima in topology search; node logic misalignment.
+* **Limitations**: Requires robust execution feedback.
+* **Computational Complexity**: $\mathcal{O}(P \cdot T)$ where $P$ is population and $T$ is topology depth.
+* **Scalability**: High (up to 19x cost reduction).
+* **Production Readiness**: High (Critical for low-latency financial tasks).
+* **Financial Adaptation**: Hybridizing order execution logic (Code) with strategic intent (LLM).
+* **Components Affected**: `WorkflowEngine`, `EvolutionGate`, `StrategyDiscovery`.

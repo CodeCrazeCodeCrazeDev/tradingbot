@@ -19,8 +19,10 @@ Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
 import logging
 import os
 import networkx as nx
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
+import json
+from uuid import uuid4
 from .models import ResearchLedgerEntry, ScientificMemoryObject, EvidenceNode, EvidenceEdge, RelationType
 
 logger = logging.getLogger(__name__)
@@ -35,24 +37,44 @@ class SAGEGraphMemory:
         self.evolution_rounds = 0
 
     def add_evidence(self, triplet: Tuple[str, str, str], context: Dict[str, Any], evidence: Dict[str, Any]):
-        """Adds context-dependent triplet (QKG principle) to the graph."""
+        """
+        Adds context-dependent triplet (QKG principle) to the graph.
+        Implements 'Quantum Knowledge Graph' (arXiv:2604.23972).
+        """
         u, r, v = triplet
-        # Context-dependent validity key
-        context_key = json.dumps(context, sort_keys=True)
 
-        self.graph.add_edge(u, v, key=r, relation=r, context=context, evidence=evidence, timestamp=datetime.utcnow().isoformat())
-        logger.debug(f"SAGE: Added triplet ({u}, {r}, {v}) under context {context_key}")
+        # SAGE (arXiv:2605.12061) Graph Substrate
+        # Triplets are valid ONLY in specific context
+        self.graph.add_edge(u, v,
+                           key=f"{r}_{uuid4().hex[:8]}",
+                           relation=r,
+                           context_validity=context,
+                           evidence=evidence,
+                           timestamp=datetime.utcnow().isoformat())
+        logger.debug(f"SAGE-QKG: Added triplet ({u}, {r}, {v}) with context requirements.")
 
     def evolve(self, feedback: List[Dict[str, Any]]):
-        """Self-evolution round: Refine graph structure based on Reader feedback."""
+        """
+        Self-evolution round: Refine graph structure based on Reader-Writer feedback loops.
+        Implements SAGE (arXiv:2605.12061) evolutionary mechanism.
+        """
         self.evolution_rounds += 1
         logger.info(f"SAGE: Starting Evolution Round {self.evolution_rounds}")
-        # Logic to prune weak links or collapse nodes based on feedback
+
         for f in feedback:
-            target = f.get("target_edge")
-            if f.get("action") == "PRUNE":
-                 # Implementation of pruning
-                 pass
+            edge_id = f.get("edge_id")
+            if not isinstance(edge_id, (list, tuple)) or len(edge_id) != 3:
+                logger.warning(f"SAGE-Evolution: Invalid edge_id format: {edge_id}")
+                continue
+
+            u, v, key = edge_id
+            if f.get("action") == "PRUNE" and self.graph.has_edge(u, v, key):
+                self.graph.remove_edge(u, v, key)
+                logger.info(f"SAGE-Evolution: Pruned edge ({u}, {v}, {key}) based on reader feedback")
+
+            elif f.get("action") == "STRENGTHEN" and self.graph.has_edge(u, v, key):
+                self.graph[u][v][key]['weight'] = self.graph[u][v][key].get('weight', 1.0) * 1.1
+
         logger.info(f"SAGE: Evolution Round {self.evolution_rounds} complete.")
 
 class HierarchicalMemorySystem:
@@ -126,17 +148,25 @@ class HierarchicalMemorySystem:
         pass
 
     def store_ledger_entry(self, entry: ResearchLedgerEntry):
-        """Persists a research snapshot and updates the SAGE graph."""
+        """
+        Persists a research snapshot and updates the SAGE graph.
+        Implements 'Scholar-KG' principles from Agents-K1 (arXiv:2606.13669).
+        """
         file_path = os.path.join(self.ledger_path, f"{entry.entry_id}.json")
 
-        # Update SAGE graph from evidence graph snapshot
+        # Update SAGE graph from evidence graph snapshot (QKG-aware)
         for node_id, node in entry.evidence_graph_snapshot.nodes.items():
-            self.sage_graph.add_node(node_id, type=node.node_type, content=str(node.content))
+            self.sage_graph.add_node(node_id,
+                                     type=node.node_type,
+                                     content=str(node.content),
+                                     last_seen=datetime.utcnow().isoformat())
 
         for edge in entry.evidence_graph_snapshot.edges:
+            # QKG: Store context validity mask
             self.sage_graph.add_edge(edge.source_id, edge.target_id,
                                      relation=edge.relation.value,
-                                     weight=edge.weight)
+                                     weight=edge.weight,
+                                     context_validity=edge.context_validity_mask)
 
         self._save_graph()
 
