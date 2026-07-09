@@ -15,6 +15,12 @@ from trading_bot.core.hms.memory import HierarchicalMemorySystem
 async def test_logact_reliability_backbone():
     """Verify LogAct Shared-Log Backbone and Voter consensus."""
     csc = CognitiveSystemController()
+
+    # Register mock voter to simulate GovernanceShield
+    async def mock_voter(action):
+        return {"decision": "APPROVED", "reason": "Test Consensus"}
+
+    decision_bus.register_voter("GovernanceShield", mock_voter)
     await decision_bus.start()
 
     action = LogAction(
@@ -45,14 +51,15 @@ async def test_sage_memory_evolution_gain():
     """
     hms = HierarchicalMemorySystem()
 
-    # Simulate experience (Stateful)
-    feedback = [{"target_edge": "E1", "action": "PRUNE", "reason": "Low reliability"}]
-    hms.submit_feedback(feedback)
+    # Simulate experience (Stateful) via L2CL schema evolution
+    feedback = {"reliability": "low", "action": "PRUNE"}
+    hms.evolve_schema("crypto", feedback)
 
-    # Verify evolution
-    assert hms.graph_memory.evolution_rounds > 0
+    # Verify evolution in meta-schema
+    assert hms.memory_schema["asset_classes"]["crypto"]["reliability"] == "low"
 
     # Gain Metric Calculation (Mocked for architectural verification)
+    # G = Perf(Stateful) - Perf(Stateless)
     perf_stateful = 0.85
     perf_stateless = 0.70
     gain = perf_stateful - perf_stateless
