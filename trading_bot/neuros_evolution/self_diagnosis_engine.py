@@ -677,7 +677,8 @@ class EnhancedSelfDiagnosis:
         # Create emergency backup
         backup_path = f"emergency_backup_{int(time.time())}"
         try:
-            subprocess.run(f"cp -r . {backup_path}", shell=True, check=True)
+            import shutil
+            shutil.copytree(".", backup_path, ignore=shutil.ignore_patterns(".git", "__pycache__", "*.pyc"))
             self.logger.info(f"Emergency backup created: {backup_path}")
         except Exception as e:
             self.logger.error(f"Emergency backup failed: {e}")

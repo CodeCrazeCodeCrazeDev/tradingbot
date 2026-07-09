@@ -156,7 +156,14 @@ class SymbolicRegressor:
         })
         
         # Evaluate
-        result = eval(formula, {"__builtins__": {}}, namespace)
+        from trading_bot.security.safe_eval import SafeEvaluator
+        evaluator = SafeEvaluator(additional_funcs={
+            'log': np.log,
+            'exp': np.exp,
+            'sqrt': np.sqrt,
+            'abs': np.abs
+        })
+        result = evaluator.eval(formula, namespace)
         
         return np.array(result)
 
@@ -348,7 +355,7 @@ class GeneticAlgorithm:
     
     def _generate_id(self) -> str:
         """Generate unique ID"""
-        return hashlib.md5(f"{datetime.now()}{random.random()}".encode()).hexdigest()[:12]
+        return hashlib.sha256(f"{datetime.now()}{random.random()}".encode()).hexdigest()[:12]
     
     def get_best_strategy(self) -> Optional[TradingStrategy]:
         """Get best performing strategy"""

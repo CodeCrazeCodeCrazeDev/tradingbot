@@ -46,22 +46,26 @@ class CognitiveSystemController:
         self.world_model = world_model
         self.hms = hms
         self.shield = shield
-        self.folding_operator = FoldingOperator(hms)
+
+        # Correct reference to InformationFolder (HIPIF)
+        self.folding_operator = InformationFolder()
 
         self.hypothesis_gen = HypothesisGenerator(world_model)
         self.verifier_swarm = VerificationSwarm()
-        self.folder = InformationFolder()
+        self.folder = self.folding_operator
 
         # HASP: Executable Guardrails (Skill Programs)
         self.skill_programs = self._load_skill_programs()
 
-    def _load_skill_programs(self) -> Dict[str, Any]:
-        # In production, load from a registry. Here we stub it.
-        return {}
-
         # DiscoLoop Channels
         self.continuous_state = {} # Latent embeddings
         self.discrete_channel = [] # Semantic tokens
+
+        self._initialized = True
+
+    def _load_skill_programs(self) -> Dict[str, Any]:
+        # In production, load from a registry. Here we stub it.
+        return {}
 
     async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
         """
@@ -110,7 +114,11 @@ class CognitiveSystemController:
                     break
 
         if not decision_ready:
-            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason="Failed Pivot/Refine loop")
+            return CoreDecision(
+                outcome=DecisionOutcome.TRADE_REJECTED,
+                trade_id=str(uuid4()),
+                dominant_rejection_reason="Failed Pivot/Refine loop"
+            )
 
         # 11. Governance Gate (Immutable Shield)
         trade_proposal = self._translate_to_proposal(ledger_entry)
@@ -118,7 +126,11 @@ class CognitiveSystemController:
 
         from ..immutable_shield import GovernanceDecision
         if shield_report.decision != GovernanceDecision.APPROVED:
-             return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=f"Shield: {shield_report.reason}")
+             return CoreDecision(
+                 outcome=DecisionOutcome.TRADE_REJECTED,
+                 trade_id=trade_proposal.get("trade_id", str(uuid4())),
+                 dominant_rejection_reason=f"Shield: {shield_report.reason}"
+             )
 
         # 12. Execution & Folding (HIPIF)
         logger.info(f"CSC-V5: Trade APPROVED. Folding horizon...")
