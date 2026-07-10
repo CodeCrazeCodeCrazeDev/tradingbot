@@ -1,128 +1,111 @@
 """
-Implements Skill-to-LoRA (S2L) and Skill Programs (HASP).
+HASP (Harnessing Agents with Skill Programs) & S2L (Skill-to-LoRA) Router.
+Implements the 'SkillRouter' as the authoritative tactical coordinator for UCA V5.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
-
-logger = logging.getLogger(__name__)
-
-class SkillRouter:
-    """
-    Routes agent tasks to either lightweight LoRA adapters (S2L)
-    or executable Skill Programs (HASP/PFs).
-    """
-
-    def __init__(self):
-        self.active_adapters = {} # Mock registry for LoRA adapters
-        self.program_functions = {
-            "high_vol_guardrail": self._pf_volatility_guardrail
-        }
-
-    async def route_task(self, agent_id: str, task: str, context: Dict) -> Dict:
-        """Routes task based on behavioral archetypes."""
-
-        # 1. Check for executable Program Functions (HASP)
-        # PFs trigger on failure-prone states
-        if context.get('market', {}).get('volatility', 0) > 0.3:
-            logger.warning(f"HASP: failure-prone state detected. Activating PF: high_vol_guardrail")
-            return await self.program_functions["high_vol_guardrail"](agent_id, task, context)
-
-        # 2. Skill-to-LoRA (S2L) Internalization
-        # Instead of injecting skill text, we activate a specific behavior adapter
-        adapter_id = self._determine_adapter(task)
-        if adapter_id:
-            logger.info(f"S2L: Activating behavior adapter: {adapter_id} for agent {agent_id}")
-            return {"status": "dispatched_to_adapter", "adapter": adapter_id}
-
-        return {"status": "standard_execution"}
-
-    def _determine_adapter(self, task: str) -> Optional[str]:
-        """Determines the behavioral archetype for the task."""
-        if "hedge" in task.lower():
-            return "lora_hedging_archetype"
-        if "arbitrage" in task.lower():
-            return "lora_arbitrage_archetype"
-        return None
-
-    async def _pf_volatility_guardrail(self, agent_id: str, task: str, context: Dict) -> Dict:
-        """Executable PF: Hard guardrail for high volatility."""
-        return {
-            "status": "pf_intervention",
-            "action": "override_to_hold",
-            "reason": "Volatility exceeded HASP safety threshold"
-        }
-SkillRouter & HASP - UCA V5 Skill Management
-
-Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral behaviors (Skill-to-LoRA).
-Implements 'HASP' (2026) and 'S2L' (2026).
-"""
-
-import logging
-from typing import Any, Dict, List, Optional, Callable
-from dataclasses import dataclass
+import asyncio
 from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple, Callable
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
 class SkillType(Enum):
-    HASP_PROGRAM = "hasp_program"
-    S2L_ADAPTER = "s2l_adapter"
-    REASONING_CHAIN = "reasoning_chain"
+    PROGRAM = "hasp_program"  # Executable Skill Program (ESP)
+    LORA = "s2l_adapter"      # Skill-to-LoRA Adapter
+    PROMPT = "legacy_prompt"  # Legacy advisory prompt
 
 @dataclass
-class SkillArtifact:
-    skill_id: str
-    skill_type: SkillType
-    executable: Any
-    metadata: Dict[str, Any]
+class SkillProgramResponse:
+    action_final: Any
+    intervention_context: Dict[str, Any]
+    status: str # "PASS", "MODIFY", "VETO"
 
 class SkillRouter:
     """
-    Routes agent tasks to the most efficient skill implementation.
+    Authoritative Router mapping task states to HASP Programs or S2L Adapters.
     """
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(SkillRouter, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
     def __init__(self):
-        self._registry: Dict[str, SkillArtifact] = {}
-        logger.info("SkillRouter initialized for UCA V5")
+        if self._initialized:
+            return
+        self.programs: Dict[str, Callable[[Dict[str, Any], Any], SkillProgramResponse]] = {}
+        self.adapters: Dict[str, str] = {} # Map regime -> LoRA adapter_id
+        self._initialized = True
+        logger.info("HASP SkillRouter initialized")
 
-    def register_skill(self, artifact: SkillArtifact):
-        self._registry[artifact.skill_id] = artifact
-        logger.debug(f"Registered skill: {artifact.skill_id} ({artifact.skill_type.value})")
+    def register_program(self, skill_id: str, program_fn: Callable):
+        self.programs[skill_id] = program_fn
+        logger.info(f"Registered HASP Skill Program: {skill_id}")
 
-    def route_task(self, task_type: str, context: Dict[str, Any]) -> Optional[SkillArtifact]:
+    def register_adapter(self, regime_id: str, adapter_id: str):
+        self.adapters[regime_id] = adapter_id
+        logger.info(f"Registered S2L Adapter: {adapter_id} for regime {regime_id}")
+
+    async def route_and_execute(self, state: Dict[str, Any], proposed_action: Any) -> Tuple[Any, Dict[str, Any], str]:
         """
-        Decision logic to select between a weight-based LoRA adapter
-        or an executable HASP program.
+        Main entry point for CSC to harness agent actions.
         """
-        # Logic based on task complexity, reliability requirements, and token budget
-        # For now, we use a simple mapping
-        skill_id = self._get_mapping(task_type)
-        return self._registry.get(skill_id)
+        # 1. Identify active ESPs (Guardrails)
+        for pid, pfn in self.programs.items():
+            try:
+                res = pfn(state, proposed_action)
+                if res.status != "PASS":
+                    logger.warning(f"HASP: Skill Program {pid} triggered intervention: {res.status}")
+                    return res.action_final, res.intervention_context, res.status
+            except Exception as e:
+                logger.error(f"HASP: Skill Program {pid} failed: {e}")
 
-    def _get_mapping(self, task_type: str) -> str:
-        # Mock mapping
-        mappings = {
-            "execution": "vwap_hasp_v1",
-            "risk_check": "compliance_gate_hasp",
-            "sentiment": "sentiment_lora_v2"
-        }
-        return mappings.get(task_type, "default_reasoning")
+        # 2. Identify active S2L Adapter (Behavioral Mode)
+        regime = state.get("market_regime", "UNKNOWN")
+        adapter_id = self.adapters.get(regime)
+        if adapter_id:
+            logger.debug(f"S2L: Routing to behavioral adapter: {adapter_id}")
+            return proposed_action, {"adapter_id": adapter_id}, "PASS"
 
-class HASPExecutor:
-    """
-    Secure execution environment for HASP (Harnessing Agents with Skill Programs).
-    """
-    def execute(self, skill: SkillArtifact, state: Dict[str, Any]) -> Dict[str, Any]:
-        """Executes the state-action intervention function."""
-        if skill.skill_type != SkillType.HASP_PROGRAM:
-            raise ValueError(f"Skill {skill.skill_id} is not a HASP program")
+        return proposed_action, {}, "PASS"
 
-        logger.info(f"HASP: Executing skill program {skill.skill_id}")
-        # In a real system, this would call the executable (Python/WASM) in a sandbox
-        try:
-            result = skill.executable(state)
-            return {"status": "success", "result": result}
-        except Exception as e:
-            logger.error(f"HASP Execution Failure: {e}")
-            return {"status": "failure", "error": str(e)}
+# --- Common Skill Programs (Guardrails) ---
+
+def volatility_guardrail(state: Dict[str, Any], action: Any) -> SkillProgramResponse:
+    vol = state.get("volatility", 0.0)
+    if vol > 0.05:
+        if action and action.get("type") == "MARKET_ORDER":
+             modified_action = action.copy()
+             modified_action["type"] = "LIMIT_ORDER"
+             modified_action["reason"] = "HASP: Forced limit order due to high volatility"
+             return SkillProgramResponse(modified_action, {"volatility": vol}, "MODIFY")
+    return SkillProgramResponse(action, {}, "PASS")
+
+def max_exposure_guardrail(state: Dict[str, Any], action: Any) -> SkillProgramResponse:
+    exposure = state.get("current_exposure", 0.0)
+    limit = state.get("exposure_limit", 1.0)
+    if exposure > limit:
+        return SkillProgramResponse(None, {"exposure": exposure, "limit": limit}, "VETO")
+    return SkillProgramResponse(action, {}, "PASS")
+
+def drawdown_guardrail(state: Dict[str, Any], action: Any) -> SkillProgramResponse:
+    from ...skills.risk_management.drawdown_tracker import DrawdownDurationTracker
+    import numpy as np
+    equity_history = state.get("equity_history", [])
+    if not equity_history:
+        return SkillProgramResponse(action, {}, "PASS")
+    tracker = DrawdownDurationTracker()
+    res = tracker.track(np.array(equity_history))
+    if res.current_drawdown < -0.15:
+        return SkillProgramResponse(None, {"drawdown": res.current_drawdown}, "VETO")
+    return SkillProgramResponse(action, {}, "PASS")
+
+# Global instance
+skill_router = SkillRouter()
+skill_router.register_program("volatility_guard", volatility_guardrail)
+skill_router.register_program("exposure_guard", max_exposure_guardrail)
+skill_router.register_program("drawdown_guard", drawdown_guardrail)
