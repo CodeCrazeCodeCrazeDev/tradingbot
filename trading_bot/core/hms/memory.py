@@ -18,21 +18,49 @@ Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
 
 import logging
 import os
+import json
 import networkx as nx
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
+from dataclasses import dataclass, field
 from .models import ResearchLedgerEntry, ScientificMemoryObject, EvidenceNode, EvidenceEdge, RelationType
 
 logger = logging.getLogger(__name__)
+
+@dataclass
+class MemoryTier:
+    name: str
+    persistent: bool = True
+    storage_path: Optional[str] = None
 
 class SAGEGraphMemory:
     """
     SAGE Substrate: A dynamic, self-evolving graph memory.
     Supports incremental construction and Reader-Writer feedback loops.
     """
-    def __init__(self):
-        self.graph = nx.MultiDiGraph()
+    def __init__(self, graph_path: Optional[str] = None):
+        self.graph_path = graph_path
+        self.graph = self._load_graph()
         self.evolution_rounds = 0
+
+    def _load_graph(self) -> nx.MultiDiGraph:
+        if self.graph_path and os.path.exists(self.graph_path):
+            try:
+                # nx.read_graphml returns a DiGraph or MultiDiGraph based on file
+                G = nx.read_graphml(self.graph_path)
+                if not isinstance(G, nx.MultiDiGraph):
+                    return nx.MultiDiGraph(G)
+                return G
+            except Exception as e:
+                logger.error(f"SAGE: Failed to load graph: {e}")
+        return nx.MultiDiGraph()
+
+    def save_graph(self):
+        if self.graph_path:
+            try:
+                nx.write_graphml(self.graph, self.graph_path)
+            except Exception as e:
+                logger.error(f"SAGE: Failed to save graph: {e}")
 
     def add_evidence(self, triplet: Tuple[str, str, str], context: Dict[str, Any], evidence: Dict[str, Any]):
         """Adds context-dependent triplet (QKG principle) to the graph."""
@@ -51,8 +79,13 @@ class SAGEGraphMemory:
         for f in feedback:
             target = f.get("target_edge")
             if f.get("action") == "PRUNE":
-                 # Implementation of pruning
-                 pass
+                 # Implementation of pruning: find edge and remove it
+                 if target and len(target) >= 2:
+                     u, v = target[0], target[1]
+                     key = target[2] if len(target) > 2 else None
+                     if self.graph.has_edge(u, v, key=key):
+                         self.graph.remove_edge(u, v, key=key)
+                         logger.info(f"SAGE: Pruned edge ({u}, {v}, {key})")
         logger.info(f"SAGE: Evolution Round {self.evolution_rounds} complete.")
 
 class HierarchicalMemorySystem:
@@ -61,37 +94,38 @@ class HierarchicalMemorySystem:
     - SAGE: Self-evolving Agentic Graph-Memory.
     - AutoMem: Automated Learning of Memory as a Cognitive Skill.
     """
-    def __init__(self, storage_root: str = "alphaalgo_data/hms_v3"):
-        self.storage_root = storage_root
-
     def __init__(self, base_path: str = "alphaalgo_data/hms"):
         self.base_path = base_path
+        self.storage_root = base_path
         self.ledger_path = os.path.join(base_path, "research_ledger")
         self.knowledge_path = os.path.join(base_path, "scientific_memory")
         self.graph_path = os.path.join(base_path, "sage_graph.graphml")
 
         os.makedirs(self.ledger_path, exist_ok=True)
+        os.makedirs(self.knowledge_path, exist_ok=True)
         logger.info("HMS V5: SAGE-integrated memory system initialized")
-
-        # SAGE: Persistent Graph Memory
-        self.sage_graph = self._load_graph()
 
         # AutoMem: Memory Structure
         self.memory_schema = self._load_schema()
 
-    def _load_graph(self) -> nx.DiGraph:
-        if os.path.exists(self.graph_path):
-            try:
-                return nx.read_graphml(self.graph_path)
-            except Exception as e:
-                logger.error(f"HMS: Failed to load SAGE graph: {e}")
-        return nx.DiGraph()
+        # SAGE: Persistent Graph Memory
+        self.graph_memory = SAGEGraphMemory(self.graph_path)
 
-    def _save_graph(self):
-        try:
-            nx.write_graphml(self.sage_graph, self.graph_path)
-        except Exception as e:
-            logger.error(f"HMS: Failed to save SAGE graph: {e}")
+        # Initialize Tiers (6-tier architecture)
+        self.tiers = {
+            "working": MemoryTier("working", persistent=False),
+            "episodic": MemoryTier("episodic", persistent=True),
+            "semantic": MemoryTier("semantic", persistent=True),
+            "procedural": MemoryTier("procedural", persistent=True),
+            "research": MemoryTier("research", persistent=True),
+            "institutional": MemoryTier("institutional", persistent=True),
+        }
+
+        # Setup persistence for tiers
+        for tier_name, tier in self.tiers.items():
+            if tier.persistent:
+                os.makedirs(os.path.join(self.base_path, tier_name), exist_ok=True)
+
 
     def _load_schema(self) -> Dict[str, Any]:
         schema_path = os.path.join(self.base_path, "memory_schema.json")
@@ -112,9 +146,9 @@ class HierarchicalMemorySystem:
             relation = entry.get("relation", "ASSOCIATED_WITH")
 
             if source and target:
-                self.sage_graph.add_edge(source, target, relation=relation, weight=1.0)
+                self.graph_memory.graph.add_edge(source, target, relation=relation, weight=1.0)
 
-        self._save_graph()
+        self.graph_memory.save_graph()
 
     def optimize_metamemory(self, success_trajectories: List[Any]):
         """
@@ -131,14 +165,14 @@ class HierarchicalMemorySystem:
 
         # Update SAGE graph from evidence graph snapshot
         for node_id, node in entry.evidence_graph_snapshot.nodes.items():
-            self.sage_graph.add_node(node_id, type=node.node_type, content=str(node.content))
+            self.graph_memory.graph.add_node(node_id, type=node.node_type, content=str(node.content))
 
         for edge in entry.evidence_graph_snapshot.edges:
-            self.sage_graph.add_edge(edge.source_id, edge.target_id,
+            self.graph_memory.graph.add_edge(edge.source_id, edge.target_id,
                                      relation=edge.relation.value,
                                      weight=edge.weight)
 
-        self._save_graph()
+        self.graph_memory.save_graph()
 
         entry_data = {
             "entry_id": entry.entry_id,
@@ -152,10 +186,8 @@ class HierarchicalMemorySystem:
             "sage_sync": True
         }
 
-        # Setup persistence
-        for tier_name, tier in self.tiers.items():
-            if tier.persistent:
-                os.makedirs(os.path.join(self.storage_root, tier_name), exist_ok=True)
+        with open(file_path, 'w') as f:
+            json.dump(entry_data, f, indent=2)
 
     def retrieve_evidence_chain(self, query: str) -> List[EvidenceNode]:
         """
@@ -165,6 +197,11 @@ class HierarchicalMemorySystem:
         # Mock retrieval of related evidence from the graph
         logger.info(f"HMS: SAGE retrieving evidence chain for: {query}")
         return []
+
+    def submit_feedback(self, feedback: List[Dict[str, Any]]):
+        """Submit feedback to evolve the SAGE graph."""
+        logger.info(f"HMS: Submitting feedback for SAGE evolution: {len(feedback)} items")
+        self.graph_memory.evolve(feedback)
 
     def store_scientific_lesson(self, lesson: ScientificMemoryObject):
         """Stores a generalized lesson derived from research outcomes."""

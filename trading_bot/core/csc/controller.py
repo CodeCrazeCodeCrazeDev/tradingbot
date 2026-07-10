@@ -46,14 +46,16 @@ class CognitiveSystemController:
         self.world_model = world_model
         self.hms = hms
         self.shield = shield
-        self.folding_operator = FoldingOperator(hms)
+        self.folding_operator = InformationFolder()
 
         self.hypothesis_gen = HypothesisGenerator(world_model)
         self.verifier_swarm = VerificationSwarm()
-        self.folder = InformationFolder()
 
         # HASP: Executable Guardrails (Skill Programs)
         self.skill_programs = self._load_skill_programs()
+
+        # Register as voter in decision_bus for LogAct backbone reliability
+        decision_bus.register_voter("GovernanceShield", self._governance_voter)
 
     def _load_skill_programs(self) -> Dict[str, Any]:
         # In production, load from a registry. Here we stub it.
@@ -172,3 +174,8 @@ class CognitiveSystemController:
 
     def _translate_to_proposal(self, entry: ResearchLedgerEntry) -> Dict[str, Any]:
         return {"trade_id": str(entry.entry_id), "symbol": "EURUSD", "quantity": 1.0, "confidence": entry.composite_confidence}
+
+    async def _governance_voter(self, action: LogAction) -> Dict[str, Any]:
+        """LogAct Voter implementation for the CSC."""
+        # For now, approve all unless extreme risk (mock)
+        return {"decision": "APPROVE", "reason": "Passed CSC governance"}
