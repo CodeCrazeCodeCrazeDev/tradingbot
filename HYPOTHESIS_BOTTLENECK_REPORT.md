@@ -1,31 +1,21 @@
 # Hypothesis Bottleneck Report - AlphaAlgo Audit 2026
 
-## 1. Architectural Fragmentation
-- **Cause**: Independent development of `PHCE-D`, `AlphaMining`, `CuriosityEngine`, and `CSC` led to isolated hypothesis definitions.
-- **Downstream Effect**: Duplicate research, inconsistent evaluation standards, and "Knowledge Silos" where a failure in one system isn't learned by another.
-- **Priority**: CRITICAL
-- **Redesign**: Consolidate all under the `ScientificReasoningEngine` (SRE) core.
+## 1. Fragmentation of Logic (Critical)
+- **Bottleneck**: PHCE-D, AlphaMining, and CuriosityEngine maintain independent hypothesis states.
+- **Downstream Effect**: Duplicate effort and inconsistent evaluation criteria.
+- **Recommendation**: Unify under the SRE 19-stage lifecycle.
 
-## 2. The "Delusion Loop"
-- **Cause**: Lack of grounded historical/synthetic data in some self-play and strategy discovery modules.
-- **Downstream Effect**: Optimizing against noise or "winning" in unrealistic simulations.
-- **Priority**: HIGH
-- **Redesign**: Enforce `BacktestEngine` or `GWM` grounding for every hypothesis simulation.
+## 2. Lack of Unified Causal/Bayesian Loop (High)
+- **Bottleneck**: PHCE-D uses deterministic gates; AlphaMining uses genetic fitness. SRE has the blueprint but isn't integrated.
+- **Downstream Effect**: Inability to perform cross-domain evidence synthesis.
+- **Recommendation**: Integrate SRE's Bayesian update and Counterfactual stages into the main decision flow.
 
-## 3. Inconsistent Uncertainty Calibration
-- **Cause**: Some modules use raw confidence (0.0-1.0), others use Credal intervals, and others use p-values.
-- **Downstream Effect**: Impossible to compare the "truth score" of a macro-economic hypothesis vs. a technical-alpha hypothesis.
-- **Priority**: HIGH
-- **Redesign**: Unified Bayesian Posterior + Entropy/Variance metric in `ScientificHypothesis`.
+## 3. Insufficient Adversarial Testing (High)
+- **Bottleneck**: AlphaMining lacks explicit adversarial debate (Step 8 of SRE).
+- **Downstream Effect**: High risk of discovering spurious correlations (alpha decay).
+- **Recommendation**: Hook VerificationSwarm into the SRE evaluation pipeline.
 
-## 4. Missing Causal Constraints
-- **Cause**: Evolutionary and Genetic engines (e.g., `StrategyDiscovery`) focus on correlation-driven fitness.
-- **Downstream Effect**: Discovery of spurious correlations that decay rapidly (Alpha Decay).
-- **Priority**: MEDIUM
-- **Redesign**: Integrate `CausalModel` (Do-calculus) as a mandatory filter in the SRE cycle (Step 7: Counterfactual Generation).
-
-## 5. Poor Failure Reuse
-- **Cause**: Rejected hypotheses are often simply discarded or forgotten in tournament selection.
-- **Downstream Effect**: Repeating historical mistakes and losing the "Negative Knowledge" of why something failed.
-- **Priority**: MEDIUM
-- **Redesign**: Implement a mandatory `Rejected` or `Dormant` end-state with a "Reason for Failure" metadata field persisted in HMS.
+## 4. Poor Failure Persistence (Medium)
+- **Bottleneck**: Rejected hypotheses in PHCE-D and AlphaMining are discarded without rich metadata.
+- **Downstream Effect**: Repeating historical errors.
+- **Recommendation**: Force persistence of "Negative Knowledge" in HMS Tier 5 (Institutional).

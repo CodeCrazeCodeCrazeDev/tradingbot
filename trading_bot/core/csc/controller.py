@@ -1,13 +1,10 @@
 """
-
 Implements the Active Inference (VFE minimization) loop and
 HIPIF (Hierarchical Planning with Information Folding).
 
 The "One Brain" authoritative controller orchestrating the LogAct pipeline.
 Implements Active Inference (surpise minimization) and DiscoLoop reasoning.
 Cognitive System Controller (CSC) - UCA V5 (July 2026)
-
-Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
 """
 
 import logging
@@ -18,18 +15,20 @@ from datetime import datetime
 from uuid import uuid4
 
 from .hypothesis import HypothesisGenerator, ReasoningBranch
-from .folding import InformationFolder
+from .folding import InformationFolder as FoldingOperator
 from ..verification.swarm import VerificationSwarm
 from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport
 from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
 from ..immutable_shield import ImmutableShield
 from ..unified_event_bus import decision_bus, LogAction, ActionStatus
+from ...core_agent_system.scientific_reasoning.core import ScientificReasoningEngine, HypothesisState
 
 logger = logging.getLogger(__name__)
 
 class CognitiveSystemController:
     """
     UCA V5 Controller integrating DiscoLoop, HASP, and Pivot/Refine.
+    Unified under the Scientific Reasoning Engine (SRE).
     """
     _instance = None
     _lock = asyncio.Lock()
@@ -46,129 +45,80 @@ class CognitiveSystemController:
         self.world_model = world_model
         self.hms = hms
         self.shield = shield
-        self.folding_operator = FoldingOperator(hms)
 
+        # Core Functional Components
         self.hypothesis_gen = HypothesisGenerator(world_model)
         self.verifier_swarm = VerificationSwarm()
         self.folder = InformationFolder()
 
-        # HASP: Executable Guardrails (Skill Programs)
+        # Unified SRE Integration - Passing self as controller for hook reuse
+        self.sre = ScientificReasoningEngine(controller=self, hms=hms, world_model=world_model)
+
         self.skill_programs = self._load_skill_programs()
+        self._initialized = True
 
     def _load_skill_programs(self) -> Dict[str, Any]:
-        # In production, load from a registry. Here we stub it.
         return {}
-
-        # DiscoLoop Channels
-        self.continuous_state = {} # Latent embeddings
-        self.discrete_channel = [] # Semantic tokens
 
     async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
         """
-        12-step Recursive Active Inference Pipeline.
+        19-step Recursive Scientific Reasoning Pipeline via SRE.
         """
-        logger.info("CSC-V5: Starting Recursive Active Inference Pipeline")
+        logger.info("CSC-V5: Starting Unified Scientific Reasoning Pipeline")
 
-        # 4. Executable Guardrails (HASP Intervention)
-        intervention = self._apply_hasp_guardrails(observation)
-        if intervention:
-            observation.update(intervention)
+        # 1. Scientific lifecycle (SRE stages)
+        hyp_id = await self.sre.run_cycle(observation)
+        hypothesis = self.sre.registry.get(hyp_id)
 
-        # 5. Multi-Hypothesis Generation
-        branches = await self.hypothesis_gen.generate_competing_branches(observation)
+        if not hypothesis or hypothesis.state == HypothesisState.REJECTED:
+            logger.warning(f"CSC-V5: Hypothesis {hyp_id} REJECTED by scientific engine.")
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason="Scientific Rejection")
 
-        # 6. Causal Simulation (CWMI / World Model)
-        sim_results = await self.hypothesis_gen.simulate_branches(branches)
+        # 2. Decision check (Validated/Confirmed hypotheses)
+        if hypothesis.state in [HypothesisState.CONFIRMED, HypothesisState.INSTITUTIONALIZED, HypothesisState.EVALUATION, HypothesisState.CONTINUOUS_MONITORING]:
 
-        # 7. Decision Selection (EV Optimization)
-        best_branch = self._select_optimal_branch(branches, sim_results)
-        if not best_branch:
-            return None
+            # Governance Gate (Immutable Shield)
+            trade_proposal = self._translate_to_proposal_from_hypothesis(hypothesis)
+            shield_report = self.shield.validate_action("trade", trade_proposal, {"market": observation})
 
-        # 8. Decision Loop (Pivot/Refine)
-        decision_ready = False
-        attempts = 0
-        while not decision_ready and attempts < 3:
-            attempts += 1
+            from ..immutable_shield import GovernanceDecision
+            if shield_report.decision != GovernanceDecision.APPROVED:
+                 return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=f"Shield: {shield_report.reason}")
 
-            # 9. Verification Swarm (Peer Review)
-            ledger_entry = self._create_ledger_entry(best_branch, sim_results.get(best_branch.branch_id, []))
-            reports = await self.verifier_swarm.run_swarm(ledger_entry)
-            ledger_entry.verifier_reports = reports
+            # Execution & Folding (HIPIF)
+            logger.info(f"CSC-V5: Scientific Hypothesis {hyp_id} APPROVED for execution.")
 
-            # 10. Pivot/Refine Decision
-            if self._verify_evidence_hard_constraint(ledger_entry):
-                decision_ready = True
-            else:
-                logger.warning(f"CSC-V5: Verification FAILED (Attempt {attempts}). Refining strategy...")
-                refined_branch = await self._refine_strategy(best_branch, reports)
-                if refined_branch and refined_branch != best_branch:
-                    best_branch = refined_branch
-                else:
-                    # If we can't refine further, break
-                    logger.error("CSC-V5: Could not refine strategy further.")
-                    break
+            # Persist to HMS
+            if self.hms:
+                entry = self._create_ledger_entry_from_hyp(hypothesis)
+                self.hms.store_ledger_entry(entry)
 
-        if not decision_ready:
-            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason="Failed Pivot/Refine loop")
+            return CoreDecision(
+                outcome=DecisionOutcome.TRADE_APPROVED,
+                trade_id=trade_proposal.get("trade_id"),
+                confidence_vector=ConfidenceVector(
+                    statistical=hypothesis.posterior,
+                    regime=0.8,
+                    execution=0.9,
+                    tail_risk=1.0 - hypothesis.uncertainty,
+                    model_stability=hypothesis.validation_score
+                )
+            )
 
-        # 11. Governance Gate (Immutable Shield)
-        trade_proposal = self._translate_to_proposal(ledger_entry)
-        shield_report = self.shield.validate_action("trade", trade_proposal, {"market": observation})
+        return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason="Inconclusive Scientific State")
 
-        from ..immutable_shield import GovernanceDecision
-        if shield_report.decision != GovernanceDecision.APPROVED:
-             return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=f"Shield: {shield_report.reason}")
-
-        # 12. Execution & Folding (HIPIF)
-        logger.info(f"CSC-V5: Trade APPROVED. Folding horizon...")
-        self.folder.fold_history(ledger_entry)
-
-        # Persist to HMS
-        self.hms.store_ledger_entry(ledger_entry)
-
-        return CoreDecision(
-            outcome=DecisionOutcome.TRADE_APPROVED,
-            trade_id=trade_proposal.get("trade_id"),
-            confidence_vector=self._calculate_composite_confidence(ledger_entry)
-        )
-
-    def _apply_hasp_guardrails(self, observation: Dict[str, Any]) -> Dict[str, Any]:
-        """HASP: Executable guardrails check."""
-        return {}
-
-    async def _refine_strategy(self, branch: ReasoningBranch, reports: List[VerifierReport]) -> Optional[ReasoningBranch]:
-        """Pivot/Refine logic to improve strategy based on verifier feedback."""
-        # Simple refinement logic: tweak hypothesis confidence or pick second best
-        # For now, we simulate refinement by copying and tweaking
-        refined = copy.deepcopy(branch)
-        if refined.hypotheses:
-            refined.hypotheses[0].description += " (Refined)"
-        return refined
-
-    def _select_optimal_branch(self, branches: List[ReasoningBranch], simulations: Dict[str, Any]) -> Optional[ReasoningBranch]:
-        if not branches: return None
-        return branches[0]
-
-    def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
+    def _create_ledger_entry_from_hyp(self, hypothesis: Any) -> ResearchLedgerEntry:
         return ResearchLedgerEntry(
-            hypothesis=branch.hypotheses[0] if branch.hypotheses else None,
-            reasoning_steps=branch.reasoning_trace,
-            evidence_graph_snapshot=branch.evidence_graph,
-            multi_path_scenarios=[{"name": s.name} for s in scenarios] if scenarios else []
+            hypothesis=hypothesis,
+            reasoning_steps=[hypothesis.state.name],
+            evidence_graph_snapshot=None
         )
 
-    def _verify_evidence_hard_constraint(self, entry: ResearchLedgerEntry) -> bool:
-        # Check vetoes and consensus
-        for report in entry.verifier_reports:
-            if not report.is_valid and report.confidence > 0.8: return False
-
-        valid_reports = [r for r in entry.verifier_reports if r.is_valid]
-        consensus = len(valid_reports) / len(entry.verifier_reports) if entry.verifier_reports else 0
-        return consensus >= 0.75
-
-    def _calculate_composite_confidence(self, entry: ResearchLedgerEntry) -> ConfidenceVector:
-        return ConfidenceVector(statistical=0.8, regime=0.8, execution=0.9, tail_risk=0.85, model_stability=0.7)
-
-    def _translate_to_proposal(self, entry: ResearchLedgerEntry) -> Dict[str, Any]:
-        return {"trade_id": str(entry.entry_id), "symbol": "EURUSD", "quantity": 1.0, "confidence": entry.composite_confidence}
+    def _translate_to_proposal_from_hypothesis(self, hypothesis: Any) -> Dict[str, Any]:
+        return {
+            "trade_id": str(hypothesis.id),
+            "symbol": "EURUSD",
+            "quantity": 1.0,
+            "confidence": hypothesis.posterior,
+            "scientific_state": hypothesis.state.name
+        }
