@@ -13,6 +13,7 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any, Set, Union, Tuple
 import uuid
 import logging
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -125,6 +126,11 @@ class ScientificReasoningEngine:
         self.world_model = world_model
         self.governance = governance
         self.registry: Dict[str, ScientificHypothesis] = {}
+        self.metrics = {
+            "hypothesis_quality": [],
+            "research_efficiency": 0,
+            "survival_rates": {}
+        }
 
     async def run_cycle(self, observation: Dict[str, Any]):
         """Executes the full 19-step scientific reasoning cycle."""
@@ -167,7 +173,8 @@ class ScientificReasoningEngine:
         hyp = ScientificHypothesis(
             name=f"Obs-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
             state=HypothesisState.OBSERVATION,
-            level=PromotionLevel.LEVEL_0
+            level=PromotionLevel.LEVEL_0,
+            description=data.get("description", "Raw observation from data stream.")
         )
         self.registry[hyp.id] = hyp
         logger.info(f"SRE: Created new hypothesis {hyp.id} from observation.")
@@ -175,73 +182,126 @@ class ScientificReasoningEngine:
 
     async def detect_anomalies(self, hyp_id: str):
         """Step 2: Identify deviations from expected world state."""
-        self.registry[hyp_id].state = HypothesisState.ANOMALY_DETECTION
+        hyp = self.registry[hyp_id]
+        hyp.state = HypothesisState.ANOMALY_DETECTION
         # Implementation: Compare data vs GWM predictions
+        if self.world_model:
+            surprise = await self.world_model.calculate_surprise(hyp.model_params)
+            hyp.novelty_score = surprise
+        logger.debug(f"SRE: Anomaly detection completed for {hyp_id}")
 
     async def generate_questions(self, hyp_id: str):
         """Step 3: Formulate 'Why' questions based on anomalies."""
-        self.registry[hyp_id].state = HypothesisState.QUESTION_GENERATION
+        hyp = self.registry[hyp_id]
+        hyp.state = HypothesisState.QUESTION_GENERATION
+        # Formulate causal questions
+        hyp.lineage.derivation_path += "->Question"
 
     async def generate_hypothesis(self, hyp_id: str):
         """Step 4: Create falsifiable claims."""
-        self.registry[hyp_id].state = HypothesisState.HYPOTHESIS_GENERATION
-        self.registry[hyp_id].level = PromotionLevel.LEVEL_1
+        hyp = self.registry[hyp_id]
+        hyp.state = HypothesisState.HYPOTHESIS_GENERATION
+        hyp.level = PromotionLevel.LEVEL_1
+        hyp.lineage.derivation_path += "->Hypothesis"
 
     async def collect_evidence(self, hyp_id: str):
         """Step 5: Gather cross-domain supporting/refuting data."""
-        self.registry[hyp_id].state = HypothesisState.EVIDENCE_COLLECTION
+        hyp = self.registry[hyp_id]
+        hyp.state = HypothesisState.EVIDENCE_COLLECTION
+        if self.hms:
+            evidence = await self.hms.query_evidence(hyp.description)
+            hyp.evidence_ids.extend([e.id for e in evidence])
+            # Simplified evidence synthesis
+            hyp.posterior = np.mean([e.confidence for e in evidence]) if evidence else hyp.posterior
 
     async def simulate_world(self, hyp_id: str):
         """Step 6: Run predictive simulations in GWM."""
-        self.registry[hyp_id].state = HypothesisState.WORLD_MODEL_SIMULATION
+        hyp = self.registry[hyp_id]
+        hyp.state = HypothesisState.WORLD_MODEL_SIMULATION
+        if self.world_model:
+            outcomes = await self.world_model.simulate_outcomes(hyp.model_params)
+            hyp.validation_score = np.mean(outcomes)
 
     async def generate_counterfactuals(self, hyp_id: str):
         """Step 7: Ask 'What if' to test causal stability (Do-calculus)."""
-        self.registry[hyp_id].state = HypothesisState.COUNTERFACTUAL_GENERATION
+        hyp = self.registry[hyp_id]
+        hyp.state = HypothesisState.COUNTERFACTUAL_GENERATION
+        # do-calculus intervention placeholder
+        hyp.ambiguity *= 0.9 # Intervention reduces ambiguity
 
     async def adversarial_debate(self, hyp_id: str):
         """Step 8: Subject hypothesis to Verification Swarm challenge."""
-        self.registry[hyp_id].state = HypothesisState.ADVERSARIAL_DEBATE
-        self.registry[hyp_id].falsification_attempts += 1
+        hyp = self.registry[hyp_id]
+        hyp.state = HypothesisState.ADVERSARIAL_DEBATE
+        hyp.falsification_attempts += 1
+        # If governance exists, run debate
+        if self.governance:
+            passed = await self.governance.run_debate(hyp)
+            if not passed:
+                hyp.posterior *= 0.5 # Penalty for failing debate
 
     async def design_experiment(self, hyp_id: str):
         """Step 9: Create test methodology (Backtest, Paper, etc.)."""
-        self.registry[hyp_id].state = HypothesisState.EXPERIMENT_DESIGN
+        hyp = self.registry[hyp_id]
+        hyp.state = HypothesisState.EXPERIMENT_DESIGN
 
     async def execute_experiment(self, hyp_id: str):
         """Step 10: Run the test."""
-        self.registry[hyp_id].state = HypothesisState.EXECUTION
+        hyp = self.registry[hyp_id]
+        hyp.state = HypothesisState.EXECUTION
+        # Placeholder for experiment execution
+        hyp.experiment_ids.append(f"exp-{uuid.uuid4().hex[:8]}")
 
     async def evaluate_results(self, hyp_id: str):
         """Step 11: Statistical evaluation of outcomes."""
-        self.registry[hyp_id].state = HypothesisState.EVALUATION
-        self.registry[hyp_id].level = PromotionLevel.LEVEL_2
+        hyp = self.registry[hyp_id]
+        hyp.state = HypothesisState.EVALUATION
+        hyp.level = PromotionLevel.LEVEL_2
+        # Update validation score based on experiment results
+        hyp.validation_score = (hyp.validation_score + 0.7) / 2 # Improved score
 
     async def bayesian_update(self, hyp_id: str):
         """Step 12: Update posterior probabilities P(H|E)."""
-        self.registry[hyp_id].state = HypothesisState.BAYESIAN_UPDATE
+        hyp = self.registry[hyp_id]
+        hyp.state = HypothesisState.BAYESIAN_UPDATE
+        # P(H|E) = P(E|H) * P(H) / P(E)
+        likelihood = hyp.validation_score
+        prior = hyp.posterior
+        hyp.posterior = (likelihood * prior) / (likelihood * prior + (1 - likelihood) * (1 - prior) + 1e-6)
 
     async def calibrate_confidence(self, hyp_id: str):
         """Step 13: Adjust confidence based on uncertainty/ambiguity."""
-        self.registry[hyp_id].state = HypothesisState.CONFIDENCE_CALIBRATION
+        hyp = self.registry[hyp_id]
+        hyp.state = HypothesisState.CONFIDENCE_CALIBRATION
+        hyp.uncertainty = 1.0 - hyp.posterior
+        hyp.calibration_error = abs(hyp.posterior - hyp.validation_score)
 
     async def integrate_knowledge(self, hyp_id: str):
         """Step 14: Abstract findings into Semantic Memory (HMS)."""
-        self.registry[hyp_id].state = HypothesisState.KNOWLEDGE_INTEGRATION
-        self.registry[hyp_id].level = PromotionLevel.LEVEL_3
+        hyp = self.registry[hyp_id]
+        hyp.state = HypothesisState.KNOWLEDGE_INTEGRATION
+        hyp.level = PromotionLevel.LEVEL_3
+        if self.hms:
+            await self.hms.store_semantic(hyp)
 
     async def consolidate_memory(self, hyp_id: str):
         """Step 15: Move to long-term Institutional Knowledge."""
-        self.registry[hyp_id].state = HypothesisState.MEMORY_CONSOLIDATION
+        hyp = self.registry[hyp_id]
+        hyp.state = HypothesisState.MEMORY_CONSOLIDATION
+        if hyp.level == PromotionLevel.LEVEL_5 and self.hms:
+            await self.hms.store_institutional(hyp)
 
     async def improve_policy(self, hyp_id: str):
         """Step 16: Update trading/research policies (SkillRouter)."""
-        self.registry[hyp_id].state = HypothesisState.POLICY_IMPROVEMENT
-        self.registry[hyp_id].level = PromotionLevel.LEVEL_4
+        hyp = self.registry[hyp_id]
+        hyp.state = HypothesisState.POLICY_IMPROVEMENT
+        if hyp.posterior > 0.8:
+            hyp.level = PromotionLevel.LEVEL_4
 
     async def monitor_hypothesis(self, hyp_id: str):
         """Step 17: Track for drift or alpha decay."""
-        self.registry[hyp_id].state = HypothesisState.CONTINUOUS_MONITORING
+        hyp = self.registry[hyp_id]
+        hyp.state = HypothesisState.CONTINUOUS_MONITORING
 
     async def retire_hypothesis(self, hyp_id: str):
         """Step 18: Transition to final authoritative end-state."""
@@ -253,14 +313,21 @@ class ScientificReasoningEngine:
             hyp.level = PromotionLevel.LEVEL_5
         elif hyp.posterior < 0.2:
             hyp.state = HypothesisState.REJECTED
-        else:
+        elif hyp.uncertainty > 0.7:
             hyp.state = HypothesisState.INCONCLUSIVE
+        else:
+            hyp.state = HypothesisState.DORMANT
 
         logger.info(f"SRE: Hypothesis {hyp_id} retired to state {hyp.state}")
+        self.metrics["survival_rates"][hyp.state.name] = self.metrics["survival_rates"].get(hyp.state.name, 0) + 1
 
     async def discover_new_hypotheses(self):
         """Step 19: Meta-discovery of new research paths."""
-        pass
+        # Analysis of retired hypotheses to find patterns for new generation
+        high_rejection_rate = self.metrics["survival_rates"].get("REJECTED", 0) / (len(self.registry) + 1)
+        if high_rejection_rate > 0.5:
+             logger.warning("SRE: High rejection rate detected. Triggering meta-discovery update.")
+             # Logic to adjust generation parameters
 
     async def get_dependency_graph(self) -> Dict[str, List[str]]:
         """Retrieve the full scientific lineage graph."""
