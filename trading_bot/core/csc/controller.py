@@ -46,11 +46,14 @@ class CognitiveSystemController:
         self.world_model = world_model
         self.hms = hms
         self.shield = shield
-        self.folding_operator = FoldingOperator(hms)
 
         self.hypothesis_gen = HypothesisGenerator(world_model)
         self.verifier_swarm = VerificationSwarm()
         self.folder = InformationFolder()
+
+        # DiscoLoop Channels
+        self.continuous_state = {} # Latent embeddings
+        self.discrete_channel = [] # Semantic tokens
 
         # HASP: Executable Guardrails (Skill Programs)
         self.skill_programs = self._load_skill_programs()
@@ -58,10 +61,6 @@ class CognitiveSystemController:
     def _load_skill_programs(self) -> Dict[str, Any]:
         # In production, load from a registry. Here we stub it.
         return {}
-
-        # DiscoLoop Channels
-        self.continuous_state = {} # Latent embeddings
-        self.discrete_channel = [] # Semantic tokens
 
     async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
         """
@@ -123,6 +122,17 @@ class CognitiveSystemController:
         # 12. Execution & Folding (HIPIF)
         logger.info(f"CSC-V5: Trade APPROVED. Folding horizon...")
         self.folder.fold_history(ledger_entry)
+
+        # Windowing to prevent memory leaks in the discrete/continuous channels
+        self.discrete_channel.append(ledger_entry.entry_id)
+        if len(self.discrete_channel) > 100:
+            self.discrete_channel.pop(0)
+
+        # Update latent state (Simplified representation for DiscoLoop)
+        self.continuous_state[str(ledger_entry.entry_id)] = self._calculate_composite_confidence(ledger_entry)
+        if len(self.continuous_state) > 100:
+            oldest_key = next(iter(self.continuous_state))
+            del self.continuous_state[oldest_key]
 
         # Persist to HMS
         self.hms.store_ledger_entry(ledger_entry)
