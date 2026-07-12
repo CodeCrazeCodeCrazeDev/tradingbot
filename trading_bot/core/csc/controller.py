@@ -46,28 +46,36 @@ class CognitiveSystemController:
         self.world_model = world_model
         self.hms = hms
         self.shield = shield
-        self.folding_operator = FoldingOperator(hms)
 
         self.hypothesis_gen = HypothesisGenerator(world_model)
         self.verifier_swarm = VerificationSwarm()
         self.folder = InformationFolder()
 
+        # DiscoLoop Channels
+        self.continuous_state = {} # Latent embeddings
+        self.discrete_channel = [] # Semantic tokens
+
         # HASP: Executable Guardrails (Skill Programs)
         self.skill_programs = self._load_skill_programs()
+        self._initialized = True
 
     def _load_skill_programs(self) -> Dict[str, Any]:
         # In production, load from a registry. Here we stub it.
         return {}
-
-        # DiscoLoop Channels
-        self.continuous_state = {} # Latent embeddings
-        self.discrete_channel = [] # Semantic tokens
 
     async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
         """
         12-step Recursive Active Inference Pipeline.
         """
         logger.info("CSC-V5: Starting Recursive Active Inference Pipeline")
+
+        # DiscoLoop: Windowing/Clearing mechanism (prevent memory leaks)
+        if len(self.discrete_channel) > 100:
+            self.discrete_channel = self.discrete_channel[-100:]
+        if len(self.continuous_state) > 1000:
+            # For dict, we might want to keep only recent symbols or similar logic
+            # but here we'll just clear if it grows too large as a simple heuristic
+            self.continuous_state.clear()
 
         # 4. Executable Guardrails (HASP Intervention)
         intervention = self._apply_hasp_guardrails(observation)

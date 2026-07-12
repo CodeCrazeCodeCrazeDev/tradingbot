@@ -22,7 +22,6 @@ from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC, abstractmethod
-import statistics
 from ..verification.confidence_calibrator import ConfidenceCalibrator, CalibrationMethod
 
 logger = logging.getLogger(__name__)
@@ -870,8 +869,9 @@ class MultiAgentDebateSystem:
                 round_args = []
             
                 # Each agent responds to others
+                last_round_args = debate_rounds[-1].arguments
                 for agent in self.agents:
-                    for other_arg in all_arguments[-3:]:  # Last round's arguments
+                    for other_arg in last_round_args:  # Use explicit last round's arguments
                         if other_arg.agent_role != agent.role:
                             response = agent.respond_to_argument(other_arg, context)
                             if response:
