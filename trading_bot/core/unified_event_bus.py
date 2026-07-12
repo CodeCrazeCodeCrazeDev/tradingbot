@@ -148,31 +148,26 @@ class UnifiedDecisionBus:
         await self._action_queue.put((-action.priority.value, action.timestamp, action))
         logger.debug(f"Proposed action {action.action_id} from agent {action.agent_id}")
 
-    # --- Legacy Compatibility API ---
+    # --- UCA V5 API ---
 
-    def subscribe(
+    def subscribe(self, action_type: str, handler: Callable[[LogAction], Coroutine[Any, Any, None]]):
+        """Subscribe to specific action types in the shared log."""
+        self._subscribers[action_type].append({
+            "handler": handler,
+            "priority": 0
+        })
+        logger.info(f"Subscribed to LogAct action: {action_type}")
+
+    # --- Legacy Compatibility API (DEPRECATED) ---
+
+    def subscribe_legacy(
         self,
         subscriber_id: str,
         event_types: Union[str, List[str]],
-        handler: Callable[[Union[UnifiedEvent, LogAction]], Coroutine[Any, Any, None]] = None,
+        handler: Callable[[Union[UnifiedEvent, LogAction]], Coroutine[Any, Any, None]],
         priority: int = 0
     ):
-        """
-        Backward compatible subscribe method.
-        If handler is None, it assumes the V5 signature: subscribe(action_type, handler)
-        """
-        # Support V5 signature: subscribe(action_type, handler)
-        if handler is None and isinstance(subscriber_id, str) and callable(event_types):
-            action_type = subscriber_id
-            v5_handler = event_types
-            self._subscribers[action_type].append({
-                "id": "v5_sub",
-                "handler": v5_handler,
-                "priority": 0
-            })
-            return
-
-        # Support Legacy signature
+        """DEPRECATED: Use v5 subscribe()."""
         if isinstance(event_types, str):
             event_types = [event_types]
 
@@ -182,21 +177,15 @@ class UnifiedDecisionBus:
                 "handler": handler,
                 "priority": priority
             })
-            self._subscribers[etype].sort(key=lambda x: x["priority"], reverse=True)
 
     async def publish(self, event: UnifiedEvent):
-        """Backward compatible publish method. Wraps event into a LogAction."""
-        if not self._running:
-            logger.warning("Attempted to publish to stopped UnifiedDecisionBus")
-            return
-
+        """DEPRECATED: Use propose_action(). Wraps event into a LogAction."""
         action = LogAction(
             action_type=event.event_type,
             payload=event.payload,
             agent_id=event.source,
             action_id=event.event_id,
             timestamp=event.timestamp,
-            correlation_id=event.correlation_id,
             priority=event.priority
         )
         await self.propose_action(action)
