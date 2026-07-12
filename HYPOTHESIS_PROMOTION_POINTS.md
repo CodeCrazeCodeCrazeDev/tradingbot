@@ -1,24 +1,15 @@
 # Hypothesis Promotion Points
 
-Hypotheses move toward production and institutionalization at these points.
+The following paths describe how a hypothesis moves from a raw claim to institutional knowledge or production deployment:
 
-## Staging & Validation
-
-1.  **`trading_bot/core/phce_d_engine.py`**
-    - Promotion to `PAPER_TRADE_CANDIDATE`: Once a hypothesis survives cost stress and verifier checks.
-2.  **`trading_bot/foundation_agents/curiosity_engine/hypothesis_generator.py`**
-    - Promotion to `PRIORITIZED`: Selected for active testing by the curiosity system.
-
-## Production Integration
-
-1.  **`trading_bot/core/csc/controller.py`**
-    - Trade Approval: Final promotion where a hypothesis influences capital allocation.
-2.  **`trading_bot/alpha_research/live_deployment.py`**
-    - Moves validated alphas from research to live production environments.
-
-## Institutionalization
-
-1.  **`trading_bot/core_agent_system/scientific_reasoning/core.py`**
-    - `HypothesisState.INSTITUTIONALIZED`: Moving successful hypotheses to permanent semantic memory.
-2.  **`trading_bot/core/hms/memory.py`**
-    - `AutoMem`: Automating the transformation of successful episodes into generalized procedural or semantic memory.
+| Source State | Destination State | Promotion Logic / Gate | File Path |
+|--------------|-------------------|------------------------|-----------|
+| `OBSERVATION` | `LEVEL_1 (Candidate)`| `generate_hypothesis()` | `SRE Core` |
+| `Candidate` | `LEVEL_2 (Validated)`| `evaluate_results()` | `SRE Core` |
+| `Validated` | `LEVEL_3 (Research)` | `integrate_knowledge()` | `SRE Core` |
+| `Research` | `LEVEL_4 (Production)`| `improve_policy()` | `SRE Core` |
+| `Production` | `LEVEL_5 (Institutional)`| `retire_hypothesis()` (Confirmed Path) | `SRE Core` |
+| `ACTIVE` | `PAPER_TRADE_CANDIDATE`| Passing `ValidationGateway` | `PHCE-D` |
+| `PAPER_TRADE`| `LIVE_EXECUTION` | `PaperTradePromotionThresholds` met | `phce_d/paper_trade_promotion.py` |
+| `Hypothesis` | `Memory Tier 4/5` | Successful meta-analysis & consolidation | `core/hms/memory.py` |
+| `Signal` | `Alpha` | Consistent outperformance vs benchmark | `autonomous/alpha_factor_discovery.py` |

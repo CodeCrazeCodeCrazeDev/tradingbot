@@ -1,29 +1,32 @@
-# Scientific Validation Framework - SRE 2026
+# Scientific Validation Framework
 
-## 1. Metrics of Success
+## 1. Metric Suite
 
-### Hypothesis Quality (HQ)
-$$HQ = \frac{Accuracy \times Robustness}{Uncertainty}$$
+The SRE is validated against these core metrics:
 
-### Research Efficiency (RE)
-$$RE = \frac{ConfirmedHypotheses}{ComputeHours}$$
+| Metric | Target | Measurement Method |
+|--------|--------|--------------------|
+| **Hypothesis Survival Rate** | < 20% | Ratio of Promoted to Created hypotheses. |
+| **Research Efficiency** | > 0.5 | $\frac{\text{Economic Value}}{\text{Compute Cost}}$ |
+| **Calibration Error (ECE)** | < 0.05 | Difference between predicted prob and realization. |
+| **Causal Stability** | > 0.8 | Persistence of edge across counterfactual simulations. |
+| **Novelty Score** | > 0.3 | KL-divergence from existing hypothesis pool. |
+| **Falsification Rate** | > 0.1 | Frequency of successful adversarial refutations. |
 
-### Economic Value (EV)
-$$EV = TotalPnL(h) - CostOfExecution(h)$$
+## 2. Validation Gates
 
-## 2. Validation Layers
+### Gate 1: Epistemic Integrity
+- **Criteria**: $A < 0.2$ (Ambiguity) and `LeakageRisk == LOW`.
+- **Failure**: Return to `EvidenceCollection`.
 
-### Layer 1: Deterministic Consistency
-- Code-level checks for falsifiability.
-- Mandatory definition of "Failure Conditions".
+### Gate 2: Adversarial Robustness
+- **Criteria**: Must survive 3/3 "Hostile Regime" stress tests.
+- **Failure**: `REJECTED`.
 
-### Layer 2: Adversarial Stress
-- Hypothesis must survive a "Red Team" session in Step 8 (Adversarial Debate).
-- Veto rights for the `ImmutableShield`.
+### Gate 3: Causal Validity
+- **Criteria**: $\frac{P(Y|do(X))}{P(Y|X)} > 0.9$ (No hidden confounders dominating the signal).
+- **Failure**: `REJECTED` or `SPLIT`.
 
-### Layer 3: Empirical Grounding
-- Out-of-sample performance consistency.
-- Calibration Score (Expected vs. Observed accuracy).
+## 3. Continuous Self-Audit
 
-## 3. Automated Bottleneck Detection
-The SRE continuously monitors its own efficiency. If the `HQ` score for a specific domain (e.g., Sentiment) drops, it triggers a **Redesign Event** (Step 19) for that specific discovery sub-engine.
+The system runs a daily "Shadow Audit" where it re-evaluates `INSTITUTIONALIZED` hypotheses against current market data. Any hypothesis showing "Drift" is moved back to `CONTINUOUS_MONITORING` or `RETIRED`.

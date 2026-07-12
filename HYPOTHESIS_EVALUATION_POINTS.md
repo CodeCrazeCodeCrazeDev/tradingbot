@@ -1,34 +1,15 @@
 # Hypothesis Evaluation Points
 
-This document lists every location where hypotheses are tested, scored, or verified.
+Hypotheses are evaluated at various stages and depths across the system:
 
-## Deterministic Verification
-
-1.  **`trading_bot/core/phce_d_engine.py`**
-    - `PHCEDAI._verify()`: Performs deterministic/statistical checks (spread, cost, sample size).
-    - `PHCEDAI._apply_policy()`: Final gate for paper-trade promotion.
-2.  **`trading_bot/core/csc/controller.py`**
-    - `CSC._verify_evidence_hard_constraint()`: Enforces graph density and verifier consensus.
-
-## Adversarial Evaluation
-
-1.  **`trading_bot/core_agent_system/cds/epistemology_engine.py`**
-    - `EpistemologyEngine.analyze_hypothesis()`: Calculates belief scores and uncertainty using adversarial questioning.
-2.  **`trading_bot/core/verification/swarm.py`**
-    - `VerificationSwarm.run_swarm()`: Peer-review of hypotheses by specialized agents (Hallucination detector, etc.).
-
-## Statistical & Machine Learning Evaluation
-
-1.  **`trading_bot/strategy_discovery/evolutionary_engine.py`**
-    - `EvolutionaryStrategyEngine._fitness_function()`: Evaluates genomes based on Sharpe, Drawdown, and Win Rate.
-2.  **`trading_bot/alpha_research/alpha_death_clock.py`**
-    - `AlphaDeathClockManager`: Continuously monitors alpha decay (hypothesis degradation).
-3.  **`trading_bot/alpha_research/strategy_diagnostics.py`**
-    - Performs robustness and over-fitting checks.
-
-## Bayesian Updating
-
-1.  **`trading_bot/core_agent_system/scientific_reasoning/core.py`**
-    - `ScientificReasoningEngine.bayesian_update()`: Formal update of posterior probabilities.
-2.  **`trading_bot/foundation_agents/curiosity_engine/hypothesis_generator.py`**
-    - `HypothesisGenerator.update_hypothesis_status()`: Updates confidence scores based on evidence.
+| Subsystem | File Path | Method | Criteria |
+|-----------|-----------|--------|----------|
+| **PHCE-D** | `trading_bot/phce_d/verifier.py` | `verify_hypothesis()` | Sharpe, edge after cost, sign consistency. |
+| **CDS** | `trading_bot/core_agent_system/cds/epistemology_engine.py` | `analyze_hypothesis()` | Belief score, uncertainty, adversarial risk. |
+| **Gateway** | `trading_bot/phce_d/validation_gateway.py` | `validate_hypothesis()` | Lineage leakage, freshness, circuit breakers. |
+| **SRE** | `trading_bot/core_agent_system/scientific_reasoning/core.py` | `evaluate_results()` | Statistical significance, Bayesian posterior. |
+| **Scenario** | `trading_bot/phce_d/scenario_conditioner.py` | `evaluate_scenarios()` | Applicability score, discrimination improvement. |
+| **Risk** | `trading_bot/core/risk/unified_risk_manager.py` | `assess_risk()` | VaR, CVaR, Kelly sizing constraints. |
+| **Adversarial** | `trading_bot/phce_d/adversarial_stress_test.py` | `stress_test()` | Performance under regime shift/hostile conditions. |
+| **Compliance** | `trading_bot/compliance/policy_enforcer.py` | `check_compliance()` | Institutional constraints, regulatory alignment. |
+| **Drift** | `trading_bot/phce_d/drift_monitor.py` | `assess_drift()` | Feature drift, expected vs realized edge. |
