@@ -115,6 +115,11 @@ class ScientificHypothesis:
     validation_score: float = 0.0
     calibration_error: float = 1.0
 
+    # Bayesian Meta-data
+    p_lower: float = 0.0 # Credal lower bound
+    p_upper: float = 1.0 # Credal upper bound
+    vfe: float = 100.0   # Variational Free Energy score
+
 class ScientificReasoningEngine:
     """
     Unified Scientific Reasoning Engine (SRE).
@@ -133,31 +138,38 @@ class ScientificReasoningEngine:
 
         # Steps 2-17 are the core processing pipeline
         pipeline = [
-            self.detect_anomalies,
-            self.generate_questions,
-            self.generate_hypothesis,
-            self.collect_evidence,
-            self.simulate_world,
-            self.generate_counterfactuals,
-            self.adversarial_debate,
-            self.design_experiment,
-            self.execute_experiment,
-            self.evaluate_results,
-            self.bayesian_update,
-            self.calibrate_confidence,
-            self.integrate_knowledge,
-            self.consolidate_memory,
-            self.improve_policy,
-            self.monitor_hypothesis
+            (HypothesisState.ANOMALY_DETECTION, self.detect_anomalies),
+            (HypothesisState.QUESTION_GENERATION, self.generate_questions),
+            (HypothesisState.HYPOTHESIS_GENERATION, self.generate_hypothesis),
+            (HypothesisState.EVIDENCE_COLLECTION, self.collect_evidence),
+            (HypothesisState.WORLD_MODEL_SIMULATION, self.simulate_world),
+            (HypothesisState.COUNTERFACTUAL_GENERATION, self.generate_counterfactuals),
+            (HypothesisState.ADVERSARIAL_DEBATE, self.adversarial_debate),
+            (HypothesisState.EXPERIMENT_DESIGN, self.design_experiment),
+            (HypothesisState.EXECUTION, self.execute_experiment),
+            (HypothesisState.EVALUATION, self.evaluate_results),
+            (HypothesisState.BAYESIAN_UPDATE, self.bayesian_update),
+            (HypothesisState.CONFIDENCE_CALIBRATION, self.calibrate_confidence),
+            (HypothesisState.KNOWLEDGE_INTEGRATION, self.integrate_knowledge),
+            (HypothesisState.MEMORY_CONSOLIDATION, self.consolidate_memory),
+            (HypothesisState.POLICY_IMPROVEMENT, self.improve_policy),
+            (HypothesisState.CONTINUOUS_MONITORING, self.monitor_hypothesis)
         ]
 
-        for step_func in pipeline:
+        for state, step_func in pipeline:
+            self.registry[hyp_id].state = state
             await step_func(hyp_id)
-            if self.registry[hyp_id].state in [HypothesisState.REJECTED, HypothesisState.DEPRECATED]:
+            self.registry[hyp_id].last_update = datetime.now()
+
+            # Check for early termination or rejection
+            if self.registry[hyp_id].state in [HypothesisState.REJECTED, HypothesisState.DEPRECATED, HypothesisState.SUPERSEDED]:
+                logger.info(f"SRE: Early termination for {hyp_id} at state {state}")
                 break
 
         # 18. Hypothesis Retirement (State Transition to end-states)
-        await self.retire_hypothesis(hyp_id)
+        if self.registry[hyp_id].state != HypothesisState.REJECTED:
+            self.registry[hyp_id].state = HypothesisState.RETIRED
+            await self.retire_hypothesis(hyp_id)
 
         # 19. Automatic Discovery of New Hypotheses
         await self.discover_new_hypotheses()
@@ -247,20 +259,43 @@ class ScientificReasoningEngine:
         """Step 18: Transition to final authoritative end-state."""
         hyp = self.registry[hyp_id]
 
-        # Transition logic based on validation score and posterior
-        if hyp.posterior > 0.9 and hyp.validation_score > 0.8:
+        # Authoritative transition logic
+        if hyp.posterior > 0.95 and hyp.validation_score > 0.9:
             hyp.state = HypothesisState.INSTITUTIONALIZED
             hyp.level = PromotionLevel.LEVEL_5
-        elif hyp.posterior < 0.2:
+        elif hyp.posterior > 0.8 and hyp.validation_score > 0.7:
+            hyp.state = HypothesisState.CONFIRMED
+            hyp.level = PromotionLevel.LEVEL_4
+        elif hyp.posterior < 0.15:
             hyp.state = HypothesisState.REJECTED
-        else:
+        elif hyp.uncertainty > 0.8:
             hyp.state = HypothesisState.INCONCLUSIVE
+        elif hyp.ambiguity > 0.7:
+            hyp.state = HypothesisState.DORMANT
+        else:
+            hyp.state = HypothesisState.DEPRECATED
 
         logger.info(f"SRE: Hypothesis {hyp_id} retired to state {hyp.state}")
 
     async def discover_new_hypotheses(self):
-        """Step 19: Meta-discovery of new research paths."""
-        pass
+        """Step 19: Meta-discovery of new research paths and self-improvement."""
+        # Calculate current failure rate
+        total = len(self.registry)
+        if total < 10:
+            return
+
+        rejected = len([h for h in self.registry.values() if h.state == HypothesisState.REJECTED])
+        rejection_rate = rejected / total
+
+        if rejection_rate > 0.7:
+            logger.warning(f"SRE: High rejection rate detected ({rejection_rate:.2f}). Triggering self-improvement.")
+            # Trigger: Relax prior constraints or adjust anomaly thresholds
+            await self.hms.store_research_finding({
+                "type": "SRE_SELF_IMPROVEMENT",
+                "reason": "HIGH_REJECTION_RATE",
+                "rate": rejection_rate,
+                "action": "ADJUST_GENERATION_PARAMETERS"
+            })
 
     async def get_dependency_graph(self) -> Dict[str, List[str]]:
         """Retrieve the full scientific lineage graph."""

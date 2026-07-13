@@ -29,3 +29,9 @@ This document lists every location in the AlphaAlgo codebase where hypotheses ar
     - Every "Imagined" future is a temporary hypothesis about market dynamics.
 3.  **`trading_bot/ml/offline_rl/alphaalgo_autonomous_system.py`**
     - Every policy update is an implicit hypothesis about the optimal action-value mapping.
+4.  **`trading_bot/signals/`**
+    - `TradingSignal`, `CompleteSignal`, `ConfirmationSignal`: Every generated signal is an implicit short-term hypothesis that "Current conditions imply price movement X".
+5.  **`trading_bot/neuros_fi/`**
+    - `Prediction`, `ExecutionPrediction`, `StrategyHypothesis`: Direct implementation of neural-driven hypotheses in the Prefrontal and Neocortex regions.
+6.  **`trading_bot/alphaalgo_core/capital_governance.py`**
+    - `StrategyAssumption`: Encapsulates foundational beliefs about strategy performance parameters.

@@ -1,37 +1,61 @@
-# Scientific Redesign - Unified Cognitive Architecture 2026
+# Scientific Redesign: Institutional-Grade Autonomous Scientific Reasoning
 
-## The "One Brain" Philosophy
-The redesign eliminates fragmented "islands" of intelligence and replaces them with a single, authoritative **Scientific Reasoning Engine (SRE)** that governs the hypothesis lifecycle for the entire system.
+## 1. The 19-Step Recursive Scientific Lifecycle
+All system reasoning must follow this deterministic path, with explicit state transitions and logging.
 
-## The 19-Step SRE Lifecycle
-
-1.  **Observation**: Unified ingestion of market, macro, and alternative data.
-2.  **Anomaly Detection**: Identify deviations from the World Model's expected state.
-3.  **Question Generation**: Formulate "Why" questions (e.g., "Why did liquidity drop during the breakout?").
-4.  **Hypothesis Generation**: Propose falsifiable causal or predictive claims.
-5.  **Evidence Collection**: Gather multi-domain evidence (Market, Sentiment, Order Flow).
-6.  **World Model Simulation**: Run parallel futures to test the hypothesis in the GWM.
-7.  **Counterfactual Generation**: Perform "Do-calculus" interventions to test causal stability.
-8.  **Adversarial Debate**: Subject the hypothesis to the `VerificationSwarm` and `EpistemologyEngine`.
-9.  **Experiment Design**: Select the optimal test (Backtest, Monte Carlo, Paper Trade).
-10. **Execution**: Execute the experiment in a secure sandbox.
-11. **Evaluation**: Perform statistical evaluation of results (Sharpe, IC, Robustness).
-12. **Bayesian Update**: Formal update of the hypothesis's posterior probability.
-13. **Confidence Calibration**: Adjust confidence based on uncertainty and ambiguity metrics.
-14. **Knowledge Integration**: Abstract findings into the HMS Semantic layer.
-15. **Memory Consolidation**: Move important patterns to Institutional Memory.
-16. **Policy Improvement**: Update the `SkillRouter` and `RL` agents with new strategic insights.
-17. **Continuous Monitoring**: Track the hypothesis in production for drift or decay.
+1.  **Observation**: Ingest raw multi-modal market data.
+2.  **Anomaly Detection**: Compare observation against World Model predictions.
+3.  **Question Generation**: Formulate causal questions for detected anomalies.
+4.  **Hypothesis Generation**: Propose falsifiable explanations (Latent Beliefs).
+5.  **Evidence Collection**: Gather supporting/refuting cross-domain artifacts.
+6.  **World Model Simulation**: Run predictive 'dreaming' scenarios.
+7.  **Counterfactual Generation**: Test causal stability using Pearl's 'do' operator.
+8.  **Adversarial Debate**: Subject hypothesis to Verification Swarm challenge.
+9.  **Experiment Design**: Define statistical test parameters (Backtest/Paper).
+10. **Execution**: Run the experiment in a sandbox or paper environment.
+11. **Evaluation**: Statistical analysis of outcomes vs. expectations.
+12. **Bayesian Update**: Update posterior probabilities $P(H|E)$.
+13. **Confidence Calibration**: Adjust for uncertainty and ambiguity (Credal Bounds).
+14. **Knowledge Integration**: Abstract findings into Semantic Memory.
+15. **Memory Consolidation**: Move to long-term Institutional Tier (HMS Tier 5).
+16. **Policy Improvement**: Update trading/research policies (SkillRouter).
+17. **Continuous Monitoring**: Track for drift, decay, or regime change.
 18. **Hypothesis Retirement**: Transition to one of 10 authoritative end-states.
-19. **Automatic Discovery**: Meta-discovery of new research paths based on the results.
+19. **Automatic Discovery**: Meta-learning to find new research directions.
 
-## Unified Data Model: `ScientificHypothesis`
-Located in `trading_bot/core_agent_system/scientific_reasoning/core.py`.
-- **Posterior**: The primary belief score.
-- **Uncertainty**: Quantified entropy/variance.
-- **Lineage**: Immutable record of parent/child relationships (provenance).
-- **Boundary Conditions**: Regimes where the hypothesis is valid.
+## 2. Authoritative End-States
+Every hypothesis MUST end in one of these states; it can never be "deleted" without provenance.
 
-## End-States
-No hypothesis is ever deleted. They must terminate in:
-- `CONFIRMED`, `REJECTED`, `INCONCLUSIVE`, `MERGED`, `SPLIT`, `DORMANT`, `REACTIVATED`, `DEPRECATED`, `SUPERSEDED`, `INSTITUTIONALIZED`.
+- **Confirmed**: Validated, high posterior, in production.
+- **Rejected**: Falsified by experiment or adversarial debate.
+- **Inconclusive**: Insufficient evidence, requires more experimentation.
+- **Merged**: Combined with another hypothesis for greater explanatory power.
+- **Split**: Found to contain multiple distinct phenomena.
+- **Dormant**: Valid but regime-incompatible (waiting for regime shift).
+- **Reactivated**: Moved from Dormant back to active testing.
+- **Deprecated**: Replaced by a more efficient but not strictly superior model.
+- **Superseded**: Replaced by a demonstrably superior hypothesis.
+- **Institutionalized**: Promoted to foundational system invariant.
+
+## 3. Mathematical Justification
+The SRE operates on the principle of **Variational Free Energy (VFE) Minimization**:
+
+$$F = E_{q(\phi)}[\ln q(\phi) - \ln p(\omega, \phi)]$$
+
+Where:
+- $q(\phi)$ is the agent's internal belief (the hypothesis).
+- $p(\omega, \phi)$ is the generative world model.
+- Minimizing $F$ ensures both **Accuracy** (fitting the data) and **Complexity Control** (Occam's Razor).
+
+Ambiguity is managed using **Credal Bounds** $[P_{lower}, P_{upper}]$, representing the range of valid posteriors under model uncertainty.
+
+## 4. Validation Framework
+- **ECE (Expected Calibration Error)**: Must be $< 0.05$ for production promotion.
+- **Falsifiability Score**: Every hypothesis must have at least 3 defined triggers that would prove it wrong.
+- **Ablation Sensitivity**: Measuring performance impact when the hypothesis is removed.
+
+## 5. Migration Roadmap
+- **Phase A**: Base Type consolidation (Standardizing `ScientificHypothesis`).
+- **Phase B**: Core Engine refactor (Implementing the 19 steps).
+- **Phase C**: Integration (Linking Alpha Research, CSC, and HMS).
+- **Phase D**: Productionization (Enforcing the Scientific Audit Gate).
