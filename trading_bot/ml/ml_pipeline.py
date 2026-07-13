@@ -16,6 +16,7 @@ import json
 import hashlib
 import json
 import os
+import joblib
 from typing import Any, Callable, Dict, List, Optional, Type
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
@@ -226,15 +227,18 @@ class FeatureStore:
     def compute_features(
         self,
         data: Any,  # DataFrame
-        feature_names: Optional[List[str]] = None
+        feature_names: Optional[List[str]] = None,
+        inplace: bool = False
     ) -> Any:
         """Compute features from data"""
         if not PANDAS_AVAILABLE:
             logger.warning("pandas not available for feature computation")
             return data
         
+        from trading_bot.security.safe_eval import safe_eval
+
         feature_names = feature_names or list(self.features.keys())
-        result = data.copy()
+        result = data if inplace else data.copy()
         
         for name in feature_names:
             if name not in self.features:
@@ -244,11 +248,10 @@ class FeatureStore:
             
             try:
                 if feature.computation:
-                    from trading_bot.security.safe_eval import safe_eval
                     # Evaluate computation expression
                     result[name] = safe_eval(feature.computation, {'close': data.get('close'),
-                                                                    'volume': data.get('volume'),
-                                                                    'returns': result.get('returns')})
+                                                               'volume': data.get('volume'),
+                                                               'returns': result.get('returns')})
                 elif name == 'rsi':
                     result[name] = self._compute_rsi(data['close'], feature.lookback_periods)
                 elif name == 'macd':
@@ -390,7 +393,7 @@ class ModelRegistry:
             version = f"v{len(existing) + 1}"
         
         # Generate model ID
-        model_id = hashlib.md5(f"{name}_{version}_{datetime.now().isoformat()}".encode()).hexdigest()[:12]
+        model_id = hashlib.sha256(f"{name}_{version}_{datetime.now().isoformat()}".encode()).hexdigest()[:12]
         
         # Create metadata
         metadata = ModelMetadata(
@@ -410,8 +413,7 @@ class ModelRegistry:
         model_path = self.storage_path / model_id
         model_path.mkdir(exist_ok=True)
         
-        with open(model_path / 'model.json', 'w') as f:
-            json.dump(model_object, f, indent=2, default=str)
+        joblib.dump(model_object, model_path / 'model.joblib')
         
         with open(model_path / 'metadata.json', 'w') as f:
             json.dump(metadata.to_dict(), f, indent=2)
@@ -425,15 +427,23 @@ class ModelRegistry:
     
     def load_model(self, model_id: str) -> Optional[Any]:
         """Load model artifact"""
-        model_path = self.storage_path / model_id / 'model.json'
+        model_path = self.storage_path / model_id / 'model.joblib'
         
         if not model_path.exists():
+            # Check for legacy pickle format
+            legacy_path = self.storage_path / model_id / 'model.pkl'
+            if legacy_path.exists():
+                logger.warning(f"Loading legacy pickle model: {model_id}")
+                try:
+                    return joblib.load(legacy_path)
+                except Exception as e:
+                    logger.error(f"Failed to load legacy model {model_id}: {e}")
+                    return None
+
             logger.error(f"Model not found: {model_id}")
             return None
         try:
-        
-            with open(model_path, 'r') as f:
-                return json.load(f)
+            return joblib.load(model_path)
         except Exception as e:
             logger.error(f"Failed to load model {model_id}: {e}")
             return None

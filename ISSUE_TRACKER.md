@@ -1,34 +1,37 @@
-# ISSUE TRACKER
+# ISSUE_TRACKER.md - AlphaAlgo Production Engineering Audit
 
-| ID | Title | Severity | Category | Impact | Status |
-|---|---|---|---|---|---|
-| SEC-001 | Unsafe `pickle` Deserialization | Critical | Security | RCE Risk | Open |
-| SEC-002 | `shell=True` in Subprocess Calls | High | Security | Command Injection | Open |
-| SEC-003 | Hardcoded Credentials | High | Security | Credential Leak | Open |
-| REL-001 | Naked `except:` Blocks | Medium | Reliability | Silent Failures | Open |
-| REL-002 | Infinite Loops without Exit Signals | Medium | Reliability | Zombie Processes | Open |
-| PERF-001 | Blocking I/O in Async Context | High | Performance | Loop Starvation | Open |
-| ARCH-001 | Competing Orchestrators | High | Architecture | Split-Brain Decisions | Open |
-| ARCH-002 | Circular Dependency Workarounds | Medium | Architecture | Technical Debt | Open |
-| INT-001 | "Delusion Loop" (Random Simulation) | Critical | Intelligence | Hallucinated Alpha | Open |
-| MAINT-001 | "God Class" / Massive Files | Low | Maintainability | Hard to Audit | Open |
-| MAINT-002 | Excessive Print Statements | Low | Maintainability | Log Pollution | Open |
-| PROD-001 | Windows-only MT5 Lock-in | High | Production | Deployment Limit | Open |
-| REL-003 | Missing Cleanup in Async Tasks | Medium | Reliability | Memory Leaks | Open |
-| SEC-004 | Unsafe `eval()` Usage | High | Security | Code Injection | Open |
-| ARCH-003 | Redundant Registry Implementations | Medium | Architecture | Confusion | Open |
-| DATA-001 | Missing Schema Validation | Medium | Data | Corruption Risk | Open |
-| PERF-002 | O(n^2) Data Processing Loops | Medium | Performance | Latency | Open |
-| MAINT-003 | Duplicated Logic in `_archive` | High | Maintainability | Confusion | Open |
-| INT-002 | Simulated Superintelligence Stubs | High | Intelligence | False Capability | Open |
-| CONC-001 | Race Conditions in Event Bus | High | Concurrency | Data Loss | Open |
-| SEC-005 | Weak Hashing / Insecure Randomness | Medium | Security | Crypto Risk | Open |
-| REL-004 | Inconsistent Error Recovery | Medium | Reliability | System Instability | Open |
-| PERF-003 | Redundant Model Loading | High | Performance | Memory Exhaustion | Open |
-| ARCH-004 | Excessive Coupling in Core | High | Architecture | Rigidity | Open |
-| MAINT-004 | Magic Numbers in Risk Models | Medium | Maintainability | Untunable | Open |
-| DATA-002 | Stale Data in Cache | Medium | Data | Bad Decisions | Open |
-| PROD-002 | Missing Configuration Validation | Medium | Production | Startup Failure | Open |
-| REL-005 | Retry Failures in Network Calls | Medium | Reliability | Data Gaps | Open |
-| ARCH-005 | God Module `trading_bot/core/__init__.py` | Medium | Architecture | Performance | Open |
-| MAINT-005 | Missing Docstrings in Core APIs | Low | Maintainability | Onboarding | Open |
+This document tracks identified engineering issues within the AlphaAlgo codebase.
+
+| Issue ID | Severity | Category | Root Cause | Files Affected |
+| :--- | :--- | :--- | :--- | :--- |
+| ISSUE-001 | High | Security | Use of `pickle` for model and data serialization. | `ml_pipeline.py`, `sentiment_core.py`, `liquidity_ml_predictor.py` |
+| ISSUE-002 | Critical | Security | Unsafe use of `eval()` on potentially untrusted strings. | `ml_pipeline.py`, `self_evolving_intelligence.py` |
+| ISSUE-003 | High | Security | Use of `shell=True` in `subprocess` calls. | `self_diagnosis_engine.py`, `recursive_self_improvement.py` |
+| ISSUE-004 | High | Reliability | Reference to undefined `FoldingOperator` in CSC. | `trading_bot/core/csc/controller.py` |
+| ISSUE-005 | Medium | Reliability | Uninitialized attributes (`step_counter`, `fold_interval`) in `InformationFolder`. | `trading_bot/core/csc/folding.py` |
+| ISSUE-006 | Medium | Reliability | Logic errors in `InformationFolder.fold` (undefined variables). | `trading_bot/core/csc/folding.py` |
+| ISSUE-007 | High | Architecture | Extreme fragmentation of Risk Management logic. | `trading_bot/risk/*` |
+| ISSUE-008 | Medium | Architecture | Competing Event Bus implementations. | `trading_bot/core/unified_event_bus.py`, `trading_bot/core/event_bus.py` |
+| ISSUE-009 | Low | Maintainability | God Class: `autonomy_control_plane.py` (142KB). | `trading_bot/core/autonomy_control_plane.py` |
+| ISSUE-010 | Low | Security | Use of weak MD5 hashing for model identification. | `trading_bot/ml/ml_pipeline.py` |
+| ISSUE-011 | Low | Performance | Inefficient dataframe copies in `FeatureStore`. | `trading_bot/ml/ml_pipeline.py` |
+| ISSUE-012 | Medium | Architecture | Competing Orchestrators across different modules. | `trading_bot/aads/`, `trading_bot/hivemind/`, `trading_bot/orchestration/` |
+| ISSUE-013 | Medium | Reliability | Singleton pattern implementation issues with `asyncio.Lock` in `__new__`. | `trading_bot/core/csc/controller.py` |
+| ISSUE-014 | Low | Maintainability | Root-level `loguru.py` name clash with standard library/pip package. | `./loguru.py` |
+| ISSUE-015 | Medium | Architecture | Multiple entry points causing configuration and execution confusion. | `main.py`, `thinking_bot.py`, `run_full_autonomous_system.py` |
+| ISSUE-016 | Low | Data | Poor error handling for corrupted registry JSON. | `trading_bot/ml/ml_pipeline.py` |
+| ISSUE-017 | Medium | ML | Overly simplistic model comparison logic in `RetrainingPipeline`. | `trading_bot/ml/ml_pipeline.py` |
+| ISSUE-018 | Medium | Intelligence | Stubbed decision logic in `CognitiveSystemController`. | `trading_bot/core/csc/controller.py` |
+| ISSUE-019 | Low | Documentation | Obsolete files and directories still present in the tree. | `_archive/`, redundant `test_*.py` in root |
+| ISSUE-020 | High | Concurrency | Potential race conditions in `ModelRegistry` save/load if not atomic. | `trading_bot/ml/ml_pipeline.py` |
+| ISSUE-021 | Medium | Architecture | Circular dependency risk in CSC trade proposal logic. | `trading_bot/core/csc/controller.py` |
+| ISSUE-022 | Medium | Reliability | Missing scheduler cleanup in `RetrainingPipeline`. | `trading_bot/ml/ml_pipeline.py` |
+| ISSUE-023 | Low | Production | Missing environment validation for Windows-only MT5 dependencies. | `trading_bot/data/mt5_interface.py` |
+| ISSUE-024 | Low | Maintainability | Inconsistent naming conventions for Risk classes. | `trading_bot/risk/` |
+| ISSUE-025 | Low | Performance | Blocking I/O in `ModelRegistry._save_registry`. | `trading_bot/ml/ml_pipeline.py` |
+| ISSUE-026 | Medium | Architecture | Fragmented registries (Component Registry vs System Registry). | `trading_bot/core/unified_registry.py`, `trading_bot/system_registry.py` |
+| ISSUE-027 | Low | ML | Missing validation for training data samples. | `trading_bot/ml/ml_pipeline.py` |
+| ISSUE-028 | Medium | Reliability | `InformationFolder.fold_step` is async but `process_market_observation` calls it sync (it's not called yet, but likely intended). | `trading_bot/core/csc/folding.py` |
+| ISSUE-029 | Medium | Security | Credential handling in `deploy.py` needs audit. | `deploy.py` |
+| ISSUE-030 | High | Architecture | "One Brain" directive not fully enforced (multiple controllers exist). | `trading_bot/brain/`, `trading_bot/core/csc/` |
+| ISSUE-031 | Medium | Concurrency | Lack of thread-safety in `UnifiedComponentRegistry` registrations. | `trading_bot/core/unified_registry.py` |

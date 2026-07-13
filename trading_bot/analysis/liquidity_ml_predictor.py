@@ -583,6 +583,7 @@ class LiquidityMLPredictor:
     def save_models(self, filepath: str):
         """Save trained models to file."""
         try:
+            import joblib
             model_data = {
                 'models': self.models,
                 'performance': self.model_performance,
@@ -590,10 +591,8 @@ class LiquidityMLPredictor:
                 'encoders': self.feature_engineer.encoders
             }
             
-            with open(filepath, 'wb') as f:
-                pickle.dump(model_data, f)
-            
-            logger.info(f"Models saved to {filepath}")
+            joblib.dump(model_data, filepath)
+            logger.info(f"Models saved to {filepath} using joblib")
             
         except Exception as e:
             logger.error(f"Error saving models: {e}")
@@ -601,15 +600,15 @@ class LiquidityMLPredictor:
     def load_models(self, filepath: str):
         """Load trained models from file."""
         try:
-            with open(filepath, 'rb') as f:
-                model_data = pickle.load(f)
+            import joblib
+            model_data = joblib.load(filepath)
             
             self.models = model_data.get('models', {})
             self.model_performance = model_data.get('performance', {})
             self.feature_engineer.scalers = model_data.get('scalers', {})
             self.feature_engineer.encoders = model_data.get('encoders', {})
             
-            logger.info(f"Models loaded from {filepath}")
+            logger.info(f"Models loaded from {filepath} using joblib")
             
         except Exception as e:
             logger.error(f"Error loading models: {e}")

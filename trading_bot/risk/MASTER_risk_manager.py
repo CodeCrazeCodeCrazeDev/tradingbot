@@ -306,6 +306,7 @@ class MasterRiskManager:
         confidence: float = 1.0,
         **kwargs
     ) -> PositionSize:
+        self.update_drawdown(self.current_equity) # Ensure DD is up to date
         """
         Calculate optimal position size with all risk factors considered.
         
@@ -412,12 +413,15 @@ class MasterRiskManager:
             lot_size = round(lot_size / lot_step) * lot_step
             
             # Apply limits
-            lot_size = max(min_lot, min(lot_size, max_lot))
+            lot_size = max(0.0, min(lot_size, max_lot))
+            if lot_size < min_lot:
+                lot_size = 0.0
             
             # Final validation
-            if not self._validate_position_size(symbol, lot_size, adjusted_risk_pct):
-                logger.warning("Position size failed validation")
-                return PositionSize(0, 0, 0, stop_loss_pips, reason="Failed validation checks")
+            is_valid, validation_reason = self._validate_position_size(symbol, lot_size, adjusted_risk_pct)
+            if not is_valid:
+                logger.warning(f"Position size failed validation: {validation_reason}")
+                return PositionSize(0, 0, 0, stop_loss_pips, reason=validation_reason)
             
             # Calculate take profit (optional)
             take_profit_pips = kwargs.get('take_profit_pips')
@@ -547,47 +551,46 @@ class MasterRiskManager:
             self.stats.profit_factor
         ]
     
-    def _validate_position_size(self, symbol: str, lot_size: float, risk_pct: float) -> bool:
+    def _validate_position_size(self, symbol: str, lot_size: float, risk_pct: float) -> Tuple[bool, str]:
         """Validate position size against all risk limits."""
         # Check daily loss limit
         if self.daily_loss >= self.limits.max_daily_loss:
-            logger.warning(f"Daily loss limit reached: {self.daily_loss:.2%}")
-            return False
+            return False, f"Daily loss limit reached: {self.daily_loss:.2%}"
         
         # Check weekly loss limit
         if self.weekly_loss >= self.limits.max_weekly_loss:
-            logger.warning(f"Weekly loss limit reached: {self.weekly_loss:.2%}")
-            return False
+            return False, f"Weekly loss limit reached: {self.weekly_loss:.2%}"
         
         # Check monthly loss limit
         if self.monthly_loss >= self.limits.max_monthly_loss:
-            logger.warning(f"Monthly loss limit reached: {self.monthly_loss:.2%}")
-            return False
+            return False, f"Monthly loss limit reached: {self.monthly_loss:.2%}"
         
         # Check max open positions
         if len(self.open_positions) >= self.limits.max_open_positions:
-            logger.warning(f"Max open positions reached: {len(self.open_positions)}")
-            return False
+            return False, f"Max open positions reached: {len(self.open_positions)}"
         
         # Check portfolio risk
         total_risk = sum(pos.get('risk_pct', 0) for pos in self.open_positions.values())
         if total_risk + risk_pct > self.limits.max_portfolio_risk:
-            logger.warning(f"Portfolio risk limit exceeded: {total_risk + risk_pct:.2%}")
-            return False
+            return False, f"Portfolio risk limit exceeded: {total_risk + risk_pct:.2%}"
         
-        return True
+        return True, "All validation checks passed"
     
     def update_drawdown(self, current_equity: float) -> None:
         """Update drawdown calculation."""
         self.current_equity = current_equity
         
-        # Update peak
+        # Update peak (must be positive)
         if current_equity > self.peak_equity:
             self.peak_equity = current_equity
         
+        # If peak is somehow 0 or less, reset it to current equity
+        if self.peak_equity <= 0:
+            self.peak_equity = max(0.01, current_equity)
+
         # Calculate drawdown
         if self.peak_equity > 0:
-            self.current_drawdown = (self.peak_equity - current_equity) / self.peak_equity
+            self.current_drawdown = max(0.0, (self.peak_equity - current_equity) / self.peak_equity)
         
         logger.info(f"Drawdown: {self.current_drawdown:.2%}, Peak: {self.peak_equity:.2f}, Current: {current_equity:.2f}")
     

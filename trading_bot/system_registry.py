@@ -341,12 +341,10 @@ class SystemRegistry:
 _registry_instance: Optional[SystemRegistry] = None
 
 
-def get_registry() -> SystemRegistry:
-    """Get global registry instance"""
-    global _registry_instance
-    if _registry_instance is None:
-        _registry_instance = SystemRegistry()
-    return _registry_instance
+def get_registry() -> Any:
+    """Get global registry instance (Bridged to UnifiedComponentRegistry)"""
+    from trading_bot.core.unified_registry import registry
+    return registry
 
 
 def reset_registry():

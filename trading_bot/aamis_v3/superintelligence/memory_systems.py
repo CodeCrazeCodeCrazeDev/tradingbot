@@ -403,32 +403,78 @@ class MemorySystem:
         }
     
     def save_to_disk(self, filepath: str):
-        """Save memory system to disk"""
+        """Save memory system to disk using JSON for security"""
         
+        # Convert dataclasses to dicts
         data = {
-            'long_term_memory': self.long_term_memory,
-            'market_lessons': self.market_lessons,
+            'long_term_memory': {k: asdict(v) for k, v in self.long_term_memory.items()},
+            'market_lessons': {k: asdict(v) for k, v in self.market_lessons.items()},
             'trading_rules': self.trading_rules,
             'statistics': self.get_memory_statistics()
         }
         
-        with open(filepath, 'wb') as f:
-            pickle.dump(data, f)
+        # Custom encoder for Enums and Datetimes
+        def default_serializer(obj):
+            if isinstance(obj, (datetime, timedelta)):
+                return obj.isoformat()
+            if isinstance(obj, Enum):
+                return obj.value
+            raise TypeError(f"Type {type(obj)} not serializable")
+
+        with open(filepath, 'w') as f:
+            json.dump(data, f, indent=2, default=default_serializer)
         
-        logger.info(f"Saved memory system to {filepath}")
+        logger.info(f"Saved memory system to {filepath} using JSON")
     
     def load_from_disk(self, filepath: str):
-        """Load memory system from disk"""
+        """Load memory system from disk using JSON for security"""
         
         try:
-            with open(filepath, 'rb') as f:
-                data = pickle.load(f)
+            with open(filepath, 'r') as f:
+                data = json.load(f)
+
+            # Reconstruct dataclasses
+            ltm_raw = data.get('long_term_memory', {})
+            self.long_term_memory = {
+                k: LongTermMemory(
+                    memory_id=v['memory_id'],
+                    memory_type=MemoryType(v['memory_type']),
+                    content=v['content'],
+                    market_regime=v['market_regime'],
+                    asset_class=v['asset_class'],
+                    timeframe=v['timeframe'],
+                    times_validated=v['times_validated'],
+                    times_invalidated=v['times_invalidated'],
+                    confidence=v['confidence'],
+                    importance=MemoryImportance(v['importance']),
+                    created_at=datetime.fromisoformat(v['created_at']),
+                    last_accessed=datetime.fromisoformat(v['last_accessed']) if v['last_accessed'] else None,
+                    access_count=v['access_count'],
+                    related_memories=v['related_memories'],
+                    tags=v['tags'],
+                    notes=v['notes']
+                ) for k, v in ltm_raw.items()
+            }
+
+            lessons_raw = data.get('market_lessons', {})
+            self.market_lessons = {
+                k: MarketLesson(
+                    lesson_id=v['lesson_id'],
+                    title=v['title'],
+                    description=v['description'],
+                    learned_from=v['learned_from'],
+                    learned_at=datetime.fromisoformat(v['learned_at']),
+                    times_applied=v['times_applied'],
+                    success_rate=v['success_rate'],
+                    cost_to_learn=v['cost_to_learn'],
+                    applicable_regimes=v['applicable_regimes'],
+                    applicable_conditions=v['applicable_conditions']
+                ) for k, v in lessons_raw.items()
+            }
             
-            self.long_term_memory = data.get('long_term_memory', {})
-            self.market_lessons = data.get('market_lessons', {})
             self.trading_rules = data.get('trading_rules', {})
             
-            logger.info(f"Loaded memory system from {filepath}")
+            logger.info(f"Loaded memory system from {filepath} using JSON")
             
             return True
         except Exception as e:

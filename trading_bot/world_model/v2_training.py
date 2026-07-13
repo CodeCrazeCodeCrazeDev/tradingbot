@@ -15,10 +15,12 @@ from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 
-class WorldModelSpecialistTrainer:
+class WorldModelTrainer:
     def __init__(self, model: Any, lr: float = 1e-4):
         self.model = model
         self.optimizer = optim.AdamW(model.parameters(), lr=lr)
+
+class WorldModelSpecialistTrainer(WorldModelTrainer):
 
     def train_amt_step(self, historical_data: torch.Tensor):
         """

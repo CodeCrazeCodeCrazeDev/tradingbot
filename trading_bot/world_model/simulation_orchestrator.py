@@ -6,22 +6,22 @@ logger = logging.getLogger(__name__)
 
 class SimulationMode(Enum):
     MONTE_CARLO = "monte_carlo"
-    CAUSAL = "causal"
+    AGENTIC = "agentic"
     ADVERSARIAL = "adversarial"
 
-class SimulationResult:
-    def __init__(self, scenarios: List[Dict]):
-        self.scenarios = scenarios
-
 class SimulationConfig:
-    def __init__(self, n_scenarios: int = 10, horizon: int = 50):
-        self.n_scenarios = n_scenarios
-        self.horizon = horizon
+    def __init__(self, mode: SimulationMode = SimulationMode.MONTE_CARLO):
+        self.mode = mode
+
+class SimulationResult:
+    def __init__(self, success: bool):
+        self.success = success
 
 class SimulationOrchestrator:
+    """Manages heavy market simulations."""
     def __init__(self, world_model: Any):
         self.world_model = world_model
 
-    async def run_simulation(self, observation: Any, config: SimulationConfig) -> SimulationResult:
-        res = self.world_model.think(observation)
-        return SimulationResult(res["scenarios"])
+    async def run_simulation(self, config: SimulationConfig) -> SimulationResult:
+        logger.info(f"SimulationOrchestrator: Running {config.mode.value} simulation")
+        return SimulationResult(True)

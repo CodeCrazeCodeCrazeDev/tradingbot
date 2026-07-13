@@ -730,8 +730,7 @@ class CodeEvolutionAgent:
         try:
             import shlex
             for command in step['commands']:
-                cmd_list = shlex.split(command)
-                subprocess.run(cmd_list, shell=False, check=True, cwd=codebase_path)
+                subprocess.run(shlex.split(command), shell=False, check=True, cwd=codebase_path)
             return True
         except Exception as e:
             self.logger.error(f"Backup step failed: {e}")
@@ -901,8 +900,10 @@ class RecursiveSelfImprovementSystem:
                 temp_file = f.name
             
             # SCP transfer
+            import shlex
             remote_path = f"{self.remote_backup_location}iteration_{iteration_record['iteration']}.json"
-            subprocess.run(["scp", temp_file, remote_path], shell=False, check=True)
+            scp_command = ["scp", temp_file, remote_path]
+            subprocess.run(scp_command, shell=False, check=True)
             
             # Clean up
             os.unlink(temp_file)

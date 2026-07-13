@@ -33,6 +33,9 @@ class UnifiedComponentRegistry:
         self._components: Dict[str, Any] = {}
         self._metadata: Dict[str, Dict[str, Any]] = {}
         self._dependencies: Dict[str, List[str]] = {}
+
+        # SystemRegistry compatibility
+        self._instances = self._components
         self._initialized = True
         logger.info("UnifiedComponentRegistry initialized as singleton")
 
@@ -42,7 +45,8 @@ class UnifiedComponentRegistry:
         component: Any,
         component_type: str,
         dependencies: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs
     ):
         """
         Register a component with the system.
