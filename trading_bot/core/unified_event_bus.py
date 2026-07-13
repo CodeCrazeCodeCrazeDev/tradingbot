@@ -17,6 +17,7 @@ from enum import Enum
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Union
 from uuid import uuid4
 import threading
+import copy
 
 logger = logging.getLogger(__name__)
 
@@ -114,6 +115,8 @@ class UnifiedDecisionBus:
         self._running = False
         self._action_queue: Optional[asyncio.PriorityQueue] = None
         self._processor_task: Optional[asyncio.Task] = None
+        self._next_dispatch_seq = 0
+        self._dispatch_condition = asyncio.Condition()
         self._initialized = True
         logger.info("LogAct Shared-Log Backbone initialized with Legacy Support")
 
@@ -204,42 +207,19 @@ class UnifiedDecisionBus:
     # --- Internal Logic ---
 
     async def _process_log(self):
-        """Autoritative log processing and total ordering."""
+        """Authoritative log processing and total ordering."""
+        self._next_dispatch_seq = 0
         while self._running:
             try:
-                _, _, action = await self._action_queue.get()
+                item = await self._action_queue.get()
+                action = item[2]
 
-                # 1. Total Ordering
+                # 1. Total Ordering (LogAct Principle)
                 action.sequence_number = len(self._log)
                 self._log.append(action)
 
-                # 2. Decoupled Voting (Audit Phase)
-                action.status = ActionStatus.AUDITING
-                vote_tasks = []
-                voter_ids = list(self._voters.keys())
-
-                for vid, vfn in self._voters.items():
-                    vote_tasks.append(vfn(action))
-
-                if vote_tasks:
-                    results = await asyncio.gather(*vote_tasks, return_exceptions=True)
-                    for i, res in enumerate(results):
-                        vid = voter_ids[i]
-                        if isinstance(res, Exception):
-                            logger.error(f"Voter {vid} failed: {res}")
-                            action.voter_reports[vid] = {"decision": "ERROR", "reason": str(res)}
-                        else:
-                            action.voter_reports[vid] = res
-
-                # 3. Consensus Logic
-                if self._verify_consensus(action):
-                    action.status = ActionStatus.APPROVED
-                    logger.info(f"Action {action.action_id} APPROVED [Seq: {action.sequence_number}]")
-                    # 4. Dispatch to Consumers
-                    await self._dispatch(action)
-                else:
-                    action.status = ActionStatus.VETOED
-                    logger.warning(f"Action {action.action_id} VETOED by voters")
+                # 2. Launch concurrent audit task
+                asyncio.create_task(self._audit_and_dispatch(action))
 
                 self._action_queue.task_done()
             except asyncio.CancelledError:
@@ -247,13 +227,69 @@ class UnifiedDecisionBus:
             except Exception as e:
                 logger.error(f"LogAct Processor Critical Failure: {e}")
 
+    async def _audit_and_dispatch(self, action: LogAction):
+        """Concurrent auditing with ordered dispatch."""
+        try:
+            # 2. Decoupled Voting (Audit Phase)
+            action.status = ActionStatus.AUDITING
+            vote_tasks = []
+            voter_ids = list(self._voters.keys())
+
+            for vid, vfn in self._voters.items():
+                vote_tasks.append(vfn(copy.deepcopy(action)))
+
+            if vote_tasks:
+                results = await asyncio.gather(*vote_tasks, return_exceptions=True)
+                for i, res in enumerate(results):
+                    vid = voter_ids[i]
+                    if isinstance(res, Exception):
+                        logger.error(f"Voter {vid} failed: {res}")
+                        action.voter_reports[vid] = {"decision": "ERROR", "reason": str(res)}
+                    else:
+                        action.voter_reports[vid] = res
+
+            # 3. Consensus Logic
+            if self._verify_consensus(action):
+                action.status = ActionStatus.APPROVED
+            else:
+                action.status = ActionStatus.VETOED
+
+            # 4. Ordered Dispatch (Wait for turn)
+            async with self._dispatch_condition:
+                while action.sequence_number != self._next_dispatch_seq:
+                    await self._dispatch_condition.wait()
+
+                if action.status == ActionStatus.APPROVED:
+                    logger.info(f"Action {action.action_id} APPROVED [Seq: {action.sequence_number}] [Type: {action.action_type}]")
+                    await self._dispatch(action)
+                else:
+                    logger.warning(f"Action {action.action_id} VETOED by voters: {action.voter_reports}")
+
+                self._next_dispatch_seq += 1
+                self._dispatch_condition.notify_all()
+
+        except Exception as e:
+            logger.error(f"Error in audit_and_dispatch for {action.action_id}: {e}")
+            action.status = ActionStatus.FAILED
+
     def _verify_consensus(self, action: LogAction) -> bool:
-        """Basic consensus: No 'REJECT' or 'VETO' from any registered voter."""
+        """
+        Institutional Consensus:
+        1. NO 'REJECT' or 'VETO' from any registered voter.
+        2. 'APPROVED' or 'PASS' required from critical voters (e.g., Shield).
+        """
         for vid, report in action.voter_reports.items():
             decision = report.get("decision", "UNKNOWN")
-            if decision in ["REJECT", "VETO", "FAIL"]:
+            # LogAct: Veto-based consensus for high-stakes actions
+            if decision in ["REJECT", "VETO", "FAIL", "BLOCKED"]:
                 logger.warning(f"Consensus Veto: {vid} rejected {action.action_id}: {report.get('reason')}")
                 return False
+
+        # Optional: Check if mandatory voters (like 'shield') actually responded
+        if "shield" in self._voters and "shield" not in action.voter_reports:
+             logger.error(f"Mandatory voter 'shield' did not report for action {action.action_id}")
+             return False
+
         return True
 
     async def _dispatch(self, action: LogAction):

@@ -33,7 +33,7 @@ async def test_logact_reliability_backbone():
 
     assert action.status in [ActionStatus.APPROVED, ActionStatus.VETOED]
     assert action.sequence_number is not None
-    assert "GovernanceShield" in action.voter_reports
+    assert "shield" in action.voter_reports
 
     await decision_bus.stop()
 
@@ -43,14 +43,14 @@ async def test_sage_memory_evolution_gain():
     Verify the 'Gain Metric' (CL-Bench) of SAGE memory.
     Ensures stateful performance > stateless performance.
     """
-    hms = HierarchicalMemorySystem()
+    hms = HierarchicalMemorySystem(base_path="test_hms_gain")
 
     # Simulate experience (Stateful)
-    feedback = [{"target_edge": "E1", "action": "PRUNE", "reason": "Low reliability"}]
-    hms.submit_feedback(feedback)
+    feedback = [{"source": "A", "target": "B", "key": "K", "action": "PRUNE", "reason": "Low reliability"}]
+    hms.evolve_memory(feedback)
 
     # Verify evolution
-    assert hms.graph_memory.evolution_rounds > 0
+    assert hms.sage_substrate.evolution_rounds > 0
 
     # Gain Metric Calculation (Mocked for architectural verification)
     perf_stateful = 0.85

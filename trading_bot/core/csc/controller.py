@@ -19,11 +19,12 @@ from uuid import uuid4
 
 from .hypothesis import HypothesisGenerator, ReasoningBranch
 from .folding import InformationFolder
+from .router import skill_router, hasp_executor, SkillType
 from ..verification.swarm import VerificationSwarm
 from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport
 from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
 from ..immutable_shield import ImmutableShield
-from ..unified_event_bus import decision_bus, LogAction, ActionStatus
+from ..unified_event_bus import decision_bus, LogAction, ActionStatus, EventPriority
 
 logger = logging.getLogger(__name__)
 
@@ -46,28 +47,34 @@ class CognitiveSystemController:
         self.world_model = world_model
         self.hms = hms
         self.shield = shield
-        self.folding_operator = FoldingOperator(hms)
 
         self.hypothesis_gen = HypothesisGenerator(world_model)
         self.verifier_swarm = VerificationSwarm()
         self.folder = InformationFolder()
 
-        # HASP: Executable Guardrails (Skill Programs)
-        self.skill_programs = self._load_skill_programs()
-
-    def _load_skill_programs(self) -> Dict[str, Any]:
-        # In production, load from a registry. Here we stub it.
-        return {}
-
-        # DiscoLoop Channels
+        # DiscoLoop Channels (Memory Leak Prevention: Use Windowing)
         self.continuous_state = {} # Latent embeddings
-        self.discrete_channel = [] # Semantic tokens
+        self.discrete_channel = [] # Semantic tokens (Reasoning chain)
+
+        self._initialized = True
+        logger.info("CSC-V5: Unified Cognitive Controller Initialized")
 
     async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
         """
         12-step Recursive Active Inference Pipeline.
         """
         logger.info("CSC-V5: Starting Recursive Active Inference Pipeline")
+
+        # 1. Update Discrete Channel (DiscoLoop Reasoning History)
+        self.discrete_channel.append(f"Observed market state at {datetime.utcnow()}")
+        if len(self.discrete_channel) > 100: self.discrete_channel.pop(0)
+
+        # 2. Update Continuous State (DiscoLoop Latent Context)
+        # Simplified: Use observation as latent update
+        self.continuous_state.update(observation.get("latent", {}))
+
+        # 3. Active Inference: Surpise Minimization (VFE)
+        # Simplified: Calculate surprise based on world model prediction
 
         # 4. Executable Guardrails (HASP Intervention)
         intervention = self._apply_hasp_guardrails(observation)
@@ -112,13 +119,29 @@ class CognitiveSystemController:
         if not decision_ready:
             return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason="Failed Pivot/Refine loop")
 
-        # 11. Governance Gate (Immutable Shield)
+        # 11. Governance Gate (LogAct Voter)
+        # In V5, the CSC no longer calls the shield directly.
+        # Instead, it proposes the action to the decision_bus,
+        # and the ImmutableShield (registered as a voter) audits it asynchronously.
         trade_proposal = self._translate_to_proposal(ledger_entry)
-        shield_report = self.shield.validate_action("trade", trade_proposal, {"market": observation})
 
-        from ..immutable_shield import GovernanceDecision
-        if shield_report.decision != GovernanceDecision.APPROVED:
-             return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=f"Shield: {shield_report.reason}")
+        action = LogAction(
+            action_type="trade",
+            payload=trade_proposal,
+            agent_id="csc_controller",
+            correlation_id=str(ledger_entry.entry_id),
+            priority=EventPriority.HIGH
+        )
+
+        await decision_bus.propose_action(action)
+
+        # Wait for consensus in the shared log (Simplified: poll status)
+        # In a fully async system, the CSC would move to the next task.
+        while action.status in [ActionStatus.PROPOSED, ActionStatus.AUDITING]:
+             await asyncio.sleep(0.1)
+
+        if action.status != ActionStatus.APPROVED:
+             return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=f"LogAct Veto: {action.voter_reports}")
 
         # 12. Execution & Folding (HIPIF)
         logger.info(f"CSC-V5: Trade APPROVED. Folding horizon...")
@@ -135,6 +158,11 @@ class CognitiveSystemController:
 
     def _apply_hasp_guardrails(self, observation: Dict[str, Any]) -> Dict[str, Any]:
         """HASP: Executable guardrails check."""
+        skill = skill_router.route_task("risk_check", observation)
+        if skill and skill.skill_type == SkillType.HASP_PROGRAM:
+            result = hasp_executor.execute(skill, observation)
+            if result.get("status") == "success":
+                return result.get("result", {})
         return {}
 
     async def _refine_strategy(self, branch: ReasoningBranch, reports: List[VerifierReport]) -> Optional[ReasoningBranch]:
