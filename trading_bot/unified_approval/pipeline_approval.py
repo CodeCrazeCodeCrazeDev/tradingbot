@@ -175,8 +175,12 @@ class CLIApprovalInterface:
         self.rules_engine = ApprovalRulesEngine()
         
     def _clear_screen(self):
-        """Clear terminal screen"""
-        os.system('cls' if os.name == 'nt' else 'clear')
+        """Clear terminal screen (Secure)"""
+        import subprocess
+        if os.name == 'nt':
+            subprocess.run(['cls'], shell=True)
+        else:
+            subprocess.run(['clear'])
     
     def _print_header(self):
         """Print header"""

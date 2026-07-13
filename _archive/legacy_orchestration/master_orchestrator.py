@@ -39,13 +39,15 @@ logger = logging.getLogger(__name__)
 
 class MasterOrchestrator:
     """
-    Master Orchestrator - DEPRECATED.
+    Master Orchestrator - DEPRECATED (July 2026).
     Now acts as a lightweight delegator to IntegratedAgentSystem.
+    Logic is being migrated to UCA-2026 CognitiveSystemController.
     """
     
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
         self.running = False
+        self.background_processes = {} # Fix missing attribute
         
         # New unified brain
         if IAS_AVAILABLE:
@@ -479,6 +481,15 @@ class MasterOrchestrator:
         
         self.running = False
         
+        # Shutdown background processes
+        for name, proc in list(self.background_processes.items()):
+            if proc.is_alive():
+                logger.info(f"Terminating background service: {name}")
+                proc.terminate()
+                proc.join(timeout=5)
+                if proc.is_alive():
+                    proc.kill()
+
         if self.ias:
             await self.ias.shutdown()
         
