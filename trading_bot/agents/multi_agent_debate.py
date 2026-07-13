@@ -554,15 +554,17 @@ class RiskSentinel(TradingAgent):
     ) -> Optional[AgentArgument]:
         """Respond to aggressive positions."""
         try:
-            # Don't downgrade if we are already in high risk territory
-            risk_flags = 0
-            if context.portfolio_exposure > self.max_exposure: risk_flags += 1
-            if context.correlation_risk > self.max_correlation: risk_flags += 1
-            if context.vix_level and context.vix_level > 30: risk_flags += 1
-            if context.volatility > 0.03: risk_flags += 1
-
-            if risk_flags >= 2:
-                return None
+            # Maintain veto if high-risk thresholds are breached
+            if context.portfolio_exposure > 0.5 or context.volatility > 0.03:
+                return AgentArgument(
+                    agent_role=self.role,
+                    action=TradeAction.NO_TRADE,
+                    conviction=Conviction.VERY_HIGH,
+                    reasoning=["Maintaining NO_TRADE veto: risk limits breached"],
+                    key_factors={'high_risk_veto': 1.0},
+                    confidence=0.95,
+                    timestamp=datetime.now()
+                )
 
             if argument.action in [TradeAction.STRONG_BUY, TradeAction.STRONG_SELL]:
                 if context.portfolio_exposure > self.max_exposure * 0.7:
@@ -876,13 +878,12 @@ class MultiAgentDebateSystem:
             # Additional rounds if needed
             round_num = 2
             while consensus < self.consensus_threshold and round_num <= self.max_rounds:
-                previous_round_args = current_round_args
                 current_round_args = []
             
                 # Each agent responds to others
-                last_round_args = debate_rounds[-1].arguments
                 for agent in self.agents:
-                    for other_arg in previous_round_args:
+                    # Robust round-specific argument tracking
+                    for other_arg in debate_rounds[-1].arguments:
                         if other_arg.agent_role != agent.role:
                             response = agent.respond_to_argument(other_arg, context)
                             if response:

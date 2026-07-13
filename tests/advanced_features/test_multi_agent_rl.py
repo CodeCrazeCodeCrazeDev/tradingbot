@@ -1,26 +1,32 @@
-"""
-Tests for multi_agent_rl (Advanced Features)
+"""Tests for multi_agent_rl in advanced_features."""
 
-Verifies AI trading personas and neural-backed decision making.
-"""
-
-import pytest
-import numpy as np
 from trading_bot.advanced_features.multi_agent_rl import (
-    AgentType, TradingDecision, MarketState, MacroStrategist,
-    TacticalExecutioner, RiskSentinel, HeadAI, MultiAgentTradingSystem
+    AgentType,
+    MacroStrategist,
+    MarketState,
+    MultiAgentTradingSystem,
+    RiskSentinel,
+    TacticalExecutioner,
+    TradingDecision,
 )
 
-class TestAgentType:
-    """Tests for AgentType"""
+class TestAgentComponents:
+    """Tests for individual agent components"""
 
     def test_values(self):
         """Test AgentType values"""
         assert AgentType.MACRO_STRATEGIST.value == "macro_strategist"
         assert AgentType.HEAD_AI.value == "head_ai"
 
-class TestTradingDecision:
-    """Tests for TradingDecision"""
+    def test_macro_strategist(self):
+        agent = MacroStrategist()
+        assert agent.agent_type == AgentType.MACRO_STRATEGIST
+        assert agent.input_dim == 60
+
+    def test_tactical_executioner(self):
+        agent = TacticalExecutioner()
+        assert agent.agent_type == AgentType.TACTICAL_EXECUTIONER
+        assert agent.input_dim == 80
 
     def test_initialization(self):
         """Test TradingDecision initialization"""
@@ -37,8 +43,13 @@ class TestTradingDecision:
         assert decision.agent_type == AgentType.MACRO_STRATEGIST
         assert decision.action == "buy"
 
-class TestMarketState:
-    """Tests for MarketState"""
+    def test_risk_sentinel(self):
+        agent = RiskSentinel()
+        assert agent.agent_type == AgentType.RISK_SENTINEL
+        assert agent.input_dim == 40
+
+class TestSystemMetrics:
+    """Tests for system performance metrics"""
 
     def test_initialization(self):
         """Test MarketState initialization"""
@@ -55,6 +66,13 @@ class TestMarketState:
         )
         assert state.price == 1.1000
         assert state.trend_direction == "up"
+
+    def test_get_system_status(self):
+        system = MultiAgentTradingSystem()
+        status = system.get_system_status()
+        assert status['system_health'] == 'operational'
+        assert status['total_decisions'] == 0
+        assert 'recent_performance' in status
 
 class TestAgents:
     """Tests for specialized agents"""
