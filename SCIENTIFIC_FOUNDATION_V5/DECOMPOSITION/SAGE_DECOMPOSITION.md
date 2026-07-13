@@ -50,3 +50,8 @@ Modeling complex supply chains, institutional ownership networks, and multi-fact
 
 ## Production Readiness
 Medium. Requires specialized graph database and GFM.
+
+## Reusable Algorithms
+- **SAGEEvolutionLoop**: Reader-feedback-to-Writer logic for graph pruning.
+- **MultiHopGraphRetriever**: Logic for extracting evidence chains from the graph substrate.
+- **IncrementalGraphWriter**: Logic for updating $G_t$ with $H_{t+1}$.

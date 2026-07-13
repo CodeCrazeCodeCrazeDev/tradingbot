@@ -48,3 +48,7 @@ Hard risk limits, compliance checks, and execution-logic verification (e.g., "Ne
 
 ## Production Readiness
 High. Very practical for institutional safety and reliability.
+
+## Reusable Algorithms
+- **HASPHarness**: Middleware for intercepting agent actions and applying PF library.
+- **PFEvolutionaryGate**: Logic for validating and promoting new Program Functions.

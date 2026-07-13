@@ -51,3 +51,7 @@ Essential for fine-tuning on rare market events (black swans) where data is spar
 
 ## Production Readiness
 High. Implementable as a custom loss/masking layer in the training pipeline.
+
+## Reusable Algorithms
+- **SelectiveMaskingOperator**: Logic for applying $\tau_H$ and $\tau_{KL}$ masks.
+- **DualModelLoss**: Custom loss function incorporating reference model distribution.

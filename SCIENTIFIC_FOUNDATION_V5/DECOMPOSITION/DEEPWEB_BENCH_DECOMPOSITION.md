@@ -47,3 +47,7 @@ Institutional-grade research where being "vaguely right" is often worse than bei
 
 ## Production Readiness
 N/A (Benchmark/Evaluation framework).
+
+## Reusable Algorithms
+- **DerivationValidator**: Logic for checking multi-step reasoning consistency.
+- **CalibrationMonitor**: Metric (e.g., ECE) for evaluating confidence vs. accuracy.

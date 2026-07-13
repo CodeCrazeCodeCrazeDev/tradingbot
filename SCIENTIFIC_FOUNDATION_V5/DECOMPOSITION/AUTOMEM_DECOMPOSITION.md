@@ -51,3 +51,7 @@ Maintaining trade journals, institutional memory of market regimes, and long-ter
 
 ## Production Readiness
 High. Can be implemented as an "Evolutionary Memory" layer.
+
+## Reusable Algorithms
+- **MetamemoryTeacher**: Logic for reviewing trajectories and proposing schema edits.
+- **MemoryActionDistiller**: Extracts successful (state, memory_action) pairs for training.

@@ -51,3 +51,8 @@ Complex arbitrage detection and cross-market correlation analysis requiring mult
 
 ## Production Readiness
 Medium-High. Requires specific model architecture (Looped Transformer) or adaptation of existing ones.
+
+## Reusable Algorithms
+- **DiscoLoopRecurrence**: Recursive $S_k \to S_{k+1}$ update logic.
+- **HiddenStateProjector**: Projection layer for $h + \text{Proj}(e)$.
+- **RepresentationalAligner**: Inference-time intervention for $h/e$ alignment.

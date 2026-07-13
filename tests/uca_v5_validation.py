@@ -1,77 +1,122 @@
-"""
-UCA V5 Validation Suite - July 2026
-===================================
-Implements Gain Metric (CL-Bench) and HORIZON failure attribution diagnostics.
-Verifies LogAct reliability and SAGE memory evolution.
-"""
-
 import pytest
 import asyncio
+import os
+import shutil
+import time
+from datetime import datetime
 from trading_bot.core.csc.controller import CognitiveSystemController
-from trading_bot.core.unified_event_bus import decision_bus, LogAction, ActionStatus
+from trading_bot.core.unified_event_bus import decision_bus, LogAction, ActionStatus, EventPriority
 from trading_bot.core.hms.memory import HierarchicalMemorySystem
+from trading_bot.core.immutable_shield import shield, GovernanceDecision
+from trading_bot.governance.evolution_gate import EvolutionGate
+
+def reset_singletons():
+    CognitiveSystemController._instance = None
+    HierarchicalMemorySystem._instance = None
 
 @pytest.mark.asyncio
-async def test_logact_reliability_backbone():
-    """Verify LogAct Shared-Log Backbone and Voter consensus."""
-    csc = CognitiveSystemController()
+async def test_uca_v5_pipeline_integration():
+    """
+    Test the full UCA V5 12-step pipeline with consensus sync.
+    """
+    reset_singletons()
+    if os.path.exists("temp_hms_test"): shutil.rmtree("temp_hms_test")
+
+    hms = HierarchicalMemorySystem(base_path="temp_hms_test")
+    csc = CognitiveSystemController(hms=hms, shield=shield)
+
     await decision_bus.start()
 
+    # Simulate a valid trade that should be approved
+    observation = {
+        "symbol": "BTCUSD",
+        "market": {"volatility": 0.1, "trend": "up"},
+        "portfolio": {"drawdown": 0.02}
+    }
+
+    decision = await csc.process_market_observation(observation)
+
+    assert decision is not None
+    assert decision.outcome.name == "TRADE_APPROVED"
+
+    await decision_bus.stop()
+    if os.path.exists("temp_hms_test"): shutil.rmtree("temp_hms_test")
+
+@pytest.mark.asyncio
+async def test_logact_timeout_handling():
+    """
+    Test that the bus handles slow/hanging voters via timeouts.
+    """
+    reset_singletons()
+    await decision_bus.start()
+
+    # Register a hanging voter
+    async def hanging_voter(action):
+        await asyncio.sleep(10)
+        return {"decision": "APPROVED"}
+
+    decision_bus.register_voter("HangingVoter", hanging_voter)
+    decision_bus.config["voter_timeout"] = 0.5 # Fast timeout
+
     action = LogAction(
-        action_type="trade",
-        payload={"symbol": "BTCUSD", "quantity": 0.1},
-        agent_id="TestAgent"
+        action_type="test_timeout",
+        payload={"data": "test"},
+        agent_id="test_agent"
     )
 
     await decision_bus.propose_action(action)
+    status = await action.wait_for_decision(timeout=2.0)
 
-    # Wait for processing
-    for _ in range(20):
-        if action.status in [ActionStatus.APPROVED, ActionStatus.VETOED]:
-            break
-        await asyncio.sleep(0.1)
-
-    assert action.status in [ActionStatus.APPROVED, ActionStatus.VETOED]
-    assert action.sequence_number is not None
-    assert "GovernanceShield" in action.voter_reports
+    assert action.voter_reports["HangingVoter"]["decision"] == "TIMEOUT"
 
     await decision_bus.stop()
 
 @pytest.mark.asyncio
-async def test_sage_memory_evolution_gain():
+async def test_csc_memory_windowing():
     """
-    Verify the 'Gain Metric' (CL-Bench) of SAGE memory.
-    Ensures stateful performance > stateless performance.
+    Test that CSC channels don't grow indefinitely.
     """
-    hms = HierarchicalMemorySystem()
+    reset_singletons()
+    # Mock HMS and Shield
+    hms = HierarchicalMemorySystem(base_path="temp_mem_test")
+    csc = CognitiveSystemController(hms=hms, shield=shield)
+    csc.max_channel_history = 10
 
-    # Simulate experience (Stateful)
-    feedback = [{"target_edge": "E1", "action": "PRUNE", "reason": "Low reliability"}]
-    hms.submit_feedback(feedback)
+    # Run many observations
+    for i in range(20):
+        await csc.process_market_observation({"symbol": "TEST"})
 
-    # Verify evolution
-    assert hms.graph_memory.evolution_rounds > 0
-
-    # Gain Metric Calculation (Mocked for architectural verification)
-    perf_stateful = 0.85
-    perf_stateless = 0.70
-    gain = perf_stateful - perf_stateless
-
-    assert gain > 0.10 # Must show significant gain
+    assert len(csc.discrete_channel) <= 10
+    assert len(csc.continuous_state) <= 10
+    if os.path.exists("temp_mem_test"): shutil.rmtree("temp_mem_test")
 
 @pytest.mark.asyncio
-async def test_horizon_breakdown_attribution():
+async def test_high_event_rate_concurrency():
     """
-    Verify HORIZON diagnostics for long-horizon breakdown.
-    Attributes failure to specific architectural layers.
+    Stress test the LogAct backbone with simultaneous submissions.
     """
-    # Simulate a long-horizon task failure
-    task_horizon = 60 # H* > 50
+    await decision_bus.start()
 
-    # Diagnostic Judge logic (Mocked)
-    failure_type = "PlanningDrift" # One of 7 taxonomy classes
-    breaking_point = 42
+    num_actions = 20 # Reduced for CI speed
+    actions = [
+        LogAction(action_type="stress_test", payload={"i": i}, agent_id="stress_agent", priority=EventPriority.NORMAL)
+        for i in range(num_actions)
+    ]
 
-    assert task_horizon > 50
-    assert failure_type in ["PlanningDrift", "StateTracking", "ExecutionError", "ToolFailure"]
-    assert breaking_point > 40 # Goal is H* > 50 in production
+    # Propose all simultaneously
+    await asyncio.gather(*[decision_bus.propose_action(a) for a in actions])
+
+    # Wait for all to complete
+    results = await asyncio.gather(*[a.wait_for_decision(timeout=10.0) for a in actions])
+
+    assert all(r == ActionStatus.EXECUTED for r in results)
+
+    await decision_bus.stop()
+
+if __name__ == "__main__":
+    import shutil
+    for d in ["temp_hms_test", "temp_sage_test", "temp_mem_test"]:
+        if os.path.exists(d): shutil.rmtree(d)
+
+    import sys
+    pytest.main([__file__, "-v", "-c", "/dev/null"])

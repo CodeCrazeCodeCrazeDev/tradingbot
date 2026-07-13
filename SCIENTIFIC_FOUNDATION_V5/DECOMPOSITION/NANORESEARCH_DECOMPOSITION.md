@@ -50,3 +50,7 @@ Automating customized equity research reports and strategy backtesting tailored 
 
 ## Production Readiness
 Medium. High complexity in managing the co-evolutionary loops.
+
+## Reusable Algorithms
+- **TriLevelCoEvolver**: Logic for coordinating updates between Skill Bank, Memory, and Policy.
+- **SkillDistiller**: Logic for converting interaction traces into reusable procedural rules.

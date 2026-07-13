@@ -48,3 +48,7 @@ Developing and auditing new trading strategies, where "failure" (bad backtest) m
 
 ## Production Readiness
 High. Can be implemented as a robust execution framework.
+
+## Reusable Algorithms
+- **PivotRefineOperator**: Logic for choosing between strategic shift or parameter adjustment.
+- **DebateConsensusEngine**: Logic for aggregating agent arguments into a final decision.

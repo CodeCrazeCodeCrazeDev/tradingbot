@@ -39,7 +39,14 @@ class VerificationSwarm:
         """
         Executes parallel audit by all registered verifiers.
         """
-        logger.info(f"VerificationSwarm: Auditing research {research_snapshot.get('id', 'N/A')}")
+        # Handle both dicts and objects with entry_id
+        entry_id = "N/A"
+        if hasattr(research_snapshot, 'entry_id'):
+            entry_id = research_snapshot.entry_id
+        elif isinstance(research_snapshot, dict):
+            entry_id = research_snapshot.get('id', 'N/A')
+
+        logger.info(f"VerificationSwarm: Auditing research {entry_id}")
 
         # Parallel execution of verifiers
         tasks = [self._audit_agent(v, research_snapshot) for v in self.verifiers]
@@ -52,7 +59,7 @@ class VerificationSwarm:
 
     async def _audit_agent(self, agent_name: str, snapshot: Any) -> VerifierReport:
         """Mock individual verifier logic."""
-        await asyncio.sleep(0.1) # Simulate audit work
+        await asyncio.sleep(0.05) # Simulate audit work
 
         # Example of a verifier vetoing due to inconsistency
         is_valid = True

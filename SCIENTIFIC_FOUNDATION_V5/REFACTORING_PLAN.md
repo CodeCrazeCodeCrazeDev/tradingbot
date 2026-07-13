@@ -1,52 +1,48 @@
 # Refactoring Plan: AlphaAlgo UCA V5 Implementation
 
 ## 1. Dependency Graph
-- **Tier 0 (Foundation)**: `HASP_HARNESS` -> `SKILL_ROUTER` -> `CSC_CONTROLLER`.
-- **Tier 1 (Memory)**: `SAGE_MEMORY` -> `AUTOMEM_OPTIMIZER` -> `HMS_SYSTEM`.
-- **Tier 2 (Reasoning)**: `DISCOLOOP_CELL` -> `PIVOT_REFINE` -> `HYPOTHESIS_GENERATOR`.
-- **Tier 3 (Evolution)**: `EKSFT_TRAINING` -> `EVOLUTION_GATE` -> `SELF_IMPROVEMENT_CORE`.
+- **Foundation Layer (LogAct)**: `UnifiedDecisionBus` (Backbone) $\to$ `ImmutableShield` (Voter).
+- **Intelligence Layer (CSC)**: `DiscoLoopCell` $\to$ `SkillRouter` (HASP/S2L) $\to$ `CognitiveSystemController` (12-step).
+- **Knowledge Layer (HMS)**: `SAGEGraphMemory` $\to$ `AutoMemOptimizer` $\to$ `HierarchicalMemorySystem`.
+- **Evolution Layer (Gate)**: `EKSFTMasking` $\to$ `MonotoneSafeValidator` $\to$ `EvolutionGate`.
 
 ## 2. Migration Roadmap
 
-### Phase 5a: Memory & Knowledge (HMS/SAGE/AutoMem)
-- **Target**: `trading_bot/core/hms/`
+### Phase 5a: LogAct & Skill Routing
+- **Target**: `trading_bot/core/unified_event_bus.py`, `trading_bot/core/csc/router.py`.
 - **Actions**:
-    - Update `HierarchicalMemorySystem` to support agentic actions.
-    - Integrate `SAGE` graph-memory as the primary knowledge backend.
-    - Implement the `AutoMem` two-loop optimization service.
-- **Risk**: High. Data migration from old research ledger to new graph-memory.
-- **Rollback**: Keep old `.json` ledger files as read-only fallbacks.
+    - Finalize shared-log total ordering in `UnifiedDecisionBus`.
+    - Implement `HASPHarness` for executable skill programs.
+- **Risk**: Moderate. Backward compatibility with legacy bus must be preserved.
 
-### Phase 5b: Core Intelligence (CSC/HASP/DiscoLoop)
-- **Target**: `trading_bot/core/csc/`
+### Phase 5b: HMS-SAGE Memory
+- **Target**: `trading_bot/core/hms/memory.py`.
 - **Actions**:
-    - Refactor `CognitiveSystemController` to implement the 12-step pipeline.
-    - Implement `SkillProgramHarness` (HASP) for executable guardrails.
-    - Update `HypothesisGenerator` with the `Pivot/Refine` decision loop.
-    - (Partial) Implement `DiscoLoop` reasoning hooks (requires model-specific support).
-- **Risk**: Critical. This is the heart of the system.
-- **Rollback**: Maintain `CognitiveSystemController_V4` as a fallback delegator.
+    - Implement `SAGEEvolutionLoop` for graph pruning and evolution.
+    - Integrate `AutoMem` schema optimization.
+- **Risk**: High. Potential data loss during ledger-to-graph migration.
 
-### Phase 5c: Self-Improvement & Training (RSEA/EKSFT)
-- **Target**: `trading_bot/governance/` and `trading_bot/learning/`
+### Phase 5c: CSC Recursive Active Inference
+- **Target**: `trading_bot/core/csc/controller.py`.
 - **Actions**:
-    - Hard-code the `Evolution Gate` in `evolution_gate.py` with monotone-safe checks.
-    - Update training scripts to use `EKSFT` selective masking.
-- **Risk**: Medium. May slow down learning rates initially.
+    - Implement the 12-step pipeline utilizing `DiscoLoopRecurrence`.
+    - Deploy `PivotRefineOperator` for self-healing strategy refinement.
+- **Risk**: Critical. Core reasoning logic overhaul.
+
+### Phase 5d: Evolution & EKSFT
+- **Target**: `trading_bot/governance/evolution_gate.py`.
+- **Actions**:
+    - Implement `SelectiveMaskingOperator` for EKSFT-compliant fine-tuning.
+    - Enforce monotone-safe checks for all system updates.
+- **Risk**: Medium.
 
 ## 3. Risk Analysis & Mitigation
-- **Complexity Explosion**: mitigate by strictly adhering to "One Brain" and avoiding multiple orchestrators.
-- **Latency Increase**: mitigate by moving `Folding` (HIPIF) and `S2L` (LoRA) to background processes or efficient inference kernels.
-- **Inference Hardware**: S2L requires multi-LoRA support. Fallback to high-tier prompts if LoRA server is unavailable.
+- **Complexity**: Mitigated by strict "One Brain" (CSC) architecture and "LogAct" for observability.
+- **Latency**: Mitigated by moving heavyweight graph evolution and SFT to background workers.
+- **Reliability**: Mitigated by transactional voting in the LogAct backbone.
 
-## 4. Benchmark & Validation Plan
-- **Primary Metric**: Success rate on `DeepWeb-Bench` (Calibration & Derivation).
-- **Secondary Metric**: Latency-per-decision (Institutional SLA < 500ms).
-- **Validation**:
-    - Unit tests for every new algorithm in `tests/core/`.
-    - Integrated architecture verification in `tests/verification/test_uca_v5.py`.
-    - "Gain Metric" analysis (CL-Bench) to ensure genuine online learning.
-
-## 5. Rollback Strategy
-- All refactored files will be new versions (`controller_v5.py`) or use feature flags.
-- `master_orchestrator.py` will have a `V5_ENABLED` flag to toggle the new pipeline.
+## 4. Validation Plan
+- **ECE (Expected Calibration Error)**: Measure model confidence vs. accuracy (DeepWeb-Bench).
+- **Derivation Success**: Measure consistency of multi-step reasoning chains.
+- **Gain Metric**: Measure online learning improvement rate (CL-Bench).
+- **Sharpe/Drawdown**: Standard financial metrics via institutional backtest.

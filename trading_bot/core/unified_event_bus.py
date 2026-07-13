@@ -12,7 +12,7 @@ import logging
 import json
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Union
 from uuid import uuid4
@@ -58,6 +58,7 @@ class ActionStatus(Enum):
     AUDITING = "auditing"
     APPROVED = "approved"
     VETOED = "vetoed"
+    TIMED_OUT = "timed_out"
     EXECUTED = "executed"
     FAILED = "failed"
 
@@ -74,6 +75,9 @@ class LogAction:
     sequence_number: Optional[int] = None
     priority: EventPriority = EventPriority.NORMAL
 
+    # Synchronization for consensus
+    _completed_event: asyncio.Event = field(default_factory=asyncio.Event, repr=False)
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             'action_id': self.action_id,
@@ -88,10 +92,19 @@ class LogAction:
             'priority': self.priority.name
         }
 
+    async def wait_for_decision(self, timeout: float = 10.0) -> ActionStatus:
+        """Wait for the decision bus to reach consensus on this action."""
+        try:
+            await asyncio.wait_for(self._completed_event.wait(), timeout=timeout)
+        except asyncio.TimeoutError:
+            if self.status in [ActionStatus.PROPOSED, ActionStatus.AUDITING]:
+                self.status = ActionStatus.TIMED_OUT
+        return self.status
+
 class UnifiedDecisionBus:
     """
     LogAct Shared-Log Backbone - Authoritative Singleton for AlphaAlgo UCA V5.
-    Provides a transactional shared log while maintaining backward compatibility.
+    Provides a transactional shared log with explicit state machine transitions.
     """
     _instance = None
     _lock = threading.Lock()
@@ -107,7 +120,10 @@ class UnifiedDecisionBus:
         if self._initialized:
             return
 
-        self.config = config or {}
+        self.config = config or {
+            "voter_timeout": 5.0,
+            "max_log_size": 10000
+        }
         self._log: List[LogAction] = []
         self._voters: Dict[str, Callable[[LogAction], Coroutine[Any, Any, Dict[str, Any]]]] = {}
         self._subscribers: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
@@ -115,7 +131,22 @@ class UnifiedDecisionBus:
         self._action_queue: Optional[asyncio.PriorityQueue] = None
         self._processor_task: Optional[asyncio.Task] = None
         self._initialized = True
-        logger.info("LogAct Shared-Log Backbone initialized with Legacy Support")
+
+        # Auto-register ImmutableShield as a voter
+        try:
+            from .immutable_shield import shield, GovernanceDecision
+            async def shield_voter(action: LogAction) -> Dict[str, Any]:
+                report = shield.validate_action(action.action_type, action.payload, action.payload.get("context", {}))
+                return {
+                    "decision": "APPROVED" if report.decision == GovernanceDecision.APPROVED else "VETO",
+                    "reason": report.reason,
+                    "audit_id": report.audit_id
+                }
+            self.register_voter("ImmutableShield", shield_voter)
+        except ImportError:
+            logger.warning("ImmutableShield not found during LogAct initialization")
+
+        logger.info("LogAct Shared-Log Backbone initialized with Explicit State Machine")
 
     async def start(self):
         if self._running:
@@ -141,10 +172,13 @@ class UnifiedDecisionBus:
     async def propose_action(self, action: LogAction):
         """Entry point for agents to propose an intervention."""
         if not self._running:
-            logger.warning("Attempted to propose action to stopped LogAct Backbone")
-            return
+            try:
+                await self.start()
+            except RuntimeError:
+                logger.error("Attempted to propose action without running event loop")
+                return
+
         action.status = ActionStatus.PROPOSED
-        # PriorityQueue uses min-heap, so we use negative priority
         await self._action_queue.put((-action.priority.value, action.timestamp, action))
         logger.debug(f"Proposed action {action.action_id} from agent {action.agent_id}")
 
@@ -157,11 +191,7 @@ class UnifiedDecisionBus:
         handler: Callable[[Union[UnifiedEvent, LogAction]], Coroutine[Any, Any, None]] = None,
         priority: int = 0
     ):
-        """
-        Backward compatible subscribe method.
-        If handler is None, it assumes the V5 signature: subscribe(action_type, handler)
-        """
-        # Support V5 signature: subscribe(action_type, handler)
+        """Backward compatible subscribe method."""
         if handler is None and isinstance(subscriber_id, str) and callable(event_types):
             action_type = subscriber_id
             v5_handler = event_types
@@ -172,7 +202,6 @@ class UnifiedDecisionBus:
             })
             return
 
-        # Support Legacy signature
         if isinstance(event_types, str):
             event_types = [event_types]
 
@@ -185,11 +214,7 @@ class UnifiedDecisionBus:
             self._subscribers[etype].sort(key=lambda x: x["priority"], reverse=True)
 
     async def publish(self, event: UnifiedEvent):
-        """Backward compatible publish method. Wraps event into a LogAction."""
-        if not self._running:
-            logger.warning("Attempted to publish to stopped UnifiedDecisionBus")
-            return
-
+        """Backward compatible publish method."""
         action = LogAction(
             action_type=event.event_type,
             payload=event.payload,
@@ -204,55 +229,71 @@ class UnifiedDecisionBus:
     # --- Internal Logic ---
 
     async def _process_log(self):
-        """Autoritative log processing and total ordering."""
+        """Authoritative log processing with explicit state transitions."""
         while self._running:
             try:
                 _, _, action = await self._action_queue.get()
 
-                # 1. Total Ordering
+                # 1. Total Ordering & Log Persistence
                 action.sequence_number = len(self._log)
                 self._log.append(action)
+                if len(self._log) > self.config.get("max_log_size", 10000):
+                    self._log.pop(0)
 
-                # 2. Decoupled Voting (Audit Phase)
+                # 2. Audit Phase (Explicit Transition: AUDITING)
                 action.status = ActionStatus.AUDITING
-                vote_tasks = []
+                voter_timeout = self.config.get("voter_timeout", 5.0)
+
                 voter_ids = list(self._voters.keys())
+                if voter_ids:
+                    tasks = [self._run_voter(vid, action) for vid in voter_ids]
+                    try:
+                        # Use asyncio.wait_for as a secondary safety, but _run_voter handles internal timeouts
+                        await asyncio.gather(*tasks)
+                    except Exception as e:
+                        logger.error(f"Error during parallel voting for {action.action_id}: {e}")
 
-                for vid, vfn in self._voters.items():
-                    vote_tasks.append(vfn(action))
-
-                if vote_tasks:
-                    results = await asyncio.gather(*vote_tasks, return_exceptions=True)
-                    for i, res in enumerate(results):
-                        vid = voter_ids[i]
-                        if isinstance(res, Exception):
-                            logger.error(f"Voter {vid} failed: {res}")
-                            action.voter_reports[vid] = {"decision": "ERROR", "reason": str(res)}
-                        else:
-                            action.voter_reports[vid] = res
-
-                # 3. Consensus Logic
+                # 3. Consensus Phase (Explicit Transition: APPROVED or VETOED)
                 if self._verify_consensus(action):
                     action.status = ActionStatus.APPROVED
                     logger.info(f"Action {action.action_id} APPROVED [Seq: {action.sequence_number}]")
                     # 4. Dispatch to Consumers
                     await self._dispatch(action)
+                    action.status = ActionStatus.EXECUTED
                 else:
                     action.status = ActionStatus.VETOED
                     logger.warning(f"Action {action.action_id} VETOED by voters")
 
+                # Signal completion for wait_for_decision
+                action._completed_event.set()
                 self._action_queue.task_done()
+
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 logger.error(f"LogAct Processor Critical Failure: {e}")
 
+    async def _run_voter(self, voter_id: str, action: LogAction):
+        """Runs a single voter with timeout handling."""
+        voter_fn = self._voters.get(voter_id)
+        if not voter_fn: return
+
+        timeout = self.config.get("voter_timeout", 5.0)
+        try:
+            result = await asyncio.wait_for(voter_fn(action), timeout=timeout)
+            action.voter_reports[voter_id] = result
+        except asyncio.TimeoutError:
+            logger.warning(f"Voter {voter_id} TIMED OUT for action {action.action_id}")
+            action.voter_reports[voter_id] = {"decision": "TIMEOUT", "reason": "Voter exceeded time limit"}
+        except Exception as e:
+            logger.error(f"Voter {voter_id} FAILED for action {action.action_id}: {e}")
+            action.voter_reports[voter_id] = {"decision": "ERROR", "reason": str(e)}
+
     def _verify_consensus(self, action: LogAction) -> bool:
-        """Basic consensus: No 'REJECT' or 'VETO' from any registered voter."""
+        """Consensus logic: reject on any VETO, BLOCKED, or FAIL."""
         for vid, report in action.voter_reports.items():
-            decision = report.get("decision", "UNKNOWN")
-            if decision in ["REJECT", "VETO", "FAIL"]:
-                logger.warning(f"Consensus Veto: {vid} rejected {action.action_id}: {report.get('reason')}")
+            decision = str(report.get("decision", "UNKNOWN")).upper()
+            if decision in ["REJECT", "VETO", "FAIL", "BLOCKED"]:
                 return False
         return True
 
@@ -261,14 +302,9 @@ class UnifiedDecisionBus:
         handlers = self._subscribers.get(action.action_type, [])
         handlers.extend(self._subscribers.get("*", []))
 
-        if not handlers:
-            return
-
-        # If it was a legacy event, pass it as UnifiedEvent if handler expects it?
-        # For simplicity, we pass the LogAction, but we could wrap it.
-        # Most handlers will just access .payload
-        tasks = [h["handler"](action) for h in handlers]
-        await asyncio.gather(*tasks, return_exceptions=True)
+        if handlers:
+            tasks = [h["handler"](action) for h in handlers]
+            await asyncio.gather(*tasks, return_exceptions=True)
 
 # Shared Access Point
 decision_bus = UnifiedDecisionBus()
