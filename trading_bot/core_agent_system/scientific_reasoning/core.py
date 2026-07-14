@@ -13,6 +13,7 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any, Set, Union, Tuple
 import uuid
 import logging
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +120,11 @@ class ScientificReasoningEngine:
         self.world_model = world_model
         self.governance = governance
         self.registry: Dict[str, ScientificHypothesis] = {}
+        self.metrics = {
+            "hypothesis_quality": [],
+            "research_efficiency": 0,
+            "survival_rates": {}
+        }
 
     async def run_cycle(self, observation: Dict[str, Any]):
         hyp_id = await self.observe(observation)
@@ -223,8 +229,10 @@ class ScientificReasoningEngine:
             hyp.state = HypothesisState.INSTITUTIONALIZED
         elif hyp.posterior < 0.2:
             hyp.state = HypothesisState.REJECTED
-        else:
+        elif hyp.uncertainty > 0.7:
             hyp.state = HypothesisState.INCONCLUSIVE
+        else:
+            hyp.state = HypothesisState.DORMANT
 
     async def discover_new_hypotheses(self, hid: str = None):
         if len(self.registry) > 50:
