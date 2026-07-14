@@ -166,9 +166,9 @@ class OptimizedIntegration:
         # Create task to forward market data to strategy engine
         asyncio.create_task(self._forward_market_data())
     
-    async def _forward_market_data(self):
+    async def _forward_market_data(self, stop_event: Optional[asyncio.Event] = None):
         """Forward market data from optimized pipeline to strategy engine"""
-        while True:
+        while stop_event is None or not stop_event.is_set():
             try:
                 for symbol in self.trading_engine.symbols:
                     # Get latest market data from optimized pipeline
@@ -234,9 +234,9 @@ class OptimizedIntegration:
         # Create task to forward signals to executor
         asyncio.create_task(self._forward_signals_to_executor())
     
-    async def _forward_signals_to_executor(self):
+    async def _forward_signals_to_executor(self, stop_event: Optional[asyncio.Event] = None):
         """Forward signals from optimized pipeline to executor"""
-        while True:
+        while stop_event is None or not stop_event.is_set():
             try:
                 for symbol in self.trading_engine.symbols:
                     # Get active signals from optimized pipeline

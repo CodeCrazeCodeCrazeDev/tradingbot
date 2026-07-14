@@ -34,10 +34,6 @@ from .evolution_engine import (
     SelfImprovementEngine,
 )
 
-from .neuros_orchestrator import (
-    NeurosEvolutionOrchestrator,
-    quick_start,
-)
 
 from .capability_distillation import (
     CapabilityDistillationSystem,
@@ -82,12 +78,6 @@ from .meta_learning_loop import (
     create_meta_learner,
 )
 
-from .meta_intelligence_orchestrator import (
-    MetaIntelligenceOrchestrator,
-    TaskOutput,
-    SystemHealth,
-    create_meta_intelligence_layer,
-)
 
 from .universal_model_connector import (
     UniversalModelConnector,
@@ -156,8 +146,6 @@ __all__ = [
     'SelfImprovementEngine',
     
     # Orchestrator
-    'NeurosEvolutionOrchestrator',
-    'quick_start',
     
     # Capability Distillation
     'CapabilityDistillationSystem',
@@ -198,10 +186,6 @@ __all__ = [
     'create_meta_learner',
     
     # Meta-Intelligence Orchestrator
-    'MetaIntelligenceOrchestrator',
-    'TaskOutput',
-    'SystemHealth',
-    'create_meta_intelligence_layer',
     
     # Universal Model Connector (ANY frontier model)
     'UniversalModelConnector',
