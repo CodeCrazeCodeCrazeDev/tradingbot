@@ -1,30 +1,22 @@
-# Hypothesis Promotion Points (Verified Audit 2026)
+# Hypothesis Promotion Points (Institutional Audit 2026)
 
-Hypotheses move toward production and institutionalization at these points.
+## Tactical Promotion (Decision Path)
+1. **`trading_bot/core/csc/controller.py`**: `_select_optimal_branch()` (Selection for execution).
+2. **`trading_bot/core/phce_d_engine.py`**: `SimpleValidationGateway.promote()` (Signal to Trade Action).
 
-## Staging & Validation
+## Strategic Promotion (Research Path)
+1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `HypothesisState.INSTITUTIONALIZED` (High posterior confidence).
+2. **`trading_bot/alpha_research/hypothesis_extraction.py`**: `HypothesisPromotionEngine` (Research to Candidate).
+3. **`trading_bot/apex_fi/alpha_mining.py`**: `LivingFactorLibrary._promote_factor()` (Candidate to Production Alpha).
 
-1.  **`trading_bot/core/phce_d_engine.py`**
-    - Promotion to `PAPER_TRADE_CANDIDATE`: Once a hypothesis survives cost stress and verifier checks.
-2.  **`trading_bot/foundation_agents/curiosity_engine/hypothesis_generator.py`**
-    - Promotion to `PRIORITIZED`: Selected for active testing by the curiosity system.
+## Knowledge Promotion
+1. **`trading_bot/core/hms/memory.py`**: `SAGE.consolidate()` (Working memory to Long-term Graph Memory).
+2. **`trading_bot/market_teacher/market_teacher.py`**: Lessons extracted from successful trades.
 
-## Production Integration
-
-1.  **`trading_bot/core/csc/controller.py`**
-    - Trade Approval: Final promotion where a hypothesis influences capital allocation.
-2.  **`trading_bot/alpha_research/live_deployment.py`**
-    - Moves validated alphas from research to live production environments.
-3.  **`trading_bot/intelligence_core/hypothesis_engine.py`**
-    - `HypothesisEngine.graduate_hypothesis()`: Promotes validated hypotheses to strategy candidates (requires human approval).
-4.  **`trading_bot/autonomous_research_organism/integration.py`**
-    - `ResearchOrganism.share_hypothesis()`: Shares autonomous hypotheses with the central Research Lab for formal experiment orchestration.
-5.  **`trading_bot/core_agent_system/self_play_loop.py`**
-    - Policy versioning: Promoting the "Best" policy based on win rate in self-play tournaments.
-
-## Institutionalization
-
-1.  **`trading_bot/core_agent_system/scientific_reasoning/core.py`**
-    - `HypothesisState.INSTITUTIONALIZED`: Moving successful hypotheses to permanent semantic memory.
-2.  **`trading_bot/core/hms/memory.py`**
-    - `AutoMem`: Automating the transformation of successful episodes into generalized procedural or semantic memory.
+## Promotion Levels (UCA V5 Standard)
+- **Level 0**: Raw Observation / Anomaly.
+- **Level 1**: Candidate Hypothesis / Reasoning Branch.
+- **Level 2**: Validated / Evidence-Backed Hypothesis.
+- **Level 3**: Research Ledger Entry / Backtest Verified.
+- **Level 4**: Production Strategy / Active Alpha.
+- **Level 5**: Institutional Knowledge / Core World Model Principle.
