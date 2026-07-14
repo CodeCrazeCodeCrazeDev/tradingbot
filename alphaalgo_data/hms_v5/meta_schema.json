@@ -1,0 +1,11 @@
+{
+  "version": "5.0",
+  "asset_classes": {
+    "crypto": {
+      "reliability": "low",
+      "action": "PRUNE"
+    },
+    "fx": {},
+    "equities": {}
+  }
+}

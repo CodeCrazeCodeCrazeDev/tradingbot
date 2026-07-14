@@ -1,21 +1,30 @@
-# Scientific Migration Roadmap: Phase 6 Transition
+# Scientific Migration Roadmap - UCA 2026
 
-## Phase 1: Foundation (Weeks 1-2)
-- [ ] **Consolidate Base Types**: Create `trading_bot/core/base_types.py` and move the `ScientificHypothesis` and `ScientificEvidence` classes there as the single source of truth.
-- [ ] **Implement Adapters**: Create adapter layers for `phce_d`, `csc`, and `hms` to interface with the new base types.
-- [ ] **Unified Registry**: Instantiate the `ScientificReasoningEngine` as a singleton in the `SystemRegistry`.
+The transition from the current fragmented architecture to the Unified Scientific Reasoning Engine (SRE) will follow a 4-phase institutional roadmap.
 
-## Phase 2: Lifecycle Enforcement (Weeks 3-4)
-- [ ] **Step Implementation**: Gradually implement the missing logic for the 19 steps (Question Gen, Adversarial Debate, etc.).
-- [ ] **Gateway Integration**: Modify `ValidationGateway` to require `CausalIntervention` and `AdversarialDebate` proofs before promotion.
-- [ ] **Bayesian Core**: Replace threshold-based promotion logic with the Bayesian posterior update core.
+## Phase 1: Structural Foundation (Weeks 1-2)
+- **Centralize SRE Registry**: Deploy the unified `ScientificHypothesis` data model in `trading_bot/core_agent_system/scientific_reasoning/core.py`.
+- **Alias Bridging**: Implement compatibility wrappers for `PHCE-D`, `AlphaMining`, and `CuriosityEngine` to map their internal "hypotheses" to the SRE standard.
+- **Audit Logging**: Initialize the `LogAct` decision ledger to track all hypothesis state transitions.
 
-## Phase 3: Memory and Self-Improvement (Weeks 5-6)
-- [ ] **HMS Integration**: Map `ScientificHypothesis` end-states to HMS tiers (Tier 5 for Institutionalized).
-- [ ] **Failure Memory Loop**: Implement the "Negative Filter" to prevent redundant hypothesis generation.
-- [ ] **Meta-Discovery**: Implement Step 19 (`discover_new_hypotheses`) based on high-VFE regions of the market.
+## Phase 2: Pipeline Integration (Weeks 3-5)
+- **Unified 19-Step Cycle**: Wire existing modules into the SRE lifecycle.
+  - Curiosity Engine -> Steps 2-4
+  - HMS/GWM -> Steps 5-7
+  - Verification Swarm -> Step 8
+  - Backtest/Paper -> Steps 9-11
+- **Bayesian Layer**: Activate the central `bayesian_update` and `calibrate_confidence` modules.
 
-## Phase 4: Productionization (Weeks 7-8)
-- [ ] **Continuity Audit**: Run the SRE in "Shadow Mode" alongside the legacy system to verify alignment.
-- [ ] **Full Switchover**: Redirect all signal generation and validation to the SRE core.
-- [ ] **Self-Optimization**: Activate the meta-learner to optimize hypothesis generation parameters.
+## Phase 3: Advanced Reasoning (Weeks 6-8)
+- **Counterfactual Engine**: Integrate the Mamba-based GWM for Step 7 (Do-calculus).
+- **Adversarial Hardening**: Deploy the full `VerificationSwarm` with 80% consensus gate for Step 8.
+- **HMS Optimization**: Implement `AutoMem` for automated memory consolidation (Step 15).
+
+## Phase 4: Full Autonomy (Weeks 9+)
+- **Meta-Discovery**: Activate Step 19 for automatic discovery of new research paths.
+- **Legacy Decommissioning**: Gradually archive fragmented logic (e.g., `trading_bot/ai_core/`, `trading_bot/agents2/`) once SRE parity is verified.
+- **Institutional Certification**: Final audit of the Gain Metric and ECE targets.
+
+## Risk Mitigation
+- **Fail-Closed Gate**: The `ImmutableShield` remains active throughout the migration to prevent unverified SRE decisions from controlling capital.
+- **Parallel Run**: The SRE will run in "Shadow Mode" (logging only) for the first 4 weeks to calibrate against existing production strategies.

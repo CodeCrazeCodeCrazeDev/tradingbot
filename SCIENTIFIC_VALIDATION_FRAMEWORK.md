@@ -1,32 +1,28 @@
 # Scientific Validation Framework
 
-## 1. Metric Suite
+The validation of the Scientific Reasoning Engine (SRE) itself is performed using a multi-tiered testing suite designed to measure scientific integrity, predictive accuracy, and institutional stability.
 
-The SRE is validated against these core metrics:
+## 1. Scientific Integrity Tests
+- **Falsifiability Check**: Automated audit of generated hypotheses to ensure they contain concrete, measurable invalidation triggers.
+- **Lineage Integrity**: Verify that every hypothesis has a 100% complete and immutable provenance trace back to a raw observation.
+- **End-State Consistency**: Ensure that no hypothesis remains in an "intermediate" state indefinitely; all must terminate in one of the 10 authoritative end-states.
 
-| Metric | Target | Measurement Method |
-|--------|--------|--------------------|
-| **Hypothesis Survival Rate** | < 20% | Ratio of Promoted to Created hypotheses. |
-| **Research Efficiency** | > 0.5 | $\frac{\text{Economic Value}}{\text{Compute Cost}}$ |
-| **Calibration Error (ECE)** | < 0.05 | Difference between predicted prob and realization. |
-| **Causal Stability** | > 0.8 | Persistence of edge across counterfactual simulations. |
-| **Novelty Score** | > 0.3 | KL-divergence from existing hypothesis pool. |
-| **Falsification Rate** | > 0.1 | Frequency of successful adversarial refutations. |
+## 2. Predictive Performance (The "Gain Metric")
+We measure the **Gain Metric (CL-Bench)**:
+$$Gain = \frac{\text{Performance}_{\text{SRE}}}{\text{Performance}_{\text{Baseline}}} - 1$$
+Where Baseline is the system without Step 7 (Counterfactuals) or Step 8 (Adversarial Debate).
+- **Target**: Gain Metric > 0.15 (15% improvement in risk-adjusted returns).
 
-## 2. Validation Gates
+## 3. Calibration Accuracy
+- **Expected Calibration Error (ECE)**: Measure the gap between the SRE's confidence estimates and the actual frequency of successful predictions.
+$$ECE = \sum_{m=1}^M \frac{|B_m|}{n} |acc(B_m) - conf(B_m)|$$
+- **Target**: ECE < 0.10.
 
-### Gate 1: Epistemic Integrity
-- **Criteria**: $A < 0.2$ (Ambiguity) and `LeakageRisk == LOW`.
-- **Failure**: Return to `EvidenceCollection`.
+## 4. Adversarial Robustness
+- **Stress Testing**: Injecting synthetic "Black Swan" events into the GWM to test the SRE's ability to detect the anomaly (Step 2) and formulate an explanation (Step 3).
+- **Hallucination Detection Rate**: Measure the `VerificationSwarm` ability to catch spurious correlations generated in Step 4.
+- **Target**: Hallucination detection rate > 90%.
 
-### Gate 2: Adversarial Robustness
-- **Criteria**: Must survive 3/3 "Hostile Regime" stress tests.
-- **Failure**: `REJECTED`.
-
-### Gate 3: Causal Validity
-- **Criteria**: $\frac{P(Y|do(X))}{P(Y|X)} > 0.9$ (No hidden confounders dominating the signal).
-- **Failure**: `REJECTED` or `SPLIT`.
-
-## 3. Continuous Self-Audit
-
-The system runs a daily "Shadow Audit" where it re-evaluates `INSTITUTIONALIZED` hypotheses against current market data. Any hypothesis showing "Drift" is moved back to `CONTINUOUS_MONITORING` or `RETIRED`.
+## 5. Institutional Stability
+- **Decision Reproducibility**: Using the `DeterministicManager`, the system must be able to reproduce any trade decision 100% exactly from the recorded experiment state and seed.
+- **Latency Budget**: Full 19-step cycle must complete within 500ms for production-grade throughput.

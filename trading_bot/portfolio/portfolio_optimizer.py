@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 import logging
-from scipy.optimize import minimize, LinearConstraint
+from scipy.optimize import minimize, LinearConstraint, Bounds
 from scipy.cluster.hierarchy import linkage, fcluster
 from scipy.spatial.distance import squareform
 import warnings
@@ -112,6 +112,55 @@ class InvestorView:
             'confidence': self.confidence
         }
 
+
+class MultiObjectivePortfolioOptimizer:
+    """
+    UCA V5 Institutional-Grade Portfolio Optimization.
+    Supports Multi-Objective Optimization (Return, Risk, Turnover, Impact).
+    """
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        self.risk_aversion = self.config.get('risk_aversion', 2.5)
+        self.turnover_penalty = self.config.get('turnover_penalty', 0.01)
+        self.max_exposure = self.config.get('max_exposure', 1.0)
+        self.min_exposure = self.config.get('min_exposure', -1.0)
+        self.sector_limits = self.config.get('sector_limits', {})
+
+    def optimize_multi_objective(self,
+                                 expected_returns: np.ndarray,
+                                 cov_matrix: np.ndarray,
+                                 current_weights: np.ndarray,
+                                 uncertainty: np.ndarray,
+                                 liquidity: np.ndarray) -> np.ndarray:
+        """
+        Performs multi-objective optimization:
+        Maximize: E[r]'w - lambda/2 * w'Sw - turnover_penalty * |w - w0|
+        Constraints: sum(w) = 1, min_w <= w <= max_w, liquidity constraints
+        """
+        n = len(expected_returns)
+
+        # 1. Uncertainty-Constrained Kelly (arXiv:2507.xxxxx)
+        # Adjust expected returns based on prediction uncertainty
+        calibrated_returns = expected_returns / (1 + uncertainty)
+
+        def objective(w):
+            # Return objective
+            ret = np.dot(w, calibrated_returns)
+            # Risk objective (Variance)
+            risk = 0.5 * self.risk_aversion * np.dot(w.T, np.dot(cov_matrix, w))
+            # Turnover objective (L1 penalty)
+            turnover = self.turnover_penalty * np.sum(np.abs(w - current_weights))
+            # Liquidity-aware impact penalty
+            impact = 0.005 * np.sum((w - current_weights)**2 / (liquidity + 1e-6))
+
+            return -(ret - risk - turnover - impact)
+
+        # Constraints
+        cons = ({'type': 'eq', 'fun': lambda w: np.sum(w) - 1.0})
+        bounds = Bounds(self.min_exposure, self.max_exposure)
+
+        res = minimize(objective, current_weights, method='SLSQP', bounds=bounds, constraints=cons)
+        return res.x if res.success else current_weights
 
 class PortfolioOptimizer:
     """

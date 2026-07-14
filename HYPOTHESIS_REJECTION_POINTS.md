@@ -1,15 +1,30 @@
-# Hypothesis Rejection Points
+# Hypothesis Rejection Points (Verified Audit 2026)
 
-The following conditions and locations result in the rejection or retirement of a hypothesis:
+Hypotheses die or are rejected at the following points.
 
-| Subsystem | File Path | Trigger | Resulting State |
-|-----------|-----------|---------|-----------------|
-| **PHCE-D** | `trading_bot/phce_d/core_types.py` | `SkeletonKeyResult.DUMB_MATCHES` | `REJECTED` |
-| **Gateway** | `trading_bot/phce_d/validation_gateway.py` | `is_rejected_for_leakage()` | `FAIL` (Rejected) |
-| **Drift** | `trading_bot/phce_d/drift_monitor.py` | `DriftAction.SUSPEND_HYPOTHESIS` | `SUSPENDED` / `RETIRED` |
-| **SRE** | `trading_bot/core_agent_system/scientific_reasoning/core.py` | `posterior < 0.2` | `REJECTED` |
-| **SRE** | `trading_bot/core_agent_system/scientific_reasoning/core.py` | `RETIRED` | Authoritative End-States (Rejected/Deprecated) |
-| **Risk** | `trading_bot/core/risk/circuit_breaker.py` | `CircuitBreakerTrigger` | `HOLD` (Temporary Rejection) |
-| **Epistemology**| `trading_bot/core_agent_system/cds/epistemology_engine.py` | `adversarial_risk_score > 0.8` | `REJECTED` |
-| **Research** | `trading_bot/_archive/alphaalgo_institutional/research_loop.py` | `failed_validation` | `REJECTED_CANDIDATE` |
-| **Audit** | `trading_bot/phce_d/failure_memory.py` | Recurrence of known failure pattern. | `REJECTED` |
+## Immediate Filtering
+
+1.  **`trading_bot/alpha_research/hypothesis_extraction.py`**
+    - `HypothesisValidator.validate()`: Rejects hypotheses lacking clear causal mechanisms or failure modes.
+2.  **`trading_bot/core/phce_d_engine.py`**
+    - `PHCEDAI._intake_evidence()`: Rejects hypotheses if the underlying evidence is stale or untrusted.
+
+## Performance-Based Rejection
+
+1.  **`trading_bot/apex_fi/alpha_mining.py`**
+    - `LivingFactorLibrary._retire_factor()`: Retires alphas (hypotheses) that fall below a decay threshold.
+2.  **`trading_bot/strategy_discovery/evolutionary_engine.py`**
+    - Tournament selection naturally rejects low-fitness strategy genomes.
+
+## Governance & Safety Rejection
+
+1.  **`trading_bot/core/immutable_shield.py`**
+    - `ImmutableShield.validate_action()`: Rejects execution of hypotheses that violate risk or safety constraints.
+2.  **`trading_bot/core/phce_d_engine.py`**
+    - `SimpleValidationGateway.validate()`: Rejects Buy/Sell recommendations due to market hostility or portfolio drawdown.
+3.  **`trading_bot/strategy_discovery/validation.py`**
+    - `StrategyValidationPipeline`: Explicitly rejects strategies dependent on a single regime or where transaction costs exceed 50% of alpha.
+4.  **`trading_bot/core/talos_cerberus_v23.py`**
+    - `EvidenceScorecard`: Rejects (quarantines) claims from forbidden sources or with low compliance/reliability scores.
+5.  **`trading_bot/core/aletheia_browser_research.py`**
+    - `AlphaAlgoBrowserUsePlanner`: Rejects research task plans that violate financial-domain safety rails.
