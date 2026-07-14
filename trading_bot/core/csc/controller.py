@@ -1,6 +1,5 @@
 """
 Cognitive System Controller (CSC) - UCA V5 (July 2026)
-
 Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
 Implements the Active Inference (VFE minimization) loop, HIPIF, DiscoLoop, and HASP.
 The "One Brain" authoritative controller orchestrating the LogAct pipeline.
@@ -16,6 +15,7 @@ from uuid import uuid4
 
 from .hypothesis import HypothesisGenerator, ReasoningBranch, Hypothesis
 from .folding import InformationFolder
+from .router import SkillRouter
 from ..verification.swarm import VerificationSwarm
 from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport
 from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
@@ -97,6 +97,11 @@ class CognitiveSystemController:
 
         # 3. Skill Routing (Distilled Behaviors - Placeholder for S2L/LoRA)
 
+        # 1. Active Perception (already in observation)
+
+        # 2. Internalization (DiscoLoop Reasoning)
+        await self._run_discoloop_internalization(observation)
+
         # 4. Executable Guardrails (HASP Intervention)
         # (arXiv:2605.17734 - HASP)
         intervention = self._apply_hasp_guardrails(observation)
@@ -136,10 +141,11 @@ class CognitiveSystemController:
                 decision_ready = True
                 final_ledger_entry = ledger_entry
             else:
-                logger.warning(f"CSC-V5: Verification FAILED (Attempt {attempts}). Refining strategy...")
-                refined_branch = await self._refine_strategy(best_branch, reports)
-                if refined_branch and refined_branch != best_branch:
-                    best_branch = refined_branch
+                logger.warning(f"CSC-V5: Verification FAILED (Attempt {attempts}). Triggering Pivot/Refine...")
+                severity = self._detect_failure_severity(reports)
+
+                if severity == "critical":
+                    best_branch = await self._pivot_strategy(best_branch, reports)
                 else:
                     logger.error("CSC-V5: Could not refine strategy further.")
                     break

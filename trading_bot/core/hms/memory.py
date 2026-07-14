@@ -5,6 +5,7 @@ Authoritative memory system integrating SAGE (Self-evolving Agentic Graph-Memory
 and QKG (Quantum Knowledge Graph) for context-dependent research persistence.
 Implements the 'SAGE' (2026) feedback loop between Memory Writers and Readers.
 Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
+Implements 'SAGE' (arXiv:2605.12061) and 'AutoMem' (arXiv:2607.01224).
 """
 
 import logging
@@ -58,6 +59,25 @@ class SAGEGraphMemory:
             except Exception as e:
                 logger.error(f"SAGE: Failed to save graph: {e}")
 
+    def _load_graph(self) -> nx.DiGraph:
+        if os.path.exists(self.storage_path):
+            try:
+                with open(self.storage_path, 'r') as f:
+                    data = json.load(f)
+                    return nx.node_link_graph(data)
+            except Exception as e:
+                logger.error(f"SAGE: Failed to load graph: {e}")
+        return nx.DiGraph()
+
+    def _save_graph(self):
+        try:
+            os.makedirs(os.path.dirname(self.storage_path), exist_ok=True)
+            data = nx.node_link_data(self.graph)
+            with open(self.storage_path, 'w') as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            logger.error(f"SAGE: Failed to save graph: {e}")
+
     def add_evidence(self, triplet: Tuple[str, str, str], context: Dict[str, Any], evidence: Dict[str, Any]):
         """
         Adds context-dependent triplet (QKG principle) to the graph.
@@ -104,14 +124,27 @@ class SAGEGraphMemory:
         self._save_graph()
         logger.info(f"SAGE: Evolution Round {self.evolution_rounds} complete.")
 
+    def _prune_edge(self, u, v, key):
+        if self.graph.has_edge(u, v):
+            data = self.graph.get_edge_data(u, v)
+            if data and data.get("relation") == key:
+                self.graph.remove_edge(u, v)
+                logger.info(f"SAGE: Pruned edge ({u}, {v}) with relation {key}")
+
+    def _merge_nodes(self, n1, n2):
+        if self.graph.has_node(n1) and self.graph.has_node(n2):
+            # networkx.contracted_nodes modification
+            self.graph = nx.contracted_nodes(self.graph, n1, n2, self_loops=False)
+            logger.info(f"SAGE: Merged nodes {n1} and {n2}")
+
 class HierarchicalMemorySystem:
     """
-    Authoritative memory system. Integrates:
-    - SAGE: Self-evolving Agentic Graph-Memory.
-    - AutoMem: Automated Learning of Memory as a Cognitive Skill.
+    Authoritative memory system. Integrates SAGE and AutoMem.
     """
     def __init__(self, base_path: str = "alphaalgo_data/hms"):
         self.base_path = base_path
+        os.makedirs(base_path, exist_ok=True)
+
         self.ledger_path = os.path.join(base_path, "research_ledger")
         self.knowledge_path = os.path.join(base_path, "scientific_memory")
         os.makedirs(self.ledger_path, exist_ok=True)
@@ -179,7 +212,7 @@ class HierarchicalMemorySystem:
             pass
 
     def store_ledger_entry(self, entry: ResearchLedgerEntry):
-        """Persists a research snapshot and updates the SAGE graph."""
+        """Persists snapshot and updates SAGE graph."""
         file_path = os.path.join(self.ledger_path, f"{entry.entry_id}.json")
 
         # Sync with SAGE graph
@@ -229,4 +262,8 @@ class HierarchicalMemorySystem:
             "timestamp": lesson.last_updated.isoformat()
         }
         with open(file_path, 'w') as f:
-            json.dump(lesson_data, f, indent=2)
+            json.dump(entry_data, f, indent=2)
+
+    def submit_feedback(self, feedback: List[Dict[str, Any]]):
+        """External entry point for SAGE evolution feedback."""
+        self.graph_memory.evolve(feedback)
