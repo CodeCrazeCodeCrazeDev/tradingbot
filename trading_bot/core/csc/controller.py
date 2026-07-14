@@ -78,6 +78,10 @@ class CognitiveSystemController:
         self.folder = InformationFolder()
         self.discoloop = DiscoLoopCell()
 
+        # DiscoLoop Channels
+        self.continuous_state = {} # Latent embeddings
+        self.discrete_channel = [] # Semantic tokens
+
         # HASP: Executable Guardrails (Skill Programs)
         # These are executable functions that can intervene in the loop.
         self.skill_programs: Dict[str, Callable[[Dict[str, Any]], Optional[Dict[str, Any]]]] = self._load_skill_programs()
@@ -229,6 +233,17 @@ class CognitiveSystemController:
 
         # Folding
         self.folder.fold_history(final_ledger_entry)
+
+        # Windowing to prevent memory leaks in the discrete/continuous channels
+        self.discrete_channel.append(ledger_entry.entry_id)
+        if len(self.discrete_channel) > 100:
+            self.discrete_channel.pop(0)
+
+        # Update latent state (Simplified representation for DiscoLoop)
+        self.continuous_state[str(ledger_entry.entry_id)] = self._calculate_composite_confidence(ledger_entry)
+        if len(self.continuous_state) > 100:
+            oldest_key = next(iter(self.continuous_state))
+            del self.continuous_state[oldest_key]
 
         # Persist to HMS
         self.hms.store_ledger_entry(final_ledger_entry)
