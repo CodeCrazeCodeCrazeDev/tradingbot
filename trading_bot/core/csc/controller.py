@@ -1,6 +1,9 @@
 """
 Cognitive System Controller (CSC) - UCA V5 (July 2026)
-======================================================
+
+Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
+Utilizes DiscoLoop mixed-channel reasoning and Pivot/Refine self-healing.
+Corrected for thread-safe singleton initialization and memory stability.
 
 Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
 Governed by Variational Free Energy (VFE) minimization.
@@ -57,17 +60,21 @@ class CognitiveSystemController:
     UCA V5 Controller - Authoritative Strategic Brain.
     """
     _instance = None
-    _lock = asyncio.Lock()
+    _lock = threading.Lock()
 
     def __new__(cls, *args, **kwargs):
+        """Thread-safe singleton instantiation."""
         if cls._instance is None:
-            cls._instance = super(CognitiveSystemController, cls).__new__(cls)
-            cls._instance._initialized = False
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(CognitiveSystemController, cls).__new__(cls)
+                    cls._instance._initialized = False
         return cls._instance
 
     def __init__(self, world_model: Any = None, hms: Any = None, shield: Optional[ImmutableShield] = None):
         if getattr(self, "_initialized", False):
             return
+
         self.world_model = world_model
         self.hms = hms
         self.shield = shield
@@ -314,6 +321,19 @@ class CognitiveSystemController:
         # Update World Model Prediction for Step 2 of next loop
         self.last_prediction = sim_results.get(best_branch.branch_id)
 
+        if status != ActionStatus.EXECUTED:
+            self._apply_memory_windowing()
+            reason = f"LogAct consensus failure: {status.value}"
+            if action.voter_reports:
+                reason += f" - Reports: {action.voter_reports}"
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=reason)
+
+        # 12. Execution & Folding (HIPIF)
+        logger.info(f"CSC-V5: Trade Approved. Folding history...")
+        self.folder.fold_history(final_ledger)
+        self.hms.store_ledger_entry(final_ledger)
+
+        self._apply_memory_windowing()
         return CoreDecision(
             outcome=DecisionOutcome.TRADE_APPROVED,
             trade_id=trade_proposal.get("trade_id"),

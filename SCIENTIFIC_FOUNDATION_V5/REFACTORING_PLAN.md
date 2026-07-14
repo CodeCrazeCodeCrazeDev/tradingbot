@@ -35,18 +35,12 @@
 - **Risk**: Medium. May slow down learning rates initially.
 
 ## 3. Risk Analysis & Mitigation
-- **Complexity Explosion**: mitigate by strictly adhering to "One Brain" and avoiding multiple orchestrators.
-- **Latency Increase**: mitigate by moving `Folding` (HIPIF) and `S2L` (LoRA) to background processes or efficient inference kernels.
-- **Inference Hardware**: S2L requires multi-LoRA support. Fallback to high-tier prompts if LoRA server is unavailable.
+- **Complexity**: Mitigated by strict "One Brain" (CSC) architecture and "LogAct" for observability.
+- **Latency**: Mitigated by moving heavyweight graph evolution and SFT to background workers.
+- **Reliability**: Mitigated by transactional voting in the LogAct backbone.
 
-## 4. Benchmark & Validation Plan
-- **Primary Metric**: Success rate on `DeepWeb-Bench` (Calibration & Derivation).
-- **Secondary Metric**: Latency-per-decision (Institutional SLA < 500ms).
-- **Validation**:
-    - Unit tests for every new algorithm in `tests/core/`.
-    - Integrated architecture verification in `tests/verification/test_uca_v5.py`.
-    - "Gain Metric" analysis (CL-Bench) to ensure genuine online learning.
-
-## 5. Rollback Strategy
-- All refactored files will be new versions (`controller_v5.py`) or use feature flags.
-- `master_orchestrator.py` will have a `V5_ENABLED` flag to toggle the new pipeline.
+## 4. Validation Plan
+- **ECE (Expected Calibration Error)**: Measure model confidence vs. accuracy (DeepWeb-Bench).
+- **Derivation Success**: Measure consistency of multi-step reasoning chains.
+- **Gain Metric**: Measure online learning improvement rate (CL-Bench).
+- **Sharpe/Drawdown**: Standard financial metrics via institutional backtest.

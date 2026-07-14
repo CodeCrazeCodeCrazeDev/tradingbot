@@ -55,6 +55,7 @@ class EvolutionGate:
     def __init__(self, validation_engine: Any):
         self.validation_engine = validation_engine
         self.evolution_history = []
+        logger.info("EvolutionGate V5: Monotone-Safe & EKSFT enabled")
 
         # EKSFT Thresholds
         self.tau_h = 0.8  # Entropy threshold
@@ -128,4 +129,4 @@ class EvolutionGate:
         return True
 
     def get_evolution_report(self) -> List[Dict[str, Any]]:
-        return self.evolution_history
+        return self.evolution_history.copy()

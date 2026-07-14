@@ -15,7 +15,7 @@ import logging
 import json
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union, Callable, Coroutine
 from uuid import uuid4
@@ -61,6 +61,7 @@ class ActionStatus(Enum):
     AUDITING = "auditing"
     APPROVED = "approved"
     VETOED = "vetoed"
+    TIMED_OUT = "timed_out"
     EXECUTED = "executed"
     FAILED = "failed"
 
@@ -100,6 +101,15 @@ class LogAction:
             'sequence_number': self.sequence_number,
             'priority': self.priority.name
         }
+
+    async def wait_for_decision(self, timeout: float = 10.0) -> ActionStatus:
+        """Wait for the decision bus to reach consensus on this action."""
+        try:
+            await asyncio.wait_for(self._completed_event.wait(), timeout=timeout)
+        except asyncio.TimeoutError:
+            if self.status in [ActionStatus.PROPOSED, ActionStatus.AUDITING]:
+                self.status = ActionStatus.TIMED_OUT
+        return self.status
 
 class UnifiedDecisionBus:
     """
@@ -205,9 +215,11 @@ class UnifiedDecisionBus:
             try:
                 _, _, action = await self._action_queue.get()
 
-                # 1. Total Ordering
+                # 1. Total Ordering & Log Persistence
                 action.sequence_number = len(self._log)
                 self._log.append(action)
+                if len(self._log) > self.config.get("max_log_size", 10000):
+                    self._log.pop(0)
 
                 # 2. Decoupled Voting (Audit Phase)
                 # This deconstructs the agent's state machine.
@@ -240,7 +252,10 @@ class UnifiedDecisionBus:
                 else:
                     action.status = ActionStatus.VETOED
 
+                # Signal completion for wait_for_decision
+                action._completed_event.set()
                 self._action_queue.task_done()
+
             except asyncio.CancelledError:
                 break
             except Exception as e:

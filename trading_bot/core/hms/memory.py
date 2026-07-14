@@ -1,6 +1,9 @@
 """
 Hierarchical Memory System (HMS) - UCA V5 (July 2026)
 
+Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
+Implements the 6-tier architecture: Working, Episodic, Semantic, Procedural, Research, Institutional.
+
 Authoritative memory system integrating SAGE, SimpleMem, and L2CL.
 Implements the 6-tier hierarchical architecture for autonomous agents.
 
@@ -122,6 +125,21 @@ class SAGEGraphMemory:
                 nx.write_graphml(self.graph, self.graph_path)
             except Exception as e:
                 logger.error(f"SAGE: Failed to save graph: {e}")
+
+    def _load_graph(self) -> nx.MultiDiGraph:
+        if os.path.exists(self.storage_path):
+            try:
+                # GraphML is standard for NetworkX persistence
+                return nx.read_graphml(self.storage_path)
+            except Exception as e:
+                logger.error(f"SAGE: Failed to load graph from {self.storage_path}: {e}")
+        return nx.MultiDiGraph()
+
+    def save(self):
+        try:
+            nx.write_graphml(self.graph, self.storage_path)
+        except Exception as e:
+            logger.error(f"SAGE: Failed to save graph: {e}")
 
     def add_evidence(self, triplet: Tuple[str, str, str], context: Dict[str, Any], evidence: Dict[str, Any]):
         """
@@ -283,6 +301,7 @@ class HierarchicalMemorySystem:
             "timestamp": entry.timestamp.isoformat(),
             "hypothesis": entry.hypothesis.description if entry.hypothesis else "N/A",
             "composite_confidence": entry.composite_confidence,
+            "reasoning_steps": entry.reasoning_steps,
             "verifier_reports": [
                 {"agent": r.agent_name, "valid": r.is_valid, "critique": r.critique}
                 for r in entry.verifier_reports
