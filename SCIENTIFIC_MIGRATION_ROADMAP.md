@@ -1,21 +1,30 @@
-# Scientific Migration Roadmap - SRE 2026
+# Scientific Migration Roadmap - UCA 2026
 
-## Phase 1: Foundation (Weeks 1-2) - DONE
-- Unified `ScientificHypothesis` data model.
-- 19-step SRE state machine core.
+The transition from the current fragmented architecture to the Unified Scientific Reasoning Engine (SRE) will follow a 4-phase institutional roadmap.
 
-## Phase 2: Consolidation (Weeks 3-6)
-- Route `PHCE-D` into the SRE (Step 8 & 10).
-- Route `AlphaMining` into the SRE (Step 4 & 11).
-- Route `CuriosityEngine` into the SRE (Step 2 & 3).
+## Phase 1: Structural Foundation (Weeks 1-2)
+- **Centralize SRE Registry**: Deploy the unified `ScientificHypothesis` data model in `trading_bot/core_agent_system/scientific_reasoning/core.py`.
+- **Alias Bridging**: Implement compatibility wrappers for `PHCE-D`, `AlphaMining`, and `CuriosityEngine` to map their internal "hypotheses" to the SRE standard.
+- **Audit Logging**: Initialize the `LogAct` decision ledger to track all hypothesis state transitions.
 
-## Phase 3: HMS Integration (Weeks 7-10)
-- Connect SRE Step 14 & 15 to HMS `Semantic` and `Institutional` layers.
-- Implement automated `ResearchLedgerEntry` generation at every cycle.
+## Phase 2: Pipeline Integration (Weeks 3-5)
+- **Unified 19-Step Cycle**: Wire existing modules into the SRE lifecycle.
+  - Curiosity Engine -> Steps 2-4
+  - HMS/GWM -> Steps 5-7
+  - Verification Swarm -> Step 8
+  - Backtest/Paper -> Steps 9-11
+- **Bayesian Layer**: Activate the central `bayesian_update` and `calibrate_confidence` modules.
 
-## Phase 4: Full Autonomy (Weeks 11-12)
-- Activate Step 19 (Automatic Meta-Discovery).
-- Enable recursive self-improvement of the SRE generation logic.
+## Phase 3: Advanced Reasoning (Weeks 6-8)
+- **Counterfactual Engine**: Integrate the Mamba-based GWM for Step 7 (Do-calculus).
+- **Adversarial Hardening**: Deploy the full `VerificationSwarm` with 80% consensus gate for Step 8.
+- **HMS Optimization**: Implement `AutoMem` for automated memory consolidation (Step 15).
 
-## Transition Strategy: "The Shadow Brain"
-During Phase 2 and 3, the SRE will run in **Shadow Mode**, observing the legacy orchestrators and logging "What I would have decided". Deployment to production occurs only after 10 consecutive cycles of 0.95+ correlation with successful institutional decisions.
+## Phase 4: Full Autonomy (Weeks 9+)
+- **Meta-Discovery**: Activate Step 19 for automatic discovery of new research paths.
+- **Legacy Decommissioning**: Gradually archive fragmented logic (e.g., `trading_bot/ai_core/`, `trading_bot/agents2/`) once SRE parity is verified.
+- **Institutional Certification**: Final audit of the Gain Metric and ECE targets.
+
+## Risk Mitigation
+- **Fail-Closed Gate**: The `ImmutableShield` remains active throughout the migration to prevent unverified SRE decisions from controlling capital.
+- **Parallel Run**: The SRE will run in "Shadow Mode" (logging only) for the first 4 weeks to calibrate against existing production strategies.

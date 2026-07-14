@@ -25,6 +25,14 @@ This document lists every location where hypotheses are tested, scored, or verif
     - `AlphaDeathClockManager`: Continuously monitors alpha decay (hypothesis degradation).
 3.  **`trading_bot/alpha_research/strategy_diagnostics.py`**
     - Performs robustness and over-fitting checks.
+4.  **`trading_bot/strategy_discovery/validation.py`**
+    - `StrategyValidationPipeline.validate_strategy()`: Systematic validation including in-sample, out-of-sample, and regime testing.
+5.  **`trading_bot/profit_maximizer/profit_maximizer_core.py`**
+    - `SignalConfluenceScorer.score_signal()`: Evaluates signal confidence by adjusting base confidence with confluence and conflict scores.
+6.  **`trading_bot/market_student/market_teacher.py`**
+    - `MarketTeacher`: Post-hoc evaluation of AI predictions against actual market outcomes to extract lessons.
+7.  **`trading_bot/world_model/v2_training.py`**
+    - Uncertainty Calibration Loss: Evaluates the calibration of the model's predictive distributions.
 
 ## Bayesian Updating
 
