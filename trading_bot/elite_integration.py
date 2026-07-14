@@ -229,20 +229,21 @@ class Elite5StarTradingBot:
             'pnl': pnl
         }
     
-    async def run_trading_loop(self, data_source_func, interval_seconds: int = 60):
+    async def run_trading_loop(self, data_source_func, interval_seconds: int = 60, stop_event: Optional[asyncio.Event] = None):
         """
         Main trading loop
         
         Args:
             data_source_func: Function that returns DataFrame with OHLCV data
             interval_seconds: Loop interval
+            stop_event: Optional asyncio.Event to stop the loop
         """
         logger.info("🚀 Starting Elite Trading Loop")
         
         iteration = 0
         
         try:
-            while True:
+            while stop_event is None or not stop_event.is_set():
                 iteration += 1
                 logger.info(f"\n{'='*60}")
                 logger.info(f"ITERATION {iteration} - {datetime.now()}")
