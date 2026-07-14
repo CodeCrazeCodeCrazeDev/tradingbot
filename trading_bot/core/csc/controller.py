@@ -136,6 +136,14 @@ class CognitiveSystemController:
         # 2. Internalization (DiscoLoop Reasoning)
         await self._run_discoloop_internalization(observation)
 
+        # DiscoLoop: Windowing/Clearing mechanism (prevent memory leaks)
+        if len(self.discrete_channel) > 100:
+            self.discrete_channel = self.discrete_channel[-100:]
+        if len(self.continuous_state) > 1000:
+            # For dict, we might want to keep only recent symbols or similar logic
+            # but here we'll just clear if it grows too large as a simple heuristic
+            self.continuous_state.clear()
+
         # 4. Executable Guardrails (HASP Intervention)
         # (arXiv:2605.17734 - HASP)
         intervention = self._apply_hasp_guardrails(observation)

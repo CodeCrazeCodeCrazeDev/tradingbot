@@ -870,6 +870,7 @@ class MultiAgentDebateSystem:
                 current_round_args = []
             
                 # Each agent responds to others
+                last_round_args = debate_rounds[-1].arguments
                 for agent in self.agents:
                     for other_arg in previous_round_args:
                         if other_arg.agent_role != agent.role:
