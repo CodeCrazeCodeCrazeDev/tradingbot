@@ -22,7 +22,6 @@ from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC, abstractmethod
-import statistics
 from ..verification.confidence_calibrator import ConfidenceCalibrator, CalibrationMethod
 
 logger = logging.getLogger(__name__)
@@ -555,6 +554,18 @@ class RiskSentinel(TradingAgent):
     ) -> Optional[AgentArgument]:
         """Respond to aggressive positions."""
         try:
+            # Maintain veto if high-risk thresholds are breached
+            if context.portfolio_exposure > 0.5 or context.volatility > 0.03:
+                return AgentArgument(
+                    agent_role=self.role,
+                    action=TradeAction.NO_TRADE,
+                    conviction=Conviction.VERY_HIGH,
+                    reasoning=["Maintaining NO_TRADE veto: risk limits breached"],
+                    key_factors={'high_risk_veto': 1.0},
+                    confidence=0.95,
+                    timestamp=datetime.now()
+                )
+
             if argument.action in [TradeAction.STRONG_BUY, TradeAction.STRONG_SELL]:
                 if context.portfolio_exposure > self.max_exposure * 0.7:
                     return AgentArgument(
@@ -871,7 +882,8 @@ class MultiAgentDebateSystem:
             
                 # Each agent responds to others
                 for agent in self.agents:
-                    for other_arg in all_arguments[-3:]:  # Last round's arguments
+                    # Robust round-specific argument tracking
+                    for other_arg in debate_rounds[-1].arguments:
                         if other_arg.agent_role != agent.role:
                             response = agent.respond_to_argument(other_arg, context)
                             if response:
