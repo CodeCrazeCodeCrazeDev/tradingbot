@@ -108,6 +108,21 @@ class SAGEGraphMemory:
             except Exception as e:
                 logger.error(f"SAGE: Failed to save graph: {e}")
 
+    def _load_graph(self) -> nx.MultiDiGraph:
+        if self.graph_path and os.path.exists(self.graph_path):
+            try:
+                return nx.read_graphml(self.graph_path)
+            except Exception as e:
+                logger.error(f"SAGE: Failed to load graph: {e}")
+        return nx.MultiDiGraph()
+
+    def _save_graph(self):
+        if self.graph_path:
+            try:
+                nx.write_graphml(self.graph, self.graph_path)
+            except Exception as e:
+                logger.error(f"SAGE: Failed to save graph: {e}")
+
     def add_evidence(self, triplet: Tuple[str, str, str], context: Dict[str, Any], evidence: Dict[str, Any]):
         """
         Adds context-dependent triplet (QKG principle) to the graph.

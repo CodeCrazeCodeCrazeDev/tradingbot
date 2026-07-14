@@ -1,6 +1,8 @@
 """
 
 Orchestrates the selection and execution of Skill Programs (HASP)
+
+Orchestrates the selection and execution of Skill Programs (HASP)
 and behavioral behaviors (Skill-to-LoRA).
 
 Orchestrates the selection and execution of Skill Programs (HASP)
@@ -197,6 +199,8 @@ class SkillRouter:
     """
 
     def __init__(self):
+        if self._initialized:
+            return
         self._registry: Dict[str, SkillArtifact] = {}
         self.executor = HASPExecutor()
         self._initialize_default_skills()

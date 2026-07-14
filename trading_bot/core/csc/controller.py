@@ -1,5 +1,6 @@
 """
 Cognitive System Controller (CSC) - UCA V5 (July 2026)
+======================================================
 
 Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
 Governed by Variational Free Energy (VFE) minimization.
@@ -333,6 +334,8 @@ class CognitiveSystemController:
             multi_path_scenarios=[{"name": getattr(s, 'name', 'Scenario')} for s in scenarios] if scenarios else [],
             composite_confidence=branch.confidence
         )
+        entry.composite_confidence = branch.confidence
+        return entry
 
     def _verify_evidence_hard_constraint(self, entry: ResearchLedgerEntry) -> bool:
         """Verifier Swarm consensus check."""
