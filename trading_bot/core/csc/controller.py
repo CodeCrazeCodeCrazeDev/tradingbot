@@ -17,7 +17,7 @@ from .hypothesis import HypothesisGenerator, ReasoningBranch, Hypothesis
 from .folding import InformationFolder
 from .router import SkillRouter
 from ..verification.swarm import VerificationSwarm
-from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport
+from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport, EvidenceNode, EvidenceEdge, RelationType
 from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
 from ..immutable_shield import ImmutableShield
 from ..unified_event_bus import decision_bus, LogAction, ActionStatus, EventPriority
@@ -246,6 +246,33 @@ class CognitiveSystemController:
         return sorted_branches[0]
 
     def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
+        """
+        Creates a structured Research Ledger Entry including an auditable Evidence Graph.
+        Ensures every decision has a persistent chain of causality and verification.
+        """
+        # 1. Populate Evidence Graph from Branch + Context
+        graph = branch.evidence_graph
+
+        # Ensure we have the causal chain represented in the graph
+        if branch.hypotheses:
+            hyp_node_id = f"hyp_{branch.branch_id}"
+
+            # Add nodes for causal explanation components
+            explanation_node_id = f"causal_{branch.branch_id}"
+            graph.add_node(EvidenceNode(
+                node_id=explanation_node_id,
+                content=branch.causal_explanation,
+                node_type="CLAIM"
+            ))
+
+            # Link explanation to hypothesis
+            graph.add_edge(EvidenceEdge(
+                source_id=explanation_node_id,
+                target_id=hyp_node_id,
+                relation=RelationType.SUPPORTS,
+                weight=0.9
+            ))
+
         return ResearchLedgerEntry(
             hypothesis=branch.hypotheses[0] if branch.hypotheses else None,
             reasoning_steps=branch.reasoning_trace,
