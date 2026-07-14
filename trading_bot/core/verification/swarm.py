@@ -39,7 +39,8 @@ class VerificationSwarm:
         """
         Executes parallel audit by all registered verifiers.
         """
-        logger.info(f"VerificationSwarm: Auditing research {research_snapshot.get('id', 'N/A')}")
+        snapshot_id = research_snapshot.entry_id if hasattr(research_snapshot, 'entry_id') else "N/A"
+        logger.info(f"VerificationSwarm: Auditing research {snapshot_id}")
 
         # Parallel execution of verifiers
         tasks = [self._audit_agent(v, research_snapshot) for v in self.verifiers]

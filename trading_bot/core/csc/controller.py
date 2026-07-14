@@ -180,6 +180,17 @@ class CognitiveSystemController:
                  dominant_rejection_reason=f"Shield: {shield_report.reason}"
              )
 
+        # 11b. Commit to LogAct Backbone (arXiv:2604.07988)
+        # Instead of local execution, we propose the action to the shared log.
+        # Decoupled voters (including Shield) have already approved it in our local pass,
+        # but the LogAct Backbone provides the authoritative, persistent execution trail.
+        log_action = LogAction(
+            action_type="trade",
+            payload={**trade_proposal, "context": {"market": observation}},
+            agent_id="CSC_V5"
+        )
+        await decision_bus.propose_action(log_action)
+
         # 12. Execution & Folding (HIPIF)
         logger.info(f"CSC-V5: Trade APPROVED by Shield. Proposing to LogAct Backbone.")
         await decision_bus.propose_action(log_action)

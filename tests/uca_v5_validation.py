@@ -1,6 +1,5 @@
 """
 UCA V5 Release Verification Suite (July 2026)
-============================================
 
 Implements institutional-grade verification gates:
 1. Gain Metric (CL-Bench, arXiv:2606.05661)

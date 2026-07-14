@@ -63,6 +63,10 @@ class ActionStatus(Enum):
 
 @dataclass
 class LogAction:
+    """
+    Authoritative institutional-grade action record.
+    Permanently links decisions to evidence, state, and audit trails.
+    """
     action_type: str
     payload: Dict[str, Any]
     agent_id: str
@@ -73,6 +77,14 @@ class LogAction:
     voter_reports: Dict[str, Any] = field(default_factory=dict)
     sequence_number: Optional[int] = None
     priority: EventPriority = EventPriority.NORMAL
+
+    # Institutional Decision Ledger Links (arXiv:2604.07988 Extension)
+    evidence_graph_id: Optional[str] = None
+    world_model_state_hash: Optional[str] = None
+    portfolio_snapshot_id: Optional[str] = None
+    configuration_hash: Optional[str] = None
+    git_commit: Optional[str] = None
+    dataset_version: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -204,7 +216,17 @@ class UnifiedDecisionBus:
     # --- Internal Logic ---
 
     async def _process_log(self):
-        """Autoritative log processing and total ordering."""
+        """
+        Authoritative log processing and total ordering.
+        Implements LogAct (arXiv:2604.07988) State Machine Replication.
+        """
+        # Auto-inject ImmutableShield as the primary Governance Voter
+        try:
+            from .immutable_shield import shield
+            self.register_voter("immutable_shield_voter", self._shield_voter_adapter)
+        except ImportError:
+            logger.warning("ImmutableShield not available for LogAct voting")
+
         while self._running:
             try:
                 _, _, action = await self._action_queue.get()
@@ -214,7 +236,10 @@ class UnifiedDecisionBus:
                 self._log.append(action)
 
                 # 2. Decoupled Voting (Audit Phase)
+                # This deconstructs the agent's state machine.
+                # Voter can see the action BEFORE it is executed.
                 action.status = ActionStatus.AUDITING
+
                 vote_tasks = []
                 voter_ids = list(self._voters.keys())
 
@@ -235,8 +260,10 @@ class UnifiedDecisionBus:
                 if self._verify_consensus(action):
                     action.status = ActionStatus.APPROVED
                     logger.info(f"Action {action.action_id} APPROVED [Seq: {action.sequence_number}]")
-                    # 4. Dispatch to Consumers
+                    # 4. Dispatch to Consumers (Execution Phase)
+                    # Once in the log and approved, the action is 'committed'
                     await self._dispatch(action)
+                    action.status = ActionStatus.EXECUTED
                 else:
                     action.status = ActionStatus.VETOED
                     logger.warning(f"Action {action.action_id} VETOED by voters")
@@ -255,6 +282,21 @@ class UnifiedDecisionBus:
                 logger.warning(f"Consensus Veto: {vid} rejected {action.action_id}: {report.get('reason')}")
                 return False
         return True
+
+    async def _shield_voter_adapter(self, action: LogAction) -> Dict[str, Any]:
+        """Adapts ImmutableShield to the LogAct Voter interface."""
+        from .immutable_shield import shield, GovernanceDecision
+
+        # Extract context if provided in payload, else use empty
+        context = action.payload.get("context", {})
+        report = shield.validate_action(action.action_type, action.payload, context)
+
+        return {
+            "decision": "APPROVED" if report.decision == GovernanceDecision.APPROVED else "VETO",
+            "reason": report.reason,
+            "risk_score": report.risk_score,
+            "audit_id": report.audit_id
+        }
 
     async def _dispatch(self, action: LogAction):
         """Dispatch approved actions to subscribers."""

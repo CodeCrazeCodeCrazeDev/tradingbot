@@ -1,5 +1,10 @@
 """
 
+Orchestrates the selection and execution of Skill Programs (HASP)
+and behavioral adapters (Skill-to-LoRA).
+Implements 'HASP' (arXiv:2605.17734), 'S2L' (arXiv:2606.16769),
+and 'Meta-Harness' (arXiv:2603.28052).
+
 Authoritative router for mapping strategic tasks to specialized skills and agents.
 Replaces hardcoded logic in the CSC with dynamic, capability-based routing.
 """
@@ -163,8 +168,9 @@ Implements 'HASP' (arXiv:2605.17734) and 'S2L' (arXiv:2606.16769).
 
 import logging
 from typing import Any, Dict, List, Optional, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -294,6 +300,7 @@ class SkillRouter:
             return "lora_arbitrage_archetype"
         return None
 
+        start_time = datetime.utcnow()
         logger.info(f"HASP: Executing skill program {skill.skill_id}")
         try:
             # In production, this would run in a restricted sandbox
