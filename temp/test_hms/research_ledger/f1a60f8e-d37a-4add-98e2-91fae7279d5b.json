@@ -1,0 +1,15 @@
+{
+  "entry_id": "f1a60f8e-d37a-4add-98e2-91fae7279d5b",
+  "timestamp": "2026-07-06T21:58:15.416152",
+  "trade_id": null,
+  "hypothesis": "Market will move in a Bull Scenario direction due to... (Refined)",
+  "composite_confidence": 0.0,
+  "verifier_reports": [
+    {
+      "agent": "V1",
+      "valid": true,
+      "critique": "Pass"
+    }
+  ],
+  "sage_sync": true
+}

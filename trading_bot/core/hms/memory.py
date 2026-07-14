@@ -1,61 +1,259 @@
 """
-Hierarchical Memory System (HMS) - UCA-2026 Core
-==============================================
+Hierarchical Memory System (HMS) - UCA V5 (July 2026)
 
-Authoritative memory system for storing episodic research traces,
-semantic facts, and generalized scientific lessons.
+Authoritative memory system integrating SAGE (Self-evolving Agentic Graph-Memory)
+and QKG (Quantum Knowledge Graph) for context-dependent research persistence.
+Implements the 'SAGE' (2026) feedback loop between Memory Writers and Readers.
+Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
+Implements 'SAGE' (arXiv:2605.12061) and 'AutoMem' (arXiv:2607.01224).
 """
 
 import logging
-import json
 import os
-from typing import Any, Dict, List, Optional
+import json
+import networkx as nx
+from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
-from .models import ResearchLedgerEntry, ScientificMemoryObject
+from uuid import uuid4
+from .models import (
+    ResearchLedgerEntry,
+    ScientificMemoryObject,
+    EvidenceNode,
+    EvidenceEdge,
+    RelationType,
+    EvidenceGraph
+)
 
 logger = logging.getLogger(__name__)
 
+import json
+from typing import Tuple
+
+class SAGEGraphMemory:
+    """
+    SAGE Substrate: A dynamic, self-evolving graph memory.
+    Supports incremental construction and Reader-Writer feedback loops.
+    Implements QKG (Quantum Knowledge Graph) context-dependent validity.
+    """
+    def __init__(self, storage_path: Optional[str] = None):
+        self.graph = nx.MultiDiGraph()
+        self.storage_path = storage_path
+        self.evolution_rounds = 0
+        if storage_path:
+            self._load_graph()
+
+    def _load_graph(self):
+        if self.storage_path and os.path.exists(self.storage_path):
+            try:
+                # MultiDiGraph needs special handling for GraphML
+                self.graph = nx.read_graphml(self.storage_path)
+                logger.info(f"SAGE: Loaded graph from {self.storage_path}")
+            except Exception as e:
+                logger.error(f"SAGE: Failed to load graph: {e}")
+                self.graph = nx.MultiDiGraph()
+
+    def _save_graph(self):
+        if self.storage_path:
+            try:
+                nx.write_graphml(self.graph, self.storage_path)
+            except Exception as e:
+                logger.error(f"SAGE: Failed to save graph: {e}")
+
+    def _load_graph(self) -> nx.DiGraph:
+        if os.path.exists(self.storage_path):
+            try:
+                with open(self.storage_path, 'r') as f:
+                    data = json.load(f)
+                    return nx.node_link_graph(data)
+            except Exception as e:
+                logger.error(f"SAGE: Failed to load graph: {e}")
+        return nx.DiGraph()
+
+    def _save_graph(self):
+        try:
+            os.makedirs(os.path.dirname(self.storage_path), exist_ok=True)
+            data = nx.node_link_data(self.graph)
+            with open(self.storage_path, 'w') as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            logger.error(f"SAGE: Failed to save graph: {e}")
+
+    def add_evidence(self, triplet: Tuple[str, str, str], context: Dict[str, Any], evidence: Dict[str, Any]):
+        """
+        Adds context-dependent triplet (QKG principle) to the graph.
+        (Yao Wang et al., 2026 - QKG: Modeling Context-Dependent Triplet Validity)
+        """
+        u, r, v = triplet
+        # Context-dependent validity: Store context and evidence as edge attributes
+        # In QKG, the triplet validity is a function of context.
+        edge_key = f"{r}_{uuid4().hex[:8]}"
+
+        self.graph.add_edge(
+            u, v,
+            key=edge_key,
+            relation=r,
+            context=json.dumps(context),
+            evidence=json.dumps(evidence),
+            timestamp=datetime.utcnow().isoformat()
+        )
+        logger.debug(f"SAGE: Added context-aware triplet ({u}, {r}, {v})")
+        self._save_graph()
+
+    def evolve(self, feedback: List[Dict[str, Any]]):
+        """
+        Self-evolution round: Refine graph structure based on Reader feedback.
+        Implements pruning of weak links and node consolidation.
+        """
+        self.evolution_rounds += 1
+        logger.info(f"SAGE: Starting Evolution Round {self.evolution_rounds}")
+
+        for f in feedback:
+            action = f.get("action")
+            if action == "PRUNE":
+                u, v, key = f.get("edge_id")
+                if self.graph.has_edge(u, v, key):
+                    self.graph.remove_edge(u, v, key)
+                    logger.info(f"SAGE: Pruned edge ({u}, {v}, {key})")
+            elif action == "MERGE":
+                node_a = f.get("node_a")
+                node_b = f.get("node_b")
+                if self.graph.has_node(node_a) and self.graph.has_node(node_b):
+                    self.graph = nx.contracted_nodes(self.graph, node_a, node_b, self_loops=False)
+                    logger.info(f"SAGE: Merged node {node_b} into {node_a}")
+
+        self._save_graph()
+        logger.info(f"SAGE: Evolution Round {self.evolution_rounds} complete.")
+
+    def _prune_edge(self, u, v, key):
+        if self.graph.has_edge(u, v):
+            data = self.graph.get_edge_data(u, v)
+            if data and data.get("relation") == key:
+                self.graph.remove_edge(u, v)
+                logger.info(f"SAGE: Pruned edge ({u}, {v}) with relation {key}")
+
+    def _merge_nodes(self, n1, n2):
+        if self.graph.has_node(n1) and self.graph.has_node(n2):
+            # networkx.contracted_nodes modification
+            self.graph = nx.contracted_nodes(self.graph, n1, n2, self_loops=False)
+            logger.info(f"SAGE: Merged nodes {n1} and {n2}")
+
 class HierarchicalMemorySystem:
     """
-    Manages the persistent storage and retrieval of research artifacts.
+    Authoritative memory system. Integrates SAGE and AutoMem.
     """
-
     def __init__(self, base_path: str = "alphaalgo_data/hms"):
         self.base_path = base_path
+        os.makedirs(base_path, exist_ok=True)
+
         self.ledger_path = os.path.join(base_path, "research_ledger")
         self.knowledge_path = os.path.join(base_path, "scientific_memory")
-
         os.makedirs(self.ledger_path, exist_ok=True)
         os.makedirs(self.knowledge_path, exist_ok=True)
 
+        graph_path = os.path.join(base_path, "sage_graph.graphml")
+        self.sage = SAGEGraphMemory(storage_path=graph_path)
+
+        # AutoMem: Memory Structure & Schema
+        self.schema_path = os.path.join(base_path, "memory_schema.json")
+        self.memory_schema = self._load_schema()
+
+        logger.info("HMS V5: SAGE-integrated memory system initialized")
+
+    def _load_schema(self) -> Dict[str, Any]:
+        if os.path.exists(self.schema_path):
+            try:
+                with open(self.schema_path, 'r') as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.error(f"HMS: Failed to load schema: {e}")
+        return {"version": "1.0", "entities": [], "relations": []}
+
+    def _save_schema(self):
+        try:
+            with open(self.schema_path, 'w') as f:
+                json.dump(self.memory_schema, f, indent=2)
+        except Exception as e:
+            logger.error(f"HMS: Failed to save schema: {e}")
+
+    def evolve_memory(self, interaction_history: List[Dict[str, Any]]):
+        """
+        SAGE: Incremental construction from interaction history.
+        """
+        logger.info(f"HMS: Evolving SAGE from {len(interaction_history)} history entries")
+        for entry in interaction_history:
+            u = entry.get("source")
+            v = entry.get("target")
+            r = entry.get("relation", "ASSOCIATED_WITH")
+            context = entry.get("context", {})
+            evidence = entry.get("evidence", {})
+
+            if u and v:
+                self.sage.add_evidence((u, r, v), context, evidence)
+
+    def optimize_metamemory(self, success_trajectories: List[Any]):
+        """
+        AutoMem: Two-loop optimization.
+        Loop 1: Optimize Schema/Structure.
+        Loop 2: Identify proficiency patterns for agent training.
+        """
+        logger.info(f"HMS: Running AutoMem optimization on {len(success_trajectories)} trajectories")
+
+        # Loop 1: Schema optimization (Mock logic)
+        # In a real implementation, a teacher LLM would propose schema changes
+        # e.g., adding a new relation type if it appears frequently in successes.
+        self.memory_schema["last_optimized"] = datetime.utcnow().isoformat()
+        self._save_schema()
+
+        # Loop 2: Proficiency optimization
+        # Collect 'optimal' memory decisions for future SFT/RL distillation
+        proficiency_data = []
+        for traj in success_trajectories:
+            # Extract memory actions and their outcomes
+            pass
+
     def store_ledger_entry(self, entry: ResearchLedgerEntry):
-        """Persists a complete research snapshot to the ledger."""
+        """Persists snapshot and updates SAGE graph."""
         file_path = os.path.join(self.ledger_path, f"{entry.entry_id}.json")
 
-        # In a real implementation, we would use a proper DB and handle graph serialization
-        # For now, we mock the serialization
+        # Sync with SAGE graph
+        for node_id, node in entry.evidence_graph_snapshot.nodes.items():
+            # Basic node addition if not exists, or update attributes
+            if not self.sage.graph.has_node(node_id):
+                self.sage.graph.add_node(node_id, type=node.node_type, content=str(node.content))
+            else:
+                self.sage.graph.nodes[node_id].update({"type": node.node_type, "content": str(node.content)})
+
+        for edge in entry.evidence_graph_snapshot.edges:
+            context = {"source_entry": entry.entry_id}
+            evidence = {"weight": edge.weight, "timestamp": entry.timestamp.isoformat()}
+            self.sage.add_evidence((edge.source_id, edge.relation.value, edge.target_id), context, evidence)
+
+        # Persist entry details
         entry_data = {
             "entry_id": entry.entry_id,
             "timestamp": entry.timestamp.isoformat(),
-            "trade_id": entry.trade_id,
             "hypothesis": entry.hypothesis.description if entry.hypothesis else "N/A",
             "composite_confidence": entry.composite_confidence,
             "verifier_reports": [
                 {"agent": r.agent_name, "valid": r.is_valid, "critique": r.critique}
                 for r in entry.verifier_reports
-            ],
-            "evidence_node_count": len(entry.evidence_graph_snapshot.nodes)
+            ]
         }
-
         with open(file_path, 'w') as f:
             json.dump(entry_data, f, indent=2)
 
-        logger.info(f"HMS: Persisted ledger entry {entry.entry_id}")
+    async def retrieve_evidence_chain(self, query: str, context: Optional[Dict[str, Any]] = None) -> List[EvidenceNode]:
+        """
+        SAGE: Structure-aware multi-hop retrieval.
+        (BFS/Shortest Path traversal as proxy for Graph-FM)
+        """
+        logger.info(f"HMS: SAGE retrieving evidence chain for: {query}")
+        # Placeholder for complex graph search
+        return []
 
     def store_scientific_lesson(self, lesson: ScientificMemoryObject):
         """Stores a generalized lesson derived from research outcomes."""
         file_path = os.path.join(self.knowledge_path, f"{lesson.object_id}.json")
-
         lesson_data = {
             "object_id": lesson.object_id,
             "pattern_type": lesson.pattern_type,
@@ -63,15 +261,9 @@ class HierarchicalMemorySystem:
             "reproducibility": lesson.reproducibility_score,
             "timestamp": lesson.last_updated.isoformat()
         }
-
         with open(file_path, 'w') as f:
-            json.dump(lesson_data, f, indent=2)
+            json.dump(entry_data, f, indent=2)
 
-        logger.info(f"HMS: Persisted scientific lesson {lesson.object_id}")
-
-    def get_ledger_entry(self, entry_id: str) -> Optional[Dict[str, Any]]:
-        file_path = os.path.join(self.ledger_path, f"{entry_id}.json")
-        if os.path.exists(file_path):
-            with open(file_path, 'r') as f:
-                return json.load(f)
-        return None
+    def submit_feedback(self, feedback: List[Dict[str, Any]]):
+        """External entry point for SAGE evolution feedback."""
+        self.graph_memory.evolve(feedback)

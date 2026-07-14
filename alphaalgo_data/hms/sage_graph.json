@@ -1,0 +1,14 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "id": "E1"
+    },
+    {
+      "id": "E2"
+    }
+  ],
+  "edges": []
+}
