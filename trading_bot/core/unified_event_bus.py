@@ -215,21 +215,28 @@ class UnifiedDecisionBus:
 
                 # 2. Decoupled Voting (Audit Phase)
                 action.status = ActionStatus.AUDITING
-                vote_tasks = []
                 voter_ids = list(self._voters.keys())
 
-                for vid, vfn in self._voters.items():
-                    vote_tasks.append(vfn(action))
+                # UCA V5: LogAct Timeout Enforcement
+                consensus_timeout = self.config.get("consensus_timeout_sec", 2.0)
+
+                vote_tasks = [vfn(action) for vfn in self._voters.values()]
 
                 if vote_tasks:
-                    results = await asyncio.gather(*vote_tasks, return_exceptions=True)
-                    for i, res in enumerate(results):
-                        vid = voter_ids[i]
-                        if isinstance(res, Exception):
-                            logger.error(f"Voter {vid} failed: {res}")
-                            action.voter_reports[vid] = {"decision": "ERROR", "reason": str(res)}
-                        else:
-                            action.voter_reports[vid] = res
+                    try:
+                        results = await asyncio.wait_for(asyncio.gather(*vote_tasks, return_exceptions=True), timeout=consensus_timeout)
+                        for i, res in enumerate(results):
+                            vid = voter_ids[i]
+                            if isinstance(res, Exception):
+                                logger.error(f"Voter {vid} failed: {res}")
+                                action.voter_reports[vid] = {"decision": "ERROR", "reason": str(res)}
+                            else:
+                                action.voter_reports[vid] = res
+                    except asyncio.TimeoutError:
+                        logger.error(f"LogAct Consensus TIMEOUT after {consensus_timeout}s for action {action.action_id}")
+                        action.status = ActionStatus.VETOED
+                        # Log as failure in audit history
+                        continue
 
                 # 3. Consensus Logic
                 if self._verify_consensus(action):

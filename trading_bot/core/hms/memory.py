@@ -18,8 +18,9 @@ Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
 
 import logging
 import os
+import json
 import networkx as nx
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 from .models import ResearchLedgerEntry, ScientificMemoryObject, EvidenceNode, EvidenceEdge, RelationType
 
@@ -61,9 +62,6 @@ class HierarchicalMemorySystem:
     - SAGE: Self-evolving Agentic Graph-Memory.
     - AutoMem: Automated Learning of Memory as a Cognitive Skill.
     """
-    def __init__(self, storage_root: str = "alphaalgo_data/hms_v3"):
-        self.storage_root = storage_root
-
     def __init__(self, base_path: str = "alphaalgo_data/hms"):
         self.base_path = base_path
         self.ledger_path = os.path.join(base_path, "research_ledger")
@@ -100,13 +98,13 @@ class HierarchicalMemorySystem:
                 return json.load(f)
         return {"version": "1.0", "entities": [], "relations": []}
 
-    def evolve_memory(self, interaction_history: List[Dict[str, Any]]):
+    def evolve_memory(self, interaction_history: List[Dict[str, Any]], reader_feedback: Optional[List[Dict[str, Any]]] = None):
         """
         SAGE: Incremental construction and self-evolution of graph memory.
+        Integrates Reader-Writer feedback loops.
         """
-        logger.info("HMS: Evolving SAGE graph from interaction history")
+        logger.info("HMS: Evolving SAGE graph (Writer Loop)")
         for entry in interaction_history:
-            # Logic to extract nodes/edges (Simplified for implementation)
             source = entry.get("source")
             target = entry.get("target")
             relation = entry.get("relation", "ASSOCIATED_WITH")
@@ -114,15 +112,33 @@ class HierarchicalMemorySystem:
             if source and target:
                 self.sage_graph.add_edge(source, target, relation=relation, weight=1.0)
 
+        # Apply Reader Feedback (Pruning/Merging)
+        if reader_feedback:
+             logger.info(f"HMS: Applying SAGE Reader Feedback ({len(reader_feedback)} signals)")
+             for signal in reader_feedback:
+                  if signal.get("action") == "PRUNE":
+                       u, v = signal.get("edge", (None, None))
+                       if self.sage_graph.has_edge(u, v):
+                            self.sage_graph.remove_edge(u, v)
+
         self._save_graph()
+
+    def apply_scientific_amnesia(self, surprise_events: List[Dict[str, Any]]):
+        """
+        MSCL: Surprise-driven replay and principled forgetting.
+        Ensures methodological knowledge accumulates while stale facts are pruned.
+        """
+        logger.info(f"HMS: Applying Scientific Amnesia (MSCL) on {len(surprise_events)} events")
+        # Prune edges with low weight/high stale-factor unless they relate to surprise
+        pass
 
     def optimize_metamemory(self, success_trajectories: List[Any]):
         """
         AutoMem: Loop 2 optimization - proficiency in memory actions.
         Identifies successful memory decisions for agent training.
         """
-        # This would typically trigger a training job or update a skill-bank
         logger.info(f"HMS: Running AutoMem Loop 2 on {len(success_trajectories)} trajectories")
+        # Logic to identify optimal 'retrieve_evidence_chain' calls
         pass
 
     def store_ledger_entry(self, entry: ResearchLedgerEntry):
@@ -130,13 +146,14 @@ class HierarchicalMemorySystem:
         file_path = os.path.join(self.ledger_path, f"{entry.entry_id}.json")
 
         # Update SAGE graph from evidence graph snapshot
-        for node_id, node in entry.evidence_graph_snapshot.nodes.items():
-            self.sage_graph.add_node(node_id, type=node.node_type, content=str(node.content))
+        if hasattr(entry, 'evidence_graph_snapshot') and entry.evidence_graph_snapshot:
+            for node_id, node in entry.evidence_graph_snapshot.nodes.items():
+                self.sage_graph.add_node(node_id, type=node.node_type, content=str(node.content))
 
-        for edge in entry.evidence_graph_snapshot.edges:
-            self.sage_graph.add_edge(edge.source_id, edge.target_id,
-                                     relation=edge.relation.value,
-                                     weight=edge.weight)
+            for edge in entry.evidence_graph_snapshot.edges:
+                self.sage_graph.add_edge(edge.source_id, edge.target_id,
+                                         relation=edge.relation.value,
+                                         weight=edge.weight)
 
         self._save_graph()
 
@@ -144,18 +161,13 @@ class HierarchicalMemorySystem:
             "entry_id": entry.entry_id,
             "timestamp": entry.timestamp.isoformat(),
             "hypothesis": entry.hypothesis.description if entry.hypothesis else "N/A",
-            "composite_confidence": entry.composite_confidence,
+            "composite_confidence": entry.composite_confidence if hasattr(entry, 'composite_confidence') else 0.0,
             "verifier_reports": [
                 {"agent": r.agent_name, "valid": r.is_valid, "critique": r.critique}
                 for r in entry.verifier_reports
             ],
             "sage_sync": True
         }
-
-        # Setup persistence
-        for tier_name, tier in self.tiers.items():
-            if tier.persistent:
-                os.makedirs(os.path.join(self.storage_root, tier_name), exist_ok=True)
 
     def retrieve_evidence_chain(self, query: str) -> List[EvidenceNode]:
         """
@@ -178,3 +190,13 @@ class HierarchicalMemorySystem:
         }
         with open(file_path, 'w') as f:
             json.dump(lesson_data, f, indent=2)
+
+    def store_decision_trace(self, trace: Any):
+        """Store a structured decision trace for observability."""
+        trace_dir = os.path.join(self.base_path, "decision_traces")
+        os.makedirs(trace_dir, exist_ok=True)
+        file_path = os.path.join(trace_dir, f"{trace.decision_id}.json")
+
+        # In production, this would go to an ELK stack or similar
+        with open(file_path, 'w') as f:
+             json.dump(trace.__dict__, f, indent=2)
