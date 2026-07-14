@@ -74,8 +74,22 @@ class CognitiveSystemController:
     async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
         """
         12-step Recursive Active Inference Pipeline.
+        Grounded in Variational Free Energy (VFE) minimization (Ludik, 2025).
         """
-        logger.info("CSC-V5: Starting Recursive Active Inference Pipeline")
+        logger.info("CSC-V5: Starting 12-step Recursive Active Inference Pipeline")
+
+        # 1. Observation Ingestion & Anomaly Detection
+        # (Minimizing Sensory Surprise)
+        sensory_surprise = self._calculate_sensory_surprise(observation)
+        logger.debug(f"CSC-V5: Sensory Surprise: {sensory_surprise:.4f}")
+
+        # 2. Evidence Collection (SAGE Graph-Memory)
+        # (Wang et al., 2026 - SAGE)
+        evidence_chain = await self.hms.retrieve_evidence_chain(str(observation))
+
+        # 3. Belief Update (Bayesian Posterior)
+        # (Strategic Decision Intelligence, 2025)
+        self._update_internal_beliefs(observation, evidence_chain)
 
         # 1. Active Perception (Implicit in observation input)
         # 2. Internalization (DiscoLoop Reasoning)
@@ -84,14 +98,18 @@ class CognitiveSystemController:
         # 3. Skill Routing (Distilled Behaviors - Placeholder for S2L/LoRA)
 
         # 4. Executable Guardrails (HASP Intervention)
+        # (arXiv:2605.17734 - HASP)
         intervention = self._apply_hasp_guardrails(observation)
         if intervention:
+            logger.info(f"CSC-V5: HASP Intervention applied: {intervention.get('action')}")
             observation.update(intervention)
 
-        # 5. Multi-Hypothesis Generation
+        # 5. Multi-Hypothesis Generation (DiscoLoop)
+        # (Fu et al., 2026 - DiscoLoop: Discrete-Continuous Looping)
         branches = await self.hypothesis_gen.generate_competing_branches(observation)
 
         # 6. Causal Simulation (CWMI / World Model)
+        # (arXiv:2509.xxxxx - CWMI: Structural Interventions)
         sim_results = await self.hypothesis_gen.simulate_branches(branches)
 
         # 7. Decision Selection (EV Optimization / VFE Minimization)
@@ -100,6 +118,7 @@ class CognitiveSystemController:
             return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason="No viable reasoning branches")
 
         # 8. Decision Loop (Pivot/Refine)
+        # (RSEA - arXiv:2606.28374)
         decision_ready = False
         attempts = 0
         final_ledger_entry = None
@@ -107,7 +126,7 @@ class CognitiveSystemController:
         while not decision_ready and attempts < 3:
             attempts += 1
 
-            # 9. Verification Swarm (Peer Review)
+            # 9. Verification Swarm (Peer Review / Falsification)
             ledger_entry = self._create_ledger_entry(best_branch, sim_results.get(best_branch.branch_id, []))
             reports = await self.verifier_swarm.run_swarm(ledger_entry)
             ledger_entry.verifier_reports = reports
@@ -156,6 +175,15 @@ class CognitiveSystemController:
 
         # Persist to HMS
         self.hms.store_ledger_entry(final_ledger_entry)
+
+        # Final LogAct write-through
+        action = LogAction(
+            action_type="TRADE_EXECUTION",
+            payload=trade_proposal,
+            agent_id="CSC_V5",
+            status=ActionStatus.APPROVED
+        )
+        await decision_bus.propose_action(action)
 
         return CoreDecision(
             outcome=DecisionOutcome.TRADE_APPROVED,

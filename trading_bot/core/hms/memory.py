@@ -25,10 +25,14 @@ from .models import (
 
 logger = logging.getLogger(__name__)
 
+import json
+from typing import Tuple
+
 class SAGEGraphMemory:
     """
     SAGE Substrate: A dynamic, self-evolving graph memory.
     Supports incremental construction and Reader-Writer feedback loops.
+    Implements QKG (Quantum Knowledge Graph) context-dependent validity.
     """
     def __init__(self, storage_path: Optional[str] = None):
         self.graph = nx.MultiDiGraph()
@@ -55,7 +59,10 @@ class SAGEGraphMemory:
                 logger.error(f"SAGE: Failed to save graph: {e}")
 
     def add_evidence(self, triplet: Tuple[str, str, str], context: Dict[str, Any], evidence: Dict[str, Any]):
-        """Adds context-dependent triplet (QKG principle) to the graph."""
+        """
+        Adds context-dependent triplet (QKG principle) to the graph.
+        (Yao Wang et al., 2026 - QKG: Modeling Context-Dependent Triplet Validity)
+        """
         u, r, v = triplet
         # Context-dependent validity: Store context and evidence as edge attributes
         # In QKG, the triplet validity is a function of context.
@@ -202,7 +209,7 @@ class HierarchicalMemorySystem:
         with open(file_path, 'w') as f:
             json.dump(entry_data, f, indent=2)
 
-    def retrieve_evidence_chain(self, query: str) -> List[EvidenceNode]:
+    async def retrieve_evidence_chain(self, query: str, context: Optional[Dict[str, Any]] = None) -> List[EvidenceNode]:
         """
         SAGE: Structure-aware multi-hop retrieval.
         (BFS/Shortest Path traversal as proxy for Graph-FM)
