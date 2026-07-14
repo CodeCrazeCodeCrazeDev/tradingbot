@@ -11,6 +11,7 @@ Responsibilities:
 - Provide unified data interface to other agents
 """
 
+import numpy as np
 import asyncio
 import logging
 from dataclasses import dataclass, field
@@ -134,7 +135,7 @@ class DataFusionAgent:
         Fuse all data sources into a unified market picture.
         
         This is perception layer that creates situational awareness.
-        
+        """
         # ASI-Evolve: analyze data quality and completeness before fusion
         quality_assessment = await self._assess_data_quality()
         
@@ -190,7 +191,7 @@ class DataFusionAgent:
         Provide market picture to requesting agent.
         
         This enforces Rule 1: Agents NEVER access raw data directly.
-        
+        """
         self.data_requests_served += 1
         
         if not self.latest_picture:

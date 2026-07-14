@@ -15,6 +15,8 @@ from typing import Any, Dict, Optional
 from enum import Enum
 from pathlib import Path
 
+logger = logging.getLogger(__name__)
+
 
 class LogLevel(Enum):
     """Log levels"""

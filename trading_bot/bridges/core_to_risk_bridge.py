@@ -6,6 +6,7 @@ Integration Bridge: Core -> Risk
 Auto-generated bridge for connecting core and risk subsystems.
 """
 
+import asyncio
 import logging
 from typing import Any, Dict, List, Optional
 

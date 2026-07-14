@@ -59,17 +59,6 @@ class InformationFolder:
         3. Prune/Compress source Episodic entries conceptually.
         """
         logger.info(f"HIPIF: Folding episodic trace of {len(episodic_trace)} entries")
-HIPIF: Hierarchical Planning with Information Folding.
-"""
-from typing import Any
-
-class InformationFolder:
-    def __init__(self, hms: Any = None):
-        self.hms = hms
-
-    def fold_history(self, entry: Any):
-        """Compress execution traces into semantic strategic updates."""
-        pass
 
         summary = self._summarize_trace(episodic_trace)
         stats = {
@@ -84,6 +73,9 @@ class InformationFolder:
             'tokens_saved': sum(len(str(s)) for s in episodic_trace) - len(summary),
             'status': 'folded'
         }
+
+        return result
+
 
 class FoldingOperator:
     """

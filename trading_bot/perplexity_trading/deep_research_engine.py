@@ -495,8 +495,9 @@ class DeepResearchEngine:
             return None
         
         # Create citation
+        citation_seed = f"{source['name']}_{datetime.utcnow()}"
         citation = Citation(
-            citation_id=f"cite_{hashlib.md5(f'{source["name"]}_{datetime.utcnow()}'.encode()).hexdigest()[:8]}",
+            citation_id=f"cite_{hashlib.md5(citation_seed.encode()).hexdigest()[:8]}",
             source_type=source_type,
             source_name=source["name"],
             source_url=source.get("url"),

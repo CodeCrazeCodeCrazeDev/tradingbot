@@ -15,6 +15,7 @@ This module provides comprehensive portfolio optimization:
 Portfolio Manager + Quantitative Analyst + Actuary Perspective
 """
 
+from collections import defaultdict
 import numpy as np
 import pandas as pd
 from typing import Any, Dict, List, Optional, Tuple, Union

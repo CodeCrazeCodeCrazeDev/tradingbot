@@ -165,6 +165,8 @@ class CapabilityRouter:
 
 # Integration helper
 router = CapabilityRouter()
+
+"""
 SkillRouter & HASP - UCA V5 Skill Management
 Orchestrates the selection and execution of Skill Programs (HASP/PFs)
 and behavioral adapters (Skill-to-LoRA).
@@ -309,7 +311,8 @@ class SkillRouter:
             return "lora_arbitrage_archetype"
         return None
 
-        start_time = datetime.utcnow()
+    def _execute_skill_program(self, skill: 'SkillArtifact', state: Dict) -> Dict:
+        """Execute a skill program's behavior (HASP), sandboxed in production."""
         logger.info(f"HASP: Executing skill program {skill.skill_id}")
         try:
             # In production, this would run in a restricted sandbox

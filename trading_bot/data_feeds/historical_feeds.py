@@ -5,6 +5,7 @@ Historical Data Feeds
 Historical data retrieval from multiple sources.
 """
 
+import aiohttp
 import asyncio
 import logging
 from abc import ABC, abstractmethod
@@ -156,6 +157,7 @@ class YahooFinanceFeed(HistoricalDataFeed):
         """Fetch fundamental data"""
             
         try:
+            import yfinance as yf
             ticker = yf.Ticker(symbol)
             info = ticker.info
             
