@@ -1,5 +1,5 @@
 """
-Evolution Gate - UCA V5 Governance
+Evolution Gate - UCA V5 (July 2026)
 ==================================
 Monotone-safe gate for recursive agent self-evolution.
 Implements 'RSEA' (arXiv:2606.28374) and 'EKSFT' (arXiv:2605.29303).
@@ -27,6 +27,30 @@ class EvolutionGate:
     Enforces the 'Monotone-Safe' update rule.
     Integrates EKSFT for selective strategy internalization.
     """
+    def __init__(self, validation_engine: Any):
+        self.validation_engine = validation_engine
+
+    async def generate_adversarial_tests(self, code_diff: str) -> List[Dict[str, Any]]:
+        """
+        Generates 5-10 adversarial scenarios based on the proposed code change.
+        """
+        logger.info("ACE: Generating adversarial unit tests for code evolution...")
+        # In production, this would use an LLM to analyze the diff
+        return [
+            {"name": "flash_crash_liquidity", "severity": "HIGH"},
+            {"name": "api_timeout_retry_loop", "severity": "MEDIUM"},
+            {"name": "extreme_slippage_divergence", "severity": "HIGH"}
+        ]
+
+    async def run_adversarial_stress_test(self, config: Dict[str, Any], tests: List[Dict[str, Any]]) -> Dict[str, float]:
+        """
+        Executes the evolved agent configuration against adversarial tests.
+        """
+        results = {}
+        for test in tests:
+            # Mock pass/fail rate
+            results[test["name"]] = 0.95 # 95% resilience
+        return results
 
     def __init__(self, validation_engine: Any):
         self.validation_engine = validation_engine

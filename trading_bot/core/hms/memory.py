@@ -1,6 +1,14 @@
 """
 Hierarchical Memory System (HMS) - UCA V5 (July 2026)
 
+Authoritative memory system integrating SAGE, SimpleMem, and L2CL.
+Implements the 6-tier hierarchical architecture for autonomous agents.
+
+Scientific Foundation:
+- SAGE: Self-evolving Agentic Graph-Memory (Paper 3)
+- SimpleMem: Efficient Lifelong Memory (Paper 30)
+- L2CL-Mem: Meta-learning Agentic Memory Designs (Paper 34)
+
 Authoritative memory system providing a unified service interface for 6 tiers.
 Integrates SAGE (Self-evolving Graph) and AutoMem (Meta-memory optimization).
 

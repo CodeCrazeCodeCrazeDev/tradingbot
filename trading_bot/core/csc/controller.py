@@ -1,5 +1,15 @@
 """
 Cognitive System Controller (CSC) - UCA V5 (July 2026)
+
+Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
+Governed by Variational Free Energy (VFE) minimization.
+Authoritative orchestrator for LogAct Shared-Log Backbone.
+
+Scientific Foundation:
+- Active Inference (Paper 13)
+- DiscoLoop (Paper 2)
+- HIPIF (Paper 7)
+- HASP (Paper 5)
 Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
 Implements the Active Inference (VFE minimization) loop, HIPIF, DiscoLoop, and HASP.
 The "One Brain" authoritative controller orchestrating the LogAct pipeline.
@@ -24,9 +34,26 @@ from ..unified_event_bus import decision_bus, LogAction, ActionStatus, EventPrio
 
 logger = logging.getLogger(__name__)
 
+class DiscoLoopCell:
+    """
+    DiscoLoop Cell for multi-hop reasoning.
+    Loops discrete symbolic embeddings and continuous hidden states.
+    """
+    def __init__(self, latent_dim: int = 512):
+        self.latent_dim = latent_dim
+        self.hidden_state = np.zeros(latent_dim)
+        self.discrete_tokens = []
+
+    def transition(self, input_signal: np.ndarray, symbolic_input: List[str]) -> Tuple[np.ndarray, List[str]]:
+        # Simplified DiscoLoop recurrence: S_k = [h_k; e_k]
+        # In production, this uses a trained transformer/Mamba core
+        self.hidden_state = 0.9 * self.hidden_state + 0.1 * input_signal
+        self.discrete_tokens.extend(symbolic_input)
+        return self.hidden_state, self.discrete_tokens
+
 class CognitiveSystemController:
     """
-    UCA V5 Controller integrating DiscoLoop, HASP, and Pivot/Refine.
+    UCA V5 Controller - Authoritative Strategic Brain.
     """
     _instance = None
     _lock = asyncio.Lock()
@@ -47,6 +74,7 @@ class CognitiveSystemController:
         self.hypothesis_gen = HypothesisGenerator(world_model)
         self.verifier_swarm = VerificationSwarm()
         self.folder = InformationFolder()
+        self.discoloop = DiscoLoopCell()
 
         # HASP: Executable Guardrails (Skill Programs)
         # These are executable functions that can intervene in the loop.
@@ -108,6 +136,7 @@ class CognitiveSystemController:
         if intervention:
             logger.info(f"CSC-V5: HASP Intervention applied: {intervention.get('action')}")
             observation.update(intervention)
+            logger.warning(f"CSC-V5: HASP Intervention applied: {intervention.get('reason')}")
 
         # 5. Multi-Hypothesis Generation (DiscoLoop)
         # (Fu et al., 2026 - DiscoLoop: Discrete-Continuous Looping)
@@ -210,6 +239,9 @@ class CognitiveSystemController:
             status=ActionStatus.APPROVED
         )
         await decision_bus.propose_action(action)
+
+        # Update World Model Prediction for Step 2 of next loop
+        self.last_prediction = sim_results.get(best_branch.branch_id)
 
         return CoreDecision(
             outcome=DecisionOutcome.TRADE_APPROVED,
