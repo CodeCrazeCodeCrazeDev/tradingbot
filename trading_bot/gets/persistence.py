@@ -61,9 +61,9 @@ class ModelCheckpoint:
         checkpoint_path.mkdir(exist_ok=True)
         
         # Save model state
-        model_file = checkpoint_path / "model_state.pkl"
-        with open(model_file, 'wb') as f:
-            pickle.dump(model_state, f)
+        model_file = checkpoint_path / "model_state.json"
+        with open(model_file, 'w') as f:
+            json.dump(model_state, f, indent=2, default=str)
         
         # Save metadata
         meta = {
@@ -123,7 +123,7 @@ class ModelCheckpoint:
         checkpoint_path = matches[0]
         
         # Verify checksum
-        model_file = checkpoint_path / "model_state.pkl"
+        model_file = checkpoint_path / "model_state.json"
         hash_file = checkpoint_path / "checksum.sha256"
         
         if hash_file.exists():
@@ -134,8 +134,8 @@ class ModelCheckpoint:
                 raise ValueError(f"Checksum mismatch for {checkpoint_path}")
         
         # Load model
-        with open(model_file, 'rb') as f:
-            model_state = pickle.load(f)
+        with open(model_file, 'r') as f:
+            model_state = json.load(f)
         
         # Load metadata
         meta_file = checkpoint_path / "metadata.json"
@@ -159,9 +159,9 @@ class ModelCheckpoint:
         adapter_path.mkdir(exist_ok=True)
         
         # Save weights
-        weights_file = adapter_path / "weights.pkl"
-        with open(weights_file, 'wb') as f:
-            pickle.dump(weights, f)
+        weights_file = adapter_path / "weights.json"
+        with open(weights_file, 'w') as f:
+            json.dump(weights, f, indent=2, default=str)
         
         # Save metadata
         meta = {
@@ -200,10 +200,10 @@ class ModelCheckpoint:
             raise FileNotFoundError(f"No adapter found for {target_model} {adapter_type}")
         
         adapter_path = matches[0]
-        weights_file = adapter_path / "weights.pkl"
+        weights_file = adapter_path / "weights.json"
         
-        with open(weights_file, 'rb') as f:
-            return pickle.load(f)
+        with open(weights_file, 'r') as f:
+            return json.load(f)
     
     def save_head_weights(
         self,
@@ -213,10 +213,10 @@ class ModelCheckpoint:
     ) -> str:
         """Save multi-task head weights."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        head_file = self.base_path / "heads" / f"{head_name}_v{version}_{timestamp}.pkl"
+        head_file = self.base_path / "heads" / f"{head_name}_v{version}_{timestamp}.json"
         
-        with open(head_file, 'wb') as f:
-            pickle.dump(weights, f)
+        with open(head_file, 'w') as f:
+            json.dump(weights, f, indent=2, default=str)
         
         return str(head_file)
     

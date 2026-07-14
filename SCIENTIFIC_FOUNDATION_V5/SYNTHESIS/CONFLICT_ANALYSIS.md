@@ -23,3 +23,11 @@ As AlphaAlgo transitions to V5, several research-level contradictions must be re
 ## Conflict 5: Causal Models vs. Quantum KGs (CWMI vs. QKG)
 *   **The Conflict**: *CWMI* (Paper 11, Foundation) builds DAGs for causal structure. *Quantum KG* (Paper 3, New) uses context-sensitive triplets.
 *   **The Resolution**: **Conditional Causal Graphs**. The nodes and edges in our Causal SCM (Structural Causal Model) are now "Quantum". An edge $X \to Y$ exists *if and only if* the current context (regime, vol) matches the edge's validity criteria in the QKG.
+
+## Conflict 6: Probabilistic vs. Deterministic Evolution (HyEvo vs. Formal Verification)
+*   **The Conflict**: *HyEvo* (Paper 26, New) uses evolutionary strategies (probabilistic mutation) to evolve workflow topology. *Formal Proof Search* (Paper 2, New) and *UCA V5 Stability* mandate deterministic, formally verified invariant preservation.
+*   **The Resolution**: **Verification-Augmented Evolution**. HyEvo may propose stochastic mutations to the workflow graph (LLM nodes + Code nodes), but every mutation must pass a **Formal Invariant Checker** (Logic Voter in LogAct) before being committed to the authoritative shared log. We evolve stochastically but verify formally.
+
+## Conflict 7: Harness-as-Code vs. Parametric Injection (Meta-Harness vs. PT-RAG)
+*   **The Conflict**: *Meta-Harness* (Paper 25, New) optimizes the harness *code* (Python/JS wrappers). *PT-RAG* (Paper 20, Foundation) injects knowledge into *model activations* (Parametric).
+*   **The Resolution**: **Dual-Channel Injection**. Meta-Harness is used to optimize the *Retriever* and *Context Assembler* (Code Layer), while PT-RAG is used to distill the assembled context into the model's intermediate hidden states (Parametric Layer).

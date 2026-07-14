@@ -54,12 +54,29 @@ class EvidenceNode:
 
 @dataclass
 class EvidenceEdge:
-    """A directed, typed relationship in the Evidence Graph."""
+    """
+    A directed, typed relationship in the Evidence Graph.
+    Implements QKG (Quantum Knowledge Graph) context-dependent validity (arXiv:2604.23972).
+    """
     source_id: str
     target_id: str
     relation: RelationType
     weight: float = 1.0
     evidence_package_id: Optional[str] = None  # Supporting evidence for this relation
+
+    # QKG Extension: Validity depends on context (e.g. regime, volatility)
+    context_validity_mask: Dict[str, Any] = field(default_factory=dict)
+    validity_function_ref: Optional[str] = None  # Reference to a HASP program or heuristic
+
+    def is_valid_in_context(self, context: Dict[str, Any]) -> bool:
+        """Determines if this triplet is valid given the current market context."""
+        if not self.context_validity_mask:
+            return True
+
+        for key, expected in self.context_validity_mask.items():
+            if context.get(key) != expected:
+                return False
+        return True
 
 @dataclass
 class EvidenceGraph:

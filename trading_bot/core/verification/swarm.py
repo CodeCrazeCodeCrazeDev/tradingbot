@@ -30,7 +30,7 @@ class VerificationSwarm:
         """
         Executes parallel audit by all registered verifiers.
         """
-        snapshot_id = getattr(research_snapshot, 'entry_id', 'N/A')
+        snapshot_id = research_snapshot.entry_id if hasattr(research_snapshot, 'entry_id') else "N/A"
         logger.info(f"VerificationSwarm: Auditing research {snapshot_id}")
 
         # Parallel execution of verifiers

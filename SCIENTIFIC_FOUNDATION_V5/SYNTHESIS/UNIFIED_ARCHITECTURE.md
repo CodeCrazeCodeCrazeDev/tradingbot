@@ -1,42 +1,44 @@
 # Unified Superior Architecture: AlphaAlgo UCA V5 (July 2026)
 
-## 1. Architectural Philosophy: The "Recursive Active Inference" Brain
-The UCA V5 unifies all 8 mandatory papers into a single mathematical objective: **Minimizing Variational Free Energy (VFE)** through a **Recursive Active Inference** loop.
+## 1. Architectural Philosophy: Recursive Active Inference
+The AlphaAlgo UCA V5 architecture unifies all mandatory research principles into a single goal: **Minimizing Variational Free Energy (VFE)**. The system is no longer a linear pipeline but a **Recursive Active Inference** brain.
 
-## 2. Component Synthesis
+## 2. Integrated Systems
 
-### 2.1. The Cognitive System Controller (CSC) - Looped Multi-Hop Reasoning
-- **DiscoLoop Core**: Replaces the linear forward pass with a looped Transformer architecture. Every "Thought" carries both a continuous hidden state and a discrete token embedding (Bridge Entity), allowing the model to "internalize" multi-hop market reasoning before proposing an action.
-- **Pivot/Refine Strategy**: The CSC doesn't just fail; it utilizes a `Self-Healing Executor`. If a trade proposal fails verification, it enters a `Pivot` (strategic shift) or `Refine` (parameter adjustment) loop informed by the `Verifier Swarm`.
+### 2.1. The Cognitive System Controller (CSC)
+- **DiscoLoop Core**: Replaces linear reasoning with a $K$-hop discrete-continuous recurrence. Hidden states $h_k$ and discrete token embeddings $e_k$ are aligned at each hop, internalizing multi-step causal chains.
+- **Pivot/Refine Decision Loop**: Instead of binary pass/fail, the CSC enters a self-healing loop. If a trade proposal fails verification, the `Verifier Swarm` provides feedback, triggering a `Pivot` (strategic change) or `Refine` (parameter tuning).
+- **LogAct Backbone**: All proposed actions are written to a Shared-Log and must be approved by the `Verification Swarm` before execution.
 
-### 2.2. The Hierarchical Memory System (HMS) - Self-Evolving Substrate
-- **AutoMem Optimizer**: The HMS is no longer a passive DB. A background `Metamemory Loop` optimizes file schemas and prompt instructions based on trajectory successes (Loop 1) and trains the agent's proficiency in memory actions (Loop 2).
-- **SAGE Integration**: Knowledge is stored as a `Self-evolving Agentic Graph-Memory`. A Graph-FM memory reader performs multi-hop retrieval, while a memory writer incrementally evolves the graph based on interaction feedback.
+### 2.2. The Hierarchical Memory System (HMS)
+- **SAGE Substrate**: A self-evolving agentic graph-memory. A Memory Writer incrementally builds the graph, while a Graph-FM Reader performs multi-hop evidence chain retrieval.
+- **AutoMem Optimizer**: A background loop optimizes memory schemas (Loop 1) and trains the agent's proficiency in memory-management actions (Loop 2).
+- **HIPIF (Information Folding)**: Compresses completed subgoal histories into semantic updates, preserving strategic "insights" while reducing context noise.
 
-### 2.3. The Skill & Governance Layer - Executable Guardrails (HASP)
-- **Harnessing with Skill Programs (HASP)**: Advisory prompts are upgraded to executable `Program Functions (PFs)`. These act as hard guardrails in the CSC loop, intercepting failure-prone states (e.g., high volatility) and injecting corrective context or modifying actions before they reach the execution engine.
-- **Skill-to-LoRA (S2L)**: High-frequency procedural behaviors are distilled from context into lightweight `LoRA adapters`, routed dynamically to ensure token efficiency and behavioral stability.
+### 2.3. The Skill & Execution Layer
+- **HASP (Harnessing with Skill Programs)**: Procedural skills are implemented as executable Program Functions (PFs) that act as hard guardrails in the agent loop.
+- **S2L (Skill-to-LoRA)**: High-frequency behavioral archetypes are distilled into dynamically loadable LoRA adapters, reducing context window consumption.
+- **SkillRouter**: Dynamically routes tasks to PFs (for safety/procedural) or LoRAs (for behavioral/heuristic).
 
-### 2.4. Evolution & Safety - Monotone-Safe Self-Improvement
-- **RSEA & Evolution Gate**: Any self-proposed improvement to the CSC or HMS must pass through the `Evolution Gate`. This gate enforces a `Monotone-Safe` update rule: improvements are only committed if they exceed baseline performance on a held-out validation set.
-- **EKSFT Fine-tuning**: Online learning from new market data utilizes `Entropy-KL Selective Fine-Tuning`. Tokens with high uncertainty or distribution shift are masked, preventing the "Delusion Loop" and preserving the pre-trained distribution.
+### 2.4. Evolution & Learning
+- **EKSFT Training**: Online learning uses Entropy-KL Selective Fine-Tuning to prevent distribution collapse and preserve exploration capacity.
+- **RSEA (Recursive Self-Evolution)**: All system improvements must pass through a Monotone-Safe `Evolution Gate` using held-out validation.
 
-## 3. The Unified Reasoning Pipeline (12 Steps)
-
-1. **Active Perception**: Ingest market observation $o_t$.
-2. **Internalization (DiscoLoop)**: Run $K$ reasoning loops to align hidden states with discrete market entities.
+## 3. Unified Reasoning Pipeline (12 Steps)
+1. **Active Perception**: Ingest market observation.
+2. **Internalization (DiscoLoop)**: Run $K$ reasoning loops to align latent states with discrete entities.
 3. **Skill Routing (S2L)**: Activate relevant LoRA adapters based on identified regime.
-4. **Graph Retrieval (SAGE)**: Traverse the self-evolving graph for multi-hop evidence.
-5. **Executable Guardrails (HASP)**: Check state against PF-library for mandatory interventions.
-6. **Hypothesis Generation**: Produce competing multi-path branches.
-7. **Causal Simulation (CWMI)**: Run counterfactual "What-if" rollouts using SCMs.
-8. **Decision Selection**: Select branch maximizing Expected Utility / minimizing VFE.
-9. **Verification Swarm**: Peer-review the selected branch for hallucinations and logic errors.
-10. **Decision Loop (Pivot/Refine)**: If verifiers reject, Pivot strategy or Refine parameters.
-11. **Governance Gate (Shield)**: Final immutable check against hard risk/compliance limits.
-12. **Execution & Folding (HIPIF)**: Execute trade and "fold" the history into a semantic update for the next horizon.
+4. **Graph Retrieval (SAGE)**: Retrieve multi-hop evidence from the self-evolving graph.
+5. **Executable Guardrails (HASP)**: Check state against PF-library for interventions.
+6. **Multi-Hypothesis Generation**: Produce competing reasoning branches.
+7. **Causal Simulation (WM-V3)**: Run counterfactual rollouts using the Hybrid Transformer-Mamba core.
+8. **Decision Selection**: Select branch maximizing Expected Utility.
+9. **Verification Swarm**: Peer-review the selected branch.
+10. **Decision Loop (Pivot/Refine)**: Pivot strategy or Refine parameters based on verifier feedback.
+11. **Governance Gate (Shield)**: Final immutable compliance check.
+12. **Execution & Folding (HIPIF)**: Execute and fold history into a semantic update.
 
-## 4. Resolution of Contradictions
-- **Swarm vs. One Brain**: Resolved by using the `One Brain (CSC)` as the central controller while treating the `Swarm` as an external `Verification Service`.
-- **RAG vs. Graph**: Resolved by using `SAGE` as the primary graph-memory engine, superseding passive vector-based RAG.
-- **Prompts vs. Code**: Resolved by `HASP` - if a skill is critical/safety-related, it must be an executable PF; if it is behavioral/stylistic, it is a LoRA.
+## 4. Resolution of Redundancies
+- **Swarm vs. Brain**: Swarm is an external verification service; Brain is the strategic authority.
+- **RAG vs. Graph**: SAGE Graph-Memory supersedes static RAG.
+- **Prompts vs. Code**: HASP PFs for hard skills; S2L LoRAs for behavioral styles.

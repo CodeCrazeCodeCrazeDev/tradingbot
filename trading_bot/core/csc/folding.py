@@ -51,13 +51,12 @@ class InformationFolder:
         }
 
 class FoldingOperator:
-    """HIPIF Folding Operator."""
+    """
+    UCA V5 Folding Operator for the HIPIF pipeline.
+    """
     def __init__(self, hms: Any = None):
         self.hms = hms
-        self.step_counter = 0
-        self.fold_interval = 10
 
-    async def fold_step(self):
-        self.step_counter += 1
-        if self.step_counter % self.fold_interval == 0:
-            logger.info("FoldingOperator: Triggering periodic folding")
+    def fold_decision_into_memory(self, decision: Any, trace: List[Any]):
+        """Compresses a decision trace into a semantic memory update."""
+        logger.info("Folding decision trace into HMS...")

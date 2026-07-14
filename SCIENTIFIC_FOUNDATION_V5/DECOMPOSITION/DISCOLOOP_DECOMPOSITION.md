@@ -1,53 +1,52 @@
 # Engineering Decomposition: DiscoLoop (arXiv:2607.00341)
 
 ## Core Hypothesis
-Multi-hop reasoning in Transformers is limited by "depth-local storage." Looping architectures can mitigate this, but representational misalignment between hidden states and token embeddings remains. A dual-channel recurrence carrying both discrete embeddings and continuous hidden states (DiscoLoop) closes this gap.
+Transformers are limited to "one-shot" reasoning per token. Complex market causal chains require multi-hop "look-ahead." DiscoLoop internalizes this via a discrete-continuous recurrence loop carrying latent states and symbolic embeddings.
 
 ## Mathematical Formulation
-- **Loop State**: $S_k = [h_k; e_k]$ where $h$ is continuous hidden state and $e$ is discrete token embedding.
-- **Transition**: $h_{k+1}, p_{k+1} = \text{TransformerLayer}(h_k + \text{Proj}(e_k))$
-- **Discretization**: $e_{k+1} = \text{Embedding}(\text{argmax}(p_{k+1}))$ or $e_{k+1} = \text{StopGradient}(\text{Embedding}(\text{argmax}(p_{k+1})))$.
-- **Intervention**: Training-free realignment between $h_k$ and $e_k$.
+- **State Recurrence**: $S_{k+1} = [h_{k+1}; e_{k+1}]$
+- **Continuous Channel**: $h_{k+1} = \text{SSM}(h_k + \text{Proj}(e_k))$
+- **Discrete Channel**: $e_{k+1} = \text{Emb}(\text{argmax}(p(e | h_k)))$
+- **Alignment**: $\min \| \text{Decoder}(h_k) - \text{OneHot}(e_k) \|$
 
 ## Training Methodology
-- Standard cross-entropy loss on the final output.
-- Looped training with a fixed or dynamic number of iterations.
-- Realignment intervention during inference to boost zero-shot multi-hop capability.
+- **Looped BPTT**: Backpropagation through the $K$-hop loop.
+- **Realignment Gating**: Forcing the hidden state to be decodable into the symbolic token at each step.
 
 ## Learning Algorithm
-- Backpropagation through time (BPTT) for the looped transformer.
-- Realignment-aware training (optional).
+- Recurrent Transformer training with Discrete Bottlenecks.
+- Inference-time intervention to boost reasoning depth without retraining.
 
 ## Memory Architecture
-The loop itself acts as a working memory, reusing the same parameters to process intermediate reasoning steps.
+Working memory is the loop state $S_k$. Reuses parameters $K$ times.
 
 ## Planning Architecture
-Enables "internalized" planning where the model performs multiple steps of "look-ahead" or "reflection" within the same forward pass by looping.
+Internalized Tree Search. The model performs a "mental rehearsal" of futures within a single forward pass.
 
 ## Agent Architecture
-Directly impacts the reasoning core of the agent.
+Deep-reasoning backbone for the `CognitiveSystemController`.
 
 ## World Model Contribution
-Allows the world model to simulate multi-step causal chains internally without externalizing every step as tokens.
+Allows the world model to simulate $K$ steps of market evolution as a single operation.
 
 ## Self-improvement Contribution
-More efficient multi-hop reasoning reduces the need for long CoT, lowering latency and cost.
+Reduces the need for external Chain-of-Thought (CoT) tokens, lowering latency.
 
 ## Failure Modes
-- Vanishing/exploding gradients in long loops (mitigated by residual connections and normalization).
-- Over-looping leading to "loop collapse" or repetitive states.
+- **Loop Collapse**: The state becomes repetitive and fails to explore new reasoning nodes.
+- **Vanishing Gradients**: Mitigated by SSM (Mamba) or Residual connections.
 
 ## Scalability Limits
-Computational cost scales linearly with the number of loops $K$.
+Latency scales linearly with $K$.
 
 ## Computational Complexity
-$O(K \cdot L \cdot d^2)$ where $K$ is loops, $L$ is layers, $d$ is dimension.
+$\mathcal{O}(K \cdot N \cdot d^2)$.
 
 ## Engineering Tradeoffs
-Latency (more loops) vs. Reasoning depth.
+Reasoning depth ($K$) vs. Real-time latency.
 
 ## Financial Applicability
-Complex arbitrage detection and cross-market correlation analysis requiring multiple hops of data reconciliation.
+Cross-asset correlation analysis where $A \to B \to C$ must be solved before taking an action on $A$.
 
 ## Production Readiness
-Medium-High. Requires specific model architecture (Looped Transformer) or adaptation of existing ones.
+Medium. Requires custom Transformer/Mamba layer implementation.
