@@ -10,7 +10,6 @@ import time
 from typing import Any, Optional, Callable, Dict
 from datetime import datetime, timedelta
 from functools import wraps
-import pickle
 
 try:
     import redis
@@ -106,7 +105,7 @@ class APICache:
             try:
                 cached = self.redis_client.get(key)
                 if cached:
-                    value = pickle.loads(cached)
+                    value = json.loads(cached)
                     # Promote to memory cache
                     ttl = self.redis_client.ttl(key)
                     if ttl > 0:
@@ -143,7 +142,7 @@ class APICache:
                 self.redis_client.setex(
                     key,
                     ttl,
-                    pickle.dumps(value)
+                    json.dumps(value, default=str)
                 )
             except Exception as e:
                 print(f"Redis set error: {e}")

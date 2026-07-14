@@ -3,11 +3,12 @@ Immutable Shield - UCA-2026 Core Governance Component
 ===================================================
 
 Authoritative non-bypassable safety gate for all system actions.
-Implements institutional risk limits and compliance checks.
+Enforced by the UnifiedRiskEngine.
 """
 
 import logging
 import threading
+import asyncio
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional
@@ -33,7 +34,7 @@ class ShieldReport:
 class ImmutableShield:
     """
     Singleton Safety Gate for AlphaAlgo UCA-2026.
-    Ensures zero-bypass of institutional constraints.
+    Zero-bypass of institutional constraints.
     """
     _instance = None
     _lock = threading.Lock()
@@ -49,75 +50,50 @@ class ImmutableShield:
         if self._initialized:
             return
 
-        self.config = config or {
-            "max_drawdown": 0.15,
-            "max_volatility": 0.6,
-            "max_exposure": 1.0,
-            "risk_threshold": 0.7
-        }
+        self.config = config or {}
         self._audit_log: List[ShieldReport] = []
         self._initialized = True
         logger.info("ImmutableShield initialized as singleton")
 
-    def validate_action(self, action_type: str, params: Dict[str, Any], context: Dict[str, Any]) -> ShieldReport:
+    async def validate_action(self, action_type: str, params: Dict[str, Any], context: Dict[str, Any]) -> ShieldReport:
         """
-        Validate an action against hard constraints.
-        This is the only entry point for system-level approval.
+        Validate an action using the UnifiedRiskEngine as the primary evaluator.
         """
-        risk_score = 0.0
-        reasons = []
+        from .risk.unified_risk_engine import risk_engine
 
-        # 1. Market volatility check
-        market = context.get("market", {})
-        vol = market.get("volatility", 0.0)
-        if vol > self.config["max_volatility"]:
-            reasons.append(f"Market volatility ({vol}) exceeds limit ({self.config['max_volatility']})")
-            risk_score += 0.5
+        # 1. Institutional Risk Engine Audit
+        risk_result = await risk_engine.evaluate_risk(params, context)
 
-        # 2. Portfolio drawdown check
-        portfolio = context.get("portfolio", {})
-        drawdown = portfolio.get("drawdown", 0.0)
-        if drawdown > self.config["max_drawdown"]:
-            reasons.append(f"Portfolio drawdown ({drawdown}) exceeds limit ({self.config['max_drawdown']})")
-            risk_score += 0.6
+        # 2. Safety Heuristics (Local constraints)
+        reasons = risk_result.violated_constraints
 
-        # 3. Action-specific checks
-        if action_type == "trade":
-            exposure = params.get("exposure", 0.0)
-            if exposure > self.config["max_exposure"]:
-                reasons.append(f"Trade exposure ({exposure}) exceeds limit ({self.config['max_exposure']})")
-                risk_score += 0.8
-
-        elif action_type == "self_modification":
-            # Strict gate for code changes
-            safety_score = params.get("safety_score", 0.0)
-            if safety_score < 0.95:
-                reasons.append(f"Self-modification safety score ({safety_score}) below required 0.95")
-                risk_score += 1.0
+        if action_type == "self_modification":
+             safety_score = params.get("safety_score", 0.0)
+             if safety_score < 0.95:
+                 reasons.append(f"Self-mod safety score {safety_score} < 0.95")
 
         # Final decision
-        if risk_score >= self.config["risk_threshold"] or reasons:
+        if not risk_result.approved or reasons:
             decision = GovernanceDecision.BLOCKED
             reason_str = " | ".join(reasons)
         else:
             decision = GovernanceDecision.APPROVED
-            reason_str = "All checks passed"
+            reason_str = "All risk checks passed"
 
         report = ShieldReport(
             decision=decision,
             reason=reason_str,
-            risk_score=round(risk_score, 4),
-            details={"params": params, "context": context}
+            risk_score=risk_result.risk_score,
+            details={"risk_evidence": risk_result.evidence, "recommended_size": risk_result.recommended_position_size}
         )
 
         self._log_decision(report)
         return report
 
     def _log_decision(self, report: ShieldReport):
-        """Append to internal audit log (in production, this goes to persistent WORM storage)."""
         self._audit_log.append(report)
         log_level = logging.INFO if report.decision == GovernanceDecision.APPROVED else logging.WARNING
-        logger.log(log_level, f"Governance {report.decision.value}: {report.reason} [AuditID: {report.audit_id}]")
+        logger.log(log_level, f"Governance {report.decision.value}: {report.reason}")
 
     def get_audit_trail(self) -> List[ShieldReport]:
         return self._audit_log.copy()
