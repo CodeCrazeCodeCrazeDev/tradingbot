@@ -264,7 +264,7 @@ class HierarchicalMemorySystem:
 
         # Persist entry details
         entry_data = {
-            "entry_id": entry.entry_id,
+            "entry_id": str(entry.entry_id),
             "timestamp": entry.timestamp.isoformat(),
             "hypothesis": entry.hypothesis.description if entry.hypothesis else "N/A",
             "composite_confidence": entry.composite_confidence,

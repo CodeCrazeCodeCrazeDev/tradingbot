@@ -89,7 +89,9 @@ class EvolutionGate:
 
         # 4. Monotone-Safe Check (CL-Bench Gain Metric)
         gain = candidate_perf - baseline_perf
-        is_safe = gain >= self.threshold
+        calibration_drift = candidate_results.get("ece", 1.0) - baseline_results.get("ece", 1.0)
+
+        is_safe = (gain >= self.threshold) and (calibration_drift <= 0.05)
 
         if is_safe:
             logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain (G): {gain:.4f}")

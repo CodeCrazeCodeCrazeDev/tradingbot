@@ -1,6 +1,5 @@
 """
 EKSFT: Entropy-KL Selective Fine-Tuning - UCA V5 (July 2026)
-===========================================================
 
 Implements selective token masking for distribution-preserving fine-tuning.
 Prevents catastrophic forgetting and the 'Delusion Loop' during online adaptation.

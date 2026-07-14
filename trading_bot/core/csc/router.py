@@ -178,9 +178,9 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 class SkillType(Enum):
-    HASP_PROGRAM = "hasp_program"
-    S2L_ADAPTER = "s2l_adapter"
-    REASONING_CHAIN = "reasoning_chain"
+    PROGRAM = "hasp_program"  # Executable Skill Program (ESP)
+    LORA = "s2l_adapter"      # Skill-to-LoRA Adapter
+    PROMPT = "legacy_prompt"  # Legacy advisory prompt
 
 @dataclass
 class SkillArtifact:
@@ -249,9 +249,11 @@ class SkillRouter:
             metadata={"description": "Specialized arbitrage behavior"}
         ))
 
-    def register_skill(self, artifact: SkillArtifact):
-        self._registry[artifact.skill_id] = artifact
-        logger.debug(f"Registered skill: {artifact.skill_id} ({artifact.skill_type.value})")
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(SkillRouter, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
 
     async def route_task(self, task: str, context: Dict[str, Any]) -> Dict[str, Any]:
         """

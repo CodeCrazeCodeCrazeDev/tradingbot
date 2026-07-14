@@ -1,5 +1,6 @@
 """
 Cognitive System Controller (CSC) - UCA V5 (July 2026)
+=====================================================
 
 Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
 Governed by Variational Free Energy (VFE) minimization.
