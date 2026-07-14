@@ -3,8 +3,8 @@ Unified Scientific Reasoning Engine (SRE) - Core Interface
 ==========================================================
 
 The SRE unifies all hypothesis management into a single logical source of truth.
-It implements an 18-step adaptive reasoning loop (plus a 19th discovery step)
-grounded in Bayesian evidence synthesis and Active Inference (VFE minimization).
+It implements a 19-step adaptive reasoning loop grounded in Bayesian
+evidence synthesis and Active Inference (VFE minimization).
 """
 
 from enum import Enum, auto
@@ -17,7 +17,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 class HypothesisState(Enum):
-    # Active States (Lifecycle Steps)
+    """
+    The 18 primary lifecycle steps + 1 meta-discovery step.
+    Hypotheses must transition through these in order or jump to end-states.
+    """
     OBSERVATION = auto()
     ANOMALY_DETECTION = auto()
     QUESTION_GENERATION = auto()
@@ -35,6 +38,7 @@ class HypothesisState(Enum):
     MEMORY_CONSOLIDATION = auto()
     POLICY_IMPROVEMENT = auto()
     CONTINUOUS_MONITORING = auto()
+    RETIRED = auto() # Gateway to authoritative end-states
 
     # Authoritative End-States
     CONFIRMED = auto()
@@ -73,7 +77,8 @@ class HypothesisLineage:
     child_ids: List[str] = field(default_factory=list)
     merged_from: List[str] = field(default_factory=list)
     split_from: Optional[str] = None
-    derivation_path: str = "" # How this was generated (Anomaly, Question, etc)
+    derivation_path: str = "" # e.g. "Anomaly-QG-HG"
+    immutable_hash: str = "" # Proof of provenance
 
 @dataclass
 class ScientificHypothesis:
@@ -86,8 +91,9 @@ class ScientificHypothesis:
     # Mathematical Representation
     model_params: Dict[str, Any] = field(default_factory=dict)
     priors: Dict[str, float] = field(default_factory=dict)
-    posterior: float = 0.5 # Bayesian probability
+    posterior: float = 0.5 # Bayesian probability P(H|E)
     uncertainty: float = 1.0 # Entropy or Variance
+    ambiguity: float = 1.0 # Credal interval width
 
     # Lineage & Relationships
     lineage: HypothesisLineage = field(default_factory=HypothesisLineage)
@@ -102,11 +108,12 @@ class ScientificHypothesis:
     # Decision Criteria
     expected_value: float = 0.0
     novelty_score: float = 0.0
-    falsification_triggers: List[str] = field(default_factory=list)
+    falsification_triggers: List[Dict[str, Any]] = field(default_factory=list)
 
     # Validation results
     falsification_attempts: int = 0
     validation_score: float = 0.0
+    calibration_error: float = 1.0
 
 class ScientificReasoningEngine:
     """
@@ -124,53 +131,30 @@ class ScientificReasoningEngine:
         # 1. Observation
         hyp_id = await self.observe(observation)
 
-        # 2. Anomaly Detection
-        await self.detect_anomalies(hyp_id)
+        # Steps 2-17 are the core processing pipeline
+        pipeline = [
+            self.detect_anomalies,
+            self.generate_questions,
+            self.generate_hypothesis,
+            self.collect_evidence,
+            self.simulate_world,
+            self.generate_counterfactuals,
+            self.adversarial_debate,
+            self.design_experiment,
+            self.execute_experiment,
+            self.evaluate_results,
+            self.bayesian_update,
+            self.calibrate_confidence,
+            self.integrate_knowledge,
+            self.consolidate_memory,
+            self.improve_policy,
+            self.monitor_hypothesis
+        ]
 
-        # 3. Question Generation
-        await self.generate_questions(hyp_id)
-
-        # 4. Hypothesis Generation
-        await self.generate_hypothesis(hyp_id)
-
-        # 5. Evidence Collection
-        await self.collect_evidence(hyp_id)
-
-        # 6. World Model Simulation
-        await self.simulate_world(hyp_id)
-
-        # 7. Counterfactual Generation
-        await self.generate_counterfactuals(hyp_id)
-
-        # 8. Adversarial Debate
-        await self.adversarial_debate(hyp_id)
-
-        # 9. Experiment Design
-        await self.design_experiment(hyp_id)
-
-        # 10. Execution
-        await self.execute_experiment(hyp_id)
-
-        # 11. Evaluation
-        await self.evaluate_results(hyp_id)
-
-        # 12. Bayesian Update
-        await self.bayesian_update(hyp_id)
-
-        # 13. Confidence Calibration
-        await self.calibrate_confidence(hyp_id)
-
-        # 14. Knowledge Integration
-        await self.integrate_knowledge(hyp_id)
-
-        # 15. Memory Consolidation
-        await self.consolidate_memory(hyp_id)
-
-        # 16. Policy Improvement
-        await self.improve_policy(hyp_id)
-
-        # 17. Continuous Monitoring
-        await self.monitor_hypothesis(hyp_id)
+        for step_func in pipeline:
+            await step_func(hyp_id)
+            if self.registry[hyp_id].state in [HypothesisState.REJECTED, HypothesisState.DEPRECATED]:
+                break
 
         # 18. Hypothesis Retirement (State Transition to end-states)
         await self.retire_hypothesis(hyp_id)
@@ -180,13 +164,19 @@ class ScientificReasoningEngine:
 
     async def observe(self, data: Dict[str, Any]) -> str:
         """Step 1: Ingest raw observation."""
-        hyp = ScientificHypothesis(name=f"Obs-{datetime.now().strftime('%H%M%S')}", state=HypothesisState.OBSERVATION)
+        hyp = ScientificHypothesis(
+            name=f"Obs-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+            state=HypothesisState.OBSERVATION,
+            level=PromotionLevel.LEVEL_0
+        )
         self.registry[hyp.id] = hyp
+        logger.info(f"SRE: Created new hypothesis {hyp.id} from observation.")
         return hyp.id
 
     async def detect_anomalies(self, hyp_id: str):
         """Step 2: Identify deviations from expected world state."""
         self.registry[hyp_id].state = HypothesisState.ANOMALY_DETECTION
+        # Implementation: Compare data vs GWM predictions
 
     async def generate_questions(self, hyp_id: str):
         """Step 3: Formulate 'Why' questions based on anomalies."""
@@ -195,6 +185,7 @@ class ScientificReasoningEngine:
     async def generate_hypothesis(self, hyp_id: str):
         """Step 4: Create falsifiable claims."""
         self.registry[hyp_id].state = HypothesisState.HYPOTHESIS_GENERATION
+        self.registry[hyp_id].level = PromotionLevel.LEVEL_1
 
     async def collect_evidence(self, hyp_id: str):
         """Step 5: Gather cross-domain supporting/refuting data."""
@@ -205,12 +196,13 @@ class ScientificReasoningEngine:
         self.registry[hyp_id].state = HypothesisState.WORLD_MODEL_SIMULATION
 
     async def generate_counterfactuals(self, hyp_id: str):
-        """Step 7: Ask 'What if' to test causal stability."""
+        """Step 7: Ask 'What if' to test causal stability (Do-calculus)."""
         self.registry[hyp_id].state = HypothesisState.COUNTERFACTUAL_GENERATION
 
     async def adversarial_debate(self, hyp_id: str):
         """Step 8: Subject hypothesis to Verification Swarm challenge."""
         self.registry[hyp_id].state = HypothesisState.ADVERSARIAL_DEBATE
+        self.registry[hyp_id].falsification_attempts += 1
 
     async def design_experiment(self, hyp_id: str):
         """Step 9: Create test methodology (Backtest, Paper, etc.)."""
@@ -223,9 +215,10 @@ class ScientificReasoningEngine:
     async def evaluate_results(self, hyp_id: str):
         """Step 11: Statistical evaluation of outcomes."""
         self.registry[hyp_id].state = HypothesisState.EVALUATION
+        self.registry[hyp_id].level = PromotionLevel.LEVEL_2
 
     async def bayesian_update(self, hyp_id: str):
-        """Step 12: Update posterior probabilities."""
+        """Step 12: Update posterior probabilities P(H|E)."""
         self.registry[hyp_id].state = HypothesisState.BAYESIAN_UPDATE
 
     async def calibrate_confidence(self, hyp_id: str):
@@ -233,25 +226,37 @@ class ScientificReasoningEngine:
         self.registry[hyp_id].state = HypothesisState.CONFIDENCE_CALIBRATION
 
     async def integrate_knowledge(self, hyp_id: str):
-        """Step 14: Abstract findings into Semantic Memory."""
+        """Step 14: Abstract findings into Semantic Memory (HMS)."""
         self.registry[hyp_id].state = HypothesisState.KNOWLEDGE_INTEGRATION
+        self.registry[hyp_id].level = PromotionLevel.LEVEL_3
 
     async def consolidate_memory(self, hyp_id: str):
         """Step 15: Move to long-term Institutional Knowledge."""
         self.registry[hyp_id].state = HypothesisState.MEMORY_CONSOLIDATION
 
     async def improve_policy(self, hyp_id: str):
-        """Step 16: Update trading/research policies."""
+        """Step 16: Update trading/research policies (SkillRouter)."""
         self.registry[hyp_id].state = HypothesisState.POLICY_IMPROVEMENT
+        self.registry[hyp_id].level = PromotionLevel.LEVEL_4
 
     async def monitor_hypothesis(self, hyp_id: str):
         """Step 17: Track for drift or alpha decay."""
         self.registry[hyp_id].state = HypothesisState.CONTINUOUS_MONITORING
 
     async def retire_hypothesis(self, hyp_id: str):
-        """Step 18: Transition to final authoritative state."""
-        # Logic to decide final state based on evidence
-        self.registry[hyp_id].state = HypothesisState.CONFIRMED # Mock transition
+        """Step 18: Transition to final authoritative end-state."""
+        hyp = self.registry[hyp_id]
+
+        # Transition logic based on validation score and posterior
+        if hyp.posterior > 0.9 and hyp.validation_score > 0.8:
+            hyp.state = HypothesisState.INSTITUTIONALIZED
+            hyp.level = PromotionLevel.LEVEL_5
+        elif hyp.posterior < 0.2:
+            hyp.state = HypothesisState.REJECTED
+        else:
+            hyp.state = HypothesisState.INCONCLUSIVE
+
+        logger.info(f"SRE: Hypothesis {hyp_id} retired to state {hyp.state}")
 
     async def discover_new_hypotheses(self):
         """Step 19: Meta-discovery of new research paths."""
@@ -260,3 +265,7 @@ class ScientificReasoningEngine:
     async def get_dependency_graph(self) -> Dict[str, List[str]]:
         """Retrieve the full scientific lineage graph."""
         return {hid: h.lineage.parent_ids for hid, h in self.registry.items()}
+
+    def get_hypothesis(self, hyp_id: str) -> Optional[ScientificHypothesis]:
+        """Retrieve a specific hypothesis from the registry."""
+        return self.registry.get(hyp_id)
