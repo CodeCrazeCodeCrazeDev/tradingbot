@@ -89,6 +89,25 @@ class SAGEGraphMemory:
         except Exception as e:
             logger.error(f"SAGE: Failed to save graph: {e}")
 
+    def _load_graph(self) -> nx.MultiDiGraph:
+        if self.graph_path and os.path.exists(self.graph_path):
+            try:
+                # nx.read_graphml returns a DiGraph or MultiDiGraph based on file
+                G = nx.read_graphml(self.graph_path)
+                if not isinstance(G, nx.MultiDiGraph):
+                    return nx.MultiDiGraph(G)
+                return G
+            except Exception as e:
+                logger.error(f"SAGE: Failed to load graph: {e}")
+        return nx.MultiDiGraph()
+
+    def save_graph(self):
+        if self.graph_path:
+            try:
+                nx.write_graphml(self.graph, self.graph_path)
+            except Exception as e:
+                logger.error(f"SAGE: Failed to save graph: {e}")
+
     def add_evidence(self, triplet: Tuple[str, str, str], context: Dict[str, Any], evidence: Dict[str, Any]):
         """
         Adds context-dependent triplet (QKG principle) to the graph.
@@ -265,6 +284,11 @@ class HierarchicalMemorySystem:
         logger.info(f"HMS: SAGE retrieving evidence chain for: {query}")
         # Placeholder for complex graph search
         return []
+
+    def submit_feedback(self, feedback: List[Dict[str, Any]]):
+        """Submit feedback to evolve the SAGE graph."""
+        logger.info(f"HMS: Submitting feedback for SAGE evolution: {len(feedback)} items")
+        self.graph_memory.evolve(feedback)
 
     def store_scientific_lesson(self, lesson: ScientificMemoryObject):
         file_path = os.path.join(self.knowledge_path, f"{lesson.object_id}.json")
