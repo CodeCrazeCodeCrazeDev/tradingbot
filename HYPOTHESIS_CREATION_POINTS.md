@@ -1,6 +1,9 @@
-# Hypothesis Creation Points
+# Hypothesis Creation Points (Verified Audit 2026)
 
-This document lists every location in the AlphaAlgo codebase where hypotheses are explicitly or implicitly created.
+## Explicit Creation
+1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `ScientificReasoningEngine.observe()` - Core entry point.
+2. **`trading_bot/foundation_agents/curiosity_engine/hypothesis_generator.py`**: `HypothesisGenerator` - Specialized for anomalies and surprises.
+3. **`trading_bot/apex_fi/alpha_mining.py`**: `AlphaMiningEngine` - Genetic and LLM-driven alpha/hypothesis discovery.
 
 ## Explicit Creation Points (Modules)
 
@@ -20,6 +23,14 @@ This document lists every location in the AlphaAlgo codebase where hypotheses ar
     - `GeneticAlphaSearch._generate_random_expression()`: Creates `AlphaCandidate` hypotheses using genetic programming.
 7.  **`trading_bot/core_agent_system/multidimensional_intelligence/hypothesis_engine.py`**
     - `HypothesisEngine.pose_hypothesis()`: Registers cross-domain scientific hypotheses (Physics, Math, etc.).
+8.  **`trading_bot/core_agent_system/self_play_loop.py`**
+    - `SelfPlayLoop.generate_hypothesis()`: Generates hypotheses from self-play experiences and policy improvements.
+9.  **`trading_bot/world_model/imagination.py`**
+    - `ImaginationEngine.simulate_scenarios()`: Generates diverse future market scenarios as testable state hypotheses.
+10. **`trading_bot/market_teacher/absolute_laws.py`**
+    - `AbsoluteLaws._create_draft_strategy()`: Transforms observed market patterns into draft strategy hypotheses.
+11. **`trading_bot/alpha_research/hypothesis_extraction.py`**
+    - `CausalMechanismExtractor`: Explicitly extracts causal mechanism hypotheses (Cause -> Effect -> Condition) from research.
 
 ## Implicit Creation Points (Inferred Hypotheses)
 
@@ -29,9 +40,7 @@ This document lists every location in the AlphaAlgo codebase where hypotheses ar
     - Every "Imagined" future is a temporary hypothesis about market dynamics.
 3.  **`trading_bot/ml/offline_rl/alphaalgo_autonomous_system.py`**
     - Every policy update is an implicit hypothesis about the optimal action-value mapping.
-4.  **`trading_bot/signals/`**
-    - `TradingSignal`, `CompleteSignal`, `ConfirmationSignal`: Every generated signal is an implicit short-term hypothesis that "Current conditions imply price movement X".
-5.  **`trading_bot/neuros_fi/`**
-    - `Prediction`, `ExecutionPrediction`, `StrategyHypothesis`: Direct implementation of neural-driven hypotheses in the Prefrontal and Neocortex regions.
-6.  **`trading_bot/alphaalgo_core/capital_governance.py`**
-    - `StrategyAssumption`: Encapsulates foundational beliefs about strategy performance parameters.
+4.  **`trading_bot/profit_maximizer/market_regime_adapter.py`**
+    - `RegimeAnalysis`: Every regime classification is a hypothesis about the current market environment and optimal strategy adaptation.
+5.  **`trading_bot/world_model/v2_training.py`**
+    - Reasoning Traces: Every generated reasoning trace is a hypothesis about the causal chain leading to a predicted outcome.

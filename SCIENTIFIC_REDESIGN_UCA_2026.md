@@ -1,61 +1,52 @@
-# Scientific Redesign: Institutional-Grade Autonomous Scientific Reasoning
+# Scientific Redesign: UCA-2026 Hypothesis Lifecycle
 
-## 1. The 19-Step Recursive Scientific Lifecycle
-All system reasoning must follow this deterministic path, with explicit state transitions and logging.
+## 1. Unified Architectural Specification
 
-1.  **Observation**: Ingest raw multi-modal market data.
-2.  **Anomaly Detection**: Compare observation against World Model predictions.
-3.  **Question Generation**: Formulate causal questions for detected anomalies.
-4.  **Hypothesis Generation**: Propose falsifiable explanations (Latent Beliefs).
-5.  **Evidence Collection**: Gather supporting/refuting cross-domain artifacts.
-6.  **World Model Simulation**: Run predictive 'dreaming' scenarios.
-7.  **Counterfactual Generation**: Test causal stability using Pearl's 'do' operator.
-8.  **Adversarial Debate**: Subject hypothesis to Verification Swarm challenge.
-9.  **Experiment Design**: Define statistical test parameters (Backtest/Paper).
-10. **Execution**: Run the experiment in a sandbox or paper environment.
-11. **Evaluation**: Statistical analysis of outcomes vs. expectations.
-12. **Bayesian Update**: Update posterior probabilities $P(H|E)$.
-13. **Confidence Calibration**: Adjust for uncertainty and ambiguity (Credal Bounds).
-14. **Knowledge Integration**: Abstract findings into Semantic Memory.
-15. **Memory Consolidation**: Move to long-term Institutional Tier (HMS Tier 5).
-16. **Policy Improvement**: Update trading/research policies (SkillRouter).
-17. **Continuous Monitoring**: Track for drift, decay, or regime change.
-18. **Hypothesis Retirement**: Transition to one of 10 authoritative end-states.
-19. **Automatic Discovery**: Meta-learning to find new research directions.
+The redesign unifies PHCE-D, SRE, and CSC into a single, cohesive **Scientific Reasoning Engine (SRE)**. The core philosophy is that "every prediction is a hypothesis, and every hypothesis must survive a 19-step gauntlet."
 
-## 2. Authoritative End-States
-Every hypothesis MUST end in one of these states; it can never be "deleted" without provenance.
+### The 19-Step Autonomous Scientific Lifecycle
 
-- **Confirmed**: Validated, high posterior, in production.
-- **Rejected**: Falsified by experiment or adversarial debate.
-- **Inconclusive**: Insufficient evidence, requires more experimentation.
-- **Merged**: Combined with another hypothesis for greater explanatory power.
-- **Split**: Found to contain multiple distinct phenomena.
-- **Dormant**: Valid but regime-incompatible (waiting for regime shift).
-- **Reactivated**: Moved from Dormant back to active testing.
-- **Deprecated**: Replaced by a more efficient but not strictly superior model.
-- **Superseded**: Replaced by a demonstrably superior hypothesis.
-- **Institutionalized**: Promoted to foundational system invariant.
+| Step | Operation | Primary Actor | Output |
+|------|-----------|---------------|--------|
+| 1 | **Observation** | Data Ingestion | Raw Signal/Anomaly |
+| 2 | **Anomaly Detection** | World Model | Surprise Vector ($\nabla VFE$) |
+| 3 | **Question Generation** | Meta-Reasoning | Research Question |
+| 4 | **Hypothesis Gen** | Hypothesis Engine | Falsifiable Claim (ScientificHypothesis) |
+| 5 | **Evidence Collection** | Evidence Intake | Cross-Domain Evidence Packet |
+| 6 | **World Model Sim** | GWM | Simulated Futures |
+| 7 | **Counterfactual Gen** | Causal Engine | Intervention Results (Do-calculus) |
+| 8 | **Adversarial Debate** | Verifier Swarm | Multi-Agent Critique |
+| 9 | **Experiment Design** | Researcher | Test Methodology (Scenario Set) |
+| 10| **Execution** | Backtester/Paper | Performance Metrics |
+| 11| **Evaluation** | Epistemology | Credal Bounds / Belief Score |
+| 12| **Bayesian Update** | Bayesian Core | Updated Posterior $P(H\|E)$ |
+| 13| **Confidence Calib** | Calibration Mon | ECE-Adjusted Confidence |
+| 14| **Knowledge Integ** | Semantic Memory | HMS Tier 2/3 Nodes |
+| 15| **Memory Consolid** | Institutional Mem | HMS Tier 5 Permanence |
+| 16| **Policy Improv** | SkillRouter | Execution Policy Update |
+| 17| **Continuous Mon** | Drift Monitor | Drift Assessment |
+| 18| **Hypothesis Retire** | Governance Gate | End-State Assignment |
+| 19| **Auto-Discovery** | Discovery Engine | New Research Objectives |
 
-## 3. Mathematical Justification
-The SRE operates on the principle of **Variational Free Energy (VFE) Minimization**:
+## 2. Mandatory End-States
 
-$$F = E_{q(\phi)}[\ln q(\phi) - \ln p(\omega, \phi)]$$
+No hypothesis simply "disappears." Every entity must terminate in one of these 10 states:
 
-Where:
-- $q(\phi)$ is the agent's internal belief (the hypothesis).
-- $p(\omega, \phi)$ is the generative world model.
-- Minimizing $F$ ensures both **Accuracy** (fitting the data) and **Complexity Control** (Occam's Razor).
+1.  **Confirmed**: Passed all 17 steps with $P(H\|E) > 0.95$.
+2.  **Rejected**: Falsified by evidence or adversarial debate.
+3.  **Inconclusive**: Insufficient evidence to decide; kept for future observation.
+4.  **Merged**: Found to be a subset or duplicate of another hypothesis.
+5.  **Split**: Refined into two or more specialized hypotheses (e.g., regime-specific).
+6.  **Dormant**: Valid but regime is not currently active.
+7.  **Reactivated**: Moved from Dormant/Inconclusive back to Active.
+8.  **Deprecated**: Superseded by a more accurate model/hypothesis.
+9.  **Superseded**: Replaced by a hypothesis with higher explanatory power.
+10. **Institutionalized**: Promoted to core system invariant (Production).
 
-Ambiguity is managed using **Credal Bounds** $[P_{lower}, P_{upper}]$, representing the range of valid posteriors under model uncertainty.
+## 3. Provenance and Lineage
 
-## 4. Validation Framework
-- **ECE (Expected Calibration Error)**: Must be $< 0.05$ for production promotion.
-- **Falsifiability Score**: Every hypothesis must have at least 3 defined triggers that would prove it wrong.
-- **Ablation Sensitivity**: Measuring performance impact when the hypothesis is removed.
-
-## 5. Migration Roadmap
-- **Phase A**: Base Type consolidation (Standardizing `ScientificHypothesis`).
-- **Phase B**: Core Engine refactor (Implementing the 19 steps).
-- **Phase C**: Integration (Linking Alpha Research, CSC, and HMS).
-- **Phase D**: Productionization (Enforcing the Scientific Audit Gate).
+Every `ScientificHypothesis` carries an immutable `HypothesisLineage` object containing:
+- **Parent IDs**: Link to previous versions or related hypotheses.
+- **Data Provenance**: Hashes of all evidence packets used for evaluation.
+- **Actor Trace**: IDs of all agents/modules that modified or evaluated it.
+- **Regime Fingerprint**: Market conditions at each lifecycle transition.
