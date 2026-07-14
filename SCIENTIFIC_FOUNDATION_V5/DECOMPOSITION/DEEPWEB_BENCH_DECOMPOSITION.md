@@ -1,40 +1,41 @@
 # Engineering Decomposition: DeepWeb-Bench (arXiv:2605.21482)
 
 ## Core Hypothesis
-Retrieval is not the bottleneck in deep research; derivation and calibration (self-evaluation of certainty) are the primary failure points.
+The primary failure in AI research is not lack of data, but lack of derivation (connecting facts) and calibration (knowing when you are guessing).
 
 ## Mathematical Formulation
+- **Calibration Error**: $ECE = \sum \frac{|B_m|}{n} |acc(B_m) - conf(B_m)|$.
+- **Derivation Depth**: $D = \text{Length of valid logical chain}$.
 - **Performance Families**: $\{Ret, Der, Rea, Cal\}$.
-- **Error Attribution**: $E = \alpha \cdot E_{Ret} + \beta \cdot E_{Der} + \gamma \cdot E_{Rea} + \delta \cdot E_{Cal}$ where $\beta, \delta$ are typically large.
 
 ## Training Methodology
-- Focus on multi-step derivation and cross-source reconciliation.
-- Calibration training to improve the model's awareness of its own knowledge limits.
+- **Calibration-Aware RL**: Rewarding the model for high confidence when right, and *uncertainty* when information is missing.
+- **Long-Horizon Derivation**: Training on reasoning chains that require more than 10 independent facts to solve.
 
 ## Learning Algorithm
 N/A (Benchmark).
 
 ## Memory Architecture
-Demands "Massive Cross-Source Evidence" management.
+Stresses the "Multi-Source Evidence Chain" recovery of SAGE.
 
 ## Planning Architecture
-Requires "Long-Horizon Derivation" planning, moving beyond simple one-step reasoning.
+Evaluates the "Long-Horizon" strategic planning of the CSC.
 
 ## Agent Architecture
-Evaluates agents on their ability to reconcile conflicting information and derive complex answers.
+Benchmark-standard for evaluating institutional research agents.
 
 ## World Model Contribution
-Highlights the need for better "calibration" in the world model's predictions.
+Forces the world model to produce "Calibrated Uncertainty" bounds.
 
 ## Self-improvement Contribution
-Provides a metric for measuring improvements in derivation and calibration.
+Provides the definitive "Gain Metric" for architectural success.
 
 ## Failure Modes
-- Hallucinated precision (weak models).
-- Incomplete derivation (strong models).
+- **Hallucinated Logic**: Correct facts, but incorrect "linkage" between them.
+- **Overconfidence**: High confidence on low-evidence claims.
 
 ## Scalability Limits
-Benchmark complexity.
+Complexity of the benchmark tasks.
 
 ## Computational Complexity
 N/A.
@@ -43,11 +44,7 @@ N/A.
 N/A.
 
 ## Financial Applicability
-Institutional-grade research where being "vaguely right" is often worse than being "precisely wrong."
+Institutional research validation. Ensuring AlphaAlgo doesn't just "feel" right, but is "provably" right.
 
 ## Production Readiness
-N/A (Benchmark/Evaluation framework).
-
-## Reusable Algorithms
-- **DerivationValidator**: Logic for checking multi-step reasoning consistency.
-- **CalibrationMonitor**: Metric (e.g., ECE) for evaluating confidence vs. accuracy.
+Essential for verification of AlphaAlgo UCA V5.

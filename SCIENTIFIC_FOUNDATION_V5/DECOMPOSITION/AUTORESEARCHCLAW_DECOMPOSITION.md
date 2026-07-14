@@ -1,54 +1,50 @@
 # Engineering Decomposition: AutoResearchClaw (arXiv:2605.20025)
 
 ## Core Hypothesis
-Automated research must be iterative and self-reinforcing. A multi-agent pipeline with debate, self-healing execution, and cross-run evolution is superior to linear pipelines.
+Linear research pipelines are brittle. Robustness requires a multi-agent "Claw" architecture with adversarial debate and self-healing "Pivot/Refine" execution loops.
 
 ## Mathematical Formulation
-- **Pivot/Refine Loop**: $Action_{t+1} = \begin{cases} \text{Refine}(Action_t, Error) & \text{if minor fail} \\ \text{Pivot}(State) & \text{if critical fail} \end{cases}$
-- **Debate**: $Decision = \text{Consensus}(\text{Agent}_1, \dots, \text{Agent}_n)$.
+- **Pivot Logic**: If $\text{Error} > \tau_{crit}$, then $\text{Switch\_Strategy}(S) \to S'$.
+- **Refine Logic**: If $\text{Error} \le \tau_{crit}$, then $\text{Tweak\_Params}(P) \to P'$.
+- **Consensus**: $\text{Voter\_Consensus} \ge 0.75$.
 
 ## Training Methodology
-- Learning from failures via the Pivot/Refine decision loop.
-- Cross-run evolution: past mistakes are converted into future safeguards.
+- **Self-Healing RL**: Training agents on failure-recovery trajectories (Pivot/Refine traces).
+- **Adversarial Debate Training**: Rewarding verifiers for finding subtle logic errors in proposals.
 
 ## Learning Algorithm
-- Multi-agent debate for hypothesis refinement.
-- Self-healing execution logic.
+Multi-perspective debate followed by self-correcting execution.
 
 ## Memory Architecture
-Cross-run experience accumulation (Evolutionary safeguard library).
+Cross-run failure library (Safeguard Library).
 
 ## Planning Architecture
-Non-linear planning with explicit error-handling and "pivoting" capability.
+Non-linear tree search with explicit "backtracking" and "pivoting" nodes.
 
 ## Agent Architecture
-Swarm-based debate system with a specialized "Executor" and "Verifier."
+Swarm-based: Proposer, Killer (Verifiers), and Self-Healing Executor.
 
 ## World Model Contribution
-Failure modes are integrated into the world model's understanding of "what is possible."
+Failure modes are modeled as first-class market events.
 
 ## Self-improvement Contribution
-Directly converts execution failures into strategic knowledge.
+The "Claw" systematically "catches" its own errors before they hit the market.
 
 ## Failure Modes
-- Debate deadlock: Agents failing to reach consensus.
-- Pivot fatigue: Constant pivoting without progress.
+- **Pivot Fatigue**: Constant switching of strategy without execution.
+- **Debate Deadlock**: Agents unable to reach a 75% consensus.
 
 ## Scalability Limits
-Communication overhead of multi-agent debate.
+High communication overhead in the debate phase.
 
 ## Computational Complexity
-High, due to multiple agents and iterative refinement loops.
+$\mathcal{O}(N_{agents} \cdot \text{Iter})$.
 
 ## Engineering Tradeoffs
-Execution reliability vs. Computational cost.
+Safety (debate/retry) vs. Latency.
 
 ## Financial Applicability
-Developing and auditing new trading strategies, where "failure" (bad backtest) must inform the next hypothesis.
+Developing new alpha signals where the initial hypothesis is likely wrong and must be refined through backtest-fail loops.
 
 ## Production Readiness
-High. Can be implemented as a robust execution framework.
-
-## Reusable Algorithms
-- **PivotRefineOperator**: Logic for choosing between strategic shift or parameter adjustment.
-- **DebateConsensusEngine**: Logic for aggregating agent arguments into a final decision.
+High. Essential for high-stakes institutional trading.

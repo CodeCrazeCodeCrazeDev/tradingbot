@@ -1,54 +1,50 @@
 # Engineering Decomposition: HASP (arXiv:2605.17734)
 
 ## Core Hypothesis
-Textual guidance for agents is too advisory. Upgrading skills into executable Program Functions (PFs) provides hard guardrails and structured intervention in the agent loop.
+Prompt-based skills are "advisory." Reliable agents need "harnessing" via executable Skill Programs (Program Functions - PFs) that trigger on state invariants.
 
 ## Mathematical Formulation
-- **Skill Program (PF)**: $PF(s, a) \to \{a', context_{corr}, \text{null}\}$.
-- **Intervention Loop**: $a_{final} = \text{apply}(PF, a_{base}, s)$.
+- **Harness Operator**: $H(a | s, \text{PF})$.
+- **PF Execution**: $a' = \text{PF}(s, a)$.
+- **Invariant Check**: $\forall s \in \mathcal{S}_{crit}, \text{PF}(s, a) \in \mathcal{A}_{safe}$.
 
 ## Training Methodology
-- Post-training with structured supervision from teacher-reviewed PFs.
-- Controlled evolution of the PF library.
+- **Program Synthesis**: Generating Python/WASM snippets from textual skill descriptions.
+- **PF-SFT**: Training the agent to "hand-off" control to the PFs at the correct state boundaries.
 
 ## Learning Algorithm
-- Program synthesis/evolution for PFs.
-- Direct intervention in the inference loop.
+Skill Program Evolution.
 
 ## Memory Architecture
-The PF library acts as a procedural memory of "hard skills" and "guardrails."
+Procedural Skill Bank (Tier 4).
 
 ## Planning Architecture
-Planner incorporates PF checks to ensure actions are within known-safe or known-effective bounds.
+Constraint-based planning. The planner only considers actions that are "safe" according to the active PFs.
 
 ## Agent Architecture
-"Harnessed" agent where the base LLM is constrained/guided by executable code.
+"Harnessed" Hybrid Agent (LLM + Executable Code).
 
 ## World Model Contribution
-PFs can represent "physical" or "logical" invariants that the world model must respect.
+PFs represent "Physical/Logical Invariants" of the market (e.g., "Price cannot be negative").
 
 ## Self-improvement Contribution
-Evolving validated PFs creates a progressively more reliable agent.
+Validated PFs are "immortal" and do not drift like prompt-based skills.
 
 ## Failure Modes
-- Rigid guardrails: PFs preventing novel but correct actions.
-- PF bugs: Executable code errors crashing the agent loop.
+- **Rigid Invariants**: PFs blocking valid but novel high-alpha trades.
+- **PF Error**: Runtime crash in the executable snippet.
 
 ## Scalability Limits
-Complexity of managing and verifying a large number of PFs.
+Complexity of managing and verifying a large library of code snippets.
 
 ## Computational Complexity
-Low (code execution) but depends on the complexity of PF logic.
+Low (direct code execution).
 
 ## Engineering Tradeoffs
-Reliability (hard code) vs. Flexibility (LLM reasoning).
+Safety (code) vs. Flexibility (LLM).
 
 ## Financial Applicability
-Hard risk limits, compliance checks, and execution-logic verification (e.g., "Never sell before buy is confirmed").
+Hard-coding risk limits, compliance checks, and mandatory execution steps (e.g., "Cancel all pending before closing").
 
 ## Production Readiness
-High. Very practical for institutional safety and reliability.
-
-## Reusable Algorithms
-- **HASPHarness**: Middleware for intercepting agent actions and applying PF library.
-- **PFEvolutionaryGate**: Logic for validating and promoting new Program Functions.
+Critical. Standardizes complex behaviors for institutional grade bots.

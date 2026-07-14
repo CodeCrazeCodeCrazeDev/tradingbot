@@ -1,57 +1,51 @@
 # Engineering Decomposition: SAGE (arXiv:2605.12061)
 
 ## Core Hypothesis
-Graph-memory should be a dynamic, self-evolving substrate rather than a static retrieval middleware. Coupling a memory writer (incremental construction) with a Graph-FM reader enables better evidence recovery and structural learning.
+RAG is static and flat. Dynamic evidence chains require a self-evolving graph memory substrate where relationships are strengthened by use and pruned by failure.
 
 ## Mathematical Formulation
-- **Graph State**: $G = (V, E)$.
-- **Memory Writer**: $W: (G_t, H_{t+1}) \to G_{t+1}$ where $H$ is interaction history.
-- **Memory Reader**: $R: (G_t, Q) \to E_{chain}$ where $Q$ is query and $E$ is evidence chain.
-- **Self-Evolution**: Feedback from $R$ to $W$ to optimize graph structure (e.g., merging nodes, pruning edges).
+- **Graph Evolution**: $G_{t+1} = G_t \cup \text{Extract}(H) \setminus \text{Prune}(F)$.
+- **Retrieval**: Multi-hop path search over $G$ using Graph-FM embeddings.
+- **Edge Weight**: $W(e) = \sum \text{Successes} - \lambda \sum \text{Vetoes}$.
 
 ## Training Methodology
-- Contrastive learning for the memory reader to align queries with graph sub-structures.
-- Feedback-driven refinement of the memory writer's extraction logic.
+- **Contrastive Graph Alignment**: Training the Memory Reader to align natural language queries with multi-hop graph sub-structures.
+- **GFM-SFT**: Fine-tuning a Graph Foundation Model on evidence recovery tasks.
 
 ## Learning Algorithm
-- Graph Foundation Model (GFM) training.
-- Reader-Writer feedback loop for self-evolution.
+- **Graph-Native Reasoning**: Agents traverse the graph to find non-obvious causal links (e.g., "Sector A $\to$ Input B $\to$ Commodity C").
+- **Incremental Construction**: The Memory Writer adds nodes/edges in real-time as the agent learns.
 
 ## Memory Architecture
-Agentic Graph-Memory. Nodes are entities/concepts, edges are relationships/causal links.
+Self-evolving Agentic Graph-Memory (the "Substrate").
 
 ## Planning Architecture
-Enables structure-aware planning. The agent can traverse the graph to find "non-obvious" dependencies between market factors.
+Structure-aware planning. The agent uses the graph to bound its search space to "causally relevant" market factors.
 
 ## Agent Architecture
-Agent-native knowledge orchestration (Agents-K1 evolution).
+Graph-integrated agent. Knowledge is state, not just a retrieval target.
 
 ## World Model Contribution
-The graph serves as the persistent structural representation of the world model's causal knowledge.
+Serves as the persistent structural grounding for the world model's causal DAG.
 
 ## Self-improvement Contribution
-The memory improves its own grounding and answer efficiency through use.
+The graph becomes more accurate and efficient the more it is used for trading.
 
 ## Failure Modes
-- Graph drift: Incorrect relationships accumulating over time.
-- Complexity explosion: Graph becoming too dense/large to traverse efficiently.
+- **Semantic Drift**: Nodes being merged incorrectly.
+- **Graph Explosion**: Exponential growth of nodes in volatile regimes.
 
 ## Scalability Limits
-Graph traversal complexity for massive graphs.
+Graph traversal latency for very large networks.
 
 ## Computational Complexity
-$O(|V| + |E|)$ for basic retrieval; higher for multi-hop graph reasoning.
+$\mathcal{O}(|V| + |E| \cdot \log |V|)$ for multi-hop retrieval.
 
 ## Engineering Tradeoffs
 Retrieval precision (graph) vs. simplicity (vector DB).
 
 ## Financial Applicability
-Modeling complex supply chains, institutional ownership networks, and multi-factor causal graphs.
+Mapping the global causal relationship between macro indicators, central bank policy, and asset prices.
 
 ## Production Readiness
-Medium. Requires specialized graph database and GFM.
-
-## Reusable Algorithms
-- **SAGEEvolutionLoop**: Reader-feedback-to-Writer logic for graph pruning.
-- **MultiHopGraphRetriever**: Logic for extracting evidence chains from the graph substrate.
-- **IncrementalGraphWriter**: Logic for updating $G_t$ with $H_{t+1}$.
+Medium. Requires high-performance graph database (e.g., RedisGraph, Neo4j) and custom GFM.

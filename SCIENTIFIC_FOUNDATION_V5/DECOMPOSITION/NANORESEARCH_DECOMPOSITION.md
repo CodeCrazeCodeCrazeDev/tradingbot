@@ -1,56 +1,52 @@
 # Engineering Decomposition: NanoResearch (arXiv:2605.10813)
 
 ## Core Hypothesis
-Research automation requires personalization, achieved through tri-level co-evolution of a skill bank, a memory module (user-specific), and label-free policy learning.
+Institutional research requires co-evolution of specific skills, project-specific memory, and policy preferences. General models fail; personalized tri-level systems succeed.
 
 ## Mathematical Formulation
-- **Skill Bank**: $S = \{Rule_1, ..., Rule_n\}$ (compact procedural rules).
-- **Memory Module**: $M = \{Exp_{user}, Exp_{project}\}$.
-- **Policy Update**: $\Delta \theta_{planner} \propto \nabla \log \pi(a | s, M, S) \cdot F$ where $F$ is free-form feedback internalized into updates.
+- **Tri-Level State**: $\Psi = [S; M; \pi]$.
+- **Skill Bank ($S$)**: Compact procedural rules (HASP PFs).
+- **Memory Module ($M$)**: User/Project experience.
+- **Policy ($\pi$)**: Learned coordination style.
+- **Update**: $\Delta \Psi \propto \text{Feedback}(Result)$.
 
 ## Training Methodology
-1. **Skill Distillation**: Recurring operations are distilled into rules.
-2. **Memory Grounding**: Project history grounds current planning.
-3. **Preference Internalization**: Converting feedback into parameter updates (label-free policy learning).
+- **Label-Free Policy Learning**: Internalizing implicit user preferences from research outcomes.
+- **Skill Distillation**: Converting successful one-off actions into reusable HASP programs.
 
 ## Learning Algorithm
-- Tri-level Co-evolutionary loop.
-- Online policy adaptation based on implicit feedback.
+Tri-level Co-evolutionary Loop.
 
 ## Memory Architecture
-User-centric and project-centric hierarchical memory.
+Project-centric hierarchical memory (HMS Tier 5).
 
 ## Planning Architecture
-Personalized planner that realigns its coordination style based on internalized preferences.
+Personalized planning that realigns its style (e.g., "Deep Dive" vs. "Quick Scan") based on the institutional mandate.
 
 ## Agent Architecture
-Co-evolving multi-agent framework.
+Co-evolving research swarm.
 
 ## World Model Contribution
-Incorporates user methodological preferences into the causal world model.
+Captures "methodological invariants" (how we do research) as part of the causal model.
 
 ## Self-improvement Contribution
-Systematically refines research quality and reduces cost over successive cycles.
+Systematic reduction in research latency and cost over successive project cycles.
 
 ## Failure Modes
-- Over-personalization: System becoming too narrow.
-- Skill degradation: Rules becoming outdated.
+- **Over-specialization**: The system becomes unable to tackle novel research domains.
+- **Preference Bias**: Policy internalizes incorrect user biases.
 
 ## Scalability Limits
-Managing large libraries of user-specific skills and memories.
+Management of thousands of project-specific Skill Banks.
 
 ## Computational Complexity
-Overhead of tri-level management and online policy updates.
+Overhead of managing three co-evolving state layers.
 
 ## Engineering Tradeoffs
-Generalization vs. Personalization.
+General research capability vs. Institutional alignment.
 
 ## Financial Applicability
-Automating customized equity research reports and strategy backtesting tailored to specific institutional mandates.
+Tailoring AlphaAlgo's strategy discovery to specific desk mandates (e.g., "ESG-only", "HFT-Execution focus").
 
 ## Production Readiness
-Medium. High complexity in managing the co-evolutionary loops.
-
-## Reusable Algorithms
-- **TriLevelCoEvolver**: Logic for coordinating updates between Skill Bank, Memory, and Policy.
-- **SkillDistiller**: Logic for converting interaction traces into reusable procedural rules.
+Medium. High architectural complexity.

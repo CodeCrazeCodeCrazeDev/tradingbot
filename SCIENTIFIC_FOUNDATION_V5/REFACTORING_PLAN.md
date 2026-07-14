@@ -1,40 +1,38 @@
 # Refactoring Plan: AlphaAlgo UCA V5 Implementation
 
 ## 1. Dependency Graph
-- **Foundation Layer (LogAct)**: `UnifiedDecisionBus` (Backbone) $\to$ `ImmutableShield` (Voter).
-- **Intelligence Layer (CSC)**: `DiscoLoopCell` $\to$ `SkillRouter` (HASP/S2L) $\to$ `CognitiveSystemController` (12-step).
-- **Knowledge Layer (HMS)**: `SAGEGraphMemory` $\to$ `AutoMemOptimizer` $\to$ `HierarchicalMemorySystem`.
-- **Evolution Layer (Gate)**: `EKSFTMasking` $\to$ `MonotoneSafeValidator` $\to$ `EvolutionGate`.
+- **Tier 0 (Foundational Reliability)**: `LOGACT_BACKBONE` -> `VOTER_REGISTRY` -> `IMMUTABLE_SHIELD`.
+- **Tier 1 (Knowledge Substrate)**: `SAGE_GRAPH` -> `QKG_CONTEXT` -> `HMS_V5`.
+- **Tier 2 (Strategic Routing)**: `META_HARNESS` -> `SKILL_ROUTER` -> `HASP_EXECUTOR`.
+- **Tier 3 (Cognitive Loop)**: `DISCOLOOP` -> `VFE_OBJECTIVE` -> `CSC_CONTROLLER`.
+- **Tier 4 (Evolutionary Safety)**: `CL_BENCH_GAIN` -> `FORMAL_INVARIANT_GATE` -> `EVOLUTION_GATE`.
 
 ## 2. Migration Roadmap
 
-### Phase 5a: LogAct & Skill Routing
-- **Target**: `trading_bot/core/unified_event_bus.py`, `trading_bot/core/csc/router.py`.
+### Phase 5a: Reliability & Knowledge (LogAct / HMS / SAGE)
+- **Target**: `trading_bot/core/hms/`
 - **Actions**:
-    - Finalize shared-log total ordering in `UnifiedDecisionBus`.
-    - Implement `HASPHarness` for executable skill programs.
-- **Risk**: Moderate. Backward compatibility with legacy bus must be preserved.
+    - Refactor `unified_event_bus.py` into LogAct Shared-Log Backbone (arXiv:2604.07988).
+    - Implement SAGE Dynamic Graph-Memory in `memory.py` (arXiv:2605.12061).
+    - Add context-dependent validity (QKG) to `models.py` (arXiv:2604.23972).
+- **Risk**: High. Data migration from old research ledger to new graph-memory.
+- **Rollback**: Keep old `.json` ledger files as read-only fallbacks.
 
-### Phase 5b: HMS-SAGE Memory
-- **Target**: `trading_bot/core/hms/memory.py`.
+### Phase 5b: Intelligence & Routing (CSC / HASP / Meta-Harness)
+- **Target**: `trading_bot/core/csc/`
 - **Actions**:
-    - Implement `SAGEEvolutionLoop` for graph pruning and evolution.
-    - Integrate `AutoMem` schema optimization.
-- **Risk**: High. Potential data loss during ledger-to-graph migration.
+    - Implement Meta-Harness optimized `SkillRouter` (arXiv:2603.28052).
+    - Upgrade `CognitiveSystemController` with DiscoLoop (arXiv:2607.00341) and VFE (Minimizing Surprise).
+    - Deploy HASP executable guardrails (arXiv:2605.17734).
+- **Risk**: Critical. This is the heart of the system.
+- **Rollback**: Maintain `CognitiveSystemController_V4` as a fallback delegator.
 
-### Phase 5c: CSC Recursive Active Inference
-- **Target**: `trading_bot/core/csc/controller.py`.
+### Phase 5c: Evolution & Validation (HyEvo / CL-Bench)
+- **Target**: `trading_bot/governance/` and `tests/`
 - **Actions**:
-    - Implement the 12-step pipeline utilizing `DiscoLoopRecurrence`.
-    - Deploy `PivotRefineOperator` for self-healing strategy refinement.
-- **Risk**: Critical. Core reasoning logic overhaul.
-
-### Phase 5d: Evolution & EKSFT
-- **Target**: `trading_bot/governance/evolution_gate.py`.
-- **Actions**:
-    - Implement `SelectiveMaskingOperator` for EKSFT-compliant fine-tuning.
-    - Enforce monotone-safe checks for all system updates.
-- **Risk**: Medium.
+    - Implement HyEvo multi-island evolution with Formal Invariant Checking (arXiv:2603.19639).
+    - Update training scripts to use `EKSFT` selective masking.
+- **Risk**: Medium. May slow down learning rates initially.
 
 ## 3. Risk Analysis & Mitigation
 - **Complexity**: Mitigated by strict "One Brain" (CSC) architecture and "LogAct" for observability.
