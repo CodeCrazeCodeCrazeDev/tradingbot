@@ -1,6 +1,9 @@
-# Hypothesis Creation Points
+# Hypothesis Creation Points (Verified Audit 2026)
 
-This document lists every location in the AlphaAlgo codebase where hypotheses are explicitly or implicitly created.
+## Explicit Creation
+1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `ScientificReasoningEngine.observe()` - Core entry point.
+2. **`trading_bot/foundation_agents/curiosity_engine/hypothesis_generator.py`**: `HypothesisGenerator` - Specialized for anomalies and surprises.
+3. **`trading_bot/apex_fi/alpha_mining.py`**: `AlphaMiningEngine` - Genetic and LLM-driven alpha/hypothesis discovery.
 
 ## Explicit Creation Points (Modules)
 

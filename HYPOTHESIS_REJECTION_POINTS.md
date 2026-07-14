@@ -1,4 +1,4 @@
-# Hypothesis Rejection Points
+# Hypothesis Rejection Points (Verified Audit 2026)
 
 Hypotheses die or are rejected at the following points.
 

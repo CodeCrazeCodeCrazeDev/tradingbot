@@ -1,4 +1,4 @@
-# Hypothesis Promotion Points
+# Hypothesis Promotion Points (Verified Audit 2026)
 
 Hypotheses move toward production and institutionalization at these points.
 

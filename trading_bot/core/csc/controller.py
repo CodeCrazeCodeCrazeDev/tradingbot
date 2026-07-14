@@ -1,6 +1,5 @@
 """
 Cognitive System Controller (CSC) - UCA V5 (July 2026)
-=====================================================
 
 Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
 Governed by Variational Free Energy (VFE) minimization.
@@ -72,6 +71,7 @@ class CognitiveSystemController:
         self.hms = hms
         self.shield = shield
 
+        # Core Functional Components
         self.hypothesis_gen = HypothesisGenerator(world_model)
         self.verifier_swarm = VerificationSwarm()
         self.folder = InformationFolder()

@@ -1,6 +1,8 @@
-# Hypothesis Evaluation Points
+# Hypothesis Evaluation Points (Verified Audit 2026)
 
-This document lists every location where hypotheses are tested, scored, or verified.
+## Core Evaluation
+1. **`trading_bot/core/phce_d_engine.py`**: `ParallelHypothesisCorrectionEngine.process()` - Main evaluation pipeline using EvidencePackets.
+2. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `ScientificReasoningEngine.evaluate_results()` / `bayesian_update()`.
 
 ## Deterministic Verification
 

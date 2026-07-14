@@ -1,4 +1,4 @@
-# Scientific Validation Framework - SRE 2026
+# Scientific Validation Framework
 
 The validation of the Scientific Reasoning Engine (SRE) itself is performed using a multi-tiered testing suite designed to measure scientific integrity, predictive accuracy, and institutional stability.
 
