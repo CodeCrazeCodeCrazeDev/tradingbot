@@ -554,6 +554,16 @@ class RiskSentinel(TradingAgent):
     ) -> Optional[AgentArgument]:
         """Respond to aggressive positions."""
         try:
+            # Don't downgrade if we are already in high risk territory
+            risk_flags = 0
+            if context.portfolio_exposure > self.max_exposure: risk_flags += 1
+            if context.correlation_risk > self.max_correlation: risk_flags += 1
+            if context.vix_level and context.vix_level > 30: risk_flags += 1
+            if context.volatility > 0.03: risk_flags += 1
+
+            if risk_flags >= 2:
+                return None
+
             if argument.action in [TradeAction.STRONG_BUY, TradeAction.STRONG_SELL]:
                 if context.portfolio_exposure > self.max_exposure * 0.7:
                     return AgentArgument(
