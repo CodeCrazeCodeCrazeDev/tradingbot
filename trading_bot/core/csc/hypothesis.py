@@ -107,3 +107,9 @@ class HypothesisGenerator:
             simulation_results[branch.branch_id] = [] # List of MarketScenario
 
         return simulation_results
+
+    async def generate_alternative_branch(self, failed_branch: ReasoningBranch, reports: List[Any]) -> Optional[ReasoningBranch]:
+        """Generates a strategically distinct alternative (PIVOT)."""
+        logger.info(f"HypothesisGen: Generating alternative to failed branch {failed_branch.branch_id}")
+        # In production, this would use the World Model to find a path that avoids the verifier's vetoes
+        return ReasoningBranch(branch_id=f"pivot_{failed_branch.branch_id}", name=f"Pivoted {failed_branch.name}")

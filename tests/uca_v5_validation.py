@@ -1,4 +1,10 @@
 """
+
+Verifies architectural invariants and scientific superiority metrics.
+- SMR / LogAct Consistency
+- DiscoLoop Multi-hop Reasoning
+- SAGE Graph Connectivity
+- EKSFT/RSEA Governance Safety
 UCA V5 Release Verification Suite (July 2026)
 
 Implements institutional-grade verification gates:
