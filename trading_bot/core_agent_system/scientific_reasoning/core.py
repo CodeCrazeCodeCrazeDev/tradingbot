@@ -113,6 +113,11 @@ class ScientificHypothesis:
     validation_score: float = 0.0
     calibration_error: float = 1.0
 
+    # Bayesian Meta-data
+    p_lower: float = 0.0 # Credal lower bound
+    p_upper: float = 1.0 # Credal upper bound
+    vfe: float = 100.0   # Variational Free Energy score
+
 class ScientificReasoningEngine:
     def __init__(self, controller: Any = None, hms: Any = None, world_model: Any = None, governance: Any = None):
         self.controller = controller

@@ -42,3 +42,9 @@
     - `ScientificReasoningEngine.bayesian_update()`: Formal update of posterior probabilities.
 2.  **`trading_bot/foundation_agents/curiosity_engine/hypothesis_generator.py`**
     - `HypothesisGenerator.update_hypothesis_status()`: Updates confidence scores based on evidence.
+3.  **`trading_bot/verification/confidence_calibrator.py`**
+    - `PredictionRecord`: Audits historical prediction accuracy for recalibration.
+4.  **`trading_bot/signals/auto_disable_sick_signals.py`**
+    - `SignalHealthMonitor`: Evaluates the continuing validity of the "signal-as-hypothesis".
+5.  **`trading_bot/core/adversarial_failure_analysis.py`**
+    - `AdversarialAnalyzer`: Attempts to falsify signal hypotheses by simulating catastrophic market scenarios.
