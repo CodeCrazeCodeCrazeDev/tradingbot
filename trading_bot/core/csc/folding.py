@@ -49,3 +49,14 @@ class InformationFolder:
             'tokens_saved': sum(len(str(s)) for s in execution_log) - len(summary),
             'status': 'folded'
         }
+
+class FoldingOperator:
+    """
+    UCA V5 Folding Operator for the HIPIF pipeline.
+    """
+    def __init__(self, hms: Any = None):
+        self.hms = hms
+
+    def fold_decision_into_memory(self, decision: Any, trace: List[Any]):
+        """Compresses a decision trace into a semantic memory update."""
+        logger.info("Folding decision trace into HMS...")
