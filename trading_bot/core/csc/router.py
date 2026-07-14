@@ -186,6 +186,7 @@ class SkillRouter:
     Routes agent tasks to the most efficient skill implementation.
     UCA V5 implementation of S2L and HASP.
     """
+
     def __init__(self):
         self._registry: Dict[str, SkillArtifact] = {}
         self.executor = HASPExecutor()
@@ -208,14 +209,44 @@ class SkillRouter:
             metadata={"archetype": "risk_averse"}
         ))
 
+    def _init_standard_skills(self):
+        # Register standard HASP programs
+        self.register_skill(SkillArtifact(
+            skill_id="high_vol_guardrail",
+            skill_type=SkillType.HASP_PROGRAM,
+            executable=self._pf_volatility_guardrail,
+            metadata={"description": "Hard guardrail for high volatility"}
+        ))
+
+        self.register_skill(SkillArtifact(
+            skill_id="compliance_checker",
+            skill_type=SkillType.HASP_PROGRAM,
+            executable=self._pf_compliance_checker,
+            metadata={"description": "Institutional compliance gate"}
+        ))
+
+        # Register standard S2L adapters (behavioral archetypes)
+        self.register_skill(SkillArtifact(
+            skill_id="lora_hedging_archetype",
+            skill_type=SkillType.S2L_ADAPTER,
+            executable=None,
+            metadata={"description": "Specialized hedging behavior"}
+        ))
+
+        self.register_skill(SkillArtifact(
+            skill_id="lora_arbitrage_archetype",
+            skill_type=SkillType.S2L_ADAPTER,
+            executable=None,
+            metadata={"description": "Specialized arbitrage behavior"}
+        ))
+
     def register_skill(self, artifact: SkillArtifact):
         self._registry[artifact.skill_id] = artifact
         logger.debug(f"Registered skill: {artifact.skill_id} ({artifact.skill_type.value})")
 
     async def route_task(self, task: str, context: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Decision logic to select between a weight-based LoRA adapter
-        or an executable HASP program.
+        Functional routing logic for S2L and HASP.
         """
         market_state = context.get("market", {})
 
@@ -253,14 +284,15 @@ class SkillRouter:
             "reason": "Volatility exceeded HASP safety threshold (0.3)"
         }
 
-class HASPExecutor:
-    """
-    Secure execution environment for HASP (Harnessing Agents with Skill Programs).
-    """
-    def execute(self, skill: SkillArtifact, state: Dict[str, Any]) -> Dict[str, Any]:
-        """Executes the state-action intervention function."""
-        if skill.skill_type != SkillType.HASP_PROGRAM:
-            raise ValueError(f"Skill {skill.skill_id} is not a HASP program")
+        return {"status": "standard_execution"}
+
+    def _determine_adapter(self, task_type: str, context: Dict) -> Optional[str]:
+        """Functional adapter selection logic."""
+        if "hedge" in task_type.lower() or context.get("needs_hedging"):
+            return "lora_hedging_archetype"
+        if "arbitrage" in task_type.lower() or context.get("opportunity_type") == "ARBITRAGE":
+            return "lora_arbitrage_archetype"
+        return None
 
         logger.info(f"HASP: Executing skill program {skill.skill_id}")
         try:
@@ -270,3 +302,21 @@ class HASPExecutor:
         except Exception as e:
             logger.error(f"HASP Execution Failure: {e}")
             return {"status": "failure", "error": str(e)}
+
+    async def _pf_volatility_guardrail(self, context: Dict) -> Dict:
+        return {"action": "override_to_hold", "reason": "Volatility exceeded HASP safety threshold"}
+
+    async def _pf_compliance_checker(self, context: Dict) -> Dict:
+        # Functional check against institutional compliance rules
+        if context.get("quantity", 0) > 10.0:
+            return {"action": "REJECT", "reason": "Trade size exceeds compliance limit"}
+        return {"action": "APPROVE"}
+
+class HASPExecutor:
+    def __init__(self, router: SkillRouter):
+        self.router = router
+
+    async def execute(self, skill_id: str, state: Dict[str, Any]) -> Dict[str, Any]:
+        skill = self.router._registry.get(skill_id)
+        if not skill: return {"status": "error", "message": f"Skill {skill_id} not found"}
+        return await self.router.execute_hasp(skill, state)

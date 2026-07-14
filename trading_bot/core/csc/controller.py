@@ -151,7 +151,11 @@ class CognitiveSystemController:
                     break
 
         if not decision_ready:
-            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason="Failed Pivot/Refine loop")
+            return CoreDecision(
+                outcome=DecisionOutcome.TRADE_REJECTED,
+                trade_id=str(uuid4()),
+                dominant_rejection_reason="Failed Pivot/Refine loop"
+            )
 
         # 11. Governance Gate (Immutable Shield & LogAct Proposal)
         trade_proposal = self._translate_to_proposal(final_ledger_entry)
@@ -170,7 +174,11 @@ class CognitiveSystemController:
 
         from ..immutable_shield import GovernanceDecision
         if shield_report.decision != GovernanceDecision.APPROVED:
-             return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=f"Shield: {shield_report.reason}")
+             return CoreDecision(
+                 outcome=DecisionOutcome.TRADE_REJECTED,
+                 trade_id=trade_proposal.get("trade_id"),
+                 dominant_rejection_reason=f"Shield: {shield_report.reason}"
+             )
 
         # 12. Execution & Folding (HIPIF)
         logger.info(f"CSC-V5: Trade APPROVED by Shield. Proposing to LogAct Backbone.")

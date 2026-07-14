@@ -214,6 +214,8 @@ class HierarchicalMemorySystem:
     def store_ledger_entry(self, entry: ResearchLedgerEntry):
         """Persists snapshot and updates SAGE graph."""
         file_path = os.path.join(self.ledger_path, f"{entry.entry_id}.json")
+        if entry.hypothesis:
+            self.sage.add_evidence((str(entry.entry_id), "SUPPORTED_BY", entry.hypothesis.description), {}, {})
 
         # Sync with SAGE graph
         for node_id, node in entry.evidence_graph_snapshot.nodes.items():
@@ -252,15 +254,7 @@ class HierarchicalMemorySystem:
         return []
 
     def store_scientific_lesson(self, lesson: ScientificMemoryObject):
-        """Stores a generalized lesson derived from research outcomes."""
         file_path = os.path.join(self.knowledge_path, f"{lesson.object_id}.json")
-        lesson_data = {
-            "object_id": lesson.object_id,
-            "pattern_type": lesson.pattern_type,
-            "lesson": lesson.generalized_lesson,
-            "reproducibility": lesson.reproducibility_score,
-            "timestamp": lesson.last_updated.isoformat()
-        }
         with open(file_path, 'w') as f:
             json.dump(entry_data, f, indent=2)
 
