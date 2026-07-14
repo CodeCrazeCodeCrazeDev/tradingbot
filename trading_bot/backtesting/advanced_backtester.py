@@ -391,18 +391,27 @@ class AdvancedBacktester:
         return False
     
     def _calculate_fill_price(self, order: BacktestOrder, market_data: Dict[str, float]) -> float:
-        """Calculate order fill price."""
-        if order.order_type == OrderType.MARKET:
-            # Use open price with slippage
-            base_price = market_data['open']
-            slippage_factor = 1 + self.config["slippage"] if order.side == 'buy' else 1 - self.config["slippage"]
-            return base_price * slippage_factor
-        elif order.order_type == OrderType.LIMIT:
-            return order.price
-        elif order.order_type == OrderType.STOP:
-            return order.stop_price
+        """Calculate order fill price with variable spread and market impact."""
+        # 1. Base price from market data
+        base_price = market_data['open'] if order.order_type == OrderType.MARKET else (order.price if order.price else market_data['close'])
+
+        # 2. Variable Spread modeling
+        volatility = market_data.get('volatility', (market_data['high'] - market_data['low']) / market_data['close'])
+        spread = self.config.get("base_spread", 0.0001) + (volatility * 0.1)
+
+        # 3. Market Impact (Linear model based on quantity/volume)
+        volume = market_data.get('volume', 1000000)
+        market_impact = (order.quantity / volume) * self.config.get("impact_coefficient", 0.1)
         
-        return market_data['close']
+        # 4. Realistic Slippage (linked to volatility)
+        slippage = self.config["slippage"] + (volatility * np.random.uniform(0.05, 0.2))
+
+        if order.side == 'buy':
+            fill_price = base_price * (1 + spread/2 + market_impact + slippage)
+        else:
+            fill_price = base_price * (1 - spread/2 - market_impact - slippage)
+
+        return fill_price
     
     def _fill_order(self, order: BacktestOrder, fill_price: float):
         """Fill an order."""
