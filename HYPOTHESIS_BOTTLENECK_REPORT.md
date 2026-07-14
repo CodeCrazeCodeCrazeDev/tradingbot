@@ -1,4 +1,4 @@
-# Hypothesis Bottleneck Report - AlphaAlgo Audit 2026
+# Hypothesis Ecosystem Bottleneck Report
 
 ## 1. Fragmentation of Logic (Critical)
 - **Bottleneck**: PHCE-D, AlphaMining, and CuriosityEngine maintain independent hypothesis states.
@@ -15,11 +15,11 @@
 - **Downstream Effect**: High risk of discovering spurious correlations (alpha decay).
 - **Recommendation**: Hook VerificationSwarm into the SRE evaluation pipeline.
 
-## 4. Missing Causal Constraints
-- **Cause**: Evolutionary and Genetic engines (e.g., `StrategyDiscovery`) focus on correlation-driven fitness.
-- **Downstream Effect**: Discovery of spurious correlations that decay rapidly (Alpha Decay).
+### 4. Poor Memory Integration of Historical Failures
+- **Why it exists**: `FailureMemory` is currently a passive log rather than an active constraint on hypothesis generation.
+- **Downstream effects**: The system "re-discovers" and re-tests failed hypotheses in similar market regimes.
 - **Priority**: MEDIUM
-- **Redesign**: Integrate `CausalModel` (Do-calculus) as a mandatory filter in the SRE cycle (Step 7: Counterfactual Generation).
+- **Recommended Redesign**: Implement a "Semantic Negative Filter" in the `HypothesisGenerator` that queries HMS for similar rejected lineages before instantiation.
 
 ## 5. Poor Failure Reuse
 - **Cause**: Rejected hypotheses are often simply discarded or forgotten in tournament selection.
