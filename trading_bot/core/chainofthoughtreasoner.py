@@ -17,7 +17,7 @@ from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 try:
     from trading_bot.autonomous_financial_intelligence.verified_reasoning.logical_verifier import (

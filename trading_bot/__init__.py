@@ -47,6 +47,7 @@ IMMUTABLE PRINCIPLES:
 
 import logging
 import sys
+from typing import Tuple
 
 # Layer 7: Infrastructure & Orchestration (ONLY layer exposed at package level)
 try:

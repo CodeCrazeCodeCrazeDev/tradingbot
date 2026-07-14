@@ -46,10 +46,10 @@ def apply_unicode_fix():
         import locale
         try:
             locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-        except:
+        except Exception:
             try:
                 locale.setlocale(locale.LC_ALL, 'C.UTF-8')
-            except:
+            except Exception:
                 pass
 
 

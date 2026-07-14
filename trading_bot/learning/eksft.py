@@ -1,54 +1,71 @@
 """
-EKSFT (Entropy-KL Selective Fine-Tuning) Logic.
-Implements selective token masking for safe strategy internalization.
+EKSFT: Entropy-KL Selective Fine-Tuning - UCA V5 (July 2026)
+
+Implements selective token masking for distribution-preserving fine-tuning.
+Prevents catastrophic forgetting and the 'Delusion Loop' during online adaptation.
 """
 
+import logging
 import torch
 import torch.nn.functional as F
-import numpy as np
-import logging
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
-class EKSFTMasker:
+class EKSFTTrainer:
     """
-    Implements Entropy-KL Selective Fine-Tuning (arXiv:2605.29303).
+    Selective Fine-tuning based on Entropy and KL Divergence.
     """
-    def __init__(self, tau_h: float = 2.0, tau_kl: float = 0.5):
-        self.tau_h = tau_h
-        self.tau_kl = tau_kl
+    def __init__(self, model: Any, ref_model: Any, entropy_tau: float = 2.0, kl_tau: float = 0.5):
+        self.model = model
+        self.ref_model = ref_model # Frozen pre-trained model
+        self.entropy_tau = entropy_tau
+        self.kl_tau = kl_tau
 
-    def calculate_masks(self, logits: torch.Tensor, ref_logits: torch.Tensor) -> torch.Tensor:
+    def compute_selective_loss(self, input_ids: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
         """
-        Calculates a binary mask for each token in the sequence.
-        1 = Keep (Exploration/Task-relevant)
-        0 = Mask (Safety Anchor or High Noise)
+        Calculates loss only on tokens that pass the Entropy-KL filter.
         """
-        # 1. Entropy Masking (H > tau_h)
-        probs = F.softmax(logits, dim=-1)
-        entropy = -torch.sum(probs * torch.log(probs + 1e-9), dim=-1)
+        # 1. Get logits from both models
+        with torch.no_grad():
+            ref_logits = self.ref_model(input_ids).logits
 
-        # 2. KL Divergence Masking (KL > tau_kl)
-        ref_probs = F.softmax(ref_logits, dim=-1)
-        kl_div = F.kl_div(torch.log(probs + 1e-9), ref_probs, reduction='none').sum(dim=-1)
+        current_logits = self.model(input_ids).logits
 
-        # Token is an "Anchor" if it has low entropy and low KL from reference
-        # Token is "Noise" if entropy is extremely high
-        # Token is "Exploration" if it has moderate entropy and KL
+        # 2. Calculate Entropy of current model predictions
+        probs = F.softmax(current_logits, dim=-1)
+        entropy = -torch.sum(probs * torch.log(probs + 1e-10), dim=-1)
 
-        # EKSFT Rule: Mask if Entropy is too high (noise) OR if it's an Anchor (to preserve distribution)
-        # We want to train on tokens that represent the NEW knowledge/strategy
-        is_anchor = (entropy < 1.0) & (kl_div < 0.2)
-        is_noise = entropy > self.tau_h
+        # 3. Calculate KL Divergence between reference and current
+        kl_div = F.kl_div(
+            F.log_softmax(current_logits, dim=-1),
+            F.softmax(ref_logits, dim=-1),
+            reduction='none'
+        ).sum(-1)
 
-        mask = torch.ones_like(entropy)
-        mask[is_anchor] = 0
-        mask[is_noise] = 0
+        # 4. Generate Mask
+        # Mask tokens where entropy > entropy_tau OR KL > kl_tau
+        # These are tokens the model is too uncertain about or has drifted too far from the base.
+        mask = (entropy <= self.entropy_tau) & (kl_div <= self.kl_tau)
 
-        logger.debug(f"EKSFT: Masked {torch.sum(mask == 0).item()} tokens out of {mask.numel()}")
-        return mask
+        # 5. Compute masked Cross Entropy
+        loss = F.cross_entropy(current_logits.view(-1, current_logits.size(-1)), labels.view(-1), reduction='none')
+        masked_loss = loss * mask.view(-1).float()
 
-    def apply_selective_loss(self, loss: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
-        """Applies the mask to the loss tensor."""
-        return (loss * mask).sum() / (mask.sum() + 1e-9)
+        return masked_loss.sum() / (mask.sum() + 1e-10)
+
+def apply_eksft_masking(logits: torch.Tensor, ref_logits: torch.Tensor, entropy_tau: float, kl_tau: float) -> torch.Tensor:
+    """
+    Utility function for runtime token filtering.
+    """
+    probs = F.softmax(logits, dim=-1)
+    entropy = -torch.sum(probs * torch.log(probs + 1e-10), dim=-1)
+
+    kl_div = F.kl_div(
+        F.log_softmax(logits, dim=-1),
+        F.softmax(ref_logits, dim=-1),
+        reduction='none'
+    ).sum(-1)
+
+    mask = (entropy <= entropy_tau) & (kl_div <= kl_tau)
+    return mask

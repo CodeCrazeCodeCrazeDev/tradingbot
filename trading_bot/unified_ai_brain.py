@@ -1236,8 +1236,8 @@ class UnifiedAIBrain:
                         bid=price * 0.9999,
                         ask=price * 1.0001
                     )
-                except:
-                    pass
+                except Exception as e:
+                    logger.error(f"DeepChart intelligence error: {e}")
         
         return analysis
     
@@ -1267,8 +1267,8 @@ class UnifiedAIBrain:
                     })
                     if sig:
                         signals.append(sig)
-                except:
-                    pass
+                except Exception as e:
+                    logger.error(f"Complete signal system error: {e}")
         
         # Get signal from cognitive core
         if 'cognitive' in analysis:
@@ -1332,8 +1332,8 @@ class UnifiedAIBrain:
                     if not msos_result.get('approved', False):
                         result['reason'] = f"MSOS: {msos_result.get('reason', 'Rejected')}"
                         return result
-                except:
-                    pass
+                except Exception as e:
+                    logger.error(f"MSOS evaluation error: {e}")
         
         # Check risk manager
         if 'risk_manager' in self.loaded_subsystems:
@@ -1362,8 +1362,8 @@ class UnifiedAIBrain:
                     if ss.instance.is_triggered():
                         result['reason'] = "Circuit breaker triggered"
                         return result
-                except:
-                    pass
+                except Exception as e:
+                    logger.error(f"Circuit breaker check error: {e}")
         
         # Approved
         result['approved'] = True
@@ -1387,8 +1387,8 @@ class UnifiedAIBrain:
                         risk_per_trade=self.config.max_risk_per_trade,
                         confidence=signal.get('confidence', 0.5)
                     )
-                except:
-                    pass
+                except Exception as e:
+                    logger.error(f"Position sizing error: {e}")
         
         # Default calculation
         risk_amount = self.capital * self.config.max_risk_per_trade
@@ -1500,8 +1500,8 @@ class UnifiedAIBrain:
                             await ss.instance.evolve()
                         else:
                             ss.instance.evolve()
-                    except:
-                        pass
+                    except Exception as e:
+                        logger.error(f"Eternal evolution error: {e}")
             
         finally:
             self.state = BrainState.CONSCIOUS
@@ -1563,13 +1563,13 @@ class UnifiedAIBrain:
                 if hasattr(ss.instance, 'emergency_stop'):
                     try:
                         ss.instance.emergency_stop(reason)
-                    except:
-                        pass
+                    except Exception as e:
+                        logger.error(f"Error triggering emergency_stop on {name}: {e}")
                 if hasattr(ss.instance, 'trigger'):
                     try:
                         ss.instance.trigger(reason)
-                    except:
-                        pass
+                    except Exception as e:
+                        logger.error(f"Error triggering trigger on {name}: {e}")
     
     async def shutdown(self):
         """Gracefully shutdown the brain"""
