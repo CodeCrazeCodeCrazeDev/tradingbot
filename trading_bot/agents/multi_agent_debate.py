@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC, abstractmethod
 import statistics
+from ..verification.confidence_calibrator import ConfidenceCalibrator, CalibrationMethod
 
 logger = logging.getLogger(__name__)
 
@@ -577,9 +578,10 @@ class HeadAI:
     The Head AI that synthesizes all agent arguments.
     """
     
-    def __init__(self, config: Optional[Dict] = None):
+    def __init__(self, config: Optional[Dict] = None, calibrator: Optional[ConfidenceCalibrator] = None):
         try:
             self.config = config or {}
+            self.calibrator = calibrator
         
             # Agent weights
             self.weights = {
@@ -610,13 +612,30 @@ class HeadAI:
         """
         # Score each action
         try:
+            # Fix: Only use the latest argument from each agent to prevent double-counting across rounds
+            latest_arguments: Dict[AgentRole, AgentArgument] = {}
+            for arg in arguments:
+                latest_arguments[arg.agent_role] = arg
+
+            active_arguments = list(latest_arguments.values())
+
             action_scores: Dict[TradeAction, float] = {}
         
-            for arg in arguments:
+            for arg in active_arguments:
                 weight = self.weights.get(arg.agent_role, 0.33)
                 conviction_mult = arg.conviction.value / 5.0
+
+                # Apply Bayesian calibration if available
+                confidence = arg.confidence
+                if self.calibrator:
+                    cal_result = self.calibrator.calibrate(
+                        confidence,
+                        method=CalibrationMethod.BAYESIAN,
+                        prediction_type=arg.agent_role.value
+                    )
+                    confidence = cal_result.calibrated_confidence
             
-                score = weight * conviction_mult * arg.confidence
+                score = weight * conviction_mult * confidence
             
                 if arg.action not in action_scores:
                     action_scores[arg.action] = 0
@@ -631,7 +650,7 @@ class HeadAI:
                 winning_score = 0.5
         
             # Check for risk veto
-            risk_args = [a for a in arguments if a.agent_role == AgentRole.RISK_SENTINEL]
+            risk_args = [a for a in active_arguments if a.agent_role == AgentRole.RISK_SENTINEL]
             if risk_args:
                 risk_arg = risk_args[-1]
                 if risk_arg.action == TradeAction.NO_TRADE and risk_arg.conviction.value >= Conviction.HIGH.value:
@@ -639,16 +658,16 @@ class HeadAI:
                     winning_score = risk_arg.confidence
         
             # Calculate consensus
-            unique_actions = set(a.action for a in arguments)
+            unique_actions = set(a.action for a in active_arguments)
             consensus_level = 1.0 - (len(unique_actions) - 1) * 0.25
         
             # Collect votes
-            agent_votes = {a.agent_role.value: a.action.value for a in arguments}
+            agent_votes = {a.agent_role.value: a.action.value for a in active_arguments}
         
             # Collect dissenting views
             dissenting = [
                 f"{a.agent_role.value}: {a.reasoning[0]}"
-                for a in arguments
+                for a in active_arguments
                 if a.action != winning_action and a.reasoning
             ]
         
@@ -776,12 +795,15 @@ class MultiAgentDebateSystem:
     def __init__(self, config: Optional[Dict] = None):
         try:
             self.config = config or {}
+
+            # Initialize Confidence Calibrator
+            self.calibrator = ConfidenceCalibrator(self.config.get('calibrator_config'))
         
             # Initialize agents
             self.macro_strategist = MacroStrategist(config)
             self.tactical_executioner = TacticalExecutioner(config)
             self.risk_sentinel = RiskSentinel(config)
-            self.head_ai = HeadAI(config)
+            self.head_ai = HeadAI(config, calibrator=self.calibrator)
         
             self.agents = [
                 self.macro_strategist,
