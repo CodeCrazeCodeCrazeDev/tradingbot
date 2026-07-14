@@ -383,7 +383,7 @@ class RealTimeDependencyManager:
         self.log(f"Could not fix {pip_name}", "error")
         return False
     
-    def scan_codebase_imports(self) -> Set[str]:
+    async def scan_codebase_imports(self) -> Set[str]:
         """Scan all Python files for imports"""
         imports = set()
         
@@ -391,9 +391,9 @@ class RealTimeDependencyManager:
             if any(skip in str(py_file) for skip in ['__pycache__', 'backup', '.git', 'venv', 'env']):
                 continue
             try:
-            
-                with open(py_file, 'r', encoding='utf-8', errors='ignore') as f:
-                    content = f.read()
+                import aiofiles
+                async with aiofiles.open(py_file, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = await f.read()
                 
                 # Pattern 1: import xxx
                 for match in re.finditer(r'^import\s+([a-zA-Z_][a-zA-Z0-9_]*)', content, re.MULTILINE):
@@ -441,7 +441,7 @@ class RealTimeDependencyManager:
             is_realtime_critical=is_realtime
         )
     
-    def fix_all_dependencies(self) -> DependencyReport:
+    async def fix_all_dependencies(self) -> DependencyReport:
         """
         Main entry point: Fix ALL dependency issues.
         Scans codebase, identifies problems, fixes them.
@@ -466,7 +466,7 @@ class RealTimeDependencyManager:
         
         # Step 3: Scan codebase for all imports
         self.log("\n[3/5] Scanning codebase for imports...")
-        imports = self.scan_codebase_imports()
+        imports = await self.scan_codebase_imports()
         self.log(f"Found {len(imports)} unique imports")
         
         # Step 4: Check each import
@@ -635,10 +635,10 @@ class RealTimeModuleValidator:
 # CONVENIENCE FUNCTIONS
 # =============================================================================
 
-def fix_all_dependencies(verbose: bool = True) -> DependencyReport:
+async def fix_all_dependencies(verbose: bool = True) -> DependencyReport:
     """Fix all dependency issues in the codebase"""
     manager = RealTimeDependencyManager(verbose=verbose)
-    return manager.fix_all_dependencies()
+    return await manager.fix_all_dependencies()
 
 
 def verify_realtime() -> Tuple[bool, List[str]]:
@@ -670,13 +670,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     if args.all or (not args.fix and not args.verify and not args.validate):
-        # Default: run everything
-        print("\n" + "=" * 60)
-        print("ALPHAALGO REAL-TIME DEPENDENCY MANAGER")
-        print("=" * 60)
+        async def main_all():
+            # Default: run everything
+            print("\n" + "=" * 60)
+            print("ALPHAALGO REAL-TIME DEPENDENCY MANAGER")
+            print("=" * 60)
+
+            # Fix dependencies
+            report = await fix_all_dependencies(not args.quiet)
+            return report
         
-        # Fix dependencies
-        report = fix_all_dependencies(not args.quiet)
+        report = asyncio.run(main_all())
         
         # Verify real-time
         ready, issues = verify_realtime()
@@ -696,7 +700,7 @@ if __name__ == "__main__":
         sys.exit(0 if report.failed == 0 and ready else 1)
     
     if args.fix:
-        report = fix_all_dependencies(not args.quiet)
+        report = asyncio.run(fix_all_dependencies(not args.quiet))
         sys.exit(0 if report.failed == 0 else 1)
     
     if args.verify:

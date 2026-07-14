@@ -183,11 +183,40 @@ class EvolutionMonitor:
     def _save_checkpoint(self, checkpoint: SafetyCheckpoint):
         """Save checkpoint to disk"""
         
-        checkpoint_file = self.checkpoint_dir / f"{checkpoint.checkpoint_id}.pkl"
+        checkpoint_file = self.checkpoint_dir / f"{checkpoint.checkpoint_id}.json"
         
         try:
-            with open(checkpoint_file, 'wb') as f:
-                pickle.dump(checkpoint, f)
+            # Custom encoder for datetime and Enum
+            def default_serializer(obj):
+                if isinstance(obj, datetime):
+                    return obj.isoformat()
+                if hasattr(obj, 'name'): # Enum
+                    return obj.name
+                return str(obj)
+
+            with open(checkpoint_file, 'w') as f:
+                data = {
+                    'checkpoint_id': checkpoint.checkpoint_id,
+                    'timestamp': checkpoint.timestamp.isoformat(),
+                    'description': checkpoint.description,
+                    'system_state': checkpoint.system_state,
+                    'code_snapshot': checkpoint.code_snapshot,
+                    'metrics': {
+                        'timestamp': checkpoint.metrics.timestamp.isoformat(),
+                        'recursion_depth': checkpoint.metrics.recursion_depth,
+                        'code_changes_count': checkpoint.metrics.code_changes_count,
+                        'code_change_percentage': checkpoint.metrics.code_change_percentage,
+                        'performance_score': checkpoint.metrics.performance_score,
+                        'safety_score': checkpoint.metrics.safety_score,
+                        'risk_level': checkpoint.metrics.risk_level.name,
+                        'total_improvements': checkpoint.metrics.total_improvements,
+                        'successful_improvements': checkpoint.metrics.successful_improvements,
+                        'failed_improvements': checkpoint.metrics.failed_improvements,
+                        'rolled_back_improvements': checkpoint.metrics.rolled_back_improvements
+                    },
+                    'hash_signature': checkpoint.hash_signature
+                }
+                json.dump(data, f, indent=2)
             logger.info(f"Saved checkpoint to {checkpoint_file}")
         except Exception as e:
             logger.error(f"Error saving checkpoint: {e}")
@@ -196,10 +225,35 @@ class EvolutionMonitor:
         """Load existing checkpoints from disk"""
         
         try:
-            for checkpoint_file in self.checkpoint_dir.glob("*.pkl"):
+            for checkpoint_file in self.checkpoint_dir.glob("*.json"):
                 try:
-                    with open(checkpoint_file, 'rb') as f:
-                        checkpoint = pickle.load(f)
+                    with open(checkpoint_file, 'r') as f:
+                        data = json.load(f)
+
+                    metrics_data = data['metrics']
+                    metrics = EvolutionMetrics(
+                        timestamp=datetime.fromisoformat(metrics_data['timestamp']),
+                        recursion_depth=metrics_data['recursion_depth'],
+                        code_changes_count=metrics_data['code_changes_count'],
+                        code_change_percentage=metrics_data['code_change_percentage'],
+                        performance_score=metrics_data['performance_score'],
+                        safety_score=metrics_data['safety_score'],
+                        risk_level=RiskLevel[metrics_data['risk_level']],
+                        total_improvements=metrics_data['total_improvements'],
+                        successful_improvements=metrics_data['successful_improvements'],
+                        failed_improvements=metrics_data['failed_improvements'],
+                        rolled_back_improvements=metrics_data['rolled_back_improvements']
+                    )
+
+                    checkpoint = SafetyCheckpoint(
+                        checkpoint_id=data['checkpoint_id'],
+                        timestamp=datetime.fromisoformat(data['timestamp']),
+                        description=data['description'],
+                        system_state=data['system_state'],
+                        code_snapshot=data['code_snapshot'],
+                        metrics=metrics,
+                        hash_signature=data['hash_signature']
+                    )
                     
                     # Verify integrity
                     if checkpoint.verify_integrity():
