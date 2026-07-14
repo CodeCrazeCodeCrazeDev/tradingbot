@@ -1,6 +1,9 @@
 """
 
 Orchestrates the selection and execution of Skill Programs (HASP)
+and behavioral behaviors (Skill-to-LoRA).
+
+Orchestrates the selection and execution of Skill Programs (HASP)
 and behavioral adapters (Skill-to-LoRA).
 Implements 'HASP' (arXiv:2605.17734), 'S2L' (arXiv:2606.16769),
 and 'Meta-Harness' (arXiv:2603.28052).

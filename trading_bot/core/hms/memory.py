@@ -1,6 +1,9 @@
 """
 Hierarchical Memory System (HMS) - UCA V5 (July 2026)
 
+Authoritative memory system providing a unified service interface for 6 tiers.
+Integrates SAGE (Self-evolving Graph) and AutoMem (Meta-memory optimization).
+
 Authoritative memory system integrating SAGE (Self-evolving Agentic Graph-Memory)
 and QKG (Quantum Knowledge Graph) for context-dependent research persistence.
 Implements the 'SAGE' (2026) feedback loop between Memory Writers and Readers.
@@ -142,6 +145,8 @@ class HierarchicalMemorySystem:
     Authoritative memory system. Integrates SAGE and AutoMem.
     """
     def __init__(self, base_path: str = "alphaalgo_data/hms"):
+        if self._initialized:
+            return
         self.base_path = base_path
         os.makedirs(base_path, exist_ok=True)
 

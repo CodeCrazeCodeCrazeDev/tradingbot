@@ -991,17 +991,3 @@ except ImportError as e:
     pass
 
 
-class CoreOrchestrator:
-    """Stub for CoreOrchestrator."""
-    def __init__(self, *args, **kwargs):
-        self.config = kwargs.get('config', {})
-        self.running = False
-    
-    async def start(self):
-        self.running = True
-    
-    async def stop(self):
-        self.running = False
-    
-    def get_status(self):
-        return {"running": self.running}

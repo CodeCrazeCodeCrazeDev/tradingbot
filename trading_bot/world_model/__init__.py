@@ -19,7 +19,8 @@ from .v2_core import (
 
 # Training and Adaptation
 from .v2_training import (
-    WorldModelTrainer,
+    WorldModelSpecialistTrainer,
+    WorldModelSpecialistTrainer,
 )
 from .v2_adapter import (
     LegacyWorldModelAdapter,
@@ -41,9 +42,8 @@ from .uncertainty_engine import (
 
 # Simulation and Planning (Canonical V2-compatible)
 from .imagination import (
-    ImaginationPlanner,
-    PlanResult,
-    CEMPlanner,
+    PlanningEngine,
+    FutureSimulator,
 )
 
 # Simulation Components - Pointing to Canonical Simulation Subsystem
@@ -91,9 +91,6 @@ from .experience_replay import (
 )
 
 # Maintenance of Legacy Core for transition
-from .latent_dynamics import (
-    WorldModel,
-)
 
 __all__ = [
     # Canonical WM-V2
@@ -101,7 +98,7 @@ __all__ = [
     'MarketScenario',
     'PredictiveMarketCore',
     'UnifiedCrossAssetEncoder',
-    'WorldModelTrainer',
+    'WorldModelSpecialistTrainer',
     'LegacyWorldModelAdapter',
 
     # State and Governance
@@ -113,9 +110,8 @@ __all__ = [
     'UncertaintyEngine',
 
     # Planning and Orchestration
-    'ImaginationPlanner',
-    'PlanResult',
-    'CEMPlanner',
+    'PlanningEngine',
+    'FutureSimulator',
     'SimulationOrchestrator',
     'SimulationConfig',
     'SimulationMode',
@@ -134,5 +130,4 @@ __all__ = [
     'BeliefStateTracker',
 
     # Legacy Transition
-    'WorldModel',
 ]

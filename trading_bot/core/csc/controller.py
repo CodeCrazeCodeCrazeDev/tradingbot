@@ -137,7 +137,8 @@ class CognitiveSystemController:
             ledger_entry.verifier_reports = reports
 
             # 10. Pivot/Refine Decision
-            if self._verify_evidence_hard_constraint(ledger_entry):
+            from ..verification.swarm import EvidenceGraphGate
+            if EvidenceGraphGate.verify_evidence_first(ledger_entry, reports):
                 decision_ready = True
                 final_ledger_entry = ledger_entry
             else:

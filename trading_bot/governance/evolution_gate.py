@@ -9,8 +9,17 @@ import logging
 import math
 from typing import Any, Dict, List, Optional
 from datetime import datetime
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
+
+@dataclass
+class EvolutionMetrics:
+    reward: float
+    calibration: float  # (1 - ECE)
+    robustness: float   # Performance in OOD
+    latency: float      # Decision speed (ms)
+    safety_score: float # Zero-violation rate
 
 class EvolutionGate:
     """
@@ -19,9 +28,8 @@ class EvolutionGate:
     Integrates EKSFT for selective strategy internalization.
     """
 
-    def __init__(self, validation_engine: Any, improvement_threshold: float = 0.05):
+    def __init__(self, validation_engine: Any):
         self.validation_engine = validation_engine
-        self.threshold = improvement_threshold
         self.evolution_history = []
 
         # EKSFT Thresholds
@@ -30,9 +38,18 @@ class EvolutionGate:
 
     def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
         """
-        Gate: Only commit a rewrite if it improves on a held-out validation set.
+        Gate: Only promote if ALL metrics are non-regressive and at least one improves significantly.
         """
-        logger.info(f"EvolutionGate: Validating candidate {candidate_id}")
+        logger.info(f"EvolutionGate: Multi-dimensional audit for candidate {candidate_id}")
+
+        # 1. Run full benchmark suite on candidate
+        candidate_raw = self.validation_engine.run_benchmark(candidate_config)
+        candidate = EvolutionMetrics(**candidate_raw)
+
+        # 2. Institutional Safety Check (Hard Gate)
+        if candidate.safety_score < 1.0:
+            logger.error(f"EvolutionGate: REJECTED - Safety regression detected ({candidate.safety_score})")
+            return False
 
         # 1. EKSFT: Selective Token/Concept Masking for Internalization
         # Before benchmarking, we ensure the candidate was 'safely' trained
@@ -55,8 +72,8 @@ class EvolutionGate:
             self.evolution_history.append({
                 "timestamp": datetime.utcnow().isoformat(),
                 "candidate_id": candidate_id,
-                "gain": gain,
-                "status": "COMMITTED"
+                "metrics": candidate.__dict__,
+                "status": "PROMOTED"
             })
             return True
         else:

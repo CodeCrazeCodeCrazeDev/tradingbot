@@ -9,33 +9,24 @@ Enforces the 0.8 consensus hard constraint.
 import logging
 import asyncio
 from typing import Any, Dict, List, Optional
-from dataclasses import dataclass
-from datetime import datetime
+from .interface import IVerifier, VerifierVerdict
+from .specialists import CausalVerifier, HallucinationDetector, RegimeConsistencyChecker
 
 logger = logging.getLogger(__name__)
-
-@dataclass
-class VerifierReport:
-    agent_name: str
-    is_valid: bool
-    confidence: float
-    critique: str
-    detected_hallucinations: List[str]
 
 class VerificationSwarm:
     """
     Independent Auditor Swarm for the Cognitive System Controller.
     """
     def __init__(self):
-        # Specialized verifier agents
-        self.verifiers = [
-            "CausalVerifier",
-            "HallucinationDetector",
-            "CalculationReproducer",
-            "RegimeConsistencyChecker"
+        # Register specialized verifier instances
+        self.verifiers: List[IVerifier] = [
+            CausalVerifier(),
+            HallucinationDetector(),
+            RegimeConsistencyChecker()
         ]
 
-    async def run_swarm(self, research_snapshot: Any) -> List[VerifierReport]:
+    async def run_swarm(self, research_snapshot: Any) -> List[VerifierVerdict]:
         """
         Executes parallel audit by all registered verifiers.
         """
@@ -43,29 +34,14 @@ class VerificationSwarm:
         logger.info(f"VerificationSwarm: Auditing research {snapshot_id}")
 
         # Parallel execution of verifiers
-        tasks = [self._audit_agent(v, research_snapshot) for v in self.verifiers]
-        reports = await asyncio.gather(*tasks)
+        tasks = [v.audit(research_snapshot) for v in self.verifiers]
+        verdicts = await asyncio.gather(*tasks)
 
-        consensus = sum(1 for r in reports if r.is_valid) / len(reports)
+        valid_count = sum(1 for v in verdicts if v.is_valid)
+        consensus = valid_count / len(verdicts) if verdicts else 0
         logger.info(f"VerificationSwarm: Consensus reached at {consensus:.1%}")
 
-        return reports
-
-    async def _audit_agent(self, agent_name: str, snapshot: Any) -> VerifierReport:
-        """Mock individual verifier logic."""
-        await asyncio.sleep(0.1) # Simulate audit work
-
-        # Example of a verifier vetoing due to inconsistency
-        is_valid = True
-        critique = "No issues found."
-
-        return VerifierReport(
-            agent_name=agent_name,
-            is_valid=is_valid,
-            confidence=0.9,
-            critique=critique,
-            detected_hallucinations=[]
-        )
+        return verdicts
 
 class EvidenceGraphGate:
     """
@@ -73,17 +49,20 @@ class EvidenceGraphGate:
     Ensures every claim is backed by the Evidence Graph.
     """
     @staticmethod
-    def verify_evidence_first(snapshot: Any, reports: List[VerifierReport]) -> bool:
-        # 1. Consensus Gate
-        valid_count = sum(1 for r in reports if r.is_valid)
-        if valid_count / len(reports) < 0.8:
+    def verify_evidence_first(snapshot: Any, verdicts: List[VerifierVerdict]) -> bool:
+        if not verdicts:
+            return False
+
+        # 1. Consensus Gate (Institutional SLA: 80%)
+        valid_count = sum(1 for v in verdicts if v.is_valid)
+        if valid_count / len(verdicts) < 0.8:
             logger.error("EvidenceGate: REJECTED - Consensus below 80%")
             return False
 
-        # 2. Veto check
-        for r in reports:
-            if not r.is_valid and r.confidence > 0.85:
-                logger.error(f"EvidenceGate: REJECTED - High-confidence VETO by {r.agent_name}")
+        # 2. High-Confidence Veto check
+        for v in verdicts:
+            if not v.is_valid and v.confidence > 0.85:
+                logger.error(f"EvidenceGate: REJECTED - High-confidence VETO by {v.agent_name}: {v.critique}")
                 return False
 
         return True
