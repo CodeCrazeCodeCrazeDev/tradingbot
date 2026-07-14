@@ -1,6 +1,4 @@
 """
-Folding Operator - HIPIF Strategy
-================================
 
 Responsible for compressing high-resolution episodic traces into
 low-resolution semantic knowledge.
@@ -61,6 +59,17 @@ class InformationFolder:
         3. Prune/Compress source Episodic entries conceptually.
         """
         logger.info(f"HIPIF: Folding episodic trace of {len(episodic_trace)} entries")
+HIPIF: Hierarchical Planning with Information Folding.
+"""
+from typing import Any
+
+class InformationFolder:
+    def __init__(self, hms: Any = None):
+        self.hms = hms
+
+    def fold_history(self, entry: Any):
+        """Compress execution traces into semantic strategic updates."""
+        pass
 
         summary = self._summarize_trace(episodic_trace)
         stats = {
@@ -76,34 +85,13 @@ class InformationFolder:
             'status': 'folded'
         }
 
-        self.folded_summaries.append(result)
-        return result
+class FoldingOperator:
+    """
+    UCA V5 Folding Operator for the HIPIF pipeline.
+    """
+    def __init__(self, hms: Any = None):
+        self.hms = hms
 
-    def _extract_sufficient_statistics(self, ledger_entry: Any) -> Dict[str, Any]:
-        """Extracts core numerical and categorical indicators from a ledger entry."""
-        return {
-            "hypothesis_id": getattr(ledger_entry.hypothesis, "hypothesis_id", "N/A") if ledger_entry.hypothesis else "N/A",
-            "confidence": getattr(ledger_entry, "composite_confidence", 0.0),
-            "num_verifier_reports": len(getattr(ledger_entry, "verifier_reports", [])),
-            "consensus_reached": all(r.is_valid for r in getattr(ledger_entry, "verifier_reports", [])) if getattr(ledger_entry, "verifier_reports", []) else False
-        }
-
-    def _generate_semantic_summary(self, stats: Dict[str, Any]) -> str:
-        """Converts statistics into a concise natural language summary."""
-        consensus_str = "with consensus" if stats["consensus_reached"] else "without consensus"
-        return f"Research step for {stats['hypothesis_id']} completed {consensus_str}. Confidence: {stats['confidence']:.2f}."
-
-    def _summarize_trace(self, trace: List[Dict[str, Any]]) -> str:
-        """Generic trace summarization."""
-        if not trace: return "Empty trace."
-        return f"Trace of {len(trace)} events. Last action: {trace[-1].get('action_type', 'unknown')}."
-
-    def _get_dominant_type(self, trace: List[Dict[str, Any]]) -> str:
-        types = [t.get('action_type', 'unknown') for t in trace]
-        if not types: return "unknown"
-        return max(set(types), key=types.count)
-
-    def _calculate_success_rate(self, trace: List[Dict[str, Any]]) -> float:
-        successes = [1 for t in trace if t.get('status') == 'success' or t.get('status') == 'approved']
-        if not trace: return 0.0
-        return len(successes) / len(trace)
+    def fold_decision_into_memory(self, decision: Any, trace: List[Any]):
+        """Compresses a decision trace into a semantic memory update."""
+        logger.info("Folding decision trace into HMS...")

@@ -24,6 +24,11 @@ graph TD
     PI --> CM[Continuous Monitoring]
     CM --> RET[Retirement/End-States]
 
+    RET --> SRE_CORE[SRE Core Engine]
+    SRE_CORE -->|Internalizes| HMS[HMS Semantic Memory]
+    SRE_CORE -->|Updates| SkillRouter[SkillRouter Policies]
+    SRE_CORE -->|Generates| ResearchLedger[HMS Research Ledger]
+
     subgraph "End-States"
         RET --> Conf[Confirmed]
         RET --> Rej[Rejected]
