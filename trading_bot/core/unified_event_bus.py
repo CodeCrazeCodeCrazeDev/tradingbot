@@ -20,6 +20,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union, Callable, Coroutine
 from uuid import uuid4
 import threading
+import copy
 
 logger = logging.getLogger(__name__)
 
@@ -136,6 +137,8 @@ class UnifiedDecisionBus:
         self._action_queue = asyncio.PriorityQueue()
         self._running = False
         self._processor_task: Optional[asyncio.Task] = None
+        self._next_dispatch_seq = 0
+        self._dispatch_condition = asyncio.Condition()
         self._initialized = True
         logger.info("LogAct Shared-Log Backbone initialized with Legacy Support")
         self._register_default_voters()
@@ -213,7 +216,8 @@ class UnifiedDecisionBus:
 
         while self._running:
             try:
-                _, _, action = await self._action_queue.get()
+                item = await self._action_queue.get()
+                action = item[2]
 
                 # 1. Total Ordering & Log Persistence
                 action.sequence_number = len(self._log)
@@ -266,6 +270,12 @@ class UnifiedDecisionBus:
             if report.get("decision") in ["REJECT", "VETO", "FAIL"]:
                 logger.warning(f"LogAct: Action {action.action_id} VETOED by {vid}")
                 return False
+
+        # Optional: Check if mandatory voters (like 'shield') actually responded
+        if "shield" in self._voters and "shield" not in action.voter_reports:
+             logger.error(f"Mandatory voter 'shield' did not report for action {action.action_id}")
+             return False
+
         return True
 
     async def _shield_voter_adapter(self, action: LogAction) -> Dict[str, Any]:

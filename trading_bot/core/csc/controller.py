@@ -197,6 +197,17 @@ class CognitiveSystemController:
         # 3. Skill Routing (S2L/HASP)
         # This is integrated into Step 4 and the execution phase
 
+        # 1. Update Discrete Channel (DiscoLoop Reasoning History)
+        self.discrete_channel.append(f"Observed market state at {datetime.utcnow()}")
+        if len(self.discrete_channel) > 100: self.discrete_channel.pop(0)
+
+        # 2. Update Continuous State (DiscoLoop Latent Context)
+        # Simplified: Use observation as latent update
+        self.continuous_state.update(observation.get("latent", {}))
+
+        # 3. Active Inference: Surpise Minimization (VFE)
+        # Simplified: Calculate surprise based on world model prediction
+
         # 4. Executable Guardrails (HASP Intervention)
         # (arXiv:2605.17734 - HASP)
         intervention = self._apply_hasp_guardrails(observation)

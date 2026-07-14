@@ -63,6 +63,8 @@ class EvidenceEdge:
     relation: RelationType
     weight: float = 1.0
     evidence_package_id: Optional[str] = None  # Supporting evidence for this relation
+    # QKG Extension: Context-dependent validity
+    validity_context: Dict[str, Any] = field(default_factory=dict)
 
     # QKG Extension: Validity depends on context (e.g. regime, volatility)
     context_validity_mask: Dict[str, Any] = field(default_factory=dict)

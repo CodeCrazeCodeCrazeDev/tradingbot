@@ -15,6 +15,8 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime
 import uuid
 
+from .unified_event_bus import decision_bus, LogAction
+
 logger = logging.getLogger(__name__)
 
 class GovernanceDecision(Enum):
@@ -52,8 +54,26 @@ class ImmutableShield:
 
         self.config = config or {}
         self._audit_log: List[ShieldReport] = []
+
+        # Register as a LogAct Voter
+        decision_bus.register_voter("shield", self.audit_log_action)
+
         self._initialized = True
-        logger.info("ImmutableShield initialized as singleton")
+        logger.info("ImmutableShield initialized as LogAct Voter")
+
+    async def audit_log_action(self, action: LogAction) -> Dict[str, Any]:
+        """
+        LogAct Voter Interface: Audits a proposed action from the shared log.
+        """
+        context = action.payload.get("context", {}) # Logic to extract context if not provided
+        report = self.validate_action(action.action_type, action.payload, context)
+
+        return {
+            "decision": report.decision.value,
+            "reason": report.reason,
+            "risk_score": report.risk_score,
+            "audit_id": report.audit_id
+        }
 
     async def validate_action(self, action_type: str, params: Dict[str, Any], context: Dict[str, Any]) -> ShieldReport:
         """

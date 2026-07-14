@@ -141,6 +141,49 @@ class SAGEGraphMemory:
         except Exception as e:
             logger.error(f"SAGE: Failed to save graph: {e}")
 
+    def _load_graph(self) -> nx.MultiDiGraph:
+        if os.path.exists(self.graph_path):
+            try:
+                graph = nx.read_graphml(self.graph_path)
+                # Ensure we are working with a MultiDiGraph for QKG context support
+                if not isinstance(graph, nx.MultiDiGraph):
+                    graph = nx.MultiDiGraph(graph)
+
+                # SAGE Deserialization: Restore JSON-serialized attributes
+                for u, v, k, d in list(graph.edges(keys=True, data=True)):
+                    for attr in ['context', 'evidence']:
+                        if attr in d and isinstance(d[attr], str):
+                            try:
+                                d[attr] = json.loads(d[attr])
+                            except json.JSONDecodeError:
+                                pass
+                return graph
+            except Exception as e:
+                logger.error(f"SAGE: Failed to load graph: {e}")
+        return nx.MultiDiGraph()
+
+    def _save_graph(self):
+        os.makedirs(os.path.dirname(self.graph_path), exist_ok=True)
+        try:
+            # We must serialize complex attributes to strings for GraphML
+            # Note: networkx DiGraph.edges(data=True) works, but MultiDiGraph requires keys=True
+            temp_graph = self.graph.copy()
+            if isinstance(temp_graph, nx.MultiDiGraph):
+                for u, v, k, d in list(temp_graph.edges(keys=True, data=True)):
+                    if 'context' in d:
+                        d['context'] = json.dumps(d['context'])
+                    if 'evidence' in d:
+                        d['evidence'] = json.dumps(d['evidence'])
+            else:
+                for u, v, d in list(temp_graph.edges(data=True)):
+                    if 'context' in d:
+                        d['context'] = json.dumps(d['context'])
+                    if 'evidence' in d:
+                        d['evidence'] = json.dumps(d['evidence'])
+            nx.write_graphml(temp_graph, self.graph_path)
+        except Exception as e:
+            logger.error(f"SAGE: Failed to save graph: {e}")
+
     def add_evidence(self, triplet: Tuple[str, str, str], context: Dict[str, Any], evidence: Dict[str, Any]):
         """
         Adds context-dependent triplet (QKG principle) to the graph.
@@ -240,7 +283,7 @@ class HierarchicalMemorySystem:
         except Exception as e:
             logger.error(f"HMS: Failed to save schema: {e}")
 
-    def evolve_memory(self, interaction_history: List[Dict[str, Any]]):
+    def evolve_memory(self, feedback: List[Dict[str, Any]]):
         """
         SAGE: Incremental construction from interaction history.
         """
@@ -290,6 +333,7 @@ class HierarchicalMemorySystem:
             else:
                 self.sage.graph.nodes[node_id].update({"type": node.node_type, "content": str(node.content)})
 
+        # Update SAGE graph from evidence graph snapshot (QKG Principle)
         for edge in entry.evidence_graph_snapshot.edges:
             context = {"source_entry": entry.entry_id}
             evidence = {"weight": edge.weight, "timestamp": entry.timestamp.isoformat()}
