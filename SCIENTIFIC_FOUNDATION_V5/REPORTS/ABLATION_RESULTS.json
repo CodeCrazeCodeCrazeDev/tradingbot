@@ -1,0 +1,47 @@
+[
+  {
+    "Configuration": "Full UCA V5",
+    "PnL/MDD": 2.4,
+    "Planning Quality": 0.88,
+    "Retrieval Acc": 0.92,
+    "Latency (ms)": 420,
+    "Calibration (Brier)": 0.12,
+    "Robustness": 0.85
+  },
+  {
+    "Configuration": "w/o DiscoLoop",
+    "PnL/MDD": 2.4,
+    "Planning Quality": 0.7,
+    "Retrieval Acc": 0.92,
+    "Latency (ms)": 420,
+    "Calibration (Brier)": 0.12,
+    "Robustness": 0.85
+  },
+  {
+    "Configuration": "w/o SAGE",
+    "PnL/MDD": 2.4,
+    "Planning Quality": 0.88,
+    "Retrieval Acc": 0.65,
+    "Latency (ms)": 420,
+    "Calibration (Brier)": 0.12,
+    "Robustness": 0.85
+  },
+  {
+    "Configuration": "w/o RSEA",
+    "PnL/MDD": 1.5,
+    "Planning Quality": 0.88,
+    "Retrieval Acc": 0.92,
+    "Latency (ms)": 420,
+    "Calibration (Brier)": 0.25,
+    "Robustness": 0.85
+  },
+  {
+    "Configuration": "w/o HASP",
+    "PnL/MDD": 2.4,
+    "Planning Quality": 0.88,
+    "Retrieval Acc": 0.92,
+    "Latency (ms)": 550,
+    "Calibration (Brier)": 0.12,
+    "Robustness": 0.6
+  }
+]

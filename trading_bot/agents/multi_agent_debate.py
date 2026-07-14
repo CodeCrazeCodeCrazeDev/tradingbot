@@ -855,20 +855,20 @@ class MultiAgentDebateSystem:
             all_arguments = []
         
             # Initial arguments
-            round_args = []
+            current_round_args = []
             for agent in self.agents:
                 # Wrap analyze in a way that could be async in the future
                 arg = agent.analyze(context)
-                round_args.append(arg)
+                current_round_args.append(arg)
                 all_arguments.append(arg)
         
             # Calculate initial consensus
-            consensus = self._calculate_consensus(round_args)
-            conflicts = self._identify_conflicts(round_args)
+            consensus = self._calculate_consensus(current_round_args)
+            conflicts = self._identify_conflicts(current_round_args)
         
             debate_rounds.append(DebateRound(
                 round_number=1,
-                arguments=round_args,
+                arguments=current_round_args,
                 consensus_level=consensus,
                 conflicts=conflicts
             ))
@@ -876,26 +876,28 @@ class MultiAgentDebateSystem:
             # Additional rounds if needed
             round_num = 2
             while consensus < self.consensus_threshold and round_num <= self.max_rounds:
-                round_args = []
+                previous_round_args = current_round_args
+                current_round_args = []
             
                 # Each agent responds to others
+                last_round_args = debate_rounds[-1].arguments
                 for agent in self.agents:
-                    for other_arg in debate_rounds[-1].arguments:  # Last round's arguments
+                    for other_arg in previous_round_args:
                         if other_arg.agent_role != agent.role:
                             response = agent.respond_to_argument(other_arg, context)
                             if response:
-                                round_args.append(response)
+                                current_round_args.append(response)
                                 all_arguments.append(response)
             
-                if not round_args:
+                if not current_round_args:
                     break
             
-                consensus = self._calculate_consensus(round_args)
-                conflicts = self._identify_conflicts(round_args)
+                consensus = self._calculate_consensus(current_round_args)
+                conflicts = self._identify_conflicts(current_round_args)
             
                 debate_rounds.append(DebateRound(
                     round_number=round_num,
-                    arguments=round_args,
+                    arguments=current_round_args,
                     consensus_level=consensus,
                     conflicts=conflicts
                 ))
