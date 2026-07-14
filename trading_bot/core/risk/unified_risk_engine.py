@@ -1,3 +1,12 @@
+
+Consolidates all risk evaluations (VaR, CVaR, Liquidity, Drawdown)
+into a single Bayesian-calibrated LogAct voter.
+"""
+
+import logging
+from typing import Any, Dict, Optional
+from datetime import datetime
+from ..unified_event_bus import LogAction, decision_bus
 import logging
 import asyncio
 from typing import Any, Dict, List, Optional

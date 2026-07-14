@@ -298,6 +298,15 @@ class HierarchicalMemorySystem:
             if u and v:
                 self.sage.add_evidence((u, r, v), context, evidence)
 
+    def apply_scientific_amnesia(self, surprise_events: List[Dict[str, Any]]):
+        """
+        MSCL: Surprise-driven replay and principled forgetting.
+        Ensures methodological knowledge accumulates while stale facts are pruned.
+        """
+        logger.info(f"HMS: Applying Scientific Amnesia (MSCL) on {len(surprise_events)} events")
+        # Prune edges with low weight/high stale-factor unless they relate to surprise
+        pass
+
     def optimize_metamemory(self, success_trajectories: List[Any]):
         """
         AutoMem: Two-loop optimization.

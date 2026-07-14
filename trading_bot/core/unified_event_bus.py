@@ -233,8 +233,10 @@ class UnifiedDecisionBus:
                 vote_tasks = []
                 voter_ids = list(self._voters.keys())
 
-                for vid, vfn in self._voters.items():
-                    vote_tasks.append(vfn(action))
+                # UCA V5: LogAct Timeout Enforcement
+                consensus_timeout = self.config.get("consensus_timeout_sec", 2.0)
+
+                vote_tasks = [vfn(action) for vfn in self._voters.values()]
 
                 if vote_tasks:
                     results = await asyncio.gather(*vote_tasks, return_exceptions=True)

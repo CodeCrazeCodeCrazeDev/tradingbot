@@ -26,6 +26,7 @@ import json
 from typing import Any, Dict, List, Optional, Tuple, Callable
 from datetime import datetime
 from uuid import uuid4
+from dataclasses import dataclass, field
 
 from .hypothesis import HypothesisGenerator, ReasoningBranch, Hypothesis
 from .folding import InformationFolder
@@ -219,13 +220,17 @@ class CognitiveSystemController:
         # 5. Multi-Hypothesis Generation (DiscoLoop)
         # (Fu et al., 2026 - DiscoLoop: Discrete-Continuous Looping)
         branches = await self.hypothesis_gen.generate_competing_branches(observation)
+        latency["hypothesis_gen"] = (time.perf_counter() - t0) * 1000
 
         # 6. Causal Simulation (CWMI / World Model)
         # (arXiv:2509.xxxxx - CWMI: Structural Interventions)
         sim_results = await self.hypothesis_gen.simulate_branches(branches)
+        latency["causal_sim"] = (time.perf_counter() - t0) * 1000
 
         # 7. Decision Selection (EV Optimization / VFE Minimization)
         best_branch = self._select_optimal_branch(branches, sim_results)
+        latency["decision_selection"] = (time.perf_counter() - t0) * 1000
+
         if not best_branch:
             return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason="No viable reasoning branches")
 
@@ -257,6 +262,7 @@ class CognitiveSystemController:
                 else:
                     logger.error("CSC-V5: Could not refine strategy further.")
                     break
+        latency["verification_swarm"] = (time.perf_counter() - t0) * 1000
 
         if not decision_ready:
             return CoreDecision(
@@ -279,6 +285,7 @@ class CognitiveSystemController:
         # Register shield as a voter if not already done in initialization
         # In this implementation, we check the shield explicitly before proposing
         shield_report = self.shield.validate_action("trade", trade_proposal, {"market": observation})
+        latency["governance_shield"] = (time.perf_counter() - t0) * 1000
 
         from ..immutable_shield import GovernanceDecision
         if shield_report.decision != GovernanceDecision.APPROVED:

@@ -1,5 +1,8 @@
 """
 
+Verifies architectural invariants, scientific benchmarks (FIRE, CL-Bench),
+and 12-step pipeline integrity.
+
 Verifies architectural invariants and scientific superiority metrics.
 - SMR / LogAct Consistency
 - DiscoLoop Multi-hop Reasoning
