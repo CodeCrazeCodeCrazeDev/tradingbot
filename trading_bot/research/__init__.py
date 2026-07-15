@@ -162,6 +162,21 @@ except ImportError as e:
     import logging
     logging.getLogger(__name__).debug(f'Optional import failed in research.research_organization: {e}')
 
+try:
+    from .research_kernel import (
+        LifecycleState,
+        StateTransition,
+        ImmutabilityViolation,
+        ResearchObject,
+        ResearchDependencyGraph,
+        ResearchCost,
+        ResearchEconomicsEngine,
+        ResearchKernel,
+    )
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in research.research_kernel: {e}')
+
 __all__ = [
     'Hypothesis',
     'ResearchLab',
@@ -248,6 +263,14 @@ __all__ = [
     'TechnologyTransferOfficer',
     'MetaResearchEngine',
     'AlphaAlgoResearchOrganization',
+    'LifecycleState',
+    'StateTransition',
+    'ImmutabilityViolation',
+    'ResearchObject',
+    'ResearchDependencyGraph',
+    'ResearchCost',
+    'ResearchEconomicsEngine',
+    'ResearchKernel',
     'ABTestVariant',
     'ABTestingFramework',
     'AdvancedBacktester',
