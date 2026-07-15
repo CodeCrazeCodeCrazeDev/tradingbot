@@ -144,6 +144,24 @@ except ImportError as e:
     import logging
     logging.getLogger(__name__).debug(f'Optional import failed in research.discovery_platform: {e}')
 
+try:
+    from .research_organization import (
+        PhilosophySpecification,
+        ScientificPhilosophy,
+        ResearchProgram,
+        ResearchProgramManager,
+        ScientificReviewVerdict,
+        ScientificReviewer,
+        KnowledgeIntegrationHub,
+        ProductionPackage,
+        TechnologyTransferOfficer,
+        MetaResearchEngine,
+        AlphaAlgoResearchOrganization,
+    )
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in research.research_organization: {e}')
+
 __all__ = [
     'Hypothesis',
     'ResearchLab',
@@ -219,6 +237,17 @@ __all__ = [
     'QuantitativeDiscoveryPlatform',
     'ConstitutionViolation',
     'ConstitutionalLayer',
+    'PhilosophySpecification',
+    'ScientificPhilosophy',
+    'ResearchProgram',
+    'ResearchProgramManager',
+    'ScientificReviewVerdict',
+    'ScientificReviewer',
+    'KnowledgeIntegrationHub',
+    'ProductionPackage',
+    'TechnologyTransferOfficer',
+    'MetaResearchEngine',
+    'AlphaAlgoResearchOrganization',
     'ABTestVariant',
     'ABTestingFramework',
     'AdvancedBacktester',
