@@ -83,6 +83,12 @@ try:
         KnowledgeArchive,
         ProductionAnomalyAlert,
         ProductionFeedbackLoop,
+        DatasetVersionNode,
+        DataLineageRegistry,
+        CausalityAndStructuralBreakTester,
+        ExplainabilityAndAttributionEngine,
+        UncertaintyEstimator,
+        StrategyEvolutionEngine,
     )
 except ImportError as e:
     import logging
@@ -121,6 +127,12 @@ __all__ = [
     'KnowledgeArchive',
     'ProductionAnomalyAlert',
     'ProductionFeedbackLoop',
+    'DatasetVersionNode',
+    'DataLineageRegistry',
+    'CausalityAndStructuralBreakTester',
+    'ExplainabilityAndAttributionEngine',
+    'UncertaintyEstimator',
+    'StrategyEvolutionEngine',
     'ABTestVariant',
     'ABTestingFramework',
     'AdvancedBacktester',

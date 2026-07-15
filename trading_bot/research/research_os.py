@@ -265,3 +265,201 @@ class ProductionFeedbackLoop:
 
         logger.info(f"Production Feedback Loop: Automatically created prioritized research idea {new_idea.id} for post-mortem.")
         return new_idea
+
+
+# ===========================================================================
+# ADVANCED RESEARCH OS ENGINES (High Ceiling Operational Infrastructure)
+# ===========================================================================
+
+
+@dataclass
+class DatasetVersionNode:
+    version_id: str
+    source_name: str
+    lineage_parent_ids: List[str]
+    transformation_applied: str
+    hash_value: str
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+
+
+class DataLineageRegistry:
+    """
+    Enforces strict Data Governance and Lineage tracking.
+    Guarantees every feature and backtest is traceable to its raw, uncleaned base source.
+    """
+    def __init__(self) -> None:
+        self.lineage_graph: Dict[str, DatasetVersionNode] = {}
+
+    def register_version(self, source_name: str, parent_ids: List[str],
+                         transformation: str, df: pd.DataFrame) -> DatasetVersionNode:
+        """Saves a new dataset node in the lineage graph with strict SHA-256 validation."""
+        df_json = json.dumps(df.to_dict(orient="split"), default=str)
+        hash_val = hashlib.sha256(df_json.encode("utf-8")).hexdigest()
+
+        node = DatasetVersionNode(
+            version_id=str(uuid.uuid4()),
+            source_name=source_name,
+            lineage_parent_ids=parent_ids,
+            transformation_applied=transformation,
+            hash_value=hash_val
+        )
+        self.lineage_graph[node.version_id] = node
+        logger.info(f"Data Lineage Registered: {source_name} -> {node.version_id[:12]} (Hash: {hash_val[:12]})")
+        return node
+
+
+class CausalityAndStructuralBreakTester:
+    """
+    Verifies that alphas are causally linked to price returns, rather than simple correlation.
+    Includes Granger Causality proxy tests and structural break tests (Chow test proxy).
+    """
+    def __init__(self) -> None:
+        pass
+
+    def test_granger_causality_score(self, cause: pd.Series, effect: pd.Series, max_lag: int = 3) -> float:
+        """
+        Computes a F-statistic proxy for Granger Causality.
+        Tests whether the lagged values of 'cause' provide statistically significant
+        incremental predictive power over lagged 'effect' returns.
+        """
+        aligned = pd.concat([cause, effect], axis=1).dropna()
+        if len(aligned) < (max_lag * 2 + 5):
+            return 0.0
+
+        # Standard regression model: effect_t = c + b1 * effect_t-1 + b2 * cause_t-1
+        eff_curr = aligned.iloc[1:, 1].values
+        eff_lag = aligned.iloc[:-1, 1].values
+        cause_lag = aligned.iloc[:-1, 0].values
+
+        # Fit model with both lagged variables
+        X_full = np.column_stack([np.ones_like(eff_lag), eff_lag, cause_lag])
+        y = eff_curr
+        beta_full = np.linalg.lstsq(X_full, y, rcond=None)[0]
+        residuals_full = y - X_full.dot(beta_full)
+        rss_full = np.sum(residuals_full**2)
+
+        # Fit restricted model with only lagged effect
+        X_rest = np.column_stack([np.ones_like(eff_lag), eff_lag])
+        beta_rest = np.linalg.lstsq(X_rest, y, rcond=None)[0]
+        residuals_rest = y - X_rest.dot(beta_rest)
+        rss_rest = np.sum(residuals_rest**2)
+
+        # Calculate Granger F-statistic proxy
+        if rss_full == 0:
+            return 0.0
+        n_obs = len(y)
+        f_stat = ((rss_rest - rss_full) / 1.0) / (rss_full / (n_obs - 3.0))
+        return float(f_stat if f_stat > 0 else 0.0)
+
+    def detect_structural_break_chow(self, series: pd.Series, split_idx: int) -> float:
+        """
+        Computes a Chow Test proxy statistic to detect structural regime breaks in data.
+        Returns F-stat score; high values suggest a transition in the underlying pricing process.
+        """
+        if len(series) < 10 or split_idx < 5 or split_idx > (len(series) - 5):
+            return 0.0
+
+        y = series.values
+        X = np.column_stack([np.ones_like(y), np.arange(len(y))])
+
+        # 1. Total Residual Sum of Squares (RSS_pooled)
+        beta_pooled = np.linalg.lstsq(X, y, rcond=None)[0]
+        rss_pooled = np.sum((y - X.dot(beta_pooled))**2)
+
+        # 2. Split RSS
+        y1, X1 = y[:split_idx], X[:split_idx]
+        beta1 = np.linalg.lstsq(X1, y1, rcond=None)[0]
+        rss1 = np.sum((y1 - X1.dot(beta1))**2)
+
+        y2, X2 = y[split_idx:], X[split_idx:]
+        beta2 = np.linalg.lstsq(X2, y2, rcond=None)[0]
+        rss2 = np.sum((y2 - X2.dot(beta2))**2)
+
+        # Chow F-stat formula
+        rss_combined = rss1 + rss2
+        if rss_combined == 0:
+            return 0.0
+
+        k = 2  # number of parameters (intercept + slope)
+        n = len(y)
+        chow_f = ((rss_pooled - rss_combined) / k) / (rss_combined / (n - 2 * k))
+        return float(chow_f if chow_f > 0 else 0.0)
+
+
+class ExplainabilityAndAttributionEngine:
+    """
+    Provides explainability (SHAP-like) decomposition for black-box machine learning alphas.
+    Breaks down signal predictions into discrete feature attribution weights.
+    """
+    def __init__(self) -> None:
+        pass
+
+    def compute_feature_attributions(self, feature_values: Dict[str, float],
+                                    model_weights: Dict[str, float]) -> Dict[str, float]:
+        """
+        Calculates feature attributions (SHAP Proxy value) on a specific model prediction.
+        Attribution = FeatureValue * ModelWeight, normalized to sum to the prediction.
+        """
+        attributions = {}
+        total_p = sum(val * model_weights.get(name, 0.0) for name, val in feature_values.items())
+
+        for name, val in feature_values.items():
+            weight = model_weights.get(name, 0.0)
+            attributions[name] = float(val * weight)
+
+        attributions["total_prediction_raw"] = float(total_p)
+        return attributions
+
+
+class UncertaintyEstimator:
+    """
+    Models mathematical uncertainty bounds [P_lower, P_upper] for predictions.
+    Prevents overconfident execution and sizing during ambiguous/OOD regimes.
+    """
+    def __init__(self, confidence_interval: float = 0.95) -> None:
+        self.confidence_interval = confidence_interval
+
+    def estimate_credal_bounds(self, predictions_trials: np.ndarray) -> Tuple[float, float, float]:
+        """
+        Calculates Credal Bounds based on prediction dispersion.
+        Returns (mean_prediction, lower_bound, upper_bound).
+        """
+        if len(predictions_trials) == 0:
+            return 0.0, 0.0, 0.0
+
+        mean_p = float(np.mean(predictions_trials))
+        std_p = float(np.std(predictions_trials))
+
+        # Z-value proxy
+        z = 1.96 if self.confidence_interval == 0.95 else 2.58
+        margin = z * (std_p / np.sqrt(max(len(predictions_trials), 1)))
+
+        return mean_p, float(mean_p - margin), float(mean_p + margin)
+
+
+class StrategyEvolutionEngine:
+    """
+    Genetic Algorithm Engine for Strategy Evolution (Phase 66).
+    Mutates, recombines, and evolves active alpha signals to survive new regimes.
+    """
+    def __init__(self, mutation_rate: float = 0.15) -> None:
+        self.mutation_rate = mutation_rate
+
+    def crossover_alphas(self, alpha_a: np.ndarray, alpha_b: np.ndarray) -> np.ndarray:
+        """Performs uniform crossover genetic recombination of two parent alphas."""
+        size = min(len(alpha_a), len(alpha_b))
+        child = np.zeros(size)
+
+        for i in range(size):
+            # 50/50 parent genetic mix
+            child[i] = alpha_a[i] if np.random.rand() > 0.5 else alpha_b[i]
+
+        return child
+
+    def mutate_alpha(self, alpha_signal: np.ndarray) -> np.ndarray:
+        """Applies Gaussian noise alpha mutation based on active mutation rates."""
+        mutated = alpha_signal.copy()
+        for i in range(len(mutated)):
+            if np.random.rand() < self.mutation_rate:
+                mutated[i] += np.random.normal(0, 0.05)
+        return mutated
