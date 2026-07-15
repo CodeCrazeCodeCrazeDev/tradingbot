@@ -11,7 +11,7 @@ import hashlib
 import json
 import numpy as np
 import pandas as pd
-from typing import Dict, Any, List, Optional, Tuple, Set
+from typing import Dict, Any, List, Optional, Tuple, Set, Callable
 from datetime import datetime
 from dataclasses import dataclass, field
 
@@ -335,3 +335,226 @@ class QuantitativeDiscoveryPlatform:
 
         logger.info(f"QDP Kernel: Opened Research Case {case.id[:12]} investigating '{hyp.statement[:40]}'")
         return case
+
+
+# ===========================================================================
+# AUTONOMOUS QUANTITATIVE RESEARCH INSTITUTION (AQRI) EXTENSIONS
+# ===========================================================================
+
+
+@dataclass
+class KnowledgeClaim:
+    """
+    Core QDP Entity representing an economically grounded claim.
+    Claims undergo strict Bayesian updates from incoming experimental evidence.
+    """
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    statement: str = ""
+    prior_probability: float = 0.50
+    posterior_probability: float = 0.50
+    supporting_evidence_count: int = 0
+    contradicting_evidence_count: int = 0
+    status: str = "Unverified"  # Unverified, Supported, Disproven, Institutionalized
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+
+    def apply_evidence_bayes(self, p_value: float, supports: bool) -> None:
+        """Updates claim probability using standard Bayesian update logic."""
+        # Likelihood ratio proxy derived from significance
+        likelihood_ratio = 1.0 - p_value
+
+        if supports:
+            self.supporting_evidence_count += 1
+            # Standard Odds update: Posterior odds = Prior odds * Likelihood ratio
+            prior_odds = self.posterior_probability / (1.0 - self.posterior_probability + 1e-8)
+            posterior_odds = prior_odds * (1.0 + likelihood_ratio)
+            self.posterior_probability = posterior_odds / (1.0 + posterior_odds)
+        else:
+            self.contradicting_evidence_count += 1
+            prior_odds = self.posterior_probability / (1.0 - self.posterior_probability + 1e-8)
+            posterior_odds = prior_odds * (1.0 - likelihood_ratio * 0.5)
+            self.posterior_probability = posterior_odds / (1.0 + posterior_odds)
+
+        # Bound limits
+        self.posterior_probability = float(np.clip(self.posterior_probability, 0.01, 0.99))
+
+        # Evaluate status
+        if self.supporting_evidence_count > 3 and self.posterior_probability > 0.80:
+            self.status = "Supported"
+        elif self.contradicting_evidence_count > 2 and self.posterior_probability < 0.30:
+            self.status = "Disproven"
+
+
+@dataclass
+class ResearchCampaign:
+    """Groups multiple related Research Cases into long-running thematic lines."""
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    theme_name: str = ""  # e.g., "Order Book Microstructure"
+    active_case_ids: List[str] = field(default_factory=list)
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+
+
+@dataclass
+class Policy:
+    """A durable multi-regime risk/execution policy replacing temporary strategy heuristics."""
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    name: str = ""
+    target_asset: str = ""
+    max_risk_multiplier: float = 1.0
+    rules: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class InstitutionalCapitalAccount:
+    """Tracks multi-dimensional capital accumulation across the institution."""
+    scientific_capital: float = 1000.0      # Score of validated claims
+    data_capital: float = 1000.0            # Score of versioned datasets
+    computational_capital: float = 1000.0   # Score of active GPU cores/nodes
+    methodological_capital: float = 1000.0  # Score of validation methods
+    financial_capital: float = 100000.0     # USD cash allocation balance
+
+    def get_total_capital_score(self) -> float:
+        return float(
+            self.scientific_capital +
+            self.data_capital +
+            self.computational_capital +
+            self.methodological_capital +
+            (self.financial_capital * 0.01)
+        )
+
+
+@dataclass
+class PlatformEvent:
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    event_type: str = ""  # CLAIM_UPDATED, STATE_PROMOTED, ANOMALY_DETECTED
+    payload: Dict[str, Any] = field(default_factory=dict)
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+
+
+class PlatformEventBus:
+    """Propagates platform events to registered agent handlers."""
+    def __init__(self) -> None:
+        self.handlers: List[Callable[[PlatformEvent], None]] = []
+
+    def register_handler(self, handler: Callable[[PlatformEvent], None]) -> None:
+        self.handlers.append(handler)
+
+    def publish_event(self, event_type: str, payload: Dict[str, Any]) -> PlatformEvent:
+        event = PlatformEvent(event_type=event_type, payload=payload)
+        for handler in self.handlers:
+            try:
+                handler(event)
+            except Exception as e:
+                logger.error(f"EventBus: Handler failed on {event_type}: {e}")
+        return event
+
+
+# ===========================================================================
+# Institutional Review Boards (Governance Protocol)
+# ===========================================================================
+
+class ScientificReviewBoard:
+    def approve_claim(self, claim: KnowledgeClaim, p_value: float) -> bool:
+        """Approves claim only if p-value meets strict 0.05 limit."""
+        return p_value < 0.05
+
+
+class EconomicReviewBoard:
+    def approve_edge(self, expected_sharpe: float) -> bool:
+        """Approves only if expected Sharpe satisfies 2.0 institutional hurdle."""
+        return expected_sharpe >= 2.0
+
+
+class RiskReviewBoard:
+    def approve_portfolio(self, current_leverage: float) -> bool:
+        """Limits total active portfolio leverage to 3x."""
+        return current_leverage <= 3.0
+
+
+class OperationalReviewBoard:
+    def approve_latency(self, round_trip_ms: float) -> bool:
+        """Operational limit: Latency must be within 20ms round-trip budget."""
+        return round_trip_ms <= 20.0
+
+
+# ===========================================================================
+# Master AQRI Orchestrator
+# ===========================================================================
+
+class AutonomousQuantitativeResearchInstitution:
+    """
+    Autonomous Quantitative Research Institution (AQRI).
+    The highest institutional state-centric capability layer.
+    Unifies:
+    1. Discovery (Research Cases & Campaigns)
+    2. Knowledge (Claims & Graph)
+    3. Judgment (Scientific, Economic, Risk & Operational Boards)
+    4. Deployment (Multi-regime execution policies)
+    5. Evolution (Institutional Capital & Platform Events)
+    """
+    def __init__(self) -> None:
+        self.qdp = QuantitativeDiscoveryPlatform()
+        self.event_bus = PlatformEventBus()
+        self.capital = InstitutionalCapitalAccount()
+
+        # Boards
+        self.scientific_board = ScientificReviewBoard()
+        self.economic_board = EconomicReviewBoard()
+        self.risk_board = RiskReviewBoard()
+        self.operational_board = OperationalReviewBoard()
+
+        # Repositories
+        self.campaigns: Dict[str, ResearchCampaign] = {}
+        self.claims: Dict[str, KnowledgeClaim] = {}
+        self.policies: Dict[str, Policy] = {}
+
+    def start_thematic_campaign(self, theme_name: str) -> ResearchCampaign:
+        """Starts a long-running research program campaign."""
+        camp = ResearchCampaign(theme_name=theme_name)
+        self.campaigns[camp.id] = camp
+        logger.info(f"AQRI: Initiated long-running Thematic Campaign '{theme_name}' (ID: {camp.id})")
+        return camp
+
+    def register_knowledge_claim(self, campaign_id: str, statement: str) -> KnowledgeClaim:
+        """Registers a first-class knowledge claim under an active research campaign."""
+        claim = KnowledgeClaim(statement=statement)
+        self.claims[claim.id] = claim
+
+        # Link in knowledge graph
+        self.qdp.graph.add_node(claim.id, claim)
+        self.qdp.graph.add_relation(claim.id, "part_of_campaign", campaign_id)
+
+        # Publish Event
+        self.event_bus.publish_event(
+            event_type="CLAIM_REGISTERED",
+            payload={"claim_id": claim.id, "statement": statement}
+        )
+
+        logger.info(f"AQRI: Registered Knowledge Claim: '{statement}' (ID: {claim.id[:12]})")
+        return claim
+
+    def submit_evidence_for_judgment(self, claim_id: str, p_value: float, supports: bool) -> Tuple[bool, KnowledgeClaim]:
+        """Runs Bayesian evidence updating and challenges scientific validity."""
+        claim = self.claims.get(claim_id)
+        if not claim:
+            raise ValueError(f"Claim ID {claim_id} not found.")
+
+        # Update claim priors/posteriors via Bayes
+        claim.apply_evidence_bayes(p_value, supports)
+
+        # Perform Board Review
+        approved = self.scientific_board.approve_claim(claim, p_value)
+
+        if approved:
+            # Accumulate Scientific Capital on success
+            self.capital.scientific_capital += 150.0
+            self.event_bus.publish_event(
+                event_type="CLAIM_APPROVED",
+                payload={"claim_id": claim.id, "posterior_probability": claim.posterior_probability}
+            )
+        else:
+            self.event_bus.publish_event(
+                event_type="CLAIM_REJECTED",
+                payload={"claim_id": claim.id, "p_value": p_value}
+            )
+
+        return approved, claim
