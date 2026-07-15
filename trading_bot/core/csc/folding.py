@@ -41,7 +41,23 @@ class InformationFolder:
         Implements Information Folding on a trace of episodic events.
         """
         logger.info(f"HIPIF: Folding episodic trace of {len(episodic_trace)} entries")
-        return {"status": "folded", "semantic_update": "Episodic trace compressed."}
+
+        summary = self._summarize_trace(episodic_trace)
+        stats = {
+            "num_entries": len(episodic_trace),
+            "dominant_event_type": self._get_dominant_type(episodic_trace),
+            "success_rate": self._calculate_success_rate(episodic_trace)
+        }
+
+        result = {
+            'semantic_update': summary,
+            'sufficient_statistics': stats,
+            'tokens_saved': sum(len(str(s)) for s in episodic_trace) - len(summary),
+            'status': 'folded'
+        }
+
+        return result
+
 
 class FoldingOperator:
     """

@@ -11,6 +11,7 @@ Crossover = Subtree crossover
 Mutation = Point/Subtree mutation
 """
 
+from typing import Tuple
 from typing import List, Dict, Any, Optional, Callable
 from dataclasses import dataclass, field
 from enum import Enum

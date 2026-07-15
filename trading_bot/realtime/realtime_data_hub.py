@@ -19,6 +19,7 @@ Author: AlphaAlgo Trading System
 Version: 3.0.0
 """
 
+import random
 import asyncio
 import json
 import time

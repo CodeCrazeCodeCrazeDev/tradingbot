@@ -409,8 +409,6 @@ class OptimalFSizer:
         
         # Define objective function for optimization
         def objective(f):
-            pass
-        try:
             if f <= 0:
                 return -float('inf')
             
@@ -427,6 +425,7 @@ class OptimalFSizer:
             return -geometric_mean  # Negative because we're minimizing
         
         # Optimize F
+        try:
             result = optimize.minimize_scalar(
                 objective,
                 bounds=(0.001, 1.0),

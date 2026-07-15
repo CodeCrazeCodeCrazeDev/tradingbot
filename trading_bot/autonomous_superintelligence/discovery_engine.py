@@ -3,6 +3,7 @@ Discovery Engine
 Discovers patterns, strategies, and methods that humans didn't explicitly program.
 """
 
+import hashlib
 import asyncio
 import json
 import logging

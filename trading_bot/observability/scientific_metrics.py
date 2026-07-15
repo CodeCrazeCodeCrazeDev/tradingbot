@@ -84,10 +84,22 @@ class ScientificMetrics:
         self.rejection_rate = self.rejected_count / total
         self.survival_rate = (self.confirmed_count + self.institutionalized_count) / total
 
-        self.detect_bottlenecks()
-        self.last_update = datetime.now()
+    def get_summary(self) -> Dict[str, Any]:
+        return {
+            "survival_rate": self.survival_rate,
+            "rejection_rate": self.rejection_rate,
+            "avg_posterior": self.avg_posterior,
+            "total_knowledge_units": self.total_institutionalized_knowledge,
+            "timestamp": datetime.now().isoformat()
+        }
 
-        logger.info(f"SRE Metrics: Survival {self.survival_rate:.2%}, Rejection {self.rejection_rate:.2%}, Knowledge {self.institutionalized_count}")
+
+@dataclass
+class ScientificAuditMetrics:
+    total_hypotheses: int = 0
+    confirmed_count: int = 0
+    rejected_count: int = 0
+    institutionalized_count: int = 0
 
     def detect_bottlenecks(self):
         """Identifies systemic weaknesses in the hypothesis ecosystem."""

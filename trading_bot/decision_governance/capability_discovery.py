@@ -8,6 +8,7 @@ implement prototype → test in sandbox → validate statistically → integrate
 A system that discovers WHICH capabilities it lacks.
 """
 
+import numpy as np
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timedelta
 from dataclasses import dataclass
