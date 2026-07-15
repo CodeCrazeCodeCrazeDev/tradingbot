@@ -16,17 +16,9 @@ class InformationFolder:
     Prevents 'Strategic Drift' in long-horizon tasks by extracting sufficient statistics.
     """
 
-    def __init__(self, fold_interval: int = 10):
-        self.fold_interval = fold_interval
-        self.step_counter = 0
+    def __init__(self, hms: Any = None):
+        self.hms = hms
         self.folded_summaries: List[Dict[str, Any]] = []
-
-    async def fold_step(self, episodic_trace: List[Dict[str, Any]]):
-        """Processes a single execution step and triggers folding if interval reached."""
-        self.step_counter += 1
-        if self.step_counter % self.fold_interval == 0:
-            return await self.perform_folding(episodic_trace)
-        return None
 
     def fold_history(self, ledger_entry: Any) -> str:
         """
