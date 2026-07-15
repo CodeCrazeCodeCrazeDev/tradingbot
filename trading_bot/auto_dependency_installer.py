@@ -9,6 +9,7 @@ Author: AlphaAlgo Trading System
 Version: 1.0.0
 """
 
+import asyncio
 import subprocess
 import sys
 import importlib

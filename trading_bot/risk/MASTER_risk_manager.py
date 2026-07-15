@@ -436,14 +436,10 @@ class MasterRiskManager:
             
         except Exception as e:
             logger.error(f"Error calculating position size: {e}")
-
-        try:
             import traceback
             logger.error(traceback.format_exc())
             return PositionSize(0, 0, 0, stop_loss_pips, reason=f"Error: {str(e)}")
-    
-        except Exception:
-            pass
+
     def _get_base_risk_percent(self, quality: TradeQuality) -> float:
         """Get base risk percent based on trade quality and risk mode."""
         base_risks = {

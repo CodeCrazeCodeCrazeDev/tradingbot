@@ -12,6 +12,8 @@ Usage:
     logger = get_logger(__name__)
 """
 
+import functools
+import time
 import logging
 import logging.handlers
 import os

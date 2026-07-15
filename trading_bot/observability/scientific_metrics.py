@@ -74,12 +74,7 @@ class ScientificMetrics:
             "total_knowledge_units": self.total_institutionalized_knowledge,
             "timestamp": datetime.now().isoformat()
         }
-Scientific Performance Metrics - AlphaAlgo Audit 2026
-"""
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Any
-from datetime import datetime
 
 @dataclass
 class ScientificAuditMetrics:

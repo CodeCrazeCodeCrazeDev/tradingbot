@@ -6,6 +6,7 @@ Integration Bridge: Analysis -> Signals
 Auto-generated bridge for connecting analysis and signals subsystems.
 """
 
+import asyncio
 import logging
 from typing import Any, Dict, List, Optional
 
