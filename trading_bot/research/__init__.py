@@ -42,7 +42,38 @@ except ImportError as e:
     import logging
     logging.getLogger(__name__).debug(f'Optional import failed in research.research_ingestion_pipeline: {e}')
 
+try:
+    from .quant_pipeline import (
+        Hypothesis,
+        ResearchLab,
+        IngestionPipeline,
+        FeatureFactory,
+        AlphaSignal,
+        AlphaDiscoveryEngine,
+        StrategyBuilder,
+        ValidationLab,
+        PortfolioOptimizer,
+        SimulatedPaperEnvironment,
+        StrategyMetricsSnapshot,
+        ProductionMonitor,
+    )
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in research.quant_pipeline: {e}')
+
 __all__ = [
+    'Hypothesis',
+    'ResearchLab',
+    'IngestionPipeline',
+    'FeatureFactory',
+    'AlphaSignal',
+    'AlphaDiscoveryEngine',
+    'StrategyBuilder',
+    'ValidationLab',
+    'PortfolioOptimizer',
+    'SimulatedPaperEnvironment',
+    'StrategyMetricsSnapshot',
+    'ProductionMonitor',
     'ABTestVariant',
     'ABTestingFramework',
     'AdvancedBacktester',
