@@ -102,6 +102,25 @@ except ImportError as e:
     import logging
     logging.getLogger(__name__).debug(f'Optional import failed in research.research_os: {e}')
 
+try:
+    from .research_governance import (
+        StrategicMandate,
+        ResearchStrategy,
+        ResourceAllocation,
+        ResearchPortfolioManager,
+        ScienceExperimentDesign,
+        ExperimentDesigner,
+        DecisionRecord,
+        DecisionManager,
+        AuditTrace,
+        GovernanceAuditTrail,
+        MetaLearningEngine,
+        AlphaAlgoQuantitativePlatform,
+    )
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in research.research_governance: {e}')
+
 __all__ = [
     'Hypothesis',
     'ResearchLab',
@@ -149,6 +168,18 @@ __all__ = [
     'PerformanceReport',
     'KnowledgeEntry',
     'ResearchWorkspace',
+    'StrategicMandate',
+    'ResearchStrategy',
+    'ResourceAllocation',
+    'ResearchPortfolioManager',
+    'ScienceExperimentDesign',
+    'ExperimentDesigner',
+    'DecisionRecord',
+    'DecisionManager',
+    'AuditTrace',
+    'GovernanceAuditTrail',
+    'MetaLearningEngine',
+    'AlphaAlgoQuantitativePlatform',
     'ABTestVariant',
     'ABTestingFramework',
     'AdvancedBacktester',
