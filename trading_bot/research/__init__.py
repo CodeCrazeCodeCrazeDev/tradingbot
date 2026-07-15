@@ -121,6 +121,29 @@ except ImportError as e:
     import logging
     logging.getLogger(__name__).debug(f'Optional import failed in research.research_governance: {e}')
 
+try:
+    from .discovery_platform import (
+        Observation,
+        Question,
+        HypothesisObject,
+        Evidence,
+        Theory,
+        Decision,
+        Action,
+        ResearchCase,
+        KnowledgeGraph,
+        Belief,
+        BeliefManagementSystem,
+        ScientificJudgmentEngine,
+        ResearchBalanceSheet,
+        QuantitativeDiscoveryPlatform,
+        ConstitutionViolation,
+        ConstitutionalLayer,
+    )
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in research.discovery_platform: {e}')
+
 __all__ = [
     'Hypothesis',
     'ResearchLab',
@@ -180,6 +203,22 @@ __all__ = [
     'GovernanceAuditTrail',
     'MetaLearningEngine',
     'AlphaAlgoQuantitativePlatform',
+    'Observation',
+    'Question',
+    'HypothesisObject',
+    'Evidence',
+    'Theory',
+    'Decision',
+    'Action',
+    'ResearchCase',
+    'KnowledgeGraph',
+    'Belief',
+    'BeliefManagementSystem',
+    'ScientificJudgmentEngine',
+    'ResearchBalanceSheet',
+    'QuantitativeDiscoveryPlatform',
+    'ConstitutionViolation',
+    'ConstitutionalLayer',
     'ABTestVariant',
     'ABTestingFramework',
     'AdvancedBacktester',
