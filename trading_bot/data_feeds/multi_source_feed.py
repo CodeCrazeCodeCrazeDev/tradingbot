@@ -5,6 +5,7 @@ Multi-Source Data Feed
 Aggregates data from multiple sources with failover and quality scoring.
 """
 
+import aiohttp
 import asyncio
 import logging
 from dataclasses import dataclass, field
@@ -200,6 +201,7 @@ class YahooFinanceAdapter(DataFeedAdapter):
         """Fetch real-time price from Yahoo Finance"""
             
         try:
+            import yfinance as yf
             start_time = datetime.now()
             ticker = yf.Ticker(symbol)
             info = ticker.info

@@ -5,8 +5,11 @@ Ensures World Model components are backend-agnostic and
 support high-throughput cloud execution (Ray, Kubernetes, etc.).
 """
 
+import logging
 import torch
 from typing import Dict, Any, Optional
+
+logger = logging.getLogger(__name__)
 
 def export_to_torchscript(model: torch.nn.Module, example_input: torch.Tensor, filename: str):
     """

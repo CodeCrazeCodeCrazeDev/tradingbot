@@ -18,6 +18,7 @@ Failure Memory Tracking:
 - Temporal failure clustering
 """
 
+from typing import Callable
 import logging
 from typing import Dict, List, Optional, Any, Tuple, Set
 from datetime import datetime

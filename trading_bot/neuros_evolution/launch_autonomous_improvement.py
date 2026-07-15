@@ -196,7 +196,7 @@ async def run_health_diagnosis(codebase_path: str):
         
         if health_report.critical_issues:
             print("\n🚨 Critical Issues:")
-            for issue in health_report.critical_issues]:
+            for issue in health_report.critical_issues:
                 print(f"   - {issue}")
         
         if health_report.warnings:

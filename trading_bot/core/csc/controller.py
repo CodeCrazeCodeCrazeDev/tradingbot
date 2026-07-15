@@ -19,6 +19,9 @@ Implements the Active Inference (VFE minimization) loop, HIPIF, DiscoLoop, and H
 The "One Brain" authoritative controller orchestrating the LogAct pipeline.
 """
 
+import numpy as np
+import threading
+import time
 import logging
 import asyncio
 import copy
@@ -156,6 +159,9 @@ class CognitiveSystemController:
         Grounded in Variational Free Energy (VFE) minimization (Ludik, 2025).
         """
         logger.info("CSC-V5: Starting 12-step Recursive Active Inference Pipeline")
+
+        t0 = time.perf_counter()
+        latency: Dict[str, float] = {}
 
         # 1. Observation Ingestion & Anomaly Detection
         # (Minimizing Sensory Surprise)
@@ -339,17 +345,17 @@ class CognitiveSystemController:
         # Update World Model Prediction for Step 2 of next loop
         self.last_prediction = sim_results.get(best_branch.branch_id)
 
-        if status != ActionStatus.EXECUTED:
+        if action.status != ActionStatus.EXECUTED:
             self._apply_memory_windowing()
-            reason = f"LogAct consensus failure: {status.value}"
+            reason = f"LogAct consensus failure: {action.status.value}"
             if action.voter_reports:
                 reason += f" - Reports: {action.voter_reports}"
             return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=reason)
 
         # 12. Execution & Folding (HIPIF)
         logger.info(f"CSC-V5: Trade Approved. Folding history...")
-        self.folder.fold_history(final_ledger)
-        self.hms.store_ledger_entry(final_ledger)
+        self.folder.fold_history(final_ledger_entry)
+        self.hms.store_ledger_entry(final_ledger_entry)
 
         self._apply_memory_windowing()
         return CoreDecision(
@@ -434,6 +440,8 @@ class CognitiveSystemController:
                 weight=0.9
             ))
 
+        entry_id = f"ledger_{branch.branch_id}"
+
         return ResearchLedgerEntry(
             entry_id=entry_id,
             hypothesis=branch.hypotheses[0] if branch.hypotheses else None,
@@ -442,8 +450,6 @@ class CognitiveSystemController:
             multi_path_scenarios=[{"name": getattr(s, 'name', 'Scenario')} for s in scenarios] if scenarios else [],
             composite_confidence=branch.confidence
         )
-        entry.composite_confidence = branch.confidence
-        return entry
 
     def _verify_evidence_hard_constraint(self, entry: ResearchLedgerEntry) -> bool:
         """Verifier Swarm consensus check."""
