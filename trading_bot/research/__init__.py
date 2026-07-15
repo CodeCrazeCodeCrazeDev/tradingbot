@@ -177,6 +177,23 @@ except ImportError as e:
     import logging
     logging.getLogger(__name__).debug(f'Optional import failed in research.research_kernel: {e}')
 
+try:
+    from .research_computer import (
+        EpistemicInstruction,
+        CPUCycleTrace,
+        EpistemicMetrics,
+        EpistemicObjectiveFunction,
+        CompiledPipeline,
+        ResearchCompiler,
+        ResearchMemory,
+        ResearchScheduler,
+        ResearchCPU,
+        QuantitativeResearchComputer,
+    )
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in research.research_computer: {e}')
+
 __all__ = [
     'Hypothesis',
     'ResearchLab',
@@ -271,6 +288,16 @@ __all__ = [
     'ResearchCost',
     'ResearchEconomicsEngine',
     'ResearchKernel',
+    'EpistemicInstruction',
+    'CPUCycleTrace',
+    'EpistemicMetrics',
+    'EpistemicObjectiveFunction',
+    'CompiledPipeline',
+    'ResearchCompiler',
+    'ResearchMemory',
+    'ResearchScheduler',
+    'ResearchCPU',
+    'QuantitativeResearchComputer',
     'ABTestVariant',
     'ABTestingFramework',
     'AdvancedBacktester',
