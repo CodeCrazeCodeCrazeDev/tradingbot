@@ -70,6 +70,24 @@ except ImportError as e:
     import logging
     logging.getLogger(__name__).debug(f'Optional import failed in research.quant_pipeline: {e}')
 
+try:
+    from .research_os import (
+        QuantitativeIdea,
+        IdeaRegistry,
+        QuantExperiment,
+        ExperimentRegistry,
+        ReproducibilityAssurer,
+        ReviewVerdict,
+        PeerReviewBoard,
+        FailedIdeaRecord,
+        KnowledgeArchive,
+        ProductionAnomalyAlert,
+        ProductionFeedbackLoop,
+    )
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in research.research_os: {e}')
+
 __all__ = [
     'Hypothesis',
     'ResearchLab',
@@ -92,6 +110,17 @@ __all__ = [
     'ShadowTradingEnvironment',
     'PerformanceAttribution',
     'AdvancedDriftDetection',
+    'QuantitativeIdea',
+    'IdeaRegistry',
+    'QuantExperiment',
+    'ExperimentRegistry',
+    'ReproducibilityAssurer',
+    'ReviewVerdict',
+    'PeerReviewBoard',
+    'FailedIdeaRecord',
+    'KnowledgeArchive',
+    'ProductionAnomalyAlert',
+    'ProductionFeedbackLoop',
     'ABTestVariant',
     'ABTestingFramework',
     'AdvancedBacktester',
