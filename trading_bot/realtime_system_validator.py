@@ -17,6 +17,7 @@ Author: AlphaAlgo Trading System
 Version: 1.0.0
 """
 
+import psutil
 import asyncio
 import importlib
 import importlib.util

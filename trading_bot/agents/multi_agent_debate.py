@@ -863,7 +863,7 @@ class MultiAgentDebateSystem:
                 all_arguments.append(arg)
         
             # Calculate initial consensus
-            consensus = self._calculate_consensus(current_round_args)
+            consensus = self._calculate_consensus(all_arguments)
             conflicts = self._identify_conflicts(current_round_args)
         
             debate_rounds.append(DebateRound(
@@ -879,20 +879,26 @@ class MultiAgentDebateSystem:
                 previous_round_args = current_round_args
                 current_round_args = []
             
-                # Each agent responds to others
-                last_round_args = debate_rounds[-1].arguments
+                # Each agent responds to others from the last round only
                 for agent in self.agents:
-                    for other_arg in previous_round_args:
-                        if other_arg.agent_role != agent.role:
-                            response = agent.respond_to_argument(other_arg, context)
-                            if response:
-                                current_round_args.append(response)
-                                all_arguments.append(response)
+                    # Find previous arguments from others
+                    others_args = [arg for arg in previous_round_args if arg.agent_role != agent.role]
+                    if not others_args:
+                        continue
+
+                    # Agent responds to the most relevant/concerning argument from others
+                    # For simplicity, responding to the one with highest confidence
+                    target_arg = max(others_args, key=lambda a: a.confidence)
+                    response = agent.respond_to_argument(target_arg, context)
+
+                    if response:
+                        current_round_args.append(response)
+                        all_arguments.append(response)
             
                 if not current_round_args:
                     break
             
-                consensus = self._calculate_consensus(current_round_args)
+                consensus = self._calculate_consensus(all_arguments)
                 conflicts = self._identify_conflicts(current_round_args)
             
                 debate_rounds.append(DebateRound(
@@ -916,11 +922,18 @@ class MultiAgentDebateSystem:
             logger.error(f"Error in debate: {e}")
             raise
     
-    def _calculate_consensus(self, arguments: List[AgentArgument]) -> float:
-        """Calculate consensus level among arguments."""
+    def _calculate_consensus(self, all_arguments: List[AgentArgument]) -> float:
+        """Calculate consensus level among the latest arguments from all agents."""
         try:
-            if not arguments:
+            if not all_arguments:
                 return 0.0
+
+            # Group by agent role, keeping only the latest
+            latest_arguments: Dict[AgentRole, AgentArgument] = {}
+            for arg in all_arguments:
+                latest_arguments[arg.agent_role] = arg
+
+            arguments = list(latest_arguments.values())
         
             # Group by action direction
             bullish = sum(1 for a in arguments if a.action in [TradeAction.BUY, TradeAction.STRONG_BUY])

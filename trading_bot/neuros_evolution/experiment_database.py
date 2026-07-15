@@ -8,6 +8,7 @@ Supports multiple sampling policies: UCB1, greedy, random, MAP-Elites.
 Based on ASI-Evolve paper: "stores the outcome of each evolution round and supplies the sampled nodes that form the Researcher's context"
 """
 
+import numpy as np
 import asyncio
 import logging
 import json

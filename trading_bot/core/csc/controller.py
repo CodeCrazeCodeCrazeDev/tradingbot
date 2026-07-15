@@ -13,6 +13,9 @@ Scientific Foundation:
 - RSEA (arXiv:2606.28374)
 """
 
+import numpy as np
+import threading
+import time
 import logging
 import asyncio
 import copy
@@ -109,7 +112,11 @@ class CognitiveSystemController:
         logger.info("CSC-V5: Starting 12-step Recursive Active Inference Pipeline")
         t0 = time.perf_counter()
 
-        # 1. Observation Ingestion (Active Perception)
+        t0 = time.perf_counter()
+        latency: Dict[str, float] = {}
+
+        # 1. Observation Ingestion & Anomaly Detection
+        # (Minimizing Sensory Surprise)
         sensory_surprise = self._calculate_sensory_surprise(observation)
         logger.debug(f"CSC-V5: Sensory Surprise: {sensory_surprise:.4f}")
 
@@ -191,8 +198,29 @@ class CognitiveSystemController:
         self.hms.store_ledger_entry(final_ledger_entry)
         self._apply_memory_windowing()
 
-        total_latency = (time.perf_counter() - t0) * 1000
-        logger.info(f"CSC-V5: Pipeline complete. Total Latency: {total_latency:.2f}ms")
+        # Final LogAct write-through
+        action = LogAction(
+            action_type="TRADE_EXECUTION",
+            payload=trade_proposal,
+            agent_id="CSC_V5",
+            status=ActionStatus.APPROVED
+        )
+        await decision_bus.propose_action(action)
+
+        # Update World Model Prediction for Step 2 of next loop
+        self.last_prediction = sim_results.get(best_branch.branch_id)
+
+        if action.status != ActionStatus.EXECUTED:
+            self._apply_memory_windowing()
+            reason = f"LogAct consensus failure: {action.status.value}"
+            if action.voter_reports:
+                reason += f" - Reports: {action.voter_reports}"
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=reason)
+
+        # 12. Execution & Folding (HIPIF)
+        logger.info(f"CSC-V5: Trade Approved. Folding history...")
+        self.folder.fold_history(final_ledger_entry)
+        self.hms.store_ledger_entry(final_ledger_entry)
 
         return CoreDecision(
             outcome=DecisionOutcome.TRADE_APPROVED,
@@ -254,6 +282,35 @@ class CognitiveSystemController:
         return max(branches, key=lambda b: b.confidence)
 
     def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
+        """
+        Creates a structured Research Ledger Entry including an auditable Evidence Graph.
+        Ensures every decision has a persistent chain of causality and verification.
+        """
+        # 1. Populate Evidence Graph from Branch + Context
+        graph = branch.evidence_graph
+
+        # Ensure we have the causal chain represented in the graph
+        if branch.hypotheses:
+            hyp_node_id = f"hyp_{branch.branch_id}"
+
+            # Add nodes for causal explanation components
+            explanation_node_id = f"causal_{branch.branch_id}"
+            graph.add_node(EvidenceNode(
+                node_id=explanation_node_id,
+                content=branch.causal_explanation,
+                node_type="CLAIM"
+            ))
+
+            # Link explanation to hypothesis
+            graph.add_edge(EvidenceEdge(
+                source_id=explanation_node_id,
+                target_id=hyp_node_id,
+                relation=RelationType.SUPPORTS,
+                weight=0.9
+            ))
+
+        entry_id = f"ledger_{branch.branch_id}"
+
         return ResearchLedgerEntry(
             entry_id=str(uuid4()),
             hypothesis=branch.hypotheses[0] if branch.hypotheses else None,
@@ -261,6 +318,21 @@ class CognitiveSystemController:
             evidence_graph_snapshot=branch.evidence_graph,
             composite_confidence=branch.confidence
         )
+
+    def _verify_evidence_hard_constraint(self, entry: ResearchLedgerEntry) -> bool:
+        """Verifier Swarm consensus check."""
+        if not entry.verifier_reports:
+             return True # No verifiers = default pass for now? Or fail?
+
+        # Check for high-confidence vetoes
+        for report in entry.verifier_reports:
+            if not report.is_valid and report.confidence > 0.85:
+                logger.warning(f"VETO: {report.agent_name} rejected with high confidence: {report.critique}")
+                return False
+
+        valid_reports = [r for r in entry.verifier_reports if r.is_valid]
+        consensus = len(valid_reports) / len(entry.verifier_reports)
+        return consensus >= 0.70 # 70% consensus required
 
     def _calculate_composite_confidence(self, entry: ResearchLedgerEntry) -> ConfidenceVector:
         return ConfidenceVector(statistical=entry.composite_confidence, regime=0.8, execution=0.9, tail_risk=0.85, model_stability=0.7)

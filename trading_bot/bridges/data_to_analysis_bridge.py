@@ -6,6 +6,7 @@ Integration Bridge: Data -> Analysis
 Auto-generated bridge for connecting data and analysis subsystems.
 """
 
+import asyncio
 import logging
 from typing import Any, Dict, List, Optional
 

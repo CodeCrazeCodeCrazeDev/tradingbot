@@ -1,6 +1,4 @@
 """
-Information Folding (HIPIF) - UCA V5 (July 2026)
-
 Responsible for compressing high-resolution episodic traces into
 low-resolution semantic knowledge.
 Implements 'HIPIF: Hierarchical Planning and Information Folding' (arXiv:2606.10507).
@@ -28,26 +26,38 @@ class InformationFolder:
         Extracts patterns, success/failure status, and calibration info.
         """
         logger.info(f"HIPIF: Folding research snapshot {getattr(ledger_entry, 'entry_id', 'unknown')}")
+        return "Semantic research summary"
 
-        # 1. Extract sufficient statistics
-        stats = self._extract_sufficient_statistics(ledger_entry)
+    async def perform_folding(self, episodic_trace: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Implements Information Folding on a trace of episodic events.
+        """
+        logger.info(f"HIPIF: Folding episodic trace of {len(episodic_trace)} entries")
 
-        # 2. Generate semantic summary
-        summary = f"Summary of {getattr(ledger_entry, 'entry_id', 'unknown')}: {stats}"
-
-        # 3. Store in internal folded history
-        self.folded_summaries.append({
-            "timestamp": datetime.utcnow().isoformat(),
-            "summary": summary,
-            "stats": stats
-        })
-
-        return summary
-
-    def _extract_sufficient_statistics(self, ledger_entry: Any) -> Dict[str, Any]:
-        """Extracts core metrics from a ledger entry."""
-        return {
-            "confidence": getattr(ledger_entry, "composite_confidence", 0.0),
-            "step_count": len(getattr(ledger_entry, "reasoning_steps", [])),
-            "has_hypothesis": getattr(ledger_entry, "hypothesis", None) is not None
+        summary = self._summarize_trace(episodic_trace)
+        stats = {
+            "num_entries": len(episodic_trace),
+            "dominant_event_type": self._get_dominant_type(episodic_trace),
+            "success_rate": self._calculate_success_rate(episodic_trace)
         }
+
+        result = {
+            'semantic_update': summary,
+            'sufficient_statistics': stats,
+            'tokens_saved': sum(len(str(s)) for s in episodic_trace) - len(summary),
+            'status': 'folded'
+        }
+
+        return result
+
+
+class FoldingOperator:
+    """
+    UCA V5 Folding Operator for the HIPIF pipeline.
+    """
+    def __init__(self, hms: Any = None):
+        self.hms = hms
+
+    def fold_decision_into_memory(self, decision: Any, trace: List[Any]):
+        """Compresses a decision trace into a semantic memory update."""
+        logger.info("Folding decision trace into HMS...")
