@@ -83,6 +83,21 @@ class ScientificMetrics:
 
         self.rejection_rate = self.rejected_count / total
         self.survival_rate = (self.confirmed_count + self.institutionalized_count) / total
+        self._detect_bottlenecks()
+
+    def _detect_bottlenecks(self):
+        """Identifies systemic weaknesses in the hypothesis ecosystem."""
+        self.bottlenecks_detected = []
+
+        if self.total_hypotheses > 20:
+            if self.survival_rate < 0.05:
+                self.bottlenecks_detected.append("GENERATION_NOISE: Too many low-quality hypotheses generated.")
+
+            if self.rejection_rate > 0.8:
+                self.bottlenecks_detected.append("FILTERING_STRICTNESS: Evidence collection might be too hostile or priors too low.")
+
+            if self.avg_validation_score > 0.7 and self.confirmed_count + self.institutionalized_count < 2:
+                self.bottlenecks_detected.append("PROMOTION_FRICTION: Hypotheses pass validation but fail to reach confirmation.")
 
     def get_summary(self) -> Dict[str, Any]:
         return {
