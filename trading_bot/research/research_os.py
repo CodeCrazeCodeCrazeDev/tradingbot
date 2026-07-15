@@ -14,6 +14,8 @@ from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime
 from dataclasses import dataclass, field
 
+from .quant_pipeline import Hypothesis
+
 logger = logging.getLogger("AlphaAlgo.ResearchOS")
 
 
@@ -463,3 +465,201 @@ class StrategyEvolutionEngine:
             if np.random.rand() < self.mutation_rate:
                 mutated[i] += np.random.normal(0, 0.05)
         return mutated
+
+
+# ===========================================================================
+# QUANTITATIVE RESEARCH PLATFORM (QRP) ENTITIES & WORKSPACE ORCHESTRATOR
+# ===========================================================================
+
+
+@dataclass
+class ResearchProject:
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    title: str = ""
+    objective: str = ""
+    created_at: datetime = field(default_factory=datetime.utcnow)
+    status: str = "Active"  # Active, Completed, Suspended
+
+
+@dataclass
+class ResearchQuestion:
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    project_id: str = ""
+    question_text: str = ""
+    economic_foundation: str = ""
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+
+
+@dataclass
+class FeatureSet:
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    name: str = ""
+    feature_names: List[str] = field(default_factory=list)
+    dataset_version_id: str = ""
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+
+
+@dataclass
+class ValidationReport:
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    experiment_id: str = ""
+    deflated_sharpe: float = 0.0
+    p_value: float = 0.0
+    is_statistically_significant: bool = False
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+
+
+@dataclass
+class Deployment:
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    experiment_id: str = ""
+    mode: str = "shadow"  # shadow, paper, small_live, scaled_production
+    risk_limit_pips: float = 0.0
+    max_capital_usd: float = 0.0
+    deployed_at: datetime = field(default_factory=datetime.utcnow)
+
+
+@dataclass
+class PerformanceReport:
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    deployment_id: str = ""
+    total_return_usd: float = 0.0
+    live_drawdown_pct: float = 0.0
+    realized_sharpe: float = 0.0
+    slippage_drag_pips: float = 0.0
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+
+
+@dataclass
+class KnowledgeEntry:
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    source_type: str = ""  # hypothesis, experiment, deployment
+    source_id: str = ""
+    lessons_learned: str = ""
+    recommendation: str = ""
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+
+
+class ResearchWorkspace:
+    """
+    Unified central orchestrator for the Quantitative Research Platform (QRP).
+    Serves as the primary workspace API connecting researchers, the Hypothesis Lab,
+    the Experiment Manager, the Knowledge Base, and the underlying Research OS.
+    """
+    def __init__(self, target_sharpe: float = 2.0, max_drawdown: float = 8.0) -> None:
+        self.target_sharpe = target_sharpe
+        self.max_drawdown = max_drawdown
+
+        # Operational Backbones
+        self.ideas = IdeaRegistry()
+        self.experiments = ExperimentRegistry()
+        self.lineage = DataLineageRegistry()
+        self.causality = CausalityAndStructuralBreakTester()
+        self.explainability = ExplainabilityAndAttributionEngine()
+        self.uncertainty = UncertaintyEstimator()
+        self.evolution = StrategyEvolutionEngine()
+        self.peer_review = PeerReviewBoard()
+        self.knowledge = KnowledgeArchive()
+        self.feedback = ProductionFeedbackLoop(self.ideas)
+
+        # Platform Repositories
+        self.projects: Dict[str, ResearchProject] = {}
+        self.questions: Dict[str, ResearchQuestion] = {}
+        self.hypotheses: Dict[str, Hypothesis] = {}
+        self.feature_sets: Dict[str, FeatureSet] = {}
+        self.validation_reports: Dict[str, ValidationReport] = {}
+        self.deployments: Dict[str, Deployment] = {}
+        self.performance_reports: Dict[str, PerformanceReport] = {}
+        self.knowledge_entries: Dict[str, KnowledgeEntry] = {}
+
+    def create_project(self, title: str, objective: str) -> ResearchProject:
+        """Starts a new quantitative research project on the platform."""
+        project = ResearchProject(title=title, objective=objective)
+        self.projects[project.id] = project
+        logger.info(f"QRP: Created Research Project '{title}' (ID: {project.id})")
+        return project
+
+    def formulate_question(self, project_id: str, question: str, foundation: str) -> ResearchQuestion:
+        """Formulates a granular, economically grounded research question under a project."""
+        q = ResearchQuestion(project_id=project_id, question_text=question, economic_foundation=foundation)
+        self.questions[q.id] = q
+        logger.info(f"QRP: Formulated Research Question under project {project_id[:12]} -> {question}")
+        return q
+
+    def record_hypothesis(self, question_id: str, name: str, description: str,
+                          rationale: str, counterparty: str, falsifications: List[str]) -> Hypothesis:
+        """Proposes and stores a formalized hypothesis under a research question."""
+        hyp = Hypothesis(
+            name=name,
+            description=description,
+            economic_rationale=rationale,
+            counterparty_profile=counterparty,
+            falsification_conditions=falsifications
+        )
+        self.hypotheses[hyp.id] = hyp
+        logger.info(f"QRP: Hypothesis Formed: '{name}' (ID: {hyp.id})")
+        return hyp
+
+    def create_feature_set(self, name: str, features: List[str], dataset_version_id: str) -> FeatureSet:
+        """Registers a candidate feature set trace linked to a clean dataset version."""
+        f_set = FeatureSet(name=name, feature_names=features, dataset_version_id=dataset_version_id)
+        self.feature_sets[f_set.id] = f_set
+        logger.info(f"QRP: Feature Set registered: '{name}' containing {len(features)} features.")
+        return f_set
+
+    def log_validation_report(self, experiment_id: str, deflated_sharpe: float, p_value: float) -> ValidationReport:
+        """Records mathematical statistical validation for an experiment."""
+        is_sig = p_value < 0.05 and deflated_sharpe >= self.target_sharpe
+        report = ValidationReport(
+            experiment_id=experiment_id,
+            deflated_sharpe=deflated_sharpe,
+            p_value=p_value,
+            is_statistically_significant=is_sig
+        )
+        self.validation_reports[report.id] = report
+        logger.info(f"QRP: Validation Report Logged for {experiment_id[:12]} -> Deflated Sharpe: {deflated_sharpe:.2f}, Significance: {is_sig}")
+        return report
+
+    def execute_promotion_gate(self, validation_report_id: str) -> Tuple[bool, Optional[Deployment]]:
+        """
+        Promotion Gate: Promotes an experiment to simulated shadow trading
+        only if it is statistically significant and has passed peer review.
+        """
+        report = self.validation_reports.get(validation_report_id)
+        if not report:
+            return False, None
+
+        # Verify statistical significance
+        if not report.is_statistically_significant:
+            logger.warning(f"Promotion Denied: Report {validation_report_id[:12]} is not statistically significant.")
+            return False, None
+
+        # Verify Peer Review history
+        reviews = self.peer_review.review_history.get(report.experiment_id, [])
+        if not reviews or not any(r.verdict == "APPROVED" for r in reviews):
+            logger.warning(f"Promotion Denied: Experiment {report.experiment_id[:12]} has not passed peer review.")
+            return False, None
+
+        # Create Deployment node
+        deployment = Deployment(
+            experiment_id=report.experiment_id,
+            mode="shadow",
+            risk_limit_pips=15.0,
+            max_capital_usd=50000.0
+        )
+        self.deployments[deployment.id] = deployment
+        logger.info(f"PROMOTION SUCCESSFUL: Experiment {report.experiment_id[:12]} promoted to SHADOW TRADING.")
+        return True, deployment
+
+    def record_knowledge_entry(self, source_type: str, source_id: str,
+                               lessons: str, recommendation: str) -> KnowledgeEntry:
+        """Appends a searchable knowledge entry to the platform's long-term Knowledge Base."""
+        entry = KnowledgeEntry(
+            source_type=source_type,
+            source_id=source_id,
+            lessons_learned=lessons,
+            recommendation=recommendation
+        )
+        self.knowledge_entries[entry.id] = entry
+        logger.info(f"QRP Knowledge Base: Logged entry from {source_type} {source_id[:12]}.")
+        return entry
