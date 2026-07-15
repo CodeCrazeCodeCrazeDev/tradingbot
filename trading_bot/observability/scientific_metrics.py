@@ -1,11 +1,16 @@
 """
-Tracks the quality, survival, and economic value of the scientific reasoning process.
+Institutional Scientific Metrics (UCA V5)
+========================================
+
+Tracks the quality, survival, and economic value of the scientific reasoning process,
+providing feedback for the self-improvement loop.
 """
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 import logging
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -15,56 +20,69 @@ class ScientificMetrics:
     avg_posterior: float = 0.0
     avg_novelty: float = 0.0
     avg_vfe: float = 0.0
+    avg_validation_score: float = 0.0
 
     # Lifecycle Efficiency
     survival_rate: float = 0.0
-    avg_steps_to_retirement: float = 0.0
     rejection_rate: float = 0.0
+    avg_steps_to_retirement: float = 0.0
+
+    # Counts
+    total_hypotheses: int = 0
+    confirmed_count: int = 0
+    rejected_count: int = 0
+    institutionalized_count: int = 0
+    inconclusive_count: int = 0
 
     # Economic & Scientific Value
-    total_confirmed_hypotheses: int = 0
-    total_institutionalized_knowledge: int = 0
     research_efficiency_ratio: float = 0.0 # Value / Cost
-
-    # Calibration
     ece: float = 1.0 # Expected Calibration Error
 
-    last_reset: datetime = field(default_factory=datetime.now)
+    # Self-Improvement
+    bottlenecks_detected: List[str] = field(default_factory=list)
+    last_update: datetime = field(default_factory=datetime.now)
 
     def update_from_registry(self, registry: Dict[str, Any]):
         """Update metrics based on the current state of the SRE registry."""
         total = len(registry)
+        self.total_hypotheses = total
         if total == 0:
             return
 
-        confirmed = 0
-        institutionalized = 0
-        rejected = 0
+        counts = {
+            "CONFIRMED": 0,
+            "INSTITUTIONALIZED": 0,
+            "REJECTED": 0,
+            "INCONCLUSIVE": 0
+        }
+
         sum_posterior = 0.0
         sum_novelty = 0.0
         sum_vfe = 0.0
+        sum_val = 0.0
 
         for hyp in registry.values():
-            sum_posterior += hyp.posterior
-            sum_novelty += hyp.novelty_score
-            sum_vfe += hyp.vfe
+            sum_posterior += getattr(hyp, 'posterior', 0.5)
+            sum_novelty += getattr(hyp, 'novelty_score', 0.0)
+            sum_vfe += getattr(hyp, 'vfe', 0.0)
+            sum_val += getattr(hyp, 'validation_score', 0.0)
 
-            if hyp.state.name == "CONFIRMED":
-                confirmed += 1
-            elif hyp.state.name == "INSTITUTIONALIZED":
-                institutionalized += 1
-            elif hyp.state.name == "REJECTED":
-                rejected += 1
+            state_name = hyp.state.name if hasattr(hyp.state, 'name') else str(hyp.state)
+            if state_name in counts:
+                counts[state_name] += 1
+
+        self.confirmed_count = counts["CONFIRMED"]
+        self.institutionalized_count = counts["INSTITUTIONALIZED"]
+        self.rejected_count = counts["REJECTED"]
+        self.inconclusive_count = counts["INCONCLUSIVE"]
 
         self.avg_posterior = sum_posterior / total
         self.avg_novelty = sum_novelty / total
         self.avg_vfe = sum_vfe / total
-        self.total_confirmed_hypotheses = confirmed
-        self.total_institutionalized_knowledge = institutionalized
-        self.rejection_rate = rejected / total
-        self.survival_rate = (confirmed + institutionalized) / total if total > 0 else 0.0
+        self.avg_validation_score = sum_val / total
 
-        logger.info(f"Scientific Metrics Updated: Survival Rate {self.survival_rate:.2f}, Avg Posterior {self.avg_posterior:.2f}")
+        self.rejection_rate = self.rejected_count / total
+        self.survival_rate = (self.confirmed_count + self.institutionalized_count) / total
 
     def get_summary(self) -> Dict[str, Any]:
         return {
@@ -83,23 +101,27 @@ class ScientificAuditMetrics:
     rejected_count: int = 0
     institutionalized_count: int = 0
 
-    # Quality metrics
-    avg_posterior: float = 0.0
-    avg_novelty: float = 0.0
-    avg_validation_score: float = 0.0
-
-    # Efficiency metrics
-    avg_discovery_time: float = 0.0 # seconds from obs to final state
-
-    # Self-improvement triggers
-    bottlenecks_detected: List[str] = field(default_factory=list)
-
-    def calculate_survival_rate(self) -> float:
-        if self.total_hypotheses == 0: return 0.0
-        return (self.confirmed_count + self.institutionalized_count) / self.total_hypotheses
-
     def detect_bottlenecks(self):
-        if self.total_hypotheses > 10 and self.calculate_survival_rate() < 0.1:
-            self.bottlenecks_detected.append("High Rejection Rate: Generation logic may be too noisy.")
-        if self.avg_validation_score > 0.8 and self.confirmed_count < 2:
-            self.bottlenecks_detected.append("Promotion Bottleneck: Validation is passing but hypotheses are not being confirmed.")
+        """Identifies systemic weaknesses in the hypothesis ecosystem."""
+        self.bottlenecks_detected = []
+
+        if self.total_hypotheses > 20:
+            if self.survival_rate < 0.05:
+                self.bottlenecks_detected.append("GENERATION_NOISE: Too many low-quality hypotheses generated.")
+
+            if self.rejection_rate > 0.8:
+                self.bottlenecks_detected.append("FILTERING_STRICTNESS: Evidence collection might be too hostile or priors too low.")
+
+            if self.avg_validation_score > 0.7 and self.confirmed_count < 2:
+                self.bottlenecks_detected.append("PROMOTION_FRICTION: Hypotheses pass validation but fail to reach confirmation.")
+
+    def get_summary(self) -> Dict[str, Any]:
+        return {
+            "total_hypotheses": self.total_hypotheses,
+            "survival_rate": self.survival_rate,
+            "rejection_rate": self.rejection_rate,
+            "avg_posterior": self.avg_posterior,
+            "knowledge_units": self.institutionalized_count,
+            "bottlenecks": self.bottlenecks_detected,
+            "timestamp": self.last_update.isoformat()
+        }
