@@ -44,6 +44,16 @@ try:
 except ImportError:
     TORCH_AVAILABLE = False
 
+if not TORCH_AVAILABLE:
+    class MockModule:
+        def __init__(self, *args, **kwargs):
+            pass
+    class MockNN:
+        Module = MockModule
+        def __getattr__(self, name):
+            return MockModule
+    nn = MockNN()
+
 try:
     from sklearn.preprocessing import StandardScaler
     from sklearn.ensemble import GradientBoostingRegressor
