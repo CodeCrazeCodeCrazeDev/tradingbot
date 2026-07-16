@@ -97,7 +97,34 @@ class SAGEGraphMemory:
                 n1, n2 = f.get("node_a"), f.get("node_b")
                 if self.graph.has_node(n1) and self.graph.has_node(n2):
                     self.graph = nx.contracted_nodes(self.graph, n1, n2, self_loops=False)
+
+        # Periodic automatic compaction to prevent Mid-term graph bloat
+        if self.evolution_rounds % 10 == 0:
+            self.compact_graph()
+
         self.save()
+
+    def compact_graph(self, max_nodes: int = 5000, min_confidence: float = 0.3):
+        """Prunes old or low-confidence nodes/edges to prevent memory bloat."""
+        logger.info(f"SAGE: Starting graph compaction. Current size: {len(self.graph.nodes)} nodes.")
+
+        # 1. Prune edges with low confidence (if metadata exists)
+        edges_to_prune = []
+        for u, v, k, d in self.graph.edges(keys=True, data=True):
+            evidence = d.get('evidence', {})
+            if isinstance(evidence, dict) and evidence.get('confidence', 1.0) < min_confidence:
+                edges_to_prune.append((u, v, k))
+
+        for u, v, k in edges_to_prune:
+            self.graph.remove_edge(u, v, k)
+
+        # 2. Prune orphan nodes if over capacity
+        if len(self.graph.nodes) > max_nodes:
+            # Simple heuristic: remove nodes with no edges first
+            orphans = [n for n in self.graph.nodes if self.graph.degree(n) == 0]
+            self.graph.remove_nodes_from(orphans[:len(self.graph.nodes) - max_nodes])
+
+        logger.info(f"SAGE: Compaction complete. New size: {len(self.graph.nodes)} nodes.")
 
 class HierarchicalMemorySystem:
     """
