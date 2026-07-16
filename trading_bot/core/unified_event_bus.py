@@ -117,6 +117,8 @@ class UnifiedDecisionBus:
     async def _process_log(self):
         max_log_size = self.config.get("max_log_size", 1000)
         while self._running:
+            action = None
+            start_time = time.time()
             try:
                 _, _, action = await self._action_queue.get()
                 action.sequence_number = len(self._log)
@@ -141,10 +143,20 @@ class UnifiedDecisionBus:
                 else:
                     action.status = ActionStatus.VETOED
 
-                action._completed_event.set()
-                self._action_queue.task_done()
-            except asyncio.CancelledError: break
-            except Exception as e: logger.error(f"LogAct Error: {e}")
+                # Record KPI: Consensus Latency
+                latency = (time.time() - start_time) * 1000
+                logger.debug(f"KPI: Consensus Latency for {action.action_id}: {latency:.2f}ms")
+
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"LogAct Error: {e}")
+                if action:
+                    action.status = ActionStatus.FAILED
+            finally:
+                if action:
+                    action._completed_event.set()
+                    self._action_queue.task_done()
 
     def _check_consensus(self, action: LogAction) -> bool:
         for vid, report in action.voter_reports.items():

@@ -41,8 +41,15 @@ try:
     import torch.nn as nn
     import torch.nn.functional as F
     TORCH_AVAILABLE = True
-except ImportError:
+except (ImportError, NameError):
     TORCH_AVAILABLE = False
+    # Mock nn.Module for inheritance if torch is missing
+    class MockModule:
+        def __init__(self, *args, **kwargs): pass
+        def parameters(self): return []
+    class MockNN:
+        Module = MockModule
+    nn = MockNN()
 
 try:
     from sklearn.preprocessing import StandardScaler
