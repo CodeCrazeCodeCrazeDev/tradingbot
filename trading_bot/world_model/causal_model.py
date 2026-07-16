@@ -58,15 +58,22 @@ class StructuralCausalModelV5(nn.Module):
         Pearl's 'do' operator: do(X=x).
         Prunes causal parents and sets node value.
         """
+        # 1. Local copy of adjacency to prune parents
+        adj_prime = self.adjacency.clone()
         z_prime = z.clone()
-        for idx, val in interventions.items():
-            # 1. Intervene: set value
-            z_prime[:, idx] = val
-            # 2. Prune: zero out incoming influence in the local rollout
-            # (Simplified for vector implementation: zeroing out the column in adjacency)
 
-        # Propagate through modified dynamics
-        return torch.matmul(z_prime, self.adjacency)
+        for idx, val in interventions.items():
+            # 2. Prune: zero out incoming influence for intervened variable
+            # (In matmul z @ adj, incoming influence to node i is in column i)
+            adj_prime[:, idx] = 0.0
+            # Ensure self-preservation of the intervened value
+            adj_prime[idx, idx] = 1.0
+
+            # 3. Action: set value
+            z_prime[:, idx] = val
+
+        # 4. Propagate through modified causal dynamics
+        return torch.matmul(z_prime, adj_prime)
 
     def counterfactual_query(self, factual_z: torch.Tensor, alternative_action: Dict[int, float]) -> torch.Tensor:
         """
