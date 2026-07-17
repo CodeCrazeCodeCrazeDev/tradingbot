@@ -14,6 +14,22 @@ from trading_bot.core.hms.memory import HierarchicalMemorySystem
 @pytest.mark.asyncio
 async def test_logact_reliability_backbone():
     """Verify LogAct Shared-Log Backbone and Voter consensus."""
+    # Reset singleton state for clean test
+    await decision_bus.stop()
+    decision_bus._voters = {}
+    decision_bus._log = []
+    decision_bus._action_queue = None
+    decision_bus._processor_task = None
+
+    import sys
+    import importlib
+    if 'trading_bot.core.immutable_shield' in sys.modules:
+        importlib.reload(sys.modules['trading_bot.core.immutable_shield'])
+    from trading_bot.core.immutable_shield import shield
+    shield._initialized = False
+    shield.__init__()
+    decision_bus.register_voter("GovernanceShield", shield.vote_on_action)
+
     csc = CognitiveSystemController()
     await decision_bus.start()
 

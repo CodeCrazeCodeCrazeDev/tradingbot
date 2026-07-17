@@ -57,7 +57,29 @@ class ImmutableShield:
         }
         self._audit_log: List[ShieldReport] = []
         self._initialized = True
+        self._register_with_bus()
         logger.info("ImmutableShield initialized as singleton")
+
+    def _register_with_bus(self):
+        """Register the shield as a mandatory LogAct voter."""
+        try:
+            from .unified_event_bus import decision_bus
+            decision_bus.register_voter("GovernanceShield", self.vote_on_action)
+        except ImportError:
+            logger.warning("ImmutableShield: Could not register with decision_bus (import error)")
+
+    async def vote_on_action(self, action: Any) -> Dict[str, Any]:
+        """LogAct Voter Interface."""
+        report = self.validate_action(
+            action.action_type,
+            action.payload,
+            action.payload.get("context", {})
+        )
+        return {
+            "decision": "APPROVE" if report.decision == GovernanceDecision.APPROVED else "REJECT",
+            "reason": report.reason,
+            "audit_id": report.audit_id
+        }
 
     def validate_action(self, action_type: str, params: Dict[str, Any], context: Dict[str, Any]) -> ShieldReport:
         """
