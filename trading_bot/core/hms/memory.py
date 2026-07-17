@@ -24,6 +24,8 @@ from .models import (
     EvidenceGraph
 )
 from .memory_os import MemoryOS, MemoryNode, MemoryTier, MemoryProvenance
+from .cmos import CognitiveMemoryOS
+from .ontology import CMOSNode, CMOSNodeTier, CMOSProvenance
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +100,7 @@ class SAGEGraphMemory:
 
 class HierarchicalMemorySystem:
     """
-    Authoritative memory system. Consolidates SAGE, AutoMem, and Memory OS.
+    Authoritative memory system. Consolidates SAGE, AutoMem, Memory OS, and CognitiveMemoryOS.
     """
     _instance = None
     _lock = threading.Lock()
@@ -130,8 +132,11 @@ class HierarchicalMemorySystem:
         # Consolidating standard MemoryOS
         self.memory_os = MemoryOS(base_storage_path=os.path.join(base_path, "memory_os"))
 
+        # Core CMOS substrate instantiation
+        self.cmos = CognitiveMemoryOS()
+
         self._initialized = True
-        logger.info(f"HMS V5+: Initialized with Consolidated Memory OS at {base_path}")
+        logger.info(f"HMS V5+: Initialized with Consolidated Cognitive Memory OS (CMOS) at {base_path}")
 
     def _load_schema(self) -> Dict[str, Any]:
         if os.path.exists(self.schema_path):
@@ -183,7 +188,24 @@ class HierarchicalMemorySystem:
         )
         self.memory_os.write_memory(mem_node)
 
-        # 4. Persist file
+        # 4. Write to the first-class CMOS Core Ontology
+        cmos_node = CMOSNode(
+            node_id=str(entry.entry_id),
+            tier=CMOSNodeTier.T6_INSTITUTIONAL,
+            content={
+                "composite_confidence": entry.composite_confidence,
+                "reasoning_steps": entry.reasoning_steps,
+                "uncertainty_estimate": entry.uncertainty_estimate
+            },
+            provenance=CMOSProvenance(
+                source_agent="HierarchicalMemorySystem",
+                source_input_hash=str(entry.world_model_state_hash or "default_world_state_hash"),
+                confidence=entry.composite_confidence
+            )
+        )
+        self.cmos.write_node(cmos_node)
+
+        # 5. Persist file
         entry_data = {
             "entry_id": str(entry.entry_id),
             "timestamp": entry.timestamp.isoformat(),
