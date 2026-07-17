@@ -1,7 +1,8 @@
 """
 Comprehensive Unit and Integration Tests for the Quantitative Research Institution (AQRI).
 Validates the institutional operating systems, specialized divisions,
-the four advanced scientific engines, and the end-to-end 14-step quantitative research lifecycle.
+the four advanced scientific engines, Palantir Enterprise Ontology,
+AIP Orchestrator, and the end-to-end 14-step quantitative research lifecycle.
 """
 
 import pytest
@@ -15,7 +16,7 @@ from trading_bot.research.institution import (
     TradingResearchDivision, PortfolioResearchDivision, MarketMicrostructureDivision,
     RiskScienceDivision, AIResearchDivision, ProductionDeploymentDivision,
     AdversarialCritiqueBoard, SkepticismEngine, ContinuousReplicationPipeline, EvolutionSandbox,
-    Theory
+    PalantirEnterpriseOntology, AIPOrchestrator, OntologyObject, Theory
 )
 from trading_bot.research.research_computer import EpistemicInstruction
 
@@ -58,6 +59,10 @@ def test_aqri_initialization(institution):
     assert isinstance(institution.risk_division, RiskScienceDivision)
     assert isinstance(institution.ai_division, AIResearchDivision)
     assert isinstance(institution.production_division, ProductionDeploymentDivision)
+
+    # Palantir AIP Layers
+    assert isinstance(institution.ontology, PalantirEnterpriseOntology)
+    assert isinstance(institution.orchestrator, AIPOrchestrator)
 
 
 def test_research_os_intent_and_cycle(institution):
@@ -104,9 +109,6 @@ def test_knowledge_os_graph_and_beliefs(institution):
     institution.kos.balance_sheet.known_data_quality_issues = 0
 
     equity = institution.kos.update_firm_knowledge_equity()
-    # Assets: 3*1000 + 5*250 + 1*2000 = 6250
-    # Liabilities: 1*300 + 2*50 + 0*400 = 400
-    # Equity = 5850.0
     assert equity == 5850.0
 
 
@@ -208,8 +210,6 @@ def test_scientific_divisions_computations(institution):
         win_rate=0.55,
         win_loss_ratio=1.2
     )
-    # Kelly % = 0.55 - (0.45 / 1.2) = 0.55 - 0.375 = 0.175
-    # Fractional Kelly (50% Kelly) = 0.0875
     assert abs(kelly - 0.0875) < 1e-5
 
     # Market Microstructure OBI
@@ -217,7 +217,6 @@ def test_scientific_divisions_computations(institution):
         bid_vol=150.0,
         ask_vol=50.0
     )
-    # (150 - 50) / 200 = 0.5
     assert obi == 0.5
 
     # Risk Science: Credal Bounds
@@ -286,13 +285,11 @@ def test_skepticism_engine_groupthink(institution):
 
 def test_continuous_replication_pipeline(institution, sample_data):
     """Tests retrospective replication study of older accepted theories."""
-    # Seed theory in graph
     t = Theory(explanation="Causal imbalance theory", confidence_score=0.90)
     institution.kos.graph.add_node("theory_c1", t)
 
     pipeline = ContinuousReplicationPipeline(kos=institution.kos)
 
-    # Replicate theory: should perform replication run and append to audit log
     replicated, replicated_sharpe = pipeline.replicate_theory("theory_c1", sample_data)
     assert replicated in [True, False]
     assert len(pipeline.replication_audit_log) == 1
@@ -310,10 +307,52 @@ def test_evolution_sandbox_ablation():
     assert "full_integration" in ablation_matrix
     assert "only_lr_scheduler_decay" in ablation_matrix
 
-    # Verify attribution history is captured
     history = sandbox.ablation_matrix_history[proposal_id]
     assert len(history["attribution"]) == 2
     assert pytest.approx(sum(history["attribution"].values()), 1e-5) == 1.0
+
+
+def test_palantir_ontology_and_orchestrator(institution):
+    """Tests Palantir Enterprise Ontology tracking and long-running AIP Orchestrator teaming."""
+    ontology = institution.ontology
+    orchestrator = institution.orchestrator
+
+    # 1. Create objects and links
+    dataset_obj = ontology.create_object(obj_type="DATASET", properties={"name": "tick_data_EURUSD"})
+    alpha_obj = ontology.create_object(obj_type="ALPHA", properties={"formula": "imbalance * zscore"})
+    ontology.link_objects(alpha_obj.id, "trained_on", dataset_obj.id)
+
+    assert len(ontology.objects) == 2
+    assert len(ontology.relations) == 1
+
+    # 2. Transactional Mutation
+    action = ontology.apply_transaction(
+        action_type="PROMOTE_TO_PRODUCTION",
+        obj_id=alpha_obj.id,
+        params={"state": "Active", "properties_update": {"reproducibility": "verified"}},
+        agent_id="AIPOrchestrator"
+    )
+    assert ontology.objects[alpha_obj.id].state == "Active"
+    assert ontology.objects[alpha_obj.id].properties["reproducibility"] == "verified"
+    assert len(ontology.action_ledger) == 1
+
+    # 3. AIP Orchestrator Background Agents
+    agent = orchestrator.register_agent(role="RiskValidator")
+    task = orchestrator.dispatch_task(
+        agent_id=agent.id,
+        desc="Audit slippage parameter constraints on new Alpha.",
+        obj_id=alpha_obj.id
+    )
+    assert len(orchestrator.agents) == 1
+    assert task.status == "Pending"
+
+    # 4. Human-Agent Teaming Gate
+    approved = orchestrator.run_human_agent_teaming_gate(
+        task_id=task.id,
+        rationale="All slippage validation metrics met. Highly clean data."
+    )
+    assert approved is True
+    assert task.status == "Completed"
 
 
 def test_end_to_end_institutional_research_lifecycle(institution, sample_data):

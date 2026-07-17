@@ -3,8 +3,15 @@ Quantitative Research Institution (AQRI) - Top-Level Core Architecture.
 Transforms AlphaAlgo from a trading bot into an autonomous scientific institution
 focused on verified quantitative knowledge as its primary product.
 
+Inspired by:
+- Palantir AIP DevCon 5 / DevCon 6: Object-centric Enterprise Ontology
+  and the AIP Orchestrator framework for human-agent teaming at scale.
+
 Architecture:
 Research Institution (top level)
+│
+├── Palantir Enterprise Ontology (Object-centric Layer)
+├── AIP Orchestrator (Long-running multi-agent execution)
 │
 ├── Research Operating System (ROS)
 ├── Knowledge Operating System (KOS)
@@ -66,7 +73,160 @@ logger = logging.getLogger("AlphaAlgo.Institution")
 
 
 # ===========================================================================
-# 1. Advanced Institutional Engines (Solving the Gaps)
+# PALANTIR ENTERPRISE ONTOLOGY (Object-centric Layer)
+# ===========================================================================
+
+@dataclass
+class OntologyObject:
+    """An object-centric representation of an enterprise quantitative asset."""
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    type: str = "QuantitativeAsset"  # THEORY, DATASET, ALPHA, DEPLOYMENT, POLICY
+    properties: Dict[str, Any] = field(default_factory=dict)
+    state: str = "Draft"
+    last_modified: datetime = field(default_factory=datetime.utcnow)
+
+
+@dataclass
+class OntologyRelation:
+    """A typed directional link connecting two Ontology Objects."""
+    source_id: str
+    relation_type: str  # e.g., trained_on, validated_by, regulated_by
+    target_id: str
+
+
+@dataclass
+class OntologyAction:
+    """A transactional, auditable mutation applied to the Enterprise Ontology."""
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    action_type: str = "MUTATION"
+    affected_object_id: str = ""
+    parameters: Dict[str, Any] = field(default_factory=dict)
+    user_or_agent_id: str = "AIPOrchestrator"
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+
+
+class PalantirEnterpriseOntology:
+    """
+    Standardizes all quantitative scientific research assets into a unified,
+    object-centric semantic ontology. Supports auditable, transactional mutations.
+    """
+    def __init__(self) -> None:
+        self.objects: Dict[str, OntologyObject] = {}
+        self.relations: List[OntologyRelation] = []
+        self.action_ledger: List[OntologyAction] = []
+
+    def create_object(self, obj_type: str, properties: Dict[str, Any], obj_id: Optional[str] = None) -> OntologyObject:
+        """Adds a new object to the Enterprise Ontology."""
+        oid = obj_id or str(uuid.uuid4())
+        obj = OntologyObject(id=oid, type=obj_type, properties=properties)
+        self.objects[oid] = obj
+        logger.info(f"Ontology: Created Object '{obj_type}' ID: {oid[:12]}")
+        return obj
+
+    def link_objects(self, source_id: str, relation_type: str, target_id: str) -> None:
+        """Creates a directional link connecting two ontology objects."""
+        relation = OntologyRelation(source_id=source_id, relation_type=relation_type, target_id=target_id)
+        self.relations.append(relation)
+        logger.info(f"Ontology Link: {source_id[:12]} --[{relation_type}]--> {target_id[:12]}")
+
+    def apply_transaction(self, action_type: str, obj_id: str, params: Dict[str, Any], agent_id: str) -> OntologyAction:
+        """Executes an auditable transactional action on the ontology, logging it in the immutable ledger."""
+        action = OntologyAction(
+            action_type=action_type,
+            affected_object_id=obj_id,
+            parameters=params,
+            user_or_agent_id=agent_id
+        )
+        self.action_ledger.append(action)
+
+        # Mutate object state or properties safely
+        obj = self.objects.get(obj_id)
+        if obj:
+            obj.properties.update(params.get("properties_update", {}))
+            if "state" in params:
+                obj.state = params["state"]
+            obj.last_modified = datetime.utcnow()
+
+        logger.warning(f"Ontology Transaction [{action.id[:8]}]: Applied '{action_type}' to '{obj_id[:12]}'")
+        return action
+
+
+# ===========================================================================
+# PALANTIR AIP ORCHESTRATOR (Agent & Automation Execution Framework)
+# ===========================================================================
+
+@dataclass
+class OntologyAgent:
+    """A specialized long-running research agent registered in the AIP Orchestrator."""
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    role: str = ""  # DataEngineer, QuantitativeResearcher, RiskValidator, MetaScientist
+    active_tasks: List[str] = field(default_factory=list)
+
+
+@dataclass
+class OntologyAgentTask:
+    """A queued or active work package assigned to a research agent."""
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    agent_id: str = ""
+    description: str = ""
+    target_object_id: str = ""
+    status: str = "Pending"  # Pending, Running, Completed, Failed
+    dependencies: List[str] = field(default_factory=list)
+
+
+class AIPOrchestrator:
+    """
+    Long-running multi-agent execution framework inspired by Palantir DevCon 5.
+    Manages background tasks, manages agent roles, and coordinates safe human-agent teaming.
+    """
+    def __init__(self, ontology: PalantirEnterpriseOntology) -> None:
+        self.ontology = ontology
+        self.agents: Dict[str, OntologyAgent] = {}
+        self.tasks: Dict[str, OntologyAgentTask] = {}
+        self.human_overrides: Dict[str, bool] = {}
+
+    def register_agent(self, role: str) -> OntologyAgent:
+        """Spawns and registers a specialized background agent."""
+        agent = OntologyAgent(role=role)
+        self.agents[agent.id] = agent
+        logger.info(f"AIP Orchestrator: Registered Agent [{agent.id[:12]}] as '{role}'")
+        return agent
+
+    def dispatch_task(self, agent_id: str, desc: str, obj_id: str, deps: Optional[List[str]] = None) -> OntologyAgentTask:
+        """Enqueues a task for execution by an agent."""
+        task = OntologyAgentTask(
+            agent_id=agent_id,
+            description=desc,
+            target_object_id=obj_id,
+            dependencies=deps or []
+        )
+        self.tasks[task.id] = task
+        self.agents[agent_id].active_tasks.append(task.id)
+        logger.info(f"AIP Orchestrator: Dispatched Task '{desc}' to Agent [{agent_id[:12]}]")
+        return task
+
+    def run_human_agent_teaming_gate(self, task_id: str, rationale: str) -> bool:
+        """Enforces a strict human-in-the-loop safety audit before executing final ontology actions."""
+        task = self.tasks.get(task_id)
+        if not task:
+            return False
+
+        # Simulate human review: check if it contains any high risk flags
+        is_approved = "leakage" not in rationale.lower() and "unreproducible" not in rationale.lower()
+        self.human_overrides[task_id] = is_approved
+
+        if is_approved:
+            task.status = "Completed"
+            logger.warning(f"Human-Agent Teaming Gate: Approved Task {task_id[:12]}! Rationale: {rationale}")
+        else:
+            task.status = "Failed"
+            logger.error(f"Human-Agent Teaming Gate: REJECTED Task {task_id[:12]}! Rationale contains risk flags.")
+
+        return is_approved
+
+
+# ===========================================================================
+# 3. Advanced Institutional Engines (Solving the Gaps)
 # ===========================================================================
 
 class AdversarialCritiqueBoard:
@@ -90,7 +250,6 @@ class AdversarialCritiqueBoard:
         # 2. Check for P-Hacking or Overfitting
         if metrics.get("sharpe_ratio", 0.0) > 4.5 and metrics.get("p_value", 1.0) < 0.0001:
             vulnerabilities.append("WARNING: Exceptionally high Sharpe ratio (>4.5) with tiny p-value. Suspected selection overfitting.")
-            # We don't fail immediately, but log it as high risk
 
         # 3. Check for Sample Size inadequacy
         if metrics.get("num_bars", 0) < 100:
@@ -136,7 +295,6 @@ class SkepticismEngine:
         if total_associations == 0:
             return {"clustering_index": 0.0, "status": "DIVERSIFIED"}
 
-        # Determine normalized clustering (highest share of a single category)
         max_share = max(category_counts.values()) / total_associations
         status = "CLUSTERED" if max_share > 0.60 else "DIVERSIFIED"
 
@@ -164,16 +322,11 @@ class ContinuousReplicationPipeline:
         if not isinstance(theory, Theory):
             return False, 0.0
 
-        # Simulate fresh performance evaluation
-        # Let's say alpha decay occurs based on time or random drift
         decay_factor = np.random.uniform(0.70, 0.95)
         replicated_sharpe = theory.confidence_score * 3.0 * decay_factor
-
-        # If replicated Sharpe drops below 1.2, replication fails
         replicated_successfully = replicated_sharpe >= 1.2
 
         if not replicated_successfully:
-            # Active demotion
             theory.confidence_score *= 0.60
             theory.applicable_regimes = ["DEGRADED_REGIME"]
             logger.warning(f"Continuous Replication: Theory {theory_id[:12]} FAILED to replicate! Confidence score demoted.")
@@ -205,16 +358,12 @@ class EvolutionSandbox:
         to attribute the exact source of efficiency gains (N-Dimensional Ablation).
         """
         ablation_results = {}
-        # Base case (all modifications disabled): returns 0% gain
         ablation_results["baseline"] = 0.0
 
-        # Run combinations
         for comp in proposed_components:
-            # Simulate isolated component impact
             simulated_isolated_gain = np.random.uniform(2.0, 10.0)
             ablation_results[f"only_{comp}"] = float(simulated_isolated_gain)
 
-        # Full modification (all components enabled)
         sum_components = sum(ablation_results[f"only_{comp}"] for comp in proposed_components)
         full_gain = sum_components * np.random.uniform(0.9, 1.1)
         ablation_results["full_integration"] = float(full_gain)
@@ -231,7 +380,7 @@ class EvolutionSandbox:
 
 
 # ===========================================================================
-# 2. The Five Operating Systems
+# 4. The Five Operating Systems
 # ===========================================================================
 
 class ResearchOS:
@@ -312,7 +461,6 @@ class ExperimentOS:
     def test_causal_soundness(self, signal: pd.Series, target: pd.Series) -> Dict[str, float]:
         """Runs granger causality and structural breaks chow tests to rule out correlation."""
         granger_f = self.workspace.causality.test_granger_causality_score(signal, target)
-        # Structural break check at mid-point
         break_f = self.workspace.causality.detect_structural_break_chow(target, len(target) // 2)
         return {
             "granger_f_stat": granger_f,
@@ -382,7 +530,6 @@ class EvolutionOS:
         if not candidate:
             return False
 
-        # Monotone rules: improvement must be positive, regression must be 0
         is_improved = regression_results.get("improvement_percentage", 0.0) > 0.0
         has_regressions = regression_results.get("regression_failures_count", 1.0) > 0.0
 
@@ -397,7 +544,7 @@ class EvolutionOS:
 
 
 # ===========================================================================
-# 3. Specialized Scientific Divisions
+# 5. Specialized Scientific Divisions
 # ===========================================================================
 
 class TradingResearchDivision:
@@ -433,7 +580,6 @@ class PortfolioResearchDivision:
         """Calculates fractional Kelly limits to prevent over-allocation during regime changes."""
         if win_loss_ratio <= 0 or win_rate <= 0:
             return 0.0
-        # Kelly % = w - (1 - w) / R
         kelly = win_rate - (1.0 - win_rate) / win_loss_ratio
         fractional_kelly = max(0.0, kelly * 0.5)  # 50% Kelly for risk protection
         return fractional_kelly
@@ -488,7 +634,6 @@ class AIResearchDivision:
 
     def run_meta_research_audit(self) -> Dict[str, Any]:
         """Analyzes which reviewers, datasets, or strategies yielded optimal performance."""
-        # Query features and predictability
         top_efficacies = self.kos.graph.nodes
         return {
             "total_assumptions_audited": len(self.assumptions_audit),
@@ -511,17 +656,21 @@ class ProductionDeploymentDivision:
 
 
 # ===========================================================================
-# 4. Top-Level Integrated Institution Controller
+# 6. Top-Level Integrated Institution Controller
 # ===========================================================================
 
 class QuantitativeResearchInstitution:
     """
     Quantitative Research Institution (AQRI)
-    The absolute top-level architecture orchestrator governing all five Operating Systems
-    and six scientific divisions.
+    The absolute top-level architecture orchestrator governing all five Operating Systems,
+    six scientific divisions, and the Palantir Enterprise Ontology & AIP Orchestrator layers.
     """
     def __init__(self) -> None:
         logger.info("🏛️ Initializing Autonomous Quantitative Research Institution (AQRI)")
+
+        # Palantir-inspired Core Layer
+        self.ontology = PalantirEnterpriseOntology()
+        self.orchestrator = AIPOrchestrator(ontology=self.ontology)
 
         # Create foundational subsystems
         self.workspace = ResearchWorkspace()
