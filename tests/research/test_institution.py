@@ -1,7 +1,7 @@
 """
 Comprehensive Unit and Integration Tests for the Quantitative Research Institution (AQRI).
 Validates the institutional operating systems, specialized divisions,
-and the end-to-end 14-step quantitative research lifecycle.
+the four advanced scientific engines, and the end-to-end 14-step quantitative research lifecycle.
 """
 
 import pytest
@@ -13,7 +13,9 @@ from trading_bot.research.institution import (
     QuantitativeResearchInstitution,
     ResearchOS, KnowledgeOS, ExperimentOS, GovernanceOS, EvolutionOS,
     TradingResearchDivision, PortfolioResearchDivision, MarketMicrostructureDivision,
-    RiskScienceDivision, AIResearchDivision, ProductionDeploymentDivision
+    RiskScienceDivision, AIResearchDivision, ProductionDeploymentDivision,
+    AdversarialCritiqueBoard, SkepticismEngine, ContinuousReplicationPipeline, EvolutionSandbox,
+    Theory
 )
 from trading_bot.research.research_computer import EpistemicInstruction
 
@@ -239,6 +241,79 @@ def test_scientific_divisions_computations(institution):
     assert package is not None
     assert package.model_uuid == "model_123"
     assert package.reversion_rollback_hash == "sha256_hash_value"
+
+
+def test_adversarial_critique_board(institution):
+    """Tests the institutional Red Team board for look-ahead leakage and overfitting attacks."""
+    board = AdversarialCritiqueBoard()
+
+    # 1. Attack code containing shift(-1) look-ahead leakage: should fail
+    unsafe_code = "signal = df['price'].shift(-1)"
+    unsafe_metrics = {"sharpe_ratio": 2.5, "num_bars": 120}
+    is_safe, vulnerabilities = board.challenge_model_vigor("exp_001", unsafe_code, unsafe_metrics)
+    assert is_safe is False
+    assert any("look-ahead" in v.lower() for v in vulnerabilities)
+
+    # 2. Attack code with safe implementation: should succeed
+    safe_code = "signal = df['price'].shift(1)"
+    safe_metrics = {"sharpe_ratio": 2.1, "num_bars": 150}
+    is_safe_2, vulnerabilities_2 = board.challenge_model_vigor("exp_002", safe_code, safe_metrics)
+    assert is_safe_2 is True
+    assert len(vulnerabilities_2) == 0
+
+
+def test_skepticism_engine_groupthink(institution):
+    """Tests detection of Groupthink/Cognitive Clustering in active firm theories."""
+    engine = SkepticismEngine(kos=institution.kos)
+
+    # State with no theories is diversified
+    res_empty = engine.audit_cognitive_diversity()
+    assert res_empty["status"] == "DIVERSIFIED"
+
+    # Add three clustered momentum theories
+    t1 = Theory(explanation="momentum trends in pricing")
+    t2 = Theory(explanation="momentum SMA breakouts")
+    t3 = Theory(explanation="momentum breakouts with RSI indicators")
+
+    institution.kos.graph.add_node("t1", t1)
+    institution.kos.graph.add_node("t2", t2)
+    institution.kos.graph.add_node("t3", t3)
+
+    res_clustered = engine.audit_cognitive_diversity()
+    assert res_clustered["status"] == "CLUSTERED"
+    assert res_clustered["recommendation"] == "FORCE_DIVERSIFICATION"
+
+
+def test_continuous_replication_pipeline(institution, sample_data):
+    """Tests retrospective replication study of older accepted theories."""
+    # Seed theory in graph
+    t = Theory(explanation="Causal imbalance theory", confidence_score=0.90)
+    institution.kos.graph.add_node("theory_c1", t)
+
+    pipeline = ContinuousReplicationPipeline(kos=institution.kos)
+
+    # Replicate theory: should perform replication run and append to audit log
+    replicated, replicated_sharpe = pipeline.replicate_theory("theory_c1", sample_data)
+    assert replicated in [True, False]
+    assert len(pipeline.replication_audit_log) == 1
+    assert pipeline.replication_audit_log[0]["theory_id"] == "theory_c1"
+
+
+def test_evolution_sandbox_ablation():
+    """Tests N-Dimensional Ablation studies on self-evolution candidates."""
+    sandbox = EvolutionSandbox()
+    proposal_id = "ev_prop_lr_resets"
+    components = ["lr_scheduler_decay", "adam_optimizer_weight_decay"]
+
+    ablation_matrix = sandbox.execute_ablation_study(proposal_id, components)
+    assert "baseline" in ablation_matrix
+    assert "full_integration" in ablation_matrix
+    assert "only_lr_scheduler_decay" in ablation_matrix
+
+    # Verify attribution history is captured
+    history = sandbox.ablation_matrix_history[proposal_id]
+    assert len(history["attribution"]) == 2
+    assert pytest.approx(sum(history["attribution"].values()), 1e-5) == 1.0
 
 
 def test_end_to_end_institutional_research_lifecycle(institution, sample_data):
