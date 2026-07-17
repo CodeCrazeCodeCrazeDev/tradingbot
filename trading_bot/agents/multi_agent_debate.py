@@ -525,7 +525,7 @@ class RiskSentinel(TradingAgent):
                 conviction = Conviction.HIGH
                 reasoning.append("⚠️ Risk flag present - reduce position size")
             elif total_score > 0:
-                action = TradeAction.BUY  # Risk allows trading
+                action = TradeAction.HOLD  # Risk allows trading - strictly gatekeeping, no directional signal
                 conviction = Conviction.MODERATE
                 reasoning.append("✅ Risk parameters acceptable")
             else:
@@ -632,15 +632,26 @@ class HeadAI:
         
             for arg in active_arguments:
                 weight = self.weights.get(arg.agent_role, 0.33)
-                conviction_mult = arg.conviction.value / 5.0
+
+                # Defensive check for conviction type
+                if hasattr(arg.conviction, 'value'):
+                    conviction_mult = arg.conviction.value / 5.0
+                elif isinstance(arg.conviction, (int, float)):
+                    conviction_mult = max(1.0, min(5.0, arg.conviction)) / 5.0
+                else:
+                    conviction_mult = 0.6  # Default to moderate
+
+                # Defensive check for confidence
+                confidence = getattr(arg, 'confidence', 0.5)
+                if not isinstance(confidence, (int, float)) or confidence < 0:
+                    confidence = 0.5
 
                 # Apply Bayesian calibration if available
-                confidence = arg.confidence
                 if self.calibrator:
                     cal_result = self.calibrator.calibrate(
                         confidence,
                         method=CalibrationMethod.BAYESIAN,
-                        prediction_type=arg.agent_role.value
+                        prediction_type=arg.agent_role.value if hasattr(arg.agent_role, 'value') else str(arg.agent_role)
                     )
                     confidence = cal_result.calibrated_confidence
             
@@ -662,16 +673,21 @@ class HeadAI:
             risk_args = [a for a in active_arguments if a.agent_role == AgentRole.RISK_SENTINEL]
             if risk_args:
                 risk_arg = risk_args[-1]
-                if risk_arg.action == TradeAction.NO_TRADE and risk_arg.conviction.value >= Conviction.HIGH.value:
+                risk_conviction = risk_arg.conviction.value if hasattr(risk_arg.conviction, 'value') else int(risk_arg.conviction)
+                if risk_arg.action == TradeAction.NO_TRADE and risk_conviction >= Conviction.HIGH.value:
                     winning_action = TradeAction.NO_TRADE
-                    winning_score = risk_arg.confidence
+                    winning_score = getattr(risk_arg, 'confidence', 0.8)
         
             # Calculate consensus
             unique_actions = set(a.action for a in active_arguments)
             consensus_level = 1.0 - (len(unique_actions) - 1) * 0.25
         
             # Collect votes
-            agent_votes = {a.agent_role.value: a.action.value for a in active_arguments}
+            agent_votes = {}
+            for a in active_arguments:
+                role_val = a.agent_role.value if hasattr(a.agent_role, 'value') else str(a.agent_role)
+                act_val = a.action.value if hasattr(a.action, 'value') else str(a.action)
+                agent_votes[role_val] = act_val
         
             # Collect dissenting views
             dissenting = [
