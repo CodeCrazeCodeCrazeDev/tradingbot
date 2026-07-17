@@ -84,6 +84,10 @@ class ScientificMetrics:
         self.rejection_rate = self.rejected_count / total
         self.survival_rate = (self.confirmed_count + self.institutionalized_count) / total
 
+    @property
+    def total_institutionalized_knowledge(self) -> int:
+        return self.institutionalized_count
+
     def get_summary(self) -> Dict[str, Any]:
         return {
             "survival_rate": self.survival_rate,

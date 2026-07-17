@@ -43,6 +43,22 @@ try:
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
+    class MockModule:
+        def __init__(self, *args, **kwargs):
+            pass
+    class MockNN:
+        Module = MockModule
+        def Sequential(self, *args, **kwargs):
+            return MockModule()
+        def Linear(self, *args, **kwargs):
+            return MockModule()
+        def ReLU(self, *args, **kwargs):
+            return MockModule()
+        def Dropout(self, *args, **kwargs):
+            return MockModule()
+        def MSELoss(self, *args, **kwargs):
+            return MockModule()
+    nn = MockNN()
 
 try:
     from sklearn.preprocessing import StandardScaler
