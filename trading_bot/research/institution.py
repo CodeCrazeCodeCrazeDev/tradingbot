@@ -1054,9 +1054,14 @@ class QuantitativeResearchInstitution:
         )
 
         # 9. Causal Verification
-        # Extract columns or mock signals for causal verification
-        cause = data_feed.iloc[:, 0] if data_feed.shape[1] > 0 else pd.Series([1.0, 2.0, 3.0])
-        effect = data_feed.iloc[:, -1] if data_feed.shape[1] > 1 else pd.Series([1.1, 1.9, 3.1])
+        # Extract numeric columns to avoid datetime or string types causing casting errors in lstsq
+        numeric_cols = data_feed.select_dtypes(include=[np.number])
+        if not numeric_cols.empty:
+            cause = numeric_cols.iloc[:, 0]
+            effect = numeric_cols.iloc[:, -1] if numeric_cols.shape[1] > 1 else numeric_cols.iloc[:, 0]
+        else:
+            cause = pd.Series([1.0, 2.0, 3.0])
+            effect = pd.Series([1.1, 1.9, 3.1])
         causal_results = self.eos.test_causal_soundness(cause, effect)
 
         # 10. Adversarial Review (Peer Review board + Red Team Board)
