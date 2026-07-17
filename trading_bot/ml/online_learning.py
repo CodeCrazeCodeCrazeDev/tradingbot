@@ -14,6 +14,7 @@ import time
 import json
 import pickle
 import datetime
+from trading_bot.security.safe_pickle import safe_load
 from collections import deque
 import threading
 import queue
@@ -211,7 +212,7 @@ class OnlineLearner:
             Loaded online learner
         """
         with open(path, 'rb') as f:
-            learner = pickle.load(f)
+            learner = safe_load(f)
         
         logger.info(f"Loaded online learner from {path}")
         return learner
@@ -835,7 +836,7 @@ class AsyncOnlineLearner:
             Loaded online learner
         """
         with open(path, 'rb') as f:
-            learner = pickle.load(f)
+            learner = safe_load(f)
         
         logger.info(f"Loaded online learner from {path}")
         return learner

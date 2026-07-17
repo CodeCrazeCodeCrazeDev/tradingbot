@@ -13,6 +13,7 @@ import json
 import os
 import pickle
 from collections import defaultdict, Counter
+from trading_bot.security.safe_pickle import safe_load
 
 # NLP libraries
 import nltk
@@ -642,19 +643,54 @@ class SentimentAnalyzer:
     def _save_cache(self):
         """Save sentiment history to cache"""
         try:
-            with open(self.cache_path, 'wb') as f:
-                pickle.dump(self.sentiment_history, f)
-            logger.debug(f"Saved sentiment history to {self.cache_path}")
+            # Convert SentimentResult objects to serializable dictionaries
+            serialized = {}
+            for ticker, results in self.sentiment_history.items():
+                serialized[ticker] = [
+                    res.to_dict() if hasattr(res, 'to_dict') else res
+                    for res in results
+                ]
+
+            # Save to a JSON file (using self.cache_path with .json suffix)
+            json_path = self.cache_path
+            if json_path.endswith('.db') or json_path.endswith('.pkl'):
+                json_path = json_path.rsplit('.', 1)[0] + '.json'
+
+            with open(json_path, 'w') as f:
+                json.dump(serialized, f, indent=2)
+            logger.debug(f"Saved sentiment history to {json_path}")
         except Exception as e:
             logger.warning(f"Error saving sentiment cache: {e}")
     
     def _load_cache(self):
         """Load sentiment history from cache"""
-        if os.path.exists(self.cache_path):
+        json_path = self.cache_path
+        if json_path.endswith('.db') or json_path.endswith('.pkl'):
+            json_path = json_path.rsplit('.', 1)[0] + '.json'
+
+        if os.path.exists(json_path):
             try:
-                with open(self.cache_path, 'rb') as f:
-                    self.sentiment_history = pickle.load(f)
-                logger.info(f"Loaded sentiment history from {self.cache_path}")
+                with open(json_path, 'r') as f:
+                    data = json.load(f)
+
+                self.sentiment_history = defaultdict(list)
+                for ticker, results in data.items():
+                    for res in results:
+                        self.sentiment_history[ticker].append(
+                            SentimentResult(
+                                text=res['text'],
+                                score=res['score'],
+                                magnitude=res['magnitude'],
+                                compound=res['compound'],
+                                polarity=res['polarity'],
+                                subjectivity=res['subjectivity'],
+                                entities=res['entities'],
+                                topics=res['topics'],
+                                timestamp=datetime.fromisoformat(res['timestamp']),
+                                source=res['source']
+                            )
+                        )
+                logger.info(f"Loaded sentiment history from {json_path}")
             except Exception as e:
                 logger.warning(f"Error loading sentiment cache: {e}")
 

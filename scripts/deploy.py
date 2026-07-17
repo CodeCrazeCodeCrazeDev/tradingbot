@@ -4,6 +4,7 @@ Deployment script for AlphaAlgo 2.0
 
 import yaml
 import subprocess
+import shlex
 import sys
 import os
 import logging
@@ -34,9 +35,11 @@ def load_config(config_path: str) -> dict:
 def run_command(command: str, cwd: str = None) -> bool:
     """Run shell command and return success status."""
     try:
+        # Avoid shell injection by parsing trusted arguments safely with shell=False
+        args = shlex.split(command)
         result = subprocess.run(
-            command,
-            shell=True,
+            args,
+            shell=False,
             cwd=cwd,
             check=True,
             stdout=subprocess.PIPE,

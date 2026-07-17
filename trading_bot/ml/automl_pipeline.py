@@ -20,6 +20,7 @@ import hashlib
 import json
 import pickle
 from dataclasses import dataclass, field
+from trading_bot.security.safe_pickle import safe_load
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Callable, Tuple, Union, Set
 from enum import Enum, auto
@@ -499,7 +500,7 @@ class ModelRegistry:
         try:
         
             with open(mv.model_path, 'rb') as f:
-                return pickle.load(f)
+                return safe_load(f)
         except Exception as e:
             logger.error(f"Failed to load model: {e}")
             return None
