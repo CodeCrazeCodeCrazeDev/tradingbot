@@ -194,6 +194,25 @@ except ImportError as e:
     import logging
     logging.getLogger(__name__).debug(f'Optional import failed in research.research_computer: {e}')
 
+try:
+    from .institution import (
+        ResearchOS,
+        KnowledgeOS,
+        ExperimentOS,
+        GovernanceOS,
+        EvolutionOS,
+        TradingResearchDivision,
+        PortfolioResearchDivision,
+        MarketMicrostructureDivision,
+        RiskScienceDivision,
+        AIResearchDivision,
+        ProductionDeploymentDivision,
+        QuantitativeResearchInstitution,
+    )
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in research.institution: {e}')
+
 __all__ = [
     'Hypothesis',
     'ResearchLab',
@@ -322,6 +341,18 @@ __all__ = [
     'FeasibilityLevel',
     'ResearchSource',
     'retry',
+    'ResearchOS',
+    'KnowledgeOS',
+    'ExperimentOS',
+    'GovernanceOS',
+    'EvolutionOS',
+    'TradingResearchDivision',
+    'PortfolioResearchDivision',
+    'MarketMicrostructureDivision',
+    'RiskScienceDivision',
+    'AIResearchDivision',
+    'ProductionDeploymentDivision',
+    'QuantitativeResearchInstitution',
 ]
 
 class ResearchOrchestrator:

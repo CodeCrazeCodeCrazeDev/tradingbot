@@ -1,0 +1,259 @@
+"""
+Comprehensive Unit and Integration Tests for the Quantitative Research Institution (AQRI).
+Validates the institutional operating systems, specialized divisions,
+and the end-to-end 14-step quantitative research lifecycle.
+"""
+
+import pytest
+import pandas as pd
+import numpy as np
+from datetime import datetime
+
+from trading_bot.research.institution import (
+    QuantitativeResearchInstitution,
+    ResearchOS, KnowledgeOS, ExperimentOS, GovernanceOS, EvolutionOS,
+    TradingResearchDivision, PortfolioResearchDivision, MarketMicrostructureDivision,
+    RiskScienceDivision, AIResearchDivision, ProductionDeploymentDivision
+)
+from trading_bot.research.research_computer import EpistemicInstruction
+
+
+@pytest.fixture
+def institution():
+    """Returns an initialized QuantitativeResearchInstitution instance."""
+    return QuantitativeResearchInstitution()
+
+
+@pytest.fixture
+def sample_data():
+    """Generates a synthetic dataset for testing granger causality and dataset lineage."""
+    np.random.seed(42)
+    # Generate cointegrated/causal relation: target lags signal
+    signal = np.random.randn(150)
+    target = np.roll(signal, 1) + np.random.normal(0, 0.1, 150)
+    target[0] = 0.0  # clean edge
+
+    df = pd.DataFrame({
+        "feature_signal": signal,
+        "target_return": target
+    })
+    return df
+
+
+def test_aqri_initialization(institution):
+    """Verifies that the entire top-level institution initializes cleanly."""
+    assert institution is not None
+    assert isinstance(institution.ros, ResearchOS)
+    assert isinstance(institution.kos, KnowledgeOS)
+    assert isinstance(institution.eos, ExperimentOS)
+    assert isinstance(institution.gos, GovernanceOS)
+    assert isinstance(institution.evos, EvolutionOS)
+
+    # Divisions
+    assert isinstance(institution.trading_division, TradingResearchDivision)
+    assert isinstance(institution.portfolio_division, PortfolioResearchDivision)
+    assert isinstance(institution.microstructure_division, MarketMicrostructureDivision)
+    assert isinstance(institution.risk_division, RiskScienceDivision)
+    assert isinstance(institution.ai_division, AIResearchDivision)
+    assert isinstance(institution.production_division, ProductionDeploymentDivision)
+
+
+def test_research_os_intent_and_cycle(institution):
+    """Tests project creation and instruction trace tracking on ROS."""
+    project = institution.ros.register_scientific_intent(
+        title="Order Book Microstructure Alpha",
+        question_text="Does order book imbalance predict forward 1-minute price shifts?",
+        objective="Analyze OBI Spearman correlations."
+    )
+    assert project is not None
+    assert project.title == "Order Book Microstructure Alpha"
+
+    trace = institution.ros.run_cpu_cycle(EpistemicInstruction.QUESTION, project.id)
+    assert trace is not None
+    assert trace.instruction == EpistemicInstruction.QUESTION
+    assert trace.input_object_id == project.id
+    assert trace.execution_success is True
+
+
+def test_knowledge_os_graph_and_beliefs(institution):
+    """Tests semantic storage, beliefs tracking, and Research Balance Sheet calculation on KOS."""
+    # Find or verify belief
+    belief_text = "Momentum is persistent under high volatility regimes"
+    b = institution.kos.verify_belief_state(belief_text)
+    assert b is not None
+    assert b.statement == belief_text
+    assert b.status == "Hypothetical"
+
+    # Add finding to semantic graph
+    node_id = "f_node_1"
+    finding = {"type": "coefficient_correlation", "val": 0.35}
+    institution.kos.record_finding(b.id, "verified_by", node_id, finding)
+
+    related = institution.kos.graph.find_relations(b.id, "verified_by")
+    assert node_id in related
+
+    # Test Research Balance Sheet
+    institution.kos.balance_sheet.validated_theories_count = 3
+    institution.kos.balance_sheet.immutably_hashed_datasets_count = 5
+    institution.kos.balance_sheet.production_ready_alphas_count = 1
+
+    institution.kos.balance_sheet.unverified_hypotheses_count = 1
+    institution.kos.balance_sheet.technical_debt_score = 2.0
+    institution.kos.balance_sheet.known_data_quality_issues = 0
+
+    equity = institution.kos.update_firm_knowledge_equity()
+    # Assets: 3*1000 + 5*250 + 1*2000 = 6250
+    # Liabilities: 1*300 + 2*50 + 0*400 = 400
+    # Equity = 5850.0
+    assert equity == 5850.0
+
+
+def test_experiment_os_reproducibility_and_causality(institution, sample_data):
+    """Tests reproducible dataset locking and causal tests (Granger, Chow) on EOS."""
+    idea_id = "idea_momentum_test"
+    params = {"seed": 42, "model_class": "LinearCausalRegressor"}
+
+    experiment = institution.eos.register_reproducible_experiment(
+        idea_id=idea_id,
+        dataset_name="Synthetic_OBI_M1",
+        dataset_df=sample_data,
+        parameters=params
+    )
+    assert experiment is not None
+    assert experiment.random_seed == 42
+    assert experiment.dataset_name == "Synthetic_OBI_M1"
+
+    # Granger causality test
+    causal_dict = institution.eos.test_causal_soundness(
+        signal=sample_data["feature_signal"],
+        target=sample_data["target_return"]
+    )
+    assert "granger_f_stat" in causal_dict
+    assert "chow_break_f_stat" in causal_dict
+    assert causal_dict["granger_f_stat"] >= 0.0
+
+
+def test_governance_os_compliance_and_review(institution):
+    """Tests the Constitutional Layer gating and Peer Review board functionality in GOS."""
+    # Constitution violation checks
+    passed = institution.gos.check_constitutional_compliance(
+        claim_text="Alpha yields premium",
+        evidence_ids=["evidence_123"],
+        seed=123,
+        dataset_hash="hash_abc"
+    )
+    assert passed is True
+
+    # Check that a claim with NO evidence fails
+    failed = institution.gos.check_constitutional_compliance(
+        claim_text="Alpha yields premium with zero evidence",
+        evidence_ids=[],
+        seed=123,
+        dataset_hash="hash_abc"
+    )
+    assert failed is False
+
+    # Review Board testing
+    verdict = institution.gos.perform_peer_review_board(
+        experiment_id="exp_abc",
+        assumptions=["gaussian distribution", "zero latency impact"],
+        metrics={"is_sharpe": 2.2, "oos_sharpe": 1.8}
+    )
+    assert verdict is not None
+    assert verdict.methodology_valid is True
+    assert verdict.verdict == "APPROVED"
+
+
+def test_evolution_os_monotone_safety(institution):
+    """Tests monotone-safe system self-modifications in EvOS."""
+    prop_id = institution.evos.propose_system_evolution(
+        subsystem_name="SAGE_Graph_Memory",
+        proposed_code="class CompactedSAGE(SAGEGraphMemory): pass",
+        rationale="Compacts the memory footprint to resolve Day 10 initialization overheads."
+    )
+    assert prop_id is not None
+    assert prop_id in institution.evos.improvement_candidates
+
+    # Evaluate safety with a regression failure: should fail
+    reg_failed = institution.evos.run_monotone_safety_evaluation(
+        proposal_id=prop_id,
+        regression_results={"improvement_percentage": 12.5, "regression_failures_count": 2.0}
+    )
+    assert reg_failed is False
+    assert institution.evos.improvement_candidates[prop_id]["status"] == "Rejected"
+
+    # Evaluate safety with positive improvement and 0 regression: should succeed
+    reg_success = institution.evos.run_monotone_safety_evaluation(
+        proposal_id=prop_id,
+        regression_results={"improvement_percentage": 5.4, "regression_failures_count": 0.0}
+    )
+    assert reg_success is True
+    assert institution.evos.improvement_candidates[prop_id]["status"] == "Verified_Safe"
+
+
+def test_scientific_divisions_computations(institution):
+    """Validates math-oriented computations across the 6 scientific divisions."""
+    # Trading Research
+    theory = institution.trading_division.propose_alpha_theory(
+        title="Microstructure Drift",
+        description="OBI imbalance yields short-term mean-reverting pressures."
+    )
+    assert theory is not None
+    assert theory.explanation == "OBI imbalance yields short-term mean-reverting pressures."
+
+    # Portfolio Division: Fractional Kelly Allocation
+    kelly = institution.portfolio_division.compute_kelly_allocation_bounds(
+        win_rate=0.55,
+        win_loss_ratio=1.2
+    )
+    # Kelly % = 0.55 - (0.45 / 1.2) = 0.55 - 0.375 = 0.175
+    # Fractional Kelly (50% Kelly) = 0.0875
+    assert abs(kelly - 0.0875) < 1e-5
+
+    # Market Microstructure OBI
+    obi = institution.microstructure_division.compute_order_book_imbalance(
+        bid_vol=150.0,
+        ask_vol=50.0
+    )
+    # (150 - 50) / 200 = 0.5
+    assert obi == 0.5
+
+    # Risk Science: Credal Bounds
+    predictions = [1.2, 1.15, 1.25, 1.21, 1.18]
+    mean, lower, upper = institution.risk_division.calculate_prediction_bounds(predictions)
+    assert mean == pytest.approx(1.198, abs=1e-3)
+    assert lower < mean < upper
+
+    # AI Research Division
+    institution.ai_division.challenge_institutional_assumption("Pricing signals are static over multi-year regimes.")
+    assert "Pricing signals are static over multi-year regimes." in institution.ai_division.assumptions_audit
+
+    audit = institution.ai_division.run_meta_research_audit()
+    assert audit["total_assumptions_audited"] == 1
+
+    # Production Division: Packaged runbooks
+    package = institution.production_division.transition_theory_to_packaged_code(
+        model_uuid="model_123",
+        code_hash="sha256_hash_value"
+    )
+    assert package is not None
+    assert package.model_uuid == "model_123"
+    assert package.reversion_rollback_hash == "sha256_hash_value"
+
+
+def test_end_to_end_institutional_research_lifecycle(institution, sample_data):
+    """Runs a complete 14-step continuous research-and-evolution cycle in the integrated AQRI."""
+    result = institution.run_full_research_cycle(
+        project_title="Order Book Imbalance Predictive Alpha",
+        research_question="Does L2 order book imbalance have causal granger-predictive influence on EURUSD?",
+        data_feed=sample_data,
+        hypothesis_text="Momentum persists when order book imbalance > 0.4"
+    )
+
+    assert result is not None
+    assert result["promoted"] is True
+    assert result["reproducible"] is True
+    assert result["validation"].deflated_sharpe == 2.45
+    assert result["package"] is not None
+    assert result["package"].model_uuid == result["experiment"].id
+    assert result["knowledge_equity"] > 0
