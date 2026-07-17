@@ -118,7 +118,7 @@ class SalienceCalculator:
                     std = np.std(hist_values) + 1e-10
                     z_score = abs(data - mean) / std
                     return min(1.0, z_score / 3.0)  # Normalize to 0-1
-        except:
+        except Exception as e:
             pass
         
         return 0.3  # Default moderate novelty

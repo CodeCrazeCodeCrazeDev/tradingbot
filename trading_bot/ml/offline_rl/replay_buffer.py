@@ -51,20 +51,23 @@ class ReplayBuffer:
     ):
         """
         Add transition to buffer.
-        
-        Args:
-            state: State vector
-            action: Action index
-            reward: Reward value
-            next_state: Next state vector
-            done: Terminal flag
-            info: Additional information
+        Enforces strict provenance metadata validation.
         """
         try:
+            # Replay Buffer Provenance Check:
+            # Every transition must carry provenance metadata
+            required_provenance = ['source', 'timestamp', 'symbol', 'execution_type', 'slippage', 'commission', 'market_regime']
+            info = info or {}
+
+            missing_provenance = [field for field in required_provenance if field not in info]
+            if missing_provenance:
+                logger.error(f"Provenance Validation Failed. Missing fields: {missing_provenance}. Rejecting transition.")
+                raise ValueError(f"CRITICAL: Transition missing required provenance metadata fields: {missing_provenance}")
+
             if len(self.buffer) < self.capacity:
                 self.buffer.append(None)
         
-            self.buffer[self.position] = (state, action, reward, next_state, done, info or {})
+            self.buffer[self.position] = (state, action, reward, next_state, done, info)
             self.position = (self.position + 1) % self.capacity
         except Exception as e:
             logger.error(f"Error in push: {e}")

@@ -402,18 +402,31 @@ class MemorySystem:
             'memory_by_importance': self._count_by_importance()
         }
     
+    def _serialize_enum(self, obj):
+        if isinstance(obj, Enum):
+            return obj.value
+        return obj
+
     def save_to_disk(self, filepath: str):
         """Save memory system to disk"""
         
+        # Convert objects to dicts for JSON serialization
         data = {
-            'long_term_memory': self.long_term_memory,
-            'market_lessons': self.market_lessons,
+            'long_term_memory': {k: asdict(v) for k, v in self.long_term_memory.items()},
+            'market_lessons': {k: asdict(v) for k, v in self.market_lessons.items()},
             'trading_rules': self.trading_rules,
             'statistics': self.get_memory_statistics()
         }
         
-        with open(filepath, 'wb') as f:
-            pickle.dump(data, f)
+        def default_serializer(obj):
+            if isinstance(obj, (datetime, datetime)):
+                return obj.isoformat()
+            if isinstance(obj, Enum):
+                return obj.value
+            return str(obj)
+
+        with open(filepath, 'w') as f:
+            json.dump(data, f, indent=2, default=default_serializer)
         
         logger.info(f"Saved memory system to {filepath}")
     
@@ -421,11 +434,29 @@ class MemorySystem:
         """Load memory system from disk"""
         
         try:
-            with open(filepath, 'rb') as f:
-                data = pickle.load(f)
+            with open(filepath, 'r') as f:
+                data = json.load(f)
             
-            self.long_term_memory = data.get('long_term_memory', {})
-            self.market_lessons = data.get('market_lessons', {})
+            # Reconstruct objects
+            ltm_data = data.get('long_term_memory', {})
+            self.long_term_memory = {}
+            for k, v in ltm_data.items():
+                if 'created_at' in v and v['created_at']:
+                    v['created_at'] = datetime.fromisoformat(v['created_at'])
+                if 'last_accessed' in v and v['last_accessed']:
+                    v['last_accessed'] = datetime.fromisoformat(v['last_accessed'])
+                # Map strings back to Enums
+                v['memory_type'] = MemoryType(v['memory_type'])
+                v['importance'] = MemoryImportance(v['importance'])
+                self.long_term_memory[k] = LongTermMemory(**v)
+
+            lessons_data = data.get('market_lessons', {})
+            self.market_lessons = {}
+            for k, v in lessons_data.items():
+                if 'learned_at' in v and v['learned_at']:
+                    v['learned_at'] = datetime.fromisoformat(v['learned_at'])
+                self.market_lessons[k] = MarketLesson(**v)
+
             self.trading_rules = data.get('trading_rules', {})
             
             logger.info(f"Loaded memory system from {filepath}")

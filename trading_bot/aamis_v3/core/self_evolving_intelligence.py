@@ -554,14 +554,31 @@ class SelfEvolvingIntelligence:
         ))
     
     def _default_fitness_function(self, strategy: TradingStrategy) -> float:
-        """Default fitness function (Sharpe ratio)"""
-        
-        # Simulate performance (in production, backtest the strategy)
-        returns = np.random.randn(252) * 0.01  # Simulated daily returns
-        
-        sharpe = np.mean(returns) / (np.std(returns) + 1e-8) * np.sqrt(252)
-        
-        return max(sharpe, 0.0)
+        """
+        Grounded fitness function (Sharpe ratio).
+        Ensures rewards are tied to real evidence rather than random noise.
+        """
+        try:
+            # In a production environment, this must interface with a real backtester.
+            # For this audit fix, we implement a grounding check:
+            # if no real performance data is available, return 0.0 to prevent delusion.
+
+            if 'returns' in strategy.performance:
+                returns = np.array(strategy.performance['returns'])
+            else:
+                # Delusion prevention: No real data means no fitness reward
+                logger.warning(f"Strategy {strategy.strategy_id} has no real performance data. Returning 0 fitness.")
+                return 0.0
+
+            if len(returns) < 10:
+                return 0.0
+
+            sharpe = np.mean(returns) / (np.std(returns) + 1e-8) * np.sqrt(252)
+            return max(float(sharpe), 0.0)
+
+        except Exception as e:
+            logger.error(f"Error in grounded fitness calculation: {e}")
+            return 0.0
     
     def get_best_strategies(self, n: int = 5) -> List[TradingStrategy]:
         """Get top N strategies"""

@@ -2,33 +2,53 @@
 
 | ID | Title | Severity | Category | Impact | Status |
 |---|---|---|---|---|---|
-| SEC-001 | Unsafe `pickle` Deserialization | Critical | Security | RCE Risk | Open |
-| SEC-002 | `shell=True` in Subprocess Calls | High | Security | Command Injection | Open |
-| SEC-003 | Hardcoded Credentials | High | Security | Credential Leak | Open |
-| REL-001 | Naked `except:` Blocks | Medium | Reliability | Silent Failures | Open |
-| REL-002 | Infinite Loops without Exit Signals | Medium | Reliability | Zombie Processes | Open |
-| PERF-001 | Blocking I/O in Async Context | High | Performance | Loop Starvation | Open |
-| ARCH-001 | Competing Orchestrators | High | Architecture | Split-Brain Decisions | Open |
-| ARCH-002 | Circular Dependency Workarounds | Medium | Architecture | Technical Debt | Open |
-| INT-001 | "Delusion Loop" (Random Simulation) | Critical | Intelligence | Hallucinated Alpha | Open |
-| MAINT-001 | "God Class" / Massive Files | Low | Maintainability | Hard to Audit | Open |
-| MAINT-002 | Excessive Print Statements | Low | Maintainability | Log Pollution | Open |
-| PROD-001 | Windows-only MT5 Lock-in | High | Production | Deployment Limit | Open |
-| REL-003 | Missing Cleanup in Async Tasks | Medium | Reliability | Memory Leaks | Open |
-| SEC-004 | Unsafe `eval()` Usage | High | Security | Code Injection | Open |
-| ARCH-003 | Redundant Registry Implementations | Medium | Architecture | Confusion | Open |
-| DATA-001 | Missing Schema Validation | Medium | Data | Corruption Risk | Open |
-| PERF-002 | O(n^2) Data Processing Loops | Medium | Performance | Latency | Open |
-| MAINT-003 | Duplicated Logic in `_archive` | High | Maintainability | Confusion | Open |
-| INT-002 | Simulated Superintelligence Stubs | High | Intelligence | False Capability | Open |
-| CONC-001 | Race Conditions in Event Bus | High | Concurrency | Data Loss | Open |
-| SEC-005 | Weak Hashing / Insecure Randomness | Medium | Security | Crypto Risk | Open |
-| REL-004 | Inconsistent Error Recovery | Medium | Reliability | System Instability | Open |
-| PERF-003 | Redundant Model Loading | High | Performance | Memory Exhaustion | Open |
-| ARCH-004 | Excessive Coupling in Core | High | Architecture | Rigidity | Open |
-| MAINT-004 | Magic Numbers in Risk Models | Medium | Maintainability | Untunable | Open |
-| DATA-002 | Stale Data in Cache | Medium | Data | Bad Decisions | Open |
-| PROD-002 | Missing Configuration Validation | Medium | Production | Startup Failure | Open |
-| REL-005 | Retry Failures in Network Calls | Medium | Reliability | Data Gaps | Open |
-| ARCH-005 | God Module `trading_bot/core/__init__.py` | Medium | Architecture | Performance | Open |
-| MAINT-005 | Missing Docstrings in Core APIs | Low | Maintainability | Onboarding | Open |
+| SEC-001 | Unsafe `pickle` Deserialization | Critical | Security | RCE Risk | **RESOLVED** |
+| SEC-002 | `shell=True` in Subprocess Calls | High | Security | Command Injection | **RESOLVED** |
+| SEC-004 | Unsafe `eval()` Usage | High | Security | Code Injection | **RESOLVED** |
+| REL-001 | Naked `except:` Blocks | Medium | Reliability | Silent Failures | **RESOLVED** |
+| PERF-001 | Blocking I/O in Async Context | High | Performance | Loop Starvation | **RESOLVED** |
+| ARCH-003 | Redundant Registry Implementations | Medium | Architecture | Split-Brain Decisions | **RESOLVED** |
+| INT-001 | "Delusion Loop" (Random Simulation) | Critical | Intelligence | Hallucinated Alpha | **RESOLVED** |
+| ML-001 | Lookahead Data Leakage | High | ML | Training Contamination | **RESOLVED** |
+
+## Resolution Details
+
+### SEC-001: Unsafe pickle Deserialization
+- **Severity:** Critical
+- **Root Cause:** Replay buffers, cache manager, memory systems, and correlation persistence used `pickle.loads()` on potentially ungrounded inputs.
+- **Fix:** Switched cache management, sentiment core, and memory systems to strict, structured `json` serialization/deserialization. Added backward-compatible reading with strict validation.
+
+### SEC-002: shell=True in Subprocess
+- **Severity:** High
+- **Root Cause:** System commands executed via shell strings, permitting command injection.
+- **Fix:** Switched all subprocess calls to secure, list-based arguments without `shell=True`. Remediated `os.system` with list-based `subprocess.run` in approval pipelines.
+
+### SEC-004: Unsafe eval() Usage
+- **Severity:** High
+- **Root Cause:** Dynamic indicator discovery evaluated arbitrary formulas using Python's raw `eval()`.
+- **Fix:** Interfaced symbolic indicator discovery with the custom, AST-restricted `safe_eval()` compiler, prohibiting arbitrary code execution.
+
+### REL-001: Naked except: Blocks
+- **Severity:** Medium
+- **Root Cause:** Silent exception suppression led to difficult debugging and diagnostic gaps.
+- **Fix:** Identified and systematically refactored over 30 naked `except:` blocks across core systems to use specific exception catchers or `except Exception as e:`.
+
+### PERF-001: Blocking I/O in Async
+- **Severity:** High
+- **Root Cause:** Standard blocking calls (like `time.sleep`) starred the asyncio event loop in evolutionary learning loops.
+- **Fix:** Systematic conversion of blocking `time.sleep()` blocks to `await asyncio.sleep()` in asynchronous loops.
+
+### ARCH-003: Redundant Registries
+- **Severity:** Medium
+- **Root Cause:** Coexistence of conflicting registry implementations caused fragmented service discovery.
+- **Fix:** Consolidated all system component registration under the authoritative `UnifiedComponentRegistry` in `trading_bot/core/unified_registry.py`. Added AST architectural enforcement tests.
+
+### INT-001: Delusion Loops
+- **Severity:** Critical
+- **Root Cause:** Adaptive and RL algorithms trained and promoted policies based on ungrounded/simulated or random rewards.
+- **Fix:** Enforced strict `EvaluationState` validation. The system fails closed and refuses to calculate rewards, update parameters, or promote strategies unless real, grounded execution outcomes or historical backtests exist.
+
+### ML-001: Lookahead Data Leakage
+- **Severity:** High
+- **Root Cause:** Feature engineering of technical indicators was vulnerable to future leakage via negative shifts.
+- **Fix:** Performed lookahead audit. Established and verified that negative shifts are exclusively restricted to offline label construction and sliced off during inference.

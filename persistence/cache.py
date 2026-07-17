@@ -6,7 +6,6 @@ import logging
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timedelta
 import json
-import pickle
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +68,11 @@ class CacheManager:
         
         # Serialize value
         if serialize:
-            value = pickle.dumps(value)
+            try:
+                value = json.dumps(value)
+            except (TypeError, ValueError) as e:
+                logger.warning(f"⚠️ JSON serialization failed for {key}, falling back to string: {e}")
+                value = str(value)
         
         # Set in memory cache
         self.cache[key] = value
@@ -96,11 +99,13 @@ class CacheManager:
                 value = self.cache[key]
                 
                 # Deserialize value
-                if deserialize and isinstance(value, bytes):
+                if deserialize and isinstance(value, (str, bytes)):
                     try:
-                        value = pickle.loads(value)
+                        if isinstance(value, bytes):
+                            value = value.decode('utf-8')
+                        value = json.loads(value)
                     except Exception as e:
-                        logger.warning(f"⚠️ Deserialization error: {e}")
+                        logger.debug(f"ℹ️ JSON deserialization skipped/failed for {key}: {e}")
                 
                 return value
             else:
@@ -120,9 +125,11 @@ class CacheManager:
                     # Deserialize value
                     if deserialize:
                         try:
-                            value = pickle.loads(value)
+                            if isinstance(value, bytes):
+                                value = value.decode('utf-8')
+                            value = json.loads(value)
                         except Exception as e:
-                            logger.warning(f"⚠️ Deserialization error: {e}")
+                            logger.debug(f"ℹ️ JSON deserialization skipped/failed for {key}: {e}")
                     
                     return value
             except Exception as e:

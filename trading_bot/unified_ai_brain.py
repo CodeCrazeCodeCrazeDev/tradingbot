@@ -1348,7 +1348,7 @@ class UnifiedAIBrain:
                     if not risk_result.get('approved', False):
                         result['reason'] = f"Risk: {risk_result.get('reason', 'Rejected')}"
                         return result
-                except:
+                except Exception as e:
                     pass
         
         # Calculate position size

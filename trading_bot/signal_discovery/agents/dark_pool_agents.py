@@ -41,7 +41,7 @@ class DarkPoolAgent(BaseAnomalyAgent):
         ]
         try:
             idx = int(agent_id.split('_')[-1])
-        except:
+        except Exception as e:
             idx = 0
         return [all_sources[idx % len(all_sources)]]
     

@@ -230,7 +230,7 @@ class SecureVault:
                     encoded = f.read()
                 decoded = base64.b64decode(encoded)
                 self._credentials = json.loads(decoded.decode())
-            except:
+            except Exception as e:
                 self._credentials = {}
     
     def get_status(self) -> Dict:

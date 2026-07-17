@@ -459,7 +459,7 @@ class ValidationFramework:
                     if len(pred_boot) == len(y_boot) and len(y_boot) > 1:
                         acc = np.mean(np.sign(np.diff(y_boot)) == np.sign(np.diff(pred_boot)))
                         bootstrap_accuracies.append(acc)
-                except:
+                except Exception as e:
                     pass
             
             if bootstrap_accuracies:

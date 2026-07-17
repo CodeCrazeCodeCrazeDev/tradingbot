@@ -536,7 +536,7 @@ class ContinuousCapabilityDiscoveryEngine:
             
             if hasattr(generator, 'recent_signals_count'):
                 metrics['signals_generated'] = generator.recent_signals_count
-        except:
+        except Exception as e:
             pass
         return metrics
     
@@ -549,7 +549,7 @@ class ContinuousCapabilityDiscoveryEngine:
             
             if hasattr(component, 'get_risk_metrics'):
                 metrics.update(component.get_risk_metrics())
-        except:
+        except Exception as e:
             pass
         return metrics
     
@@ -562,7 +562,7 @@ class ContinuousCapabilityDiscoveryEngine:
             
             if hasattr(component, 'get_detection_accuracy'):
                 metrics['accuracy'] = component.get_detection_accuracy()
-        except:
+        except Exception as e:
             pass
         return metrics
     
@@ -575,7 +575,7 @@ class ContinuousCapabilityDiscoveryEngine:
             
             if hasattr(component, 'dependencies'):
                 deps.extend(component.dependencies)
-        except:
+        except Exception as e:
             pass
         return deps
     

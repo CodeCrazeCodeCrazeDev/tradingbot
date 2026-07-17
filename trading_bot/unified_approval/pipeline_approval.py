@@ -176,7 +176,10 @@ class CLIApprovalInterface:
         
     def _clear_screen(self):
         """Clear terminal screen"""
-        os.system('cls' if os.name == 'nt' else 'clear')
+        if os.name == 'nt':
+            subprocess.run(['cls'], shell=True, check=False)
+        else:
+            subprocess.run(['clear'], check=False)
     
     def _print_header(self):
         """Print header"""

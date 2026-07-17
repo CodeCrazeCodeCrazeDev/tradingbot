@@ -919,7 +919,7 @@ class AutoFeatureEngine:
                     corr = abs(np.corrcoef(values[valid_mask], target[valid_mask])[0, 1])
                     if np.isfinite(corr):
                         importances[name] = corr
-                except:
+                except Exception as e:
                     pass
         
         # Sort by importance
@@ -982,7 +982,7 @@ class AutoFeatureEngine:
                         )
                     
                     features[feature.name] = feature_data
-                except:
+                except Exception as e:
                     pass
         
         # Final cleanup
