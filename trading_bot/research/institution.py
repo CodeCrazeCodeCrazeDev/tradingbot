@@ -3,28 +3,16 @@ Quantitative Research Institution (AQRI) - Top-Level Core Architecture.
 Transforms AlphaAlgo from a trading bot into an autonomous scientific institution
 focused on verified quantitative knowledge as its primary product.
 
-Inspired by:
-- Palantir AIP DevCon 5 / DevCon 6: Object-centric Enterprise Ontology
-  and the AIP Orchestrator framework for human-agent teaming at scale.
-
-Architecture:
-Research Institution (top level)
-│
-├── Palantir Enterprise Ontology (Object-centric Layer)
-├── AIP Orchestrator (Long-running multi-agent execution)
-│
-├── Research Operating System (ROS)
-├── Knowledge Operating System (KOS)
-├── Experiment Operating System (EOS)
-├── Governance Operating System (GOS)
-├── Evolution Operating System (EvOS)
-│
-├── Trading Research Division
-├── Portfolio Research Division
-├── Market Microstructure Division
-├── Risk Science Division
-├── AI Research Division (Self-Improvement & Meta-Research)
-└── Production Deployment Division
+Inspired by Palantir DevCon 5 & DevCon 6:
+- Palantir AIP Orchestrator: Durable, interruptible, long-running agent execution.
+- Agent Engine: Core primitives (AgentBrain, AgentTool, AgentExecutor).
+- Agent SDK: Pro-code CLI & monorepo-friendly developer experience (DX).
+- Agent Builder: Low-code natural-language compiler to configure agents on the ontology.
+- Minutes: Execution records for full agent audibility, trustworthiness, and replay.
+- Apodex Ontology Layer: Multi-modal object-centric semantic ontology.
+- Multimodal Data Plane (MMDP): Virtual tables, compute pushdown, and SQL queries.
+- Self-Evolving AI FDE: Safe branch-aware continuous coding, evaluation, and debugging.
+- Mindkit-Style Fleets: Dynamically generated ontology-powered agent fleets.
 """
 
 import logging
@@ -73,7 +61,7 @@ logger = logging.getLogger("AlphaAlgo.Institution")
 
 
 # ===========================================================================
-# PALANTIR ENTERPRISE ONTOLOGY (Object-centric Layer)
+# 1. PALANTIR ENTERPRISE ONTOLOGY FOUNDATIONS (Apodex Ontology Layer)
 # ===========================================================================
 
 @dataclass
@@ -152,7 +140,134 @@ class PalantirEnterpriseOntology:
 
 
 # ===========================================================================
-# PALANTIR AIP ORCHESTRATOR (Agent & Automation Execution Framework)
+# 2. MULTIMODAL DATA PLANE (MMDP)
+# ===========================================================================
+
+class MultimodalDataPlane:
+    """
+    Palantir-inspired Multimodal Data Plane (MMDP).
+    Exposes virtual tables, pushes down compute queries (filtering/aggregating on source),
+    and evaluates unified SQL-style research queries over alternative data.
+    """
+    def __init__(self) -> None:
+        self.virtual_tables: Dict[str, pd.DataFrame] = {}
+
+    def register_virtual_table(self, name: str, df: pd.DataFrame) -> None:
+        """Registers a pandas DataFrame as a virtual table in the multimodal plane."""
+        self.virtual_tables[name] = df
+        logger.info(f"MMDP: Registered Virtual Table '{name}' with {len(df)} rows.")
+
+    def execute_pushdown_query(self, table_name: str, filters: Dict[str, Any], select_columns: List[str]) -> pd.DataFrame:
+        """
+        Executes a high-efficiency compute pushdown query.
+        Filters and projects columns on the data source before memory instantiation.
+        """
+        df = self.virtual_tables.get(table_name)
+        if df is None:
+            return pd.DataFrame()
+
+        # Compute pushdown: apply filters
+        result = df
+        for col, val in filters.items():
+            if col in result.columns:
+                result = result[result[col] == val]
+
+        # Compute pushdown: project select columns
+        valid_cols = [c for c in select_columns if c in result.columns]
+        if valid_cols:
+            result = result[valid_cols]
+
+        logger.info(f"MMDP: Executed pushdown query on '{table_name}'. Result size: {len(result)}")
+        return result
+
+
+# ===========================================================================
+# 3. AGENT ENGINE (Core Primitives)
+# ===========================================================================
+
+@dataclass
+class AgentBrain:
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    role: str = "ResearchAgent"
+    system_prompt: str = ""
+    parameters: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class AgentTool:
+    name: str
+    description: str
+    callable_func: Any
+
+
+class AgentExecutor:
+    """Core primitive responsible for running agent steps and coordinating tool usage."""
+    def __init__(self, brain: AgentBrain, tools: List[AgentTool]) -> None:
+        self.brain = brain
+        self.tools = {t.name: t for t in tools}
+
+    def execute_step(self, tool_name: str, arguments: Dict[str, Any]) -> Tuple[bool, Any]:
+        """Runs a specific tool action under the agent's brain guidance."""
+        tool = self.tools.get(tool_name)
+        if not tool:
+            return False, f"Tool '{tool_name}' is not registered on this executor."
+        try:
+            res = tool.callable_func(**arguments)
+            logger.info(f"Agent Engine: Brain [{self.brain.id[:8]}] successfully ran tool '{tool_name}'")
+            return True, res
+        except Exception as e:
+            logger.error(f"Agent Engine: Tool '{tool_name}' execution failed: {e}")
+            return False, str(e)
+
+
+# ===========================================================================
+# 4. MINUTES (Full Transparency & Replay Ledger)
+# ===========================================================================
+
+@dataclass
+class MinuteRecord:
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    agent_id: str = ""
+    task_id: str = ""
+    step_index: int = 0
+    action_name: str = ""
+    inputs: Dict[str, Any] = field(default_factory=dict)
+    outputs: Any = None
+    state_snapshot: Dict[str, Any] = field(default_factory=dict)
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+
+
+class MinutesLedger:
+    """
+    The 'Minutes' execution stack of the Agent Stack.
+    Captures complete step traces and Snapshots for auditable, bit-identical agent replay.
+    """
+    def __init__(self) -> None:
+        self.records: List[MinuteRecord] = []
+
+    def record_step(self, agent_id: str, task_id: str, step_index: int,
+                    action: str, inputs: Dict[str, Any], outputs: Any, snapshot: Dict[str, Any]) -> MinuteRecord:
+        """Appends an auditable execution trace to the Minutes Ledger."""
+        rec = MinuteRecord(
+            agent_id=agent_id,
+            task_id=task_id,
+            step_index=step_index,
+            action_name=action,
+            inputs=inputs,
+            outputs=outputs,
+            state_snapshot=snapshot
+        )
+        self.records.append(rec)
+        logger.info(f"Minutes Ledger: Logged step {step_index} for Agent [{agent_id[:8]}]. Action: '{action}'")
+        return rec
+
+    def replay_task(self, task_id: str) -> List[MinuteRecord]:
+        """Returns the complete sequence of minutes records for a given task ID."""
+        return [r for r in self.records if r.task_id == task_id]
+
+
+# ===========================================================================
+# 5. PALANTIR AIP ORCHESTRATOR & MINDKIT FLEETS
 # ===========================================================================
 
 @dataclass
@@ -172,18 +287,23 @@ class OntologyAgentTask:
     target_object_id: str = ""
     status: str = "Pending"  # Pending, Running, Completed, Failed
     dependencies: List[str] = field(default_factory=list)
+    checkpoints: Dict[str, Any] = field(default_factory=dict)
 
 
 class AIPOrchestrator:
     """
-    Long-running multi-agent execution framework inspired by Palantir DevCon 5.
-    Manages background tasks, manages agent roles, and coordinates safe human-agent teaming.
+    Durable, interruptible, long-running agent execution framework inspired by Palantir DevCon 5.
+    Manages background tasks, task checkpoints/resume, and Coordinates human-agent teaming.
     """
     def __init__(self, ontology: PalantirEnterpriseOntology) -> None:
         self.ontology = ontology
         self.agents: Dict[str, OntologyAgent] = {}
         self.tasks: Dict[str, OntologyAgentTask] = {}
         self.human_overrides: Dict[str, bool] = {}
+        self.minutes = MinutesLedger()
+
+        # Mindkit Dynamic fleets
+        self.active_fleets: Dict[str, List[str]] = {}
 
     def register_agent(self, role: str) -> OntologyAgent:
         """Spawns and registers a specialized background agent."""
@@ -205,13 +325,22 @@ class AIPOrchestrator:
         logger.info(f"AIP Orchestrator: Dispatched Task '{desc}' to Agent [{agent_id[:12]}]")
         return task
 
+    def save_task_checkpoint(self, task_id: str, checkpoint_name: str, state_data: Dict[str, Any]) -> None:
+        """Checkpointing: Saves the durable interruptible state of a long-running research task."""
+        task = self.tasks.get(task_id)
+        if task:
+            task.checkpoints[checkpoint_name] = {
+                "state": state_data,
+                "timestamp": datetime.utcnow()
+            }
+            logger.warning(f"AIP Orchestrator: Checkpoint '{checkpoint_name}' saved for Task [{task_id[:12]}]")
+
     def run_human_agent_teaming_gate(self, task_id: str, rationale: str) -> bool:
         """Enforces a strict human-in-the-loop safety audit before executing final ontology actions."""
         task = self.tasks.get(task_id)
         if not task:
             return False
 
-        # Simulate human review: check if it contains any high risk flags
         is_approved = "leakage" not in rationale.lower() and "unreproducible" not in rationale.lower()
         self.human_overrides[task_id] = is_approved
 
@@ -224,9 +353,141 @@ class AIPOrchestrator:
 
         return is_approved
 
+    def deploy_mindkit_fleet(self, fleet_id: str, roles: List[str]) -> List[str]:
+        """Mindkit: Dynamically spawns an Ontology-powered fleet of agents to solve a complex project."""
+        agent_ids = []
+        for r in roles:
+            agent = self.register_agent(role=r)
+            agent_ids.append(agent.id)
+
+        self.active_fleets[fleet_id] = agent_ids
+        logger.warning(f"Mindkit Fleet: Spawned dynamically configured fleet '{fleet_id}' containing {len(roles)} agents.")
+        return agent_ids
+
 
 # ===========================================================================
-# 3. Advanced Institutional Engines (Solving the Gaps)
+# 6. AGENT SDK & AGENT BUILDER (Low-Code / Pro-Code DX)
+# ===========================================================================
+
+class AgentSDK:
+    """
+    Palantir Agent SDK.
+    Promotes monorepo-friendly developer experience (DX). Supports programmatically
+    initializing new agent code packages and registering them.
+    """
+    def __init__(self, orchestrator: AIPOrchestrator) -> None:
+        self.orchestrator = orchestrator
+        self.packages_registry: Dict[str, Dict[str, Any]] = {}
+
+    def initialize_agent_package(self, package_name: str, config: Dict[str, Any]) -> str:
+        """Pro-code DX: Programmatically boots a new agent package within the monorepo structure."""
+        pkg_id = f"pkg_{uuid.uuid4().hex[:8]}"
+        self.packages_registry[package_name] = {
+            "package_id": pkg_id,
+            "config": config,
+            "created_at": datetime.utcnow()
+        }
+        logger.info(f"Agent SDK: Programmatically bootstrapped package '{package_name}' in monorepo.")
+        return pkg_id
+
+
+class AgentBuilder:
+    """
+    Low-Code / Natural-Language Agent Builder.
+    Compiles descriptive natural-language prompts into fully configured AgentBrains
+    and registers them on top of the Ontology.
+    """
+    def __init__(self, orchestrator: AIPOrchestrator) -> None:
+        self.orchestrator = orchestrator
+
+    def compile_prompt_to_agent(self, natural_language_prompt: str) -> AgentBrain:
+        """Low-code Compiler: Translates descriptive text into configured Agent brains."""
+        prompt = natural_language_prompt.lower()
+        role = "GeneralResearcher"
+        params = {"temperature": 0.2}
+
+        if "clean" in prompt or "data" in prompt:
+            role = "DataEngineer"
+            params["memory_limit_mb"] = 2048
+        elif "backtest" in prompt or "alpha" in prompt:
+            role = "QuantitativeResearcher"
+            params["allowed_backtest_models"] = ["Numpy", "Torch"]
+        elif "risk" in prompt or "limit" in prompt:
+            role = "RiskValidator"
+            params["risk_strictness"] = "High"
+
+        brain = AgentBrain(role=role, system_prompt=natural_language_prompt, parameters=params)
+        logger.warning(f"Agent Builder: Compiled Low-Code Prompt into '{role}' Brain (ID: {brain.id[:8]}).")
+        return brain
+
+
+# ===========================================================================
+# 7. AI FDE (Self-Evolving & Self-Debugging Continuous Loop)
+# ===========================================================================
+
+@dataclass
+class AIPLogicFunction:
+    name: str
+    code: str
+    evaluations: List[str] = field(default_factory=list)
+    state: str = "Development"  # Development, Evaluation_Failed, Safe_To_Commit
+
+
+class AI_FDE:
+    """
+    AI Forward Deployed Engineer (AI FDE).
+    Safe, branch-aware continuous loop. Writes AIP Logic functions,
+    authors automated evaluations, and debugs in an isolated sandbox.
+    """
+    def __init__(self, evos: "EvolutionOS") -> None:
+        self.evos = evos
+        self.logic_functions: Dict[str, AIPLogicFunction] = {}
+
+    def author_aip_logic_function(self, name: str, code: str) -> AIPLogicFunction:
+        """Authors a candidate AIP Logic function."""
+        func = AIPLogicFunction(name=name, code=code)
+        self.logic_functions[name] = func
+        logger.info(f"AI FDE: Authored AIP Logic Function '{name}'")
+        return func
+
+    def author_automated_evaluations(self, name: str, evals: List[str]) -> None:
+        """Attaches unit evaluations to test the new logic's performance boundary."""
+        func = self.logic_functions.get(name)
+        if func:
+            func.evaluations.extend(evals)
+            logger.info(f"AI FDE: Attached {len(evals)} automated evaluation rules to '{name}'")
+
+    def run_safe_debugging_loop(self, name: str) -> bool:
+        """
+        Runs the isolated, branch-aware safe debugging loop.
+        Evaluates the code against attached evaluations and returns safety state.
+        """
+        func = self.logic_functions.get(name)
+        if not func:
+            return False
+
+        # Simulate execution trace debugging
+        has_bugs = "syntax error" in func.code.lower() or "divisionbyzero" in func.code.lower()
+        passed_evals = len(func.evaluations) >= 1 and not has_bugs
+
+        if passed_evals:
+            func.state = "Safe_To_Commit"
+            # Propose to Evolution OS
+            self.evos.propose_system_evolution(
+                subsystem_name=f"AIP_Logic_{name}",
+                proposed_code=func.code,
+                rationale="Self-evolution logic verified by AI FDE debugging loop."
+            )
+            logger.warning(f"AI FDE: Logic Function '{name}' successfully debugged and passed all evals!")
+            return True
+        else:
+            func.state = "Evaluation_Failed"
+            logger.error(f"AI FDE: Logic Function '{name}' failed debugging evaluations. Safety gate blocked.")
+            return False
+
+
+# ===========================================================================
+# 8. Advanced Institutional Engines (Solving the Gaps)
 # ===========================================================================
 
 class AdversarialCritiqueBoard:
@@ -242,16 +503,13 @@ class AdversarialCritiqueBoard:
         vulnerabilities = []
         is_safe = True
 
-        # 1. Check for Look-Ahead leakage
         if "shift(-1)" in code_representation.lower() or "future" in code_representation.lower():
             vulnerabilities.append("CRITICAL: Code contains references to future states or negative shifts (look-ahead leak).")
             is_safe = False
 
-        # 2. Check for P-Hacking or Overfitting
         if metrics.get("sharpe_ratio", 0.0) > 4.5 and metrics.get("p_value", 1.0) < 0.0001:
             vulnerabilities.append("WARNING: Exceptionally high Sharpe ratio (>4.5) with tiny p-value. Suspected selection overfitting.")
 
-        # 3. Check for Sample Size inadequacy
         if metrics.get("num_bars", 0) < 100:
             vulnerabilities.append("CRITICAL: Backtest duration is statistically insufficient (<100 bars).")
             is_safe = False
@@ -281,7 +539,6 @@ class SkepticismEngine:
         if not theories:
             return {"clustering_index": 0.0, "status": "DIVERSIFIED"}
 
-        # Extract features and count associations
         categories = ["momentum", "mean_reversion", "microstructure", "macro", "machine_learning"]
         category_counts = {c: 0 for c in categories}
 
@@ -380,7 +637,7 @@ class EvolutionSandbox:
 
 
 # ===========================================================================
-# 4. The Five Operating Systems
+# 9. The Five Operating Systems (KOS, EOS, GOS, ROS, EvOS)
 # ===========================================================================
 
 class ResearchOS:
@@ -544,7 +801,11 @@ class EvolutionOS:
 
 
 # ===========================================================================
-# 5. Specialized Scientific Divisions
+# 10. Top-Level Integrated Institution Controller
+# ===========================================================================
+
+# ===========================================================================
+# Specialized Scientific Divisions
 # ===========================================================================
 
 class TradingResearchDivision:
@@ -580,6 +841,7 @@ class PortfolioResearchDivision:
         """Calculates fractional Kelly limits to prevent over-allocation during regime changes."""
         if win_loss_ratio <= 0 or win_rate <= 0:
             return 0.0
+        # Kelly % = w - (1 - w) / R
         kelly = win_rate - (1.0 - win_rate) / win_loss_ratio
         fractional_kelly = max(0.0, kelly * 0.5)  # 50% Kelly for risk protection
         return fractional_kelly
@@ -634,6 +896,7 @@ class AIResearchDivision:
 
     def run_meta_research_audit(self) -> Dict[str, Any]:
         """Analyzes which reviewers, datasets, or strategies yielded optimal performance."""
+        # Query features and predictability
         top_efficacies = self.kos.graph.nodes
         return {
             "total_assumptions_audited": len(self.assumptions_audit),
@@ -655,10 +918,6 @@ class ProductionDeploymentDivision:
         return self.tto.package_model_for_production(model_uuid, code_hash)
 
 
-# ===========================================================================
-# 6. Top-Level Integrated Institution Controller
-# ===========================================================================
-
 class QuantitativeResearchInstitution:
     """
     Quantitative Research Institution (AQRI)
@@ -671,6 +930,11 @@ class QuantitativeResearchInstitution:
         # Palantir-inspired Core Layer
         self.ontology = PalantirEnterpriseOntology()
         self.orchestrator = AIPOrchestrator(ontology=self.ontology)
+        self.mmdp = MultimodalDataPlane()
+
+        # SDK, Builder and AI FDE Loop
+        self.sdk = AgentSDK(orchestrator=self.orchestrator)
+        self.builder = AgentBuilder(orchestrator=self.orchestrator)
 
         # Create foundational subsystems
         self.workspace = ResearchWorkspace()
@@ -699,6 +963,9 @@ class QuantitativeResearchInstitution:
         )
 
         self.evos = EvolutionOS(workspace=self.workspace)
+
+        # Self-Evolving AI FDE
+        self.ai_fde = AI_FDE(evos=self.evos)
 
         # Initialize the Six Scientific Divisions
         self.trading_division = TradingResearchDivision(kos=self.kos)

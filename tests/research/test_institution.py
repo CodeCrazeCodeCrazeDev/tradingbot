@@ -16,7 +16,10 @@ from trading_bot.research.institution import (
     TradingResearchDivision, PortfolioResearchDivision, MarketMicrostructureDivision,
     RiskScienceDivision, AIResearchDivision, ProductionDeploymentDivision,
     AdversarialCritiqueBoard, SkepticismEngine, ContinuousReplicationPipeline, EvolutionSandbox,
-    PalantirEnterpriseOntology, AIPOrchestrator, OntologyObject, Theory
+    PalantirEnterpriseOntology, AIPOrchestrator, OntologyObject, Theory,
+    MultimodalDataPlane, AgentBrain, AgentTool, AgentExecutor,
+    MinuteRecord, MinutesLedger, OntologyAgent, OntologyAgentTask,
+    AgentSDK, AgentBuilder, AIPLogicFunction, AI_FDE
 )
 from trading_bot.research.research_computer import EpistemicInstruction
 
@@ -63,6 +66,10 @@ def test_aqri_initialization(institution):
     # Palantir AIP Layers
     assert isinstance(institution.ontology, PalantirEnterpriseOntology)
     assert isinstance(institution.orchestrator, AIPOrchestrator)
+    assert isinstance(institution.mmdp, MultimodalDataPlane)
+    assert isinstance(institution.sdk, AgentSDK)
+    assert isinstance(institution.builder, AgentBuilder)
+    assert isinstance(institution.ai_fde, AI_FDE)
 
 
 def test_research_os_intent_and_cycle(institution):
@@ -353,6 +360,115 @@ def test_palantir_ontology_and_orchestrator(institution):
     )
     assert approved is True
     assert task.status == "Completed"
+
+
+def test_durable_orchestration_and_checkpoints(institution):
+    """Tests durable interruptible checkpointing under AIP Orchestrator."""
+    orchestrator = institution.orchestrator
+    agent = orchestrator.register_agent(role="DataEngineer")
+    task = orchestrator.dispatch_task(agent.id, "Ingesting Tick Order Logs", "dataset_123")
+
+    # Save checkpoints to allow interruptible/resumable execution states
+    orchestrator.save_task_checkpoint(task.id, "checkpoint_stage_1", {"index_offset": 50000})
+    assert "checkpoint_stage_1" in task.checkpoints
+    assert task.checkpoints["checkpoint_stage_1"]["state"]["index_offset"] == 50000
+
+
+def test_agent_engine_core_primitives():
+    """Tests AgentBrain, AgentTool and AgentExecutor primitives."""
+    brain = AgentBrain(role="MicrostructureMiner", system_prompt="Find short-term inefficiencies")
+    tool = AgentTool(
+        name="calc_correlation",
+        description="Calculates Spearman correlations",
+        callable_func=lambda x, y: 0.85
+    )
+    executor = AgentExecutor(brain=brain, tools=[tool])
+
+    success, result = executor.execute_step("calc_correlation", {"x": [1, 2, 3], "y": [2, 4, 6]})
+    assert success is True
+    assert result == 0.85
+
+
+def test_agent_sdk_cli_dx(institution):
+    """Tests pro-code developer experience (DX) CLI initializing agent packages."""
+    sdk = institution.sdk
+    pkg_id = sdk.initialize_agent_package("CustomSlippageAgent", {"version": "1.4.2"})
+    assert pkg_id is not None
+    assert "CustomSlippageAgent" in sdk.packages_registry
+
+
+def test_agent_builder_prompt_compiler(institution):
+    """Tests low-code NLP agent creation compiling prompt to AgentBrain on top of the Ontology."""
+    builder = institution.builder
+    brain = builder.compile_prompt_to_agent("Create an agent to audit maximum drawdown risk boundaries.")
+    assert brain.role == "RiskValidator"
+    assert brain.parameters["risk_strictness"] == "High"
+
+
+def test_minutes_audit_and_replay(institution):
+    """Tests recording step execution traces in 'Minutes' and replaying agent steps."""
+    ledger = institution.orchestrator.minutes
+    ledger.record_step(
+        agent_id="agent_001",
+        task_id="task_999",
+        step_index=1,
+        action="calculate_fvg",
+        inputs={"threshold": 0.05},
+        outputs={"fvg_found": True},
+        snapshot={"fvg_count": 12}
+    )
+
+    traces = ledger.replay_task("task_999")
+    assert len(traces) == 1
+    assert traces[0].action_name == "calculate_fvg"
+    assert traces[0].outputs["fvg_found"] is True
+
+
+def test_multimodal_data_plane_pushdown(institution):
+    """Tests virtual table registrations and high-efficiency compute pushdown operations in MMDP."""
+    mmdp = institution.mmdp
+    df = pd.DataFrame({
+        "symbol": ["EURUSD", "GBPUSD", "EURUSD"],
+        "price": [1.08, 1.25, 1.09]
+    })
+    mmdp.register_virtual_table("raw_forex_feed", df)
+
+    # Compute pushdown: apply filter & projection on MMDP side before fetching
+    query_res = mmdp.execute_pushdown_query(
+        table_name="raw_forex_feed",
+        filters={"symbol": "EURUSD"},
+        select_columns=["price"]
+    )
+    assert len(query_res) == 2
+    assert list(query_res.columns) == ["price"]
+
+
+def test_ai_fde_continuous_loop(institution):
+    """Tests AI FDE self-evolving branch-aware continuous coding, evaluation and debugging."""
+    fde = institution.ai_fde
+    func = fde.author_aip_logic_function(
+        name="calc_volatility_multiplier",
+        code="def run(vix): return vix * 0.12 # clean syntax"
+    )
+    fde.author_automated_evaluations(
+        name="calc_volatility_multiplier",
+        evals=["assert run(20) == 2.4"]
+    )
+
+    success = fde.run_safe_debugging_loop("calc_volatility_multiplier")
+    assert success is True
+    assert func.state == "Safe_To_Commit"
+
+
+def test_mindkit_dynamic_fleets(institution):
+    """Tests dynamic ontology-powered fleet deployments using Mindkit patterns."""
+    orchestrator = institution.orchestrator
+    fleet_agents = orchestrator.deploy_mindkit_fleet(
+        fleet_id="fleet_micro_alpha",
+        roles=["DataEngineer", "QuantitativeResearcher", "RiskValidator"]
+    )
+    assert len(fleet_agents) == 3
+    assert orchestrator.active_fleets["fleet_micro_alpha"] == fleet_agents
 
 
 def test_end_to_end_institutional_research_lifecycle(institution, sample_data):

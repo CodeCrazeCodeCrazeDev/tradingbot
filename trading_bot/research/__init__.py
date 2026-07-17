@@ -208,6 +208,19 @@ try:
         AIResearchDivision,
         ProductionDeploymentDivision,
         QuantitativeResearchInstitution,
+        MultimodalDataPlane,
+        AgentBrain,
+        AgentTool,
+        AgentExecutor,
+        MinuteRecord,
+        MinutesLedger,
+        OntologyAgent,
+        OntologyAgentTask,
+        AIPOrchestrator,
+        AgentSDK,
+        AgentBuilder,
+        AIPLogicFunction,
+        AI_FDE,
     )
 except ImportError as e:
     import logging
@@ -353,6 +366,19 @@ __all__ = [
     'AIResearchDivision',
     'ProductionDeploymentDivision',
     'QuantitativeResearchInstitution',
+    'MultimodalDataPlane',
+    'AgentBrain',
+    'AgentTool',
+    'AgentExecutor',
+    'MinuteRecord',
+    'MinutesLedger',
+    'OntologyAgent',
+    'OntologyAgentTask',
+    'AIPOrchestrator',
+    'AgentSDK',
+    'AgentBuilder',
+    'AIPLogicFunction',
+    'AI_FDE',
 ]
 
 class ResearchOrchestrator:
