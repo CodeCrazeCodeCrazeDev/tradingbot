@@ -221,6 +221,19 @@ try:
         AgentBuilder,
         AIPLogicFunction,
         AI_FDE,
+        LivingDigitalTwin,
+        ContinuousArchitectureParser,
+        WorldStateEngine,
+        MultiAgentConsensusEngine,
+        ConsensusRole,
+        StrategicPlanningLayer,
+        ResourceAwareScheduler,
+        FormalVerificationModelChecker,
+        CausalInferenceEngine,
+        BayesianUncertaintyEstimator,
+        FailureResearchMemory,
+        EconomicEngineeringOptimizer,
+        CapabilityGovernance,
     )
 except ImportError as e:
     import logging
@@ -379,6 +392,19 @@ __all__ = [
     'AgentBuilder',
     'AIPLogicFunction',
     'AI_FDE',
+    'LivingDigitalTwin',
+    'ContinuousArchitectureParser',
+    'WorldStateEngine',
+    'MultiAgentConsensusEngine',
+    'ConsensusRole',
+    'StrategicPlanningLayer',
+    'ResourceAwareScheduler',
+    'FormalVerificationModelChecker',
+    'CausalInferenceEngine',
+    'BayesianUncertaintyEstimator',
+    'FailureResearchMemory',
+    'EconomicEngineeringOptimizer',
+    'CapabilityGovernance',
 ]
 
 class ResearchOrchestrator:

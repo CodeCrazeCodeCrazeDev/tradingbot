@@ -2,7 +2,7 @@
 Comprehensive Unit and Integration Tests for the Quantitative Research Institution (AQRI).
 Validates the institutional operating systems, specialized divisions,
 the four advanced scientific engines, Palantir Enterprise Ontology,
-AIP Orchestrator, and the end-to-end 14-step quantitative research lifecycle.
+AIP Orchestrator, the 14-step quantitative research lifecycle, and AEI capabilities.
 """
 
 import pytest
@@ -19,7 +19,12 @@ from trading_bot.research.institution import (
     PalantirEnterpriseOntology, AIPOrchestrator, OntologyObject, Theory,
     MultimodalDataPlane, AgentBrain, AgentTool, AgentExecutor,
     MinuteRecord, MinutesLedger, OntologyAgent, OntologyAgentTask,
-    AgentSDK, AgentBuilder, AIPLogicFunction, AI_FDE
+    AgentSDK, AgentBuilder, AIPLogicFunction, AI_FDE,
+    LivingDigitalTwin, TwinMetrics, ContinuousArchitectureParser,
+    WorldStateEngine, WorldState, MultiAgentConsensusEngine, ConsensusRole,
+    StrategicPlanningLayer, ResourceAwareScheduler, FormalVerificationModelChecker,
+    CausalInferenceEngine, BayesianUncertaintyEstimator, FailureResearchMemory,
+    EconomicEngineeringOptimizer, CapabilityGovernance
 )
 from trading_bot.research.research_computer import EpistemicInstruction
 
@@ -70,6 +75,14 @@ def test_aqri_initialization(institution):
     assert isinstance(institution.sdk, AgentSDK)
     assert isinstance(institution.builder, AgentBuilder)
     assert isinstance(institution.ai_fde, AI_FDE)
+
+    # AEI Pillars
+    assert isinstance(institution.twin, LivingDigitalTwin)
+    assert isinstance(institution.parser, ContinuousArchitectureParser)
+    assert isinstance(institution.world_state, WorldStateEngine)
+    assert isinstance(institution.consensus, MultiAgentConsensusEngine)
+    assert isinstance(institution.planner, StrategicPlanningLayer)
+    assert isinstance(institution.scheduler, ResourceAwareScheduler)
 
 
 def test_research_os_intent_and_cycle(institution):
@@ -469,6 +482,90 @@ def test_mindkit_dynamic_fleets(institution):
     )
     assert len(fleet_agents) == 3
     assert orchestrator.active_fleets["fleet_micro_alpha"] == fleet_agents
+
+
+def test_living_digital_twin_and_parser(institution):
+    """Tests the living digital twin metrics tracking and Continuous Architecture parser AST audits."""
+    twin = institution.twin
+    parser = institution.parser
+
+    twin.register_service("ExecutionCore", {"port": 5001, "threads": 16})
+    assert "ExecutionCore" in twin.services
+
+    # Trigger change with eval() security risk
+    change_res = parser.analyze_file_change("trading_bot/execution/arbitrage.py", "eval('1 + 1')")
+    assert change_res["risk_score"] == 0.95
+    assert twin.metrics.technical_debt_score >= 0.95
+
+
+def test_world_state_and_consensus(institution):
+    """Tests WorldState Engine query updates and independent multi-agent consensus reviews."""
+    world = institution.world_state
+    world.update_state(WorldState(repository_hash="sha_git_101", active_agent_count=5))
+    assert world.query_state().repository_hash == "sha_git_101"
+
+    # Multi-Agent Consensus reviews
+    proposal_id = "prop_999"
+    consensus = institution.consensus
+
+    consensus.collect_role_review(proposal_id, ConsensusRole.ARCHITECT, True, "Approved design pattern.")
+    consensus.collect_role_review(proposal_id, ConsensusRole.QA, True, "No regression found.")
+    consensus.collect_role_review(proposal_id, ConsensusRole.DEVOPS, True, "Deployable package verified.")
+
+    passed, rationale = consensus.evaluate_consensus(proposal_id)
+    assert passed is True
+    assert rationale == "APPROVED BY CONSENSUS"
+
+
+def test_strategic_planning_and_scheduling(institution):
+    """Tests ROI bottleneck identification and resource-aware scheduling."""
+    twin = institution.twin
+    planner = institution.planner
+    scheduler = institution.scheduler
+
+    # Setup high tech debt in twin
+    twin.metrics.technical_debt_score = 6.2
+    roi_mission = planner.identify_highest_roi_mission()
+    assert roi_mission["target_subsystem"] == "Technical_Debt_Refactor"
+    assert roi_mission["expected_roi"] == 85.0
+
+    # Resource aware allocations
+    success_alloc = scheduler.schedule_resource_task(task_priority=1, cost_cores=64)
+    assert success_alloc is True
+    assert scheduler.available_cores == 64
+
+    fail_alloc = scheduler.schedule_resource_task(task_priority=2, cost_cores=128)
+    assert fail_alloc is False
+
+
+def test_advanced_aei_capabilities(institution, sample_data):
+    """Tests formal verification proofs, causal do-effect proxies, and Beta Bayesian posteriors."""
+    # Formal Verification model check
+    proven, msg = FormalVerificationModelChecker.verify_invariant(current_state_val=10.0, proposed_delta=5.0, max_allowable_bound=20.0)
+    assert proven is True
+
+    # Pearl do-calculus causal interventional effect
+    effect = CausalInferenceEngine.estimate_interventional_do_effect(cause_active=True, outcome_series=pd.Series([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]))
+    assert effect > 0.0
+
+    # Bayesian posterior probability
+    posterior = BayesianUncertaintyEstimator.compute_posterior_confidence(prior_confidence=0.5, successful_trials=8, total_trials=10)
+    assert posterior > 0.5
+
+    # Failure Research Memory
+    failures = FailureResearchMemory()
+    failures.record_failed_hypothesis("Linear EMAs prevent drift", 0.04, "High alpha decay")
+    assert failures.is_failed_concept("Linear EMAs prevent drift") is True
+
+    # Economic Engineering Optimizer
+    viable, net_value = EconomicEngineeringOptimizer.evaluate_task_net_value(expected_alpha_return_usd=1000.0, compute_cost_usd=100.0, code_maintenance_cost_usd=50.0)
+    assert viable is True
+    assert net_value == 850.0
+
+    # Capability Governance escalation rules
+    gov = CapabilityGovernance()
+    privs = gov.log_reliability_score(0.98)
+    assert privs.can_self_evolve is True
 
 
 def test_end_to_end_institutional_research_lifecycle(institution, sample_data):
