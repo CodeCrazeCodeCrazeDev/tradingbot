@@ -335,7 +335,7 @@ class GrangerCausalityTester:
                     if results.aic < best_aic:
                         best_aic = results.aic
                         best_lag = lag
-                except:
+                except Exception as e:
                     break
             
             return best_lag

@@ -642,8 +642,13 @@ class SentimentAnalyzer:
     def _save_cache(self):
         """Save sentiment history to cache"""
         try:
-            with open(self.cache_path, 'wb') as f:
-                pickle.dump(self.sentiment_history, f)
+            # Convert SentimentResult objects to dicts for JSON serialization
+            serializable_history = {}
+            for ticker, results in self.sentiment_history.items():
+                serializable_history[ticker] = [r.to_dict() if hasattr(r, 'to_dict') else r for r in results]
+
+            with open(self.cache_path, 'w') as f:
+                json.dump(serializable_history, f, indent=2)
             logger.debug(f"Saved sentiment history to {self.cache_path}")
         except Exception as e:
             logger.warning(f"Error saving sentiment cache: {e}")
@@ -652,8 +657,18 @@ class SentimentAnalyzer:
         """Load sentiment history from cache"""
         if os.path.exists(self.cache_path):
             try:
-                with open(self.cache_path, 'rb') as f:
-                    self.sentiment_history = pickle.load(f)
+                with open(self.cache_path, 'r') as f:
+                    cached_data = json.load(f)
+
+                # Reconstruct SentimentResult objects
+                self.sentiment_history = defaultdict(list)
+                for ticker, results in cached_data.items():
+                    for r_dict in results:
+                        # Convert ISO timestamp back to datetime
+                        if 'timestamp' in r_dict:
+                            r_dict['timestamp'] = datetime.fromisoformat(r_dict['timestamp'])
+                        self.sentiment_history[ticker].append(SentimentResult(**r_dict))
+
                 logger.info(f"Loaded sentiment history from {self.cache_path}")
             except Exception as e:
                 logger.warning(f"Error loading sentiment cache: {e}")

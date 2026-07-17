@@ -483,7 +483,7 @@ class NeuralArchitectureEvolver:
                     error = np.mean((output - labels[i]) ** 2)
                     total_error += error
                 return 1.0 / (1.0 + total_error)
-            except:
+            except Exception as e:
                 return 0.0
         
         for _ in range(generations):

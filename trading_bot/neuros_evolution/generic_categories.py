@@ -195,7 +195,7 @@ class GenericCategoryManager:
                 try:
                     if re.search(regex, text, re.IGNORECASE):
                         scores[pattern.name] += 0.5
-                except:
+                except Exception as e:
                     pass
             
             # Input field hints

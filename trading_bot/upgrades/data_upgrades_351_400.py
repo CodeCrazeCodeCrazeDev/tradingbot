@@ -242,7 +242,8 @@ class DataEnrichmentService:
                 try:
                     enriched = self.enrichers[name](result)
                     result.update(enriched)
-                except: pass
+                except Exception:
+                    continue
         return result
 
 # UPGRADE 362: Data Masking Service

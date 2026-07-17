@@ -1293,7 +1293,7 @@ class DecisionVerificationChain:
                         conf = float(correction.split(":")[-1].strip())
                         corrected['confidence'] = conf
                         corrections_applied.append(f"Confidence calibrated to {conf}")
-                    except:
+                    except Exception:
                         pass
                 
                 elif "Actual R:R is" in correction:
@@ -1301,7 +1301,7 @@ class DecisionVerificationChain:
                         rr = float(correction.split("is")[-1].strip())
                         corrected['risk_reward'] = rr
                         corrections_applied.append(f"R:R corrected to {rr}")
-                    except:
+                    except Exception:
                         pass
         
         corrected['_corrections_applied'] = corrections_applied

@@ -146,7 +146,7 @@ class CompleteIntegrator:
             try:
                 from trading_bot.adaptive_systems.master_controller import MasterController
                 adaptive = MasterController()
-            except:
+            except Exception as e:
                 # Fallback to basic integration
                 from trading_bot.adaptive_systems import AdaptiveLearningEngine
                 adaptive = AdaptiveLearningEngine()

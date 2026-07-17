@@ -56,11 +56,13 @@ class CorrelationPersistence:
             True if successful, False otherwise
         """
         try:
-            # Save correlation matrix (pickle for DataFrame)
+            # Save correlation matrix
             if correlation_matrix is not None:
-                with open(self.matrix_file, 'wb') as f:
-                    pickle.dump(correlation_matrix, f)
-                logger.info(f"Saved correlation matrix to {self.matrix_file}")
+                # Use JSON for DataFrame persistence to avoid pickle security risks
+                matrix_data = correlation_matrix.to_json(orient='split')
+                with open(self.matrix_file.with_suffix('.json'), 'w') as f:
+                    f.write(matrix_data)
+                logger.info(f"Saved correlation matrix to {self.matrix_file.with_suffix('.json')}")
             
             # Save price history (JSON)
             history_data = {
@@ -125,10 +127,15 @@ class CorrelationPersistence:
             
             # Load correlation matrix (if exists)
             correlation_matrix = None
-            if self.matrix_file.exists():
+            json_matrix_file = self.matrix_file.with_suffix('.json')
+            if json_matrix_file.exists():
+                correlation_matrix = pd.read_json(json_matrix_file, orient='split')
+                logger.info(f"Loaded correlation matrix from {json_matrix_file}")
+            elif self.matrix_file.exists():
+                # Backward compatibility for old pickle files
                 with open(self.matrix_file, 'rb') as f:
                     correlation_matrix = pickle.load(f)
-                logger.info(f"Loaded correlation matrix from {self.matrix_file}")
+                logger.info(f"Loaded legacy correlation matrix from {self.matrix_file}")
             
             # Load price history
             with open(self.history_file, 'r') as f:

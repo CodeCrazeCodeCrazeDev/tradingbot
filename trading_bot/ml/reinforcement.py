@@ -146,24 +146,42 @@ class StrategyOptimizer:
     def calculate_reward(self, action: int, next_state: np.ndarray, 
                          price_change: float) -> float:
         """Calculate the reward for a given action and resulting state.
-        
-        Args:
-            action: Action taken (0=hold, 1=buy, 2=sell)
-            next_state: Resulting state after action
-            price_change: Percentage price change
-            
-        Returns:
-            Reward value
+        Enforces grounded rewards based on executable outcomes.
         """
-        # Simple reward function based on action and price change
+        # Check grounding state before calculating reward
+        from trading_bot.ml.eval_states import EvaluationState
+        eval_state = self._check_evaluation_validity()
+        if eval_state != EvaluationState.VALID:
+            logger.warning(f"Delusion Loop Prevention: Evaluation state is {eval_state.value}. Refusing to calculate reward (return 0).")
+            return 0.0
+
         if action == 0:  # hold
-            return 0  # neutral reward for holding
+            return 0.0  # neutral reward for holding
         elif action == 1:  # buy
-            return price_change * 100  # positive reward if price increases
+            # Grounded in realized returns and actual execution costs
+            # In production, self.config should contain realistic slippage and fee deduction
+            slippage = self.config.get('slippage', 0.0001)
+            fee = self.config.get('transaction_fee', 0.001)
+            net_return = price_change - slippage - fee
+            return net_return * 100
         elif action == 2:  # sell
-            return -price_change * 100  # positive reward if price decreases
+            slippage = self.config.get('slippage', 0.0001)
+            fee = self.config.get('transaction_fee', 0.001)
+            net_return = -price_change - slippage - fee
+            return net_return * 100
         
-        return 0
+        return 0.0
+
+    def _check_evaluation_validity(self) -> Any:
+        """Verify if the training data/environment is valid and grounded."""
+        from trading_bot.ml.eval_states import EvaluationState
+
+        # Grounding check: Ensure there is real market data
+        if self.state_history is None or len(self.state_history) < 10:
+            # For this audit fix, if state history is empty or too short, mark as invalid
+            return EvaluationState.INVALID_NO_MARKET_DATA
+
+        return EvaluationState.VALID
     
     def train(self, df: pd.DataFrame, epochs: int = None) -> Dict[str, Any]:
         """Train the reinforcement learning model on historical data.
@@ -203,6 +221,14 @@ class StrategyOptimizer:
             'sharpe_ratio': 0
         }
         
+        # Fail-closed training mechanism based on evaluation state
+        from trading_bot.ml.eval_states import EvaluationState
+
+        eval_state = self._check_evaluation_validity()
+        if eval_state != EvaluationState.VALID:
+            logger.critical(f"Delusion Loop Prevention: Refusing to train model due to invalid evaluation state: {eval_state.value}")
+            return {'success': False, 'error': f"Invalid evaluation state: {eval_state.value}"}
+
         # Simulate training process
         total_reward = 0
         episode_rewards = []

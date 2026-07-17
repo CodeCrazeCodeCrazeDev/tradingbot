@@ -1339,7 +1339,7 @@ class DNADataStorage:
             data = json.loads(json_data.decode())
             self._metrics['read_operations'] += 1
             return data
-        except:
+        except Exception as e:
             return None
     
     async def bio_pattern_recognition(
@@ -1815,7 +1815,7 @@ class PlasmaComputing:
                 try:
                     result = op(inp)
                     results.append(result)
-                except:
+                except Exception as e:
                     results.append(None)
                 
                 self._metrics['parallel_operations'] += 1
@@ -2220,7 +2220,7 @@ class GrapheneProcessor:
                     a = np.array(data[0])
                     b = np.array(data[1])
                     result['output'] = np.dot(a, b).tolist()
-                except:
+                except Exception as e:
                     result['output'] = None
             else:
                 result['output'] = None
@@ -2230,7 +2230,7 @@ class GrapheneProcessor:
             if np is not None and isinstance(data, list):
                 try:
                     result['output'] = np.fft.fft(data).tolist()
-                except:
+                except Exception as e:
                     result['output'] = None
             else:
                 result['output'] = None

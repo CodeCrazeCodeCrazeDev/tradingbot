@@ -18,7 +18,7 @@ from trading_bot.system_interfaces import (
     ExecutionResult,
 )
 from trading_bot.system_config import SystemConfig, get_config
-from trading_bot.system_registry import SystemRegistry, get_registry, ComponentMetadata
+from trading_bot.core.unified_registry import SystemRegistry, get_registry, ComponentMetadata
 from trading_bot.system_interfaces import SystemLayer
 
 logger = logging.getLogger(__name__)

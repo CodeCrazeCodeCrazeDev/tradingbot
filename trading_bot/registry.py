@@ -6,7 +6,7 @@ This module provides a centralized registry of all available components,
 making it easy to discover and use the right module for each task.
 
 Usage:
-    from trading_bot.registry import get_component, list_components
+    from trading_bot.core.unified_registry import get_component, list_components
     
     # Get a specific component
     risk_manager = get_component('risk', 'MasterRiskManager')

@@ -187,7 +187,7 @@ class VisualInspectionAgent:
                 try:
                     button_text = button.text
                     button.click()
-                    time.sleep(0.5)
+                    await asyncio.sleep(0.5)
                     results['functionality'][f'button_{i}'] = True
                     results['elements'][f'button_{i}'] = {
                         'text': button_text,
@@ -211,7 +211,7 @@ class VisualInspectionAgent:
                     href = link.get_attribute('href')
                     if href:
                         link.click()
-                        time.sleep(0.5)
+                        await asyncio.sleep(0.5)
                         self.driver.back()
                         results['functionality'][f'nav_{i}'] = True
                 except Exception:
