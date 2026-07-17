@@ -1,13 +1,9 @@
 """
-Hierarchical Memory System (HMS) - UCA V5 (July 2026)
+Hierarchical Memory System (HMS) - UCA V5+ (July 2026)
 
-Authoritative memory system integrating SAGE (Self-evolving Agentic Graph-Memory)
-and AutoMem (Meta-memory optimization).
-Implements the 6-tier architecture: Working, Episodic, Semantic, Procedural, Research, Institutional.
-
-Scientific Foundation:
-- SAGE: arXiv:2605.12061
-- AutoMem: arXiv:2607.01224
+Authoritative memory system integrating SAGE, AutoMem, and the unified Memory OS.
+Implements the 8-tier architecture: Workspace, Episodic, Semantic, Procedural,
+Research, World Models, Institutional, and Meta-Memory.
 """
 
 import logging
@@ -27,6 +23,7 @@ from .models import (
     RelationType,
     EvidenceGraph
 )
+from .memory_os import MemoryOS, MemoryNode, MemoryTier, MemoryProvenance
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +98,7 @@ class SAGEGraphMemory:
 
 class HierarchicalMemorySystem:
     """
-    Authoritative memory system. Consolidates SAGE and AutoMem.
+    Authoritative memory system. Consolidates SAGE, AutoMem, and Memory OS.
     """
     _instance = None
     _lock = threading.Lock()
@@ -130,8 +127,11 @@ class HierarchicalMemorySystem:
         self.schema_path = os.path.join(base_path, "memory_schema.json")
         self.memory_schema = self._load_schema()
 
+        # Consolidating standard MemoryOS
+        self.memory_os = MemoryOS(base_storage_path=os.path.join(base_path, "memory_os"))
+
         self._initialized = True
-        logger.info(f"HMS V5: Initialized at {base_path}")
+        logger.info(f"HMS V5+: Initialized with Consolidated Memory OS at {base_path}")
 
     def _load_schema(self) -> Dict[str, Any]:
         if os.path.exists(self.schema_path):
@@ -166,7 +166,24 @@ class HierarchicalMemorySystem:
         for node_id, node in entry.evidence_graph_snapshot.nodes.items():
             self.sage.graph.add_node(node_id, type=node.node_type, content=str(node.content))
 
-        # 3. Persist file
+        # 3. Synchronize to our new multi-tier MemoryOS
+        mem_node = MemoryNode(
+            node_id=str(entry.entry_id),
+            tier=MemoryTier.T6_INSTITUTIONAL,
+            content={
+                "composite_confidence": entry.composite_confidence,
+                "reasoning_steps": entry.reasoning_steps,
+                "uncertainty_estimate": entry.uncertainty_estimate
+            },
+            provenance=MemoryProvenance(
+                source_agent="HierarchicalMemorySystem",
+                source_input_hash=str(entry.world_model_state_hash),
+                confidence=entry.composite_confidence
+            )
+        )
+        self.memory_os.write_memory(mem_node)
+
+        # 4. Persist file
         entry_data = {
             "entry_id": str(entry.entry_id),
             "timestamp": entry.timestamp.isoformat(),
@@ -177,6 +194,9 @@ class HierarchicalMemorySystem:
 
     def optimize_metamemory(self, success_trajectories: List[Any]):
         """AutoMem: Schema optimization based on success."""
+        # Standard schema version bump
+        current_version = float(self.memory_schema.get("version", "1.0"))
+        self.memory_schema["version"] = str(current_version + 0.1)
         self.memory_schema["last_optimized"] = datetime.utcnow().isoformat()
         self._save_schema()
-        logger.info("HMS: AutoMem optimization complete")
+        logger.info("HMS: AutoMem optimization complete and version increased")
