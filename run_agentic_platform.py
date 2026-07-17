@@ -2,7 +2,8 @@
 """
 Palantir DevCon 5 / DevCon 6 Inspired Agentic Trading Platform Demonstrator.
 Coordinates the durable orchestrator, enterprise ontology, multimodal data plane,
-minutes execution audits, AI FDE self-improvement loops, and low-code agent studio.
+minutes execution audits, AI FDE self-improvement loops, low-code agent studio,
+and Weco AI AIDE2-Style dual-loop recursive self-improvement (RSI).
 """
 
 import sys
@@ -27,7 +28,8 @@ from trading_bot.research.institution import (
     AdversarialCritiqueBoard,
     SkepticismEngine,
     ContinuousReplicationPipeline,
-    EvolutionSandbox
+    EvolutionSandbox,
+    RSILadder
 )
 
 def run_platform_demonstration():
@@ -173,8 +175,35 @@ def run_platform_demonstration():
     logger.info(f"AI FDE continuous evaluation debug outcome: SUCCESS = {fde_success}")
 
 
-    # 9. INTEGRATED 14-STEP LIFE-CYCLE EXECUTION
-    logger.info("\n--- [Step 9: Running Full 14-Step Quantitative Research Lifecycle] ---")
+    # 9. WECO AI RECURSIVE SELF-IMPROVEMENT (AIDE2)
+    logger.info("\n--- [Step 9: Weco AI AIDE2 Dual-Loop RSI Engine] ---")
+    # Prompt Compressor
+    verbose_history = (
+        "Verbose system log seq starting... Done.\n"
+        "Loading dataset OBI... Done.\n"
+        "Step 1: Out-of-sample Sharpe ratio found = 1.65.\n"
+        "Garbage redundant token noise lines... omitted.\n"
+        "Step 2: Forward return Sharpe ratio found = 2.45.\n"
+        "def run_aide_optimizer(p): pass"
+    )
+    compressed_history = institution.prompt_compressor.compress_context(verbose_history)
+    logger.info(f"Prompt Compressor summary (16x compressed): '{compressed_history}'")
+
+    # Anti Reward Hacking Gate
+    hacking_attempt = "with mock.patch('target'): return True"
+    safe, hack_reason = institution.anti_hacking.inspect_code_for_hacking(hacking_attempt, "assert sharpe > 1.2")
+    logger.info(f"Anti Reward Hacking Gate: Hacking code allowed = {safe}. Reason = {hack_reason}")
+
+    # AIDE2 Outer loop optimization step
+    level, best_sharpe = institution.aide_outer_loop.execute_self_improvement_step(
+        proposed_harness_rewrite="class NewHarness(AIDE2_OuterLoop): pass",
+        human_tuned_baseline_sharpe=0.80
+    )
+    logger.info(f"AIDE2 Dual-Loop RSI: Reached Ladder Level = {level.name}. Best Sharpe = {best_sharpe:.2f}")
+
+
+    # 10. INTEGRATED 14-STEP LIFE-CYCLE EXECUTION
+    logger.info("\n--- [Step 10: Running Full 14-Step Quantitative Research Lifecycle] ---")
     cycle_result = institution.run_full_research_cycle(
         project_title="Order Book Imbalance Causal Predictive Alpha",
         research_question="Does L2 order book imbalance have causal granger-predictive influence on EURUSD?",

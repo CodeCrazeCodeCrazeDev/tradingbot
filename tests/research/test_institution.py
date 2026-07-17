@@ -2,7 +2,8 @@
 Comprehensive Unit and Integration Tests for the Quantitative Research Institution (AQRI).
 Validates the institutional operating systems, specialized divisions,
 the four advanced scientific engines, Palantir Enterprise Ontology,
-AIP Orchestrator, the 14-step quantitative research lifecycle, and AEI capabilities.
+AIP Orchestrator, the 14-step research lifecycle, AEI capabilities,
+and Weco AI AIDE2-Style recursive self-improvement (RSI) dual loops.
 """
 
 import pytest
@@ -24,7 +25,8 @@ from trading_bot.research.institution import (
     WorldStateEngine, WorldState, MultiAgentConsensusEngine, ConsensusRole,
     StrategicPlanningLayer, ResourceAwareScheduler, FormalVerificationModelChecker,
     CausalInferenceEngine, BayesianUncertaintyEstimator, FailureResearchMemory,
-    EconomicEngineeringOptimizer, CapabilityGovernance
+    EconomicEngineeringOptimizer, CapabilityGovernance,
+    PromptCompressor, AntiRewardHackingGate, RSILadder, AIDE2_InnerLoop, AIDE2_OuterLoop
 )
 from trading_bot.research.research_computer import EpistemicInstruction
 
@@ -83,6 +85,12 @@ def test_aqri_initialization(institution):
     assert isinstance(institution.consensus, MultiAgentConsensusEngine)
     assert isinstance(institution.planner, StrategicPlanningLayer)
     assert isinstance(institution.scheduler, ResourceAwareScheduler)
+
+    # Weco AI RSI Engines
+    assert isinstance(institution.prompt_compressor, PromptCompressor)
+    assert isinstance(institution.anti_hacking, AntiRewardHackingGate)
+    assert isinstance(institution.aide_inner_loop, AIDE2_InnerLoop)
+    assert isinstance(institution.aide_outer_loop, AIDE2_OuterLoop)
 
 
 def test_research_os_intent_and_cycle(institution):
@@ -317,7 +325,7 @@ def test_continuous_replication_pipeline(institution, sample_data):
 
 
 def test_evolution_sandbox_ablation():
-    """Tests N-Dimensional Ablation studies on self-evolution candidates."""
+    """Tests N-Dimensional Ablation studies on self-evolution proposals."""
     sandbox = EvolutionSandbox()
     proposal_id = "ev_prop_lr_resets"
     components = ["lr_scheduler_decay", "adam_optimizer_weight_decay"]
@@ -566,6 +574,60 @@ def test_advanced_aei_capabilities(institution, sample_data):
     gov = CapabilityGovernance()
     privs = gov.log_reliability_score(0.98)
     assert privs.can_self_evolve is True
+
+
+def test_weco_prompt_compression():
+    """Tests 16x prompt context compression according to AIDE2 standards."""
+    naive_history = (
+        "Verbose system initialization sequence starting... Done.\n"
+        "Loading dataset... Done.\n"
+        "Step 1: Out-of-sample Sharpe ratio found = 1.45.\n"
+        "Verbose garbage debug lines... omitted.\n"
+        "Step 2: Forward return Sharpe ratio found = 1.95.\n"
+        "def calculate_spread_impact(p): pass"
+    )
+    compressed = PromptCompressor.compress_context(naive_history)
+    assert "1.45" in compressed
+    assert "1.95" in compressed
+    assert "calculate_spread_impact" in compressed
+    # Exclude verbose garbage sequences
+    assert "sequence starting" not in compressed
+    assert len(compressed) < len(naive_history)
+
+
+def test_weco_anti_reward_hacking():
+    """Tests automated detection and blockage of reward hacking and test outcome cheating."""
+    gate = AntiRewardHackingGate()
+
+    # 1. Try cheating code using mock patch: should reject
+    cheat_code = "with mock.patch('target') as m: return True"
+    clean, msg = gate.inspect_code_for_hacking(cheat_code, "assert sharpe > 1.2")
+    assert clean is False
+    assert "REJECTED" in msg
+
+    # 2. Try outcome matching cheat: should reject
+    cheat_code_2 = "assert expected == actual"
+    clean_2, msg_2 = gate.inspect_code_for_hacking(cheat_code_2, "assert sharpe > 1.2")
+    assert clean_2 is False
+
+    # 3. Clean optimization code: should pass
+    clean_code = "def calc_sharpe(pnl): return np.mean(pnl) / np.std(pnl)"
+    clean_3, msg_3 = gate.inspect_code_for_hacking(clean_code, "assert sharpe > 1.2")
+    assert clean_3 is True
+
+
+def test_aide2_dual_loop_rsi(institution):
+    """Tests AIDE2 dual-loop RSI progression on Weco's 4-level ladder."""
+    outer_loop = institution.aide_outer_loop
+    assert outer_loop is not None
+
+    # Step 1: Execute recursive self improvement under low baseline: transitions to Level 1 Net Positive
+    level, sharpe = outer_loop.execute_self_improvement_step(
+        proposed_harness_rewrite="class NewHarness(AIDE2_OuterLoop): pass",
+        human_tuned_baseline_sharpe=0.80
+    )
+    assert level == RSILadder.LEVEL_1_NET_POSITIVE or level == RSILadder.LEVEL_2_IGNITION
+    assert sharpe > 0.80
 
 
 def test_end_to_end_institutional_research_lifecycle(institution, sample_data):

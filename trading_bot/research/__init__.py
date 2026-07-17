@@ -234,6 +234,11 @@ try:
         FailureResearchMemory,
         EconomicEngineeringOptimizer,
         CapabilityGovernance,
+        PromptCompressor,
+        AntiRewardHackingGate,
+        RSILadder,
+        AIDE2_InnerLoop,
+        AIDE2_OuterLoop,
     )
 except ImportError as e:
     import logging
@@ -405,6 +410,11 @@ __all__ = [
     'FailureResearchMemory',
     'EconomicEngineeringOptimizer',
     'CapabilityGovernance',
+    'PromptCompressor',
+    'AntiRewardHackingGate',
+    'RSILadder',
+    'AIDE2_InnerLoop',
+    'AIDE2_OuterLoop',
 ]
 
 class ResearchOrchestrator:
