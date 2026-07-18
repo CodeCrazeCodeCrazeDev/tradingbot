@@ -154,6 +154,9 @@ class ScientificReasoningEngine:
         self.registry[hyp.id] = hyp
         return hyp.id
 
+    def get_hypothesis(self, hid: str) -> ScientificHypothesis:
+        return self.registry.get(hid)
+
     async def detect_anomalies(self, hid: str):
         """Step 2: Detect deviations from World Model expectations."""
         hyp = self.registry[hid]
