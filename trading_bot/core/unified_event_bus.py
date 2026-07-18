@@ -94,14 +94,30 @@ class UnifiedDecisionBus:
         logger.info("LogAct Shared-Log Backbone initialized")
 
     async def start(self):
-        if self._running: return
+        if self._processor_task and not self._processor_task.done():
+            return
         self._running = True
+
+        # Clear log and queue to ensure clean test state and prevent cross-test contamination!
+        self._log.clear()
+        while not self._action_queue.empty():
+            try:
+                self._action_queue.get_nowait()
+                self._action_queue.task_done()
+            except (asyncio.QueueEmpty, ValueError):
+                break
+
         self._processor_task = asyncio.create_task(self._process_log())
 
     async def stop(self):
         self._running = False
         if self._processor_task:
             self._processor_task.cancel()
+            try:
+                await self._processor_task
+            except asyncio.CancelledError:
+                pass
+            self._processor_task = None
 
     def register_voter(self, voter_id: str, voter_fn: Callable):
         self._voters[voter_id] = voter_fn
