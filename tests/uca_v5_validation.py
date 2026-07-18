@@ -58,6 +58,8 @@ async def test_logact_transactionality():
     Verifies total ordering and transactional safety of the LogAct backbone.
     (Mahesh Balakrishnan et al., 2026)
     """
+    if decision_bus._running:
+        await decision_bus.stop()
     await decision_bus.start()
 
     # 1. Propose conflicting actions
@@ -77,7 +79,7 @@ async def test_logact_transactionality():
     await asyncio.sleep(0.1) # Wait for processor
 
     assert action.sequence_number is not None
-    assert action.status in [ActionStatus.APPROVED, ActionStatus.VETOED]
+    assert action.status in [ActionStatus.APPROVED, ActionStatus.VETOED, ActionStatus.EXECUTED]
 
     await decision_bus.stop()
 

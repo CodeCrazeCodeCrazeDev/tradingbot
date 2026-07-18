@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d3" for="edge" attr.name="timestamp" attr.type="string" />
+  <key id="d2" for="edge" attr.name="evidence" attr.type="string" />
+  <key id="d1" for="edge" attr.name="context" attr.type="string" />
+  <key id="d0" for="edge" attr.name="relation" attr.type="string" />
+  <graph edgedefault="directed">
+    <node id="99cde3db-304d-45e2-bf5b-8b3615743001" />
+    <node id="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." />
+    <edge source="99cde3db-304d-45e2-bf5b-8b3615743001" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="HYPOTHESIZED_a1e150e5">
+      <data key="d0">HYPOTHESIZED</data>
+      <data key="d1">{"context": "research_ledger"}</data>
+      <data key="d2">{"confidence": 0.9}</data>
+      <data key="d3">2026-07-18T16:53:20.698955</data>
+    </edge>
+  </graph>
+</graphml>

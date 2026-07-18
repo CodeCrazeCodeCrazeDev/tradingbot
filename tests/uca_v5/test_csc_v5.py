@@ -10,10 +10,15 @@ async def test_csc_hasp_intervention():
     # Setup mocks
     world_model = MagicMock()
     hms = MagicMock()
+    hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
-    shield.validate_action = MagicMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
+    shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
 
     csc = CognitiveSystemController(world_model, hms, shield)
+
+    # Ensure bus is started
+    from trading_bot.core.unified_event_bus import decision_bus
+    await decision_bus.start()
 
     # Observation triggering volatility guardrail (volatility > 0.3)
     obs = {"market": {"volatility": 0.5}, "features": [0.1, 0.2]}
@@ -23,15 +28,29 @@ async def test_csc_hasp_intervention():
     assert decision.outcome == DecisionOutcome.TRADE_REJECTED
     assert "Volatility exceeded HASP safety threshold" in decision.dominant_rejection_reason
 
+    await decision_bus.stop()
+
 @pytest.mark.asyncio
-async def test_csc_pivot_loop():
+async def test_csc_pivot_loop(monkeypatch):
+    from trading_bot.core.unified_event_bus import LogAction, ActionStatus
+    async def mock_wait(self, timeout=5.0):
+        self._completed_event.set()
+        self.status = ActionStatus.APPROVED
+        return ActionStatus.APPROVED
+    monkeypatch.setattr(LogAction, "wait_for_decision", mock_wait)
+
     # Setup mocks
     world_model = MagicMock()
     hms = MagicMock()
+    hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
-    shield.validate_action = MagicMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
+    shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
 
     csc = CognitiveSystemController(world_model, hms, shield)
+
+    # Ensure bus is started
+    from trading_bot.core.unified_event_bus import decision_bus
+    await decision_bus.start()
 
     # Mock verifier reports failing first attempt
     report_fail = MagicMock(is_valid=False, confidence=0.95, critique="STRATEGIC_FLAW detected")
@@ -45,3 +64,5 @@ async def test_csc_pivot_loop():
 
     assert decision.outcome == DecisionOutcome.TRADE_APPROVED
     assert csc.verifier_swarm.run_swarm.call_count == 2
+
+    await decision_bus.stop()

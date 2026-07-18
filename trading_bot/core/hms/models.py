@@ -141,6 +141,18 @@ class ResearchLedgerEntry:
     model_version: str = "UCA-2026-v1"
     agent_versions: Dict[str, str] = field(default_factory=dict)
 
+    # Institutional Decision Provenance & Robust Audit trail
+    evidence_used: List[Dict[str, Any]] = field(default_factory=list)
+    assumptions: List[str] = field(default_factory=list)
+    agent_opinions: Dict[str, Any] = field(default_factory=dict)
+    dissenting_opinions: List[str] = field(default_factory=list)
+    consensus_history: List[Dict[str, Any]] = field(default_factory=list)
+    verification_results: Dict[str, Any] = field(default_factory=dict)
+    causal_reasoning: str = ""
+    risk_justification: str = ""
+    configuration_hash: str = "default_sha256_hash"
+    git_commit: str = "head_commit_hash"
+
 @dataclass
 class ScientificMemoryObject:
     """A generalized lesson or pattern stored in Persistent Research Memory."""

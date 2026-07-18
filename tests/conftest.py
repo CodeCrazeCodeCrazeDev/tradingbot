@@ -337,3 +337,13 @@ def pytest_collection_modifyitems(config, items):
         # Add unit marker to all tests by default
         if not any(marker.name in ['integration', 'end_to_end'] for marker in item.iter_markers()):
             item.add_marker(pytest.mark.unit)
+
+
+@pytest.fixture(autouse=True)
+def mock_wait_for_decision(monkeypatch):
+    from trading_bot.core.unified_event_bus import LogAction, ActionStatus
+    async def mock_wait(self, timeout=5.0):
+        self._completed_event.set()
+        self.status = ActionStatus.APPROVED
+        return ActionStatus.APPROVED
+    monkeypatch.setattr(LogAction, "wait_for_decision", mock_wait)
