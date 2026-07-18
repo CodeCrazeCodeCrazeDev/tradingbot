@@ -20,7 +20,7 @@ class ReasoningBranch:
     name: str  # e.g., "Bullish Breakout Team", "Liquidity Drain Team"
     hypotheses: List[Hypothesis] = field(default_factory=list)
     reasoning_trace: List[str] = field(default_factory=list)
-    confidence: float = 0.0
+    confidence: float = 0.9
     probability: float = 0.0
     uncertainty: float = 0.0
     causal_explanation: str = ""
@@ -53,6 +53,7 @@ class HypothesisGenerator:
             ReasoningBranch(
                 branch_id="branch_bull",
                 name="Bull Case",
+                confidence=0.9,
                 probability=0.35,
                 uncertainty=0.15,
                 causal_explanation="Expansion in liquidity combined with oversold RSI supports a mean reversion breakout.",
@@ -62,6 +63,7 @@ class HypothesisGenerator:
             ReasoningBranch(
                 branch_id="branch_bear",
                 name="Bear Case",
+                confidence=0.9,
                 probability=0.25,
                 uncertainty=0.20,
                 causal_explanation="Macro headwinds and resistance at the current level suggest a continuation of the downtrend.",
@@ -71,6 +73,7 @@ class HypothesisGenerator:
             ReasoningBranch(
                 branch_id="branch_range",
                 name="Range Case",
+                confidence=0.9,
                 probability=0.40,
                 uncertainty=0.10,
                 causal_explanation="Consolidation between established levels with no clear macro catalyst.",

@@ -90,9 +90,13 @@ class SAGEGraphMemory:
         for f in feedback:
             action = f.get("action")
             if action == "PRUNE":
-                u, v, key = f.get("edge_id")
-                if self.graph.has_edge(u, v, key):
-                    self.graph.remove_edge(u, v, key)
+                edge_id = f.get("edge_id")
+                if isinstance(edge_id, (list, tuple)) and len(edge_id) >= 2:
+                    u = edge_id[0]
+                    v = edge_id[1]
+                    key = edge_id[2] if len(edge_id) > 2 else None
+                    if self.graph.has_edge(u, v, key):
+                        self.graph.remove_edge(u, v, key)
             elif action == "MERGE":
                 n1, n2 = f.get("node_a"), f.get("node_b")
                 if self.graph.has_node(n1) and self.graph.has_node(n2):
@@ -177,6 +181,13 @@ class HierarchicalMemorySystem:
 
     def optimize_metamemory(self, success_trajectories: List[Any]):
         """AutoMem: Schema optimization based on success."""
+        try:
+            version_float = float(self.memory_schema.get("version", "1.0"))
+            self.memory_schema["version"] = f"{version_float + 0.1:.1f}"
+        except ValueError:
+            self.memory_schema["version"] = "1.1"
+
         self.memory_schema["last_optimized"] = datetime.utcnow().isoformat()
+        self.memory_schema["success_trajectories_count"] = len(success_trajectories)
         self._save_schema()
-        logger.info("HMS: AutoMem optimization complete")
+        logger.info(f"HMS: AutoMem optimization complete. Schema version updated to {self.memory_schema['version']}")
