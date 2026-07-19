@@ -246,18 +246,27 @@ class SkillRouter:
                 return skill.executable(context)
 
         # 2. Check for S2L adapters
-        if "hedge" in task.lower():
+        if "hedge" in task.lower() or context.get("needs_hedging") is True:
             skill = self._registry.get("hedging_behavior")
             if skill:
-                return {"status": "s2l_routed", "adapter_id": skill.adapter_id}
+                return {
+                    "status": "dispatched_to_adapter",
+                    "adapter": "lora_hedging_archetype",
+                    "result": {
+                        "status": "s2l_routed",
+                        "adapter_id": skill.adapter_id
+                    }
+                }
 
         return {"status": "standard_reasoning"}
 
     def _pf_volatility_guardrail(self, context: Dict[str, Any]) -> Dict[str, Any]:
         return {
             "status": "pf_intervention",
-            "action": "override_to_hold",
-            "reason": "Volatility exceeded HASP safety threshold (0.3)"
+            "result": {
+                "action": "override_to_hold",
+                "reason": "Volatility exceeded HASP safety threshold (0.3)"
+            }
         }
 
 class HASPExecutor:

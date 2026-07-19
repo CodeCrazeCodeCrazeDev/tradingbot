@@ -4,6 +4,19 @@ from unittest.mock import MagicMock, AsyncMock
 from trading_bot.core.csc.controller import CognitiveSystemController
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome, CoreDecision
 from trading_bot.core.immutable_shield import GovernanceDecision
+from trading_bot.core.unified_event_bus import LogAction, ActionStatus, decision_bus
+
+@pytest.fixture(autouse=True)
+def mock_event_bus(monkeypatch):
+    # Mock LogAction.wait_for_decision to return ActionStatus.APPROVED immediately
+    async def mock_wait(*args, **kwargs):
+        return ActionStatus.APPROVED
+    monkeypatch.setattr(LogAction, "wait_for_decision", mock_wait)
+
+    # Mock decision_bus.propose_action to do nothing
+    async def mock_propose(*args, **kwargs):
+        pass
+    monkeypatch.setattr(decision_bus, "propose_action", mock_propose)
 
 @pytest.mark.asyncio
 async def test_csc_hasp_intervention():
