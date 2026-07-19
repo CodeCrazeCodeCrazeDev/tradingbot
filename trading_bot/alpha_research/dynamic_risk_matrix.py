@@ -146,26 +146,50 @@ class RiskFactors:
     economic_calendar_risk: float = 0.0
 
 
-class RiskNeuralNetwork(nn.Module):
-    """Neural network for risk prediction"""
-    
-    def __init__(self, input_dim: int = 15, hidden_dim: int = 64):
-        super().__init__()
+if TORCH_AVAILABLE:
+    class RiskNeuralNetwork(nn.Module):
+        """Neural network for risk prediction"""
         
-        self.network = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(hidden_dim, 32),
-            nn.ReLU(),
-            nn.Linear(32, 5)  # 5 outputs: risk_score, vol, drawdown, var, hedge_ratio
-        )
-        
-    def forward(self, x):
-        return self.network(x)
+        def __init__(self, input_dim: int = 15, hidden_dim: int = 64):
+            super().__init__()
+
+            self.network = nn.Sequential(
+                nn.Linear(input_dim, hidden_dim),
+                nn.ReLU(),
+                nn.Dropout(0.2),
+                nn.Linear(hidden_dim, hidden_dim),
+                nn.ReLU(),
+                nn.Dropout(0.2),
+                nn.Linear(hidden_dim, 32),
+                nn.ReLU(),
+                nn.Linear(32, 5)  # 5 outputs: risk_score, vol, drawdown, var, hedge_ratio
+            )
+
+        def forward(self, x):
+            return self.network(x)
+else:
+    class RiskNeuralNetwork:
+        """Fallback neural network placeholder for non-torch environments"""
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __call__(self, x):
+            return self.forward(x)
+
+        def forward(self, x):
+            import numpy as np
+            if hasattr(x, "shape") and len(x.shape) > 1:
+                return np.zeros((x.shape[0], 5), dtype=np.float32)
+            return np.zeros((1, 5), dtype=np.float32)
+
+        def eval(self):
+            return self
+
+        def train(self, mode=True):
+            return self
+
+        def parameters(self):
+            return []
 
 
 class RiskPredictor:
