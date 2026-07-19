@@ -270,3 +270,32 @@ class TestCapabilityMaturityModel:
         assert "problem_discovery" in details_names
         assert "statistical_validation" in details_names
         assert "production_feedback_loops" in details_names
+
+
+# ===========================================================================
+# 4. Institutional Recommendations Engine Tests
+# ===========================================================================
+
+from trading_bot.research.recommendations import InstitutionalRecommendationsRegistry
+
+class TestInstitutionalRecommendations:
+    """Verifies complete registration and auditing of 50 scientific guidelines."""
+
+    def test_recommendations_count_and_scoring(self) -> None:
+        registry = InstitutionalRecommendationsRegistry()
+        audit = registry.run_compliance_audit()
+
+        assert audit["total_recommendations_evaluated"] == 50
+        assert audit["compliant_recommendations_count"] == 50
+        assert audit["compliance_score_pct"] == 100.0
+
+    def test_recommendations_by_category(self) -> None:
+        registry = InstitutionalRecommendationsRegistry()
+        data_gov = registry.get_by_category("DATA_GOVERNANCE")
+        assert len(data_gov) == 5
+        assert data_gov[0].id == "REC-001"
+        assert "SHA-256" in data_gov[0].description
+
+        stat_rigor = registry.get_by_category("STATISTICAL_RIGOR")
+        assert len(stat_rigor) == 5
+        assert any(r.id == "REC-021" for r in stat_rigor)
