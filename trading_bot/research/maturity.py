@@ -126,6 +126,36 @@ class ResearchCapabilityAuditor:
                 "impact": "Instantaneous adaptation to market shifts.",
                 "cost_days": 8.0,
                 "architecture_fit": "trading_bot/research/research_os.py"
+            },
+            "fdr_control": {
+                "why": "Controls False Discovery Rate across multi-hypothesis testing landscapes.",
+                "principle": "Benjamini-Hochberg FDR control.",
+                "risk_if_missing": "High volume of spurious alphas accepted.",
+                "has_it": True,
+                "maturity_level": MaturityLevel.LEVEL_5_OPTIMIZING,
+                "impact": "Drastic reduction in false positives.",
+                "cost_days": 4.0,
+                "architecture_fit": "trading_bot/research/constitution.py"
+            },
+            "purged_embargoed_cv": {
+                "why": "Mathematically removes overlaps and leakage in cross-validation setups.",
+                "principle": "Purged & Embargoed Cross Validation.",
+                "risk_if_missing": "Inflated backtest scores due to time-series correlations.",
+                "has_it": True,
+                "maturity_level": MaturityLevel.LEVEL_5_OPTIMIZING,
+                "impact": "Leakage-free backtest evaluations.",
+                "cost_days": 5.0,
+                "architecture_fit": "trading_bot/research/constitution.py"
+            },
+            "ablation_analysis": {
+                "why": "Forces parsimonious features by requiring significant marginal performance gain.",
+                "principle": "Feature Ablation constraint.",
+                "risk_if_missing": "Complexity inflation and high maintenance overhead.",
+                "has_it": True,
+                "maturity_level": MaturityLevel.LEVEL_4_QUANTITATIVE,
+                "impact": "Parsimonious and robust model features.",
+                "cost_days": 3.0,
+                "architecture_fit": "trading_bot/research/constitution.py"
             }
         }
 

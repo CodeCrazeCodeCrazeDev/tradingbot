@@ -153,6 +153,47 @@ class TestResearchConstitution:
             ResearchConstitution.assert_governance_signoff(metrics)
         assert "Severe Out-Of-Sample degradation detected" in str(exc_info.value)
 
+    def test_assert_fdr_control_success(self) -> None:
+        p_values = [0.001, 0.002, 0.01, 0.04, 0.8]
+        mask = ResearchConstitution.assert_fdr_control(p_values, alpha=0.05)
+        # At least the first few should survive BH correction
+        assert sum(mask) > 0
+        assert mask[0] is True
+
+    def test_assert_fdr_control_failure(self) -> None:
+        p_values = [0.6, 0.7, 0.8, 0.9, 0.95]
+        with pytest.raises(ConstitutionViolation) as exc_info:
+            ResearchConstitution.assert_fdr_control(p_values, alpha=0.05)
+        assert "False Discovery Rate (FDR) control check failed" in str(exc_info.value)
+
+    def test_assert_purged_embargoed_cv_success(self) -> None:
+        # intervals separated by 50, which is >= required purging + embargo = 30
+        train = [(0, 100)]
+        val = [(150, 200)]
+        ResearchConstitution.assert_purged_embargoed_cv(train, val, purge_bars=10, embargo_bars=20)
+
+    def test_assert_purged_embargoed_cv_overlap_failure(self) -> None:
+        train = [(0, 100)]
+        val = [(90, 200)]  # overlaps at [90, 100]
+        with pytest.raises(ConstitutionViolation) as exc_info:
+            ResearchConstitution.assert_purged_embargoed_cv(train, val)
+        assert "Overlap detected" in str(exc_info.value)
+
+    def test_assert_purged_embargoed_cv_gap_failure(self) -> None:
+        train = [(0, 100)]
+        val = [(115, 200)]  # gap of 15 which is less than 30 (10 + 20)
+        with pytest.raises(ConstitutionViolation) as exc_info:
+            ResearchConstitution.assert_purged_embargoed_cv(train, val, purge_bars=10, embargo_bars=20)
+        assert "Insufficient gap" in str(exc_info.value)
+
+    def test_assert_marginal_benefit_ablation_success(self) -> None:
+        ResearchConstitution.assert_marginal_benefit_ablation(full_performance=2.5, ablated_performance=2.3, min_marginal_gain=0.1)
+
+    def test_assert_marginal_benefit_ablation_failure(self) -> None:
+        with pytest.raises(ConstitutionViolation) as exc_info:
+            ResearchConstitution.assert_marginal_benefit_ablation(full_performance=2.5, ablated_performance=2.48, min_marginal_gain=0.1)
+        assert "Feature failed Ablation Analysis" in str(exc_info.value)
+
 
 # ===========================================================================
 # 2. Machine-Readable Schema Serialization Tests
@@ -222,7 +263,7 @@ class TestCapabilityMaturityModel:
         assert "maturity_class" in report
         assert "details" in report
         assert report["overall_maturity_score"] >= 4.0
-        assert report["audited_capabilities_count"] == 10
+        assert report["audited_capabilities_count"] == 13
 
         # Verify that all audited capabilities are returned
         details_names = [d["capability"] for d in report["details"]]

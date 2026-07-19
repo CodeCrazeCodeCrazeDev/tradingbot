@@ -54,6 +54,8 @@ class FeatureSchema:
     turnover_rate: float
     p_value: float
     status: str = "DRAFT"  # DRAFT, EXCLUDED, APPROVED
+    ablation_marginal_gain: float = 0.0
+    fdr_adjusted_p_value: float = 0.0
     timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
 
     def to_json(self) -> str:
@@ -71,6 +73,7 @@ class ExperimentSchema:
     code_version: str  # Git commit hash
     outcome_metrics: Dict[str, float] = field(default_factory=dict)
     status: str = "REGISTERED"  # REGISTERED, RUNNING, COMPLETED, FAILED
+    purged_cv_parameters: Dict[str, Any] = field(default_factory=dict)
     timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
 
     def to_json(self) -> str:

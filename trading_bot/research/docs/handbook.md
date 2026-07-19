@@ -33,7 +33,7 @@ This handbook establishes the formal, institutional-grade quantitative research 
 
 ### 7. Statistical Validation & Multi-Testing Controls
 - **Universal Standard**: Guard against the "p-hacking" fallacy by deflating backtest metrics relative to the number of historical trials run.
-- **Execution**: Compute Bailey and Lopez de Prado's Deflated Sharpe Ratio (DSR) to calculate the exact probability of alpha significance.
+- **Execution**: Compute Bailey and Lopez de Prado's Deflated Sharpe Ratio (DSR) to calculate the exact probability of alpha significance. Enforce Benjamini-Hochberg False Discovery Rate (FDR) control across concurrent hypothesis portfolios, and perform Purged and Embargoed Cross-Validation to eliminate temporal look-ahead leakage.
 
 ### 8. Model Governance & Peer Review
 - **Universal Standard**: Ensure models undergo independent, de-biased red-team critiques before live deployment.
