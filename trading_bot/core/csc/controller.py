@@ -31,6 +31,7 @@ from dataclasses import dataclass, field
 from .hypothesis import HypothesisGenerator, ReasoningBranch, Hypothesis
 from .folding import InformationFolder
 from .router import SkillRouter
+from .acpe import AdaptiveControlPolicyEngine
 from ..verification.swarm import VerificationSwarm
 from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport, EvidenceNode, EvidenceEdge, RelationType
 from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
@@ -94,6 +95,7 @@ class CognitiveSystemController:
         self.folder = InformationFolder()
         self.discoloop = DiscoLoopCell(latent_dim=16)
         self.skill_router = SkillRouter()
+        self.acpe = AdaptiveControlPolicyEngine(hms)
 
         # State Channels
         self.continuous_state: Dict[str, Any] = {}
@@ -111,6 +113,10 @@ class CognitiveSystemController:
         """
         logger.info("CSC-V5: Starting 12-step Recursive Active Inference Pipeline")
         t0 = time.perf_counter()
+
+        # ACPE Dynamic Parameterization (arXiv:2607.14159 Integration)
+        harness_config = self.acpe.parameterize_pipeline(observation)
+        self._max_loops = harness_config.max_iterations
 
         t0 = time.perf_counter()
         latency: Dict[str, float] = {}
