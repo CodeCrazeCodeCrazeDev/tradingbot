@@ -588,6 +588,11 @@ class ResearchWorkspace:
         self._cse_engine = None
         self._ceda_gate = None
 
+        # Self-Evolution Integration Backbones
+        self._se_mutator = None
+        self._se_gate = None
+        self._se_tournament = None
+
     def get_ecie_pipeline(self):
         """Lazy-loads the External Capability Intelligence Engine (ECIE) pipeline."""
         if self._ecie_pipeline is None:
@@ -643,6 +648,27 @@ class ResearchWorkspace:
             from trading_bot.research.cse_ceda import CEDADecisionGate
             self._ceda_gate = CEDADecisionGate(self)
         return self._ceda_gate
+
+    def get_self_evolution_mutator(self):
+        """Lazy-loads the Self-Evolution Controlled Mutator."""
+        if self._se_mutator is None:
+            from trading_bot.research.self_evolution.mutator import ControlledMutator
+            self._se_mutator = ControlledMutator()
+        return self._se_mutator
+
+    def get_self_evolution_gate(self):
+        """Lazy-loads the Self-Evolution Invariant Gate."""
+        if self._se_gate is None:
+            from trading_bot.research.self_evolution.gate import InvariantGate
+            self._se_gate = InvariantGate()
+        return self._se_gate
+
+    def get_self_evolution_tournament(self, regimes: List[str]):
+        """Lazy-loads the Self-Evolution Regime Tournament manager."""
+        if self._se_tournament is None:
+            from trading_bot.research.self_evolution.tournament import RegimeTournament
+            self._se_tournament = RegimeTournament(regimes)
+        return self._se_tournament
 
     def create_project(self, title: str, objective: str) -> ResearchProject:
         """Starts a new quantitative research project on the platform."""
