@@ -581,6 +581,9 @@ class ResearchWorkspace:
         self._eip_pipeline = None
         self._eip_eqe = None
 
+        # Introspection Integration Backbones
+        self._introspection_engine = None
+
     def get_ecie_pipeline(self):
         """Lazy-loads the External Capability Intelligence Engine (ECIE) pipeline."""
         if self._ecie_pipeline is None:
@@ -615,6 +618,13 @@ class ResearchWorkspace:
             from trading_bot.research.eip.eqe import EvidenceQualityEngine
             self._eip_eqe = EvidenceQualityEngine()
         return self._eip_eqe
+
+    def get_introspection_engine(self):
+        """Lazy-loads the Introspection Engine."""
+        if self._introspection_engine is None:
+            from trading_bot.research.introspection.core import IntrospectionEngine
+            self._introspection_engine = IntrospectionEngine()
+        return self._introspection_engine
 
     def create_project(self, title: str, objective: str) -> ResearchProject:
         """Starts a new quantitative research project on the platform."""
