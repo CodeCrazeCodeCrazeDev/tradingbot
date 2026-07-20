@@ -47,6 +47,12 @@ class UnifiedComponentRegistry:
         """
         Register a component with the system.
         """
+        # Architectural drift prevention
+        if name.endswith("Registry") and name != "UnifiedComponentRegistry":
+            raise ValueError(f"Unauthorized registry registration: {name}. Only UnifiedComponentRegistry is allowed.")
+        if name.endswith("Orchestrator") and name not in ["AIPOrchestrator", "SimulationOrchestrator"]:
+            raise ValueError(f"Unauthorized orchestrator: {name}. All orchestration must route through CognitiveSystemController or authorized Ontologies.")
+
         if name in self._components:
             logger.warning(f"Component '{name}' already registered. Overwriting.")
 

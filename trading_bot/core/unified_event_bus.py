@@ -95,6 +95,8 @@ class UnifiedDecisionBus:
 
     async def start(self):
         if self._running: return
+        # Re-initialize the queue to bind to the current running event loop
+        self._action_queue = asyncio.PriorityQueue()
         self._running = True
         self._processor_task = asyncio.create_task(self._process_log())
 

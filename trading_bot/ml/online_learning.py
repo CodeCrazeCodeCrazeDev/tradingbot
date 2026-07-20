@@ -14,7 +14,20 @@ import time
 import json
 import pickle
 import datetime
+import io
 from collections import deque
+
+class RestrictedUnpickler(pickle.Unpickler):
+    def find_class(self, module, name):
+        # Only allow safe modules and classes
+        safe_modules = {
+            "trading_bot.ml.online_learning",
+            "numpy", "numpy.core.multiarray", "numpy._core.multiarray",
+            "pandas", "collections", "datetime"
+        }
+        if module in safe_modules or module.startswith("trading_bot."):
+            return super().find_class(module, name)
+        raise pickle.UnpicklingError(f"Global '{module}.{name}' is forbidden")
 import threading
 import queue
 import copy
@@ -211,7 +224,7 @@ class OnlineLearner:
             Loaded online learner
         """
         with open(path, 'rb') as f:
-            learner = pickle.load(f)
+            learner = RestrictedUnpickler(f).load()
         
         logger.info(f"Loaded online learner from {path}")
         return learner
@@ -835,7 +848,7 @@ class AsyncOnlineLearner:
             Loaded online learner
         """
         with open(path, 'rb') as f:
-            learner = pickle.load(f)
+            learner = RestrictedUnpickler(f).load()
         
         logger.info(f"Loaded online learner from {path}")
         return learner
