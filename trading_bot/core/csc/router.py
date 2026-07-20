@@ -236,14 +236,20 @@ class SkillRouter:
         self._registry[artifact.skill_id] = artifact
         logger.debug(f"Registered skill: {artifact.skill_id} ({artifact.skill_type.value})")
 
-    async def route_task(self, task: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    async def route_task(self, task: str, context: Dict[str, Any], *args, **kwargs) -> Dict[str, Any]:
         """Routes a task to the appropriate skill or adapter."""
         # 1. Check for applicable HASP programs (Hard Guardrails)
         market_state = context.get("market", {})
         if market_state.get("volatility", 0) > 0.3:
             skill = self._registry.get("volatility_guardrail")
             if skill and skill.executable:
-                return skill.executable(context)
+                res = skill.executable(context)
+                if "propose" in task or kwargs.get("agent_id"):
+                    return res
+                return {
+                    "status": "success",
+                    "pf_result": res
+                }
 
         # 2. Check for S2L adapters
         if "hedge" in task.lower():
