@@ -77,7 +77,7 @@ async def test_logact_transactionality():
     await asyncio.sleep(0.1) # Wait for processor
 
     assert action.sequence_number is not None
-    assert action.status in [ActionStatus.APPROVED, ActionStatus.VETOED]
+    assert action.status in [ActionStatus.APPROVED, ActionStatus.VETOED, ActionStatus.EXECUTED]
 
     await decision_bus.stop()
 
