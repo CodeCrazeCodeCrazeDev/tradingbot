@@ -572,6 +572,24 @@ class ResearchWorkspace:
         self.performance_reports: Dict[str, PerformanceReport] = {}
         self.knowledge_entries: Dict[str, KnowledgeEntry] = {}
 
+        # ECIE Integration Backbones
+        self._ecie_pipeline = None
+        self._ecie_governance = None
+
+    def get_ecie_pipeline(self):
+        """Lazy-loads the External Capability Intelligence Engine (ECIE) pipeline."""
+        if self._ecie_pipeline is None:
+            from trading_bot.research.ecie.pipeline import ECIEPipeline
+            self._ecie_pipeline = ECIEPipeline()
+        return self._ecie_pipeline
+
+    def get_ecie_governance(self):
+        """Lazy-loads the ECIE governance gate manager."""
+        if self._ecie_governance is None:
+            from trading_bot.research.ecie.governance import GovernanceGate
+            self._ecie_governance = GovernanceGate(self)
+        return self._ecie_governance
+
     def create_project(self, title: str, objective: str) -> ResearchProject:
         """Starts a new quantitative research project on the platform."""
         project = ResearchProject(title=title, objective=objective)
