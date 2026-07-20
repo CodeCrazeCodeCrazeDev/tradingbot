@@ -576,6 +576,11 @@ class ResearchWorkspace:
         self._ecie_pipeline = None
         self._ecie_governance = None
 
+        # EIP Integration Backbones
+        self._eip_registry = None
+        self._eip_pipeline = None
+        self._eip_eqe = None
+
     def get_ecie_pipeline(self):
         """Lazy-loads the External Capability Intelligence Engine (ECIE) pipeline."""
         if self._ecie_pipeline is None:
@@ -589,6 +594,27 @@ class ResearchWorkspace:
             from trading_bot.research.ecie.governance import GovernanceGate
             self._ecie_governance = GovernanceGate(self)
         return self._ecie_governance
+
+    def get_eip_registry(self):
+        """Lazy-loads the Universal Capability Registry of EIP."""
+        if self._eip_registry is None:
+            from trading_bot.research.eip.registry import UniversalCapabilityRegistry
+            self._eip_registry = UniversalCapabilityRegistry(self)
+        return self._eip_registry
+
+    def get_eip_pipeline(self):
+        """Lazy-loads the shared EIP shared pipeline."""
+        if self._eip_pipeline is None:
+            from trading_bot.research.eip.pipeline import EIPPipeline
+            self._eip_pipeline = EIPPipeline()
+        return self._eip_pipeline
+
+    def get_eip_eqe(self):
+        """Lazy-loads the Evidence Quality Engine of EIP."""
+        if self._eip_eqe is None:
+            from trading_bot.research.eip.eqe import EvidenceQualityEngine
+            self._eip_eqe = EvidenceQualityEngine()
+        return self._eip_eqe
 
     def create_project(self, title: str, objective: str) -> ResearchProject:
         """Starts a new quantitative research project on the platform."""
