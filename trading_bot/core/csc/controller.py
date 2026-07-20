@@ -133,6 +133,31 @@ class CognitiveSystemController:
             logger.warning(f"CSC-V5: HASP Intervention applied: {intervention.get('reason', 'Unknown')}")
 
         # 5. Multi-Hypothesis Generation
+        # Advisory tactical multi-agent debate to inform the strategic loop
+        try:
+            from ...agents.multi_agent_debate import create_debate_system, MarketContext
+            debate_system = create_debate_system()
+            market_ctx = MarketContext(
+                symbol=observation.get("symbol", "BTC/USDT"),
+                current_price=observation.get("price", observation.get("current_price", 1.0)),
+                htf_trend=observation.get("htf_trend", "UP"),
+                ltf_trend=observation.get("ltf_trend", "UP"),
+                volatility=observation.get("volatility", 0.015),
+                volume_ratio=observation.get("volume_ratio", 1.0),
+                key_levels=observation.get("key_levels", {"support": [], "resistance": []}),
+                news_sentiment=observation.get("news_sentiment", 0.0),
+                portfolio_exposure=observation.get("portfolio_exposure", 0.1),
+                correlation_risk=observation.get("correlation_risk", 0.1),
+                vix_level=observation.get("vix_level", 15.0)
+            )
+            debate_decision = await debate_system.debate(market_ctx)
+            logger.info(f"CSC-V5: Advisory tactical multi-agent debate finished. Decision recommendation: {debate_decision.action.value} (Confidence: {debate_decision.confidence:.2f})")
+            observation["tactical_recommendation"] = debate_decision.action.value
+            observation["tactical_confidence"] = debate_decision.confidence
+            observation["debate_provenance"] = debate_decision.to_dict()
+        except Exception as e:
+            logger.error(f"CSC-V5: Tactical debate advisor failed: {e}")
+
         branches = await self.hypothesis_gen.generate_competing_branches(observation)
 
         # 6. Causal Simulation (CWMI / World Model)
