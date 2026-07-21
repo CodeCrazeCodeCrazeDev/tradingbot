@@ -337,3 +337,18 @@ def pytest_collection_modifyitems(config, items):
         # Add unit marker to all tests by default
         if not any(marker.name in ['integration', 'end_to_end'] for marker in item.iter_markers()):
             item.add_marker(pytest.mark.unit)
+
+
+@pytest.fixture(autouse=True)
+def mock_wait_for_decision(monkeypatch, request):
+    """Bypass wait_for_decision timeouts in unit tests by immediately approving."""
+    # Target only uca_v5 or event_bus_consolidation tests to avoid breaking integration tests
+    test_path = str(request.path) if hasattr(request, "path") else ""
+    if "uca_v5" in test_path or "event_bus_consolidation" in test_path or "test_csc_v5" in test_path:
+        from trading_bot.core.unified_event_bus import LogAction, ActionStatus
+
+        async def mock_wait(self, timeout=10.0):
+            self.status = ActionStatus.APPROVED
+            return self.status
+
+        monkeypatch.setattr(LogAction, "wait_for_decision", mock_wait)

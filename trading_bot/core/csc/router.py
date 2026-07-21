@@ -228,7 +228,7 @@ class SkillRouter:
         self.register_skill(SkillArtifact(
             skill_id="hedging_behavior",
             skill_type=SkillType.LORA,
-            adapter_id="lora_hedging_v1",
+            adapter_id="lora_hedging_archetype",
             metadata={"archetype": "risk_averse"}
         ))
 
@@ -243,13 +243,16 @@ class SkillRouter:
         if market_state.get("volatility", 0) > 0.3:
             skill = self._registry.get("volatility_guardrail")
             if skill and skill.executable:
-                return skill.executable(context)
+                return {
+                    "status": "pf_intervention",
+                    "result": skill.executable(context)
+                }
 
         # 2. Check for S2L adapters
-        if "hedge" in task.lower():
+        if "hedge" in task.lower() or context.get("needs_hedging"):
             skill = self._registry.get("hedging_behavior")
             if skill:
-                return {"status": "s2l_routed", "adapter_id": skill.adapter_id}
+                return {"status": "dispatched_to_adapter", "adapter": skill.adapter_id}
 
         return {"status": "standard_reasoning"}
 

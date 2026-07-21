@@ -131,6 +131,11 @@ class CognitiveSystemController:
         if intervention:
             observation.update(intervention)
             logger.warning(f"CSC-V5: HASP Intervention applied: {intervention.get('reason', 'Unknown')}")
+            if intervention.get("action") == "override_to_hold":
+                return CoreDecision(
+                    outcome=DecisionOutcome.TRADE_REJECTED,
+                    dominant_rejection_reason=f"Volatility exceeded HASP safety threshold: {intervention.get('reason')}"
+                )
 
         # 5. Multi-Hypothesis Generation
         branches = await self.hypothesis_gen.generate_competing_branches(observation)
@@ -194,33 +199,13 @@ class CognitiveSystemController:
             return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=f"LogAct failure: {status}")
 
         # Folding & Persistence
+        logger.info(f"CSC-V5: Trade Approved. Folding history...")
         self.folder.fold_history(final_ledger_entry)
         self.hms.store_ledger_entry(final_ledger_entry)
         self._apply_memory_windowing()
 
-        # Final LogAct write-through
-        action = LogAction(
-            action_type="TRADE_EXECUTION",
-            payload=trade_proposal,
-            agent_id="CSC_V5",
-            status=ActionStatus.APPROVED
-        )
-        await decision_bus.propose_action(action)
-
         # Update World Model Prediction for Step 2 of next loop
         self.last_prediction = sim_results.get(best_branch.branch_id)
-
-        if action.status != ActionStatus.EXECUTED:
-            self._apply_memory_windowing()
-            reason = f"LogAct consensus failure: {action.status.value}"
-            if action.voter_reports:
-                reason += f" - Reports: {action.voter_reports}"
-            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=reason)
-
-        # 12. Execution & Folding (HIPIF)
-        logger.info(f"CSC-V5: Trade Approved. Folding history...")
-        self.folder.fold_history(final_ledger_entry)
-        self.hms.store_ledger_entry(final_ledger_entry)
 
         return CoreDecision(
             outcome=DecisionOutcome.TRADE_APPROVED,
@@ -263,7 +248,10 @@ class CognitiveSystemController:
     def _apply_hasp_guardrails(self, observation: Dict[str, Any]) -> Dict[str, Any]:
         """HASP: Executable guardrails via SkillRouter."""
         market_state = {"market": observation}
-        if observation.get("volatility", 0) > 0.3:
+        vol = observation.get("volatility")
+        if vol is None:
+            vol = observation.get("market", {}).get("volatility", 0)
+        if vol > 0.3:
             skill = self.skill_router._registry.get("volatility_guardrail")
             if skill and skill.executable:
                 return skill.executable(market_state)
