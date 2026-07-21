@@ -176,7 +176,7 @@ class TradeProposal:
 class CoreDecision:
     """Final decision from AlphaAlgo Core"""
     outcome: DecisionOutcome
-    trade_id: str
+    trade_id: str = ""
     timestamp: datetime = field(default_factory=datetime.utcnow)
     
     # Rejection details

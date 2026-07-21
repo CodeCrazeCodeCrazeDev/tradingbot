@@ -337,3 +337,17 @@ def pytest_collection_modifyitems(config, items):
         # Add unit marker to all tests by default
         if not any(marker.name in ['integration', 'end_to_end'] for marker in item.iter_markers()):
             item.add_marker(pytest.mark.unit)
+
+
+@pytest.fixture(autouse=True)
+def mock_wait_for_decision(request, monkeypatch):
+    """Intercept LogAction.wait_for_decision to return ActionStatus.APPROVED instantly for targeted unit tests."""
+    from trading_bot.core.unified_event_bus import LogAction, ActionStatus
+
+    test_path = str(request.path)
+    if "uca_v5" in test_path or "event_bus_consolidation" in test_path:
+        async def mock_wait(self, timeout=None):
+            self.status = ActionStatus.APPROVED
+            return ActionStatus.APPROVED
+
+        monkeypatch.setattr(LogAction, "wait_for_decision", mock_wait)

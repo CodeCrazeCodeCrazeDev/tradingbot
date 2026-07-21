@@ -48,6 +48,14 @@ class LogAction:
 
     _completed_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
 
+    @property
+    def event_type(self) -> str:
+        return self.action_type
+
+    @property
+    def source(self) -> str:
+        return self.agent_id
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             'action_id': self.action_id,
@@ -110,6 +118,17 @@ class UnifiedDecisionBus:
         action.status = ActionStatus.PROPOSED
         await self._action_queue.put((-action.priority.value, action.timestamp, action))
 
+    async def publish(self, event: 'UnifiedEvent'):
+        action = LogAction(
+            action_type=event.event_type,
+            payload=event.payload,
+            agent_id=event.source,
+            action_id=event.event_id,
+            timestamp=event.timestamp,
+            priority=event.priority
+        )
+        await self.propose_action(action)
+
     def subscribe(self, action_type: str, handler: Callable, subscriber_id: str = "anon", priority: int = 0):
         self._subscribers[action_type].append({"id": subscriber_id, "handler": handler, "priority": priority})
         self._subscribers[action_type].sort(key=lambda x: x["priority"], reverse=True)
@@ -158,3 +177,14 @@ class UnifiedDecisionBus:
         if tasks: await asyncio.gather(*tasks, return_exceptions=True)
 
 decision_bus = UnifiedDecisionBus()
+
+@dataclass
+class UnifiedEvent:
+    event_type: str
+    payload: Dict[str, Any]
+    source: str
+    event_id: str = field(default_factory=lambda: str(uuid4()))
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+    priority: EventPriority = EventPriority.NORMAL
+    correlation_id: Optional[str] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
