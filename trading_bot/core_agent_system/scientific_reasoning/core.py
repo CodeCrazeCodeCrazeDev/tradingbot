@@ -131,6 +131,10 @@ class ScientificReasoningEngine:
             "survival_rates": {}
         }
 
+    def get_hypothesis(self, hid: str) -> Optional[ScientificHypothesis]:
+        """Retrieve a hypothesis from the SRE registry by ID."""
+        return self.registry.get(hid)
+
     async def run_cycle(self, observation: Dict[str, Any]):
         hyp_id = await self.observe(observation)
 

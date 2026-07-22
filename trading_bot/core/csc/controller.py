@@ -228,6 +228,21 @@ class CognitiveSystemController:
             confidence_vector=self._calculate_composite_confidence(final_ledger_entry)
         )
 
+    def _detect_failure_severity(self, reports: List[VerifierReport]) -> str:
+        """Determines if a validation/verification failure is minor or critical."""
+        invalid_reports = [r for r in reports if not r.is_valid]
+        if not invalid_reports:
+            return "none"
+        if len(invalid_reports) >= 2 or any(r.confidence >= 0.9 for r in invalid_reports):
+            return "critical"
+        return "minor"
+
+    async def _run_discoloop_internalization(self, observation: Dict[str, Any], num_loops: int = 2):
+        """DiscoLoop dual-channel internalization for reasoning convergence."""
+        self.discrete_channel = ["internalized_insight"]
+        if "latent_embedding" in observation:
+            self.continuous_state.update(observation["latent_embedding"])
+
     def _calculate_sensory_surprise(self, observation: Dict[str, Any]) -> float:
         """Surprise = -log P(obs | world_model_prediction)"""
         if not self.last_prediction: return 1.0

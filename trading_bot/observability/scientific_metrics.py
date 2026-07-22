@@ -42,6 +42,25 @@ class ScientificMetrics:
     bottlenecks_detected: List[str] = field(default_factory=list)
     last_update: datetime = field(default_factory=datetime.now)
 
+    @property
+    def total_institutionalized_knowledge(self) -> int:
+        """Total knowledge units that have been institutionalized."""
+        return self.institutionalized_count
+
+    def detect_bottlenecks(self):
+        """Identifies systemic weaknesses in the hypothesis ecosystem."""
+        self.bottlenecks_detected = []
+
+        if self.total_hypotheses > 20:
+            if self.survival_rate < 0.05:
+                self.bottlenecks_detected.append("GENERATION_NOISE")
+
+            if self.rejection_rate > 0.8:
+                self.bottlenecks_detected.append("FILTERING_STRICTNESS")
+
+            if self.avg_validation_score > 0.7 and self.confirmed_count < 2:
+                self.bottlenecks_detected.append("PROMOTION_FRICTION")
+
     def update_from_registry(self, registry: Dict[str, Any]):
         """Update metrics based on the current state of the SRE registry."""
         total = len(registry)
@@ -67,7 +86,14 @@ class ScientificMetrics:
             sum_vfe += getattr(hyp, 'vfe', 0.0)
             sum_val += getattr(hyp, 'validation_score', 0.0)
 
-            state_name = hyp.state.name if hasattr(hyp.state, 'name') else str(hyp.state)
+            # Check both attribute and string representations safely
+            state_name = ""
+            if hasattr(hyp, 'state'):
+                if hasattr(hyp.state, 'name'):
+                    state_name = hyp.state.name
+                else:
+                    state_name = str(hyp.state)
+
             if state_name in counts:
                 counts[state_name] += 1
 
@@ -83,6 +109,7 @@ class ScientificMetrics:
 
         self.rejection_rate = self.rejected_count / total
         self.survival_rate = (self.confirmed_count + self.institutionalized_count) / total
+        self.detect_bottlenecks()
 
     def get_summary(self) -> Dict[str, Any]:
         return {
