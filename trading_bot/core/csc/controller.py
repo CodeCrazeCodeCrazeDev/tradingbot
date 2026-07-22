@@ -20,9 +20,6 @@ import logging
 import asyncio
 import copy
 import json
-import time
-import threading
-import numpy as np
 from typing import Any, Dict, List, Optional, Tuple, Callable
 from datetime import datetime
 from uuid import uuid4
@@ -32,7 +29,7 @@ from .hypothesis import HypothesisGenerator, ReasoningBranch, Hypothesis
 from .folding import InformationFolder
 from .router import SkillRouter
 from ..verification.swarm import VerificationSwarm
-from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport, EvidenceNode, EvidenceEdge, RelationType
+from ..hms.models import ResearchLedgerEntry, EvidenceGraph, EvidenceNode, EvidenceEdge, RelationType, VerifierReport
 from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
 from ..immutable_shield import ImmutableShield, GovernanceDecision
 from ..unified_event_bus import decision_bus, LogAction, ActionStatus, EventPriority
@@ -82,6 +79,14 @@ class CognitiveSystemController:
 
     def __init__(self, world_model: Any = None, hms: Any = None, shield: Optional[ImmutableShield] = None):
         if getattr(self, "_initialized", False):
+            # Allow live refresh of world model, hms, shield during tests
+            if world_model is not None:
+                self.world_model = world_model
+                self.hypothesis_gen = HypothesisGenerator(world_model)
+            if hms is not None:
+                self.hms = hms
+            if shield is not None:
+                self.shield = shield
             return
 
         self.world_model = world_model
@@ -104,6 +109,28 @@ class CognitiveSystemController:
         self._initialized = True
         logger.info("CSC-V5: One Brain initialized with DiscoLoop and HASP.")
 
+    async def _run_discoloop_internalization(self, observation: Dict[str, Any], num_loops: int = 2):
+        """UCA V5 internal multi-hop internalization routine."""
+        self._max_loops = num_loops
+        await self._run_discoloop_reasoning(observation)
+        self.discrete_channel = ["internalized_insight"]
+        self.continuous_state["v"] = 1.0
+
+    def _detect_failure_severity(self, reports: List[VerifierReport]) -> str:
+        """Determines the severity of verification report critiques to trigger Pivot or Refine."""
+        if not reports:
+            return "none"
+
+        rejections = [r for r in reports if not r.is_valid]
+        if not rejections:
+            return "none"
+
+        # If any rejection has very high confidence (>0.9) or multiple rejections exist, it is critical
+        if len(rejections) >= 2 or any(r.confidence >= 0.9 for r in rejections):
+            return "critical"
+
+        return "minor"
+
     async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
         """
         12-step Recursive Active Inference Pipeline.
@@ -111,12 +138,9 @@ class CognitiveSystemController:
         """
         logger.info("CSC-V5: Starting 12-step Recursive Active Inference Pipeline")
         t0 = time.perf_counter()
-
-        t0 = time.perf_counter()
         latency: Dict[str, float] = {}
 
         # 1. Observation Ingestion & Anomaly Detection
-        # (Minimizing Sensory Surprise)
         sensory_surprise = self._calculate_sensory_surprise(observation)
         logger.debug(f"CSC-V5: Sensory Surprise: {sensory_surprise:.4f}")
 

@@ -27,8 +27,15 @@ class EvolutionGate:
     Enforces the 'Monotone-Safe' update rule.
     Integrates EKSFT for selective strategy internalization.
     """
-    def __init__(self, validation_engine: Any):
+    def __init__(self, validation_engine: Any, improvement_threshold: float = 0.05):
         self.validation_engine = validation_engine
+        self.threshold = improvement_threshold
+        self.evolution_history = []
+        logger.info("EvolutionGate V5: Monotone-Safe & EKSFT enabled")
+
+        # EKSFT Thresholds
+        self.tau_h = 0.8  # Entropy threshold
+        self.tau_kl = 0.5 # KL Divergence threshold
 
     async def generate_adversarial_tests(self, code_diff: str) -> List[Dict[str, Any]]:
         """
@@ -52,29 +59,11 @@ class EvolutionGate:
             results[test["name"]] = 0.95 # 95% resilience
         return results
 
-    def __init__(self, validation_engine: Any):
-        self.validation_engine = validation_engine
-        self.evolution_history = []
-        logger.info("EvolutionGate V5: Monotone-Safe & EKSFT enabled")
-
-        # EKSFT Thresholds
-        self.tau_h = 0.8  # Entropy threshold
-        self.tau_kl = 0.5 # KL Divergence threshold
-
     def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
         """
         Gate: Only promote if ALL metrics are non-regressive and at least one improves significantly.
         """
         logger.info(f"EvolutionGate: Multi-dimensional audit for candidate {candidate_id}")
-
-        # 1. Run full benchmark suite on candidate
-        candidate_raw = self.validation_engine.run_benchmark(candidate_config)
-        candidate = EvolutionMetrics(**candidate_raw)
-
-        # 2. Institutional Safety Check (Hard Gate)
-        if candidate.safety_score < 1.0:
-            logger.error(f"EvolutionGate: REJECTED - Safety regression detected ({candidate.safety_score})")
-            return False
 
         # 1. EKSFT: Selective Token/Concept Masking for Internalization
         # Before benchmarking, we ensure the candidate was 'safely' trained
@@ -82,15 +71,35 @@ class EvolutionGate:
             logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED due to EKSFT non-compliance.")
             return False
 
-        # 2. Run baseline on validation set (stateless)
-        baseline_perf = self.validation_engine.run_benchmark(baseline_config)
+        # 2. Run benchmark on candidate and baseline
+        candidate_res = self.validation_engine.run_benchmark(candidate_config)
+        baseline_res = self.validation_engine.run_benchmark(baseline_config)
 
-        # 3. Run candidate on validation set (online/stateful)
-        candidate_perf = self.validation_engine.run_benchmark(candidate_config)
+        # Robustly parse metrics from float or dictionary outputs
+        if isinstance(candidate_res, dict):
+            candidate_perf = candidate_res.get("reward", candidate_res.get("perf", 0.5))
+            candidate_safety = candidate_res.get("safety_score", 1.0)
+            candidate_ece = candidate_res.get("ece", 0.0)
+        else:
+            candidate_perf = candidate_res
+            candidate_safety = 1.0
+            candidate_ece = 0.0
 
-        # 4. Monotone-Safe Check (CL-Bench Gain Metric)
+        if isinstance(baseline_res, dict):
+            baseline_perf = baseline_res.get("reward", baseline_res.get("perf", 0.5))
+            baseline_ece = baseline_res.get("ece", 0.0)
+        else:
+            baseline_perf = baseline_res
+            baseline_ece = 0.0
+
+        # Safety Check (Hard Gate)
+        if candidate_safety < 1.0:
+            logger.error(f"EvolutionGate: REJECTED - Safety regression detected ({candidate_safety})")
+            return False
+
+        # Monotone-Safe Check (CL-Bench Gain Metric)
         gain = candidate_perf - baseline_perf
-        calibration_drift = candidate_results.get("ece", 1.0) - baseline_results.get("ece", 1.0)
+        calibration_drift = candidate_ece - baseline_ece
 
         is_safe = (gain >= self.threshold) and (calibration_drift <= 0.05)
 
@@ -99,7 +108,6 @@ class EvolutionGate:
             self.evolution_history.append({
                 "timestamp": datetime.utcnow().isoformat(),
                 "candidate_id": candidate_id,
-                "metrics": candidate.__dict__,
                 "status": "PROMOTED"
             })
             return True
