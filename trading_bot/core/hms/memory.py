@@ -129,9 +129,24 @@ class HierarchicalMemorySystem:
 
         self.schema_path = os.path.join(base_path, "memory_schema.json")
         self.memory_schema = self._load_schema()
+        self.memory_window_size = 100
 
         self._initialized = True
         logger.info(f"HMS V5: Initialized at {base_path}")
+
+    def seal_adapt_memory_window(self, retention_latency_reward: float):
+        """
+        Adapts the HMS 'memory_window_size' based on downstream task performance reward
+        using the MIT SEAL paper reinforcement learning adaptation framework.
+        """
+        if retention_latency_reward < 1.0:
+            # Latency or surprise was high -> reduce window size to lower retrieval latency
+            self.memory_window_size = max(self.memory_window_size - 10, 10)
+            logger.info(f"SEAL: Memory retention latency was high. Adapted HMS memory window to {self.memory_window_size} to optimize lookup performance.")
+        else:
+            # High quality retrieval -> increase window to retain more context
+            self.memory_window_size = min(self.memory_window_size + 10, 500)
+            logger.info(f"SEAL: Memory retrieval was highly accurate. Adapted HMS memory window to {self.memory_window_size} to retain more contextual episodic memory.")
 
     def _load_schema(self) -> Dict[str, Any]:
         if os.path.exists(self.schema_path):
