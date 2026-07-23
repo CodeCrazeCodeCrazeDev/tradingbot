@@ -705,3 +705,39 @@ class ResearchWorkspaceV2:
             "challengers": results,
             "best_challenger": results[0] if results else None
         }
+
+    def run_seal_adaptation_loop(self, base_weights: np.ndarray, train_returns: pd.Series,
+                                 oos_returns: pd.Series, num_iterations: int = 5) -> Tuple[np.ndarray, Dict[str, Any]]:
+        """
+        Integrates the MIT SEAL (Self-Adapting Language Models) framework.
+        Runs the dual inner/outer reinforcement self-edit loops to persistently adapt model weights.
+        Logs the resulting self-edit update directive to the immutable governance log.
+        """
+        from .seal_adapter import SEALSystem
+        seal = SEALSystem()
+        adapted_weights, best_edit = seal.self_adapt_alpha(
+            base_weights=base_weights,
+            train_returns=train_returns,
+            oos_returns=oos_returns,
+            num_iterations=num_iterations
+        )
+
+        edit_directive = {
+            "self_edit_id": best_edit.id if best_edit else "unknown",
+            "noise_std": best_edit.synthetic_noise_std if best_edit else 0.0,
+            "imbalance_scale": best_edit.synthetic_imbalance_scale if best_edit else 1.0,
+            "learning_rate": best_edit.learning_rate if best_edit else 0.0,
+            "epochs": best_edit.epochs if best_edit else 0,
+            "l2_reg": best_edit.l2_regularization if best_edit else 0.0
+        }
+
+        # Log the adaptation to the immutable governance log
+        self.append_to_governance_ledger(
+            event_type="SEAL_SELF_ADAPTATION",
+            payload={
+                "edit_directive": edit_directive,
+                "adapted_weights_mean": float(adapted_weights.mean())
+            }
+        )
+
+        return adapted_weights, edit_directive
