@@ -103,6 +103,12 @@ except ImportError as e:
     logging.getLogger(__name__).debug(f'Optional import failed in research.research_os: {e}')
 
 try:
+    from .research_os_v2 import ResearchWorkspaceV2
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in research.research_os_v2: {e}')
+
+try:
     from .research_governance import (
         StrategicMandate,
         ResearchStrategy,
@@ -195,6 +201,7 @@ except ImportError as e:
     logging.getLogger(__name__).debug(f'Optional import failed in research.research_computer: {e}')
 
 __all__ = [
+    'ResearchWorkspaceV2',
     'Hypothesis',
     'ResearchLab',
     'IngestionPipeline',
