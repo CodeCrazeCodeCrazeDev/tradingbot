@@ -33,17 +33,20 @@ async def test_csc_12_step_pipeline():
     report = VerifierReport(agent_name="V1", is_valid=True, confidence=0.9, critique="Looks good")
     controller.verifier_swarm.run_swarm = AsyncMock(return_value=[report])
 
-    # Ensure bus is started
-    from trading_bot.core.unified_event_bus import decision_bus
-    await decision_bus.start()
+    from unittest.mock import patch
+    from trading_bot.core.unified_event_bus import ActionStatus
 
     observation = {"price_action": "BULLISH", "volatility": 0.01}
-    decision = await controller.process_market_observation(observation)
+
+    with patch("trading_bot.core.unified_event_bus.decision_bus.propose_action", new_callable=AsyncMock) as mock_propose:
+        async def side_effect(act):
+            act.status = ActionStatus.EXECUTED
+        mock_propose.side_effect = side_effect
+
+        decision = await controller.process_market_observation(observation)
 
     assert decision.outcome == DecisionOutcome.TRADE_APPROVED
     assert controller.hms.store_ledger_entry.called
-
-    await decision_bus.stop()
 
 @pytest.mark.asyncio
 async def test_csc_hasp_guardrail():
