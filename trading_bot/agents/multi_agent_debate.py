@@ -857,10 +857,13 @@ class MultiAgentDebateSystem:
             # Initial arguments
             current_round_args = []
             for agent in self.agents:
-                # Wrap analyze in a way that could be async in the future
-                arg = agent.analyze(context)
-                current_round_args.append(arg)
-                all_arguments.append(arg)
+                try:
+                    # Wrap analyze in a way that could be async in the future
+                    arg = agent.analyze(context)
+                    current_round_args.append(arg)
+                    all_arguments.append(arg)
+                except Exception as e:
+                    logger.error(f"Agent {agent.role.value} failed to analyze: {e}", exc_info=True)
         
             # Calculate initial consensus
             consensus = self._calculate_consensus(all_arguments)
@@ -881,19 +884,22 @@ class MultiAgentDebateSystem:
             
                 # Each agent responds to others from the last round only
                 for agent in self.agents:
-                    # Find previous arguments from others
-                    others_args = [arg for arg in previous_round_args if arg.agent_role != agent.role]
-                    if not others_args:
-                        continue
+                    try:
+                        # Find previous arguments from others
+                        others_args = [arg for arg in previous_round_args if arg.agent_role != agent.role]
+                        if not others_args:
+                            continue
 
-                    # Agent responds to the most relevant/concerning argument from others
-                    # For simplicity, responding to the one with highest confidence
-                    target_arg = max(others_args, key=lambda a: a.confidence)
-                    response = agent.respond_to_argument(target_arg, context)
+                        # Agent responds to the most relevant/concerning argument from others
+                        # For simplicity, responding to the one with highest confidence
+                        target_arg = max(others_args, key=lambda a: a.confidence)
+                        response = agent.respond_to_argument(target_arg, context)
 
-                    if response:
-                        current_round_args.append(response)
-                        all_arguments.append(response)
+                        if response:
+                            current_round_args.append(response)
+                            all_arguments.append(response)
+                    except Exception as e:
+                        logger.error(f"Agent {agent.role.value} failed during debate round response: {e}", exc_info=True)
             
                 if not current_round_args:
                     break
