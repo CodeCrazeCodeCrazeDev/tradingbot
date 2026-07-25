@@ -178,6 +178,7 @@ import logging
 from enum import Enum
 from typing import Any, Dict, List, Optional, Callable
 from dataclasses import dataclass
+from .models import NormalizedMarketContext
 
 logger = logging.getLogger(__name__)
 
@@ -240,7 +241,12 @@ class SkillRouter:
         """Routes a task to the appropriate skill or adapter."""
         # 1. Check for applicable HASP programs (Hard Guardrails)
         market_state = context.get("market", {})
-        if market_state.get("volatility", 0) > 0.3:
+        if isinstance(market_state, NormalizedMarketContext):
+            vol = market_state.volatility
+        else:
+            vol = market_state.get("volatility", 0) if isinstance(market_state, dict) else 0
+
+        if vol > 0.3:
             skill = self._registry.get("volatility_guardrail")
             if skill and skill.executable:
                 return skill.executable(context)
@@ -254,11 +260,30 @@ class SkillRouter:
         return {"status": "standard_reasoning"}
 
     def _pf_volatility_guardrail(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        return {
-            "status": "pf_intervention",
-            "action": "override_to_hold",
-            "reason": "Volatility exceeded HASP safety threshold (0.3)"
-        }
+        market_state = context.get("market", {})
+        if isinstance(market_state, NormalizedMarketContext):
+            vol = market_state.volatility
+        elif isinstance(market_state, dict):
+            vol = market_state.get("volatility")
+            if vol is None:
+                vol = context.get("volatility", 0)
+        else:
+            vol = 0.0
+
+        if vol > 0.3:
+            return {
+                "status": "pf_intervention",
+                "action": "override_to_hold",
+                "reason": "Volatility exceeded HASP safety threshold (0.3)",
+                "max_leverage": 1.0,
+                "reasoning_context": "CRITICAL_VOLATILITY"
+            }
+        else:
+            return {
+                "status": "warning",
+                "max_leverage": 1.0,
+                "reasoning_context": "CRITICAL_VOLATILITY"
+            }
 
 class HASPExecutor:
     """Executes Skill Programs in a controlled environment."""

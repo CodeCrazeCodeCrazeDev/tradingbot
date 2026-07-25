@@ -31,6 +31,7 @@ from dataclasses import dataclass, field
 from .hypothesis import HypothesisGenerator, ReasoningBranch, Hypothesis
 from .folding import InformationFolder
 from .router import SkillRouter
+from .models import NormalizedMarketContext, MarketContextAdapter
 from ..verification.swarm import VerificationSwarm
 from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport, EvidenceNode, EvidenceEdge, RelationType
 from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
@@ -82,6 +83,13 @@ class CognitiveSystemController:
 
     def __init__(self, world_model: Any = None, hms: Any = None, shield: Optional[ImmutableShield] = None):
         if getattr(self, "_initialized", False):
+            if world_model is not None:
+                self.world_model = world_model
+                self.hypothesis_gen = HypothesisGenerator(world_model)
+            if hms is not None:
+                self.hms = hms
+            if shield is not None:
+                self.shield = shield
             return
 
         self.world_model = world_model
@@ -104,36 +112,39 @@ class CognitiveSystemController:
         self._initialized = True
         logger.info("CSC-V5: One Brain initialized with DiscoLoop and HASP.")
 
-    async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
+    async def process_market_observation(self, observation: Any) -> Optional[CoreDecision]:
         """
         12-step Recursive Active Inference Pipeline.
         Grounded in Variational Free Energy (VFE) minimization.
         """
         logger.info("CSC-V5: Starting 12-step Recursive Active Inference Pipeline")
         t0 = time.perf_counter()
-
-        t0 = time.perf_counter()
         latency: Dict[str, float] = {}
 
-        # 1. Observation Ingestion & Anomaly Detection
-        # (Minimizing Sensory Surprise)
-        sensory_surprise = self._calculate_sensory_surprise(observation)
+        # 1. Observation Ingestion & Anomaly Detection (Canonical Normalization)
+        context = MarketContextAdapter.normalize(observation)
+        sensory_surprise = self._calculate_sensory_surprise(context)
         logger.debug(f"CSC-V5: Sensory Surprise: {sensory_surprise:.4f}")
 
         # 2. Surprise-Driven Evidence Collection (SAGE Graph-Memory)
-        evidence_chain = await self.hms.retrieve_evidence_chain(str(observation))
+        evidence_chain = await self.hms.retrieve_evidence_chain(str(context))
 
         # 3. Multi-hop Internalization (DiscoLoop Reasoning)
-        await self._run_discoloop_reasoning(observation)
+        await self._run_discoloop_reasoning(context)
 
         # 4. Executable Guardrails (HASP Intervention)
-        intervention = self._apply_hasp_guardrails(observation)
+        intervention = self._apply_hasp_guardrails(context)
         if intervention:
-            observation.update(intervention)
             logger.warning(f"CSC-V5: HASP Intervention applied: {intervention.get('reason', 'Unknown')}")
+            if intervention.get("status") == "pf_intervention":
+                return CoreDecision(
+                    outcome=DecisionOutcome.TRADE_REJECTED,
+                    trade_id="",
+                    dominant_rejection_reason=intervention.get("reason", "Volatility exceeded HASP safety threshold")
+                )
 
         # 5. Multi-Hypothesis Generation
-        branches = await self.hypothesis_gen.generate_competing_branches(observation)
+        branches = await self.hypothesis_gen.generate_competing_branches(context)
 
         # 6. Causal Simulation (CWMI / World Model)
         sim_results = await self.hypothesis_gen.simulate_branches(branches)
@@ -141,7 +152,7 @@ class CognitiveSystemController:
         # 7. Decision Selection (VFE Minimization)
         best_branch = self._select_optimal_branch(branches, sim_results)
         if not best_branch:
-            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason="No viable reasoning branches")
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id="", dominant_rejection_reason="No viable reasoning branches")
 
         # 8. Decision Loop (Pivot/Refine)
         decision_ready = False
@@ -166,11 +177,11 @@ class CognitiveSystemController:
                 if not best_branch: break
 
         if not decision_ready:
-            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason="Failed Pivot/Refine loop")
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id=best_branch.branch_id if best_branch else "", dominant_rejection_reason="Failed Pivot/Refine loop")
 
         # 11. Governance Gate (Immutable Shield & LogAct Proposal)
         trade_proposal = self._translate_to_proposal(final_ledger_entry)
-        shield_report = await self.shield.validate_action("trade", trade_proposal, {"market": observation})
+        shield_report = await self.shield.validate_action("trade", trade_proposal, {"market": context})
 
         if shield_report.decision != GovernanceDecision.APPROVED:
              return CoreDecision(
@@ -182,7 +193,7 @@ class CognitiveSystemController:
         # 12. Execution via LogAct & Folding (HIPIF)
         log_action = LogAction(
             action_type="TRADE_EXECUTION",
-            payload={**trade_proposal, "context": {"market": observation}},
+            payload={**trade_proposal, "context": {"market": context}},
             agent_id="CSC_V5",
             priority=EventPriority.HIGH
         )
@@ -191,7 +202,7 @@ class CognitiveSystemController:
         status = await log_action.wait_for_decision(timeout=5.0)
 
         if status != ActionStatus.APPROVED and status != ActionStatus.EXECUTED:
-            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=f"LogAct failure: {status}")
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id=trade_proposal.get("trade_id") or "", dominant_rejection_reason=f"LogAct failure: {status}")
 
         # Folding & Persistence
         self.folder.fold_history(final_ledger_entry)
@@ -215,7 +226,7 @@ class CognitiveSystemController:
             reason = f"LogAct consensus failure: {action.status.value}"
             if action.voter_reports:
                 reason += f" - Reports: {action.voter_reports}"
-            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=reason)
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id=trade_proposal.get("trade_id") or "", dominant_rejection_reason=reason)
 
         # 12. Execution & Folding (HIPIF)
         logger.info(f"CSC-V5: Trade Approved. Folding history...")
@@ -228,15 +239,15 @@ class CognitiveSystemController:
             confidence_vector=self._calculate_composite_confidence(final_ledger_entry)
         )
 
-    def _calculate_sensory_surprise(self, observation: Dict[str, Any]) -> float:
+    def _calculate_sensory_surprise(self, context: NormalizedMarketContext) -> float:
         """Surprise = -log P(obs | world_model_prediction)"""
         if not self.last_prediction: return 1.0
         return 0.1
 
-    async def _run_discoloop_reasoning(self, observation: Dict[str, Any]):
+    async def _run_discoloop_reasoning(self, context: NormalizedMarketContext):
         """DiscoLoop dual-channel recurrence: S_k = [h_k; e_k]."""
-        e_k = self._encode_discrete(observation)
-        input_signal = self._encode_continuous(observation)
+        e_k = self._encode_discrete(context)
+        input_signal = self._encode_continuous(context)
 
         if self._max_loops == 0:
             self.discrete_channel.append("token_oneshot")
@@ -252,18 +263,18 @@ class CognitiveSystemController:
 
         self.continuous_state["latent"] = self.discoloop.hidden_state.tolist()
 
-    def _encode_continuous(self, observation: Dict[str, Any]) -> np.ndarray:
+    def _encode_continuous(self, context: NormalizedMarketContext) -> np.ndarray:
         return np.random.normal(0, 1, (16,))
 
-    def _encode_discrete(self, observation: Dict[str, Any]) -> np.ndarray:
+    def _encode_discrete(self, context: NormalizedMarketContext) -> np.ndarray:
         e = np.zeros((16,))
         e[0] = 1.0
         return e
 
-    def _apply_hasp_guardrails(self, observation: Dict[str, Any]) -> Dict[str, Any]:
+    def _apply_hasp_guardrails(self, context: NormalizedMarketContext) -> Dict[str, Any]:
         """HASP: Executable guardrails via SkillRouter."""
-        market_state = {"market": observation}
-        if observation.get("volatility", 0) > 0.3:
+        market_state = {"market": context}
+        if context.volatility > 0.05:
             skill = self.skill_router._registry.get("volatility_guardrail")
             if skill and skill.executable:
                 return skill.executable(market_state)
@@ -273,7 +284,7 @@ class CognitiveSystemController:
         refined = copy.deepcopy(branch)
         for report in reports:
             if not report.is_valid:
-                refined.reasoning_trace.append(f"Refinement: {report.critique}")
+                refined.reasoning_trace.append(f"Correction: {report.critique}")
                 refined.confidence *= 0.9
         return refined if refined.confidence > 0.5 else None
 

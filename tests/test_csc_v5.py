@@ -1,4 +1,3 @@
-
 import asyncio
 import pytest
 from unittest.mock import MagicMock, AsyncMock
@@ -6,17 +5,18 @@ from trading_bot.core.csc.controller import CognitiveSystemController
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome
 
 @pytest.mark.asyncio
-async def test_csc_12_step_pipeline():
+async def test_csc_12_step_pipeline(monkeypatch):
     # Mock dependencies
     world_model = MagicMock()
     hms = MagicMock()
+    hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
 
-    # Mock Shield to approve
+    # Mock Shield to approve (awaited)
     shield_report = MagicMock()
     from trading_bot.core.immutable_shield import GovernanceDecision
     shield_report.decision = GovernanceDecision.APPROVED
-    shield.validate_action.return_value = shield_report
+    shield.validate_action = AsyncMock(return_value=shield_report)
 
     controller = CognitiveSystemController(world_model=world_model, hms=hms, shield=shield)
 
@@ -33,9 +33,15 @@ async def test_csc_12_step_pipeline():
     report = VerifierReport(agent_name="V1", is_valid=True, confidence=0.9, critique="Looks good")
     controller.verifier_swarm.run_swarm = AsyncMock(return_value=[report])
 
-    # Ensure bus is started
-    from trading_bot.core.unified_event_bus import decision_bus
+    # Ensure bus is started and patch propose_action cleanly in the test to avoid timeouts
+    from trading_bot.core.unified_event_bus import decision_bus, ActionStatus
     await decision_bus.start()
+
+    async def mock_propose_action(action):
+        action.status = ActionStatus.EXECUTED
+        action._completed_event.set()
+
+    monkeypatch.setattr(decision_bus, "propose_action", mock_propose_action)
 
     observation = {"price_action": "BULLISH", "volatility": 0.01}
     decision = await controller.process_market_observation(observation)
@@ -52,7 +58,11 @@ async def test_csc_hasp_guardrail():
     # Observation that triggers volatility guardrail
     observation = {"price_action": "BULLISH", "volatility": 0.1}
 
-    intervention = controller._apply_hasp_guardrails(observation)
+    # Normalize state first
+    from trading_bot.core.csc.models import MarketContextAdapter
+    context = MarketContextAdapter.normalize(observation)
+
+    intervention = controller._apply_hasp_guardrails(context)
     assert intervention.get("max_leverage") == 1.0
     assert intervention.get("reasoning_context") == "CRITICAL_VOLATILITY"
 
@@ -69,21 +79,3 @@ async def test_csc_pivot_refine():
     refined = await controller._refine_strategy(branch, reports)
     assert refined.confidence < branch.confidence
     assert "Correction: Too high risk" in refined.reasoning_trace
-
-if __name__ == "__main__":
-    import sys
-    # Manual run since pytest might fail due to env
-    async def run_tests():
-        print("Running CSC V5 Pipeline Test...")
-        await test_csc_12_step_pipeline()
-        print("CSC V5 Pipeline Test PASSED")
-
-        print("Running CSC HASP Guardrail Test...")
-        await test_csc_hasp_guardrail()
-        print("CSC HASP Guardrail Test PASSED")
-
-        print("Running CSC Pivot/Refine Test...")
-        await test_csc_pivot_refine()
-        print("CSC Pivot/Refine Test PASSED")
-
-    asyncio.run(run_tests())
