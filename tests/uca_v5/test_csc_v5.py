@@ -10,8 +10,9 @@ async def test_csc_hasp_intervention():
     # Setup mocks
     world_model = MagicMock()
     hms = MagicMock()
+    hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
-    shield.validate_action = MagicMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
+    shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
 
     csc = CognitiveSystemController(world_model, hms, shield)
 
@@ -28,8 +29,9 @@ async def test_csc_pivot_loop():
     # Setup mocks
     world_model = MagicMock()
     hms = MagicMock()
+    hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
-    shield.validate_action = MagicMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
+    shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
 
     csc = CognitiveSystemController(world_model, hms, shield)
 
