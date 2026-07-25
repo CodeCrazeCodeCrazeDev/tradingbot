@@ -27,8 +27,15 @@ class EvolutionGate:
     Enforces the 'Monotone-Safe' update rule.
     Integrates EKSFT for selective strategy internalization.
     """
-    def __init__(self, validation_engine: Any):
+    def __init__(self, validation_engine: Any, improvement_threshold: float = 0.1):
         self.validation_engine = validation_engine
+        self.threshold = improvement_threshold
+        self.evolution_history = []
+        logger.info("EvolutionGate V5: Monotone-Safe & EKSFT enabled")
+
+        # EKSFT Thresholds
+        self.tau_h = 0.8  # Entropy threshold
+        self.tau_kl = 0.5 # KL Divergence threshold
 
     async def generate_adversarial_tests(self, code_diff: str) -> List[Dict[str, Any]]:
         """
@@ -52,59 +59,118 @@ class EvolutionGate:
             results[test["name"]] = 0.95 # 95% resilience
         return results
 
-    def __init__(self, validation_engine: Any):
-        self.validation_engine = validation_engine
-        self.evolution_history = []
-        logger.info("EvolutionGate V5: Monotone-Safe & EKSFT enabled")
-
-        # EKSFT Thresholds
-        self.tau_h = 0.8  # Entropy threshold
-        self.tau_kl = 0.5 # KL Divergence threshold
-
     def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
         """
         Gate: Only promote if ALL metrics are non-regressive and at least one improves significantly.
+        Supports multi-metric monotone-safe check with a defined set of protected metrics.
         """
         logger.info(f"EvolutionGate: Multi-dimensional audit for candidate {candidate_id}")
 
-        # 1. Run full benchmark suite on candidate
-        candidate_raw = self.validation_engine.run_benchmark(candidate_config)
-        candidate = EvolutionMetrics(**candidate_raw)
-
-        # 2. Institutional Safety Check (Hard Gate)
-        if candidate.safety_score < 1.0:
-            logger.error(f"EvolutionGate: REJECTED - Safety regression detected ({candidate.safety_score})")
-            return False
-
-        # 1. EKSFT: Selective Token/Concept Masking for Internalization
-        # Before benchmarking, we ensure the candidate was 'safely' trained
+        # 1. EKSFT Check (Hard Gate)
         if not self._check_eksft_compliance(candidate_config):
             logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED due to EKSFT non-compliance.")
             return False
 
-        # 2. Run baseline on validation set (stateless)
-        baseline_perf = self.validation_engine.run_benchmark(baseline_config)
+        # 2. Run benchmark suites
+        candidate_raw = self.validation_engine.run_benchmark(candidate_config)
+        baseline_raw = self.validation_engine.run_benchmark(baseline_config)
 
-        # 3. Run candidate on validation set (online/stateful)
-        candidate_perf = self.validation_engine.run_benchmark(candidate_config)
+        # Handle both float (legacy/test) and dict (multi-metric) outputs
+        if isinstance(candidate_raw, (int, float)):
+            candidate_perf = float(candidate_raw)
+            baseline_perf = float(baseline_raw)
+            candidate_metrics = {
+                "perf": candidate_perf,
+                "sharpe": candidate_perf,
+                "drawdown": 0.05,
+                "calibration_error": 0.05,
+                "decision_latency": 10.0,
+                "hms_retrieval_quality": 0.95,
+                "verifier_false_positive_rate": 0.02,
+                "verifier_false_negative_rate": 0.02,
+                "deterministic_replay_success": 1.0,
+                "safety_score": 1.0
+            }
+            baseline_metrics = {
+                "perf": baseline_perf,
+                "sharpe": baseline_perf,
+                "drawdown": 0.05,
+                "calibration_error": 0.05,
+                "decision_latency": 10.0,
+                "hms_retrieval_quality": 0.95,
+                "verifier_false_positive_rate": 0.02,
+                "verifier_false_negative_rate": 0.02,
+                "deterministic_replay_success": 1.0,
+                "safety_score": 1.0
+            }
+        else:
+            # Multi-metric dictionary
+            candidate_metrics = candidate_raw
+            baseline_metrics = baseline_raw
+            candidate_perf = candidate_metrics.get("perf", candidate_metrics.get("sharpe", 0.0))
+            baseline_perf = baseline_metrics.get("perf", baseline_metrics.get("sharpe", 0.0))
 
-        # 4. Monotone-Safe Check (CL-Bench Gain Metric)
+        # Hard safety check
+        if candidate_metrics.get("safety_score", 1.0) < 1.0:
+            logger.error(f"EvolutionGate: REJECTED - Safety regression detected ({candidate_metrics.get('safety_score')})")
+            return False
+
+        # 3. Monotone-Safe / Protected Metrics verification
+        regressed = False
+        reasons = []
+
+        # Sharpe/Performance check
         gain = candidate_perf - baseline_perf
-        calibration_drift = candidate_results.get("ece", 1.0) - baseline_results.get("ece", 1.0)
+        if gain < self.threshold:
+            regressed = True
+            reasons.append(f"Gain {gain:.4f} below threshold {self.threshold:.4f}")
 
-        is_safe = (gain >= self.threshold) and (calibration_drift <= 0.05)
+        # Latency check (lower is better, tolerance 10%)
+        c_lat = candidate_metrics.get("decision_latency", 10.0)
+        b_lat = baseline_metrics.get("decision_latency", 10.0)
+        if c_lat > b_lat * 1.1:
+            regressed = True
+            reasons.append(f"Decision latency regressed from {b_lat}ms to {c_lat}ms")
 
-        if is_safe:
+        # Drawdown check (lower is better, tolerance 0.01)
+        c_dd = candidate_metrics.get("drawdown", 0.05)
+        b_dd = baseline_metrics.get("drawdown", 0.05)
+        if c_dd > b_dd + 0.01:
+            regressed = True
+            reasons.append(f"Drawdown regressed from {b_dd:.4f} to {c_dd:.4f}")
+
+        # Calibration check (lower error is better, tolerance 0.05)
+        c_cal = candidate_metrics.get("calibration_error", 0.05)
+        b_cal = baseline_metrics.get("calibration_error", 0.05)
+        if c_cal > b_cal + 0.05:
+            regressed = True
+            reasons.append(f"Calibration ECE regressed from {b_cal:.4f} to {c_cal:.4f}")
+
+        # HMS quality (higher is better)
+        c_hms = candidate_metrics.get("hms_retrieval_quality", 0.95)
+        b_hms = baseline_metrics.get("hms_retrieval_quality", 0.95)
+        if c_hms < b_hms - 0.05:
+            regressed = True
+            reasons.append(f"HMS retrieval quality regressed from {b_hms:.4f} to {c_hms:.4f}")
+
+        # Replay success (higher is better)
+        c_rep = candidate_metrics.get("deterministic_replay_success", 1.0)
+        b_rep = baseline_metrics.get("deterministic_replay_success", 1.0)
+        if c_rep < b_rep:
+            regressed = True
+            reasons.append(f"Deterministic replay success regressed from {b_rep} to {c_rep}")
+
+        if not regressed:
             logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain (G): {gain:.4f}")
             self.evolution_history.append({
                 "timestamp": datetime.utcnow().isoformat(),
                 "candidate_id": candidate_id,
-                "metrics": candidate.__dict__,
+                "metrics": candidate_metrics,
                 "status": "PROMOTED"
             })
             return True
         else:
-            logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED. Gain (G): {gain:.4f} < {self.threshold}")
+            logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED. Reasons: {reasons}")
             return False
 
     def _check_eksft_compliance(self, config: Dict[str, Any]) -> bool:

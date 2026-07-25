@@ -240,16 +240,27 @@ class SkillRouter:
         """Routes a task to the appropriate skill or adapter."""
         # 1. Check for applicable HASP programs (Hard Guardrails)
         market_state = context.get("market", {})
-        if market_state.get("volatility", 0) > 0.3:
+        vol = market_state.get("volatility")
+        if vol is None and "volatility" in context:
+            vol = context.get("volatility")
+
+        if vol is not None and vol > 0.3:
             skill = self._registry.get("volatility_guardrail")
             if skill and skill.executable:
-                return skill.executable(context)
+                pf_res = skill.executable(context)
+                return {
+                    "status": "pf_intervention",
+                    "pf_result": pf_res
+                }
 
         # 2. Check for S2L adapters
-        if "hedge" in task.lower():
+        if "hedge" in task.lower() or "hedg" in task.lower():
             skill = self._registry.get("hedging_behavior")
             if skill:
-                return {"status": "s2l_routed", "adapter_id": skill.adapter_id}
+                return {
+                    "status": "s2l_routed",
+                    "adapter_id": skill.adapter_id
+                }
 
         return {"status": "standard_reasoning"}
 

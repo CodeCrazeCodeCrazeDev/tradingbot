@@ -38,9 +38,48 @@ class ScientificMetrics:
     research_efficiency_ratio: float = 0.0 # Value / Cost
     ece: float = 1.0 # Expected Calibration Error
 
+    # Latency Tracking (First-class observability)
+    csc_stage_latency: Dict[str, float] = field(default_factory=dict)
+    router_dispatch_latency: float = 0.0
+    hms_latency: float = 0.0
+    swarm_latency: float = 0.0
+    gate_latency: float = 0.0
+    end_to_end_latency: float = 0.0
+    queue_depth: int = 0
+    memory_growth_bytes: float = 0.0
+    retry_counts: int = 0
+    failure_counts: int = 0
+
     # Self-Improvement
     bottlenecks_detected: List[str] = field(default_factory=list)
     last_update: datetime = field(default_factory=datetime.now)
+
+    @property
+    def total_institutionalized_knowledge(self) -> int:
+        return self.institutionalized_count
+
+    def detect_bottlenecks(self):
+        """Identifies systemic weaknesses and tail-latency outliers in the hypothesis ecosystem."""
+        self.bottlenecks_detected = []
+
+        # Scientific/Ecosystem Bottlenecks
+        if self.total_hypotheses > 20:
+            if self.survival_rate < 0.05:
+                self.bottlenecks_detected.append("GENERATION_NOISE")
+            if self.rejection_rate > 0.8:
+                self.bottlenecks_detected.append("FILTERING_STRICTNESS")
+            if self.avg_validation_score > 0.7 and self.confirmed_count < 2:
+                self.bottlenecks_detected.append("PROMOTION_FRICTION")
+
+        # Latency/Performance Bottlenecks
+        if self.end_to_end_latency > 100.0: # ms limit
+            self.bottlenecks_detected.append("E2E_LATENCY_SPIKE")
+        if self.hms_latency > 25.0:
+            self.bottlenecks_detected.append("HMS_BOTTLENECK")
+        if self.router_dispatch_latency > 15.0:
+            self.bottlenecks_detected.append("ROUTER_BOTTLENECK")
+        if self.swarm_latency > 50.0:
+            self.bottlenecks_detected.append("SWARM_BOTTLENECK")
 
     def update_from_registry(self, registry: Dict[str, Any]):
         """Update metrics based on the current state of the SRE registry."""
@@ -83,6 +122,9 @@ class ScientificMetrics:
 
         self.rejection_rate = self.rejected_count / total
         self.survival_rate = (self.confirmed_count + self.institutionalized_count) / total
+
+        # Drive first-class bottleneck analysis
+        self.detect_bottlenecks()
 
     def get_summary(self) -> Dict[str, Any]:
         return {

@@ -38,3 +38,47 @@ def test_hms_automem_optimization(hms):
 
     new_version = hms.memory_schema.get("version")
     assert float(new_version) > float(initial_version)
+
+def test_hms_deterministic_migrations_and_replay(hms):
+    # Reset version for test isolation since hms is a singleton
+    hms.memory_schema["schema_version"] = "1.0"
+    hms.memory_schema["version"] = "1.0"
+    hms.memory_schema["entities"] = []
+    hms.memory_schema["relations"] = []
+    hms.memory_schema["migration_history"] = []
+    hms._save_schema()
+
+    # Verify initial state
+    assert hms.memory_schema["schema_version"] == "1.0"
+    assert hms.validate_replay(hms.memory_schema) is True
+
+    # 1. Migrate up to 1.1
+    success = hms.migrate_to_version("1.1")
+    assert success is True
+    assert hms.memory_schema["schema_version"] == "1.1"
+    assert any(e["type"] == "RESEARCH_METADATA" for e in hms.memory_schema["entities"])
+
+    # Replay validation should hold
+    assert hms.validate_replay(hms.memory_schema) is True
+
+    # 2. Migrate up to 1.2
+    success = hms.migrate_to_version("1.2")
+    assert success is True
+    assert hms.memory_schema["schema_version"] == "1.2"
+    assert any(r["type"] == "CONTRADICTS" for r in hms.memory_schema["relations"])
+
+    # Replay validation
+    assert hms.validate_replay(hms.memory_schema) is True
+
+    # 3. Rollback (down-migrate) back to 1.0
+    success = hms.migrate_to_version("1.0")
+    assert success is True
+    assert hms.memory_schema["schema_version"] == "1.0"
+
+    # Check that added entities and relations were removed
+    assert not any(e["type"] == "RESEARCH_METADATA" for e in hms.memory_schema["entities"])
+    assert not any(r["type"] == "CONTRADICTS" for r in hms.memory_schema["relations"])
+
+    # Track history holds
+    assert len(hms.memory_schema["migration_history"]) >= 4
+    assert hms.validate_replay(hms.memory_schema) is True
