@@ -38,3 +38,21 @@ def test_hms_automem_optimization(hms):
 
     new_version = hms.memory_schema.get("version")
     assert float(new_version) > float(initial_version)
+
+    # Verify migration record properties
+    history = hms.memory_schema.get("migration_history", [])
+    assert len(history) > 0
+    record = history[-1]
+    assert "migration_id" in record
+    assert "migration_timestamp" in record
+    assert record["migration_reason"] == "AutoMem optimization from success trajectories"
+    assert record["compatibility_level"] == "FORWARD_COMPATIBLE"
+    assert record["previous_version"] == "1.0"
+    assert record["target_version"] == "1.1"
+
+    # Verify explicit manual migration
+    success = hms.run_migration("2.0", "Manual structural upgrade")
+    assert success is True
+    assert hms.memory_schema["version"] == "2.0"
+    assert len(hms.memory_schema["migration_history"]) == 2
+    assert hms.memory_schema["migration_history"][-1]["compatibility_level"] == "COMPATIBLE"

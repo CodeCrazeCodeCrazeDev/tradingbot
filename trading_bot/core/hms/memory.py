@@ -138,10 +138,43 @@ class HierarchicalMemorySystem:
             try:
                 with open(self.schema_path, 'r') as f: return json.load(f)
             except: pass
-        return {"version": "1.0", "entities": [], "relations": []}
+        return {
+            "version": "1.0",
+            "entities": [],
+            "relations": [],
+            "migration_history": []
+        }
 
     def _save_schema(self):
         with open(self.schema_path, 'w') as f: json.dump(self.memory_schema, f, indent=2)
+
+    def run_migration(self, target_version: str, migration_reason: str) -> bool:
+        """Run an explicit schema migration."""
+        current_version = float(self.memory_schema.get("version", "1.0"))
+        target_f = float(target_version)
+        if target_f <= current_version:
+            logger.info(f"HMS: Schema already at or past version {target_version}")
+            return False
+
+        # Apply schema changes (e.g. initialize new entities or properties)
+        self.memory_schema["version"] = target_version
+
+        migration_entry = {
+            "migration_id": f"mig_{uuid4().hex[:8]}",
+            "migration_timestamp": datetime.utcnow().isoformat(),
+            "migration_reason": migration_reason,
+            "compatibility_level": "COMPATIBLE",
+            "previous_version": str(current_version),
+            "target_version": target_version
+        }
+
+        if "migration_history" not in self.memory_schema:
+            self.memory_schema["migration_history"] = []
+        self.memory_schema["migration_history"].append(migration_entry)
+
+        self._save_schema()
+        logger.info(f"HMS: Schema migrated from {current_version} to {target_version}")
+        return True
 
     async def retrieve_evidence_chain(self, query: str) -> List[Any]:
         # Simple retrieval from SAGE graph
@@ -177,6 +210,24 @@ class HierarchicalMemorySystem:
 
     def optimize_metamemory(self, success_trajectories: List[Any]):
         """AutoMem: Schema optimization based on success."""
+        current_version = float(self.memory_schema.get("version", "1.0"))
+        new_version = str(round(current_version + 0.1, 2))
+
+        self.memory_schema["version"] = new_version
         self.memory_schema["last_optimized"] = datetime.utcnow().isoformat()
+
+        migration_entry = {
+            "migration_id": f"mig_{uuid4().hex[:8]}",
+            "migration_timestamp": datetime.utcnow().isoformat(),
+            "migration_reason": "AutoMem optimization from success trajectories",
+            "compatibility_level": "FORWARD_COMPATIBLE",
+            "previous_version": str(current_version),
+            "target_version": new_version
+        }
+
+        if "migration_history" not in self.memory_schema:
+            self.memory_schema["migration_history"] = []
+        self.memory_schema["migration_history"].append(migration_entry)
+
         self._save_schema()
-        logger.info("HMS: AutoMem optimization complete")
+        logger.info(f"HMS: AutoMem optimization complete. Schema evolved to version {new_version}")

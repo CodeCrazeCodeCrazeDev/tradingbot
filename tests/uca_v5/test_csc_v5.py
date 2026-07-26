@@ -5,13 +5,23 @@ from trading_bot.core.csc.controller import CognitiveSystemController
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome, CoreDecision
 from trading_bot.core.immutable_shield import GovernanceDecision
 
+@pytest.fixture(autouse=True)
+def mock_decision_bus(monkeypatch):
+    from trading_bot.core.unified_event_bus import decision_bus, ActionStatus
+    async def mock_propose_action(action):
+        action.status = ActionStatus.EXECUTED
+        action._completed_event.set()
+    monkeypatch.setattr(decision_bus, "propose_action", mock_propose_action)
+
 @pytest.mark.asyncio
 async def test_csc_hasp_intervention():
     # Setup mocks
     world_model = MagicMock()
-    hms = MagicMock()
-    shield = MagicMock()
-    shield.validate_action = MagicMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
+    hms = AsyncMock()
+    hms.retrieve_evidence_chain = AsyncMock(return_value=[])
+    hms.store_ledger_entry = MagicMock()
+    shield = AsyncMock()
+    shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
 
     csc = CognitiveSystemController(world_model, hms, shield)
 
@@ -27,9 +37,11 @@ async def test_csc_hasp_intervention():
 async def test_csc_pivot_loop():
     # Setup mocks
     world_model = MagicMock()
-    hms = MagicMock()
-    shield = MagicMock()
-    shield.validate_action = MagicMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
+    hms = AsyncMock()
+    hms.retrieve_evidence_chain = AsyncMock(return_value=[])
+    hms.store_ledger_entry = MagicMock()
+    shield = AsyncMock()
+    shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
 
     csc = CognitiveSystemController(world_model, hms, shield)
 

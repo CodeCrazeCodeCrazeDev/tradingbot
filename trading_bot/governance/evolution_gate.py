@@ -89,10 +89,14 @@ class EvolutionGate:
         candidate_perf = self.validation_engine.run_benchmark(candidate_config)
 
         # 4. Monotone-Safe Check (CL-Bench Gain Metric)
-        gain = candidate_perf - baseline_perf
-        calibration_drift = candidate_results.get("ece", 1.0) - baseline_results.get("ece", 1.0)
+        gain = candidate_perf.get("reward", 0.0) - baseline_perf.get("reward", 0.0)
 
-        is_safe = (gain >= self.threshold) and (calibration_drift <= 0.05)
+        candidate_ece = 1.0 - candidate_perf.get("calibration", 1.0)
+        baseline_ece = 1.0 - baseline_perf.get("calibration", 1.0)
+        calibration_drift = candidate_ece - baseline_ece
+
+        threshold = getattr(self, "threshold", 0.0)
+        is_safe = (gain >= threshold) and (calibration_drift <= 0.05)
 
         if is_safe:
             logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain (G): {gain:.4f}")
@@ -104,7 +108,7 @@ class EvolutionGate:
             })
             return True
         else:
-            logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED. Gain (G): {gain:.4f} < {self.threshold}")
+            logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED. Gain (G): {gain:.4f} < {threshold}")
             return False
 
     def _check_eksft_compliance(self, config: Dict[str, Any]) -> bool:

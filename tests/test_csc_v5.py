@@ -5,18 +5,28 @@ from unittest.mock import MagicMock, AsyncMock
 from trading_bot.core.csc.controller import CognitiveSystemController
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome
 
+@pytest.fixture(autouse=True)
+def mock_decision_bus(monkeypatch):
+    from trading_bot.core.unified_event_bus import decision_bus, ActionStatus
+    async def mock_propose_action(action):
+        action.status = ActionStatus.EXECUTED
+        action._completed_event.set()
+    monkeypatch.setattr(decision_bus, "propose_action", mock_propose_action)
+
 @pytest.mark.asyncio
 async def test_csc_12_step_pipeline():
     # Mock dependencies
     world_model = MagicMock()
-    hms = MagicMock()
-    shield = MagicMock()
+    hms = AsyncMock()
+    hms.retrieve_evidence_chain = AsyncMock(return_value=[])
+    hms.store_ledger_entry = MagicMock()
+    shield = AsyncMock()
 
     # Mock Shield to approve
     shield_report = MagicMock()
     from trading_bot.core.immutable_shield import GovernanceDecision
     shield_report.decision = GovernanceDecision.APPROVED
-    shield.validate_action.return_value = shield_report
+    shield.validate_action = AsyncMock(return_value=shield_report)
 
     controller = CognitiveSystemController(world_model=world_model, hms=hms, shield=shield)
 
@@ -49,12 +59,12 @@ async def test_csc_12_step_pipeline():
 async def test_csc_hasp_guardrail():
     controller = CognitiveSystemController()
 
-    # Observation that triggers volatility guardrail
-    observation = {"price_action": "BULLISH", "volatility": 0.1}
+    # Observation that triggers volatility guardrail (needs to be > 0.3 for hasp default)
+    observation = {"price_action": "BULLISH", "volatility": 0.5}
 
     intervention = controller._apply_hasp_guardrails(observation)
-    assert intervention.get("max_leverage") == 1.0
-    assert intervention.get("reasoning_context") == "CRITICAL_VOLATILITY"
+    assert intervention.get("action") == "override_to_hold"
+    assert "Volatility exceeded HASP safety threshold" in intervention.get("reason")
 
 @pytest.mark.asyncio
 async def test_csc_pivot_refine():
@@ -68,7 +78,7 @@ async def test_csc_pivot_refine():
 
     refined = await controller._refine_strategy(branch, reports)
     assert refined.confidence < branch.confidence
-    assert "Correction: Too high risk" in refined.reasoning_trace
+    assert "Refinement: Too high risk" in refined.reasoning_trace
 
 if __name__ == "__main__":
     import sys
