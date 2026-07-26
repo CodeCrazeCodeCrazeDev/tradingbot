@@ -17,6 +17,20 @@ Layered Architecture (L0–L10):
 """
 
 # L1 + L3: Latent Dynamics (Perception + World Model Ensemble)
+from .unified_world_model import (
+    UnifiedWorldModel,
+    TrainingCoordinator,
+    MarketStateEncoder as ModularMarketStateEncoder,
+    TemporalMemory,
+    LatentStateModel,
+    CausalDynamicsEngine,
+    FutureRolloutGenerator,
+    CounterfactualEngine as ModularCounterfactualEngine,
+    UncertaintyEstimator,
+    OpportunityEvaluator,
+    DecisionInterface,
+)
+
 from .latent_dynamics import (
     WorldModel,
     MarketStateEncoder,
@@ -155,6 +169,19 @@ from .ignorance_score import (
 )
 
 __all__ = [
+    # Unified World Model
+    'UnifiedWorldModel',
+    'TrainingCoordinator',
+    'ModularMarketStateEncoder',
+    'TemporalMemory',
+    'LatentStateModel',
+    'CausalDynamicsEngine',
+    'FutureRolloutGenerator',
+    'ModularCounterfactualEngine',
+    'UncertaintyEstimator',
+    'OpportunityEvaluator',
+    'DecisionInterface',
+
     # Legacy
     'WorldModel',
     'MarketStateEncoder',
