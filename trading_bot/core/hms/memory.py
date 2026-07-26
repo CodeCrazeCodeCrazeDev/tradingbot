@@ -177,6 +177,12 @@ class HierarchicalMemorySystem:
 
     def optimize_metamemory(self, success_trajectories: List[Any]):
         """AutoMem: Schema optimization based on success."""
+        current_version_str = self.memory_schema.get("version", "1.0")
+        try:
+            current_version = float(current_version_str)
+        except ValueError:
+            current_version = 1.0
+        self.memory_schema["version"] = f"{current_version + 0.1:.1f}"
         self.memory_schema["last_optimized"] = datetime.utcnow().isoformat()
         self._save_schema()
         logger.info("HMS: AutoMem optimization complete")

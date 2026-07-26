@@ -20,7 +20,7 @@ class ReasoningBranch:
     name: str  # e.g., "Bullish Breakout Team", "Liquidity Drain Team"
     hypotheses: List[Hypothesis] = field(default_factory=list)
     reasoning_trace: List[str] = field(default_factory=list)
-    confidence: float = 0.0
+    confidence: float = 0.8
     probability: float = 0.0
     uncertainty: float = 0.0
     causal_explanation: str = ""
