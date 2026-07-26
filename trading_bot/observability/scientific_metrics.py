@@ -42,6 +42,10 @@ class ScientificMetrics:
     bottlenecks_detected: List[str] = field(default_factory=list)
     last_update: datetime = field(default_factory=datetime.now)
 
+    @property
+    def total_institutionalized_knowledge(self) -> int:
+        return self.institutionalized_count
+
     def update_from_registry(self, registry: Dict[str, Any]):
         """Update metrics based on the current state of the SRE registry."""
         total = len(registry)
@@ -83,6 +87,16 @@ class ScientificMetrics:
 
         self.rejection_rate = self.rejected_count / total
         self.survival_rate = (self.confirmed_count + self.institutionalized_count) / total
+
+        # Detect bottlenecks
+        self.bottlenecks_detected = []
+        if total > 20:
+            if self.survival_rate < 0.05:
+                self.bottlenecks_detected.append("GENERATION_NOISE")
+            if self.rejection_rate > 0.8:
+                self.bottlenecks_detected.append("FILTERING_STRICTNESS")
+            if self.avg_validation_score > 0.7 and self.confirmed_count < 2:
+                self.bottlenecks_detected.append("PROMOTION_FRICTION")
 
     def get_summary(self) -> Dict[str, Any]:
         return {
