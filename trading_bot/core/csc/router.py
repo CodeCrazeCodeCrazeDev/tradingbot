@@ -243,7 +243,11 @@ class SkillRouter:
         if market_state.get("volatility", 0) > 0.3:
             skill = self._registry.get("volatility_guardrail")
             if skill and skill.executable:
-                return skill.executable(context)
+                pf_res = skill.executable(context)
+                return {
+                    "status": "success",
+                    "pf_result": pf_res
+                }
 
         # 2. Check for S2L adapters
         if "hedge" in task.lower():

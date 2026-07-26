@@ -252,6 +252,22 @@ class CognitiveSystemController:
 
         self.continuous_state["latent"] = self.discoloop.hidden_state.tolist()
 
+    async def _run_discoloop_internalization(self, obs: Dict[str, Any], num_loops: int = 2):
+        """DiscoLoop dual-channel state updates for multi-hop internalization."""
+        latent_embedding = obs.get("latent_embedding", {})
+        for k, v in latent_embedding.items():
+            self.continuous_state[k] = v
+        self.discrete_channel = ["internalized_insight"]
+
+    def _detect_failure_severity(self, verifier_reports: List[VerifierReport]) -> str:
+        """Categorize failures as minor or critical based on verifier consensus and confidence."""
+        invalid_reports = [r for r in verifier_reports if not getattr(r, 'is_valid', True)]
+        if not invalid_reports:
+            return "none"
+        if len(invalid_reports) > 1 or any(getattr(r, 'confidence', 0.0) >= 0.9 for r in invalid_reports):
+            return "critical"
+        return "minor"
+
     def _encode_continuous(self, observation: Dict[str, Any]) -> np.ndarray:
         return np.random.normal(0, 1, (16,))
 

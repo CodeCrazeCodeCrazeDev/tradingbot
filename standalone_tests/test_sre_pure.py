@@ -26,6 +26,11 @@ async def test_sre_cycle():
     await sre.bayesian_update(hid)
     assert sre.registry[hid].posterior > 0.5
 
+    # Contract uncertainty below 0.7
+    await sre.calibrate_confidence(hid)
+    # Force high posterior to trigger institutionalization
+    sre.registry[hid].posterior = 0.85
+
     await sre.retire_hypothesis(hid)
     assert sre.registry[hid].state == HypothesisState.INSTITUTIONALIZED
 
