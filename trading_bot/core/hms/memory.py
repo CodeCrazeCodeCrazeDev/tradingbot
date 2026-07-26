@@ -13,6 +13,8 @@ Scientific Foundation:
 import logging
 import os
 import json
+import hashlib
+import copy
 import networkx as nx
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
@@ -29,6 +31,12 @@ from .models import (
 )
 
 logger = logging.getLogger(__name__)
+
+def calculate_integrity_hash(schema_dict: Dict[str, Any]) -> str:
+    """Computes SHA-256 checksum of memory schema for audit compliance."""
+    temp = {k: v for k, v in schema_dict.items() if k != "integrity_hash"}
+    serialized = json.dumps(temp, sort_keys=True)
+    return hashlib.sha256(serialized.encode('utf-8')).hexdigest()
 
 class SAGEGraphMemory:
     """
@@ -102,6 +110,7 @@ class SAGEGraphMemory:
 class HierarchicalMemorySystem:
     """
     Authoritative memory system. Consolidates SAGE and AutoMem.
+    Provides robust structural schema migrations, integrity checks, and fallback rollbacks.
     """
     _instance = None
     _lock = threading.Lock()
@@ -134,14 +143,116 @@ class HierarchicalMemorySystem:
         logger.info(f"HMS V5: Initialized at {base_path}")
 
     def _load_schema(self) -> Dict[str, Any]:
+        default_schema = {
+            "version": "1.0",
+            "entities": ["RESEARCH_ENTRY", "HYPOTHESIS"],
+            "relations": ["HYPOTHESIZED", "SUPPORTS", "REFUTES"],
+            "migration_history": [],
+            "provenance": "AlphaAlgo HMS Schema"
+        }
         if os.path.exists(self.schema_path):
             try:
-                with open(self.schema_path, 'r') as f: return json.load(f)
-            except: pass
-        return {"version": "1.0", "entities": [], "relations": []}
+                with open(self.schema_path, 'r') as f:
+                    schema = json.load(f)
+                    if self._validate_schema_integrity(schema):
+                        return schema
+                    else:
+                        logger.warning("HMS: Schema failed integrity checks, falling back to default schema.")
+            except Exception as e:
+                logger.error(f"HMS: Schema load error: {e}")
+
+        # Save fresh hashed schema
+        default_schema["integrity_hash"] = calculate_integrity_hash(default_schema)
+        return default_schema
+
+    def _validate_schema_integrity(self, schema_dict: Dict[str, Any]) -> bool:
+        required_keys = ["version", "entities", "relations"]
+        if not all(k in schema_dict for k in required_keys):
+            logger.error("HMS Schema validation failed: missing required structural keys")
+            return False
+
+        stored_hash = schema_dict.get("integrity_hash")
+        if stored_hash:
+            calculated_hash = calculate_integrity_hash(schema_dict)
+            if stored_hash != calculated_hash:
+                logger.error(f"HMS Schema integrity hash mismatch! Calculated {calculated_hash} but found {stored_hash}")
+                return False
+        return True
 
     def _save_schema(self):
-        with open(self.schema_path, 'w') as f: json.dump(self.memory_schema, f, indent=2)
+        # Always compute fresh integrity hash before write
+        self.memory_schema["integrity_hash"] = calculate_integrity_hash(self.memory_schema)
+        with open(self.schema_path, 'w') as f:
+            json.dump(self.memory_schema, f, indent=2)
+
+    def migrate_schema(self, target_version: str) -> bool:
+        """
+        Explicitly migrates the schema forward or backward to target_version.
+        Provides robust rollbacks and full validation boundaries.
+        """
+        current_version = self.memory_schema.get("version", "1.0")
+        if current_version == target_version:
+            logger.info(f"HMS Schema: Already at target version {target_version}")
+            return True
+
+        original_schema_backup = copy.deepcopy(self.memory_schema)
+        logger.info(f"HMS Schema: Attempting migration from {current_version} to {target_version}...")
+
+        try:
+            curr = float(current_version)
+            tgt = float(target_version)
+
+            if curr < tgt:
+                # Forward migration
+                while curr < tgt:
+                    next_v = round(curr + 0.1, 1)
+                    success = self._run_migration_step(str(curr), str(next_v))
+                    if not success:
+                        raise RuntimeError(f"Migration step from {curr} to {next_v} failed")
+                    curr = next_v
+            else:
+                # Backward rollback migration
+                while curr > tgt:
+                    next_v = round(curr - 0.1, 1)
+                    success = self._run_rollback_step(str(curr), str(next_v))
+                    if not success:
+                        raise RuntimeError(f"Rollback step from {curr} to {next_v} failed")
+                    curr = next_v
+
+            self.memory_schema["version"] = str(target_version)
+            self.memory_schema["migration_history"] = self.memory_schema.get("migration_history", [])
+            self.memory_schema["migration_history"].append({
+                "from": current_version,
+                "to": target_version,
+                "timestamp": datetime.utcnow().isoformat(),
+                "status": "SUCCESS"
+            })
+            self._save_schema()
+            logger.info(f"HMS Schema: Successfully migrated to {target_version}")
+            return True
+
+        except Exception as e:
+            logger.error(f"HMS Schema: Migration failed! Initiating rollback... Error: {e}")
+            self.memory_schema = original_schema_backup
+            self._save_schema()
+            return False
+
+    def _run_migration_step(self, from_v: str, to_v: str) -> bool:
+        """Applies structural changes for version transition step."""
+        logger.info(f"HMS: Running forward transition step {from_v} -> {to_v}")
+        if from_v == "1.0" and to_v == "1.1":
+            self.memory_schema["entities"] = self.memory_schema.get("entities", []) + ["SAGE_NODE"]
+            return True
+        return True
+
+    def _run_rollback_step(self, from_v: str, to_v: str) -> bool:
+        """Reverts structural changes for rollback transition step."""
+        logger.info(f"HMS: Running backward rollback step {from_v} -> {to_v}")
+        if from_v == "1.1" and to_v == "1.0":
+            if "SAGE_NODE" in self.memory_schema.get("entities", []):
+                self.memory_schema["entities"].remove("SAGE_NODE")
+            return True
+        return True
 
     async def retrieve_evidence_chain(self, query: str) -> List[Any]:
         # Simple retrieval from SAGE graph
@@ -177,6 +288,14 @@ class HierarchicalMemorySystem:
 
     def optimize_metamemory(self, success_trajectories: List[Any]):
         """AutoMem: Schema optimization based on success."""
-        self.memory_schema["last_optimized"] = datetime.utcnow().isoformat()
-        self._save_schema()
-        logger.info("HMS: AutoMem optimization complete")
+        current_version = self.memory_schema.get("version", "1.0")
+        new_version = str(round(float(current_version) + 0.1, 1))
+
+        # Observable and deterministic schema version migration
+        success = self.migrate_schema(new_version)
+        if success:
+            self.memory_schema["last_optimized"] = datetime.utcnow().isoformat()
+            self._save_schema()
+            logger.info(f"HMS: AutoMem optimization complete. Schema version updated to {new_version}")
+        else:
+            logger.error("HMS: AutoMem optimization aborted due to migration failure")

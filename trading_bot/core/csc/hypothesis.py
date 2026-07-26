@@ -80,6 +80,9 @@ class HypothesisGenerator:
         ]
 
         for branch in branches:
+            # Explicitly compute confidence as the complement of epistemic uncertainty
+            branch.confidence = 1.0 - branch.uncertainty
+
             # Generate a base hypothesis for each branch
             hyp = Hypothesis(
                 description=f"Market will follow {branch.name}: {branch.causal_explanation}",

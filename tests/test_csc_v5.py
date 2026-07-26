@@ -10,13 +10,14 @@ async def test_csc_12_step_pipeline():
     # Mock dependencies
     world_model = MagicMock()
     hms = MagicMock()
+    hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
 
     # Mock Shield to approve
     shield_report = MagicMock()
     from trading_bot.core.immutable_shield import GovernanceDecision
     shield_report.decision = GovernanceDecision.APPROVED
-    shield.validate_action.return_value = shield_report
+    shield.validate_action = AsyncMock(return_value=shield_report)
 
     controller = CognitiveSystemController(world_model=world_model, hms=hms, shield=shield)
 
@@ -49,8 +50,8 @@ async def test_csc_12_step_pipeline():
 async def test_csc_hasp_guardrail():
     controller = CognitiveSystemController()
 
-    # Observation that triggers volatility guardrail
-    observation = {"price_action": "BULLISH", "volatility": 0.1}
+    # Observation that triggers volatility guardrail (volatility > 0.3)
+    observation = {"price_action": "BULLISH", "volatility": 0.4}
 
     intervention = controller._apply_hasp_guardrails(observation)
     assert intervention.get("max_leverage") == 1.0

@@ -182,9 +182,26 @@ from dataclasses import dataclass
 logger = logging.getLogger(__name__)
 
 class SkillType(Enum):
-    PROGRAM = "hasp_program"  # Executable Skill Program (PF)
-    LORA = "s2l_adapter"      # Skill-to-LoRA Adapter
-    PROMPT = "legacy_prompt"  # Legacy advisory prompt
+    PROGRAM = "hasp_program"       # Executable Skill Program (PF)
+    HASP_PROGRAM = "hasp_program"  # Executable Skill Program (PF) - alias for test compatibility
+    LORA = "s2l_adapter"           # Skill-to-LoRA Adapter
+    PROMPT = "legacy_prompt"       # Legacy advisory prompt
+
+@dataclass
+class SkillRouteOutcome:
+    """Canonical return API shape for all SkillRouter routing actions."""
+    status: str
+    action: Optional[str] = None
+    adapter_id: Optional[str] = None
+    reason: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "status": self.status,
+            "action": self.action,
+            "adapter_id": self.adapter_id,
+            "reason": self.reason
+        }
 
 @dataclass
 class SkillArtifact:
@@ -233,31 +250,52 @@ class SkillRouter:
         ))
 
     def register_skill(self, artifact: SkillArtifact):
+        # Validate capability registration during startup / import
+        if not artifact.skill_id:
+            raise ValueError("Skill registration failed: skill_id cannot be empty")
+        if artifact.skill_type in [SkillType.PROGRAM, SkillType.HASP_PROGRAM] and not artifact.executable:
+            raise ValueError(f"Skill registration failed for {artifact.skill_id}: missing executable program callback")
+
         self._registry[artifact.skill_id] = artifact
         logger.debug(f"Registered skill: {artifact.skill_id} ({artifact.skill_type.value})")
 
-    async def route_task(self, task: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    async def route_task(self, task: str, context: Dict[str, Any]) -> SkillRouteOutcome:
         """Routes a task to the appropriate skill or adapter."""
         # 1. Check for applicable HASP programs (Hard Guardrails)
         market_state = context.get("market", {})
-        if market_state.get("volatility", 0) > 0.3:
+        vol = market_state.get("volatility")
+        if vol is None and "market_volatility" in context:
+            vol = context["market_volatility"]
+
+        if vol is not None and vol > 0.3:
             skill = self._registry.get("volatility_guardrail")
             if skill and skill.executable:
-                return skill.executable(context)
+                res = skill.executable(context)
+                return SkillRouteOutcome(
+                    status="pf_intervention",
+                    action=res.get("action", "override_to_hold"),
+                    reason=res.get("reason", "Volatility exceeded HASP safety threshold (0.3)")
+                )
 
         # 2. Check for S2L adapters
-        if "hedge" in task.lower():
+        if "hedge" in task.lower() or "hedg" in task.lower():
             skill = self._registry.get("hedging_behavior")
             if skill:
-                return {"status": "s2l_routed", "adapter_id": skill.adapter_id}
+                return SkillRouteOutcome(
+                    status="s2l_routed",
+                    adapter_id=skill.adapter_id,
+                    reason="Matched hedging task request"
+                )
 
-        return {"status": "standard_reasoning"}
+        return SkillRouteOutcome(status="standard_reasoning")
 
     def _pf_volatility_guardrail(self, context: Dict[str, Any]) -> Dict[str, Any]:
         return {
             "status": "pf_intervention",
             "action": "override_to_hold",
-            "reason": "Volatility exceeded HASP safety threshold (0.3)"
+            "reason": "Volatility exceeded HASP safety threshold (0.3)",
+            "max_leverage": 1.0,
+            "reasoning_context": "CRITICAL_VOLATILITY"
         }
 
 class HASPExecutor:
@@ -269,6 +307,7 @@ class HASPExecutor:
         skill = self.router._registry.get(skill_id)
         if not skill or not skill.executable:
             return {"status": "error", "message": f"Executable skill {skill_id} not found"}
+        return self._execute_skill_program(skill, state)
 
     def _execute_skill_program(self, skill: 'SkillArtifact', state: Dict) -> Dict:
         """Execute a skill program's behavior (HASP), sandboxed in production."""
