@@ -5,20 +5,29 @@ from unittest.mock import MagicMock, AsyncMock
 from trading_bot.core.csc.controller import CognitiveSystemController
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome
 
+class ImmediateDecisionBus:
+    async def propose_action(self, action):
+        from trading_bot.core.unified_event_bus import ActionStatus
+        action.status = ActionStatus.EXECUTED
+        action._completed_event.set()
+
 @pytest.mark.asyncio
 async def test_csc_12_step_pipeline():
     # Mock dependencies
     world_model = MagicMock()
     hms = MagicMock()
+    hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
 
     # Mock Shield to approve
     shield_report = MagicMock()
     from trading_bot.core.immutable_shield import GovernanceDecision
     shield_report.decision = GovernanceDecision.APPROVED
-    shield.validate_action.return_value = shield_report
+    shield.validate_action = AsyncMock(return_value=shield_report)
 
-    controller = CognitiveSystemController(world_model=world_model, hms=hms, shield=shield)
+    # Inject fake bus
+    fake_bus = ImmediateDecisionBus()
+    controller = CognitiveSystemController(world_model=world_model, hms=hms, shield=shield, decision_bus=fake_bus)
 
     # Mock Hypothesis Gen using AsyncMock
     from trading_bot.core.csc.hypothesis import ReasoningBranch, Hypothesis
