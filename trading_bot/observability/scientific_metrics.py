@@ -191,6 +191,16 @@ class ScientificMetrics:
             if self.avg_validation_score > 0.7 and self.confirmed_count < 2:
                 self.bottlenecks_detected.append("PROMOTION_FRICTION")
 
+        # Detect bottlenecks
+        self.bottlenecks_detected = []
+        if total > 20:
+            if self.survival_rate < 0.05:
+                self.bottlenecks_detected.append("GENERATION_NOISE")
+            if self.rejection_rate > 0.8:
+                self.bottlenecks_detected.append("FILTERING_STRICTNESS")
+            if self.avg_validation_score > 0.7 and self.confirmed_count < 2:
+                self.bottlenecks_detected.append("PROMOTION_FRICTION")
+
     def get_summary(self) -> Dict[str, Any]:
         return {
             "survival_rate": self.survival_rate,

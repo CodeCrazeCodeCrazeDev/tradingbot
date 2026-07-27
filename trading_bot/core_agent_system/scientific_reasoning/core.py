@@ -153,6 +153,9 @@ class ScientificReasoningEngine:
                 break
         return hyp_id
 
+    def get_hypothesis(self, hid: str) -> Optional[ScientificHypothesis]:
+        return self.registry.get(hid)
+
     async def observe(self, data: Dict[str, Any]) -> str:
         hyp = ScientificHypothesis(name=f"Obs-{uuid.uuid4().hex[:4]}", state=HypothesisState.OBSERVATION)
         self.registry[hyp.id] = hyp
