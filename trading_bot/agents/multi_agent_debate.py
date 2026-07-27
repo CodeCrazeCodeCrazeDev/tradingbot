@@ -931,6 +931,23 @@ class MultiAgentDebateSystem:
         except Exception as e:
             logger.error(f"Error in __init__: {e}")
             raise
+
+    def seal_adapt_consensus_threshold(self, downstream_utility_reward: float):
+        """
+        Adapts the multi-agent 'consensus_threshold' based on downstream task performance reward
+        using the MIT SEAL paper reinforcement learning adaptation framework.
+        """
+        # Outer loop adjustment
+        # If reward is high (good decisions), keep threshold stable or slightly lower it to speed up consensus.
+        # If reward is low (bad decisions), increase threshold to require higher consensus rigor before trade approval.
+        if downstream_utility_reward < 1.5:
+            # Decisions were sub-optimal -> require stricter consensus
+            self.consensus_threshold = min(self.consensus_threshold + 0.05, 0.95)
+            logger.info(f"SEAL: Downstream decision utility was sub-optimal. Adapted debate consensus threshold to {self.consensus_threshold:.2f} for higher rigor.")
+        else:
+            # Decisions were excellent -> we can slightly lower consensus requirement to save computational cycles
+            self.consensus_threshold = max(self.consensus_threshold - 0.02, 0.50)
+            logger.info(f"SEAL: Downstream decision utility was excellent. Adapted debate consensus threshold to {self.consensus_threshold:.2f} for improved performance.")
     
     async def debate(self, topic: Any, context: Optional[MarketContext] = None) -> FinalDecision:
         """

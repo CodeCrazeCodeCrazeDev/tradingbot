@@ -232,6 +232,33 @@ except ImportError as e:
     logging.getLogger(__name__).debug(f'Optional import failed in research.research_os: {e}')
 
 try:
+    from .research_os_v2 import ResearchWorkspaceV2
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in research.research_os_v2: {e}')
+
+try:
+    from .seal_adapter import (
+        SEALSelfEdit,
+        SEALInnerLoop,
+        SEALOuterLoop,
+        SEALSystem
+    )
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in research.seal_adapter: {e}')
+
+try:
+    from .seal_discovery import (
+        SEALDiscoveryCandidate,
+        SEALSelfEditProposal,
+        SEALDiscoveryEngine
+    )
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in research.seal_discovery: {e}')
+
+try:
     from .research_governance import (
         StrategicMandate,
         ResearchStrategy,
@@ -374,6 +401,14 @@ except ImportError as e:
     logging.getLogger(__name__).debug(f'Optional import failed in research.institution: {e}')
 
 __all__ = [
+    'ResearchWorkspaceV2',
+    'SEALSelfEdit',
+    'SEALInnerLoop',
+    'SEALOuterLoop',
+    'SEALSystem',
+    'SEALDiscoveryCandidate',
+    'SEALSelfEditProposal',
+    'SEALDiscoveryEngine',
     'Hypothesis',
     'ResearchLab',
     'IngestionPipeline',

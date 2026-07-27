@@ -1,4 +1,118 @@
 """
+An institutional-grade, highly rigorous quantitative research and execution operating system.
+Supports SQL persistence, DAG-based lineage tracking, advanced statistical validation
+(Deflated Sharpe Ratio, FDR Benjamini-Hochberg, look-ahead and duplicate filters),
+immutable cryptographic peer-review governance logs, and closed-loop evolutionary tournaments.
+"""
+
+import os
+import json
+import sqlite3
+import hashlib
+import logging
+import numpy as np
+import pandas as pd
+import networkx as nx
+from typing import Dict, Any, List, Optional, Tuple, Union
+from datetime import datetime
+from uuid import uuid4
+
+from ..core.unified_registry import registry as unified_registry
+
+logger = logging.getLogger("AlphaAlgo.ResearchOS_V2")
+
+class ResearchWorkspaceV2:
+    """
+    Authoritative Central Orchestrator for the Quantitative Research Platform (QRP).
+    Evolves the existing Research OS into a modular, SQL-persistent, scientifically rigorous OS.
+    Registered in the Unified Component Registry under component type 'research_operating_system'.
+    """
+
+    def __init__(self, db_path: str = "research.db", target_sharpe: float = 2.0, max_drawdown: float = 8.0) -> None:
+        self.db_path = db_path
+        self.target_sharpe = target_sharpe
+        self.max_drawdown = max_drawdown
+        self._init_db()
+        self._register_with_unified_registry()
+        logger.info(f"ResearchOS-V2: Initialized with database at {self.db_path}")
+
+    # ===========================================================================
+    # 1. SQL-Backed Database Initialization & CRUD
+    # ===========================================================================
+
+    def _init_db(self) -> None:
+        """Initializes all required database tables for institutional storage and governance."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            # Enable WAL mode for high concurrency
+            cursor.execute("PRAGMA journal_mode=WAL;")
+
+            # 1. Projects Table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS projects (
+                    id TEXT PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    objective TEXT,
+                    created_at TEXT NOT NULL,
+                    status TEXT NOT NULL
+                );
+            """)
+
+            # 2. Questions Table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS questions (
+                    id TEXT PRIMARY KEY,
+                    project_id TEXT,
+                    question_text TEXT NOT NULL,
+                    economic_foundation TEXT,
+                    timestamp TEXT NOT NULL,
+                    FOREIGN KEY (project_id) REFERENCES projects(id)
+                );
+            """)
+
+            # 3. Hypotheses Table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS hypotheses (
+                    id TEXT PRIMARY KEY,
+                    question_id TEXT,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    rationale TEXT,
+                    counterparty TEXT,
+                    falsifications TEXT, -- JSON list
+                    status TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (question_id) REFERENCES questions(id)
+                );
+            """)
+
+            # 4. Datasets Table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS datasets (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    path TEXT,
+                    hash_value TEXT NOT NULL,
+                    num_records INTEGER DEFAULT 0,
+                    created_at TEXT NOT NULL
+                );
+            """)
+
+            # 5. Features Table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS features (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    dataset_id TEXT,
+                    formula TEXT,
+                    importance_score REAL DEFAULT 0.0,
+                    timestamp TEXT NOT NULL,
+                    FOREIGN KEY (dataset_id) REFERENCES datasets(id)
+                );
+            """)
+
+            # 6. Experiments Table
+            cursor.execute("""
 AlphaAlgo Research Operating System (V2) - Core Platform.
 Provides durable SQLite registries, NetworkX lineage graphs, Deflated Sharpe Ratio (DSR),
 immutable provenance fingerprinting, multi-baseline strategy evaluation,
