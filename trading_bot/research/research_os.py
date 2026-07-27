@@ -572,6 +572,104 @@ class ResearchWorkspace:
         self.performance_reports: Dict[str, PerformanceReport] = {}
         self.knowledge_entries: Dict[str, KnowledgeEntry] = {}
 
+        # ECIE Integration Backbones
+        self._ecie_pipeline = None
+        self._ecie_governance = None
+
+        # EIP Integration Backbones
+        self._eip_registry = None
+        self._eip_pipeline = None
+        self._eip_eqe = None
+
+        # Introspection Integration Backbones
+        self._introspection_engine = None
+
+        # CSE-CEDA Integration Backbones
+        self._cse_engine = None
+        self._ceda_gate = None
+
+        # Self-Evolution Integration Backbones
+        self._se_mutator = None
+        self._se_gate = None
+        self._se_tournament = None
+
+    def get_ecie_pipeline(self):
+        """Lazy-loads the External Capability Intelligence Engine (ECIE) pipeline."""
+        if self._ecie_pipeline is None:
+            from trading_bot.research.ecie.pipeline import ECIEPipeline
+            self._ecie_pipeline = ECIEPipeline()
+        return self._ecie_pipeline
+
+    def get_ecie_governance(self):
+        """Lazy-loads the ECIE governance gate manager."""
+        if self._ecie_governance is None:
+            from trading_bot.research.ecie.governance import GovernanceGate
+            self._ecie_governance = GovernanceGate(self)
+        return self._ecie_governance
+
+    def get_eip_registry(self):
+        """Lazy-loads the Universal Capability Registry of EIP."""
+        if self._eip_registry is None:
+            from trading_bot.research.eip.registry import UniversalCapabilityRegistry
+            self._eip_registry = UniversalCapabilityRegistry(self)
+        return self._eip_registry
+
+    def get_eip_pipeline(self):
+        """Lazy-loads the shared EIP shared pipeline."""
+        if self._eip_pipeline is None:
+            from trading_bot.research.eip.pipeline import EIPPipeline
+            self._eip_pipeline = EIPPipeline()
+        return self._eip_pipeline
+
+    def get_eip_eqe(self):
+        """Lazy-loads the Evidence Quality Engine of EIP."""
+        if self._eip_eqe is None:
+            from trading_bot.research.eip.eqe import EvidenceQualityEngine
+            self._eip_eqe = EvidenceQualityEngine()
+        return self._eip_eqe
+
+    def get_introspection_engine(self):
+        """Lazy-loads the Introspection Engine."""
+        if self._introspection_engine is None:
+            from trading_bot.research.introspection.core import IntrospectionEngine
+            self._introspection_engine = IntrospectionEngine()
+        return self._introspection_engine
+
+    def get_cse_engine(self):
+        """Lazy-loads the CSE Evolution Engine."""
+        if self._cse_engine is None:
+            from trading_bot.research.cse_ceda import InvariantGatedEvolutionEngine
+            self._cse_engine = InvariantGatedEvolutionEngine(self)
+        return self._cse_engine
+
+    def get_ceda_gate(self):
+        """Lazy-loads the CEDA Decision Gate."""
+        if self._ceda_gate is None:
+            from trading_bot.research.cse_ceda import CEDADecisionGate
+            self._ceda_gate = CEDADecisionGate(self)
+        return self._ceda_gate
+
+    def get_self_evolution_mutator(self):
+        """Lazy-loads the Self-Evolution Controlled Mutator."""
+        if self._se_mutator is None:
+            from trading_bot.research.self_evolution.mutator import ControlledMutator
+            self._se_mutator = ControlledMutator()
+        return self._se_mutator
+
+    def get_self_evolution_gate(self):
+        """Lazy-loads the Self-Evolution Invariant Gate."""
+        if self._se_gate is None:
+            from trading_bot.research.self_evolution.gate import InvariantGate
+            self._se_gate = InvariantGate()
+        return self._se_gate
+
+    def get_self_evolution_tournament(self, regimes: List[str]):
+        """Lazy-loads the Self-Evolution Regime Tournament manager."""
+        if self._se_tournament is None:
+            from trading_bot.research.self_evolution.tournament import RegimeTournament
+            self._se_tournament = RegimeTournament(regimes)
+        return self._se_tournament
+
     def create_project(self, title: str, objective: str) -> ResearchProject:
         """Starts a new quantitative research project on the platform."""
         project = ResearchProject(title=title, objective=objective)
