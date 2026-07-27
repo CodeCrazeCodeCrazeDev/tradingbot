@@ -24,6 +24,7 @@ from enum import Enum
 from abc import ABC, abstractmethod
 import uuid
 from trading_bot.execution.trade_executor import TradeExecutor, Order, OrderType, OrderSide
+from trading_bot.core.unified_registry import registry
 
 logger = logging.getLogger(__name__)
 
@@ -180,9 +181,9 @@ class BaseAgent(ABC):
                 'operation': operation,
                 'task_id': task_id,
                 'description': description,
-                'context': metadata,
-                'data': metadata,
-                'metadata': metadata
+                'context': metadata if isinstance(metadata, dict) else {'task_data': metadata},
+                'data': metadata if isinstance(metadata, dict) else {'task_data': metadata},
+                'metadata': metadata if isinstance(metadata, dict) else {'task_data': metadata}
             }
 
             result = await self.execute(action)
@@ -309,7 +310,10 @@ class AgentRegistry:
         self.config = config
         self.object_registry = object_registry
         
-        # Agent storage
+        # Use Unified Registry for storage
+        self.unified_registry = registry
+
+        # Internal cache for fast lookup (subset of Unified Registry)
         self.agents: Dict[str, BaseAgent] = {}
         
         # Capability index for fast lookup
@@ -329,7 +333,7 @@ class AgentRegistry:
         
         self.running = False
         
-        logger.info("Agent Registry initialized")
+        logger.info("Agent Registry initialized (bridged to Unified Registry)")
     
     async def initialize(self):
         """Initialize the registry"""
@@ -364,7 +368,19 @@ class AgentRegistry:
         if agent.status == AgentStatus.INITIALIZING:
             await agent.initialize()
         
-        # Store agent
+        # Store in Unified Registry
+        self.unified_registry.register(
+            name=agent.agent_id,
+            component=agent,
+            component_type="agent",
+            metadata={
+                "name": agent.name,
+                "role": agent.role.value,
+                "capabilities": [c.name for c in agent.capabilities]
+            }
+        )
+
+        # Update local cache for backward compatibility
         self.agents[agent.agent_id] = agent
         
         # Index by role
@@ -647,6 +663,8 @@ class PlannerAgent(BaseAgent):
             return await self._generate_proposal(context)
         elif operation == 'analyze':
             data = action.get('data', {})
+            if not data or len(data) <= 1: # Might only have task_id or similar
+                data = action.get('context', {}).get('market_state', action.get('context', {}))
             return await self._analyze(data)
         elif operation == 'execute_task':
             # For general tasks, we can try to propose based on metadata
@@ -865,6 +883,12 @@ class EvaluatorAgent(BaseAgent):
         operation = action.get('operation', 'evaluate')
         
         if operation in ['evaluate', 'evaluation', 'analyze', 'reporting', 'report']:
+            # Robust data gathering for evaluation
+            if operation == 'analyze' and (not action.get('trade') or not action.get('outcome')):
+                data = action.get('data', {})
+                if not data or len(data) <= 1:
+                    data = action.get('context', {})
+                return await self._evaluate(data)
             return await self._evaluate(action)
         elif operation in ['backtest', 'backtesting']:
             return await self._backtest(action)
@@ -942,6 +966,12 @@ class ResearchAgent(BaseAgent):
         operation = action.get('operation', 'research')
         
         if operation in ['research', 'analyze', 'analysis']:
+            # Robust data gathering for research/analysis
+            if operation == 'analyze' and not action.get('topic'):
+                data = action.get('data', {})
+                if not data or len(data) <= 1:
+                    data = action.get('context', {})
+                return await self._research(data)
             return await self._research(action)
         elif operation in ['discover', 'discovery']:
             return await self._discover(action)
@@ -1007,7 +1037,7 @@ class SafetyAgent(BaseAgent):
         """Execute safety check"""
         operation = action.get('operation', 'check')
         
-        if operation == 'check':
+        if operation in ['check', 'analyze']:
             return await self._safety_check(action)
         elif operation == 'verify':
             return await self._verify(action)

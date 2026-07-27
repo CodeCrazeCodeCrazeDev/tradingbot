@@ -9,6 +9,7 @@ Author: AlphaAlgo Trading System
 Version: 1.0.0
 """
 
+import asyncio
 import subprocess
 import sys
 import importlib
@@ -215,7 +216,7 @@ class AutoDependencyInstaller:
             
             return False
     
-    def scan_imports(self) -> Set[str]:
+    async def scan_imports(self) -> Set[str]:
         """Scan all Python files for import statements"""
         imports = set()
         
@@ -240,9 +241,9 @@ class AutoDependencyInstaller:
             if any(skip in str(py_file) for skip in ['__pycache__', 'backup', '.git']):
                 continue
             try:
-            
-                with open(py_file, 'r', encoding='utf-8', errors='ignore') as f:
-                    content = f.read()
+                import aiofiles
+                async with aiofiles.open(py_file, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = await f.read()
                 
                 # Find import statements - more precise patterns
                 # Pattern 1: import xxx (at start of line, not in string/comment)
@@ -265,10 +266,10 @@ class AutoDependencyInstaller:
         
         return imports
     
-    def get_missing_packages(self) -> List[str]:
+    async def get_missing_packages(self) -> List[str]:
         """Get list of missing packages"""
         self.log("Scanning codebase for imports...")
-        imports = self.scan_imports()
+        imports = await self.scan_imports()
         
         self.log(f"Found {len(imports)} unique imports")
         
@@ -331,14 +332,14 @@ class AutoDependencyInstaller:
             self.failed_packages.add(package_name)
             return False
     
-    def install_all_missing(self) -> Tuple[int, int, int]:
+    async def install_all_missing(self) -> Tuple[int, int, int]:
         """
         Install all missing packages
         
         Returns:
             Tuple of (installed_count, failed_count, skipped_count)
         """
-        missing = self.get_missing_packages()
+        missing = await self.get_missing_packages()
         
         if not missing:
             self.log("All dependencies are already installed!", "success")
@@ -410,7 +411,7 @@ class AutoDependencyInstaller:
         except Exception:
             return False
     
-    def full_install(self) -> bool:
+    async def full_install(self) -> bool:
         """
         Perform full dependency installation:
         1. Upgrade pip
@@ -428,13 +429,13 @@ class AutoDependencyInstaller:
         self.install_core_requirements()
         
         # Step 3: Scan and install missing
-        installed, failed, skipped = self.install_all_missing()
+        installed, failed, skipped = await self.install_all_missing()
         
         # Return True if no critical failures
         return failed == 0
 
 
-def install_dependencies(base_path: str = None, verbose: bool = True) -> bool:
+async def install_dependencies(base_path: str = None, verbose: bool = True) -> bool:
     """
     Convenience function to install all dependencies
     
@@ -446,10 +447,10 @@ def install_dependencies(base_path: str = None, verbose: bool = True) -> bool:
         True if all critical dependencies installed successfully
     """
     installer = AutoDependencyInstaller(base_path, verbose)
-    return installer.full_install()
+    return await installer.full_install()
 
 
-def check_dependencies(base_path: str = None) -> List[str]:
+async def check_dependencies(base_path: str = None) -> List[str]:
     """
     Check for missing dependencies without installing
     
@@ -457,7 +458,7 @@ def check_dependencies(base_path: str = None) -> List[str]:
         List of missing package names
     """
     installer = AutoDependencyInstaller(base_path, verbose=False)
-    return installer.get_missing_packages()
+    return await installer.get_missing_packages()
 
 
 # ============================================================================
@@ -478,7 +479,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     if args.check:
-        missing = check_dependencies(args.path)
+        missing = asyncio.run(check_dependencies(args.path))
         if missing:
             print(f"Missing packages ({len(missing)}):")
             for pkg in sorted(missing):
@@ -488,5 +489,5 @@ if __name__ == "__main__":
             print("All dependencies installed!")
             sys.exit(0)
     else:
-        success = install_dependencies(args.path, not args.quiet)
+        success = asyncio.run(install_dependencies(args.path, not args.quiet))
         sys.exit(0 if success else 1)

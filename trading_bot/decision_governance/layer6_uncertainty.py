@@ -10,6 +10,8 @@ Outputs:
 - confidence under distribution shift
 """
 
+from collections import defaultdict
+import numpy as np
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
 from dataclasses import dataclass, field

@@ -10,7 +10,7 @@ Responsibilities:
 """
 
 import numpy as np
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass, asdict
 from datetime import datetime
 import logging
@@ -270,11 +270,12 @@ class PlannerAgent:
             logger.error(f"Error in _calculate_trend_strength: {e}")
             raise
     
-    def propose_trade(
+    async def propose_trade(
         self,
         symbol: str,
         market_data: Dict,
-        current_equity: float = 10000.0
+        current_equity: float = 10000.0,
+        skill_router: Optional[Any] = None
     ) -> Optional[TradeProposal]:
         """
         Propose a trade based on analysis
@@ -290,7 +291,18 @@ class PlannerAgent:
         # Rate limiting
         try:
             self._check_rate_limit()
-        
+
+            # UCA V4: Routing through Skill Programs (HASP)
+            if skill_router:
+                routing_result = await skill_router.route_task(
+                    agent_id="planner_v4",
+                    task=f"propose_trade_{symbol}",
+                    context={'market': market_data}
+                )
+                if routing_result.get('status') == 'pf_intervention':
+                    logger.warning(f"Planner: HASP intervention - {routing_result.get('reason')}")
+                    return None
+
             # Analyze market
             analysis = self.analyze_market(market_data)
         

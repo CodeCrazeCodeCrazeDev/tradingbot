@@ -162,23 +162,23 @@
     "last_accessed": null
   },
   "coordination_pattern_hierarchical": {
-    "memory_id": "df1e1005-d365-41d8-a3ba-b114ddb460a3",
+    "memory_id": "7160e3be-dadd-4b59-b89e-9dac51f15189",
     "memory_type": "semantic",
     "content": {
       "total_uses": 1,
       "successes": 1,
-      "avg_duration": 0.001459,
+      "avg_duration": 0.001618,
       "avg_efficiency": 1.0,
       "avg_quality": 0.8
     },
     "metadata": {
       "key": "coordination_pattern_hierarchical",
       "related": [
-        "task_type_<Task pending name='Task-1' coro=<run_all() running at /app/tests/core_agent_system/run.py:22> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>"
+        "task_type_<Task pending name='Task-1' coro=<test_integrated_system_flow() running at /app/tests/core_agent_system/test_integration.py:19> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-30T01:10:44.160056",
+    "timestamp": "2026-07-04T06:47:14.118894",
     "access_count": 0,
     "last_accessed": null
   },
@@ -881,6 +881,801 @@
     },
     "importance": 0.5,
     "timestamp": "2026-06-30T01:10:44.157935",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_react_reasoner_1_1a98b8b4": {
+    "memory_id": "437654d2-bf0e-4d8d-b6ba-e60f04119488",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "react_reasoner_1_1a98b8b4",
+      "name": "MainReasoner",
+      "archetype": "react_reasoner",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-03T01:02:19.336363"
+    },
+    "metadata": {
+      "key": "agent_react_reasoner_1_1a98b8b4",
+      "related": [
+        "dynamic_agents",
+        "react_reasoner"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-03T01:02:19.336639",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_constitutional_guardian_1_57cbb497": {
+    "memory_id": "3a765a17-dfb3-4741-85fa-92bbf85ea58f",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "constitutional_guardian_1_57cbb497",
+      "name": "SafetyGuardian",
+      "archetype": "constitutional_guardian",
+      "role": "safety",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-03T01:02:19.336796"
+    },
+    "metadata": {
+      "key": "agent_constitutional_guardian_1_57cbb497",
+      "related": [
+        "dynamic_agents",
+        "constitutional_guardian"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-03T01:02:19.337075",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_analyst_1_e8b2d4fc": {
+    "memory_id": "8c542be8-d238-4764-b867-2f40846b9cfa",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "analyst_1_e8b2d4fc",
+      "name": "MarketAnalyst",
+      "archetype": "analyst",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-03T01:02:19.337268"
+    },
+    "metadata": {
+      "key": "agent_analyst_1_e8b2d4fc",
+      "related": [
+        "dynamic_agents",
+        "analyst"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-03T01:02:19.337469",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_monitor_1_4d8c0d08": {
+    "memory_id": "ccd6d7cd-da8b-4691-affc-82cd89ac878c",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "monitor_1_4d8c0d08",
+      "name": "SystemMonitor",
+      "archetype": "monitor",
+      "role": "monitor",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-03T01:02:19.337614"
+    },
+    "metadata": {
+      "key": "agent_monitor_1_4d8c0d08",
+      "related": [
+        "dynamic_agents",
+        "monitor"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-03T01:02:19.337786",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "obs_trace_80157332": {
+    "memory_id": "f78197c4-7539-4353-9039-a81ef083e898",
+    "memory_type": "semantic",
+    "content": {
+      "selected_workflow": "standard_analysis_v1",
+      "workflow_trace": [
+        {
+          "node": "start",
+          "type": "decompose",
+          "result": {
+            "success": true,
+            "task_id": "<Task pending name='Task-1' coro=<test_integrated_system_flow() running at /app/tests/core_agent_system/test_integration.py:19> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>",
+            "subtasks_completed": 1,
+            "duration": 0.001424,
+            "efficiency": 1.0,
+            "results": [
+              {
+                "success": true,
+                "result": null,
+                "reasoning": "=== ReAct Trace: Analyze market and provide a clear buy/sell/hold signal with reasoning ===\nStep 1: THOUGHT [assessment]: Task: Analyze market and provide a clear buy/sell/hold signal with reasoning. Current market shows price=unknown, volatility=unknown. Portfolio has equity=unknown, exposure=unknown. I need to analyze the situation and determine the best course of action.\nStep 2: ACTION [market_data]: {'symbol': 'EURUSD'}\nStep 3: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-03T01:02:19.339343'}\nStep 4: THOUGHT [planning]: Previous action succeeded with result: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-03T01:02:19.339343'}. Based on this, I should proceed with the next step towards: Analyze market and provide a clear buy/sell/hold signal with reasoning.\nStep 5: ACTION [strategy_analyzer]: {'analysis_type': 'signal', 'market_data': {}}\nStep 6: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'Unknown', 'signal': 'buy', 'confidence': 0.7, 'reasoning': 'Bullish trend with momentum confirmation for Unknown'}",
+                "iterations": 6,
+                "agent_id": "react_reasoner_1_1a98b8b4",
+                "agent_name": "MainReasoner",
+                "quality": 0.8
+              }
+            ]
+          }
+        },
+        {
+          "node": "end",
+          "type": "conclude",
+          "result": {
+            "success": true,
+            "concluded": true
+          }
+        }
+      ],
+      "activated_agents": [],
+      "tools_used": [],
+      "duration": 0.001827,
+      "success": true
+    },
+    "metadata": {
+      "key": "obs_trace_80157332",
+      "related": []
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-03T01:02:19.339957",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_react_reasoner_1_2f58cbf3": {
+    "memory_id": "6c39ba97-b532-4785-951c-79e4fc87758a",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "react_reasoner_1_2f58cbf3",
+      "name": "MainReasoner",
+      "archetype": "react_reasoner",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-03T01:11:18.652668"
+    },
+    "metadata": {
+      "key": "agent_react_reasoner_1_2f58cbf3",
+      "related": [
+        "dynamic_agents",
+        "react_reasoner"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-03T01:11:18.653013",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_constitutional_guardian_1_4723ae6d": {
+    "memory_id": "14b6ac39-39fe-4e66-9dfc-3580a469fe26",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "constitutional_guardian_1_4723ae6d",
+      "name": "SafetyGuardian",
+      "archetype": "constitutional_guardian",
+      "role": "safety",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-03T01:11:18.653306"
+    },
+    "metadata": {
+      "key": "agent_constitutional_guardian_1_4723ae6d",
+      "related": [
+        "dynamic_agents",
+        "constitutional_guardian"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-03T01:11:18.653552",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_analyst_1_2a1f027a": {
+    "memory_id": "2876bd1f-e7f9-41fa-9afd-90818b2a6950",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "analyst_1_2a1f027a",
+      "name": "MarketAnalyst",
+      "archetype": "analyst",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-03T01:11:18.653708"
+    },
+    "metadata": {
+      "key": "agent_analyst_1_2a1f027a",
+      "related": [
+        "dynamic_agents",
+        "analyst"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-03T01:11:18.653902",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_monitor_1_1c4a8b2a": {
+    "memory_id": "3c685457-dbb7-41fe-b832-9a7e482c2d47",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "monitor_1_1c4a8b2a",
+      "name": "SystemMonitor",
+      "archetype": "monitor",
+      "role": "monitor",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-03T01:11:18.654051"
+    },
+    "metadata": {
+      "key": "agent_monitor_1_1c4a8b2a",
+      "related": [
+        "dynamic_agents",
+        "monitor"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-03T01:11:18.654296",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "obs_trace_83b18739": {
+    "memory_id": "58cbb45a-62c6-4995-b4a9-b01436fd7849",
+    "memory_type": "semantic",
+    "content": {
+      "selected_workflow": "standard_analysis_v1",
+      "workflow_trace": [
+        {
+          "node": "start",
+          "type": "decompose",
+          "result": {
+            "success": true,
+            "task_id": "<Task pending name='Task-1' coro=<test_integrated_system_flow() running at /app/tests/core_agent_system/test_integration.py:19> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>",
+            "subtasks_completed": 1,
+            "duration": 0.001867,
+            "efficiency": 1.0,
+            "results": [
+              {
+                "success": true,
+                "result": null,
+                "reasoning": "=== ReAct Trace: Analyze market and provide a clear buy/sell/hold signal with reasoning ===\nStep 1: THOUGHT [assessment]: Task: Analyze market and provide a clear buy/sell/hold signal with reasoning. Current market shows price=unknown, volatility=unknown. Portfolio has equity=unknown, exposure=unknown. I need to analyze the situation and determine the best course of action.\nStep 2: ACTION [market_data]: {'symbol': 'EURUSD'}\nStep 3: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-03T01:11:18.656348'}\nStep 4: THOUGHT [planning]: Previous action succeeded with result: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-03T01:11:18.656348'}. Based on this, I should proceed with the next step towards: Analyze market and provide a clear buy/sell/hold signal with reasoning.\nStep 5: ACTION [strategy_analyzer]: {'analysis_type': 'signal', 'market_data': {}}\nStep 6: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'Unknown', 'signal': 'buy', 'confidence': 0.7, 'reasoning': 'Bullish trend with momentum confirmation for Unknown'}",
+                "iterations": 6,
+                "agent_id": "react_reasoner_1_2f58cbf3",
+                "agent_name": "MainReasoner",
+                "quality": 0.8
+              }
+            ]
+          }
+        },
+        {
+          "node": "end",
+          "type": "conclude",
+          "result": {
+            "success": true,
+            "concluded": true
+          }
+        }
+      ],
+      "activated_agents": [],
+      "tools_used": [],
+      "duration": 0.002287,
+      "success": true
+    },
+    "metadata": {
+      "key": "obs_trace_83b18739",
+      "related": []
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-03T01:11:18.656995",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_react_reasoner_1_98bce014": {
+    "memory_id": "940e0507-ca32-4210-86c5-b19c40ecc711",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "react_reasoner_1_98bce014",
+      "name": "MainReasoner",
+      "archetype": "react_reasoner",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-03T01:12:09.975662"
+    },
+    "metadata": {
+      "key": "agent_react_reasoner_1_98bce014",
+      "related": [
+        "dynamic_agents",
+        "react_reasoner"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-03T01:12:09.975961",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_constitutional_guardian_1_b1a6e7a7": {
+    "memory_id": "20aaf981-61be-424c-b258-36006be1044f",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "constitutional_guardian_1_b1a6e7a7",
+      "name": "SafetyGuardian",
+      "archetype": "constitutional_guardian",
+      "role": "safety",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-03T01:12:09.976187"
+    },
+    "metadata": {
+      "key": "agent_constitutional_guardian_1_b1a6e7a7",
+      "related": [
+        "dynamic_agents",
+        "constitutional_guardian"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-03T01:12:09.976428",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_analyst_1_70d6e682": {
+    "memory_id": "03f7f746-f503-43d3-9209-b4bd8bcb2685",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "analyst_1_70d6e682",
+      "name": "MarketAnalyst",
+      "archetype": "analyst",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-03T01:12:09.976613"
+    },
+    "metadata": {
+      "key": "agent_analyst_1_70d6e682",
+      "related": [
+        "dynamic_agents",
+        "analyst"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-03T01:12:09.976810",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_monitor_1_d49e322e": {
+    "memory_id": "722634b7-febd-4b2a-b799-2773a712eb12",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "monitor_1_d49e322e",
+      "name": "SystemMonitor",
+      "archetype": "monitor",
+      "role": "monitor",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-03T01:12:09.976992"
+    },
+    "metadata": {
+      "key": "agent_monitor_1_d49e322e",
+      "related": [
+        "dynamic_agents",
+        "monitor"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-03T01:12:09.977365",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "obs_trace_1a6fe2ce": {
+    "memory_id": "a03e466f-67e2-4055-89fa-64b455037b22",
+    "memory_type": "semantic",
+    "content": {
+      "selected_workflow": "standard_analysis_v1",
+      "workflow_trace": [
+        {
+          "node": "start",
+          "type": "decompose",
+          "result": {
+            "success": true,
+            "task_id": "<Task pending name='Task-1' coro=<test_integrated_system_flow() running at /app/tests/core_agent_system/test_integration.py:19> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>",
+            "subtasks_completed": 1,
+            "duration": 0.002019,
+            "efficiency": 1.0,
+            "results": [
+              {
+                "success": true,
+                "result": null,
+                "reasoning": "=== ReAct Trace: Analyze market and provide a clear buy/sell/hold signal with reasoning ===\nStep 1: THOUGHT [assessment]: Task: Analyze market and provide a clear buy/sell/hold signal with reasoning. Current market shows price=unknown, volatility=unknown. Portfolio has equity=unknown, exposure=unknown. I need to analyze the situation and determine the best course of action.\nStep 2: ACTION [market_data]: {'symbol': 'EURUSD'}\nStep 3: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-03T01:12:09.979577'}\nStep 4: THOUGHT [planning]: Previous action succeeded with result: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-03T01:12:09.979577'}. Based on this, I should proceed with the next step towards: Analyze market and provide a clear buy/sell/hold signal with reasoning.\nStep 5: ACTION [strategy_analyzer]: {'analysis_type': 'signal', 'market_data': {}}\nStep 6: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'Unknown', 'signal': 'buy', 'confidence': 0.7, 'reasoning': 'Bullish trend with momentum confirmation for Unknown'}",
+                "iterations": 6,
+                "agent_id": "react_reasoner_1_98bce014",
+                "agent_name": "MainReasoner",
+                "quality": 0.8
+              }
+            ]
+          }
+        },
+        {
+          "node": "end",
+          "type": "conclude",
+          "result": {
+            "success": true,
+            "concluded": true
+          }
+        }
+      ],
+      "activated_agents": [],
+      "tools_used": [],
+      "duration": 0.002603,
+      "success": true
+    },
+    "metadata": {
+      "key": "obs_trace_1a6fe2ce",
+      "related": []
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-03T01:12:09.980475",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_react_reasoner_1_fa98860e": {
+    "memory_id": "939678b3-ab09-43a1-a58a-374f67491941",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "react_reasoner_1_fa98860e",
+      "name": "MainReasoner",
+      "archetype": "react_reasoner",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-04T06:37:05.536374"
+    },
+    "metadata": {
+      "key": "agent_react_reasoner_1_fa98860e",
+      "related": [
+        "dynamic_agents",
+        "react_reasoner"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-04T06:37:05.536805",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_constitutional_guardian_1_63c3aa01": {
+    "memory_id": "c097f820-c87d-4f0b-85be-03b63ecabfd1",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "constitutional_guardian_1_63c3aa01",
+      "name": "SafetyGuardian",
+      "archetype": "constitutional_guardian",
+      "role": "safety",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-04T06:37:05.537067"
+    },
+    "metadata": {
+      "key": "agent_constitutional_guardian_1_63c3aa01",
+      "related": [
+        "dynamic_agents",
+        "constitutional_guardian"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-04T06:37:05.537521",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_analyst_1_3346e210": {
+    "memory_id": "2c68c7f1-5aba-4388-92d6-53c8873cd175",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "analyst_1_3346e210",
+      "name": "MarketAnalyst",
+      "archetype": "analyst",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-04T06:37:05.537857"
+    },
+    "metadata": {
+      "key": "agent_analyst_1_3346e210",
+      "related": [
+        "dynamic_agents",
+        "analyst"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-04T06:37:05.538062",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_monitor_1_1660f1e1": {
+    "memory_id": "90932ccb-2ce2-4ec5-bfdb-aa589d0f2587",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "monitor_1_1660f1e1",
+      "name": "SystemMonitor",
+      "archetype": "monitor",
+      "role": "monitor",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-04T06:37:05.538242"
+    },
+    "metadata": {
+      "key": "agent_monitor_1_1660f1e1",
+      "related": [
+        "dynamic_agents",
+        "monitor"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-04T06:37:05.538446",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "obs_trace_e5d2e041": {
+    "memory_id": "bb66fc41-92aa-441d-93e8-2584c75feb4c",
+    "memory_type": "semantic",
+    "content": {
+      "selected_workflow": "standard_analysis_v1",
+      "workflow_trace": [
+        {
+          "node": "start",
+          "type": "decompose",
+          "result": {
+            "success": true,
+            "task_id": "<Task pending name='Task-1' coro=<test_integrated_system_flow() running at /app/tests/core_agent_system/test_integration.py:19> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>",
+            "subtasks_completed": 1,
+            "duration": 0.002433,
+            "efficiency": 1.0,
+            "results": [
+              {
+                "success": true,
+                "result": null,
+                "reasoning": "=== ReAct Trace: Analyze market and provide a clear buy/sell/hold signal with reasoning ===\nStep 1: THOUGHT [assessment]: Task: Analyze market and provide a clear buy/sell/hold signal with reasoning. Current market shows price=unknown, volatility=unknown. Portfolio has equity=unknown, exposure=unknown. I need to analyze the situation and determine the best course of action.\nStep 2: ACTION [market_data]: {'symbol': 'EURUSD'}\nStep 3: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-04T06:37:05.541075'}\nStep 4: THOUGHT [planning]: Previous action succeeded with result: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-04T06:37:05.541075'}. Based on this, I should proceed with the next step towards: Analyze market and provide a clear buy/sell/hold signal with reasoning.\nStep 5: ACTION [strategy_analyzer]: {'analysis_type': 'signal', 'market_data': {}}\nStep 6: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'Unknown', 'signal': 'buy', 'confidence': 0.7, 'reasoning': 'Bullish trend with momentum confirmation for Unknown'}",
+                "iterations": 6,
+                "agent_id": "react_reasoner_1_fa98860e",
+                "agent_name": "MainReasoner",
+                "quality": 0.8
+              }
+            ]
+          }
+        },
+        {
+          "node": "end",
+          "type": "conclude",
+          "result": {
+            "success": true,
+            "concluded": true
+          }
+        }
+      ],
+      "activated_agents": [],
+      "tools_used": [],
+      "duration": 0.003097,
+      "success": true
+    },
+    "metadata": {
+      "key": "obs_trace_e5d2e041",
+      "related": []
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-04T06:37:05.542062",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_react_reasoner_1_978c0313": {
+    "memory_id": "fe6189aa-667f-4e22-8451-8e217f598006",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "react_reasoner_1_978c0313",
+      "name": "MainReasoner",
+      "archetype": "react_reasoner",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-04T06:47:14.114471"
+    },
+    "metadata": {
+      "key": "agent_react_reasoner_1_978c0313",
+      "related": [
+        "dynamic_agents",
+        "react_reasoner"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-04T06:47:14.114762",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_constitutional_guardian_1_0475078d": {
+    "memory_id": "9cfd8022-1744-4d77-8378-5a52f9c4647f",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "constitutional_guardian_1_0475078d",
+      "name": "SafetyGuardian",
+      "archetype": "constitutional_guardian",
+      "role": "safety",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-04T06:47:14.115051"
+    },
+    "metadata": {
+      "key": "agent_constitutional_guardian_1_0475078d",
+      "related": [
+        "dynamic_agents",
+        "constitutional_guardian"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-04T06:47:14.115323",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_analyst_1_8adbef9d": {
+    "memory_id": "56f94f62-bdab-408f-8159-74ae1ce80f4b",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "analyst_1_8adbef9d",
+      "name": "MarketAnalyst",
+      "archetype": "analyst",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-04T06:47:14.115676"
+    },
+    "metadata": {
+      "key": "agent_analyst_1_8adbef9d",
+      "related": [
+        "dynamic_agents",
+        "analyst"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-04T06:47:14.116080",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_monitor_1_2a50f719": {
+    "memory_id": "3b8d832f-d5fc-4bcf-98dc-82a93277424f",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "monitor_1_2a50f719",
+      "name": "SystemMonitor",
+      "archetype": "monitor",
+      "role": "monitor",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-04T06:47:14.116232"
+    },
+    "metadata": {
+      "key": "agent_monitor_1_2a50f719",
+      "related": [
+        "dynamic_agents",
+        "monitor"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-04T06:47:14.116471",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "obs_trace_09bf41bd": {
+    "memory_id": "f433aa65-db86-403f-866a-984ef9129fff",
+    "memory_type": "semantic",
+    "content": {
+      "selected_workflow": "standard_analysis_v1",
+      "workflow_trace": [
+        {
+          "node": "start",
+          "type": "decompose",
+          "result": {
+            "success": true,
+            "task_id": "<Task pending name='Task-1' coro=<test_integrated_system_flow() running at /app/tests/core_agent_system/test_integration.py:19> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>",
+            "subtasks_completed": 1,
+            "duration": 0.001618,
+            "efficiency": 1.0,
+            "results": [
+              {
+                "success": true,
+                "result": null,
+                "reasoning": "=== ReAct Trace: Analyze market and provide a clear buy/sell/hold signal with reasoning ===\nStep 1: THOUGHT [assessment]: Task: Analyze market and provide a clear buy/sell/hold signal with reasoning. Current market shows price=unknown, volatility=unknown. Portfolio has equity=unknown, exposure=unknown. I need to analyze the situation and determine the best course of action.\nStep 2: ACTION [market_data]: {'symbol': 'EURUSD'}\nStep 3: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-04T06:47:14.118087'}\nStep 4: THOUGHT [planning]: Previous action succeeded with result: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-04T06:47:14.118087'}. Based on this, I should proceed with the next step towards: Analyze market and provide a clear buy/sell/hold signal with reasoning.\nStep 5: ACTION [strategy_analyzer]: {'analysis_type': 'signal', 'market_data': {}}\nStep 6: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'Unknown', 'signal': 'buy', 'confidence': 0.7, 'reasoning': 'Bullish trend with momentum confirmation for Unknown'}",
+                "iterations": 6,
+                "agent_id": "react_reasoner_1_978c0313",
+                "agent_name": "MainReasoner",
+                "quality": 0.8
+              }
+            ]
+          }
+        },
+        {
+          "node": "end",
+          "type": "conclude",
+          "result": {
+            "success": true,
+            "concluded": true
+          }
+        }
+      ],
+      "activated_agents": [],
+      "tools_used": [],
+      "duration": 0.002312,
+      "success": true
+    },
+    "metadata": {
+      "key": "obs_trace_09bf41bd",
+      "related": []
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-04T06:47:14.119084",
     "access_count": 0,
     "last_accessed": null
   }

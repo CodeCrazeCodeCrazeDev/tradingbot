@@ -23,6 +23,7 @@ from enum import Enum
 from abc import ABC, abstractmethod
 import uuid
 import json
+from trading_bot.core.unified_registry import registry
 
 logger = logging.getLogger(__name__)
 
@@ -260,6 +261,9 @@ class ToolRegistry:
         self.config = config or {}
         self.object_registry = object_registry
         
+        # Use Unified Registry for storage
+        self.unified_registry = registry
+
         # Tool storage
         self.tools: Dict[str, BaseTool] = {}
         
@@ -271,7 +275,7 @@ class ToolRegistry:
         # Tool factories for dynamic creation
         self.tool_factories: Dict[str, Type[BaseTool]] = {}
         
-        logger.info("Tool Registry initialized")
+        logger.info("Tool Registry initialized (bridged to Unified Registry)")
     
     async def initialize(self):
         """Initialize the registry with default tools"""
@@ -299,6 +303,18 @@ class ToolRegistry:
     
     async def register_tool(self, tool: BaseTool) -> str:
         """Register a tool"""
+        # Store in Unified Registry
+        self.unified_registry.register(
+            name=tool.name,
+            component=tool,
+            component_type="tool",
+            metadata={
+                "category": tool.category.value,
+                "permission": tool.permission.value,
+                "description": tool.description
+            }
+        )
+
         self.tools[tool.name] = tool
         self.category_index[tool.category].append(tool.name)
         

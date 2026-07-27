@@ -1,0 +1,107 @@
+{
+  "timestamp": "2026-07-05T09:57:00.542772",
+  "status": "SECURE",
+  "total_issues": 11,
+  "issues_by_severity": {
+    "critical": 0,
+    "high": 0,
+    "medium": 11,
+    "low": 0
+  },
+  "issues": {
+    "critical": [],
+    "high": [],
+    "medium": [
+      {
+        "category": "Unsafe Code",
+        "description": "Dynamic import",
+        "file": "/app/scripts/validation/comprehensive_qa_validation.py",
+        "line": 122,
+        "code": "__import__('sklearn')",
+        "timestamp": "2026-07-05T09:57:00.329203"
+      },
+      {
+        "category": "Unsafe Code",
+        "description": "Dynamic import",
+        "file": "/app/scripts/validation/comprehensive_qa_validation.py",
+        "line": 124,
+        "code": "__import__('yaml')",
+        "timestamp": "2026-07-05T09:57:00.329235"
+      },
+      {
+        "category": "Unsafe Code",
+        "description": "Dynamic import",
+        "file": "/app/scripts/validation/comprehensive_qa_validation.py",
+        "line": 126,
+        "code": "__import__(package)",
+        "timestamp": "2026-07-05T09:57:00.329246"
+      },
+      {
+        "category": "Unsafe Code",
+        "description": "Dynamic import",
+        "file": "/app/scripts/validation/auto_complete_validation.py",
+        "line": 307,
+        "code": "__import__(module)",
+        "timestamp": "2026-07-05T09:57:00.372155"
+      },
+      {
+        "category": "Unsafe Code",
+        "description": "Unsafe exec() usage",
+        "file": "/app/scripts/validation/validate_critical_fixes.py",
+        "line": 51,
+        "code": "exec(import_stmt)",
+        "timestamp": "2026-07-05T09:57:00.398985"
+      },
+      {
+        "category": "Unsafe Code",
+        "description": "Dynamic import",
+        "file": "/app/scripts/validation/comprehensive_validation.py",
+        "line": 239,
+        "code": "__import__(package)",
+        "timestamp": "2026-07-05T09:57:00.422570"
+      },
+      {
+        "category": "Unsafe Code",
+        "description": "Dynamic import",
+        "file": "/app/scripts/validation/comprehensive_validation.py",
+        "line": 285,
+        "code": "module = __import__(module_name, fromlist=[class_name])",
+        "timestamp": "2026-07-05T09:57:00.422737"
+      },
+      {
+        "category": "Unsafe Code",
+        "description": "Dynamic import",
+        "file": "/app/scripts/validation/run_full_validation.py",
+        "line": 71,
+        "code": "__import__(package.replace('-', '_'))",
+        "timestamp": "2026-07-05T09:57:00.466385"
+      },
+      {
+        "category": "Unsafe Code",
+        "description": "Dynamic import",
+        "file": "/app/scripts/validation/FINAL_VALIDATION.py",
+        "line": 68,
+        "code": "mod = __import__(module, fromlist=classes)",
+        "timestamp": "2026-07-05T09:57:00.531947"
+      },
+      {
+        "category": "Unsafe Code",
+        "description": "Unsafe eval() usage",
+        "file": "/app/scripts/validation/security_audit_comprehensive.py",
+        "line": 52,
+        "code": "(r'eval\\(', 'Unsafe eval() usage'),",
+        "timestamp": "2026-07-05T09:57:00.538139"
+      },
+      {
+        "category": "Unsafe Code",
+        "description": "Unsafe exec() usage",
+        "file": "/app/scripts/validation/security_audit_comprehensive.py",
+        "line": 53,
+        "code": "(r'exec\\(', 'Unsafe exec() usage'),",
+        "timestamp": "2026-07-05T09:57:00.538157"
+      }
+    ],
+    "low": [],
+    "info": []
+  }
+}

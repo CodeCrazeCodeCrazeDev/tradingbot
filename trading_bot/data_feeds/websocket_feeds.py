@@ -5,6 +5,7 @@ WebSocket Data Feeds
 Real-time WebSocket connections to crypto exchanges.
 """
 
+import websockets
 import asyncio
 import json
 import logging

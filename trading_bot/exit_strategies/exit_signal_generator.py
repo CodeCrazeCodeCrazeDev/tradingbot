@@ -6,6 +6,7 @@ This module provides exit signal generation capabilities for the Elite Trading B
 creating comprehensive exit signals based on multiple analysis methods.
 """
 
+from datetime import timedelta
 import enum
 import logging
 from datetime import datetime

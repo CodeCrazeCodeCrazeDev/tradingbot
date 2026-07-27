@@ -17,6 +17,7 @@ Author: AlphaAlgo Trading System
 Version: 1.0.0
 """
 
+import psutil
 import asyncio
 import importlib
 import importlib.util
@@ -136,7 +137,7 @@ class RealTimeSystemValidator:
         symbol = symbols.get(level, "[INFO]")
         print(f"{symbol} {message}")
     
-    def check_module_imports(self, module_path: Path) -> ValidationResult:
+    async def check_module_imports(self, module_path: Path) -> ValidationResult:
         """Check if a module can be imported without errors"""
         start_time = time.time()
         
@@ -145,8 +146,9 @@ class RealTimeSystemValidator:
             module_name = str(rel_path).replace('\\', '.').replace('/', '.').replace('.py', '')
             
             # Read the file to check for real-time patterns
-            with open(module_path, 'r', encoding='utf-8', errors='ignore') as f:
-                content = f.read()
+            import aiofiles
+            async with aiofiles.open(module_path, 'r', encoding='utf-8', errors='ignore') as f:
+                content = await f.read()
             
             is_realtime = any(pattern in content for pattern in self.realtime_patterns)
             
@@ -186,13 +188,14 @@ class RealTimeSystemValidator:
                 duration_ms=duration
             )
     
-    def check_async_functions(self, module_path: Path) -> List[ValidationResult]:
+    async def check_async_functions(self, module_path: Path) -> List[ValidationResult]:
         """Check async functions in a module"""
         results = []
         
         try:
-            with open(module_path, 'r', encoding='utf-8', errors='ignore') as f:
-                content = f.read()
+            import aiofiles
+            async with aiofiles.open(module_path, 'r', encoding='utf-8', errors='ignore') as f:
+                content = await f.read()
             
             # Find async function definitions
             import re
@@ -239,7 +242,7 @@ class RealTimeSystemValidator:
         
         return results
     
-    def validate_all_modules(self) -> SystemValidationReport:
+    async def validate_all_modules(self) -> SystemValidationReport:
         """Validate all Python modules in the codebase"""
         self.log("=" * 60)
         self.log("REAL-TIME SYSTEM VALIDATOR")
@@ -256,7 +259,7 @@ class RealTimeSystemValidator:
         
         for py_file in py_files:
             # Check module imports
-            result = self.check_module_imports(py_file)
+            result = await self.check_module_imports(py_file)
             self.report.results.append(result)
             
             if result.status == ValidationStatus.PASSED:
@@ -273,7 +276,7 @@ class RealTimeSystemValidator:
                 self.report.skipped += 1
             
             # Check async functions
-            async_results = self.check_async_functions(py_file)
+            async_results = await self.check_async_functions(py_file)
             self.report.results.extend(async_results)
         
         # Validate real-time components
@@ -445,16 +448,16 @@ class RealTimeHealthMonitor:
 # CONVENIENCE FUNCTIONS
 # =============================================================================
 
-def validate_system(verbose: bool = True) -> SystemValidationReport:
+async def validate_system(verbose: bool = True) -> SystemValidationReport:
     """Validate the entire system"""
     validator = RealTimeSystemValidator(verbose=verbose)
-    return validator.validate_all_modules()
+    return await validator.validate_all_modules()
 
 
-def get_failed_modules() -> List[ValidationResult]:
+async def get_failed_modules() -> List[ValidationResult]:
     """Get list of modules that failed validation"""
     validator = RealTimeSystemValidator(verbose=False)
-    validator.validate_all_modules()
+    await validator.validate_all_modules()
     return validator.get_failed_modules()
 
 
@@ -490,7 +493,11 @@ if __name__ == "__main__":
             print(json.dumps(status, indent=2))
         asyncio.run(main())
     else:
-        report = validate_system(not args.quiet)
+        async def main_validate():
+            report = await validate_system(not args.quiet)
+            return report
+
+        report = asyncio.run(main_validate())
         
         if args.export:
             validator = RealTimeSystemValidator(verbose=False)

@@ -9,8 +9,7 @@ import signal
 import sys
 from pathlib import Path
 
-from master_orchestrator import MasterOrchestrator
-from trading_bot.autonomous_superintelligence import AutonomousSuperintelligence
+from trading_bot.core_agent_system import IntegratedAgentSystem
 
 logging.basicConfig(
     level=logging.INFO,
@@ -41,32 +40,31 @@ async def main():
     
     config = {
         'enable_superintelligence': True,
-        'si_capital': 100000.0,
-        'si_max_agents': 50,
-        'si_min_agents': 10,
-        'si_safety': True,
-        'si_max_experiments': 10,
-        'si_scan_interval': 60,
+        'total_capital': 100000.0,
+        'max_agents': 50,
+        'min_agents': 10,
+        'safety_threshold': 0.7,
+        'max_experiments': 10,
+        'scan_interval': 60,
     }
     
-    orchestrator = MasterOrchestrator(config)
+    system = IntegratedAgentSystem(config)
     
     def signal_handler(sig, frame):
         logger.info("\nShutdown signal received")
-        orchestrator.stop_all()
+        asyncio.create_task(system.shutdown())
         sys.exit(0)
     
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
     try:
-        await orchestrator.start_all_async()
+        await system.initialize()
+        asyncio.create_task(system.start())
         
-        orchestrator.print_status()
-        
-        logger.info("\n🚀 FULL AUTONOMOUS SYSTEM IS NOW OPERATIONAL 🚀\n")
+        logger.info("\n🚀 FULL UNIFIED AUTONOMOUS SYSTEM IS NOW OPERATIONAL 🚀\n")
         logger.info("The system will:")
-        logger.info("  • Trade using traditional strategies")
+        logger.info("  • Trade using Integrated Agent System")
         logger.info("  • Manage its own operations autonomously")
         logger.info("  • Discover new trading methods")
         logger.info("  • Detect global opportunities")
@@ -79,22 +77,21 @@ async def main():
         logger.info("Press Ctrl+C to shutdown gracefully")
         logger.info("")
         
-        while orchestrator.running:
+        while system.running:
             await asyncio.sleep(60)
             
-            if orchestrator.superintelligence:
-                status = await orchestrator.superintelligence.get_comprehensive_status()
-                logger.info("System Status - Autonomy: %.1f%%, Agents: %d, Discoveries: %d",
-                          status['core']['autonomy_level'] * 100,
-                          status['agents']['total_agents'],
-                          status['research']['total_discoveries'])
+            status = system.get_comprehensive_status()
+            logger.info("System Status - Agents: %d, Tools: %d, Iteration: %d",
+                      status['agents']['total_agents'],
+                      status['tools']['total_tools'],
+                      status['self_play']['iteration'])
         
     except KeyboardInterrupt:
         logger.info("\nInterrupted by user")
     except Exception as e:
         logger.error("Fatal error: %s", e, exc_info=True)
     finally:
-        await orchestrator.stop_all_async()
+        await system.shutdown()
 
 
 if __name__ == "__main__":

@@ -1,94 +1,21 @@
-"""
-AI Orchestrator - Coordinates AI components
-"""
-
 import logging
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+from trading_bot.core.csc.controller import CognitiveSystemController
 
 logger = logging.getLogger(__name__)
 
-
 class AIOrchestrator:
-    """Coordinates AI components"""
-    
-    def __init__(self, config: Dict[str, Any] = None):
-        try:
-            self.config = config or {}
-            self._running = False
-        except Exception as e:
-            logger.error(f"Error in __init__: {e}")
-            raise
-    
-    async def initialize(self, config: Dict[str, Any] = None) -> bool:
-        """
-        initialize function.
+    """Compatibility shim for legacy AIOrchestrator. Delegates to CSC."""
+    def __init__(self, config: Optional[Dict] = None):
+        self.config = config or {}
+        self.csc = CognitiveSystemController()
+        logger.info("AIOrchestrator (Shim) initialized. Routing to CSC.")
 
-    Args:
-        config: Description
+    async def start(self):
+        logger.info("AIOrchestrator (Shim) started.")
 
-    Returns:
-        Result of operation
-        """
-        try:
-            logger.info("AIOrchestrator initialized")
-            return True
-        except Exception as e:
-            logger.error(f"Error in initialize: {e}")
-            raise
-    
-    async def start(self) -> bool:
-        """
-        start function.
+    async def stop(self):
+        logger.info("AIOrchestrator (Shim) stopped.")
 
-    Auto-documented by QwenCodeMender.
-        """
-        try:
-            self._running = True
-            return True
-        except Exception as e:
-            logger.error(f"Error in start: {e}")
-            raise
-    
-    async def stop(self) -> bool:
-        try:
-            self._running = False
-            return True
-        except Exception as e:
-            logger.error(f"Error in stop: {e}")
-            raise
-
-
-_orchestrator: Optional[AIOrchestrator] = None
-def get_orchestrator() -> AIOrchestrator:
-    """
-    get_orchestrator function.
-
-    Auto-documented by QwenCodeMender.
-    """
-    try:
-        global _orchestrator
-        if _orchestrator is None:
-            _orchestrator = AIOrchestrator()
-        return _orchestrator
-    except Exception as e:
-        logger.error(f"Error in get_orchestrator: {e}")
-        raise
-
-async def initialize(config: Dict[str, Any] = None) -> bool:
-    """
-    initialize function.
-
-    Args:
-        config: Description
-
-    Returns:
-        Result of operation
-    """
-    return await get_orchestrator().initialize(config)
-async def start() -> bool:
-    return await get_orchestrator().start()
-async def stop() -> bool:
-    return await get_orchestrator().stop()
-
-# Alias for backward compatibility
-AICoreOrchestrator = AIOrchestrator
+    def get_status(self) -> Dict[str, Any]:
+        return {"status": "operational", "mode": "shim", "delegated_to": "CSC"}
