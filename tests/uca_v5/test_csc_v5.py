@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, AsyncMock
 from trading_bot.core.csc.controller import CognitiveSystemController
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome, CoreDecision
 from trading_bot.core.immutable_shield import GovernanceDecision
+from trading_bot.core.unified_event_bus import decision_bus
 
 @pytest.mark.asyncio
 async def test_csc_hasp_intervention():
@@ -26,6 +27,9 @@ async def test_csc_hasp_intervention():
 
 @pytest.mark.asyncio
 async def test_csc_pivot_loop():
+    # Ensure bus is started
+    await decision_bus.start()
+
     # Setup mocks
     world_model = MagicMock()
     hms = MagicMock()
