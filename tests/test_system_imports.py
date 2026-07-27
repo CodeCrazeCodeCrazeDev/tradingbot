@@ -5,8 +5,12 @@ Tests all major components to identify import issues
 
 import sys
 import traceback
+from pathlib import Path
 
-def test_import(module_name, description):
+# Add project root to path so imports resolve to the real package.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+def run_import(module_name, description):
     """Test importing a module"""
     try:
         exec(f"import {module_name}")
@@ -18,7 +22,7 @@ def test_import(module_name, description):
         traceback.print_exc()
         return False
 
-def test_from_import(module_name, items, description):
+def run_from_import(module_name, items, description):
     """Test importing specific items from a module"""
     try:
         items_str = ", ".join(items)
