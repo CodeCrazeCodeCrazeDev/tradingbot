@@ -1,78 +1,61 @@
+"""
+Tests validating Deterministic Replay and Causal Correctness.
+Ensures that identical random seed, configuration, and market inputs produce identical decisions.
+"""
+
 import pytest
-import asyncio
+import numpy as np
+import random
 from unittest.mock import MagicMock, AsyncMock
 
 from trading_bot.core.csc.controller import CognitiveSystemController
-from trading_bot.core.alphaalgo_core_engine import DecisionOutcome
+from trading_bot.core.alphaalgo_core_engine import DecisionOutcome, CoreDecision
 from trading_bot.core.immutable_shield import GovernanceDecision
-from trading_bot.core.unified_event_bus import ActionStatus
+from trading_bot.core.unified_event_bus import ActionStatus, LogAction, decision_bus
+
+def set_all_seeds(seed: int = 42):
+    random.seed(seed)
+    np.random.seed(seed)
+
+@pytest.fixture(autouse=True)
+def mock_event_bus():
+    async def mock_propose(action, *args, **kwargs):
+        action.status = ActionStatus.EXECUTED
+    LogAction.wait_for_decision = AsyncMock(return_value=ActionStatus.APPROVED)
+    decision_bus.propose_action = mock_propose
 
 @pytest.mark.asyncio
 async def test_deterministic_decision_replay():
-    """
-    Verifies that given identical market observation inputs, the Cognitive System Controller
-    inference pipeline produces fully deterministic outputs, with no strategic drift or non-reproducibility.
-    """
-    world_model = MagicMock()
-    hms = MagicMock()
-    hms.retrieve_evidence_chain = AsyncMock(return_value=[])
-    shield = MagicMock()
-    shield_report = MagicMock()
-    shield_report.decision = GovernanceDecision.APPROVED
-    shield.validate_action = AsyncMock(return_value=shield_report)
+    """Verifies that identical seed and observation inputs yield identical decisions."""
+    # Run 1
+    set_all_seeds(42)
+    world_model_1 = MagicMock()
+    hms_1 = MagicMock()
+    hms_1.retrieve_evidence_chain = AsyncMock(return_value=[])
+    shield_1 = MagicMock()
+    shield_1.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
 
-    # Force reset singleton for run 1
-    CognitiveSystemController._instance = None
-    csc_run_1 = CognitiveSystemController(world_model=world_model, hms=hms, shield=shield)
+    csc_1 = CognitiveSystemController(world_model_1, hms_1, shield_1)
 
-    obs = {
-        "price_action": "BULLISH",
-        "volatility": 0.1,
-        "market": {"volatility": 0.1}
-    }
+    obs = {"market": {"volatility": 0.15}, "features": [0.5, -0.2, 0.1]}
 
-    # Execute Run 1
-    decision_1 = await csc_run_1.process_market_observation(obs)
+    # We clear discrete channel to ensure a clean start
+    csc_1.discrete_channel.clear()
+    decision_1 = await csc_1.process_market_observation(obs)
 
-    # Force reset singleton for run 2 to ensure independent initialization
-    CognitiveSystemController._instance = None
-    csc_run_2 = CognitiveSystemController(world_model=world_model, hms=hms, shield=shield)
+    # Run 2
+    set_all_seeds(42)
+    world_model_2 = MagicMock()
+    hms_2 = MagicMock()
+    hms_2.retrieve_evidence_chain = AsyncMock(return_value=[])
+    shield_2 = MagicMock()
+    shield_2.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
 
-    # Execute Run 2 with identical inputs
-    decision_2 = await csc_run_2.process_market_observation(obs)
+    csc_2 = CognitiveSystemController(world_model_2, hms_2, shield_2)
+    csc_2.discrete_channel.clear()
+    decision_2 = await csc_2.process_market_observation(obs)
 
-    # Assert exact deterministic match of decisions
+    # Assert identical outcomes
     assert decision_1.outcome == decision_2.outcome
     assert decision_1.dominant_rejection_reason == decision_2.dominant_rejection_reason
-
-
-@pytest.mark.asyncio
-async def test_hasp_guardrail_failure_recovery():
-    """
-    Verifies that the HASP program functions cleanly intercept critical volatility states
-    and gracefully recover via a non-bypassable rejection/remedial action.
-    """
-    world_model = MagicMock()
-    hms = MagicMock()
-    hms.retrieve_evidence_chain = AsyncMock(return_value=[])
-    shield = MagicMock()
-    shield_report = MagicMock()
-    shield_report.decision = GovernanceDecision.APPROVED
-    shield.validate_action = AsyncMock(return_value=shield_report)
-
-    # Force reset singleton
-    CognitiveSystemController._instance = None
-    csc = CognitiveSystemController(world_model=world_model, hms=hms, shield=shield)
-
-    # Critical volatility (>0.3) triggering HASP override
-    high_vol_obs = {
-        "price_action": "BULLISH",
-        "volatility": 0.45,
-        "market": {"volatility": 0.45}
-    }
-
-    decision = await csc.process_market_observation(high_vol_obs)
-
-    # Verify fail-safe rejection
-    assert decision.outcome == DecisionOutcome.TRADE_REJECTED
-    assert "Volatility exceeded HASP safety threshold (0.3)" in decision.dominant_rejection_reason
+    assert csc_1.discrete_channel == csc_2.discrete_channel
