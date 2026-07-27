@@ -169,6 +169,8 @@ class UnifiedDecisionBus:
             await self.start()
 
         action.status = ActionStatus.PROPOSED
+        if self._action_queue is None:
+            self._action_queue = asyncio.PriorityQueue()
         await self._action_queue.put((-action.priority.value, action.timestamp, action))
         logger.debug(f"LogAct: Action {action.action_id} queued for auditing (Priority: {action.priority.name})")
 
