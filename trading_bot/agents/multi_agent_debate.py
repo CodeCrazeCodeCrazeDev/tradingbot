@@ -525,7 +525,7 @@ class RiskSentinel(TradingAgent):
                 conviction = Conviction.HIGH
                 reasoning.append("⚠️ Risk flag present - reduce position size")
             elif total_score > 0:
-                action = TradeAction.HOLD  # Risk allows trading - strictly gatekeeping, no directional signal
+                action = TradeAction.HOLD  # Risk allows trading
                 conviction = Conviction.MODERATE
                 reasoning.append("✅ Risk parameters acceptable")
             else:
@@ -621,7 +621,7 @@ class HeadAI:
         """
         # Score each action
         try:
-            # Fix: Only use the latest argument from each agent to prevent double-counting across rounds
+            # Only use the latest argument from each agent to prevent double-counting across rounds
             latest_arguments: Dict[AgentRole, AgentArgument] = {}
             for arg in arguments:
                 latest_arguments[arg.agent_role] = arg
@@ -678,9 +678,12 @@ class HeadAI:
                     winning_action = TradeAction.NO_TRADE
                     winning_score = getattr(risk_arg, 'confidence', 0.8)
         
-            # Calculate consensus
-            unique_actions = set(a.action for a in active_arguments)
-            consensus_level = 1.0 - (len(unique_actions) - 1) * 0.25
+            # Calculate consensus using directional agreement
+            bullish = sum(1 for a in active_arguments if a.action in [TradeAction.BUY, TradeAction.STRONG_BUY])
+            bearish = sum(1 for a in active_arguments if a.action in [TradeAction.SELL, TradeAction.STRONG_SELL])
+            neutral = sum(1 for a in active_arguments if a.action in [TradeAction.HOLD, TradeAction.NO_TRADE])
+
+            consensus_level = max(bullish, bearish, neutral) / len(active_arguments) if active_arguments else 0.0
         
             # Collect votes
             agent_votes = {}
@@ -708,7 +711,7 @@ class HeadAI:
         
             # Generate reasoning
             reasoning = self._generate_reasoning(
-                winning_action, arguments, consensus_level
+            winning_action, active_arguments, consensus_level
             )
         
             return FinalDecision(
@@ -804,7 +807,8 @@ class HeadAI:
             # Key points from each agent
             for arg in arguments:
                 if arg.reasoning:
-                    parts.append(f"{arg.agent_role.value}: {arg.reasoning[0]}")
+                    agent_reasoning = " ".join(arg.reasoning)
+                    parts.append(f"{arg.agent_role.value}: {agent_reasoning}")
         
             return " | ".join(parts)
         except Exception as e:
@@ -964,10 +968,17 @@ class MultiAgentDebateSystem:
             logger.error(f"Error in _calculate_consensus: {e}")
             raise
     
-    def _identify_conflicts(self, arguments: List[AgentArgument]) -> List[str]:
+    def _identify_conflicts(self, all_arguments: List[AgentArgument]) -> List[str]:
         """Identify conflicts between arguments."""
         try:
             conflicts = []
+
+            # Group by agent role, keeping only the latest
+            latest_arguments: Dict[AgentRole, AgentArgument] = {}
+            for arg in all_arguments:
+                latest_arguments[arg.agent_role] = arg
+
+            arguments = list(latest_arguments.values())
         
             actions = [a.action for a in arguments]
         
