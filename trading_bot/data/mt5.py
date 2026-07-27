@@ -29,68 +29,11 @@ class SymbolInfo:
 class MT5Interface:
     """Institutional-grade MT5Interface stub for testing and system compatibility."""
 
-    def __init__(self, *args, **kwargs):
-        self.config = kwargs
-        self._connected = True
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-
-    def connect(self) -> bool:
-        self._connected = True
-        return True
-
-    def disconnect(self) -> None:
-        self._connected = False
-
-    def account_info(self) -> Optional[AccountInfo]:
-        return AccountInfo()
-
-    def symbol_info(self, symbol: str) -> Optional[SymbolInfo]:
-        return SymbolInfo()
-
-    def get_rates(self, symbol: str, timeframe: str, count: int) -> List[Dict[str, Any]]:
-        # Dummy rates for testing
-        import pandas as pd
-        import numpy as np
-        dates = pd.date_range(end=pd.Timestamp.now(), periods=count, freq='H')
-        return [
-            {
-                "time": d.to_pydatetime(),
-                "open": 1.1000,
-                "high": 1.1050,
-                "low": 1.0950,
-                "close": 1.1000,
-                "volume": 5000
-            }
-            for d in dates
-        ]
-
-    def place_order(self, order_type: str, symbol: str, volume: float, price: Optional[float] = None, **kwargs) -> Dict[str, Any]:
-        return {
-            "order_id": 123456,
-            "status": "filled",
-            "volume": volume,
-            "price": price or 1.1000,
-            "symbol": symbol
-MT5Interface class.
-Provides direct integration or fallback mocks for MT5 and brokers.
-"""
-
-import logging
-from typing import Dict, Any, Optional
-
-logger = logging.getLogger("AlphaAlgo.MT5Interface")
-
-class MT5Interface:
-    """Interacts with MetaTrader 5 terminal or provides standard mock wrappers when offline."""
-
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None, *args, **kwargs):
         self.config = config or {}
-        self.connected = False
+        if kwargs:
+            self.config.update(kwargs)
+        self.connected = True
 
     def __enter__(self):
         self.connect()
@@ -104,16 +47,60 @@ class MT5Interface:
         self.connected = True
         return True
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         logger.info("MT5Interface: Disconnected.")
         self.connected = False
 
-    def place_order(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        logger.info(f"MT5Interface: Order placed successfully -> {request}")
-        return {
-            "retcode": 10009,  # DONE
-            "order": 123456,
-            "volume": request.get("volume", 0.1),
-            "price": request.get("price", 1.0),
-            "comment": "Mock trade completed"
-        }
+    def account_info(self) -> Optional[AccountInfo]:
+        return AccountInfo()
+
+    def symbol_info(self, symbol: str) -> Optional[SymbolInfo]:
+        return SymbolInfo()
+
+    def get_rates(self, symbol: str, timeframe: str, count: int) -> List[Dict[str, Any]]:
+        # Dummy rates for testing
+        import pandas as pd
+        dates = pd.date_range(end=pd.Timestamp.now(), periods=count, freq='H')
+        return [
+            {
+                "time": d.to_pydatetime(),
+                "open": 1.1000,
+                "high": 1.1050,
+                "low": 1.0950,
+                "close": 1.1000,
+                "volume": 5000
+            }
+            for d in dates
+        ]
+
+    def place_order(self, *args, **kwargs) -> Dict[str, Any]:
+        """Supports both place_order(order_type, symbol, volume, price, ...) and place_order(request_dict) signatures."""
+        if len(args) == 1 and isinstance(args[0], dict):
+            request = args[0]
+            logger.info(f"MT5Interface: Order placed successfully -> {request}")
+            return {
+                "retcode": 10009,  # DONE
+                "order": 123456,
+                "order_id": 123456,
+                "status": "filled",
+                "volume": request.get("volume", 0.1),
+                "price": request.get("price", 1.0),
+                "comment": "Mock trade completed"
+            }
+        else:
+            # Traditional positional signature
+            order_type = args[0] if len(args) > 0 else "BUY"
+            symbol = args[1] if len(args) > 1 else "EURUSD"
+            volume = args[2] if len(args) > 2 else 0.1
+            price = args[3] if len(args) > 3 else (kwargs.get("price") or 1.1000)
+
+            return {
+                "retcode": 10009,
+                "order": 123456,
+                "order_id": 123456,
+                "status": "filled",
+                "volume": volume,
+                "price": price,
+                "symbol": symbol,
+                "comment": "Mock trade completed"
+            }
