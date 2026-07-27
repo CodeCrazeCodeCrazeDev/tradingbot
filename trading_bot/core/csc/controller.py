@@ -1,4 +1,7 @@
 """
+
+Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
+Implements 'DiscoLoop' (2026) for multi-hop reasoning and 'HIPIF' for information folding.
 Cognitive System Controller (CSC) - UCA V6 (July 2026)
 
 Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
@@ -135,6 +138,9 @@ class CognitiveSystemController:
             "reasoning_depth": self._max_loops,
             "latent": self.continuous_state.get("latent", [])
         }
+
+        self._initialized = True
+        logger.info("CSC-V5: One Brain Controller Initialized")
 
     async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
         """

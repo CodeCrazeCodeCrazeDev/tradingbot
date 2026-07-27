@@ -1,4 +1,8 @@
 """
+
+Implements 'SAGE: A Self-Evolving Agentic Graph-Memory Engine' (2026).
+Supports incremental construction, Graph-FM multi-hop retrieval,
+and Reader-Writer feedback loops for structural evolution.
 Hierarchical Memory System (HMS) - UCA V6 (July 2026)
 
 Authoritative memory system integrating SAGE (Self-evolving Agentic Graph-Memory)
