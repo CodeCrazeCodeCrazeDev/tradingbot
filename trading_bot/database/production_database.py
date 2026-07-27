@@ -34,6 +34,13 @@ try:
 except ImportError:
     SQLALCHEMY_AVAILABLE = False
     logger.warning("SQLAlchemy not installed. Install with: pip install sqlalchemy asyncpg")
+    class TradeRecord: pass
+    class PositionRecord: pass
+    class OrderRecord: pass
+    class AccountSnapshot: pass
+    class MetricRecord: pass
+    class SignalRecord: pass
+    class AuditLog: pass
 
 # Alembic for migrations
 try:
