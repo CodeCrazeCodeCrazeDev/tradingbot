@@ -41,7 +41,7 @@ try:
     import torch.nn as nn
     import torch.nn.functional as F
     TORCH_AVAILABLE = True
-except ImportError:
+except (ImportError, NameError):
     TORCH_AVAILABLE = False
     # Create dummy classes for when torch is not available
     class nn:
