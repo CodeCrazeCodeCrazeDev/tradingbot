@@ -10,13 +10,7 @@ import asyncio
 import logging
 from unittest.mock import Mock, patch, MagicMock
 
-try:
-    from trading_bot.digital_twin import *
-except ImportError:
-    # Fallback import
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.digital_twin import *
+from trading_bot.simulation.digital_twin import *
 
 logger = logging.getLogger(__name__)
 
