@@ -38,6 +38,18 @@ class ScientificMetrics:
     research_efficiency_ratio: float = 0.0 # Value / Cost
     ece: float = 1.0 # Expected Calibration Error
 
+    # Latency Tracking (First-class observability)
+    csc_stage_latency: Dict[str, float] = field(default_factory=dict)
+    router_dispatch_latency: float = 0.0
+    hms_latency: float = 0.0
+    swarm_latency: float = 0.0
+    gate_latency: float = 0.0
+    end_to_end_latency: float = 0.0
+    queue_depth: int = 0
+    memory_growth_bytes: float = 0.0
+    retry_counts: int = 0
+    failure_counts: int = 0
+
     # Self-Improvement
     bottlenecks_detected: List[str] = field(default_factory=list)
     last_update: datetime = field(default_factory=datetime.now)
@@ -152,6 +164,9 @@ class ScientificMetrics:
             if self.avg_validation_score > 0.7 and self.confirmed_count < 2:
                 self.bottlenecks_detected.append("PROMOTION_FRICTION")
 
+        self.detect_bottlenecks()
+
+        # Drive first-class bottleneck analysis
         self.detect_bottlenecks()
 
     def get_summary(self) -> Dict[str, Any]:

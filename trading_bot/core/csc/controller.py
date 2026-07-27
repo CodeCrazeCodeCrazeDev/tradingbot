@@ -333,6 +333,22 @@ class CognitiveSystemController:
         if not self.last_prediction: return 1.0
         return 0.2
 
+    async def _run_discoloop_internalization(self, obs: Dict[str, Any], num_loops: int = 2):
+        self._max_loops = num_loops
+        await self._run_discoloop_reasoning(obs)
+        if "latent_embedding" in obs:
+            self.discrete_channel = ["internalized_insight"]
+            self.continuous_state["v"] = obs["latent_embedding"]["v"]
+
+    def _detect_failure_severity(self, reports: List[Any]) -> str:
+        failures = [r for r in reports if not getattr(r, 'is_valid', True)]
+        if not failures:
+            return "none"
+        critical_count = sum(1 for r in failures if getattr(r, 'confidence', 0) > 0.9)
+        if critical_count >= 2 or any(getattr(r, 'confidence', 0) > 0.94 for r in failures):
+            return "critical"
+        return "minor"
+
     async def _run_discoloop_reasoning(self, observation: Dict[str, Any]):
         """DiscoLoop recurrence: h_k+1, e_k+1 = f(h_k, e_k)"""
         e_k = np.zeros((512,))

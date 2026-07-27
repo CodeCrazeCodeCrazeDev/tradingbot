@@ -13,6 +13,7 @@ Research, World Models, Institutional, and Meta-Memory.
 import logging
 import os
 import json
+import hashlib
 import networkx as nx
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
@@ -221,6 +222,7 @@ class HierarchicalMemorySystem:
             logger.info(f"SEAL: Memory retrieval was highly accurate. Adapted HMS memory window to {self.memory_window_size} to retain more contextual episodic memory.")
 
     def _load_schema(self) -> Dict[str, Any]:
+        schema = {"version": "1.0", "schema_version": "1.0", "entities": [], "relations": []}
         if os.path.exists(self.schema_path):
             try:
                 with open(self.schema_path, 'r') as f: return json.load(f)
@@ -228,7 +230,77 @@ class HierarchicalMemorySystem:
         return {"version": "2.0", "entities": [], "relations": [], "optimized_count": 0}
 
     def _save_schema(self):
-        with open(self.schema_path, 'w') as f: json.dump(self.memory_schema, f, indent=2)
+        self.memory_schema["updated_at"] = datetime.utcnow().isoformat()
+        self.memory_schema["integrity_hash"] = self._calculate_integrity_hash(self.memory_schema)
+        with open(self.schema_path, 'w') as f:
+            json.dump(self.memory_schema, f, indent=2)
+
+    def migrate_to_version(self, target_version: str) -> bool:
+        """Runs explicit up/down migrations sequentially to target_version."""
+        current_v_str = self.memory_schema.get("schema_version", "1.0")
+        current_v = float(current_v_str)
+        target_v = float(target_version)
+
+        if current_v == target_v:
+            return True
+
+        logger.info(f"HMS Migration: Preparing migration from {current_v_str} to {target_version}")
+
+        # Step-by-step sequential migration
+        direction = "up" if target_v > current_v else "down"
+        while current_v != target_v:
+            if direction == "up":
+                next_v = round(current_v + 0.1, 1)
+                success = self._run_migration_step(f"{current_v:.1f}", f"{next_v:.1f}", "up")
+                if not success:
+                    logger.error(f"HMS Migration failed at step {current_v:.1f} -> {next_v:.1f}")
+                    return False
+                current_v = next_v
+            else:
+                next_v = round(current_v - 0.1, 1)
+                success = self._run_migration_step(f"{current_v:.1f}", f"{next_v:.1f}", "down")
+                if not success:
+                    logger.error(f"HMS Rollback failed at step {current_v:.1f} -> {next_v:.1f}")
+                    return False
+                current_v = next_v
+
+        self.memory_schema["schema_version"] = f"{current_v:.1f}"
+        self.memory_schema["version"] = f"{current_v:.1f}" # Sync legacy
+        self._save_schema()
+        return True
+
+    def _run_migration_step(self, from_v: str, to_v: str, direction: str) -> bool:
+        logger.info(f"HMS: Executing {direction}-migration from {from_v} to {to_v}")
+
+        # Define deterministic schema updates
+        if direction == "up":
+            if from_v == "1.0" and to_v == "1.1":
+                # Up-migration 1.0 -> 1.1: add specialized tracking property
+                self.memory_schema["entities"].append({"type": "RESEARCH_METADATA", "fields": ["fdr_adjusted_p", "purged_embargoed_cv"]})
+            elif from_v == "1.1" and to_v == "1.2":
+                self.memory_schema["relations"].append({"type": "CONTRADICTS", "inverse": "CONTRADICTS"})
+        else: # down-migration / rollback
+            if from_v == "1.1" and to_v == "1.0":
+                # Rollback 1.1 -> 1.0: remove added entities
+                self.memory_schema["entities"] = [e for e in self.memory_schema["entities"] if e.get("type") != "RESEARCH_METADATA"]
+            elif from_v == "1.2" and to_v == "1.1":
+                self.memory_schema["relations"] = [r for r in self.memory_schema["relations"] if r.get("type") != "CONTRADICTS"]
+
+        # Track history
+        self.memory_schema["migration_history"].append({
+            "timestamp": datetime.utcnow().isoformat(),
+            "from_version": from_v,
+            "to_version": to_v,
+            "direction": direction,
+            "status": "SUCCESS"
+        })
+        return True
+
+    def validate_replay(self, schema_data: Dict[str, Any]) -> bool:
+        """Validates schema integrity and correctness."""
+        expected_hash = self._calculate_integrity_hash(schema_data)
+        actual_hash = schema_data.get("integrity_hash")
+        return expected_hash == actual_hash
 
     async def retrieve_evidence_chain(self, query: str) -> List[Any]:
         """Multi-hop evidence retrieval via SAGE."""
