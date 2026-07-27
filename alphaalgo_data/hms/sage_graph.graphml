@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d5" for="edge" attr.name="timestamp" attr.type="string" />
+  <key id="d4" for="edge" attr.name="evidence" attr.type="string" />
+  <key id="d3" for="edge" attr.name="context" attr.type="string" />
+  <key id="d2" for="edge" attr.name="relation" attr.type="string" />
+  <key id="d1" for="node" attr.name="content" attr.type="string" />
+  <key id="d0" for="node" attr.name="type" attr.type="string" />
+  <graph edgedefault="directed">
+    <node id="1198057a-7831-4875-b8a5-ec0e1100e689" />
+    <node id="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." />
+    <node id="hyp_branch_bull">
+      <data key="d0">HYPOTHESIS</data>
+      <data key="d1">Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout.</data>
+    </node>
+    <node id="causal_branch_bull">
+      <data key="d0">CLAIM</data>
+      <data key="d1">Expansion in liquidity combined with oversold RSI supports a mean reversion breakout.</data>
+    </node>
+    <node id="54e501fe-6c58-4d34-a064-31748e103893" />
+    <node id="b5ecf662-e4be-4886-aa2c-12b3220f1212" />
+    <node id="9cb3caaa-c5f0-4957-b5b9-19fdeb4831c4" />
+    <node id="aa84e7dc-2201-435d-8cac-49bf195c5516" />
+    <node id="736ba96e-c0d0-4492-ba7d-70c0e7aafe36" />
+    <edge source="1198057a-7831-4875-b8a5-ec0e1100e689" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="HYPOTHESIZED_8d886aa1">
+      <data key="d2">HYPOTHESIZED</data>
+      <data key="d3">{"context": "research_ledger"}</data>
+      <data key="d4">{"confidence": 0.0}</data>
+      <data key="d5">2026-07-16T17:24:33.019704</data>
+    </edge>
+    <edge source="54e501fe-6c58-4d34-a064-31748e103893" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="HYPOTHESIZED_7e457ea2">
+      <data key="d2">HYPOTHESIZED</data>
+      <data key="d3">{"context": "research_ledger"}</data>
+      <data key="d4">{"confidence": 0.0}</data>
+      <data key="d5">2026-07-16T17:24:34.076972</data>
+    </edge>
+    <edge source="b5ecf662-e4be-4886-aa2c-12b3220f1212" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="HYPOTHESIZED_6e1b99d0">
+      <data key="d2">HYPOTHESIZED</data>
+      <data key="d3">{"context": "research_ledger"}</data>
+      <data key="d4">{"confidence": 0.0}</data>
+      <data key="d5">2026-07-16T17:24:35.133288</data>
+    </edge>
+    <edge source="9cb3caaa-c5f0-4957-b5b9-19fdeb4831c4" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="HYPOTHESIZED_e5867967">
+      <data key="d2">HYPOTHESIZED</data>
+      <data key="d3">{"context": "research_ledger"}</data>
+      <data key="d4">{"confidence": 0.0}</data>
+      <data key="d5">2026-07-16T17:24:36.189153</data>
+    </edge>
+    <edge source="aa84e7dc-2201-435d-8cac-49bf195c5516" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="HYPOTHESIZED_2f045c24">
+      <data key="d2">HYPOTHESIZED</data>
+      <data key="d3">{"context": "research_ledger"}</data>
+      <data key="d4">{"confidence": 0.0}</data>
+      <data key="d5">2026-07-16T17:24:37.245174</data>
+    </edge>
+    <edge source="736ba96e-c0d0-4492-ba7d-70c0e7aafe36" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="HYPOTHESIZED_49b65a8f">
+      <data key="d2">HYPOTHESIZED</data>
+      <data key="d3">{"context": "research_ledger"}</data>
+      <data key="d4">{"confidence": 0.0}</data>
+      <data key="d5">2026-07-16T17:24:38.301305</data>
+    </edge>
+  </graph>
+</graphml>
