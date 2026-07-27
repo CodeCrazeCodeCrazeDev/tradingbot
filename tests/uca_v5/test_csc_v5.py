@@ -34,6 +34,8 @@ async def test_csc_hasp_intervention():
     assert decision.outcome == DecisionOutcome.TRADE_REJECTED
     assert "Volatility exceeded HASP safety threshold" in decision.dominant_rejection_reason
 
+    await decision_bus.stop()
+
 @pytest.mark.asyncio
 async def test_csc_pivot_loop():
     # Ensure bus is started

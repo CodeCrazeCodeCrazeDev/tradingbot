@@ -58,6 +58,8 @@ async def test_logact_transactionality():
     Verifies total ordering and transactional safety of the LogAct backbone.
     (Mahesh Balakrishnan et al., 2026)
     """
+    if decision_bus._running:
+        await decision_bus.stop()
     await decision_bus.start()
 
     # 1. Propose conflicting actions

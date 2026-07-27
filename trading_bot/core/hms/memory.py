@@ -265,5 +265,10 @@ class HierarchicalMemorySystem:
 
         self.memory_schema["optimized_count"] += 1
         self.memory_schema["last_optimized"] = datetime.utcnow().isoformat()
+        try:
+            current_version = float(self.memory_schema.get("version", "1.0"))
+            self.memory_schema["version"] = str(current_version + 0.1)
+        except ValueError:
+            self.memory_schema["version"] = "1.1"
         self._save_schema()
         logger.info("HMS V6: AutoMem optimization cycle complete.")
