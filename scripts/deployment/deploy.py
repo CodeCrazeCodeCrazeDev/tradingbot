@@ -37,7 +37,7 @@ def run_command(command, cwd=None):
         result = subprocess.run(
             command,
             cwd=cwd,
-            shell=True,
+            shell=False,
             check=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

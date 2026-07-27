@@ -114,6 +114,8 @@ class UnifiedDecisionBus:
         """
         max_log_size = self.config.get("max_log_size", 10000)
         while self._running:
+            action = None
+            start_time = time.time()
             try:
                 # 1. Queue Retrieval
                 _, _, action = await self._action_queue.get()
@@ -177,18 +179,20 @@ class UnifiedDecisionBus:
                     action.status = ActionStatus.VETOED
                     logger.warning(f"LogAct [{action.sequence_number}]: Action {action.action_id} VETOED")
 
-                c_end = datetime.utcnow()
+                # Record KPI: Consensus Latency
+                latency = (time.time() - start_time) * 1000
+                logger.debug(f"KPI: Consensus Latency for {action.action_id}: {latency:.2f}ms")
 
-                # 5. Ack Phase
-                action._completed_event.set()
-                self._action_queue.task_done()
-
-                t_total = (datetime.utcnow() - t_start).total_seconds()
-                logger.debug(f"LogAct [{action.sequence_number}]: Total processing time: {t_total:.3f}s")
-
-            except asyncio.CancelledError: break
+            except asyncio.CancelledError:
+                break
             except Exception as e:
-                logger.error(f"LogAct CRITICAL Error: {e}", exc_info=True)
+                logger.error(f"LogAct Error: {e}")
+                if action:
+                    action.status = ActionStatus.FAILED
+            finally:
+                if action:
+                    action._completed_event.set()
+                    self._action_queue.task_done()
 
     def _check_consensus(self, action: LogAction) -> bool:
         """

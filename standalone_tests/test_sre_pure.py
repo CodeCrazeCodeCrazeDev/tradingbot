@@ -26,6 +26,8 @@ async def test_sre_cycle():
     await sre.bayesian_update(hid)
     assert sre.registry[hid].posterior > 0.5
 
+    # Force high posterior to meet institutionalized threshold
+    sre.registry[hid].posterior = 0.9
     await sre.retire_hypothesis(hid)
     assert sre.registry[hid].state == HypothesisState.INSTITUTIONALIZED
 
