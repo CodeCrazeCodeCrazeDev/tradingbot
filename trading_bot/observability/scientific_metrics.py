@@ -42,6 +42,10 @@ class ScientificMetrics:
     bottlenecks_detected: List[str] = field(default_factory=list)
     last_update: datetime = field(default_factory=datetime.now)
 
+    @property
+    def total_institutionalized_knowledge(self) -> int:
+        return self.institutionalized_count
+
     def update_from_registry(self, registry: Dict[str, Any]):
         """Update metrics based on the current state of the SRE registry."""
         total = len(registry)
@@ -107,6 +111,23 @@ class ScientificMetrics:
     def total_institutionalized_knowledge(self) -> int:
         return self.institutionalized_count
 
+        # Run bottleneck detection
+        self.detect_bottlenecks()
+
+    def detect_bottlenecks(self):
+        """Identifies systemic weaknesses in the hypothesis ecosystem."""
+        self.bottlenecks_detected = []
+
+        if self.total_hypotheses > 20:
+            if self.survival_rate < 0.05:
+                self.bottlenecks_detected.append("GENERATION_NOISE")
+
+            if self.rejection_rate > 0.8:
+                self.bottlenecks_detected.append("FILTERING_STRICTNESS")
+
+            if self.avg_validation_score > 0.7 and self.confirmed_count < 2:
+                self.bottlenecks_detected.append("PROMOTION_FRICTION")
+
     def get_summary(self) -> Dict[str, Any]:
         return {
             "survival_rate": self.survival_rate,
@@ -140,6 +161,12 @@ class ScientificAuditMetrics:
     confirmed_count: int = 0
     rejected_count: int = 0
     institutionalized_count: int = 0
+    survival_rate: float = 0.0
+    rejection_rate: float = 0.0
+    avg_posterior: float = 0.0
+    avg_validation_score: float = 0.0
+    bottlenecks_detected: List[str] = field(default_factory=list)
+    last_update: datetime = field(default_factory=datetime.now)
 
     def detect_bottlenecks(self):
         """Identifies systemic weaknesses in the hypothesis ecosystem."""
@@ -147,13 +174,13 @@ class ScientificAuditMetrics:
 
         if self.total_hypotheses > 20:
             if self.survival_rate < 0.05:
-                self.bottlenecks_detected.append("GENERATION_NOISE: Too many low-quality hypotheses generated.")
+                self.bottlenecks_detected.append("GENERATION_NOISE")
 
             if self.rejection_rate > 0.8:
-                self.bottlenecks_detected.append("FILTERING_STRICTNESS: Evidence collection might be too hostile or priors too low.")
+                self.bottlenecks_detected.append("FILTERING_STRICTNESS")
 
             if self.avg_validation_score > 0.7 and self.confirmed_count < 2:
-                self.bottlenecks_detected.append("PROMOTION_FRICTION: Hypotheses pass validation but fail to reach confirmation.")
+                self.bottlenecks_detected.append("PROMOTION_FRICTION")
 
     def get_summary(self) -> Dict[str, Any]:
         return {
