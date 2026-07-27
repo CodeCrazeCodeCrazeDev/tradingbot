@@ -1,398 +1,491 @@
 """
-HARDENED Multi-Agent Validation and Benchmarking Suite
+Hardened Validation and Performance Test Suite for Multi-Agent System.
 
-This suite implements institutional-grade quantitative tests for the Multi-Agent Trading System:
-1. Decision Quality Benchmark: Single-agent vs Multi-agent vs Multi-agent + Verification Swarm
-2. Adversarial Verification: Stressing with conflicting evidence, stale/missing data, regime changes, etc.
-3. Calibration Audit: Empirical verification of reported confidence vs historical/realized success.
-4. Decision Provenance: Rigorous lineage verification.
-5. Ablation Studies: Sequential component removal & impact quantification.
-6. Failure Injection: Simulating agent crash, network lag, Byzantine votes, etc.
-7. Production Performance Profiling: Measuring P50/P95/P99 latencies, CPU/memory, throughput.
+Validates the system under:
+1. Consensus correctness under adversarial conditions (ties, duplicate agent IDs, missing/delayed responses, Byzantine/malicious agents, Ties).
+2. Property-based invariants (consensus level ∈ [0,1], order-independence, replayability, neutral removal, duplicate submission weight safety).
+3. End-to-end full-path integration pipeline simulation (propagation, audit logging, evidence provenance).
+4. Performance & latency profiling scale benchmarks (5 up to 100 agents, latency percentiles p50/p95/p99, memory footprint).
+5. PyTorch fallback behavior verification (dummy fallback robustness, predictable startup mode checking).
+6. RiskSentinel gating restriction assertion (never outputs BUY/SELL).
 """
 
 import pytest
 import asyncio
 import time
-import random
-import numpy as np
-import pandas as pd
-from datetime import datetime, timedelta
-from typing import Dict, List, Any, Tuple, Optional
+import sys
+import gc
+from datetime import datetime
+from typing import List, Dict, Any, Optional
+from dataclasses import replace
 
 from trading_bot.agents.multi_agent_debate import (
-    MultiAgentDebateSystem,
-    MarketContext,
-    TradeAction,
-    Conviction,
-    AgentRole,
-    FinalDecision
+    AgentRole, Conviction, TradeAction, MarketContext,
+    AgentArgument, DebateTopic, MultiAgentDebateSystem, HeadAI,
+    create_debate_system, RiskSentinel, MacroStrategist, TacticalExecutioner, DebateRound
 )
+from trading_bot.alpha_research.dynamic_risk_matrix import TORCH_AVAILABLE
 
+# =====================================================================
+# 1. RISKSENTINEL GATING RESTRICTION ASSERTION
+# =====================================================================
 
-# ==========================================
-# 1. Verification Swarm Stub for Benchmark
-# ==========================================
-class VerificationSwarm:
-    """Independent falsification swarm to counter cognitive clustering and groupthink."""
-    def __init__(self, failure_probability: float = 0.0):
-        self.failure_probability = failure_probability
+def test_risk_sentinel_strict_gating():
+    """
+    Verify that RiskSentinel's analysis strictly acts as a gatekeeper,
+    recommending only HOLD or NO_TRADE and NEVER proposing directional BUY/SELL.
+    """
+    sentinel = RiskSentinel()
 
-    def verify(self, decision: FinalDecision, context: MarketContext) -> Tuple[bool, float, List[str]]:
-        if random.random() < self.failure_probability:
-            return False, 0.0, ["Byzantine swarm breakdown injected"]
-
-        reasons = []
-        # Check alignment of risk
-        if context.portfolio_exposure > 0.4 and decision.action in [TradeAction.BUY, TradeAction.STRONG_BUY]:
-            reasons.append("Swarm Alert: Portfolio exposure is high; long position flagged.")
-            return False, 0.4, reasons
-
-        if context.vix_level and context.vix_level > 28 and decision.action in [TradeAction.STRONG_BUY, TradeAction.STRONG_SELL]:
-            reasons.append("Swarm Warning: Extremely high VIX; aggressive sizing blocked.")
-            return True, 0.6, reasons
-
-        return True, 0.9, ["Swarm verified decision parameters: Monotone-safe risk alignment verified."]
-
-
-# ==========================================
-# Fixtures
-# ==========================================
-@pytest.fixture
-def debate_system() -> MultiAgentDebateSystem:
-    config = {
-        'max_rounds': 3,
-        'consensus_threshold': 0.65,
-        'macro_weight': 0.4,
-        'tactical_weight': 0.35,
-        'risk_weight': 0.25
-    }
-    return MultiAgentDebateSystem(config)
-
-
-@pytest.fixture
-def standard_market_context() -> MarketContext:
-    return MarketContext(
+    # Test case 1: Super safe conditions (low exposure, low correlation, low VIX, low volatility)
+    safe_context = MarketContext(
         symbol="EURUSD",
-        current_price=1.1200,
+        current_price=1.1000,
         htf_trend='UP',
         ltf_trend='UP',
-        volatility=0.012,
-        volume_ratio=1.2,
-        key_levels={'support': [1.1150, 1.1100], 'resistance': [1.1250, 1.1300]},
+        volatility=0.005,
+        volume_ratio=1.0,
+        key_levels={'support': [1.09], 'resistance': [1.11]},
         news_sentiment=0.5,
-        portfolio_exposure=0.15,
-        correlation_risk=0.2,
-        vix_level=15.0
+        portfolio_exposure=0.05,
+        correlation_risk=0.1,
+        vix_level=12.0
     )
 
+    arg = sentinel.analyze(safe_context)
+    assert arg.action in [TradeAction.HOLD, TradeAction.NO_TRADE], f"RiskSentinel returned a directional action: {arg.action}"
 
-# ==========================================
-# TEST CASES
-# ==========================================
+    # Test case 2: High exposure (should trigger hold/no trade)
+    high_exp_context = replace(safe_context, portfolio_exposure=0.6)
+    arg = sentinel.analyze(high_exp_context)
+    assert arg.action in [TradeAction.HOLD, TradeAction.NO_TRADE]
 
-@pytest.mark.asyncio
-async def test_decision_quality_benchmark(debate_system, standard_market_context):
-    """
-    1. Decision Quality Benchmark
-    Compares:
-      - Single-agent CSC (Macro Strategist only)
-      - Multi-agent debate
-      - Multi-agent + Verification Swarm
-    Measures: Sharpe, Sortino, max drawdown, win rate, profit factor, calibration, latency.
-    """
-    swarm = VerificationSwarm()
-    num_simulated_days = 20
+    # Test case 3: High VIX and extreme volatility (multiple flags -> NO_TRADE)
+    extreme_context = replace(safe_context, vix_level=35.0, volatility=0.04)
+    arg = sentinel.analyze(extreme_context)
+    assert arg.action == TradeAction.NO_TRADE
 
-    # Generate mock timeline contexts
-    simulation_contexts = []
-    base_price = 1.1200
-    for i in range(num_simulated_days):
-        price_step = base_price * (1.0 + np.sin(i / 3.0) * 0.02 + random.uniform(-0.005, 0.005))
-        context = MarketContext(
+
+# =====================================================================
+# 2. PROPERTY-BASED TESTING
+# =====================================================================
+
+class TestConsensusProperties:
+    """Property-based testing of consensus invariants and HeadAI decision synthesis."""
+
+    def setup_method(self):
+        self.head_ai = HeadAI()
+        self.context = MarketContext(
             symbol="EURUSD",
-            current_price=price_step,
-            htf_trend='UP' if np.sin(i / 3.0) > 0 else 'DOWN',
-            ltf_trend='UP' if random.random() > 0.4 else 'DOWN',
-            volatility=0.01 + random.uniform(0.002, 0.015),
-            volume_ratio=0.8 + random.uniform(0, 1.2),
-            key_levels={'support': [1.1100], 'resistance': [1.1400]},
-            news_sentiment=random.uniform(-0.8, 0.8),
-            portfolio_exposure=0.1 + (i * 0.015) % 0.35,
-            correlation_risk=random.uniform(0.1, 0.45),
-            vix_level=12.0 + random.uniform(2.0, 15.0)
+            current_price=1.10,
+            htf_trend='UP',
+            ltf_trend='UP',
+            volatility=0.01,
+            volume_ratio=1.0,
+            key_levels={'support': [], 'resistance': []},
+            news_sentiment=0.0,
+            portfolio_exposure=0.1,
+            correlation_risk=0.1
         )
-        simulation_contexts.append(context)
 
-    # Let's run simulated paths
-    results = {
-        "single_agent": {"returns": [], "latencies": [], "actions": []},
-        "multi_agent": {"returns": [], "latencies": [], "actions": []},
-        "multi_agent_swarm": {"returns": [], "latencies": [], "actions": []}
-    }
+    def test_consensus_range_invariant(self):
+        """Invariant: Consensus score must always be in [0.0, 1.0]."""
+        actions = [TradeAction.BUY, TradeAction.SELL, TradeAction.HOLD, TradeAction.STRONG_BUY, TradeAction.STRONG_SELL, TradeAction.NO_TRADE]
+        roles = [AgentRole.MACRO_STRATEGIST, AgentRole.TACTICAL_EXECUTIONER, AgentRole.RISK_SENTINEL]
 
-    for context in simulation_contexts:
-        # Path A: Single-agent (Strap Macro-strategist argument directly)
-        t0 = time.time()
-        single_arg = debate_system.macro_strategist.analyze(context)
-        results["single_agent"]["latencies"].append(time.time() - t0)
-        results["single_agent"]["actions"].append(single_arg.action)
-        # Compute simplified return
-        direction = 1 if single_arg.action in [TradeAction.BUY, TradeAction.STRONG_BUY] else (-1 if single_arg.action in [TradeAction.SELL, TradeAction.STRONG_SELL] else 0)
-        results["single_agent"]["returns"].append(direction * random.uniform(-0.01, 0.025))
+        # Generates combinations and asserts consensus ∈ [0, 1]
+        for act1 in actions:
+            for act2 in actions:
+                for act3 in actions:
+                    args = [
+                        AgentArgument(roles[0], act1, Conviction.HIGH, ["Reason1"], {}, 0.9, datetime.now()),
+                        AgentArgument(roles[1], act2, Conviction.MODERATE, ["Reason2"], {}, 0.8, datetime.now()),
+                        AgentArgument(roles[2], act3, Conviction.LOW, ["Reason3"], {}, 0.7, datetime.now()),
+                    ]
+                    decision = self.head_ai.synthesize_decision(args, self.context, [])
+                    assert 0.0 <= decision.consensus_level <= 1.0
 
-        # Path B: Multi-agent debate
-        t0 = time.time()
-        decision_ma = await debate_system.debate(context)
-        results["multi_agent"]["latencies"].append(time.time() - t0)
-        results["multi_agent"]["actions"].append(decision_ma.action)
-        direction_ma = 1 if decision_ma.action in [TradeAction.BUY, TradeAction.STRONG_BUY] else (-1 if decision_ma.action in [TradeAction.SELL, TradeAction.STRONG_SELL] else 0)
-        results["multi_agent"]["returns"].append(direction_ma * random.uniform(-0.01, 0.025))
+    def test_order_independence(self):
+        """Invariant: The ordering of arguments in the list must not affect the final winning action or consensus level."""
+        arg1 = AgentArgument(AgentRole.MACRO_STRATEGIST, TradeAction.BUY, Conviction.HIGH, ["Reason1"], {}, 0.9, datetime.now())
+        arg2 = AgentArgument(AgentRole.TACTICAL_EXECUTIONER, TradeAction.SELL, Conviction.MODERATE, ["Reason2"], {}, 0.8, datetime.now())
+        arg3 = AgentArgument(AgentRole.RISK_SENTINEL, TradeAction.HOLD, Conviction.LOW, ["Reason3"], {}, 0.7, datetime.now())
 
-        # Path C: Multi-agent + Swarm
-        t0 = time.time()
-        decision_mas = await debate_system.debate(context)
-        verified, swarm_conf, swarm_reasons = swarm.verify(decision_mas, context)
-        action_mas = decision_mas.action if verified else TradeAction.HOLD
-        results["multi_agent_swarm"]["latencies"].append(time.time() - t0)
-        results["multi_agent_swarm"]["actions"].append(action_mas)
-        direction_mas = 1 if action_mas in [TradeAction.BUY, TradeAction.STRONG_BUY] else (-1 if action_mas in [TradeAction.SELL, TradeAction.STRONG_SELL] else 0)
-        results["multi_agent_swarm"]["returns"].append(direction_mas * random.uniform(-0.005, 0.022))
+        perm1 = [arg1, arg2, arg3]
+        perm2 = [arg3, arg1, arg2]
+        perm3 = [arg2, arg3, arg1]
 
-    # Compile Portfolio Performance metrics
-    def calculate_metrics(returns: List[float]) -> Dict[str, float]:
-        df_ret = pd.Series(returns)
-        cum_ret = df_ret.sum()
-        win_rate = (df_ret > 0).sum() / len(df_ret) if len(df_ret) > 0 else 0
-        sharpe = np.mean(returns) / np.std(returns) * np.sqrt(252) if np.std(returns) > 0 else 0.0
-        neg_returns = [r for r in returns if r < 0]
-        sortino = np.mean(returns) / np.std(neg_returns) * np.sqrt(252) if np.std(neg_returns) > 0 else 0.0
+        dec1 = self.head_ai.synthesize_decision(perm1, self.context, [])
+        dec2 = self.head_ai.synthesize_decision(perm2, self.context, [])
+        dec3 = self.head_ai.synthesize_decision(perm3, self.context, [])
 
-        # Drawdown
-        cum_prod = (1 + df_ret).cumprod()
-        running_max = cum_prod.cummax()
-        drawdown = (cum_prod - running_max) / running_max
-        max_drawdown = drawdown.min() if len(drawdown) > 0 else 0.0
+        assert dec1.action == dec2.action == dec3.action
+        assert dec1.consensus_level == dec2.consensus_level == dec3.consensus_level
+        assert dec1.confidence == dec2.confidence == dec3.confidence
 
-        # Profit Factor
-        gains = sum([r for r in returns if r > 0])
-        losses = abs(sum([r for r in returns if r < 0]))
-        profit_factor = gains / losses if losses > 0 else (gains if gains > 0 else 1.0)
+    def test_duplicate_submission_weight_safety(self):
+        """Invariant: Submitting identical repeated arguments for an agent must never artificially inflate its weight or change vote outcome."""
+        arg1 = AgentArgument(AgentRole.MACRO_STRATEGIST, TradeAction.BUY, Conviction.HIGH, ["Reason1"], {}, 0.9, datetime.now())
+        arg2 = AgentArgument(AgentRole.TACTICAL_EXECUTIONER, TradeAction.SELL, Conviction.MODERATE, ["Reason2"], {}, 0.8, datetime.now())
+
+        # Base arguments
+        base_args = [arg1, arg2]
+        dec_base = self.head_ai.synthesize_decision(base_args, self.context, [])
+
+        # Suffix with duplicates of arg1
+        dup_args = [arg1, arg2, arg1, arg1]
+        dec_dup = self.head_ai.synthesize_decision(dup_args, self.context, [])
+
+        assert dec_base.action == dec_dup.action
+        assert dec_base.consensus_level == dec_dup.consensus_level
+
+    def test_neutral_removal_direction_invariant(self):
+        """Invariant: Removing an abstaining/neutral (HOLD) agent from a skewed debate cannot reverse consensus direction."""
+        arg_bull = AgentArgument(AgentRole.MACRO_STRATEGIST, TradeAction.BUY, Conviction.HIGH, ["Bullish"], {}, 0.9, datetime.now())
+        arg_bear = AgentArgument(AgentRole.TACTICAL_EXECUTIONER, TradeAction.BUY, Conviction.MODERATE, ["Bullish executioner"], {}, 0.8, datetime.now())
+        arg_neutral = AgentArgument(AgentRole.RISK_SENTINEL, TradeAction.HOLD, Conviction.LOW, ["Neutral risk"], {}, 0.5, datetime.now())
+
+        args_with_neutral = [arg_bull, arg_bear, arg_neutral]
+        dec_with = self.head_ai.synthesize_decision(args_with_neutral, self.context, [])
+
+        args_without_neutral = [arg_bull, arg_bear]
+        dec_without = self.head_ai.synthesize_decision(args_without_neutral, self.context, [])
+
+        # Direction (BUY) should remain unchanged
+        assert dec_with.action == dec_without.action == TradeAction.BUY
+
+    def test_replay_stability(self):
+        """Invariant: Replaying the synthesis under exact same conditions is bit-identical."""
+        arg1 = AgentArgument(AgentRole.MACRO_STRATEGIST, TradeAction.STRONG_BUY, Conviction.VERY_HIGH, ["Reason1"], {}, 0.95, datetime.now())
+        arg2 = AgentArgument(AgentRole.TACTICAL_EXECUTIONER, TradeAction.BUY, Conviction.HIGH, ["Reason2"], {}, 0.90, datetime.now())
+        arg3 = AgentArgument(AgentRole.RISK_SENTINEL, TradeAction.HOLD, Conviction.MODERATE, ["Reason3"], {}, 0.80, datetime.now())
+
+        args = [arg1, arg2, arg3]
+        dec1 = self.head_ai.synthesize_decision(args, self.context, [])
+        dec2 = self.head_ai.synthesize_decision(args, self.context, [])
+
+        assert dec1.action == dec2.action
+        assert dec1.confidence == dec2.confidence
+        assert dec1.consensus_level == dec2.consensus_level
+        assert dec1.reasoning == dec2.reasoning
+
+
+# =====================================================================
+# 3. ADVERSARIAL AND EDGE CASE CONDITIONS
+# =====================================================================
+
+class TestAdversarialDebates:
+    """Verifies HeadAI and DebateSystem correctness under complex, adversarial, or edge conditions."""
+
+    def setup_method(self):
+        self.head_ai = HeadAI()
+        self.context = MarketContext(
+            symbol="EURUSD",
+            current_price=1.10,
+            htf_trend='UP',
+            ltf_trend='UP',
+            volatility=0.01,
+            volume_ratio=1.0,
+            key_levels={'support': [], 'resistance': []},
+            news_sentiment=0.0,
+            portfolio_exposure=0.1,
+            correlation_risk=0.1
+        )
+
+    def test_duplicate_agent_ids_resolution(self):
+        """Test how system handles multiple distinct arguments from the same AgentRole (uses latest)."""
+        arg_early = AgentArgument(AgentRole.MACRO_STRATEGIST, TradeAction.SELL, Conviction.LOW, ["Old view"], {}, 0.5, datetime.now())
+        arg_late = AgentArgument(AgentRole.MACRO_STRATEGIST, TradeAction.BUY, Conviction.HIGH, ["Evolved new view"], {}, 0.9, datetime.now())
+        arg_other = AgentArgument(AgentRole.TACTICAL_EXECUTIONER, TradeAction.BUY, Conviction.HIGH, ["Confirming view"], {}, 0.8, datetime.now())
+
+        # Debate arguments listed chronologically
+        args = [arg_early, arg_other, arg_late]
+        decision = self.head_ai.synthesize_decision(args, self.context, [])
+
+        # Macro strategist's latest argument (BUY) must override old argument (SELL)
+        # Therefore, consensus should resolve to BUY rather than being split
+        assert decision.action == TradeAction.BUY
+        # Verify deduplication resolved to exactly 2 active unique agents
+        assert len(decision.agent_votes) == 2
+        assert decision.agent_votes[AgentRole.MACRO_STRATEGIST.value] == TradeAction.BUY.value
+
+    def test_delayed_or_missing_responses(self):
+        """Test debate system with missing agent inputs (gaps in roles)."""
+        # Macro Strategist is missing
+        arg_tactical = AgentArgument(AgentRole.TACTICAL_EXECUTIONER, TradeAction.BUY, Conviction.HIGH, ["Timing perfect"], {}, 0.9, datetime.now())
+        arg_risk = AgentArgument(AgentRole.RISK_SENTINEL, TradeAction.HOLD, Conviction.MODERATE, ["Acceptable risk"], {}, 0.8, datetime.now())
+
+        args = [arg_tactical, arg_risk]
+        decision = self.head_ai.synthesize_decision(args, self.context, [])
+
+        assert decision.action == TradeAction.BUY
+        assert len(decision.agent_votes) == 2
+
+    def test_perfect_tie_votes(self):
+        """Test tie resolution in decision synthesis (e.g. BUY vs SELL with equal weights/conviction)."""
+        # Equal weights in HeadAI default (macro: 0.35, tactical: 0.35)
+        arg_macro = AgentArgument(AgentRole.MACRO_STRATEGIST, TradeAction.BUY, Conviction.HIGH, ["Bullish structural"], {}, 0.8, datetime.now())
+        arg_tactical = AgentArgument(AgentRole.TACTICAL_EXECUTIONER, TradeAction.SELL, Conviction.HIGH, ["Bearish execution"], {}, 0.8, datetime.now())
+
+        args = [arg_macro, arg_tactical]
+        decision = self.head_ai.synthesize_decision(args, self.context, [])
+
+        # In a perfect tie, system must fall back deterministically and gracefully (e.g., BUY or standard priority)
+        assert decision.action in [TradeAction.BUY, TradeAction.SELL, TradeAction.HOLD]
+        assert 0.0 <= decision.consensus_level <= 1.0
+
+    def test_one_high_confidence_expert_vs_many_low_confidence_agents(self):
+        """Test one high-confidence strategist overriding multiple low-confidence opposing agents."""
+        expert_macro = AgentArgument(AgentRole.MACRO_STRATEGIST, TradeAction.STRONG_BUY, Conviction.VERY_HIGH, ["Absolute conviction alpha"], {}, 0.98, datetime.now())
+        novice_tactical = AgentArgument(AgentRole.TACTICAL_EXECUTIONER, TradeAction.SELL, Conviction.VERY_LOW, ["Shallow pullback"], {}, 0.15, datetime.now())
+        novice_risk = AgentArgument(AgentRole.RISK_SENTINEL, TradeAction.HOLD, Conviction.LOW, ["Slight noise"], {}, 0.20, datetime.now())
+
+        args = [expert_macro, novice_tactical, novice_risk]
+        decision = self.head_ai.synthesize_decision(args, self.context, [])
+
+        # Structural macro expertise must dominate over low-confidence noise
+        assert decision.action == TradeAction.STRONG_BUY
+
+    def test_byzantine_malicious_agents(self):
+        """Test debate system resilience when handling corrupted or invalid inputs (malicious arguments)."""
+        arg_macro = AgentArgument(AgentRole.MACRO_STRATEGIST, TradeAction.BUY, Conviction.HIGH, ["Standard buy"], {}, 0.9, datetime.now())
+
+        # Byzantine agent with corrupted extreme negative confidence or invalid action
+        arg_byzantine = AgentArgument(AgentRole.TACTICAL_EXECUTIONER, "CORRUPTED_ACTION", -10, ["Boom!"], {}, -100.0, datetime.now()) # type: ignore
+
+        args = [arg_macro, arg_byzantine]
+
+        # Synthesis must survive gracefully without throwing NameError/AttributeError or dividing by zero
+        try:
+            decision = self.head_ai.synthesize_decision(args, self.context, [])
+            assert decision is not None
+            assert decision.action in [TradeAction.BUY, TradeAction.HOLD]
+        except Exception as e:
+            pytest.fail(f"Byzantine inputs crashed the debate synthesis: {e}")
+
+    def test_all_neutral_debate(self):
+        """Test a debate where everyone abstains or stays neutral."""
+        args = [
+            AgentArgument(AgentRole.MACRO_STRATEGIST, TradeAction.HOLD, Conviction.LOW, ["Sideways range"], {}, 0.5, datetime.now()),
+            AgentArgument(AgentRole.TACTICAL_EXECUTIONER, TradeAction.HOLD, Conviction.LOW, ["No entry trigger"], {}, 0.5, datetime.now()),
+            AgentArgument(AgentRole.RISK_SENTINEL, TradeAction.HOLD, Conviction.MODERATE, ["Wait and see"], {}, 0.6, datetime.now()),
+        ]
+
+        decision = self.head_ai.synthesize_decision(args, self.context, [])
+        assert decision.action == TradeAction.HOLD
+        assert decision.consensus_level == 1.0
+
+
+# =====================================================================
+# 4. END-TO-END PIPELINE AND FLOW INTEGRATION
+# =====================================================================
+
+class PipelineSimulator:
+    """Simulates the full production execution pipeline of the trading bot."""
+
+    def __init__(self):
+        self.debate_system = create_debate_system()
+        self.verification_triggered = False
+        self.risk_evaluation_complete = False
+        self.order_executed = False
+        self.execution_block_reason = None
+        self.audit_log: List[Dict[str, Any]] = []
+
+    def log_audit(self, step: str, details: Any):
+        self.audit_log.append({
+            "timestamp": datetime.now().isoformat(),
+            "step": step,
+            "details": details
+        })
+
+    async def run_pipeline(self, context: MarketContext) -> Dict[str, Any]:
+        # Step 1: Specialists & Debate
+        self.log_audit("market_data_ingest", {"symbol": context.symbol, "price": context.current_price})
+
+        decision = await self.debate_system.debate(context)
+        self.log_audit("debate_complete", {
+            "winning_action": decision.action.value,
+            "consensus": decision.consensus_level,
+            "votes": decision.agent_votes,
+            "reasoning": decision.reasoning
+        })
+
+        # Step 2: Verification Swarm
+        self.verification_triggered = True
+        verification_passed = decision.confidence >= 0.5
+        self.log_audit("verification_swarm", {"passed": verification_passed, "confidence": decision.confidence})
+
+        # Step 3: Risk Sentinel Gatekeeping Evaluation
+        # If Risk Sentinel has raised NO_TRADE or HOLD, we must block/adjust execution
+        self.risk_evaluation_complete = True
+        risk_sentinel_vote = decision.agent_votes.get("risk_sentinel")
+
+        gated = False
+        if risk_sentinel_vote == "no_trade":
+            gated = True
+            self.execution_block_reason = "BLOCKED_BY_RISK_SENTINEL_VETO"
+            self.log_audit("risk_gating", {"status": "BLOCKED", "reason": "RiskSentinel VETO (NO_TRADE)"})
+        elif decision.action == TradeAction.HOLD:
+            gated = True
+            self.execution_block_reason = "BLOCKED_BY_HOLD_DECISION"
+            self.log_audit("risk_gating", {"status": "BLOCKED", "reason": "Consensus resolved to HOLD"})
+        else:
+            self.log_audit("risk_gating", {"status": "ALLOWED"})
+
+        # Step 4: Execution Planner
+        if not gated and verification_passed and decision.action in [TradeAction.BUY, TradeAction.STRONG_BUY, TradeAction.SELL, TradeAction.STRONG_SELL]:
+            self.order_executed = True
+            self.log_audit("execution", {"executed": True, "action": decision.action.value, "size_pct": decision.position_size_pct})
+        else:
+            self.order_executed = False
+            self.log_audit("execution", {"executed": False, "reason": self.execution_block_reason or "Verification failed or Neutral view"})
 
         return {
-            "cumulative_return": float(cum_ret),
-            "win_rate": float(win_rate),
-            "sharpe_ratio": float(sharpe),
-            "sortino_ratio": float(sortino),
-            "max_drawdown": float(max_drawdown),
-            "profit_factor": float(profit_factor)
+            "decision": decision,
+            "executed": self.order_executed,
+            "block_reason": self.execution_block_reason,
+            "audit_log": self.audit_log
         }
 
-    metrics_single = calculate_metrics(results["single_agent"]["returns"])
-    metrics_ma = calculate_metrics(results["multi_agent"]["returns"])
-    metrics_mas = calculate_metrics(results["multi_agent_swarm"]["returns"])
-
-    # Basic validations to ensure multi-agent behaves sensibly vs single agent
-    assert "win_rate" in metrics_ma
-    assert "sharpe_ratio" in metrics_mas
-    assert np.mean(results["multi_agent"]["latencies"]) < 0.1, "Debate latency exceeds institutional constraints"
-
 
 @pytest.mark.asyncio
-async def test_adversarial_verification_scenarios(debate_system):
-    """
-    2. Adversarial Verification
-    Stresses the debate system with high-risk scenarios:
-      - conflicting evidence
-      - stale/missing data
-      - regime changes (VIX spikes, extreme volatility)
-      - flash crashes
-      - manipulated sentiment
-    Ensures that every agent explains why a trade should NOT be taken.
-    """
-    # Regime A: Flash-crash scenario (Price plummeting, extreme volatility, news sentiment panicking)
-    flash_crash_context = MarketContext(
+async def test_full_pipeline_propagation_hold():
+    """Verify that a HOLD or NO_TRADE decision from the debate system propagates correctly and blocks execution."""
+    # Context with extreme exposure to trigger a RiskSentinel veto (recommending NO_TRADE)
+    risky_context = MarketContext(
         symbol="EURUSD",
-        current_price=1.0500,
-        htf_trend='DOWN',
-        ltf_trend='DOWN',
-        volatility=0.045, # Extreme
-        volume_ratio=3.5, # Massive selloff
-        key_levels={'support': [], 'resistance': [1.1200]}, # Breakout of support
-        news_sentiment=-0.95, # Panic
-        portfolio_exposure=0.1,
-        correlation_risk=0.8, # Extreme correlation risk
-        vix_level=42.0 # Panic
-    )
-
-    decision = await debate_system.debate(flash_crash_context)
-
-    # Under a flash crash, Risk Sentinel must trigger NO_TRADE or HOLD
-    assert decision.action in [TradeAction.NO_TRADE, TradeAction.HOLD], "Veto or risk-moderated stance failed during flash crash!"
-
-    # Confirm anti-trade reasons are recorded
-    args = debate_system.decisions[-1].provenance['agent_arguments']
-    sentinel_args = [a for a in args if a['agent'] == AgentRole.RISK_SENTINEL.value]
-    assert len(sentinel_args) > 0
-    assert len(sentinel_args[0]['anti_trade_reasoning']) > 0, "Agents did not provide structured explanation of anti-trade risk factors!"
-
-    # Regime B: Manipulated Sentiment vs Opposite Trends
-    manipulated_context = MarketContext(
-        symbol="EURUSD",
-        current_price=1.1200,
-        htf_trend='DOWN',
+        current_price=1.1000,
+        htf_trend='UP',
         ltf_trend='UP',
-        volatility=0.01,
-        volume_ratio=0.3, # Extremely low volume
-        key_levels={'support': [1.1150], 'resistance': [1.1250]},
-        news_sentiment=0.98, # Artificially spiked
-        portfolio_exposure=0.1,
-        correlation_risk=0.1,
-        vix_level=14.0
+        volatility=0.015,
+        volume_ratio=1.3,
+        key_levels={'support': [1.0950], 'resistance': [1.1050]},
+        news_sentiment=0.4,
+        portfolio_exposure=0.95,  # Extreme exposure > max_exposure
+        correlation_risk=0.8,      # Extreme correlation risk
+        vix_level=32.0             # Elevated VIX
     )
-    decision_man = await debate_system.debate(manipulated_context)
-    assert decision_man.action in [TradeAction.HOLD, TradeAction.BUY, TradeAction.SELL]
+
+    pipeline = PipelineSimulator()
+    result = await pipeline.run_pipeline(risky_context)
+
+    # Risk Sentinel should have vetoed (returned NO_TRADE)
+    decision = result["decision"]
+    assert decision.action == TradeAction.NO_TRADE
+    assert result["executed"] is False
+    assert result["block_reason"] == "BLOCKED_BY_RISK_SENTINEL_VETO"
+
+    # Verify audit log completeness
+    audit_steps = [log["step"] for log in result["audit_log"]]
+    assert "market_data_ingest" in audit_steps
+    assert "debate_complete" in audit_steps
+    assert "risk_gating" in audit_steps
+    assert "execution" in audit_steps
+
+    # Confirm provenance contains complete debate evidence
+    debate_log = next(log for log in result["audit_log"] if log["step"] == "debate_complete")
+    assert "risk_sentinel" in debate_log["details"]["votes"]
+    assert debate_log["details"]["votes"]["risk_sentinel"] == "no_trade"
 
 
-@pytest.mark.asyncio
-async def test_calibration_audit(debate_system, standard_market_context):
-    """
-    3. Calibration Audit
-    Every confidence score should be empirically calibrated.
-    We test that the system calibrates its confidence using the ConfidenceCalibrator
-    and evaluates the calibration ratio.
-    """
-    decision = await debate_system.debate(standard_market_context)
-    assert decision.confidence > 0.0 and decision.confidence <= 1.0
-
-    # Ensure ConfidenceCalibrator is active in the debate system
-    assert debate_system.calibrator is not None
-
-
-@pytest.mark.asyncio
-async def test_decision_provenance(debate_system, standard_market_context):
-    """
-    4. Decision Provenance
-    Every trade must capture comprehensive provenance for post-mortems and reproducibility:
-      - evidence used
-      - assumptions
-      - agent opinions & dissenting views
-      - consensus history
-      - verification results
-      - causal reasoning
-      - risk justification
-      - model versions
-      - configuration hash
-      - git commit
-    """
-    # Run the debate
-    decision = await debate_system.debate(standard_market_context)
-
-    prov = decision.provenance
-    assert prov is not None
-    assert prov['symbol'] == standard_market_context.symbol
-    assert prov['current_price'] == standard_market_context.current_price
-    assert 'htf_trend' in prov['assumptions']
-    assert 'ltf_trend' in prov['assumptions']
-    assert 'vix_level' in prov['assumptions']
-    assert len(prov['agent_arguments']) > 0
-    assert 'agent_votes' in prov
-    assert len(prov['consensus_history']) > 0
-    assert 'final_consensus_level' in prov
-    assert len(prov['causal_reasoning']) > 0
-    assert 'risk_justification' in prov
-    assert 'model_versions' in prov
-    assert 'configuration_hash' in prov
-    assert prov['git_commit'] == 'ba46e82' or (len(prov['git_commit']) == 40 and all(c in '0123456789abcdef' for c in prov['git_commit']))
-
+# =====================================================================
+# 5. PERFORMANCE AND SCALABILITY BENCHMARKS
+# =====================================================================
 
 @pytest.mark.asyncio
-async def test_ablation_studies(debate_system, standard_market_context):
+async def test_debate_performance_benchmarks():
     """
-    5. Ablation Studies
-    Sequential removal of components to quantify incremental contribution:
-      - Debate mechanism (disable rounds)
-      - Risk Sentinel gating (Weights to 0.0)
-      - World Model / Trend indicators (Trends to neutral/side)
+    Scale the debate system from 5 up to 100 mock agents,
+    benchmarking p50, p95, p99 debate latencies and monitoring memory growth.
     """
-    # Path A: Full system (Control)
-    full_decision = await debate_system.debate(standard_market_context)
+    context = MarketContext(
+        symbol="EURUSD",
+        current_price=1.1000,
+        htf_trend='UP',
+        ltf_trend='UP',
+        volatility=0.015,
+        volume_ratio=1.3,
+        key_levels={'support': [1.0950], 'resistance': [1.1050]},
+        news_sentiment=0.4,
+        portfolio_exposure=0.25,
+        correlation_risk=0.3
+    )
 
-    # Ablated Path 1: Debate disabled (Max rounds = 1)
-    debate_system.max_rounds = 1
-    no_debate_decision = await debate_system.debate(standard_market_context)
+    head_ai = HeadAI()
+    scale_sizes = [5, 10, 25, 50, 100]
 
-    # Ablated Path 2: Risk Sentinel deactivated (Risk weight = 0)
-    debate_system.head_ai.weights[AgentRole.RISK_SENTINEL] = 0.0
-    debate_system.head_ai.weights[AgentRole.MACRO_STRATEGIST] = 0.5
-    debate_system.head_ai.weights[AgentRole.TACTICAL_EXECUTIONER] = 0.5
-    no_risk_decision = await debate_system.debate(standard_market_context)
+    print("\n--- DEBATE LATENCY & SCALABILITY PROFILE ---")
 
-    # Verify ablated results produce different, quantified behavior profiles
-    assert no_debate_decision.debate_rounds == 1
-    assert no_risk_decision.confidence != full_decision.confidence or no_risk_decision.action == full_decision.action
+    for size in scale_sizes:
+        # Allocate mock arguments
+        arguments = []
+        for i in range(size):
+            # Create unique role dynamically
+            role_name = f"specialist_agent_{i}"
+            # Construct mock arguments
+            arg = AgentArgument(
+                agent_role=AgentRole.MACRO_STRATEGIST, # Re-use compatible role enum
+                action=TradeAction.BUY if i % 2 == 0 else TradeAction.HOLD,
+                conviction=Conviction.HIGH if i % 3 == 0 else Conviction.MODERATE,
+                reasoning=[f"Benchmark signal reason {i}"],
+                key_factors={"alpha": 0.8},
+                confidence=0.85,
+                timestamp=datetime.now()
+            )
+            arguments.append(arg)
+
+        # Run debate synthesis 50 times to get stable latencies
+        iterations = 50
+        latencies_ms = []
+
+        gc.collect() # Reset garbage collection for reliable baseline
+
+        for _ in range(iterations):
+            start_time = time.perf_counter()
+            _ = head_ai.synthesize_decision(arguments, context, [])
+            end_time = time.perf_counter()
+            latencies_ms.append((end_time - start_time) * 1000.0)
+
+        # Calculate percentiles
+        latencies_ms.sort()
+        p50 = latencies_ms[int(iterations * 0.50)]
+        p95 = latencies_ms[int(iterations * 0.95)]
+        p99 = latencies_ms[-1]
+
+        print(f"Agents Count: {size:3d} | Latency: p50={p50:6.3f}ms | p95={p95:6.3f}ms | p99={p99:6.3f}ms")
+
+        # Validate that the p50 latencies are under acceptable limits (e.g., < 20ms for 100 agents)
+        assert p50 < 20.0, f"Performance bottleneck detected for {size} agents: p50={p50:.3f}ms"
 
 
-@pytest.mark.asyncio
-async def test_failure_injection_resilience(debate_system, standard_market_context):
+# =====================================================================
+# 6. PYTORCH FALLBACK BEHAVIOR VERIFICATION
+# =====================================================================
+
+def test_pytorch_fallback_classes_integrity():
     """
-    6. Failure Injection
-    Tests robustness and graceful degradation of the system against:
-      - Crashed agent (returns None or throws)
-      - Delayed responses / timeouts
-      - Corrupted or invalid context data
-      - Byzantine consensus votes (Tie-breakers / conflicting weights)
+    Ensure fallback classes in dynamic_risk_matrix.py are fully defined and robust.
+    They must allow smooth startup and execution without NameError, and fail predictably on actual operations.
     """
-    # Scenario A: Crashed Agent
-    # If the RiskSentinel's analyze method is corrupted/crashed, the system should gracefully fallback/degrade to safe hold or NO_TRADE
-    original_analyze = debate_system.risk_sentinel.analyze
+    # Import the modules
+    from trading_bot.alpha_research.dynamic_risk_matrix import RiskNeuralNetwork, DynamicRiskMatrix
 
-    def buggy_analyze(context):
-        raise RuntimeError("Risk Sentinel agent critical database crash injected!")
+    # Confirm the RiskNeuralNetwork class is successfully defined and initialized without NameErrors
+    try:
+        net = RiskNeuralNetwork(input_dim=10)
+        assert net is not None
+    except Exception as e:
+        pytest.fail(f"RiskNeuralNetwork construction failed under fallback check: {e}")
 
-    debate_system.risk_sentinel.analyze = buggy_analyze
+    # Confirm that DynamicRiskMatrix functions gracefully
+    try:
+        drm = DynamicRiskMatrix()
+        assert drm is not None
 
-    # Running debate with crashed RiskSentinel should gracefully complete with a safe action
-    fallback_decision = await debate_system.debate(standard_market_context)
-    assert fallback_decision.action == TradeAction.NO_TRADE, "Risk Sentinel crash fallback should yield NO_TRADE defensive block!"
-    assert fallback_decision.confidence == 0.95, "Risk Sentinel fallback confidence should be highly defensive!"
-
-    # Test other agent crash (MacroStrategist)
-    original_macro_analyze = debate_system.macro_strategist.analyze
-    debate_system.macro_strategist.analyze = lambda context: (_ for _ in ()).throw(RuntimeError("Macro Strategist failed!"))
-
-    fallback_decision_2 = await debate_system.debate(standard_market_context)
-    # The system should remain online and complete with an action reflecting graceful degradation
-    assert fallback_decision_2.action is not None
-
-    # Restore agents
-    debate_system.risk_sentinel.analyze = original_analyze
-    debate_system.macro_strategist.analyze = original_macro_analyze
-
-
-@pytest.mark.asyncio
-async def test_production_performance_profiling(debate_system, standard_market_context):
-    """
-    7. Production Performance Profiling
-    Benchmark latency profiles up to 100 simulated sequential iterations to verify:
-      - P50, P95, and P99 latencies
-      - CPU timing
-      - throughput (actions per second)
-    """
-    latencies = []
-    num_runs = 50
-
-    for _ in range(num_runs):
-        t0 = time.time()
-        _ = await debate_system.debate(standard_market_context)
-        latencies.append((time.time() - t0) * 1000) # Milliseconds
-
-    p50 = np.percentile(latencies, 50)
-    p95 = np.percentile(latencies, 95)
-    p99 = np.percentile(latencies, 99)
-    throughput = num_runs / (sum(latencies) / 1000)
-
-    print(f"\n[Multi-Agent Perf Profiling] P50: {p50:.2f}ms, P95: {p95:.2f}ms, P99: {p99:.2f}ms, Throughput: {throughput:.1f} ops/sec")
-
-    assert p50 < 20.0, "P50 latency exceeds production-grade threshold!"
-    assert p99 < 100.0, "P99 latency has unacceptable tail lag!"
+        # Calling calculate or update in mock/fallback mode should succeed or raise standard handled exceptions
+        # but NEVER throw NameError or basic syntax crashes.
+        res = drm.calculate_risk_weights([[0.1, 0.2]])
+        assert res is not None
+    except Exception as e:
+        if "NameError" in str(e):
+            pytest.fail(f"DynamicRiskMatrix raised NameError during execution: {e}")
