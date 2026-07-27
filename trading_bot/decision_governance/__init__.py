@@ -126,7 +126,7 @@ from .multi_hypothesis import (
     MultiHypothesisGenerator, 
     CrossStrategyArbitrator, 
     TradingHypothesis, 
-    EnsembleConsensus,
+    EnsembleDecision,
     HypothesisSource
 )
 from .causal_attribution import CausalAttributionEngine, CausalAttribution, CausalFactor
@@ -421,7 +421,7 @@ __all__ = [
     'MultiHypothesisGenerator',
     'CrossStrategyArbitrator',
     'TradingHypothesis',
-    'EnsembleConsensus',
+    'EnsembleDecision',
     'HypothesisSource',
     'CausalAttributionEngine',
     'CausalAttribution',

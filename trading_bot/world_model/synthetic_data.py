@@ -3,6 +3,7 @@ Phase 4: World Models - Synthetic Market Generation
 Creates realistic market scenarios for training and testing
 """
 
+import torch.nn as nn
 import numpy as np
 import torch
 from typing import Dict, List, Optional, Tuple, Any

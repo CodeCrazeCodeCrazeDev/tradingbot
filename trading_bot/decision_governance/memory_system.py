@@ -10,6 +10,7 @@ You need three memories, not one:
 Without these three, introspection remains hand-wavy.
 """
 
+from typing import Set
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timedelta
 from collections import defaultdict, deque

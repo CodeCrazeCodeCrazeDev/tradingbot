@@ -155,7 +155,17 @@ class ScientificReasoningEngine:
         return hyp.id
 
     async def detect_anomalies(self, hid: str):
-        self.registry[hid].state = HypothesisState.ANOMALY_DETECTION
+        """Step 2: Detect deviations from World Model expectations."""
+        hyp = self.registry[hid]
+        hyp.state = HypothesisState.ANOMALY_DETECTION
+
+        if self.world_model and hasattr(self.world_model, "predict_state"):
+            # Compare observation (hyp.boundary_conditions) with predicted state
+            predicted = await self.world_model.predict_state(hyp.boundary_conditions)
+            surprise = np.mean([abs(predicted.get(k, 0) - v) for k, v in hyp.model_params.items() if isinstance(v, (int, float))])
+            hyp.vfe = surprise # Using surprise as a proxy for VFE in Step 2
+            if surprise > 0.5:
+                logger.info(f"SRE: Anomaly detected for {hid} (Surprise: {surprise:.4f})")
 
     async def generate_questions(self, hid: str):
         self.registry[hid].state = HypothesisState.QUESTION_GENERATION
@@ -179,11 +189,20 @@ class ScientificReasoningEngine:
             pass
 
     async def generate_counterfactuals(self, hid: str):
-        self.registry[hid].state = HypothesisState.COUNTERFACTUAL_GENERATION
+        """Step 7: Perform 'What-if' (do-calculus) interventional testing."""
+        hyp = self.registry[hid]
+        hyp.state = HypothesisState.COUNTERFACTUAL_GENERATION
+
         if self.world_model and hasattr(self.world_model, "simulate_intervention"):
-            intervention = self.registry[hid].model_params.get("intervention", {})
+            # Define intervention: what if the primary feature was different?
+            intervention = hyp.model_params.get("intervention", {"target": "price_action", "value": "reversed"})
             results = await self.world_model.simulate_intervention(intervention)
-            self.registry[hid].validation_score = results.get("causal_stability", 0.5)
+
+            # If the result doesn't change when we intervene on a non-causal variable, it's robust.
+            # If it DOES change when we intervene on the 'cause', the hypothesis is strengthened.
+            hyp.validation_score = results.get("causal_stability", 0.5)
+            hyp.ambiguity = 1.0 - results.get("confidence", 0.5)
+            logger.info(f"SRE: Counterfactual simulation completed for {hid}. Causal Stability: {hyp.validation_score:.4f}")
 
     async def adversarial_debate(self, hid: str):
         self.registry[hid].state = HypothesisState.ADVERSARIAL_DEBATE
@@ -240,7 +259,21 @@ class ScientificReasoningEngine:
             hyp.state = HypothesisState.DORMANT
 
     async def discover_new_hypotheses(self, hid: str = None):
-        if len(self.registry) > 50:
-            rejections = len([h for h in self.registry.values() if h.state == HypothesisState.REJECTED])
-            if rejections / len(self.registry) > 0.7:
-                logger.warning("SRE: High rejection rate detected.")
+        """Step 19: Meta-discovery of new research directions."""
+        if len(self.registry) < 10:
+            return
+
+        rejections = [h for h in self.registry.values() if h.state == HypothesisState.REJECTED]
+        rejection_rate = len(rejections) / len(self.registry)
+
+        if rejection_rate > 0.7:
+            logger.warning(f"SRE: Critical rejection rate ({rejection_rate:.2%}). Triggering Meta-Discovery.")
+            # In production, this would call AlphaMiningEngine with new search priors
+            if self.controller and hasattr(self.controller, "alpha_mining"):
+                await self.controller.alpha_mining.adjust_search_strategy(reason="high_rejection_rate")
+
+        # Look for clusters of successful hypotheses to 'Split' or 'Merge'
+        confirmed = [h for h in self.registry.values() if h.state == HypothesisState.INSTITUTIONALIZED]
+        if len(confirmed) > 2:
+            # Simple merge logic example
+            logger.info("SRE: Identifying opportunities for hypothesis synthesis (Merging).")

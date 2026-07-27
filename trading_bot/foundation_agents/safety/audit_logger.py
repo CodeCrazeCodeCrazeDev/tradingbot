@@ -12,6 +12,7 @@ Provides comprehensive audit logging for:
 Ensures complete accountability and traceability.
 """
 
+from collections import defaultdict
 import logging
 import hashlib
 import json

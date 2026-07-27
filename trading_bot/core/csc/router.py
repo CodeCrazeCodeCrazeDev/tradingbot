@@ -1,4 +1,5 @@
 """
+SkillRouter & HASP - UCA V5 Skill Management (July 2026)
 
 Orchestrates the selection and execution of Skill Programs (HASP)
 
@@ -165,6 +166,8 @@ class CapabilityRouter:
 
 # Integration helper
 router = CapabilityRouter()
+
+"""
 SkillRouter & HASP - UCA V5 Skill Management
 Orchestrates the selection and execution of Skill Programs (HASP/PFs)
 and behavioral adapters (Skill-to-LoRA).
@@ -172,15 +175,14 @@ Implements 'HASP' (arXiv:2605.17734) and 'S2L' (arXiv:2606.16769).
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Callable
-from dataclasses import dataclass, field
 from enum import Enum
-from datetime import datetime
+from typing import Any, Dict, List, Optional, Callable
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
 class SkillType(Enum):
-    PROGRAM = "hasp_program"  # Executable Skill Program (ESP)
+    PROGRAM = "hasp_program"  # Executable Skill Program (PF)
     LORA = "s2l_adapter"      # Skill-to-LoRA Adapter
     PROMPT = "legacy_prompt"  # Legacy advisory prompt
 
@@ -188,70 +190,16 @@ class SkillType(Enum):
 class SkillArtifact:
     skill_id: str
     skill_type: SkillType
-    executable: Optional[Callable] = None
+    executable: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None
     adapter_id: Optional[str] = None
     metadata: Dict[str, Any] = None
 
 class SkillRouter:
     """
-    Routes agent tasks to the most efficient skill implementation.
-    UCA V5 implementation of S2L and HASP.
+    Authoritative router for mapping strategic tasks to specialized skills.
+    Replaces hardcoded logic with dynamic, capability-based routing.
     """
-
-    def __init__(self):
-        if self._initialized:
-            return
-        self._registry: Dict[str, SkillArtifact] = {}
-        self.executor = HASPExecutor()
-        self._initialize_default_skills()
-        logger.info("SkillRouter V5: Initialized")
-
-    def _initialize_default_skills(self):
-        # Register a mock HASP guardrail
-        self.register_skill(SkillArtifact(
-            skill_id="volatility_guardrail",
-            skill_type=SkillType.HASP_PROGRAM,
-            executable=self._pf_volatility_guardrail,
-            metadata={"trigger_threshold": 0.3}
-        ))
-        # Register a mock S2L adapter
-        self.register_skill(SkillArtifact(
-            skill_id="hedging_behavior",
-            skill_type=SkillType.S2L_ADAPTER,
-            adapter_id="lora_hedging_v1",
-            metadata={"archetype": "risk_averse"}
-        ))
-
-    def _init_standard_skills(self):
-        # Register standard HASP programs
-        self.register_skill(SkillArtifact(
-            skill_id="high_vol_guardrail",
-            skill_type=SkillType.HASP_PROGRAM,
-            executable=self._pf_volatility_guardrail,
-            metadata={"description": "Hard guardrail for high volatility"}
-        ))
-
-        self.register_skill(SkillArtifact(
-            skill_id="compliance_checker",
-            skill_type=SkillType.HASP_PROGRAM,
-            executable=self._pf_compliance_checker,
-            metadata={"description": "Institutional compliance gate"}
-        ))
-
-        # Register standard S2L adapters (behavioral archetypes)
-        self.register_skill(SkillArtifact(
-            skill_id="lora_hedging_archetype",
-            skill_type=SkillType.S2L_ADAPTER,
-            executable=None,
-            metadata={"description": "Specialized hedging behavior"}
-        ))
-
-        self.register_skill(SkillArtifact(
-            skill_id="lora_arbitrage_archetype",
-            skill_type=SkillType.S2L_ADAPTER,
-            executable=None,
-            metadata={"description": "Specialized arbitrage behavior"}
-        ))
+    _instance = None
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -259,80 +207,74 @@ class SkillRouter:
             cls._instance._initialized = False
         return cls._instance
 
-    async def route_task(self, task: str, context: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Functional routing logic for S2L and HASP.
-        """
-        market_state = context.get("market", {})
+    def __init__(self):
+        if self._initialized:
+            return
+        self._registry: Dict[str, SkillArtifact] = {}
+        self._initialize_default_skills()
+        self._initialized = True
+        logger.info("SkillRouter V5: Initialized")
 
-        # 1. HASP: Evaluate PF applicability (Hard Guardrails)
+    def _initialize_default_skills(self):
+        # Register standard HASP programs
+        self.register_skill(SkillArtifact(
+            skill_id="volatility_guardrail",
+            skill_type=SkillType.PROGRAM,
+            executable=self._pf_volatility_guardrail,
+            metadata={"description": "Hard guardrail for high volatility"}
+        ))
+
+        # Register standard S2L adapters
+        self.register_skill(SkillArtifact(
+            skill_id="hedging_behavior",
+            skill_type=SkillType.LORA,
+            adapter_id="lora_hedging_v1",
+            metadata={"archetype": "risk_averse"}
+        ))
+
+    def register_skill(self, artifact: SkillArtifact):
+        self._registry[artifact.skill_id] = artifact
+        logger.debug(f"Registered skill: {artifact.skill_id} ({artifact.skill_type.value})")
+
+    async def route_task(self, task: str, context: Dict[str, Any]) -> Dict[str, Any]:
+        """Routes a task to the appropriate skill or adapter."""
+        # 1. Check for applicable HASP programs (Hard Guardrails)
+        market_state = context.get("market", {})
         if market_state.get("volatility", 0) > 0.3:
             skill = self._registry.get("volatility_guardrail")
-            if skill:
-                logger.warning(f"HASP: failure-prone state detected. Activating PF: {skill.skill_id}")
-                return self.executor.execute(skill, context)
+            if skill and skill.executable:
+                return skill.executable(context)
 
-        # 2. S2L: Skill-to-LoRA Internalization
-        # Determine behavioral archetype for the task
-        adapter_skill = self._determine_s2l_adapter(task)
-        if adapter_skill:
-            logger.info(f"S2L: Routing to behavioral adapter: {adapter_skill.adapter_id}")
-            return {
-                "status": "s2l_routed",
-                "adapter_id": adapter_skill.adapter_id,
-                "metadata": adapter_skill.metadata
-            }
+        # 2. Check for S2L adapters
+        if "hedge" in task.lower():
+            skill = self._registry.get("hedging_behavior")
+            if skill:
+                return {"status": "s2l_routed", "adapter_id": skill.adapter_id}
 
         return {"status": "standard_reasoning"}
 
-    def _determine_s2l_adapter(self, task: str) -> Optional[SkillArtifact]:
-        """Maps task to S2L adapter artifact."""
-        if "hedge" in task.lower():
-            return self._registry.get("hedging_behavior")
-        return None
-
-    def _pf_volatility_guardrail(self, state: Dict[str, Any]) -> Dict[str, Any]:
-        """Executable PF: Hard guardrail for high volatility."""
+    def _pf_volatility_guardrail(self, context: Dict[str, Any]) -> Dict[str, Any]:
         return {
             "status": "pf_intervention",
             "action": "override_to_hold",
             "reason": "Volatility exceeded HASP safety threshold (0.3)"
         }
 
-        return {"status": "standard_execution"}
-
-    def _determine_adapter(self, task_type: str, context: Dict) -> Optional[str]:
-        """Functional adapter selection logic."""
-        if "hedge" in task_type.lower() or context.get("needs_hedging"):
-            return "lora_hedging_archetype"
-        if "arbitrage" in task_type.lower() or context.get("opportunity_type") == "ARBITRAGE":
-            return "lora_arbitrage_archetype"
-        return None
-
-        start_time = datetime.utcnow()
-        logger.info(f"HASP: Executing skill program {skill.skill_id}")
-        try:
-            # In production, this would run in a restricted sandbox
-            result = skill.executable(state)
-            return {"status": "success", "pf_result": result}
-        except Exception as e:
-            logger.error(f"HASP Execution Failure: {e}")
-            return {"status": "failure", "error": str(e)}
-
-    async def _pf_volatility_guardrail(self, context: Dict) -> Dict:
-        return {"action": "override_to_hold", "reason": "Volatility exceeded HASP safety threshold"}
-
-    async def _pf_compliance_checker(self, context: Dict) -> Dict:
-        # Functional check against institutional compliance rules
-        if context.get("quantity", 0) > 10.0:
-            return {"action": "REJECT", "reason": "Trade size exceeds compliance limit"}
-        return {"action": "APPROVE"}
-
 class HASPExecutor:
-    def __init__(self, router: SkillRouter):
-        self.router = router
+    """Executes Skill Programs in a controlled environment."""
+    def __init__(self, router: Optional[SkillRouter] = None):
+        self.router = router or SkillRouter()
 
     async def execute(self, skill_id: str, state: Dict[str, Any]) -> Dict[str, Any]:
         skill = self.router._registry.get(skill_id)
-        if not skill: return {"status": "error", "message": f"Skill {skill_id} not found"}
-        return await self.router.execute_hasp(skill, state)
+        if not skill or not skill.executable:
+            return {"status": "error", "message": f"Executable skill {skill_id} not found"}
+
+    def _execute_skill_program(self, skill: 'SkillArtifact', state: Dict) -> Dict:
+        """Execute a skill program's behavior (HASP), sandboxed in production."""
+        logger.info(f"HASP: Executing skill program {skill.skill_id}")
+        try:
+            return skill.executable(state)
+        except Exception as e:
+            logger.error(f"HASP Execution Failure: {e}")
+            return {"status": "failure", "error": str(e)}
