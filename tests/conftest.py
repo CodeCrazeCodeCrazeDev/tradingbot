@@ -301,6 +301,16 @@ def temp_config_file():
     temp_path.unlink(missing_ok=True)
 
 
+@pytest.fixture(autouse=True)
+def mock_wait_for_decision(monkeypatch):
+    """Automatically patch LogAction.wait_for_decision to avoid hanging in tests."""
+    from trading_bot.core.unified_event_bus import LogAction, ActionStatus
+    async def mock_wait(self, timeout=10.0):
+        self.status = ActionStatus.APPROVED
+        return ActionStatus.APPROVED
+    monkeypatch.setattr(LogAction, "wait_for_decision", mock_wait)
+
+
 # Pytest hooks
 def pytest_configure(config):
     """Configure pytest with all markers."""

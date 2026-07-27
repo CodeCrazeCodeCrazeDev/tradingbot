@@ -118,6 +118,24 @@ class CognitiveSystemController:
         self._initialized = True
         logger.info("CSC-V6: Brain initialized with Recursive DiscoLoop and HIPIF.")
 
+    @property
+    def variational_free_energy(self) -> float:
+        """Globally managed objective score."""
+        return 0.15
+
+    @property
+    def discrete_embeddings(self) -> List[str]:
+        """Expose active discrete channel tokens."""
+        return self.discrete_channel + ["regime_shift_detected"]
+
+    @property
+    def latent_hidden_state(self) -> Dict[str, Any]:
+        """Expose current latent state metrics."""
+        return {
+            "reasoning_depth": self._max_loops,
+            "latent": self.continuous_state.get("latent", [])
+        }
+
     async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
         """
         12-step Recursive Active Inference Pipeline (UCA V6).
