@@ -41,8 +41,61 @@ try:
     import torch.nn as nn
     import torch.nn.functional as F
     TORCH_AVAILABLE = True
-except ImportError:
+except (ImportError, NameError):
     TORCH_AVAILABLE = False
+    # Create dummy classes for when torch is not available
+    class nn:
+        class Module:
+            def __init__(self, *args, **kwargs): pass
+            def parameters(self): return []
+            def to(self, *args, **kwargs): return self
+            def train(self): pass
+            def eval(self): pass
+            def __call__(self, *args, **kwargs): return None
+        class Linear:
+            def __init__(self, *args, **kwargs): pass
+        class ReLU:
+            def __init__(self, *args, **kwargs): pass
+        class Dropout:
+            def __init__(self, *args, **kwargs): pass
+        class Sequential:
+            def __init__(self, *args, **kwargs): pass
+        class MSELoss:
+            def __init__(self, *args, **kwargs): pass
+    class F:
+        @staticmethod
+        def relu(x): return x
+        @staticmethod
+        def softmax(x, dim=None): return x
+    class torch:
+        float32 = "float32"
+        class Tensor:
+            def unsqueeze(self, *args, **kwargs): return self
+        @staticmethod
+        def tensor(data, *args, **kwargs): return data
+        @staticmethod
+        def FloatTensor(data, *args, **kwargs): return data
+        @staticmethod
+        def no_grad():
+            class NoGrad:
+                def __enter__(self): pass
+                def __exit__(self, *args): pass
+            return NoGrad()
+        class optim:
+            class Adam:
+                def __init__(self, *args, **kwargs): pass
+                def zero_grad(self): pass
+                def step(self): pass
+
+if not TORCH_AVAILABLE:
+    class MockModule:
+        def __init__(self, *args, **kwargs):
+            pass
+    class MockNN:
+        Module = MockModule
+        def __getattr__(self, name):
+            return MockModule
+    nn = MockNN()
 
 try:
     from sklearn.preprocessing import StandardScaler
@@ -146,6 +199,11 @@ class RiskFactors:
     economic_calendar_risk: float = 0.0
 
 
+if not TORCH_AVAILABLE:
+    class nn:
+        class Module:
+            pass
+
 class RiskNeuralNetwork(nn.Module):
     """Neural network for risk prediction"""
     
@@ -180,6 +238,15 @@ class RiskPredictor:
         # Fallback model
         self.fallback_model = None
         
+        # Fail fast in production if Torch is missing and stubs are used
+        import os
+        env = os.getenv("ENVIRONMENT") or self.config.get("environment")
+        if env == "production" and not TORCH_AVAILABLE:
+            raise RuntimeError(
+                "CRITICAL STARTUP FAILURE: Neural network risk predictor is using Dummy Torch stubs "
+                "under a PRODUCTION environment. Production startup aborted to prevent silent intelligence degradation."
+            )
+
         if TORCH_AVAILABLE:
             self.neural_net = RiskNeuralNetwork()
         

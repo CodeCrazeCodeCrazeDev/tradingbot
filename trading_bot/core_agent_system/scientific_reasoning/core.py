@@ -132,6 +132,7 @@ class ScientificReasoningEngine:
         }
 
     def get_hypothesis(self, hid: str) -> Optional[ScientificHypothesis]:
+        """Retrieve a hypothesis from the registry by its ID."""
         return self.registry.get(hid)
 
     async def run_cycle(self, observation: Dict[str, Any]):
@@ -156,6 +157,9 @@ class ScientificReasoningEngine:
         hyp = ScientificHypothesis(name=f"Obs-{uuid.uuid4().hex[:4]}", state=HypothesisState.OBSERVATION)
         self.registry[hyp.id] = hyp
         return hyp.id
+
+    def get_hypothesis(self, hid: str) -> ScientificHypothesis:
+        return self.registry.get(hid)
 
     async def detect_anomalies(self, hid: str):
         """Step 2: Detect deviations from World Model expectations."""
@@ -252,7 +256,7 @@ class ScientificReasoningEngine:
 
     async def retire_hypothesis(self, hid: str):
         hyp = self.registry[hid]
-        if hyp.posterior > 0.8:
+        if hyp.posterior >= 0.8:
             hyp.state = HypothesisState.INSTITUTIONALIZED
         elif hyp.posterior < 0.2:
             hyp.state = HypothesisState.REJECTED
