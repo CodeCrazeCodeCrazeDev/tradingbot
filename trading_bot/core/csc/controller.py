@@ -188,7 +188,7 @@ class CognitiveSystemController:
             return "critical"
         return "minor"
 
-    async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
+    async def process_market_observation(self, observation: Any) -> Optional[CoreDecision]:
         """
         12-step Recursive Active Inference Pipeline (UCA V6).
         Grounded in Variational Free Energy (VFE) minimization.

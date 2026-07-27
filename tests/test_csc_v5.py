@@ -5,14 +5,14 @@ from trading_bot.core.csc.controller import CognitiveSystemController
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome
 
 @pytest.mark.asyncio
-async def test_csc_12_step_pipeline():
+async def test_csc_12_step_pipeline(monkeypatch):
     # Mock dependencies
     world_model = MagicMock()
     hms = MagicMock()
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
 
-    # Mock Shield to approve
+    # Mock Shield to approve (awaited)
     shield_report = MagicMock()
     from trading_bot.core.immutable_shield import GovernanceDecision
     shield_report.decision = GovernanceDecision.APPROVED
