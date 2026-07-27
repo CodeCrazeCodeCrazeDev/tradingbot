@@ -9,9 +9,10 @@ from datetime import datetime
 from pathlib import Path
 
 # Add project root to path so imports resolve to the real package.
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-def run_comprehensive_tests():
+def main():
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
     print("="*70)
     print("ELITE TRADING BOT - COMPREHENSIVE TEST")
     print("="*70)
@@ -114,7 +115,7 @@ def run_comprehensive_tests():
     print("="*70)
 
     try:
-        from trading_bot.notifications import NotificationManager, NotificationMessage, NotificationMessage, NotificationPriority
+        from trading_bot.notifications import NotificationManager, NotificationMessage, NotificationPriority
 
         # Create notification manager (without real credentials)
         notifier = NotificationManager(config={})
@@ -426,5 +427,5 @@ def run_comprehensive_tests():
     # Exit with appropriate code
     sys.exit(0 if test_results['failed'] == 0 else 1)
 
-if __name__ == '__main__':
-    run_comprehensive_tests()
+if __name__ == "__main__":
+    main()
