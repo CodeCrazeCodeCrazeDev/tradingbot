@@ -131,6 +131,10 @@ class ScientificReasoningEngine:
             "survival_rates": {}
         }
 
+    def get_hypothesis(self, hid: str) -> Optional[ScientificHypothesis]:
+        """Retrieve a hypothesis from the registry by its ID."""
+        return self.registry.get(hid)
+
     async def run_cycle(self, observation: Dict[str, Any]):
         hyp_id = await self.observe(observation)
 
@@ -249,7 +253,7 @@ class ScientificReasoningEngine:
 
     async def retire_hypothesis(self, hid: str):
         hyp = self.registry[hid]
-        if hyp.posterior > 0.8:
+        if hyp.posterior >= 0.8:
             hyp.state = HypothesisState.INSTITUTIONALIZED
         elif hyp.posterior < 0.2:
             hyp.state = HypothesisState.REJECTED
