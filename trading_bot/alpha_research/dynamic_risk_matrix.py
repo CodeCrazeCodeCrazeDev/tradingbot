@@ -41,8 +41,61 @@ try:
     import torch.nn as nn
     import torch.nn.functional as F
     TORCH_AVAILABLE = True
-except ImportError:
+except (ImportError, NameError):
     TORCH_AVAILABLE = False
+    # Create dummy classes for when torch is not available
+    class nn:
+        class Module:
+            def __init__(self, *args, **kwargs): pass
+            def parameters(self): return []
+            def to(self, *args, **kwargs): return self
+            def train(self): pass
+            def eval(self): pass
+            def __call__(self, *args, **kwargs): return None
+        class Linear:
+            def __init__(self, *args, **kwargs): pass
+        class ReLU:
+            def __init__(self, *args, **kwargs): pass
+        class Dropout:
+            def __init__(self, *args, **kwargs): pass
+        class Sequential:
+            def __init__(self, *args, **kwargs): pass
+        class MSELoss:
+            def __init__(self, *args, **kwargs): pass
+    class F:
+        @staticmethod
+        def relu(x): return x
+        @staticmethod
+        def softmax(x, dim=None): return x
+    class torch:
+        float32 = "float32"
+        class Tensor:
+            def unsqueeze(self, *args, **kwargs): return self
+        @staticmethod
+        def tensor(data, *args, **kwargs): return data
+        @staticmethod
+        def FloatTensor(data, *args, **kwargs): return data
+        @staticmethod
+        def no_grad():
+            class NoGrad:
+                def __enter__(self): pass
+                def __exit__(self, *args): pass
+            return NoGrad()
+        class optim:
+            class Adam:
+                def __init__(self, *args, **kwargs): pass
+                def zero_grad(self): pass
+                def step(self): pass
+
+if not TORCH_AVAILABLE:
+    class MockModule:
+        def __init__(self, *args, **kwargs):
+            pass
+    class MockNN:
+        Module = MockModule
+        def __getattr__(self, name):
+            return MockModule
+    nn = MockNN()
 
 try:
     from sklearn.preprocessing import StandardScaler
@@ -146,50 +199,31 @@ class RiskFactors:
     economic_calendar_risk: float = 0.0
 
 
-if TORCH_AVAILABLE:
-    class RiskNeuralNetwork(nn.Module):
-        """Neural network for risk prediction"""
-        
-        def __init__(self, input_dim: int = 15, hidden_dim: int = 64):
-            super().__init__()
-
-            self.network = nn.Sequential(
-                nn.Linear(input_dim, hidden_dim),
-                nn.ReLU(),
-                nn.Dropout(0.2),
-                nn.Linear(hidden_dim, hidden_dim),
-                nn.ReLU(),
-                nn.Dropout(0.2),
-                nn.Linear(hidden_dim, 32),
-                nn.ReLU(),
-                nn.Linear(32, 5)  # 5 outputs: risk_score, vol, drawdown, var, hedge_ratio
-            )
-
-        def forward(self, x):
-            return self.network(x)
-else:
-    class RiskNeuralNetwork:
-        """Fallback neural network placeholder for non-torch environments"""
-        def __init__(self, *args, **kwargs):
+if not TORCH_AVAILABLE:
+    class nn:
+        class Module:
             pass
 
-        def __call__(self, x):
-            return self.forward(x)
-
-        def forward(self, x):
-            import numpy as np
-            if hasattr(x, "shape") and len(x.shape) > 1:
-                return np.zeros((x.shape[0], 5), dtype=np.float32)
-            return np.zeros((1, 5), dtype=np.float32)
-
-        def eval(self):
-            return self
-
-        def train(self, mode=True):
-            return self
-
-        def parameters(self):
-            return []
+class RiskNeuralNetwork(nn.Module):
+    """Neural network for risk prediction"""
+    
+    def __init__(self, input_dim: int = 15, hidden_dim: int = 64):
+        super().__init__()
+        
+        self.network = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(hidden_dim, 32),
+            nn.ReLU(),
+            nn.Linear(32, 5)  # 5 outputs: risk_score, vol, drawdown, var, hedge_ratio
+        )
+        
+    def forward(self, x):
+        return self.network(x)
 
 
 class RiskPredictor:
