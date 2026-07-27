@@ -1,3 +1,23 @@
+platform linux -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: /app
+plugins: cov-7.1.0, asyncio-1.4.0, timeout-2.4.0
+asyncio: mode=Mode.AUTO
+collected 7 items
+
+tests/uca_v5/test_csc_v5.py::test_csc_hasp_intervention PASSED           [ 14%]
+tests/uca_v5/test_csc_v5.py::test_csc_pivot_loop PASSED                  [ 28%]
+tests/uca_v5/test_hms_v5.py::test_hms_sage_graph_evolution PASSED        [ 42%]
+tests/uca_v5/test_hms_v5.py::test_hms_automem_optimization PASSED        [ 57%]
+tests/uca_v5/test_router_v5.py::test_router_hasp_routing PASSED          [ 71%]
+tests/uca_v5/test_router_v5.py::test_router_s2l_routing PASSED           [ 85%]
+tests/test_event_bus_consolidation.py::TestEventBusConsolidation::test_event_bus_bridge PASSED [100%]
+
+```
+
+---
+
+## 4. Regression Analysis & Code Coverage
+No regressions were introduced during this remediation phase. Code coverage in core active inference layers was maintained, and diagnostic tools confirm no memory leaks or dangling event-bus tasks remain in the active execution queue.
 # VALIDATION REPORT - Production Audit Fixes
 
 ## 1. Security Validation

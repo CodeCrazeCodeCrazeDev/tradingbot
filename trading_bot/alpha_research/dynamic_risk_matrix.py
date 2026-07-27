@@ -238,6 +238,15 @@ class RiskPredictor:
         # Fallback model
         self.fallback_model = None
         
+        # Fail fast in production if Torch is missing and stubs are used
+        import os
+        env = os.getenv("ENVIRONMENT") or self.config.get("environment")
+        if env == "production" and not TORCH_AVAILABLE:
+            raise RuntimeError(
+                "CRITICAL STARTUP FAILURE: Neural network risk predictor is using Dummy Torch stubs "
+                "under a PRODUCTION environment. Production startup aborted to prevent silent intelligence degradation."
+            )
+
         if TORCH_AVAILABLE:
             self.neural_net = RiskNeuralNetwork()
         
