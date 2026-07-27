@@ -322,6 +322,9 @@ class CognitiveSystemController:
         }
 
     def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
+        provenance = InstitutionalProvenance(
+            pipeline_version="UCA-V6"
+        )
         return ResearchLedgerEntry(
             entry_id=str(uuid4()),
             hypothesis=branch.hypotheses[0] if branch.hypotheses else None,

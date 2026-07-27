@@ -12,7 +12,7 @@ async def test_router_hasp_routing():
     result = await router.route_task("execution", context)
 
     assert result["status"] == "pf_intervention"
-    assert result["result"]["action"] == "override_to_hold"
+    assert result["action"] == "override_to_hold"
 
 @pytest.mark.asyncio
 async def test_router_s2l_routing():
@@ -23,5 +23,5 @@ async def test_router_s2l_routing():
 
     result = await router.route_task("hedging_task", context)
 
-    assert result["status"] == "dispatched_to_adapter"
-    assert result["adapter"] == "lora_hedging_archetype"
+    assert result["status"] == "s2l_routed"
+    assert result["adapter_id"] == "lora_hedging_v2"

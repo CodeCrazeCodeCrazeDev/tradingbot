@@ -1,14 +1,6 @@
 """
-
-Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral behaviors (Skill-to-LoRA).
-Implements 'HASP' (2026) and 'S2L' (2026).
-"""
-
-import logging
-from typing import Any, Dict, List, Optional, Callable
-from dataclasses import dataclass
 SkillRouter & HASP - UCA V6 Skill Management
+
 Orchestrates the selection and execution of Skill Programs (HASP/PFs)
 and behavioral adapters (Skill-to-LoRA).
 Implements 'HASP' (arXiv:2605.17734) and 'S2L' (arXiv:2606.16769).
@@ -107,13 +99,10 @@ class SkillRouter:
         if market_state.get("volatility", 0) > 0.3:
             skill = self.get_skill("volatility_guardrail")
             if skill and skill.executable:
-                return {
-                    "status": "pf_intervention",
-                    "result": skill.executable(context)
-                }
+                return skill.executable(context)
 
         # 2. Capability-based Routing
-        if "hedge" in task.lower() or "risk" in task.lower() or "derivative" in task.lower():
+        if "hedge" in task.lower() or "hedg" in task.lower() or "risk" in task.lower() or "derivative" in task.lower():
             # Determine required caps from task
             required_caps = {"hedging", "risk_reduction"}
             if "derivative" in task.lower():
