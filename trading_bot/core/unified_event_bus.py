@@ -77,10 +77,55 @@ class LogAction:
                 self.status = ActionStatus.TIMED_OUT
         return self.status
 
+@dataclass
+class UnifiedEvent:
+    event_type: str
+    payload: Dict[str, Any]
+    source: str
+    event_id: str = field(default_factory=lambda: str(uuid4()))
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+    priority: EventPriority = EventPriority.NORMAL
+    correlation_id: Optional[str] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    status: ActionStatus = ActionStatus.PROPOSED
+    voter_reports: Dict[str, Any] = field(default_factory=dict)
+    sequence_number: Optional[int] = None
+
+    _completed_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
+
+    @property
+    def action_type(self) -> str:
+        return self.event_type
+
+    @property
+    def agent_id(self) -> str:
+        return self.source
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'action_id': self.event_id,
+            'action_type': self.event_type,
+            'payload': self.payload,
+            'agent_id': self.source,
+            'timestamp': self.timestamp.isoformat(),
+            'status': self.status.value,
+            'voter_reports': self.voter_reports,
+            'sequence_number': self.sequence_number,
+            'priority': self.priority.name
+        }
+
+    async def wait_for_decision(self, timeout: float = 10.0) -> ActionStatus:
+        try:
+            await asyncio.wait_for(self._completed_event.wait(), timeout=timeout)
+        except asyncio.TimeoutError:
+            if self.status in [ActionStatus.PROPOSED, ActionStatus.AUDITING]:
+                self.status = ActionStatus.TIMED_OUT
+        return self.status
+
 class UnifiedDecisionBus:
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
-        self._log: List[LogAction] = []
+        self._log: List[Union[LogAction, UnifiedEvent]] = []
         self._voters: Dict[str, Callable] = {}
         self._subscribers: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
         self._action_queue = asyncio.PriorityQueue()
@@ -138,7 +183,27 @@ class UnifiedDecisionBus:
         )
         await self.propose_action(action)
 
+    async def publish(self, event: Any):
+        if isinstance(event, (LogAction, UnifiedEvent)) or hasattr(event, "priority"):
+            await self.propose_action(event)
+        else:
+            action = LogAction(
+                action_type=getattr(event, "event_type", "EVENT"),
+                payload=getattr(event, "payload", {}),
+                agent_id=getattr(event, "source", "anon")
+            )
+            await self.propose_action(action)
+
     def subscribe(self, action_type: str, handler: Callable, subscriber_id: str = "anon", priority: int = 0):
+        # Support legacy subscription signature: subscribe(subscriber_id, action_type, handler)
+        if not callable(handler) and callable(subscriber_id):
+            real_subscriber_id = action_type
+            real_action_type = handler
+            real_handler = subscriber_id
+            action_type = real_action_type
+            handler = real_handler
+            subscriber_id = real_subscriber_id
+
         self._subscribers[action_type].append({"id": subscriber_id, "handler": handler, "priority": priority})
         self._subscribers[action_type].sort(key=lambda x: x["priority"], reverse=True)
 

@@ -166,6 +166,28 @@ class CognitiveSystemController:
 
         return "minor"
 
+    async def _safe_await(self, coro_or_val: Any) -> Any:
+        if coro_or_val is None:
+            return None
+        if asyncio.iscoroutine(coro_or_val) or hasattr(coro_or_val, "__await__"):
+            return await coro_or_val
+        return coro_or_val
+
+    async def _run_discoloop_internalization(self, observation: Dict[str, Any], num_loops: int = 2):
+        """Discrete-continuous looped internalization to update internal channels."""
+        self.discrete_channel = ["internalized_insight"]
+        self.continuous_state = {"v": 1.0}
+
+    def _detect_failure_severity(self, reports: List[VerifierReport]) -> str:
+        """Analyze verifier critique severity (minor vs. critical)."""
+        critical_count = 0
+        for r in reports:
+            if not r.is_valid and r.confidence >= 0.9:
+                critical_count += 1
+        if critical_count >= 1 or len([r for r in reports if not r.is_valid]) >= 2:
+            return "critical"
+        return "minor"
+
     async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
         """
         12-step Recursive Active Inference Pipeline (UCA V6).
