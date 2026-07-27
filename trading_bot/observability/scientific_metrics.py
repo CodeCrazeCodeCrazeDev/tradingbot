@@ -103,6 +103,10 @@ class ScientificMetrics:
     def total_institutionalized_knowledge(self) -> int:
         return self.institutionalized_count
 
+    @property
+    def total_institutionalized_knowledge(self) -> int:
+        return self.institutionalized_count
+
     def get_summary(self) -> Dict[str, Any]:
         return {
             "survival_rate": self.survival_rate,
