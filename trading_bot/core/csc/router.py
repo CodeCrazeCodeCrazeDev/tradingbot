@@ -252,5 +252,4 @@ class HASPExecutor:
             # Deterministic execution
             return skill.executable(state)
         except Exception as e:
-            logger.error(f"HASP Execution Failure: {e}")
             return {"status": "failure", "error": str(e)}

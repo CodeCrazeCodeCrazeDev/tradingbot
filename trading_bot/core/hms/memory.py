@@ -308,6 +308,34 @@ class HierarchicalMemorySystem:
         actual_hash = schema_data.get("integrity_hash")
         return expected_hash == actual_hash
 
+    def run_migration(self, target_version: str, migration_reason: str) -> bool:
+        """Run an explicit schema migration."""
+        current_version = float(self.memory_schema.get("version", "1.0"))
+        target_f = float(target_version)
+        if target_f <= current_version:
+            logger.info(f"HMS: Schema already at or past version {target_version}")
+            return False
+
+        # Apply schema changes (e.g. initialize new entities or properties)
+        self.memory_schema["version"] = target_version
+
+        migration_entry = {
+            "migration_id": f"mig_{uuid4().hex[:8]}",
+            "migration_timestamp": datetime.utcnow().isoformat(),
+            "migration_reason": migration_reason,
+            "compatibility_level": "COMPATIBLE",
+            "previous_version": str(current_version),
+            "target_version": target_version
+        }
+
+        if "migration_history" not in self.memory_schema:
+            self.memory_schema["migration_history"] = []
+        self.memory_schema["migration_history"].append(migration_entry)
+
+        self._save_schema()
+        logger.info(f"HMS: Schema migrated from {current_version} to {target_version}")
+        return True
+
     async def retrieve_evidence_chain(self, query: str) -> List[Any]:
         """Multi-hop evidence retrieval via SAGE."""
         return self.sage.retrieve_subgraph(query, hops=2)

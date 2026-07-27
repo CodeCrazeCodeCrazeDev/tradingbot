@@ -26,6 +26,14 @@ class ImmediateDecisionBus:
         action.status = ActionStatus.EXECUTED
         action._completed_event.set()
 
+@pytest.fixture(autouse=True)
+def mock_decision_bus(monkeypatch):
+    from trading_bot.core.unified_event_bus import decision_bus, ActionStatus
+    async def mock_propose_action(action):
+        action.status = ActionStatus.EXECUTED
+        action._completed_event.set()
+    monkeypatch.setattr(decision_bus, "propose_action", mock_propose_action)
+
 @pytest.mark.asyncio
 async def test_csc_hasp_intervention():
     # Setup mocks
