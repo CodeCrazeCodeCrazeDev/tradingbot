@@ -132,7 +132,7 @@ class ScientificReasoningEngine:
         }
 
     def get_hypothesis(self, hid: str) -> Optional[ScientificHypothesis]:
-        """Retrieve a scientific hypothesis by its ID from the registry."""
+        """Retrieve a hypothesis from the registry by its ID."""
         return self.registry.get(hid)
 
     async def run_cycle(self, observation: Dict[str, Any]):
@@ -157,6 +157,9 @@ class ScientificReasoningEngine:
         hyp = ScientificHypothesis(name=f"Obs-{uuid.uuid4().hex[:4]}", state=HypothesisState.OBSERVATION)
         self.registry[hyp.id] = hyp
         return hyp.id
+
+    def get_hypothesis(self, hid: str) -> ScientificHypothesis:
+        return self.registry.get(hid)
 
     async def detect_anomalies(self, hid: str):
         """Step 2: Detect deviations from World Model expectations."""
@@ -242,7 +245,8 @@ class ScientificReasoningEngine:
             from ...core.hms.models import ResearchLedgerEntry
             entry = ResearchLedgerEntry(hypothesis=hyp)
             reports = await self.controller.verifier_swarm.run_swarm(entry)
-            vetoed = any(not r.is_valid and r.confidence > 0.8 for r in reports)
+            # Simple aggregation
+            vetoed = any(not r.is_valid and r.confidence > 0.85 for r in reports)
             if vetoed:
                 hyp.posterior *= 0.5
                 logger.warning(f"SRE: Adversarial debate for {hid} vetoed due to verifier disagreement.")
@@ -330,7 +334,7 @@ class ScientificReasoningEngine:
 
     async def retire_hypothesis(self, hid: str):
         hyp = self.registry[hid]
-        if hyp.posterior > 0.8:
+        if hyp.posterior >= 0.8:
             hyp.state = HypothesisState.INSTITUTIONALIZED
         elif hyp.posterior < 0.2:
             hyp.state = HypothesisState.REJECTED
