@@ -193,6 +193,10 @@ class CoreDecision:
     killer_verdict: Optional[AgentVerdict] = None
     all_verdicts: List[AgentVerdict] = field(default_factory=list)
 
+    # Institutional Reproducibility (UCA V5)
+    provenance_hash: str = ""
+    pipeline_version: str = "UCA-V5"
+
 
 class MarketHostilityDetector:
     """Stage 0: Market Hostility Check"""

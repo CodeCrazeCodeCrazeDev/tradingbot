@@ -20,6 +20,7 @@ import hashlib
 import json
 import pickle
 from dataclasses import dataclass, field
+from trading_bot.security.safe_pickle import safe_load
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Callable, Tuple, Union, Set
 from enum import Enum, auto
@@ -374,6 +375,9 @@ class ModelRegistry:
         # Currently deployed models
         self.deployed: Dict[str, ModelVersion] = {}
         
+        # PERF-003: Model object cache to prevent redundant loading
+        self._model_cache: Dict[str, Any] = {}
+
         self._lock = threading.RLock()
         
         # Load existing models
@@ -492,14 +496,25 @@ class ModelRegistry:
     
     def load_model(self, model_id: str, version: Optional[int] = None) -> Optional[Any]:
         """Load a model object"""
+        # PERF-003: Check cache first
+        cache_key = f"{model_id}_v{version if version else 'latest'}"
+        with self._lock:
+            if cache_key in self._model_cache:
+                return self._model_cache[cache_key]
+
         mv = self.get_model(model_id, version)
         
         if not mv or not mv.model_path:
             return None
         try:
-        
             with open(mv.model_path, 'rb') as f:
-                return pickle.load(f)
+                model_obj = pickle.load(f)
+
+            # Update cache
+            with self._lock:
+                self._model_cache[cache_key] = model_obj
+
+            return model_obj
         except Exception as e:
             logger.error(f"Failed to load model: {e}")
             return None
