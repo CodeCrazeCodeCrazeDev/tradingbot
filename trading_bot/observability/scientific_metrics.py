@@ -99,6 +99,10 @@ class ScientificMetrics:
             if self.avg_validation_score > 0.7 and self.confirmed_count + self.institutionalized_count < 2:
                 self.bottlenecks_detected.append("PROMOTION_FRICTION: Hypotheses pass validation but fail to reach confirmation.")
 
+    @property
+    def total_institutionalized_knowledge(self) -> int:
+        return self.institutionalized_count
+
     def get_summary(self) -> Dict[str, Any]:
         return {
             "survival_rate": self.survival_rate,
