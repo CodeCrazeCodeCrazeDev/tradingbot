@@ -492,11 +492,12 @@ class LiquidityMLPredictor:
                     logger.info(f"Insufficient samples for {prediction_type.value}: {len(samples)}")
                     continue
                 try:
-                
-                    # Prepare training data
-                    features = np.array([sample[0] for sample in samples])
-                    labels = np.array([sample[1] for sample in samples])
-                    weights = np.array([sample[2] if len(sample) > 2 else 1.0 for sample in samples])
+                    # PERF-002: Batch convert samples to numpy arrays for efficiency
+                    # samples is a list of tuples (features, label, weight)
+                    all_data = np.array(samples, dtype=object)
+                    features = np.vstack(all_data[:, 0])
+                    labels = all_data[:, 1].astype(float)
+                    weights = all_data[:, 2].astype(float) if all_data.shape[1] > 2 else np.ones(len(labels))
                     
                     # Split data
                     X_train, X_test, y_train, y_test, w_train, w_test = train_test_split(
@@ -584,6 +585,10 @@ class LiquidityMLPredictor:
     def save_models(self, filepath: str):
         """Save trained models to file."""
         try:
+            # SECURITY: Validate path
+            if not filepath.startswith(('.', '/')):
+                raise ValueError(f"Invalid path: {filepath}")
+
             model_data = {
                 'models': self.models,
                 'performance': self.model_performance,
@@ -602,6 +607,10 @@ class LiquidityMLPredictor:
     def load_models(self, filepath: str):
         """Load trained models from file."""
         try:
+            # SECURITY: Validate path
+            if not filepath.startswith(('.', '/')):
+                raise ValueError(f"Invalid path: {filepath}")
+
             with open(filepath, 'rb') as f:
                 model_data = safe_load(f)
             

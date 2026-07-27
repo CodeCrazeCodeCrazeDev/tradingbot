@@ -136,11 +136,16 @@ class CodeEvolver:
         # Rollback states
         self._rollback_states: Dict[str, Dict[str, Any]] = {}
         
+        # Long-term stability: Generational Checkpoints (Priority 6)
+        self._checkpoints_path = Path(self.config.get('checkpoints_path', 'evolution_checkpoints'))
+        self._checkpoints_path.mkdir(parents=True, exist_ok=True)
+        self._generation_counter = 0
+
         # Storage path
         self._storage_path = Path(self.config.get('storage_path', 'evolution_state'))
         self._storage_path.mkdir(parents=True, exist_ok=True)
         
-        logger.info("CodeEvolver initialized")
+        logger.info("CodeEvolver initialized with Generational Checkpointing")
     
     def propose_evolution(
         self,
@@ -253,6 +258,23 @@ class CodeEvolver:
         
         return True
     
+    def create_generational_checkpoint(self):
+        """Archives the current system genome to prevent long-term population collapse."""
+        self._generation_counter += 1
+        checkpoint_file = self._checkpoints_path / f"generation_{self._generation_counter}.json"
+
+        state = {
+            'generation': self._generation_counter,
+            'timestamp': datetime.now().isoformat(),
+            'applied_evolutions': [res.proposal_id for res in self._applied_evolutions],
+            'proposals_count': len(self._proposals)
+        }
+
+        with open(checkpoint_file, 'w') as f:
+            json.dump(state, f, indent=2)
+
+        logger.info(f"Evolution: Created generational checkpoint {self._generation_counter}")
+
     def apply_evolution(
         self, 
         proposal_id: str,
@@ -311,6 +333,10 @@ class CodeEvolver:
             self._applied_evolutions.append(result)
             logger.info(f"Evolution {proposal_id} applied successfully")
             
+            # Create checkpoint every 5 successful evolutions
+            if len(self._applied_evolutions) % 5 == 0:
+                self.create_generational_checkpoint()
+
         except Exception as e:
             logger.error(f"Failed to apply evolution {proposal_id}: {e}")
             result = EvolutionResult(

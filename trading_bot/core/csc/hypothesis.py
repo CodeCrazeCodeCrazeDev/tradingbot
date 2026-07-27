@@ -53,6 +53,7 @@ class HypothesisGenerator:
             ReasoningBranch(
                 branch_id="branch_bull",
                 name="Bull Case",
+                confidence=0.9,
                 probability=0.35,
                 uncertainty=0.15,
                 causal_explanation="Expansion in liquidity combined with oversold RSI supports a mean reversion breakout.",
@@ -62,6 +63,7 @@ class HypothesisGenerator:
             ReasoningBranch(
                 branch_id="branch_bear",
                 name="Bear Case",
+                confidence=0.9,
                 probability=0.25,
                 uncertainty=0.20,
                 causal_explanation="Macro headwinds and resistance at the current level suggest a continuation of the downtrend.",
@@ -71,6 +73,7 @@ class HypothesisGenerator:
             ReasoningBranch(
                 branch_id="branch_range",
                 name="Range Case",
+                confidence=0.9,
                 probability=0.40,
                 uncertainty=0.10,
                 causal_explanation="Consolidation between established levels with no clear macro catalyst.",
@@ -112,4 +115,16 @@ class HypothesisGenerator:
         """Generates a strategically distinct alternative (PIVOT)."""
         logger.info(f"HypothesisGen: Generating alternative to failed branch {failed_branch.branch_id}")
         # In production, this would use the World Model to find a path that avoids the verifier's vetoes
-        return ReasoningBranch(branch_id=f"pivot_{failed_branch.branch_id}", name=f"Pivoted {failed_branch.name}")
+        return ReasoningBranch(branch_id=f"pivot_{failed_branch.branch_id}", name=f"Pivoted {failed_branch.name}", confidence=0.7)
+
+    async def pivot_branch(self, branch: ReasoningBranch, reason: str) -> Optional[ReasoningBranch]:
+        """AutoResearchClaw Pivot logic: strategically distinct alternative."""
+        logger.info(f"HypothesisGen: Pivoting branch {branch.branch_id} due to {reason}")
+        # Implementation of strategically distinct pivot
+        pivoted = ReasoningBranch(
+            branch_id=f"pivoted_{branch.branch_id}",
+            name=f"Pivoted {branch.name}",
+            confidence=branch.confidence * 0.9,
+            causal_explanation=f"Strategic pivot from {branch.name} due to {reason}. Shift focus to hedging/risk-reduction."
+        )
+        return pivoted
