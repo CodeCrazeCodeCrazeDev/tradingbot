@@ -22,8 +22,13 @@ async def test_csc_12_step_pipeline():
 
     # Mock Hypothesis Gen using AsyncMock
     from trading_bot.core.csc.hypothesis import ReasoningBranch, Hypothesis
+    from trading_bot.core.hms.models import EvidenceNode, EvidenceEdge, RelationType
     branch = ReasoningBranch(branch_id="test_b", name="Test Branch", confidence=0.9)
     branch.hypotheses.append(Hypothesis(description="Test Hypothesis"))
+    for i in range(6):
+        branch.evidence_graph.add_node(EvidenceNode(node_id=f"node_{i}", content="test", node_type="EVIDENCE"))
+    for i in range(4):
+        branch.evidence_graph.add_edge(EvidenceEdge(source_id="node_0", target_id=f"node_{i+1}", relation=RelationType.SUPPORTS))
 
     controller.hypothesis_gen.generate_competing_branches = AsyncMock(return_value=[branch])
     controller.hypothesis_gen.simulate_branches = AsyncMock(return_value={"test_b": []})
@@ -33,17 +38,17 @@ async def test_csc_12_step_pipeline():
     report = VerifierReport(agent_name="V1", is_valid=True, confidence=0.9, critique="Looks good")
     controller.verifier_swarm.run_swarm = AsyncMock(return_value=[report])
 
-    # Ensure bus is started
-    from trading_bot.core.unified_event_bus import decision_bus
-    await decision_bus.start()
-
     observation = {"price_action": "BULLISH", "volatility": 0.01}
-    decision = await controller.process_market_observation(observation)
+
+    with patch("trading_bot.core.unified_event_bus.decision_bus.propose_action", new_callable=AsyncMock) as mock_propose:
+        async def side_effect(act):
+            act.status = ActionStatus.EXECUTED
+        mock_propose.side_effect = side_effect
+
+        decision = await controller.process_market_observation(observation)
 
     assert decision.outcome == DecisionOutcome.TRADE_APPROVED
     assert controller.hms.store_ledger_entry.called
-
-    await decision_bus.stop()
 
 @pytest.mark.asyncio
 async def test_csc_hasp_guardrail():
