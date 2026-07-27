@@ -63,9 +63,8 @@ async def test_hasp_guardrail_interception():
 
     result = await router.route_task("execution", context)
 
-    assert result["status"] == "success"
-    assert result["pf_result"]["status"] == "pf_intervention"
-    assert result["pf_result"]["action"] == "override_to_hold"
+    assert result["status"] == "pf_intervention"
+    assert result["result"]["action"] == "override_to_hold"
 
 @pytest.mark.asyncio
 async def test_s2l_behavioral_routing():
