@@ -180,7 +180,8 @@ class HierarchicalMemorySystem:
         return cls._instance
 
     def __init__(self, base_path: str = "alphaalgo_data/hms"):
-        if self._initialized: return
+        if getattr(self, "_initialized", False) and getattr(self, "base_path", None) == base_path:
+            return
         self.base_path = base_path
         os.makedirs(base_path, exist_ok=True)
 
