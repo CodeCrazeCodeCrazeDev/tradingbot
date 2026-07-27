@@ -95,6 +95,7 @@ class UnifiedDecisionBus:
 
     async def start(self):
         if self._running: return
+        self._action_queue = asyncio.PriorityQueue()
         self._running = True
         self._processor_task = asyncio.create_task(self._process_log())
 
@@ -102,12 +103,16 @@ class UnifiedDecisionBus:
         self._running = False
         if self._processor_task:
             self._processor_task.cancel()
+        # Clean up queue to prevent cross-test leakage
+        self._action_queue = None
 
     def register_voter(self, voter_id: str, voter_fn: Callable):
         self._voters[voter_id] = voter_fn
 
     async def propose_action(self, action: LogAction):
         action.status = ActionStatus.PROPOSED
+        if self._action_queue is None:
+            self._action_queue = asyncio.PriorityQueue()
         await self._action_queue.put((-action.priority.value, action.timestamp, action))
 
     def subscribe(self, action_type: str, handler: Callable, subscriber_id: str = "anon", priority: int = 0):
