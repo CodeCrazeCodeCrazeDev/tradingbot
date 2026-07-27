@@ -99,7 +99,10 @@ class SkillRouter:
         if market_state.get("volatility", 0) > 0.3:
             skill = self.get_skill("volatility_guardrail")
             if skill and skill.executable:
-                return skill.executable(context)
+                return {
+                    "status": "pf_intervention",
+                    "result": skill.executable(context)
+                }
 
         # 2. Capability-based Routing
         if "hedge" in task.lower() or "risk" in task.lower() or "derivative" in task.lower():

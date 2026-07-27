@@ -15,6 +15,11 @@ async def test_csc_hasp_intervention():
     shield = MagicMock()
     shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
 
+    # Reset singleton state if needed to bind updated mocks
+    if CognitiveSystemController._instance is not None:
+        CognitiveSystemController._instance.world_model = world_model
+        CognitiveSystemController._instance.hms = hms
+        CognitiveSystemController._instance.shield = shield
     csc = CognitiveSystemController(world_model, hms, shield)
 
     # Observation triggering volatility guardrail (volatility > 0.3)
@@ -37,6 +42,11 @@ async def test_csc_pivot_loop():
     shield = MagicMock()
     shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
 
+    # Reset singleton state if needed to bind updated mocks
+    if CognitiveSystemController._instance is not None:
+        CognitiveSystemController._instance.world_model = world_model
+        CognitiveSystemController._instance.hms = hms
+        CognitiveSystemController._instance.shield = shield
     csc = CognitiveSystemController(world_model, hms, shield)
 
     obs = {"volatility": 0.1, "features": [0.1] * 16}
