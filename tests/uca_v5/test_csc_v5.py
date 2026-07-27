@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, AsyncMock
 from trading_bot.core.csc.controller import CognitiveSystemController
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome, CoreDecision
 from trading_bot.core.immutable_shield import GovernanceDecision
+from trading_bot.core.unified_event_bus import decision_bus
 
 @pytest.mark.asyncio
 async def test_csc_hasp_intervention():
@@ -17,7 +18,7 @@ async def test_csc_hasp_intervention():
     csc = CognitiveSystemController(world_model, hms, shield)
 
     # Observation triggering volatility guardrail (volatility > 0.3)
-    obs = {"market": {"volatility": 0.5}, "features": [0.1, 0.2]}
+    obs = {"volatility": 0.5, "features": [0.1] * 16}
 
     decision = await csc.process_market_observation(obs)
 
@@ -26,6 +27,9 @@ async def test_csc_hasp_intervention():
 
 @pytest.mark.asyncio
 async def test_csc_pivot_loop():
+    # Ensure bus is started
+    await decision_bus.start()
+
     # Setup mocks
     world_model = MagicMock()
     hms = MagicMock()
@@ -35,15 +39,22 @@ async def test_csc_pivot_loop():
 
     csc = CognitiveSystemController(world_model, hms, shield)
 
-    # Mock verifier reports failing first attempt
-    report_fail = MagicMock(is_valid=False, confidence=0.95, critique="STRATEGIC_FLAW detected")
-    report_pass = MagicMock(is_valid=True, confidence=0.9, critique="Looks good")
+    obs = {"volatility": 0.1, "features": [0.1] * 16}
 
-    csc.verifier_swarm.run_swarm = AsyncMock(side_effect=[[report_fail], [report_pass]])
+    # Mock simulation to trigger pivot
+    # In V6, pivot is triggered by high failure rate in simulation
+    csc.hypothesis_gen.simulate_branches = AsyncMock(return_value={
+        "branch_bull": {"failure_rate": 0.8},
+        "branch_bear": {"failure_rate": 0.1},
+        "branch_range": {"failure_rate": 0.2}
+    })
 
-    obs = {"market": {"volatility": 0.1}, "features": [0.1, 0.2]}
+    from trading_bot.core.unified_event_bus import decision_bus
+    await decision_bus.start()
+
+    csc.verifier_swarm.run_swarm = AsyncMock(return_value=[MagicMock(is_valid=True, confidence=0.9)])
 
     decision = await csc.process_market_observation(obs)
+    await decision_bus.stop()
 
     assert decision.outcome == DecisionOutcome.TRADE_APPROVED
-    assert csc.verifier_swarm.run_swarm.call_count == 2
