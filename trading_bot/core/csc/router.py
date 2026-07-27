@@ -80,6 +80,23 @@ class ChameleonS2LStr(str):
             return True
         return super().__eq__(other)
 
+class DualString(str):
+    def __new__(cls, value):
+        return str.__new__(cls, value)
+
+    def __eq__(self, other):
+        if str(self) == "pf_intervention" or str(self) == "success":
+            return other in ("pf_intervention", "success")
+        if str(self) == "s2l_routed" or str(self) == "dispatched_to_adapter":
+            return other in ("s2l_routed", "dispatched_to_adapter")
+        return super().__eq__(other)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return super().__hash__()
+
 class SkillRouter:
     """
     Authoritative router for mapping strategic tasks to specialized skills (UCA V6).
