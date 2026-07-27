@@ -43,6 +43,49 @@ try:
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
+    # Create dummy classes for when torch is not available
+    class nn:
+        class Module:
+            def __init__(self, *args, **kwargs): pass
+            def parameters(self): return []
+            def to(self, *args, **kwargs): return self
+            def train(self): pass
+            def eval(self): pass
+            def __call__(self, *args, **kwargs): return None
+        class Linear:
+            def __init__(self, *args, **kwargs): pass
+        class ReLU:
+            def __init__(self, *args, **kwargs): pass
+        class Dropout:
+            def __init__(self, *args, **kwargs): pass
+        class Sequential:
+            def __init__(self, *args, **kwargs): pass
+        class MSELoss:
+            def __init__(self, *args, **kwargs): pass
+    class F:
+        @staticmethod
+        def relu(x): return x
+        @staticmethod
+        def softmax(x, dim=None): return x
+    class torch:
+        float32 = "float32"
+        class Tensor:
+            def unsqueeze(self, *args, **kwargs): return self
+        @staticmethod
+        def tensor(data, *args, **kwargs): return data
+        @staticmethod
+        def FloatTensor(data, *args, **kwargs): return data
+        @staticmethod
+        def no_grad():
+            class NoGrad:
+                def __enter__(self): pass
+                def __exit__(self, *args): pass
+            return NoGrad()
+        class optim:
+            class Adam:
+                def __init__(self, *args, **kwargs): pass
+                def zero_grad(self): pass
+                def step(self): pass
 
 try:
     from sklearn.preprocessing import StandardScaler
