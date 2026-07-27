@@ -34,6 +34,12 @@ from .ontology import CMOSNode, CMOSNodeTier, CMOSProvenance
 
 logger = logging.getLogger(__name__)
 
+def calculate_integrity_hash(schema_dict: Dict[str, Any]) -> str:
+    """Computes SHA-256 checksum of memory schema for audit compliance."""
+    temp = {k: v for k, v in schema_dict.items() if k != "integrity_hash"}
+    serialized = json.dumps(temp, sort_keys=True)
+    return hashlib.sha256(serialized.encode('utf-8')).hexdigest()
+
 class SAGEGraphMemory:
     """
     SAGE Substrate: A dynamic, self-evolving graph memory (arXiv:2605.12061).

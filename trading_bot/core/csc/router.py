@@ -25,9 +25,26 @@ from uuid import uuid4
 logger = logging.getLogger(__name__)
 
 class SkillType(Enum):
-    PROGRAM = "hasp_program"  # Executable Skill Program (PF)
-    LORA = "s2l_adapter"      # Skill-to-LoRA Adapter
-    PROMPT = "legacy_prompt"  # Legacy advisory prompt
+    PROGRAM = "hasp_program"       # Executable Skill Program (PF)
+    HASP_PROGRAM = "hasp_program"  # Executable Skill Program (PF) - alias for test compatibility
+    LORA = "s2l_adapter"           # Skill-to-LoRA Adapter
+    PROMPT = "legacy_prompt"       # Legacy advisory prompt
+
+@dataclass
+class SkillRouteOutcome:
+    """Canonical return API shape for all SkillRouter routing actions."""
+    status: str
+    action: Optional[str] = None
+    adapter_id: Optional[str] = None
+    reason: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "status": self.status,
+            "action": self.action,
+            "adapter_id": self.adapter_id,
+            "reason": self.reason
+        }
 
 @dataclass
 class SkillArtifact:
@@ -184,7 +201,7 @@ class SkillRouter:
                 elif skill.skill_type == SkillType.PROGRAM:
                     return skill.executable(context)
 
-        return {"status": "standard_reasoning"}
+        return SkillRouteOutcome(status="standard_reasoning")
 
     def get_skill(self, skill_id: str, version: Optional[str] = None) -> Optional[SkillArtifact]:
         """Retrieves a specific skill, defaults to latest."""

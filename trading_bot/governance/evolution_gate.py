@@ -7,6 +7,7 @@ Implements 'RSEA' (arXiv:2606.28374), 'EKSFT' (arXiv:2605.29303), and 'NanoResea
 
 import logging
 import math
+import copy
 from typing import Any, Dict, List, Optional
 from datetime import datetime
 from dataclasses import dataclass
@@ -93,7 +94,7 @@ class EvolutionGate:
 
         # 5. Institutional Safety Check (Hard Gate)
         if candidate.safety_score < 1.0:
-            logger.error(f"EvolutionGate: REJECTED - Safety regression detected ({candidate.safety_score})")
+            logger.error(f"EvolutionGate: REJECTED - Safety regression detected ({candidate.safety_score} < 1.0)")
             return False
 
         # 6. Monotone-Safe Check: Gain Metric (arXiv:2606.05661 CL-Bench)
@@ -123,6 +124,20 @@ class EvolutionGate:
         else:
             logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED. Gain (G): {gain:.4f} < {self.threshold} or calibration drift too high.")
             return False
+
+        if candidate.latency > baseline.latency * 1.2:
+            logger.error(f"EvolutionGate: REJECTED - Latency regression exceeds limits ({baseline.latency}ms -> {candidate.latency}ms)")
+            return False
+
+        # Candidate APPROVED
+        logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain (G): {gain:.4f}")
+        self.evolution_history.append({
+            "timestamp": datetime.utcnow().isoformat(),
+            "candidate_id": candidate_id,
+            "metrics": candidate.__dict__,
+            "status": "PROMOTED"
+        })
+        return True
 
     def _check_eksft_compliance(self, config: Dict[str, Any]) -> bool:
         """Prevents distribution sharpening and entropy collapse."""

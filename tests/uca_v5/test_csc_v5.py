@@ -30,6 +30,7 @@ class ImmediateDecisionBus:
 async def test_csc_hasp_intervention():
     # Setup mocks
     world_model = MagicMock()
+
     hms = MagicMock()
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
@@ -64,6 +65,7 @@ async def test_csc_pivot_loop():
 
     # Setup mocks
     world_model = MagicMock()
+
     hms = MagicMock()
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
@@ -92,6 +94,8 @@ async def test_csc_pivot_loop():
     csc.verifier_swarm.run_swarm = AsyncMock(return_value=[MagicMock(is_valid=True, confidence=0.9)])
 
     decision = await csc.process_market_observation(obs)
+    await decision_bus.stop()
+
     await decision_bus.stop()
 
     assert decision.outcome == DecisionOutcome.TRADE_APPROVED

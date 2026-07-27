@@ -2,6 +2,13 @@ import pytest
 from unittest.mock import MagicMock
 from trading_bot.core.csc.router import SkillRouter, SkillType
 
+@pytest.fixture(autouse=True)
+def reset_router_singleton():
+    """Reset SkillRouter singleton before and after each test."""
+    SkillRouter._instance = None
+    yield
+    SkillRouter._instance = None
+
 @pytest.mark.asyncio
 async def test_router_hasp_routing():
     router = SkillRouter()
