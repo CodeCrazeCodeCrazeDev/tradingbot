@@ -31,7 +31,7 @@ from .hypothesis import HypothesisGenerator, ReasoningBranch, Hypothesis
 from .folding import InformationFolder
 from .router import SkillRouter
 from ..verification.swarm import VerificationSwarm
-from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport, EvidenceNode, EvidenceEdge, RelationType
+from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport, EvidenceNode, EvidenceEdge, RelationType, InstitutionalProvenance
 from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
 from ..immutable_shield import ImmutableShield, GovernanceDecision
 from ..unified_event_bus import decision_bus, LogAction, ActionStatus, EventPriority
@@ -78,23 +78,27 @@ class CognitiveSystemController:
     UCA V6 Controller - Authoritative Strategic Brain.
     Implements 12-step Recursive Active Inference.
     """
-    _instance = None
-    _lock = threading.Lock()
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = super(CognitiveSystemController, cls).__new__(cls)
-                    cls._instance._initialized = False
-        return cls._instance
-
-    def __init__(self, world_model: Any = None, hms: Any = None, shield: Optional[ImmutableShield] = None):
-        if getattr(self, "_initialized", False):
-            return
-
+    def __init__(
+        self,
+        world_model: Any,
+        hms: Any,
+        skill_router: SkillRouter,
+        verifier_swarm: VerificationSwarm,
+        risk_engine: Any,
+        consensus_engine: Any,
+        execution_planner: Any,
+        evolution_gate: Any,
+        shield: Optional[ImmutableShield] = None
+    ):
+        # 1. Dependency Injection
         self.world_model = world_model
         self.hms = hms
+        self.skill_router = skill_router
+        self.verifier_swarm = verifier_swarm
+        self.risk_engine = risk_engine
+        self.consensus_engine = consensus_engine
+        self.execution_planner = execution_planner
+        self.evolution_gate = evolution_gate
         self.shield = shield
 
         # Core Functional Components
@@ -104,7 +108,7 @@ class CognitiveSystemController:
         self.discoloop = DiscoLoopCell(latent_dim=512)
         self.skill_router = SkillRouter()
 
-        # State Channels
+        # 4. State Channels
         self.continuous_state: Dict[str, Any] = {}
         self.discrete_channel: List[str] = []
         self.last_prediction: Any = None
@@ -299,7 +303,8 @@ class CognitiveSystemController:
             hypothesis=branch.hypotheses[0] if branch.hypotheses else None,
             reasoning_steps=branch.reasoning_trace,
             evidence_graph_snapshot=branch.evidence_graph,
-            composite_confidence=branch.confidence
+            composite_confidence=branch.confidence,
+            provenance=provenance
         )
 
     def _calculate_composite_confidence(self, entry: ResearchLedgerEntry) -> ConfidenceVector:

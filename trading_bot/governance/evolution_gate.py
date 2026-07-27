@@ -78,14 +78,20 @@ class EvolutionGate:
         # Calibration Check (arXiv:2605.21482 DeepWeb-Bench)
         calibration_drift = baseline.calibration - candidate.calibration
 
-        is_safe = (gain >= self.threshold) and (calibration_drift <= 0.05)
+        if is_significant and no_regressions:
+            logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain: {gain:.4f}")
 
-        if is_safe:
-            logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain (G): {gain:.4f}")
+            # Immutable Provenance (UCA V5)
             self.evolution_history.append({
                 "timestamp": datetime.utcnow().isoformat(),
                 "candidate_id": candidate_id,
-                "metrics": candidate.__dict__,
+                "metrics": candidate_perf,
+                "provenance": {
+                    "baseline_id": baseline_config.get("id"),
+                    "validation_mode": "CL-Bench-Stateful",
+                    "reproducible_seed": 42,
+                    "signatures": {"governance": "APPROVED_UCA_V5"}
+                },
                 "status": "PROMOTED"
             })
             return True

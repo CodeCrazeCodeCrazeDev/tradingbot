@@ -101,6 +101,8 @@ class StructuralCausalModelV6(nn.Module):
         1. Prune PA_i: Zero out incoming influence for intervened nodes.
         2. Assign: Set intervened nodes to x.
         """
+        # 1. Local copy of adjacency to prune parents
+        adj_prime = self.adjacency.clone()
         z_prime = z.clone()
         adj_modified = self.adjacency.clone()
 
