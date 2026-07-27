@@ -1,16 +1,35 @@
-# ISSUE TRACKER
+# ISSUE TRACKER - POST-AUDIT
 
-This tracker lists the audited production engineering issues, their severities, categories, and final resolution statuses. All critical and high issues are completely closed.
-
-| ID | Title | Severity | Category | Impact | Status |
-|---|---|---|---|---|---|
-| **SEC-001** | Unsafe `pickle` Deserialization | Critical | Security | RCE Risk in ML Pipelines | **RESOLVED** (Migrated to pure JSON cache/persistency and SafeUnpickler) |
-| **SEC-002** | `shell=True` in Subprocess Calls | High | Security | Command Injection Risk | **RESOLVED** (Migrated to structured lists with `shell=False`) |
-| **REL-001** | Cross-Test Singleton Contamination | High | Reliability | Stale mocks / frozen controller references | **RESOLVED** (Refactored `CognitiveSystemController.__init__` to refresh mock dependencies) |
-| **REL-002** | Event Bus Processor Starvation | High | Reliability | Background task liveness halts on restarts | **RESOLVED** (Refactored `UnifiedDecisionBus` start/stop state resets) |
-| **PERF-001**| Redundant Duplicate Execution Blocks | High | Performance | Double LogAct proposals and duplicate history folding | **RESOLVED** (Purged redundant duplicate block in Step 12) |
-| **INT-001** | Division Fault / Premature Rejection | Critical | Intelligence | Generated reasoning branches confidence defaulted to 0.0 | **RESOLVED** (Initialized default non-zero confidence to 0.9) |
-| **MAINT-001**| Test Suite Import Mismatch & NameErrors| Medium | Maintainability| Bypassed chaos/replay validation tests | **RESOLVED** (Restored pathlib Path imports and matched testing package routes) |
-| **DATA-001** | Silent Metamemory Optimization Stalls | Medium | Data | Schema version remained frozen at 1.0 during AutoMem | **RESOLVED** (Implemented automatic float increments in optimize_metamemory) |
-| **CONC-001** | Timing-Dependent Validation Race | High | Concurrency | APPROVED to EXECUTED race in LogAct assertions | **RESOLVED** (Asserted [APPROVED, EXECUTED] union set in validations) |
-| **PROD-001** | MT5 Windows Lock-in | High | Production | OS lock-in for execution adapters | **RESOLVED** (Decoupled with standard abstract execution layers and paper-trading adapters) |
+| ID | Title | Severity | Category | Status |
+|---|---|---|---|---|
+| SEC-001 | Unsafe `pickle` Deserialization | Critical | Security | RESOLVED |
+| SEC-002 | `shell=True` in Subprocess Calls | High | Security | RESOLVED |
+| SEC-003 | Hardcoded Credentials | High | Security | RESOLVED |
+| SEC-004 | Unsafe `eval()` Usage | High | Security | RESOLVED |
+| SEC-005 | Insecure Randomness for Quant | Medium | Security | RESOLVED |
+| SEC-006 | Credential Exposure in Compose | High | Security | RESOLVED |
+| REL-001 | Naked `except:` Blocks | Medium | Reliability | RESOLVED |
+| REL-002 | Signal Safety in Main Loop | Medium | Reliability | RESOLVED |
+| REL-003 | Async Task Resource Cleanup | Medium | Reliability | RESOLVED |
+| REL-004 | Inconsistent Error Recovery | Medium | Reliability | IMPROVED |
+| REL-005 | Network Retry Failures | Medium | Reliability | RESOLVED |
+| PERF-001 | Blocking I/O in Async Context | High | Performance | RESOLVED |
+| PERF-002 | O(n^2) Data Processing Loops | Medium | Performance | RESOLVED |
+| PERF-003 | Redundant Model Loading | High | Performance | RESOLVED |
+| DATA-001 | Missing Schema Validation | Medium | Data | RESOLVED |
+| DATA-002 | Stale Data in Cache | Medium | Data | RESOLVED |
+| ARCH-001 | Competing Orchestrators | High | Architecture | RESOLVED |
+| ARCH-002 | Circular Dependencies | Medium | Architecture | PARTIAL |
+| ARCH-002 | Circular Dependencies | Medium | Architecture | RESOLVED |
+| ARCH-004 | Excessive Coupling in Core | High | Architecture | RESOLVED |
+| ARCH-005 | God Module `core/__init__.py` | Medium | Architecture | RESOLVED |
+| ARCH-006 | Duplicate `aamis_v3` System | Low | Architecture | RESOLVED |
+| INT-001 | "Delusion Loop" (Reality Gate) | Critical | Intelligence | RESOLVED |
+| INT-002 | Simulated Superintelligence Stubs | High | Intelligence | RESOLVED |
+| PROD-001 | Windows-only MT5 Lock-in | High | Production | RESOLVED |
+| PROD-002 | Configuration Validation | Medium | Production | VERIFIED |
+| MAINT-001 | "God Class" / Massive Legacy File | Low | Maintainability | RESOLVED |
+| MAINT-002 | Excessive Print Statements | Low | Maintainability | RESOLVED |
+| MAINT-003 | Duplicated Logic in `_archive` | High | Maintainability | ARCHIVED |
+| MAINT-004 | Magic Numbers in Risk Models | Medium | Maintainability | RESOLVED |
+| MAINT-005 | Missing Docstrings in Core APIs | Low | Maintainability | RESOLVED |

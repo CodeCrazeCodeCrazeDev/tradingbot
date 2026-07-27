@@ -70,19 +70,7 @@ class LogAction:
         return self.status
 
 class UnifiedDecisionBus:
-    _instance = None
-    _lock = threading.Lock()
-
-    def __new__(cls, *args, **kwargs):
-        with cls._lock:
-            if cls._instance is None:
-                cls._instance = super(UnifiedDecisionBus, cls).__new__(cls)
-                cls._instance._initialized = False
-        return cls._instance
-
     def __init__(self, config: Optional[Dict] = None):
-        if self._initialized:
-            return
         self.config = config or {}
         self._log: List[LogAction] = []
         self._voters: Dict[str, Callable] = {}
@@ -90,7 +78,6 @@ class UnifiedDecisionBus:
         self._action_queue = asyncio.PriorityQueue()
         self._running = False
         self._processor_task: Optional[asyncio.Task] = None
-        self._initialized = True
         logger.info("LogAct Shared-Log Backbone initialized")
 
     async def start(self):
@@ -123,49 +110,120 @@ class UnifiedDecisionBus:
         self._voters[voter_id] = voter_fn
 
     async def propose_action(self, action: LogAction):
+        """Proposes an action to the shared log."""
+        if not self._running:
+            logger.warning(f"LogAct: Attempted to propose action {action.action_id} while bus is not running. Starting bus...")
+            await self.start()
+
         action.status = ActionStatus.PROPOSED
         await self._action_queue.put((-action.priority.value, action.timestamp, action))
+        logger.debug(f"LogAct: Action {action.action_id} queued for auditing (Priority: {action.priority.name})")
 
     def subscribe(self, action_type: str, handler: Callable, subscriber_id: str = "anon", priority: int = 0):
         self._subscribers[action_type].append({"id": subscriber_id, "handler": handler, "priority": priority})
         self._subscribers[action_type].sort(key=lambda x: x["priority"], reverse=True)
 
     async def _process_log(self):
-        max_log_size = self.config.get("max_log_size", 1000)
+        """
+        Main LogAct processing loop.
+        Instrumented with UCA V5 high-resolution tracing.
+        """
+        max_log_size = self.config.get("max_log_size", 10000)
         while self._running:
+            action = None
+            start_time = time.time()
             try:
+                # 1. Queue Retrieval
                 _, _, action = await self._action_queue.get()
+                t_start = datetime.utcnow()
                 action.sequence_number = len(self._log)
                 self._log.append(action)
                 if len(self._log) > max_log_size:
                     self._log.pop(0)
 
+                logger.debug(f"LogAct [{action.sequence_number}]: Processing action {action.action_id} ({action.action_type})")
+
+                # 2. Audit Phase (Voter Execution)
                 action.status = ActionStatus.AUDITING
                 voter_ids = list(self._voters.keys())
-                vote_tasks = [vfn(action) for vfn in self._voters.values()]
+
+                # UCA V5: Mandatory voter verification
+                if "ImmutableShield" not in voter_ids and "shield" not in voter_ids:
+                    logger.critical(f"LogAct CRITICAL: Mandatory Shield voter missing for action {action.action_id}")
+                    action.status = ActionStatus.VETOED
+                    action.voter_reports["SYSTEM"] = {"decision": "VETO", "reason": "Mandatory Shield voter missing"}
+                    action._completed_event.set()
+                    self._action_queue.task_done()
+                    continue
+
+                vote_tasks = []
+                for v_id, vfn in self._voters.items():
+                    try:
+                        if asyncio.iscoroutinefunction(vfn):
+                            vote_tasks.append(vfn(action))
+                        else:
+                            # Wrap sync voters in a thread pool to avoid blocking the bus
+                            loop = asyncio.get_event_loop()
+                            vote_tasks.append(loop.run_in_executor(None, vfn, action))
+                    except Exception as e:
+                        logger.error(f"LogAct: Error preparing voter {v_id}: {e}")
 
                 if vote_tasks:
+                    v_start = datetime.utcnow()
                     results = await asyncio.gather(*vote_tasks, return_exceptions=True)
+                    v_end = datetime.utcnow()
+
                     for i, res in enumerate(results):
                         vid = voter_ids[i]
-                        action.voter_reports[vid] = res if not isinstance(res, Exception) else {"decision": "FAIL", "reason": str(res)}
+                        if isinstance(res, Exception):
+                            action.voter_reports[vid] = {"decision": "FAIL", "reason": str(res)}
+                        else:
+                            action.voter_reports[vid] = res
 
+                    logger.debug(f"LogAct [{action.sequence_number}]: Voter phase complete in {(v_end - v_start).total_seconds():.3f}s")
+
+                # 3. Consensus Phase
+                c_start = datetime.utcnow()
                 if self._check_consensus(action):
                     action.status = ActionStatus.APPROVED
+                    logger.info(f"LogAct [{action.sequence_number}]: Action {action.action_id} APPROVED")
+
+                    # 4. Dispatch Phase
                     await self._dispatch(action)
                     action.status = ActionStatus.EXECUTED
                 else:
                     action.status = ActionStatus.VETOED
+                    logger.warning(f"LogAct [{action.sequence_number}]: Action {action.action_id} VETOED")
 
-                action._completed_event.set()
-                self._action_queue.task_done()
-            except asyncio.CancelledError: break
-            except Exception as e: logger.error(f"LogAct Error: {e}")
+                # Record KPI: Consensus Latency
+                latency = (time.time() - start_time) * 1000
+                logger.debug(f"KPI: Consensus Latency for {action.action_id}: {latency:.2f}ms")
+
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"LogAct Error: {e}")
+                if action:
+                    action.status = ActionStatus.FAILED
+            finally:
+                if action:
+                    action._completed_event.set()
+                    self._action_queue.task_done()
 
     def _check_consensus(self, action: LogAction) -> bool:
+        """
+        UCA V5 Consensus Logic.
+        Hardened: Case-insensitive and supports multiple result formats.
+        """
         for vid, report in action.voter_reports.items():
-            if isinstance(report, dict) and report.get("decision") in ["REJECT", "VETO", "FAIL", "BLOCKED"]:
-                return False
+            if isinstance(report, dict):
+                decision = str(report.get("decision", "FAIL")).upper()
+                if decision in ["REJECT", "VETO", "FAIL", "BLOCKED"]:
+                    logger.warning(f"LogAct: Action {action.action_id} VETOED by {vid}: {report.get('reason', 'No reason')}")
+                    return False
+            elif isinstance(report, str):
+                if report.upper() in ["REJECT", "VETO", "FAIL", "BLOCKED"]:
+                    return False
         return True
 
     async def _dispatch(self, action: LogAction):
@@ -173,4 +231,5 @@ class UnifiedDecisionBus:
         tasks = [h["handler"](action) for h in handlers]
         if tasks: await asyncio.gather(*tasks, return_exceptions=True)
 
+# Global instance for production path (authoritative)
 decision_bus = UnifiedDecisionBus()
