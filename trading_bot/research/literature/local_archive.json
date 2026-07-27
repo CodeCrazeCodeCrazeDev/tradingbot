@@ -1,0 +1,36 @@
+[
+    {
+        "paper_id": "local_logact_2026",
+        "title": "LogAct: Transactional Self-Proposed Transformations in Superintelligent AI Systems",
+        "authors": [
+            "AlphaAlgo Research Core"
+        ],
+        "publish_date": "2026-01-15",
+        "abstract": "We present LogAct, a transactional self-proposed transformation framework resolving evolution conflicts in sovereign active inference agents.",
+        "url": "https://alphaalgo.internal/logact",
+        "category": "active_inference"
+    },
+    {
+        "paper_id": "local_vpin_vol",
+        "title": "Order Flow Imbalance and Volatility Clustering in Liquid Regime Forex Trading",
+        "authors": [
+            "Easley, D.",
+            "Lopez de Prado, M."
+        ],
+        "publish_date": "2024-11-20",
+        "abstract": "An empirical analysis combining Volume-Synchronized Probability of Toxicity (VPIN) and realized variance clustering to predict microstructural regime changes.",
+        "url": "https://alphaalgo.internal/vpin_vol",
+        "category": "microstructure"
+    },
+    {
+        "paper_id": "local_hrp_opt",
+        "title": "Hierarchical Risk Parity via Optimal Transport Distance Metrics",
+        "authors": [
+            "Research Division"
+        ],
+        "publish_date": "2025-05-10",
+        "abstract": "A novel application of Wasserstein distance metrics within Hierarchical Risk Parity algorithm to robustify portfolio allocation against tail-risk correlation shifts.",
+        "url": "https://alphaalgo.internal/hrp_opt",
+        "category": "portfolio_optimization"
+    }
+]
