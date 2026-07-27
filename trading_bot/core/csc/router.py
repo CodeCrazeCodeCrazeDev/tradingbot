@@ -154,7 +154,6 @@ class SkillRouter:
 
     def _pf_volatility_guardrail(self, context: Dict[str, Any]) -> Dict[str, Any]:
         return {
-            "status": "pf_intervention",
             "action": "override_to_hold",
             "reason": "Volatility exceeded HASP safety threshold (0.3)",
             "pf_version": "1.1.0"
