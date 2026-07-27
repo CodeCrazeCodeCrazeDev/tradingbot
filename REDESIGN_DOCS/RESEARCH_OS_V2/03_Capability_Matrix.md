@@ -1,0 +1,19 @@
+# 03. Capability Comparison Matrix
+
+This comparison matrix maps AlphaAlgo's current state against the capabilities of elite quantitative research institutions.
+
+---
+
+| Research Stage | Elite Institutional Standard | AlphaAlgo Current State | Gap Rating | Redesign Target |
+| :--- | :--- | :--- | :--- | :--- |
+| **Hypothesis Control** | Structured backlog of theoretical, falsifiable financial claims mapped in a relational schema. | Simple `Hypothesis` dataclass, disconnected from backtests or data. | **High** | Introduce `HypothesisRegistry` with falsification gates, active confidence scores, and child experiments. |
+| **Data Lineage** | Immutable DAG tracking raw sources through transformations to features with strict content hashes. | Dataframe hashing on ingestion, but no intermediate step tracking. | **Medium** | NetworkX `DatasetLineageGraph` mapping `DatasetVersion` nodes to `FeatureVersion` nodes with SQLite indexes. |
+| **Feature Registry** | Shared, versioned feature catalog with computed metrics (mutual info, decay, drift) to prevent duplication. | Hardcoded `FeatureFactory` computing a fixed column set. | **High** | Dedicated `FeatureRegistry` caching versioned feature metadata and evaluating feature drift dynamically. |
+| **Multiple Testing** | Compulsory p-value deflation (e.g. Deflated Sharpe Ratio) correcting for selection bias in high-volume testing. | Uses nominal Sharpe Ratio; easily fooled by multi-parameter optimization. | **High** | Implement Bailey & Lopez de Prado's `DeflatedSharpeRatio` in a mandatory statistical validation step. |
+| **Benchmarking** | Strategies must outperform standard statistical, financial, and machine learning baselines under cross-validation. | No benchmarking. Backtests run against raw history with no baseline comparisons. | **High** | Register `BaselineStrategyLibrary` representing 10+ baselines; implement multi-baseline outperformance test. |
+| **Lineage & Provenance** | Immutable fingerprint incorporating dataset version, feature versions, code commit, config, seeds, and environment. | Basic seed locking and simple split hashing. | **High** | Implement immutable `ProvenanceHash` generating SHA-256 identities. Any parameter change produces a new node. |
+| **Ledger Auditing** | Append-only transaction ledger storing every experiment state transition, audit comment, and validation report. | Basic local log file entries or memory dictionaries. | **High** | Durably persist append-only transitions into SQLite-backed `research.db`. Historical events are immutable. |
+| **Experiment States** | Managed state machine (Draft -> Running -> Completed -> Validated -> Approved/Rejected -> Archived) with transitions. | Flat dataclass containing state as a text string field. | **Medium** | Enforce transition rules and log states to the SQLite ledger to secure audit paths. |
+| **Separation of Concerns** | Strategy research is separate from independent validation and governance. One Brain acts as a pure consumer. | Single components often design and backtest strategies in the same loop. | **Medium** | Decouple Research OS completely: Research OS writes validated strategy metadata to SQLite, CSC queries and consumes. |
+| **Data Leakage Guards** | Automated detectors flagging future-lookahead drift, train/test contamination, and bad ticks prior to backtests. | Basic `DataValidator` checks shapes but lacks lookahead or contamination checks. | **High** | Hardened `DataValidator` with automated lookahead index shift detection and sample overlap validators. Fail-closed. |
+| **Research Debt** | Quantitative logging of failed theories and duplicate discoveries to prevent infinite loops of dead-ends. | In-memory dict storing basic failed idea titles. | **Medium** | SQL-backed `Research Debt Tracker` blocking experiments testing historically falsified/failed hypotheses. |

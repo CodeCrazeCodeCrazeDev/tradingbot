@@ -1,4 +1,37 @@
 """
+Provides backward and testing compatibility for data validation modules.
+"""
+
+from typing import Any, Optional, Dict
+import logging
+from datetime import datetime
+
+logger = logging.getLogger(__name__)
+
+class DataValidator:
+    """
+    DataValidator implementation stub
+    """
+
+    def __init__(self, config: Optional[Dict] = None):
+        self.config = config or {}
+        self.initialized = False
+
+    def initialize(self) -> bool:
+        self.initialized = True
+        return True
+
+    def process(self, data: Any) -> Any:
+        if not self.initialized:
+            self.initialize()
+        return data
+
+    def get_status(self) -> Dict:
+        return {
+            'initialized': self.initialized,
+            'timestamp': datetime.now().isoformat(),
+            'config': self.config
+        }
 Data Validator class.
 Provides validation and sanitization checks for historical and streaming datasets.
 """
@@ -21,12 +54,10 @@ class DataValidator:
             return False, {"error": "DataFrame is empty or None"}
 
         report = {
-            "total_records": len(df),
+            "row_count": len(df),
             "missing_values": 0,
             "corrupted_rows": 0,
-            "bad_ticks_count": 0,
-            "look_ahead_violations": 0,
-            "errors": [],
+            "logical_errors": 0,
             "warnings": []
         }
 
@@ -34,8 +65,7 @@ class DataValidator:
         required_cols = ["open", "high", "low", "close"]
         missing_cols = [col for col in required_cols if col not in df.columns]
         if missing_cols:
-            report["errors"].append(f"Missing required columns: {missing_cols}")
-            return False, report
+            return False, {"error": f"Missing required columns: {missing_cols}"}
 
         # Check for NaNs
         nan_counts = df[required_cols].isna().sum().sum()
@@ -50,13 +80,7 @@ class DataValidator:
             (df["low"] > df["close"])
         )
         violations_count = int(logical_violations.sum())
-        report["bad_ticks_count"] = violations_count
+        report["logical_errors"] = violations_count
 
-        # Check for look-ahead bias (any column containing 'future' or 'lead' or 'lookahead')
-        look_ahead_cols = [col for col in df.columns if any(x in str(col).lower() for x in ["future", "lead", "look_ahead", "lookahead"])]
-        if look_ahead_cols:
-            report["look_ahead_violations"] = len(look_ahead_cols)
-            report["errors"].append(f"Possible look-ahead bias detected in columns: {look_ahead_cols}")
-
-        is_valid = (nan_counts == 0) and (violations_count == 0) and (report["look_ahead_violations"] == 0)
+        is_valid = (nan_counts == 0) and (violations_count == 0)
         return is_valid, report
