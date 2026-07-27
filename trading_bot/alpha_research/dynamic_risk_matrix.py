@@ -87,6 +87,16 @@ except (ImportError, NameError):
                 def zero_grad(self): pass
                 def step(self): pass
 
+if not TORCH_AVAILABLE:
+    class MockModule:
+        def __init__(self, *args, **kwargs):
+            pass
+    class MockNN:
+        Module = MockModule
+        def __getattr__(self, name):
+            return MockModule
+    nn = MockNN()
+
 try:
     from sklearn.preprocessing import StandardScaler
     from sklearn.ensemble import GradientBoostingRegressor
