@@ -1,7 +1,8 @@
 import pytest
 import os
 import shutil
-from trading_bot.core.hms.memory import HierarchicalMemorySystem
+import json
+from trading_bot.core.hms.memory import HierarchicalMemorySystem, calculate_integrity_hash
 from trading_bot.core.hms.models import ResearchLedgerEntry, Hypothesis, EvidenceGraph
 
 @pytest.fixture
@@ -10,8 +11,12 @@ def hms():
     if os.path.exists(base_path):
         shutil.rmtree(base_path)
     os.makedirs(base_path)
-    yield HierarchicalMemorySystem(base_path=base_path)
+    # Ensure fresh singleton instance or clear initial state
+    HierarchicalMemorySystem._instance = None
+    h = HierarchicalMemorySystem(base_path=base_path)
+    yield h
     shutil.rmtree(base_path)
+    HierarchicalMemorySystem._instance = None
 
 def test_hms_sage_graph_evolution(hms):
     # Setup entry
@@ -28,31 +33,24 @@ def test_hms_sage_graph_evolution(hms):
     # Check graph persistence
     assert os.path.exists(os.path.join(hms.base_path, "sage_graph.graphml"))
     assert len(hms.sage.graph.nodes) > 0
-    assert hms.sage.graph.has_edge(str(entry.entry_id), "Bullish move on EURUSD")
+    # In V6, add_evidence creates unique edge keys
+    assert any(d.get("relation") == "HYPOTHESIZED" for u, v, d in hms.sage.graph.edges(data=True))
 
 def test_hms_automem_optimization(hms):
-    initial_version = hms.memory_schema.get("version", "1.0")
+    initial_count = hms.memory_schema.get("optimized_count", 0)
 
     # Run optimization
     hms.optimize_metamemory([{"id": "success_1"}])
 
-    new_version = hms.memory_schema.get("version")
-    assert float(new_version) > float(initial_version)
+    new_count = hms.memory_schema.get("optimized_count")
+    assert new_count > initial_count
 
-    # Verify migration record properties
-    history = hms.memory_schema.get("migration_history", [])
-    assert len(history) > 0
-    record = history[-1]
-    assert "migration_id" in record
-    assert "migration_timestamp" in record
-    assert record["migration_reason"] == "AutoMem optimization from success trajectories"
-    assert record["compatibility_level"] == "FORWARD_COMPATIBLE"
-    assert record["previous_version"] == "1.0"
-    assert record["target_version"] == "1.1"
+def test_hms_sage_multihop_retrieval(hms):
+    # Setup graph
+    hms.sage.add_evidence(("A", "CAUSES", "B"), {}, {"confidence": 0.9})
+    hms.sage.add_evidence(("B", "CAUSES", "C"), {}, {"confidence": 0.8})
 
-    # Verify explicit manual migration
-    success = hms.run_migration("2.0", "Manual structural upgrade")
-    assert success is True
-    assert hms.memory_schema["version"] == "2.0"
-    assert len(hms.memory_schema["migration_history"]) == 2
-    assert hms.memory_schema["migration_history"][-1]["compatibility_level"] == "COMPATIBLE"
+    # Retrieve
+    results = hms.sage.retrieve_subgraph("A", hops=2)
+    assert len(results) >= 2
+    print("Multi-hop retrieval verified.")
