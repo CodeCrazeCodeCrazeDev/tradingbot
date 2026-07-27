@@ -144,6 +144,28 @@ class CognitiveSystemController:
         self._initialized = True
         logger.info("CSC-V5: One Brain Controller Initialized")
 
+    async def _run_discoloop_internalization(self, observation: Dict[str, Any], num_loops: int = 2):
+        """UCA V5 internal multi-hop internalization routine."""
+        self._max_loops = num_loops
+        await self._run_discoloop_reasoning(observation)
+        self.discrete_channel = ["internalized_insight"]
+        self.continuous_state["v"] = 1.0
+
+    def _detect_failure_severity(self, reports: List[VerifierReport]) -> str:
+        """Determines the severity of verification report critiques to trigger Pivot or Refine."""
+        if not reports:
+            return "none"
+
+        rejections = [r for r in reports if not r.is_valid]
+        if not rejections:
+            return "none"
+
+        # If any rejection has very high confidence (>0.9) or multiple rejections exist, it is critical
+        if len(rejections) >= 2 or any(r.confidence >= 0.9 for r in rejections):
+            return "critical"
+
+        return "minor"
+
     async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
         """
         12-step Recursive Active Inference Pipeline (UCA V6).

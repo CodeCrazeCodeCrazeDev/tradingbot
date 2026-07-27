@@ -220,7 +220,7 @@ class ScientificReasoningEngine:
             entry = ResearchLedgerEntry(hypothesis=self.registry[hid])
             reports = await self.controller.verifier_swarm.run_swarm(entry)
             # Simple aggregation
-            vetoed = any(not r.is_valid and r.confidence > 0.8 for r in reports)
+            vetoed = any(not r.is_valid and r.confidence > 0.85 for r in reports)
             if vetoed:
                 self.registry[hid].posterior *= 0.5
 
