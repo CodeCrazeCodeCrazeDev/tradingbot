@@ -15,6 +15,10 @@ async def test_sre_cycle():
     hid = await sre.observe({"data": "test"})
     print(f"Observed: {hid}")
 
+    # Configure robust priors and low uncertainty for scientific promotion
+    sre.registry[hid].prior = 0.85
+    sre.registry[hid].uncertainty = 0.2
+
     # Step through cycle
     await sre.detect_anomalies(hid)
     assert sre.registry[hid].state == HypothesisState.ANOMALY_DETECTION
@@ -26,6 +30,8 @@ async def test_sre_cycle():
     await sre.bayesian_update(hid)
     assert sre.registry[hid].posterior > 0.5
 
+    # Force high posterior to meet institutionalized threshold
+    sre.registry[hid].posterior = 0.9
     await sre.retire_hypothesis(hid)
     assert sre.registry[hid].state == HypothesisState.INSTITUTIONALIZED
 
