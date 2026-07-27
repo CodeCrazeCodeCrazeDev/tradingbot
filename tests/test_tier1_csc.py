@@ -9,6 +9,7 @@ async def test_csc_v5_pipeline():
 
     # Mock HMS and World Model
     class MockHMS:
+        async def retrieve_evidence_chain(self, obs): return []
         def store_ledger_entry(self, entry): pass
     class MockWM:
         async def generate_competing_branches(self, obs): return []
