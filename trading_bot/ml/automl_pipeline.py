@@ -20,6 +20,7 @@ import hashlib
 import json
 import pickle
 from dataclasses import dataclass, field
+from trading_bot.security.safe_pickle import safe_load
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Callable, Tuple, Union, Set
 from enum import Enum, auto

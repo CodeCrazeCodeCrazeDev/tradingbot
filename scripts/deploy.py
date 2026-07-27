@@ -4,6 +4,7 @@ Deployment script for AlphaAlgo 2.0
 
 import yaml
 import subprocess
+import shlex
 import sys
 import os
 import shlex

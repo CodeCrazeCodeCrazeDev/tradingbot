@@ -12,6 +12,7 @@ import re
 import json
 import os
 from collections import defaultdict, Counter
+from trading_bot.security.safe_pickle import safe_load
 
 # NLP libraries
 import nltk
@@ -657,7 +658,11 @@ class SentimentAnalyzer:
     
     def _load_cache(self):
         """Load sentiment history from cache"""
-        if os.path.exists(self.cache_path):
+        json_path = self.cache_path
+        if json_path.endswith('.db') or json_path.endswith('.pkl'):
+            json_path = json_path.rsplit('.', 1)[0] + '.json'
+
+        if os.path.exists(json_path):
             try:
                 with open(self.cache_path, 'r') as f:
                     data = json.load(f)

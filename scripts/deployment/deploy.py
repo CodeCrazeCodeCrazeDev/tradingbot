@@ -16,6 +16,7 @@ from pathlib import Path
 import logging
 import datetime
 import subprocess
+import shlex
 import time
 
 # Configure logging
@@ -34,8 +35,9 @@ def run_command(command, cwd=None):
     """Run a command and return the output"""
     logger.info(f"Running command: {command}")
     try:
+        args = shlex.split(command)
         result = subprocess.run(
-            command,
+            args,
             cwd=cwd,
             shell=False,
             check=True,

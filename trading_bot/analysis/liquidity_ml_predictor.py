@@ -9,6 +9,7 @@ and fair value gap behavior using advanced feature engineering and ensemble meth
 
 import pickle
 import time
+from trading_bot.security.safe_pickle import safe_load
 from collections import deque, defaultdict
 from dataclasses import dataclass
 from enum import Enum
@@ -611,7 +612,7 @@ class LiquidityMLPredictor:
                 raise ValueError(f"Invalid path: {filepath}")
 
             with open(filepath, 'rb') as f:
-                model_data = pickle.load(f)
+                model_data = safe_load(f)
             
             self.models = model_data.get('models', {})
             self.model_performance = model_data.get('performance', {})
