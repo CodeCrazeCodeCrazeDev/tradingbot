@@ -33,6 +33,7 @@ from uuid import uuid4
 from .hypothesis import HypothesisGenerator, ReasoningBranch, Hypothesis
 from .folding import InformationFolder
 from .router import SkillRouter
+from .acpe import AdaptiveControlPolicyEngine
 from ..verification.swarm import VerificationSwarm
 from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport, EvidenceNode, EvidenceEdge, RelationType, InstitutionalProvenance
 from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
@@ -110,6 +111,7 @@ class CognitiveSystemController:
         self.folder = InformationFolder(hms)
         self.discoloop = DiscoLoopCell(latent_dim=512)
         self.skill_router = SkillRouter()
+        self.acpe = AdaptiveControlPolicyEngine(hms)
 
         # 4. State Channels
         self.continuous_state: Dict[str, Any] = {}

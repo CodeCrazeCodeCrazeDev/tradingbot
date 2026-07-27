@@ -6,6 +6,20 @@ from trading_bot.core.alphaalgo_core_engine import DecisionOutcome, CoreDecision
 from trading_bot.core.immutable_shield import GovernanceDecision
 from trading_bot.core.unified_event_bus import decision_bus
 
+@pytest.fixture(autouse=True)
+def mock_event_bus_for_csc(monkeypatch):
+    from trading_bot.core.unified_event_bus import LogAction, UnifiedDecisionBus, ActionStatus
+
+    async def mock_propose(self, action):
+        action.status = ActionStatus.EXECUTED
+        action._completed_event.set()
+
+    async def mock_wait(self, timeout=5.0):
+        return ActionStatus.EXECUTED
+
+    monkeypatch.setattr(UnifiedDecisionBus, "propose_action", mock_propose)
+    monkeypatch.setattr(LogAction, "wait_for_decision", mock_wait)
+
 @pytest.mark.asyncio
 async def test_csc_hasp_intervention():
     # Setup mocks
