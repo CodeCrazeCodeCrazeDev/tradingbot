@@ -71,7 +71,14 @@ class ScientificMetrics:
             sum_vfe += getattr(hyp, 'vfe', 0.0)
             sum_val += getattr(hyp, 'validation_score', 0.0)
 
-            state_name = hyp.state.name if hasattr(hyp.state, 'name') else str(hyp.state)
+            # Check both attribute and string representations safely
+            state_name = ""
+            if hasattr(hyp, 'state'):
+                if hasattr(hyp.state, 'name'):
+                    state_name = hyp.state.name
+                else:
+                    state_name = str(hyp.state)
+
             if state_name in counts:
                 counts[state_name] += 1
 
