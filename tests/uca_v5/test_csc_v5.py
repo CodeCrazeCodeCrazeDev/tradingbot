@@ -22,6 +22,10 @@ async def test_csc_hasp_intervention():
         CognitiveSystemController._instance.shield = shield
     csc = CognitiveSystemController(world_model, hms, shield)
 
+    # Reset continuous/discrete state channels to prevent side effects
+    csc.discrete_channel = []
+    csc.continuous_state = {}
+
     # Observation triggering volatility guardrail (volatility > 0.3)
     obs = {"volatility": 0.5, "features": [0.1] * 16}
 

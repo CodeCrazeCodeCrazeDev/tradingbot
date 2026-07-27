@@ -5,13 +5,9 @@ Supports incremental construction, Graph-FM multi-hop retrieval,
 and Reader-Writer feedback loops for structural evolution.
 Hierarchical Memory System (HMS) - UCA V6 (July 2026)
 
-Authoritative memory system integrating SAGE (Self-evolving Agentic Graph-Memory)
-and AutoMem (Meta-memory optimization).
-Implements the 6-tier architecture: Working, Episodic, Semantic, Procedural, Research, Institutional.
-
-Scientific Foundation:
-- SAGE: arXiv:2605.12061
-- AutoMem: arXiv:2607.01224
+Authoritative memory system integrating SAGE, AutoMem, and the unified Memory OS.
+Implements the 8-tier architecture: Workspace, Episodic, Semantic, Procedural,
+Research, World Models, Institutional, and Meta-Memory.
 """
 
 import logging
@@ -31,6 +27,9 @@ from .models import (
     RelationType,
     EvidenceGraph
 )
+from .memory_os import MemoryOS, MemoryNode, MemoryTier, MemoryProvenance
+from .cmos import CognitiveMemoryOS
+from .ontology import CMOSNode, CMOSNodeTier, CMOSProvenance
 
 logger = logging.getLogger(__name__)
 
@@ -195,6 +194,12 @@ class HierarchicalMemorySystem:
 
         self.schema_path = os.path.join(base_path, "memory_schema.json")
         self.memory_schema = self._load_schema()
+
+        # Consolidating standard MemoryOS
+        self.memory_os = MemoryOS(base_storage_path=os.path.join(base_path, "memory_os"))
+
+        # Core CMOS substrate instantiation
+        self.cmos = CognitiveMemoryOS()
 
         self._initialized = True
         logger.info(f"HMS V6: One Memory initialized at {base_path}")
