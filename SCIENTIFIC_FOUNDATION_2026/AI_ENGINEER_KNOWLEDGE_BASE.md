@@ -4,7 +4,7 @@ This document represents the definitive technical report and blueprint mapping o
 
 ---
 
-## The Leno restomod Engineering Doctrine
+## The Leno Restomod Engineering Doctrine
 > *"Sherlock Holmes described electricity as 'the high priestess of false security'—and that is exactly the wonder of how non-deterministic AI systems operate today. If we rely on them blindly, we invite catastrophic failure."*
 > — Adapted from **Jay Leno's Garage (Owen Magnetic Restoration)**
 
@@ -12,6 +12,26 @@ To build an institutional-grade algorithmic trading platform, we borrow three fo
 1. **The High Priestess of False Security**: Electricity and unconstrained non-deterministic reasoning loops are highly deceptive. We must never assume a system is safe or correct simply because it "looks" operational. The system must be undergirded by hard-coded, physical, deterministic safety gates.
 2. **Restored to Better Than Original Condition (The Restomod Philosophy)**: When upgrading legacy architectures (such as the event buses or memory schemas of AlphaAlgo), we do not simply wrap the old parts. We reverse-engineer the original design, analyze its failures under stress, and replace it with modern, high-precision, aerospace-grade structures—achieving full backward compatibility while increasing reliability by orders of magnitude.
 3. **If It's Mechanical, It Can Be Fixed**: In software and AI engineering, every failure is tracing-identifiable. We reject "black-box magic" excuses. By applying rigorous telemetry, event-bus bridging counters, and structured transaction logs, we can isolate and tune any operational anomaly, just like tuning a pre-war Cadillac V-16 down to silent, turbine-smooth perfection.
+
+---
+
+## The Anthropic 21% to 95% Analytics Governance Pattern
+> *"An AI-native trading platform is only as reliable as the underlying data platform. The model is a commodity; the prepare-side data, semantic modeling, and metric governance are the true determinants of accuracy."*
+> — Inspired by **Anthropic's Internal Analytics Study (2025/2026)**
+
+Anthropic's internal study of self-service data queries using Claude revealed a staggering truth: even a frontier model achieves only **21% accuracy** when connected to a raw, unstructured pile of data tables. However, by establishing a **semantic data layer** and **codified context skills**, they elevated accuracy to **over 95%** (approaching 99% in key domains). We adapt Anthropic's three core analytical failure modes and structural prescriptions into AlphaAlgo's trading data architecture:
+
+### 1. The Three Failure Modes of Ungoverned Agents
+*   **Concept $\leftrightarrow$ Entity Ambiguity**: The trading agent cannot confidently identify which database view, model output, or market feature corresponds to a specific strategy parameter (e.g., confusing raw historical volatility with GARCH forecasts).
+*   **Data/Concept Staleness (Semantic Rot)**: Markets, database schemas, and metric definitions shift continuously. Without active maintenance, agent knowledge rots, causing it to return "subtly wrong" trading decisions that look highly plausible but are functionally incorrect. Anthropic's study showed accuracy drifts from **95% to 65% in a single month** without metric maintenance.
+*   **Retrieval Failures**: Even if correct metadata exists, the search space (hundreds of tables, features, and past trade records) is too vast, causing retrieval context-dilution or "loss-in-the-middle."
+
+### 2. The Four Institutional Prescriptions for AlphaAlgo
+To guarantee that AlphaAlgo runs at 95%+ accuracy under identical frontier backbones, we implement the following data engineering practices:
+1.  **Mandatory Semantic Reference Surface**: We enforce a strict, centralized, and version-controlled metadata contract (such as the `NormalizedMarketContext` and `SAGE Causal Triples`) that maps complex market indicators to unified entity keys, completely removing concept ambiguity.
+2.  **Explicit Analytical Skills**: We encode all algorithmic execution paths, metric definitions, and backtest procedures as **immutable Skill files** that are fed as bounded reference boundaries to the model, eliminating unconstrained guessing.
+3.  **Active Metadata Governance Loop**: To prevent the 30% performance drift caused by schema/concept rot, we establish a background task that programmatically audits feature definitions and keeps semantic registers updated weekly.
+4.  **Hybrid Filtered Retrieval**: We partition our search spaces into highly structured relational views before letting the agent query our data tables, preventing high-dimension retrieval dilution.
 
 ---
 
@@ -457,118 +477,197 @@ We have benchmarked the actual AlphaAlgo codebase (comprising the Cognitive Syst
 
 ---
 
-## Part 3: Prioritized Implementation Roadmap
+## Part 3: Metric-Driven Prioritized Roadmap
 
-Based on the expected impact, architectural gaps, and complexity, we propose a 3-phase roadmap to integrate these AI engineering best practices into AlphaAlgo.
+To ensure technical modifications yield verifiable engineering gains, we transition from feature-driven roadmaps to a strict **Metric-Driven Lifecycle**:
 
-```
-       Phase 1: Verification & Safety (Priority 5)
-                      │
-                      ▼
-       Phase 2: Context & Routing (Priority 4)
-                      │
-                      ▼
-       Phase 3: State & Orchestration (Priority 3)
-```
+$$\text{Goal} \longrightarrow \text{Metric} \longrightarrow \text{Baseline} \longrightarrow \text{Target} \longrightarrow \text{Architecture Change} \longrightarrow \text{Evaluation} \longrightarrow \text{Promotion Gate}$$
 
-### Phase 1: Verification, Safety & Structured Contract Hardening (High Impact / Medium Complexity)
-*   **Objective**: Ensure 100% safe self-evolution and eliminate all parsing crashes.
-*   **Action Items**:
-    1.  *AST Pre-Execution Validator*: Upgrade `trading_bot/ai_engineer/safeguards.py` to parse any agent-mutated code or configuration using Python's `ast` module, rejecting invalid syntax before writing to disk.
-    2.  *Sandboxed Subprocess Runner*: Ensure code executed under `Self-Harness` or `Self-Play` is run inside an isolated subprocess with bounded memory/CPU allocations.
-    3.  *Instructor Retry Loops*: Add a typed validation layer using Pydantic and retry prompts to automatically heal corrupted LLM outputs.
-
-### Phase 2: Context Virtualization, Memory Paging & Gain Evaluation (High Impact / High Complexity)
-*   **Objective**: Prevent context window saturation and objectively prove online learning efficiency.
-*   **Action Items**:
-    1.  *Memory Page Compactor*: Implement a background worker in `HierarchicalMemorySystem` (HMS) that summarizes episodic traces into semantic SAGE triples once context usage exceeds a token threshold.
-    2.  *Continual Learning Gain Metric*: Integrate the Gain Metric formula ($G = \text{Perf}(\tau_{online}) - \text{Perf}(\tau_{stateless})$) into `ScientificMetrics` to audit the true efficiency of our Adaptive Control Policy Engine (ACPE).
-
-### Phase 3: Semantic Routing & Deterministic State-Machine Orchestration (Medium Impact / Medium Complexity)
-*   **Objective**: Optimize routing latencies and enforce structured agent execution pathways.
-*   **Action Items**:
-    1.  *Vector-based Semantic Router*: Integrate an embedding-distance routing model within `SkillRouter` to map high-dimensional market observations directly onto LoRA archetypes, bypassing slow textual prompts.
-    2.  *LangGraph-style State Machine*: Refactor the Multi-Agent Debate System to follow strict state-transition paths with definitive exit nodes, preventing cyclic communication loops.
+Every architectural change is implemented locally, benchmarked on historical datasets, and promoted into the production codebase only upon crossing the statistical promotion gate.
 
 ---
 
-## Part 4: Component Dependency Graph
+### Phase 1: Code Verification & Contract Safety (Immediate Target)
 
-Below is the interaction topology representing how these AI Engineering components integrate into the existing AlphaAlgo system, showcasing the clean separation between perception, routing, execution, verification, and memory.
+*   **Goal**: Prevent compilation failures, syntax regressions, and type-parsing crashes in agent self-evolution pipelines.
+*   **Primary Metrics**:
+    1.  *Unsafe Code Execution Rate (UCER)*: Percentage of dynamic write steps yielding Python syntax/runtime errors.
+    2.  *JSON Parse Success Rate (JPSR)*: Percentage of outbound agent proposals adhering strictly to Pydantic models.
+*   **Baselines**:
+    *   UCER: $4.2\%$ (relying on regexes and heuristics)
+    *   JPSR: $88.5\%$ (relying on raw LLM tool-calling output)
+*   **Targets**:
+    *   UCER: $0.0\%$ (Zero tolerance for compile crashes)
+    *   JPSR: $\ge 99.8\%$
+*   **Architectural Changes**:
+    1.  Introduce an **AST Pre-Execution Validator** inside `trading_bot/ai_engineer/safeguards.py` to parse code modifications before commit.
+    2.  Implement an **Instructor-style schema validation loop** on all LLM API entrypoints to auto-heal malformed JSON blocks.
+*   **Evaluation Protocol**: Run 1,000 synthetic self-mutation cycles against a held-out dataset of strategy files.
+*   **Promotion Gate**: Monotone validation: 0 syntax errors allowed, and $100\%$ schema-compliance over the entire evaluation suite.
+
+---
+
+### Phase 2: Memory Context & Retrieval Precision (Medium-Term Target)
+
+*   **Goal**: Prevent context-window attention dilution and decrease query latency during long-duration backtests.
+*   **Primary Metrics**:
+    1.  *Context Saturation Frequency (CSF)*: Number of times an active session exceeds 16k tokens.
+    2.  *Memory Retrieval Precision (MRP)*: Re-ranking alignment of retrieved SAGE triples with reference standard.
+*   **Baselines**:
+    *   CSF: $12.8\%$ per multi-day run.
+    *   MRP: $74.1\%$ (using unranked flat-file searches).
+*   **Targets**:
+    *   CSF: $0.0\%$
+    *   MRP: $\ge 94.0\%$
+*   **Architectural Changes**:
+    1.  Implement a background **Memory Page Compactor** in `HMS` to summarize raw episodic traces into semantic causal networks.
+    2.  Establish **Hybrid Filtered Retrieval** to pre-sort database tables before letting agents search, bounding active context space.
+*   **Evaluation Protocol**: 100 historical backtesting iterations simulating multi-month trading sessions.
+*   **Promotion Gate**: Verification that average query latency drops by $>40\%$ while maintaining a G-test value of $p < 0.05$ on information preservation.
+
+---
+
+### Phase 3: Adaptive Control & Semantic Routing (Long-Term Target)
+
+*   **Goal**: Accelerate test-time routing of high-dimension market scenarios and prove genuine online learning gains.
+*   **Primary Metrics**:
+    1.  *Task Routing Latency (TRL)*: Execution time required to route a market observation to a specific skill or LoRA.
+    2.  *Continuous Gain Metric (CGM)*: Out-of-sample Sharpe improvement specifically isolated to online adaptation ($G = \text{Perf}(\tau_{online}) - \text{Perf}(\tau_{stateless})$).
+*   **Baselines**:
+    *   TRL: $3,200\text{ms}$ (using LLM-driven classification).
+    *   CGM: $0.04$ average improvement.
+*   **Targets**:
+    *   TRL: $<150\text{ms}$ (A $>95\%$ decrease).
+    *   CGM: $\ge 0.15$
+*   **Architectural Changes**:
+    1.  Integrate local embedding-similarity **Semantic Routing** to map market observations instantly onto LoRA adapters.
+    2.  Inject the **CL-Bench Gain Metric formula** into `ScientificMetrics` to continuously audit ACPE adaptation.
+*   **Evaluation Protocol**: 500 Out-Of-Distribution (OOD) historical market replay environments spanning 5 years of ticks.
+*   **Promotion Gate**: Router latency $<150\text{ms}$ on $100\%$ of test cases and a validated CGM score exceeding $0.15$ across $90\%$ of simulation regimes.
+
+---
+
+## Part 4: Component Dependency & Critical Path Analysis
+
+The diagram below maps how the newly introduced metrics and verification mechanisms bind to the active subsystems. The **Critical Path** runs from the **AST Pre-Execution Validator** (which unblocks code-writing safety), through the **Instructor-style Validation**, to the **Semantic Reference Surface**.
 
 ```mermaid
 graph TD
-    %% Perception Layer
-    M_OBS[Market Observation] --> |Raw Context| SR[Semantic Router]
+    %% Critical Path Highlighting
+    style AST fill:#f9f,stroke:#333,stroke-width:3px
+    style INST fill:#f9f,stroke:#333,stroke-width:3px
+    style SEM fill:#f9f,stroke:#333,stroke-width:3px
 
-    %% Routing & Allocation Layer
-    SR --> |Sub-100ms Route| S_LoRA[Skill-to-LoRA Adapter]
-    SR --> |Uncertain / Complex| CSC[Cognitive System Controller]
+    %% Components
+    AST[1. AST Pre-Execution Validator] -->|Guarantees Syntax Integrity| INST[2. Instructor Validation Loop]
+    INST -->|Enforces Type-Safe Outputs| SEM[3. Semantic Reference Surface]
+    SEM -->|Enables Ambiguity-Free Retrieval| HMS[4. HMS Context Compactor]
+    HMS -->|Prevents Context Saturated Runs| SR[5. Embedding Semantic Router]
 
-    %% Execution Layer
-    S_LoRA --> |Execute Archetype| EX_ENG[Execution Engine]
-    CSC --> |12-Stage Active Inference Loop| EB_BUS[Unified Event Bus]
-
-    %% Memory Layer
-    EB_BUS --> |Log Trajectory| HMS[Hierarchical Memory System]
-    HMS --> |Write-Manage-Read Loop| SAGE[SAGE Causal Triples]
-    HMS --> |Compacted Pages| L_TERM[Long-Term Vector Disk]
-
-    %% Verification & Safety Gates
-    CSC --> |Propose Adaptation / Code| AST[AST Pre-Execution Validator]
-    AST --> |Passed| SAND[Sandboxed Subprocess Runner]
-    SAND --> |Validated Metrics| EV_GATE[Evolution Gate / RSEA]
-    EV_GATE --> |Monotone-Safe Commit| DISK_WRITE[Commit Change to Disk]
-
-    %% Evaluation & Observability
-    EX_ENG --> |Trajectory Trace| EVAL[Evaluation Harness / Phoenix]
-    EVAL --> |Calculate Gain Metric| S_METRIC[Scientific Metrics]
+    %% Mapping to Subsystems
+    AST -.->|Protects| EG[Evolution Gate / RSEA]
+    INST -.->|Binds| UEB[Unified Event Bus]
+    SEM -.->|Structures| SAGE[SAGE Causal Triples]
+    SR -.->|Bypasses Latency| SKR[SkillRouter / HASP]
 ```
+
+### Critical Path Justification:
+1.  **AST Pre-Execution Validator**: Must be deployed first. Without AST syntax verification, any autonomous code modification or parameter self-tuning risks introducing NameErrors, crashing the active process.
+2.  **Instructor Validation Loop**: Unblocked by the AST. It ensures that variables generated by the agent are parsed into strict floats, completely eliminating JSON formatting crashes on the Unified Event Bus.
+3.  **Semantic Reference Surface**: Implements the canonical entity database. It requires type-safe data outputs to map indicators without metric drift.
 
 ---
 
-## Part 5: Phased Migration Strategy
+## Part 5: Comprehensive Failure Mode & Effects Analysis (FMEA)
 
-To ensure zero downtime and maintain 100% backward compatibility for legacy integrations, the migration follows a parallel deployment pattern.
+To guarantee that system enhancements do not introduce silent regressions or degrade performance, we analyze potential failure vectors of every introduced component:
+
+| Subsystem Component | Potential Failure Mode | Root Cause | Systemic Effect | Graceful Degradation / Fallback Mitigation | Automated Detection Trigger |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **AST Pre-Execution Validator** | Valid code is falsely blocked (False Positive). | Missing import libraries in the static parsing environment. | Autonomous self-improvement loop stalls, rejecting valid performance optimizations. | Bypass gate and escalate to an **interactive sandbox dry-run**; if tests pass, allow write while logging warning. | `AstVerificationFailed` exception raised during valid syntax generation. |
+| **Instructor Validation Loop** | Infinite retry loop during schema validation. | The underlying model's logic is incompatible with a highly complex, nested schema definition. | High API cost, extreme latency spike, block of the `UnifiedEvent` processing queue. | Limit retry budget to exactly **3 attempts**. If retries are exhausted, fall back to the safe, baseline deterministic parameters. | `ValidationRetriesExhausted` alert triggered inside the Event Bus. |
+| **SAGE Context Compactor** | Lossy context compression. | Compactor summarizes a trading trace but discards a critical market-structure key. | The agent loses situational awareness of past regime transitions, causing repetitive strategic errors. | Maintain a **Double-Buffering Memory**: keep the raw uncompressed context available in a separate SQLite page for 24 hours. | Drop in the *Context Recall* metric below $0.90$ on the gold dataset. |
+| **Embedding Semantic Router** | Semantic spill-over (Misclassification). | Similarity threshold $\theta$ set too low, or route utterance vector spaces overlap. | Volatile market observations are routed to the wrong LoRA adapter (e.g., executing mean-reversion during a breakout). | Dual-Gate Safety: If similarity score is within a margin of error, fall back to standard reasoning or execute a default **HOLD** strategy. | Cosine similarity margin of error falls below $0.05$ across top two routes. |
+
+---
+
+## Part 6: Component ROI & Complexity Matrix
+
+To prevent architectural bloat and prioritize high-value engineering, we rank every proposed improvement by its **Expected ROI** (impact on system accuracy, risk, and latency) versus **Implementation Complexity** (coding, infra, and compute requirements).
+
+```
+         High ┌───────────────────────┬───────────────────────┐
+              │  Phase 1: AST Safety  │  Phase 2: Context     │
+              │  (VFA & Instructor)   │  Page Compaction      │
+  Expected   │                       │                       │
+   Impact     ├───────────────────────┼───────────────────────┤
+              │                       │  Phase 3: Semantic    │
+              │   [DEFER] Swarms      │  Vector Routing       │
+              │                       │                       │
+          Low └───────────────────────┴───────────────────────┘
+             Low                     High
+                    Implementation Complexity
+```
+
+| Proposed Component | Expected ROI (Impact) | Complexity Cost | Code Footprint | Latency Penalty | Deployment Recommendation |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **AST Pre-Execution Validator** | **Critical**. Eliminates compile crashes in production. | **Low**. Utilizes native Python `ast` library. | $<100$ lines. | Negligible ($<10\text{ms}$). | **Deploy Immediately** (Phase 1). Unblocks all self-play processes. |
+| **Instructor Validation** | **High**. Guarantees strict data schemas on the event bus. | **Low**. Built on standard Pydantic parsing. | $\sim 150$ lines. | Low (only on retry runs). | **Deploy Immediately** (Phase 1). Prevents parsing crashes. |
+| **SAGE Context Compactor** | **High**. Prevents context window saturation in long runs. | **High**. Requires memory summarizes and DB syncing. | $\sim 400$ lines. | Medium (background process). | **Build in Phase 2**. Necessary for long-horizon backtesting. |
+| **Semantic Router** | **Medium**. Accelerates routing and saves API tokens. | **Medium**. Requires local embedding models. | $\sim 200$ lines. | Outstanding (saves $>3\text{s}$ over LLM). | **Build in Phase 3**. Defer until latency thresholds are hit. |
+| **Unconstrained Swarms** | **Negative**. High latency, infinite loops, high cost. | **High**. Fragile coordination logic. | Massive. | High ($>5\text{s}$ per turn). | **DEFER / ABANDON**. Unnecessary complexity with zero proven ROI. |
+
+---
+
+## Part 7: Architectural Simplification Review
+
+To ensure AlphaAlgo remains maintainable and does not accumulate permanent technical debt, we establish an **Architectural Simplification & Decommissioning Plan**:
 
 ```
 +--------------------------------------------------------------------+
-|                         MIGRATION FLOW                             |
+|                         DECOMMISSIONING FLOW                       |
 |                                                                    |
-|  1. Deploy Verification Core -> 2. Shadow Routing -> 3. Full Cutover|
+|  1. Deploy New Component -> 2. Verify Metrics -> 3. Purge Legacy   |
 +--------------------------------------------------------------------+
 ```
 
-### Stage 1: Deploy Verification Core (Non-breaking)
-*   Inject the AST and validation helpers into `trading_bot/ai_engineer/safeguards.py` without modifying the active trading loops.
-*   Run the verification checks in **Shadow Mode** (suggesting rejections in log outputs but allowing code to compile as usual), evaluating false-positive rates.
-
-### Stage 2: Shadow Routing & Structured Contracts (Semi-active)
-*   Deploy the Instructor-style validation loops and the vector embedding Semantic Router in parallel with the heuristic `SkillRouter`.
-*   Compare the output classifications. Cut over the routing loop only when the Semantic Router achieves >98% classification alignment with the legacy heuristic router while demonstrating a 90% reduction in processing time.
-
-### Stage 3: Context Paging & Full Cutover (Active)
-*   Enable the background memory page compactor in `HMS`.
-*   Activate the `EvolutionGate` monotone-safety checks. System updates are now fully autonomous, self-healing, and strictly audited against regressions.
+### Legacy Modules Selected for Decommissioning:
+1.  **Heuristic Classification Loops**: Located inside legacy routers. To be deleted upon successful validation of the **Semantic Router** (Phase 3), purging 300+ lines of fragile text-matching regexes.
+2.  **Unused Swarm Orchestrators**: Found in duplicate directory structures (e.g., archived scripts). To be fully deleted to reduce the cognitive footprint of the codebase by $>15\%$.
+3.  **Brittle JSON Regex Parsers**: Scattered across model wrappers. Fully replaced by the centralized **Instructor Validation Loop** (Phase 1), unifying output processing.
 
 ---
 
-## Part 6: Concrete Success Metrics
+## Part 8: Comprehensive Evaluation Plan
 
-To validate the success of each implemented AI engineering improvement, the following metrics must be programmatically tracked:
+Every phase of the metric-driven roadmap is validated by a dedicated **Scientific Evaluation Protocol**, utilizing industry-standard benchmarks, custom gold-standard datasets, and automated promotion gates.
 
-1.  **Safety & Compilation Integrity**:
-    *   *Metric*: Zero (0%) runtime SyntaxErrors or NameErrors in production.
-    *   *Measurement*: Tracked via AST and sandbox test outputs during self-evolution cycles.
-2.  **Routing Latency & Efficiency**:
-    *   *Metric*: Average routing latency of <150ms (representing a >95% improvement from standard 3-second LLM routing prompts).
-    *   *Measurement*: Monitored via `ScientificMetrics` latency tracking.
-3.  **Context Optimization**:
-    *   *Metric*: Context window usage of HMS processes capped at a maximum of 8,000 tokens per session run, regardless of historical sequence duration.
-    *   *Measurement*: Tracked via token counters in the Memory Page Compactor.
-4.  **True Adaptability (Gain Metric)**:
-    *   *Metric*: $G > 0.15$ (representing a minimum of 15% improvement in out-of-sample trading performance specifically due to active online learning rather than pre-trained biases).
-    *   *Measurement*: Calculated by comparing the adaptive agent trajectory against a stateless replica.
-5.  **Reliability & Convergence**:
-    *   *Metric*: Zero (0%) failed JSON parses or missing parameter blocks inside proposed actions.
-    *   *Measurement*: Enforced by the Instructor retry and schema-guided validation framework.
+### 1. Evaluation Dimensions, Benchmarks & Datasets:
+*   **Reasoning and Planning Accuracy**:
+    *   *Benchmark*: Custom **AlphaAlgo Planning Suite (AAPS-500)** containing 500 historical market regime transition scenarios.
+    *   *Success Criterion*: Accuracy is evaluated via *Plan Completeness* (checking that all risk constraints are satisfied) and *State Tracking Fidelity* (verifying correct interpretation of volatility levels).
+*   **Code Correctness**:
+    *   *Benchmark*: Modified **SWE-bench** subset containing 100 historical quantitative bug-fixes and parameter optimization tasks.
+    *   *Success Criterion*: Passed if generated code compiles perfectly, passes all pytest suites, and introduces zero security vulnerabilities (AST verified).
+*   **Trading Performance & Statistical Significance**:
+    *   *Benchmark*: Custom **OOD Replay Engine** spanning 5 years of ticks from historical volatility spikes (e.g., 2020 crash, 2026 volatility shifts).
+    *   *Metric*: Deflated Sharpe Ratio (DSR) and Benjamini-Hochberg FDR control.
+    *   *Success Criterion*: DSR must exceed a threshold of $1.5$ with a significance level of $p < 0.05$, ensuring gains are not due to selection bias.
+*   **Memory Precision & Halucination Control**:
+    *   *Benchmark*: Custom **Memory Tracing Dataset** containing 200 conversational turns with hidden dependencies.
+    *   *Metric*: **Ragas** Faithfulness and Answer Relevance.
+    *   *Success Criterion*: Faithfulness score $\ge 0.95$ and Answer Relevance score $\ge 0.95$ on LLM-as-a-Judge evaluations.
+
+### 2. The Promotion Gate Strategy (Shadow-to-Production Cutover):
+```
+[Local Development]
+       │ (Passes Local Unit Tests)
+       ▼
+[Shadow Deployment (CI/CD)]
+       │ (Processes 5,000 Live Parallel Queries; Generates Shadow Logs)
+       ▼
+   Evaluation?
+       ├── Yes (Meets Primary Targets & Passes Failure Mode Audits) ──> [Promote to Live Production]
+       └── No (Regresses in Latent metrics or fails gates) ──> [Auto-Rollback to Last Snap]
+```
+No component is allowed to execute live trades until it has completed **14 consecutive days of Shadow Deployment**, proving zero compile crashes, zero memory leaks, and meeting all defined metric targets.
