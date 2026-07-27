@@ -50,6 +50,7 @@ async def test_csc_decision_determinism(monkeypatch):
     """
     # Create matching mocks
     world_model = MagicMock()
+    world_model.simulate_intervention = AsyncMock(return_value={})
     hms = MagicMock()
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
@@ -86,24 +87,25 @@ async def test_csc_decision_determinism(monkeypatch):
 
     # Run decision process multiple times
     decisions = []
-    for _ in range(3):
-        # We need to deepcopy the obs to verify input isolation
-        input_obs = copy.deepcopy(obs)
-        decision = await csc.process_market_observation(input_obs)
-        decisions.append(decision)
+    try:
+        for _ in range(3):
+            # We need to deepcopy the obs to verify input isolation
+            input_obs = copy.deepcopy(obs)
+            decision = await csc.process_market_observation(input_obs)
+            decisions.append(decision)
 
-    # Assert 100% equivalence of all results
-    first = decisions[0]
-    for other in decisions[1:]:
-        assert other.outcome == first.outcome
-        assert other.trade_id is not None
-        assert len(other.trade_id) > 0
-        assert other.dominant_rejection_reason == first.dominant_rejection_reason
-        assert other.confidence_vector.statistical == first.confidence_vector.statistical
-        assert other.confidence_vector.regime == first.confidence_vector.regime
-        assert other.confidence_vector.execution == first.confidence_vector.execution
-
-    await decision_bus.stop()
+        # Assert 100% equivalence of all results
+        first = decisions[0]
+        for other in decisions[1:]:
+            assert other.outcome == first.outcome
+            assert other.trade_id is not None
+            assert len(other.trade_id) > 0
+            assert other.dominant_rejection_reason == first.dominant_rejection_reason
+            assert other.confidence_vector.statistical == first.confidence_vector.statistical
+            assert other.confidence_vector.regime == first.confidence_vector.regime
+            assert other.confidence_vector.execution == first.confidence_vector.execution
+    finally:
+        await decision_bus.stop()
 
 @pytest.mark.asyncio
 async def test_csc_negative_paths_and_failures(monkeypatch):
@@ -111,7 +113,18 @@ async def test_csc_negative_paths_and_failures(monkeypatch):
     Verify negative paths (e.g. empty branches, empty verifier reports, conflicting reports,
     or rejected shield validations) result in structured rejection CoreDecisions.
     """
+    # Patch decision_bus propose_action
+    from trading_bot.core.unified_event_bus import decision_bus, ActionStatus
+    await decision_bus.start()
+
+    async def mock_propose_action(action):
+        action.status = ActionStatus.EXECUTED
+        action._completed_event.set()
+
+    monkeypatch.setattr(decision_bus, "propose_action", mock_propose_action)
+
     world_model = MagicMock()
+    world_model.simulate_intervention = AsyncMock(return_value={})
     hms = MagicMock()
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
@@ -134,8 +147,11 @@ async def test_csc_negative_paths_and_failures(monkeypatch):
     csc.verifier_swarm.run_swarm = AsyncMock(return_value=[report])
 
     obs = {"market": {"volatility": 0.02}}
-    decision = await csc.process_market_observation(obs)
+    try:
+        decision = await csc.process_market_observation(obs)
 
-    # Must reject safely due to shield veto
-    assert decision.outcome == DecisionOutcome.TRADE_REJECTED
-    assert "Hard exposure violation" in decision.dominant_rejection_reason
+        # Must reject safely due to shield veto
+        assert decision.outcome == DecisionOutcome.TRADE_REJECTED
+        assert "Hard exposure violation" in decision.dominant_rejection_reason
+    finally:
+        await decision_bus.stop()

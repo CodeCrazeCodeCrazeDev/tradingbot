@@ -82,37 +82,66 @@ class CognitiveSystemController:
     UCA V6 Controller - Authoritative Strategic Brain.
     Implements 12-step Recursive Active Inference.
     """
+    _instance = None
+
     def __init__(
         self,
         world_model: Any,
         hms: Any,
-        skill_router: SkillRouter,
-        verifier_swarm: VerificationSwarm,
-        risk_engine: Any,
-        consensus_engine: Any,
-        execution_planner: Any,
-        evolution_gate: Any,
-        shield: Optional[ImmutableShield] = None
+        *args,
+        **kwargs
     ):
+        # Setup class instance reference for backward compatibility in tests
+        CognitiveSystemController._instance = self
+
         # 1. Dependency Injection
         self.world_model = world_model
         self.hms = hms
-        self.skill_router = skill_router
-        self.verifier_swarm = verifier_swarm
-        self.risk_engine = risk_engine
-        self.consensus_engine = consensus_engine
-        self.execution_planner = execution_planner
-        self.evolution_gate = evolution_gate
-        self.shield = shield
+
+        # Dynamically unpack optional positional and keyword arguments
+        self.shield = kwargs.get("shield")
+        self.skill_router = kwargs.get("skill_router")
+        self.verifier_swarm = kwargs.get("verifier_swarm")
+        self.risk_engine = kwargs.get("risk_engine")
+        self.consensus_engine = kwargs.get("consensus_engine")
+        self.execution_planner = kwargs.get("execution_planner")
+        self.evolution_gate = kwargs.get("evolution_gate")
+
+        # Map positional arguments
+        # If we got CognitiveSystemController(world_model, hms, shield)
+        if len(args) == 1:
+            self.shield = args[0]
+        # Or if we have V6 signature: (world_model, hms, skill_router, verifier_swarm, risk_engine, consensus_engine, execution_planner, evolution_gate, shield=None)
+        elif len(args) >= 6:
+            self.skill_router = args[0]
+            self.verifier_swarm = args[1]
+            self.risk_engine = args[2]
+            self.consensus_engine = args[3]
+            self.execution_planner = args[4]
+            self.evolution_gate = args[5]
+            if len(args) >= 7:
+                self.shield = args[6]
+        elif len(args) > 1:
+            # General fallback pairing by type or index
+            for arg in args:
+                if isinstance(arg, ImmutableShield):
+                    self.shield = arg
+                elif isinstance(arg, SkillRouter):
+                    self.skill_router = arg
+                elif isinstance(arg, VerificationSwarm):
+                    self.verifier_swarm = arg
+
+        # Inject default functional components if not explicitly provided
+        self.skill_router = self.skill_router or SkillRouter()
+        self.verifier_swarm = self.verifier_swarm or VerificationSwarm()
+
         from ..unified_event_bus import decision_bus as real_decision_bus
         self.decision_bus = decision_bus or real_decision_bus
 
         # Core Functional Components
         self.hypothesis_gen = HypothesisGenerator(world_model)
-        self.verifier_swarm = VerificationSwarm()
         self.folder = InformationFolder(hms)
         self.discoloop = DiscoLoopCell(latent_dim=512)
-        self.skill_router = SkillRouter()
         self.acpe = AdaptiveControlPolicyEngine(hms)
 
         # 4. State Channels
@@ -216,13 +245,17 @@ class CognitiveSystemController:
         # 3. HASP Shielding (Prescriptive Guardrails)
         # Pre-emptive intervention for known failure modes
         intervention = await self.skill_router.route_task("market_ingestion", observation)
+        if hasattr(intervention, "to_dict"):
+            intervention = intervention.to_dict()
         if intervention.get("status") == "pf_intervention":
-            logger.warning(f"CSC-V6 Step 3: HASP PF Intervention: {intervention['reason']}")
-            if intervention.get("action") == "override_to_hold":
+            pf_result = intervention.get("pf_result", {})
+            reason = pf_result.get("reason", intervention.get("reason", "unknown"))
+            logger.warning(f"CSC-V6 Step 3: HASP PF Intervention: {reason}")
+            if pf_result.get("action") == "override_to_hold" or intervention.get("action") == "override_to_hold":
                 return CoreDecision(
                     outcome=DecisionOutcome.TRADE_REJECTED,
                     trade_id=observation.get("trade_id", str(uuid4())),
-                    dominant_rejection_reason=f"HASP PF Intervention: {intervention['reason']}"
+                    dominant_rejection_reason=f"HASP PF Intervention: {reason}"
                 )
             observation.update(intervention)
 
@@ -401,6 +434,7 @@ class CognitiveSystemController:
         }
 
     def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
+        provenance = InstitutionalProvenance()
         return ResearchLedgerEntry(
             entry_id=str(uuid4()),
             hypothesis=branch.hypotheses[0] if branch.hypotheses else None,
