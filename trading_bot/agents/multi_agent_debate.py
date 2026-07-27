@@ -525,7 +525,7 @@ class RiskSentinel(TradingAgent):
                 conviction = Conviction.HIGH
                 reasoning.append("⚠️ Risk flag present - reduce position size")
             elif total_score > 0:
-                action = TradeAction.BUY  # Risk allows trading
+                action = TradeAction.HOLD  # Risk allows trading
                 conviction = Conviction.MODERATE
                 reasoning.append("✅ Risk parameters acceptable")
             else:
@@ -621,7 +621,7 @@ class HeadAI:
         """
         # Score each action
         try:
-            # Fix: Only use the latest argument from each agent to prevent double-counting across rounds
+            # Only use the latest argument from each agent to prevent double-counting across rounds
             latest_arguments: Dict[AgentRole, AgentArgument] = {}
             for arg in arguments:
                 latest_arguments[arg.agent_role] = arg
@@ -632,15 +632,26 @@ class HeadAI:
         
             for arg in active_arguments:
                 weight = self.weights.get(arg.agent_role, 0.33)
-                conviction_mult = arg.conviction.value / 5.0
+
+                # Defensive check for conviction type
+                if hasattr(arg.conviction, 'value'):
+                    conviction_mult = arg.conviction.value / 5.0
+                elif isinstance(arg.conviction, (int, float)):
+                    conviction_mult = max(1.0, min(5.0, arg.conviction)) / 5.0
+                else:
+                    conviction_mult = 0.6  # Default to moderate
+
+                # Defensive check for confidence
+                confidence = getattr(arg, 'confidence', 0.5)
+                if not isinstance(confidence, (int, float)) or confidence < 0:
+                    confidence = 0.5
 
                 # Apply Bayesian calibration if available
-                confidence = arg.confidence
                 if self.calibrator:
                     cal_result = self.calibrator.calibrate(
                         confidence,
                         method=CalibrationMethod.BAYESIAN,
-                        prediction_type=arg.agent_role.value
+                        prediction_type=arg.agent_role.value if hasattr(arg.agent_role, 'value') else str(arg.agent_role)
                     )
                     confidence = cal_result.calibrated_confidence
             
@@ -662,16 +673,24 @@ class HeadAI:
             risk_args = [a for a in active_arguments if a.agent_role == AgentRole.RISK_SENTINEL]
             if risk_args:
                 risk_arg = risk_args[-1]
-                if risk_arg.action == TradeAction.NO_TRADE and risk_arg.conviction.value >= Conviction.HIGH.value:
+                risk_conviction = risk_arg.conviction.value if hasattr(risk_arg.conviction, 'value') else int(risk_arg.conviction)
+                if risk_arg.action == TradeAction.NO_TRADE and risk_conviction >= Conviction.HIGH.value:
                     winning_action = TradeAction.NO_TRADE
-                    winning_score = risk_arg.confidence
+                    winning_score = getattr(risk_arg, 'confidence', 0.8)
         
-            # Calculate consensus
-            unique_actions = set(a.action for a in active_arguments)
-            consensus_level = 1.0 - (len(unique_actions) - 1) * 0.25
+            # Calculate consensus using directional agreement
+            bullish = sum(1 for a in active_arguments if a.action in [TradeAction.BUY, TradeAction.STRONG_BUY])
+            bearish = sum(1 for a in active_arguments if a.action in [TradeAction.SELL, TradeAction.STRONG_SELL])
+            neutral = sum(1 for a in active_arguments if a.action in [TradeAction.HOLD, TradeAction.NO_TRADE])
+
+            consensus_level = max(bullish, bearish, neutral) / len(active_arguments) if active_arguments else 0.0
         
             # Collect votes
-            agent_votes = {a.agent_role.value: a.action.value for a in active_arguments}
+            agent_votes = {}
+            for a in active_arguments:
+                role_val = a.agent_role.value if hasattr(a.agent_role, 'value') else str(a.agent_role)
+                act_val = a.action.value if hasattr(a.action, 'value') else str(a.action)
+                agent_votes[role_val] = act_val
         
             # Collect dissenting views
             dissenting = [
@@ -692,7 +711,7 @@ class HeadAI:
         
             # Generate reasoning
             reasoning = self._generate_reasoning(
-                winning_action, arguments, consensus_level
+            winning_action, active_arguments, consensus_level
             )
         
             return FinalDecision(
@@ -788,7 +807,8 @@ class HeadAI:
             # Key points from each agent
             for arg in arguments:
                 if arg.reasoning:
-                    parts.append(f"{arg.agent_role.value}: {arg.reasoning[0]}")
+                    agent_reasoning = " ".join(arg.reasoning)
+                    parts.append(f"{arg.agent_role.value}: {agent_reasoning}")
         
             return " | ".join(parts)
         except Exception as e:
@@ -948,10 +968,17 @@ class MultiAgentDebateSystem:
             logger.error(f"Error in _calculate_consensus: {e}")
             raise
     
-    def _identify_conflicts(self, arguments: List[AgentArgument]) -> List[str]:
+    def _identify_conflicts(self, all_arguments: List[AgentArgument]) -> List[str]:
         """Identify conflicts between arguments."""
         try:
             conflicts = []
+
+            # Group by agent role, keeping only the latest
+            latest_arguments: Dict[AgentRole, AgentArgument] = {}
+            for arg in all_arguments:
+                latest_arguments[arg.agent_role] = arg
+
+            arguments = list(latest_arguments.values())
         
             actions = [a.action for a in arguments]
         
