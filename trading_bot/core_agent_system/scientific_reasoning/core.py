@@ -253,7 +253,7 @@ class ScientificReasoningEngine:
 
     async def retire_hypothesis(self, hid: str):
         hyp = self.registry[hid]
-        if hyp.posterior > 0.8:
+        if hyp.posterior >= 0.8:
             hyp.state = HypothesisState.INSTITUTIONALIZED
         elif hyp.posterior < 0.2:
             hyp.state = HypothesisState.REJECTED

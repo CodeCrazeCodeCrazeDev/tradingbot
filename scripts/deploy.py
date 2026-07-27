@@ -6,6 +6,7 @@ import yaml
 import subprocess
 import sys
 import os
+import shlex
 import logging
 from datetime import datetime
 import time
@@ -34,9 +35,11 @@ def load_config(config_path: str) -> dict:
 def run_command(command: str, cwd: str = None) -> bool:
     """Run shell command and return success status."""
     try:
+        # Avoid shell=True for security
+        cmd_list = shlex.split(command)
         result = subprocess.run(
-            command,
-            shell=True,
+            cmd_list,
+            shell=False,
             cwd=cwd,
             check=True,
             stdout=subprocess.PIPE,
