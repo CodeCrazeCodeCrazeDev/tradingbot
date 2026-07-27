@@ -9,41 +9,41 @@ from datetime import datetime
 from pathlib import Path
 
 # Add project root to path so imports resolve to the real package.
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-# Test results
-test_results = {
-    'passed': 0,
-    'failed': 0,
-    'skipped': 0,
-    'tests': []
-}
+def main():
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-def test_result(test_name: str, passed: bool, message: str = ""):
-    """Record test result"""
-    status = "[PASS]" if passed else "[FAIL]"
-    test_results['tests'].append({
-        'name': test_name,
-        'passed': passed,
-        'message': message
-    })
-    if passed:
-        test_results['passed'] += 1
-    else:
-        test_results['failed'] += 1
-    
-    print(f"{status} - {test_name}")
-    if message:
-        print(f"     {message}")
-
-
-def run_all_tests():
-    """Run all comprehensive tests for Elite Trading Bot"""
     print("="*70)
     print("ELITE TRADING BOT - COMPREHENSIVE TEST")
     print("="*70)
     print(f"Test started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
+
+    # Test results
+    test_results = {
+        'passed': 0,
+        'failed': 0,
+        'skipped': 0,
+        'tests': []
+    }
+
+    def test_result(test_name: str, passed: bool, message: str = ""):
+        """Record test result"""
+        status = "[PASS]" if passed else "[FAIL]"
+        test_results['tests'].append({
+            'name': test_name,
+            'passed': passed,
+            'message': message
+        })
+        if passed:
+            test_results['passed'] += 1
+        else:
+            test_results['failed'] += 1
+
+        print(f"{status} - {test_name}")
+        if message:
+            print(f"     {message}")
+
 
     # ============================================================================
     # TEST 1: CORE IMPORTS
@@ -346,10 +346,10 @@ def run_all_tests():
         # Count total exports
         total_exports = len(trading_bot.__all__)
         test_result("Total exports count", total_exports > 400, f"Exports: {total_exports}")
-        
+
         # Check version
         test_result("Version check", hasattr(trading_bot, '__version__'), f"Version: {trading_bot.__version__}")
-        
+
     except Exception as e:
         test_result("Integration test", False, str(e))
 
@@ -427,6 +427,5 @@ def run_all_tests():
     # Exit with appropriate code
     sys.exit(0 if test_results['failed'] == 0 else 1)
 
-
 if __name__ == "__main__":
-    run_all_tests()
+    main()

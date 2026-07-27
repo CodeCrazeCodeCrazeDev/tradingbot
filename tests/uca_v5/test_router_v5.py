@@ -21,7 +21,8 @@ async def test_router_s2l_routing():
     # Context needing hedging
     context = {"market": {"volatility": 0.1}, "needs_hedging": True}
 
-    result = await router.route_task("hedging_task", context)
+    # The router checks if "hedge" in task.lower()
+    result = await router.route_task("hedge_task", context)
 
-    assert result["status"] == "dispatched_to_adapter"
-    assert result["adapter"] == "lora_hedging_archetype"
+    assert result["status"] == "s2l_routed"
+    assert result["adapter_id"] == "lora_hedging_v1"

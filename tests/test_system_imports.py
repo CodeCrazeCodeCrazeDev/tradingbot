@@ -35,9 +35,9 @@ def run_from_import(module_name, items, description):
         traceback.print_exc()
         return False
 
-def test_all_system_imports():
-    """Verify that all main system modules can be imported without errors"""
-    print("=" * 80)
+print("=" * 80)
+
+def main():
     print("ALPHAALGO SYSTEM IMPORT VALIDATION")
     print("=" * 80)
     print()
@@ -47,7 +47,7 @@ def test_all_system_imports():
     # Test Data Layer
     print("Testing Data Layer...")
     print("-" * 80)
-    results.append(run_from_import("trading_bot.data",
+    results.append(test_from_import("trading_bot.data",
         ["MarketDataStream", "TimeSeriesDB", "RealTimeProcessor", "PipelineMonitor"],
         "Data Layer Components"))
     print()
@@ -55,16 +55,16 @@ def test_all_system_imports():
     # Test Intelligence Layer - Brain
     print("Testing Intelligence Layer - Brain...")
     print("-" * 80)
-    results.append(run_from_import("trading_bot.brain",
+    results.append(test_from_import("trading_bot.brain",
         ["EliteBrainController"],
         "Elite Brain Controller"))
-    results.append(run_from_import("trading_bot.brain",
+    results.append(test_from_import("trading_bot.brain",
         ["Tier1TechnicalAnalysis", "Tier2OrderFlowIntelligence", "Tier3MarketStructure"],
         "Brain Tiers 1-3"))
-    results.append(run_from_import("trading_bot.brain",
+    results.append(test_from_import("trading_bot.brain",
         ["Tier4RegimeDetection", "Tier5SentimentAnalysis", "Tier6MacroAnalysis"],
         "Brain Tiers 4-6"))
-    results.append(run_from_import("trading_bot.brain",
+    results.append(test_from_import("trading_bot.brain",
         ["Tier7RiskManagement", "Tier8ExecutionIntelligence", "Tier9MetaLearning"],
         "Brain Tiers 7-9"))
     print()
@@ -72,10 +72,10 @@ def test_all_system_imports():
     # Test Intelligence Layer - Agents
     print("Testing Intelligence Layer - Agents...")
     print("-" * 80)
-    results.append(run_from_import("trading_bot.agents2.coordinator",
+    results.append(test_from_import("agents.coordinator",
         ["MultiAgentCoordinator"],
         "Multi-Agent Coordinator"))
-    results.append(run_from_import("trading_bot.agents2.specialized_agents",
+    results.append(test_from_import("agents.specialized_agents",
         ["TrendFollowingAgent", "MeanReversionAgent", "VolatilityAgent"],
         "Specialized Agents"))
     print()
@@ -83,7 +83,7 @@ def test_all_system_imports():
     # Test ML Pipeline
     print("Testing ML Pipeline...")
     print("-" * 80)
-    results.append(run_from_import("ml.pipeline",
+    results.append(test_from_import("ml.pipeline",
         ["MLPipeline"],
         "ML Pipeline"))
     print()
@@ -91,10 +91,10 @@ def test_all_system_imports():
     # Test Risk Management Layer
     print("Testing Risk Management Layer...")
     print("-" * 80)
-    results.append(run_from_import("trading_bot.risk",
+    results.append(test_from_import("trading_bot.risk",
         ["UnifiedRiskManager"],
         "Unified Risk Manager"))
-    results.append(run_from_import("risk_management",
+    results.append(test_from_import("risk_management",
         ["RiskEngine", "PortfolioManager"],
         "Risk Engine & Portfolio Manager"))
     print()
@@ -102,10 +102,10 @@ def test_all_system_imports():
     # Test Execution Layer
     print("Testing Execution Layer...")
     print("-" * 80)
-    results.append(run_from_import("broker.broker_interface",
+    results.append(test_from_import("broker.broker_interface",
         ["BrokerInterface"],
         "Broker Interface"))
-    results.append(run_from_import("trading.order_execution",
+    results.append(test_from_import("trading.order_execution",
         ["OrderExecutionManager"],
         "Order Execution Manager"))
     print()
@@ -113,10 +113,10 @@ def test_all_system_imports():
     # Test Advanced Features
     print("Testing Advanced Features...")
     print("-" * 80)
-    results.append(run_from_import("trading_bot.advanced_features.liquidity_holography",
+    results.append(test_from_import("trading_bot.advanced_features.liquidity_holography",
         ["LiquidityHolographyEngine", "LiquidityGravityWell"],
         "Liquidity Holography"))
-    results.append(run_from_import("trading_bot.advanced_features.institutional_footprint",
+    results.append(test_from_import("trading_bot.advanced_features.institutional_footprint",
         ["InstitutionalFootprintDNA"],
         "Institutional Footprint"))
     print()
@@ -124,7 +124,7 @@ def test_all_system_imports():
     # Test Explainability
     print("Testing Explainability...")
     print("-" * 80)
-    results.append(run_from_import("explainability",
+    results.append(test_from_import("explainability",
         ["ExplainableAI"],
         "Explainable AI"))
     print()
@@ -132,7 +132,7 @@ def test_all_system_imports():
     # Test Infrastructure
     print("Testing Infrastructure...")
     print("-" * 80)
-    results.append(run_from_import("infrastructure",
+    results.append(test_from_import("infrastructure",
         ["HealthCheck"],
         "Health Check"))
     print()
@@ -152,15 +152,12 @@ def test_all_system_imports():
     print(f"Success Rate: {(passed/total)*100:.1f}%")
     print()
 
-    # Under pytest, we only assert on the agents' and other verified modules' correctness
-    # or skip failing imports that depend on unavailable platform dependencies
-    print("Import validation check completed.")
+    if failed == 0:
+        print("SUCCESS! ALL IMPORTS WORKING! System is ready to run.")
+        sys.exit(0)
+    else:
+        print("WARNING: Some imports failed. Please fix the issues above.")
+        sys.exit(1)
 
 if __name__ == "__main__":
-    # If run as a standalone script, execute the test directly and exit appropriately.
-    try:
-        test_all_system_imports()
-        sys.exit(0)
-    except AssertionError as e:
-        print(e)
-        sys.exit(1)
+    main()
