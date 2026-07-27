@@ -83,6 +83,21 @@ class ScientificMetrics:
 
         self.rejection_rate = self.rejected_count / total
         self.survival_rate = (self.confirmed_count + self.institutionalized_count) / total
+        self._detect_bottlenecks()
+
+    def _detect_bottlenecks(self):
+        """Identifies systemic weaknesses in the hypothesis ecosystem."""
+        self.bottlenecks_detected = []
+
+        if self.total_hypotheses > 20:
+            if self.survival_rate < 0.05:
+                self.bottlenecks_detected.append("GENERATION_NOISE: Too many low-quality hypotheses generated.")
+
+            if self.rejection_rate > 0.8:
+                self.bottlenecks_detected.append("FILTERING_STRICTNESS: Evidence collection might be too hostile or priors too low.")
+
+            if self.avg_validation_score > 0.7 and self.confirmed_count + self.institutionalized_count < 2:
+                self.bottlenecks_detected.append("PROMOTION_FRICTION: Hypotheses pass validation but fail to reach confirmation.")
 
     @property
     def total_institutionalized_knowledge(self) -> int:
@@ -93,9 +108,26 @@ class ScientificMetrics:
             "survival_rate": self.survival_rate,
             "rejection_rate": self.rejection_rate,
             "avg_posterior": self.avg_posterior,
-            "total_knowledge_units": self.total_institutionalized_knowledge,
+            "total_knowledge_units": self.institutionalized_count,
             "timestamp": datetime.now().isoformat()
         }
+
+
+class BottleneckDetector:
+    """Specialized component for identifying systemic constraints and friction points."""
+    @staticmethod
+    def analyze(metrics: Any) -> List[str]:
+        bottlenecks = []
+        if metrics.total_hypotheses > 20:
+            if metrics.survival_rate < 0.05:
+                bottlenecks.append("GENERATION_NOISE")
+
+            if metrics.rejection_rate > 0.8:
+                bottlenecks.append("FILTERING_STRICTNESS")
+
+            if metrics.avg_validation_score > 0.7 and metrics.confirmed_count < 2:
+                bottlenecks.append("PROMOTION_FRICTION")
+        return bottlenecks
 
 
 @dataclass

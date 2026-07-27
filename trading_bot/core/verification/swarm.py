@@ -65,4 +65,12 @@ class EvidenceGraphGate:
                 logger.error(f"EvidenceGate: REJECTED - High-confidence VETO by {v.agent_name}: {v.critique}")
                 return False
 
+        # 3. Evidence Graph Hard Constraints
+        # We need at least 5 nodes and 3 edges in the evidence graph snapshot
+        if hasattr(snapshot, "evidence_graph_snapshot") and snapshot.evidence_graph_snapshot is not None:
+            graph = snapshot.evidence_graph_snapshot
+            if len(graph.nodes) < 5 or len(graph.edges) < 3:
+                logger.error(f"EvidenceGate: REJECTED - Insufficient evidence. Graph has {len(graph.nodes)} nodes and {len(graph.edges)} edges.")
+                return False
+
         return True
