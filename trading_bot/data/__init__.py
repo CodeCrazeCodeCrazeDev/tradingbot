@@ -1,6 +1,4 @@
 """
-Trading Bot Data Layer Package
-==============================
 Exports authoritative interfaces for MT5 connectivity, data validation, and database managers.
 """
 
@@ -46,3 +44,10 @@ __all__ = [
     "RealTimeProcessor",
     "PipelineMonitor"
 ]
+Data management module initialization.
+"""
+
+from .validate import DataValidator
+from .mt5 import MT5Interface
+
+__all__ = ["DataValidator", "MT5Interface"]
