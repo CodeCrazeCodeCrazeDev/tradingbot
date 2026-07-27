@@ -58,13 +58,11 @@ class UnifiedComponentRegistry:
         self._dependencies[name] = dependencies or []
         logger.debug(f"Registered {component_type}: {name}")
 
-    def get(self, name: str) -> Any:
+    def get(self, name: str, default: Any = None) -> Any:
         """
         Retrieve a component by name.
         """
-        if name not in self._components:
-            raise KeyError(f"Component '{name}' not found in registry")
-        return self._components[name]
+        return self._components.get(name, default)
 
     def get_by_type(self, component_type: str) -> List[Any]:
         """
