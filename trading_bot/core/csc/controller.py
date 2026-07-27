@@ -104,6 +104,8 @@ class CognitiveSystemController:
         self.execution_planner = execution_planner
         self.evolution_gate = evolution_gate
         self.shield = shield
+        from ..unified_event_bus import decision_bus as real_decision_bus
+        self.decision_bus = decision_bus or real_decision_bus
 
         # Core Functional Components
         self.hypothesis_gen = HypothesisGenerator(world_model)
