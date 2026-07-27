@@ -86,6 +86,9 @@ class HypothesisGenerator:
         ]
 
         for branch in branches:
+            # Set confidence as the complement of uncertainty
+            branch.confidence = round(1.0 - branch.uncertainty, 3)
+
             # Generate a base hypothesis for each branch
             hyp = Hypothesis(
                 description=f"Market will follow {branch.name}: {branch.causal_explanation}",

@@ -29,7 +29,6 @@ from typing import Any, Dict, List, Optional, Tuple, Callable
 from unittest.mock import MagicMock
 from datetime import datetime
 from uuid import uuid4
-from dataclasses import dataclass, field
 
 from .hypothesis import HypothesisGenerator, ReasoningBranch, Hypothesis
 from .folding import InformationFolder
