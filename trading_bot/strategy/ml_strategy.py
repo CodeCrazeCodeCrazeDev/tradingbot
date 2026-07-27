@@ -14,11 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
-try:
-    from trading_bot.strategy.strategy_engine import StrategyEngine, Signal
-except ImportError:
-    StrategyEngine = None
-    Signal = None
+from .strategy_engine import StrategyEngine, Signal
 
 try:
     from trading_bot.data import MT5Interface

@@ -1,25 +1,38 @@
-# Scientific Mathematical Foundation - SRE 2026
+# Scientific Mathematical Foundation
 
-The Scientific Reasoning Engine (SRE) is grounded in four mathematical pillars.
+## 1. Bayesian Updating and Credal Bounds
 
-## 1. Variational Active Inference (VAI)
-The global objective is the minimization of **Variational Free Energy (VFE)**.
-A hypothesis $h$ is evaluated by the expected free energy $G(h)$ of its outcomes:
-$$G(h) \approx \sum_{\tau} E_{q(s_\tau, o_\tau | h)} [\ln q(s_\tau | h) - \ln p(s_\tau, o_\tau)]$$
-This balances **Epistemic Value** (information gain) and **Extrinsic Value** (expected utility).
+The SRE uses a Bayesian framework to manage the probability of hypothesis correctness.
 
-## 2. Bayesian Evidence Synthesis
-Updating hypothesis $H$ given evidence $E$:
+### Posterior Update
+For a hypothesis $H$ and evidence $E$:
 $$P(H|E) = \frac{P(E|H)P(H)}{P(E)}$$
-We use a **Recursive Bayesian Filter** for continuous updates as new evidence packets arrive in the HMS.
 
-## 3. Causal Stability (Do-Calculus)
-To distinguish correlation from causation, we utilize Pearl's **Do-Calculus**:
-$$P(Y | do(X)) \neq P(Y | X)$$
-Step 7 (Counterfactuals) simulates interventions $do(X)$ in the GWM to verify the mechanism $X \rightarrow Y$ remains stable even when $X$ is forced.
+Where:
+- $P(H)$ is the prior belief from HMS Tier 3/4.
+- $P(E|H)$ is the likelihood from GWM simulation and Backtest/Execution results.
 
-## 4. Uncertainty Calibration (Credal Sets)
-We move beyond single-point probabilities to **Credal Intervals** $[\underline{P}, \overline{P}]$ to handle ambiguity:
-- **Ambiguity**: $\overline{P} - \underline{P}$
-- **Confidence**: Inverse of uncertainty/ambiguity.
-High-ambiguity hypotheses are routed for further "Evidence Collection" (Step 5) rather than "Execution" (Step 10).
+### Credal Bounds (Imprecise Probability)
+To account for epistemic uncertainty, we use an interval $[P_{lower}, P_{upper}]$:
+- **Ambiguity**: $A = P_{upper} - P_{lower}$
+- **Actionable Decision**: A trade is only initiated if $P_{lower} > \text{Threshold}$.
+
+## 2. Variational Free Energy (VFE)
+
+The system minimizes VFE to balance accuracy and complexity (Occam's Razor):
+$$VFE = \text{Complexity} - \text{Accuracy}$$
+$$\mathcal{F} = D_{KL}(q(\phi)||p(\phi)) - \mathbb{E}_{q(\phi)}[\log p(o|\phi)]$$
+
+Lower VFE indicates a better model of the market. Anomaly detection (Step 2) is triggered when $\Delta \mathcal{F} > \text{SurpriseThreshold}$.
+
+## 3. Causal Intervention (Do-calculus)
+
+Evaluation must include an interventional test:
+$$P(Y | \text{do}(X))$$
+This ensures that the "Alpha" (Y) is actually caused by the "Signal" (X) and not a confounding market variable (Z).
+
+## 4. Confidence Calibration (ECE)
+
+The Expected Calibration Error (ECE) is used to punish over-confident models:
+$$ECE = \sum_{m=1}^M \frac{|B_m|}{n} |\text{acc}(B_m) - \text{conf}(B_m)|$$
+Hypotheses with high ECE are demoted regardless of their "nominal" Sharpe ratio.

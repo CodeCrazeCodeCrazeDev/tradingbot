@@ -14,10 +14,7 @@ from typing import List, Literal
 import pandas as pd  # type: ignore
 from loguru import logger
 
-try:
-    from trading_bot.strategy.strategy_engine import StrategyEngine
-except ImportError:
-    StrategyEngine = None
+from trading_bot.strategy.strategy_engine import StrategyEngine
 
 # ---------------------------------------------------------------------------
 # Data classes

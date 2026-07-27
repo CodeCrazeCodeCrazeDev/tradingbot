@@ -293,9 +293,11 @@ class MetricsRegistry:
                 
                     for bucket in buckets:
                         bucket_count = sum(1 for v in sorted_obs if v <= bucket)
-                        lines.append(f'{key.replace("}", f",le=\"{bucket}\"}}")} {bucket_count}')
+                        bucket_label = f',le="{bucket}"}}'
+                        lines.append(f"{key.replace('}', bucket_label)} {bucket_count}")
                 
-                    lines.append(f'{key.replace("}", ",le=\"+Inf\"}}")} {count}')
+                    inf_label = ',le="+Inf"}'
+                    lines.append(f"{key.replace('}', inf_label)} {count}")
                     lines.append(f"{key}_sum {total}")
                     lines.append(f"{key}_count {count}")
         

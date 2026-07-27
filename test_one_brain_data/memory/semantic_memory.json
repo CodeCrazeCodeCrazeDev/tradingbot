@@ -1,0 +1,326 @@
+{
+  "agent_react_reasoner_1_c48bd1f1": {
+    "memory_id": "4ab3907d-61b5-4b00-90da-f2b7670e839d",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "react_reasoner_1_c48bd1f1",
+      "name": "MainReasoner",
+      "archetype": "react_reasoner",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-07T07:38:19.572929"
+    },
+    "metadata": {
+      "key": "agent_react_reasoner_1_c48bd1f1",
+      "related": [
+        "dynamic_agents",
+        "react_reasoner"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-07T07:38:19.573202",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_constitutional_guardian_1_306310de": {
+    "memory_id": "00f4873a-ef66-4e93-9be2-1080f5cb6554",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "constitutional_guardian_1_306310de",
+      "name": "SafetyGuardian",
+      "archetype": "constitutional_guardian",
+      "role": "safety",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-07T07:38:19.573361"
+    },
+    "metadata": {
+      "key": "agent_constitutional_guardian_1_306310de",
+      "related": [
+        "dynamic_agents",
+        "constitutional_guardian"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-07T07:38:19.573652",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_analyst_1_9cdacad7": {
+    "memory_id": "f9a1fc56-cfc7-4d79-ad01-eb94caa40937",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "analyst_1_9cdacad7",
+      "name": "MarketAnalyst",
+      "archetype": "analyst",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-07T07:38:19.573877"
+    },
+    "metadata": {
+      "key": "agent_analyst_1_9cdacad7",
+      "related": [
+        "dynamic_agents",
+        "analyst"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-07T07:38:19.574079",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_monitor_1_14c3ea5f": {
+    "memory_id": "44e26ace-854d-4af1-9e64-1d6a16aabafe",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "monitor_1_14c3ea5f",
+      "name": "SystemMonitor",
+      "archetype": "monitor",
+      "role": "monitor",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-07T07:38:19.574223"
+    },
+    "metadata": {
+      "key": "agent_monitor_1_14c3ea5f",
+      "related": [
+        "dynamic_agents",
+        "monitor"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-07T07:38:19.574404",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_react_reasoner_1_6b3a7b08": {
+    "memory_id": "373f869f-239c-4c8d-9a7c-9883e29ae7b6",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "react_reasoner_1_6b3a7b08",
+      "name": "MainReasoner",
+      "archetype": "react_reasoner",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-07T07:51:18.754118"
+    },
+    "metadata": {
+      "key": "agent_react_reasoner_1_6b3a7b08",
+      "related": [
+        "dynamic_agents",
+        "react_reasoner"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-07T07:51:18.754396",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_constitutional_guardian_1_41f7b6b9": {
+    "memory_id": "bf76d117-2a3d-4bb8-bc1c-c2d0b693ded7",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "constitutional_guardian_1_41f7b6b9",
+      "name": "SafetyGuardian",
+      "archetype": "constitutional_guardian",
+      "role": "safety",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-07T07:51:18.754555"
+    },
+    "metadata": {
+      "key": "agent_constitutional_guardian_1_41f7b6b9",
+      "related": [
+        "dynamic_agents",
+        "constitutional_guardian"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-07T07:51:18.754956",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_analyst_1_5fa24661": {
+    "memory_id": "5579494e-cca1-4448-af06-218b13a9301b",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "analyst_1_5fa24661",
+      "name": "MarketAnalyst",
+      "archetype": "analyst",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-07T07:51:18.755177"
+    },
+    "metadata": {
+      "key": "agent_analyst_1_5fa24661",
+      "related": [
+        "dynamic_agents",
+        "analyst"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-07T07:51:18.755371",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_monitor_1_cf7c8286": {
+    "memory_id": "21aaa934-d578-44a9-af2f-71f907ff859b",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "monitor_1_cf7c8286",
+      "name": "SystemMonitor",
+      "archetype": "monitor",
+      "role": "monitor",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-07T07:51:18.755720"
+    },
+    "metadata": {
+      "key": "agent_monitor_1_cf7c8286",
+      "related": [
+        "dynamic_agents",
+        "monitor"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-07T07:51:18.756084",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_react_reasoner_1_d4c2e797": {
+    "memory_id": "4f4f2502-b77b-4218-aaf6-10706b16799c",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "react_reasoner_1_d4c2e797",
+      "name": "MainReasoner",
+      "archetype": "react_reasoner",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-07T08:34:08.649880"
+    },
+    "metadata": {
+      "key": "agent_react_reasoner_1_d4c2e797",
+      "related": [
+        "dynamic_agents",
+        "react_reasoner"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-07T08:34:08.650159",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_constitutional_guardian_1_2ce71c28": {
+    "memory_id": "dcb7c112-8d0b-4d41-b573-4c776cf94a38",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "constitutional_guardian_1_2ce71c28",
+      "name": "SafetyGuardian",
+      "archetype": "constitutional_guardian",
+      "role": "safety",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-07T08:34:08.650318"
+    },
+    "metadata": {
+      "key": "agent_constitutional_guardian_1_2ce71c28",
+      "related": [
+        "dynamic_agents",
+        "constitutional_guardian"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-07T08:34:08.650618",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_analyst_1_926f0d99": {
+    "memory_id": "7df12cf7-5561-4471-80e8-503831a26c1b",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "analyst_1_926f0d99",
+      "name": "MarketAnalyst",
+      "archetype": "analyst",
+      "role": "planner",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-07T08:34:08.650778"
+    },
+    "metadata": {
+      "key": "agent_analyst_1_926f0d99",
+      "related": [
+        "dynamic_agents",
+        "analyst"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-07T08:34:08.650988",
+    "access_count": 0,
+    "last_accessed": null
+  },
+  "agent_monitor_1_c4b4f766": {
+    "memory_id": "957021d7-3be8-4b9a-b293-a5c8f972f352",
+    "memory_type": "semantic",
+    "content": {
+      "agent_id": "monitor_1_c4b4f766",
+      "name": "SystemMonitor",
+      "archetype": "monitor",
+      "role": "monitor",
+      "capabilities": [],
+      "status": "active",
+      "current_tasks": 0,
+      "tasks_completed": 0,
+      "success_rate": 1.0,
+      "created_at": "2026-07-07T08:34:08.651140"
+    },
+    "metadata": {
+      "key": "agent_monitor_1_c4b4f766",
+      "related": [
+        "dynamic_agents",
+        "monitor"
+      ]
+    },
+    "importance": 0.5,
+    "timestamp": "2026-07-07T08:34:08.651320",
+    "access_count": 0,
+    "last_accessed": null
+  }
+}

@@ -1,53 +1,54 @@
 # Engineering Decomposition: EKSFT (arXiv:2605.29303)
 
 ## Core Hypothesis
-Supervised Fine-tuning (SFT) in low-data regimes should prioritize activating task-relevant capabilities rather than memorizing specific content. Selectively masking high-uncertainty or distribution-shifting tokens prevents fitting to limited samples and preserves the pre-trained distribution.
+Supervised Fine-tuning (SFT) in sparse-data regimes (like black-swan market events) causes distribution collapse or catastrophic forgetting. Entropy-KL Selective Fine-Tuning (EKSFT) prevents this by updates only on "informative" tokens that preserve the pre-trained distribution.
 
 ## Mathematical Formulation
-- **Entropy Masking**: Mask tokens $x_t$ where $H(P_{model}(x_t | x_{<t})) > \tau_H$.
-- **KL Divergence Masking**: Mask tokens $x_t$ where $D_{KL}(P_{ref}(x_t | x_{<t}) || P_{model}(x_t | x_{<t})) > \tau_{KL}$.
-- **Loss Function**: $L = -\sum_{t \in \{t | mask_t=0\}} \log P_{model}(x_t | x_{<t})$.
+- **Masking Logic**: Token $x_t$ is masked if it belongs to the high-uncertainty set $\mathcal{M}$.
+- **Entropy Mask**: $H(P_{model}(x_t | x_{<t})) > \tau_H$.
+- **KL Anchor**: $D_{KL}(P_{ref}(x_t | x_{<t}) || P_{model}(x_t | x_{<t})) > \tau_{KL}$.
+- **Loss**: $\mathcal{L}_{EKSFT} = \sum_{t \notin \mathcal{M}} -\log P_{model}(x_t | x_{<t})$.
 
 ## Training Methodology
-1. Use a reference model (frozen pre-trained) and the model to be fine-tuned.
-2. For each token in the SFT dataset, calculate entropy and KL divergence.
-3. Apply masks based on thresholds $\tau_H$ and $\tau_{KL}$.
-4. Update model weights only on non-masked tokens.
+1. Initialize with a frozen Reference Model ($P_{ref}$) and an active Student Model.
+2. Calculate token-level entropy and KL-divergence for each sequence in the training set.
+3. Apply binary masks $\mathbf{m}$ to the loss function based on thresholds $\tau_H$ and $\tau_{KL}$.
+4. Perform gradient updates only on unmasked tokens.
 
 ## Learning Algorithm
-- **EKSFT-SFT**: Selective token imitation during supervised learning.
-- **Post-RL**: EKSFT-initialized models provide better starting points for RL exploration.
+- **Selective Gradient Filtering**: Direct modification of the SGD/Adam step to ignore high-KL tokens.
+- **Monotone-Safe Alignment**: Ensuring the model never moves away from the "safety anchors" of the reference model.
 
 ## Memory Architecture
-N/A (Primarily a training technique).
+Weight-based parametric memory stabilization. No external memory required.
 
 ## Planning Architecture
-N/A (Improves base model capability used in planning).
+Improves the reliability of the base model used by the `PlannerAgent`, ensuring it doesn't "hallucinate" novel strategies that conflict with historical risk anchors.
 
 ## Agent Architecture
-N/A.
+Self-stabilizing reasoning backbone.
 
 ## World Model Contribution
-Ensures the world model's internal representation doesn't drift during fine-tuning on limited market scenarios.
+Ensures the `WorldModelV3` transition distributions remain calibrated even after fine-tuning on recent volatility.
 
 ## Self-improvement Contribution
-Provides a "monotone-safe" way to ingest new trade data without catastrophic forgetting or distribution collapse.
+The "Evolution Gate" utilizes EKSFT to ingest new trade data without strategic drift.
 
 ## Failure Modes
-- Incorrect threshold selection (too restrictive = no learning; too loose = overfitting).
-- Dependence on the quality of the reference model.
+- **Anchor Drift**: Reference model itself is misaligned.
+- **Under-fitting**: Thresholds too tight, preventing learning of valid new patterns.
 
 ## Scalability Limits
-Requires dual-model inference during training (reference + current), increasing VRAM/compute costs.
+Requires 2x memory during training (reference model + active model).
 
 ## Computational Complexity
-$O(T \cdot (C_{model} + C_{ref}))$ where $T$ is sequence length and $C$ is inference cost.
+$\mathcal{O}(T \cdot \text{Forward}(P_{ref} + P_{model}))$ per sequence.
 
 ## Engineering Tradeoffs
-Compute overhead for token filtering vs. improved generalization and RL stability.
+Compute cost (dual model) vs. Alignment stability.
 
 ## Financial Applicability
-Essential for fine-tuning on rare market events (black swans) where data is sparse and overfitting is dangerous.
+Ingesting rare black-swan events (e.g., flash crashes) without breaking the baseline risk-management policy.
 
 ## Production Readiness
-High. Implementable as a custom loss/masking layer in the training pipeline.
+High. Implementable as a custom loss layer in PyTorch/XLA.

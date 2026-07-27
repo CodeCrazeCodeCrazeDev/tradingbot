@@ -37,6 +37,7 @@ VALIDATION CRITERIA:
 - Stress testing (survives shocks)
 """
 
+import random
 import hashlib
 import json
 import logging

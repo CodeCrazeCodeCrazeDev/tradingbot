@@ -1,0 +1,27 @@
+# Institutional Quantitative Configuration
+# Aligned with major institutional quantitative pipeline standards.
+
+trading:
+  symbol: "EURUSD"
+  mode: "paper"
+  use_ml: true
+  execution_algo: "smart"
+
+objectives:
+  target_sharpe: 2.5
+  max_drawdown_pct: 10.0
+  daily_turnover_limit_pct: 30.0
+  capacity_limit_usd: 50000000.0
+
+execution_cost:
+  commission_per_million_usd: 15.0  # $15 per million USD traded (approx 0.0015%)
+  fixed_commission_per_trade: 2.0  # $2 per trade (flat cost model)
+  default_spread_pips: 0.8         # Typical liquid institutional spread
+  default_slippage_pips: 0.4       # Typical market impact slippage under standard liquidity
+
+risk_limits:
+  max_positions: 5
+  max_volatility_threshold: 0.03   # Max annualized standard deviation threshold for volatility breaker
+  max_spread_pips_limit: 2.5       # Spread circuit breaker
+  daily_loss_limit_pct: 2.5        # Session drawdown limit
+  risk_per_trade_pct: 1.0          # Conservative baseline risk

@@ -22,7 +22,6 @@ from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC, abstractmethod
-import statistics
 from ..verification.confidence_calibrator import ConfidenceCalibrator, CalibrationMethod
 
 logger = logging.getLogger(__name__)
@@ -526,7 +525,7 @@ class RiskSentinel(TradingAgent):
                 conviction = Conviction.HIGH
                 reasoning.append("⚠️ Risk flag present - reduce position size")
             elif total_score > 0:
-                action = TradeAction.BUY  # Risk allows trading
+                action = TradeAction.HOLD  # Risk allows trading
                 conviction = Conviction.MODERATE
                 reasoning.append("✅ Risk parameters acceptable")
             else:
@@ -555,6 +554,16 @@ class RiskSentinel(TradingAgent):
     ) -> Optional[AgentArgument]:
         """Respond to aggressive positions."""
         try:
+            # Don't downgrade if we are already in high risk territory
+            risk_flags = 0
+            if context.portfolio_exposure > self.max_exposure: risk_flags += 1
+            if context.correlation_risk > self.max_correlation: risk_flags += 1
+            if context.vix_level and context.vix_level > 30: risk_flags += 1
+            if context.volatility > 0.03: risk_flags += 1
+
+            if risk_flags >= 2:
+                return None
+
             if argument.action in [TradeAction.STRONG_BUY, TradeAction.STRONG_SELL]:
                 if context.portfolio_exposure > self.max_exposure * 0.7:
                     return AgentArgument(
@@ -612,7 +621,7 @@ class HeadAI:
         """
         # Score each action
         try:
-            # Fix: Only use the latest argument from each agent to prevent double-counting across rounds
+            # Only use the latest argument from each agent to prevent double-counting across rounds
             latest_arguments: Dict[AgentRole, AgentArgument] = {}
             for arg in arguments:
                 latest_arguments[arg.agent_role] = arg
@@ -623,15 +632,26 @@ class HeadAI:
         
             for arg in active_arguments:
                 weight = self.weights.get(arg.agent_role, 0.33)
-                conviction_mult = arg.conviction.value / 5.0
+
+                # Defensive check for conviction type
+                if hasattr(arg.conviction, 'value'):
+                    conviction_mult = arg.conviction.value / 5.0
+                elif isinstance(arg.conviction, (int, float)):
+                    conviction_mult = max(1.0, min(5.0, arg.conviction)) / 5.0
+                else:
+                    conviction_mult = 0.6  # Default to moderate
+
+                # Defensive check for confidence
+                confidence = getattr(arg, 'confidence', 0.5)
+                if not isinstance(confidence, (int, float)) or confidence < 0:
+                    confidence = 0.5
 
                 # Apply Bayesian calibration if available
-                confidence = arg.confidence
                 if self.calibrator:
                     cal_result = self.calibrator.calibrate(
                         confidence,
                         method=CalibrationMethod.BAYESIAN,
-                        prediction_type=arg.agent_role.value
+                        prediction_type=arg.agent_role.value if hasattr(arg.agent_role, 'value') else str(arg.agent_role)
                     )
                     confidence = cal_result.calibrated_confidence
             
@@ -653,16 +673,24 @@ class HeadAI:
             risk_args = [a for a in active_arguments if a.agent_role == AgentRole.RISK_SENTINEL]
             if risk_args:
                 risk_arg = risk_args[-1]
-                if risk_arg.action == TradeAction.NO_TRADE and risk_arg.conviction.value >= Conviction.HIGH.value:
+                risk_conviction = risk_arg.conviction.value if hasattr(risk_arg.conviction, 'value') else int(risk_arg.conviction)
+                if risk_arg.action == TradeAction.NO_TRADE and risk_conviction >= Conviction.HIGH.value:
                     winning_action = TradeAction.NO_TRADE
-                    winning_score = risk_arg.confidence
+                    winning_score = getattr(risk_arg, 'confidence', 0.8)
         
-            # Calculate consensus
-            unique_actions = set(a.action for a in active_arguments)
-            consensus_level = 1.0 - (len(unique_actions) - 1) * 0.25
+            # Calculate consensus using directional agreement
+            bullish = sum(1 for a in active_arguments if a.action in [TradeAction.BUY, TradeAction.STRONG_BUY])
+            bearish = sum(1 for a in active_arguments if a.action in [TradeAction.SELL, TradeAction.STRONG_SELL])
+            neutral = sum(1 for a in active_arguments if a.action in [TradeAction.HOLD, TradeAction.NO_TRADE])
+
+            consensus_level = max(bullish, bearish, neutral) / len(active_arguments) if active_arguments else 0.0
         
             # Collect votes
-            agent_votes = {a.agent_role.value: a.action.value for a in active_arguments}
+            agent_votes = {}
+            for a in active_arguments:
+                role_val = a.agent_role.value if hasattr(a.agent_role, 'value') else str(a.agent_role)
+                act_val = a.action.value if hasattr(a.action, 'value') else str(a.action)
+                agent_votes[role_val] = act_val
         
             # Collect dissenting views
             dissenting = [
@@ -683,7 +711,7 @@ class HeadAI:
         
             # Generate reasoning
             reasoning = self._generate_reasoning(
-                winning_action, arguments, consensus_level
+            winning_action, active_arguments, consensus_level
             )
         
             return FinalDecision(
@@ -779,7 +807,8 @@ class HeadAI:
             # Key points from each agent
             for arg in arguments:
                 if arg.reasoning:
-                    parts.append(f"{arg.agent_role.value}: {arg.reasoning[0]}")
+                    agent_reasoning = " ".join(arg.reasoning)
+                    parts.append(f"{arg.agent_role.value}: {agent_reasoning}")
         
             return " | ".join(parts)
         except Exception as e:
@@ -846,20 +875,20 @@ class MultiAgentDebateSystem:
             all_arguments = []
         
             # Initial arguments
-            round_args = []
+            current_round_args = []
             for agent in self.agents:
                 # Wrap analyze in a way that could be async in the future
                 arg = agent.analyze(context)
-                round_args.append(arg)
+                current_round_args.append(arg)
                 all_arguments.append(arg)
         
             # Calculate initial consensus
-            consensus = self._calculate_consensus(round_args)
-            conflicts = self._identify_conflicts(round_args)
+            consensus = self._calculate_consensus(all_arguments)
+            conflicts = self._identify_conflicts(current_round_args)
         
             debate_rounds.append(DebateRound(
                 round_number=1,
-                arguments=round_args,
+                arguments=current_round_args,
                 consensus_level=consensus,
                 conflicts=conflicts
             ))
@@ -867,26 +896,34 @@ class MultiAgentDebateSystem:
             # Additional rounds if needed
             round_num = 2
             while consensus < self.consensus_threshold and round_num <= self.max_rounds:
-                round_args = []
+                previous_round_args = current_round_args
+                current_round_args = []
             
-                # Each agent responds to others
+                # Each agent responds to others from the last round only
                 for agent in self.agents:
-                    for other_arg in all_arguments[-3:]:  # Last round's arguments
-                        if other_arg.agent_role != agent.role:
-                            response = agent.respond_to_argument(other_arg, context)
-                            if response:
-                                round_args.append(response)
-                                all_arguments.append(response)
+                    # Find previous arguments from others
+                    others_args = [arg for arg in previous_round_args if arg.agent_role != agent.role]
+                    if not others_args:
+                        continue
+
+                    # Agent responds to the most relevant/concerning argument from others
+                    # For simplicity, responding to the one with highest confidence
+                    target_arg = max(others_args, key=lambda a: a.confidence)
+                    response = agent.respond_to_argument(target_arg, context)
+
+                    if response:
+                        current_round_args.append(response)
+                        all_arguments.append(response)
             
-                if not round_args:
+                if not current_round_args:
                     break
             
-                consensus = self._calculate_consensus(round_args)
-                conflicts = self._identify_conflicts(round_args)
+                consensus = self._calculate_consensus(all_arguments)
+                conflicts = self._identify_conflicts(current_round_args)
             
                 debate_rounds.append(DebateRound(
                     round_number=round_num,
-                    arguments=round_args,
+                    arguments=current_round_args,
                     consensus_level=consensus,
                     conflicts=conflicts
                 ))
@@ -905,11 +942,18 @@ class MultiAgentDebateSystem:
             logger.error(f"Error in debate: {e}")
             raise
     
-    def _calculate_consensus(self, arguments: List[AgentArgument]) -> float:
-        """Calculate consensus level among arguments."""
+    def _calculate_consensus(self, all_arguments: List[AgentArgument]) -> float:
+        """Calculate consensus level among the latest arguments from all agents."""
         try:
-            if not arguments:
+            if not all_arguments:
                 return 0.0
+
+            # Group by agent role, keeping only the latest
+            latest_arguments: Dict[AgentRole, AgentArgument] = {}
+            for arg in all_arguments:
+                latest_arguments[arg.agent_role] = arg
+
+            arguments = list(latest_arguments.values())
         
             # Group by action direction
             bullish = sum(1 for a in arguments if a.action in [TradeAction.BUY, TradeAction.STRONG_BUY])
@@ -924,10 +968,17 @@ class MultiAgentDebateSystem:
             logger.error(f"Error in _calculate_consensus: {e}")
             raise
     
-    def _identify_conflicts(self, arguments: List[AgentArgument]) -> List[str]:
+    def _identify_conflicts(self, all_arguments: List[AgentArgument]) -> List[str]:
         """Identify conflicts between arguments."""
         try:
             conflicts = []
+
+            # Group by agent role, keeping only the latest
+            latest_arguments: Dict[AgentRole, AgentArgument] = {}
+            for arg in all_arguments:
+                latest_arguments[arg.agent_role] = arg
+
+            arguments = list(latest_arguments.values())
         
             actions = [a.action for a in arguments]
         

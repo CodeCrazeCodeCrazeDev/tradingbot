@@ -54,12 +54,31 @@ class EvidenceNode:
 
 @dataclass
 class EvidenceEdge:
-    """A directed, typed relationship in the Evidence Graph."""
+    """
+    A directed, typed relationship in the Evidence Graph.
+    Implements QKG (Quantum Knowledge Graph) context-dependent validity (arXiv:2604.23972).
+    """
     source_id: str
     target_id: str
     relation: RelationType
     weight: float = 1.0
     evidence_package_id: Optional[str] = None  # Supporting evidence for this relation
+    # QKG Extension: Context-dependent validity
+    validity_context: Dict[str, Any] = field(default_factory=dict)
+
+    # QKG Extension: Validity depends on context (e.g. regime, volatility)
+    context_validity_mask: Dict[str, Any] = field(default_factory=dict)
+    validity_function_ref: Optional[str] = None  # Reference to a HASP program or heuristic
+
+    def is_valid_in_context(self, context: Dict[str, Any]) -> bool:
+        """Determines if this triplet is valid given the current market context."""
+        if not self.context_validity_mask:
+            return True
+
+        for key, expected in self.context_validity_mask.items():
+            if context.get(key) != expected:
+                return False
+        return True
 
 @dataclass
 class EvidenceGraph:
@@ -96,6 +115,26 @@ class VerifierReport:
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
 @dataclass
+class InstitutionalProvenance:
+    """
+    Immutable provenance record for bit-for-bit decision reproduction.
+    UCA V5 Requirement: Institutional Accountability.
+    """
+    git_sha: str = "unknown"
+    config_hash: str = ""
+    model_versions: Dict[str, str] = field(default_factory=dict)
+    feature_hash: str = ""
+    input_snapshot_hash: str = ""
+    memory_snapshot_id: str = ""
+    random_seed: int = 0
+    cuda_deterministic: bool = True
+    torch_version: str = ""
+    numpy_version: str = ""
+    pipeline_version: str = "UCA-V5"
+    risk_policy_version: str = "v1.0"
+    verification_signatures: Dict[str, str] = field(default_factory=dict)
+
+@dataclass
 class ResearchLedgerEntry:
     """Permanent audit trail for a single trading decision."""
     entry_id: str = field(default_factory=lambda: str(uuid.uuid4()))
@@ -118,9 +157,23 @@ class ResearchLedgerEntry:
     composite_confidence: float = 0.0
     uncertainty_estimate: float = 0.0
 
+    # Institutional Provenance (UCA V5)
+    provenance: InstitutionalProvenance = field(default_factory=InstitutionalProvenance)
+
     # Metadata
     model_version: str = "UCA-2026-v1"
     agent_versions: Dict[str, str] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serializes entry for LogAct commitment."""
+        return {
+            "entry_id": self.entry_id,
+            "trade_id": self.trade_id,
+            "timestamp": self.timestamp.isoformat(),
+            "hypothesis_id": self.hypothesis.hypothesis_id if self.hypothesis else None,
+            "composite_confidence": self.composite_confidence,
+            "provenance": self.provenance.__dict__ if self.provenance else {}
+        }
 
 @dataclass
 class ScientificMemoryObject:
