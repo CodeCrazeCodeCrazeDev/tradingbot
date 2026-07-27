@@ -68,8 +68,8 @@ async def test_hasp_guardrail_interception():
 
     result = await router.route_task("execution", context)
 
-    assert result.status == "pf_intervention"
-    assert result.action == "override_to_hold"
+    assert result["status"] == "pf_intervention"
+    assert result["result"]["action"] == "override_to_hold"
 
 @pytest.mark.asyncio
 async def test_s2l_behavioral_routing():
@@ -114,3 +114,61 @@ async def test_rsea_monotone_safe_gate():
 
     assert gate.validate_evolution("C1", candidate_good, baseline) is True
     assert gate.validate_evolution("C2", candidate_bad, baseline) is False
+
+@pytest.mark.asyncio
+async def test_rsea_multi_metric_protected_gate():
+    """Verify multi-metric protected metrics prevents silent regression."""
+    class MultiMetricValidationEngine:
+        def run_benchmark(self, config):
+            return config
+
+    gate = EvolutionGate(validation_engine=MultiMetricValidationEngine(), improvement_threshold=0.1)
+
+    baseline = {
+        "perf": 0.5,
+        "decision_latency": 10.0,
+        "drawdown": 0.05,
+        "calibration_error": 0.05,
+        "hms_retrieval_quality": 0.95,
+        "deterministic_replay_success": 1.0,
+        "safety_score": 1.0
+    }
+
+    # 1. Performance improves and no protected metric regresses -> Approve
+    candidate_good = {
+        "perf": 0.65,
+        "decision_latency": 10.0,
+        "drawdown": 0.05,
+        "calibration_error": 0.05,
+        "hms_retrieval_quality": 0.95,
+        "deterministic_replay_success": 1.0,
+        "safety_score": 1.0,
+        "training_metadata": {}
+    }
+    assert gate.validate_evolution("CG", candidate_good, baseline) is True
+
+    # 2. Performance improves but decision latency regresses significantly -> Reject
+    candidate_bad_latency = {
+        "perf": 0.65,
+        "decision_latency": 15.0, # Regressed (10.0 -> 15.0 > 10% tol)
+        "drawdown": 0.05,
+        "calibration_error": 0.05,
+        "hms_retrieval_quality": 0.95,
+        "deterministic_replay_success": 1.0,
+        "safety_score": 1.0,
+        "training_metadata": {}
+    }
+    assert gate.validate_evolution("CB_Lat", candidate_bad_latency, baseline) is False
+
+    # 3. Performance improves but drawdown regresses -> Reject
+    candidate_bad_drawdown = {
+        "perf": 0.65,
+        "decision_latency": 10.0,
+        "drawdown": 0.08, # Regressed (0.05 -> 0.08 > 0.01 tol)
+        "calibration_error": 0.05,
+        "hms_retrieval_quality": 0.95,
+        "deterministic_replay_success": 1.0,
+        "safety_score": 1.0,
+        "training_metadata": {}
+    }
+    assert gate.validate_evolution("CB_DD", candidate_bad_drawdown, baseline) is False

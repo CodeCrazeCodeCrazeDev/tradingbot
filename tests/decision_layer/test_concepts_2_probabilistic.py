@@ -10,13 +10,7 @@ import asyncio
 import logging
 from unittest.mock import Mock, patch, MagicMock
 
-try:
-    from trading_bot.concepts_2_probabilistic import *
-except ImportError:
-    # Fallback import
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.concepts_2_probabilistic import *
+from trading_bot.decision_layer.concepts_2_probabilistic import *
 
 logger = logging.getLogger(__name__)
 

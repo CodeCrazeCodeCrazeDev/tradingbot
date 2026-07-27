@@ -16,7 +16,8 @@ try:
 except ImportError:
     # Fallback import
     import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
     from trading_bot.research.innovation_lab import *
 
 logger = logging.getLogger(__name__)
