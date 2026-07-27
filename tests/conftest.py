@@ -301,6 +301,16 @@ def temp_config_file():
     temp_path.unlink(missing_ok=True)
 
 
+@pytest.fixture(autouse=True)
+def mock_wait_for_decision(monkeypatch):
+    """Automatically patch LogAction.wait_for_decision to avoid hanging in tests."""
+    from trading_bot.core.unified_event_bus import LogAction, ActionStatus
+    async def mock_wait(self, timeout=10.0):
+        self.status = ActionStatus.APPROVED
+        return ActionStatus.APPROVED
+    monkeypatch.setattr(LogAction, "wait_for_decision", mock_wait)
+
+
 # Pytest hooks
 def pytest_configure(config):
     """Configure pytest with all markers."""
@@ -340,10 +350,15 @@ def pytest_collection_modifyitems(config, items):
 
 
 @pytest.fixture(autouse=True)
-def mock_wait_for_decision(monkeypatch):
-    from trading_bot.core.unified_event_bus import LogAction, ActionStatus
-    async def mock_wait(self, timeout=5.0):
-        self._completed_event.set()
-        self.status = ActionStatus.APPROVED
-        return ActionStatus.APPROVED
-    monkeypatch.setattr(LogAction, "wait_for_decision", mock_wait)
+def mock_wait_for_decision(monkeypatch, request):
+    """Bypass wait_for_decision timeouts in unit tests by immediately approving."""
+    # Target only uca_v5 or event_bus_consolidation tests to avoid breaking integration tests
+    test_path = str(request.path) if hasattr(request, "path") else ""
+    if "uca_v5" in test_path or "event_bus_consolidation" in test_path or "test_csc_v5" in test_path:
+        from trading_bot.core.unified_event_bus import LogAction, ActionStatus
+
+        async def mock_wait(self, timeout=10.0):
+            self.status = ActionStatus.APPROVED
+            return self.status
+
+        monkeypatch.setattr(LogAction, "wait_for_decision", mock_wait)

@@ -115,6 +115,26 @@ class VerifierReport:
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
 @dataclass
+class InstitutionalProvenance:
+    """
+    Immutable provenance record for bit-for-bit decision reproduction.
+    UCA V5 Requirement: Institutional Accountability.
+    """
+    git_sha: str = "unknown"
+    config_hash: str = ""
+    model_versions: Dict[str, str] = field(default_factory=dict)
+    feature_hash: str = ""
+    input_snapshot_hash: str = ""
+    memory_snapshot_id: str = ""
+    random_seed: int = 0
+    cuda_deterministic: bool = True
+    torch_version: str = ""
+    numpy_version: str = ""
+    pipeline_version: str = "UCA-V5"
+    risk_policy_version: str = "v1.0"
+    verification_signatures: Dict[str, str] = field(default_factory=dict)
+
+@dataclass
 class ResearchLedgerEntry:
     """Permanent audit trail for a single trading decision."""
     entry_id: str = field(default_factory=lambda: str(uuid.uuid4()))
@@ -137,21 +157,23 @@ class ResearchLedgerEntry:
     composite_confidence: float = 0.0
     uncertainty_estimate: float = 0.0
 
+    # Institutional Provenance (UCA V5)
+    provenance: InstitutionalProvenance = field(default_factory=InstitutionalProvenance)
+
     # Metadata
     model_version: str = "UCA-2026-v1"
     agent_versions: Dict[str, str] = field(default_factory=dict)
 
-    # Institutional Decision Provenance & Robust Audit trail
-    evidence_used: List[Dict[str, Any]] = field(default_factory=list)
-    assumptions: List[str] = field(default_factory=list)
-    agent_opinions: Dict[str, Any] = field(default_factory=dict)
-    dissenting_opinions: List[str] = field(default_factory=list)
-    consensus_history: List[Dict[str, Any]] = field(default_factory=list)
-    verification_results: Dict[str, Any] = field(default_factory=dict)
-    causal_reasoning: str = ""
-    risk_justification: str = ""
-    configuration_hash: str = "default_sha256_hash"
-    git_commit: str = "head_commit_hash"
+    def to_dict(self) -> Dict[str, Any]:
+        """Serializes entry for LogAct commitment."""
+        return {
+            "entry_id": self.entry_id,
+            "trade_id": self.trade_id,
+            "timestamp": self.timestamp.isoformat(),
+            "hypothesis_id": self.hypothesis.hypothesis_id if self.hypothesis else None,
+            "composite_confidence": self.composite_confidence,
+            "provenance": self.provenance.__dict__ if self.provenance else {}
+        }
 
 @dataclass
 class ScientificMemoryObject:
