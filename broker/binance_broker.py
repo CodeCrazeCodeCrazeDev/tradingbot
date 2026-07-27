@@ -17,7 +17,7 @@ from .broker_interface import (
     Position
 )
 
-# Set up logger
+Set up logger
 logger = logging.getLogger(__name__)
 
 
@@ -261,8 +261,7 @@ class BinanceBroker(BrokerInterface):
     async def _ws_message_handler(self):
         """Handle WebSocket messages."""
         while self.ws_connected:
-            try:
-                message = await self.ws.recv()
+            message = await self.ws.recv()
                 data = json.loads(message)
                 
                 # Handle different message types

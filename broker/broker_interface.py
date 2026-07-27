@@ -15,7 +15,7 @@ import base64
 import json
 import time 
 
-# Set up logger
+Set up logger
 logger = logging.getLogger(__name__)
 
 

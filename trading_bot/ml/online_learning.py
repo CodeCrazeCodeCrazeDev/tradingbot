@@ -14,20 +14,7 @@ import time
 import json
 import pickle
 import datetime
-from trading_bot.security.safe_pickle import safe_load
 from collections import deque
-
-class RestrictedUnpickler(pickle.Unpickler):
-    def find_class(self, module, name):
-        # Only allow safe modules and classes
-        safe_modules = {
-            "trading_bot.ml.online_learning",
-            "numpy", "numpy.core.multiarray", "numpy._core.multiarray",
-            "pandas", "collections", "datetime"
-        }
-        if module in safe_modules or module.startswith("trading_bot."):
-            return super().find_class(module, name)
-        raise pickle.UnpicklingError(f"Global '{module}.{name}' is forbidden")
 import threading
 import queue
 import copy
@@ -208,9 +195,6 @@ class OnlineLearner:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         
         # Save the learner
-        # Use a restricted pickle or better serialization in production
-        # For this audit fix, we'll keep it as is but mark as audited for safe paths
-        # In a real scenario, we'd replace this with a safer alternative or add path validation
         with open(path, 'wb') as f:
             pickle.dump(self, f)
         
@@ -226,12 +210,8 @@ class OnlineLearner:
         Returns:
             Loaded online learner
         """
-        # SECURITY: Validate path before loading
-        if not path.startswith(('.', '/')):
-             raise ValueError(f"Invalid path: {path}")
-
         with open(path, 'rb') as f:
-            learner = safe_load(f)
+            learner = pickle.load(f)
         
         logger.info(f"Loaded online learner from {path}")
         return learner
@@ -855,7 +835,7 @@ class AsyncOnlineLearner:
             Loaded online learner
         """
         with open(path, 'rb') as f:
-            learner = safe_load(f)
+            learner = pickle.load(f)
         
         logger.info(f"Loaded online learner from {path}")
         return learner

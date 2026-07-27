@@ -8,7 +8,6 @@ import json
 import logging
 import pickle
 from pathlib import Path
-from trading_bot.security.safe_pickle import safe_load
 from typing import Any, Dict, Optional
 from datetime import datetime
 import pandas as pd
@@ -35,7 +34,7 @@ class CorrelationPersistence:
         self.max_state_age_hours = self.config.get('max_state_age_hours', 24)
         
         # File paths
-        self.matrix_file = self.storage_dir / 'correlation_matrix.json'
+        self.matrix_file = self.storage_dir / 'correlation_matrix.pkl'
         self.history_file = self.storage_dir / 'price_history.json'
         self.metadata_file = self.storage_dir / 'metadata.json'
         
@@ -57,10 +56,10 @@ class CorrelationPersistence:
             True if successful, False otherwise
         """
         try:
-            # Save correlation matrix (JSON for DataFrame to avoid pickle)
+            # Save correlation matrix (pickle for DataFrame)
             if correlation_matrix is not None:
-                with open(self.matrix_file, 'w') as f:
-                    json.dump(correlation_matrix.to_dict(), f, indent=2)
+                with open(self.matrix_file, 'wb') as f:
+                    pickle.dump(correlation_matrix, f)
                 logger.info(f"Saved correlation matrix to {self.matrix_file}")
             
             # Save price history (JSON)
@@ -127,9 +126,8 @@ class CorrelationPersistence:
             # Load correlation matrix (if exists)
             correlation_matrix = None
             if self.matrix_file.exists():
-                with open(self.matrix_file, 'r') as f:
-                    matrix_dict = json.load(f)
-                    correlation_matrix = pd.DataFrame.from_dict(matrix_dict)
+                with open(self.matrix_file, 'rb') as f:
+                    correlation_matrix = pickle.load(f)
                 logger.info(f"Loaded correlation matrix from {self.matrix_file}")
             
             # Load price history

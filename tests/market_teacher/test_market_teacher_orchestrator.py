@@ -11,10 +11,12 @@ import logging
 from unittest.mock import Mock, patch, MagicMock
 
 try:
-    from trading_bot.market_teacher.market_teacher_orchestrator import *
+    from trading_bot.market_teacher_orchestrator import *
 except ImportError:
-    # Mark the entire module as skipped under pytest because market_teacher_orchestrator is archived
-    pytestmark = pytest.mark.skip(reason="market_teacher_orchestrator is archived")
+    # Fallback import
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from trading_bot.market_teacher_orchestrator import *
 
 logger = logging.getLogger(__name__)
 

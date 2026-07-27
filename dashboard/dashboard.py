@@ -415,6 +415,99 @@ app.layout = dbc.Container(
                 )
             ]
         ),
+
+        # Deep Research & Self-Evolution Hub
+        dbc.Row(
+            [
+                dbc.Col(
+                    dbc.Card(
+                        [
+                            dbc.CardHeader("Perplexity Deep Research & Self-Evolution Control Hub"),
+                            dbc.CardBody(
+                                [
+                                    dbc.Row(
+                                        [
+                                            # Research Submission
+                                            dbc.Col(
+                                                [
+                                                    html.H5("Start New Deep Research"),
+                                                    dbc.Textarea(
+                                                        id="research-question-input",
+                                                        placeholder="Enter deep research question (e.g., Impact of inflation rates on FX liquidity)",
+                                                        style={"height": "100px", "marginBottom": "15px"}
+                                                    ),
+                                                    dbc.Row(
+                                                        [
+                                                            dbc.Col(
+                                                                [
+                                                                    html.Label("Time Limit (sec)"),
+                                                                    dbc.Input(id="research-time-limit", type="number", value=60)
+                                                                ],
+                                                                width=6
+                                                            ),
+                                                            dbc.Col(
+                                                                [
+                                                                    html.Label("Verifier Risk Profile"),
+                                                                    dbc.Select(
+                                                                        id="research-risk-profile",
+                                                                        options=[
+                                                                            {"label": "Conservative", "value": "conservative"},
+                                                                            {"label": "Moderate", "value": "moderate"},
+                                                                            {"label": "Aggressive", "value": "aggressive"}
+                                                                        ],
+                                                                        value="conservative"
+                                                                    )
+                                                                ],
+                                                                width=6
+                                                            )
+                                                        ],
+                                                        className="mb-3"
+                                                    ),
+                                                    dbc.Button("Submit Deep Research", id="submit-research-btn", color="success", className="w-100 mb-3"),
+
+                                                    html.H5("Ask a Follow-Up (Branch Thread)", className="mt-4"),
+                                                    dbc.Input(id="follow-up-question", placeholder="Ask a follow-up question based on current evidence..."),
+                                                    dbc.Button("Branch and Research", id="submit-follow-up-btn", color="info", className="w-100 mt-2")
+                                                ],
+                                                width=5
+                                            ),
+
+                                            # Research Display & Search
+                                            dbc.Col(
+                                                [
+                                                    dbc.Row(
+                                                        [
+                                                            dbc.Col(
+                                                                dbc.Input(id="search-query-input", placeholder="Search previous threads / knowledge base..."),
+                                                                width=8
+                                                            ),
+                                                            dbc.Col(
+                                                                dbc.Button("Search Threads", id="search-threads-btn", color="primary", className="w-100"),
+                                                                width=4
+                                                            )
+                                                        ],
+                                                        className="mb-3"
+                                                    ),
+                                                    html.Div(id="search-results-output"),
+
+                                                    html.Hr(),
+
+                                                    # Results Details
+                                                    html.Div(id="research-results-display")
+                                                ],
+                                                width=7
+                                            )
+                                        ]
+                                    )
+                                ]
+                            )
+                        ],
+                        className="mb-4"
+                    ),
+                    width=12
+                )
+            ]
+        ),
         
         # Refresh interval
         dcc.Interval(
@@ -636,6 +729,185 @@ def update_symbol_analysis(n_clicks, symbol):
     )
     
     return analysis
+
+# Deep Research & Self-Evolution Callbacks
+@app.callback(
+    Output("research-results-display", "children"),
+    [
+        Input("submit-research-btn", "n_clicks"),
+        Input("submit-follow-up-btn", "n_clicks")
+    ],
+    [
+        State("research-question-input", "value"),
+        State("research-time-limit", "value"),
+        State("research-risk-profile", "value"),
+        State("follow-up-question", "value"),
+        State("research-results-display", "children")
+    ],
+    prevent_initial_call=True
+)
+def handle_research_submission(new_clicks, follow_clicks, question, time_limit, risk_profile, follow_question, current_display):
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return "No active inquiry."
+
+    trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
+
+    # 1. Base URL config
+    headers = {}
+    if API_TOKEN:
+        headers["Authorization"] = f"Bearer {API_TOKEN}"
+
+    try:
+        if trigger_id == "submit-research-btn":
+            if not question:
+                return "Please enter a deep research question."
+
+            payload = {
+                "question": question,
+                "constraints": {"depth": "deep", "time_limit_seconds": time_limit or 60},
+                "risk_profile": risk_profile or "conservative"
+            }
+            res = requests.post(f"{API_URL}/deep_research", json=payload, headers=headers)
+            res.raise_for_status()
+            inquiry_id = res.json()["id"]
+
+        elif trigger_id == "submit-follow-up-btn":
+            if not follow_question:
+                return "Please enter a follow-up question."
+            # Retrieve active inquiry ID from current display or state
+            # Simple parsing: search for inquiry ID in a hidden div or parse from display
+            # We can use a pattern or just match a hardcoded parent id if none exists yet,
+            # or try to extract it from the display
+            active_id = None
+            if isinstance(current_display, dict) and "props" in current_display:
+                active_id = current_display["props"].get("id")
+            if not active_id:
+                # Fallback to search list or default
+                active_id = "inquiry_1"
+
+            payload = {
+                "inquiry_id": active_id,
+                "question": follow_question
+            }
+            res = requests.post(f"{API_URL}/deep_research/follow_up", json=payload, headers=headers)
+            res.raise_for_status()
+            inquiry_id = res.json()["id"]
+
+        # Fetch the complete inquiry details
+        details_res = requests.get(f"{API_URL}/inquiries/{inquiry_id}", headers=headers)
+        details_res.raise_for_status()
+        inquiry = details_res.json()
+
+        # Display Reasoning Traces
+        trace_elements = [html.Li(t) for t in inquiry.get("reasoning_trace", [])]
+
+        # Display Citations
+        citation_elements = [
+            html.Div(
+                [
+                    html.Strong(f"[{c['citation_id']}] {c['source_name']} ({c['reliability'].upper()})"),
+                    html.P(f"Hash: {c['content_hash']}"),
+                    html.A(c["source_url"], href=c["source_url"], target="_blank")
+                ],
+                style={"borderBottom": "1px solid #444", "padding": "5px 0"}
+            )
+            for c in inquiry.get("citations", [])
+        ]
+
+        # Display Evidence Graph Nodes
+        node_elements = [
+            html.Span(
+                f"({node['type'].upper()}) {node['label']} ",
+                style={"badge": "badge-secondary", "margin": "3px", "border": "1px solid #666", "padding": "3px", "borderRadius": "3px"}
+            )
+            for node in inquiry.get("evidence_graph", {}).get("nodes", [])
+        ]
+
+        # Create complete beautiful details element
+        return html.Div(
+            id=inquiry["id"],  # Set active inquiry ID on wrapper
+            children=[
+                html.H4(f"Inquiry ID: {inquiry['id']}", className="text-info"),
+                html.P([html.Strong("Question: "), inquiry["question"]]),
+                html.P([html.Strong("Status: "), inquiry["status"].upper()], style={"color": "#00cc96"}),
+                html.Hr(),
+
+                html.H5("Final Brief (Summary)"),
+                html.P(inquiry["final_brief"], style={"padding": "10px", "backgroundColor": "#333", "borderRadius": "5px"}),
+
+                html.H5("Step-Level Reasoning Trace"),
+                html.Ol(trace_elements, style={"paddingLeft": "20px"}),
+
+                html.H5("Evidence Graph Nodes (Claims)"),
+                html.Div(node_elements, className="mb-3"),
+
+                html.H5("Source Citations & Proof of Provenance"),
+                html.Div(citation_elements),
+
+                html.Hr(),
+                html.H5("Statistics"),
+                html.P(f"Estimated Cost: ${inquiry['statistics']['cost']:.4f} USD"),
+                html.P(f"Execution Latency: {inquiry['statistics']['runtime_seconds']:.2f} seconds"),
+                html.P(f"Information Sources Scanned: {inquiry['statistics']['sources_scanned']}")
+            ]
+        )
+    except Exception as e:
+        return html.Div(f"Error conducting deep research: {str(e)}", style={"color": "#ef553b"})
+
+
+@app.callback(
+    Output("search-results-output", "children"),
+    [Input("search-threads-btn", "n_clicks")],
+    [State("search-query-input", "value")],
+    prevent_initial_call=True
+)
+def handle_threads_search(n_clicks, query):
+    if not query:
+        return "Please enter a search term."
+
+    headers = {}
+    if API_TOKEN:
+        headers["Authorization"] = f"Bearer {API_TOKEN}"
+
+    try:
+        res = requests.get(f"{API_URL}/deep_research/search", params={"q": query}, headers=headers)
+        res.raise_for_status()
+        results = res.json()
+
+        if not results:
+            return "No previous threads matched your search query."
+
+        return html.Div(
+            [
+                html.H5("Search Results (Previous Threads):"),
+                dbc.Table(
+                    [
+                        html.Thead(
+                            html.Tr([html.Th("Inquiry ID"), html.Th("Question"), html.Th("Brief Preview")])
+                        ),
+                        html.Tbody(
+                            [
+                                html.Tr(
+                                    [
+                                        html.Td(inq["id"]),
+                                        html.Td(inq["question"]),
+                                        html.Td(inq["final_brief"][:80] + "...")
+                                    ]
+                                )
+                                for inq in results
+                            ]
+                        )
+                    ],
+                    bordered=True,
+                    hover=True,
+                    striped=True
+                )
+            ]
+        )
+    except Exception as e:
+        return html.Div(f"Error searching threads: {str(e)}", style={"color": "#ef553b"})
+
 
 # Run the app
 if __name__ == '__main__':

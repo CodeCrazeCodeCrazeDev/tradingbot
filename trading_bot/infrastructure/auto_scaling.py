@@ -160,7 +160,7 @@ class AutoScaler:
             else:
                 gpu_usage = None
                 gpu_memory = None
-        except Exception:
+        except:
             gpu_usage = None
             gpu_memory = None
         

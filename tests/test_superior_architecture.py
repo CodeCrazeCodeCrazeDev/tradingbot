@@ -12,9 +12,7 @@ def mock_world_model():
 
 @pytest.fixture
 def mock_hms():
-    h = MagicMock()
-    h.retrieve_evidence_chain = AsyncMock(return_value=[])
-    return h
+    return MagicMock()
 
 @pytest.mark.asyncio
 async def test_csc_pipeline_success(mock_world_model, mock_hms):

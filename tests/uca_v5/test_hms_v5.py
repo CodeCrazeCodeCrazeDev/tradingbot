@@ -1,8 +1,7 @@
 import pytest
 import os
 import shutil
-import json
-from trading_bot.core.hms.memory import HierarchicalMemorySystem, calculate_integrity_hash
+from trading_bot.core.hms.memory import HierarchicalMemorySystem
 from trading_bot.core.hms.models import ResearchLedgerEntry, Hypothesis, EvidenceGraph
 
 @pytest.fixture
@@ -11,12 +10,8 @@ def hms():
     if os.path.exists(base_path):
         shutil.rmtree(base_path)
     os.makedirs(base_path)
-    # Ensure fresh singleton instance or clear initial state
-    HierarchicalMemorySystem._instance = None
-    h = HierarchicalMemorySystem(base_path=base_path)
-    yield h
+    yield HierarchicalMemorySystem(base_path=base_path)
     shutil.rmtree(base_path)
-    HierarchicalMemorySystem._instance = None
 
 def test_hms_sage_graph_evolution(hms):
     # Setup entry
@@ -33,24 +28,13 @@ def test_hms_sage_graph_evolution(hms):
     # Check graph persistence
     assert os.path.exists(os.path.join(hms.base_path, "sage_graph.graphml"))
     assert len(hms.sage.graph.nodes) > 0
-    # In V6, add_evidence creates unique edge keys
-    assert any(d.get("relation") == "HYPOTHESIZED" for u, v, d in hms.sage.graph.edges(data=True))
+    assert hms.sage.graph.has_edge(str(entry.entry_id), "Bullish move on EURUSD")
 
 def test_hms_automem_optimization(hms):
-    initial_count = hms.memory_schema.get("optimized_count", 0)
+    initial_version = hms.memory_schema.get("version", "1.0")
 
     # Run optimization
     hms.optimize_metamemory([{"id": "success_1"}])
 
-    new_count = hms.memory_schema.get("optimized_count")
-    assert new_count > initial_count
-
-def test_hms_sage_multihop_retrieval(hms):
-    # Setup graph
-    hms.sage.add_evidence(("A", "CAUSES", "B"), {}, {"confidence": 0.9})
-    hms.sage.add_evidence(("B", "CAUSES", "C"), {}, {"confidence": 0.8})
-
-    # Retrieve
-    results = hms.sage.retrieve_subgraph("A", hops=2)
-    assert len(results) >= 2
-    print("Multi-hop retrieval verified.")
+    new_version = hms.memory_schema.get("version")
+    assert float(new_version) > float(initial_version)

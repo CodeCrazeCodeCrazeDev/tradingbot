@@ -2,13 +2,6 @@ import pytest
 from unittest.mock import MagicMock
 from trading_bot.core.csc.router import SkillRouter, SkillType
 
-@pytest.fixture(autouse=True)
-def reset_router_singleton():
-    """Reset SkillRouter singleton before and after each test."""
-    SkillRouter._instance = None
-    yield
-    SkillRouter._instance = None
-
 @pytest.mark.asyncio
 async def test_router_hasp_routing():
     router = SkillRouter()
@@ -19,7 +12,7 @@ async def test_router_hasp_routing():
     result = await router.route_task("execution", context)
 
     assert result["status"] == "pf_intervention"
-    assert result["pf_result"]["action"] == "override_to_hold"
+    assert result["result"]["action"] == "override_to_hold"
 
 @pytest.mark.asyncio
 async def test_router_s2l_routing():
@@ -28,8 +21,7 @@ async def test_router_s2l_routing():
     # Context needing hedging
     context = {"market": {"volatility": 0.1}, "needs_hedging": True}
 
-    # The router checks if "hedge" in task.lower()
-    result = await router.route_task("hedge_task", context)
+    result = await router.route_task("hedging_task", context)
 
-    assert result["status"] == "s2l_routed"
-    assert result["adapter_id"] == "lora_hedging_v1"
+    assert result["status"] == "dispatched_to_adapter"
+    assert result["adapter"] == "lora_hedging_archetype"

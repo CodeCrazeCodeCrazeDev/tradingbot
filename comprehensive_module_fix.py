@@ -96,8 +96,7 @@ for module_key in failing_modules:
     if target_file.exists():
         try:
             content = target_file.read_text(encoding='utf-8')
-        except Exception as e:
-            print(f"  [WARNING] Could not read {target_file}: {e}")
+        except:
             content = '"""Auto-generated module."""\n'
     else:
         content = '"""Auto-generated module."""\n'

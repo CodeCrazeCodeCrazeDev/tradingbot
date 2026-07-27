@@ -287,33 +287,13 @@ class RecursiveImprovementCore:
         logger.info(f"Saved state to {state_file}")
 
     def load_state(self):
-        """Load improvement state from disk with robust error handling (Day 1 Guard)."""
+        """Load improvement state from disk"""
         state_file = self.storage_path / 'recursive_improvement_state.json'
         if not state_file.exists():
-            logger.info("No previous state found. Initializing new state.")
             return
         
-        try:
-            with open(state_file, 'r') as f:
-                state = json.load(f)
+        with open(state_file, 'r') as f:
+            state = json.load(f)
 
-            self.meta_learnings = state.get('meta_learnings', [])
-
-            # Restore cycles (limited to prevent memory bloat)
-            cycle_data = state.get('cycles', {})
-            for k, v in list(cycle_data.items())[-100:]:  # Keep last 100 cycles in memory
-                self.cycles[k] = ImprovementCycle(
-                    cycle_id=v['cycle_id'],
-                    dimension=ImprovementDimension(v['dimension']),
-                    depth=v['depth'],
-                    parent_cycle_id=v.get('parent_cycle_id'),
-                    start_time=datetime.fromisoformat(v['start_time']) if 'start_time' in v else datetime.utcnow(),
-                    status=v['status'],
-                    improvements_applied=v['improvements_applied']
-                )
-
-            logger.info(f"Loaded state from {state_file} (Restored {len(self.cycles)} recent cycles)")
-        except (json.JSONDecodeError, KeyError, ValueError) as e:
-            logger.error(f"Failed to load state file {state_file}: {e}. Creating backup and starting fresh.")
-            if state_file.exists():
-                state_file.rename(state_file.with_suffix('.json.bak'))
+        self.meta_learnings = state.get('meta_learnings', [])
+        logger.info(f"Loaded state from {state_file}")

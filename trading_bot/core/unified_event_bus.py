@@ -48,14 +48,6 @@ class LogAction:
 
     _completed_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
 
-    @property
-    def event_type(self) -> str:
-        return self.action_type
-
-    @property
-    def source(self) -> str:
-        return self.agent_id
-
     def to_dict(self) -> Dict[str, Any]:
         return {
             'action_id': self.action_id,
@@ -77,239 +69,92 @@ class LogAction:
                 self.status = ActionStatus.TIMED_OUT
         return self.status
 
-@dataclass
-class UnifiedEvent:
-    event_type: str
-    payload: Dict[str, Any]
-    source: str
-    event_id: str = field(default_factory=lambda: str(uuid4()))
-    timestamp: datetime = field(default_factory=datetime.utcnow)
-    priority: EventPriority = EventPriority.NORMAL
-    correlation_id: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    status: ActionStatus = ActionStatus.PROPOSED
-    voter_reports: Dict[str, Any] = field(default_factory=dict)
-    sequence_number: Optional[int] = None
-
-    _completed_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
-
-    @property
-    def action_type(self) -> str:
-        return self.event_type
-
-    @property
-    def agent_id(self) -> str:
-        return self.source
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            'action_id': self.event_id,
-            'action_type': self.event_type,
-            'payload': self.payload,
-            'agent_id': self.source,
-            'timestamp': self.timestamp.isoformat(),
-            'status': self.status.value,
-            'voter_reports': self.voter_reports,
-            'sequence_number': self.sequence_number,
-            'priority': self.priority.name
-        }
-
-    async def wait_for_decision(self, timeout: float = 10.0) -> ActionStatus:
-        try:
-            await asyncio.wait_for(self._completed_event.wait(), timeout=timeout)
-        except asyncio.TimeoutError:
-            if self.status in [ActionStatus.PROPOSED, ActionStatus.AUDITING]:
-                self.status = ActionStatus.TIMED_OUT
-        return self.status
-
 class UnifiedDecisionBus:
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super(UnifiedDecisionBus, cls).__new__(cls)
+                cls._instance._initialized = False
+        return cls._instance
+
     def __init__(self, config: Optional[Dict] = None):
+        if self._initialized:
+            return
         self.config = config or {}
-        self._log: List[Union[LogAction, UnifiedEvent]] = []
+        self._log: List[LogAction] = []
         self._voters: Dict[str, Callable] = {}
         self._subscribers: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
         self._action_queue = asyncio.PriorityQueue()
         self._running = False
         self._processor_task: Optional[asyncio.Task] = None
+        self._initialized = True
         logger.info("LogAct Shared-Log Backbone initialized")
 
     async def start(self):
-        if self._processor_task and not self._processor_task.done():
-            return
+        if self._running: return
+        self._action_queue = asyncio.PriorityQueue()
         self._running = True
-
-        # Clear log and queue to ensure clean test state and prevent cross-test contamination!
-        self._log.clear()
-        while not self._action_queue.empty():
-            try:
-                self._action_queue.get_nowait()
-                self._action_queue.task_done()
-            except (asyncio.QueueEmpty, ValueError):
-                break
-
         self._processor_task = asyncio.create_task(self._process_log())
 
     async def stop(self):
         self._running = False
         if self._processor_task:
             self._processor_task.cancel()
-            try:
-                await self._processor_task
-            except asyncio.CancelledError:
-                pass
-            self._processor_task = None
+        # Clean up queue to prevent cross-test leakage
+        self._action_queue = None
 
     def register_voter(self, voter_id: str, voter_fn: Callable):
         self._voters[voter_id] = voter_fn
 
     async def propose_action(self, action: LogAction):
-        """Proposes an action to the shared log."""
-        if not self._running:
-            logger.warning(f"LogAct: Attempted to propose action {action.action_id} while bus is not running. Starting bus...")
-            await self.start()
-
         action.status = ActionStatus.PROPOSED
         if self._action_queue is None:
             self._action_queue = asyncio.PriorityQueue()
         await self._action_queue.put((-action.priority.value, action.timestamp, action))
-        logger.debug(f"LogAct: Action {action.action_id} queued for auditing (Priority: {action.priority.name})")
-
-    async def publish(self, event: 'UnifiedEvent'):
-        action = LogAction(
-            action_type=event.event_type,
-            payload=event.payload,
-            agent_id=event.source,
-            action_id=event.event_id,
-            timestamp=event.timestamp,
-            priority=event.priority
-        )
-        await self.propose_action(action)
-
-    async def publish(self, event: Any):
-        if isinstance(event, (LogAction, UnifiedEvent)) or hasattr(event, "priority"):
-            await self.propose_action(event)
-        else:
-            action = LogAction(
-                action_type=getattr(event, "event_type", "EVENT"),
-                payload=getattr(event, "payload", {}),
-                agent_id=getattr(event, "source", "anon")
-            )
-            await self.propose_action(action)
 
     def subscribe(self, action_type: str, handler: Callable, subscriber_id: str = "anon", priority: int = 0):
-        # Support legacy subscription signature: subscribe(subscriber_id, action_type, handler)
-        if not callable(handler) and callable(subscriber_id):
-            real_subscriber_id = action_type
-            real_action_type = handler
-            real_handler = subscriber_id
-            action_type = real_action_type
-            handler = real_handler
-            subscriber_id = real_subscriber_id
-
         self._subscribers[action_type].append({"id": subscriber_id, "handler": handler, "priority": priority})
         self._subscribers[action_type].sort(key=lambda x: x["priority"], reverse=True)
 
     async def _process_log(self):
-        """
-        Main LogAct processing loop.
-        Instrumented with UCA V5 high-resolution tracing.
-        """
-        max_log_size = self.config.get("max_log_size", 10000)
+        max_log_size = self.config.get("max_log_size", 1000)
         while self._running:
-            action = None
-            start_time = time.time()
             try:
-                # 1. Queue Retrieval
                 _, _, action = await self._action_queue.get()
-                t_start = datetime.utcnow()
                 action.sequence_number = len(self._log)
                 self._log.append(action)
                 if len(self._log) > max_log_size:
                     self._log.pop(0)
 
-                logger.debug(f"LogAct [{action.sequence_number}]: Processing action {action.action_id} ({action.action_type})")
-
-                # 2. Audit Phase (Voter Execution)
                 action.status = ActionStatus.AUDITING
                 voter_ids = list(self._voters.keys())
-
-                # UCA V5: Mandatory voter verification
-                if "ImmutableShield" not in voter_ids and "shield" not in voter_ids:
-                    logger.critical(f"LogAct CRITICAL: Mandatory Shield voter missing for action {action.action_id}")
-                    action.status = ActionStatus.VETOED
-                    action.voter_reports["SYSTEM"] = {"decision": "VETO", "reason": "Mandatory Shield voter missing"}
-                    action._completed_event.set()
-                    self._action_queue.task_done()
-                    continue
-
-                vote_tasks = []
-                for v_id, vfn in self._voters.items():
-                    try:
-                        if asyncio.iscoroutinefunction(vfn):
-                            vote_tasks.append(vfn(action))
-                        else:
-                            # Wrap sync voters in a thread pool to avoid blocking the bus
-                            loop = asyncio.get_event_loop()
-                            vote_tasks.append(loop.run_in_executor(None, vfn, action))
-                    except Exception as e:
-                        logger.error(f"LogAct: Error preparing voter {v_id}: {e}")
+                vote_tasks = [vfn(action) for vfn in self._voters.values()]
 
                 if vote_tasks:
-                    v_start = datetime.utcnow()
                     results = await asyncio.gather(*vote_tasks, return_exceptions=True)
-                    v_end = datetime.utcnow()
-
                     for i, res in enumerate(results):
                         vid = voter_ids[i]
-                        if isinstance(res, Exception):
-                            action.voter_reports[vid] = {"decision": "FAIL", "reason": str(res)}
-                        else:
-                            action.voter_reports[vid] = res
+                        action.voter_reports[vid] = res if not isinstance(res, Exception) else {"decision": "FAIL", "reason": str(res)}
 
-                    logger.debug(f"LogAct [{action.sequence_number}]: Voter phase complete in {(v_end - v_start).total_seconds():.3f}s")
-
-                # 3. Consensus Phase
-                c_start = datetime.utcnow()
                 if self._check_consensus(action):
                     action.status = ActionStatus.APPROVED
-                    logger.info(f"LogAct [{action.sequence_number}]: Action {action.action_id} APPROVED")
-
-                    # 4. Dispatch Phase
                     await self._dispatch(action)
                     action.status = ActionStatus.EXECUTED
                 else:
                     action.status = ActionStatus.VETOED
-                    logger.warning(f"LogAct [{action.sequence_number}]: Action {action.action_id} VETOED")
 
-                # Record KPI: Consensus Latency
-                latency = (time.time() - start_time) * 1000
-                logger.debug(f"KPI: Consensus Latency for {action.action_id}: {latency:.2f}ms")
-
-            except asyncio.CancelledError:
-                break
-            except Exception as e:
-                logger.error(f"LogAct Error: {e}")
-                if action:
-                    action.status = ActionStatus.FAILED
-            finally:
-                if action:
-                    action._completed_event.set()
-                    self._action_queue.task_done()
+                action._completed_event.set()
+                self._action_queue.task_done()
+            except asyncio.CancelledError: break
+            except Exception as e: logger.error(f"LogAct Error: {e}")
 
     def _check_consensus(self, action: LogAction) -> bool:
-        """
-        UCA V5 Consensus Logic.
-        Hardened: Case-insensitive and supports multiple result formats.
-        """
         for vid, report in action.voter_reports.items():
-            if isinstance(report, dict):
-                decision = str(report.get("decision", "FAIL")).upper()
-                if decision in ["REJECT", "VETO", "FAIL", "BLOCKED"]:
-                    logger.warning(f"LogAct: Action {action.action_id} VETOED by {vid}: {report.get('reason', 'No reason')}")
-                    return False
-            elif isinstance(report, str):
-                if report.upper() in ["REJECT", "VETO", "FAIL", "BLOCKED"]:
-                    return False
+            if isinstance(report, dict) and report.get("decision") in ["REJECT", "VETO", "FAIL", "BLOCKED"]:
+                return False
         return True
 
     async def _dispatch(self, action: LogAction):
@@ -317,16 +162,4 @@ class UnifiedDecisionBus:
         tasks = [h["handler"](action) for h in handlers]
         if tasks: await asyncio.gather(*tasks, return_exceptions=True)
 
-# Global instance for production path (authoritative)
 decision_bus = UnifiedDecisionBus()
-
-@dataclass
-class UnifiedEvent:
-    event_type: str
-    payload: Dict[str, Any]
-    source: str
-    event_id: str = field(default_factory=lambda: str(uuid4()))
-    timestamp: datetime = field(default_factory=datetime.utcnow)
-    priority: EventPriority = EventPriority.NORMAL
-    correlation_id: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)

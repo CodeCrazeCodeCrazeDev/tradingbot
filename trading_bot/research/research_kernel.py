@@ -117,11 +117,7 @@ class ResearchDependencyGraph:
             obj_type=obj.obj_type,
             state=obj.state.name,
             version=obj.version,
-            hash=obj.payload_hash,
-            # Priority 4: Enhanced provenance metadata
-            created_at=obj.created_at.isoformat(),
-            creator=obj.creator,
-            checksum=hashlib.sha256(json.dumps(obj.payload, sort_keys=True, default=str).encode()).hexdigest()
+            hash=obj.payload_hash
         )
 
     def add_relation_edge(self, parent_id: str, child_id: str, relation_type: str) -> None:
@@ -204,29 +200,6 @@ class ResearchKernel:
                         relation_type="derived_to"
                     )
         logger.info(f"Research Kernel: Registered {obj.obj_type} '{obj.name}' (ID: {obj.id[:12]})")
-
-    def verify_provenance_integrity(self, obj_id: str) -> bool:
-        """Verifies that an object's payload hash matches its registered checksum (Priority 4)."""
-        obj = self.registry.get(obj_id)
-        if not obj: return False
-
-        current_hash = hashlib.sha256(json.dumps(obj.payload, sort_keys=True, default=str).encode()).hexdigest()
-        return current_hash == obj.payload_hash
-
-    def archive_old_objects(self, age_days: int = 365 * 5):
-        """
-        Moves objects older than age_days to a 'RETIRED' state to ensure 5-10 year scalability.
-        In a real system, this would move payloads to cold storage (e.g. AWS S3 Glacier).
-        """
-        cutoff = datetime.utcnow() - timedelta(days=age_days)
-        count = 0
-        for obj in self.registry.values():
-            if obj.created_at < cutoff and obj.state not in {LifecycleState.RETIRED, LifecycleState.DEPRECATED}:
-                obj.state = LifecycleState.RETIRED
-                count += 1
-
-        if count > 0:
-            logger.warning(f"Research Kernel: Archived {count} objects older than {age_days} days for long-term stability.")
 
     def execute_state_transition(self, obj_id: str, target_state: LifecycleState,
                                  approver: str, rationale: str) -> None:

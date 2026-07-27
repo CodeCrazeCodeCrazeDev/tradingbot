@@ -16,7 +16,7 @@ class TestEventBusConsolidation(unittest.TestCase):
         async def handler(event):
             received.append(event)
 
-        decision_bus.subscribe("test.event", handler, subscriber_id="test_sub")
+        decision_bus.subscribe("test_sub", "test.event", handler)
 
         # Publish via legacy bus
         eb = EventBus()

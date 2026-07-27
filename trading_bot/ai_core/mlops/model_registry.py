@@ -6,7 +6,6 @@ import logging
 import json
 import pickle
 from pathlib import Path
-from trading_bot.security.safe_pickle import safe_load
 from typing import Any, Dict, List, Optional
 from datetime import datetime
 from dataclasses import dataclass, asdict
@@ -148,7 +147,7 @@ class ModelRegistry:
         model_path = self.registry_path / f"{model_key}.pkl"
         try:
             with open(model_path, 'rb') as f:
-                model = safe_load(f)
+                model = pickle.load(f)
             logger.info(f"Loaded model {model_key}")
             return model
         except Exception as e:

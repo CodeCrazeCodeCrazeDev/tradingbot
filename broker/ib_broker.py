@@ -16,7 +16,7 @@ from .broker_interface import (
     Position
 )
 
-# Set up logger
+Set up logger
 logger = logging.getLogger(__name__)
 
 

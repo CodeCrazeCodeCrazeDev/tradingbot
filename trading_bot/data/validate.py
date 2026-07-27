@@ -1,86 +1,46 @@
-"""
-Provides backward and testing compatibility for data validation modules.
-"""
-
-from typing import Any, Optional, Dict
-import logging
-from datetime import datetime
-
-logger = logging.getLogger(__name__)
-
-class DataValidator:
-    """
-    DataValidator implementation stub
-    """
-
-    def __init__(self, config: Optional[Dict] = None):
-        self.config = config or {}
-        self.initialized = False
-
-    def initialize(self) -> bool:
-        self.initialized = True
-        return True
-
-    def process(self, data: Any) -> Any:
-        if not self.initialized:
-            self.initialize()
-        return data
-
-    def get_status(self) -> Dict:
-        return {
-            'initialized': self.initialized,
-            'timestamp': datetime.now().isoformat(),
-            'config': self.config
-        }
-Data Validator class.
-Provides validation and sanitization checks for historical and streaming datasets.
-"""
-
 import pandas as pd
-from typing import Dict, Any, Tuple
+from typing import Dict, Tuple, Any
 
 class DataValidator:
-    """Validates Pandas DataFrames to ensure proper OHLCV and technical feature health."""
-
-    def __init__(self, config: Dict[str, Any] = None):
-        self.config = config or {}
+    """Rigorous pre-flight data quality and integrity validator."""
 
     def validate_dataframe(self, df: pd.DataFrame) -> Tuple[bool, Dict[str, Any]]:
-        """
-        Validates structure, types, missing values, and logical boundaries on OHLCV columns.
-        Returns a tuple: (is_valid, validation_report)
-        """
-        if df is None or df.empty:
-            return False, {"error": "DataFrame is empty or None"}
-
         report = {
-            "row_count": len(df),
-            "missing_values": 0,
-            "corrupted_rows": 0,
-            "logical_errors": 0,
-            "warnings": []
+            "total_records": len(df),
+            "bad_ticks_count": 0,
+            "look_ahead_violations": 0,
+            "errors": []
         }
 
-        # Check required columns
-        required_cols = ["open", "high", "low", "close"]
-        missing_cols = [col for col in required_cols if col not in df.columns]
-        if missing_cols:
-            return False, {"error": f"Missing required columns: {missing_cols}"}
+        if df.empty:
+            report["errors"].append("DataFrame is empty")
+            return False, report
 
-        # Check for NaNs
-        nan_counts = df[required_cols].isna().sum().sum()
-        report["missing_values"] = int(nan_counts)
+        # Check for bad ticks (negative values, open/high/low/close consistency)
+        bad_ticks = 0
+        for col in ["open", "high", "low", "close"]:
+            if col in df.columns:
+                if (df[col] < 0).any():
+                    bad_ticks += (df[col] < 0).sum()
 
-        # Check logical OHLC relations: high >= open/close/low, low <= open/close/high
-        logical_violations = (
-            (df["high"] < df["low"]) |
-            (df["high"] < df["open"]) |
-            (df["high"] < df["close"]) |
-            (df["low"] > df["open"]) |
-            (df["low"] > df["close"])
-        )
-        violations_count = int(logical_violations.sum())
-        report["logical_errors"] = violations_count
+        if "high" in df.columns and "low" in df.columns:
+            inconsistent_ticks = (df["high"] < df["low"]).sum()
+            bad_ticks += inconsistent_ticks
 
-        is_valid = (nan_counts == 0) and (violations_count == 0)
+        report["bad_ticks_count"] = int(bad_ticks)
+        if bad_ticks > 0:
+            report["errors"].append(f"Found {bad_ticks} bad ticks (negative prices or high < low)")
+
+        # Check for look-ahead violations
+        look_ahead_cols = []
+        for col in df.columns:
+            col_lower = str(col).lower()
+            if any(keyword in col_lower for keyword in ["future", "target", "next", "lead", "prediction"]):
+                look_ahead_cols.append(col)
+
+        report["look_ahead_violations"] = len(look_ahead_cols)
+        if len(look_ahead_cols) > 0:
+            report["errors"].append(f"Possible look-ahead bias detected in columns: {', '.join(look_ahead_cols)}")
+
+        is_valid = (report["bad_ticks_count"] == 0) and (report["look_ahead_violations"] == 0)
         return is_valid, report

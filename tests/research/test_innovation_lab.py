@@ -8,17 +8,16 @@ All classes, methods, and functions tested.
 import pytest
 import asyncio
 import logging
-from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
+from pathlib import Path
 
 try:
-    from trading_bot.research.innovation_lab import *
+    from trading_bot.innovation_lab import *
 except ImportError:
     # Fallback import
     import sys
-    from pathlib import Path
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-    from trading_bot.research.innovation_lab import *
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from trading_bot.innovation_lab import *
 
 logger = logging.getLogger(__name__)
 

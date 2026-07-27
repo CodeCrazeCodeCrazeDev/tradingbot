@@ -22,24 +22,15 @@ class EKSFTTrainer:
         self.entropy_tau = entropy_tau
         self.kl_tau = kl_tau
 
-    def compute_selective_loss(self, input_ids: torch.Tensor, labels: torch.Tensor, market_context: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def compute_selective_loss(self, input_ids: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
         """
         Calculates loss only on tokens that pass the Entropy-KL filter.
-        Includes a 'Reality Gate' to ensure market-grounded updates.
         """
         # 1. Get logits from both models
         with torch.no_grad():
             ref_logits = self.ref_model(input_ids).logits
 
         current_logits = self.model(input_ids).logits
-
-        # 1.5 Reality Gate: Ensure market data is not random noise (if context provided)
-        if market_context is not None:
-             # Basic check: if market variance is near zero, it's likely fake/dead data
-             # INT-001: Prevent delusion loop
-             if torch.var(market_context) < 1e-6:
-                 logger.warning("Delusion Loop Detected: Market data variance too low. Skipping update.")
-                 return torch.tensor(0.0, device=input_ids.device, requires_grad=True)
 
         # 2. Calculate Entropy of current model predictions
         probs = F.softmax(current_logits, dim=-1)

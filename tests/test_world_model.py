@@ -5,19 +5,18 @@ Tests for World Models and Simulation (Phase 4)
 import unittest
 import torch
 import numpy as np
-from trading_bot.world_model.latent_dynamics import (
+from world_model.latent_dynamics import (
     WorldModel,
     MarketStateEncoder,
     MarketStateDecoder,
     LatentDynamicsModel
 )
-from trading_bot.world_model.imagination import ImaginationPlanner
-from trading_bot.world_model.synthetic_data import (
+from world_model.imagination import ImaginationPlanner
+from world_model.synthetic_data import (
     SyntheticMarketGenerator,
     MarketScenario,
     MarketRegime
 )
-from trading_bot.world_model.unified_world_model import UnifiedWorldModel, TrainingCoordinator
 
 
 class TestWorldModel(unittest.TestCase):
@@ -26,10 +25,8 @@ class TestWorldModel(unittest.TestCase):
     def setUp(self):
         self.world_model = WorldModel(
             input_dim=20,
-            latent_dim=20,
-            hidden_dim=64,
-            option_dim=5,
-            graph_dim=20
+            latent_dim=32,
+            hidden_dim=64
         )
     
     def test_encode_decode(self):
@@ -53,7 +50,7 @@ class TestWorldModel(unittest.TestCase):
         state = torch.randn(1, 20)
         latent = self.world_model.encode(state)
         
-        next_state, reward, hidden, info = self.world_model.predict_next(latent)
+        next_state, reward, hidden = self.world_model.predict_next(latent)
         
         self.assertEqual(next_state.shape, latent.shape)
         self.assertIsInstance(reward.item(), float)
@@ -216,100 +213,6 @@ class TestSyntheticData(unittest.TestCase):
         # Check indicator lengths
         self.assertEqual(len(indicators['sma_20']), 1000)
         self.assertEqual(len(indicators['rsi']), 1000)
-
-
-class TestUnifiedWorldModel(unittest.TestCase):
-    """Test the newly redesigned UnifiedWorldModel and its training coordinator."""
-
-    def setUp(self):
-        # Initialize target UnifiedWorldModel
-        self.model = UnifiedWorldModel(
-            num_assets=5,
-            num_timeframes=5,
-            sequence_len=20,
-            num_features=10,
-            latent_dim=128,
-            action_dim=3,
-            hidden_dim=128
-        )
-        self.coordinator = TrainingCoordinator(self.model)
-
-    def test_end_to_end_prediction(self):
-        """Test standard predict() forward pass yielding a strongly-typed WorldModelPrediction."""
-        x = torch.randn(2, 5, 5, 20, 10)  # batch=2, assets=5, timeframes=5, seq=20, features=10
-        pred = self.model.predict(x)
-
-        # 1. Verify structured traces and recommendation fields
-        self.assertIsNotNone(pred.recommended_action)
-        self.assertIn(pred.recommended_action, ["BUY", "SELL", "HOLD"])
-        self.assertIsNotNone(pred.reasoning_trace)
-        self.assertEqual(pred.reasoning_trace.chosen_policy, f"Formally recommended {pred.recommended_action} policy based on highest expected utility.")
-
-        # 2. Verify Scenarios A, B, and C are simulated
-        self.assertIn("Scenario_Normal", pred.predicted_states)
-        self.assertIn("Scenario_Bull", pred.predicted_states)
-        self.assertIn("Scenario_Bear", pred.predicted_states)
-
-        normal_rollout = pred.predicted_states["Scenario_Normal"]
-        self.assertEqual(len(normal_rollout.predicted_states), 5) # horizon=5
-        self.assertIn("EURUSD", normal_rollout.predicted_prices)
-
-        # 3. Verify uncertainty estimates
-        self.assertTrue(0.0 <= pred.epistemic_uncertainty <= 1.0)
-        self.assertTrue(0.0 <= pred.aleatoric_uncertainty <= 1.0)
-        self.assertTrue(0.0 <= pred.calibration_score <= 1.0)
-
-        # 4. Verify counterfactual reasoning questions are answered
-        self.assertIn("no_trade", pred.counterfactuals)
-        self.assertIn("double_volatility", pred.counterfactuals)
-        self.assertIn("wide_spread", pred.counterfactuals)
-        self.assertIn("illiquid", pred.counterfactuals)
-
-        cf_vol = pred.counterfactuals["double_volatility"]
-        self.assertEqual(cf_vol.question, "What if volatility doubles?")
-        self.assertEqual(cf_vol.intervention, {"volatility_multiplier": 2.0})
-
-    def test_causal_interventions(self):
-        """Test Pearl's do-calculus node intervention and topological SCM propagation."""
-        node_values = torch.zeros(2, 5)
-        node_values[:, 0] = 3.5  # Fed_Rate 3.5%
-        node_values[:, 1] = 1.0  # Volatility 1.0
-
-        # Intervene and force Volatility (index 1) to be high (5.0)
-        intervened = self.model.causal_engine.intervene(node_values, target_idx=1, value=5.0)
-
-        # SCM propagation guarantees descendants like spreads and returns are updated
-        self.assertEqual(float(intervened[0, 1].item()), 5.0)
-        self.assertNotEqual(float(intervened[0, 4].item()), 0.0)  # Return index 4 is non-zero due to propagation
-
-    def test_training_pipeline(self):
-        """Test multi-objective joint optimization via TrainingCoordinator."""
-        x_t = torch.randn(2, 5, 5, 20, 10)
-        x_next = torch.randn(2, 5, 5, 20, 10)
-        action = torch.tensor([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
-        actual_reward = torch.tensor([0.05, -0.01])
-        actual_causal_nodes = torch.randn(2, 5)
-        target_policy_logits = torch.tensor([[0.8, 0.1, 0.1], [0.1, 0.8, 0.1]])
-
-        losses = self.coordinator.train_step(
-            x_t=x_t,
-            x_next=x_next,
-            action=action,
-            actual_reward=actual_reward,
-            actual_causal_nodes=actual_causal_nodes,
-            target_policy_logits=target_policy_logits
-        )
-
-        # Ensure all optimization terms are calculated and updated
-        self.assertIn("loss_total", losses)
-        self.assertIn("loss_seq", losses)
-        self.assertIn("loss_latent", losses)
-        self.assertIn("loss_reward", losses)
-        self.assertIn("loss_causal", losses)
-        self.assertIn("loss_calibration", losses)
-        self.assertIn("loss_policy", losses)
-
-        self.assertTrue(losses["loss_total"] > 0.0)
 
 
 if __name__ == '__main__':

@@ -49,23 +49,6 @@ class TWAPExecutor:
         except Exception as e:
             logger.error(f"Error in __init__: {e}")
             raise
-
-    def seal_adapt_interval(self, reward_oos_slippage: float):
-        """
-        Adapts the execution 'interval_minutes' parameter based on downstream task reward performance
-        using the MIT SEAL paper reinforcement learning adaptation framework.
-        """
-        # Outer loop adjustment
-        # If reward is high (less slippage), we keep current or adjust slightly.
-        # If reward is low (high slippage), we increase intervals to reduce market impact.
-        if reward_oos_slippage < 0.5:
-            # High slippage occurred -> increase interval to spread execution further
-            self.config['interval_minutes'] = min(self.config['interval_minutes'] + 1, 10)
-            logger.info(f"SEAL: Execution slippage was high. Adapted TWAP interval to {self.config['interval_minutes']} minutes to reduce market impact.")
-        else:
-            # Low slippage -> we can shorten interval to achieve faster completion
-            self.config['interval_minutes'] = max(self.config['interval_minutes'] - 1, 1)
-            logger.info(f"SEAL: Execution slippage was low. Adapted TWAP interval to {self.config['interval_minutes']} minutes to speed up completion.")
     
     def create_execution_plan(self, symbol: str, direction: str, volume: float, 
                              current_price: float) -> Dict[str, Any]:

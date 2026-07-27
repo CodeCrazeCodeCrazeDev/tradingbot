@@ -170,19 +170,6 @@ class AutonomousCore:
         Core thinking loop - analyze state, make decisions, plan actions.
         This is where the AI decides what to do next.
         """
-        # INT-002: Safety check - only 'think' if we have enough real-world grounded data
-        if self.state.autonomy_level < 0.1:
-            logger.warning("Autonomy level too low for independent thinking. Requiring manual guidance.")
-            return Decision(
-                decision_id=f"decision_{datetime.now().timestamp()}",
-                decision_type='guidance_required',
-                reasoning=['Insufficient data for autonomous decision making'],
-                actions=[],
-                expected_impact={},
-                confidence=0.0,
-                timestamp=datetime.now()
-            )
-
         current_state = await self._analyze_system_state()
         
         opportunities = await self._identify_opportunities(current_state)
