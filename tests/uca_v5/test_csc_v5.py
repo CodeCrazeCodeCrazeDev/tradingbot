@@ -34,8 +34,16 @@ def mock_decision_bus(monkeypatch):
         action._completed_event.set()
     monkeypatch.setattr(decision_bus, "propose_action", mock_propose_action)
 
+from trading_bot.core.unified_event_bus import decision_bus, ActionStatus
+
 @pytest.mark.asyncio
-async def test_csc_hasp_intervention():
+async def test_csc_hasp_intervention(monkeypatch):
+    # Mock propose_action to approve immediately
+    async def mock_propose_action(action):
+        action.status = ActionStatus.EXECUTED
+        action._completed_event.set()
+    monkeypatch.setattr(decision_bus, "propose_action", mock_propose_action)
+
     # Setup mocks
     world_model = MagicMock()
 

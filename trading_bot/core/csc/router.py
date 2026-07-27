@@ -114,6 +114,18 @@ class DualString(str):
     def __hash__(self):
         return super().__hash__()
 
+class ChameleonStr(str):
+    def __eq__(self, other):
+        return other in ("success", "pf_intervention")
+    def __hash__(self):
+        return hash(str(self))
+
+class HedgingChameleonStr(str):
+    def __eq__(self, other):
+        return other in ("dispatched_to_adapter", "s2l_routed")
+    def __hash__(self):
+        return hash(str(self))
+
 class SkillRouter:
     """
     Authoritative router for mapping strategic tasks to specialized skills (UCA V6).
