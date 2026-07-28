@@ -9,6 +9,7 @@ Implements 'LogAct: Enabling Agentic Reliability via Shared Logs' (Paper 1).
 import asyncio
 import logging
 import json
+import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -138,14 +139,9 @@ class UnifiedDecisionBus:
             return
         self._running = True
 
-        # Clear log and queue to ensure clean test state and prevent cross-test contamination!
+        # Re-initialize PriorityQueue to bind to the active event loop and prevent cross-loop leakage
+        self._action_queue = asyncio.PriorityQueue()
         self._log.clear()
-        while not self._action_queue.empty():
-            try:
-                self._action_queue.get_nowait()
-                self._action_queue.task_done()
-            except (asyncio.QueueEmpty, ValueError):
-                break
 
         self._processor_task = asyncio.create_task(self._process_log())
 
