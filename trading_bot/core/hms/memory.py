@@ -1,5 +1,4 @@
 """
-
 Implements 'SAGE: A Self-Evolving Agentic Graph-Memory Engine' (2026).
 Supports incremental construction, Graph-FM multi-hop retrieval,
 and Reader-Writer feedback loops for structural evolution.
@@ -186,6 +185,10 @@ class HierarchicalMemorySystem:
                     cls._instance._initialized = False
         return cls._instance
 
+    @staticmethod
+    def _calculate_integrity_hash(schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
+
     def __init__(self, base_path: str = "alphaalgo_data/hms"):
         if getattr(self, "_initialized", False) and getattr(self, "base_path", None) == base_path:
             return
@@ -228,12 +231,16 @@ class HierarchicalMemorySystem:
             logger.info(f"SEAL: Memory retrieval was highly accurate. Adapted HMS memory window to {self.memory_window_size} to retain more contextual episodic memory.")
 
     def _load_schema(self) -> Dict[str, Any]:
-        schema = {"version": "1.0", "schema_version": "1.0", "entities": [], "relations": []}
+        schema = {"version": "2.0", "schema_version": "1.0", "entities": [], "relations": [], "migration_history": [], "optimized_count": 0}
         if os.path.exists(self.schema_path):
             try:
-                with open(self.schema_path, 'r') as f: return json.load(f)
+                with open(self.schema_path, 'r') as f:
+                    data = json.load(f)
+                    if "migration_history" not in data:
+                        data["migration_history"] = []
+                    return data
             except: pass
-        return {"version": "2.0", "entities": [], "relations": [], "optimized_count": 0}
+        return schema
 
     def _save_schema(self):
         self.memory_schema["updated_at"] = datetime.utcnow().isoformat()
