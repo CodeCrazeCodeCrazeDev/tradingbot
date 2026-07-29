@@ -1652,12 +1652,16 @@ class MultiAgentDebateSystem:
 
             t_start = time.perf_counter()
 
+            # --- OVERSIGHT PILLAR 1: A PRIORI CONTROL (arXiv:2606.05391) ---
+            # Proactive verification of initial system constraints, input contexts, and baseline safety guardrails
             # Handle case where only context is provided (backward compatibility)
             if context is None and isinstance(topic, MarketContext):
                 context = topic
             if context is None:
                 raise ValueError("MarketContext is required for debate")
 
+            # --- OVERSIGHT PILLAR 2: CO-PLANNING (arXiv:2606.05391) ---
+            # Establishing the debate agenda, configuring consensus thresholds dynamically, and initializing agent rosters
             debate_rounds = []
             all_arguments = []
         
@@ -1704,6 +1708,8 @@ class MultiAgentDebateSystem:
                 self.decisions.append(decision)
                 return decision
         
+            # --- OVERSIGHT PILLAR 3: REAL-TIME MONITORING (arXiv:2606.05391) ---
+            # Active observation and tracing of multi-agent interactions, intermediate voting, consensus evolution, and conflict patterns
             # Calculate initial consensus
             consensus = self._calculate_consensus(all_arguments)
             conflicts = self._identify_conflicts(current_round_args)
@@ -1806,6 +1812,8 @@ class MultiAgentDebateSystem:
             t_end = time.perf_counter()
             duration_ms = (t_end - t_start) * 1000.0
 
+            # --- OVERSIGHT PILLAR 4: POST HOC REVIEW (arXiv:2606.05391) ---
+            # Retrospective evaluation of debate quality, consensus/disagreement analysis, continuous invariants checks, and immutable logging
             # Evaluate the completed debate using the DebateQualityEvaluator
             evaluation = self.quality_evaluator.evaluate_debate(
                 initial_votes=initial_votes,
