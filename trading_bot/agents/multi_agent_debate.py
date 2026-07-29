@@ -20,6 +20,7 @@ Features:
 
 import logging
 import subprocess
+import uuid
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
@@ -111,22 +112,28 @@ class AgentArgument:
     confidence: float
     timestamp: datetime
     anti_trade_reasoning: List[str] = field(default_factory=list)
+    observation: str = ""
+    evidence: List[str] = field(default_factory=list)
+    hypothesis: str = ""
+    predictions: List[str] = field(default_factory=list)
+    counter_evidence: List[str] = field(default_factory=list)
+    verification: str = ""
     
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'agent': self.agent_role.value,
-            'action': self.action.value,
-            'conviction': self.conviction.name,
-            'reasoning': self.reasoning,
-            'anti_trade_reasoning': self.anti_trade_reasoning,
-            'key_factors': self.key_factors,
-            'confidence': self.confidence,
-            'observation': self.observation,
-            'evidence': self.evidence,
-            'hypothesis': self.hypothesis,
-            'predictions': self.predictions,
-            'counter_evidence': self.counter_evidence,
-            'verification': self.verification
+            'agent': self.agent_role.value if hasattr(self.agent_role, 'value') else str(self.agent_role),
+            'action': self.action.value if hasattr(self.action, 'value') else str(self.action),
+            'conviction': self.conviction.name if hasattr(self.conviction, 'name') else str(self.conviction),
+            'reasoning': getattr(self, 'reasoning', []),
+            'anti_trade_reasoning': getattr(self, 'anti_trade_reasoning', []),
+            'key_factors': getattr(self, 'key_factors', {}),
+            'confidence': getattr(self, 'confidence', 0.5),
+            'observation': getattr(self, 'observation', ""),
+            'evidence': getattr(self, 'evidence', []),
+            'hypothesis': getattr(self, 'hypothesis', ""),
+            'predictions': getattr(self, 'predictions', []),
+            'counter_evidence': getattr(self, 'counter_evidence', []),
+            'verification': getattr(self, 'verification', "")
         }
 
 
@@ -164,12 +171,23 @@ class DebateResult:
     consensus_level: float
     dissenting_views: List[str]
     provenance: Dict[str, Any] = field(default_factory=dict)
+    disagreement_map: Dict[str, float] = field(default_factory=dict)
+    consensus_score: float = 0.0
+    consensus_method: str = "Bayesian"
+    winning_action: Optional[TradeAction] = None
+    winning_score: float = 0.0
+    minority_opinions: List[AgentArgument] = field(default_factory=list)
+    vetoes: List[str] = field(default_factory=list)
+    confidence_distribution: Dict[str, float] = field(default_factory=dict)
+    evidence_summary: List[str] = field(default_factory=list)
+    reasoning_trace: List[str] = field(default_factory=list)
+    verification_status: str = "unverified"
     
     def to_dict(self) -> Dict[str, Any]:
         return {
             'timestamp': self.timestamp.isoformat(),
             'symbol': self.symbol,
-            'action': self.action.value,
+            'action': self.action.value if hasattr(self.action, 'value') else str(self.action),
             'confidence': self.confidence,
             'position_size_pct': self.position_size_pct,
             'entry_price': self.entry_price,
@@ -179,12 +197,54 @@ class DebateResult:
             'agent_votes': self.agent_votes,
             'consensus_level': self.consensus_level,
             'dissenting_views': self.dissenting_views,
-            'provenance': self.provenance
+            'provenance': self.provenance,
+            'disagreement_map': self.disagreement_map,
+            'consensus_score': self.consensus_score,
+            'consensus_method': self.consensus_method,
+            'winning_action': self.winning_action.value if self.winning_action and hasattr(self.winning_action, 'value') else str(self.winning_action) if self.winning_action else None,
+            'winning_score': self.winning_score,
+            'minority_opinions': [m.to_dict() for m in self.minority_opinions],
+            'vetoes': self.vetoes,
+            'confidence_distribution': self.confidence_distribution,
+            'evidence_summary': self.evidence_summary,
+            'reasoning_trace': self.reasoning_trace,
+            'verification_status': self.verification_status
         }
 
 
 # Dynamic alias for seamless backwards compatibility
 FinalDecision = DebateResult
+
+
+@dataclass
+class AgentScorecard:
+    """Scorecard evaluating expected contribution, precision, and recall of an agent."""
+    expected_contribution: float
+    precision: float
+    recall: float
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'expected_contribution': self.expected_contribution,
+            'precision': self.precision,
+            'recall': self.recall
+        }
+
+
+class RiskVerifierOutcome:
+    def __init__(self, is_valid: bool, reason: str = ""):
+        self.is_valid = is_valid
+        self.reason = reason
+
+
+class RiskVerifier:
+    """Mock/compatibility verifier class for risk assessment."""
+    def verify(self, action: TradeAction, context: MarketContext) -> RiskVerifierOutcome:
+        # If exposure, VIX or correlation exceed safe limits, directional trades are invalid
+        if action in [TradeAction.BUY, TradeAction.STRONG_BUY, TradeAction.SELL, TradeAction.STRONG_SELL]:
+            if getattr(context, 'portfolio_exposure', 0.0) > 0.5 or getattr(context, 'vix_level', 0.0) > 30.0 or getattr(context, 'correlation_risk', 0.0) > 0.7:
+                return RiskVerifierOutcome(is_valid=False, reason="Risk parameters exceeded")
+        return RiskVerifierOutcome(is_valid=True)
 
 
 class TradingAgent(ABC):
@@ -233,6 +293,12 @@ class MacroStrategist(TradingAgent):
             reasoning = []
             anti_trade_reasoning = []
             key_factors = {}
+            observation = f"Market state for {context.symbol} at current price {context.current_price:.5f}"
+            evidence = []
+            hypothesis = ""
+            predictions = []
+            counter_evidence = []
+            verification = ""
 
             # Analyze HTF trend
             if context.htf_trend == 'UP':
@@ -378,6 +444,12 @@ class TacticalExecutioner(TradingAgent):
             reasoning = []
             anti_trade_reasoning = []
             key_factors = {}
+            observation = f"Market state for {context.symbol} at current price {context.current_price:.5f}"
+            evidence = []
+            hypothesis = ""
+            predictions = []
+            counter_evidence = []
+            verification = ""
 
             # Analyze LTF Trend
             if context.ltf_trend == 'UP':
@@ -512,6 +584,12 @@ class RiskSentinel(TradingAgent):
             reasoning = []
             anti_trade_reasoning = []
             key_factors = {}
+            observation = f"Market state for {context.symbol} at current price {context.current_price:.5f}"
+            evidence = []
+            hypothesis = ""
+            predictions = []
+            counter_evidence = []
+            verification = ""
             risk_flags = 0
 
             # Exposure check
@@ -569,6 +647,7 @@ class RiskSentinel(TradingAgent):
                 evidence.append(f"Asset local volatility normal ({context.volatility:.2%}).")
 
             key_factors['volatility_risk'] = vol_score
+            total_score = sum(key_factors.values())
 
             # Determine Action
             if risk_flags >= 2:
@@ -1091,6 +1170,24 @@ class HeadAI:
             FinalDecision
         """
         try:
+            # 1. Advanced, institutional-grade argument ranking & sorting
+            # Combine expertise weights, confidence, historical precision, and evidence quality, with timestamp as tie-breaker
+            def get_arg_score(arg: AgentArgument) -> Tuple[float, float]:
+                weight = self.weights.get(arg.agent_role, 0.33)
+                confidence = getattr(arg, 'confidence', 0.5)
+                precision = 0.8
+                if scorecards and arg.agent_role in scorecards:
+                    precision = scorecards[arg.agent_role].precision
+                evidence_quality = 1.0 + 0.1 * len(getattr(arg, 'evidence', []))
+                # Compute integrated priority
+                priority = weight * confidence * precision * evidence_quality
+                # Tie-breaker is timestamp float
+                ts_val = getattr(arg, 'timestamp', None)
+                ts_float = ts_val.timestamp() if ts_val and hasattr(ts_val, 'timestamp') else 0.0
+                return (priority, ts_float)
+
+            sorted_arguments = sorted(arguments, key=get_arg_score)
+
             # Only use the latest argument from each agent to prevent double-counting across rounds
             latest_arguments: Dict[AgentRole, AgentArgument] = {}
             for arg in sorted_arguments:
@@ -1100,6 +1197,7 @@ class HeadAI:
 
             # Perform scoring using weights, conviction, and scorecard dynamic contributions
             action_scores: Dict[TradeAction, float] = {}
+            confidence_distribution: Dict[str, float] = {}
             for arg in active_arguments:
                 weight = self.weights.get(arg.agent_role, 0.33)
 
@@ -1125,6 +1223,9 @@ class HeadAI:
                     )
                     confidence = cal_result.calibrated_confidence
 
+                role_str = arg.agent_role.value if hasattr(arg.agent_role, 'value') else str(arg.agent_role)
+                confidence_distribution[role_str] = confidence
+
                 score = weight * conviction_mult * confidence
                 if arg.action not in action_scores:
                     action_scores[arg.action] = 0.0
@@ -1136,6 +1237,29 @@ class HeadAI:
             else:
                 winning_action = TradeAction.HOLD
 
+            # Compute winning score (confidence)
+            if self.calibrator:
+                prior_prob = 0.50
+                if context.htf_trend == "UP" and winning_action in [TradeAction.BUY, TradeAction.STRONG_BUY]:
+                    prior_prob = 0.55
+                elif context.htf_trend == "DOWN" and winning_action in [TradeAction.SELL, TradeAction.STRONG_SELL]:
+                    prior_prob = 0.55
+
+                evidence_likelihoods = []
+                for arg in active_arguments:
+                    is_endorsing = (arg.action == winning_action)
+                    role_str = arg.agent_role.value if hasattr(arg.agent_role, 'value') else str(arg.agent_role)
+                    conf = confidence_distribution.get(role_str, getattr(arg, 'confidence', 0.5))
+                    w = self.weights.get(arg.agent_role, 0.33)
+                    evidence_likelihoods.append((is_endorsing, conf, w))
+
+                winning_score = self.calculate_bayesian_posterior(prior_prob, evidence_likelihoods)
+            elif action_scores:
+                winning_score = action_scores[winning_action]
+            else:
+                winning_score = 0.5
+
+            vetoes = []
             # Check for risk veto
             risk_args = [a for a in active_arguments if a.agent_role == AgentRole.RISK_SENTINEL]
             if risk_args:
@@ -1144,21 +1268,50 @@ class HeadAI:
                 if risk_arg.action == TradeAction.NO_TRADE and risk_conviction >= Conviction.HIGH.value:
                     winning_action = TradeAction.NO_TRADE
                     winning_score = getattr(risk_arg, 'confidence', 0.8)
-        
+                    vetoes.append(f"RiskSentinel NO_TRADE active veto with conviction {risk_conviction}")
+
+            # 2. Compute mathematical disagreement using normalized action distance
+            def action_distance(act1: TradeAction, act2: TradeAction) -> float:
+                if act1 == act2:
+                    return 0.0
+                is_buy1 = act1 in [TradeAction.BUY, TradeAction.STRONG_BUY]
+                is_buy2 = act2 in [TradeAction.BUY, TradeAction.STRONG_BUY]
+                is_sell1 = act1 in [TradeAction.SELL, TradeAction.STRONG_SELL]
+                is_sell2 = act2 in [TradeAction.SELL, TradeAction.STRONG_SELL]
+                if is_buy1 and is_buy2:
+                    return 0.25
+                if is_sell1 and is_sell2:
+                    return 0.25
+                is_neutral1 = act1 in [TradeAction.HOLD, TradeAction.NO_TRADE]
+                is_neutral2 = act2 in [TradeAction.HOLD, TradeAction.NO_TRADE]
+                if is_neutral1 or is_neutral2:
+                    return 0.5
+                return 1.0
+
+            disagreement_map = {}
+            for arg in active_arguments:
+                r_str = arg.agent_role.value if hasattr(arg.agent_role, 'value') else str(arg.agent_role)
+                disagreement_map[r_str] = action_distance(arg.action, winning_action)
+
+            # 3. Preserve all minority opinions
+            minority_opinions = [
+                arg for arg in active_arguments if arg.action != winning_action
+            ]
+
             # Calculate consensus using directional agreement
             bullish = sum(1 for a in active_arguments if a.action in [TradeAction.BUY, TradeAction.STRONG_BUY])
             bearish = sum(1 for a in active_arguments if a.action in [TradeAction.SELL, TradeAction.STRONG_SELL])
             neutral = sum(1 for a in active_arguments if a.action in [TradeAction.HOLD, TradeAction.NO_TRADE])
 
             consensus_level = max(bullish, bearish, neutral) / len(active_arguments) if active_arguments else 0.0
-        
+
             # Collect votes
             agent_votes = {}
             for a in active_arguments:
                 role_val = a.agent_role.value if hasattr(a.agent_role, 'value') else str(a.agent_role)
                 act_val = a.action.value if hasattr(a.action, 'value') else str(a.action)
                 agent_votes[role_val] = act_val
-        
+
             # Collect dissenting views
             dissenting = [
                 f"{a.agent_role.value}: {a.reasoning[0]}"
@@ -1170,17 +1323,27 @@ class HeadAI:
             position_size = self._calculate_position_size(
                 winning_action, winning_score, consensus_level, context
             )
-        
+
             # Calculate levels
             entry, stop, target = self._calculate_levels(
                 winning_action, context
             )
-        
+
             # Generate reasoning
             reasoning = self._generate_reasoning(
-            winning_action, active_arguments, consensus_level
+                winning_action, active_arguments, consensus_level
             )
-        
+
+            evidence_summary = []
+            for arg in active_arguments:
+                evidence_summary.extend(getattr(arg, 'evidence', []))
+
+            reasoning_trace = [
+                f"HeadAI Consensus evaluation method: Bayesian synthesis.",
+                f"Active debate rounds: {len(debate_rounds)}.",
+                f"Resolved winning action: {winning_action.value}."
+            ]
+
             # Register comprehensive decision provenance
             provenance = {
                 'timestamp': datetime.now().isoformat(),
@@ -1216,6 +1379,12 @@ class HeadAI:
                 'git_commit': (lambda: sys_git_commit())()
             }
 
+            # 5. Debate invariants validation
+            assert winning_score >= 0.0, "Invariant violation: winning_score must be non-negative"
+            assert len(arguments) > 0, "Invariant violation: debate cannot have zero arguments"
+            assert winning_action is not None, "Invariant violation: winning_action must be defined"
+            assert 0.0 <= consensus_level <= 1.0, "Invariant violation: consensus_level must be in [0, 1]"
+
             return FinalDecision(
                 timestamp=datetime.now(),
                 symbol=context.symbol,
@@ -1230,7 +1399,18 @@ class HeadAI:
                 debate_rounds=len(debate_rounds),
                 consensus_level=consensus_level,
                 dissenting_views=dissenting,
-                provenance=provenance
+                provenance=provenance,
+                disagreement_map=disagreement_map,
+                consensus_score=consensus_level,
+                consensus_method="Bayesian",
+                winning_action=winning_action,
+                winning_score=winning_score,
+                minority_opinions=minority_opinions,
+                vetoes=vetoes,
+                confidence_distribution=confidence_distribution,
+                evidence_summary=evidence_summary,
+                reasoning_trace=reasoning_trace,
+                verification_status="unverified"
             )
         except Exception as e:
             logger.error(f"Error in HeadAI synthesize_decision: {e}")
@@ -1465,8 +1645,7 @@ class MultiAgentDebateSystem:
         Args:
             topic: Debate topic
             context: Market context
-            
-    async def debate(self, topic: Any, context: Optional[MarketContext] = None) -> FinalDecision:
+        """
         try:
             import time
             import uuid
@@ -1485,9 +1664,11 @@ class MultiAgentDebateSystem:
             # Initial arguments with Graceful Degradation
             current_round_args = []
             initial_votes = []
+            successful_agent_count = 0
             for agent in self.agents:
                 try:
                     arg = agent.analyze(context)
+                    successful_agent_count += 1
                 except Exception as e:
                     logger.error(f"Graceful Degradation triggered: Agent {agent.role.value} crashed during analyze: {e}")
                     # Apply defensive fallback depending on agent role
@@ -1516,6 +1697,12 @@ class MultiAgentDebateSystem:
                 current_round_args.append(arg)
                 all_arguments.append(arg)
                 initial_votes.append(arg.action)
+
+            if successful_agent_count == 0:
+                # Total partition: trigger the emergency safe NO_TRADE fallback
+                decision = self._trigger_emergency_no_trade(context, debate_rounds)
+                self.decisions.append(decision)
+                return decision
         
             # Calculate initial consensus
             consensus = self._calculate_consensus(all_arguments)
@@ -1589,6 +1776,22 @@ class MultiAgentDebateSystem:
                 all_arguments, context, debate_rounds, scorecards=scorecards
             )
 
+            # Fail-closed price / hallucination validation
+            verification_results = {
+                'hallucination_detector': {
+                    'is_valid': True,
+                    'reason': None
+                }
+            }
+            if context.current_price <= 0:
+                logger.warning(f"HallucinationDetector: Malformed/Negative price detected: {context.current_price}")
+                verification_results['hallucination_detector'] = {
+                    'is_valid': False,
+                    'reason': "Invalid current price detected"
+                }
+                decision.action = TradeAction.NO_TRADE
+                decision.reasoning += " | Invalid current price detected"
+
             # Run active Falsification Gate
             falsification_report = await self.falsification_gate.run_falsification(decision.action, context)
             decision.falsification_report = falsification_report
@@ -1633,6 +1836,7 @@ class MultiAgentDebateSystem:
                 'memory_snapshot': f"sage_mem_snap_{hashlib.md5(market_state_str.encode('utf-8')).hexdigest()[:8]}",
                 'experiment_id': "exp_multidim_debate_prod",
                 'risk_policy_version': "risk_fortress_v6_strict",
+                'verification_results': verification_results,
                 'verification_report': {
                     'num_rounds': len(debate_rounds),
                     'conflicts_detected': conflicts
@@ -1671,7 +1875,7 @@ class MultiAgentDebateSystem:
             'consensus_score': 0.0,
             'selected_action': TradeAction.NO_TRADE.value,
             'reasoning': "EMERGENCY VETO: Zero active responsive agents in debate loop.",
-            'git_commit': get_git_commit()
+            'git_commit': self._get_git_commit()
         }
         return FinalDecision(
             timestamp=datetime.now(),
