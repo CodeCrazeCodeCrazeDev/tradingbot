@@ -186,6 +186,9 @@ class HierarchicalMemorySystem:
                     cls._instance._initialized = False
         return cls._instance
 
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
+
     def __init__(self, base_path: str = "alphaalgo_data/hms"):
         if getattr(self, "_initialized", False) and getattr(self, "base_path", None) == base_path:
             return

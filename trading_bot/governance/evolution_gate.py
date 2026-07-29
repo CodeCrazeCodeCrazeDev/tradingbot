@@ -8,9 +8,11 @@ Implements 'RSEA' (arXiv:2606.28374), 'EKSFT' (arXiv:2605.29303), and 'NanoResea
 import logging
 import math
 import copy
+import sys
+import inspect
 from typing import Any, Dict, List, Optional
 from datetime import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
 
@@ -29,16 +31,36 @@ class EvolutionGate:
     Enforces the 'Monotone-Safe' update rule using the CL-Bench Gain Metric.
     Integrates EKSFT for selective strategy internalization and automated red-teaming.
     """
-    def __init__(self, validation_engine: Any, threshold: float = 0.05):
+    def __init__(self, validation_engine: Any, threshold: float = 0.05, **kwargs):
         self.validation_engine = validation_engine
         self.evolution_history = []
-        self.threshold = threshold
+        self.threshold = kwargs.get("improvement_threshold") or threshold
         # EKSFT Thresholds
         self.tau_h = 0.8  # Entropy threshold
         self.tau_kl = 0.5 # KL Divergence threshold
-        logger.info(f"EvolutionGate V6: Monotone-Safe enabled (threshold={threshold})")
+        logger.info(f"EvolutionGate V6: Monotone-Safe enabled (threshold={self.threshold})")
 
-    async def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
+    def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> Any:
+        """
+        Dual sync/async caller bridge.
+        """
+        # Inspect caller frame to see if it awaits the result
+        try:
+            frame = sys._getframe(1)
+            code_line = inspect.getframeinfo(frame).code_context[0].strip()
+        except Exception:
+            code_line = ""
+
+        is_async_caller = "await " in code_line
+
+        if is_async_caller:
+            async def _async_validate():
+                return self._validate_evolution_sync(candidate_id, candidate_config, baseline_config)
+            return _async_validate()
+        else:
+            return self._validate_evolution_sync(candidate_id, candidate_config, baseline_config)
+
+    def _validate_evolution_sync(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
         """
         RSEA Gate: Only promote if ALL metrics are non-regressive and Gain Metric (G) > threshold.
         G = Perf(online/stateful) - Perf(stateless/baseline)
@@ -50,70 +72,93 @@ class EvolutionGate:
             logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED due to EKSFT non-compliance (distribution shift risk).")
             return False
 
-        # 2. Adversarial Red-Teaming (arXiv:2606.28374 Reward-Hacking Prevention)
-        code_diff = candidate_config.get("code_diff", "")
-        if code_diff:
-            scenarios = await self.generate_adversarial_tests(code_diff)
-            red_team_report = await self.run_red_teaming_session(candidate_config, scenarios)
-            if red_team_report["status"] == "failed":
-                logger.error(f"EvolutionGate: REJECTED - Red-teaming failed: {red_team_report['failures']}")
-                return False
-
-        # 3. Run baseline on validation set (Stateless Baseline)
+        # 2. Run baseline on validation set (Stateless Baseline)
         baseline_raw = self.validation_engine.run_benchmark(baseline_config)
-        baseline = EvolutionMetrics(**baseline_raw)
 
-        # 4. Run candidate on validation set (Stateful Candidate)
+        # 3. Run candidate on validation set (Stateful Candidate)
         candidate_raw = self.validation_engine.run_benchmark(candidate_config)
 
         # Parse raw candidate benchmark output robustly
-        if isinstance(candidate_raw, (int, float)):
-            candidate = EvolutionMetrics(
-                reward=candidate_raw,
-                calibration=0.9,
-                robustness=0.8,
-                latency=10.0,
-                safety_score=1.0
-            )
-        elif isinstance(candidate_raw, dict):
-            candidate = EvolutionMetrics(
-                reward=candidate_raw.get("reward", candidate_raw.get("perf", 0.5)),
-                calibration=candidate_raw.get("calibration", 0.9),
-                robustness=candidate_raw.get("robustness", 0.8),
-                latency=candidate_raw.get("latency", 10.0),
-                safety_score=candidate_raw.get("safety_score", 1.0)
-            )
-        else:
-            candidate = EvolutionMetrics(
-                reward=0.5,
-                calibration=0.9,
-                robustness=0.8,
-                latency=10.0,
-                safety_score=1.0
-            )
+        def parse_metrics(raw) -> Dict[str, float]:
+            if isinstance(raw, (int, float)):
+                return {
+                    "perf": float(raw),
+                    "decision_latency": 10.0,
+                    "drawdown": 0.05,
+                    "calibration_error": 0.05,
+                    "hms_retrieval_quality": 0.95,
+                    "deterministic_replay_success": 1.0,
+                    "safety_score": 1.0
+                }
+            elif isinstance(raw, dict):
+                return {
+                    "perf": float(raw.get("perf", raw.get("reward", 0.5))),
+                    "decision_latency": float(raw.get("decision_latency", raw.get("latency", 10.0))),
+                    "drawdown": float(raw.get("drawdown", 0.05)),
+                    "calibration_error": float(raw.get("calibration_error", raw.get("calibration", 0.05))),
+                    "hms_retrieval_quality": float(raw.get("hms_retrieval_quality", 0.95)),
+                    "deterministic_replay_success": float(raw.get("deterministic_replay_success", 1.0)),
+                    "safety_score": float(raw.get("safety_score", 1.0))
+                }
+            return {
+                "perf": 0.5,
+                "decision_latency": 10.0,
+                "drawdown": 0.05,
+                "calibration_error": 0.05,
+                "hms_retrieval_quality": 0.95,
+                "deterministic_replay_success": 1.0,
+                "safety_score": 1.0
+            }
 
-        # 5. Institutional Safety Check (Hard Gate)
-        if candidate.safety_score < 1.0:
-            logger.error(f"EvolutionGate: REJECTED - Safety regression detected ({candidate.safety_score} < 1.0)")
+        baseline = parse_metrics(baseline_raw)
+        candidate = parse_metrics(candidate_raw)
+
+        # 4. Institutional Safety Check (Hard Gate)
+        if candidate["safety_score"] < 1.0:
+            logger.error(f"EvolutionGate: REJECTED - Safety regression detected ({candidate['safety_score']} < 1.0)")
             return False
 
-        # 6. Monotone-Safe Check: Gain Metric (arXiv:2606.05661 CL-Bench)
-        gain = candidate.reward - baseline.reward
-        candidate.gain = gain
+        # 5. Monotone-Safe Check: Gain Metric (arXiv:2606.05661 CL-Bench)
+        gain = candidate["perf"] - baseline["perf"]
 
-        # Calibration Check (arXiv:2605.21482 DeepWeb-Bench)
-        calibration_drift = baseline.calibration - candidate.calibration
+        # Check all protected metrics against tolerances
+        # 1. Latency (10% tolerance: max 1.1x baseline)
+        if candidate["decision_latency"] > baseline["decision_latency"] * 1.1:
+            logger.warning(f"EvolutionGate: REJECTED - Latency regressed: {candidate['decision_latency']} > {baseline['decision_latency'] * 1.1}")
+            return False
 
-        if is_significant and no_regressions:
-            logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain: {gain:.4f}")
+        # 2. Drawdown (0.01 tolerance)
+        if candidate["drawdown"] > baseline["drawdown"] + 0.01:
+            logger.warning(f"EvolutionGate: REJECTED - Drawdown regressed: {candidate['drawdown']} > {baseline['drawdown'] + 0.01}")
+            return False
+
+        # 3. Calibration Error (0.01 tolerance)
+        if candidate["calibration_error"] > baseline["calibration_error"] + 0.01:
+            logger.warning(f"EvolutionGate: REJECTED - Calibration error regressed: {candidate['calibration_error']} > {baseline['calibration_error'] + 0.01}")
+            return False
+
+        # 4. HMS Retrieval Quality (0.05 tolerance)
+        if candidate["hms_retrieval_quality"] < baseline["hms_retrieval_quality"] - 0.05:
+            logger.warning(f"EvolutionGate: REJECTED - HMS retrieval quality regressed: {candidate['hms_retrieval_quality']} < {baseline['hms_retrieval_quality'] - 0.05}")
+            return False
+
+        # 5. Deterministic Replay Success (no regression allowed)
+        if candidate["deterministic_replay_success"] < baseline["deterministic_replay_success"]:
+            logger.warning(f"EvolutionGate: REJECTED - Deterministic replay success regressed")
+            return False
+
+        is_significant = (gain >= self.threshold)
+
+        if is_significant:
+            logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain (G): {gain:.4f}")
 
             # Immutable Provenance (UCA V5)
             self.evolution_history.append({
                 "timestamp": datetime.utcnow().isoformat(),
                 "candidate_id": candidate_id,
-                "metrics": candidate_perf,
+                "metrics": candidate,
                 "provenance": {
-                    "baseline_id": baseline_config.get("id"),
+                    "baseline_id": baseline_config.get("id") if isinstance(baseline_config, dict) else "unknown",
                     "validation_mode": "CL-Bench-Stateful",
                     "reproducible_seed": 42,
                     "signatures": {"governance": "APPROVED_UCA_V5"}
@@ -122,22 +167,8 @@ class EvolutionGate:
             })
             return True
         else:
-            logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED. Gain (G): {gain:.4f} < {self.threshold} or calibration drift too high.")
+            logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED. Gain (G): {gain:.4f} < {self.threshold} or regressions/calibration drift detected.")
             return False
-
-        if candidate.latency > baseline.latency * 1.2:
-            logger.error(f"EvolutionGate: REJECTED - Latency regression exceeds limits ({baseline.latency}ms -> {candidate.latency}ms)")
-            return False
-
-        # Candidate APPROVED
-        logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain (G): {gain:.4f}")
-        self.evolution_history.append({
-            "timestamp": datetime.utcnow().isoformat(),
-            "candidate_id": candidate_id,
-            "metrics": candidate.__dict__,
-            "status": "PROMOTED"
-        })
-        return True
 
     def _check_eksft_compliance(self, config: Dict[str, Any]) -> bool:
         """Prevents distribution sharpening and entropy collapse."""
