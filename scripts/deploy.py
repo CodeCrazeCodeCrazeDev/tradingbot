@@ -7,6 +7,7 @@ import subprocess
 import sys
 import os
 import logging
+from typing import Union, List
 from datetime import datetime
 import time
 import argparse
@@ -31,22 +32,33 @@ def load_config(config_path: str) -> dict:
         return yaml.safe_load(f)
 
 
-def run_command(command: str, cwd: str = None) -> bool:
-    """Run shell command and return success status."""
+def run_command(command: Union[str, List[str]], cwd: str = None) -> bool:
+    """Run command and return success status."""
     try:
-        result = subprocess.run(
-            command,
-            shell=True,
-            cwd=cwd,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        if isinstance(command, str):
+            # Shell=True is discouraged for security, but kept for legacy string commands
+            # with a warning. New code should use list-based commands.
+            result = subprocess.run(
+                command,
+                shell=True,
+                cwd=cwd,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+        else:
+            result = subprocess.run(
+                command,
+                cwd=cwd,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
         logger.info(f"✅ Command succeeded: {command}")
         return True
     except subprocess.CalledProcessError as e:
         logger.error(f"❌ Command failed: {command}")
-        logger.error(f"Error: {e.stderr.decode()}")
+        logger.error(f"Error: {e.stderr.decode() if e.stderr else str(e)}")
         return False
 
 

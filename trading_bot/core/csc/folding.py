@@ -12,6 +12,9 @@ from typing import Any, Dict, List
 logger = logging.getLogger(__name__)
 
 class InformationFolder:
+    pass
+
+class FoldingOperator(InformationFolder):
     """
     Compresses execution history into semantic strategic updates.
     Prevents 'Strategic Drift' in long-horizon tasks.

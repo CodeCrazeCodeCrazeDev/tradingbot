@@ -29,8 +29,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from trading_bot.analysis.liquidity_radar import LiquidityRadar
 from trading_bot.analysis.advanced_order_flow import AdvancedOrderFlowAnalyzer
 from trading_bot.analysis.market_microstructure import (
-import numpy
-import pandas
     MarketMicrostructureAnalyzer, OrderBookSnapshot, OrderBookLevel, TradeData
 )
 
@@ -40,13 +38,11 @@ logger = logging.getLogger(__name__)
 
 
 class AdvancedMarketAnalysisDemo:
-    pass
     """
     Advanced market analysis demonstration system.
     """
     
     def __init__(self):
-    pass
         """Initialize the demo system."""
         self.setup_components()
         self.setup_sample_data()
@@ -55,7 +51,6 @@ class AdvancedMarketAnalysisDemo:
         logger.info("Advanced Market Analysis Demo initialized")
     
     def setup_components(self):
-    pass
         """Initialize all analysis components."""
         self.liquidity_radar = LiquidityRadar()
         self.order_flow_analyzer = AdvancedOrderFlowAnalyzer()
@@ -66,7 +61,6 @@ class AdvancedMarketAnalysisDemo:
         self.update_interval = 5  # seconds
         
     def setup_sample_data(self):
-    pass
         """Generate sample market data."""
         # Generate sample OHLCV data
         dates = pd.date_range(start='2024-01-01', end='2024-01-31', freq='H')
@@ -78,7 +72,6 @@ class AdvancedMarketAnalysisDemo:
         
         # Add some autocorrelation
         for i in range(1, len(returns)):
-    pass
             returns[i] += 0.1 * returns[i-1]
         
         prices = base_price * np.exp(np.cumsum(returns))
@@ -103,7 +96,6 @@ class AdvancedMarketAnalysisDemo:
         self.generate_trade_data()
         
     def generate_orderbook_data(self):
-    pass
         """Generate sample order book data."""
         self.orderbook_snapshots = []
         
@@ -115,7 +107,6 @@ class AdvancedMarketAnalysisDemo:
             # Generate bid levels
             bids = []
             for j in range(10):
-    pass
                 price = mid_price - spread/2 - j * 0.00001
                 size = np.random.uniform(100000, 1000000)
                 bids.append(OrderBookLevel(price, size, side="bid"))
@@ -123,7 +114,6 @@ class AdvancedMarketAnalysisDemo:
             # Generate ask levels
             asks = []
             for j in range(10):
-    pass
                 price = mid_price + spread/2 + j * 0.00001
                 size = np.random.uniform(100000, 1000000)
                 asks.append(OrderBookLevel(price, size, side="ask"))
@@ -142,7 +132,6 @@ class AdvancedMarketAnalysisDemo:
             self.orderbook_snapshots.append(snapshot)
     
     def generate_trade_data(self):
-    pass
         """Generate sample trade data."""
         self.trade_data = []
         
@@ -166,7 +155,6 @@ class AdvancedMarketAnalysisDemo:
             self.trade_data.append(trade)
     
     def setup_dashboard(self):
-    pass
         """Setup the Dash dashboard."""
         self.app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
         
@@ -226,7 +214,6 @@ class AdvancedMarketAnalysisDemo:
         self.register_callbacks()
     
     def register_callbacks(self):
-    pass
         """Register dashboard callbacks."""
         
         @self.app.callback(
@@ -234,10 +221,8 @@ class AdvancedMarketAnalysisDemo:
             [Input('liquidity-btn', 'n_clicks')]
         )
         def run_liquidity_analysis(n_clicks):
-    pass
             """Run liquidity radar analysis."""
             if not n_clicks:
-    pass
                 return ""
             
             # Run liquidity analysis
@@ -248,7 +233,6 @@ class AdvancedMarketAnalysisDemo:
             # Convert to JSON-serializable format
             zones_data = []
             for zone in profile.zones:
-    pass
                 zones_data.append({
                     'id': zone.id,
                     'type': zone.zone_type.value,
@@ -272,10 +256,8 @@ class AdvancedMarketAnalysisDemo:
             [Input('orderflow-btn', 'n_clicks')]
         )
         def run_orderflow_analysis(n_clicks):
-    pass
             """Run order flow analysis."""
             if not n_clicks:
-    pass
                 return ""
             
             # Run order flow analysis
@@ -286,7 +268,6 @@ class AdvancedMarketAnalysisDemo:
             # Convert signals to JSON-serializable format
             signals_data = []
             for signal in profile.signals:
-    pass
                 signals_data.append({
                     'type': signal.signal_type.value,
                     'strength': signal.strength.value,
@@ -310,10 +291,8 @@ class AdvancedMarketAnalysisDemo:
             [Input('microstructure-btn', 'n_clicks')]
         )
         def run_microstructure_analysis(n_clicks):
-    pass
             """Run microstructure analysis."""
             if not n_clicks:
-    pass
                 return ""
             
             # Run microstructure analysis
@@ -340,36 +319,27 @@ class AdvancedMarketAnalysisDemo:
              Input('microstructure-data', 'children')]
         )
         def render_analysis_content(active_tab, liquidity_data, orderflow_data, microstructure_data):
-    pass
             """Render content for active analysis tab."""
             if active_tab == "liquidity-tab":
-    pass
                 return self.render_liquidity_tab(liquidity_data)
             elif active_tab == "orderflow-tab":
-    pass
                 return self.render_orderflow_tab(orderflow_data)
             elif active_tab == "microstructure-tab":
-    pass
                 return self.render_microstructure_tab(microstructure_data)
             elif active_tab == "combined-tab":
-    pass
                 return self.render_combined_tab(liquidity_data, orderflow_data, microstructure_data)
             else:
-    pass
                 return html.Div("Select a tab to view analysis results")
     
     def render_liquidity_tab(self, liquidity_data):
-    pass
         """Render liquidity radar analysis tab."""
         if not liquidity_data:
-    pass
             return html.Div([
                 html.H4("Liquidity Radar Analysis"),
                 html.P("Click 'Run Liquidity Analysis' to see results")
             ])
         
         try:
-    pass
             data = eval(liquidity_data)  # Convert string back to dict
             zones = data['zones']
             
@@ -395,7 +365,6 @@ class AdvancedMarketAnalysisDemo:
             }
             
             for zone in zones:
-    pass
                 color = colors.get(zone['type'], 'gray')
                 alpha = 0.3 if zone['strength'] == 'weak' else 0.5 if zone['strength'] == 'moderate' else 0.7
                 
@@ -457,22 +426,18 @@ class AdvancedMarketAnalysisDemo:
                 html.Hr(),
                 dcc.Graph(figure=fig)
             ])
-            
-    pass
+        except Exception as e:
             return html.Div(f"Error rendering liquidity analysis: {str(e)}")
     
     def render_orderflow_tab(self, orderflow_data):
-    pass
         """Render order flow analysis tab."""
         if not orderflow_data:
-    pass
             return html.Div([
                 html.H4("Order Flow Analysis"),
                 html.P("Click 'Analyze Order Flow' to see results")
             ])
         
         try:
-    pass
             data = eval(orderflow_data)
             signals = data['signals']
             
@@ -502,7 +467,6 @@ class AdvancedMarketAnalysisDemo:
             }
             
             for signal in signals:
-    pass
                 color = signal_colors.get(signal['type'], 'gray')
                 fig.add_trace(go.Scatter(
                     x=[pd.to_datetime(signal['timestamp'])],
@@ -566,22 +530,18 @@ class AdvancedMarketAnalysisDemo:
                 html.Hr(),
                 dcc.Graph(figure=fig)
             ])
-            
-    pass
+        except Exception as e:
             return html.Div(f"Error rendering order flow analysis: {str(e)}")
     
     def render_microstructure_tab(self, microstructure_data):
-    pass
         """Render microstructure analysis tab."""
         if not microstructure_data:
-    pass
             return html.Div([
                 html.H4("Market Microstructure Analysis"),
                 html.P("Click 'Check Microstructure' to see results")
             ])
         
         try:
-    pass
             data = eval(microstructure_data)
             
             # Create microstructure metrics visualization
@@ -671,12 +631,10 @@ class AdvancedMarketAnalysisDemo:
                 html.Hr(),
                 dcc.Graph(figure=fig)
             ])
-            
-    pass
+        except Exception as e:
             return html.Div(f"Error rendering microstructure analysis: {str(e)}")
     
     def render_combined_tab(self, liquidity_data, orderflow_data, microstructure_data):
-    pass
         """Render combined analysis overview."""
         return html.Div([
             html.H4("Combined Market Analysis Overview"),
@@ -693,7 +651,6 @@ class AdvancedMarketAnalysisDemo:
         ])
     
     def run_demo(self, debug=True, port=8051):
-    pass
         """Run the advanced market analysis demo."""
         print("\n" + "="*80)
         print("ELITE TRADING BOT - ADVANCED MARKET ANALYSIS DEMO")
@@ -716,12 +673,10 @@ class AdvancedMarketAnalysisDemo:
 
 
 def main():
-    pass
     """Main function to run the demo."""
     demo = AdvancedMarketAnalysisDemo()
     demo.run_demo()
 
 
 if __name__ == "__main__":
-    pass
     main()

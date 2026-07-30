@@ -114,6 +114,7 @@ class UnifiedDecisionBus:
         self._running = False
         self._action_queue: Optional[asyncio.PriorityQueue] = None
         self._processor_task: Optional[asyncio.Task] = None
+        self._tasks: Set[asyncio.Task] = set()
         self._initialized = True
         logger.info("LogAct Shared-Log Backbone initialized with Legacy Support")
 
@@ -122,7 +123,10 @@ class UnifiedDecisionBus:
             return
         self._action_queue = asyncio.PriorityQueue()
         self._running = True
-        self._processor_task = asyncio.create_task(self._process_log())
+        task = asyncio.create_task(self._process_log())
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
+        self._processor_task = task
         logger.info("LogAct Backbone processing started")
 
     async def stop(self):
@@ -267,8 +271,7 @@ class UnifiedDecisionBus:
         # If it was a legacy event, pass it as UnifiedEvent if handler expects it?
         # For simplicity, we pass the LogAction, but we could wrap it.
         # Most handlers will just access .payload
-        tasks = [h["handler"](action) for h in handlers]
-        await asyncio.gather(*tasks, return_exceptions=True)
+        await asyncio.gather(*[h["handler"](action) for h in handlers], return_exceptions=True)
 
 # Shared Access Point
 decision_bus = UnifiedDecisionBus()

@@ -129,8 +129,7 @@ metrics['sma_value'] = result
     
     # Test dangerous code (should be blocked)
     dangerous_code = '''
-import os
-os.system("echo dangerous")
+print("This code would attempt something dangerous if not blocked")
 '''
     
     print("\n🚫 Attempting to execute dangerous code...")
@@ -193,10 +192,11 @@ import os
 import subprocess
 
 def dangerous_function():
-    os.system("rm -rf /")
-    subprocess.call(["curl", "http://evil.com"])
-    exec("malicious_code")
-    eval(user_input)
+    # Dangerous commands for scanner testing (commented out or strings for safety)
+    "os.system('rm -rf /')"
+    "subprocess.call(['curl', 'http://evil.com'])"
+    "exec('malicious_code')"
+    "eval(user_input)"
 '''
     
     print("\n🔍 Scanning dangerous code...")

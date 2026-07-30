@@ -19,7 +19,7 @@ from .v2_core import (
 
 # Training and Adaptation
 from .v2_training import (
-    WorldModelTrainer,
+    WorldModelSpecialistTrainer as WorldModelTrainer,
 )
 from .v2_adapter import (
     LegacyWorldModelAdapter,

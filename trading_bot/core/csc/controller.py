@@ -46,22 +46,34 @@ class CognitiveSystemController:
         self.world_model = world_model
         self.hms = hms
         self.shield = shield
-        self.folding_operator = FoldingOperator(hms)
+        self.folding_operator = InformationFolder()
 
         self.hypothesis_gen = HypothesisGenerator(world_model)
         self.verifier_swarm = VerificationSwarm()
-        self.folder = InformationFolder()
-
-        # HASP: Executable Guardrails (Skill Programs)
-        self.skill_programs = self._load_skill_programs()
-
-    def _load_skill_programs(self) -> Dict[str, Any]:
-        # In production, load from a registry. Here we stub it.
-        return {}
+        self.folder = self.folding_operator
 
         # DiscoLoop Channels
         self.continuous_state = {} # Latent embeddings
         self.discrete_channel = [] # Semantic tokens
+
+        # HASP: Executable Guardrails (Skill Programs)
+        self.skill_programs = self._load_skill_programs()
+        self._initialized = True
+
+    def get_status(self) -> Dict[str, Any]:
+        """Returns the version and health status of the CSC."""
+        return {
+            "version": "UCA-2026-V5",
+            "health": "STABLE",
+            "channels": {
+                "continuous": len(self.continuous_state),
+                "discrete": len(self.discrete_channel)
+            }
+        }
+
+    def _load_skill_programs(self) -> Dict[str, Any]:
+        # In production, load from a registry. Here we stub it.
+        return {}
 
     async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
         """

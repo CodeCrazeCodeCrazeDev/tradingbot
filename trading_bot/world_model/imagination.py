@@ -81,3 +81,9 @@ class PlanningEngine:
     def _estimate_reward(self, trajectory: torch.Tensor) -> float:
         # Mock: in production this uses the Risk/Alpha heads
         return float(trajectory.mean())
+
+# Backward-compatibility aliases for UCA V5 Architecture
+ImaginationPlanner = PlanningEngine
+CEMPlanner = PlanningEngine
+class PlanResult:
+    pass

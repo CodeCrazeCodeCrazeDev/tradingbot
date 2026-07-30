@@ -1236,7 +1236,7 @@ class UnifiedAIBrain:
                         bid=price * 0.9999,
                         ask=price * 1.0001
                     )
-                except:
+                except Exception as e:
                     pass
         
         return analysis
@@ -1267,7 +1267,7 @@ class UnifiedAIBrain:
                     })
                     if sig:
                         signals.append(sig)
-                except:
+                except Exception as e:
                     pass
         
         # Get signal from cognitive core
@@ -1332,7 +1332,7 @@ class UnifiedAIBrain:
                     if not msos_result.get('approved', False):
                         result['reason'] = f"MSOS: {msos_result.get('reason', 'Rejected')}"
                         return result
-                except:
+                except Exception as e:
                     pass
         
         # Check risk manager
@@ -1348,7 +1348,7 @@ class UnifiedAIBrain:
                     if not risk_result.get('approved', False):
                         result['reason'] = f"Risk: {risk_result.get('reason', 'Rejected')}"
                         return result
-                except:
+                except Exception as e:
                     pass
         
         # Calculate position size
@@ -1362,7 +1362,7 @@ class UnifiedAIBrain:
                     if ss.instance.is_triggered():
                         result['reason'] = "Circuit breaker triggered"
                         return result
-                except:
+                except Exception as e:
                     pass
         
         # Approved
@@ -1387,7 +1387,7 @@ class UnifiedAIBrain:
                         risk_per_trade=self.config.max_risk_per_trade,
                         confidence=signal.get('confidence', 0.5)
                     )
-                except:
+                except Exception as e:
                     pass
         
         # Default calculation
@@ -1500,7 +1500,7 @@ class UnifiedAIBrain:
                             await ss.instance.evolve()
                         else:
                             ss.instance.evolve()
-                    except:
+                    except Exception as e:
                         pass
             
         finally:
@@ -1563,12 +1563,12 @@ class UnifiedAIBrain:
                 if hasattr(ss.instance, 'emergency_stop'):
                     try:
                         ss.instance.emergency_stop(reason)
-                    except:
+                    except Exception as e:
                         pass
                 if hasattr(ss.instance, 'trigger'):
                     try:
                         ss.instance.trigger(reason)
-                    except:
+                    except Exception as e:
                         pass
     
     async def shutdown(self):

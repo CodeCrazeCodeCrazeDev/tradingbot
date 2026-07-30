@@ -11,9 +11,9 @@ import json
 from pathlib import Path
 import traceback
 
-from ..registry import ModuleRegistry, get_registry, initialize_registry
-from ..registry.service_locator import ServiceLocator, get_service_locator
-from .service_managers import (
+from trading_bot.registry import ModuleRegistry, get_registry, initialize_registry
+from trading_bot.registry.service_locator import ServiceLocator, get_service_locator
+from trading_bot.orchestration.service_managers import (
     ServiceManager, DataServiceManager, AnalysisServiceManager,
     TradingServiceManager, RiskServiceManager, OptimizationServiceManager,
     OrchestrationServiceManager, SpecializedSystemServiceManager,

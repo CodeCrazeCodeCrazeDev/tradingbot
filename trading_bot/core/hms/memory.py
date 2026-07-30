@@ -18,9 +18,11 @@ Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
 
 import logging
 import os
+import json
 import networkx as nx
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
+from uuid import uuid4
 from .models import ResearchLedgerEntry, ScientificMemoryObject, EvidenceNode, EvidenceEdge, RelationType
 
 logger = logging.getLogger(__name__)
@@ -61,11 +63,9 @@ class HierarchicalMemorySystem:
     - SAGE: Self-evolving Agentic Graph-Memory.
     - AutoMem: Automated Learning of Memory as a Cognitive Skill.
     """
-    def __init__(self, storage_root: str = "alphaalgo_data/hms_v3"):
-        self.storage_root = storage_root
-
     def __init__(self, base_path: str = "alphaalgo_data/hms"):
         self.base_path = base_path
+        self.storage_root = base_path # For backward compatibility with malformed store_ledger_entry
         self.ledger_path = os.path.join(base_path, "research_ledger")
         self.knowledge_path = os.path.join(base_path, "scientific_memory")
         self.graph_path = os.path.join(base_path, "sage_graph.graphml")
@@ -79,13 +79,13 @@ class HierarchicalMemorySystem:
         # AutoMem: Memory Structure
         self.memory_schema = self._load_schema()
 
-    def _load_graph(self) -> nx.DiGraph:
+    def _load_graph(self) -> nx.MultiDiGraph:
         if os.path.exists(self.graph_path):
             try:
                 return nx.read_graphml(self.graph_path)
             except Exception as e:
                 logger.error(f"HMS: Failed to load SAGE graph: {e}")
-        return nx.DiGraph()
+        return nx.MultiDiGraph()
 
     def _save_graph(self):
         try:
@@ -152,10 +152,8 @@ class HierarchicalMemorySystem:
             "sage_sync": True
         }
 
-        # Setup persistence
-        for tier_name, tier in self.tiers.items():
-            if tier.persistent:
-                os.makedirs(os.path.join(self.storage_root, tier_name), exist_ok=True)
+        with open(file_path, 'w') as f:
+            json.dump(entry_data, f, indent=2)
 
     def retrieve_evidence_chain(self, query: str) -> List[EvidenceNode]:
         """

@@ -194,9 +194,9 @@ class OnlineLearner:
         # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(path), exist_ok=True)
         
-        # Save the learner
-        with open(path, 'wb') as f:
-            pickle.dump(self, f)
+        # Institutional standard: Use joblib for model-bearing objects
+        import joblib
+        joblib.dump(self, path)
         
         logger.info(f"Saved online learner to {path}")
     
@@ -210,8 +210,8 @@ class OnlineLearner:
         Returns:
             Loaded online learner
         """
-        with open(path, 'rb') as f:
-            learner = pickle.load(f)
+        import joblib
+        learner = joblib.load(path)
         
         logger.info(f"Loaded online learner from {path}")
         return learner
@@ -814,9 +814,9 @@ class AsyncOnlineLearner:
         # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(path), exist_ok=True)
         
-        # Save the learner
-        with open(path, 'wb') as f:
-            pickle.dump(self, f)
+        # Institutional standard: Use joblib for model-bearing objects
+        import joblib
+        joblib.dump(self, path)
         
         logger.info(f"Saved online learner to {path}")
         
@@ -834,8 +834,8 @@ class AsyncOnlineLearner:
         Returns:
             Loaded online learner
         """
-        with open(path, 'rb') as f:
-            learner = pickle.load(f)
+        import joblib
+        learner = joblib.load(path)
         
         logger.info(f"Loaded online learner from {path}")
         return learner

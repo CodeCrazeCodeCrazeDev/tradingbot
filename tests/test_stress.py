@@ -127,7 +127,7 @@ class TestResourceExhaustion:
         
         # Check if we can write more
         try:
-            with open(temp_path, "a") as f:
+            with open(temp_path, "ab") as f:
                 f.write(b"test")
             can_write = True
         except Exception:

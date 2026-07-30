@@ -15,8 +15,10 @@ from typing import Any, Dict, List, Optional, Tuple
 from loguru import logger
 
 try:
-    from trading_bot.strategy.strategy_engine import StrategyEngine, Signal
-except ImportError:
+    from .strategy_engine import StrategyEngine, Signal
+except ImportError as e:
+    import traceback
+    traceback.print_exc()
     StrategyEngine = None
     Signal = None
 
