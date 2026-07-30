@@ -1,13 +1,4 @@
 """
-
-Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral behaviors (Skill-to-LoRA).
-Implements 'HASP' (2026) and 'S2L' (2026).
-"""
-
-import logging
-from typing import Any, Dict, List, Optional, Callable
-from dataclasses import dataclass
 SkillRouter & HASP - UCA V6 Skill Management
 Orchestrates the selection and execution of Skill Programs (HASP/PFs)
 and behavioral adapters (Skill-to-LoRA).
