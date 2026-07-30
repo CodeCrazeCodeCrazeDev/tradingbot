@@ -7,6 +7,12 @@ from trading_bot.core.csc.models import NormalizedMarketContext, MarketContextAd
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome, CoreDecision
 from trading_bot.core.immutable_shield import GovernanceDecision
 
+@pytest.fixture(autouse=True)
+def reset_csc_singleton():
+    CognitiveSystemController._instance = None
+    yield
+    CognitiveSystemController._instance = None
+
 def test_normalized_market_context_immutability():
     """Verify that NormalizedMarketContext is immutable and correctly populated."""
     context = NormalizedMarketContext(volatility=0.25, price_action="BULLISH", features=[1.0, 2.0])
@@ -50,6 +56,7 @@ async def test_csc_decision_determinism(monkeypatch):
     """
     # Create matching mocks
     world_model = MagicMock()
+    world_model.simulate_intervention = AsyncMock(return_value=[])
     hms = MagicMock()
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
@@ -112,6 +119,7 @@ async def test_csc_negative_paths_and_failures(monkeypatch):
     or rejected shield validations) result in structured rejection CoreDecisions.
     """
     world_model = MagicMock()
+    world_model.simulate_intervention = AsyncMock(return_value=[])
     hms = MagicMock()
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()

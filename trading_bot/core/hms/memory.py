@@ -227,6 +227,14 @@ class HierarchicalMemorySystem:
             self.memory_window_size = min(self.memory_window_size + 10, 500)
             logger.info(f"SEAL: Memory retrieval was highly accurate. Adapted HMS memory window to {self.memory_window_size} to retain more contextual episodic memory.")
 
+    def _calculate_integrity_hash(self, schema_data: Dict[str, Any]) -> str:
+        """Calculates deterministic SHA-256 hash over canonical memory schema fields (integrity verification)."""
+        import hashlib
+        import json
+        clean_schema = {k: v for k, v in schema_data.items() if k not in ("integrity_hash", "updated_at")}
+        schema_json = json.dumps(clean_schema, sort_keys=True)
+        return hashlib.sha256(schema_json.encode('utf-8')).hexdigest()
+
     def _load_schema(self) -> Dict[str, Any]:
         schema = {"version": "1.0", "schema_version": "1.0", "entities": [], "relations": []}
         if os.path.exists(self.schema_path):

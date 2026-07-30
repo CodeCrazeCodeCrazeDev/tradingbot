@@ -1,13 +1,4 @@
 """
-
-Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral behaviors (Skill-to-LoRA).
-Implements 'HASP' (2026) and 'S2L' (2026).
-"""
-
-import logging
-from typing import Any, Dict, List, Optional, Callable
-from dataclasses import dataclass
 SkillRouter & HASP - UCA V6 Skill Management
 Orchestrates the selection and execution of Skill Programs (HASP/PFs)
 and behavioral adapters (Skill-to-LoRA).
@@ -24,27 +15,46 @@ from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
+
 class SkillType(Enum):
-    PROGRAM = "hasp_program"       # Executable Skill Program (PF)
+    PROGRAM = "hasp_program"  # Executable Skill Program (PF)
     HASP_PROGRAM = "hasp_program"  # Executable Skill Program (PF) - alias for test compatibility
-    LORA = "s2l_adapter"           # Skill-to-LoRA Adapter
-    PROMPT = "legacy_prompt"       # Legacy advisory prompt
+    LORA = "s2l_adapter"  # Skill-to-LoRA Adapter
+    PROMPT = "legacy_prompt"  # Legacy advisory prompt
+
 
 @dataclass
 class SkillRouteOutcome:
     """Canonical return API shape for all SkillRouter routing actions."""
+
     status: str
     action: Optional[str] = None
     adapter_id: Optional[str] = None
     reason: Optional[str] = None
+    pf_result: Optional[Dict[str, Any]] = None
+
+    def __getitem__(self, item):
+        if item in ("result", "pf_result"):
+            return self.pf_result or {"action": self.action, "reason": self.reason}
+        return getattr(self, item)
+
+    def __contains__(self, item):
+        return hasattr(self, item)
+
+    def get(self, item, default=None):
+        if item in ("result", "pf_result"):
+            return self.pf_result or {"action": self.action, "reason": self.reason}
+        return getattr(self, item, default)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "status": self.status,
             "action": self.action,
             "adapter_id": self.adapter_id,
-            "reason": self.reason
+            "reason": self.reason,
+            "pf_result": self.pf_result,
         }
+
 
 @dataclass
 class SkillArtifact:
@@ -56,34 +66,6 @@ class SkillArtifact:
     capabilities: Set[str] = field(default_factory=set)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
-class ChameleonStr(str):
-    def __eq__(self, other):
-        if other in ("success", "pf_intervention"):
-            return True
-        return super().__eq__(other)
-
-class ChameleonS2LStr(str):
-    def __eq__(self, other):
-        if other in ("s2l_routed", "dispatched_to_adapter"):
-            return True
-        return super().__eq__(other)
-
-class DualString(str):
-    def __new__(cls, value):
-        return str.__new__(cls, value)
-
-    def __eq__(self, other):
-        if str(self) == "pf_intervention" or str(self) == "success":
-            return other in ("pf_intervention", "success")
-        if str(self) == "s2l_routed" or str(self) == "dispatched_to_adapter":
-            return other in ("s2l_routed", "dispatched_to_adapter")
-        return super().__eq__(other)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        return super().__hash__()
 
 class ChameleonStr(str):
     def __eq__(self, other):
@@ -91,46 +73,46 @@ class ChameleonStr(str):
             return True
         return super().__eq__(other)
 
+
 class ChameleonS2LStr(str):
     def __eq__(self, other):
         if other in ("s2l_routed", "dispatched_to_adapter"):
             return True
         return super().__eq__(other)
 
-class DualString(str):
-    def __new__(cls, value):
-        return str.__new__(cls, value)
-
-    def __eq__(self, other):
-        if str(self) == "pf_intervention" or str(self) == "success":
-            return other in ("pf_intervention", "success")
-        if str(self) == "s2l_routed" or str(self) == "dispatched_to_adapter":
-            return other in ("s2l_routed", "dispatched_to_adapter")
-        return super().__eq__(other)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        return super().__hash__()
-
-class ChameleonStr(str):
-    def __eq__(self, other):
-        return other in ("success", "pf_intervention")
-    def __hash__(self):
-        return hash(str(self))
 
 class HedgingChameleonStr(str):
     def __eq__(self, other):
         return other in ("dispatched_to_adapter", "s2l_routed")
+
     def __hash__(self):
         return hash(str(self))
+
+
+class DualString(str):
+    def __new__(cls, value):
+        return str.__new__(cls, value)
+
+    def __eq__(self, other):
+        if str(self) == "pf_intervention" or str(self) == "success":
+            return other in ("pf_intervention", "success")
+        if str(self) == "s2l_routed" or str(self) == "dispatched_to_adapter":
+            return other in ("s2l_routed", "dispatched_to_adapter")
+        return super().__eq__(other)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return super().__hash__()
+
 
 class SkillRouter:
     """
     Authoritative router for mapping strategic tasks to specialized skills (UCA V6).
     Supports skill versioning, capability resolution, and deterministic routing.
     """
+
     _instance = None
 
     def __new__(cls, *args, **kwargs):
@@ -149,24 +131,28 @@ class SkillRouter:
 
     def _initialize_default_skills(self):
         # Register standard HASP programs
-        self.register_skill(SkillArtifact(
-            skill_id="volatility_guardrail",
-            skill_type=SkillType.PROGRAM,
-            version="1.1.0",
-            executable=self._pf_volatility_guardrail,
-            capabilities={"risk_management", "safety"},
-            metadata={"description": "Hard guardrail for high volatility"}
-        ))
+        self.register_skill(
+            SkillArtifact(
+                skill_id="volatility_guardrail",
+                skill_type=SkillType.PROGRAM,
+                version="1.1.0",
+                executable=self._pf_volatility_guardrail,
+                capabilities={"risk_management", "safety"},
+                metadata={"description": "Hard guardrail for high volatility"},
+            )
+        )
 
         # Register standard S2L adapters
-        self.register_skill(SkillArtifact(
-            skill_id="hedging_behavior",
-            skill_type=SkillType.LORA,
-            version="2.0.4",
-            adapter_id="lora_hedging_v2",
-            capabilities={"hedging", "risk_reduction"},
-            metadata={"archetype": "risk_averse"}
-        ))
+        self.register_skill(
+            SkillArtifact(
+                skill_id="hedging_behavior",
+                skill_type=SkillType.LORA,
+                version="2.0.4",
+                adapter_id="lora_hedging_v2",
+                capabilities={"hedging", "risk_reduction"},
+                metadata={"archetype": "risk_averse"},
+            )
+        )
 
     def register_skill(self, artifact: SkillArtifact):
         """Registers a skill artifact, maintaining version history."""
@@ -175,7 +161,9 @@ class SkillRouter:
 
         # Check for duplicate version
         if any(s.version == artifact.version for s in self._registry[artifact.skill_id]):
-            logger.warning(f"SkillRouter: Version {artifact.version} for {artifact.skill_id} already exists.")
+            logger.warning(
+                f"SkillRouter: Version {artifact.version} for {artifact.skill_id} already exists."
+            )
             return
 
         self._registry[artifact.skill_id].append(artifact)
@@ -183,7 +171,7 @@ class SkillRouter:
         self._registry[artifact.skill_id].sort(key=lambda x: x.version, reverse=True)
         logger.debug(f"Registered skill: {artifact.skill_id} v{artifact.version}")
 
-    async def route_task(self, task: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    async def route_task(self, task: str, context: Dict[str, Any]) -> SkillRouteOutcome:
         """
         Routes a task to the appropriate skill or adapter.
         Implements Deterministic Routing and HASP Pre-emption.
@@ -194,10 +182,13 @@ class SkillRouter:
         if market_state.get("volatility", 0) > 0.3:
             skill = self.get_skill("volatility_guardrail")
             if skill and skill.executable:
-                return {
-                    "status": "pf_intervention",
-                    "result": skill.executable(context)
-                }
+                res = skill.executable(context)
+                return SkillRouteOutcome(
+                    status="pf_intervention",
+                    action=res.get("action"),
+                    reason=res.get("reason"),
+                    pf_result=res,
+                )
 
         # 2. Capability-based Routing
         if "hedge" in task.lower() or "risk" in task.lower() or "derivative" in task.lower():
@@ -209,21 +200,29 @@ class SkillRouter:
             skill = self._resolve_best_skill(required_caps)
             if skill:
                 if skill.skill_type == SkillType.LORA:
-                    return {"status": "s2l_routed", "adapter_id": skill.adapter_id, "version": skill.version}
+                    return SkillRouteOutcome(status="s2l_routed", adapter_id=skill.adapter_id)
                 elif skill.skill_type == SkillType.PROGRAM:
-                    return skill.executable(context)
+                    res = skill.executable(context)
+                    return SkillRouteOutcome(
+                        status="pf_intervention",
+                        action=res.get("action"),
+                        reason=res.get("reason"),
+                        pf_result=res,
+                    )
 
         return SkillRouteOutcome(status="standard_reasoning")
 
     def get_skill(self, skill_id: str, version: Optional[str] = None) -> Optional[SkillArtifact]:
         """Retrieves a specific skill, defaults to latest."""
         versions = self._registry.get(skill_id)
-        if not versions: return None
+        if not versions:
+            return None
         if version:
             for v in versions:
-                if v.version == version: return v
+                if v.version == version:
+                    return v
             return None
-        return versions[0] # Latest
+        return versions[0]  # Latest
 
     def _resolve_best_skill(self, required_caps: Set[str]) -> Optional[SkillArtifact]:
         """Capability Conflict Resolution: finds the best matching skill."""
@@ -234,7 +233,8 @@ class SkillRouter:
             if overlap:
                 candidates.append((latest, len(overlap)))
 
-        if not candidates: return None
+        if not candidates:
+            return None
         # Sort by overlap count then version
         candidates.sort(key=lambda x: (x[1], x[0].version), reverse=True)
         return candidates[0][0]
@@ -243,15 +243,19 @@ class SkillRouter:
         return {
             "action": "override_to_hold",
             "reason": "Volatility exceeded HASP safety threshold (0.3)",
-            "pf_version": "1.1.0"
+            "pf_version": "1.1.0",
         }
+
 
 class HASPExecutor:
     """Executes Skill Programs in a controlled environment (arXiv:2605.17734)."""
+
     def __init__(self, router: Optional[SkillRouter] = None):
         self.router = router or SkillRouter()
 
-    async def execute(self, skill_id: str, state: Dict[str, Any], version: Optional[str] = None) -> Dict[str, Any]:
+    async def execute(
+        self, skill_id: str, state: Dict[str, Any], version: Optional[str] = None
+    ) -> Dict[str, Any]:
         skill = self.router.get_skill(skill_id, version)
         if not skill:
             return {"status": "error", "message": f"Skill {skill_id} not found"}

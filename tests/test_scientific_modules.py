@@ -80,12 +80,12 @@ async def test_s2l_behavioral_routing():
     result = await router.route_task("I need to hedge my EURUSD position", context)
 
     assert result.status == "s2l_routed"
-    assert result.adapter_id == "lora_hedging_v1"
+    assert result.adapter_id == "lora_hedging_v2"
 
 @pytest.mark.asyncio
 async def test_eksft_compliance_verification():
     """Verify EKSFT selective masking check in EvolutionGate."""
-    gate = EvolutionGate(validation_engine=MockValidationEngine(), improvement_threshold=0.1)
+    gate = EvolutionGate(validation_engine=MockValidationEngine(), threshold=0.1)
 
     # 1. Compliant candidate (high entropy token was masked)
     config_ok = {
@@ -106,14 +106,14 @@ async def test_eksft_compliance_verification():
 @pytest.mark.asyncio
 async def test_rsea_monotone_safe_gate():
     """Verify RSEA only approves improvements > threshold."""
-    gate = EvolutionGate(validation_engine=MockValidationEngine(), improvement_threshold=0.1)
+    gate = EvolutionGate(validation_engine=MockValidationEngine(), threshold=0.1)
 
     baseline = {"perf": 0.5}
     candidate_good = {"perf": 0.65, "training_metadata": {}} # Gain 0.15 > 0.1
     candidate_bad = {"perf": 0.55, "training_metadata": {}}  # Gain 0.05 < 0.1
 
-    assert gate.validate_evolution("C1", candidate_good, baseline) is True
-    assert gate.validate_evolution("C2", candidate_bad, baseline) is False
+    assert await gate.validate_evolution("C1", candidate_good, baseline) is True
+    assert await gate.validate_evolution("C2", candidate_bad, baseline) is False
 
 @pytest.mark.asyncio
 async def test_rsea_multi_metric_protected_gate():
@@ -122,7 +122,7 @@ async def test_rsea_multi_metric_protected_gate():
         def run_benchmark(self, config):
             return config
 
-    gate = EvolutionGate(validation_engine=MultiMetricValidationEngine(), improvement_threshold=0.1)
+    gate = EvolutionGate(validation_engine=MultiMetricValidationEngine(), threshold=0.1)
 
     baseline = {
         "perf": 0.5,
@@ -145,7 +145,7 @@ async def test_rsea_multi_metric_protected_gate():
         "safety_score": 1.0,
         "training_metadata": {}
     }
-    assert gate.validate_evolution("CG", candidate_good, baseline) is True
+    assert await gate.validate_evolution("CG", candidate_good, baseline) is True
 
     # 2. Performance improves but decision latency regresses significantly -> Reject
     candidate_bad_latency = {
@@ -158,7 +158,7 @@ async def test_rsea_multi_metric_protected_gate():
         "safety_score": 1.0,
         "training_metadata": {}
     }
-    assert gate.validate_evolution("CB_Lat", candidate_bad_latency, baseline) is False
+    assert await gate.validate_evolution("CB_Lat", candidate_bad_latency, baseline) is False
 
     # 3. Performance improves but drawdown regresses -> Reject
     candidate_bad_drawdown = {
@@ -171,4 +171,4 @@ async def test_rsea_multi_metric_protected_gate():
         "safety_score": 1.0,
         "training_metadata": {}
     }
-    assert gate.validate_evolution("CB_DD", candidate_bad_drawdown, baseline) is False
+    assert await gate.validate_evolution("CB_DD", candidate_bad_drawdown, baseline) is False

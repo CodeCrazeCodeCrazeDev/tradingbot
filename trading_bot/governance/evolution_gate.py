@@ -22,6 +22,10 @@ class EvolutionMetrics:
     latency: float      # Decision speed (ms)
     safety_score: float # Zero-violation rate
     gain: float = 0.0   # CL-Bench Gain Metric (G)
+    drawdown: float = 0.0
+    calibration_error: float = 0.0
+    hms_retrieval_quality: float = 1.0
+    deterministic_replay_success: float = 1.0
 
 class EvolutionGate:
     """
@@ -61,7 +65,36 @@ class EvolutionGate:
 
         # 3. Run baseline on validation set (Stateless Baseline)
         baseline_raw = self.validation_engine.run_benchmark(baseline_config)
-        baseline = EvolutionMetrics(**baseline_raw)
+
+        # Parse raw baseline benchmark output robustly
+        if isinstance(baseline_raw, (int, float)):
+            baseline = EvolutionMetrics(
+                reward=baseline_raw,
+                calibration=0.9,
+                robustness=0.8,
+                latency=10.0,
+                safety_score=1.0
+            )
+        elif isinstance(baseline_raw, dict):
+            baseline = EvolutionMetrics(
+                reward=baseline_raw.get("reward", baseline_raw.get("perf", 0.5)),
+                calibration=baseline_raw.get("calibration", 0.9),
+                robustness=baseline_raw.get("robustness", 0.8),
+                latency=baseline_raw.get("latency", baseline_raw.get("decision_latency", 10.0)),
+                safety_score=baseline_raw.get("safety_score", 1.0),
+                drawdown=baseline_raw.get("drawdown", 0.0),
+                calibration_error=baseline_raw.get("calibration_error", 0.0),
+                hms_retrieval_quality=baseline_raw.get("hms_retrieval_quality", 1.0),
+                deterministic_replay_success=baseline_raw.get("deterministic_replay_success", 1.0)
+            )
+        else:
+            baseline = EvolutionMetrics(
+                reward=0.5,
+                calibration=0.9,
+                robustness=0.8,
+                latency=10.0,
+                safety_score=1.0
+            )
 
         # 4. Run candidate on validation set (Stateful Candidate)
         candidate_raw = self.validation_engine.run_benchmark(candidate_config)
@@ -80,8 +113,12 @@ class EvolutionGate:
                 reward=candidate_raw.get("reward", candidate_raw.get("perf", 0.5)),
                 calibration=candidate_raw.get("calibration", 0.9),
                 robustness=candidate_raw.get("robustness", 0.8),
-                latency=candidate_raw.get("latency", 10.0),
-                safety_score=candidate_raw.get("safety_score", 1.0)
+                latency=candidate_raw.get("latency", candidate_raw.get("decision_latency", 10.0)),
+                safety_score=candidate_raw.get("safety_score", 1.0),
+                drawdown=candidate_raw.get("drawdown", 0.0),
+                calibration_error=candidate_raw.get("calibration_error", 0.0),
+                hms_retrieval_quality=candidate_raw.get("hms_retrieval_quality", 1.0),
+                deterministic_replay_success=candidate_raw.get("deterministic_replay_success", 1.0)
             )
         else:
             candidate = EvolutionMetrics(
@@ -104,6 +141,18 @@ class EvolutionGate:
         # Calibration Check (arXiv:2605.21482 DeepWeb-Bench)
         calibration_drift = baseline.calibration - candidate.calibration
 
+        is_significant = (gain >= self.threshold)
+        no_regressions = (
+            candidate.latency <= baseline.latency * 1.10 and
+            candidate.drawdown <= baseline.drawdown * 1.10 and
+            candidate.calibration_error <= baseline.calibration_error * 1.10 and
+            candidate.calibration >= baseline.calibration * 0.90 and
+            candidate.robustness >= baseline.robustness * 0.90 and
+            candidate.safety_score >= baseline.safety_score and
+            candidate.hms_retrieval_quality >= baseline.hms_retrieval_quality * 0.90 and
+            candidate.deterministic_replay_success >= baseline.deterministic_replay_success
+        )
+
         if is_significant and no_regressions:
             logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain: {gain:.4f}")
 
@@ -111,7 +160,13 @@ class EvolutionGate:
             self.evolution_history.append({
                 "timestamp": datetime.utcnow().isoformat(),
                 "candidate_id": candidate_id,
-                "metrics": candidate_perf,
+                "metrics": {
+                    "reward": candidate.reward,
+                    "calibration": candidate.calibration,
+                    "robustness": candidate.robustness,
+                    "latency": candidate.latency,
+                    "safety_score": candidate.safety_score
+                },
                 "provenance": {
                     "baseline_id": baseline_config.get("id"),
                     "validation_mode": "CL-Bench-Stateful",
@@ -122,22 +177,8 @@ class EvolutionGate:
             })
             return True
         else:
-            logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED. Gain (G): {gain:.4f} < {self.threshold} or calibration drift too high.")
+            logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED. Gain (G): {gain:.4f} < {self.threshold} or regression detected.")
             return False
-
-        if candidate.latency > baseline.latency * 1.2:
-            logger.error(f"EvolutionGate: REJECTED - Latency regression exceeds limits ({baseline.latency}ms -> {candidate.latency}ms)")
-            return False
-
-        # Candidate APPROVED
-        logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain (G): {gain:.4f}")
-        self.evolution_history.append({
-            "timestamp": datetime.utcnow().isoformat(),
-            "candidate_id": candidate_id,
-            "metrics": candidate.__dict__,
-            "status": "PROMOTED"
-        })
-        return True
 
     def _check_eksft_compliance(self, config: Dict[str, Any]) -> bool:
         """Prevents distribution sharpening and entropy collapse."""
