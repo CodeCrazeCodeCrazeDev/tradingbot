@@ -112,8 +112,8 @@ async def test_rsea_monotone_safe_gate():
     candidate_good = {"perf": 0.65, "training_metadata": {}} # Gain 0.15 > 0.1
     candidate_bad = {"perf": 0.55, "training_metadata": {}}  # Gain 0.05 < 0.1
 
-    assert gate.validate_evolution("C1", candidate_good, baseline) is True
-    assert gate.validate_evolution("C2", candidate_bad, baseline) is False
+    assert await gate.validate_evolution("C1", candidate_good, baseline) is True
+    assert await gate.validate_evolution("C2", candidate_bad, baseline) is False
 
 @pytest.mark.asyncio
 async def test_rsea_multi_metric_protected_gate():
@@ -145,7 +145,7 @@ async def test_rsea_multi_metric_protected_gate():
         "safety_score": 1.0,
         "training_metadata": {}
     }
-    assert gate.validate_evolution("CG", candidate_good, baseline) is True
+    assert await gate.validate_evolution("CG", candidate_good, baseline) is True
 
     # 2. Performance improves but decision latency regresses significantly -> Reject
     candidate_bad_latency = {
@@ -158,7 +158,7 @@ async def test_rsea_multi_metric_protected_gate():
         "safety_score": 1.0,
         "training_metadata": {}
     }
-    assert gate.validate_evolution("CB_Lat", candidate_bad_latency, baseline) is False
+    assert await gate.validate_evolution("CB_Lat", candidate_bad_latency, baseline) is False
 
     # 3. Performance improves but drawdown regresses -> Reject
     candidate_bad_drawdown = {
@@ -171,4 +171,4 @@ async def test_rsea_multi_metric_protected_gate():
         "safety_score": 1.0,
         "training_metadata": {}
     }
-    assert gate.validate_evolution("CB_DD", candidate_bad_drawdown, baseline) is False
+    assert await gate.validate_evolution("CB_DD", candidate_bad_drawdown, baseline) is False

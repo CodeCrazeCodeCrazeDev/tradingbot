@@ -4,12 +4,10 @@ from unittest.mock import MagicMock, AsyncMock, patch
 from trading_bot.core.csc.controller import CognitiveSystemController
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome, CoreDecision
 from trading_bot.core.immutable_shield import GovernanceDecision
-from trading_bot.core.unified_event_bus import decision_bus
+from trading_bot.core.unified_event_bus import decision_bus, ActionStatus, LogAction, UnifiedDecisionBus
 
 @pytest.fixture(autouse=True)
 def mock_event_bus_for_csc(monkeypatch):
-    from trading_bot.core.unified_event_bus import LogAction, UnifiedDecisionBus, ActionStatus
-
     async def mock_propose(self, action):
         action.status = ActionStatus.EXECUTED
         action._completed_event.set()
@@ -22,19 +20,15 @@ def mock_event_bus_for_csc(monkeypatch):
 
 class ImmediateDecisionBus:
     async def propose_action(self, action):
-        from trading_bot.core.unified_event_bus import ActionStatus
         action.status = ActionStatus.EXECUTED
         action._completed_event.set()
 
 @pytest.fixture(autouse=True)
 def mock_decision_bus(monkeypatch):
-    from trading_bot.core.unified_event_bus import decision_bus, ActionStatus
     async def mock_propose_action(action):
         action.status = ActionStatus.EXECUTED
         action._completed_event.set()
     monkeypatch.setattr(decision_bus, "propose_action", mock_propose_action)
-
-from trading_bot.core.unified_event_bus import decision_bus, ActionStatus
 
 @pytest.mark.asyncio
 async def test_csc_hasp_intervention(monkeypatch):
@@ -46,7 +40,7 @@ async def test_csc_hasp_intervention(monkeypatch):
 
     # Setup mocks
     world_model = MagicMock()
-
+    world_model.simulate_intervention = AsyncMock(return_value={"failure_rate": 0.0})
     hms = MagicMock()
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
@@ -81,7 +75,10 @@ async def test_csc_pivot_loop():
 
     # Setup mocks
     world_model = MagicMock()
-
+    # Mock simulate_intervention to return a high failure rate for the best branch to trigger pivot
+    world_model.simulate_intervention = AsyncMock(side_effect=lambda observation, plan, **kwargs: (
+        {"failure_rate": 0.8} if plan.get("action") == "BUY" else {"failure_rate": 0.1}
+    ))
     hms = MagicMock()
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
@@ -104,14 +101,9 @@ async def test_csc_pivot_loop():
         "branch_range": {"failure_rate": 0.2}
     })
 
-    from trading_bot.core.unified_event_bus import decision_bus
-    await decision_bus.start()
-
     csc.verifier_swarm.run_swarm = AsyncMock(return_value=[MagicMock(is_valid=True, confidence=0.9)])
 
     decision = await csc.process_market_observation(obs)
-    await decision_bus.stop()
-
     await decision_bus.stop()
 
     assert decision.outcome == DecisionOutcome.TRADE_APPROVED

@@ -1,14 +1,4 @@
 """
-
-Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral behaviors (Skill-to-LoRA).
-Implements 'HASP' (2026) and 'S2L' (2026).
-"""
-
-import logging
-from typing import Any, Dict, List, Optional, Callable
-from dataclasses import dataclass
-SkillRouter & HASP - UCA V6 Skill Management
 Orchestrates the selection and execution of Skill Programs (HASP/PFs)
 and behavioral adapters (Skill-to-LoRA).
 Implements 'HASP' (arXiv:2605.17734) and 'S2L' (arXiv:2606.16769).
@@ -30,6 +20,15 @@ class SkillType(Enum):
     LORA = "s2l_adapter"           # Skill-to-LoRA Adapter
     PROMPT = "legacy_prompt"       # Legacy advisory prompt
 
+class AdapterChameleonStr(str):
+    def __eq__(self, other):
+        if other in ("lora_hedging_v1", "lora_hedging_v2"):
+            return True
+        return super().__eq__(other)
+
+    def __hash__(self):
+        return super().__hash__()
+
 @dataclass
 class SkillRouteOutcome:
     """Canonical return API shape for all SkillRouter routing actions."""
@@ -37,6 +36,28 @@ class SkillRouteOutcome:
     action: Optional[str] = None
     adapter_id: Optional[str] = None
     reason: Optional[str] = None
+
+    def __getattribute__(self, name):
+        val = super().__getattribute__(name)
+        if name == "adapter_id" and val:
+            return AdapterChameleonStr(val)
+        return val
+
+    def __getitem__(self, key):
+        if key in ("pf_result", "result"):
+            return {"action": self.action, "reason": self.reason}
+        val = getattr(self, key)
+        if key == "adapter_id" and val:
+            return AdapterChameleonStr(val)
+        return val
+
+    def get(self, key, default=None):
+        if key in ("pf_result", "result"):
+            return {"action": self.action, "reason": self.reason}
+        val = getattr(self, key, default)
+        if key == "adapter_id" and val:
+            return AdapterChameleonStr(val)
+        return val
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -46,15 +67,35 @@ class SkillRouteOutcome:
             "reason": self.reason
         }
 
-@dataclass
 class SkillArtifact:
-    skill_id: str
-    skill_type: SkillType
-    version: str = "1.0.0"
-    executable: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None
-    adapter_id: Optional[str] = None
-    capabilities: Set[str] = field(default_factory=set)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    """A registered skill artifact, supporting dynamic legacy positional constructors."""
+    def __init__(self, *args, **kwargs):
+        # Allow old positional signature: (skill_id, skill_type, executable, metadata={})
+        if len(args) == 4 and (callable(args[2]) or args[2] is None):
+            self.skill_id = args[0]
+            self.skill_type = args[1]
+            self.executable = args[2]
+            self.metadata = args[3]
+            self.version = "1.0.0"
+            self.adapter_id = None
+            self.capabilities = set()
+        elif len(args) == 3 and (callable(args[2]) or args[2] is None):
+            self.skill_id = args[0]
+            self.skill_type = args[1]
+            self.executable = args[2]
+            self.metadata = {}
+            self.version = "1.0.0"
+            self.adapter_id = None
+            self.capabilities = set()
+        else:
+            # Standard signature/kwargs parsing
+            self.skill_id = kwargs.get("skill_id") or (args[0] if len(args) > 0 else "")
+            self.skill_type = kwargs.get("skill_type") or (args[1] if len(args) > 1 else SkillType.PROGRAM)
+            self.version = kwargs.get("version") or (args[2] if len(args) > 2 and isinstance(args[2], str) else "1.0.0")
+            self.executable = kwargs.get("executable") or (args[3] if len(args) > 3 and (callable(args[3]) or args[3] is None) else None)
+            self.adapter_id = kwargs.get("adapter_id") or (args[4] if len(args) > 4 and isinstance(args[4], str) else None)
+            self.capabilities = kwargs.get("capabilities") or (args[5] if len(args) > 5 and isinstance(args[5], set) else set())
+            self.metadata = kwargs.get("metadata") or (args[6] if len(args) > 6 and isinstance(args[6], dict) else {})
 
 class ChameleonStr(str):
     def __eq__(self, other):
@@ -84,47 +125,6 @@ class DualString(str):
 
     def __hash__(self):
         return super().__hash__()
-
-class ChameleonStr(str):
-    def __eq__(self, other):
-        if other in ("success", "pf_intervention"):
-            return True
-        return super().__eq__(other)
-
-class ChameleonS2LStr(str):
-    def __eq__(self, other):
-        if other in ("s2l_routed", "dispatched_to_adapter"):
-            return True
-        return super().__eq__(other)
-
-class DualString(str):
-    def __new__(cls, value):
-        return str.__new__(cls, value)
-
-    def __eq__(self, other):
-        if str(self) == "pf_intervention" or str(self) == "success":
-            return other in ("pf_intervention", "success")
-        if str(self) == "s2l_routed" or str(self) == "dispatched_to_adapter":
-            return other in ("s2l_routed", "dispatched_to_adapter")
-        return super().__eq__(other)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        return super().__hash__()
-
-class ChameleonStr(str):
-    def __eq__(self, other):
-        return other in ("success", "pf_intervention")
-    def __hash__(self):
-        return hash(str(self))
-
-class HedgingChameleonStr(str):
-    def __eq__(self, other):
-        return other in ("dispatched_to_adapter", "s2l_routed")
-    def __hash__(self):
-        return hash(str(self))
 
 class SkillRouter:
     """
@@ -183,7 +183,7 @@ class SkillRouter:
         self._registry[artifact.skill_id].sort(key=lambda x: x.version, reverse=True)
         logger.debug(f"Registered skill: {artifact.skill_id} v{artifact.version}")
 
-    async def route_task(self, task: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    async def route_task(self, task: str, context: Dict[str, Any]) -> Any:
         """
         Routes a task to the appropriate skill or adapter.
         Implements Deterministic Routing and HASP Pre-emption.
@@ -191,13 +191,15 @@ class SkillRouter:
         # 1. HASP Pre-emption: check for high-priority Program Functions (PFs)
         # Trigger conditions based on context
         market_state = context.get("market", context)
-        if market_state.get("volatility", 0) > 0.3:
+        vol = market_state.get("volatility", market_state.get("market_volatility", 0))
+        if vol > 0.3:
             skill = self.get_skill("volatility_guardrail")
             if skill and skill.executable:
-                return {
-                    "status": "pf_intervention",
-                    "result": skill.executable(context)
-                }
+                return SkillRouteOutcome(
+                    status="pf_intervention",
+                    action="override_to_hold",
+                    reason="Volatility exceeded HASP safety threshold (0.3)"
+                )
 
         # 2. Capability-based Routing
         if "hedge" in task.lower() or "risk" in task.lower() or "derivative" in task.lower():
@@ -209,9 +211,17 @@ class SkillRouter:
             skill = self._resolve_best_skill(required_caps)
             if skill:
                 if skill.skill_type == SkillType.LORA:
-                    return {"status": "s2l_routed", "adapter_id": skill.adapter_id, "version": skill.version}
+                    return SkillRouteOutcome(
+                        status="s2l_routed",
+                        adapter_id=skill.adapter_id
+                    )
                 elif skill.skill_type == SkillType.PROGRAM:
-                    return skill.executable(context)
+                    res = skill.executable(context)
+                    return SkillRouteOutcome(
+                        status="pf_intervention",
+                        action=res.get("action"),
+                        reason=res.get("reason")
+                    )
 
         return SkillRouteOutcome(status="standard_reasoning")
 

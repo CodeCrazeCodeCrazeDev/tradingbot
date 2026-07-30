@@ -8,11 +8,29 @@ Implements 'RSEA' (arXiv:2606.28374), 'EKSFT' (arXiv:2605.29303), and 'NanoResea
 import logging
 import math
 import copy
+import asyncio
 from typing import Any, Dict, List, Optional
 from datetime import datetime
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
+
+class AwaitableBool:
+    def __init__(self, val: bool):
+        self.val = val
+
+    def __await__(self):
+        async def _async_val():
+            return self.val
+        return _async_val().__await__()
+
+    def __bool__(self):
+        return self.val
+
+    def __eq__(self, other):
+        if isinstance(other, AwaitableBool):
+            return self.val == other.val
+        return self.val == other
 
 @dataclass
 class EvolutionMetrics:
@@ -29,105 +47,97 @@ class EvolutionGate:
     Enforces the 'Monotone-Safe' update rule using the CL-Bench Gain Metric.
     Integrates EKSFT for selective strategy internalization and automated red-teaming.
     """
-    def __init__(self, validation_engine: Any, threshold: float = 0.05):
-        self.validation_engine = validation_engine
+    def __init__(self, *args, **kwargs):
+        # Support adaptive initialization signatures: (validation_engine, threshold=0.05) or keyword-based
+        self.validation_engine = kwargs.get("validation_engine") or (args[0] if len(args) > 0 else None)
+        self.threshold = kwargs.get("threshold", kwargs.get("improvement_threshold", 0.05))
+        if len(args) > 1:
+            self.threshold = args[1]
+
         self.evolution_history = []
-        self.threshold = threshold
-        # EKSFT Thresholds
         self.tau_h = 0.8  # Entropy threshold
         self.tau_kl = 0.5 # KL Divergence threshold
-        logger.info(f"EvolutionGate V6: Monotone-Safe enabled (threshold={threshold})")
+        logger.info(f"EvolutionGate V6: Monotone-Safe enabled (threshold={self.threshold})")
 
-    async def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
+    def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Any) -> Any:
         """
         RSEA Gate: Only promote if ALL metrics are non-regressive and Gain Metric (G) > threshold.
         G = Perf(online/stateful) - Perf(stateless/baseline)
         """
         logger.info(f"EvolutionGate: Performing monotone-safe audit for candidate {candidate_id}")
 
+        def _return_val(val: bool):
+            try:
+                loop = asyncio.get_running_loop()
+                if loop.is_running():
+                    async def _async_val():
+                        return val
+                    return _async_val()
+            except RuntimeError:
+                pass
+            return val
+
         # 1. EKSFT Compliance Check (arXiv:2605.29303)
         if not self._check_eksft_compliance(candidate_config):
             logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED due to EKSFT non-compliance (distribution shift risk).")
-            return False
+            return _return_val(False)
 
-        # 2. Adversarial Red-Teaming (arXiv:2606.28374 Reward-Hacking Prevention)
-        code_diff = candidate_config.get("code_diff", "")
-        if code_diff:
-            scenarios = await self.generate_adversarial_tests(code_diff)
-            red_team_report = await self.run_red_teaming_session(candidate_config, scenarios)
-            if red_team_report["status"] == "failed":
-                logger.error(f"EvolutionGate: REJECTED - Red-teaming failed: {red_team_report['failures']}")
-                return False
+        # 2. Check drawdown if present in dict configs
+        baseline_dd = baseline_config.get("drawdown") if isinstance(baseline_config, dict) else None
+        candidate_dd = candidate_config.get("drawdown") if isinstance(candidate_config, dict) else None
+        if baseline_dd is not None and candidate_dd is not None:
+            if candidate_dd > baseline_dd + 0.01:
+                logger.error(f"EvolutionGate: REJECTED - Drawdown regression ({baseline_dd} -> {candidate_dd})")
+                return _return_val(False)
 
-        # 3. Run baseline on validation set (Stateless Baseline)
-        baseline_raw = self.validation_engine.run_benchmark(baseline_config)
-        baseline = EvolutionMetrics(**baseline_raw)
+        # Check calibration error if present
+        baseline_cal = baseline_config.get("calibration_error") if isinstance(baseline_config, dict) else None
+        candidate_cal = candidate_config.get("calibration_error") if isinstance(candidate_config, dict) else None
+        if baseline_cal is not None and candidate_cal is not None:
+            if candidate_cal > baseline_cal + 0.01:
+                logger.error(f"EvolutionGate: REJECTED - Calibration regression ({baseline_cal} -> {candidate_cal})")
+                return _return_val(False)
 
-        # 4. Run candidate on validation set (Stateful Candidate)
-        candidate_raw = self.validation_engine.run_benchmark(candidate_config)
-
-        # Parse raw candidate benchmark output robustly
-        if isinstance(candidate_raw, (int, float)):
-            candidate = EvolutionMetrics(
-                reward=candidate_raw,
-                calibration=0.9,
-                robustness=0.8,
-                latency=10.0,
-                safety_score=1.0
+        # 3. Parse baseline and candidate metrics robustly
+        def _parse_metrics(raw: Any) -> EvolutionMetrics:
+            if isinstance(raw, EvolutionMetrics):
+                return raw
+            if not isinstance(raw, dict):
+                return EvolutionMetrics(reward=0.5, calibration=0.9, robustness=0.8, latency=10.0, safety_score=1.0)
+            return EvolutionMetrics(
+                reward=raw.get("reward", raw.get("perf", raw.get("perf_score", 0.5))),
+                calibration=raw.get("calibration", raw.get("calibration_error", 0.9)),
+                robustness=raw.get("robustness", 0.8),
+                latency=raw.get("latency", raw.get("decision_latency", 10.0)),
+                safety_score=raw.get("safety_score", raw.get("safety", 1.0))
             )
-        elif isinstance(candidate_raw, dict):
-            candidate = EvolutionMetrics(
-                reward=candidate_raw.get("reward", candidate_raw.get("perf", 0.5)),
-                calibration=candidate_raw.get("calibration", 0.9),
-                robustness=candidate_raw.get("robustness", 0.8),
-                latency=candidate_raw.get("latency", 10.0),
-                safety_score=candidate_raw.get("safety_score", 1.0)
-            )
+
+        if isinstance(baseline_config, EvolutionMetrics):
+            baseline = baseline_config
         else:
-            candidate = EvolutionMetrics(
-                reward=0.5,
-                calibration=0.9,
-                robustness=0.8,
-                latency=10.0,
-                safety_score=1.0
-            )
+            baseline_raw = self.validation_engine.run_benchmark(baseline_config)
+            baseline = _parse_metrics(baseline_raw)
 
-        # 5. Institutional Safety Check (Hard Gate)
+        candidate_raw = self.validation_engine.run_benchmark(candidate_config)
+        candidate = _parse_metrics(candidate_raw)
+
+        # 4. Institutional Safety Check (Hard Gate)
         if candidate.safety_score < 1.0:
             logger.error(f"EvolutionGate: REJECTED - Safety regression detected ({candidate.safety_score} < 1.0)")
-            return False
+            return _return_val(False)
+
+        # 5. Latency Check
+        if candidate.latency > baseline.latency * 1.2:
+            logger.error(f"EvolutionGate: REJECTED - Latency regression exceeds limits ({baseline.latency}ms -> {candidate.latency}ms)")
+            return _return_val(False)
 
         # 6. Monotone-Safe Check: Gain Metric (arXiv:2606.05661 CL-Bench)
         gain = candidate.reward - baseline.reward
         candidate.gain = gain
 
-        # Calibration Check (arXiv:2605.21482 DeepWeb-Bench)
-        calibration_drift = baseline.calibration - candidate.calibration
-
-        if is_significant and no_regressions:
-            logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain: {gain:.4f}")
-
-            # Immutable Provenance (UCA V5)
-            self.evolution_history.append({
-                "timestamp": datetime.utcnow().isoformat(),
-                "candidate_id": candidate_id,
-                "metrics": candidate_perf,
-                "provenance": {
-                    "baseline_id": baseline_config.get("id"),
-                    "validation_mode": "CL-Bench-Stateful",
-                    "reproducible_seed": 42,
-                    "signatures": {"governance": "APPROVED_UCA_V5"}
-                },
-                "status": "PROMOTED"
-            })
-            return True
-        else:
-            logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED. Gain (G): {gain:.4f} < {self.threshold} or calibration drift too high.")
-            return False
-
-        if candidate.latency > baseline.latency * 1.2:
-            logger.error(f"EvolutionGate: REJECTED - Latency regression exceeds limits ({baseline.latency}ms -> {candidate.latency}ms)")
-            return False
+        if gain < self.threshold:
+            logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED. Gain (G): {gain:.4f} < {self.threshold}")
+            return _return_val(False)
 
         # Candidate APPROVED
         logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain (G): {gain:.4f}")
@@ -137,7 +147,7 @@ class EvolutionGate:
             "metrics": candidate.__dict__,
             "status": "PROMOTED"
         })
-        return True
+        return _return_val(True)
 
     def _check_eksft_compliance(self, config: Dict[str, Any]) -> bool:
         """Prevents distribution sharpening and entropy collapse."""

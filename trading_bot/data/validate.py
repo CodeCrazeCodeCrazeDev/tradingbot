@@ -2,15 +2,16 @@
 Provides backward and testing compatibility for data validation modules.
 """
 
-from typing import Any, Optional, Dict
+from typing import Any, Optional, Dict, Tuple
 import logging
+import pandas as pd
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
 class DataValidator:
     """
-    DataValidator implementation stub
+    Validates Pandas DataFrames to ensure proper OHLCV and technical feature health.
     """
 
     def __init__(self, config: Optional[Dict] = None):
@@ -32,18 +33,6 @@ class DataValidator:
             'timestamp': datetime.now().isoformat(),
             'config': self.config
         }
-Data Validator class.
-Provides validation and sanitization checks for historical and streaming datasets.
-"""
-
-import pandas as pd
-from typing import Dict, Any, Tuple
-
-class DataValidator:
-    """Validates Pandas DataFrames to ensure proper OHLCV and technical feature health."""
-
-    def __init__(self, config: Dict[str, Any] = None):
-        self.config = config or {}
 
     def validate_dataframe(self, df: pd.DataFrame) -> Tuple[bool, Dict[str, Any]]:
         """
