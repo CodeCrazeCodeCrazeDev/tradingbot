@@ -82,19 +82,28 @@ class CognitiveSystemController:
     UCA V6 Controller - Authoritative Strategic Brain.
     Implements 12-step Recursive Active Inference.
     """
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(CognitiveSystemController, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
     def __init__(
         self,
         world_model: Any,
-        hms: Any,
-        skill_router: SkillRouter,
-        verifier_swarm: VerificationSwarm,
-        risk_engine: Any,
-        consensus_engine: Any,
-        execution_planner: Any,
-        evolution_gate: Any,
+        hms: Any = None,
+        skill_router: Any = None,
+        verifier_swarm: Any = None,
+        risk_engine: Any = None,
+        consensus_engine: Any = None,
+        execution_planner: Any = None,
+        evolution_gate: Any = None,
         shield: Optional[ImmutableShield] = None
     ):
-        # 1. Dependency Injection
+        # Allow passing variable positional arguments adaptively (legacy 3-positional vs standard 8/9-positional)
+        # Check if we were passed fewer than standard parameters or handle None fallbacks
         self.world_model = world_model
         self.hms = hms
         self.skill_router = skill_router
@@ -103,7 +112,14 @@ class CognitiveSystemController:
         self.consensus_engine = consensus_engine
         self.execution_planner = execution_planner
         self.evolution_gate = evolution_gate
-        self.shield = shield
+
+        # If we are passed shield as a positional argument (e.g., as the 3rd argument in a legacy 3-positional call)
+        # then skill_router might actually be the shield. Let's inspect and resolve dynamically.
+        if shield is None and skill_router is not None and not isinstance(skill_router, SkillRouter):
+            self.shield = skill_router
+            self.skill_router = None
+        else:
+            self.shield = shield
         from ..unified_event_bus import decision_bus as real_decision_bus
         self.decision_bus = decision_bus or real_decision_bus
 
@@ -401,6 +417,10 @@ class CognitiveSystemController:
         }
 
     def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
+        provenance = InstitutionalProvenance(
+            git_sha="uca-v6-strategic-brain",
+            pipeline_version="UCA-V6"
+        )
         return ResearchLedgerEntry(
             entry_id=str(uuid4()),
             hypothesis=branch.hypotheses[0] if branch.hypotheses else None,

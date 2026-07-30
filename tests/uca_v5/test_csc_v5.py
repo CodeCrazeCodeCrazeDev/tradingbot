@@ -46,6 +46,7 @@ async def test_csc_hasp_intervention(monkeypatch):
 
     # Setup mocks
     world_model = MagicMock()
+    world_model.simulate_intervention = AsyncMock(return_value={"failure_rate": 0.1, "expected_slippage": 0.01})
 
     hms = MagicMock()
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
@@ -76,11 +77,13 @@ async def test_csc_hasp_intervention(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_csc_pivot_loop():
+    from trading_bot.core.unified_event_bus import decision_bus
     # Ensure bus is started
     await decision_bus.start()
 
     # Setup mocks
     world_model = MagicMock()
+    world_model.simulate_intervention = AsyncMock(return_value={"failure_rate": 0.1, "expected_slippage": 0.01})
 
     hms = MagicMock()
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
