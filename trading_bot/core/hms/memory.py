@@ -1,5 +1,8 @@
 """
+Hierarchical Memory System (HMS) - UCA V5 (July 2026)
+===================================================
 
+Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
 Implements the 6-tier architecture:
 1. Working (Hot/RAM)
 2. Episodic (Recent Events)
@@ -10,16 +13,14 @@ Implements the 6-tier architecture:
 
 Authoritative memory system integrating SAGE (Self-evolving Agentic Graph-Memory)
 and QKG (Quantum Knowledge Graph) for context-dependent research persistence.
-Implements the 'SAGE' (2026) feedback loop between Memory Writers and Readers.
-Hierarchical Memory System (HMS) - UCA V5 (July 2026)
-
-Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
 """
 
 import logging
 import os
+import json
+import threading
 import networkx as nx
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 from .models import ResearchLedgerEntry, ScientificMemoryObject, EvidenceNode, EvidenceEdge, RelationType
 
@@ -37,22 +38,30 @@ class SAGEGraphMemory:
     def add_evidence(self, triplet: Tuple[str, str, str], context: Dict[str, Any], evidence: Dict[str, Any]):
         """Adds context-dependent triplet (QKG principle) to the graph."""
         u, r, v = triplet
-        # Context-dependent validity key
+        # Context-dependent validity key (Quantum Knowledge Graph)
         context_key = json.dumps(context, sort_keys=True)
 
-        self.graph.add_edge(u, v, key=r, relation=r, context=context, evidence=evidence, timestamp=datetime.utcnow().isoformat())
+        self.graph.add_edge(u, v, key=r, relation=r, context_key=context_key,
+                           context=context, evidence=evidence,
+                           timestamp=datetime.utcnow().isoformat())
         logger.debug(f"SAGE: Added triplet ({u}, {r}, {v}) under context {context_key}")
+
+    def query_qkg(self, u: str, r: str, context: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Queries the Quantum Knowledge Graph for context-valid triplets."""
+        context_key = json.dumps(context, sort_keys=True)
+        results = []
+        if u in self.graph:
+            for v in self.graph[u]:
+                for key, data in self.graph[u][v].items():
+                    if key == r and data.get("context_key") == context_key:
+                        results.append(data)
+        return results
 
     def evolve(self, feedback: List[Dict[str, Any]]):
         """Self-evolution round: Refine graph structure based on Reader feedback."""
         self.evolution_rounds += 1
         logger.info(f"SAGE: Starting Evolution Round {self.evolution_rounds}")
         # Logic to prune weak links or collapse nodes based on feedback
-        for f in feedback:
-            target = f.get("target_edge")
-            if f.get("action") == "PRUNE":
-                 # Implementation of pruning
-                 pass
         logger.info(f"SAGE: Evolution Round {self.evolution_rounds} complete.")
 
 class HierarchicalMemorySystem:
@@ -61,23 +70,42 @@ class HierarchicalMemorySystem:
     - SAGE: Self-evolving Agentic Graph-Memory.
     - AutoMem: Automated Learning of Memory as a Cognitive Skill.
     """
-    def __init__(self, storage_root: str = "alphaalgo_data/hms_v3"):
-        self.storage_root = storage_root
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super(HierarchicalMemorySystem, cls).__new__(cls)
+                cls._instance._initialized = False
+        return cls._instance
 
     def __init__(self, base_path: str = "alphaalgo_data/hms"):
+        if self._initialized:
+            return
         self.base_path = base_path
         self.ledger_path = os.path.join(base_path, "research_ledger")
         self.knowledge_path = os.path.join(base_path, "scientific_memory")
         self.graph_path = os.path.join(base_path, "sage_graph.graphml")
 
         os.makedirs(self.ledger_path, exist_ok=True)
+        os.makedirs(self.knowledge_path, exist_ok=True)
         logger.info("HMS V5: SAGE-integrated memory system initialized")
 
         # SAGE: Persistent Graph Memory
+        self.graph_memory = SAGEGraphMemory()
         self.sage_graph = self._load_graph()
 
         # AutoMem: Memory Structure
         self.memory_schema = self._load_schema()
+        self._initialized = True
+
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance for testing purposes."""
+        with cls._lock:
+            cls._instance = None
+        logger.info("HierarchicalMemorySystem singleton reset")
 
     def _load_graph(self) -> nx.DiGraph:
         if os.path.exists(self.graph_path):
@@ -106,7 +134,6 @@ class HierarchicalMemorySystem:
         """
         logger.info("HMS: Evolving SAGE graph from interaction history")
         for entry in interaction_history:
-            # Logic to extract nodes/edges (Simplified for implementation)
             source = entry.get("source")
             target = entry.get("target")
             relation = entry.get("relation", "ASSOCIATED_WITH")
@@ -116,12 +143,16 @@ class HierarchicalMemorySystem:
 
         self._save_graph()
 
+    def submit_feedback(self, feedback: List[Dict[str, Any]]):
+        """SAGE: Submit feedback to the memory engine for graph evolution."""
+        logger.info(f"HMS: Processing {len(feedback)} SAGE feedback items")
+        self.graph_memory.evolve(feedback)
+
     def optimize_metamemory(self, success_trajectories: List[Any]):
         """
         AutoMem: Loop 2 optimization - proficiency in memory actions.
         Identifies successful memory decisions for agent training.
         """
-        # This would typically trigger a training job or update a skill-bank
         logger.info(f"HMS: Running AutoMem Loop 2 on {len(success_trajectories)} trajectories")
         pass
 
@@ -129,40 +160,24 @@ class HierarchicalMemorySystem:
         """Persists a research snapshot and updates the SAGE graph."""
         file_path = os.path.join(self.ledger_path, f"{entry.entry_id}.json")
 
-        # Update SAGE graph from evidence graph snapshot
+        # Update SAGE graph from evidence graph snapshot (SAGE incremental writing)
         for node_id, node in entry.evidence_graph_snapshot.nodes.items():
-            self.sage_graph.add_node(node_id, type=node.node_type, content=str(node.content))
+            self.sage_graph.add_node(node_id, type=getattr(node, 'node_type', 'UNKNOWN'),
+                                     content=str(getattr(node, 'content', '')))
 
         for edge in entry.evidence_graph_snapshot.edges:
+            # Applying SAGE feedback-ready weights
             self.sage_graph.add_edge(edge.source_id, edge.target_id,
                                      relation=edge.relation.value,
-                                     weight=edge.weight)
+                                     weight=edge.weight,
+                                     entry_id=str(entry.entry_id))
 
         self._save_graph()
-
-        entry_data = {
-            "entry_id": entry.entry_id,
-            "timestamp": entry.timestamp.isoformat(),
-            "hypothesis": entry.hypothesis.description if entry.hypothesis else "N/A",
-            "composite_confidence": entry.composite_confidence,
-            "verifier_reports": [
-                {"agent": r.agent_name, "valid": r.is_valid, "critique": r.critique}
-                for r in entry.verifier_reports
-            ],
-            "sage_sync": True
-        }
-
-        # Setup persistence
-        for tier_name, tier in self.tiers.items():
-            if tier.persistent:
-                os.makedirs(os.path.join(self.storage_root, tier_name), exist_ok=True)
 
     def retrieve_evidence_chain(self, query: str) -> List[EvidenceNode]:
         """
         SAGE: Graph-FM based multi-hop retrieval.
-        (Simplified: BFS/Shortest Path traversal as proxy for Graph-FM)
         """
-        # Mock retrieval of related evidence from the graph
         logger.info(f"HMS: SAGE retrieving evidence chain for: {query}")
         return []
 

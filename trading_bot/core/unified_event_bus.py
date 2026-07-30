@@ -10,6 +10,7 @@ Maintains backward compatibility with the UCA-2026 UnifiedDecisionBus API.
 import asyncio
 import logging
 import json
+import os
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -17,6 +18,7 @@ from enum import Enum
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Union
 from uuid import uuid4
 import threading
+from .governance.determinism import determinism
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +35,7 @@ class UnifiedEvent:
     event_type: str
     payload: Dict[str, Any]
     source: str
-    event_id: str = field(default_factory=lambda: str(uuid4()))
+    event_id: str = field(default_factory=lambda: determinism.get_uuid())
     timestamp: datetime = field(default_factory=datetime.utcnow)
     priority: EventPriority = EventPriority.NORMAL
     correlation_id: Optional[str] = None
@@ -66,7 +68,7 @@ class LogAction:
     action_type: str
     payload: Dict[str, Any]
     agent_id: str
-    action_id: str = field(default_factory=lambda: str(uuid4()))
+    action_id: str = field(default_factory=lambda: determinism.get_uuid())
     timestamp: datetime = field(default_factory=datetime.utcnow)
     status: ActionStatus = ActionStatus.PROPOSED
     correlation_id: Optional[str] = None
@@ -108,6 +110,7 @@ class UnifiedDecisionBus:
             return
 
         self.config = config or {}
+        self.log_path = self.config.get("log_path", "alphaalgo_data/logact_backbone.jsonl")
         self._log: List[LogAction] = []
         self._voters: Dict[str, Callable[[LogAction], Coroutine[Any, Any, Dict[str, Any]]]] = {}
         self._subscribers: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
@@ -115,6 +118,12 @@ class UnifiedDecisionBus:
         self._action_queue: Optional[asyncio.PriorityQueue] = None
         self._processor_task: Optional[asyncio.Task] = None
         self._initialized = True
+
+        # Create directory if it doesn't exist
+        log_dir = os.path.dirname(self.log_path)
+        if log_dir:
+            os.makedirs(log_dir, exist_ok=True)
+
         logger.info("LogAct Shared-Log Backbone initialized with Legacy Support")
 
     async def start(self):
@@ -130,6 +139,19 @@ class UnifiedDecisionBus:
         if self._processor_task:
             self._processor_task.cancel()
         logger.info("LogAct Backbone processing stopped")
+
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance for testing purposes."""
+        with cls._lock:
+            if cls._instance:
+                # Stop if running
+                if cls._instance._running:
+                    cls._instance._running = False
+                    if cls._instance._processor_task:
+                        cls._instance._processor_task.cancel()
+                cls._instance = None
+        logger.info("UnifiedDecisionBus singleton reset")
 
     # --- UCA V5 API ---
 
@@ -147,6 +169,24 @@ class UnifiedDecisionBus:
         # PriorityQueue uses min-heap, so we use negative priority
         await self._action_queue.put((-action.priority.value, action.timestamp, action))
         logger.debug(f"Proposed action {action.action_id} from agent {action.agent_id}")
+
+    def get_action_by_id(self, action_id: str) -> Optional[LogAction]:
+        """Retrieve an action from the log by its ID."""
+        for action in self._log:
+            if action.action_id == action_id:
+                return action
+        return None
+
+    async def recover(self, from_sequence: int = 0):
+        """Semantic recovery from the shared log."""
+        logger.info(f"LogAct: Initiating recovery from sequence {from_sequence}")
+        if os.path.exists(self.log_path):
+            with open(self.log_path, 'r') as f:
+                for line in f:
+                    data = json.loads(line)
+                    # Simple reconstruction - in production would need full state machine replay
+                    # ...
+        logger.info("LogAct: Recovery complete")
 
     # --- Legacy Compatibility API ---
 
@@ -212,6 +252,10 @@ class UnifiedDecisionBus:
                 # 1. Total Ordering
                 action.sequence_number = len(self._log)
                 self._log.append(action)
+
+                # Persistence (LogAct durability)
+                with open(self.log_path, 'a') as f:
+                    f.write(json.dumps(action.to_dict()) + "\n")
 
                 # 2. Decoupled Voting (Audit Phase)
                 action.status = ActionStatus.AUDITING

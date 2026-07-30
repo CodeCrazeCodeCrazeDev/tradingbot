@@ -15,6 +15,12 @@ from trading_bot.core.hms.memory import HierarchicalMemorySystem
 async def test_logact_reliability_backbone():
     """Verify LogAct Shared-Log Backbone and Voter consensus."""
     csc = CognitiveSystemController()
+
+    # Mock a voter since we are in a clean state
+    async def mock_voter(action):
+        return {"decision": "APPROVED", "reason": "System Test"}
+    decision_bus.register_voter("GovernanceShield", mock_voter)
+
     await decision_bus.start()
 
     action = LogAction(

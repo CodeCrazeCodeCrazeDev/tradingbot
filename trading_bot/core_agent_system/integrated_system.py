@@ -14,8 +14,19 @@ from typing import Any, Dict, List, Optional
 from pathlib import Path
 import redis
 
-from .master_orchestrator import MasterOrchestrator, SystemContext, Decision
-from .meta_orchestrator import MetaOrchestrator
+from trading_bot.core.csc.controller import CognitiveSystemController as MasterOrchestrator
+from trading_bot.core.alphaalgo_core_engine import CoreDecision as Decision
+from dataclasses import dataclass
+
+@dataclass
+class SystemContext:
+    timestamp: datetime
+    market_state: Dict[str, Any]
+    portfolio_state: Dict[str, Any]
+    agent_states: Dict[str, Any]
+    pending_decisions: List[Any]
+    recent_outcomes: List[Any]
+    risk_metrics: Dict[str, Any]
 from trading_bot.neuros_evolution.controlled_objects import ControlledObjectRegistry
 from .react_loop import ReActLoop
 from .constitutional_layer import ConstitutionalAI
@@ -50,7 +61,6 @@ from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
 from .self_coordinating_core import SelfCoordinatingCore
-from .meta_orchestrator import MetaOrchestrator
 from .swarm.usis import UnifiedSwarmIntelligenceSystem
 from .swarm.experts import MarketScientist, QuantAnalyst, SwarmRiskManager
 
@@ -191,8 +201,8 @@ class IntegratedAgentSystem:
             config=self.config
         )
 
-        # 11. Meta-Orchestrator
-        self.meta_orchestrator = MetaOrchestrator(self.config)
+        # 11. Meta-Orchestrator (Consolidated into CSC)
+        self.meta_orchestrator = self.orchestrator
 
         # 12. Unified Swarm Intelligence System (USIS)
         self.swarm_system = UnifiedSwarmIntelligenceSystem(
@@ -216,17 +226,10 @@ class IntegratedAgentSystem:
         await self.constitutional_layer.initialize()
         await self.react_loop.initialize()
 
-        self.orchestrator.inject_dependencies(
-            policy_network=self.policy_network,
-            value_network=self.value_network,
-            constitutional_layer=self.constitutional_layer,
-            react_loop=self.react_loop,
-            agent_registry=self.agent_registry,
-            tool_registry=self.tool_registry,
-            memory_system=self.memory_system,
-            world_model=self.world_model
-        )
-        await self.orchestrator.initialize()
+        # CSC V5 doesn't use inject_dependencies but uses constructor or bus
+        # We keep the calls if they exist or skip
+        if hasattr(self.orchestrator, 'initialize') and callable(self.orchestrator.initialize):
+            await self.orchestrator.initialize()
         
         self.self_play_loop.audit_system = self.coordination_core.governance
         await self.self_play_loop.initialize()
