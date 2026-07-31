@@ -11,7 +11,6 @@ try:
         AdaptiveIntegrationSystem,
     )
 except ImportError as e:
-    # adaptive_integration not available
     pass
 
 # alphaalgo_2_0
@@ -20,7 +19,6 @@ try:
         SystemCapability,
     )
 except ImportError as e:
-    # alphaalgo_2_0 not available
     pass
 
 # alphaalgo_2_0_system
@@ -29,7 +27,6 @@ try:
         Alphaalgo20System,
     )
 except ImportError as e:
-    # alphaalgo_2_0_system not available
     pass
 
 # brain_architecture
@@ -39,7 +36,6 @@ try:
         EliteBrain,
     )
 except ImportError as e:
-    # brain_architecture not available
     pass
 
 # brain_trader
@@ -48,7 +44,6 @@ try:
         BrainTrader,
     )
 except ImportError as e:
-    # brain_trader not available
     pass
 
 # central_controller
@@ -57,7 +52,6 @@ try:
         CentralController,
     )
 except ImportError as e:
-    # central_controller not available
     pass
 
 # elite_brain
@@ -66,7 +60,6 @@ try:
         EliteBrainController,
     )
 except ImportError as e:
-    # elite_brain not available
     pass
 
 # mt5_brain_trader
@@ -75,16 +68,15 @@ try:
         MT5BrainTrader,
     )
 except ImportError as e:
-    # mt5_brain_trader not available
     pass
 
 # tier9_metalearning
 try:
     from .tier9_metalearning import (
         MetaLearningSystem,
+        Tier9MetaLearning,
     )
 except ImportError as e:
-    # tier9_metalearning not available
     pass
 
 # tier_structure
@@ -94,7 +86,19 @@ try:
         EliteBrainSignal,
     )
 except ImportError as e:
-    # tier_structure not available
+    pass
+
+# Import Tiers 1-8 cleanly
+try:
+    from .tier1_technical import Tier1TechnicalAnalysis
+    from .tier2_orderflow import Tier2OrderFlowIntelligence
+    from .tier3_structure import Tier3MarketStructure
+    from .tier4_regime import Tier4RegimeDetection
+    from .tier5_sentiment import Tier5SentimentAnalysis
+    from .tier6_macro import Tier6MacroAnalysis
+    from .tier7_risk import Tier7RiskManagement
+    from .tier8_execution import Tier8ExecutionIntelligence
+except ImportError as e:
     pass
 
 __all__ = [
@@ -111,6 +115,15 @@ __all__ = [
     'MT5BrainTrader',
     'MetaLearningSystem',
     'SystemCapability',
+    'Tier1TechnicalAnalysis',
+    'Tier2OrderFlowIntelligence',
+    'Tier3MarketStructure',
+    'Tier4RegimeDetection',
+    'Tier5SentimentAnalysis',
+    'Tier6MacroAnalysis',
+    'Tier7RiskManagement',
+    'Tier8ExecutionIntelligence',
+    'Tier9MetaLearning',
 ]
 
 # Alias for backward compatibility

@@ -156,16 +156,14 @@ class AlphaAlgoOperator:
         # Check critical env vars
         from dotenv import load_dotenv
 
-logger = logging.getLogger(__name__)
-
-load_dotenv(env_file)
+        load_dotenv(env_file)
         
-critical_vars = ["MT5_LOGIN", "MT5_PASSWORD", "MT5_SERVER"]
-for var in critical_vars:
+        critical_vars = ["MT5_LOGIN", "MT5_PASSWORD", "MT5_SERVER"]
+        for var in critical_vars:
             if not os.getenv(var):
                 issues.append(f"Missing environment variable: {var}")
         
-return len(issues) == 0, issues
+        return len(issues) == 0, issues
     
 def run_system_diagnostic(self) -> SystemHealth:
         """Run complete system diagnostic"""

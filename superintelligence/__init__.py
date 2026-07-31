@@ -1,1 +1,4 @@
-"""Auto-generated __init__.py"""
+"""
+Backward-compatibility bridge for superintelligence.
+"""
+from trading_bot.superintelligence import *

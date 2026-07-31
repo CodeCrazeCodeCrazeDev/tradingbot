@@ -141,7 +141,7 @@ class CognitiveSystemController:
         # 7. Decision Selection (VFE Minimization)
         best_branch = self._select_optimal_branch(branches, sim_results)
         if not best_branch:
-            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason="No viable reasoning branches")
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id="NO_BRANCH", dominant_rejection_reason="No viable reasoning branches")
 
         # 8. Decision Loop (Pivot/Refine)
         decision_ready = False
@@ -166,7 +166,7 @@ class CognitiveSystemController:
                 if not best_branch: break
 
         if not decision_ready:
-            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason="Failed Pivot/Refine loop")
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id=getattr(best_branch, "branch_id", "REJECTED_REFINE"), dominant_rejection_reason="Failed Pivot/Refine loop")
 
         # 11. Governance Gate (Immutable Shield & LogAct Proposal)
         trade_proposal = self._translate_to_proposal(final_ledger_entry)
@@ -191,7 +191,7 @@ class CognitiveSystemController:
         status = await log_action.wait_for_decision(timeout=5.0)
 
         if status != ActionStatus.APPROVED and status != ActionStatus.EXECUTED:
-            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=f"LogAct failure: {status}")
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id=trade_proposal.get("trade_id", "REJECTED_LOGACT"), dominant_rejection_reason=f"LogAct failure: {status}")
 
         # Folding & Persistence
         self.folder.fold_history(final_ledger_entry)
@@ -215,7 +215,7 @@ class CognitiveSystemController:
             reason = f"LogAct consensus failure: {action.status.value}"
             if action.voter_reports:
                 reason += f" - Reports: {action.voter_reports}"
-            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=reason)
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id=trade_proposal.get("trade_id", "REJECTED_CONSENSUS"), dominant_rejection_reason=reason)
 
         # 12. Execution & Folding (HIPIF)
         logger.info(f"CSC-V5: Trade Approved. Folding history...")
