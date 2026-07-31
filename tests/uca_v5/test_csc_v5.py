@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, AsyncMock, patch
 from trading_bot.core.csc.controller import CognitiveSystemController
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome, CoreDecision
 from trading_bot.core.immutable_shield import GovernanceDecision
-from trading_bot.core.unified_event_bus import decision_bus
+from trading_bot.core.unified_event_bus import decision_bus, ActionStatus
 
 @pytest.fixture(autouse=True)
 def mock_event_bus_for_csc(monkeypatch):
@@ -33,8 +33,6 @@ def mock_decision_bus(monkeypatch):
         action.status = ActionStatus.EXECUTED
         action._completed_event.set()
     monkeypatch.setattr(decision_bus, "propose_action", mock_propose_action)
-
-from trading_bot.core.unified_event_bus import decision_bus, ActionStatus
 
 @pytest.mark.asyncio
 async def test_csc_hasp_intervention(monkeypatch):
@@ -104,14 +102,9 @@ async def test_csc_pivot_loop():
         "branch_range": {"failure_rate": 0.2}
     })
 
-    from trading_bot.core.unified_event_bus import decision_bus
-    await decision_bus.start()
-
     csc.verifier_swarm.run_swarm = AsyncMock(return_value=[MagicMock(is_valid=True, confidence=0.9)])
 
     decision = await csc.process_market_observation(obs)
-    await decision_bus.stop()
-
     await decision_bus.stop()
 
     assert decision.outcome == DecisionOutcome.TRADE_APPROVED

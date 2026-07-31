@@ -17,3 +17,6 @@ Moving from `pickle` to `json` for standard state and using `asyncio.to_thread` 
 
 ## 6. Deterministic Replay and Provenance
 The Replay Engine now captures full environmental provenance (Git SHA, configuration hashes, dependency versions) and enforces deterministic execution. This ensures that every institutional decision can be audited and reproduced bit-identically in a research environment.
+
+## 7. Multi-Agent Consensus and Verification Robustness
+Fixed severe circular dependency and duplicated logic issues in `multi_agent_debate.py`. Synthesized actions are safely bound with winning scores and chronological sorting. Byzantine and non-responsive agents are now handled via graceful degradation and defensive emergency safe holds (`_trigger_emergency_no_trade`), and price hallucination attempts are vetoed by the falsification gate with fully populated decision provenance logs.

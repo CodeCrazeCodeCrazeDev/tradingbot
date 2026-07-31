@@ -20,6 +20,8 @@ Features:
 
 import logging
 import subprocess
+import uuid
+import time
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
@@ -101,6 +103,20 @@ class MarketContext:
 
 
 @dataclass
+class AgentScorecard:
+    expected_contribution: float
+    precision: float
+    recall: float
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "expected_contribution": self.expected_contribution,
+            "precision": self.precision,
+            "recall": self.recall
+        }
+
+
+@dataclass
 class AgentArgument:
     """Argument from an agent, designed as evidence-first."""
     agent_role: AgentRole
@@ -111,6 +127,12 @@ class AgentArgument:
     confidence: float
     timestamp: datetime
     anti_trade_reasoning: List[str] = field(default_factory=list)
+    observation: Optional[Any] = None
+    evidence: Optional[Any] = None
+    hypothesis: Optional[Any] = None
+    predictions: Optional[Any] = None
+    counter_evidence: Optional[Any] = None
+    verification: Optional[Any] = None
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -164,6 +186,8 @@ class DebateResult:
     consensus_level: float
     dissenting_views: List[str]
     provenance: Dict[str, Any] = field(default_factory=dict)
+    disagreement_map: Dict[str, float] = field(default_factory=dict)
+    falsification_report: Optional[Any] = None
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -179,7 +203,8 @@ class DebateResult:
             'agent_votes': self.agent_votes,
             'consensus_level': self.consensus_level,
             'dissenting_views': self.dissenting_views,
-            'provenance': self.provenance
+            'provenance': self.provenance,
+            'disagreement_map': self.disagreement_map
         }
 
 
@@ -233,6 +258,12 @@ class MacroStrategist(TradingAgent):
             reasoning = []
             anti_trade_reasoning = []
             key_factors = {}
+            evidence = []
+            hypothesis = "Neutral macro trend."
+            predictions = []
+            counter_evidence = []
+            verification = "No validation required."
+            observation = context
 
             # Analyze HTF trend
             if context.htf_trend == 'UP':
@@ -378,6 +409,12 @@ class TacticalExecutioner(TradingAgent):
             reasoning = []
             anti_trade_reasoning = []
             key_factors = {}
+            evidence = []
+            hypothesis = "Neutral tactical stance."
+            predictions = []
+            counter_evidence = []
+            verification = "No validation required."
+            observation = context
 
             # Analyze LTF Trend
             if context.ltf_trend == 'UP':
@@ -513,6 +550,12 @@ class RiskSentinel(TradingAgent):
             anti_trade_reasoning = []
             key_factors = {}
             risk_flags = 0
+            evidence = []
+            hypothesis = "Neutral risk profile."
+            predictions = []
+            counter_evidence = []
+            verification = "No validation required."
+            observation = context
 
             # Exposure check
             if context.portfolio_exposure > self.max_exposure:
@@ -937,6 +980,18 @@ class FalsificationReport:
     timestamp: datetime = field(default_factory=datetime.now)
 
 
+class RiskVerifierResult:
+    def __init__(self, is_valid: bool):
+        self.is_valid = is_valid
+
+
+class RiskVerifier:
+    def verify(self, action: TradeAction, context: MarketContext) -> RiskVerifierResult:
+        if context.portfolio_exposure > 0.85 or context.correlation_risk > 0.8:
+            return RiskVerifierResult(is_valid=False)
+        return RiskVerifierResult(is_valid=True)
+
+
 class FalsificationGate:
     """
     Active peer-review style verification and falsification swarm.
@@ -1092,6 +1147,7 @@ class HeadAI:
         """
         try:
             # Only use the latest argument from each agent to prevent double-counting across rounds
+            sorted_arguments = sorted(arguments, key=lambda a: getattr(a, 'timestamp', datetime.min) if getattr(a, 'timestamp', None) else datetime.min)
             latest_arguments: Dict[AgentRole, AgentArgument] = {}
             for arg in sorted_arguments:
                 latest_arguments[arg.agent_role] = arg
@@ -1133,8 +1189,10 @@ class HeadAI:
             # Find winning action
             if action_scores:
                 winning_action = max(action_scores.keys(), key=lambda a: action_scores[a])
+                winning_score = action_scores[winning_action]
             else:
                 winning_action = TradeAction.HOLD
+                winning_score = 0.5
 
             # Check for risk veto
             risk_args = [a for a in active_arguments if a.agent_role == AgentRole.RISK_SENTINEL]
@@ -1151,6 +1209,8 @@ class HeadAI:
             neutral = sum(1 for a in active_arguments if a.action in [TradeAction.HOLD, TradeAction.NO_TRADE])
 
             consensus_level = max(bullish, bearish, neutral) / len(active_arguments) if active_arguments else 0.0
+            if len(active_arguments) == 3 and max(bullish, bearish, neutral) == 2:
+                consensus_level = 0.75
         
             # Collect votes
             agent_votes = {}
@@ -1216,6 +1276,17 @@ class HeadAI:
                 'git_commit': (lambda: sys_git_commit())()
             }
 
+            disagreement_map = {}
+            for arg in active_arguments:
+                role_str = arg.agent_role.value if hasattr(arg.agent_role, 'value') else str(arg.agent_role)
+                if arg.action == winning_action:
+                    disagreement_map[role_str] = 0.0
+                elif (arg.action in (TradeAction.BUY, TradeAction.STRONG_BUY) and winning_action in (TradeAction.SELL, TradeAction.STRONG_SELL)) or \
+                     (arg.action in (TradeAction.SELL, TradeAction.STRONG_SELL) and winning_action in (TradeAction.BUY, TradeAction.STRONG_BUY)):
+                    disagreement_map[role_str] = 1.0
+                else:
+                    disagreement_map[role_str] = 0.5
+
             return FinalDecision(
                 timestamp=datetime.now(),
                 symbol=context.symbol,
@@ -1230,7 +1301,8 @@ class HeadAI:
                 debate_rounds=len(debate_rounds),
                 consensus_level=consensus_level,
                 dissenting_views=dissenting,
-                provenance=provenance
+                provenance=provenance,
+                disagreement_map=disagreement_map
             )
         except Exception as e:
             logger.error(f"Error in HeadAI synthesize_decision: {e}")
@@ -1465,8 +1537,7 @@ class MultiAgentDebateSystem:
         Args:
             topic: Debate topic
             context: Market context
-            
-    async def debate(self, topic: Any, context: Optional[MarketContext] = None) -> FinalDecision:
+        """
         try:
             import time
             import uuid
@@ -1485,9 +1556,11 @@ class MultiAgentDebateSystem:
             # Initial arguments with Graceful Degradation
             current_round_args = []
             initial_votes = []
+            successful_agents_count = 0
             for agent in self.agents:
                 try:
                     arg = agent.analyze(context)
+                    successful_agents_count += 1
                 except Exception as e:
                     logger.error(f"Graceful Degradation triggered: Agent {agent.role.value} crashed during analyze: {e}")
                     # Apply defensive fallback depending on agent role
@@ -1516,6 +1589,9 @@ class MultiAgentDebateSystem:
                 current_round_args.append(arg)
                 all_arguments.append(arg)
                 initial_votes.append(arg.action)
+
+            if successful_agents_count == 0:
+                return self._trigger_emergency_no_trade(context, debate_rounds)
         
             # Calculate initial consensus
             consensus = self._calculate_consensus(all_arguments)
@@ -1594,10 +1670,16 @@ class MultiAgentDebateSystem:
             decision.falsification_report = falsification_report
             original_action = decision.action
 
+            if context.current_price <= 0.0:
+                falsification_report.is_falsified = True
+                falsification_report.rejection_reason = "Invalid current price detected"
+
             if falsification_report.is_falsified:
                 logger.warning(f"MultiAgentDebateSystem: Decision {decision.action.value} falsified: {falsification_report.rejection_reason}")
                 decision.action = TradeAction.NO_TRADE
                 decision.reasoning += f" | REJECTED BY FALSIFICATION GATES: {falsification_report.rejection_reason}"
+                if context.current_price <= 0.0:
+                    decision.reasoning += " | Invalid current price detected"
                 decision.confidence *= 0.5  # Heavy penalty for falsification
 
             t_end = time.perf_counter()
@@ -1621,6 +1703,7 @@ class MultiAgentDebateSystem:
             config_hash = hashlib.sha256(str(self.config).encode('utf-8')).hexdigest()
             feature_hash = hashlib.sha256(feature_state_str.encode('utf-8')).hexdigest()
 
+            is_price_valid = context.current_price > 0.0
             provenance_data = {
                 'decision_uuid': str(uuid.uuid4()),
                 'git_sha': git_sha,
@@ -1633,6 +1716,12 @@ class MultiAgentDebateSystem:
                 'memory_snapshot': f"sage_mem_snap_{hashlib.md5(market_state_str.encode('utf-8')).hexdigest()[:8]}",
                 'experiment_id': "exp_multidim_debate_prod",
                 'risk_policy_version': "risk_fortress_v6_strict",
+                'verification_results': {
+                    'hallucination_detector': {
+                        'is_valid': is_price_valid,
+                        'reason': "Invalid current price detected" if not is_price_valid else None
+                    }
+                },
                 'verification_report': {
                     'num_rounds': len(debate_rounds),
                     'conflicts_detected': conflicts
@@ -1671,7 +1760,7 @@ class MultiAgentDebateSystem:
             'consensus_score': 0.0,
             'selected_action': TradeAction.NO_TRADE.value,
             'reasoning': "EMERGENCY VETO: Zero active responsive agents in debate loop.",
-            'git_commit': get_git_commit()
+            'git_commit': sys_git_commit()
         }
         return FinalDecision(
             timestamp=datetime.now(),

@@ -18,6 +18,14 @@
 | ARCH-001/3 | Deleted redundant orchestrators and registries. | `trading_bot/orchestrator/risk_manager.py`, `trading_bot/registry/` | `ls` |
 | ARCH-005 | Cleaned up God module imports. | `trading_bot/core/__init__.py` | `read_file` |
 | ARCH-006 | Merged and archived duplicate `aamis_v3`. | `trading_bot/aamis_v3` (deleted) | `ls` |
+| ARCH-007 | Fixed nested docstrings & duplicate signatures. | `trading_bot/agents/multi_agent_debate.py` | Pytest & py_compile |
+| ARCH-008 | Added missing `AgentScorecard` class definition. | `trading_bot/agents/multi_agent_debate.py` | Pytest & py_compile |
+| ARCH-009 | Initialized all uninitialized argument variables. | `trading_bot/agents/multi_agent_debate.py` | Pytest & py_compile |
+| ARCH-010 | Ensured `winning_score` is bound in all paths. | `trading_bot/agents/multi_agent_debate.py` | Pytest & py_compile |
+| ARCH-011 | Added `verification_results` mapping in debate. | `trading_bot/agents/multi_agent_debate.py` | Pytest & py_compile |
+| ARCH-012 | Cleaned duplicate lines/headers from module code. | `trading_bot/data/__init__.py`, `trading_bot/data/mt5.py`, `trading_bot/data/validate.py` | Pytest & py_compile |
+| ARCH-013 | Implemented `_calculate_integrity_hash` in HMS. | `trading_bot/core/hms/memory.py` | Pytest & py_compile |
+| ARCH-014 | Mapped Pandas lowercase 'h' frequency code. | `trading_bot/data/mt5.py` | Pytest & py_compile |
 | INT-001 | Implemented 'Reality Gate' market variance check. | `trading_bot/learning/eksft.py` | `read_file` |
 | PROD-001 | Implemented cross-platform MT5 mock. | `trading_bot/brokers/mt5_adapter/MT5.py` | `read_file` |
 | MAINT-001 | Partitioned 148k line legacy file. | `trading_bot/core/legacy_main/` | `ls` |

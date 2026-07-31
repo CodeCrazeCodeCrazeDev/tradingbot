@@ -19,11 +19,18 @@
 | DATA-001 | Missing Schema Validation | Medium | Data | RESOLVED |
 | DATA-002 | Stale Data in Cache | Medium | Data | RESOLVED |
 | ARCH-001 | Competing Orchestrators | High | Architecture | RESOLVED |
-| ARCH-002 | Circular Dependencies | Medium | Architecture | PARTIAL |
 | ARCH-002 | Circular Dependencies | Medium | Architecture | RESOLVED |
 | ARCH-004 | Excessive Coupling in Core | High | Architecture | RESOLVED |
 | ARCH-005 | God Module `core/__init__.py` | Medium | Architecture | RESOLVED |
 | ARCH-006 | Duplicate `aamis_v3` System | Low | Architecture | RESOLVED |
+| ARCH-007 | Duplicate debate() Docstrings & Signature | High | Architecture | RESOLVED |
+| ARCH-008 | Missing `AgentScorecard` Class Definition | High | Architecture | RESOLVED |
+| ARCH-009 | Uninitialized Agent Argument Fields | High | Correctness | RESOLVED |
+| ARCH-010 | Unbound `winning_score` in Fusion | High | Correctness | RESOLVED |
+| ARCH-011 | Missing Provenance `verification_results` | High | Correctness | RESOLVED |
+| ARCH-012 | Syntax Corruption in `data/` modules | High | Reliability | RESOLVED |
+| ARCH-013 | Missing `_calculate_integrity_hash` in HMS | High | Reliability | RESOLVED |
+| ARCH-014 | Typo Frequency 'H' in MT5 Rates | Medium | Correctness | RESOLVED |
 | INT-001 | "Delusion Loop" (Reality Gate) | Critical | Intelligence | RESOLVED |
 | INT-002 | Simulated Superintelligence Stubs | High | Intelligence | RESOLVED |
 | PROD-001 | Windows-only MT5 Lock-in | High | Production | RESOLVED |

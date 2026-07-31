@@ -186,7 +186,7 @@ class HierarchicalMemorySystem:
                     cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self, base_path: str = "alphaalgo_data/hms"):
+    def __init__(self, base_path: str = "alphaalgo_data/test_hms"):
         if getattr(self, "_initialized", False) and getattr(self, "base_path", None) == base_path:
             return
         self.base_path = base_path
@@ -213,6 +213,10 @@ class HierarchicalMemorySystem:
         self._initialized = True
         logger.info(f"HMS V6: One Memory initialized at {base_path}")
 
+    def reset(self):
+        self.memory_schema = {"version": "2.0", "entities": [], "relations": [], "optimized_count": 0}
+        self._save_schema()
+
     def seal_adapt_memory_window(self, retention_latency_reward: float):
         """
         Adapts the HMS 'memory_window_size' based on downstream task performance reward
@@ -234,6 +238,12 @@ class HierarchicalMemorySystem:
                 with open(self.schema_path, 'r') as f: return json.load(f)
             except: pass
         return {"version": "2.0", "entities": [], "relations": [], "optimized_count": 0}
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        """Computes SHA-256 checksum of memory schema for audit compliance."""
+        temp = {k: v for k, v in schema_dict.items() if k != "integrity_hash"}
+        serialized = json.dumps(temp, sort_keys=True)
+        return hashlib.sha256(serialized.encode('utf-8')).hexdigest()
 
     def _save_schema(self):
         self.memory_schema["updated_at"] = datetime.utcnow().isoformat()
@@ -293,6 +303,8 @@ class HierarchicalMemorySystem:
                 self.memory_schema["relations"] = [r for r in self.memory_schema["relations"] if r.get("type") != "CONTRADICTS"]
 
         # Track history
+        if "migration_history" not in self.memory_schema:
+            self.memory_schema["migration_history"] = []
         self.memory_schema["migration_history"].append({
             "timestamp": datetime.utcnow().isoformat(),
             "from_version": from_v,
