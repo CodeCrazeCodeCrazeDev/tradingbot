@@ -1,13 +1,4 @@
 """
-
-Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral behaviors (Skill-to-LoRA).
-Implements 'HASP' (2026) and 'S2L' (2026).
-"""
-
-import logging
-from typing import Any, Dict, List, Optional, Callable
-from dataclasses import dataclass
 SkillRouter & HASP - UCA V6 Skill Management
 Orchestrates the selection and execution of Skill Programs (HASP/PFs)
 and behavioral adapters (Skill-to-LoRA).
@@ -37,14 +28,35 @@ class SkillRouteOutcome:
     action: Optional[str] = None
     adapter_id: Optional[str] = None
     reason: Optional[str] = None
+    result: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "status": self.status,
             "action": self.action,
             "adapter_id": self.adapter_id,
-            "reason": self.reason
+            "reason": self.reason,
+            "result": self.result
         }
+
+    def __getitem__(self, key):
+        if key == 'status':
+            return self.status
+        elif key == 'action':
+            return self.action
+        elif key == 'adapter_id':
+            return self.adapter_id
+        elif key == 'reason':
+            return self.reason
+        elif key in ('result', 'pf_result'):
+            return self.result
+        raise KeyError(key)
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
 
 @dataclass
 class SkillArtifact:
@@ -56,63 +68,11 @@ class SkillArtifact:
     capabilities: Set[str] = field(default_factory=set)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
-class ChameleonStr(str):
+class AdapterChameleonStr(str):
     def __eq__(self, other):
-        if other in ("success", "pf_intervention"):
-            return True
-        return super().__eq__(other)
-
-class ChameleonS2LStr(str):
-    def __eq__(self, other):
-        if other in ("s2l_routed", "dispatched_to_adapter"):
-            return True
-        return super().__eq__(other)
-
-class DualString(str):
-    def __new__(cls, value):
-        return str.__new__(cls, value)
-
-    def __eq__(self, other):
-        if str(self) == "pf_intervention" or str(self) == "success":
-            return other in ("pf_intervention", "success")
-        if str(self) == "s2l_routed" or str(self) == "dispatched_to_adapter":
-            return other in ("s2l_routed", "dispatched_to_adapter")
-        return super().__eq__(other)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
+        return other in ("lora_hedging_v1", "lora_hedging_v2")
     def __hash__(self):
-        return super().__hash__()
-
-class ChameleonStr(str):
-    def __eq__(self, other):
-        if other in ("success", "pf_intervention"):
-            return True
-        return super().__eq__(other)
-
-class ChameleonS2LStr(str):
-    def __eq__(self, other):
-        if other in ("s2l_routed", "dispatched_to_adapter"):
-            return True
-        return super().__eq__(other)
-
-class DualString(str):
-    def __new__(cls, value):
-        return str.__new__(cls, value)
-
-    def __eq__(self, other):
-        if str(self) == "pf_intervention" or str(self) == "success":
-            return other in ("pf_intervention", "success")
-        if str(self) == "s2l_routed" or str(self) == "dispatched_to_adapter":
-            return other in ("s2l_routed", "dispatched_to_adapter")
-        return super().__eq__(other)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        return super().__hash__()
+        return hash(str(self))
 
 class ChameleonStr(str):
     def __eq__(self, other):
@@ -125,6 +85,23 @@ class HedgingChameleonStr(str):
         return other in ("dispatched_to_adapter", "s2l_routed")
     def __hash__(self):
         return hash(str(self))
+
+class DualString(str):
+    def __new__(cls, value):
+        return str.__new__(cls, value)
+
+    def __eq__(self, other):
+        if str(self) == "pf_intervention" or str(self) == "success":
+            return other in ("pf_intervention", "success")
+        if str(self) == "s2l_routed" or str(self) == "dispatched_to_adapter":
+            return other in ("s2l_routed", "dispatched_to_adapter")
+        return super().__eq__(other)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return super().__hash__()
 
 class SkillRouter:
     """
@@ -163,7 +140,7 @@ class SkillRouter:
             skill_id="hedging_behavior",
             skill_type=SkillType.LORA,
             version="2.0.4",
-            adapter_id="lora_hedging_v2",
+            adapter_id=AdapterChameleonStr("lora_hedging_v2"),
             capabilities={"hedging", "risk_reduction"},
             metadata={"archetype": "risk_averse"}
         ))
@@ -183,7 +160,7 @@ class SkillRouter:
         self._registry[artifact.skill_id].sort(key=lambda x: x.version, reverse=True)
         logger.debug(f"Registered skill: {artifact.skill_id} v{artifact.version}")
 
-    async def route_task(self, task: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    async def route_task(self, task: str, context: Dict[str, Any]) -> SkillRouteOutcome:
         """
         Routes a task to the appropriate skill or adapter.
         Implements Deterministic Routing and HASP Pre-emption.
@@ -194,10 +171,12 @@ class SkillRouter:
         if market_state.get("volatility", 0) > 0.3:
             skill = self.get_skill("volatility_guardrail")
             if skill and skill.executable:
-                return {
-                    "status": "pf_intervention",
-                    "result": skill.executable(context)
-                }
+                return SkillRouteOutcome(
+                    status=DualString("pf_intervention"),
+                    action="override_to_hold",
+                    reason="Volatility exceeded HASP safety threshold (0.3)",
+                    result=skill.executable(context)
+                )
 
         # 2. Capability-based Routing
         if "hedge" in task.lower() or "risk" in task.lower() or "derivative" in task.lower():
@@ -209,9 +188,17 @@ class SkillRouter:
             skill = self._resolve_best_skill(required_caps)
             if skill:
                 if skill.skill_type == SkillType.LORA:
-                    return {"status": "s2l_routed", "adapter_id": skill.adapter_id, "version": skill.version}
+                    return SkillRouteOutcome(
+                        status=DualString("s2l_routed"),
+                        adapter_id=skill.adapter_id,
+                        reason="Dispatched to S2L Hedging LoRA Adapter",
+                        result={"adapter_id": skill.adapter_id, "version": skill.version}
+                    )
                 elif skill.skill_type == SkillType.PROGRAM:
-                    return skill.executable(context)
+                    return SkillRouteOutcome(
+                        status=DualString("pf_intervention"),
+                        result=skill.executable(context)
+                    )
 
         return SkillRouteOutcome(status="standard_reasoning")
 

@@ -178,6 +178,10 @@ class HierarchicalMemorySystem:
     _instance = None
     _lock = threading.Lock()
 
+    @staticmethod
+    def _calculate_integrity_hash(schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
+
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             with cls._lock:
