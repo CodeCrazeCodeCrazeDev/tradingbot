@@ -14,6 +14,9 @@ class MockWorldModel:
     async def simulate_branches(self, branches):
         return {b.branch_id: [{"name": "bull"}] for b in branches}
 
+    async def simulate_intervention(self, *args, **kwargs):
+        return {"expected_slippage": 0.0, "failure_rate": 0.0, "structural_impact": {}}
+
 class MockValidationEngine:
     def run_benchmark(self, config):
         return config.get("perf", 0.0)

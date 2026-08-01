@@ -104,9 +104,6 @@ async def test_csc_pivot_loop():
         "branch_range": {"failure_rate": 0.2}
     })
 
-    from trading_bot.core.unified_event_bus import decision_bus
-    await decision_bus.start()
-
     csc.verifier_swarm.run_swarm = AsyncMock(return_value=[MagicMock(is_valid=True, confidence=0.9)])
 
     decision = await csc.process_market_observation(obs)

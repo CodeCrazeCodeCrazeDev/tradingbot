@@ -1,5 +1,5 @@
-import json
 #!/usr/bin/env python
+import json
 """
 Elite Trading Bot - Deployment Script
 

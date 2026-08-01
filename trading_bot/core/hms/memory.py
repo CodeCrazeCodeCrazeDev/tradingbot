@@ -40,6 +40,56 @@ def calculate_integrity_hash(schema_dict: Dict[str, Any]) -> str:
     serialized = json.dumps(temp, sort_keys=True)
     return hashlib.sha256(serialized.encode('utf-8')).hexdigest()
 
+class CompatMultiDiGraph(nx.MultiDiGraph):
+    def __getitem__(self, key):
+        val = super().__getitem__(key)
+        # val is an Atlas/Adjacency-like structure
+        # If we subscript further, e.g. graph[u][v]["relation"], we want to return a wrapper
+        class CompatAdjacency(dict):
+            def __getitem__(self, inner_key):
+                inner_val = super().__getitem__(inner_key)
+                if isinstance(inner_val, dict):
+                    # It's a dict of edge keys -> attributes
+                    # Let's wrap it in a class that also exposes attributes directly
+                    class CompatEdgeAttrs(dict):
+                        def __getitem__(self, attr_key):
+                            if attr_key in self:
+                                return super().__getitem__(attr_key)
+                            # Fallback: find the first edge and get its attribute
+                            for edge_attr in self.values():
+                                if isinstance(edge_attr, dict) and attr_key in edge_attr:
+                                    return edge_attr[attr_key]
+                            raise KeyError(attr_key)
+                    return CompatEdgeAttrs(inner_val)
+                return inner_val
+        return CompatAdjacency(val)
+
+class SAGEGraphProxy:
+    def __init__(self, graph):
+        self._graph = graph
+
+    def __getattr__(self, name):
+        return getattr(self._graph, name)
+
+    def __getitem__(self, key):
+        adj = self._graph[key]
+        class CompatAdjacency(dict):
+            def __getitem__(self, inner_key):
+                val = adj[inner_key]
+                class CompatEdgeAttrs(dict):
+                    def __getitem__(self, attr_key):
+                        if attr_key in self:
+                            return super().__getitem__(attr_key)
+                        for edge_attr in self.values():
+                            if isinstance(edge_attr, dict) and attr_key in edge_attr:
+                                return edge_attr[attr_key]
+                        raise KeyError(attr_key)
+                return CompatEdgeAttrs(val)
+        return CompatAdjacency(adj)
+
+    def __contains__(self, key):
+        return key in self._graph
+
 class SAGEGraphMemory:
     """
     SAGE Substrate: A dynamic, self-evolving graph memory (arXiv:2605.12061).
@@ -52,12 +102,12 @@ class SAGEGraphMemory:
         self.eta = 0.1 # Learning rate for edge weights
         logger.info(f"SAGE V6: Initialized with {len(self.graph.nodes)} nodes")
 
-    def _load_graph(self) -> nx.MultiDiGraph:
+    def _load_graph(self) -> CompatMultiDiGraph:
         if os.path.exists(self.storage_path):
             try:
                 graph = nx.read_graphml(self.storage_path)
-                if not isinstance(graph, nx.MultiDiGraph):
-                    graph = nx.MultiDiGraph(graph)
+                if not isinstance(graph, CompatMultiDiGraph):
+                    graph = CompatMultiDiGraph(graph)
 
                 # Deserialize complex attributes and weights
                 for u, v, k, d in list(graph.edges(keys=True, data=True)):
@@ -71,7 +121,7 @@ class SAGEGraphMemory:
                 return graph
             except Exception as e:
                 logger.error(f"SAGE: Load failed: {e}")
-        return nx.MultiDiGraph()
+        return CompatMultiDiGraph()
 
     def save(self):
         os.makedirs(os.path.dirname(self.storage_path), exist_ok=True)
@@ -235,6 +285,9 @@ class HierarchicalMemorySystem:
             except: pass
         return {"version": "2.0", "entities": [], "relations": [], "optimized_count": 0}
 
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
+
     def _save_schema(self):
         self.memory_schema["updated_at"] = datetime.utcnow().isoformat()
         self.memory_schema["integrity_hash"] = self._calculate_integrity_hash(self.memory_schema)
@@ -339,6 +392,24 @@ class HierarchicalMemorySystem:
     async def retrieve_evidence_chain(self, query: str) -> List[Any]:
         """Multi-hop evidence retrieval via SAGE."""
         return self.sage.retrieve_subgraph(query, hops=2)
+
+    @property
+    def sage_graph(self):
+        """Expose raw SAGE graph memory wrapped in a compatibility proxy."""
+        return SAGEGraphProxy(self.sage.graph)
+
+    def evolve_memory(self, history: List[Dict[str, Any]]):
+        """Allows older tests to evolve/populate SAGE memory with custom triplets."""
+        for item in history:
+            source = item.get("source")
+            target = item.get("target")
+            relation = item.get("relation")
+            if source and target and relation:
+                self.sage.add_evidence(
+                    (source, relation, target),
+                    {"context": "evolve_memory_test"},
+                    {"confidence": 1.0}
+                )
 
     def store_ledger_entry(self, entry: ResearchLedgerEntry):
         """Active Management: Storing and indexing research ledger entries."""
