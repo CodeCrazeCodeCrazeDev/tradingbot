@@ -1,99 +1,87 @@
 <?xml version='1.0' encoding='utf-8'?>
-<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
-  <key id="d6" for="edge" attr.name="id" attr.type="string" />
-  <key id="d5" for="edge" attr.name="timestamp" attr.type="string" />
-  <key id="d4" for="edge" attr.name="evidence" attr.type="string" />
-  <key id="d3" for="edge" attr.name="context" attr.type="string" />
-  <key id="d2" for="edge" attr.name="relation" attr.type="string" />
-  <key id="d1" for="node" attr.name="content" attr.type="string" />
-  <key id="d0" for="node" attr.name="type" attr.type="string" />
-  <graph edgedefault="directed">
-    <node id="2b9079e4-a524-4d91-a476-8f45c349cc80" />
-    <node id="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." />
-    <node id="eb6fc530-adf9-43a0-8e1e-0b07e2234e92" />
-    <node id="fc223031-562b-4bda-a75a-d3e95bd8ba94" />
-    <node id="hyp_branch_bull">
-      <data key="d0">HYPOTHESIS</data>
-      <data key="d1">Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout.</data>
-    </node>
-    <node id="causal_branch_bull">
-      <data key="d0">CLAIM</data>
-      <data key="d1">Expansion in liquidity combined with oversold RSI supports a mean reversion breakout.</data>
-    </node>
-    <node id="b3e36c9a-e102-42b1-b347-c196c692604a" />
-    <node id="0094b9e8-f826-4e4e-a70d-71a6af2e1080" />
-    <node id="5e17ba2d-e22e-40df-af43-867db976d522" />
-    <node id="994ab4b6-8cc1-4a4e-913b-f5d24c5a5924" />
-    <node id="bfa0c268-4460-492f-8f13-9219657e9894" />
-    <node id="9665ef35-79bb-4f3d-8656-cd0879970758" />
-    <node id="f085a5d7-f161-46f5-8117-01c19eaf0422" />
-    <edge source="2b9079e4-a524-4d91-a476-8f45c349cc80" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="0">
-      <data key="d2">HYPOTHESIZED</data>
-      <data key="d3">{"context": "research_ledger"}</data>
-      <data key="d4">{"confidence": 0.0}</data>
-      <data key="d5">2026-07-16T08:25:32.092114</data>
-      <data key="d6">0</data>
-    </edge>
-    <edge source="eb6fc530-adf9-43a0-8e1e-0b07e2234e92" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="0">
-      <data key="d2">HYPOTHESIZED</data>
-      <data key="d3">{"context": "research_ledger"}</data>
-      <data key="d4">{"confidence": 0.0}</data>
-      <data key="d5">2026-07-16T08:31:22.485966</data>
-      <data key="d6">0</data>
-    </edge>
-    <edge source="fc223031-562b-4bda-a75a-d3e95bd8ba94" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="0">
-      <data key="d2">HYPOTHESIZED</data>
-      <data key="d3">{"context": "research_ledger"}</data>
-      <data key="d4">{"confidence": 0.0}</data>
-      <data key="d5">2026-07-16T08:34:34.448287</data>
-      <data key="d6">0</data>
-    </edge>
-    <edge source="b3e36c9a-e102-42b1-b347-c196c692604a" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="0">
-      <data key="d2">HYPOTHESIZED</data>
-      <data key="d3">{"context": "research_ledger"}</data>
-      <data key="d4">{"confidence": 0.0}</data>
-      <data key="d5">2026-07-16T08:34:34.503102</data>
-      <data key="d6">0</data>
-    </edge>
-    <edge source="0094b9e8-f826-4e4e-a70d-71a6af2e1080" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="0">
-      <data key="d2">HYPOTHESIZED</data>
-      <data key="d3">{"context": "research_ledger"}</data>
-      <data key="d4">{"confidence": 0.0}</data>
-      <data key="d5">2026-07-16T08:36:00.593923</data>
-      <data key="d6">0</data>
-    </edge>
-    <edge source="5e17ba2d-e22e-40df-af43-867db976d522" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="0">
-      <data key="d2">HYPOTHESIZED</data>
-      <data key="d3">{"context": "research_ledger"}</data>
-      <data key="d4">{"confidence": 0.0}</data>
-      <data key="d5">2026-07-16T08:36:00.649763</data>
-      <data key="d6">0</data>
-    </edge>
-    <edge source="994ab4b6-8cc1-4a4e-913b-f5d24c5a5924" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="0">
-      <data key="d2">HYPOTHESIZED</data>
-      <data key="d3">{"context": "research_ledger"}</data>
-      <data key="d4">{"confidence": 0.0}</data>
-      <data key="d5">2026-07-16T08:41:27.272894</data>
-      <data key="d6">HYPOTHESIZED_f5354253</data>
-    </edge>
-    <edge source="bfa0c268-4460-492f-8f13-9219657e9894" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="0">
-      <data key="d2">HYPOTHESIZED</data>
-      <data key="d3">{"context": "research_ledger"}</data>
-      <data key="d4">{"confidence": 0.0}</data>
-      <data key="d5">2026-07-16T08:41:27.328127</data>
-      <data key="d6">HYPOTHESIZED_aefb2074</data>
-    </edge>
-    <edge source="9665ef35-79bb-4f3d-8656-cd0879970758" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="HYPOTHESIZED_707c8a7b">
-      <data key="d2">HYPOTHESIZED</data>
-      <data key="d3">{"context": "research_ledger"}</data>
-      <data key="d4">{"confidence": 0.0}</data>
-      <data key="d5">2026-07-16T10:17:48.944225</data>
-    </edge>
-    <edge source="f085a5d7-f161-46f5-8117-01c19eaf0422" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="HYPOTHESIZED_2fcd910f">
-      <data key="d2">HYPOTHESIZED</data>
-      <data key="d3">{"context": "research_ledger"}</data>
-      <data key="d4">{"confidence": 0.0}</data>
-      <data key="d5">2026-07-16T10:17:49.001787</data>
-    </edge>
-  </graph>
-</graphml>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"><key id="d7" for="edge" attr.name="id" attr.type="string"/>
+<key id="d6" for="edge" attr.name="timestamp" attr.type="string"/>
+<key id="d5" for="edge" attr.name="weight" attr.type="double"/>
+<key id="d4" for="edge" attr.name="evidence" attr.type="string"/>
+<key id="d3" for="edge" attr.name="context" attr.type="string"/>
+<key id="d2" for="edge" attr.name="relation" attr.type="string"/>
+<key id="d1" for="node" attr.name="content" attr.type="string"/>
+<key id="d0" for="node" attr.name="type" attr.type="string"/>
+<graph edgedefault="directed"><node id="72262022-7f57-4f60-9c2f-ebda3b055447"/>
+<node id="Market will follow Range Case: Consolidation between established levels with no clear macro catalyst."/>
+<node id="hyp_branch_range">
+  <data key="d0">HYPOTHESIS</data>
+  <data key="d1">Market will follow Range Case: Consolidation between established levels with no clear macro catalyst.</data>
+</node>
+<node id="node_branch_range_0">
+  <data key="d0">EVIDENCE</data>
+  <data key="d1">Evidence 0 for Range Case</data>
+</node>
+<node id="node_branch_range_1">
+  <data key="d0">EVIDENCE</data>
+  <data key="d1">Evidence 1 for Range Case</data>
+</node>
+<node id="node_branch_range_2">
+  <data key="d0">EVIDENCE</data>
+  <data key="d1">Evidence 2 for Range Case</data>
+</node>
+<node id="node_branch_range_3">
+  <data key="d0">EVIDENCE</data>
+  <data key="d1">Evidence 3 for Range Case</data>
+</node>
+<node id="node_branch_range_4">
+  <data key="d0">EVIDENCE</data>
+  <data key="d1">Evidence 4 for Range Case</data>
+</node>
+<node id="4e889582-c632-44f8-9467-693b3ac574a2"/>
+<node id="83644fcd-a918-499b-b458-a3b372afd300"/>
+<node id="1ac28db0-5ce0-4ab1-b4e6-d237b8fd21af"/>
+<node id="5370bd35-e23f-4190-92d4-4c0c894b36b2"/>
+<node id="42de350f-47aa-4073-88b7-0a5508eb7e34"/>
+<edge source="72262022-7f57-4f60-9c2f-ebda3b055447" target="Market will follow Range Case: Consolidation between established levels with no clear macro catalyst." id="0">
+  <data key="d2">HYPOTHESIZED</data>
+  <data key="d3">{"context": "research_ledger", "branch": "UCA_V6"}</data>
+  <data key="d4">{"confidence": 0.9}</data>
+  <data key="d5">0.9</data>
+  <data key="d6">2026-08-01T19:54:34.514792</data>
+  <data key="d7">0</data>
+</edge>
+<edge source="4e889582-c632-44f8-9467-693b3ac574a2" target="Market will follow Range Case: Consolidation between established levels with no clear macro catalyst." id="0">
+  <data key="d2">HYPOTHESIZED</data>
+  <data key="d3">{"context": "research_ledger", "branch": "UCA_V6"}</data>
+  <data key="d4">{"confidence": 0.9}</data>
+  <data key="d5">0.9</data>
+  <data key="d6">2026-08-01T19:54:34.569089</data>
+  <data key="d7">0</data>
+</edge>
+<edge source="83644fcd-a918-499b-b458-a3b372afd300" target="Market will follow Range Case: Consolidation between established levels with no clear macro catalyst." id="0">
+  <data key="d2">HYPOTHESIZED</data>
+  <data key="d3">{"context": "research_ledger", "branch": "UCA_V6"}</data>
+  <data key="d4">{"confidence": 0.9}</data>
+  <data key="d5">0.9</data>
+  <data key="d6">2026-08-01T19:59:30.273336</data>
+  <data key="d7">HYPOTHESIZED_4db11980</data>
+</edge>
+<edge source="1ac28db0-5ce0-4ab1-b4e6-d237b8fd21af" target="Market will follow Range Case: Consolidation between established levels with no clear macro catalyst." id="0">
+  <data key="d2">HYPOTHESIZED</data>
+  <data key="d3">{"context": "research_ledger", "branch": "UCA_V6"}</data>
+  <data key="d4">{"confidence": 0.9}</data>
+  <data key="d5">0.9</data>
+  <data key="d6">2026-08-01T19:59:30.328089</data>
+  <data key="d7">HYPOTHESIZED_93a1b932</data>
+</edge>
+<edge source="5370bd35-e23f-4190-92d4-4c0c894b36b2" target="Market will follow Range Case: Consolidation between established levels with no clear macro catalyst." id="HYPOTHESIZED_31099b80">
+  <data key="d2">HYPOTHESIZED</data>
+  <data key="d3">{"context": "research_ledger", "branch": "UCA_V6"}</data>
+  <data key="d4">{"confidence": 0.9}</data>
+  <data key="d5">0.9</data>
+  <data key="d6">2026-08-01T20:07:03.152460</data>
+</edge>
+<edge source="42de350f-47aa-4073-88b7-0a5508eb7e34" target="Market will follow Range Case: Consolidation between established levels with no clear macro catalyst." id="HYPOTHESIZED_d83c4ac4">
+  <data key="d2">HYPOTHESIZED</data>
+  <data key="d3">{"context": "research_ledger", "branch": "UCA_V6"}</data>
+  <data key="d4">{"confidence": 0.9}</data>
+  <data key="d5">0.9</data>
+  <data key="d6">2026-08-01T20:07:03.217507</data>
+</edge>
+</graph></graphml>

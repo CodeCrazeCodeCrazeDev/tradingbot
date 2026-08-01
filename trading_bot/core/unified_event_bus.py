@@ -9,6 +9,7 @@ Implements 'LogAct: Enabling Agentic Reliability via Shared Logs' (Paper 1).
 import asyncio
 import logging
 import json
+import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -94,6 +95,10 @@ class UnifiedEvent:
     _completed_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
 
     @property
+    def action_id(self) -> str:
+        return self.event_id
+
+    @property
     def action_type(self) -> str:
         return self.event_type
 
@@ -123,7 +128,22 @@ class UnifiedEvent:
         return self.status
 
 class UnifiedDecisionBus:
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(UnifiedDecisionBus, cls).__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+
     def __init__(self, config: Optional[Dict] = None):
+        if self._initialized:
+            if config:
+                self.config.update(config)
+            return
         self.config = config or {}
         self._log: List[Union[LogAction, UnifiedEvent]] = []
         self._voters: Dict[str, Callable] = {}
@@ -131,6 +151,7 @@ class UnifiedDecisionBus:
         self._action_queue = asyncio.PriorityQueue()
         self._running = False
         self._processor_task: Optional[asyncio.Task] = None
+        self._initialized = True
         logger.info("LogAct Shared-Log Backbone initialized")
 
     async def start(self):
@@ -319,14 +340,3 @@ class UnifiedDecisionBus:
 
 # Global instance for production path (authoritative)
 decision_bus = UnifiedDecisionBus()
-
-@dataclass
-class UnifiedEvent:
-    event_type: str
-    payload: Dict[str, Any]
-    source: str
-    event_id: str = field(default_factory=lambda: str(uuid4()))
-    timestamp: datetime = field(default_factory=datetime.utcnow)
-    priority: EventPriority = EventPriority.NORMAL
-    correlation_id: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
