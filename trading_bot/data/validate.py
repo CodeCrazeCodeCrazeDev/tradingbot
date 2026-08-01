@@ -2,9 +2,10 @@
 Provides backward and testing compatibility for data validation modules.
 """
 
-from typing import Any, Optional, Dict
+from typing import Any, Optional, Dict, Tuple
 import logging
 from datetime import datetime
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -32,18 +33,6 @@ class DataValidator:
             'timestamp': datetime.now().isoformat(),
             'config': self.config
         }
-Data Validator class.
-Provides validation and sanitization checks for historical and streaming datasets.
-"""
-
-import pandas as pd
-from typing import Dict, Any, Tuple
-
-class DataValidator:
-    """Validates Pandas DataFrames to ensure proper OHLCV and technical feature health."""
-
-    def __init__(self, config: Dict[str, Any] = None):
-        self.config = config or {}
 
     def validate_dataframe(self, df: pd.DataFrame) -> Tuple[bool, Dict[str, Any]]:
         """
@@ -58,7 +47,9 @@ class DataValidator:
             "missing_values": 0,
             "corrupted_rows": 0,
             "logical_errors": 0,
-            "warnings": []
+            "warnings": [],
+            "total_records": len(df),
+            "bad_ticks_count": 0
         }
 
         # Check required columns
@@ -81,6 +72,7 @@ class DataValidator:
         )
         violations_count = int(logical_violations.sum())
         report["logical_errors"] = violations_count
+        report["bad_ticks_count"] = violations_count
 
         is_valid = (nan_counts == 0) and (violations_count == 0)
         return is_valid, report
