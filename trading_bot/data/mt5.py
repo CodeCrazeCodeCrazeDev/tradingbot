@@ -6,7 +6,7 @@ from typing import Any, Optional, Dict, List
 import logging
 from dataclasses import dataclass
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("AlphaAlgo.MT5Interface")
 
 @dataclass
 class AccountInfo:
@@ -31,20 +31,26 @@ class MT5Interface:
 
     def __init__(self, *args, **kwargs):
         self.config = kwargs
+        self.connected = True
         self._connected = True
 
     def __enter__(self):
+        self.connect()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+        self.disconnect()
 
     def connect(self) -> bool:
+        self.connected = True
         self._connected = True
+        logger.info("MT5Interface: Connected (Mocked mode).")
         return True
 
     def disconnect(self) -> None:
+        self.connected = False
         self._connected = False
+        logger.info("MT5Interface: Disconnected.")
 
     def account_info(self) -> Optional[AccountInfo]:
         return AccountInfo()
@@ -56,7 +62,7 @@ class MT5Interface:
         # Dummy rates for testing
         import pandas as pd
         import numpy as np
-        dates = pd.date_range(end=pd.Timestamp.now(), periods=count, freq='H')
+        dates = pd.date_range(end=pd.Timestamp.now(), periods=count, freq='h')
         return [
             {
                 "time": d.to_pydatetime(),
@@ -69,51 +75,32 @@ class MT5Interface:
             for d in dates
         ]
 
-    def place_order(self, order_type: str, symbol: str, volume: float, price: Optional[float] = None, **kwargs) -> Dict[str, Any]:
+    def place_order(self, *args, **kwargs) -> Dict[str, Any]:
+        """Supports positional/keyword or dict-based invocation."""
+        if len(args) > 0 and isinstance(args[0], dict):
+            request = args[0]
+            logger.info(f"MT5Interface: Order placed successfully -> {request}")
+            return {
+                "retcode": 10009,  # DONE
+                "order": 123456,
+                "volume": request.get("volume", 0.1),
+                "price": request.get("price", 1.0),
+                "comment": "Mock trade completed"
+            }
+
+        # Otherwise positional/kw args
+        order_type = args[0] if len(args) > 0 else kwargs.get("order_type", "buy")
+        symbol = args[1] if len(args) > 1 else kwargs.get("symbol", "EURUSD")
+        volume = args[2] if len(args) > 2 else kwargs.get("volume", 0.1)
+        price = args[3] if len(args) > 3 else kwargs.get("price", None)
+
         return {
             "order_id": 123456,
             "status": "filled",
             "volume": volume,
             "price": price or 1.1000,
-            "symbol": symbol
-MT5Interface class.
-Provides direct integration or fallback mocks for MT5 and brokers.
-"""
-
-import logging
-from typing import Dict, Any, Optional
-
-logger = logging.getLogger("AlphaAlgo.MT5Interface")
-
-class MT5Interface:
-    """Interacts with MetaTrader 5 terminal or provides standard mock wrappers when offline."""
-
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
-        self.config = config or {}
-        self.connected = False
-
-    def __enter__(self):
-        self.connect()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.disconnect()
-
-    def connect(self) -> bool:
-        logger.info("MT5Interface: Connected (Mocked mode).")
-        self.connected = True
-        return True
-
-    def disconnect(self):
-        logger.info("MT5Interface: Disconnected.")
-        self.connected = False
-
-    def place_order(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        logger.info(f"MT5Interface: Order placed successfully -> {request}")
-        return {
-            "retcode": 10009,  # DONE
+            "symbol": symbol,
+            "retcode": 10009,
             "order": 123456,
-            "volume": request.get("volume", 0.1),
-            "price": request.get("price", 1.0),
             "comment": "Mock trade completed"
         }
