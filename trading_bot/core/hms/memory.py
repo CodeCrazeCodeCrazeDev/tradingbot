@@ -177,6 +177,7 @@ class HierarchicalMemorySystem:
     """
     _instance = None
     _lock = threading.Lock()
+    _calculate_integrity_hash = staticmethod(calculate_integrity_hash)
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
