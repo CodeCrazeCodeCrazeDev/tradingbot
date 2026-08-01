@@ -241,6 +241,9 @@ class HierarchicalMemorySystem:
         with open(self.schema_path, 'w') as f:
             json.dump(self.memory_schema, f, indent=2)
 
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
+
     def migrate_to_version(self, target_version: str) -> bool:
         """Runs explicit up/down migrations sequentially to target_version."""
         current_v_str = self.memory_schema.get("schema_version", "1.0")
