@@ -1,14 +1,4 @@
 """
-
-Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral behaviors (Skill-to-LoRA).
-Implements 'HASP' (2026) and 'S2L' (2026).
-"""
-
-import logging
-from typing import Any, Dict, List, Optional, Callable
-from dataclasses import dataclass
-SkillRouter & HASP - UCA V6 Skill Management
 Orchestrates the selection and execution of Skill Programs (HASP/PFs)
 and behavioral adapters (Skill-to-LoRA).
 Implements 'HASP' (arXiv:2605.17734) and 'S2L' (arXiv:2606.16769).
@@ -84,47 +74,6 @@ class DualString(str):
 
     def __hash__(self):
         return super().__hash__()
-
-class ChameleonStr(str):
-    def __eq__(self, other):
-        if other in ("success", "pf_intervention"):
-            return True
-        return super().__eq__(other)
-
-class ChameleonS2LStr(str):
-    def __eq__(self, other):
-        if other in ("s2l_routed", "dispatched_to_adapter"):
-            return True
-        return super().__eq__(other)
-
-class DualString(str):
-    def __new__(cls, value):
-        return str.__new__(cls, value)
-
-    def __eq__(self, other):
-        if str(self) == "pf_intervention" or str(self) == "success":
-            return other in ("pf_intervention", "success")
-        if str(self) == "s2l_routed" or str(self) == "dispatched_to_adapter":
-            return other in ("s2l_routed", "dispatched_to_adapter")
-        return super().__eq__(other)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        return super().__hash__()
-
-class ChameleonStr(str):
-    def __eq__(self, other):
-        return other in ("success", "pf_intervention")
-    def __hash__(self):
-        return hash(str(self))
-
-class HedgingChameleonStr(str):
-    def __eq__(self, other):
-        return other in ("dispatched_to_adapter", "s2l_routed")
-    def __hash__(self):
-        return hash(str(self))
 
 class SkillRouter:
     """
