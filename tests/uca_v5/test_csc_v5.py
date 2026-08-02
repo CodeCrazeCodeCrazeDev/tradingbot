@@ -53,10 +53,7 @@ async def test_csc_hasp_intervention(monkeypatch):
     shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
 
     # Reset singleton state if needed to bind updated mocks
-    if CognitiveSystemController._instance is not None:
-        CognitiveSystemController._instance.world_model = world_model
-        CognitiveSystemController._instance.hms = hms
-        CognitiveSystemController._instance.shield = shield
+    CognitiveSystemController.reset()
     csc = CognitiveSystemController(world_model, hms, shield)
 
     # Reset continuous/discrete state channels to prevent side effects
@@ -87,11 +84,7 @@ async def test_csc_pivot_loop():
     shield = MagicMock()
     shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
 
-    # Reset singleton state if needed to bind updated mocks
-    if CognitiveSystemController._instance is not None:
-        CognitiveSystemController._instance.world_model = world_model
-        CognitiveSystemController._instance.hms = hms
-        CognitiveSystemController._instance.shield = shield
+    CognitiveSystemController.reset()
     csc = CognitiveSystemController(world_model, hms, shield)
 
     obs = {"volatility": 0.1, "features": [0.1] * 16}
@@ -104,14 +97,9 @@ async def test_csc_pivot_loop():
         "branch_range": {"failure_rate": 0.2}
     })
 
-    from trading_bot.core.unified_event_bus import decision_bus
-    await decision_bus.start()
-
     csc.verifier_swarm.run_swarm = AsyncMock(return_value=[MagicMock(is_valid=True, confidence=0.9)])
 
     decision = await csc.process_market_observation(obs)
-    await decision_bus.stop()
-
     await decision_bus.stop()
 
     assert decision.outcome == DecisionOutcome.TRADE_APPROVED
