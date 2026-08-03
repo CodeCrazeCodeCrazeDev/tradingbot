@@ -9,9 +9,9 @@ from trading_bot.core.immutable_shield import GovernanceDecision
 async def test_csc_hasp_intervention():
     # Setup mocks
     world_model = MagicMock()
-    hms = MagicMock()
+    hms = AsyncMock()
     shield = MagicMock()
-    shield.validate_action = MagicMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
+    shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
 
     csc = CognitiveSystemController(world_model, hms, shield)
 
@@ -23,15 +23,22 @@ async def test_csc_hasp_intervention():
     assert decision.outcome == DecisionOutcome.TRADE_REJECTED
     assert "Volatility exceeded HASP safety threshold" in decision.dominant_rejection_reason
 
+class MockDecisionBus:
+    async def propose_action(self, action):
+        from trading_bot.core.unified_event_bus import ActionStatus
+        action.status = ActionStatus.EXECUTED
+        action._completed_event.set()
+
 @pytest.mark.asyncio
 async def test_csc_pivot_loop():
     # Setup mocks
     world_model = MagicMock()
-    hms = MagicMock()
+    hms = AsyncMock()
     shield = MagicMock()
-    shield.validate_action = MagicMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
+    shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
+    mock_bus = MockDecisionBus()
 
-    csc = CognitiveSystemController(world_model, hms, shield)
+    csc = CognitiveSystemController(world_model, hms, shield, decision_bus=mock_bus)
 
     # Mock verifier reports failing first attempt
     report_fail = MagicMock(is_valid=False, confidence=0.95, critique="STRATEGIC_FLAW detected")

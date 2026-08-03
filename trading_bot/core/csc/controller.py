@@ -80,16 +80,34 @@ class CognitiveSystemController:
                     cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self, world_model: Any = None, hms: Any = None, shield: Optional[ImmutableShield] = None):
+    def __init__(self, world_model: Any = None, hms: Any = None, shield: Optional[ImmutableShield] = None, decision_bus: Any = None):
+        # Support dependency injection reset across tests on the singleton instance
+        if world_model is not None:
+            self.world_model = world_model
+            self.hypothesis_gen = HypothesisGenerator(world_model)
+        if hms is not None:
+            self.hms = hms
+        if shield is not None:
+            self.shield = shield
+        if decision_bus is not None:
+            self.decision_bus = decision_bus
+
         if getattr(self, "_initialized", False):
             return
 
-        self.world_model = world_model
-        self.hms = hms
-        self.shield = shield
+        # Default fallback initialization
+        if not hasattr(self, "world_model"):
+            self.world_model = world_model
+        if not hasattr(self, "hms"):
+            self.hms = hms
+        if not hasattr(self, "shield"):
+            self.shield = shield
+        if not hasattr(self, "decision_bus"):
+            from ..unified_event_bus import decision_bus as default_decision_bus
+            self.decision_bus = default_decision_bus
 
         # Core Functional Components
-        self.hypothesis_gen = HypothesisGenerator(world_model)
+        self.hypothesis_gen = HypothesisGenerator(self.world_model)
         self.verifier_swarm = VerificationSwarm()
         self.folder = InformationFolder()
         self.discoloop = DiscoLoopCell(latent_dim=16)
@@ -131,6 +149,11 @@ class CognitiveSystemController:
         if intervention:
             observation.update(intervention)
             logger.warning(f"CSC-V5: HASP Intervention applied: {intervention.get('reason', 'Unknown')}")
+            if intervention.get("status") in ["pf_intervention", "success"] or intervention.get("action") == "override_to_hold":
+                return CoreDecision(
+                    outcome=DecisionOutcome.TRADE_REJECTED,
+                    dominant_rejection_reason=intervention.get("reason", "Volatility exceeded HASP safety threshold")
+                )
 
         # 5. Multi-Hypothesis Generation
         branches = await self.hypothesis_gen.generate_competing_branches(observation)
@@ -187,7 +210,10 @@ class CognitiveSystemController:
             priority=EventPriority.HIGH
         )
 
-        await decision_bus.propose_action(log_action)
+        if not self.decision_bus:
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason="LogAct failure: Decision Bus unavailable")
+
+        await self.decision_bus.propose_action(log_action)
         status = await log_action.wait_for_decision(timeout=5.0)
 
         if status != ActionStatus.APPROVED and status != ActionStatus.EXECUTED:
@@ -205,7 +231,11 @@ class CognitiveSystemController:
             agent_id="CSC_V5",
             status=ActionStatus.APPROVED
         )
-        await decision_bus.propose_action(action)
+        if not self.decision_bus:
+            action.status = ActionStatus.VETOED
+        else:
+            await self.decision_bus.propose_action(action)
+            await action.wait_for_decision(timeout=5.0)
 
         # Update World Model Prediction for Step 2 of next loop
         self.last_prediction = sim_results.get(best_branch.branch_id)
@@ -263,7 +293,9 @@ class CognitiveSystemController:
     def _apply_hasp_guardrails(self, observation: Dict[str, Any]) -> Dict[str, Any]:
         """HASP: Executable guardrails via SkillRouter."""
         market_state = {"market": observation}
-        if observation.get("volatility", 0) > 0.3:
+        market_data = observation.get("market", {}) if "market" in observation else observation
+        volatility = market_data.get("volatility", 0) if isinstance(market_data, dict) else 0
+        if volatility > 0.3:
             skill = self.skill_router._registry.get("volatility_guardrail")
             if skill and skill.executable:
                 return skill.executable(market_state)
@@ -273,6 +305,7 @@ class CognitiveSystemController:
         refined = copy.deepcopy(branch)
         for report in reports:
             if not report.is_valid:
+                refined.reasoning_trace.append(f"Correction: {report.critique}")
                 refined.reasoning_trace.append(f"Refinement: {report.critique}")
                 refined.confidence *= 0.9
         return refined if refined.confidence > 0.5 else None
