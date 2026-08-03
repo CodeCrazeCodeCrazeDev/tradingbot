@@ -34,35 +34,48 @@ class HypothesisGenerator:
 
     async def generate_competing_branches(self, market_data: Dict[str, Any]) -> List[ReasoningBranch]:
         """
-        Creates multiple reasoning branches (e.g., Bull, Bear, Range).
+        Creates 10 diverse reasoning branches to ensure comprehensive scenario coverage.
         """
-        logger.info("HypothesisGenerator creating competing branches")
+        logger.info("HypothesisGenerator creating 10 diverse competing branches")
 
-        # 1. Ask World Model for raw scenarios (Price/Vol/Liq futures)
-        # 2. Assign specialized reasoning agents to each scenario
-        # 3. Each agent produces a ReasoningBranch with its own EvidenceGraph
-
-        # Mock branches
-        branches = [
-            ReasoningBranch(branch_id="branch_bull", name="Bull Scenario"),
-            ReasoningBranch(branch_id="branch_bear", name="Bear Scenario"),
-            ReasoningBranch(branch_id="branch_neutral", name="Neutral Scenario")
+        scenarios = [
+            ("Bull Continuation", "Market maintains current upward trajectory"),
+            ("Bull Exhaustion", "Upward momentum fades, potential for distribution"),
+            ("Bear Continuation", "Downward momentum persists"),
+            ("Bear Reversal", "Market hits support and bounces"),
+            ("Range Continuation", "Price remains bound between key levels"),
+            ("Breakout", "Volatility surge leads to range departure"),
+            ("Liquidity Sweep", "Stop-run before actual move"),
+            ("Volatility Shock", "Unpredictable large move in either direction"),
+            ("Macro Event", "Systemic reaction to external news/data"),
+            ("Black Swan", "Extreme low-probability high-impact tail event")
         ]
 
-        for branch in branches:
-            # Generate a base hypothesis for each branch
+        branches = []
+        for name, desc in scenarios:
+            branch_id = f"branch_{name.lower().replace(' ', '_')}"
+            branch = ReasoningBranch(branch_id=branch_id, name=name)
+
+            # Generate structured hypothesis
             hyp = Hypothesis(
-                description=f"Market will move in a {branch.name} direction due to...",
-                predicted_outcome=branch.name
+                description=desc,
+                predicted_outcome=name,
+                probability=0.1,  # Uniform prior before simulation
+                epistemic_uncertainty=0.5,
+                aleatoric_uncertainty=0.2,
+                expected_return=0.01 if "Bull" in name else -0.01 if "Bear" in name else 0.0,
+                invalidation_conditions=[f"Breach of {name} core assumptions"]
             )
             branch.hypotheses.append(hyp)
 
-            # Initialize a minimal evidence graph for the branch
+            # Initialize Evidence Graph for branch
             branch.evidence_graph.add_node(EvidenceNode(
-                node_id=f"hyp_{branch.branch_id}",
+                node_id=f"hyp_{branch_id}",
                 content=hyp.description,
                 node_type="HYPOTHESIS"
             ))
+
+            branches.append(branch)
 
         return branches
 

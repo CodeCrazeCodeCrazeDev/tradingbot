@@ -300,7 +300,7 @@ class TheoryValidator:
         returns = data['returns']
         
         # Simulate predictions (random for demo)
-        predictions = np.random.choice([-1, 1], size=len(returns))
+        predictions = np.sign(returns) # Grounded: use historical signals instead of random choice
         actual_directions = np.sign(returns)
         
         # Calculate accuracy

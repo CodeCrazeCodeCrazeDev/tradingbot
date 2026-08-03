@@ -577,7 +577,7 @@ class WorldModel:
         
         for asset in new_state.prices:
             vol = new_state.volatility.get(asset, 0.02)
-            random_return = np.random.normal(regime_drift, vol)
+            random_return = regime_drift + (0.5 - state.regime_confidence) * vol
             new_state.prices[asset] *= (1 + random_return)
             new_state.returns[asset] = random_return
         

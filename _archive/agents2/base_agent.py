@@ -11,8 +11,8 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
-from ..a2a import A2AMessageBus
-from ..world2agent import World2AgentBridge
+from ...a2a import A2AMessageBus
+from ...world2agent import World2AgentBridge
 
 # Set up logger
 logger = logging.getLogger(__name__)

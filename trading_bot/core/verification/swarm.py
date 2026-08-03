@@ -81,6 +81,76 @@ class CalculationReproducer(BaseVerificationAgent):
             critique="All quantitative calculations reproduced successfully."
         )
 
+class RiskVerifier(BaseVerificationAgent):
+    """Actively searches for risk-based reasons to falsify a trade proposal."""
+
+    async def verify(self, ledger_entry: ResearchLedgerEntry) -> VerifierReport:
+        logger.info(f"RiskVerifier searching for risk falsification for entry {ledger_entry.entry_id}")
+
+        # In a real implementation, this would pull current exposure and volatility data
+        # For now, we enforce strict risk-based falsification logic
+        risks = []
+
+        # Example: check if tail risk was considered
+        if not any("tail risk" in step.lower() or "black swan" in step.lower() for step in ledger_entry.reasoning_steps):
+            risks.append("Reasoning fails to explicitly consider tail risk or black swan events.")
+
+        return VerifierReport(
+            agent_name="RiskVerifier",
+            is_valid=len(risks) == 0,
+            confidence=0.92,
+            critique="Trade survives risk falsification." if not risks else f"FALSIFIED: {risks[0]}"
+        )
+
+class LiquidityVerifier(BaseVerificationAgent):
+    """Verifies if the trade size is appropriate for current market liquidity."""
+
+    async def verify(self, ledger_entry: ResearchLedgerEntry) -> VerifierReport:
+        logger.info(f"LiquidityVerifier checking liquidity constraints for entry {ledger_entry.entry_id}")
+
+        # Check if liquidity evidence exists in the graph
+        liquidity_nodes = [n for n in ledger_entry.evidence_graph_snapshot.nodes.values()
+                          if "liquidity" in n.content.lower() or "volume" in n.content.lower()]
+
+        if not liquidity_nodes:
+            return VerifierReport(
+                agent_name="LiquidityVerifier",
+                is_valid=False,
+                confidence=0.85,
+                critique="FALSIFIED: No empirical liquidity evidence found in the decision graph."
+            )
+
+        return VerifierReport(
+            agent_name="LiquidityVerifier",
+            is_valid=True,
+            confidence=0.9,
+            critique="Liquidity constraints verified."
+        )
+
+class MarketStructureVerifier(BaseVerificationAgent):
+    """Searches for structural market reasons why the trade might fail."""
+
+    async def verify(self, ledger_entry: ResearchLedgerEntry) -> VerifierReport:
+        logger.info(f"MarketStructureVerifier analyzing entry {ledger_entry.entry_id}")
+
+        # Check for regime alignment
+        regime_consistency = any("regime" in step.lower() for step in ledger_entry.reasoning_steps)
+
+        if not regime_consistency:
+            return VerifierReport(
+                agent_name="MarketStructureVerifier",
+                is_valid=False,
+                confidence=0.8,
+                critique="FALSIFIED: Trade reasoning does not explicitly account for current market regime."
+            )
+
+        return VerifierReport(
+            agent_name="MarketStructureVerifier",
+            is_valid=True,
+            confidence=0.88,
+            critique="Market structure analysis appears consistent."
+        )
+
 class VerificationSwarm:
     """Orchestrates the independent verification agents."""
 
@@ -88,7 +158,10 @@ class VerificationSwarm:
         self.agents: List[BaseVerificationAgent] = [
             HallucinationDetector(),
             CausalVerifier(),
-            CalculationReproducer()
+            CalculationReproducer(),
+            RiskVerifier(),
+            LiquidityVerifier(),
+            MarketStructureVerifier()
         ]
 
     async def run_swarm(self, ledger_entry: ResearchLedgerEntry) -> List[VerifierReport]:

@@ -212,17 +212,14 @@ from .trading_simulator import (
     create_trading_simulator_integration,
 )
 
-# EXPANDED: Multi-Agent Debate System
-from .multi_agent_debate import (
+# EXPANDED: Multi-Agent Debate System (Consolidated to trading_bot.agents)
+from ..agents.multi_agent_debate import (
     MultiAgentDebateSystem,
-    DebateRole,
-    DebateStatus,
-    ArgumentType,
-    Argument,
-    DebateRound,
-    AgentBelief,
-    DebateResult,
-    DebatingAgent,
+    AgentRole as DebateRole,
+    # Map other names if necessary or use specialized versions from agents
+    TradeAction,
+    Conviction,
+    FinalDecision as DebateResult,
     create_debate_system,
 )
 

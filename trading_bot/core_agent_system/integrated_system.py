@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 from pathlib import Path
 import redis
 
-from .master_orchestrator import MasterOrchestrator, SystemContext, Decision
+from master_orchestrator import MasterOrchestrator, SystemContext, Decision
 from .meta_orchestrator import MetaOrchestrator
 from trading_bot.neuros_evolution.controlled_objects import ControlledObjectRegistry
 from .react_loop import ReActLoop
@@ -34,7 +34,7 @@ from .agent_registry import (
 )
 from .migrated_agents.planner import MigratedPlannerAgent
 from .multidimensional_intelligence.agent import MultidimensionalResearchAgent
-from trading_bot.agents2.specialized_agents import (
+from .migrated_agents.legacy_agents import (
     TrendFollowingAgent,
     MeanReversionAgent,
     VolatilityAgent,

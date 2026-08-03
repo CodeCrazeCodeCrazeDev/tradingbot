@@ -23,6 +23,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC, abstractmethod
 import statistics
+import uuid
+from ..core.unified_event_bus import decision_bus, UnifiedEvent, EventPriority
+from ..verification.confidence_calibrator import ConfidenceCalibrator, CalibrationMethod
+from ..core.hms.models import EvidenceGraph, EvidenceNode, EvidenceEdge, RelationType
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +85,7 @@ class MarketContext:
 
 @dataclass
 class AgentArgument:
-    """Argument from an agent."""
+    """Argument from an agent with structured evidence."""
     agent_role: AgentRole
     action: TradeAction
     conviction: Conviction
@@ -90,19 +94,24 @@ class AgentArgument:
     confidence: float
     timestamp: datetime
     
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        to_dict function.
+    # UCA V4 Evidence Graph additions
+    uncertainty: float = 0.0
+    assumptions: List[str] = field(default_factory=list)
+    causal_links: Dict[str, str] = field(default_factory=dict)
+    evidence_ids: List[str] = field(default_factory=list)
 
-    Auto-documented by QwenCodeMender.
-        """
+    def to_dict(self) -> Dict[str, Any]:
         return {
             'agent': self.agent_role.value,
             'action': self.action.value,
             'conviction': self.conviction.name,
             'reasoning': self.reasoning,
             'key_factors': self.key_factors,
-            'confidence': self.confidence
+            'confidence': self.confidence,
+            'uncertainty': self.uncertainty,
+            'assumptions': self.assumptions,
+            'causal_links': self.causal_links,
+            'evidence_ids': self.evidence_ids
         }
 
 
@@ -130,7 +139,7 @@ class DebateRound:
 
 @dataclass
 class FinalDecision:
-    """Final decision from Head AI."""
+    """Final decision from Head AI with structured evidence."""
     timestamp: datetime
     symbol: str
     action: TradeAction
@@ -145,6 +154,12 @@ class FinalDecision:
     consensus_level: float
     dissenting_views: List[str]
     
+    # Evidence Graph Metadata
+    aggregate_uncertainty: float = 0.0
+    critical_assumptions: List[str] = field(default_factory=list)
+    failure_conditions: List[str] = field(default_factory=list)
+    evidence_graph: EvidenceGraph = field(default_factory=EvidenceGraph)
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             'timestamp': self.timestamp.isoformat(),
@@ -158,7 +173,11 @@ class FinalDecision:
             'reasoning': self.reasoning,
             'agent_votes': self.agent_votes,
             'consensus_level': self.consensus_level,
-            'dissenting_views': self.dissenting_views
+            'dissenting_views': self.dissenting_views,
+            'aggregate_uncertainty': self.aggregate_uncertainty,
+            'critical_assumptions': self.critical_assumptions,
+            'failure_conditions': self.failure_conditions,
+            'evidence_graph_id': self.evidence_graph.graph_id if self.evidence_graph else None
         }
 
 
@@ -610,9 +629,16 @@ class HeadAI:
         """
         # Score each action
         try:
+            # Only consider the latest argument from each agent to prevent double-counting across rounds
+            latest_arguments: Dict[AgentRole, AgentArgument] = {}
+            for arg in arguments:
+                latest_arguments[arg.agent_role] = arg
+
+            final_arguments = list(latest_arguments.values())
+
             action_scores: Dict[TradeAction, float] = {}
         
-            for arg in arguments:
+            for arg in final_arguments:
                 weight = self.weights.get(arg.agent_role, 0.33)
                 conviction_mult = arg.conviction.value / 5.0
             
@@ -631,24 +657,23 @@ class HeadAI:
                 winning_score = 0.5
         
             # Check for risk veto
-            risk_args = [a for a in arguments if a.agent_role == AgentRole.RISK_SENTINEL]
-            if risk_args:
-                risk_arg = risk_args[-1]
+            risk_arg = latest_arguments.get(AgentRole.RISK_SENTINEL)
+            if risk_arg:
                 if risk_arg.action == TradeAction.NO_TRADE and risk_arg.conviction.value >= Conviction.HIGH.value:
                     winning_action = TradeAction.NO_TRADE
                     winning_score = risk_arg.confidence
         
-            # Calculate consensus
-            unique_actions = set(a.action for a in arguments)
+            # Calculate consensus based on latest views
+            unique_actions = set(a.action for a in final_arguments)
             consensus_level = 1.0 - (len(unique_actions) - 1) * 0.25
         
-            # Collect votes
-            agent_votes = {a.agent_role.value: a.action.value for a in arguments}
+            # Collect latest votes
+            agent_votes = {a.agent_role.value: a.action.value for a in final_arguments}
         
-            # Collect dissenting views
+            # Collect dissenting views from latest arguments
             dissenting = [
                 f"{a.agent_role.value}: {a.reasoning[0]}"
-                for a in arguments
+                for a in final_arguments
                 if a.action != winning_action and a.reasoning
             ]
         
@@ -662,9 +687,57 @@ class HeadAI:
                 winning_action, context
             )
         
+            # Aggregate evidence graph metadata
+            all_assumptions = []
+            all_uncertainties = []
+            for arg in final_arguments:
+                all_assumptions.extend(arg.assumptions)
+                all_uncertainties.append(arg.uncertainty)
+
+            avg_uncertainty = sum(all_uncertainties) / len(all_uncertainties) if all_uncertainties else 0.0
+
+            # Build Evidence Graph
+            graph = EvidenceGraph()
+            verdict_id = f"verdict_{uuid.uuid4().hex[:8]}"
+            graph.add_node(EvidenceNode(
+                node_id=verdict_id,
+                content=f"Final Verdict: {winning_action.value}",
+                node_type="VERDICT"
+            ))
+
+            for arg in final_arguments:
+                arg_node_id = f"arg_{arg.agent_role.value}"
+                graph.add_node(EvidenceNode(
+                    node_id=arg_node_id,
+                    content=f"{arg.agent_role.value} recommends {arg.action.value}",
+                    node_type="CLAIM"
+                ))
+
+                # Link argument to verdict
+                relation = RelationType.SUPPORTS if arg.action == winning_action else RelationType.REFUTES
+                graph.add_edge(EvidenceEdge(
+                    source_id=arg_node_id,
+                    target_id=verdict_id,
+                    relation=relation,
+                    weight=arg.confidence
+                ))
+
+                # Add specific evidence nodes if present
+                for eid in arg.evidence_ids:
+                    graph.add_node(EvidenceNode(
+                        node_id=eid,
+                        content=eid,
+                        node_type="EVIDENCE"
+                    ))
+                    graph.add_edge(EvidenceEdge(
+                        source_id=eid,
+                        target_id=arg_node_id,
+                        relation=RelationType.SUPPORTS
+                    ))
+
             # Generate reasoning
             reasoning = self._generate_reasoning(
-                winning_action, arguments, consensus_level
+                winning_action, final_arguments, consensus_level
             )
         
             return FinalDecision(
@@ -680,7 +753,11 @@ class HeadAI:
                 agent_votes=agent_votes,
                 debate_rounds=len(debate_rounds),
                 consensus_level=consensus_level,
-                dissenting_views=dissenting
+                dissenting_views=dissenting,
+                aggregate_uncertainty=avg_uncertainty,
+                critical_assumptions=list(set(all_assumptions)),
+                failure_conditions=[f"Breach of {len(all_assumptions)} critical assumptions"],
+                evidence_graph=graph
             )
         except Exception as e:
             logger.error(f"Error in synthesize_decision: {e}")
@@ -793,6 +870,9 @@ class MultiAgentDebateSystem:
             self.max_rounds = self.config.get('max_rounds', 3)
             self.consensus_threshold = self.config.get('consensus_threshold', 0.7)
         
+            # Calibration & Uncertainty
+            self.calibrator = ConfidenceCalibrator(self.config.get('calibration', {}))
+
             # History
             self.decisions: List[FinalDecision] = []
         
@@ -875,8 +955,33 @@ class MultiAgentDebateSystem:
             decision = self.head_ai.synthesize_decision(
                 all_arguments, context, debate_rounds
             )
+
+            # Apply Bayesian calibration and uncertainty quantification
+            try:
+                calibration_res = self.calibrator.calibrate(
+                    decision.confidence,
+                    method=CalibrationMethod.BAYESIAN,
+                    prediction_type=decision.action.value
+                )
+                decision.confidence = calibration_res.calibrated_confidence
+                decision.aggregate_uncertainty = (calibration_res.uncertainty_bounds[1] - calibration_res.uncertainty_bounds[0]) / 2
+                decision.reasoning += f" | Calibrated Confidence: {decision.confidence:.2f} (Uncertainty: ±{decision.aggregate_uncertainty:.2f})"
+            except Exception as e:
+                logger.warning(f"Confidence calibration failed: {e}")
         
             self.decisions.append(decision)
+
+            # Publish to UnifiedDecisionBus for UCA integration
+            try:
+                event = UnifiedEvent(
+                    event_type="multi_agent_decision",
+                    payload=decision.to_dict(),
+                    source="multi_agent_debate_system",
+                    priority=EventPriority.HIGH if decision.action != TradeAction.HOLD else EventPriority.NORMAL
+                )
+                await decision_bus.publish(event)
+            except Exception as e:
+                logger.warning(f"Failed to publish multi-agent decision to UnifiedDecisionBus: {e}")
         
             return decision
         except Exception as e:

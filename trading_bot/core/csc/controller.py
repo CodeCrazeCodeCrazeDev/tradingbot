@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 
 from .hypothesis import HypothesisGenerator, ReasoningBranch
+from .reliability import ReliabilityTracker
 from ..verification.swarm import VerificationSwarm
 from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport
 from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
@@ -31,6 +32,7 @@ class CognitiveSystemController:
 
         self.hypothesis_gen = HypothesisGenerator(world_model)
         self.verifier_swarm = VerificationSwarm()
+        self.reliability_tracker = ReliabilityTracker()
 
         self.evidence_threshold = 0.7
         self.confidence_threshold = 0.65
@@ -116,9 +118,26 @@ class CognitiveSystemController:
 
     def _select_optimal_branch(self, branches: List[ReasoningBranch], simulations: Dict[str, Any]) -> Optional[ReasoningBranch]:
         """Selects the branch with highest EV and lowest uncertainty."""
-        # Implementation of Bayesian EV optimization
         if not branches: return None
-        return branches[0] # Mock: return the first one
+
+        # Grounded branch selection: Rank by (Expected Return * Probability) / (Uncertainty + 1)
+        # This replaces the first-branch mock with a selection based on expected utility.
+        scored_branches = []
+        for b in branches:
+            hyp = b.hypotheses[0] if b.hypotheses else None
+            if not hyp: continue
+
+            # Simple EV metric
+            ev = hyp.expected_return * hyp.probability
+            risk_penalty = hyp.epistemic_uncertainty + hyp.aleatoric_uncertainty
+            utility = ev / (risk_penalty + 0.1)
+
+            scored_branches.append((utility, b))
+
+        if not scored_branches: return branches[0]
+
+        scored_branches.sort(key=lambda x: x[0], reverse=True)
+        return scored_branches[0][1]
 
     def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
         return ResearchLedgerEntry(
@@ -167,12 +186,24 @@ class CognitiveSystemController:
         return True
 
     def _calculate_composite_confidence(self, entry: ResearchLedgerEntry) -> ConfidenceVector:
-        # Calculate from graph confidence, verifier reports, and WM uncertainty
+        # 1. Base verifier confidence
         avg_verifier_conf = sum(r.confidence for r in entry.verifier_reports) / len(entry.verifier_reports) if entry.verifier_reports else 0
 
+        # 2. Dynamic Reliability Weighting
+        # In a real cycle, we'd identify which agents contributed to this ledger entry
+        # and adjust their influence based on current regime reliability.
+        regime = entry.hypothesis.predicted_outcome if entry.hypothesis else "unknown"
+
+        # Example: Weight 'HallucinationDetector' contributions
+        detector_weight = self.reliability_tracker.get_agent_weight("HallucinationDetector", regime)
+
+        # 3. Uncertainly quantification from Hypothesis
+        prob = entry.hypothesis.probability if entry.hypothesis else 0.5
+        epistemic = entry.hypothesis.epistemic_uncertainty if entry.hypothesis else 0.5
+
         return ConfidenceVector(
-            statistical=0.75,
-            regime=0.8,
+            statistical=prob * (1.0 - epistemic),
+            regime=0.8 * detector_weight,
             execution=0.9,
             tail_risk=0.85,
             model_stability=avg_verifier_conf
@@ -194,3 +225,11 @@ class CognitiveSystemController:
             self.hms.store_ledger_entry(entry)
         except Exception as e:
             logger.error(f"CSC: HMS persistence failed: {e}")
+
+    def _store_in_ledger(self, entry: ResearchLedgerEntry):
+        """Final persistence of the research cycle."""
+        try:
+            self.hms.store_ledger_entry(entry)
+            logger.info(f"CSC: Institutional memory persisted for {entry.entry_id}")
+        except Exception as e:
+            logger.warning(f"CSC: Failed to persist memory: {e}")

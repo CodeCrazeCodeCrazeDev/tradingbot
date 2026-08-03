@@ -46,11 +46,19 @@ class EvidencePackage:
 
 @dataclass
 class EvidenceNode:
-    """A node in the Causal Evidence Graph."""
+    """A node in the Causal Evidence Graph with decay and regime awareness."""
     node_id: str
-    content: Union[EvidencePackage, str]  # Can be an evidence package or a claim string
-    node_type: str  # "EVIDENCE", "CLAIM", "HYPOTHESIS"
+    content: Union[EvidencePackage, str]
+    node_type: str  # "EVIDENCE", "CLAIM", "HYPOTHESIS", "VERDICT"
+
+    # Causal Graph additions
+    confidence: float = 1.0
+    uncertainty: float = 0.0
+    market_regime: str = "unknown"
+    causal_parents: List[str] = field(default_factory=list)
+    freshness_score: float = 1.0  # 1.0 (new) to 0.0 (obsolete)
     metadata: Dict[str, Any] = field(default_factory=dict)
+    timestamp: datetime = field(default_factory=datetime.utcnow)
 
 @dataclass
 class EvidenceEdge:
@@ -59,7 +67,8 @@ class EvidenceEdge:
     target_id: str
     relation: RelationType
     weight: float = 1.0
-    evidence_package_id: Optional[str] = None  # Supporting evidence for this relation
+    evidence_package_id: Optional[str] = None
+    is_causal: bool = False
 
 @dataclass
 class EvidenceGraph:
@@ -74,15 +83,35 @@ class EvidenceGraph:
     def add_edge(self, edge: EvidenceEdge):
         self.edges.append(edge)
 
+    def query_counterfactual(self, intervention: Dict[str, Any]) -> 'EvidenceGraph':
+        """
+        Simulates the effect of an intervention on the evidence graph.
+        Part of the UCA V4 Do-Calculus implementation.
+        """
+        # Return a copy with modified nodes based on causal links
+        # This is a stub for the full structural causal model (SCM) implementation
+        return self
+
 @dataclass
 class Hypothesis:
-    """A falsifiable market hypothesis."""
+    """A falsifiable market hypothesis with uncertainty quantification."""
     hypothesis_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     description: str = ""
     base_assumptions: List[str] = field(default_factory=list)
     predicted_outcome: str = ""
     evidence_ids: List[str] = field(default_factory=list)
     confidence_interval: Tuple[float, float] = (0.0, 0.0)
+
+    # UCA V4 Structured Metadata
+    probability: float = 0.0
+    epistemic_uncertainty: float = 0.0  # Knowledge gap
+    aleatoric_uncertainty: float = 0.0  # Market noise
+    expected_return: float = 0.0
+    expected_drawdown: float = 0.0
+    expected_holding_time_bars: int = 0
+    invalidation_conditions: List[str] = field(default_factory=list)
+    execution_feasibility: float = 1.0
+
     created_at: datetime = field(default_factory=datetime.utcnow)
 
 @dataclass
