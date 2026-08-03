@@ -1,16 +1,6 @@
 """
-
 Orchestrates the selection and execution of Skill Programs (HASP)
 and behavioral behaviors (Skill-to-LoRA).
-Implements 'HASP' (2026) and 'S2L' (2026).
-"""
-
-import logging
-from typing import Any, Dict, List, Optional, Callable
-from dataclasses import dataclass
-SkillRouter & HASP - UCA V6 Skill Management
-Orchestrates the selection and execution of Skill Programs (HASP/PFs)
-and behavioral adapters (Skill-to-LoRA).
 Implements 'HASP' (arXiv:2605.17734) and 'S2L' (arXiv:2606.16769).
 """
 
@@ -85,47 +75,6 @@ class DualString(str):
     def __hash__(self):
         return super().__hash__()
 
-class ChameleonStr(str):
-    def __eq__(self, other):
-        if other in ("success", "pf_intervention"):
-            return True
-        return super().__eq__(other)
-
-class ChameleonS2LStr(str):
-    def __eq__(self, other):
-        if other in ("s2l_routed", "dispatched_to_adapter"):
-            return True
-        return super().__eq__(other)
-
-class DualString(str):
-    def __new__(cls, value):
-        return str.__new__(cls, value)
-
-    def __eq__(self, other):
-        if str(self) == "pf_intervention" or str(self) == "success":
-            return other in ("pf_intervention", "success")
-        if str(self) == "s2l_routed" or str(self) == "dispatched_to_adapter":
-            return other in ("s2l_routed", "dispatched_to_adapter")
-        return super().__eq__(other)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        return super().__hash__()
-
-class ChameleonStr(str):
-    def __eq__(self, other):
-        return other in ("success", "pf_intervention")
-    def __hash__(self):
-        return hash(str(self))
-
-class HedgingChameleonStr(str):
-    def __eq__(self, other):
-        return other in ("dispatched_to_adapter", "s2l_routed")
-    def __hash__(self):
-        return hash(str(self))
-
 class SkillRouter:
     """
     Authoritative router for mapping strategic tasks to specialized skills (UCA V6).
@@ -140,7 +89,7 @@ class SkillRouter:
         return cls._instance
 
     def __init__(self):
-        if self._initialized:
+        if getattr(self, "_initialized", False):
             return
         self._registry: Dict[str, List[SkillArtifact]] = {}
         self._initialize_default_skills()
@@ -179,7 +128,6 @@ class SkillRouter:
             return
 
         self._registry[artifact.skill_id].append(artifact)
-        # Keep list sorted by version (Simplified)
         self._registry[artifact.skill_id].sort(key=lambda x: x.version, reverse=True)
         logger.debug(f"Registered skill: {artifact.skill_id} v{artifact.version}")
 
@@ -188,8 +136,6 @@ class SkillRouter:
         Routes a task to the appropriate skill or adapter.
         Implements Deterministic Routing and HASP Pre-emption.
         """
-        # 1. HASP Pre-emption: check for high-priority Program Functions (PFs)
-        # Trigger conditions based on context
         market_state = context.get("market", context)
         if market_state.get("volatility", 0) > 0.3:
             skill = self.get_skill("volatility_guardrail")
@@ -199,9 +145,7 @@ class SkillRouter:
                     "result": skill.executable(context)
                 }
 
-        # 2. Capability-based Routing
         if "hedge" in task.lower() or "risk" in task.lower() or "derivative" in task.lower():
-            # Determine required caps from task
             required_caps = {"hedging", "risk_reduction"}
             if "derivative" in task.lower():
                 required_caps.add("complex_derivatives")
@@ -235,7 +179,6 @@ class SkillRouter:
                 candidates.append((latest, len(overlap)))
 
         if not candidates: return None
-        # Sort by overlap count then version
         candidates.sort(key=lambda x: (x[1], x[0].version), reverse=True)
         return candidates[0][0]
 
@@ -261,7 +204,6 @@ class HASPExecutor:
 
         logger.info(f"HASP: Executing skill program {skill.skill_id} v{skill.version}")
         try:
-            # Deterministic execution
             return skill.executable(state)
         except Exception as e:
             return {"status": "failure", "error": str(e)}
