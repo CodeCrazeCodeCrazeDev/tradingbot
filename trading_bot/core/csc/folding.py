@@ -7,7 +7,7 @@ low-resolution semantic knowledge.
 """
 
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -17,10 +17,22 @@ class InformationFolder:
     Prevents 'Strategic Drift' in long-horizon tasks.
     """
 
+    def __init__(self, hms: Optional[Any] = None, fold_interval: int = 10):
+        self.hms = hms
+        self.fold_interval = fold_interval
+        self.step_counter = 0
+
     async def fold_step(self):
         self.step_counter += 1
         if self.step_counter % self.fold_interval == 0:
             await self.perform_folding()
+
+    async def perform_folding(self):
+        logger.info("HIPIF: Performing scheduled folding operation.")
+        # Perform compaction on hms tiers
+        if self.hms:
+            # Consolidation logic: move episodic to semantic
+            pass
 
     def fold_history(self, ledger_entry: Any):
         """
@@ -38,7 +50,8 @@ class InformationFolder:
         3. Write to Semantic/Research tiers.
         4. Prune source Episodic entries.
         """
-        summary = f"Subgoal for {task} completed with success={result.get('success')}"
+        result = execution_log[-1] if execution_log else {}
+        summary = f"Subgoal for {task} completed with success={result.get('success', False)}"
 
         return {
             'semantic_update': summary,
@@ -49,3 +62,6 @@ class InformationFolder:
             'tokens_saved': sum(len(str(s)) for s in execution_log) - len(summary),
             'status': 'folded'
         }
+
+# Alias for backward compatibility with UCA components (e.g. ReActLoop)
+FoldingOperator = InformationFolder
