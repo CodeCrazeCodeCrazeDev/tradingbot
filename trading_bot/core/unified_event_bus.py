@@ -9,6 +9,7 @@ Implements 'LogAct: Enabling Agentic Reliability via Shared Logs' (Paper 1).
 import asyncio
 import logging
 import json
+import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime

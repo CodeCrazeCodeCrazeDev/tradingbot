@@ -227,6 +227,9 @@ class HierarchicalMemorySystem:
             self.memory_window_size = min(self.memory_window_size + 10, 500)
             logger.info(f"SEAL: Memory retrieval was highly accurate. Adapted HMS memory window to {self.memory_window_size} to retain more contextual episodic memory.")
 
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
+
     def _load_schema(self) -> Dict[str, Any]:
         schema = {"version": "1.0", "schema_version": "1.0", "entities": [], "relations": []}
         if os.path.exists(self.schema_path):
