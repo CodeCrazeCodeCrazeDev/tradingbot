@@ -10,7 +10,6 @@ import hashlib
 import json
 import logging
 import os
-import pickle
 import time
 from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -338,8 +337,8 @@ class DiskCache:
                 return None
 
                 # Load from file
-                with open(file_path, 'rb') as f:
-                    value = pickle.load(f)
+                with open(file_path, 'r') as f:
+                    value = json.load(f)
 
                 # Update access info
                 self.index[key]['last_accessed'] = time.time()
@@ -384,8 +383,8 @@ class DiskCache:
         
         try:
             # Save to file
-            with open(file_path, 'wb') as f:
-                pickle.dump(value, f)
+            with open(file_path, 'w') as f:
+                json.dump(value, f)
             
             # Update index
             self.index[key] = {

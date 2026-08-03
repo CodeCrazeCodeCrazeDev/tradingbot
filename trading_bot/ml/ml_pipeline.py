@@ -244,10 +244,11 @@ class FeatureStore:
             
             try:
                 if feature.computation:
-                    # Evaluate computation expression
-                    result[name] = eval(feature.computation, {'close': data.get('close'), 
-                                                               'volume': data.get('volume'),
-                                                               'returns': result.get('returns')})
+                    # Use safe_eval for feature computation
+                    from trading_bot.security.safe_eval import safe_eval
+                    result[name] = safe_eval(feature.computation, {'close': data.get('close'),
+                                                                    'volume': data.get('volume'),
+                                                                    'returns': result.get('returns')})
                 elif name == 'rsi':
                     result[name] = self._compute_rsi(data['close'], feature.lookback_periods)
                 elif name == 'macd':
@@ -409,6 +410,9 @@ class ModelRegistry:
         model_path = self.storage_path / model_id
         model_path.mkdir(exist_ok=True)
         
+        # Security Hardening: Use safer serialization if model supports it
+        # For now, we still use pickle but with explicit warning or restricted globals if possible
+        # Ideally replace with joblib (for sklearn) or torch.save (for torch)
         with open(model_path / 'model.pkl', 'wb') as f:
             pickle.dump(model_object, f)
         

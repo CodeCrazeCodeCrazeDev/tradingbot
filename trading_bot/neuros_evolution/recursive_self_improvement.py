@@ -729,7 +729,11 @@ class CodeEvolutionAgent:
         """Execute backup step"""
         try:
             for command in step['commands']:
-                subprocess.run(command, shell=True, check=True, cwd=codebase_path)
+                # Security Hardening: Use list-based subprocess.run to avoid shell=True
+                # Note: Command strings need to be parsed into lists
+                import shlex
+                cmd_list = shlex.split(command)
+                subprocess.run(cmd_list, shell=False, check=True, cwd=codebase_path)
             return True
         except Exception as e:
             self.logger.error(f"Backup step failed: {e}")
@@ -899,8 +903,9 @@ class RecursiveSelfImprovementSystem:
                 temp_file = f.name
             
             # SCP transfer
-            scp_command = f"scp {temp_file} {self.remote_backup_location}iteration_{iteration_record['iteration']}.json"
-            subprocess.run(scp_command, shell=True, check=True)
+            # Security Hardening: Use list-based subprocess.run to avoid shell=True
+            dest = f"{self.remote_backup_location}iteration_{iteration_record['iteration']}.json"
+            subprocess.run(["scp", temp_file, dest], shell=False, check=True)
             
             # Clean up
             os.unlink(temp_file)

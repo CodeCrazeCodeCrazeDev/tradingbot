@@ -6,7 +6,7 @@ Replaces deprecated pyarrow.plasma with a more robust and Windows-compatible sol
 
 import asyncio
 import logging
-import pickle
+import json
 import time
 import uuid
 import os
@@ -168,7 +168,7 @@ class SharedMemoryManager:
         elif isinstance(data, pd.DataFrame):
             return self._put_dataframe(data, obj_id)
         else:
-            return self._put_pickle(data, obj_id)
+            return self._put_json(data, obj_id)
     
     def _put_numpy_array(self, array: np.ndarray, obj_id: str) -> str:
         """Store a NumPy array in shared memory"""
@@ -205,21 +205,12 @@ class SharedMemoryManager:
     
     def _put_dataframe(self, df: pd.DataFrame, obj_id: str) -> str:
         """Store a pandas DataFrame in shared memory"""
-        # Convert to dict of arrays
-        arrays = {
-            'index': df.index.values,
-            'columns': np.array(df.columns),
-            'dtypes': np.array([str(dt) for dt in df.dtypes])
-        }
-        
-        for col in df.columns:
-            arrays[f'data_{col}'] = df[col].values
-        
-        # Store dict in shared memory
-        return self._put_pickle(arrays, obj_id)
+        from trading_bot.core.governance.serialization import SerializerRegistry
+        serialized = SerializerRegistry.serialize_dataframe(df)
+        return self._put_json(serialized, obj_id)
     
-    def _put_pickle(self, data: Any, obj_id: str) -> str:
-        """Store a pickled object in shared memory"""
+    def _put_json(self, data: Any, obj_id: str) -> str:
+        """Store a JSON-serialized object in shared memory"""
         with self.lock:
             # Clean up existing object with same ID
             if obj_id in self.objects:
@@ -227,21 +218,23 @@ class SharedMemoryManager:
                 self.current_size -= old_obj.size
                 old_obj.close()
             
-            # Pickle data
-            pickled_data = pickle.dumps(data)
-            size = len(pickled_data)
+            # Serialize to JSON
+            # Note: We use a custom encoder or handle non-serializable objects if necessary
+            # For now, assume data is JSON serializable
+            json_data = json.dumps(data).encode('utf-8')
+            size = len(json_data)
             
             # Create shared memory
             shm = shared_memory.SharedMemory(create=True, size=size)
             
             # Copy data to shared memory
-            shm.buf[:size] = pickled_data
+            shm.buf[:size] = json_data
             
             # Create object metadata
             obj = SharedMemoryObject(
                 name=shm.name,
                 size=size,
-                dtype='pickle'
+                dtype='json'
             )
             obj.shm = shm
             obj.created = True
@@ -273,12 +266,12 @@ class SharedMemoryManager:
             obj.last_accessed = time.time()
             obj.access_count += 1
             
-            if obj.dtype == 'pickle':
-                return self._get_pickle(obj)
+            if obj.dtype == 'json':
+                return self._get_json(obj)
             elif obj.dtype.startswith('float') or obj.dtype.startswith('int'):
                 return self._get_numpy_array(obj)
             else:
-                return self._get_pickle(obj)
+                return self._get_json(obj)
     
     def _get_numpy_array(self, obj: SharedMemoryObject) -> np.ndarray:
         """Retrieve a NumPy array from shared memory"""
@@ -292,15 +285,15 @@ class SharedMemoryManager:
         # Return a copy to avoid issues if the shared memory is deleted
         return array.copy()
     
-    def _get_pickle(self, obj: SharedMemoryObject) -> Any:
-        """Retrieve a pickled object from shared memory"""
+    def _get_json(self, obj: SharedMemoryObject) -> Any:
+        """Retrieve a JSON-serialized object from shared memory"""
         # Attach to shared memory
         if obj.shm is None:
             obj.shm = shared_memory.SharedMemory(name=obj.name)
         
-        # Unpickle data
-        pickled_data = bytes(obj.shm.buf[:obj.size])
-        return pickle.loads(pickled_data)
+        # Deserialize data
+        json_data = bytes(obj.shm.buf[:obj.size]).decode('utf-8')
+        return json.loads(json_data)
     
     def get_dataframe(self, obj_id: str) -> pd.DataFrame:
         """
@@ -316,19 +309,9 @@ class SharedMemoryManager:
             KeyError: If the object ID is not found
             ValueError: If the object is not a DataFrame
         """
-        arrays = self.get(obj_id)
-        
-        if not isinstance(arrays, dict) or 'columns' not in arrays or 'index' not in arrays:
-            raise ValueError(f"Object {obj_id} is not a DataFrame")
-        
-        # Reconstruct DataFrame
-        df_data = {}
-        for col in arrays['columns']:
-            col_str = str(col)
-            if f'data_{col_str}' in arrays:
-                df_data[col_str] = arrays[f'data_{col_str}']
-        
-        return pd.DataFrame(df_data, index=arrays['index'])
+        from trading_bot.core.governance.serialization import SerializerRegistry
+        serialized = self.get(obj_id)
+        return SerializerRegistry.deserialize_dataframe(serialized)
     
     def exists(self, obj_id: str) -> bool:
         """Check if an object exists in shared memory"""

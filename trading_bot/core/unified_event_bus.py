@@ -218,21 +218,32 @@ class UnifiedDecisionBus:
                 vote_tasks = []
                 voter_ids = list(self._voters.keys())
 
+                # Enforce a secure, strict timeout for voter execution to prevent hangs/livelocks
+                voter_timeout = float(self.config.get("voter_timeout", 5.0))
                 for vid, vfn in self._voters.items():
-                    vote_tasks.append(vfn(action))
+                    vote_tasks.append(asyncio.wait_for(vfn(action), timeout=voter_timeout))
 
                 if vote_tasks:
                     results = await asyncio.gather(*vote_tasks, return_exceptions=True)
                     for i, res in enumerate(results):
                         vid = voter_ids[i]
-                        if isinstance(res, Exception):
+                        if isinstance(res, asyncio.TimeoutError):
+                            logger.error(f"Voter {vid} timed out after {voter_timeout} seconds")
+                            action.voter_reports[vid] = {"decision": "ERROR", "reason": f"Timeout of {voter_timeout}s exceeded"}
+                        elif isinstance(res, Exception):
                             logger.error(f"Voter {vid} failed: {res}")
                             action.voter_reports[vid] = {"decision": "ERROR", "reason": str(res)}
                         else:
                             action.voter_reports[vid] = res
 
                 # 3. Consensus Logic
-                if self._verify_consensus(action):
+                import time
+                import os
+                import sys
+                start_time = time.perf_counter()
+
+                is_approved = self._verify_consensus(action)
+                if is_approved:
                     action.status = ActionStatus.APPROVED
                     logger.info(f"Action {action.action_id} APPROVED [Seq: {action.sequence_number}]")
                     # 4. Dispatch to Consumers
@@ -240,6 +251,31 @@ class UnifiedDecisionBus:
                 else:
                     action.status = ActionStatus.VETOED
                     logger.warning(f"Action {action.action_id} VETOED by voters")
+
+                # Generate Decision-Level Observability Telemetry and Provenance
+                latency_ms = (time.perf_counter() - start_time) * 1000
+                telemetry_record = {
+                    "decision_id": action.action_id,
+                    "action_type": action.action_type,
+                    "agent_id": action.agent_id,
+                    "status": action.status.value,
+                    "latency_ms": latency_ms,
+                    "sequence_number": action.sequence_number,
+                    "verifier_reports": action.voter_reports,
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "environment": {
+                        "pid": os.getpid(),
+                        "python_version": sys.version,
+                        "platform": sys.platform
+                    }
+                }
+
+                # Append telemetry record securely to structured JSONL logs
+                try:
+                    with open("decision_provenance_observability.jsonl", "a", encoding="utf-8") as tf:
+                        tf.write(json.dumps(telemetry_record) + "\n")
+                except Exception as ex:
+                    logger.error(f"Failed to write decision telemetry log: {ex}")
 
                 self._action_queue.task_done()
             except asyncio.CancelledError:

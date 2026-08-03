@@ -37,9 +37,11 @@ class EvaluationTask:
     
     def to_dict(self) -> Dict:
         """Serialize task to dictionary"""
+        # Security Hardening: Use JSON-compatible genome representation
+        # StrategyGenome should have a to_dict() method
         return {
             'task_id': self.task_id,
-            'genome': pickle.dumps(self.genome).hex(),
+            'genome': self.genome.to_dict() if hasattr(self.genome, 'to_dict') else str(self.genome),
             'market_data_hash': self.market_data_hash,
             'config_hash': self.config_hash,
             'priority': self.priority,
@@ -49,9 +51,19 @@ class EvaluationTask:
     @classmethod
     def from_dict(cls, data: Dict) -> 'EvaluationTask':
         """Deserialize task from dictionary"""
+        # Security Hardening: Use StrategyGenome reconstruction from dict
+        from ..alpha_evolve.strategy_genome import StrategyGenome
+        genome_data = data['genome']
+        if isinstance(genome_data, dict):
+            genome = StrategyGenome.from_dict(genome_data)
+        else:
+            # Fallback for old records, but log warning
+            logger.warning("EvaluationTask: received non-dict genome data")
+            genome = genome_data
+
         return cls(
             task_id=data['task_id'],
-            genome=pickle.loads(bytes.fromhex(data['genome'])),
+            genome=genome,
             market_data_hash=data['market_data_hash'],
             config_hash=data['config_hash'],
             priority=data.get('priority', 0),
@@ -73,11 +85,12 @@ class EvaluationResult:
     
     def to_dict(self) -> Dict:
         """Serialize result to dictionary"""
+        # Security Hardening: Use JSON-compatible result representation
         return {
             'task_id': self.task_id,
             'success': self.success,
-            'backtest_result': pickle.dumps(self.backtest_result).hex() if self.backtest_result else None,
-            'fitness_score': pickle.dumps(self.fitness_score).hex() if self.fitness_score else None,
+            'backtest_result': self.backtest_result.to_dict() if self.backtest_result and hasattr(self.backtest_result, 'to_dict') else None,
+            'fitness_score': self.fitness_score.to_dict() if self.fitness_score and hasattr(self.fitness_score, 'to_dict') else None,
             'error_message': self.error_message,
             'execution_time_ms': self.execution_time_ms,
             'worker_id': self.worker_id,
@@ -87,11 +100,21 @@ class EvaluationResult:
     @classmethod
     def from_dict(cls, data: Dict) -> 'EvaluationResult':
         """Deserialize result from dictionary"""
+        # Security Hardening: Reconstruct from dict
+        from ..alpha_evolve.backtesting_engine import BacktestResult
+        from ..alpha_evolve.fitness_evaluator import FitnessScore
+
+        br_data = data.get('backtest_result')
+        backtest_result = BacktestResult.from_dict(br_data) if br_data and isinstance(br_data, dict) else None
+
+        fs_data = data.get('fitness_score')
+        fitness_score = FitnessScore.from_dict(fs_data) if fs_data and isinstance(fs_data, dict) else None
+
         return cls(
             task_id=data['task_id'],
             success=data['success'],
-            backtest_result=pickle.loads(bytes.fromhex(data['backtest_result'])) if data.get('backtest_result') else None,
-            fitness_score=pickle.loads(bytes.fromhex(data['fitness_score'])) if data.get('fitness_score') else None,
+            backtest_result=backtest_result,
+            fitness_score=fitness_score,
             error_message=data.get('error_message'),
             execution_time_ms=data.get('execution_time_ms', 0.0),
             worker_id=data.get('worker_id', ''),

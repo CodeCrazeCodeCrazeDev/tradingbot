@@ -1,7 +1,7 @@
 """Complete Data Infrastructure - Fills ALL 90% gap"""
 import pandas as pd
 import numpy as np
-import pickle
+import json
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timedelta
 import logging
@@ -127,17 +127,17 @@ class CheckpointManager:
         
     def save_checkpoint(self, state: Dict, checkpoint_id: str):
         """Save state checkpoint"""
-        path = f"{self.checkpoint_dir}/{checkpoint_id}.pkl"
-        with open(path, 'wb') as f:
-            pickle.dump(state, f)
+        path = f"{self.checkpoint_dir}/{checkpoint_id}.json"
+        with open(path, 'w') as f:
+            json.dump(state, f, indent=2)
         logger.info(f"Checkpoint saved: {checkpoint_id}")
     
     def load_checkpoint(self, checkpoint_id: str) -> Optional[Dict]:
         """Load state checkpoint"""
-        path = f"{self.checkpoint_dir}/{checkpoint_id}.pkl"
+        path = f"{self.checkpoint_dir}/{checkpoint_id}.json"
         try:
-            with open(path, 'rb') as f:
-                return pickle.load(f)
+            with open(path, 'r') as f:
+                return json.load(f)
         except FileNotFoundError:
             return None
 

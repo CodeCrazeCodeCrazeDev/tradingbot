@@ -18,8 +18,9 @@ Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
 
 import logging
 import os
+import json
 import networkx as nx
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 from .models import ResearchLedgerEntry, ScientificMemoryObject, EvidenceNode, EvidenceEdge, RelationType
 
@@ -61,14 +62,13 @@ class HierarchicalMemorySystem:
     - SAGE: Self-evolving Agentic Graph-Memory.
     - AutoMem: Automated Learning of Memory as a Cognitive Skill.
     """
-    def __init__(self, storage_root: str = "alphaalgo_data/hms_v3"):
-        self.storage_root = storage_root
-
     def __init__(self, base_path: str = "alphaalgo_data/hms"):
         self.base_path = base_path
+        self.storage_root = base_path
         self.ledger_path = os.path.join(base_path, "research_ledger")
         self.knowledge_path = os.path.join(base_path, "scientific_memory")
         self.graph_path = os.path.join(base_path, "sage_graph.graphml")
+        self.tiers = {} # Tier mapping
 
         os.makedirs(self.ledger_path, exist_ok=True)
         logger.info("HMS V5: SAGE-integrated memory system initialized")

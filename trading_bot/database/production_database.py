@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Production Database Integration
 
@@ -43,7 +44,17 @@ try:
 except ImportError:
     ALEMBIC_AVAILABLE = False
 
-if SQLALCHEMY_AVAILABLE:
+if not SQLALCHEMY_AVAILABLE:
+    class DummyBase:
+        pass
+    TradeRecord = DummyBase
+    PositionRecord = DummyBase
+    OrderRecord = DummyBase
+    AccountSnapshot = DummyBase
+    MetricRecord = DummyBase
+    SignalRecord = DummyBase
+    AuditLog = DummyBase
+else:
     Base = declarative_base()
     
     # ==========================================

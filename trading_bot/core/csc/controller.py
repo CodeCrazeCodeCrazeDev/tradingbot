@@ -46,11 +46,12 @@ class CognitiveSystemController:
         self.world_model = world_model
         self.hms = hms
         self.shield = shield
-        self.folding_operator = FoldingOperator(hms)
 
         self.hypothesis_gen = HypothesisGenerator(world_model)
         self.verifier_swarm = VerificationSwarm()
         self.folder = InformationFolder()
+        # Authoritative folding operator
+        self.folding_operator = self.folder
 
         # HASP: Executable Guardrails (Skill Programs)
         self.skill_programs = self._load_skill_programs()
