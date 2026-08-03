@@ -421,8 +421,9 @@ class MemorySystem:
         """Load memory system from disk"""
         
         try:
+            from trading_bot.security.artifact_manager import RestrictedUnpickler
             with open(filepath, 'rb') as f:
-                data = pickle.load(f)
+                data = RestrictedUnpickler(f).load()
             
             self.long_term_memory = data.get('long_term_memory', {})
             self.market_lessons = data.get('market_lessons', {})

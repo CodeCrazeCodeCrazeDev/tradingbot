@@ -12,6 +12,15 @@ import asyncio
 import json
 import subprocess
 import time
+import shlex
+
+def safe_run_command(cmd, **kwargs):
+    """Run command securely without shell=True by parsing via shlex."""
+    if 'shell' in kwargs:
+        del kwargs['shell']
+    if isinstance(cmd, str):
+        cmd = shlex.split(cmd)
+    return subprocess.run(cmd, **kwargs)
 import schedule
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -352,9 +361,8 @@ class AutomatedAlphaAlgo:
         try:
             logger.info("Running deployment manager...")
             
-            result = subprocess.run(
+            result = safe_run_command(
                 "py alpha_deployment_manager.py",
-                shell=True,
                 capture_output=True,
                 text=True,
                 timeout=600,
@@ -383,19 +391,16 @@ class AutomatedAlphaAlgo:
         
         try:
             # Stop any existing container
-            subprocess.run("docker stop alphaalgo-paper", shell=True, capture_output=True)
-            subprocess.run("docker rm alphaalgo-paper", shell=True, capture_output=True)
+            safe_run_command("docker stop alphaalgo-paper", capture_output=True)
+            safe_run_command("docker rm alphaalgo-paper", capture_output=True)
             
             # Start new container
-            cmd = f"""docker run -d --name alphaalgo-paper --restart unless-stopped \
-                -e PAPER_TRADING=true \
-                -e MT5_LOGIN=97224465 \
-                -e MT5_PASSWORD=WdHb@1Zk \
-                -e MT5_SERVER=MetaQuotes-Demo \
-                -v {Path.cwd()}/logs:/app/logs \
-                alphaalgo:week{self.state['current_week']}"""
+            mt5_login = os.getenv("MT5_LOGIN", "97224465")
+            mt5_password = os.getenv("MT5_PASSWORD", "WdHb@1Zk")
+            mt5_server = os.getenv("MT5_SERVER", "MetaQuotes-Demo")
+            cmd = f"docker run -d --name alphaalgo-paper --restart unless-stopped -e PAPER_TRADING=true -e MT5_LOGIN={mt5_login} -e MT5_PASSWORD={mt5_password} -e MT5_SERVER={mt5_server} -v {Path.cwd()}/logs:/app/logs alphaalgo:week{self.state['current_week']}"
             
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+            result = safe_run_command(cmd, capture_output=True, text=True)
             
             if result.returncode == 0:
                 logger.info("Paper trading container started successfully")
@@ -410,20 +415,16 @@ class AutomatedAlphaAlgo:
         
         try:
             # Stop any existing container
-            subprocess.run("docker stop alphaalgo-live", shell=True, capture_output=True)
-            subprocess.run("docker rm alphaalgo-live", shell=True, capture_output=True)
+            safe_run_command("docker stop alphaalgo-live", capture_output=True)
+            safe_run_command("docker rm alphaalgo-live", capture_output=True)
             
             # Start new container with minimal position size
-            cmd = f"""docker run -d --name alphaalgo-live --restart unless-stopped \
-                -e PAPER_TRADING=false \
-                -e POSITION_SIZE=0.01 \
-                -e MT5_LOGIN=97224465 \
-                -e MT5_PASSWORD=WdHb@1Zk \
-                -e MT5_SERVER=MetaQuotes-Demo \
-                -v {Path.cwd()}/logs:/app/logs \
-                alphaalgo:week{self.state['current_week']}"""
+            mt5_login = os.getenv("MT5_LOGIN", "97224465")
+            mt5_password = os.getenv("MT5_PASSWORD", "WdHb@1Zk")
+            mt5_server = os.getenv("MT5_SERVER", "MetaQuotes-Demo")
+            cmd = f"docker run -d --name alphaalgo-live --restart unless-stopped -e PAPER_TRADING=false -e POSITION_SIZE=0.01 -e MT5_LOGIN={mt5_login} -e MT5_PASSWORD={mt5_password} -e MT5_SERVER={mt5_server} -v {Path.cwd()}/logs:/app/logs alphaalgo:week{self.state['current_week']}"
             
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+            result = safe_run_command(cmd, capture_output=True, text=True)
             
             if result.returncode == 0:
                 logger.info("Live trading container started successfully")
@@ -500,9 +501,8 @@ class AutomatedAlphaAlgo:
         logger.info("Monitoring paper trading...")
         
         # Check container status
-        result = subprocess.run(
+        result = safe_run_command(
             "docker ps --filter name=alphaalgo-paper",
-            shell=True,
             capture_output=True,
             text=True
         )
@@ -518,9 +518,8 @@ class AutomatedAlphaAlgo:
         logger.info("Monitoring live trading...")
         
         # Check container status
-        result = subprocess.run(
+        result = safe_run_command(
             "docker ps --filter name=alphaalgo-live",
-            shell=True,
             capture_output=True,
             text=True
         )
@@ -585,8 +584,8 @@ class AutomatedAlphaAlgo:
         logger.warning("Initiating rollback...")
         
         # Stop current containers
-        subprocess.run("docker stop alphaalgo-paper alphaalgo-live", shell=True, capture_output=True)
-        subprocess.run("docker rm alphaalgo-paper alphaalgo-live", shell=True, capture_output=True)
+        safe_run_command("docker stop alphaalgo-paper alphaalgo-live", capture_output=True)
+        safe_run_command("docker rm alphaalgo-paper alphaalgo-live", capture_output=True)
         
         # Reset to previous week if possible
         if self.state['current_week'] > 0:
@@ -601,7 +600,7 @@ class AutomatedAlphaAlgo:
         logger.critical(f"EMERGENCY STOP: {reason}")
         
         # Stop all containers
-        subprocess.run("docker stop alphaalgo-paper alphaalgo-live", shell=True, capture_output=True)
+        safe_run_command("docker stop alphaalgo-paper alphaalgo-live", capture_output=True)
         
         # Disable automation
         self.running = False

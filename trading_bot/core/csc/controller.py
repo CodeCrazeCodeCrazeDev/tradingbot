@@ -20,6 +20,7 @@ import logging
 import asyncio
 import copy
 import json
+import uuid
 import time
 import threading
 import numpy as np
@@ -81,15 +82,20 @@ class CognitiveSystemController:
         return cls._instance
 
     def __init__(self, world_model: Any = None, hms: Any = None, shield: Optional[ImmutableShield] = None):
+        if world_model is not None:
+            self.world_model = world_model
+            if hasattr(self, "hypothesis_gen"):
+                self.hypothesis_gen.world_model = world_model
+        if hms is not None:
+            self.hms = hms
+        if shield is not None:
+            self.shield = shield
+
         if getattr(self, "_initialized", False):
             return
 
-        self.world_model = world_model
-        self.hms = hms
-        self.shield = shield
-
         # Core Functional Components
-        self.hypothesis_gen = HypothesisGenerator(world_model)
+        self.hypothesis_gen = HypothesisGenerator(self.world_model)
         self.verifier_swarm = VerificationSwarm()
         self.folder = InformationFolder()
         self.discoloop = DiscoLoopCell(latent_dim=16)
@@ -131,6 +137,12 @@ class CognitiveSystemController:
         if intervention:
             observation.update(intervention)
             logger.warning(f"CSC-V5: HASP Intervention applied: {intervention.get('reason', 'Unknown')}")
+            if intervention.get("action") == "override_to_hold":
+                return CoreDecision(
+                    outcome=DecisionOutcome.TRADE_REJECTED,
+                    trade_id=str(uuid.uuid4()),
+                    dominant_rejection_reason=intervention.get("reason", "Volatility exceeded HASP safety threshold")
+                )
 
         # 5. Multi-Hypothesis Generation
         branches = await self.hypothesis_gen.generate_competing_branches(observation)
@@ -141,7 +153,7 @@ class CognitiveSystemController:
         # 7. Decision Selection (VFE Minimization)
         best_branch = self._select_optimal_branch(branches, sim_results)
         if not best_branch:
-            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason="No viable reasoning branches")
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id=str(uuid.uuid4()), dominant_rejection_reason="No viable reasoning branches")
 
         # 8. Decision Loop (Pivot/Refine)
         decision_ready = False
@@ -166,7 +178,8 @@ class CognitiveSystemController:
                 if not best_branch: break
 
         if not decision_ready:
-            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason="Failed Pivot/Refine loop")
+            trade_id_val = best_branch.branch_id if best_branch else str(uuid.uuid4())
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id=trade_id_val, dominant_rejection_reason="Failed Pivot/Refine loop")
 
         # 11. Governance Gate (Immutable Shield & LogAct Proposal)
         trade_proposal = self._translate_to_proposal(final_ledger_entry)
@@ -191,7 +204,7 @@ class CognitiveSystemController:
         status = await log_action.wait_for_decision(timeout=5.0)
 
         if status != ActionStatus.APPROVED and status != ActionStatus.EXECUTED:
-            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=f"LogAct failure: {status}")
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id=trade_proposal.get("trade_id", "unknown_trade_id"), dominant_rejection_reason=f"LogAct failure: {status}")
 
         # Folding & Persistence
         self.folder.fold_history(final_ledger_entry)
@@ -215,7 +228,7 @@ class CognitiveSystemController:
             reason = f"LogAct consensus failure: {action.status.value}"
             if action.voter_reports:
                 reason += f" - Reports: {action.voter_reports}"
-            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, dominant_rejection_reason=reason)
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id=trade_proposal.get("trade_id", "unknown_trade_id"), dominant_rejection_reason=reason)
 
         # 12. Execution & Folding (HIPIF)
         logger.info(f"CSC-V5: Trade Approved. Folding history...")
@@ -262,10 +275,16 @@ class CognitiveSystemController:
 
     def _apply_hasp_guardrails(self, observation: Dict[str, Any]) -> Dict[str, Any]:
         """HASP: Executable guardrails via SkillRouter."""
-        market_state = {"market": observation}
-        if observation.get("volatility", 0) > 0.3:
+        vol = observation.get("volatility")
+        if vol is None and "market" in observation:
+            vol = observation["market"].get("volatility")
+        if vol is None:
+            vol = 0.0
+
+        if vol > 0.3:
             skill = self.skill_router._registry.get("volatility_guardrail")
             if skill and skill.executable:
+                market_state = observation if "market" in observation else {"market": observation}
                 return skill.executable(market_state)
         return {}
 

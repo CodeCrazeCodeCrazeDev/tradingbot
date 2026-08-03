@@ -126,8 +126,9 @@ class CorrelationPersistence:
             # Load correlation matrix (if exists)
             correlation_matrix = None
             if self.matrix_file.exists():
+                from trading_bot.security.artifact_manager import RestrictedUnpickler
                 with open(self.matrix_file, 'rb') as f:
-                    correlation_matrix = pickle.load(f)
+                    correlation_matrix = RestrictedUnpickler(f).load()
                 logger.info(f"Loaded correlation matrix from {self.matrix_file}")
             
             # Load price history

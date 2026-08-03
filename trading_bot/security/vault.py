@@ -230,7 +230,8 @@ class SecureVault:
                     encoded = f.read()
                 decoded = base64.b64decode(encoded)
                 self._credentials = json.loads(decoded.decode())
-            except:
+            except Exception as e:
+                logger.warning(f"Vault: Failed to load basic credentials, defaulting to empty: {e}")
                 self._credentials = {}
     
     def get_status(self) -> Dict:

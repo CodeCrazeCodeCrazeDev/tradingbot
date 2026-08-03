@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime, timedelta
 import json
 import pickle
+from trading_bot.security.artifact_manager import ArtifactManager
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +70,7 @@ class CacheManager:
         
         # Serialize value
         if serialize:
-            value = pickle.dumps(value)
+            value = ArtifactManager.serialize_data(value)
         
         # Set in memory cache
         self.cache[key] = value
@@ -98,7 +99,7 @@ class CacheManager:
                 # Deserialize value
                 if deserialize and isinstance(value, bytes):
                     try:
-                        value = pickle.loads(value)
+                        value = ArtifactManager.deserialize_data(value)
                     except Exception as e:
                         logger.warning(f"⚠️ Deserialization error: {e}")
                 
@@ -118,9 +119,9 @@ class CacheManager:
                     self.expiry[key] = datetime.now() + timedelta(seconds=self.default_ttl)
                     
                     # Deserialize value
-                    if deserialize:
+                    if deserialize and isinstance(value, bytes):
                         try:
-                            value = pickle.loads(value)
+                            value = ArtifactManager.deserialize_data(value)
                         except Exception as e:
                             logger.warning(f"⚠️ Deserialization error: {e}")
                     

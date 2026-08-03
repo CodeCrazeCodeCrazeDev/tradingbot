@@ -497,9 +497,9 @@ class ModelRegistry:
         if not mv or not mv.model_path:
             return None
         try:
-        
+            from trading_bot.security.artifact_manager import RestrictedUnpickler
             with open(mv.model_path, 'rb') as f:
-                return pickle.load(f)
+                return RestrictedUnpickler(f).load()
         except Exception as e:
             logger.error(f"Failed to load model: {e}")
             return None
