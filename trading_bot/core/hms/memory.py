@@ -213,6 +213,11 @@ class HierarchicalMemorySystem:
         self._initialized = True
         logger.info(f"HMS V6: One Memory initialized at {base_path}")
 
+    @classmethod
+    def _calculate_integrity_hash(cls, schema_dict: Dict[str, Any]) -> str:
+        """Helper to invoke the module-level calculate_integrity_hash function."""
+        return calculate_integrity_hash(schema_dict)
+
     def seal_adapt_memory_window(self, retention_latency_reward: float):
         """
         Adapts the HMS 'memory_window_size' based on downstream task performance reward

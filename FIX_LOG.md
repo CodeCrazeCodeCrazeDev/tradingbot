@@ -22,3 +22,17 @@
 | PROD-001 | Implemented cross-platform MT5 mock. | `trading_bot/brokers/mt5_adapter/MT5.py` | `read_file` |
 | MAINT-001 | Partitioned 148k line legacy file. | `trading_bot/core/legacy_main/` | `ls` |
 | MAINT-004 | Externalized magic numbers to YAML. | `config/risk_params.yaml` | `ls` |
+| SYN-001 | Resolved unterminated triple quoted string syntax error. | `trading_bot/data/__init__.py` | `read_file` |
+| SYN-002 | Removed unclosed comments and nested docstrings from MT5. | `trading_bot/data/mt5.py` | `read_file` |
+| SYN-003 | Corrected unclosed triple quote blocks in validator. | `trading_bot/data/validate.py` | `read_file` |
+| SYN-004 | Cleared unclosed docstrings and duplicates in router. | `trading_bot/core/csc/router.py` | `read_file` |
+| SYN-005 | Removed duplicate confidence keyword argument. | `trading_bot/core/csc/hypothesis.py` | `read_file` |
+| REL-006 | Imported missing time module in the LogAct event bus. | `trading_bot/core/unified_event_bus.py` | `read_file` |
+| REL-007 | Built dynamic positional/keyword constructor map for CSC. | `trading_bot/core/csc/controller.py` | `read_file` |
+| REL-008 | Instantiated valid default InstitutionalProvenance record. | `trading_bot/core/csc/controller.py` | `read_file` |
+| REL-009 | Purged duplicate method definitions at bottom of controller. | `trading_bot/core/csc/controller.py` | `read_file` |
+| REL-010 | Hardened key-extraction in pre-emption handler with fallback. | `trading_bot/core/csc/controller.py` | `read_file` |
+| REL-011 | Implemented _safe_await to cleanly accept MagicMocks in awaits. | `trading_bot/core/csc/controller.py` | `read_file` |
+| REL-012 | Stripped non-existent parameters in provenance instantiation. | `trading_bot/core/csc/controller.py` | `read_file` |
+| REL-013 | Cleared local scoping conflicts for decision_bus in tests. | `tests/uca_v5/test_csc_v5.py` | `read_file` |
+| REL-014 | Mapped missing _calculate_integrity_hash to module function. | `trading_bot/core/hms/memory.py` | `read_file` |

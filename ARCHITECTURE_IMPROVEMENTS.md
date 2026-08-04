@@ -17,3 +17,6 @@ Moving from `pickle` to `json` for standard state and using `asyncio.to_thread` 
 
 ## 6. Deterministic Replay and Provenance
 The Replay Engine now captures full environmental provenance (Git SHA, configuration hashes, dependency versions) and enforces deterministic execution. This ensures that every institutional decision can be audited and reproduced bit-identically in a research environment.
+
+## 7. Active Inference Brain and Skill Router Consolidation
+The `CognitiveSystemController` (CSC) has been hardened into an extremely resilient single brain that dynamically resolves varying legacy or full-fledged positional argument patterns. It utilizes adaptive wrappers to execute synchronous, asynchronous, or mocked dependencies flawlessly without event-loop disruption. The `SkillRouter` has been unified to resolve program vs. adapter routing conflicts deterministically.

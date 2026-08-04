@@ -27,7 +27,7 @@ class ImmediateDecisionBus:
         action._completed_event.set()
 
 @pytest.fixture(autouse=True)
-def mock_decision_bus(monkeypatch):
+def mock_decision_bus_fixture(monkeypatch):
     from trading_bot.core.unified_event_bus import decision_bus, ActionStatus
     async def mock_propose_action(action):
         action.status = ActionStatus.EXECUTED
@@ -76,16 +76,14 @@ async def test_csc_hasp_intervention(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_csc_pivot_loop():
-    # Ensure bus is started
-    await decision_bus.start()
-
     # Setup mocks
     world_model = MagicMock()
 
     hms = MagicMock()
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
-    shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
+    shield.validate_action = MagicMock()
+    shield.validate_action.return_value = MagicMock(decision=GovernanceDecision.APPROVED)
 
     # Reset singleton state if needed to bind updated mocks
     if CognitiveSystemController._instance is not None:
@@ -104,14 +102,11 @@ async def test_csc_pivot_loop():
         "branch_range": {"failure_rate": 0.2}
     })
 
-    from trading_bot.core.unified_event_bus import decision_bus
     await decision_bus.start()
 
     csc.verifier_swarm.run_swarm = AsyncMock(return_value=[MagicMock(is_valid=True, confidence=0.9)])
 
     decision = await csc.process_market_observation(obs)
-    await decision_bus.stop()
-
     await decision_bus.stop()
 
     assert decision.outcome == DecisionOutcome.TRADE_APPROVED
