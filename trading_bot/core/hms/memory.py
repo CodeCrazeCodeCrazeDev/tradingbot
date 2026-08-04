@@ -302,6 +302,10 @@ class HierarchicalMemorySystem:
         })
         return True
 
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        """Helper routing to standard module function."""
+        return calculate_integrity_hash(schema_dict)
+
     def validate_replay(self, schema_data: Dict[str, Any]) -> bool:
         """Validates schema integrity and correctness."""
         expected_hash = self._calculate_integrity_hash(schema_data)

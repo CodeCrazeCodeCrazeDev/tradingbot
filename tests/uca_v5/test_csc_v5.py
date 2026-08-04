@@ -28,17 +28,16 @@ class ImmediateDecisionBus:
 
 @pytest.fixture(autouse=True)
 def mock_decision_bus(monkeypatch):
-    from trading_bot.core.unified_event_bus import decision_bus, ActionStatus
+    from trading_bot.core.unified_event_bus import ActionStatus
     async def mock_propose_action(action):
         action.status = ActionStatus.EXECUTED
         action._completed_event.set()
     monkeypatch.setattr(decision_bus, "propose_action", mock_propose_action)
 
-from trading_bot.core.unified_event_bus import decision_bus, ActionStatus
-
 @pytest.mark.asyncio
 async def test_csc_hasp_intervention(monkeypatch):
     # Mock propose_action to approve immediately
+    from trading_bot.core.unified_event_bus import ActionStatus
     async def mock_propose_action(action):
         action.status = ActionStatus.EXECUTED
         action._completed_event.set()
@@ -104,14 +103,9 @@ async def test_csc_pivot_loop():
         "branch_range": {"failure_rate": 0.2}
     })
 
-    from trading_bot.core.unified_event_bus import decision_bus
-    await decision_bus.start()
-
     csc.verifier_swarm.run_swarm = AsyncMock(return_value=[MagicMock(is_valid=True, confidence=0.9)])
 
     decision = await csc.process_market_observation(obs)
-    await decision_bus.stop()
-
     await decision_bus.stop()
 
     assert decision.outcome == DecisionOutcome.TRADE_APPROVED
