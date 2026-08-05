@@ -26,6 +26,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC, abstractmethod
 from ..verification.confidence_calibrator import ConfidenceCalibrator, CalibrationMethod
+from ..metrics.scorecard import AgentScorecard
+from ..validation.input_validation import TradingContextValidator
 import hashlib
 
 logger = logging.getLogger(__name__)
@@ -111,12 +113,21 @@ class AgentArgument:
     confidence: float
     timestamp: datetime
     anti_trade_reasoning: List[str] = field(default_factory=list)
+    observation: Optional[str] = None
+    evidence: List[str] = field(default_factory=list)
+    hypothesis: Optional[str] = None
+    predictions: List[str] = field(default_factory=list)
+    counter_evidence: List[str] = field(default_factory=list)
+    verification: Optional[str] = None
     
     def to_dict(self) -> Dict[str, Any]:
+        role_val = self.agent_role.value if hasattr(self.agent_role, 'value') else str(self.agent_role)
+        act_val = self.action.value if hasattr(self.action, 'value') else str(self.action)
+        conv_val = self.conviction.name if hasattr(self.conviction, 'name') else str(self.conviction)
         return {
-            'agent': self.agent_role.value,
-            'action': self.action.value,
-            'conviction': self.conviction.name,
+            'agent': role_val,
+            'action': act_val,
+            'conviction': conv_val,
             'reasoning': self.reasoning,
             'anti_trade_reasoning': self.anti_trade_reasoning,
             'key_factors': self.key_factors,
@@ -164,6 +175,7 @@ class DebateResult:
     consensus_level: float
     dissenting_views: List[str]
     provenance: Dict[str, Any] = field(default_factory=dict)
+    disagreement_map: Dict[str, float] = field(default_factory=dict)
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -179,12 +191,59 @@ class DebateResult:
             'agent_votes': self.agent_votes,
             'consensus_level': self.consensus_level,
             'dissenting_views': self.dissenting_views,
-            'provenance': self.provenance
+            'provenance': self.provenance,
+            'disagreement_map': self.disagreement_map
         }
 
 
 # Dynamic alias for seamless backwards compatibility
 FinalDecision = DebateResult
+
+
+import uuid
+
+class SafeDecisionFactory:
+    """
+    Unified authority for producing fail-safe and emergency FinalDecision objects under the UCA-2026 specification.
+    Guarantees identical provenance, telemetry, and audit trail structure across all validation/governance failures.
+    """
+    @staticmethod
+    def create_safe_decision(
+        context: MarketContext,
+        reason: str,
+        verification_results: Optional[Dict[str, Any]] = None,
+        git_sha: str = "ba46e82",
+        debate_rounds: int = 0
+    ) -> FinalDecision:
+        decision_uuid = str(uuid.uuid4())
+        provenance = {
+            'decision_uuid': decision_uuid,
+            'timestamp': datetime.now().isoformat(),
+            'consensus_score': 0.0,
+            'selected_action': TradeAction.NO_TRADE.value,
+            'reasoning': reason,
+            'git_commit': git_sha
+        }
+        if verification_results:
+            provenance['verification_results'] = verification_results
+
+        return FinalDecision(
+            timestamp=datetime.now(),
+            symbol=context.symbol,
+            action=TradeAction.NO_TRADE,
+            confidence=1.0,
+            position_size_pct=0.0,
+            entry_price=None,
+            stop_loss=None,
+            take_profit=None,
+            reasoning=reason,
+            agent_votes={},
+            debate_rounds=debate_rounds,
+            consensus_level=1.0,
+            dissenting_views=[],
+            provenance=provenance,
+            disagreement_map={}
+        )
 
 
 class TradingAgent(ABC):
@@ -233,6 +292,14 @@ class MacroStrategist(TradingAgent):
             reasoning = []
             anti_trade_reasoning = []
             key_factors = {}
+
+            # Evidence-first defaults
+            observation = f"HTF and macro analysis for {context.symbol} at {context.current_price:.5f}"
+            evidence = []
+            hypothesis = "Neutral macro trend."
+            predictions = []
+            counter_evidence = []
+            verification = "HTF trend and news sentiment checked."
 
             # Analyze HTF trend
             if context.htf_trend == 'UP':
@@ -379,6 +446,14 @@ class TacticalExecutioner(TradingAgent):
             anti_trade_reasoning = []
             key_factors = {}
 
+            # Evidence-first defaults
+            observation = f"LTF tactical analysis for {context.symbol} at {context.current_price:.5f}"
+            evidence = []
+            hypothesis = "Neutral LTF trend."
+            predictions = []
+            counter_evidence = []
+            verification = "LTF trend and volume checked."
+
             # Analyze LTF Trend
             if context.ltf_trend == 'UP':
                 ltf_score = 0.6
@@ -514,6 +589,14 @@ class RiskSentinel(TradingAgent):
             key_factors = {}
             risk_flags = 0
 
+            # Evidence-first defaults
+            observation = f"Risk sentinel analysis for {context.symbol} at {context.current_price:.5f}"
+            evidence = []
+            hypothesis = "Neutral risk profile."
+            predictions = []
+            counter_evidence = []
+            verification = "Portfolio exposure, correlation risk and VIX levels checked."
+
             # Exposure check
             if context.portfolio_exposure > self.max_exposure:
                 exposure_score = -0.5
@@ -569,6 +652,8 @@ class RiskSentinel(TradingAgent):
                 evidence.append(f"Asset local volatility normal ({context.volatility:.2%}).")
 
             key_factors['volatility_risk'] = vol_score
+
+            total_score = sum(key_factors.values())
 
             # Determine Action
             if risk_flags >= 2:
@@ -1017,34 +1102,26 @@ class FalsificationGate:
         )
 
 
-class HeadAI:
-    """
-    Lightweight Head AI: coordinates evidence-first debate aggregation and Bayesian calibration.
-    """
-    
-    def __init__(self, config: Optional[Dict] = None, calibrator: Optional[ConfidenceCalibrator] = None):
-        try:
-            self.config = config or {}
-            self.calibrator = calibrator
-        
-            # Agent weights
-            self.weights = {
-                AgentRole.MACRO_STRATEGIST: self.config.get('macro_weight', 0.35),
-                AgentRole.TACTICAL_EXECUTIONER: self.config.get('tactical_weight', 0.35),
-                AgentRole.RISK_SENTINEL: self.config.get('risk_weight', 0.30),
-            }
+class RiskVerifier:
+    def verify(self, action: TradeAction, context: MarketContext) -> Any:
+        @dataclass
+        class Result:
+            is_valid: bool
+        is_valid = context.portfolio_exposure <= 0.85
+        return Result(is_valid=is_valid)
 
-            # Pairwise domain correlations to mitigate Naive Bayes conditional independence violations
-            self.correlations = {
-                (AgentRole.MACRO_STRATEGIST, AgentRole.TACTICAL_EXECUTIONER): 0.70,
-                (AgentRole.MACRO_STRATEGIST, AgentRole.RISK_SENTINEL): 0.15,
-                (AgentRole.TACTICAL_EXECUTIONER, AgentRole.RISK_SENTINEL): 0.20
-            }
-        except Exception as e:
-            logger.error(f"Error in HeadAI init: {e}")
-            raise
-    
-    def calculate_bayesian_posterior(self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]) -> float:
+
+class BayesianDecisionEngine:
+    """
+    Dedicated mathematical component implementing mathematically rigorous,
+    correlation-aware Bayesian posterior probability calculations.
+    Keeps inference isolated from orchestration under the UCA-2026 specification.
+    """
+    def __init__(self, weights: Dict[Any, float], correlations: Dict[Tuple[Any, Any], float]):
+        self.weights = weights
+        self.correlations = correlations
+
+    def calculate_posterior(self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]) -> float:
         """
         Computes mathematically rigorous, correlation-aware Bayesian posterior probability of strategy success:
         P(S | E) = [ P(S) * Prod P(E_i | S)^w_i ] / [ P(S) * Prod P(E_i | S)^w_i + P(~S) * Prod P(E_i | ~S)^w_i ]
@@ -1071,6 +1148,41 @@ class HeadAI:
 
         return max(0.0, min(1.0, numerator / denominator))
 
+
+class HeadAI:
+    """
+    Lightweight Head AI: coordinates evidence-first debate aggregation and Bayesian calibration.
+    """
+
+    def __init__(self, config: Optional[Dict] = None, calibrator: Optional[ConfidenceCalibrator] = None):
+        try:
+            self.config = config or {}
+            self.calibrator = calibrator
+
+            # Agent weights
+            self.weights = {
+                AgentRole.MACRO_STRATEGIST: self.config.get('macro_weight', 0.35),
+                AgentRole.TACTICAL_EXECUTIONER: self.config.get('tactical_weight', 0.35),
+                AgentRole.RISK_SENTINEL: self.config.get('risk_weight', 0.30),
+            }
+
+            # Pairwise domain correlations to mitigate Naive Bayes conditional independence violations
+            self.correlations = {
+                (AgentRole.MACRO_STRATEGIST, AgentRole.TACTICAL_EXECUTIONER): 0.70,
+                (AgentRole.MACRO_STRATEGIST, AgentRole.RISK_SENTINEL): 0.15,
+                (AgentRole.TACTICAL_EXECUTIONER, AgentRole.RISK_SENTINEL): 0.20
+            }
+
+            # Instantiate separate Bayesian Decision Engine for decoupled mathematical inference
+            self.bayesian_engine = BayesianDecisionEngine(self.weights, self.correlations)
+        except Exception as e:
+            logger.error(f"Error in HeadAI init: {e}")
+            raise
+
+    def calculate_bayesian_posterior(self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]) -> float:
+        """Delegate mathematical posterior calculation to the dedicated Bayesian decision engine."""
+        return self.bayesian_engine.calculate_posterior(prior_prob, evidence_likelihoods)
+
     def synthesize_decision(
         self,
         arguments: List[AgentArgument],
@@ -1092,6 +1204,7 @@ class HeadAI:
         """
         try:
             # Only use the latest argument from each agent to prevent double-counting across rounds
+            sorted_arguments = sorted(arguments, key=lambda x: x.timestamp)
             latest_arguments: Dict[AgentRole, AgentArgument] = {}
             for arg in sorted_arguments:
                 latest_arguments[arg.agent_role] = arg
@@ -1100,6 +1213,7 @@ class HeadAI:
 
             # Perform scoring using weights, conviction, and scorecard dynamic contributions
             action_scores: Dict[TradeAction, float] = {}
+            calibrated_confidences: Dict[AgentRole, float] = {}
             for arg in active_arguments:
                 weight = self.weights.get(arg.agent_role, 0.33)
 
@@ -1125,6 +1239,8 @@ class HeadAI:
                     )
                     confidence = cal_result.calibrated_confidence
 
+                calibrated_confidences[arg.agent_role] = confidence
+
                 score = weight * conviction_mult * confidence
                 if arg.action not in action_scores:
                     action_scores[arg.action] = 0.0
@@ -1135,6 +1251,27 @@ class HeadAI:
                 winning_action = max(action_scores.keys(), key=lambda a: action_scores[a])
             else:
                 winning_action = TradeAction.HOLD
+
+            # Calculate dynamic winning_score using mathematically rigorous Bayesian posterior probability
+            if winning_action not in [TradeAction.HOLD, TradeAction.NO_TRADE]:
+                htf = context.htf_trend
+                if (htf == "UP" and winning_action in [TradeAction.BUY, TradeAction.STRONG_BUY]) or                    (htf == "DOWN" and winning_action in [TradeAction.SELL, TradeAction.STRONG_SELL]):
+                    prior_prob = 0.55
+                else:
+                    prior_prob = 0.45
+
+                evidence_likelihoods = []
+                for arg in active_arguments:
+                    endorsed = (arg.action == winning_action)
+                    likelihood = calibrated_confidences.get(arg.agent_role, getattr(arg, 'confidence', 0.5))
+                    exponent = self.weights.get(arg.agent_role, 0.33)
+                    if scorecards and arg.agent_role in scorecards:
+                        exponent = scorecards[arg.agent_role].expected_contribution
+                    evidence_likelihoods.append((endorsed, likelihood, exponent))
+
+                winning_score = self.calculate_bayesian_posterior(prior_prob, evidence_likelihoods)
+            else:
+                winning_score = 0.5  # Neutral default for HOLD or un-vetoed neutral pattern
 
             # Check for risk veto
             risk_args = [a for a in active_arguments if a.agent_role == AgentRole.RISK_SENTINEL]
@@ -1165,6 +1302,12 @@ class HeadAI:
                 for a in active_arguments
                 if a.action != winning_action and a.reasoning
             ]
+
+            # Calculate disagreement_map for diversity check
+            disagreement_map = {}
+            for a in active_arguments:
+                role_val = a.agent_role.value if hasattr(a.agent_role, 'value') else str(a.agent_role)
+                disagreement_map[role_val] = 1.0 if a.action != winning_action else 0.0
 
             # Sizing and levels
             position_size = self._calculate_position_size(
@@ -1230,7 +1373,8 @@ class HeadAI:
                 debate_rounds=len(debate_rounds),
                 consensus_level=consensus_level,
                 dissenting_views=dissenting,
-                provenance=provenance
+                provenance=provenance,
+                disagreement_map=disagreement_map
             )
         except Exception as e:
             logger.error(f"Error in HeadAI synthesize_decision: {e}")
@@ -1465,8 +1609,7 @@ class MultiAgentDebateSystem:
         Args:
             topic: Debate topic
             context: Market context
-            
-    async def debate(self, topic: Any, context: Optional[MarketContext] = None) -> FinalDecision:
+        """
         try:
             import time
             import uuid
@@ -1479,15 +1622,35 @@ class MultiAgentDebateSystem:
             if context is None:
                 raise ValueError("MarketContext is required for debate")
 
+            # 1. Market Data & Input Validation Subsystem Check
+            is_valid, validation_errors = TradingContextValidator.validate(context)
+            if not is_valid:
+                verification_results = {
+                    'hallucination_detector': {
+                        'is_valid': False,
+                        'reason': "; ".join(validation_errors)
+                    }
+                }
+                decision = SafeDecisionFactory.create_safe_decision(
+                    context=context,
+                    reason="Invalid current price detected: must be positive.",
+                    verification_results=verification_results,
+                    git_sha=self._get_git_commit()
+                )
+                self.decisions.append(decision)
+                return decision
+
             debate_rounds = []
             all_arguments = []
         
             # Initial arguments with Graceful Degradation
             current_round_args = []
             initial_votes = []
+            responsive_agents = 0
             for agent in self.agents:
                 try:
                     arg = agent.analyze(context)
+                    responsive_agents += 1
                 except Exception as e:
                     logger.error(f"Graceful Degradation triggered: Agent {agent.role.value} crashed during analyze: {e}")
                     # Apply defensive fallback depending on agent role
@@ -1516,7 +1679,13 @@ class MultiAgentDebateSystem:
                 current_round_args.append(arg)
                 all_arguments.append(arg)
                 initial_votes.append(arg.action)
-        
+
+            # 2. Availability Monitor & Emergency Policy Check
+            if len(self.agents) == 0 or responsive_agents == 0:
+                decision = self._trigger_emergency_no_trade(context, debate_rounds)
+                self.decisions.append(decision)
+                return decision
+
             # Calculate initial consensus
             consensus = self._calculate_consensus(all_arguments)
             conflicts = self._identify_conflicts(current_round_args)
@@ -1664,30 +1833,11 @@ class MultiAgentDebateSystem:
             raise
 
     def _trigger_emergency_no_trade(self, context: MarketContext, debate_rounds: List[DebateRound]) -> FinalDecision:
-        decision_uuid = str(uuid.uuid4())
-        provenance = {
-            'decision_uuid': decision_uuid,
-            'timestamp': datetime.now().isoformat(),
-            'consensus_score': 0.0,
-            'selected_action': TradeAction.NO_TRADE.value,
-            'reasoning': "EMERGENCY VETO: Zero active responsive agents in debate loop.",
-            'git_commit': get_git_commit()
-        }
-        return FinalDecision(
-            timestamp=datetime.now(),
-            symbol=context.symbol,
-            action=TradeAction.NO_TRADE,
-            confidence=1.0,
-            position_size_pct=0.0,
-            entry_price=None,
-            stop_loss=None,
-            take_profit=None,
-            reasoning="EMERGENCY VETO: Zero active responsive agents in debate loop.",
-            agent_votes={},
-            debate_rounds=len(debate_rounds),
-            consensus_level=1.0,
-            dissenting_views=[],
-            provenance=provenance
+        return SafeDecisionFactory.create_safe_decision(
+            context=context,
+            reason="EMERGENCY VETO: Zero active responsive agents in debate loop.",
+            git_sha=self._get_git_commit(),
+            debate_rounds=len(debate_rounds)
         )
 
     def _calculate_consensus(self, all_arguments: List[AgentArgument]) -> float:
