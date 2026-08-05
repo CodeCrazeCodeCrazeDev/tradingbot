@@ -76,6 +76,7 @@ async def test_csc_hasp_intervention(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_csc_pivot_loop():
+    from trading_bot.core.unified_event_bus import decision_bus
     # Ensure bus is started
     await decision_bus.start()
 
@@ -103,9 +104,6 @@ async def test_csc_pivot_loop():
         "branch_bear": {"failure_rate": 0.1},
         "branch_range": {"failure_rate": 0.2}
     })
-
-    from trading_bot.core.unified_event_bus import decision_bus
-    await decision_bus.start()
 
     csc.verifier_swarm.run_swarm = AsyncMock(return_value=[MagicMock(is_valid=True, confidence=0.9)])
 

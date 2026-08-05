@@ -44,16 +44,11 @@ class HypothesisGenerator:
         """
         logger.info("HypothesisGenerator creating competing branches")
 
-        # 1. Ask World Model for raw scenarios (Price/Vol/Liq futures)
-        # 2. Assign specialized reasoning agents to each scenario
-        # 3. Each agent produces a ReasoningBranch with its own EvidenceGraph
-
         # Multi-Hypothesis Generation
         branches = [
             ReasoningBranch(
                 branch_id="branch_bull",
                 name="Bull Case",
-                confidence=0.9,
                 probability=0.35,
                 uncertainty=0.15,
                 confidence=0.85,
@@ -64,7 +59,6 @@ class HypothesisGenerator:
             ReasoningBranch(
                 branch_id="branch_bear",
                 name="Bear Case",
-                confidence=0.9,
                 probability=0.25,
                 uncertainty=0.20,
                 confidence=0.80,
@@ -75,7 +69,6 @@ class HypothesisGenerator:
             ReasoningBranch(
                 branch_id="branch_range",
                 name="Range Case",
-                confidence=0.9,
                 probability=0.40,
                 uncertainty=0.10,
                 confidence=0.90,

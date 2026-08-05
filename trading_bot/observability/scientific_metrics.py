@@ -114,13 +114,13 @@ class ScientificMetrics:
 
         if self.total_hypotheses > 20:
             if self.survival_rate < 0.05:
-                self.bottlenecks_detected.append("GENERATION_NOISE: Too many low-quality hypotheses generated.")
+                self.bottlenecks_detected.append("GENERATION_NOISE")
 
             if self.rejection_rate > 0.8:
-                self.bottlenecks_detected.append("FILTERING_STRICTNESS: Evidence collection might be too hostile or priors too low.")
+                self.bottlenecks_detected.append("FILTERING_STRICTNESS")
 
             if self.avg_validation_score > 0.7 and self.confirmed_count + self.institutionalized_count < 2:
-                self.bottlenecks_detected.append("PROMOTION_FRICTION: Hypotheses pass validation but fail to reach confirmation.")
+                self.bottlenecks_detected.append("PROMOTION_FRICTION")
 
     @property
     def total_institutionalized_knowledge(self) -> int:
