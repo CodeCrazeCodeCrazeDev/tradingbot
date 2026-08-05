@@ -44,8 +44,8 @@ __all__ = [
     "RealTimeProcessor",
     "PipelineMonitor"
 ]
-Data management module initialization.
-"""
+
+"""Data management module initialization."""
 
 from .validate import DataValidator
 from .mt5 import MT5Interface

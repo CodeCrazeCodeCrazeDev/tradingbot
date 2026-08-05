@@ -6,15 +6,6 @@ Implements 'HASP' (2026) and 'S2L' (2026).
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Callable
-from dataclasses import dataclass
-SkillRouter & HASP - UCA V6 Skill Management
-Orchestrates the selection and execution of Skill Programs (HASP/PFs)
-and behavioral adapters (Skill-to-LoRA).
-Implements 'HASP' (arXiv:2605.17734) and 'S2L' (arXiv:2606.16769).
-"""
-
-import logging
 import asyncio
 from enum import Enum
 from typing import Any, Dict, List, Optional, Callable, Set
@@ -37,6 +28,17 @@ class SkillRouteOutcome:
     action: Optional[str] = None
     adapter_id: Optional[str] = None
     reason: Optional[str] = None
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return getattr(self, key, default)
+
+    def __getitem__(self, key: str) -> Any:
+        if hasattr(self, key):
+            return getattr(self, key)
+        raise KeyError(key)
+
+    def __contains__(self, key: str) -> bool:
+        return hasattr(self, key)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -194,9 +196,13 @@ class SkillRouter:
         if market_state.get("volatility", 0) > 0.3:
             skill = self.get_skill("volatility_guardrail")
             if skill and skill.executable:
+                res = skill.executable(context)
                 return {
                     "status": "pf_intervention",
-                    "result": skill.executable(context)
+                    "result": res,
+                    "action": res.get("action"),
+                    "reason": res.get("reason"),
+                    "pf_version": res.get("pf_version")
                 }
 
         # 2. Capability-based Routing

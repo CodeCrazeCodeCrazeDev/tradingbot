@@ -46,6 +46,7 @@ async def test_csc_hasp_intervention(monkeypatch):
 
     # Setup mocks
     world_model = MagicMock()
+    world_model.simulate_intervention = AsyncMock(return_value={})
 
     hms = MagicMock()
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
@@ -81,6 +82,7 @@ async def test_csc_pivot_loop():
 
     # Setup mocks
     world_model = MagicMock()
+    world_model.simulate_intervention = AsyncMock(return_value={})
 
     hms = MagicMock()
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
@@ -103,9 +105,6 @@ async def test_csc_pivot_loop():
         "branch_bear": {"failure_rate": 0.1},
         "branch_range": {"failure_rate": 0.2}
     })
-
-    from trading_bot.core.unified_event_bus import decision_bus
-    await decision_bus.start()
 
     csc.verifier_swarm.run_swarm = AsyncMock(return_value=[MagicMock(is_valid=True, confidence=0.9)])
 

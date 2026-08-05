@@ -8,6 +8,7 @@ from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class AccountInfo:
     balance: float = 10000.0
@@ -17,6 +18,7 @@ class AccountInfo:
     margin_level: float = 1000.0
     profit: float = 0.0
 
+
 @dataclass
 class SymbolInfo:
     point: float = 0.00001
@@ -25,6 +27,7 @@ class SymbolInfo:
     volume_min: float = 0.01
     volume_max: float = 10.0
     volume_step: float = 0.01
+
 
 class MT5Interface:
     """Institutional-grade MT5Interface stub for testing and system compatibility."""
@@ -55,7 +58,6 @@ class MT5Interface:
     def get_rates(self, symbol: str, timeframe: str, count: int) -> List[Dict[str, Any]]:
         # Dummy rates for testing
         import pandas as pd
-        import numpy as np
         dates = pd.date_range(end=pd.Timestamp.now(), periods=count, freq='H')
         return [
             {
@@ -69,51 +71,24 @@ class MT5Interface:
             for d in dates
         ]
 
-    def place_order(self, order_type: str, symbol: str, volume: float, price: Optional[float] = None, **kwargs) -> Dict[str, Any]:
+    def place_order(self, order_type: Any = None, symbol: Optional[str] = None, volume: Optional[float] = None, price: Optional[float] = None, **kwargs) -> Dict[str, Any]:
+        if isinstance(order_type, dict):
+            # It's the request dict signature!
+            request = order_type
+            logger.info(f"MT5Interface: Order placed successfully -> {request}")
+            return {
+                "retcode": 10009,  # DONE
+                "order": 123456,
+                "volume": request.get("volume", 0.1),
+                "price": request.get("price", 1.0),
+                "comment": "Mock trade completed"
+            }
+
+        # It's the standard signature!
         return {
             "order_id": 123456,
             "status": "filled",
             "volume": volume,
             "price": price or 1.1000,
             "symbol": symbol
-MT5Interface class.
-Provides direct integration or fallback mocks for MT5 and brokers.
-"""
-
-import logging
-from typing import Dict, Any, Optional
-
-logger = logging.getLogger("AlphaAlgo.MT5Interface")
-
-class MT5Interface:
-    """Interacts with MetaTrader 5 terminal or provides standard mock wrappers when offline."""
-
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
-        self.config = config or {}
-        self.connected = False
-
-    def __enter__(self):
-        self.connect()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.disconnect()
-
-    def connect(self) -> bool:
-        logger.info("MT5Interface: Connected (Mocked mode).")
-        self.connected = True
-        return True
-
-    def disconnect(self):
-        logger.info("MT5Interface: Disconnected.")
-        self.connected = False
-
-    def place_order(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        logger.info(f"MT5Interface: Order placed successfully -> {request}")
-        return {
-            "retcode": 10009,  # DONE
-            "order": 123456,
-            "volume": request.get("volume", 0.1),
-            "price": request.get("price", 1.0),
-            "comment": "Mock trade completed"
         }
