@@ -133,6 +133,11 @@ class InstitutionalProvenance:
     pipeline_version: str = "UCA-V5"
     risk_policy_version: str = "v1.0"
     verification_signatures: Dict[str, str] = field(default_factory=dict)
+    source_feed: str = "unknown"
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+    raw_payload_checksum: str = ""
+    decision_trace_hash: str = ""
+    operator_signature: str = ""
 
 @dataclass
 class ResearchLedgerEntry:
