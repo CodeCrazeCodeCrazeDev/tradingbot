@@ -8,6 +8,7 @@ Implements 'RSEA' (arXiv:2606.28374), 'EKSFT' (arXiv:2605.29303), and 'NanoResea
 import logging
 import math
 import copy
+import asyncio
 from typing import Any, Dict, List, Optional
 from datetime import datetime
 from dataclasses import dataclass
@@ -38,16 +39,28 @@ class EvolutionGate:
         self.tau_kl = 0.5 # KL Divergence threshold
         logger.info(f"EvolutionGate V6: Monotone-Safe enabled (threshold={threshold})")
 
-    async def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
+    def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Any) -> Any:
         """
         RSEA Gate: Only promote if ALL metrics are non-regressive and Gain Metric (G) > threshold.
-        G = Perf(online/stateful) - Perf(stateless/baseline)
+        Dual Sync/Async: Returns a coroutine if there is a running loop, otherwise executes synchronously.
         """
+        async def _run_async():
+            return await self._validate_evolution_impl(candidate_id, candidate_config, baseline_config)
+
+        try:
+            asyncio.get_running_loop()
+            # Active event loop -> return coroutine
+            return _run_async()
+        except RuntimeError:
+            # No running loop -> execute synchronously using asyncio.run
+            return asyncio.run(self._validate_evolution_impl(candidate_id, candidate_config, baseline_config))
+
+    async def _validate_evolution_impl(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Any) -> bool:
         logger.info(f"EvolutionGate: Performing monotone-safe audit for candidate {candidate_id}")
 
         # 1. EKSFT Compliance Check (arXiv:2605.29303)
         if not self._check_eksft_compliance(candidate_config):
-            logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED due to EKSFT non-compliance (distribution shift risk).")
+            logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED due to EKSFT non-compliance.")
             return False
 
         # 2. Adversarial Red-Teaming (arXiv:2606.28374 Reward-Hacking Prevention)
@@ -60,8 +73,11 @@ class EvolutionGate:
                 return False
 
         # 3. Run baseline on validation set (Stateless Baseline)
-        baseline_raw = self.validation_engine.run_benchmark(baseline_config)
-        baseline = EvolutionMetrics(**baseline_raw)
+        if hasattr(baseline_config, "reward"):
+            baseline = baseline_config
+        else:
+            baseline_raw = self.validation_engine.run_benchmark(baseline_config)
+            baseline = EvolutionMetrics(**baseline_raw)
 
         # 4. Run candidate on validation set (Stateful Candidate)
         candidate_raw = self.validation_engine.run_benchmark(candidate_config)
@@ -104,40 +120,27 @@ class EvolutionGate:
         # Calibration Check (arXiv:2605.21482 DeepWeb-Bench)
         calibration_drift = baseline.calibration - candidate.calibration
 
-        if is_significant and no_regressions:
-            logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain: {gain:.4f}")
+        # Verify no regressions across critical metrics
+        no_regressions = (
+            candidate.calibration >= baseline.calibration * 0.95 and
+            candidate.robustness >= baseline.robustness * 0.95 and
+            candidate.latency <= baseline.latency * 1.2
+        )
 
-            # Immutable Provenance (UCA V5)
+        is_significant = gain >= self.threshold
+
+        if is_significant and no_regressions:
+            logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain (G): {gain:.4f}")
             self.evolution_history.append({
                 "timestamp": datetime.utcnow().isoformat(),
                 "candidate_id": candidate_id,
-                "metrics": candidate_perf,
-                "provenance": {
-                    "baseline_id": baseline_config.get("id"),
-                    "validation_mode": "CL-Bench-Stateful",
-                    "reproducible_seed": 42,
-                    "signatures": {"governance": "APPROVED_UCA_V5"}
-                },
+                "metrics": candidate.__dict__,
                 "status": "PROMOTED"
             })
             return True
         else:
-            logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED. Gain (G): {gain:.4f} < {self.threshold} or calibration drift too high.")
+            logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED. Gain (G): {gain:.4f} < {self.threshold} or calibration drift/metrics regressed.")
             return False
-
-        if candidate.latency > baseline.latency * 1.2:
-            logger.error(f"EvolutionGate: REJECTED - Latency regression exceeds limits ({baseline.latency}ms -> {candidate.latency}ms)")
-            return False
-
-        # Candidate APPROVED
-        logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain (G): {gain:.4f}")
-        self.evolution_history.append({
-            "timestamp": datetime.utcnow().isoformat(),
-            "candidate_id": candidate_id,
-            "metrics": candidate.__dict__,
-            "status": "PROMOTED"
-        })
-        return True
 
     def _check_eksft_compliance(self, config: Dict[str, Any]) -> bool:
         """Prevents distribution sharpening and entropy collapse."""
