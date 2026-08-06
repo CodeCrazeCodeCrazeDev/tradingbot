@@ -1,47 +1,51 @@
-platform linux -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
-rootdir: /app
-plugins: cov-7.1.0, asyncio-1.4.0, timeout-2.4.0
-asyncio: mode=Mode.AUTO
-collected 7 items
+# VALIDATION REPORT - Predefined Validation Plan (Phase 6)
 
-tests/uca_v5/test_csc_v5.py::test_csc_hasp_intervention PASSED           [ 14%]
-tests/uca_v5/test_csc_v5.py::test_csc_pivot_loop PASSED                  [ 28%]
-tests/uca_v5/test_hms_v5.py::test_hms_sage_graph_evolution PASSED        [ 42%]
-tests/uca_v5/test_hms_v5.py::test_hms_automem_optimization PASSED        [ 57%]
-tests/uca_v5/test_router_v5.py::test_router_hasp_routing PASSED          [ 71%]
-tests/uca_v5/test_router_v5.py::test_router_s2l_routing PASSED           [ 85%]
-tests/test_event_bus_consolidation.py::TestEventBusConsolidation::test_event_bus_bridge PASSED [100%]
-
-```
+Every single planned fix has a predefined validation plan to ensure correctness, zero regression, and performance efficiency once authorized.
 
 ---
 
-## 4. Regression Analysis & Code Coverage
-No regressions were introduced during this remediation phase. Code coverage in core active inference layers was maintained, and diagnostic tools confirm no memory leaks or dangling event-bus tasks remain in the active execution queue.
-# VALIDATION REPORT - Production Audit Fixes
+## Predefined Validation Plan per Issue
 
-## 1. Security Validation
-- Checked all `subprocess.run` calls: No `shell=True` found in modified scripts.
-- Verified `pickle` removal: `persistence/cache.py` now uses `json`.
-- Verified `eval()` removal: Demo scripts now use `ast.literal_eval()`.
+### 1. MAINT-006 to MAINT-009: Syntax Errors
+- **Unit Validation:** Not applicable (SyntaxErrors).
+- **Integration Validation:** Check that Python interpreter can compile and load `data/__init__.py`, `data/validate.py`, `core/csc/router.py`, and `core/csc/hypothesis.py`.
+- **Regression Validation:** Ensure all unit tests in `tests/uca_v5/` load cleanly without SyntaxErrors.
+- **Benchmark:** Not applicable.
+- **Profiling:** Verify no syntax warning delays on package startup.
+- **Static Analysis:** Run AST parser validation over modified files.
+- **Security Analysis:** Not applicable.
+- **Concurrency Validation:** Not applicable.
+- **Memory Validation:** Not applicable.
 
-## 2. Reliability Validation
-- Signal Handling: `MainTradingLoop` now correctly captures `SIGINT` and `SIGTERM`.
-- Resource Cleanup: `UnifiedDecisionBus` verified to mark actions as `FAILED` on exception and set the completion event in `finally`.
+### 2. PERF-004: Vectorized RSI Calculation
+- **Unit Validation:** Not applicable.
+- **Integration Validation:** Ensure `test_ohlcv_processing_speed` passes successfully.
+- **Regression Validation:** Verify output values match custom lambda RSI calculations exactly on sample data.
+- **Benchmark:** Assert execution speed is under 100ms for 1000 bars.
+- **Profiling:** Use `line_profiler` to verify no bottlenecks in rolling calculations.
+- **Static Analysis:** Not applicable.
+- **Security Analysis:** Not applicable.
+- **Concurrency Validation:** Verify thread-safety of vectorized operations under concurrent test runs.
+- **Memory Validation:** Check memory footprint remains constant.
 
-## 3. Performance Validation
-- Async Non-blocking: Cache operations moved to thread pool via `to_thread`.
-- Vectorization: `retrain_models` in liquidity predictor now uses batch numpy operations.
+### 3. MAINT-010 to MAINT-013: Export Exposes
+- **Unit Validation:** Verify exports are accessible in namespace.
+- **Integration Validation:** Run `test_ingestion_components`, `test_price_predictor_initialization`, `test_offline_rl_agents`, and `TestSignalLifecycle`.
+- **Regression Validation:** Verify other components importing from the root packages continue to load cleanly.
+- **Benchmark:** None.
+- **Profiling:** None.
+- **Static Analysis:** Use Pyflakes/MyPy to verify exported names are correctly resolved.
+- **Security Analysis:** None.
+- **Concurrency Validation:** None.
+- **Memory Validation:** None.
 
-## 4. Architectural Validation
-- Registry Consolidation: `trading_bot/registry/` deleted; `trading_bot.core` imports verified.
-- MT5 Portability: `MT5` class successfully handles `ImportError` and provides warning/mock mode on Linux.
-
-## 5. Intelligence Validation
-- Reality Gate: `EKSFTTrainer` now includes variance-based market grounding check.
-- Grounded Autonomy: `AutonomousCore` now requires a minimum autonomy level (0.1) before independent thinking.
-
-## 6. Scientific & Chaos Validation
-- Institutional Chaos: `tests/chaos_engineering.py` confirms safe degradation under MT5/Redis failure.
-- Ablation Studies: `tests/uca_v5_ablation_study.py` quantifies the value of DiscoLoop, HASP, and SAGE.
-- Quant Pipeline: `tests/test_advanced_quant_pipeline.py` verifies institutional research metrics (DSR, Mutual Info) pass with 100% success.
+### 4. MAINT-014 to MAINT-017 & ARCH-005 & PERF-001: Integration Failures
+- **Unit Validation:** Verify that `PositionSize` can be queried for `.lot_size`.
+- **Integration Validation:** Run the updated `test_system_integration.py` file in `tests_new/`.
+- **Regression Validation:** Run all active inference tests under `tests/uca_v5/` to confirm zero regressions.
+- **Benchmark:** Assert TWAP/VWAP plan creation runs in under 20ms.
+- **Profiling:** None.
+- **Static Analysis:** Verify clean typing resolution under MyPy.
+- **Security Analysis:** None.
+- **Concurrency Validation:** Ensure `GovernanceOrchestrator` handles parallel thread state safely.
+- **Memory Validation:** Verify zero memory leaks during repeated strategy optimizer instantiations.
