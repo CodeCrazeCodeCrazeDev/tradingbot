@@ -43,6 +43,7 @@ from .specialized_planners import (
     MeanReversionPlanner,
     VolatilityPlanner
 )
+from trading_bot.neuros_evolution.controlled_objects import ControlledObjectRegistry
 from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
@@ -430,6 +431,11 @@ class IntegratedAgentSystem:
 
         logger.info(f"Integrated System executing task via Meta-Orchestrator: {task}")
 
+        from .adapters import ReasoningTrace, ResponseFormatter
+        start_time = datetime.now()
+        obs_trace = {}
+        trace = ReasoningTrace(goal=task, analysis_summary="Executing task", plan=[])
+
         # 1. Use Meta-Orchestrator for self-scaffolding workflow
         meta_result = await self.meta_orchestrator.execute_task(
             task=task,
@@ -466,7 +472,6 @@ class IntegratedAgentSystem:
         )
 
         # Standardized Response Formatting
-        from .adapters import ReasoningTrace, ResponseFormatter
 
         # Extract results from trace
         answer_part = "No specific result returned."
@@ -476,6 +481,7 @@ class IntegratedAgentSystem:
             else:
                 answer_part = str(meta_result['result'])
 
+        final_answer = f"Task completed. Result: {answer_part}"
         formatted_response = ResponseFormatter.format_response(trace, [])
 
         if context.get('use_coordination'):

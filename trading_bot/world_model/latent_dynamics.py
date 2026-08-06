@@ -1524,3 +1524,79 @@ class WorldModel:
             self.pressure_probe.load_state_dict(state['pressure_probe'])
 
         logger.info(f"📂 World Model loaded from {filepath}")
+
+
+class AgenticPlanningWorldModel(nn.Module):
+    """
+    Agentic Planning World Model incorporating 'Internalizing the Future' (arXiv:2606.27483).
+
+    A unified training paradigm for world model planning that internalizes future-aware planning.
+    It simulates prospective state rollouts conditioned on candidate plans and estimates the
+    plan-conditioned success score (analogous to Q-value).
+
+    Three-stage paradigm:
+    1. WM-AMT: World Model Agentic Mid-Training to inject latent predictive capabilities.
+    2. FE-SFT: Format-Eliciting SFT to structure the injected predictive capability.
+    3. FC-RL: Foresight-Conditioned RL to refine calibration and utility of generated simulations.
+    """
+    def __init__(self, latent_dim: int = 64, hidden_dim: int = 128, action_dim: int = 5):
+        super().__init__()
+        self.latent_dim = latent_dim
+
+        # Prospective state rollout predictor (conditioned on plan/action)
+        self.rollout_predictor = nn.Sequential(
+            nn.Linear(latent_dim + action_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, latent_dim)
+        )
+
+        # Plan-conditioned success estimator (Q-value analogue)
+        self.success_estimator = nn.Sequential(
+            nn.Linear(latent_dim + action_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, 1),
+            nn.Sigmoid()
+        )
+
+        self.training_stage = "uninitialized"
+        logger.info("Initialized Agentic Planning World Model (arXiv:2606.27483)")
+
+    def forward(self, latent_state: torch.Tensor, plan_action: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Simulate prospective state rollout and predict plan-conditioned success score.
+        """
+        x = torch.cat([latent_state, plan_action], dim=-1)
+        prospective_next = self.rollout_predictor(x)
+        success_estimate = self.success_estimator(x)
+        return prospective_next, success_estimate
+
+    def wm_amt_inject_latent_predictions(self, states: torch.Tensor, actions: torch.Tensor, next_states: torch.Tensor) -> torch.Tensor:
+        """
+        Stage 1: World Model Agentic Mid-Training (WM-AMT).
+        Inject latent predictive capabilities into the policy by optimizing prospective prediction.
+        """
+        self.training_stage = "WM-AMT"
+        predicted_next, _ = self.forward(states, actions)
+        loss = F.mse_loss(predicted_next, next_states)
+        return loss
+
+    def fe_sft_format_structure(self, states: torch.Tensor, actions: torch.Tensor, structured_targets: torch.Tensor) -> torch.Tensor:
+        """
+        Stage 2: Format-Eliciting SFT (FE-SFT).
+        Structure the injected latent capability using standardized outputs (e.g. formatted predictions).
+        """
+        self.training_stage = "FE-SFT"
+        predicted_next, _ = self.forward(states, actions)
+        # SFT formatted structure alignment (MSE to targets)
+        loss = F.mse_loss(predicted_next, structured_targets)
+        return loss
+
+    def fc_rl_refine_foresight(self, states: torch.Tensor, actions: torch.Tensor, actual_success_outcomes: torch.Tensor) -> torch.Tensor:
+        """
+        Stage 3: Foresight-Conditioned Reinforcement Learning (FC-RL).
+        Refine the calibration and utility of generated foresight simulations.
+        """
+        self.training_stage = "FC-RL"
+        _, success_estimate = self.forward(states, actions)
+        loss = F.binary_cross_entropy(success_estimate.view(-1), actual_success_outcomes.view(-1))
+        return loss
