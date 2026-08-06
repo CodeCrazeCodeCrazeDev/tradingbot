@@ -19,7 +19,6 @@
 | DATA-001 | Missing Schema Validation | Medium | Data | RESOLVED |
 | DATA-002 | Stale Data in Cache | Medium | Data | RESOLVED |
 | ARCH-001 | Competing Orchestrators | High | Architecture | RESOLVED |
-| ARCH-002 | Circular Dependencies | Medium | Architecture | PARTIAL |
 | ARCH-002 | Circular Dependencies | Medium | Architecture | RESOLVED |
 | ARCH-004 | Excessive Coupling in Core | High | Architecture | RESOLVED |
 | ARCH-005 | God Module `core/__init__.py` | Medium | Architecture | RESOLVED |
@@ -33,3 +32,15 @@
 | MAINT-003 | Duplicated Logic in `_archive` | High | Maintainability | ARCHIVED |
 | MAINT-004 | Magic Numbers in Risk Models | Medium | Maintainability | RESOLVED |
 | MAINT-005 | Missing Docstrings in Core APIs | Low | Maintainability | RESOLVED |
+| SYN-001 | MT5 Interface Syntax Error | Critical | Syntax | RESOLVED |
+| SYN-002 | Data Validator Syntax Error | Critical | Syntax | RESOLVED |
+| SYN-003 | Data Init Package Syntax Error | Critical | Syntax | RESOLVED |
+| SYN-004 | SkillRouter Syntax Error | Critical | Syntax | RESOLVED |
+| SYN-005 | Hypothesis Generator Syntax Error | Critical | Syntax | RESOLVED |
+| SYN-006 | Research Init Package Syntax Error | Critical | Syntax | RESOLVED |
+| SYN-007 | Research OS V2 Double Header | Critical | Syntax | RESOLVED |
+| SYN-008 | Multi-Agent Debate Docstring Error | Critical | Syntax | RESOLVED |
+| ARCH-007 | Competing Registry Duplication | High | Architecture | RESOLVED |
+| TST-001 | Unbound Local Event Bus Test Error | Medium | Reliability | RESOLVED |
+| TST-002 | Singleton State Contamination | High | Reliability | RESOLVED |
+| TST-003 | Missing Integrity Hash on HMS | High | Reliability | RESOLVED |

@@ -579,10 +579,6 @@ __all__ = [
     'RSILadder',
     'AIDE2_InnerLoop',
     'AIDE2_OuterLoop',
-]
-
-class ResearchOrchestrator:
-    """Auto-generated stub orchestrator for research."""
     
     # Phase 2 Abstractions
     'ResearchProposal',

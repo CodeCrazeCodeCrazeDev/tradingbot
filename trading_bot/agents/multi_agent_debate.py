@@ -1465,8 +1465,7 @@ class MultiAgentDebateSystem:
         Args:
             topic: Debate topic
             context: Market context
-            
-    async def debate(self, topic: Any, context: Optional[MarketContext] = None) -> FinalDecision:
+        """
         try:
             import time
             import uuid

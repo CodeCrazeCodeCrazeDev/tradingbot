@@ -2,6 +2,13 @@ import pytest
 import asyncio
 from unittest.mock import MagicMock, AsyncMock, patch
 from trading_bot.core.csc.controller import CognitiveSystemController
+
+@pytest.fixture(autouse=True)
+def reset_csc_singleton():
+    """Reset CognitiveSystemController singleton state to isolate tests."""
+    CognitiveSystemController._instance = None
+    yield
+    CognitiveSystemController._instance = None
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome, CoreDecision
 from trading_bot.core.immutable_shield import GovernanceDecision
 from trading_bot.core.unified_event_bus import decision_bus
@@ -104,7 +111,6 @@ async def test_csc_pivot_loop():
         "branch_range": {"failure_rate": 0.2}
     })
 
-    from trading_bot.core.unified_event_bus import decision_bus
     await decision_bus.start()
 
     csc.verifier_swarm.run_swarm = AsyncMock(return_value=[MagicMock(is_valid=True, confidence=0.9)])
