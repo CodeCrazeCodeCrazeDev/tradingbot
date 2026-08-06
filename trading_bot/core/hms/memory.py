@@ -235,6 +235,10 @@ class HierarchicalMemorySystem:
             except: pass
         return {"version": "2.0", "entities": [], "relations": [], "optimized_count": 0}
 
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        """Computes SHA-256 checksum of memory schema for audit compliance."""
+        return calculate_integrity_hash(schema_dict)
+
     def _save_schema(self):
         self.memory_schema["updated_at"] = datetime.utcnow().isoformat()
         self.memory_schema["integrity_hash"] = self._calculate_integrity_hash(self.memory_schema)

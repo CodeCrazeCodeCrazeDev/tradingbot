@@ -31,20 +31,23 @@ class MT5Interface:
 
     def __init__(self, *args, **kwargs):
         self.config = kwargs
-        self._connected = True
+        self.connected = True
 
     def __enter__(self):
+        self.connect()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+        self.disconnect()
 
     def connect(self) -> bool:
-        self._connected = True
+        logger.info("MT5Interface: Connected (Mocked mode).")
+        self.connected = True
         return True
 
     def disconnect(self) -> None:
-        self._connected = False
+        logger.info("MT5Interface: Disconnected.")
+        self.connected = False
 
     def account_info(self) -> Optional[AccountInfo]:
         return AccountInfo()
@@ -68,45 +71,6 @@ class MT5Interface:
             }
             for d in dates
         ]
-
-    def place_order(self, order_type: str, symbol: str, volume: float, price: Optional[float] = None, **kwargs) -> Dict[str, Any]:
-        return {
-            "order_id": 123456,
-            "status": "filled",
-            "volume": volume,
-            "price": price or 1.1000,
-            "symbol": symbol
-MT5Interface class.
-Provides direct integration or fallback mocks for MT5 and brokers.
-"""
-
-import logging
-from typing import Dict, Any, Optional
-
-logger = logging.getLogger("AlphaAlgo.MT5Interface")
-
-class MT5Interface:
-    """Interacts with MetaTrader 5 terminal or provides standard mock wrappers when offline."""
-
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
-        self.config = config or {}
-        self.connected = False
-
-    def __enter__(self):
-        self.connect()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.disconnect()
-
-    def connect(self) -> bool:
-        logger.info("MT5Interface: Connected (Mocked mode).")
-        self.connected = True
-        return True
-
-    def disconnect(self):
-        logger.info("MT5Interface: Disconnected.")
-        self.connected = False
 
     def place_order(self, request: Dict[str, Any]) -> Dict[str, Any]:
         logger.info(f"MT5Interface: Order placed successfully -> {request}")
