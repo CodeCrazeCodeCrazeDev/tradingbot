@@ -9,6 +9,7 @@ Implements 'LogAct: Enabling Agentic Reliability via Shared Logs' (Paper 1).
 import asyncio
 import logging
 import json
+import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -238,8 +239,6 @@ class UnifiedDecisionBus:
                     logger.critical(f"LogAct CRITICAL: Mandatory Shield voter missing for action {action.action_id}")
                     action.status = ActionStatus.VETOED
                     action.voter_reports["SYSTEM"] = {"decision": "VETO", "reason": "Mandatory Shield voter missing"}
-                    action._completed_event.set()
-                    self._action_queue.task_done()
                     continue
 
                 vote_tasks = []
