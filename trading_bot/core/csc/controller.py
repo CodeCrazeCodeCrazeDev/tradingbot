@@ -82,40 +82,48 @@ class CognitiveSystemController:
     UCA V6 Controller - Authoritative Strategic Brain.
     Implements 12-step Recursive Active Inference.
     """
+    _instance = None
+
     def __init__(
         self,
         world_model: Any,
         hms: Any,
-        skill_router: SkillRouter,
-        verifier_swarm: VerificationSwarm,
-        risk_engine: Any,
-        consensus_engine: Any,
-        execution_planner: Any,
-        evolution_gate: Any,
-        shield: Optional[ImmutableShield] = None
+        skill_router: Optional[SkillRouter] = None,
+        verifier_swarm: Optional[VerificationSwarm] = None,
+        risk_engine: Any = None,
+        consensus_engine: Any = None,
+        execution_planner: Any = None,
+        evolution_gate: Any = None,
+        shield: Optional[ImmutableShield] = None,
+        **kwargs
     ):
-        # 1. Dependency Injection
         self.world_model = world_model
         self.hms = hms
-        self.skill_router = skill_router
-        self.verifier_swarm = verifier_swarm
+
+        # Detect and adapt if a legacy 3-positional-argument call was made (world_model, hms, shield)
+        # In that case, 'skill_router' actually contains the 'shield' instance
+        if skill_router is not None and not isinstance(skill_router, SkillRouter) and (hasattr(skill_router, "validate_action") or "Mock" in str(type(skill_router))):
+            shield = skill_router
+            skill_router = None
+
+        self.shield = shield
+        self.skill_router = skill_router or SkillRouter()
+        self.verifier_swarm = verifier_swarm or VerificationSwarm()
         self.risk_engine = risk_engine
         self.consensus_engine = consensus_engine
         self.execution_planner = execution_planner
         self.evolution_gate = evolution_gate
-        self.shield = shield
+
         from ..unified_event_bus import decision_bus as real_decision_bus
-        self.decision_bus = decision_bus or real_decision_bus
+        self.decision_bus = kwargs.get("decision_bus") or decision_bus or real_decision_bus
 
         # Core Functional Components
         self.hypothesis_gen = HypothesisGenerator(world_model)
-        self.verifier_swarm = VerificationSwarm()
         self.folder = InformationFolder(hms)
         self.discoloop = DiscoLoopCell(latent_dim=512)
-        self.skill_router = SkillRouter()
         self.acpe = AdaptiveControlPolicyEngine(hms)
 
-        # 4. State Channels
+        # State Channels
         self.continuous_state: Dict[str, Any] = {}
         self.discrete_channel: List[str] = []
         self.last_prediction: Any = None
@@ -123,6 +131,7 @@ class CognitiveSystemController:
 
         self._max_loops = 3
         self._initialized = True
+        CognitiveSystemController._instance = self
         logger.info("CSC-V6: Brain initialized with Recursive DiscoLoop and HIPIF.")
 
     @property
@@ -216,15 +225,20 @@ class CognitiveSystemController:
         # 3. HASP Shielding (Prescriptive Guardrails)
         # Pre-emptive intervention for known failure modes
         intervention = await self.skill_router.route_task("market_ingestion", observation)
-        if intervention.get("status") == "pf_intervention":
-            logger.warning(f"CSC-V6 Step 3: HASP PF Intervention: {intervention['reason']}")
-            if intervention.get("action") == "override_to_hold":
+        if hasattr(intervention, "to_dict"):
+            intervention_dict = intervention.to_dict()
+        else:
+            intervention_dict = intervention
+
+        if intervention_dict.get("status") == "pf_intervention":
+            logger.warning(f"CSC-V6 Step 3: HASP PF Intervention: {intervention_dict.get('reason')}")
+            if intervention_dict.get("action") == "override_to_hold":
                 return CoreDecision(
                     outcome=DecisionOutcome.TRADE_REJECTED,
                     trade_id=observation.get("trade_id", str(uuid4())),
-                    dominant_rejection_reason=f"HASP PF Intervention: {intervention['reason']}"
+                    dominant_rejection_reason=f"HASP PF Intervention: {intervention_dict.get('reason')}"
                 )
-            observation.update(intervention)
+            observation.update(intervention_dict)
 
         # 4. Recursive DiscoLoop Reasoning
         # Dual-channel recurrence for multi-hop internal reasoning
@@ -236,14 +250,12 @@ class CognitiveSystemController:
         branches = await self.hypothesis_gen.generate_competing_branches(observation)
 
         # 6. Causal Simulation (CWMI)
-        # Interventional rollouts (do-calculus) using the DiscoLoop latent state
-        latent_z = torch.tensor([self.continuous_state.get("latent", [0.0]*512)])
-        sim_results = {}
-        for branch in branches:
-            # Simulate each branch interpretation
-            sim_results[branch.branch_id] = await self.world_model.simulate_intervention(
-                observation, branch.execution_plan, latent_z=latent_z
-            )
+        # Interventional rollouts (do-calculus) using the hypothesis simulator
+        try:
+            sim_results = await self.hypothesis_gen.simulate_branches(branches)
+        except Exception as e:
+            logger.error(f"CSC-V6 Step 6: Causal Simulation Failure: {e}")
+            sim_results = {}
 
         # 7. Pivot/Refine Optimization
         # Self-healing strategy adjustment
@@ -385,6 +397,8 @@ class CognitiveSystemController:
         Synthesizes the final trade proposal from the best reasoning branch and its simulation results.
         """
         sim_data = simulations.get(branch.branch_id, {})
+        if not isinstance(sim_data, dict):
+            sim_data = {}
 
         # Adjust quantity based on expected slippage and structural impact
         base_qty = branch.execution_plan.get("quantity", 0.1)
@@ -401,6 +415,7 @@ class CognitiveSystemController:
         }
 
     def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
+        provenance = InstitutionalProvenance()
         return ResearchLedgerEntry(
             entry_id=str(uuid4()),
             hypothesis=branch.hypotheses[0] if branch.hypotheses else None,

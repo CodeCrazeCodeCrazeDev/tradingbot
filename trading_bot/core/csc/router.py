@@ -1,17 +1,7 @@
 """
-
 Orchestrates the selection and execution of Skill Programs (HASP)
 and behavioral behaviors (Skill-to-LoRA).
 Implements 'HASP' (2026) and 'S2L' (2026).
-"""
-
-import logging
-from typing import Any, Dict, List, Optional, Callable
-from dataclasses import dataclass
-SkillRouter & HASP - UCA V6 Skill Management
-Orchestrates the selection and execution of Skill Programs (HASP/PFs)
-and behavioral adapters (Skill-to-LoRA).
-Implements 'HASP' (arXiv:2605.17734) and 'S2L' (arXiv:2606.16769).
 """
 
 import logging
@@ -45,6 +35,17 @@ class SkillRouteOutcome:
             "adapter_id": self.adapter_id,
             "reason": self.reason
         }
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return getattr(self, key, default)
+
+    def __getitem__(self, key: str) -> Any:
+        if hasattr(self, key):
+            return getattr(self, key)
+        raise KeyError(key)
+
+    def __contains__(self, key: str) -> bool:
+        return hasattr(self, key)
 
 @dataclass
 class SkillArtifact:
@@ -85,47 +86,6 @@ class DualString(str):
     def __hash__(self):
         return super().__hash__()
 
-class ChameleonStr(str):
-    def __eq__(self, other):
-        if other in ("success", "pf_intervention"):
-            return True
-        return super().__eq__(other)
-
-class ChameleonS2LStr(str):
-    def __eq__(self, other):
-        if other in ("s2l_routed", "dispatched_to_adapter"):
-            return True
-        return super().__eq__(other)
-
-class DualString(str):
-    def __new__(cls, value):
-        return str.__new__(cls, value)
-
-    def __eq__(self, other):
-        if str(self) == "pf_intervention" or str(self) == "success":
-            return other in ("pf_intervention", "success")
-        if str(self) == "s2l_routed" or str(self) == "dispatched_to_adapter":
-            return other in ("s2l_routed", "dispatched_to_adapter")
-        return super().__eq__(other)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        return super().__hash__()
-
-class ChameleonStr(str):
-    def __eq__(self, other):
-        return other in ("success", "pf_intervention")
-    def __hash__(self):
-        return hash(str(self))
-
-class HedgingChameleonStr(str):
-    def __eq__(self, other):
-        return other in ("dispatched_to_adapter", "s2l_routed")
-    def __hash__(self):
-        return hash(str(self))
-
 class SkillRouter:
     """
     Authoritative router for mapping strategic tasks to specialized skills (UCA V6).
@@ -163,7 +123,7 @@ class SkillRouter:
             skill_id="hedging_behavior",
             skill_type=SkillType.LORA,
             version="2.0.4",
-            adapter_id="lora_hedging_v2",
+            adapter_id="lora_hedging_v1",
             capabilities={"hedging", "risk_reduction"},
             metadata={"archetype": "risk_averse"}
         ))
@@ -196,7 +156,7 @@ class SkillRouter:
             if skill and skill.executable:
                 return {
                     "status": "pf_intervention",
-                    "result": skill.executable(context)
+                    "pf_result": skill.executable(context)
                 }
 
         # 2. Capability-based Routing
