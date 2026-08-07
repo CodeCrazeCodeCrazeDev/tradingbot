@@ -32,4 +32,4 @@ async def test_router_s2l_routing():
     result = await router.route_task("hedge_task", context)
 
     assert result["status"] == "s2l_routed"
-    assert result["adapter_id"] in ("lora_hedging_v1", "lora_hedging_v2")
+    assert result["adapter_id"] == "lora_hedging_v2"

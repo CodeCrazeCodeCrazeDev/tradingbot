@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class DataValidator:
     """Validates Pandas DataFrames to ensure proper OHLCV and technical feature health."""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Dict[str, Any] = None):
         self.config = config or {}
         self.initialized = True
 
@@ -23,7 +23,7 @@ class DataValidator:
     def process(self, data: Any) -> Any:
         return data
 
-    def get_status(self) -> Dict:
+    def get_status(self) -> Dict[str, Any]:
         return {
             'initialized': self.initialized,
             'timestamp': datetime.now().isoformat(),
