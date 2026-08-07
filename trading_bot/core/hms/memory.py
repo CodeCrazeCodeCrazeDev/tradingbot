@@ -227,13 +227,16 @@ class HierarchicalMemorySystem:
             self.memory_window_size = min(self.memory_window_size + 10, 500)
             logger.info(f"SEAL: Memory retrieval was highly accurate. Adapted HMS memory window to {self.memory_window_size} to retain more contextual episodic memory.")
 
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
+
     def _load_schema(self) -> Dict[str, Any]:
-        schema = {"version": "1.0", "schema_version": "1.0", "entities": [], "relations": []}
+        schema = {"version": "1.0", "schema_version": "1.0", "entities": [], "relations": [], "optimized_count": 0, "migration_history": []}
         if os.path.exists(self.schema_path):
             try:
                 with open(self.schema_path, 'r') as f: return json.load(f)
             except: pass
-        return {"version": "2.0", "entities": [], "relations": [], "optimized_count": 0}
+        return schema
 
     def _save_schema(self):
         self.memory_schema["updated_at"] = datetime.utcnow().isoformat()
@@ -293,6 +296,8 @@ class HierarchicalMemorySystem:
                 self.memory_schema["relations"] = [r for r in self.memory_schema["relations"] if r.get("type") != "CONTRADICTS"]
 
         # Track history
+        if "migration_history" not in self.memory_schema:
+            self.memory_schema["migration_history"] = []
         self.memory_schema["migration_history"].append({
             "timestamp": datetime.utcnow().isoformat(),
             "from_version": from_v,
