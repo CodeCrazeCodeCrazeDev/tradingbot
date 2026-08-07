@@ -86,72 +86,63 @@ class CognitiveSystemController:
 
     def __init__(
         self,
-        world_model: Any = None,
-        hms: Any = None,
+        world_model: Any,
+        hms: Any,
         *args,
-        skill_router: Optional[SkillRouter] = None,
-        verifier_swarm: Optional[VerificationSwarm] = None,
-        risk_engine: Any = None,
-        consensus_engine: Any = None,
-        execution_planner: Any = None,
-        evolution_gate: Any = None,
-        shield: Optional[ImmutableShield] = None,
         **kwargs
     ):
-        # 1. Dependency Injection with dynamic positional fallback for backward compatibility
+        # Setup class instance reference for backward compatibility in tests
+        CognitiveSystemController._instance = self
+
+        # 1. Dependency Injection
         self.world_model = world_model
         self.hms = hms
 
-        # Detect positional arguments passed after hms
-        # In legacy 3-argument signature: (world_model, hms, shield)
-        # In modern 9-argument signature: (world_model, hms, skill_router, verifier_swarm, risk_engine, consensus_engine, execution_planner, evolution_gate, shield)
-        pos_args = list(args)
+        # Dynamically unpack optional positional and keyword arguments
+        self.shield = kwargs.get("shield")
+        self.skill_router = kwargs.get("skill_router")
+        self.verifier_swarm = kwargs.get("verifier_swarm")
+        self.risk_engine = kwargs.get("risk_engine")
+        self.consensus_engine = kwargs.get("consensus_engine")
+        self.execution_planner = kwargs.get("execution_planner")
+        self.evolution_gate = kwargs.get("evolution_gate")
 
-        # If there is 1 positional argument passed in *args (which means 3 positional args total)
-        if len(pos_args) == 1:
-            # Legacy signature: third positional argument is shield
-            self.shield = pos_args[0]
-            self.skill_router = skill_router or SkillRouter()
-            self.verifier_swarm = verifier_swarm or VerificationSwarm()
-            self.risk_engine = risk_engine
-            self.consensus_engine = consensus_engine
-            self.execution_planner = execution_planner
-            self.evolution_gate = evolution_gate
-        else:
-            # Modern or mixed signature
-            self.skill_router = pos_args[0] if len(pos_args) > 0 else (skill_router or SkillRouter())
-            self.verifier_swarm = pos_args[1] if len(pos_args) > 1 else (verifier_swarm or VerificationSwarm())
-            self.risk_engine = pos_args[2] if len(pos_args) > 2 else risk_engine
-            self.consensus_engine = pos_args[3] if len(pos_args) > 3 else consensus_engine
-            self.execution_planner = pos_args[4] if len(pos_args) > 4 else execution_planner
-            self.evolution_gate = pos_args[5] if len(pos_args) > 5 else evolution_gate
-            self.shield = pos_args[6] if len(pos_args) > 6 else (shield or kwargs.get("shield"))
+        # Map positional arguments
+        # If we got CognitiveSystemController(world_model, hms, shield)
+        if len(args) == 1:
+            self.shield = args[0]
+        # Or if we have V6 signature: (world_model, hms, skill_router, verifier_swarm, risk_engine, consensus_engine, execution_planner, evolution_gate, shield=None)
+        elif len(args) >= 6:
+            self.skill_router = args[0]
+            self.verifier_swarm = args[1]
+            self.risk_engine = args[2]
+            self.consensus_engine = args[3]
+            self.execution_planner = args[4]
+            self.evolution_gate = args[5]
+            if len(args) >= 7:
+                self.shield = args[6]
+        elif len(args) > 1:
+            # General fallback pairing by type or index
+            for arg in args:
+                if isinstance(arg, ImmutableShield):
+                    self.shield = arg
+                elif isinstance(arg, SkillRouter):
+                    self.skill_router = arg
+                elif isinstance(arg, VerificationSwarm):
+                    self.verifier_swarm = arg
 
-        # Fallback to defaults or mocks for missing services
-        if self.skill_router is None:
-            self.skill_router = SkillRouter()
-        if self.verifier_swarm is None:
-            self.verifier_swarm = VerificationSwarm()
-        if self.risk_engine is None:
-            self.risk_engine = MagicMock()
-        if self.consensus_engine is None:
-            self.consensus_engine = MagicMock()
-        if self.execution_planner is None:
-            self.execution_planner = MagicMock()
-        if self.evolution_gate is None:
-            self.evolution_gate = MagicMock()
-        if self.shield is None:
-            self.shield = MagicMock()
+        # Inject default functional components if not explicitly provided
+        self.skill_router = self.skill_router or SkillRouter()
+        self.verifier_swarm = self.verifier_swarm or VerificationSwarm()
 
-        # Handle other custom kwargs like decision_bus or others
         from ..unified_event_bus import decision_bus as real_decision_bus
         self.decision_bus = kwargs.get("decision_bus") or real_decision_bus
 
         # Core Functional Components
-        self.hypothesis_gen = HypothesisGenerator(self.world_model)
-        self.folder = InformationFolder(self.hms)
+        self.hypothesis_gen = HypothesisGenerator(world_model)
+        self.folder = InformationFolder(hms)
         self.discoloop = DiscoLoopCell(latent_dim=512)
-        self.acpe = AdaptiveControlPolicyEngine(self.hms)
+        self.acpe = AdaptiveControlPolicyEngine(hms)
 
         # 4. State Channels
         self.continuous_state: Dict[str, Any] = {}
@@ -253,21 +244,14 @@ class CognitiveSystemController:
 
         # 3. HASP Shielding (Prescriptive Guardrails)
         # Pre-emptive intervention for known failure modes
-        intervention = await self._safe_await(self.skill_router.route_task("market_ingestion", observation))
-
-        # Handle both dict and dataclass results robustly!
-        if isinstance(intervention, dict):
-            status = intervention.get("status")
-            reason = intervention.get("reason", "")
-            action_val = intervention.get("action")
-        else:
-            status = getattr(intervention, "status", None)
-            reason = getattr(intervention, "reason", "")
-            action_val = getattr(intervention, "action", None)
-
-        if status == "pf_intervention":
+        intervention = await self.skill_router.route_task("market_ingestion", observation)
+        if hasattr(intervention, "to_dict"):
+            intervention = intervention.to_dict()
+        if intervention.get("status") == "pf_intervention":
+            pf_result = intervention.get("pf_result", {})
+            reason = pf_result.get("reason", intervention.get("reason", "unknown"))
             logger.warning(f"CSC-V6 Step 3: HASP PF Intervention: {reason}")
-            if action_val == "override_to_hold":
+            if pf_result.get("action") == "override_to_hold" or intervention.get("action") == "override_to_hold":
                 return CoreDecision(
                     outcome=DecisionOutcome.TRADE_REJECTED,
                     trade_id=observation.get("trade_id", str(uuid4())),
@@ -471,10 +455,7 @@ class CognitiveSystemController:
         }
 
     def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
-        provenance = InstitutionalProvenance(
-            git_sha="CSC_V6",
-            random_seed=42
-        )
+        provenance = InstitutionalProvenance()
         return ResearchLedgerEntry(
             entry_id=str(uuid4()),
             hypothesis=branch.hypotheses[0] if branch.hypotheses else None,
