@@ -56,6 +56,16 @@ class SkillRouteOutcome:
             "version": self.version
         }
 
+    def __getitem__(self, key):
+        if key == "pf_result" and self.status == "pf_intervention":
+            return {"action": self.action or "override_to_hold", "reason": self.reason}
+        return getattr(self, key, None)
+
+    def get(self, key, default=None):
+        if key == "pf_result" and self.status == "pf_intervention":
+            return {"action": self.action or "override_to_hold", "reason": self.reason}
+        return getattr(self, key, default)
+
 @dataclass
 class SkillArtifact:
     skill_id: str
