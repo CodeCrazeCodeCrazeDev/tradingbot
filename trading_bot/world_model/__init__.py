@@ -19,7 +19,8 @@ from .v2_core import (
 
 # Training and Adaptation
 from .v2_training import (
-    WorldModelSpecialistTrainer as WorldModelTrainer,
+    WorldModelSpecialistTrainer,
+    WorldModelSpecialistTrainer,
 )
 from .v2_adapter import (
     LegacyWorldModelAdapter,
@@ -40,9 +41,38 @@ from .uncertainty_engine import (
 )
 
 # Simulation and Planning (Canonical V2-compatible)
-class ImaginationPlanner: pass
-class PlanResult: pass
-class CEMPlanner: pass
+from .imagination import (
+    PlanningEngine,
+    FutureSimulator,
+)
+
+# Simulation Components - Pointing to Canonical Simulation Subsystem
+try:
+    from trading_bot.simulation import (
+        SimulationOrchestrator,
+        SimulationMode,
+    )
+except ImportError:
+    # Minimal canonical definitions if simulation package is not yet fully linked
+    from enum import Enum
+    class SimulationMode(Enum):
+        PAPER = "paper"
+        BACKTEST = "backtest"
+        STRESS = "stress"
+
+    class SimulationOrchestrator:
+        def __init__(self, config=None): pass
+
+# Type stubs for completeness if missing elsewhere
+from dataclasses import dataclass
+from typing import Any
+@dataclass
+class SimulationConfig:
+    mode: Any = None
+
+@dataclass
+class SimulationResult:
+    success: bool = True
 
 # Synthetic Data Generation
 from .synthetic_data import (
@@ -60,27 +90,7 @@ from .experience_replay import (
     BeliefStateTracker,
 )
 
-# Authoritative Compatibility Stubs for Legacy Migration
-
-class SimulationOrchestrator:
-    def __init__(self, config=None):
-        self.config = config or {}
-        self.running = False
-    async def start(self): self.running = True
-    async def stop(self): self.running = False
-    def get_status(self): return {"running": self.running}
-
-class SimulationConfig: pass
-class SimulationMode: pass
-class SimulationResult: pass
-
-class WorldModel:
-    """Legacy WorldModel adapter pointing to WorldModelV2."""
-    def __init__(self, config=None):
-        self.config = config or {}
-        self.core = WorldModelV2({"equities": 20, "fx": 10, "macro": 5})
-    def predict(self, state):
-        return self.core(state)
+# Maintenance of Legacy Core for transition
 
 __all__ = [
     # Canonical WM-V2/V3
@@ -88,7 +98,7 @@ __all__ = [
     'MarketScenario',
     'PredictiveMarketCore',
     'UnifiedCrossAssetEncoder',
-    'WorldModelTrainer',
+    'WorldModelSpecialistTrainer',
     'LegacyWorldModelAdapter',
 
     # State and Governance
@@ -100,9 +110,8 @@ __all__ = [
     'UncertaintyEngine',
 
     # Planning and Orchestration
-    'ImaginationPlanner',
-    'PlanResult',
-    'CEMPlanner',
+    'PlanningEngine',
+    'FutureSimulator',
     'SimulationOrchestrator',
     'SimulationConfig',
     'SimulationMode',
@@ -121,5 +130,4 @@ __all__ = [
     'BeliefStateTracker',
 
     # Legacy Transition
-    'WorldModel',
 ]

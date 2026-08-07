@@ -10,13 +10,7 @@ import asyncio
 import logging
 from unittest.mock import Mock, patch, MagicMock
 
-try:
-    from trading_bot.core_types import *
-except ImportError:
-    # Fallback import
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.core_types import *
+from trading_bot.decision_layer.core_types import *
 
 logger = logging.getLogger(__name__)
 

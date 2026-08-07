@@ -8,6 +8,7 @@ and only permits capital deployment when the reasoning graph is sufficiently
 complete, coherent, and robust.
 """
 
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -17,6 +18,8 @@ from collections import defaultdict, deque
 import uuid
 import json
 import hashlib
+
+logger = logging.getLogger(__name__)
 
 
 class ClaimType(Enum):

@@ -2,12 +2,8 @@
 Event Bus - Async Event-Driven Architecture
 ============================================
 
-Central event bus for service communication:
-- Publish/Subscribe pattern
-- Event routing and filtering
-- Async event processing
-- Event history and replay
-- Dead letter queue for failed events
+Bridged legacy event bus for service communication.
+Saves, forwards, and coordinates events between legacy subsystems and UnifiedDecisionBus.
 """
 
 import asyncio
@@ -22,6 +18,39 @@ import json
 from trading_bot.core.unified_event_bus import decision_bus, UnifiedEvent, EventPriority as UnifiedEventPriority
 
 logger = logging.getLogger(__name__)
+
+
+class LegacyBusUsageCounter:
+    """Tracks and records legacy event bus usage metrics."""
+    _publish_count = 0
+    _subscribe_count = 0
+    _callers = set()
+
+    @classmethod
+    def record_publish(cls, event_type: str, source: str):
+        cls._publish_count += 1
+        cls._callers.add(source)
+        logger.warning(
+            f"LegacyBusUsage: {source} published {event_type}. "
+            f"Total legacy publishes: {cls._publish_count}. Migration to UnifiedDecisionBus recommended."
+        )
+
+    @classmethod
+    def record_subscribe(cls, subscriber_id: str, event_types: List[str]):
+        cls._subscribe_count += 1
+        cls._callers.add(subscriber_id)
+        logger.warning(
+            f"LegacyBusUsage: {subscriber_id} subscribed to {event_types}. "
+            f"Total legacy subscribes: {cls._subscribe_count}. Migration to UnifiedDecisionBus recommended."
+        )
+
+    @classmethod
+    def get_metrics(cls) -> Dict[str, Any]:
+        return {
+            "legacy_publishes": cls._publish_count,
+            "legacy_subscribes": cls._subscribe_count,
+            "active_legacy_callers": list(cls._callers)
+        }
 
 
 class EventPriority(Enum):
@@ -54,7 +83,7 @@ class Event:
     metadata: Dict[str, Any] = field(default_factory=dict)
     retry_count: int = 0
     max_retries: int = 3
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             'event_id': self.event_id,
@@ -81,7 +110,7 @@ class Subscription:
 class EventBus:
     """
     Async Event Bus for Service Communication
-    
+
     Features:
     - Async publish/subscribe
     - Event filtering
@@ -89,7 +118,7 @@ class EventBus:
     - Dead letter queue
     - Event history
     """
-    
+
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
         self.unified_bus = decision_bus
@@ -101,9 +130,9 @@ class EventBus:
         self._running = False
         self._processor_task: Optional[asyncio.Task] = None
         self._lock = asyncio.Lock()
-        
+
         logger.info("EventBus initialized (bridged to UnifiedDecisionBus)")
-    
+
     async def start(self) -> None:
         """Start event processing"""
         if self._running:
@@ -111,7 +140,7 @@ class EventBus:
         self._running = True
         self._processor_task = asyncio.create_task(self._process_events())
         logger.info("EventBus started")
-    
+
     async def stop(self) -> None:
         """Stop event processing"""
         self._running = False
@@ -122,7 +151,7 @@ class EventBus:
             except asyncio.CancelledError:
                 pass
         logger.info("EventBus stopped")
-    
+
     def subscribe(
         self,
         subscriber_id: str,
@@ -132,6 +161,7 @@ class EventBus:
         priority: int = 0
     ) -> None:
         """Subscribe to events"""
+        LegacyBusUsageCounter.record_subscribe(subscriber_id, event_types)
         subscription = Subscription(
             subscriber_id=subscriber_id,
             event_types=set(event_types),
@@ -139,14 +169,14 @@ class EventBus:
             filter_fn=filter_fn,
             priority=priority
         )
-        
+
         for event_type in event_types:
             self._subscribers[event_type].append(subscription)
             # Sort by priority (higher first)
             self._subscribers[event_type].sort(key=lambda s: -s.priority)
-        
+
         logger.debug(f"Subscriber {subscriber_id} registered for {event_types}")
-    
+
     def unsubscribe(self, subscriber_id: str) -> None:
         """Unsubscribe from all events"""
         for event_type in list(self._subscribers.keys()):
@@ -155,9 +185,10 @@ class EventBus:
                 if s.subscriber_id != subscriber_id
             ]
         logger.debug(f"Subscriber {subscriber_id} unsubscribed")
-    
+
     async def publish(self, event: Event) -> None:
         """Publish an event"""
+        LegacyBusUsageCounter.record_publish(event.event_type, event.source)
         # Forward to Unified Decision Bus
         unified_event = UnifiedEvent(
             event_type=event.event_type,
@@ -174,7 +205,7 @@ class EventBus:
         # Local processing for legacy compatibility
         await self._event_queue.put((-event.priority.value, event.timestamp, event))
         logger.debug(f"Event published: {event.event_type} from {event.source}")
-    
+
     async def publish_and_wait(self, event: Event, timeout: float = 30.0) -> bool:
         """Publish event and wait for processing"""
         completion_event = asyncio.Event()
@@ -186,7 +217,7 @@ class EventBus:
         except asyncio.TimeoutError:
             logger.warning(f"Event {event.event_id} timed out")
             return False
-    
+
     async def _process_events(self) -> None:
         """Process events from queue"""
         while self._running:
@@ -198,36 +229,36 @@ class EventBus:
                     )
                 except asyncio.TimeoutError:
                     continue
-                
+
                 # Process event
                 await self._dispatch_event(event)
-                
+
                 # Store in history
                 async with self._lock:
                     self._event_history.append(event)
                     if len(self._event_history) > self._max_history:
                         self._event_history = self._event_history[-self._max_history:]
-                
+
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 logger.error(f"Error processing event: {e}")
-    
+
     async def _dispatch_event(self, event: Event) -> None:
         """Dispatch event to subscribers"""
         subscribers = self._subscribers.get(event.event_type, [])
         # Also get wildcard subscribers
         subscribers.extend(self._subscribers.get('*', []))
-        
+
         if not subscribers:
             logger.debug(f"No subscribers for {event.event_type}")
             return
-        
+
         for subscription in subscribers:
             # Apply filter if present
             if subscription.filter_fn and not subscription.filter_fn(event):
                 continue
-            
+
             try:
                 await subscription.handler(event)
             except Exception as e:
@@ -235,7 +266,7 @@ class EventBus:
                     f"Handler error for {subscription.subscriber_id}: {e}"
                 )
                 event.retry_count += 1
-                
+
                 if event.retry_count < event.max_retries:
                     # Re-queue for retry
                     await self.publish(event)
@@ -243,22 +274,22 @@ class EventBus:
                     # Move to dead letter queue
                     self._dead_letter_queue.append(event)
                     logger.warning(f"Event {event.event_id} moved to dead letter queue")
-        
+
         # Signal completion if waiting
         completion_event = event.metadata.get('_completion_event')
         if completion_event:
             completion_event.set()
-    
+
     def get_dead_letters(self) -> List[Event]:
         """Get dead letter queue"""
         return self._dead_letter_queue.copy()
-    
+
     def clear_dead_letters(self) -> int:
         """Clear dead letter queue"""
         count = len(self._dead_letter_queue)
         self._dead_letter_queue.clear()
         return count
-    
+
     async def replay_events(
         self,
         event_types: Optional[List[str]] = None,
@@ -274,7 +305,7 @@ class EventBus:
             await self.publish(event)
             count += 1
         return count
-    
+
     def get_stats(self) -> Dict[str, Any]:
         """Get event bus statistics"""
         return {
@@ -312,12 +343,12 @@ class EventTypes:
     MARKET_TICK = "market.tick"
     MARKET_CANDLE = "market.candle"
     MARKET_DEPTH = "market.depth"
-    
+
     # Signal events
     SIGNAL_GENERATED = "signal.generated"
     SIGNAL_VALIDATED = "signal.validated"
     SIGNAL_REJECTED = "signal.rejected"
-    
+
     # Trade events
     TRADE_REQUESTED = "trade.requested"
     TRADE_REQUEST = "trade.request"
@@ -327,53 +358,53 @@ class EventTypes:
     TRADE_EXECUTED = "trade.executed"
     TRADE_FAILED = "trade.failed"
     TRADE_CLOSED = "trade.closed"
-    
+
     # Order events
     ORDER_PLACED = "order.placed"
     ORDER_FILLED = "order.filled"
     ORDER_REJECTED = "order.rejected"
     ORDER_CANCELLED = "order.cancelled"
     ORDER_CANCEL_REQUEST = "order.cancel.request"
-    
+
     # Position events
     POSITION_OPENED = "position.opened"
     POSITION_CLOSED = "position.closed"
     POSITION_UPDATED = "position.updated"
-    
+
     # Alpha events
     ALPHA_SIGNAL = "alpha.signal"
-    
+
     # Risk events
     RISK_CHECK_PASSED = "risk.check.passed"
     RISK_CHECK_FAILED = "risk.check.failed"
     RISK_LIMIT_BREACH = "risk.limit.breach"
     RISK_LIMIT_EXCEEDED = "risk.limit.exceeded"
     DRAWDOWN_WARNING = "risk.drawdown.warning"
-    
+
     # Broker events
     BROKER_CONNECTED = "broker.connected"
     BROKER_DISCONNECTED = "broker.disconnected"
     BROKER_ERROR = "broker.error"
-    
+
     # System events
     SYSTEM_STARTUP = "system.startup"
     SYSTEM_SHUTDOWN = "system.shutdown"
     SYSTEM_ERROR = "system.error"
     SYSTEM_HEALTH_CHECK = "system.health.check"
     SYSTEM_STATUS = "system.status"
-    
+
     # Service events
     SERVICE_STARTED = "service.started"
     SERVICE_STOPPED = "service.stopped"
     SERVICE_ERROR = "service.error"
     SERVICE_HEALTH = "service.health"
-    
+
     # AI events
     AI_ANALYSIS_COMPLETE = "ai.analysis.complete"
     AI_PREDICTION_READY = "ai.prediction.ready"
     AI_MODEL_UPDATED = "ai.model.updated"
     AI_LEARNING_CYCLE = "ai.learning.cycle"
-    
+
     # Workflow events
     WORKFLOW_STARTED = "workflow.started"
     WORKFLOW_STEP_COMPLETE = "workflow.step.complete"

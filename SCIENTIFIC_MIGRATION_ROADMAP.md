@@ -1,21 +1,23 @@
-# Scientific Migration Roadmap - SRE 2026
+# Scientific Migration Roadmap - UCA 2026 Redesign
 
-## Phase 1: Foundation (Weeks 1-2) - DONE
-- Unified `ScientificHypothesis` data model.
-- 19-step SRE state machine core.
+This roadmap outlines the transition from the fragmented hypothesis ecosystem to the Unified Scientific Reasoning Engine (SRE).
 
-## Phase 2: Consolidation (Weeks 3-6)
-- Route `PHCE-D` into the SRE (Step 8 & 10).
-- Route `AlphaMining` into the SRE (Step 4 & 11).
-- Route `CuriosityEngine` into the SRE (Step 2 & 3).
+## Phase 1: Foundation & Data Normalization (Current)
+- **Centralize Data Model**: Enforce `ScientificHypothesis` in `trading_bot/core_agent_system/scientific_reasoning/core.py` as the primary entity.
+- **Bridge Legacy Components**: Map existing signals from CSC, PHCE-D, and Alpha Mining to the SRE registry via internal adapters.
+- **Baseline Metrics**: Activate `ScientificMetrics` to track current system performance and identify bottleneck baselines.
 
-## Phase 3: HMS Integration (Weeks 7-10)
-- Connect SRE Step 14 & 15 to HMS `Semantic` and `Institutional` layers.
-- Implement automated `ResearchLedgerEntry` generation at every cycle.
+## Phase 2: Pipeline Hardening (Weeks 1-4)
+- **Concrete Lifecycle Implementation**: Replace SRE stubs (Steps 2, 7, 19) with full production-grade logic.
+  - Integrate GWM for `detect_anomalies`.
+  - Wire `AdversarialAnalyzer` for `generate_counterfactuals`.
+- **Epistemic Calibration**: Force all Level 3+ hypotheses through the `EpistemologyEngine` for adversarial evaluation before promotion.
 
-## Phase 4: Full Autonomy (Weeks 11-12)
-- Activate Step 19 (Automatic Meta-Discovery).
-- Enable recursive self-improvement of the SRE generation logic.
+## Phase 3: SAGE & Memory Integration (Weeks 5-8)
+- **Institutional Memory**: Connect Step 15 (`Memory Consolidation`) to the SAGE Graph memory in HMS.
+- **Scientific Replay**: Implement surprise-driven replay to prevent "Scientific Amnesia" and refine historical hypothesis failures.
 
-## Transition Strategy: "The Shadow Brain"
-During Phase 2 and 3, the SRE will run in **Shadow Mode**, observing the legacy orchestrators and logging "What I would have decided". Deployment to production occurs only after 10 consecutive cycles of 0.95+ correlation with successful institutional decisions.
+## Phase 4: Full Autonomy & Meta-Discovery (Weeks 9+)
+- **Active Inference**: Enable full VFE-driven reasoning where the system autonomously generates research questions based on surprise.
+- **Alpha Evolution**: Connect SRE Meta-Discovery (Step 19) to the `GeneticAlphaSearch` search priors.
+- **Legacy Decommissioning**: Gradual removal of redundant registries once SRE parity is verified in live trading.

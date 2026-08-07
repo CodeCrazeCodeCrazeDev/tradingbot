@@ -1,53 +1,52 @@
 # Engineering Decomposition: AutoMem (arXiv:2607.01224)
 
 ## Core Hypothesis
-Memory management is a learned cognitive skill (metamemory). Automating the optimization of memory structure (schemas, prompts) and model proficiency (action selection) significantly boosts long-horizon task performance.
+Memory management is an independently learnable cognitive skill (metamemory) that can be optimized through automated feedback loops. Treat memory actions (Read, Write, Manage) as first-class operations alongside task actions.
 
 ## Mathematical Formulation
-- **Memory Action Vocabulary**: $A_M = \{\text{Read}, \text{Write}, \text{Update}, \text{Delete}, \text{Search}\}$.
-- **Two-Loop Optimization**:
-    - **Loop 1 (Structure)**: $S^* = \arg\max_S \mathbb{E}_{\tau \sim P(\tau | S, \theta)} [R(\tau)]$ (using a teacher LLM to revise $S$).
-    - **Loop 2 (Proficiency)**: $\theta^* = \arg\min_\theta \mathcal{L}(\theta; \mathcal{D}_{mem})$ where $\mathcal{D}_{mem}$ contains optimal memory decisions.
+- **Memory Reward**: $R_M = \text{Recall}(Q) \cdot \text{Utility}(E | Q) - \text{Cost}(Tokens)$.
+- **Loop 1 (Structure Optimization)**: $S^* = \arg\max_S \mathbb{E}[R_{task}(\tau | S)]$ where $S$ is the memory schema.
+- **Loop 2 (Proficiency Learning)**: $\theta^* = \arg\min \mathcal{L}(\theta; \mathcal{D}_{best\_mem})$ where $\mathcal{D}$ contains trajectories with optimal memory decisions.
 
 ## Training Methodology
-1. **Trajectory Review**: High-capability model reviews full agent trajectories.
-2. **Structure Iteration**: Teacher model modifies memory file schemas and prompt-based instructions.
-3. **Behavioral Distillation**: Agent's successful memory actions are collected and used for supervised fine-tuning or RL.
+1. **Retrospective Review**: A high-tier teacher LLM reviews agent trajectories to identify where memory failures (e.g., missing context, stale facts) occurred.
+2. **Schema Mutation**: The teacher proposes revisions to `memory_schema.json` to better capture recurring patterns.
+3. **Behavioral Distillation**: The agent is fine-tuned on "Golden Trajectories" where it correctly used the memory system to solve complex tasks.
 
 ## Learning Algorithm
-- Iterative Prompt/Schema optimization.
-- SFT on successful memory-action traces.
+- **Automated Metamemory Learning (AML)**: Iterative refinement of memory-access policies.
+- **Schema-Aware Distillation**: Training the agent to follow the evolved schemas.
 
 ## Memory Architecture
-Promotes memory operations to "first-class" actions. Decouples task logic from memory management logic.
+Hierarchical Memory System (HMS). Tiers: Working, Episodic, Semantic, Procedural, Research, Institutional.
 
 ## Planning Architecture
-Agents incorporate memory actions into their planning steps (e.g., "I should look up the previous sentiment before deciding on this trade").
+Plans include explicit "Memory Reasoning" steps (e.g., "Search Research Ledger for similar volatility spikes").
 
 ## Agent Architecture
-Metacognitive agent with a dedicated memory-management layer.
+Metacognitive agent with a dedicated `Metamemory Controller`.
 
 ## World Model Contribution
-Provides the world model with a cleaner, better-structured history of state transitions.
+Provides the `WorldModelV3` with structured, long-term state history.
 
 ## Self-improvement Contribution
-The agent becomes better at managing its own knowledge over time without human intervention.
+The agent learns to forget useless noise and prioritize high-value market signals.
 
 ## Failure Modes
-- Delayed reward: Memory mistakes may only surface thousands of steps later.
-- Over-retrieval: Learning to search too much, increasing costs.
+- **Memory Saturation**: Storing too much irrelevant data, causing retrieval noise.
+- **Stale Context**: Failing to update/prune facts after a regime shift.
 
 ## Scalability Limits
-Computational cost of trajectory review by teacher models.
+Cost of teacher-model review for large-scale production logs.
 
 ## Computational Complexity
-Loop 1 is expensive (high-tier model). Loop 2 is standard fine-tuning.
+$\mathcal{O}(N_{traj} \cdot \text{Teacher\_Cost})$.
 
 ## Engineering Tradeoffs
-Control (hardcoded schemas) vs. Flexibility (learned schemas).
+Storage cost vs. Reasoning accuracy.
 
 ## Financial Applicability
-Maintaining trade journals, institutional memory of market regimes, and long-term risk assessment.
+Maintaining a "Living Strategy Journal" that evolves its data structure as the market changes.
 
 ## Production Readiness
-High. Can be implemented as an "Evolutionary Memory" layer.
+High. Can be implemented as a background optimization service.
