@@ -10,19 +10,17 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 class DataValidator:
-    """Validates Pandas DataFrames and dictionaries to ensure proper data and technical feature health."""
+    """Validates Pandas DataFrames to ensure proper OHLCV and technical feature health."""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Dict[str, Any] = None):
         self.config = config or {}
-        self.initialized = False
+        self.initialized = True
 
     def initialize(self) -> bool:
         self.initialized = True
         return True
 
     def process(self, data: Any) -> Any:
-        if not self.initialized:
-            self.initialize()
         return data
 
     def get_status(self) -> Dict[str, Any]:
