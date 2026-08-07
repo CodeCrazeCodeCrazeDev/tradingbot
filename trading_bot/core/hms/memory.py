@@ -1,5 +1,4 @@
 """
-
 Implements 'SAGE: A Self-Evolving Agentic Graph-Memory Engine' (2026).
 Supports incremental construction, Graph-FM multi-hop retrieval,
 and Reader-Writer feedback loops for structural evolution.
@@ -237,7 +236,11 @@ class HierarchicalMemorySystem:
         schema = {"version": "1.0", "schema_version": "1.0", "entities": [], "relations": [], "optimized_count": 0, "migration_history": []}
         if os.path.exists(self.schema_path):
             try:
-                with open(self.schema_path, 'r') as f: return json.load(f)
+                with open(self.schema_path, 'r') as f:
+                    data = json.load(f)
+                    if "migration_history" not in data:
+                        data["migration_history"] = []
+                    return data
             except: pass
         return schema
 

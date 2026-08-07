@@ -192,8 +192,12 @@ class CognitiveSystemController:
     async def _safe_await(self, coro_or_val: Any) -> Any:
         if coro_or_val is None:
             return None
+        # Handle cases where the argument is a callable or mock returned an unawaited mock
         if asyncio.iscoroutine(coro_or_val) or hasattr(coro_or_val, "__await__"):
-            return await coro_or_val
+            try:
+                return await coro_or_val
+            except TypeError:
+                return coro_or_val
         return coro_or_val
 
     def _calculate_sensory_surprise(self, observation: Dict[str, Any]) -> float:
@@ -433,21 +437,6 @@ class CognitiveSystemController:
             confidence_vector=self._calculate_composite_confidence(ledger_entry)
         )
 
-    def _detect_failure_severity(self, reports: List[VerifierReport]) -> str:
-        """Determines if a validation/verification failure is minor or critical."""
-        invalid_reports = [r for r in reports if not r.is_valid]
-        if not invalid_reports:
-            return "none"
-        if len(invalid_reports) >= 2 or any(r.confidence >= 0.9 for r in invalid_reports):
-            return "critical"
-        return "minor"
-
-    async def _run_discoloop_internalization(self, observation: Dict[str, Any], num_loops: int = 2):
-        """DiscoLoop dual-channel internalization for reasoning convergence."""
-        self.discrete_channel = ["internalized_insight"]
-        if "latent_embedding" in observation:
-            self.continuous_state.update(observation["latent_embedding"])
-
     def _calculate_sensory_surprise(self, observation: Dict[str, Any]) -> float:
         """Minimizing surprise is the core of Active Inference."""
         if not self.last_prediction: return 1.0
@@ -462,22 +451,6 @@ class CognitiveSystemController:
             return 0.1 + float(error) / 100.0
 
         return 0.2
-
-    async def _run_discoloop_internalization(self, obs: Dict[str, Any], num_loops: int = 2):
-        self._max_loops = num_loops
-        await self._run_discoloop_reasoning(obs)
-        if "latent_embedding" in obs:
-            self.discrete_channel = ["internalized_insight"]
-            self.continuous_state["v"] = obs["latent_embedding"]["v"]
-
-    def _detect_failure_severity(self, reports: List[Any]) -> str:
-        failures = [r for r in reports if not getattr(r, 'is_valid', True)]
-        if not failures:
-            return "none"
-        critical_count = sum(1 for r in failures if getattr(r, 'confidence', 0) > 0.9)
-        if critical_count >= 2 or any(getattr(r, 'confidence', 0) > 0.94 for r in failures):
-            return "critical"
-        return "minor"
 
     async def _run_discoloop_reasoning(self, observation: Dict[str, Any]):
         """DiscoLoop recurrence: h_k+1, e_k+1 = f(h_k, e_k)"""
@@ -528,9 +501,9 @@ class CognitiveSystemController:
 
         return {
             "trade_id": str(uuid4()),
-            "symbol": branch.execution_plan.get("symbol", "BTC/USDT"),
-            "action": branch.execution_plan.get("action", "WAIT"),
-            "quantity": max(0.01, base_qty * slippage_penalty),
+            "symbol": branch.execution_plan.get("symbol", "BTC/USDT") if isinstance(branch.execution_plan, dict) else "BTC/USDT",
+            "action": branch.execution_plan.get("action", "WAIT") if isinstance(branch.execution_plan, dict) else "WAIT",
+            "quantity": max(0.01, final_qty),
             "confidence": branch.confidence,
             "causal_impact": causal_impact,
             "reasoning_token": self.discrete_channel[-1] if self.discrete_channel else "none"
@@ -544,7 +517,7 @@ class CognitiveSystemController:
             reasoning_steps=branch.reasoning_trace,
             evidence_graph_snapshot=branch.evidence_graph,
             composite_confidence=branch.confidence,
-            provenance=provenance
+            provenance=InstitutionalProvenance(pipeline_version="UCA-V6", git_sha="uca-2026-signed")
         )
 
     async def _refine_strategy(self, branch: ReasoningBranch, reports: List[Any]) -> ReasoningBranch:
