@@ -1,35 +1,13 @@
-# ISSUE TRACKER - POST-AUDIT
+# AlphaAlgo Production Verification Issue Tracker
 
-| ID | Title | Severity | Category | Status |
-|---|---|---|---|---|
-| SEC-001 | Unsafe `pickle` Deserialization | Critical | Security | RESOLVED |
-| SEC-002 | `shell=True` in Subprocess Calls | High | Security | RESOLVED |
-| SEC-003 | Hardcoded Credentials | High | Security | RESOLVED |
-| SEC-004 | Unsafe `eval()` Usage | High | Security | RESOLVED |
-| SEC-005 | Insecure Randomness for Quant | Medium | Security | RESOLVED |
-| SEC-006 | Credential Exposure in Compose | High | Security | RESOLVED |
-| REL-001 | Naked `except:` Blocks | Medium | Reliability | RESOLVED |
-| REL-002 | Signal Safety in Main Loop | Medium | Reliability | RESOLVED |
-| REL-003 | Async Task Resource Cleanup | Medium | Reliability | RESOLVED |
-| REL-004 | Inconsistent Error Recovery | Medium | Reliability | IMPROVED |
-| REL-005 | Network Retry Failures | Medium | Reliability | RESOLVED |
-| PERF-001 | Blocking I/O in Async Context | High | Performance | RESOLVED |
-| PERF-002 | O(n^2) Data Processing Loops | Medium | Performance | RESOLVED |
-| PERF-003 | Redundant Model Loading | High | Performance | RESOLVED |
-| DATA-001 | Missing Schema Validation | Medium | Data | RESOLVED |
-| DATA-002 | Stale Data in Cache | Medium | Data | RESOLVED |
-| ARCH-001 | Competing Orchestrators | High | Architecture | RESOLVED |
-| ARCH-002 | Circular Dependencies | Medium | Architecture | PARTIAL |
-| ARCH-002 | Circular Dependencies | Medium | Architecture | RESOLVED |
-| ARCH-004 | Excessive Coupling in Core | High | Architecture | RESOLVED |
-| ARCH-005 | God Module `core/__init__.py` | Medium | Architecture | RESOLVED |
-| ARCH-006 | Duplicate `aamis_v3` System | Low | Architecture | RESOLVED |
-| INT-001 | "Delusion Loop" (Reality Gate) | Critical | Intelligence | RESOLVED |
-| INT-002 | Simulated Superintelligence Stubs | High | Intelligence | RESOLVED |
-| PROD-001 | Windows-only MT5 Lock-in | High | Production | RESOLVED |
-| PROD-002 | Configuration Validation | Medium | Production | VERIFIED |
-| MAINT-001 | "God Class" / Massive Legacy File | Low | Maintainability | RESOLVED |
-| MAINT-002 | Excessive Print Statements | Low | Maintainability | RESOLVED |
-| MAINT-003 | Duplicated Logic in `_archive` | High | Maintainability | ARCHIVED |
-| MAINT-004 | Magic Numbers in Risk Models | Medium | Maintainability | RESOLVED |
-| MAINT-005 | Missing Docstrings in Core APIs | Low | Maintainability | RESOLVED |
+### Active Audited Issues & Defect Registry
+
+| Issue ID | Subsystem Component | Severity | Class | Exact File Path | Root Cause Explanation | Implemented Verification Action |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **ARCH-001** | `CognitiveSystemController` | High | Architecture | `trading_bot/core/csc/controller.py` | Missing class `_instance` lock check inside `__new__` constructor allowed multiple instantiations under concurrent startup execution. | Implemented safe singleton lock checking on import. Verified via `test_csc_v5.py`. |
+| **REL-001** | `CognitiveSystemController` | Critical | Reliability | `trading_bot/core/csc/controller.py` | Local name `provenance` was referred to on line 446 without initialization inside the `_create_ledger_entry` scope. | Overwrote with explicit `InstitutionalProvenance()` instance. Verified via `test_csc_contract_and_determinism.py`. |
+| **CONC-001** | `UnifiedDecisionBus` | High | Concurrency | `trading_bot/core/unified_event_bus.py` | Missed `import time` at the top of the event bus module caused `NameError` during background process latency measurements on line 220. | Added `import time` immediately. Verified via thread cleanup in `test_csc_v5.py`. |
+| **DATA-001** | `MT5Interface` | High | Data | `trading_bot/data/mt5.py` | SyntaxError caused by duplicate, nested class strings on line 89. | Removed duplicate strings and consolidated method signatures. Verified via `pytest`. |
+| **DATA-002** | `DataValidator` | High | Data | `trading_bot/data/validate.py` | SyntaxError caused by duplicate class strings on line 52. | Removed duplicate strings and formatted class definitions. Verified via `pytest`. |
+| **INT-001** | `HypothesisGenerator` | Medium | Intelligence | `trading_bot/core/csc/hypothesis.py` | Duplicate argument key `confidence` was used in `ReasoningBranch` constructors. | Cleaned up duplicate keys and aligned default parameter values. Verified via `pytest`. |
+| **INT-002** | `SkillRouter` | Medium | Intelligence | `trading_bot/core/csc/router.py` | Unterminated triple-quoted docstring on line 250 crashed compiler. | Closed docstrings and resolved formatting. Verified via `test_router_v5.py`. |
