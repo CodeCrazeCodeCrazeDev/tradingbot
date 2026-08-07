@@ -77,7 +77,7 @@ class MT5Interface:
     def place_order(self, request: Dict[str, Any], *args, **kwargs) -> Dict[str, Any]:
         logger.info(f"MT5Interface: Order placed successfully -> {request}")
         return {
-            "retcode": 10009,  # DONE
+            "retcode": 10009,
             "order": 123456,
             "comment": "Mock trade completed"
         }

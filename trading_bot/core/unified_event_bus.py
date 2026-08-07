@@ -170,17 +170,6 @@ class UnifiedDecisionBus:
         await self._action_queue.put((-action.priority.value, action.timestamp, action))
         logger.debug(f"LogAct: Action {action.action_id} queued for auditing (Priority: {action.priority.name})")
 
-    async def publish(self, event: 'UnifiedEvent'):
-        action = LogAction(
-            action_type=event.event_type,
-            payload=event.payload,
-            agent_id=event.source,
-            action_id=event.event_id,
-            timestamp=event.timestamp,
-            priority=event.priority
-        )
-        await self.propose_action(action)
-
     async def publish(self, event: Any):
         if isinstance(event, (LogAction, UnifiedEvent)) or hasattr(event, "priority"):
             await self.propose_action(event)
@@ -313,14 +302,3 @@ class UnifiedDecisionBus:
 
 # Global instance for production path (authoritative)
 decision_bus = UnifiedDecisionBus()
-
-@dataclass
-class UnifiedEvent:
-    event_type: str
-    payload: Dict[str, Any]
-    source: str
-    event_id: str = field(default_factory=lambda: str(uuid4()))
-    timestamp: datetime = field(default_factory=datetime.utcnow)
-    priority: EventPriority = EventPriority.NORMAL
-    correlation_id: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)

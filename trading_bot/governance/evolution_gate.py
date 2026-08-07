@@ -8,9 +8,11 @@ Implements 'RSEA' (arXiv:2606.28374), 'EKSFT' (arXiv:2605.29303), and 'NanoResea
 import logging
 import math
 import copy
+import sys
+import inspect
 from typing import Any, Dict, List, Optional
 from datetime import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
 
@@ -133,12 +135,14 @@ class EvolutionGate:
             logger.error(f"EvolutionGate: REJECTED - Safety regression detected ({candidate.safety_score} < 1.0)")
             return False
 
-        # 6. Monotone-Safe Check: Gain Metric (arXiv:2606.05661 CL-Bench)
-        gain = candidate.reward - baseline.reward
-        candidate.gain = gain
+        # 5. Monotone-Safe Check: Gain Metric (arXiv:2606.05661 CL-Bench)
+        gain = candidate["perf"] - baseline["perf"]
 
-        # Calibration Check (arXiv:2605.21482 DeepWeb-Bench)
-        calibration_drift = baseline.calibration - candidate.calibration
+        # Check all protected metrics against tolerances
+        # 1. Latency (10% tolerance: max 1.1x baseline)
+        if candidate["decision_latency"] > baseline["decision_latency"] * 1.1:
+            logger.warning(f"EvolutionGate: REJECTED - Latency regressed: {candidate['decision_latency']} > {baseline['decision_latency'] * 1.1}")
+            return False
 
         # Verify no protected metrics are violated and at least one is significantly improved
         is_significant = gain >= self.threshold
