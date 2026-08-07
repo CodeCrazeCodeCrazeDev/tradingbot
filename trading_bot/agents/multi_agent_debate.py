@@ -111,6 +111,12 @@ class AgentArgument:
     confidence: float
     timestamp: datetime
     anti_trade_reasoning: List[str] = field(default_factory=list)
+    observation: Dict[str, Any] = field(default_factory=dict)
+    evidence: List[str] = field(default_factory=list)
+    hypothesis: str = ""
+    predictions: List[str] = field(default_factory=list)
+    counter_evidence: List[str] = field(default_factory=list)
+    verification: str = ""
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -187,6 +193,21 @@ class DebateResult:
 FinalDecision = DebateResult
 
 
+@dataclass
+class AgentScorecard:
+    """Rolling agent performance metrics."""
+    expected_contribution: float = 1.0
+    precision: float = 0.8
+    recall: float = 0.8
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "expected_contribution": self.expected_contribution,
+            "precision": self.precision,
+            "recall": self.recall
+        }
+
+
 class TradingAgent(ABC):
     """Base class for trading agents."""
     
@@ -233,6 +254,12 @@ class MacroStrategist(TradingAgent):
             reasoning = []
             anti_trade_reasoning = []
             key_factors = {}
+            observation = {}
+            evidence = []
+            hypothesis = ""
+            predictions = []
+            counter_evidence = []
+            verification = ""
 
             # Analyze HTF trend
             if context.htf_trend == 'UP':
@@ -378,6 +405,12 @@ class TacticalExecutioner(TradingAgent):
             reasoning = []
             anti_trade_reasoning = []
             key_factors = {}
+            observation = {}
+            evidence = []
+            hypothesis = ""
+            predictions = []
+            counter_evidence = []
+            verification = ""
 
             # Analyze LTF Trend
             if context.ltf_trend == 'UP':
@@ -513,6 +546,12 @@ class RiskSentinel(TradingAgent):
             anti_trade_reasoning = []
             key_factors = {}
             risk_flags = 0
+            observation = {}
+            evidence = []
+            hypothesis = ""
+            predictions = []
+            counter_evidence = []
+            verification = ""
 
             # Exposure check
             if context.portfolio_exposure > self.max_exposure:
@@ -570,25 +609,44 @@ class RiskSentinel(TradingAgent):
 
             key_factors['volatility_risk'] = vol_score
 
+            # Calculate overall score
+            total_score = sum(key_factors.values())
+
             # Determine Action
             if risk_flags >= 2:
                 action = TradeAction.NO_TRADE
                 conviction = Conviction.VERY_HIGH
                 reasoning.append("🛑 Multiple risk flags - recommending NO TRADE")
                 anti_trade_reasoning.append("Risk sentinel active veto: severe multiple stress threats detected")
+                hypothesis = "Elevated risk profile detected, requesting safe hold patterns."
+                predictions = ["Market expected to face adverse price conditions."]
+                counter_evidence = ["Risk flags clear completely."]
+                verification = "Veto enforced due to extreme risk-adjusted profile."
             elif risk_flags == 1:
                 action = TradeAction.HOLD
                 conviction = Conviction.HIGH
                 reasoning.append("⚠️ Risk flag present - reduce position size")
                 anti_trade_reasoning.append("Partial risk block: single stress indicator active")
+                hypothesis = "A single risk flag is active. Proceeding with caution."
+                predictions = ["Cautious and buffered market timing pattern recommended."]
+                counter_evidence = ["Risk flag is completely cleared."]
+                verification = "Risk parameters buffered."
             elif total_score > 0:
                 action = TradeAction.HOLD  # Risk allows trading
                 conviction = Conviction.MODERATE
                 reasoning.append("✅ Risk parameters acceptable")
+                hypothesis = "Risk parameters within acceptable parameters."
+                predictions = ["Safe execution allowed."]
+                counter_evidence = ["New risk flag active."]
+                verification = "Normal risk levels."
             else:
                 action = TradeAction.BUY
                 conviction = Conviction.MODERATE
                 anti_trade_reasoning.append("Sub-zero overall risk-adjusted fitness score")
+                hypothesis = "Excellent risk conditions."
+                predictions = ["Safe to execute trade orders."]
+                counter_evidence = ["Volatilty or correlation spikes."]
+                verification = "Risk-cleared execution timing."
         
             confidence = min(0.95, 0.6 + risk_flags * 0.15)
 
@@ -1093,7 +1151,7 @@ class HeadAI:
         try:
             # Only use the latest argument from each agent to prevent double-counting across rounds
             latest_arguments: Dict[AgentRole, AgentArgument] = {}
-            for arg in sorted_arguments:
+            for arg in arguments:
                 latest_arguments[arg.agent_role] = arg
 
             active_arguments = list(latest_arguments.values())
@@ -1465,8 +1523,7 @@ class MultiAgentDebateSystem:
         Args:
             topic: Debate topic
             context: Market context
-            
-    async def debate(self, topic: Any, context: Optional[MarketContext] = None) -> FinalDecision:
+        """
         try:
             import time
             import uuid
