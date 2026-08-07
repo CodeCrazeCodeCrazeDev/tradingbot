@@ -23,7 +23,7 @@ class DataValidator:
     def process(self, data: Any) -> Any:
         return data
 
-    def get_status(self) -> Dict:
+    def get_status(self) -> Dict[str, Any]:
         return {
             'initialized': self.initialized,
             'timestamp': datetime.now().isoformat(),
