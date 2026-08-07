@@ -274,5 +274,5 @@ class TestMultiAgentAdversarial:
 
         # Quorum size 3 (Macro + Tactical + Risk)
         decision_quorum_3 = head_ai.synthesize_decision([arg_1, arg_2, arg_3], context, [])
-        assert decision_quorum_3.consensus_level == pytest.approx(2 / 3)  # 2/3 agree
+        assert decision_quorum_3.consensus_level == pytest.approx(2/3)  # 2/3 agree
         assert decision_quorum_3.action == TradeAction.BUY
