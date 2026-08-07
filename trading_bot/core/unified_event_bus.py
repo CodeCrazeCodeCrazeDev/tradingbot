@@ -17,6 +17,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union, Callable
 from uuid import uuid4
 import threading
+from .governance.determinism import determinism
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ class LogAction:
     action_type: str
     payload: Dict[str, Any]
     agent_id: str
-    action_id: str = field(default_factory=lambda: str(uuid4()))
+    action_id: str = field(default_factory=lambda: determinism.get_uuid())
     timestamp: datetime = field(default_factory=datetime.utcnow)
     status: ActionStatus = ActionStatus.PROPOSED
     voter_reports: Dict[str, Any] = field(default_factory=dict)

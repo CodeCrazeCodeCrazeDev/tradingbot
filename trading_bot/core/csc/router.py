@@ -131,6 +131,22 @@ class SkillRouter:
             metadata={"archetype": "risk_averse"}
         ))
 
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance for testing purposes."""
+        with cls._lock:
+            cls._instance = None
+        logger.info("SkillRouter singleton reset")
+
+    def _setup_default_skills(self):
+        """Setup some default V5 skills."""
+        self.register_skill(SkillArtifact(
+            skill_id="high_vol_guardrail",
+            skill_type=SkillType.HASP_PROGRAM,
+            executable=self._pf_volatility_guardrail,
+            metadata={"description": "Volatility safety check"}
+        ))
+
     def register_skill(self, artifact: SkillArtifact):
         """Registers a skill artifact, maintaining version history."""
         if artifact.skill_id not in self._registry:

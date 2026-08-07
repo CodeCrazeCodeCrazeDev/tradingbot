@@ -1,4 +1,9 @@
 """
+
+Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
+Implements the Active Inference (VFE minimization) loop and
+HIPIF (Hierarchical Planning with Information Folding).
+The "One Brain" authoritative controller orchestrating the LogAct pipeline.
 Cognitive System Controller (CSC) - UCA V6
 
 Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
@@ -536,6 +541,7 @@ class CognitiveSystemController:
             composite_confidence=branch.confidence,
             provenance=InstitutionalProvenance(pipeline_version="UCA-V6", git_sha="uca-2026-signed")
         )
+        return entry
 
     async def _refine_strategy(self, branch: ReasoningBranch, reports: List[Any]) -> ReasoningBranch:
         """Refines a strategy branch based on verifier feedback by reducing confidence and tracing corrections."""

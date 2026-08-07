@@ -1,4 +1,16 @@
 """
+
+Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
+Implements the 6-tier architecture:
+1. Working (Hot/RAM)
+2. Episodic (Recent Events)
+3. Semantic (Facts/Knowledge)
+4. Procedural (Skills/LoRA)
+5. Research (Evidence/Snapshots)
+6. Institutional (Priors/Governance)
+
+Authoritative memory system integrating SAGE (Self-evolving Agentic Graph-Memory)
+and QKG (Quantum Knowledge Graph) for context-dependent research persistence.
 Implements 'SAGE: A Self-Evolving Agentic Graph-Memory Engine' (2026).
 Supports incremental construction, Graph-FM multi-hop retrieval,
 and Reader-Writer feedback loops for structural evolution.
