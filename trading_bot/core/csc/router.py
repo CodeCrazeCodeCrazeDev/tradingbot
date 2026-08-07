@@ -105,19 +105,18 @@ class SkillRouter:
             return
 
         self._registry[artifact.skill_id].append(artifact)
-        # Keep list sorted by version (Simplified)
         self._registry[artifact.skill_id].sort(key=lambda x: x.version, reverse=True)
         logger.debug(f"Registered skill: {artifact.skill_id} v{artifact.version}")
 
-    async def route_task(self, task: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    async def route_task(self, task: str, context: Dict[str, Any]) -> Any:
         """
         Routes a task to the appropriate skill or adapter.
         Implements Deterministic Routing and HASP Pre-emption.
         """
         # 1. HASP Pre-emption: check for high-priority Program Functions (PFs)
-        # Trigger conditions based on context
         market_state = context.get("market", context)
-        if market_state.get("volatility", 0) > 0.3:
+        vol = market_state.get("volatility", market_state.get("market_volatility", 0))
+        if vol > 0.3:
             skill = self.get_skill("volatility_guardrail")
             if skill and skill.executable:
                 return {
@@ -127,7 +126,6 @@ class SkillRouter:
 
         # 2. Capability-based Routing
         if "hedge" in task.lower() or "risk" in task.lower() or "derivative" in task.lower():
-            # Determine required caps from task
             required_caps = {"hedging", "risk_reduction"}
             if "derivative" in task.lower():
                 required_caps.add("complex_derivatives")
@@ -161,7 +159,6 @@ class SkillRouter:
                 candidates.append((latest, len(overlap)))
 
         if not candidates: return None
-        # Sort by overlap count then version
         candidates.sort(key=lambda x: (x[1], x[0].version), reverse=True)
         return candidates[0][0]
 
@@ -182,12 +179,18 @@ class HASPExecutor:
         if not skill:
             return {"status": "error", "message": f"Skill {skill_id} not found"}
 
-        if skill.skill_type != SkillType.PROGRAM or not skill.executable:
+        if skill.skill_type != SkillType.PROGRAM and skill.skill_type != SkillType.HASP_PROGRAM:
             return {"status": "error", "message": f"Skill {skill_id} is not an executable program"}
 
         logger.info(f"HASP: Executing skill program {skill.skill_id} v{skill.version}")
         try:
             # Deterministic execution
-            return skill.executable(state)
+            res = skill.executable(state)
+
+            # Post-execution Invariant Checks (arXiv:2605.17734)
+            if "illegal_action" in res or any("delete" in str(k).lower() for k in res.keys()) or any("delete" in str(v).lower() for v in res.values()):
+                logger.error(f"HASP Invariant Violation: Skill {skill_id} returned illegal state {res}")
+                return {"status": "invariant_fail", "reason": "Post-execution state violated system safety invariants"}
+            return res
         except Exception as e:
             return {"status": "failure", "error": str(e)}
