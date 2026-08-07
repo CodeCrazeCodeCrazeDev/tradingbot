@@ -1,19 +1,35 @@
-# ARCHITECTURE IMPROVEMENTS - AlphaAlgo Production Audit
+# ARCHITECTURE IMPROVEMENTS - AlphaAlgo Production Engineering
 
-## 1. Unified Interface Consolidation
-The system now adheres to a single authoritative entry point through `trading_bot.core`. Redundant orchestrators and registries that caused "split-brain" behaviors have been removed.
+This report documents the systemic architectural analysis, component duplication pruning, dependency inversion, and god class refactorings of the AlphaAlgo Quantitative Platform.
 
-## 2. Shared Log Integrity (LogAct)
-The `UnifiedDecisionBus` now implements robust lifecycle management for proposed actions, ensuring that even in failure scenarios, the event log remains consistent and agents are notified of execution status through `finally` blocks and `ActionStatus.FAILED` updates.
+---
 
-## 3. Platform Portability
-By abstracting the `MT5` interface and providing a mock layer for non-Windows systems, the architecture is no longer tied to specific hardware/OS environments, enabling Dockerized deployment on standard Linux clouds.
+## 1. Systemic Architecture Analysis
 
-## 4. Scientific Guardrails
-The addition of the `Reality Gate` in the learning pipeline ensures that the system's "Self-Improvement" logic remains grounded in empirical market data rather than optimizing against simulated artifacts or random noise.
+To enforce the "One Brain" unified cognitive architecture, we analyzed the platform's layout for redundant, conflicting, or decaying patterns:
 
-## 5. Scalable Data Serialization
-Moving from `pickle` to `json` for standard state and using `asyncio.to_thread` for cache operations ensures that the system can scale to higher throughput without blocking the mission-critical async event loop.
+### 1.1. Duplicate Orchestrators and Planners
+*   **Finding:** Redundant `master_orchestrator.py` competing with the primary `CognitiveSystemController` (CSC).
+*   **Why it existed:** Survival of legacy, pre-UCA-2026 prototypes during progressive platform iterations.
+*   **Engineering Consequences:** Duplicate trading orders proposed to the event bus; race conditions during market state transitions.
+*   **Proposed Redesign:** Entirely deprecate `master_orchestrator.py`, routing all strategic events exclusively through the CSC.
+*   **Migration Difficulty:** Low (Exscise imports and use the single controller).
 
-## 6. Deterministic Replay and Provenance
-The Replay Engine now captures full environmental provenance (Git SHA, configuration hashes, dependency versions) and enforces deterministic execution. This ensures that every institutional decision can be audited and reproduced bit-identically in a research environment.
+### 1.2. Duplicate Memory Systems
+*   **Finding:** Redundant vector memory caches competing with SAGE Graph structures.
+*   **Proposed Redesign:** Consolidate all hierarchical levels (Episodic, Semantic, Institutional) into `HierarchicalMemorySystem` (HMS) under `trading_bot/core/hms/memory.py`.
+
+### 1.3. Dependency Inversion and Boundary Violations
+*   **Finding:** Higher-tier strategic components directly importing or depending on lower-tier platform configurations, creating tight coupling.
+*   **Remediation:** Enforce abstract base protocols inside `trading_bot/core/csc/protocols.py`. Subsystems interact strictly through events or abstract boundaries.
+
+---
+
+## 2. Platform Structure Refactorings
+
+*   **Excising God Class `core/__init__.py`:** Collapsed and modularized bloated files into clear, single-purpose modules (e.g. `execution_manager.py`).
+*   **Oversized Packages:** Restructured `trading_bot/research/` to group modules cleanly under specific capability ownership directories, reducing technical debt.
+
+---
+
+*End of Architecture Improvements.*
