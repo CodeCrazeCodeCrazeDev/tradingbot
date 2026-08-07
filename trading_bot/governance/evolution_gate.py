@@ -24,6 +24,10 @@ class EvolutionMetrics:
     latency: float      # Decision speed (ms)
     safety_score: float # Zero-violation rate
     gain: float = 0.0   # CL-Bench Gain Metric (G)
+    drawdown: float = 0.0
+    calibration_error: float = 0.0
+    hms_retrieval_quality: float = 1.0
+    deterministic_replay_success: float = 1.0
 
 class EvolutionGate:
     """
@@ -151,6 +155,18 @@ class EvolutionGate:
             candidate.robustness >= baseline.robustness * 0.95 and
             candidate.latency <= baseline.latency * 1.2 and
             candidate.safety_score >= baseline.safety_score
+        )
+
+        is_significant = (gain >= self.threshold)
+        no_regressions = (
+            candidate.latency <= baseline.latency * 1.10 and
+            candidate.drawdown <= baseline.drawdown * 1.10 and
+            candidate.calibration_error <= baseline.calibration_error * 1.10 and
+            candidate.calibration >= baseline.calibration * 0.90 and
+            candidate.robustness >= baseline.robustness * 0.90 and
+            candidate.safety_score >= baseline.safety_score and
+            candidate.hms_retrieval_quality >= baseline.hms_retrieval_quality * 0.90 and
+            candidate.deterministic_replay_success >= baseline.deterministic_replay_success
         )
 
         if is_significant and no_regressions:

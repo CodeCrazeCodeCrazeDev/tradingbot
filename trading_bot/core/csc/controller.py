@@ -32,25 +32,37 @@ from .folding import InformationFolder
 from .router import SkillRouter
 from .acpe import AdaptiveControlPolicyEngine
 from ..verification.swarm import VerificationSwarm
-from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport, EvidenceNode, EvidenceEdge, RelationType, InstitutionalProvenance
+from ..hms.models import (
+    ResearchLedgerEntry,
+    EvidenceGraph,
+    VerifierReport,
+    EvidenceNode,
+    EvidenceEdge,
+    RelationType,
+    InstitutionalProvenance,
+)
 from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
 from ..immutable_shield import ImmutableShield, GovernanceDecision
 from ..unified_event_bus import decision_bus, LogAction, ActionStatus, EventPriority
 
 logger = logging.getLogger(__name__)
 
+
 class DiscoLoopCell:
     """
     DiscoLoop Cell for multi-hop reasoning (arXiv:2607.00341).
     Loops discrete symbolic embeddings and continuous hidden states.
     """
+
     def __init__(self, latent_dim: int = 512):
         self.latent_dim = latent_dim
         self.hidden_state = np.zeros(latent_dim)
         self.discrete_tokens = []
-        self.alpha = 0.9 # Realignment factor
+        self.alpha = 0.9  # Realignment factor
 
-    def transition(self, input_signal: np.ndarray, e_k: np.ndarray, k: int) -> Tuple[np.ndarray, str]:
+    def transition(
+        self, input_signal: np.ndarray, e_k: np.ndarray, k: int
+    ) -> Tuple[np.ndarray, str]:
         """
         S_k = [h_k; e_k]
         1. Continuous update: h_next = f(h_k, e_k)
@@ -170,7 +182,7 @@ class CognitiveSystemController:
         """Expose current latent state metrics."""
         return {
             "reasoning_depth": self._max_loops,
-            "latent": self.continuous_state.get("latent", [])
+            "latent": self.continuous_state.get("latent", []),
         }
 
     async def _run_discoloop_internalization(self, observation: Dict[str, Any], num_loops: int = 2):
@@ -384,7 +396,7 @@ class CognitiveSystemController:
             action_type="TRADE_PROPOSAL",
             payload=decision_proposal,
             agent_id="CSC_V6",
-            priority=EventPriority.HIGH
+            priority=EventPriority.HIGH,
         )
         await self._safe_await(self.decision_bus.propose_action(log_action))
 
@@ -402,7 +414,7 @@ class CognitiveSystemController:
             return CoreDecision(
                 outcome=DecisionOutcome.TRADE_REJECTED,
                 trade_id=decision_proposal.get("trade_id"),
-                dominant_rejection_reason=f"Shield Veto: {shield_report.reason}"
+                dominant_rejection_reason=f"Shield Veto: {shield_report.reason}",
             )
 
         # 12. HIPIF Folding & Persistence
@@ -417,7 +429,7 @@ class CognitiveSystemController:
             action_type="TRADE_EXECUTION",
             payload=decision_proposal,
             agent_id="CSC_V6",
-            priority=EventPriority.CRITICAL
+            priority=EventPriority.CRITICAL,
         )
         await self._safe_await(self.decision_bus.propose_action(action))
         status = await self._safe_await(action.wait_for_decision(timeout=5.0))
@@ -427,14 +439,14 @@ class CognitiveSystemController:
             return CoreDecision(
                 outcome=DecisionOutcome.TRADE_REJECTED,
                 trade_id=decision_proposal.get("trade_id"),
-                dominant_rejection_reason=reason
+                dominant_rejection_reason=reason,
             )
 
         logger.info(f"CSC-V6: Decision COMMITTED in {time.perf_counter()-t0:.3f}s")
         return CoreDecision(
             outcome=DecisionOutcome.TRADE_APPROVED,
             trade_id=decision_proposal.get("trade_id"),
-            confidence_vector=self._calculate_composite_confidence(ledger_entry)
+            confidence_vector=self._calculate_composite_confidence(ledger_entry),
         )
 
     def _calculate_sensory_surprise(self, observation: Dict[str, Any]) -> float:
@@ -455,21 +467,24 @@ class CognitiveSystemController:
     async def _run_discoloop_reasoning(self, observation: Dict[str, Any]):
         """DiscoLoop recurrence: h_k+1, e_k+1 = f(h_k, e_k)"""
         e_k = np.zeros((512,))
-        e_k[0] = 1.0 # Initial discrete state
+        e_k[0] = 1.0  # Initial discrete state
         input_signal = np.random.normal(0, 0.1, (512,))
 
         for k in range(self._max_loops):
             h_next, token = self.discoloop.transition(input_signal, e_k, k)
             self.discrete_channel.append(token)
-            idx = int(token.split('_')[-2])
+            idx = int(token.split("_")[-2])
             e_k = np.zeros_like(h_next)
             e_k[idx] = 1.0
 
         self.continuous_state["latent"] = self.discoloop.hidden_state.tolist()
 
-    async def _pivot_refine_loop(self, branches: List[ReasoningBranch], simulations: Dict[str, Any]) -> Optional[ReasoningBranch]:
+    async def _pivot_refine_loop(
+        self, branches: List[ReasoningBranch], simulations: Dict[str, Any]
+    ) -> Optional[ReasoningBranch]:
         """AutoResearchClaw Pivot/Refine logic (arXiv:2605.20025)."""
-        if not branches: return None
+        if not branches:
+            return None
         best = max(branches, key=lambda b: b.confidence)
 
         sim_data = simulations.get(best.branch_id, {})
@@ -484,7 +499,9 @@ class CognitiveSystemController:
 
         return best
 
-    def _select_optimal_action(self, branch: ReasoningBranch, simulations: Dict[str, Any]) -> Dict[str, Any]:
+    def _select_optimal_action(
+        self, branch: ReasoningBranch, simulations: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Synthesizes the final trade proposal from the best reasoning branch and its simulation results.
         """
@@ -530,4 +547,10 @@ class CognitiveSystemController:
         return new_branch
 
     def _calculate_composite_confidence(self, entry: ResearchLedgerEntry) -> ConfidenceVector:
-        return ConfidenceVector(statistical=entry.composite_confidence, regime=0.8, execution=0.9, tail_risk=0.85, model_stability=0.7)
+        return ConfidenceVector(
+            statistical=entry.composite_confidence,
+            regime=0.8,
+            execution=0.9,
+            tail_risk=0.85,
+            model_stability=0.7,
+        )

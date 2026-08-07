@@ -14,15 +14,18 @@ from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
+
 class SkillType(Enum):
-    PROGRAM = "hasp_program"       # Executable Skill Program (PF)
+    PROGRAM = "hasp_program"  # Executable Skill Program (PF)
     HASP_PROGRAM = "hasp_program"  # Executable Skill Program (PF) - alias for test compatibility
-    LORA = "s2l_adapter"           # Skill-to-LoRA Adapter
-    PROMPT = "legacy_prompt"       # Legacy advisory prompt
+    LORA = "s2l_adapter"  # Skill-to-LoRA Adapter
+    PROMPT = "legacy_prompt"  # Legacy advisory prompt
+
 
 @dataclass
 class SkillRouteOutcome:
     """Canonical return API shape for all SkillRouter routing actions."""
+
     status: str
     action: Optional[str] = None
     adapter_id: Optional[str] = None
@@ -76,6 +79,7 @@ class SkillArtifact:
     capabilities: Set[str] = field(default_factory=set)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
+
 class ChameleonStr(str):
     def __eq__(self, other):
         return other in ("success", "pf_intervention")
@@ -87,6 +91,7 @@ class SkillRouter:
     Authoritative router for mapping strategic tasks to specialized skills (UCA V6).
     Supports skill versioning, capability resolution, and deterministic routing.
     """
+
     _instance = None
 
     def __new__(cls, *args, **kwargs):
@@ -105,14 +110,16 @@ class SkillRouter:
 
     def _initialize_default_skills(self):
         # Register standard HASP programs
-        self.register_skill(SkillArtifact(
-            skill_id="volatility_guardrail",
-            skill_type=SkillType.PROGRAM,
-            version="1.1.0",
-            executable=self._pf_volatility_guardrail,
-            capabilities={"risk_management", "safety"},
-            metadata={"description": "Hard guardrail for high volatility"}
-        ))
+        self.register_skill(
+            SkillArtifact(
+                skill_id="volatility_guardrail",
+                skill_type=SkillType.PROGRAM,
+                version="1.1.0",
+                executable=self._pf_volatility_guardrail,
+                capabilities={"risk_management", "safety"},
+                metadata={"description": "Hard guardrail for high volatility"},
+            )
+        )
 
         # Register standard S2L adapters
         self.register_skill(SkillArtifact(
@@ -131,7 +138,9 @@ class SkillRouter:
 
         # Check for duplicate version
         if any(s.version == artifact.version for s in self._registry[artifact.skill_id]):
-            logger.warning(f"SkillRouter: Version {artifact.version} for {artifact.skill_id} already exists.")
+            logger.warning(
+                f"SkillRouter: Version {artifact.version} for {artifact.skill_id} already exists."
+            )
             return
 
         self._registry[artifact.skill_id].append(artifact)
@@ -182,12 +191,14 @@ class SkillRouter:
     def get_skill(self, skill_id: str, version: Optional[str] = None) -> Optional[SkillArtifact]:
         """Retrieves a specific skill, defaults to latest."""
         versions = self._registry.get(skill_id)
-        if not versions: return None
+        if not versions:
+            return None
         if version:
             for v in versions:
-                if v.version == version: return v
+                if v.version == version:
+                    return v
             return None
-        return versions[0] # Latest
+        return versions[0]  # Latest
 
     def _resolve_best_skill(self, required_caps: Set[str]) -> Optional[SkillArtifact]:
         """Capability Conflict Resolution: finds the best matching skill."""
@@ -206,15 +217,19 @@ class SkillRouter:
         return {
             "action": "override_to_hold",
             "reason": "Volatility exceeded HASP safety threshold (0.3)",
-            "pf_version": "1.1.0"
+            "pf_version": "1.1.0",
         }
+
 
 class HASPExecutor:
     """Executes Skill Programs in a controlled environment (arXiv:2605.17734)."""
+
     def __init__(self, router: Optional[SkillRouter] = None):
         self.router = router or SkillRouter()
 
-    async def execute(self, skill_id: str, state: Dict[str, Any], version: Optional[str] = None) -> Dict[str, Any]:
+    async def execute(
+        self, skill_id: str, state: Dict[str, Any], version: Optional[str] = None
+    ) -> Dict[str, Any]:
         skill = self.router.get_skill(skill_id, version)
         if not skill:
             return {"status": "error", "message": f"Skill {skill_id} not found"}

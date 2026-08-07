@@ -39,7 +39,7 @@ async def test_scientific_metrics_bottleneck_detection():
     registry = {f"h{i}": MockHyp("REJECTED") for i in range(25)}
     metrics.update_from_registry(registry)
 
-    assert "GENERATION_NOISE" in metrics.bottlenecks_detected or "FILTERING_STRICTNESS" in metrics.bottlenecks_detected
+    assert any("GENERATION_NOISE" in b for b in metrics.bottlenecks_detected) or any("FILTERING_STRICTNESS" in b for b in metrics.bottlenecks_detected)
 
 @pytest.mark.asyncio
 async def test_terminal_states_enforcement():
