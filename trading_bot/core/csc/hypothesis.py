@@ -60,7 +60,6 @@ class HypothesisGenerator:
                 name="Bull Case",
                 probability=0.35,
                 uncertainty=0.15,
-                confidence=0.85,
                 causal_explanation="Expansion in liquidity combined with oversold RSI supports a mean reversion breakout.",
                 invalidation_conditions=[
                     "Price closes below recent support",
@@ -73,7 +72,6 @@ class HypothesisGenerator:
                 name="Bear Case",
                 probability=0.25,
                 uncertainty=0.20,
-                confidence=0.80,
                 causal_explanation="Macro headwinds and resistance at the current level suggest a continuation of the downtrend.",
                 invalidation_conditions=["Price breaks resistance at 1.1100"],
                 execution_plan={"action": "SELL", "limit_price": 1.1040},
@@ -83,7 +81,6 @@ class HypothesisGenerator:
                 name="Range Case",
                 probability=0.40,
                 uncertainty=0.10,
-                confidence=0.90,
                 causal_explanation="Consolidation between established levels with no clear macro catalyst.",
                 invalidation_conditions=["Expansion in volatility index"],
                 execution_plan={"action": "WAIT"},
