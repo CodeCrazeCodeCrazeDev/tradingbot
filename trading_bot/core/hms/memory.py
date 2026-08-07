@@ -238,6 +238,25 @@ class HierarchicalMemorySystem:
             except: pass
         return schema
 
+    def _calculate_integrity_hash(self, schema: Dict[str, Any]) -> str:
+        """
+        Calculates a deterministic SHA-256 hash over the canonical JSON representation
+        of the memory schema, excluding derived/volatile fields (integrity_hash, updated_at).
+        """
+        # Create a copy to avoid mutating the original schema
+        clean_schema = {}
+        for k, v in schema.items():
+            if k not in ("integrity_hash", "updated_at"):
+                clean_schema[k] = v
+
+        try:
+            # Deterministic, canonical serialization with sort_keys=True
+            canonical_json = json.dumps(clean_schema, sort_keys=True)
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"HMS Schema contains non-serializable values: {e}")
+
+        return hashlib.sha256(canonical_json.encode("utf-8")).hexdigest()
+
     def _save_schema(self):
         self.memory_schema["updated_at"] = datetime.utcnow().isoformat()
         self.memory_schema["integrity_hash"] = self._calculate_integrity_hash(self.memory_schema)

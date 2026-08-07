@@ -307,6 +307,7 @@ class CognitiveSystemController:
 
         # 10. Verification Swarm (Peer Review)
         # Specialized voters falsify or validate the proposal
+        logger.info("CSC-V6: Step 10: Running Verification Swarm")
         ledger_entry = self._create_ledger_entry(best_branch, sim_results.get(best_branch.branch_id, []))
         reports = await self._safe_await(self.verifier_swarm.run_swarm(ledger_entry))
         ledger_entry.verifier_reports = reports
@@ -323,10 +324,12 @@ class CognitiveSystemController:
 
         # 12. HIPIF Folding & Persistence
         # Semantic compression of the episode
+        logger.info("CSC-V6: Step 12: Folding and persisting ledger entry")
         self.folder.fold_history(ledger_entry)
         self.hms.store_ledger_entry(ledger_entry)
 
         # Final LogAct write-through for approved trade
+        logger.info("CSC-V6: Proposing final trade execution to decision bus")
         action = LogAction(
             action_type="TRADE_EXECUTION",
             payload=decision_proposal,
@@ -464,6 +467,15 @@ class CognitiveSystemController:
             composite_confidence=branch.confidence,
             provenance=provenance
         )
+
+    async def _refine_strategy(self, branch: ReasoningBranch, reports: List[Any]) -> ReasoningBranch:
+        """Refines a strategy branch based on verifier feedback by reducing confidence and tracing corrections."""
+        new_branch = copy.deepcopy(branch)
+        new_branch.confidence = round(branch.confidence * 0.9, 3)
+        for r in reports:
+            critique = getattr(r, 'critique', 'critique')
+            new_branch.reasoning_trace.append(f"Correction: {critique}")
+        return new_branch
 
     def _calculate_composite_confidence(self, entry: ResearchLedgerEntry) -> ConfidenceVector:
         return ConfidenceVector(statistical=entry.composite_confidence, regime=0.8, execution=0.9, tail_risk=0.85, model_stability=0.7)

@@ -7,6 +7,13 @@ from trading_bot.core.csc.models import NormalizedMarketContext, MarketContextAd
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome, CoreDecision
 from trading_bot.core.immutable_shield import GovernanceDecision
 
+@pytest.fixture(autouse=True)
+def reset_csc_singleton():
+    """Reset CognitiveSystemController singleton before and after each test."""
+    CognitiveSystemController._instance = None
+    yield
+    CognitiveSystemController._instance = None
+
 def test_normalized_market_context_immutability():
     """Verify that NormalizedMarketContext is immutable and correctly populated."""
     context = NormalizedMarketContext(volatility=0.25, price_action="BULLISH", features=[1.0, 2.0])
@@ -75,7 +82,9 @@ async def test_csc_decision_determinism(monkeypatch):
 
     # Patch decision_bus propose_action
     from trading_bot.core.unified_event_bus import decision_bus, ActionStatus
-    await decision_bus.start()
+    res = decision_bus.start()
+    if asyncio.iscoroutine(res) or hasattr(res, "__await__"):
+        await res
 
     async def mock_propose_action(action):
         action.status = ActionStatus.EXECUTED

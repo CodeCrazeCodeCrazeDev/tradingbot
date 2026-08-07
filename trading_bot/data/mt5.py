@@ -79,7 +79,5 @@ class MT5Interface:
         return {
             "retcode": 10009,  # DONE
             "order": 123456,
-            "volume": request.get("volume", 0.1),
-            "price": request.get("price", 1.0),
             "comment": "Mock trade completed"
         }

@@ -27,13 +27,33 @@ class SkillRouteOutcome:
     action: Optional[str] = None
     adapter_id: Optional[str] = None
     reason: Optional[str] = None
+    version: Optional[str] = None
+
+    def __getitem__(self, item):
+        if item in ("result", "pf_result"):
+            return {
+                "action": self.action,
+                "reason": self.reason,
+                "pf_version": self.version
+            }
+        try:
+            return getattr(self, item)
+        except AttributeError:
+            raise KeyError(item)
+
+    def get(self, item, default=None):
+        try:
+            return self[item]
+        except (AttributeError, KeyError):
+            return default
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "status": self.status,
             "action": self.action,
             "adapter_id": self.adapter_id,
-            "reason": self.reason
+            "reason": self.reason,
+            "version": self.version
         }
 
 @dataclass
@@ -133,9 +153,19 @@ class SkillRouter:
             skill = self._resolve_best_skill(required_caps)
             if skill:
                 if skill.skill_type == SkillType.LORA:
-                    return {"status": "s2l_routed", "adapter_id": skill.adapter_id, "version": skill.version}
+                    return SkillRouteOutcome(
+                        status="s2l_routed",
+                        adapter_id=skill.adapter_id,
+                        version=skill.version
+                    )
                 elif skill.skill_type == SkillType.PROGRAM:
-                    return skill.executable(context)
+                    res = skill.executable(context)
+                    return SkillRouteOutcome(
+                        status="pf_intervention",
+                        action=res.get("action"),
+                        reason=res.get("reason"),
+                        version=res.get("pf_version")
+                    )
 
         return SkillRouteOutcome(status="standard_reasoning")
 

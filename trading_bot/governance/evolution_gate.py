@@ -150,7 +150,7 @@ class EvolutionGate:
         )
 
         if is_significant and no_regressions:
-            logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain: {gain:.4f}")
+            logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain (G): {gain:.4f}")
 
             # Immutable Provenance (UCA V5)
             self.evolution_history.append({
@@ -167,7 +167,14 @@ class EvolutionGate:
             })
             return True
         else:
-            logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED. Gain (G): {gain:.4f} < {self.threshold} or calibration drift too high.")
+            reasons = []
+            if not is_significant:
+                reasons.append(f"insignificant gain {gain:.4f} < {self.threshold}")
+            if calibration_drift > 0.05:
+                reasons.append(f"calibration drift {calibration_drift:.4f} > 0.05")
+            if candidate.latency > baseline.latency * 1.2:
+                reasons.append(f"latency regression {candidate.latency} > {baseline.latency * 1.2}")
+            logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED due to: {', '.join(reasons)}")
             return False
 
     def _check_eksft_compliance(self, config: Dict[str, Any]) -> bool:
