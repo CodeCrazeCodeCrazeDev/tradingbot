@@ -27,10 +27,10 @@ class SymbolInfo:
     volume_step: float = 0.01
 
 class MT5Interface:
-    """Institutional-grade MT5Interface stub for testing and system compatibility."""
+    """Interacts with MetaTrader 5 terminal or provides standard mock wrappers when offline."""
 
-    def __init__(self, *args, **kwargs):
-        self.config = kwargs.get("config") or (args[0] if args and isinstance(args[0], dict) else kwargs)
+    def __init__(self, config: Optional[Dict[str, Any]] = None, *args, **kwargs):
+        self.config = config or kwargs
         self._connected = True
         self.connected = True
 
@@ -74,38 +74,10 @@ class MT5Interface:
             for d in dates
         ]
 
-    def place_order(self, *args, **kwargs) -> Dict[str, Any]:
-        # Handle dict request style or positional style
-        if args and isinstance(args[0], dict):
-            request = args[0]
-            vol = request.get("volume", 0.1)
-            pr = request.get("price", 1.0)
-            sym = request.get("symbol", "EURUSD")
-            return {
-                "retcode": 10009,  # DONE
-                "order": 123456,
-                "order_id": 123456,
-                "volume": vol,
-                "price": pr,
-                "symbol": sym,
-                "status": "filled",
-                "comment": "Mock trade completed"
-            }
-
-        # Positional style or kwargs
-        # place_order(self, order_type, symbol, volume, price=None, **kwargs)
-        order_type = kwargs.get("order_type") or (args[0] if len(args) > 0 else "buy")
-        symbol = kwargs.get("symbol") or (args[1] if len(args) > 1 else "EURUSD")
-        volume = kwargs.get("volume") or (args[2] if len(args) > 2 else 0.1)
-        price = kwargs.get("price") or (args[3] if len(args) > 3 else 1.1000)
-
+    def place_order(self, request: Dict[str, Any], *args, **kwargs) -> Dict[str, Any]:
+        logger.info(f"MT5Interface: Order placed successfully -> {request}")
         return {
             "retcode": 10009,
             "order": 123456,
-            "order_id": 123456,
-            "status": "filled",
-            "volume": volume,
-            "price": price,
-            "symbol": symbol,
             "comment": "Mock trade completed"
         }
