@@ -7,7 +7,6 @@ and deterministic replay requirements.
 """
 
 import pytest
-import asyncio
 import numpy as np
 from trading_bot.governance.evolution_gate import EvolutionGate, EvolutionMetrics
 
@@ -36,8 +35,7 @@ class MockValidationEngine:
             "std_dev": 0.001
         }
 
-@pytest.mark.asyncio
-async def test_rsea_monotone_safe_promotion():
+def test_rsea_monotone_safe_promotion():
     """Validates that valid improvements are promoted."""
     engine = MockValidationEngine(reward_gain=0.10) # 10% gain (Significant)
     gate = EvolutionGate(engine)
@@ -45,13 +43,12 @@ async def test_rsea_monotone_safe_promotion():
     candidate = {"id": "C-001", "logic_shard": {"halt": False}}
     baseline = {"id": "B-001"}
 
-    approved = await gate.validate_evolution("C-001", candidate, baseline)
+    approved = gate.validate_evolution("C-001", candidate, baseline)
     assert approved is True
     assert len(gate.evolution_history) == 1
     assert gate.evolution_history[0]["status"] == "PROMOTED"
 
-@pytest.mark.asyncio
-async def test_rsea_regression_rejection():
+def test_rsea_regression_rejection():
     """Validates that improvements with safety regressions are rejected."""
     engine = MockValidationEngine(reward_gain=0.10, regression=True)
     gate = EvolutionGate(engine)
@@ -59,12 +56,11 @@ async def test_rsea_regression_rejection():
     candidate = {"id": "C-002"}
     baseline = {"id": "B-001"}
 
-    approved = await gate.validate_evolution("C-002", candidate, baseline)
+    approved = gate.validate_evolution("C-002", candidate, baseline)
     assert approved is False
     assert len(gate.evolution_history) == 0
 
-@pytest.mark.asyncio
-async def test_eksft_uncertainty_masking():
+def test_eksft_uncertainty_masking():
     """Validates that high-uncertainty concepts must be masked (EKSFT)."""
     engine = MockValidationEngine()
     gate = EvolutionGate(engine)
@@ -76,7 +72,7 @@ async def test_eksft_uncertainty_masking():
             "eksft_trace": [{"id": "volatile_asset_x", "entropy": 0.9, "masked": False}]
         }
     }
-    approved = await gate.validate_evolution("C-003", bad_candidate, {"id": "B-001"})
+    approved = gate.validate_evolution("C-003", bad_candidate, {"id": "B-001"})
     assert approved is False
 
     # Concept with high entropy AND mask -> Should Pass
@@ -86,11 +82,10 @@ async def test_eksft_uncertainty_masking():
             "eksft_trace": [{"id": "volatile_asset_x", "entropy": 0.9, "masked": True}]
         }
     }
-    approved = await gate.validate_evolution("C-004", good_candidate, {"id": "B-001"})
+    approved = gate.validate_evolution("C-004", good_candidate, {"id": "B-001"})
     assert approved is True
 
-@pytest.mark.asyncio
-async def test_formal_invariant_halt_violation():
+def test_formal_invariant_halt_violation():
     """Validates that exposure cannot be increased while halted."""
     engine = MockValidationEngine()
     gate = EvolutionGate(engine)
@@ -99,5 +94,5 @@ async def test_formal_invariant_halt_violation():
         "id": "C-005",
         "logic_shard": {"halt": True, "increase_exposure": True}
     }
-    approved = await gate.validate_evolution("C-005", violating_candidate, {"id": "B-001"})
+    approved = gate.validate_evolution("C-005", violating_candidate, {"id": "B-001"})
     assert approved is False

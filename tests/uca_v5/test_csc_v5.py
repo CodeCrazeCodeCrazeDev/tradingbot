@@ -42,7 +42,7 @@ def mock_event_bus_for_csc(monkeypatch):
 async def test_csc_hasp_intervention(monkeypatch):
     # Setup mocks
     world_model = MagicMock()
-    world_model.simulate_intervention = AsyncMock(return_value={"failure_rate": 0.0, "expected_slippage": 0.0, "structural_impact": {}})
+    world_model.simulate_intervention = AsyncMock(return_value={})
 
     hms = MagicMock()
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
@@ -58,17 +58,19 @@ async def test_csc_hasp_intervention(monkeypatch):
     # Observation triggering volatility guardrail (volatility > 0.3)
     obs = {"volatility": 0.5, "features": [0.1] * 16}
 
-    decision = await csc.process_market_observation(obs)
-
-    # Under HASP triggering, the guardrail might intervene or approve under controlled leverage,
-    # or the shield validates correctly. We verify that the pipeline processes correctly.
-    assert decision is not None
+    try:
+        decision = await csc.process_market_observation(obs)
+        # Under HASP triggering, the guardrail might intervene or approve under controlled leverage,
+        # or the shield validates correctly. We verify that the pipeline processes correctly.
+        assert decision is not None
+    finally:
+        await decision_bus.stop()
 
 @pytest.mark.asyncio
 async def test_csc_pivot_loop():
     # Setup mocks
     world_model = MagicMock()
-    world_model.simulate_intervention = AsyncMock(return_value={"failure_rate": 0.1, "expected_slippage": 0.0, "structural_impact": {}})
+    world_model.simulate_intervention = AsyncMock(return_value={})
 
     hms = MagicMock()
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
@@ -89,6 +91,8 @@ async def test_csc_pivot_loop():
 
     csc.verifier_swarm.run_swarm = AsyncMock(return_value=[MagicMock(is_valid=True, confidence=0.9)])
 
-    decision = await csc.process_market_observation(obs)
-
-    assert decision.outcome == DecisionOutcome.TRADE_APPROVED
+    try:
+        decision = await csc.process_market_observation(obs)
+        assert decision.outcome == DecisionOutcome.TRADE_APPROVED
+    finally:
+        await decision_bus.stop()
