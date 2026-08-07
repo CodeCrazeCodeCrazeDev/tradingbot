@@ -189,6 +189,12 @@ class HierarchicalMemorySystem:
     _instance = None
     _lock = threading.Lock()
 
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance of the memory system."""
+        with cls._lock:
+            cls._instance = None
+
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             with cls._lock:

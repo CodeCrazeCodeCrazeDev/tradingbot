@@ -125,6 +125,15 @@ class UnifiedEvent:
         return self.status
 
 class UnifiedDecisionBus:
+    _instance: Optional['UnifiedDecisionBus'] = None
+
+    @classmethod
+    def reset(cls):
+        """Reset the global decision_bus instance or clear configuration state."""
+        global decision_bus
+        decision_bus = UnifiedDecisionBus()
+        cls._instance = decision_bus
+
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
         self._log: List[Union[LogAction, UnifiedEvent]] = []

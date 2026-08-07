@@ -20,7 +20,98 @@ Hypotheses exist under several nomenclatures across diverse subsystems:
 6.  **Strategy Discovery**: Genomes within the evolutionary optimization loop representing implicit "alpha combinations".
 7.  **Decision Layer**: Action proposals and trade ideas generated dynamically.
 
-### 1.2 Unified Dependency Graph of the Hypothesis Ecosystem
+### 1.2 Hypothesis Creation Points (Explicit & Implicit)
+
+#### Explicit Creation Points
+1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `ScientificReasoningEngine.observe()`
+2. **`trading_bot/foundation_agents/curiosity_engine/hypothesis_generator.py`**: `HypothesisGenerator.generate_from_anomaly()`
+3. **`trading_bot/alpha_research/hypothesis_extraction.py`**: `HypothesisExtractionEngine.extract_from_research()`
+4. **`trading_bot/core/csc/hypothesis.py`**: `HypothesisGenerator.generate_competing_branches()`
+5. **`trading_bot/apex_fi/alpha_mining.py`**: `GeneticAlphaSearch._generate_random_expression()`
+6. **`trading_bot/world_model/imagination.py`**: `ImaginationEngine.simulate_scenarios()`
+7. **`trading_bot/market_teacher/absolute_laws.py`**: `AbsoluteLaws._create_draft_strategy()`
+8. **`trading_bot/core/phce_d_engine.py`**: `PHCEDAI._generate_hypothesis()`
+
+#### Implicit Creation Points
+1. **`trading_bot/strategy_discovery/evolutionary_engine.py`**: `StrategyGenome` (Implicit signal-reward hypothesis).
+2. **`trading_bot/ml/offline_rl/alphaalgo_autonomous_system.py`**: Policy updates (Implicit state-action value hypothesis).
+3. **`trading_bot/world_model/v2_training.py`**: Reasoning traces (Implicit causal chain hypothesis).
+4. **`trading_bot/profit_maximizer/market_regime_adapter.py`**: Regime classification (Implicit environment hypothesis).
+5. **`trading_bot/world_model/causal_model.py`**: Causal World Model Induction (Implicit causal mechanism).
+
+---
+
+### 1.3 Hypothesis Evaluation Points
+
+#### Core Scientific Evaluation
+1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `ScientificReasoningEngine.evaluate_results()` & `bayesian_update()`.
+2. **`trading_bot/core_agent_system/cds/epistemology_engine.py`**: `EpistemologyEngine.analyze_hypothesis()` (Adversarial questioning).
+
+#### Tactical Evaluation (Decision Layer)
+1. **`trading_bot/core/phce_d_engine.py`**: `ParallelHypothesisCorrectionEngine.process()` (Evidence synthesis).
+2. **`trading_bot/core/csc/controller.py`**: `CSC._verify_evidence_hard_constraint()` (Graph-based verification).
+3. **`trading_bot/core_agent_system/cds/verdict_engine.py`**: `VerdictEngine.synthesize_verdict()` (Weighted consensus).
+
+#### Statistical & Technical Evaluation
+1. **`trading_bot/alpha_research/strategy_diagnostics.py`**: `StrategyDiagnostics` (Overfitting, health, and robustness).
+2. **`trading_bot/strategy_discovery/validation.py`**: `StrategyValidationPipeline` (Regime testing, transaction costs).
+3. **`trading_bot/alpha_research/alpha_death_clock.py`**: `AlphaDeathClockManager` (Decay monitoring).
+4. **`trading_bot/world_model/imagination.py`**: `PlanEvaluator.evaluate_plan()` (Lookahead utility across scenarios).
+
+#### Governance & Institutional Evaluation
+1. **`trading_bot/core/unified_event_bus.py`**: `LogAction.wait_for_decision()` (Consensus/Voter auditing).
+2. **`trading_bot/core/immutable_shield.py`**: `ImmutableShield.validate_action()` (Hard safety rails).
+
+---
+
+### 1.4 Hypothesis Rejection Points
+
+#### Logical & Structural Rejection
+1. **`trading_bot/alpha_research/hypothesis_extraction.py`**: `HypothesisValidator` (Lacks mechanism/falsification).
+2. **`trading_bot/core/talos_cerberus_v23.py`**: `EvidenceScorecard` (Source unreliability, compliance failure).
+
+#### Performance & Decay Rejection
+1. **`trading_bot/apex_fi/alpha_mining.py`**: `LivingFactorLibrary._retire_factor()` (Sharpe/Entropy decay).
+2. **`trading_bot/signals/auto_disable_sick_signals.py`**: `SignalHealthMonitor` (Recent failure rate).
+3. **`trading_bot/strategy_discovery/evolutionary_engine.py`**: Fitness-based selection (Natural selection of genomes).
+
+#### Safety & Governance Rejection
+1. **`trading_bot/core/unified_event_bus.py`**: `LogAction` status `REJECTED` or `VETOED` (Voter consensus).
+2. **`trading_bot/core/immutable_shield.py`**: Hard constraint violation (Risk/Exposure).
+3. **`trading_bot/core/phce_d_engine.py`**: `SimpleValidationGateway` (Market hostility).
+
+#### Scientific Rejection
+1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `HypothesisState.REJECTED` (Posterior belief < 0.2).
+2. **`trading_bot/core/adversarial_failure_analysis.py`**: `AdversarialAnalyzer` (Successful falsification simulation).
+
+---
+
+### 1.5 Hypothesis Promotion Points
+
+#### Tactical Promotion (Decision Path)
+1. **`trading_bot/core/csc/controller.py`**: `_select_optimal_branch()` (Selection for execution).
+2. **`trading_bot/core/phce_d_engine.py`**: `SimpleValidationGateway.promote()` (Signal to Trade Action).
+
+#### Strategic Promotion (Research Path)
+1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `HypothesisState.INSTITUTIONALIZED` (High posterior confidence).
+2. **`trading_bot/alpha_research/hypothesis_extraction.py`**: `HypothesisPromotionEngine` (Research to Candidate).
+3. **`trading_bot/apex_fi/alpha_mining.py`**: `LivingFactorLibrary._promote_factor()` (Candidate to Production Alpha).
+
+#### Knowledge Promotion
+1. **`trading_bot/core/hms/memory.py`**: `SAGE.consolidate()` (Working memory to Long-term Graph Memory).
+2. **`trading_bot/market_teacher/market_teacher.py`**: Lessons extracted from successful trades.
+
+#### Promotion Levels (UCA V5 Standard)
+- **Level 0**: Raw Observation / Anomaly.
+- **Level 1**: Candidate Hypothesis / Reasoning Branch.
+- **Level 2**: Validated / Evidence-Backed Hypothesis.
+- **Level 3**: Research Ledger Entry / Backtest Verified.
+- **Level 4**: Production Strategy / Active Alpha.
+- **Level 5**: Institutional Knowledge / Core World Model Principle.
+
+---
+
+### 1.6 Unified Dependency Graph of the Hypothesis Ecosystem
 
 ```mermaid
 graph TD
@@ -152,3 +243,29 @@ We instantiate an automated validation suite verifying:
 1.  **State Transition Monotonicity**: Verifying that a hypothesis cannot reach `CONFIRMED` or `INSTITUTIONALIZED` without transitioning through evaluation and debate.
 2.  **Calibration Accuracy**: Asserting that average posterior matches empirical win rates within bounded expected errors.
 3.  **Failure Retrieval Persistence**: Guaranteeing that the SRE successfully blocks the generation of a hypothesis if a structurally similar model resides in the `REJECTED` memory.
+
+---
+
+## Phase 6 — Migration Roadmap
+
+This roadmap outlines the transition from the fragmented hypothesis ecosystem to the Unified Scientific Reasoning Engine (SRE).
+
+### Stage 1: Foundation & Data Normalization
+- **Centralize Data Model**: Enforce `ScientificHypothesis` in `trading_bot/core_agent_system/scientific_reasoning/core.py` as the primary entity.
+- **Bridge Legacy Components**: Map existing signals from CSC, PHCE-D, and Alpha Mining to the SRE registry via internal adapters.
+- **Baseline Metrics**: Activate `ScientificMetrics` to track current system performance and identify bottleneck baselines.
+
+### Stage 2: Pipeline Hardening
+- **Concrete Lifecycle Implementation**: Replace SRE stubs (Steps 2, 7, 19) with full production-grade logic.
+  - Integrate GWM for `detect_anomalies`.
+  - Wire `AdversarialAnalyzer` for `generate_counterfactuals`.
+- **Epistemic Calibration**: Force all Level 3+ hypotheses through the `EpistemologyEngine` for adversarial evaluation before promotion.
+
+### Stage 3: SAGE & Memory Integration
+- **Institutional Memory**: Connect Step 15 (`Memory Consolidation`) to the SAGE Graph memory in HMS.
+- **Scientific Replay**: Implement surprise-driven replay to prevent "Scientific Amnesia" and refine historical hypothesis failures.
+
+### Stage 4: Full Autonomy & Meta-Discovery
+- **Active Inference**: Enable full VFE-driven reasoning where the system autonomously generates research questions based on surprise.
+- **Alpha Evolution**: Connect SRE Meta-Discovery (Step 19) to the `GeneticAlphaSearch` search priors.
+- **Legacy Decommissioning**: Gradual removal of redundant registries once SRE parity is verified in live trading.
