@@ -135,6 +135,23 @@ class UnifiedDecisionBus:
         self._processor_task: Optional[asyncio.Task] = None
         logger.info("LogAct Shared-Log Backbone initialized")
 
+    @classmethod
+    def reset(cls):
+        """Resets the global decision bus instance state."""
+        global decision_bus
+        if 'decision_bus' in globals() and decision_bus is not None:
+            # Stop the task if running
+            decision_bus._running = False
+            if decision_bus._processor_task:
+                decision_bus._processor_task.cancel()
+                decision_bus._processor_task = None
+            decision_bus._log.clear()
+            decision_bus._voters.clear()
+            decision_bus._subscribers.clear()
+            # Re-initialize the queue
+            decision_bus._action_queue = asyncio.PriorityQueue()
+        logger.info("UnifiedDecisionBus reset complete.")
+
     async def start(self):
         if self._processor_task and not self._processor_task.done():
             return
