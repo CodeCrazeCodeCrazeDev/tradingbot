@@ -301,5 +301,20 @@ class UnifiedDecisionBus:
         tasks = [h["handler"](action) for h in handlers]
         if tasks: await asyncio.gather(*tasks, return_exceptions=True)
 
+    @classmethod
+    def reset(cls):
+        """Resets the global decision bus instance and its internal structures."""
+        global decision_bus
+        decision_bus._log.clear()
+        decision_bus._voters.clear()
+        decision_bus._subscribers.clear()
+        decision_bus._running = False
+        if decision_bus._processor_task:
+            decision_bus._processor_task.cancel()
+            decision_bus._processor_task = None
+        decision_bus._action_queue = None
+        # Re-initialize to a clean instance
+        decision_bus = UnifiedDecisionBus()
+
 # Global instance for production path (authoritative)
 decision_bus = UnifiedDecisionBus()

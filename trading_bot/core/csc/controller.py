@@ -518,6 +518,7 @@ class CognitiveSystemController:
         base_qty = branch.execution_plan.get("quantity", 0.1)
         slippage = sim_data.get("expected_slippage", 0.0) if isinstance(sim_data, dict) else 0.0
         slippage_penalty = 1.0 - (slippage * 100)
+        final_qty = base_qty * max(0.1, slippage_penalty)
 
         causal_impact = sim_data.get("structural_impact", {}) if isinstance(sim_data, dict) else {}
 
@@ -560,3 +561,13 @@ class CognitiveSystemController:
             tail_risk=0.85,
             model_stability=0.7,
         )
+
+    @classmethod
+    async def reset(cls):
+        """Resets the controller singleton."""
+        if cls._instance:
+            cls._instance.continuous_state.clear()
+            cls._instance.discrete_channel.clear()
+            cls._instance.vfe_history.clear()
+            cls._instance.last_prediction = None
+            cls._instance = None
