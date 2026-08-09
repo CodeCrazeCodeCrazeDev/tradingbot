@@ -100,20 +100,38 @@ class CognitiveSystemController:
     Implements 12-step Recursive Active Inference.
     """
     _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(CognitiveSystemController, cls).__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+
+    @classmethod
+    async def reset(cls):
+        """Reset the singleton instance of the controller."""
+        with cls._lock:
+            cls._instance = None
 
     def __init__(
         self,
-        world_model: Any,
-        hms: Any,
+        world_model: Any = None,
+        hms: Any = None,
         *args,
         **kwargs
     ):
+        if getattr(self, "_initialized", False):
+            return
+        self._initialized = True
         # Setup class instance reference for backward compatibility in tests
         CognitiveSystemController._instance = self
 
         # 1. Dependency Injection
-        self.world_model = world_model
-        self.hms = hms
+        self.world_model = world_model or MagicMock()
+        self.hms = hms or MagicMock()
 
         # Dynamically unpack optional positional and keyword arguments
         self.shield = kwargs.get("shield")
@@ -518,6 +536,7 @@ class CognitiveSystemController:
         base_qty = branch.execution_plan.get("quantity", 0.1)
         slippage = sim_data.get("expected_slippage", 0.0) if isinstance(sim_data, dict) else 0.0
         slippage_penalty = 1.0 - (slippage * 100)
+        final_qty = base_qty * slippage_penalty
 
         causal_impact = sim_data.get("structural_impact", {}) if isinstance(sim_data, dict) else {}
 

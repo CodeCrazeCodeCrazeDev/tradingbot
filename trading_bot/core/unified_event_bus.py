@@ -125,7 +125,39 @@ class UnifiedEvent:
         return self.status
 
 class UnifiedDecisionBus:
+    _instance: Optional['UnifiedDecisionBus'] = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(UnifiedDecisionBus, cls).__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+
+    @classmethod
+    def reset(cls):
+        """Reset the global decision_bus instance or clear configuration state."""
+        global decision_bus
+        with cls._lock:
+            if cls._instance is not None:
+                # Stop if running
+                if hasattr(cls._instance, "_running") and cls._instance._running:
+                    cls._instance._running = False
+                cls._instance = None
+            # Let's instantiate directly without global name reassignment recursion
+            cls._instance = super(UnifiedDecisionBus, cls).__new__(cls)
+            cls._instance._initialized = False
+            cls._instance.__init__()
+            decision_bus = cls._instance
+
     def __init__(self, config: Optional[Dict] = None):
+        if getattr(self, "_initialized", False):
+            if config:
+                self.config.update(config)
+            return
+        self._initialized = True
         self.config = config or {}
         self._log: List[Union[LogAction, UnifiedEvent]] = []
         self._voters: Dict[str, Callable] = {}

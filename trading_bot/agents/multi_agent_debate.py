@@ -109,20 +109,6 @@ class MarketContext:
 
 
 @dataclass
-class AgentScorecard:
-    expected_contribution: float
-    precision: float
-    recall: float
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "expected_contribution": self.expected_contribution,
-            "precision": self.precision,
-            "recall": self.recall
-        }
-
-
-@dataclass
 class AgentArgument:
     """Argument from an agent, designed as evidence-first."""
 
@@ -178,34 +164,10 @@ class DebateRound:
 
 
 @dataclass
-class AgentScorecard:
-    expected_contribution: float
-    precision: float
-    recall: float
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "expected_contribution": self.expected_contribution,
-            "precision": self.precision,
-            "recall": self.recall,
-        }
-
-
-@dataclass
 class VerificationOutcome:
     is_valid: bool
 
 
-class RiskVerifier:
-    """Mock/Stub RiskVerifier for backward compatibility in tests."""
-
-    def verify(self, action: TradeAction, context: MarketContext) -> VerificationOutcome:
-        is_valid = True
-        if context.portfolio_exposure > 0.5 or context.correlation_risk > 0.7:
-            is_valid = False
-        if context.vix_level and context.vix_level > 30:
-            is_valid = False
-        return VerificationOutcome(is_valid=is_valid)
 
 
 @dataclass
@@ -1312,13 +1274,6 @@ class FalsificationGate:
         )
 
 
-class RiskVerifier:
-    def verify(self, action: TradeAction, context: MarketContext) -> Any:
-        @dataclass
-        class Result:
-            is_valid: bool
-        is_valid = context.portfolio_exposure <= 0.85
-        return Result(is_valid=is_valid)
 
 
 class HeadAI:
@@ -1505,6 +1460,7 @@ class HeadAI:
                 winning_score = self.calculate_bayesian_posterior(prior_prob, evidence_likelihoods)
 
             # Check for risk veto
+            vetoes = []
             risk_args = [a for a in active_arguments if a.agent_role == AgentRole.RISK_SENTINEL]
             if risk_args:
                 risk_arg = risk_args[-1]
@@ -2203,6 +2159,12 @@ class MultiAgentDebateSystem:
                 "execution_latency": duration_ms,
                 "decision_timestamp": datetime.now().isoformat(),
                 "debate_quality_evaluation": evaluation,
+                "falsification_report": {
+                    "is_falsified": falsification_report.is_falsified,
+                    "rejection_reason": falsification_report.rejection_reason,
+                    "verifier_outcomes": falsification_report.verifier_outcomes,
+                    "worst_case_scenario": falsification_report.worst_case_scenario
+                }
             }
             decision.provenance = provenance_data
 
