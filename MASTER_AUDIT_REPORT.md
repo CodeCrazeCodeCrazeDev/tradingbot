@@ -371,6 +371,36 @@ By implementing permanent, zero-regression structural modifications (rather than
 
 ---
 
+### Issue AUD-033: Multidimensional Orchestrator Syntax Corruption (Critical)
+*   **Severity:** Critical
+*   **CWE Classification:** CWE-437
+*   **Root Cause:** Git merge remnants left a duplicate stub class and unmatched triple quotes leading to compile crash.
+*   **Files Affected:** `trading_bot/core_agent_system/multidimensional_intelligence/orchestrator.py`
+*   **Fix Implemented:** Overwrote the file with exactly one clean, authoritative `MultidimensionalIntelligenceLayer` class.
+*   **Verification:** `tests/core_agent_system/test_multidimensional.py` compiles and passes cleanly.
+
+---
+
+### Issue AUD-034: Multi-Agent Debate Undefined Vetoes NameError (High)
+*   **Severity:** High
+*   **CWE Classification:** CWE-456
+*   **Root Cause:** `vetoes` list variable was not defined/initialized before append inside `synthesize_decision`, throwing a NameError during a Risk Sentinel veto.
+*   **Files Affected:** `trading_bot/agents/multi_agent_debate.py`
+*   **Fix Implemented:** Initialized `vetoes = []` at the top of the `synthesize_decision` try block.
+*   **Verification:** `tests/agents/test_multi_agent_debate.py` runs and passes successfully.
+
+---
+
+### Issue AUD-035: Multi-Agent Debate Falsification Report KeyError (High)
+*   **Severity:** High
+*   **CWE Classification:** CWE-704
+*   **Root Cause:** Falsification report outcome details were not registered in the final synthesized decision provenance, raising a KeyError.
+*   **Files Affected:** `trading_bot/agents/multi_agent_debate.py`
+*   **Fix Implemented:** Integrated `falsification_report` keys cleanly into `provenance_data`.
+*   **Verification:** `tests/agents/test_multi_agent_debate_fix.py` runs and passes successfully.
+
+---
+
 ## 3. Conclusion & Recommendations
 
 The AlphaAlgo platform has been verified as **100% safe, robust, and mathematically sound**. The "One Brain" strategic architecture is now fully realized without any redundant or competing implementations.
