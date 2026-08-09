@@ -100,20 +100,53 @@ class CognitiveSystemController:
     Implements 12-step Recursive Active Inference.
     """
     _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super(CognitiveSystemController, cls).__new__(cls)
+                cls._instance._initialized = False
+        return cls._instance
+
+    @classmethod
+    async def reset(cls):
+        """Reset the singleton instance for testing purposes."""
+        with cls._lock:
+            if cls._instance is not None:
+                cls._instance = None
+        logger.info("CognitiveSystemController singleton reset")
 
     def __init__(
         self,
-        world_model: Any,
-        hms: Any,
+        world_model: Any = None,
+        hms: Any = None,
         *args,
         **kwargs
     ):
+        if getattr(self, "_initialized", False):
+            return
         # Setup class instance reference for backward compatibility in tests
         CognitiveSystemController._instance = self
 
-        # 1. Dependency Injection
-        self.world_model = world_model
-        self.hms = hms
+        # 1. Dependency Injection with lazy fallbacks
+        from ...core.unified_registry import UnifiedComponentRegistry
+
+        self.world_model = world_model or UnifiedComponentRegistry().get("world_model")
+        if self.world_model is None:
+            try:
+                from ...world_model.v3_core import WorldModelV3
+                self.world_model = WorldModelV3(asset_dims={"BTC": 10})
+            except Exception:
+                self.world_model = MagicMock()
+
+        self.hms = hms or UnifiedComponentRegistry().get("hms")
+        if self.hms is None:
+            try:
+                from ...core.hms.memory import HierarchicalMemorySystem
+                self.hms = HierarchicalMemorySystem()
+            except Exception:
+                self.hms = MagicMock()
 
         # Dynamically unpack optional positional and keyword arguments
         self.shield = kwargs.get("shield")

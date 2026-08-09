@@ -100,6 +100,10 @@ class UnifiedEvent:
         return self.event_type
 
     @property
+    def action_id(self) -> str:
+        return self.event_id
+
+    @property
     def agent_id(self) -> str:
         return self.source
 
@@ -125,7 +129,21 @@ class UnifiedEvent:
         return self.status
 
 class UnifiedDecisionBus:
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super(UnifiedDecisionBus, cls).__new__(cls)
+                cls._instance._initialized = False
+        return cls._instance
+
     def __init__(self, config: Optional[Dict] = None):
+        if getattr(self, "_initialized", False):
+            if config:
+                self.config.update(config)
+            return
         self.config = config or {}
         self._log: List[Union[LogAction, UnifiedEvent]] = []
         self._voters: Dict[str, Callable] = {}
@@ -133,7 +151,21 @@ class UnifiedDecisionBus:
         self._action_queue = asyncio.PriorityQueue()
         self._running = False
         self._processor_task: Optional[asyncio.Task] = None
+        self._initialized = True
         logger.info("LogAct Shared-Log Backbone initialized")
+
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance for testing purposes."""
+        with cls._lock:
+            if cls._instance is not None:
+                # Stop if running
+                if hasattr(cls._instance, "_running") and cls._instance._running:
+                    cls._instance._running = False
+                    if cls._instance._processor_task:
+                        cls._instance._processor_task.cancel()
+                cls._instance = None
+        logger.info("UnifiedDecisionBus singleton reset")
 
     async def start(self):
         if self._processor_task and not self._processor_task.done():
