@@ -125,7 +125,40 @@ class UnifiedEvent:
         return self.status
 
 class UnifiedDecisionBus:
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(UnifiedDecisionBus, cls).__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+
+    @classmethod
+    def reset(cls):
+        with cls._lock:
+            if cls._instance is not None:
+                cls._instance._running = False
+                processor_task = getattr(cls._instance, "_processor_task", None)
+                if processor_task:
+                    try:
+                        processor_task.cancel()
+                    except Exception:
+                        pass
+                if hasattr(cls._instance, "_log") and isinstance(cls._instance._log, list):
+                    cls._instance._log.clear()
+                if hasattr(cls._instance, "_voters") and isinstance(cls._instance._voters, dict):
+                    cls._instance._voters.clear()
+                if hasattr(cls._instance, "_subscribers") and isinstance(cls._instance._subscribers, dict):
+                    cls._instance._subscribers.clear()
+                cls._instance._initialized = False
+                cls._instance = None
+
     def __init__(self, config: Optional[Dict] = None):
+        if getattr(self, "_initialized", False):
+            return
         self.config = config or {}
         self._log: List[Union[LogAction, UnifiedEvent]] = []
         self._voters: Dict[str, Callable] = {}
@@ -133,6 +166,7 @@ class UnifiedDecisionBus:
         self._action_queue = asyncio.PriorityQueue()
         self._running = False
         self._processor_task: Optional[asyncio.Task] = None
+        self._initialized = True
         logger.info("LogAct Shared-Log Backbone initialized")
 
     async def start(self):
