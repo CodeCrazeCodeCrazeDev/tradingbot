@@ -165,3 +165,22 @@ async def test_rsea_multi_metric_protected_gate():
         "training_metadata": {}
     }
     assert await gate.validate_evolution("CB_Safety", candidate_bad_safety, baseline) is False
+
+@pytest.mark.asyncio
+async def test_csc_safety_and_self_improvement():
+    """Verify execution correctness of the safety checking and self-improvement validation pipeline."""
+    csc = CognitiveSystemController()
+    obs = {"impact": 0.9, "confidence": 0.8, "cost": 0.1, "target": "execution_optimizer"}
+
+    result = await csc.execute_self_improvement_loop(obs)
+
+    assert result["status"] == "completed"
+    assert result["promoted"] is True
+    assert result["triage_score"] > 5.0
+    assert "observe" in result["trace"]
+    assert "archive" in result["trace"]
+
+    # Test dropped triage path
+    obs_low = {"impact": 0.1, "confidence": 0.1, "cost": 0.9}
+    result_low = await csc.execute_self_improvement_loop(obs_low)
+    assert result_low["status"] == "dropped"

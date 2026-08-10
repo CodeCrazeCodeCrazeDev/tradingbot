@@ -16,6 +16,23 @@ from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
 
+class AwaitableBool:
+    def __init__(self, value: bool):
+        self.value = value
+
+    def __await__(self):
+        async def _async_wrapper():
+            return self.value
+        return _async_wrapper().__await__()
+
+    def __bool__(self):
+        return self.value
+
+    def __eq__(self, other):
+        if isinstance(other, AwaitableBool):
+            return self.value == other.value
+        return self.value == other
+
 @dataclass
 class EvolutionMetrics:
     reward: float
@@ -28,6 +45,25 @@ class EvolutionMetrics:
     calibration_error: float = 0.0
     hms_retrieval_quality: float = 1.0
     deterministic_replay_success: float = 1.0
+
+    def __getitem__(self, item: str) -> Any:
+        mapping = {
+            "perf": self.reward,
+            "reward": self.reward,
+            "decision_latency": self.latency,
+            "latency": self.latency,
+            "calibration": self.calibration,
+            "robustness": self.robustness,
+            "safety_score": self.safety_score,
+            "drawdown": self.drawdown,
+            "calibration_error": self.calibration_error,
+            "gain": self.gain,
+            "hms_retrieval_quality": self.hms_retrieval_quality,
+            "deterministic_replay_success": self.deterministic_replay_success
+        }
+        if item in mapping:
+            return mapping[item]
+        raise KeyError(item)
 
 class EvolutionGate:
     """
@@ -44,7 +80,7 @@ class EvolutionGate:
         self.tau_kl = 0.5 # KL Divergence threshold
         logger.info(f"EvolutionGate V6: Monotone-Safe enabled (threshold={self.threshold})")
 
-    def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
+    def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> AwaitableBool:
         """
         RSEA Gate: Only promote if ALL metrics are non-regressive and Gain Metric (G) > threshold.
         G = Perf(online/stateful) - Perf(stateless/baseline)
@@ -54,13 +90,13 @@ class EvolutionGate:
         # 1. EKSFT Compliance Check (arXiv:2605.29303)
         if not self._check_eksft_compliance(candidate_config):
             logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED due to EKSFT non-compliance (distribution shift risk).")
-            return False
+            return AwaitableBool(False)
 
         # Formal Invariant safety check: exposure cannot be increased while halted
         logic_shard = candidate_config.get("logic_shard", {}) or {}
         if logic_shard.get("halt", False) and logic_shard.get("increase_exposure", False):
             logger.error(f"EvolutionGate: REJECTED - Candidate {candidate_id} violated formal invariant (halted but increasing exposure)")
-            return False
+            return AwaitableBool(False)
 
         # 2. Adversarial Red-Teaming (arXiv:2606.28374 Reward-Hacking Prevention)
         code_diff = candidate_config.get("code_diff", "")
@@ -69,7 +105,7 @@ class EvolutionGate:
             red_team_report = self.run_red_teaming_session(candidate_config, scenarios)
             if red_team_report["status"] == "failed":
                 logger.error(f"EvolutionGate: REJECTED - Red-teaming failed: {red_team_report['failures']}")
-                return False
+                return AwaitableBool(False)
 
         # 3. Run baseline on validation set (Stateless Baseline)
         if isinstance(baseline_config, dict):
@@ -137,7 +173,7 @@ class EvolutionGate:
         # 5. Institutional Safety Check (Hard Gate)
         if candidate.safety_score < 1.0:
             logger.error(f"EvolutionGate: REJECTED - Safety regression detected ({candidate.safety_score} < 1.0)")
-            return False
+            return AwaitableBool(False)
 
         # 5. Monotone-Safe Check: Gain Metric (arXiv:2606.05661 CL-Bench)
         gain = candidate["perf"] - baseline["perf"]
@@ -146,17 +182,9 @@ class EvolutionGate:
         # 1. Latency (10% tolerance: max 1.1x baseline)
         if candidate["decision_latency"] > baseline["decision_latency"] * 1.1:
             logger.warning(f"EvolutionGate: REJECTED - Latency regressed: {candidate['decision_latency']} > {baseline['decision_latency'] * 1.1}")
-            return False
+            return AwaitableBool(False)
 
         # Verify no protected metrics are violated and at least one is significantly improved
-        is_significant = gain >= self.threshold
-        no_regressions = (
-            candidate.calibration >= baseline.calibration * 0.95 and
-            candidate.robustness >= baseline.robustness * 0.95 and
-            candidate.latency <= baseline.latency * 1.2 and
-            candidate.safety_score >= baseline.safety_score
-        )
-
         is_significant = (gain >= self.threshold)
         no_regressions = (
             candidate.latency <= baseline.latency * 1.10 and
@@ -168,6 +196,8 @@ class EvolutionGate:
             candidate.hms_retrieval_quality >= baseline.hms_retrieval_quality * 0.90 and
             candidate.deterministic_replay_success >= baseline.deterministic_replay_success
         )
+
+        calibration_drift = abs(candidate.calibration - baseline.calibration)
 
         if is_significant and no_regressions:
             logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain (G): {gain:.4f}")
@@ -185,7 +215,7 @@ class EvolutionGate:
                 },
                 "status": "PROMOTED"
             })
-            return True
+            return AwaitableBool(True)
         else:
             reasons = []
             if not is_significant:
@@ -195,7 +225,7 @@ class EvolutionGate:
             if candidate.latency > baseline.latency * 1.2:
                 reasons.append(f"latency regression {candidate.latency} > {baseline.latency * 1.2}")
             logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED due to: {', '.join(reasons)}")
-            return False
+            return AwaitableBool(False)
 
     def _check_eksft_compliance(self, config: Dict[str, Any]) -> bool:
         """Prevents distribution sharpening and entropy collapse."""
