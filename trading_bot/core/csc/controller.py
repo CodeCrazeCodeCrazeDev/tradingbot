@@ -100,6 +100,23 @@ class CognitiveSystemController:
     Implements 12-step Recursive Active Inference.
     """
     _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(CognitiveSystemController, cls).__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+
+    @classmethod
+    async def reset(cls):
+        """Reset the global CognitiveSystemController singleton instance."""
+        with cls._lock:
+            if cls._instance is not None:
+                cls._instance = None
+        logger.info("CognitiveSystemController state reset")
 
     def __init__(
         self,
@@ -108,6 +125,8 @@ class CognitiveSystemController:
         *args,
         **kwargs
     ):
+        if getattr(self, "_initialized", False):
+            return
         # Setup class instance reference for backward compatibility in tests
         CognitiveSystemController._instance = self
 

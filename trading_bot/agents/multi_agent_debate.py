@@ -1212,6 +1212,60 @@ class FalsificationReport:
     timestamp: datetime = field(default_factory=datetime.now)
 
 
+@dataclass
+class ProvenanceDataSchema:
+    schema_version: str = "1.0.0"
+    decision_uuid: str = field(default_factory=lambda: str(uuid.uuid4()))
+    git_sha: str = ""
+    configuration_hash: str = ""
+    feature_hash: str = ""
+    market_snapshot_hash: str = ""
+    dataset_version: str = "dataset_v3.2_prod"
+    market_data_version: str = "tick_data_L2_v5"
+    model_version: str = "models_v5.4.1"
+    memory_snapshot: str = ""
+    experiment_id: str = "exp_multidim_debate_prod"
+    risk_policy_version: str = "risk_fortress_v6_strict"
+    verification_results: Dict[str, Any] = field(default_factory=dict)
+    verification_report: Dict[str, Any] = field(default_factory=dict)
+    agent_contributions: Dict[str, Any] = field(default_factory=dict)
+    agent_scorecards: Dict[str, Any] = field(default_factory=dict)
+    consensus_record: Dict[str, Any] = field(default_factory=dict)
+    random_seed: str = "seed_42"
+    environment_fingerprint: str = ""
+    execution_latency: float = 0.0
+    decision_timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
+    debate_quality_evaluation: Dict[str, Any] = field(default_factory=dict)
+    falsification_report: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "schema_version": self.schema_version,
+            "decision_uuid": self.decision_uuid,
+            "git_sha": self.git_sha,
+            "configuration_hash": self.configuration_hash,
+            "feature_hash": self.feature_hash,
+            "market_snapshot_hash": self.market_snapshot_hash,
+            "dataset_version": self.dataset_version,
+            "market_data_version": self.market_data_version,
+            "model_version": self.model_version,
+            "memory_snapshot": self.memory_snapshot,
+            "experiment_id": self.experiment_id,
+            "risk_policy_version": self.risk_policy_version,
+            "verification_results": self.verification_results,
+            "verification_report": self.verification_report,
+            "agent_contributions": self.agent_contributions,
+            "agent_scorecards": self.agent_scorecards,
+            "consensus_record": self.consensus_record,
+            "random_seed": self.random_seed,
+            "environment_fingerprint": self.environment_fingerprint,
+            "execution_latency": self.execution_latency,
+            "decision_timestamp": self.decision_timestamp,
+            "debate_quality_evaluation": self.debate_quality_evaluation,
+            "falsification_report": self.falsification_report,
+        }
+
+
 class FalsificationGate:
     """
     Active peer-review style verification and falsification swarm.
@@ -1399,6 +1453,7 @@ class HeadAI:
             FinalDecision
         """
         try:
+            vetoes = []
             # 1. Advanced, institutional-grade argument ranking & sorting
             # Combine expertise weights, confidence, historical precision, and evidence quality, with timestamp as tie-breaker
             def get_arg_score(arg: AgentArgument) -> Tuple[float, float]:
@@ -2171,40 +2226,47 @@ class MultiAgentDebateSystem:
             config_hash = hashlib.sha256(str(self.config).encode("utf-8")).hexdigest()
             feature_hash = hashlib.sha256(feature_state_str.encode("utf-8")).hexdigest()
 
-            provenance_data = {
-                'decision_uuid': str(uuid.uuid4()),
-                'git_sha': git_sha,
-                'configuration_hash': config_hash,
-                'feature_hash': feature_hash,
-                'market_snapshot_hash': hashlib.sha256(market_state_str.encode('utf-8')).hexdigest(),
-                'dataset_version': "dataset_v3.2_prod",
-                'market_data_version': "tick_data_L2_v5",
-                'model_version': "models_v5.4.1",
-                'memory_snapshot': f"sage_mem_snap_{hashlib.md5(market_state_str.encode('utf-8')).hexdigest()[:8]}",
-                'experiment_id': "exp_multidim_debate_prod",
-                'risk_policy_version': "risk_fortress_v6_strict",
-                'verification_results': verification_results,
-                'verification_report': {
+            provenance_schema = ProvenanceDataSchema(
+                decision_uuid=str(uuid.uuid4()),
+                git_sha=git_sha,
+                configuration_hash=config_hash,
+                feature_hash=feature_hash,
+                market_snapshot_hash=hashlib.sha256(market_state_str.encode('utf-8')).hexdigest(),
+                dataset_version="dataset_v3.2_prod",
+                market_data_version="tick_data_L2_v5",
+                model_version="models_v5.4.1",
+                memory_snapshot=f"sage_mem_snap_{hashlib.md5(market_state_str.encode('utf-8')).hexdigest()[:8]}",
+                experiment_id="exp_multidim_debate_prod",
+                risk_policy_version="risk_fortress_v6_strict",
+                verification_results=verification_results,
+                verification_report={
                     'num_rounds': len(debate_rounds),
                     'conflicts_detected': conflicts
                 },
-                "agent_contributions": {
+                agent_contributions={
                     role.value: sc.expected_contribution for role, sc in scorecards.items()
                 },
-                "agent_scorecards": {role.value: sc.to_dict() for role, sc in scorecards.items()},
-                "consensus_record": {
+                agent_scorecards={role.value: sc.to_dict() for role, sc in scorecards.items()},
+                consensus_record={
                     "consensus_level": decision.consensus_level,
                     "votes": decision.agent_votes,
                 },
-                "random_seed": "seed_42",
-                "environment_fingerprint": hashlib.sha256(
+                random_seed="seed_42",
+                environment_fingerprint=hashlib.sha256(
                     f"{git_sha}_{config_hash}".encode("utf-8")
                 ).hexdigest(),
-                "execution_latency": duration_ms,
-                "decision_timestamp": datetime.now().isoformat(),
-                "debate_quality_evaluation": evaluation,
-            }
-            decision.provenance = provenance_data
+                execution_latency=duration_ms,
+                decision_timestamp=datetime.now().isoformat(),
+                debate_quality_evaluation=evaluation,
+                falsification_report={
+                    'is_falsified': falsification_report.is_falsified,
+                    'rejection_reason': falsification_report.rejection_reason,
+                    'verifier_outcomes': falsification_report.verifier_outcomes,
+                    'worst_case_scenario': falsification_report.worst_case_scenario,
+                    'timestamp': falsification_report.timestamp.isoformat() if hasattr(falsification_report.timestamp, 'isoformat') else str(falsification_report.timestamp)
+                }
+            )
+            decision.provenance = provenance_schema.to_dict()
 
             self.decisions.append(decision)
             return decision

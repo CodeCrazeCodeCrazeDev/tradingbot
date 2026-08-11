@@ -197,6 +197,14 @@ class HierarchicalMemorySystem:
                     cls._instance._initialized = False
         return cls._instance
 
+    @classmethod
+    def reset(cls):
+        """Reset the global HierarchicalMemorySystem singleton instance state."""
+        with cls._lock:
+            if cls._instance is not None:
+                cls._instance = None
+        logger.info("HierarchicalMemorySystem state reset")
+
     def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
         return calculate_integrity_hash(schema_dict)
 

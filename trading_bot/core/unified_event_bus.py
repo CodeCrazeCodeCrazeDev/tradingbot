@@ -125,7 +125,40 @@ class UnifiedEvent:
         return self.status
 
 class UnifiedDecisionBus:
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(UnifiedDecisionBus, cls).__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+
+    @classmethod
+    def reset(cls):
+        """Reset the global decision_bus instance state."""
+        with cls._lock:
+            if cls._instance is not None:
+                instance = cls._instance
+                if instance._processor_task and not instance._processor_task.done():
+                    try:
+                        instance._processor_task.cancel()
+                    except Exception:
+                        pass
+                instance._running = False
+                instance._processor_task = None
+                instance._log.clear()
+                instance._voters.clear()
+                instance._subscribers.clear()
+                instance._action_queue = asyncio.PriorityQueue()
+                instance._initialized = False
+                logger.info("UnifiedDecisionBus state reset")
+
     def __init__(self, config: Optional[Dict] = None):
+        if getattr(self, "_initialized", False):
+            return
         self.config = config or {}
         self._log: List[Union[LogAction, UnifiedEvent]] = []
         self._voters: Dict[str, Callable] = {}
