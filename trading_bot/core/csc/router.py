@@ -6,6 +6,7 @@ Implements 'HASP' (2026) and 'S2L' (2026).
 
 import logging
 import asyncio
+import threading
 from enum import Enum
 from typing import Any, Dict, List, Optional, Callable, Set
 from dataclasses import dataclass, field
@@ -93,6 +94,7 @@ class SkillRouter:
     """
 
     _instance = None
+    _lock = threading.Lock()
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -126,7 +128,7 @@ class SkillRouter:
             skill_id="hedging_behavior",
             skill_type=SkillType.LORA,
             version="2.0.4",
-            adapter_id="lora_hedging_v1",
+            adapter_id="lora_hedging_v2",
             capabilities={"hedging", "risk_reduction"},
             metadata={"archetype": "risk_averse"}
         ))
@@ -174,10 +176,12 @@ class SkillRouter:
         if vol > 0.3:
             skill = self.get_skill("volatility_guardrail")
             if skill and skill.executable:
-                return {
-                    "status": "pf_intervention",
-                    "pf_result": skill.executable(context)
-                }
+                return SkillRouteOutcome(
+                    status="pf_intervention",
+                    action="override_to_hold",
+                    reason="Volatility exceeded HASP safety threshold (0.3)",
+                    version="1.1.0"
+                )
 
         # 2. Capability-based Routing
         if "hedge" in task.lower() or "risk" in task.lower() or "derivative" in task.lower():
