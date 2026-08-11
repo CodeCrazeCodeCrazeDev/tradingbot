@@ -125,7 +125,19 @@ class UnifiedEvent:
         return self.status
 
 class UnifiedDecisionBus:
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super(UnifiedDecisionBus, cls).__new__(cls)
+                cls._instance._initialized = False
+        return cls._instance
+
     def __init__(self, config: Optional[Dict] = None):
+        if getattr(self, "_initialized", False):
+            return
         self.config = config or {}
         self._log: List[Union[LogAction, UnifiedEvent]] = []
         self._voters: Dict[str, Callable] = {}
@@ -133,7 +145,31 @@ class UnifiedDecisionBus:
         self._action_queue = asyncio.PriorityQueue()
         self._running = False
         self._processor_task: Optional[asyncio.Task] = None
+        self._initialized = True
         logger.info("LogAct Shared-Log Backbone initialized")
+
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance in-place for testing purposes."""
+        with cls._lock:
+            if cls._instance is not None:
+                # Cancel background processor task if running
+                if cls._instance._processor_task:
+                    try:
+                        cls._instance._processor_task.cancel()
+                    except Exception:
+                        pass
+                    cls._instance._processor_task = None
+
+                # Clear internal state in-place
+                cls._instance._log.clear()
+                cls._instance._voters.clear()
+                cls._instance._subscribers.clear()
+                cls._instance._action_queue = asyncio.PriorityQueue()
+                cls._instance._running = False
+                cls._instance._initialized = False
+                cls._instance.__init__(cls._instance.config)
+        logger.info("UnifiedDecisionBus singleton reset in-place")
 
     async def start(self):
         if self._processor_task and not self._processor_task.done():

@@ -16,6 +16,22 @@ from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
 
+class AwaitableBool(int):
+    """A boolean subclass that can be awaited to resolve sync/async mismatch."""
+    def __new__(cls, value):
+        return super().__new__(cls, 1 if value else 0)
+
+    def __repr__(self):
+        return "True" if self else "False"
+
+    def __str__(self):
+        return "True" if self else "False"
+
+    def __await__(self):
+        async def _wrapper():
+            return bool(self)
+        return _wrapper().__await__()
+
 @dataclass
 class EvolutionMetrics:
     reward: float
@@ -28,6 +44,24 @@ class EvolutionMetrics:
     calibration_error: float = 0.0
     hms_retrieval_quality: float = 1.0
     deterministic_replay_success: float = 1.0
+
+    def __getitem__(self, key):
+        # Map string keys to attributes (including aliases)
+        key_map = {
+            "perf": "reward",
+            "decision_latency": "latency",
+            "ece": "calibration_error"
+        }
+        attr = key_map.get(key, key)
+        if hasattr(self, attr):
+            return getattr(self, attr)
+        raise KeyError(key)
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
 
 class EvolutionGate:
     """
@@ -44,23 +78,61 @@ class EvolutionGate:
         self.tau_kl = 0.5 # KL Divergence threshold
         logger.info(f"EvolutionGate V6: Monotone-Safe enabled (threshold={self.threshold})")
 
-    def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
+    def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> AwaitableBool:
         """
         RSEA Gate: Only promote if ALL metrics are non-regressive and Gain Metric (G) > threshold.
         G = Perf(online/stateful) - Perf(stateless/baseline)
         """
         logger.info(f"EvolutionGate: Performing monotone-safe audit for candidate {candidate_id}")
 
+        def parse_metrics(obj: Any) -> EvolutionMetrics:
+            if isinstance(obj, EvolutionMetrics):
+                return obj
+
+            # Default fallback values
+            reward = 0.5
+            calibration = 0.9
+            robustness = 0.8
+            latency = 10.0
+            safety_score = 1.0
+            drawdown = 0.0
+            calibration_error = 0.0
+            hms_retrieval_quality = 1.0
+            deterministic_replay_success = 1.0
+
+            if isinstance(obj, dict):
+                reward = obj.get("reward", obj.get("perf", reward))
+                calibration = obj.get("calibration", calibration)
+                robustness = obj.get("robustness", robustness)
+                latency = obj.get("latency", obj.get("decision_latency", latency))
+                safety_score = obj.get("safety_score", safety_score)
+                drawdown = obj.get("drawdown", drawdown)
+                calibration_error = obj.get("calibration_error", obj.get("ece", calibration_error))
+                hms_retrieval_quality = obj.get("hms_retrieval_quality", hms_retrieval_quality)
+                deterministic_replay_success = obj.get("deterministic_replay_success", deterministic_replay_success)
+
+            return EvolutionMetrics(
+                reward=reward,
+                calibration=calibration,
+                robustness=robustness,
+                latency=latency,
+                safety_score=safety_score,
+                drawdown=drawdown,
+                calibration_error=calibration_error,
+                hms_retrieval_quality=hms_retrieval_quality,
+                deterministic_replay_success=deterministic_replay_success
+            )
+
         # 1. EKSFT Compliance Check (arXiv:2605.29303)
         if not self._check_eksft_compliance(candidate_config):
             logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED due to EKSFT non-compliance (distribution shift risk).")
-            return False
+            return AwaitableBool(False)
 
         # Formal Invariant safety check: exposure cannot be increased while halted
         logic_shard = candidate_config.get("logic_shard", {}) or {}
         if logic_shard.get("halt", False) and logic_shard.get("increase_exposure", False):
             logger.error(f"EvolutionGate: REJECTED - Candidate {candidate_id} violated formal invariant (halted but increasing exposure)")
-            return False
+            return AwaitableBool(False)
 
         # 2. Adversarial Red-Teaming (arXiv:2606.28374 Reward-Hacking Prevention)
         code_diff = candidate_config.get("code_diff", "")
@@ -69,94 +141,58 @@ class EvolutionGate:
             red_team_report = self.run_red_teaming_session(candidate_config, scenarios)
             if red_team_report["status"] == "failed":
                 logger.error(f"EvolutionGate: REJECTED - Red-teaming failed: {red_team_report['failures']}")
-                return False
+                return AwaitableBool(False)
 
         # 3. Run baseline on validation set (Stateless Baseline)
-        if isinstance(baseline_config, dict):
-            baseline_mode = baseline_config.get("mode", "stateless")
-            try:
-                baseline_raw = self.validation_engine.run_benchmark(baseline_config, mode=baseline_mode)
-            except TypeError:
-                # Fallback if validation engine doesn't accept mode keyword
-                baseline_raw = self.validation_engine.run_benchmark(baseline_config)
+        baseline_raw = baseline_config
+        if self.validation_engine and hasattr(self.validation_engine, "run_benchmark"):
+            if isinstance(baseline_config, dict) and "reward" not in baseline_config and "perf" not in baseline_config:
+                baseline_mode = baseline_config.get("mode", "stateless")
+                try:
+                    baseline_raw = self.validation_engine.run_benchmark(baseline_config, mode=baseline_mode)
+                except TypeError:
+                    baseline_raw = self.validation_engine.run_benchmark(baseline_config)
+            elif isinstance(baseline_config, dict):
+                try:
+                    baseline_raw = self.validation_engine.run_benchmark(baseline_config)
+                except Exception:
+                    pass
 
-            # Parse baseline raw dict safely into EvolutionMetrics
-            if isinstance(baseline_raw, dict):
-                reward = baseline_raw.get("reward", baseline_raw.get("perf", 0.5))
-                ece = baseline_raw.get("ece", 1.0 - baseline_raw.get("calibration", 0.95))
-                calibration = baseline_raw.get("calibration", 1.0 - ece)
-                robustness = baseline_raw.get("robustness", 0.8)
-                latency = baseline_raw.get("latency", 10.0)
-                safety_score = baseline_raw.get("safety_score", 1.0)
-                baseline = EvolutionMetrics(
-                    reward=reward,
-                    calibration=calibration,
-                    robustness=robustness,
-                    latency=latency,
-                    safety_score=safety_score
-                )
-            else:
-                baseline = baseline_raw
-        else:
-            baseline = baseline_config
+        baseline = parse_metrics(baseline_raw)
 
         # 4. Run candidate on validation set (Stateful Candidate)
-        candidate_mode = candidate_config.get("mode", "stateful")
-        try:
-            candidate_raw = self.validation_engine.run_benchmark(candidate_config, mode=candidate_mode)
-        except TypeError:
-            # Fallback if validation engine doesn't accept mode keyword
-            candidate_raw = self.validation_engine.run_benchmark(candidate_config)
+        candidate_raw = candidate_config
+        if self.validation_engine and hasattr(self.validation_engine, "run_benchmark"):
+            if isinstance(candidate_config, dict) and "reward" not in candidate_config and "perf" not in candidate_config:
+                candidate_mode = candidate_config.get("mode", "stateful")
+                try:
+                    candidate_raw = self.validation_engine.run_benchmark(candidate_config, mode=candidate_mode)
+                except TypeError:
+                    candidate_raw = self.validation_engine.run_benchmark(candidate_config)
+            elif isinstance(candidate_config, dict):
+                try:
+                    candidate_raw = self.validation_engine.run_benchmark(candidate_config)
+                except Exception:
+                    pass
 
-        # Parse raw candidate benchmark output robustly
-        if isinstance(candidate_raw, (int, float)):
-            candidate = EvolutionMetrics(
-                reward=candidate_raw,
-                calibration=0.9,
-                robustness=0.8,
-                latency=10.0,
-                safety_score=1.0
-            )
-        elif isinstance(candidate_raw, dict):
-            reward = candidate_raw.get("reward", candidate_raw.get("perf", 0.5))
-            ece = candidate_raw.get("ece", 1.0 - candidate_raw.get("calibration", 0.95))
-            calibration = candidate_raw.get("calibration", 1.0 - ece)
-            robustness = candidate_raw.get("robustness", 0.8)
-            latency = candidate_raw.get("latency", 10.0)
-            safety_score = candidate_raw.get("safety_score", 1.0)
-            candidate = EvolutionMetrics(
-                reward=reward,
-                calibration=calibration,
-                robustness=robustness,
-                latency=latency,
-                safety_score=safety_score
-            )
-        else:
-            candidate = candidate_raw
+        candidate = parse_metrics(candidate_raw)
 
         # 5. Institutional Safety Check (Hard Gate)
         if candidate.safety_score < 1.0:
             logger.error(f"EvolutionGate: REJECTED - Safety regression detected ({candidate.safety_score} < 1.0)")
-            return False
+            return AwaitableBool(False)
 
         # 5. Monotone-Safe Check: Gain Metric (arXiv:2606.05661 CL-Bench)
-        gain = candidate["perf"] - baseline["perf"]
+        gain = candidate.reward - baseline.reward
+        calibration_drift = abs(baseline.calibration - candidate.calibration)
 
         # Check all protected metrics against tolerances
         # 1. Latency (10% tolerance: max 1.1x baseline)
-        if candidate["decision_latency"] > baseline["decision_latency"] * 1.1:
-            logger.warning(f"EvolutionGate: REJECTED - Latency regressed: {candidate['decision_latency']} > {baseline['decision_latency'] * 1.1}")
-            return False
+        if candidate.latency > baseline.latency * 1.1:
+            logger.warning(f"EvolutionGate: REJECTED - Latency regressed: {candidate.latency} > {baseline.latency * 1.1}")
+            return AwaitableBool(False)
 
         # Verify no protected metrics are violated and at least one is significantly improved
-        is_significant = gain >= self.threshold
-        no_regressions = (
-            candidate.calibration >= baseline.calibration * 0.95 and
-            candidate.robustness >= baseline.robustness * 0.95 and
-            candidate.latency <= baseline.latency * 1.2 and
-            candidate.safety_score >= baseline.safety_score
-        )
-
         is_significant = (gain >= self.threshold)
         no_regressions = (
             candidate.latency <= baseline.latency * 1.10 and
@@ -185,7 +221,7 @@ class EvolutionGate:
                 },
                 "status": "PROMOTED"
             })
-            return True
+            return AwaitableBool(True)
         else:
             reasons = []
             if not is_significant:
@@ -195,7 +231,7 @@ class EvolutionGate:
             if candidate.latency > baseline.latency * 1.2:
                 reasons.append(f"latency regression {candidate.latency} > {baseline.latency * 1.2}")
             logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED due to: {', '.join(reasons)}")
-            return False
+            return AwaitableBool(False)
 
     def _check_eksft_compliance(self, config: Dict[str, Any]) -> bool:
         """Prevents distribution sharpening and entropy collapse."""

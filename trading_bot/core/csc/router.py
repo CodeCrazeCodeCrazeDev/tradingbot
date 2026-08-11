@@ -86,6 +86,8 @@ class ChameleonStr(str):
     def __hash__(self):
         return super().__hash__()
 
+import threading
+
 class SkillRouter:
     """
     Authoritative router for mapping strategic tasks to specialized skills (UCA V6).
@@ -93,15 +95,17 @@ class SkillRouter:
     """
 
     _instance = None
+    _lock = threading.Lock()
 
     def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(SkillRouter, cls).__new__(cls)
-            cls._instance._initialized = False
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super(SkillRouter, cls).__new__(cls)
+                cls._instance._initialized = False
         return cls._instance
 
     def __init__(self):
-        if self._initialized:
+        if getattr(self, "_initialized", False):
             return
         self._registry: Dict[str, List[SkillArtifact]] = {}
         self._initialize_default_skills()
@@ -126,7 +130,7 @@ class SkillRouter:
             skill_id="hedging_behavior",
             skill_type=SkillType.LORA,
             version="2.0.4",
-            adapter_id="lora_hedging_v1",
+            adapter_id="lora_hedging_v2",
             capabilities={"hedging", "risk_reduction"},
             metadata={"archetype": "risk_averse"}
         ))
@@ -135,7 +139,9 @@ class SkillRouter:
     def reset(cls):
         """Reset the singleton instance for testing purposes."""
         with cls._lock:
-            cls._instance = None
+            if cls._instance is not None:
+                cls._instance._initialized = False
+                cls._instance = None
         logger.info("SkillRouter singleton reset")
 
     def _setup_default_skills(self):
@@ -174,10 +180,13 @@ class SkillRouter:
         if vol > 0.3:
             skill = self.get_skill("volatility_guardrail")
             if skill and skill.executable:
-                return {
-                    "status": "pf_intervention",
-                    "pf_result": skill.executable(context)
-                }
+                res = skill.executable(context)
+                return SkillRouteOutcome(
+                    status="pf_intervention",
+                    action=res.get("action"),
+                    reason=res.get("reason"),
+                    version=res.get("pf_version")
+                )
 
         # 2. Capability-based Routing
         if "hedge" in task.lower() or "risk" in task.lower() or "derivative" in task.lower():
