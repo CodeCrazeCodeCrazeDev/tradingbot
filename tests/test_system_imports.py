@@ -35,6 +35,10 @@ def run_from_import(module_name, items, description):
         traceback.print_exc()
         return False
 
+# Alias to avoid NameError
+test_from_import = run_from_import
+test_import = run_import
+
 print("=" * 80)
 
 def main():

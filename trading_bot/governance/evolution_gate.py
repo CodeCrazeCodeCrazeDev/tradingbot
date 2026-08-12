@@ -16,6 +16,23 @@ from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
 
+class AwaitableBool:
+    def __init__(self, value: bool):
+        self.value = value
+    def __bool__(self) -> bool:
+        return self.value
+    def __eq__(self, other):
+        if isinstance(other, AwaitableBool):
+            return self.value == other.value
+        return self.value == other
+    def __await__(self):
+        async def _await_helper():
+            return self.value
+        return _await_helper().__await__()
+    def __repr__(self):
+        return str(self.value)
+
+
 @dataclass
 class EvolutionMetrics:
     reward: float
@@ -44,7 +61,14 @@ class EvolutionGate:
         self.tau_kl = 0.5 # KL Divergence threshold
         logger.info(f"EvolutionGate V6: Monotone-Safe enabled (threshold={self.threshold})")
 
-    def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
+    def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> AwaitableBool:
+        """
+        Wrapper supporting both synchronous and awaited boolean returns.
+        """
+        res = self._validate_evolution_internal(candidate_id, candidate_config, baseline_config)
+        return AwaitableBool(res)
+
+    def _validate_evolution_internal(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
         """
         RSEA Gate: Only promote if ALL metrics are non-regressive and Gain Metric (G) > threshold.
         G = Perf(online/stateful) - Perf(stateless/baseline)
@@ -140,12 +164,12 @@ class EvolutionGate:
             return False
 
         # 5. Monotone-Safe Check: Gain Metric (arXiv:2606.05661 CL-Bench)
-        gain = candidate["perf"] - baseline["perf"]
+        gain = candidate.reward - baseline.reward
 
         # Check all protected metrics against tolerances
         # 1. Latency (10% tolerance: max 1.1x baseline)
-        if candidate["decision_latency"] > baseline["decision_latency"] * 1.1:
-            logger.warning(f"EvolutionGate: REJECTED - Latency regressed: {candidate['decision_latency']} > {baseline['decision_latency'] * 1.1}")
+        if candidate.latency > baseline.latency * 1.1:
+            logger.warning(f"EvolutionGate: REJECTED - Latency regressed: {candidate.latency} > {baseline.latency * 1.1}")
             return False
 
         # Verify no protected metrics are violated and at least one is significantly improved
@@ -190,6 +214,7 @@ class EvolutionGate:
             reasons = []
             if not is_significant:
                 reasons.append(f"insignificant gain {gain:.4f} < {self.threshold}")
+            calibration_drift = abs(candidate.calibration - baseline.calibration)
             if calibration_drift > 0.05:
                 reasons.append(f"calibration drift {calibration_drift:.4f} > 0.05")
             if candidate.latency > baseline.latency * 1.2:
