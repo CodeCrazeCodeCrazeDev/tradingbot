@@ -29,6 +29,15 @@ class EvolutionMetrics:
     hms_retrieval_quality: float = 1.0
     deterministic_replay_success: float = 1.0
 
+    def __getitem__(self, key):
+        # Map known key aliases to attributes
+        mapped_key = {
+            "perf": "reward",
+            "decision_latency": "latency",
+            "calibration_drift": "calibration_error",
+        }.get(key, key)
+        return getattr(self, mapped_key)
+
 class EvolutionGate:
     """
     RSEA: Recursive Self-Evolving Agents Gate (arXiv:2606.28374).
@@ -50,6 +59,20 @@ class EvolutionGate:
         G = Perf(online/stateful) - Perf(stateless/baseline)
         """
         logger.info(f"EvolutionGate: Performing monotone-safe audit for candidate {candidate_id}")
+
+        def _get_metric(obj, key, default=0.0):
+            # Map aliases
+            mapped_key = {
+                "perf": "reward",
+                "decision_latency": "latency",
+                "calibration_drift": "calibration_error",
+            }.get(key, key)
+            if isinstance(obj, dict):
+                return obj.get(mapped_key, obj.get(key, default))
+            try:
+                return obj[mapped_key]
+            except Exception:
+                return getattr(obj, mapped_key, getattr(obj, key, default))
 
         # 1. EKSFT Compliance Check (arXiv:2605.29303)
         if not self._check_eksft_compliance(candidate_config):
@@ -93,7 +116,9 @@ class EvolutionGate:
                     calibration=calibration,
                     robustness=robustness,
                     latency=latency,
-                    safety_score=safety_score
+                    safety_score=safety_score,
+                    drawdown=baseline_raw.get("drawdown", 0.0),
+                    calibration_error=baseline_raw.get("calibration_error", 1.0 - calibration)
                 )
             else:
                 baseline = baseline_raw
@@ -129,44 +154,42 @@ class EvolutionGate:
                 calibration=calibration,
                 robustness=robustness,
                 latency=latency,
-                safety_score=safety_score
+                safety_score=safety_score,
+                drawdown=candidate_raw.get("drawdown", 0.0),
+                calibration_error=candidate_raw.get("calibration_error", 1.0 - calibration)
             )
         else:
             candidate = candidate_raw
 
         # 5. Institutional Safety Check (Hard Gate)
-        if candidate.safety_score < 1.0:
-            logger.error(f"EvolutionGate: REJECTED - Safety regression detected ({candidate.safety_score} < 1.0)")
+        safety_score = _get_metric(candidate, "safety_score", 1.0)
+        if safety_score < 1.0:
+            logger.error(f"EvolutionGate: REJECTED - Safety regression detected ({safety_score} < 1.0)")
             return False
 
         # 5. Monotone-Safe Check: Gain Metric (arXiv:2606.05661 CL-Bench)
-        gain = candidate["perf"] - baseline["perf"]
+        gain = _get_metric(candidate, "perf", 0.5) - _get_metric(baseline, "perf", 0.5)
+        calibration_drift = _get_metric(candidate, "calibration_error", 0.0) - _get_metric(baseline, "calibration_error", 0.0)
 
         # Check all protected metrics against tolerances
         # 1. Latency (10% tolerance: max 1.1x baseline)
-        if candidate["decision_latency"] > baseline["decision_latency"] * 1.1:
-            logger.warning(f"EvolutionGate: REJECTED - Latency regressed: {candidate['decision_latency']} > {baseline['decision_latency'] * 1.1}")
+        candidate_latency = _get_metric(candidate, "decision_latency", 10.0)
+        baseline_latency = _get_metric(baseline, "decision_latency", 10.0)
+        if candidate_latency > baseline_latency * 1.1:
+            logger.warning(f"EvolutionGate: REJECTED - Latency regressed: {candidate_latency} > {baseline_latency * 1.1}")
             return False
 
         # Verify no protected metrics are violated and at least one is significantly improved
-        is_significant = gain >= self.threshold
-        no_regressions = (
-            candidate.calibration >= baseline.calibration * 0.95 and
-            candidate.robustness >= baseline.robustness * 0.95 and
-            candidate.latency <= baseline.latency * 1.2 and
-            candidate.safety_score >= baseline.safety_score
-        )
-
         is_significant = (gain >= self.threshold)
         no_regressions = (
-            candidate.latency <= baseline.latency * 1.10 and
-            candidate.drawdown <= baseline.drawdown * 1.10 and
-            candidate.calibration_error <= baseline.calibration_error * 1.10 and
-            candidate.calibration >= baseline.calibration * 0.90 and
-            candidate.robustness >= baseline.robustness * 0.90 and
-            candidate.safety_score >= baseline.safety_score and
-            candidate.hms_retrieval_quality >= baseline.hms_retrieval_quality * 0.90 and
-            candidate.deterministic_replay_success >= baseline.deterministic_replay_success
+            _get_metric(candidate, "latency", 10.0) <= _get_metric(baseline, "latency", 10.0) * 1.10 and
+            _get_metric(candidate, "drawdown", 0.0) <= _get_metric(baseline, "drawdown", 0.0) * 1.10 and
+            _get_metric(candidate, "calibration_error", 0.0) <= _get_metric(baseline, "calibration_error", 0.0) * 1.10 and
+            _get_metric(candidate, "calibration", 0.9) >= _get_metric(baseline, "calibration", 0.9) * 0.90 and
+            _get_metric(candidate, "robustness", 0.8) >= _get_metric(baseline, "robustness", 0.8) * 0.90 and
+            _get_metric(candidate, "safety_score", 1.0) >= _get_metric(baseline, "safety_score", 1.0) and
+            _get_metric(candidate, "hms_retrieval_quality", 1.0) >= _get_metric(baseline, "hms_retrieval_quality", 1.0) * 0.90 and
+            _get_metric(candidate, "deterministic_replay_success", 1.0) >= _get_metric(baseline, "deterministic_replay_success", 1.0)
         )
 
         if is_significant and no_regressions:
@@ -176,7 +199,7 @@ class EvolutionGate:
             self.evolution_history.append({
                 "timestamp": datetime.utcnow().isoformat(),
                 "candidate_id": candidate_id,
-                "metrics": candidate.__dict__,
+                "metrics": candidate.__dict__ if hasattr(candidate, "__dict__") else candidate,
                 "provenance": {
                     "baseline_id": baseline_config.get("id") if isinstance(baseline_config, dict) else getattr(baseline_config, "id", "unknown"),
                     "validation_mode": "CL-Bench-Stateful",
@@ -192,8 +215,10 @@ class EvolutionGate:
                 reasons.append(f"insignificant gain {gain:.4f} < {self.threshold}")
             if calibration_drift > 0.05:
                 reasons.append(f"calibration drift {calibration_drift:.4f} > 0.05")
-            if candidate.latency > baseline.latency * 1.2:
-                reasons.append(f"latency regression {candidate.latency} > {baseline.latency * 1.2}")
+            cand_lat = _get_metric(candidate, "latency", 10.0)
+            base_lat = _get_metric(baseline, "latency", 10.0)
+            if cand_lat > base_lat * 1.2:
+                reasons.append(f"latency regression {cand_lat} > {base_lat * 1.2}")
             logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED due to: {', '.join(reasons)}")
             return False
 
