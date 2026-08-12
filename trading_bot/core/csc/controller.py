@@ -100,11 +100,25 @@ class CognitiveSystemController:
     Implements 12-step Recursive Active Inference.
     """
     _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            with cls._lock:
+                if not cls._instance:
+                    cls._instance = super().__new__(cls)
+        return cls._instance
+
+    @classmethod
+    async def reset(cls):
+        """Async reset of the CognitiveSystemController singleton."""
+        with cls._lock:
+            cls._instance = None
 
     def __init__(
         self,
-        world_model: Any,
-        hms: Any,
+        world_model: Any = None,
+        hms: Any = None,
         *args,
         **kwargs
     ):
@@ -515,9 +529,10 @@ class CognitiveSystemController:
             sim_data = {}
 
         # Adjust quantity based on expected slippage and structural impact
-        base_qty = branch.execution_plan.get("quantity", 0.1)
+        base_qty = branch.execution_plan.get("quantity", 0.1) if isinstance(branch.execution_plan, dict) else 0.1
         slippage = sim_data.get("expected_slippage", 0.0) if isinstance(sim_data, dict) else 0.0
         slippage_penalty = 1.0 - (slippage * 100)
+        final_qty = base_qty * slippage_penalty
 
         causal_impact = sim_data.get("structural_impact", {}) if isinstance(sim_data, dict) else {}
 

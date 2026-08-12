@@ -125,7 +125,20 @@ class UnifiedEvent:
         return self.status
 
 class UnifiedDecisionBus:
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            with cls._lock:
+                if not cls._instance:
+                    cls._instance = super().__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+
     def __init__(self, config: Optional[Dict] = None):
+        if getattr(self, '_initialized', False):
+            return
         self.config = config or {}
         self._log: List[Union[LogAction, UnifiedEvent]] = []
         self._voters: Dict[str, Callable] = {}
@@ -133,7 +146,33 @@ class UnifiedDecisionBus:
         self._action_queue = asyncio.PriorityQueue()
         self._running = False
         self._processor_task: Optional[asyncio.Task] = None
+        self._initialized = True
         logger.info("LogAct Shared-Log Backbone initialized")
+
+    @classmethod
+    def reset(cls):
+        """Thread-safe reset of the singleton instance."""
+        instance = cls._instance
+        if instance:
+            instance._log.clear()
+            instance._voters.clear()
+            instance._subscribers.clear()
+            instance._running = False
+            # Safe task cancellation
+            if instance._processor_task:
+                try:
+                    instance._processor_task.cancel()
+                except Exception:
+                    pass
+                instance._processor_task = None
+            try:
+                # Rebuild priority queue in current running event loop if any
+                loop = asyncio.get_running_loop()
+                instance._action_queue = asyncio.PriorityQueue()
+            except RuntimeError:
+                instance._action_queue = None
+            instance._initialized = False
+            cls._instance = None
 
     async def start(self):
         if self._processor_task and not self._processor_task.done():

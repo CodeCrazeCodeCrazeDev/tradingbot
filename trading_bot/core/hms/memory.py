@@ -197,6 +197,14 @@ class HierarchicalMemorySystem:
                     cls._instance._initialized = False
         return cls._instance
 
+    @classmethod
+    def reset(cls):
+        """Thread-safe reset of the HierarchicalMemorySystem singleton."""
+        with cls._lock:
+            if cls._instance is not None:
+                cls._instance._initialized = False
+                cls._instance = None
+
     def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
         return calculate_integrity_hash(schema_dict)
 
