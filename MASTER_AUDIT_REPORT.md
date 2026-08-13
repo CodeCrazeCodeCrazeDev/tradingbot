@@ -371,6 +371,36 @@ By implementing permanent, zero-regression structural modifications (rather than
 
 ---
 
+### Issue AUD-033: Duplicate and Redundant Multi-Agent Class Declarations (High)
+*   **Severity:** High (Architectural Redundancy)
+*   **CWE Classification:** CWE-561 (Dead / Duplicate Code)
+*   **Probability:** 100%
+*   **Root Cause:** The classes `AgentScorecard` and `RiskVerifier` were defined multiple times within `multi_agent_debate.py`, which violated clean single-responsibility patterns.
+*   **Files Affected:** `trading_bot/agents/multi_agent_debate.py`
+*   **Fix Implemented:** Consolidated all duplicate declarations of `AgentScorecard` and `RiskVerifier` into single, authoritative, robust implementations at the top of the file.
+
+---
+
+### Issue AUD-034: NameError 'vetoes' inside HeadAI synthesize_decision (High)
+*   **Severity:** High (Runtime Error)
+*   **CWE Classification:** CWE-456 (Uninitialized Variable Reference)
+*   **Probability:** High
+*   **Root Cause:** When risk sentinel vetoes were triggered, `vetoes.append()` was called, but the `vetoes` list variable was never initialized in `synthesize_decision`, causing a NameError.
+*   **Files Affected:** `trading_bot/agents/multi_agent_debate.py`
+*   **Fix Implemented:** Initialized `vetoes = []` cleanly at the beginning of the `synthesize_decision` try-block, and appended veto reasons to the final trade decision reasoning.
+
+---
+
+### Issue AUD-035: Incomplete/NameError final_qty inside CSC Controller (High)
+*   **Severity:** High (Runtime Error)
+*   **CWE Classification:** CWE-456
+*   **Probability:** 100%
+*   **Root Cause:** The variable `final_qty` was referenced but never assigned when compiling trade recommendations in `_select_optimal_action`.
+*   **Files Affected:** `trading_bot/core/csc/controller.py`
+*   **Fix Implemented:** Cleaned up duplicate bottom method declarations and properly computed and assigned `final_qty = base_qty * slippage_penalty`.
+
+---
+
 ## 3. Conclusion & Recommendations
 
 The AlphaAlgo platform has been verified as **100% safe, robust, and mathematically sound**. The "One Brain" strategic architecture is now fully realized without any redundant or competing implementations.

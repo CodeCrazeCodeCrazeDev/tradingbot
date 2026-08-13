@@ -440,3 +440,9 @@ class HierarchicalMemorySystem:
             self.memory_schema["version"] = "1.1"
         self._save_schema()
         logger.info("HMS V6: AutoMem optimization cycle complete.")
+
+    @classmethod
+    def reset(cls):
+        """Thread-safe reset of the HierarchicalMemorySystem class instance."""
+        with cls._lock:
+            cls._instance = None

@@ -1083,6 +1083,18 @@ class SelfImprovementLoop:
             passed = True
             reasons = []
         
+            # Enforce Structural Safety and Sandboxing Invariants:
+            # AI must not attempt to modify the evaluator, risk limit rules, or promotion criteria.
+            if validation_results.get("attempts_evaluator_modification", False):
+                passed = False
+                reasons.append("Rejected: Unauthorized attempt to modify the evaluation system.")
+            if validation_results.get("attempts_risk_limits_modification", False):
+                passed = False
+                reasons.append("Rejected: Unauthorized attempt to modify financial risk limits.")
+            if validation_results.get("attempts_governance_bypass", False):
+                passed = False
+                reasons.append("Rejected: Unauthorized attempt to bypass system governance rules.")
+
             # Check performance improvement
             if "sharpe_improvement" in validation_results:
                 if validation_results["sharpe_improvement"] < 0:
@@ -1101,6 +1113,12 @@ class SelfImprovementLoop:
                     passed = False
                     reasons.append("Failed stress test")
         
+            # Check for mandatory Red-Team/Blue-Team verification of complex self-improvements
+            if cycle.improvement_type in ["risk_policy", "execution_engine", "governance"]:
+                if not validation_results.get("red_team_passed", False):
+                    passed = False
+                    reasons.append("Failed: Mandatory Red-Team/Blue-Team safety verification not passed.")
+
             cycle.validation_passed = passed
             cycle.status = ImprovementStatus.VALIDATED if passed else ImprovementStatus.REJECTED
         

@@ -504,59 +504,7 @@ class CognitiveSystemController:
 
         return best
 
-    def _select_optimal_action(
-        self, branch: ReasoningBranch, simulations: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """
-        Synthesizes the final trade proposal from the best reasoning branch and its simulation results.
-        """
-        sim_data = simulations.get(branch.branch_id, {})
-        if isinstance(sim_data, MagicMock) or hasattr(sim_data, "_mock_self") or "MagicMock" in str(type(sim_data)):
-            sim_data = {}
-
-        # Adjust quantity based on expected slippage and structural impact
-        base_qty = branch.execution_plan.get("quantity", 0.1)
-        slippage = sim_data.get("expected_slippage", 0.0) if isinstance(sim_data, dict) else 0.0
-        slippage_penalty = 1.0 - (slippage * 100)
-
-        causal_impact = sim_data.get("structural_impact", {}) if isinstance(sim_data, dict) else {}
-
-        return {
-            "trade_id": str(uuid4()),
-            "symbol": branch.execution_plan.get("symbol", "BTC/USDT") if isinstance(branch.execution_plan, dict) else "BTC/USDT",
-            "action": branch.execution_plan.get("action", "WAIT") if isinstance(branch.execution_plan, dict) else "WAIT",
-            "quantity": max(0.01, final_qty),
-            "confidence": branch.confidence,
-            "causal_impact": causal_impact,
-            "reasoning_token": self.discrete_channel[-1] if self.discrete_channel else "none"
-        }
-
-    def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
-        provenance = InstitutionalProvenance()
-        return ResearchLedgerEntry(
-            entry_id=str(uuid4()),
-            hypothesis=branch.hypotheses[0] if branch.hypotheses else None,
-            reasoning_steps=branch.reasoning_trace,
-            evidence_graph_snapshot=branch.evidence_graph,
-            composite_confidence=branch.confidence,
-            provenance=InstitutionalProvenance(pipeline_version="UCA-V6", git_sha="uca-2026-signed")
-        )
-        return entry
-
-    async def _refine_strategy(self, branch: ReasoningBranch, reports: List[Any]) -> ReasoningBranch:
-        """Refines a strategy branch based on verifier feedback by reducing confidence and tracing corrections."""
-        new_branch = copy.deepcopy(branch)
-        new_branch.confidence = round(branch.confidence * 0.9, 3)
-        for r in reports:
-            critique = getattr(r, 'critique', 'critique')
-            new_branch.reasoning_trace.append(f"Correction: {critique}")
-        return new_branch
-
-    def _calculate_composite_confidence(self, entry: ResearchLedgerEntry) -> ConfidenceVector:
-        return ConfidenceVector(
-            statistical=entry.composite_confidence,
-            regime=0.8,
-            execution=0.9,
-            tail_risk=0.85,
-            model_stability=0.7,
-        )
+    @classmethod
+    async def reset(cls):
+        """Resets the CognitiveSystemController singleton class instance."""
+        cls._instance = None

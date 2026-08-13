@@ -301,5 +301,25 @@ class UnifiedDecisionBus:
         tasks = [h["handler"](action) for h in handlers]
         if tasks: await asyncio.gather(*tasks, return_exceptions=True)
 
+    @classmethod
+    def reset(cls):
+        """Thread-safe reset of the global authoritative decision_bus singleton."""
+        global decision_bus
+        # Check if the existing singleton has a running task and stop it gracefully
+        if 'decision_bus' in globals() and decision_bus is not None:
+            # We try to cleanly cancel any running background tasks
+            if decision_bus._processor_task:
+                decision_bus._processor_task.cancel()
+                decision_bus._processor_task = None
+            decision_bus._running = False
+            # Clear all logs, voters, subscribers, queue
+            decision_bus._log.clear()
+            decision_bus._voters.clear()
+            decision_bus._subscribers.clear()
+            # Reset queue to prevent loop leakage
+            decision_bus._action_queue = asyncio.PriorityQueue()
+        else:
+            decision_bus = UnifiedDecisionBus()
+
 # Global instance for production path (authoritative)
 decision_bus = UnifiedDecisionBus()

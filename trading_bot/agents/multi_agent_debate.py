@@ -177,35 +177,10 @@ class DebateRound:
         }
 
 
-@dataclass
-class AgentScorecard:
-    expected_contribution: float
-    precision: float
-    recall: float
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "expected_contribution": self.expected_contribution,
-            "precision": self.precision,
-            "recall": self.recall,
-        }
+# Consolidated AgentScorecard definition moved to top, removing duplicate definitions.
 
 
-@dataclass
-class VerificationOutcome:
-    is_valid: bool
-
-
-class RiskVerifier:
-    """Mock/Stub RiskVerifier for backward compatibility in tests."""
-
-    def verify(self, action: TradeAction, context: MarketContext) -> VerificationOutcome:
-        is_valid = True
-        if context.portfolio_exposure > 0.5 or context.correlation_risk > 0.7:
-            is_valid = False
-        if context.vix_level and context.vix_level > 30:
-            is_valid = False
-        return VerificationOutcome(is_valid=is_valid)
+# Replaced with consolidated RiskVerifier below
 
 
 @dataclass
@@ -251,19 +226,7 @@ class DebateResult:
 FinalDecision = DebateResult
 
 
-@dataclass
-class AgentScorecard:
-    """Scorecard evaluating expected contribution, precision, and recall of an agent."""
-    expected_contribution: float
-    precision: float
-    recall: float
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            'expected_contribution': self.expected_contribution,
-            'precision': self.precision,
-            'recall': self.recall
-        }
+# Consolidated AgentScorecard definition moved to top, removing duplicate definitions.
 
 
 class RiskVerifierOutcome:
@@ -1312,13 +1275,7 @@ class FalsificationGate:
         )
 
 
-class RiskVerifier:
-    def verify(self, action: TradeAction, context: MarketContext) -> Any:
-        @dataclass
-        class Result:
-            is_valid: bool
-        is_valid = context.portfolio_exposure <= 0.85
-        return Result(is_valid=is_valid)
+# Consolidated into the single authoritative RiskVerifier class at the top.
 
 
 class HeadAI:
@@ -1399,6 +1356,7 @@ class HeadAI:
             FinalDecision
         """
         try:
+            vetoes = []
             # 1. Advanced, institutional-grade argument ranking & sorting
             # Combine expertise weights, confidence, historical precision, and evidence quality, with timestamp as tie-breaker
             def get_arg_score(arg: AgentArgument) -> Tuple[float, float]:
@@ -1604,6 +1562,8 @@ class HeadAI:
             reasoning = self._generate_reasoning(
                 winning_action, active_arguments, consensus_level
             )
+            if vetoes:
+                reasoning += f" | ACTIVE VETOES: {', '.join(vetoes)}"
 
             evidence_summary = []
             for arg in active_arguments:

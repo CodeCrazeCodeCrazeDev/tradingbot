@@ -86,6 +86,8 @@ class ChameleonStr(str):
     def __hash__(self):
         return super().__hash__()
 
+import threading
+
 class SkillRouter:
     """
     Authoritative router for mapping strategic tasks to specialized skills (UCA V6).
@@ -93,6 +95,7 @@ class SkillRouter:
     """
 
     _instance = None
+    _lock = threading.Lock()
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
