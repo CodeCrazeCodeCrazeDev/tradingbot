@@ -1,7 +1,8 @@
 import pytest
 import os
 import shutil
-from trading_bot.core.hms.memory import HierarchicalMemorySystem
+import json
+from trading_bot.core.hms.memory import HierarchicalMemorySystem, calculate_integrity_hash
 from trading_bot.core.hms.models import ResearchLedgerEntry, Hypothesis, EvidenceGraph
 
 @pytest.fixture
@@ -10,8 +11,12 @@ def hms():
     if os.path.exists(base_path):
         shutil.rmtree(base_path)
     os.makedirs(base_path)
-    yield HierarchicalMemorySystem(base_path=base_path)
+    # Ensure fresh singleton instance or clear initial state
+    HierarchicalMemorySystem._instance = None
+    h = HierarchicalMemorySystem(base_path=base_path)
+    yield h
     shutil.rmtree(base_path)
+    HierarchicalMemorySystem._instance = None
 
 def test_hms_sage_graph_evolution(hms):
     # Setup entry

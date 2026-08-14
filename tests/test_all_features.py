@@ -9,11 +9,10 @@ from datetime import datetime
 from pathlib import Path
 
 # Add project root to path so imports resolve to the real package.
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+def main():
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-def run_comprehensive_tests():
-    """Run comprehensive system test logic and return results."""
     print("="*70)
     print("ELITE TRADING BOT - COMPREHENSIVE TEST")
     print("="*70)
@@ -45,6 +44,7 @@ def run_comprehensive_tests():
         if message:
             print(f"     {message}")
 
+
     # ============================================================================
     # TEST 1: CORE IMPORTS
     # ============================================================================
@@ -67,6 +67,7 @@ def run_comprehensive_tests():
         test_result("Import AI Core components", True, "7 components imported")
     except Exception as e:
         test_result("Import AI Core components", False, str(e))
+
 
     # ============================================================================
     # TEST 2: NEW PREMIUM FEATURES IMPORTS
@@ -105,6 +106,7 @@ def run_comprehensive_tests():
     except Exception as e:
         test_result("Import Trade Journal", False, str(e))
 
+
     # ============================================================================
     # TEST 3: NOTIFICATION SYSTEM
     # ============================================================================
@@ -131,6 +133,7 @@ def run_comprehensive_tests():
 
     except Exception as e:
         test_result("Notification System", False, str(e))
+
 
     # ============================================================================
     # TEST 4: VOICE ASSISTANT
@@ -159,6 +162,7 @@ def run_comprehensive_tests():
 
     except Exception as e:
         test_result("Voice Assistant", False, str(e))
+
 
     # ============================================================================
     # TEST 5: MOBILE API
@@ -190,6 +194,7 @@ def run_comprehensive_tests():
 
     except Exception as e:
         test_result("Mobile API", False, str(e))
+
 
     # ============================================================================
     # TEST 6: AUTO OPTIMIZER
@@ -226,6 +231,7 @@ def run_comprehensive_tests():
     except Exception as e:
         test_result("Auto Optimizer", False, str(e))
 
+
     # ============================================================================
     # TEST 7: TRADE JOURNAL
     # ============================================================================
@@ -257,6 +263,7 @@ def run_comprehensive_tests():
     except Exception as e:
         test_result("Trade Journal", False, str(e))
 
+
     # ============================================================================
     # TEST 8: RISK MANAGEMENT
     # ============================================================================
@@ -272,6 +279,7 @@ def run_comprehensive_tests():
             test_result("Risk Manager available", False, "Module not fully implemented")
     except Exception as e:
         test_result("Risk Manager", False, str(e))
+
 
     # ============================================================================
     # TEST 9: INDICATORS
@@ -297,6 +305,7 @@ def run_comprehensive_tests():
         test_result("Import ML Indicators", True, "ML indicators available")
     except Exception as e:
         test_result("Import ML Indicators", False, str(e))
+
 
     # ============================================================================
     # TEST 10: EXECUTION & SAFETY
@@ -325,6 +334,7 @@ def run_comprehensive_tests():
     except Exception as e:
         test_result("Import Safety modules", False, str(e))
 
+
     # ============================================================================
     # TEST 11: INTEGRATION TEST
     # ============================================================================
@@ -342,6 +352,7 @@ def run_comprehensive_tests():
 
     except Exception as e:
         test_result("Integration test", False, str(e))
+
 
     # ============================================================================
     # TEST 12: ASYNC FUNCTIONALITY
@@ -378,6 +389,7 @@ def run_comprehensive_tests():
     except Exception as e:
         test_result("Async test runner", False, str(e))
 
+
     # ============================================================================
     # FINAL RESULTS
     # ============================================================================
@@ -411,15 +423,9 @@ def run_comprehensive_tests():
     print("="*70)
 
     print(f"\nTest completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    return test_results
 
+    # Exit with appropriate code
+    sys.exit(0 if test_results['failed'] == 0 else 1)
 
-def test_all_features_run():
-    """Pytest-compatible test runner wrapper."""
-    results = run_comprehensive_tests()
-    assert results['failed'] == 0, f"Some tests failed: {results['failed']} failures"
-
-
-if __name__ == '__main__':
-    results = run_comprehensive_tests()
-    sys.exit(0 if results['failed'] == 0 else 1)
+if __name__ == "__main__":
+    main()

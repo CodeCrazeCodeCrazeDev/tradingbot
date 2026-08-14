@@ -5,8 +5,12 @@ Tests all major components to identify import issues
 
 import sys
 import traceback
+from pathlib import Path
 
-def test_import(module_name, description):
+# Add project root to path so imports resolve to the real package.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+def run_import(module_name, description):
     """Test importing a module"""
     try:
         exec(f"import {module_name}")
@@ -18,7 +22,7 @@ def test_import(module_name, description):
         traceback.print_exc()
         return False
 
-def test_from_import(module_name, items, description):
+def run_from_import(module_name, items, description):
     """Test importing specific items from a module"""
     try:
         items_str = ", ".join(items)
@@ -31,10 +35,9 @@ def test_from_import(module_name, items, description):
         traceback.print_exc()
         return False
 
+print("=" * 80)
 
-def run_system_imports():
-    """Run system import checks and return success boolean."""
-    print("=" * 80)
+def main():
     print("ALPHAALGO SYSTEM IMPORT VALIDATION")
     print("=" * 80)
     print()
@@ -45,7 +48,7 @@ def run_system_imports():
     print("Testing Data Layer...")
     print("-" * 80)
     results.append(test_from_import("trading_bot.data",
-        ["MT5Interface"],
+        ["MarketDataStream", "TimeSeriesDB", "RealTimeProcessor", "PipelineMonitor"],
         "Data Layer Components"))
     print()
 
@@ -151,17 +154,10 @@ def run_system_imports():
 
     if failed == 0:
         print("SUCCESS! ALL IMPORTS WORKING! System is ready to run.")
-        return True
+        sys.exit(0)
     else:
         print("WARNING: Some imports failed. Please fix the issues above.")
-        return False
+        sys.exit(1)
 
-
-def test_system_imports_run():
-    """Pytest-compatible test runner wrapper."""
-    assert run_system_imports(), "Some system imports failed"
-
-
-if __name__ == '__main__':
-    success = run_system_imports()
-    sys.exit(0 if success else 1)
+if __name__ == "__main__":
+    main()

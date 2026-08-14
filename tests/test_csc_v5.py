@@ -4,21 +4,29 @@ from unittest.mock import MagicMock, AsyncMock
 from trading_bot.core.csc.controller import CognitiveSystemController
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome
 
+class ImmediateDecisionBus:
+    async def propose_action(self, action):
+        from trading_bot.core.unified_event_bus import ActionStatus
+        action.status = ActionStatus.EXECUTED
+        action._completed_event.set()
+
 @pytest.mark.asyncio
-async def test_csc_12_step_pipeline():
+async def test_csc_12_step_pipeline(monkeypatch):
     # Mock dependencies
     world_model = MagicMock()
     hms = MagicMock()
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
 
-    # Mock Shield to approve
+    # Mock Shield to approve (awaited)
     shield_report = MagicMock()
     from trading_bot.core.immutable_shield import GovernanceDecision
     shield_report.decision = GovernanceDecision.APPROVED
     shield.validate_action = AsyncMock(return_value=shield_report)
 
-    controller = CognitiveSystemController(world_model=world_model, hms=hms, shield=shield)
+    # Inject fake bus
+    fake_bus = ImmediateDecisionBus()
+    controller = CognitiveSystemController(world_model=world_model, hms=hms, shield=shield, decision_bus=fake_bus)
 
     # Mock Hypothesis Gen using AsyncMock
     from trading_bot.core.csc.hypothesis import ReasoningBranch, Hypothesis
@@ -39,7 +47,13 @@ async def test_csc_12_step_pipeline():
     controller.verifier_swarm.run_swarm = AsyncMock(return_value=[report])
 
     observation = {"price_action": "BULLISH", "volatility": 0.01}
-    decision = await controller.process_market_observation(observation)
+
+    with patch("trading_bot.core.unified_event_bus.decision_bus.propose_action", new_callable=AsyncMock) as mock_propose:
+        async def side_effect(act):
+            act.status = ActionStatus.EXECUTED
+        mock_propose.side_effect = side_effect
+
+        decision = await controller.process_market_observation(observation)
 
     assert decision.outcome == DecisionOutcome.TRADE_APPROVED
     assert controller.hms.store_ledger_entry.called
