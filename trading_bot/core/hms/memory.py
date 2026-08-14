@@ -364,6 +364,14 @@ class HierarchicalMemorySystem:
         })
         return True
 
+    def _calculate_integrity_hash(self, schema_data: Dict[str, Any]) -> str:
+        import hashlib
+        import copy
+        data_copy = copy.deepcopy(schema_data)
+        data_copy.pop("integrity_hash", None)
+        serialized = json.dumps(data_copy, sort_keys=True)
+        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
     def validate_replay(self, schema_data: Dict[str, Any]) -> bool:
         """Validates schema integrity and correctness."""
         expected_hash = self._calculate_integrity_hash(schema_data)

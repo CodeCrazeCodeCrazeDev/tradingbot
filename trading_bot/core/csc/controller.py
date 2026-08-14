@@ -21,14 +21,10 @@ Scientific Foundation:
 
 import numpy as np
 import torch
-import threading
 import time
 import logging
 import asyncio
-import copy
-import json
-from typing import Any, Dict, List, Optional, Tuple, Callable
-from unittest.mock import MagicMock
+from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 from uuid import uuid4
 
@@ -471,6 +467,9 @@ class CognitiveSystemController:
                 observation, branch.execution_plan, latent_z=latent_z
             ))
 
+        # 6. Causal Simulation
+        sim_results = await self._safe_await(self.hypothesis_gen.simulate_branches(branches))
+
         # 7. Pivot/Refine Optimization
         # Self-healing strategy adjustment
         best_branch = await self._safe_await(self._pivot_refine_loop(branches, sim_results))
@@ -510,6 +509,16 @@ class CognitiveSystemController:
                 trade_id=decision_proposal.get("trade_id"),
                 dominant_rejection_reason=f"Shield Veto: {shield_report.reason}",
             )
+
+        # 11. Immutable Commitment
+        if self.shield is not None:
+            shield_report = await self._safe_await(self.shield.validate_action("trade", decision_proposal, {"market": observation}))
+            if shield_report and getattr(shield_report, "decision", None) != GovernanceDecision.APPROVED:
+                return CoreDecision(
+                    outcome=DecisionOutcome.TRADE_REJECTED,
+                    trade_id=decision_proposal.get("trade_id", "NO_BRANCH"),
+                    dominant_rejection_reason=f"Shield Veto: {getattr(shield_report, 'reason', 'Vetoed by Immutable Shield')}"
+                )
 
         # 12. HIPIF Folding & Persistence
         # Semantic compression of the episode

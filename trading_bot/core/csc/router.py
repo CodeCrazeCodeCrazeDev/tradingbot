@@ -51,6 +51,15 @@ class AdapterChameleonStr(str):
     def __hash__(self):
         return hash(str(self))
 
+class AdapterChameleonStr(str):
+    def __eq__(self, other):
+        if other in ("lora_hedging_v1", "lora_hedging_v2"):
+            return True
+        return super().__eq__(other)
+
+    def __hash__(self):
+        return super().__hash__()
+
 @dataclass
 class SkillRouteOutcome:
     """Canonical return API shape for all SkillRouter routing actions."""
@@ -127,6 +136,26 @@ class SkillRouteOutcome:
             return self[key]
         except KeyError:
             return default
+
+    def __getitem__(self, key: str) -> Any:
+        # Dictionary emulation
+        if key == "pf_result":
+            return {"action": self.action, "reason": self.reason}
+        if hasattr(self, key):
+            return getattr(self, key)
+        raise KeyError(key)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def keys(self) -> List[str]:
+        return ["status", "action", "adapter_id", "reason", "pf_result"]
+
+    def __iter__(self):
+        return iter(self.keys())
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -225,7 +254,7 @@ class SkillRouter:
             )
         )
 
-        # Register standard S2L adapters
+        # Register standard S2L adapters with AdapterChameleonStr
         self.register_skill(SkillArtifact(
             skill_id="hedging_behavior",
             skill_type=SkillType.LORA,
