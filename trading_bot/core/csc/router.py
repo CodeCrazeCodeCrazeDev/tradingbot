@@ -23,6 +23,14 @@ class SkillType(Enum):
     PROMPT = "legacy_prompt"  # Legacy advisory prompt
 
 
+class SkillDomain(Enum):
+    MARKET_STRUCTURE = "market_structure"
+    LIQUIDITY = "liquidity"
+    STATISTICAL_ARBITRAGE = "statistical_arbitrage"
+    DATA_QUALITY = "data_quality"
+    RISK_MANAGEMENT = "risk_management"
+
+
 @dataclass
 class SkillRouteOutcome:
     """Canonical return API shape for all SkillRouter routing actions."""
@@ -107,9 +115,15 @@ class SkillRouter:
         if self._initialized:
             return
         self._registry: Dict[str, List[SkillArtifact]] = {}
+        self._specialists: Dict[str, List[SkillDomain]] = {}
         self._initialize_default_skills()
         self._initialized = True
         logger.info("SkillRouter V6: Initialized with Versioning and Conflict Resolution")
+
+    def register_specialist(self, specialist_name: str, domains: List[SkillDomain], *args, **kwargs):
+        """Register a specialist agent with its associated skill domains."""
+        self._specialists[specialist_name] = domains
+        logger.info(f"SkillRouter V6: Registered specialist '{specialist_name}' with domains {domains}")
 
     def _initialize_default_skills(self):
         # Register standard HASP programs
