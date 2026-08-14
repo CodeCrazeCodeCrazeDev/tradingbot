@@ -1,5 +1,16 @@
 """
 
+Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
+Implements the 6-tier architecture:
+1. Working (Hot/RAM)
+2. Episodic (Recent Events)
+3. Semantic (Facts/Knowledge)
+4. Procedural (Skills/LoRA)
+5. Research (Evidence/Snapshots)
+6. Institutional (Priors/Governance)
+
+Authoritative memory system integrating SAGE (Self-evolving Agentic Graph-Memory)
+and QKG (Quantum Knowledge Graph) for context-dependent research persistence.
 Implements 'SAGE: A Self-Evolving Agentic Graph-Memory Engine' (2026).
 Supports incremental construction, Graph-FM multi-hop retrieval,
 and Reader-Writer feedback loops for structural evolution.
@@ -177,6 +188,9 @@ class HierarchicalMemorySystem:
     """
     _instance = None
     _lock = threading.Lock()
+    _calculate_integrity_hash = staticmethod(calculate_integrity_hash)
+
+    _calculate_integrity_hash = staticmethod(calculate_integrity_hash)
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -185,6 +199,9 @@ class HierarchicalMemorySystem:
                     cls._instance = super(HierarchicalMemorySystem, cls).__new__(cls)
                     cls._instance._initialized = False
         return cls._instance
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
 
     def __init__(self, base_path: str = "alphaalgo_data/hms"):
         if getattr(self, "_initialized", False) and getattr(self, "base_path", None) == base_path:
@@ -213,6 +230,10 @@ class HierarchicalMemorySystem:
         self._initialized = True
         logger.info(f"HMS V6: One Memory initialized at {base_path}")
 
+    def reset(self):
+        self.memory_schema = {"version": "2.0", "entities": [], "relations": [], "optimized_count": 0}
+        self._save_schema()
+
     def seal_adapt_memory_window(self, retention_latency_reward: float):
         """
         Adapts the HMS 'memory_window_size' based on downstream task performance reward
@@ -227,13 +248,52 @@ class HierarchicalMemorySystem:
             self.memory_window_size = min(self.memory_window_size + 10, 500)
             logger.info(f"SEAL: Memory retrieval was highly accurate. Adapted HMS memory window to {self.memory_window_size} to retain more contextual episodic memory.")
 
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
+
     def _load_schema(self) -> Dict[str, Any]:
-        schema = {"version": "1.0", "schema_version": "1.0", "entities": [], "relations": []}
+        schema = {"version": "1.0", "schema_version": "1.0", "entities": [], "relations": [], "optimized_count": 0, "migration_history": []}
         if os.path.exists(self.schema_path):
             try:
-                with open(self.schema_path, 'r') as f: return json.load(f)
+                with open(self.schema_path, 'r') as f:
+                    data = json.load(f)
+                    if "migration_history" not in data:
+                        data["migration_history"] = []
+                    return data
             except: pass
-        return {"version": "2.0", "entities": [], "relations": [], "optimized_count": 0}
+        return schema
+
+    def _calculate_integrity_hash(self, schema: Dict[str, Any]) -> str:
+        """
+        Calculates a deterministic SHA-256 hash over the canonical JSON representation
+        of the memory schema, excluding derived/volatile fields (integrity_hash, updated_at).
+        """
+        # Create a copy to avoid mutating the original schema
+        clean_schema = {}
+        for k, v in schema.items():
+            if k not in ("integrity_hash", "updated_at"):
+                clean_schema[k] = v
+
+        try:
+            # Deterministic, canonical serialization with sort_keys=True
+            canonical_json = json.dumps(clean_schema, sort_keys=True)
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"HMS Schema contains non-serializable values: {e}")
+
+        return hashlib.sha256(canonical_json.encode("utf-8")).hexdigest()
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        """Calculates SHA-256 integrity hash of schema."""
+        return calculate_integrity_hash(schema_dict)
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        """Computes SHA-256 checksum of memory schema for audit compliance."""
+        temp = {k: v for k, v in schema_dict.items() if k != "integrity_hash"}
+        serialized = json.dumps(temp, sort_keys=True)
+        return hashlib.sha256(serialized.encode('utf-8')).hexdigest()
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
 
     def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
         return calculate_integrity_hash(schema_dict)
@@ -243,6 +303,9 @@ class HierarchicalMemorySystem:
         self.memory_schema["integrity_hash"] = self._calculate_integrity_hash(self.memory_schema)
         with open(self.schema_path, 'w') as f:
             json.dump(self.memory_schema, f, indent=2)
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
 
     def migrate_to_version(self, target_version: str) -> bool:
         """Runs explicit up/down migrations sequentially to target_version."""
@@ -296,6 +359,8 @@ class HierarchicalMemorySystem:
                 self.memory_schema["relations"] = [r for r in self.memory_schema["relations"] if r.get("type") != "CONTRADICTS"]
 
         # Track history
+        if "migration_history" not in self.memory_schema:
+            self.memory_schema["migration_history"] = []
         self.memory_schema["migration_history"].append({
             "timestamp": datetime.utcnow().isoformat(),
             "from_version": from_v,
@@ -304,6 +369,14 @@ class HierarchicalMemorySystem:
             "status": "SUCCESS"
         })
         return True
+
+    def _calculate_integrity_hash(self, schema_data: Dict[str, Any]) -> str:
+        import hashlib
+        import copy
+        data_copy = copy.deepcopy(schema_data)
+        data_copy.pop("integrity_hash", None)
+        serialized = json.dumps(data_copy, sort_keys=True)
+        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
     def validate_replay(self, schema_data: Dict[str, Any]) -> bool:
         """Validates schema integrity and correctness."""
