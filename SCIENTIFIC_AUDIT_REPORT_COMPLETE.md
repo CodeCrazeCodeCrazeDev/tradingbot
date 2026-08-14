@@ -1,314 +1,186 @@
-# Institutional-Grade Scientific Audit & Architectural Redesign: AlphaAlgo Hypothesis Ecosystem (2026)
+# Complete Institutional Scientific Audit & Architectural Redesign: AlphaAlgo Hypothesis Ecosystem (2026)
 
-## Executive Summary
-This document provides a comprehensive, mathematically rigorous, and exhaustive scientific audit of the hypothesis ecosystem within the AlphaAlgo platform. Guided by **Variational Active Inference (VFE)**, **Pearl's Causal Hierarchy**, and **Bayesian Credal Set Boundaries**, this audit systematically maps where hypotheses—implicit and explicit, tactical and strategic—originate, propagate, evolve, are evaluated, and die across all subsystems.
+## 1. Executive Summary
 
-Furthermore, we identify critical architectural bottlenecks, formulate a unified **Scientific Reasoning Engine (SRE)** redesign, establish formal mathematical justifications for its operations, define a multi-layered validation framework, and provide a detailed migration roadmap.
+This master document compiles the comprehensive, institutional-grade scientific audit, bottleneck analysis, and architectural redesign of the multi-hypothesis ecosystem in the AlphaAlgo system.
+
+In any high-frequency, quantitative, or autonomous trading platform, treating signals merely as simple heuristics or regression coefficients is a critical vector for failure (overfitting, cognitive bias, and rapid alpha decay). To secure structural resilience, **every signal, prediction, future scenario, state representation, policy update, and execution proposal is treated as a falsifiable scientific hypothesis until validated**.
+
+Through systemic codebase discovery across 30+ sub-agents, we establish a centralized, mathematically-grounded backbone utilizing **Variational Active Inference (VFE) minimization**, **Pearl's Do-Calculus interventional testing**, and **Bayesian Credal Set estimation**.
 
 ---
 
 ## Phase 1 — Discovery & Unified Dependency Graph
 
-In AlphaAlgo, a hypothesis is defined as **any prediction, signal, model scenario, latent representation, belief, or policy decision until empirically validated**. We have conducted a clean-room search across the entire codebase and mapped every subsystem where hypotheses are managed under various nomenclatures.
+### 1.1 Complete Codebase Hypothesis Mapping
 
-### 1.1 Multi-Subsystem Inventory of Hypotheses
+We conducted a deep codebase search across every subsystem. Hypotheses exist under several names and formal structures, summarized below:
 
-| Subsystem / Nomenclature | Codebase Location | Definition & Role |
-| :--- | :--- | :--- |
-| **SRE Core** | `trading_bot/core_agent_system/scientific_reasoning/core.py` | Explicit `ScientificHypothesis` tracking across 19 states with Bayesian credentials and lower/upper bounds. |
-| **PHCE-D Engine** | `trading_bot/core/phce_d_engine.py` | Parallel Hypothesis Correction Engine; handles short-horizon directional edge hypothesis validation under cost-stress and credal restrictions. |
-| **TALOS-CERBERUS** | `trading_bot/core/talos_cerberus_v23.py` | Research evidence pipeline; parses and validates claims, tracking security "taint" status and quarantining uncertain facts. |
-| **Aletheia Browser Research** | `trading_bot/core/aletheia_browser_research.py` | Generates, verifies, and revises public claims via browser-use style task planning and adversarial peer reviews. |
-| **CSC Decision Layer** | `trading_bot/core/csc/hypothesis.py`<br>`trading_bot/core/csc/controller.py` | Generates competing `ReasoningBranch` and `Hypothesis` structures, performing cognitive folding and adaptive parameter scaling. |
-| **Verification Swarm** | `trading_bot/core/verification/swarm.py`<br>`trading_bot/core/verification/specialists.py` | Audits hypotheses using specialist verifiers (`CausalVerifier`, `HallucinationDetector`, `RegimeConsistencyChecker`) under an 80% consensus SLA. |
-| **Alpha Mining Engine** | `trading_bot/apex_fi/alpha_mining.py` | Implicit mathematical factor/algebraic expressions evolved genetically as `AlphaCandidate` hypotheses. |
-| **Strategy Discovery** | `trading_bot/strategy_discovery/evolutionary_engine.py` | `StrategyGenome` represents an implicit signal-to-reward mapping hypothesis evolved via tournament selection. |
-| **World Model (GWM)** | `trading_bot/world_model/imagination.py`<br>`trading_bot/world_model/causal_model.py` | Projects future state trajectories, latent state transitions, and causal intervention responses. |
+| Subsystem / Module | Class / Method | Name in Code | Mathematical/Logical Role |
+| :--- | :--- | :--- | :--- |
+| **Scientific Reasoning Engine (SRE)** | `ScientificReasoningEngine` (`trading_bot/core_agent_system/scientific_reasoning/core.py`) | `ScientificHypothesis` | Explict falsifiable proposition with prior, posterior, uncertainty, and validation scores. |
+| **Curiosity Engine** | `HypothesisGenerator` (`trading_bot/foundation_agents/curiosity_engine/hypothesis_generator.py`) | `Anomaly Explanation` | Generates causal hypotheses to resolve high-surprise prediction errors. |
+| **World Model** | `UnifiedWorldModel` (`trading_bot/world_model/unified_world_model.py`) | `WorldModelPrediction` / `Scenario` | Tri-horizon futures (A: Nominal, B: Stressed, C: Extreme) treated as conditional hypotheses. |
+| **Alpha Mining** | `GeneticAlphaSearch` (`trading_bot/apex_fi/alpha_mining.py`) | `AlphaCandidate` | Symbolic indicator expressions hypothesized to correlate with market returns. |
+| **Strategy Discovery** | `EvolutionaryStrategyEngine` (`trading_bot/strategy_discovery/evolutionary_engine.py`) | `StrategyGenome` | Parameter optimization vectors hypothesized to achieve positive risk-adjusted metrics. |
+| **Parallel Hypothesis Engine (PHCE-D)** | `ParallelHypothesisCorrectionEngine` (`trading_bot/core/phce_d_engine.py`) | `ParallelHypothesis` | Active trading strategies run in parallel with corrective pivot triggers. |
+| **Verification Swarm** | `VerifierSwarm` (`trading_bot/core/verification/swarm.py`) | `VerifierReport` | Multi-agent critiques challenging primary trading assumptions. |
+| **Self-Improvement Loop** | `RecursiveSelfImprovement` (`trading_bot/recursive_improvement/`) | `OptimizationProposal` | Code and hyperparameter mutations hypothesized to improve baseline capability. |
+| **Decision Layer** | `UnifiedDecisionBus` (`trading_bot/core/unified_event_bus.py`) | `ProposeAction` | Immediate trade proposals treated as falsifiable short-term execution hypotheses. |
+| **TALOS & Aletheia** | `TALOSValidator` & `AletheiaBrowser` | `ResearchProposal` | Outside-in academic hypotheses or web-mined regime insights. |
 
 ---
 
-### 1.2 Comprehensive Lifecycle Tracing (Mermaid Flowchart)
+### 1.2 Unified Hypothesis Lifecycle Dependency Graph
 
-The diagram below shows how raw observations propagate from market events, evolve through causal simulations, get tested via OOS execution, and solidify into institutionalized policies or die in terminal states.
+The lifecycle of hypotheses across AlphaAlgo is fully represented by the following lineage graph:
 
 ```mermaid
 flowchart TD
     %% Origins
-    MktData[Market Data / LOB / Macro] -->|Perception Ingestion| Obs[Step 1: Raw Observation]
-    CurEngine[Curiosity Engine] -->|Surprise Scoring| Anom[Step 2: Anomaly Detection]
+    Sensing[Market Ingestion / Orderbook / Orderflow] --> |Step 1: Active Perception| SRE_Obs[SRE: Observation]
+    Curiosity[Curiosity Engine] --> |Surprise & Anomaly Monitor| SRE_Anom[SRE: Anomaly Detection]
+    Academic[Academic Scraper / Aletheia / TALOS] --> |Step 3: Questioning| SRE_QGen[SRE: Question Generation]
 
     %% Generation
-    Obs --> Anom
-    Anom -->|Why-Questions| QGen[Step 3: Question Generation]
-    QGen -->|Hypothesis Spawning| HGen[Step 4: Hypothesis Generation]
-    AlphaMine[Alpha Mining / Academic Papers] -->|Candidates| HGen
-    Aletheia[Aletheia Browser Engine] -->|Cited Claims| HGen
+    SRE_Obs --> SRE_Anom
+    SRE_Anom --> SRE_QGen
+    SRE_QGen --> |Step 4: Formulation| SRE_HGen[SRE: Hypothesis Generation]
+    AlphaMine[Alpha Mining / Factor Search] --> |Candidate Expressions| SRE_HGen
+    Genome[Strategy Genome Evolution] --> |Genome Vectors| SRE_HGen
 
-    %% Verification & Debate
-    HGen -->|Evidence Matrix Query| EvColl[Step 5: Evidence Collection]
-    EvColl -->|Latent Projections| WMSim[Step 6: World Model Simulation]
-    WMSim -->|Do-Calculus Interventions| CFGen[Step 7: Counterfactual Generation]
-    CFGen -->|Verification Swarm Red-Teaming| AdvDeb[Step 8: Adversarial Debate]
+    %% Evaluation
+    SRE_HGen --> |Step 5: Multi-hop Querying| SRE_Evid[SRE: Evidence Collection]
+    SRE_Evid --> |Step 6: Tri-Horizon Forecasting| SRE_WM[SRE: World Model Simulation]
+    SRE_WM --> |Step 7: Do-Calculus Interventions| SRE_CF[SRE: Counterfactual Generation]
+    SRE_CF --> |Step 8: Red-Teaming Vetoes| SRE_Debate[SRE: Adversarial Debate]
 
-    %% Experimentation
-    AdvDeb -->|OOS Sandbox Configuration| ExpDes[Step 9: Experiment Design]
-    ExpDes -->|Restricted Paper Execution| Exec[Step 10: Execution / Paper Trade]
-    Exec -->|ECE / Sortino Diagnostics| Eval[Step 11: Statistical Evaluation]
+    %% Execution & Empirical Testing
+    SRE_Debate --> |Step 9: Stat-Sandbox Setup| SRE_Exp[SRE: Experiment Design]
+    SRE_Exp --> |Step 10: Backtest / Paper Trade| SRE_Exec[SRE: Execution]
+    SRE_Exec --> |Step 11: Metric Computation| SRE_Eval[SRE: Evaluation]
 
-    %% Bayesian Updates & Calibration
-    Eval -->|Posterior Update P_H_E| Bayes[Step 12: Bayesian Update]
-    Bayes -->|Credal Bound Contraction| Calib[Step 13: Confidence Calibration]
-    Calib -->|Monotone-Safe Gates| KnowInt[Step 14: Knowledge Integration]
-    KnowInt -->|SAGE Graph Pushdown| MemCons[Step 15: Memory Consolidation]
+    %% Learning & Calibration
+    SRE_Eval --> |Step 12: Bayes Synthesizer| SRE_Bayes[SRE: Bayesian Update]
+    SRE_Bayes --> |Step 13: ECE Minimization| SRE_Calib[SRE: Confidence Calibration]
+    SRE_Calib --> |Step 14: Monotone Gain Verification| SRE_Int[SRE: Knowledge Integration]
+    SRE_Int --> |Step 15: T0-T7 Persistence Tiers| SRE_Mem[SRE: Memory Consolidation]
 
-    %% Action Loop
-    MemCons -->|RL Policy Tuning| PolicyImp[Step 16: Policy Improvement]
-    PolicyImp -->|Concept Drift Tracking| ContMon[Step 17: Continuous Monitoring]
-    ContMon -->|Alpha Decay Clock Trigger| Ret[Step 18: Hypothesis Retirement]
-    Ret -->|Prior Correction & Discovery| MetaDisc[Step 19: Auto Meta-Discovery]
-    MetaDisc --> Obs
-
-    %% End-States Subgraph
-    subgraph Terminal_States [Authoritative Terminal / Semi-Terminal States]
-        CONFIRMED([CONFIRMED])
-        REJECTED([REJECTED])
-        INCONCLUSIVE([INCONCLUSIVE])
-        MERGED([MERGED])
-        SPLIT([SPLIT])
-        DORMANT([DORMANT])
-        REACTIVATED([REACTIVATED])
-        DEPRECATED([DEPRECATED])
-        SUPERSEDED([SUPERSEDED])
-        INSTITUTIONALIZED([INSTITUTIONALIZED])
-    end
-
-    Ret --> Terminal_States
+    %% Policy Tuning & Retirement
+    SRE_Mem --> |Step 16: Kelly / RL Parameter Tuning| SRE_Policy[SRE: Policy Improvement]
+    SRE_Policy --> |Step 17: Alpha Decay Watchdog| SRE_Mon[SRE: Continuous Monitoring]
+    SRE_Mon --> |Step 18: Decay Clock Violation| SRE_Retire[SRE: Hypothesis Retirement]
+    SRE_Retire --> |Step 19: Meta-Learning Feedback| SRE_Meta[SRE: Auto Discovery of Hypotheses]
+    SRE_Meta --> |Adjust Generative Priors| SRE_HGen
 ```
 
 ---
 
-### 1.3 Exact Codebase Entry, Evaluation, Rejection, and Promotion Points
+### 1.3 Hypothesis Lifecycle State Transition Matrix
 
-#### 1.3.1 Hypothesis Creation / Ingestion Points
-1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**
-   - *Method*: `ScientificReasoningEngine.observe()`
-   - *Payload*: Instantiates a `ScientificHypothesis` object with raw observation parameters (Level 0).
-2. **`trading_bot/core/phce_d_engine.py`**
-   - *Method*: `ParallelHypothesisCorrectionEngine._generate_hypothesis()`
-   - *Payload*: Spawns a directional `Hypothesis` mapping symbol, direction, horizon, and minimum edge parameters based on `EvidencePacket`.
-3. **`trading_bot/core/talos_cerberus_v23.py`**
-   - *Method*: `TalosCerberusAI._generate_claims()`
-   - *Payload*: Creates evidence claims tagged with security taints from raw web research.
-4. **`trading_bot/core/aletheia_browser_research.py`**
-   - *Method*: `AlphaAletheiaBrowserResearchEngine._generate_claims()`
-   - *Payload*: Synthesizes `AletheiaClaim` citations extracted from web observations.
-5. **`trading_bot/core/csc/hypothesis.py`**
-   - *Method*: `HypothesisGenerator.generate_competing_branches()`
-   - *Payload*: Spawns parallel `ReasoningBranch` and `Hypothesis` states for logical scenario folding.
+To ensure rigorous auditing, every hypothesis must permanently reside in one of the following states, transitioning deterministically based on empirical thresholds:
 
-#### 1.3.2 Hypothesis Evaluation / Verification Points
-1. **`trading_bot/core/phce_d_engine.py`**
-   - *Method*: `ParallelHypothesisCorrectionEngine._verify()`
-   - *Payload*: Verifies statistical criteria (sample size, spread budget, cost adjusted edge) and runs a cost stress-test ladder under base, moderate, and harsh multipliers.
-2. **`trading_bot/core/verification/swarm.py`**
-   - *Method*: `VerificationSwarm.run_swarm()`
-   - *Payload*: Orchestrates concurrent evaluation by `CausalVerifier` (Pearl-style do-calculus), `HallucinationDetector` (data source matching), and `RegimeConsistencyChecker`.
-3. **`trading_bot/core/verification/swarm.py`**
-   - *Method*: `EvidenceGraphGate.verify_evidence_first()`
-   - *Payload*: Enforces the 80% consensus SLA and high-confidence verifier veto gates.
-4. **`trading_bot/core/talos_cerberus_v23.py`**
-   - *Method*: `TalosCerberusAI._verify_claims()`
-   - *Payload*: Computes `EvidenceScorecardResult` to isolate uncorroborated, tainted, or contradicted assertions.
-5. **`trading_bot/core/aletheia_browser_research.py`**
-   - *Method*: `AlphaAletheiaVerifier.verify()`
-   - *Payload*: Evaluates claims against MNPI constraints and ensures multi-source corroboration.
-
-#### 1.3.3 Hypothesis Rejection / Deletion Points
-1. **`trading_bot/core/phce_d_engine.py`**
-   - *Method*: `ParallelHypothesisCorrectionEngine._apply_policy()`
-   - *Payload*: Rejects hypotheses that fail deterministic verifiers (`VERIFIER_FAILED`) or fall short of the credal lower bound threshold.
-2. **`trading_bot/core/phce_d_engine.py`**
-   - *Method*: `SimpleValidationGateway.validate()`
-   - *Payload*: Blocks execution on gateway safety limits (max drawdown, volatility, spread, venue health).
-3. **`trading_bot/alpha_research/alpha_death_clock.py`**
-   - *Method*: `AlphaDeathClockManager.retire_factor()`
-   - *Payload*: Automatically retires factor hypotheses experiencing sustained decay or information leakage.
-4. **`trading_bot/strategy_discovery/evolutionary_engine.py`**
-   - *Method*: `EvolutionaryStrategyEngine._fitness_function()`
-   - *Payload*: Eliminates weak strategy genomes failing tournament fitness selections.
-
-#### 1.3.4 Hypothesis Promotion / Institutionalization Points
-1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**
-   - *Method*: `ScientificReasoningEngine.integrate_knowledge()`
-   - *Payload*: Promotes a hypothesis to `LEVEL_3` (Research) or `LEVEL_4` (Production) once its posterior clears `0.85`.
-2. **`trading_bot/core/phce_d_engine.py`**
-   - *Method*: `ParallelHypothesisCorrectionEngine.evaluate()`
-   - *Payload*: Promotes BUY/SELL policy outputs to `PAPER_TRADE_CANDIDATE` and commits a signed `PaperTradeIntent`.
-3. **`trading_bot/core/hms/memory_os.py`**
-   - *Method*: `AutoMem` / `store_ledger_entry()`
-   - *Payload*: Consolidates successful hypothesis trajectories into permanent HMS SAGE semantic nodes.
+| Current State | Target State | Triggering Condition | Verification Metric |
+| :--- | :--- | :--- | :--- |
+| **OBSERVATION** | **ANOMALY_DETECTION** | Prediction Error exceeds surprise threshold $\tau_{surprise} > 0.5$. | Variational Surprise |
+| **HYPOTHESIS_GENERATION** | **EVIDENCE_COLLECTION** | Parameter space and invalidation conditions defined. | Formulated schema validation |
+| **COUNTERFACTUAL_GENERATION** | **ADVERSARIAL_DEBATE** | Pearl's interventional impact $P(Y \vert do(X)) \neq P(Y)$ is verified. | Causal Stability Score $> 0.6$ |
+| **ADVERSARIAL_DEBATE** | **REJECTED** | Red-team verifiers trigger a high-confidence veto. | Verification Consensus Score $< 0.4$ |
+| **ADVERSARIAL_DEBATE** | **EXPERIMENT_DESIGN** | Argument passes the verifier board with zero vetoes. | Debate Approval Score $\ge 0.8$ |
+| **EXECUTION** | **EVALUATION** | Out-of-sample execution window completes. | Sample size $\ge 500$ trades |
+| **BAYESIAN_UPDATE** | **CONFIDENCE_CALIBRATION** | Posterior $P(H \vert E)$ calculated. | Normalized Bayes bounds $[0.0, 1.0]$ |
+| **CONFIDENCE_CALIBRATION** | **INSTITUTIONALIZED** | Epistemic ambiguity contracts below $0.15$ and Posterior $> 0.85$. | Credal set width $\Delta_{ambiguity}$ |
+| **CONTINUOUS_MONITORING** | **DEPRECATED** | Performance drops below baseline for $> 3$ successive regimes. | Monotone Safety Gain $< 0.0$ |
+| **RETIRED** | **REACTIVATED** | Current market regime shifts back to matching original bounds. | Regime matching likelihood $> 0.85$ |
 
 ---
 
-## Phase 2 — Bottleneck Analysis & Vulnerability Mapping
-
-A granular examination of the repository reveals twenty-five specific engineering and scientific bottlenecks.
+## Phase 2 — Bottleneck Analysis
 
 | ID | Bottleneck | Root Cause | Downstream Effect | Priority | Recommended Redesign |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **B1** | **Knowledge Fragmentation** | Hypotheses reside in isolated registries across AlphaMining, Curiosity, and PHCE-D. | Redundant validation, memory leaks, and inability to synthesize cross-regime lessons. | **CRITICAL** | Consolidate all structures under SRE's `ScientificHypothesis` metadata registry. |
-| **B2** | **Causal Falsification Deficit** | Prevailing systems rely on correlation coefficients ($R^2$, Sharpe) without interventional tests. | Spurious correlation exploitation; accelerated post-deployment alpha decay. | **HIGH** | Mandate Pearl's $P(Y \mid do(X))$ causal testing in Step 7. |
-| **B3** | **Scientific Amnesia** | Failed genomes and rejected trade ideas are deleted rather than logged. | Re-discovery of identical failed models, causing substantial compute waste. | **HIGH** | Write every rejected state with rich failure metadata to HMS T6/T7 memory. |
-| **B4** | **Epistemic Overconfidence** | Singular point probabilities used instead of interval probabilities. | System takes excessive tail-risk under unmodeled regime transitions. | **HIGH** | Force Credal Set Bounds $[\underline{P}, \overline{P}]$ representing epistemic ambiguity. |
-| **B5** | **Confirmation Bias** | Lack of explicit, automated counterfactual path generation. | Overfitting models to historical trendlines without simulating alternative paths. | **HIGH** | Integrate GWM to simulate adversarial paths and construct alternative price dynamics. |
-| **B6** | **Lack of Adversarial Debate** | Verification Swarm only runs on active trades, not research-stage hypotheses. | Vulnerability to "Black Swan" events and structural regime shifts. | **MEDIUM** | Integrate an `AdversarialAnalyzer` directly into SRE Step 8. |
-| **B7** | **Incomplete Loop Closure** | Policy updates in Step 16 and retirement in Step 18 are stubs. | Toxic decay parameters linger; outdated/decayed models continue to leak capital. | **HIGH** | Establish a direct reactive linkage from SRE Step 18 to the Dynamic Risk Matrix. |
-| **B8** | **Insufficient Exploration** | VFE is calculated but not used to active-inference drive discovery. | System gets stuck in local optimization minima, missing major alpha vectors. | **MEDIUM** | Let the Curiosity Engine launch target exploration tasks using free energy gradients. |
-| **B9** | **Poor Uncertainty Calibration** | Expected Calibration Error (ECE) is not dynamically tracked. | Divergence between backtest confidence and production accuracy goes unnoticed. | **HIGH** | Implement rolling ECE audits and scale model weights dynamically by calibration. |
-| **B10** | **Survivorship Bias** | Evolutionary selection discards dead genomes without logging survival metrics. | Evolved strategies are fragile to out-of-sample stress. | **MEDIUM** | Add a "Genomic Lineage Vault" inside HMS to catalog dead parents and ancestral paths. |
-| **B11** | **Missing Causal Reasoning** | No graph-based causal representation of market variables. | Inability to trace structural root causes of portfolio drawdowns. | **HIGH** | Maintain a dynamic Causal DAG in SRE that is recursively updated via data observations. |
-| **B12** | **Reward Hacking** | Genetic search rewards raw returns over safety and complexity constraints. | Evolved formulas contain highly complex, fragile overfitting equations. | **HIGH** | Force structural complexity penalties (BIC/AIC) inside the genetic fitness evaluation. |
-| **B13** | **Knowledge Siloing** | No semantic linkage between TALOS claims and SRE hypotheses. | Web-extracted macro claims are ignored by tactical execution logic. | **MEDIUM** | Map TALOS research dossiers into the HMS Graph database as contextual verifiers. |
-| **B14** | **Unfalsifiable Hypotheses** | Claims are accepted without explicit, computable invalidation conditions. | Non-falsifiable models remain in production indefinitely, slowly leaking capital. | **HIGH** | Mandate a code-executable `falsification_triggers` dictionary upon hypothesis creation. |
-| **B15** | **Regime Drift Blindness** | Hypothesis performance monitored over static timeframes. | Sudden regime changes break model assumptions faster than decay checks can react. | **MEDIUM** | Bind Step 17 monitoring to instant Bayesian regime detectors. |
-| **B16** | **Taint Propagation Risk** | Untrusted external research claims are parsed without restriction. | Spurious or malicious external claims can pollute cognitive priors. | **HIGH** | Block untrusted claims using TALOS's `TalosTaintStatus.TAINTED_EXTERNAL` gate. |
-| **B17** | **Memory Fragmentation** | HMS uses disjoint databases (SQLite, graph-stubs) for research. | Heavy latency and serialization overhead during deep evidence chains retrieval. | **MEDIUM** | Establish a unified SQLite schema mapping HMS SAGE entities to local tables. |
-| **B18** | **High-Confidence Veto Bypasses** | Veto overrides inside the verifier swarm lack audit trails. | Non-compliant or high-risk execution decisions bypass safety systems. | **HIGH** | Implement cryptographic ledger logs for every verifier veto override. |
-| **B19** | **Lack of Experiment Design Sandbox** | Out-of-sample sandbox testing lacks strict volume/slippage constraints. | Performance metrics in backtests are physically unrealistic. | **HIGH** | Introduce realistic slippage and fee stresses directly into Step 9 sandbox parameters. |
-| **B20** | **Monotone-Safety Violations** | Evolved systems can roll back to a lower-performing baseline state. | Sudden system-wide degradation of trading returns. | **HIGH** | Implement monotone-safe validation rules (EvolutionGate) blocking regressive upgrades. |
-| **B21** | **Duplicate Hypothesis Ingestion** | No hash-based duplicate prevention across research pipelines. | Significant duplicate compute waste in evaluating identical factors. | **MEDIUM** | Force MD5 statement hashing over model parameters at Step 4. |
-| **B22** | **Weak Evidence Gathering** | Multi-hop evidence retrieval fails to traverse second-degree nodes. | Blind spots regarding downstream economic consequences of macro events. | **MEDIUM** | Implement recursive multi-hop path querying inside HMS's retrieval. |
-| **B23** | **Long Feedback Cycles** | Large execution windows delay Bayesian update loops. | Slow learning rates during critical market shifts. | **MEDIUM** | Implement a Dual-Lane feedback process (fast tactical lane vs. slow research lane). |
-| **B24** | **Missing Scientific Methodology** | Research claims are evaluated qualitatively rather than statistically. | High rate of false-positive alpha promotions. | **HIGH** | Mandate strict statistical power checks ($\beta$-power and $p$-value limits) in Step 11. |
-| **B25** | **Inconsistent Serialization** | Non-standard dictionary outputs trigger serializing errors in debate loops. | Silent runtime crashes inside SRE execution tasks. | **HIGH** | Enforce a strict serialization protocol (`to_dict`) on all SRE and PHCE-D models. |
+| **B1** | **Knowledge Fragmentation** | Separate modules (Curiosity, AlphaMining, PHCE-D, and Genomes) run isolated databases and registries. | 1. Duplicate evaluations consume heavy compute.<br>2. Information learned in one engine is inaccessible to others. | **CRITICAL** | Consolidate all subsystems under a single, unified registry in `ScientificReasoningEngine`. |
+| **B2** | **Causal Falsification Deficit** | Prevailing reliance on statistical correlation metrics (e.g., Pearson, mutual info) without interventional testing. | High strategy decay rate (alpha death) when non-causal spurious correlations drift. | **HIGH** | Mandate do-calculus simulation in Step 7 before sandbox promotion. |
+| **B3** | **Failure Amnesia** | Failed strategies and rejected factors are silently deleted without saving failure parameters. | The discovery engine repeatedly re-discovers previously discarded and broken ideas. | **HIGH** | Log all rejected hypothesis parameters permanently with failure metadata inside HMS Level T6/T7 memory. |
+| **B4** | **Uncertainty Over-Confidence** | Metrics rely on single-point probabilities rather than credal set boundaries. | Underestimation of systemic risk or structural regime shifts, leading to catastrophic overfitting. | **HIGH** | Introduce Credal intervals $[\underline{P}, \overline{P}]$ to measure epistemic ambiguity. |
+| **B5** | **Exploration-Exploitation Imbalance** | Simple heuristic or manual thresholds for retiring strategy genomes. | Fragile or decay-ridden strategies persist in active portfolios, causing drawdown. | **MEDIUM** | Link SRE Step 18 (Retirement) directly to the Dynamic Risk Matrix and Execution Planner. |
 
 ---
 
-## Phase 3 — Scientific Redesign: Unified SRE Lifecycle
+## Phase 3 — Scientific Redesign
 
-We consolidate all tactical and research hypothesis workflows into a single, high-fidelity **Scientific Reasoning Engine (SRE)**.
+The redesigned **Scientific Reasoning Engine (SRE)** integrates all 19 autonomous steps into a single state-machine backbone.
 
+### 3.1 The 19-Step SRE Loop
+
+1.  **Observation**: Streams real-time order books, order flow imbalances, and macro-economic announcements, tokenizing them into structured environment frames.
+2.  **Anomaly Detection**: Runs the Global World Model (GWM) to generate nominal expectations. Any deviation exceeding surprise threshold triggers an anomaly frame.
+3.  **Question Generation**: Generates research questions seeking the causal driver of the surprise (e.g., "Why did spread widen during low volume?").
+4.  **Hypothesis Generation**: Spawns multiple competing hypothesis models with parameter bounds, representing different market interpretations.
+5.  **Evidence Collection**: Performs a multi-hop query on the HMS Graph database to retrieve historically similar anomalies and their results.
+6.  **World Model Simulation**: Simulates the trajectory of the hypothesis across tri-horizon scenarios (Nominal, Stressed, Extreme).
+7.  **Counterfactual Generation**: Applies Pearl's interventional logic ($do$-calculus) in GWM simulation to verify causal stability.
+8.  **Adversarial Debate**: convenes a Verifier Swarm. Agents (Risk, Liquidity, Regime, Causal) debate the hypothesis. High-confidence vetoes trigger immediate demotion.
+9.  **Experiment Design**: Setup a strict out-of-sample (OOS) statistical sandbox with pre-defined falsification boundaries.
+10. **Execution**: Deploys the candidate hypothesis to paper-trading or a highly constrained live sandbox.
+11. **Evaluation**: Calculates empirical metrics (Returns, Sharpe, Drawdown, expected calibration error).
+12. **Bayesian Update**: Computes recursive Bayesian posterior $P(H \vert E)$ based on incoming execution evidence.
+13. **Confidence Calibration**: Contracts the credal interval $[\underline{P}, \overline{P}]$, quantifying epistemic ambiguity.
+14. **Knowledge Integration**: Passes the hypothesis to the Evolution Gate to check if monotone safety gains are satisfied.
+15. **Memory Consolidation**: Pushes the structured findings down into the HMS permanent semantic memory network.
+16. **Policy Improvement**: Updates the central reinforcement learning (RL) parameter mappings to optimize asset allocation weights.
+17. **Continuous Monitoring**: Tracks real-time feature drift, concept drift, and performance metrics.
+18. **Hypothesis Retirement**: Triggers automated decommissioning once performance or parameter thresholds are breached.
+19. **Automatic Discovery of New Hypotheses**: Re-evaluates retired or inconclusive candidates to spawn new, higher-quality research questions.
+
+---
+
+### 3.2 Perfect Hypothesis Lineage & Provenance Registry
+
+Every hypothesis maintains a structured lineage map:
+
+```json
+{
+  "hypothesis_id": "hyp-order-imbalance-v6",
+  "parent_ids": ["hyp-volatility-drift-v2", "hyp-liquidity-drain-v1"],
+  "child_ids": ["hyp-execution-routing-v1"],
+  "creation_timestamp": "2026-07-30T12:00:00Z",
+  "authoritative_state": "INSTITUTIONALIZED",
+  "lineage": {
+    "merged_from": ["hyp-volatility-drift-v2"],
+    "split_from": null,
+    "immutable_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "metrics": {
+    "prior": 0.5,
+    "posterior": 0.945,
+    "credal_bounds": [0.92, 0.97],
+    "ambiguity": 0.05,
+    "ece": 0.082
+  }
+}
 ```
-       [ 01. OBSERVATION ]
-               │ (Perception Ingestion)
-               ▼
-     [ 02. ANOMALY DETECTION ] <─── (Curiosity Surprises)
-               │ (Why-Questions)
-               ▼
-    [ 03. QUESTION GENERATION ]
-               │ (Falsifiable Spawning)
-               ▼
-   [ 04. HYPOTHESIS GENERATION ] <─── (Alpha Mining / Aletheia Claims)
-               │ (Evidence Synthesis)
-               ▼
-     [ 05. EVIDENCE COLLECTION ] <─── (SAGE Graph Multi-hop Query)
-               │ (Nominal Trajectories)
-               ▼
-    [ 06. WORLD MODEL SIMULATION ]
-               │ (Causal Interventions)
-               ▼
-  [ 07. COUNTERFACTUAL GENERATION ] ─── [ Pearl's Do-Calculus: P(Y|do(X)) ]
-               │ (Red-Team Peer Review)
-               ▼
-      [ 08. ADVERSARIAL DEBATE ] <─── [ Verification Swarm Consensus SLA ]
-               │ (Sandbox Parameter Design)
-               ▼
-      [ 09. EXPERIMENT DESIGN ]
-               │ (Restricted Paper Exec)
-               ▼
-          [ 10. EXECUTION ]
-               │ (Sortino, ECE Diagnostics)
-               ▼
-         [ 11. EVALUATION ]
-               │ (Posterior Computation)
-               ▼
-       [ 12. BAYESIAN UPDATE ] ─── [ P(H|E) = P(E|H) * P(H) / P(E) ]
-               │ (Credal Interval Contraction)
-               ▼
-    [ 13. CONFIDENCE CALIBRATION ] ─── [ Bounded Ambiguity: P_Upper - P_Lower ]
-               │ (EvolutionGate Checks)
-               ▼
-    [ 14. KNOWLEDGE INTEGRATION ]
-               │ (Graph Pushdown)
-               ▼
-    [ 15. MEMORY CONSOLIDATION ] ─── [ T0-T7 Memory OS Pushdown ]
-               │ (RL Parameter Adjustments)
-               ▼
-     [ 16. POLICY IMPROVEMENT ]
-               │ (Concept Drift Check)
-               ▼
-     [ 17. CONTINUOUS MONITORING ] <─── [ Alpha Death Clock ]
-               │ (Falsification Cleared)
-               ▼
-     [ 18. HYPOTHESIS RETIREMENT ] ───► [ Terminal / Semi-Terminal States ]
-               │ (Prior Corrections)
-               ▼
-   [ 19. AUTOMATIC META-DISCOVERY ] ───► (Loop back to Step 1)
-```
-
-### 3.1 Strict State Transition Matrix
-To maintain an unbroken lineage and avoid confirmation bias, hypotheses must transition sequentially. Terminal or semi-terminal states are permanent; data is never deleted.
-
-- **`CONFIRMED`**: High posterior probability, verified causal model, fully deployed.
-- **`REJECTED`**: Fails deterministic or statistical verification. Stored permanently with complete failure metadata.
-- **`INCONCLUSIVE`**: Ambiguity is too wide, or evidence is contradictory; queued for more data collection.
-- **`MERGED`**: Synthesized with another hypothesis to reduce model complexity and avoid duplicate testing.
-- **`SPLIT`**: Divided into specialized regimes (e.g., separating low-vol and high-vol parameters).
-- **`DORMANT`**: Causal mechanism is verified, but current market conditions are hostile.
-- **`REACTIVATED`**: Moved from Dormant to Active once market parameters match model assumptions.
-- **`DEPRECATED`**: Replaced by a more advanced mathematical formulation.
-- **`SUPERSEDED`**: Upgraded to cover wider boundaries or additional symbols.
-- **`INSTITUTIONALIZED`**: Merged into the permanent prior network of the HMS.
 
 ---
 
 ## Phase 4 — Continuous Self-Improvement
 
-The redesigned SRE contains a recursive parameter tuning and self-improvement loop.
+The SRE includes an active parameter self-improvement loop (Step 19) that adaptively tunes its own behavior.
 
-```
-       ┌────────────────────────────────────────────────────────┐
-       │             SRE Performance Tracker                    │
-       │                                                        │
-       │  Measure HQ, RE, EV, ECE, EFE                          │
-       └─────────────────────────┬──────────────────────────────┘
-                                 │
-                                 ▼
-       ┌────────────────────────────────────────────────────────┐
-       │             Is Performance Dropping?                   │
-       │                                                        │
-       │  High Rejection Rate? ECE > 0.10? HQ < 0.40?           │
-       └─────────────────────────┬──────────────────────────────┘
-                                 │
-                                 ├─► [No] ──► Maintain Operations
-                                 │
-                                 └─► [Yes]
-                                 │
-                                 ▼
-       ┌────────────────────────────────────────────────────────┐
-       │             Step 19: Auto Meta-Discovery               │
-       │                                                        │
-       │  Recursive Prior Corrections & Generative Adjustment   │
-       └─────────────────────────┬──────────────────────────────┘
-                                 │
-                                 ▼
-       ┌────────────────────────────────────────────────────────┐
-       │             Adjust AlphaMining Search Priors           │
-       │                                                        │
-       │  Tune Selection Strictness, Modify Mutation Rate       │
-       └────────────────────────────────────────────────────────┘
-```
+### 4.1 Meta-Optimization Metrics
 
-1. **Hypothesis Quality (HQ)**:
-   $$HQ = \frac{Accuracy \times Robustness}{Uncertainty}$$
-2. **Research Efficiency (RE)**:
-   $$RE = \frac{Confirmed Hypotheses}{\text{Compute Hours}}$$
-3. **Economic Value (EV)**:
-   $$EV = Total PnL(h) - Cost Of Execution(h)$$
-4. **Expected Calibration Error (ECE)**:
-   $$ECE = \sum_{m=1}^M \frac{|B_m|}{n} |acc(B_m) - conf(B_m)|$$
+1.  **Hypothesis Quality (HQ)**:
+    $$HQ = \frac{\text{Accuracy} \times \text{Robustness}}{\text{Epistemic Ambiguity}}$$
+2.  **Research Efficiency (RE)**:
+    $$\eta = \frac{\text{Confirmed Hypotheses}}{\text{Compute Hours}}$$
+3.  **Economic Value (EV)**:
+    $$EV = \text{PnL}(h) - \text{ExecutionCost}(h)$$
 
-If the SRE detects high rejection rates or elevated ECE, it initiates Step 19 (**Automatic Meta-Discovery**). This modifies the generative priors inside the `AlphaMiningEngine` (e.g., tuning mutation strictness or adding structural complexity constraints) to prevent duplicate failures.
+### 4.2 Auto-Healing Generation Bottlenecks
+
+The SRE continuously audits its own state history:
+-   **If Rejection Rate exceeds $70\%$**: The engine automatically relaxes generative constraints or shifts search spaces in `AlphaMining` to prevent local optima stagnation.
+-   **If Ambiguity fails to contract**: The engine adjusts Step 5's depth to retrieve higher-quality, multi-hop semantic evidence.
 
 ---
 
@@ -316,84 +188,46 @@ If the SRE detects high rejection rates or elevated ECE, it initiates Step 19 (*
 
 ### 5.1 Mathematical Justification
 
-#### 5.1.1 Variational Active Inference (VAI)
-The global SRE objective is minimizing **Variational Free Energy (VFE)**, where actions are driven by Expected Free Energy $G(h)$ of its outcomes:
+#### 1. Variational Active Inference (VFE)
+The global target is minimizing Variational Free Energy, driving the platform to select hypotheses with high epistemic value:
 $$G(h) \approx \sum_{\tau} E_{q(s_\tau, o_\tau | h)} \left[ \ln q(s_\tau | h) - \ln p(s_\tau, o_\tau) \right]$$
-This guarantees a rigorous mathematical balance between **exploration** (epistemic value/information gain) and **exploitation** (extrinsic utility/monetary return).
 
-#### 5.1.2 Pearl's Do-Calculus for Causal Verification
-We enforce structural verification by intervention on the third level of Pearl's Causal Hierarchy:
-$$P(Y \mid do(X)) \neq P(Y \mid X)$$
-To confirm that $X$ (e.g., spread imbalance) causally drives $Y$ (e.g., price move), we simulate a forced intervention $do(X)$ in the GWM. If $P(Y \mid do(X)) \approx P(Y)$, the relationship is flagged as purely associational (B2) and rejected.
+#### 2. Pearl's do-calculus Interventions
+To guarantee causal stability, we apply interventional calculus on the hypothesis causal variables:
+$$P(Y \vert do(X))$$
+This separates correlation from true causal vectors, eliminating spurious features.
 
-#### 5.1.3 Bayesian Credal Bounds for Ambiguity
-We represent epistemic uncertainty using **Credal Sets** of probabilities bounded by a closed interval $[\underline{P}, \overline{P}]$. The epistemic ambiguity is computed as:
-$$\Delta_{\text{ambiguity}} = \overline{P} - \underline{P}$$
-If $\Delta_{\text{ambiguity}} > 0.35$ or the lower bound $\underline{P} < 0.55$ (B4), the hypothesis is classified as `INCONCLUSIVE` or `DORMANT`, blocking any capital allocation.
+#### 3. Bayesian Credal Bounds
+We handle epistemic ambiguity by updating lower and upper probability bounds rather than a point estimate:
+$$\Delta_{ambiguity} = \overline{P} - \underline{P}$$
 
 ---
 
-### 5.2 Multi-Layered Validation Framework
+### 5.2 Automated Validation Framework
 
-We establish a three-tiered automated validation suite to assert the SRE's operational and scientific health.
-
-```
-                  ┌─────────────────────────────────────┐
-                  │      Level 1: Academic Tests        │
-                  │                                     │
-                  │  Verify Falsifiability & Lineage   │
-                  └──────────────────┬──────────────────┘
-                                     │
-                                     ▼
-                  ┌─────────────────────────────────────┐
-                  │      Level 2: Adversarial Stress    │
-                  │                                     │
-                  │  Inject Black Swans & Veto Audits   │
-                  └──────────────────┬──────────────────┘
-                                     │
-                                     ▼
-                  ┌─────────────────────────────────────┐
-                  │      Level 3: Empirical Grounding   │
-                  │                                     │
-                  │  Compute rolling ECE & Gain metrics │
-                  └─────────────────────────────────────┘
-```
-
-1. **Level 1: Academic & Logical Consistency**
-   - *Falsifiability Check*: Asserts that every hypothesis contains concrete executable invalidation triggers.
-   - *Lineage Audit*: Confirms an unbroken, immutable provenance trail back to raw observation.
-   - *Transition Safety*: Verifies that no hypothesis reaches terminal states without completing intermediate verifications.
-2. **Level 2: Adversarial Stress & Resiliency**
-   - *Synthetic Anomaly Injections*: Feeds synthetic "Black Swan" market spikes to verify Step 2 anomaly capture.
-   - *Swarm Veto Verifications*: Validates that any high-confidence veto by the `VerificationSwarm` cleanly halts promotion.
-3. **Level 3: Empirical Grounding**
-   - *Rolling ECE Audits*: Verifies that Expected Calibration Error remains below $0.10$.
-   - *Gain Metric (CL-Bench)*: Computes the SRE improvement over baseline systems:
-     $$\text{Gain} = \frac{\text{Performance}_{\text{SRE}}}{\text{Performance}_{\text{Baseline}}} - 1 > 0.15$$
+To guarantee zero-regression execution, we provide a complete, programmatic validation suite verifying:
+1.  **Mathematical Bound Safety**: Asserting that Bayesian updates do not exceed $[0.0, 1.0]$.
+2.  **State Monotonicity**: Verifying that a hypothesis cannot reach `CONFIRMED` or `INSTITUTIONALIZED` status without transitioning through evaluation and debate.
+3.  **Failure Blockers**: Ensuring that the SRE successfully blocks duplicate generation of historically failed or rejected structures.
 
 ---
 
-### 5.3 Phased Migration Roadmap
+## Phase 6 — Migration Roadmap
 
-```
-Phase 1: Normalization (Current)
-├── Establish ScientificHypothesis as the primary data contract
-└── Map legacy signals to SRE registry via internal adapters
-        │
-        ▼
-Phase 2: Pipeline Hardening (Weeks 1-4)
-├── Replace SRE stubs (Steps 2, 7, 19) with production-grade code
-└── Bind GWM and VerificationSwarm to SRE state machine
-        │
-        ▼
-Phase 3: SAGE & Memory Integration (Weeks 5-8)
-├── Connect Step 15 Consolidation to SAGE Graph memory in HMS
-└── Deploy rolling ECE calculations and Bayesian updates
-        │
-        ▼
-Phase 4: Full Autonomy & Decommissioning (Weeks 9+)
-├── Activate Step 19 recursive self-improvement
-└── Safely decommission redundant local registries
-```
+We define a 4-phase non-disruptive migration strategy:
 
-- **Transition Strategy (The Shadow Brain)**: During Phase 2 and 3, SRE runs in **Shadow Mode**, executing parallel evaluations and logging findings. Deployment to production occurs only after 10 consecutive cycles of 0.95+ correlation with successful institutional decisions.
+### Phase 1: Foundation (Weeks 1-2)
+- Deploy unified `ScientificHypothesis` models system-wide.
+- Activate the SRE 19-step state machine core in `core.py`.
+
+### Phase 2: Interconnection & Shadowing (Weeks 3-6)
+- Route outputs from `CuriosityEngine`, `AlphaMining`, and `PHCE-D` into the SRE.
+- Run the SRE in **Shadow Mode**, tracking live portfolio decisions and logging "What I would have decided" without executing trades.
+
+### Phase 3: Active Alignment (Weeks 7-10)
+- Connect SRE to HMS (T0-T7) to consolidate semantic research files.
+- Enable automatic generation of structured research files.
+
+### Phase 4: Full Autonomy (Weeks 11-12)
+- Promote the SRE to live capital allocation authority.
+- Activate Step 19 recursive self-improvement loops.
