@@ -23,6 +23,7 @@ class TestDataToAnalysisBridge(IntegrationTestBase, BridgeTestMixin):
         """Test that market data flows correctly to analysis layer."""
         # Simulate data flow
         source_data = sample_ohlcv_data.iloc[0].to_dict()
+        source_data["timestamp"] = sample_ohlcv_data.index[0]
         
         # Transform to analysis format
         target_data = {
