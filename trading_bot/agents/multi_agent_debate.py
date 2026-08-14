@@ -343,6 +343,14 @@ class MacroStrategist(TradingAgent):
             counter_evidence = []
             verification = "HTF trend and news sentiment checked."
 
+            # Evidence-first defaults
+            observation = f"HTF and macro analysis for {context.symbol} at {context.current_price:.5f}"
+            evidence = []
+            hypothesis = "Neutral macro trend."
+            predictions = []
+            counter_evidence = []
+            verification = "HTF trend and news sentiment checked."
+
             # Analyze HTF trend
             if context.htf_trend == "UP":
                 trend_score = 0.7
@@ -526,6 +534,14 @@ class TacticalExecutioner(TradingAgent):
             counter_evidence = []
             verification = "LTF trend and volume checked."
 
+            # Evidence-first defaults
+            observation = f"LTF tactical analysis for {context.symbol} at {context.current_price:.5f}"
+            evidence = []
+            hypothesis = "Neutral LTF trend."
+            predictions = []
+            counter_evidence = []
+            verification = "LTF trend and volume checked."
+
             # Analyze LTF Trend
             if context.ltf_trend == "UP":
                 ltf_score = 0.6
@@ -692,6 +708,14 @@ class RiskSentinel(TradingAgent):
             counter_evidence = []
             verification = "Portfolio exposure, correlation risk and VIX levels checked."
 
+            # Evidence-first defaults
+            observation = f"Risk sentinel analysis for {context.symbol} at {context.current_price:.5f}"
+            evidence = []
+            hypothesis = "Neutral risk profile."
+            predictions = []
+            counter_evidence = []
+            verification = "Portfolio exposure, correlation risk and VIX levels checked."
+
             # Exposure check
             if context.portfolio_exposure > self.max_exposure:
                 exposure_score = -0.5
@@ -767,6 +791,8 @@ class RiskSentinel(TradingAgent):
                 evidence.append(f"Asset local volatility normal ({context.volatility:.2%}).")
 
             key_factors['volatility_risk'] = vol_score
+            total_score = sum(key_factors.values())
+
             total_score = sum(key_factors.values())
 
             total_score = sum(key_factors.values())
@@ -1508,6 +1534,32 @@ class HeadAI:
             else:
                 winning_action = TradeAction.HOLD
                 winning_score = 0.5
+
+            # Compute default winning_score based on arguments advocating the winning action
+            winning_score = 0.5
+            winning_action_args = [a for a in active_arguments if a.action == winning_action]
+            if winning_action_args:
+                winning_score = max(getattr(a, 'confidence', 0.5) for a in winning_action_args)
+
+            # Calculate Bayesian posterior probability of strategy success if a calibrator is present
+            if self.calibrator:
+                htf = context.htf_trend
+                if (htf == "UP" and winning_action in [TradeAction.BUY, TradeAction.STRONG_BUY]) or \
+                   (htf == "DOWN" and winning_action in [TradeAction.SELL, TradeAction.STRONG_SELL]):
+                    prior_prob = 0.55
+                else:
+                    prior_prob = 0.45
+
+                evidence_likelihoods = []
+                for arg in active_arguments:
+                    endorsed = (arg.action == winning_action)
+                    likelihood = getattr(arg, 'confidence', 0.5)
+                    exponent = self.weights.get(arg.agent_role, 0.33)
+                    if scorecards and arg.agent_role in scorecards:
+                        exponent = scorecards[arg.agent_role].expected_contribution
+                    evidence_likelihoods.append((endorsed, likelihood, exponent))
+
+                winning_score = self.calculate_bayesian_posterior(prior_prob, evidence_likelihoods)
 
             # Compute default winning_score based on arguments advocating the winning action
             winning_score = 0.5
