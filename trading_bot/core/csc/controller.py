@@ -470,6 +470,9 @@ class CognitiveSystemController:
         # 6. Causal Simulation
         sim_results = await self._safe_await(self.hypothesis_gen.simulate_branches(branches))
 
+        # 6. Causal Simulation
+        sim_results = await self._safe_await(self.hypothesis_gen.simulate_branches(branches))
+
         # 7. Pivot/Refine Optimization
         # Self-healing strategy adjustment
         best_branch = await self._safe_await(self._pivot_refine_loop(branches, sim_results))
