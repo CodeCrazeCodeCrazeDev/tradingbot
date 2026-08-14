@@ -99,6 +99,23 @@ class SkillRouteOutcome:
         """Allows dictionary get retrieval for compatibility."""
         return getattr(self, item, default)
 
+    def __getitem__(self, key):
+        if key == "status":
+            return self.status
+        elif key == "action":
+            return self.action
+        elif key == "adapter_id":
+            return self.adapter_id
+        elif key == "reason":
+            return self.reason
+        raise KeyError(key)
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "status": self.status,

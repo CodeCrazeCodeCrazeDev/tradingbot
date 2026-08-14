@@ -188,6 +188,7 @@ class HierarchicalMemorySystem:
     """
     _instance = None
     _lock = threading.Lock()
+    _calculate_integrity_hash = staticmethod(calculate_integrity_hash)
 
     _calculate_integrity_hash = staticmethod(calculate_integrity_hash)
 
