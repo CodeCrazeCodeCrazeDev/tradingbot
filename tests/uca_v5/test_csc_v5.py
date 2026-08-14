@@ -48,6 +48,13 @@ async def test_csc_hasp_intervention(monkeypatch):
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
     shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
+    from trading_bot.core.csc.router import SkillRouter
+    skill_router = SkillRouter()
+    verifier_swarm = MagicMock()
+    risk_engine = MagicMock()
+    consensus_engine = MagicMock()
+    execution_planner = MagicMock()
+    evolution_gate = MagicMock()
 
     csc = CognitiveSystemController(world_model, hms, shield)
 
@@ -76,6 +83,13 @@ async def test_csc_pivot_loop():
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
     shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
+    from trading_bot.core.csc.router import SkillRouter
+    skill_router = SkillRouter()
+    verifier_swarm = MagicMock()
+    risk_engine = MagicMock()
+    consensus_engine = MagicMock()
+    execution_planner = MagicMock()
+    evolution_gate = MagicMock()
 
     csc = CognitiveSystemController(world_model, hms, shield)
 

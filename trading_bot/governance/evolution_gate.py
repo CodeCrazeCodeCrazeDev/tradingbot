@@ -169,6 +169,22 @@ class EvolutionGate:
             candidate.deterministic_replay_success >= baseline.deterministic_replay_success
         )
 
+        # Fix NameErrors: Define is_significant, no_regressions and candidate_perf
+        is_significant = gain >= self.threshold
+        no_regressions = (
+            candidate.calibration >= baseline.calibration - 0.05 and
+            candidate.robustness >= baseline.robustness - 0.05 and
+            candidate.latency <= baseline.latency * 1.5
+        )
+        candidate_perf = {
+            "reward": candidate.reward,
+            "calibration": candidate.calibration,
+            "robustness": candidate.robustness,
+            "latency": candidate.latency,
+            "safety_score": candidate.safety_score,
+            "gain": candidate.gain
+        }
+
         if is_significant and no_regressions:
             logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain (G): {gain:.4f}")
 
