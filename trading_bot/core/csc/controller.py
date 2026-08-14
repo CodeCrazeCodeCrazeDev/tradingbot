@@ -469,8 +469,9 @@ class CognitiveSystemController:
 
         return 0.2
 
-    async def _run_discoloop_reasoning(self, observation: Dict[str, Any]):
+    async def _run_discoloop_reasoning(self, observation: Dict[str, Any], k: Optional[int] = None):
         """DiscoLoop recurrence: h_k+1, e_k+1 = f(h_k, e_k)"""
+        loops = k if k is not None else self._max_loops
         e_k = np.zeros((512,))
         e_k[0] = 1.0  # Initial discrete state
         input_signal = np.random.normal(0, 0.1, (512,))
@@ -482,7 +483,7 @@ class CognitiveSystemController:
             e_k = np.zeros_like(h_next)
             e_k[idx] = 1.0
 
-        self.continuous_state["latent"] = self.discoloop.hidden_state.tolist()
+        self.continuous_state["latent"] = np.array(self.discoloop.hidden_state)
 
     async def _pivot_refine_loop(
         self, branches: List[ReasoningBranch], simulations: Dict[str, Any]
