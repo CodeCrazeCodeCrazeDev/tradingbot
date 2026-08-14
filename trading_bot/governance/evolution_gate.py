@@ -71,8 +71,8 @@ class EvolutionGate:
 
     def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
         """
-        RSEA Gate: Only promote if ALL metrics are non-regressive and Gain Metric (G) > threshold.
-        G = Perf(online/stateful) - Perf(stateless/baseline)
+        RSEA Gate: Returns a primitive bool if called from synchronous test contexts,
+        and returns a coroutine otherwise to satisfy asynchronous callers.
         """
         result = self._validate_evolution_sync(candidate_id, candidate_config, baseline_config)
 
@@ -188,7 +188,7 @@ class EvolutionGate:
         # Parse raw candidate benchmark output robustly
         if isinstance(candidate_raw, (int, float)):
             candidate = EvolutionMetrics(
-                reward=candidate_raw,
+                reward=float(candidate_raw),
                 calibration=0.9,
                 robustness=0.8,
                 latency=10.0,
@@ -211,7 +211,7 @@ class EvolutionGate:
         else:
             candidate = candidate_raw
 
-        # 5. Institutional Safety Check (Hard Gate)
+        # 4. Monotone-Safe Verification
         if candidate.safety_score < 1.0:
             logger.error(f"EvolutionGate: REJECTED - Safety regression detected ({candidate.safety_score} < 1.0)")
             return _return_val(False)

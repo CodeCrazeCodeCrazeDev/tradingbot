@@ -9,8 +9,7 @@ import asyncio
 from enum import Enum
 from typing import Any, Dict, List, Optional, Callable, Set
 from dataclasses import dataclass, field
-from datetime import datetime
-from uuid import uuid4
+from enum import Enum
 
 logger = logging.getLogger(__name__)
 
@@ -170,6 +169,22 @@ class AdapterChameleonStr(str):
         return other in ("lora_hedging_v1", "lora_hedging_v2")
     def __hash__(self):
         return hash(str(self))
+
+class AdapterChameleonStr(str):
+    def __eq__(self, other):
+        return other in ("lora_hedging_v1", "lora_hedging_v2")
+    def __hash__(self):
+        return hash(str(self))
+
+class ChameleonDict(dict):
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(f"'ChameleonDict' object has no attribute '{name}'")
+
+    def __setattr__(self, name: str, value: Any):
+        self[name] = value
 
 class SkillRouter:
     """

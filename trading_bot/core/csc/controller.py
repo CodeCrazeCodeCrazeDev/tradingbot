@@ -168,7 +168,7 @@ class CognitiveSystemController:
         self.last_prediction = None
         self.vfe_history = []
 
-        self._max_loops = 3
+        self._max_loops = getattr(self, "_max_loops", 3)
         self._initialized = True
         CognitiveSystemController._instance = self
         logger.info("CSC-V6: Brain initialized with dynamic argument mapping.")
@@ -207,8 +207,8 @@ class CognitiveSystemController:
             return "critical"
         return "minor"
 
-    async def _safe_await(self, coro_or_val: Any) -> Any:
-        if coro_or_val is None:
+    async def _safe_await(self, val_or_coro: Any) -> Any:
+        if val_or_coro is None:
             return None
         # Handle cases where the argument is a callable or mock returned an unawaited mock
         if asyncio.iscoroutine(coro_or_val) or hasattr(coro_or_val, "__await__"):
