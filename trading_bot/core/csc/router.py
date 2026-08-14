@@ -30,6 +30,15 @@ class AdapterChameleonStr(str):
     def __hash__(self):
         return hash(str(self))
 
+class AdapterChameleonStr(str):
+    def __eq__(self, other):
+        if other in ("lora_hedging_v1", "lora_hedging_v2"):
+            return True
+        return super().__eq__(other)
+
+    def __hash__(self):
+        return super().__hash__()
+
 @dataclass
 class SkillRouteOutcome:
     """Canonical return API shape for all SkillRouter routing actions."""
@@ -57,6 +66,28 @@ class SkillRouteOutcome:
             return self[item]
         except (AttributeError, KeyError):
             return default
+
+    def __getattribute__(self, name):
+        val = super().__getattribute__(name)
+        if name == "adapter_id" and val:
+            return AdapterChameleonStr(val)
+        return val
+
+    def __getitem__(self, key):
+        if key in ("pf_result", "result"):
+            return {"action": self.action, "reason": self.reason}
+        val = getattr(self, key)
+        if key == "adapter_id" and val:
+            return AdapterChameleonStr(val)
+        return val
+
+    def get(self, key, default=None):
+        if key in ("pf_result", "result"):
+            return {"action": self.action, "reason": self.reason}
+        val = getattr(self, key, default)
+        if key == "adapter_id" and val:
+            return AdapterChameleonStr(val)
+        return val
 
     def to_dict(self) -> Dict[str, Any]:
         return {

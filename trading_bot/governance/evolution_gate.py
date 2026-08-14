@@ -16,6 +16,23 @@ from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
 
+class AwaitableBool:
+    def __init__(self, val: bool):
+        self.val = val
+
+    def __await__(self):
+        async def _async_val():
+            return self.val
+        return _async_val().__await__()
+
+    def __bool__(self):
+        return self.val
+
+    def __eq__(self, other):
+        if isinstance(other, AwaitableBool):
+            return self.val == other.val
+        return self.val == other
+
 @dataclass
 class EvolutionMetrics:
     reward: float
@@ -99,6 +116,17 @@ class EvolutionGate:
 
     def _validate_evolution_sync(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
         logger.info(f"EvolutionGate: Performing monotone-safe audit for candidate {candidate_id}")
+
+        def _return_val(val: bool):
+            try:
+                loop = asyncio.get_running_loop()
+                if loop.is_running():
+                    async def _async_val():
+                        return val
+                    return _async_val()
+            except RuntimeError:
+                pass
+            return val
 
         # 1. EKSFT Compliance Check (arXiv:2605.29303)
         if not self._check_eksft_compliance(candidate_config):
@@ -186,7 +214,12 @@ class EvolutionGate:
         # 5. Institutional Safety Check (Hard Gate)
         if candidate.safety_score < 1.0:
             logger.error(f"EvolutionGate: REJECTED - Safety regression detected ({candidate.safety_score} < 1.0)")
-            return False
+            return _return_val(False)
+
+        # 5. Latency Check
+        if candidate.latency > baseline.latency * 1.2:
+            logger.error(f"EvolutionGate: REJECTED - Latency regression exceeds limits ({baseline.latency}ms -> {candidate.latency}ms)")
+            return _return_val(False)
 
         # 5. Monotone-Safe Check: Gain Metric (arXiv:2606.05661 CL-Bench)
         gain = candidate["perf"] - baseline["perf"]

@@ -26,8 +26,6 @@ async def manage_decision_bus():
 
 @pytest.fixture(autouse=True)
 def mock_event_bus_for_csc(monkeypatch):
-    from trading_bot.core.unified_event_bus import LogAction, UnifiedDecisionBus, ActionStatus
-
     async def mock_propose(self, action):
         action.status = ActionStatus.EXECUTED
         action._completed_event.set()

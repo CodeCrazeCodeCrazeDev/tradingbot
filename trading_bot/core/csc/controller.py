@@ -344,7 +344,7 @@ class CognitiveSystemController:
         except Exception as e:
             logger.error(f"CSC-V6 Step 2: SAGE Retrieval Failure: {e}")
             evidence_chain = []
-        logger.info(f"CSC-V6 Step 2: Retrieved {len(evidence_chain)} evidence chains")
+        logger.info(f"CSC-V6 Step 2: Retrieved {len(evidence_chain) if evidence_chain else 0} evidence chains")
 
         # 3. HASP Shielding (Prescriptive Guardrails)
         # Pre-emptive intervention for known failure modes
