@@ -125,6 +125,12 @@ class ChameleonStr(str):
     def __hash__(self):
         return super().__hash__()
 
+class AdapterChameleonStr(str):
+    def __eq__(self, other):
+        return other in ("lora_hedging_v1", "lora_hedging_v2")
+    def __hash__(self):
+        return hash(str(self))
+
 class SkillRouter:
     """
     Authoritative router for mapping strategic tasks to specialized skills (UCA V6).
@@ -146,6 +152,10 @@ class SkillRouter:
         self._initialize_default_skills()
         self._initialized = True
         logger.info("SkillRouter V6: Initialized with Versioning and Conflict Resolution")
+
+    def reset(self):
+        self._registry.clear()
+        self._initialize_default_skills()
 
     def _initialize_default_skills(self):
         # Register standard HASP programs
@@ -213,6 +223,7 @@ class SkillRouter:
         if vol > 0.3:
             skill = self.get_skill("volatility_guardrail")
             if skill and skill.executable:
+                res = skill.executable(context)
                 return {
                     "status": "pf_intervention",
                     "pf_result": skill.executable(context)

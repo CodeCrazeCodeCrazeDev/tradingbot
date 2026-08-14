@@ -1212,6 +1212,18 @@ class FalsificationReport:
     timestamp: datetime = field(default_factory=datetime.now)
 
 
+class RiskVerifierResult:
+    def __init__(self, is_valid: bool):
+        self.is_valid = is_valid
+
+
+class RiskVerifier:
+    def verify(self, action: TradeAction, context: MarketContext) -> RiskVerifierResult:
+        if context.portfolio_exposure > 0.85 or context.correlation_risk > 0.8:
+            return RiskVerifierResult(is_valid=False)
+        return RiskVerifierResult(is_valid=True)
+
+
 class FalsificationGate:
     """
     Active peer-review style verification and falsification swarm.
@@ -2134,6 +2146,10 @@ class MultiAgentDebateSystem:
             decision.falsification_report = falsification_report
             original_action = decision.action
 
+            if context.current_price <= 0.0:
+                falsification_report.is_falsified = True
+                falsification_report.rejection_reason = "Invalid current price detected"
+
             if falsification_report.is_falsified:
                 logger.warning(
                     f"MultiAgentDebateSystem: Decision {decision.action.value} falsified: {falsification_report.rejection_reason}"
@@ -2171,6 +2187,7 @@ class MultiAgentDebateSystem:
             config_hash = hashlib.sha256(str(self.config).encode("utf-8")).hexdigest()
             feature_hash = hashlib.sha256(feature_state_str.encode("utf-8")).hexdigest()
 
+            is_price_valid = context.current_price > 0.0
             provenance_data = {
                 'decision_uuid': str(uuid.uuid4()),
                 'git_sha': git_sha,

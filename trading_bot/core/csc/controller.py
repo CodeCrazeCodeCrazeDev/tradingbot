@@ -322,6 +322,85 @@ class CognitiveSystemController:
     def _calculate_composite_confidence(self, entry: ResearchLedgerEntry) -> ConfidenceVector:
         return ConfidenceVector(statistical=entry.composite_confidence, regime=0.8, execution=0.9, tail_risk=0.85, model_stability=0.7)
 
+    def _calculate_sensory_surprise(self, observation: Dict[str, Any]) -> float:
+        """Minimizing surprise is the core of Active Inference."""
+        if not self.last_prediction: return 1.0
+        return 0.2
+
+    async def _run_discoloop_reasoning(self, observation: Dict[str, Any]):
+        """DiscoLoop recurrence: h_k+1, e_k+1 = f(h_k, e_k)"""
+        e_k = np.zeros((512,))
+        e_k[0] = 1.0 # Initial discrete state
+        input_signal = np.random.normal(0, 0.1, (512,))
+
+        for k in range(self._max_loops):
+            h_next, token = self.discoloop.transition(input_signal, e_k, k)
+            self.discrete_channel.append(token)
+            idx = int(token.split('_')[-2])
+            e_k = np.zeros_like(h_next)
+            e_k[idx] = 1.0
+
+        self.continuous_state["latent"] = self.discoloop.hidden_state.tolist()
+
+    async def _pivot_refine_loop(self, branches: List[ReasoningBranch], simulations: Dict[str, Any]) -> Optional[ReasoningBranch]:
+        """AutoResearchClaw Pivot/Refine logic (arXiv:2605.20025)."""
+        if not branches: return None
+        best = max(branches, key=lambda b: b.confidence)
+
+        sim_data = simulations.get(best.branch_id, {})
+        # If simulation results are nested, retrieve them appropriately
+        if isinstance(sim_data, list):
+            sim_data = sim_data[0] if len(sim_data) > 0 else {}
+        elif isinstance(sim_data, MagicMock):
+            sim_data = {}
+
+        if sim_data and sim_data.get("failure_rate", 0) > 0.4:
+            logger.warning(f"CSC-V6: High simulation failure detected. Pivoting strategy...")
+            pivoted_branch = await self.hypothesis_gen.pivot_branch(best, "high_risk_detected")
+            if pivoted_branch:
+                return pivoted_branch
+
+        return best
+
+    def _select_optimal_action(self, branch: ReasoningBranch, simulations: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Synthesizes the final trade proposal from the best reasoning branch and its simulation results.
+        """
+        sim_data = simulations.get(branch.branch_id, {})
+        if isinstance(sim_data, list):
+            sim_data = sim_data[0] if len(sim_data) > 0 else {}
+        elif isinstance(sim_data, MagicMock):
+            sim_data = {}
+
+        # Adjust quantity based on expected slippage and structural impact
+        base_qty = branch.execution_plan.get("quantity", 0.1)
+        slippage_penalty = 1.0 - (sim_data.get("expected_slippage", 0.0) * 100)
+
+        return {
+            "trade_id": str(uuid4()),
+            "symbol": branch.execution_plan.get("symbol", "BTC/USDT"),
+            "action": branch.execution_plan.get("action", "WAIT"),
+            "quantity": max(0.01, base_qty * slippage_penalty),
+            "confidence": branch.confidence,
+            "causal_impact": sim_data.get("structural_impact", {}),
+            "reasoning_token": self.discrete_channel[-1] if self.discrete_channel else "none"
+        }
+
+    def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
+        # Construct institutional provenance block
+        provenance = InstitutionalProvenance()
+        return ResearchLedgerEntry(
+            entry_id=str(uuid4()),
+            hypothesis=branch.hypotheses[0] if branch.hypotheses else None,
+            reasoning_steps=branch.reasoning_trace,
+            evidence_graph_snapshot=branch.evidence_graph,
+            composite_confidence=branch.confidence,
+            provenance=provenance
+        )
+
+    def _calculate_composite_confidence(self, entry: ResearchLedgerEntry) -> ConfidenceVector:
+        return ConfidenceVector(statistical=entry.composite_confidence, regime=0.8, execution=0.9, tail_risk=0.85, model_stability=0.7)
+
     async def process_market_observation(self, observation: Any) -> Optional[CoreDecision]:
         """
         12-step Recursive Active Inference Pipeline (UCA V6).

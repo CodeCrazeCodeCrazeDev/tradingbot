@@ -229,6 +229,10 @@ class HierarchicalMemorySystem:
         self._initialized = True
         logger.info(f"HMS V6: One Memory initialized at {base_path}")
 
+    def reset(self):
+        self.memory_schema = {"version": "2.0", "entities": [], "relations": [], "optimized_count": 0}
+        self._save_schema()
+
     def seal_adapt_memory_window(self, retention_latency_reward: float):
         """
         Adapts the HMS 'memory_window_size' based on downstream task performance reward
@@ -280,6 +284,12 @@ class HierarchicalMemorySystem:
     def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
         """Calculates SHA-256 integrity hash of schema."""
         return calculate_integrity_hash(schema_dict)
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        """Computes SHA-256 checksum of memory schema for audit compliance."""
+        temp = {k: v for k, v in schema_dict.items() if k != "integrity_hash"}
+        serialized = json.dumps(temp, sort_keys=True)
+        return hashlib.sha256(serialized.encode('utf-8')).hexdigest()
 
     def _save_schema(self):
         self.memory_schema["updated_at"] = datetime.utcnow().isoformat()
