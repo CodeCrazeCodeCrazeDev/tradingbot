@@ -344,7 +344,7 @@ class CognitiveSystemController:
         except Exception as e:
             logger.error(f"CSC-V6 Step 2: SAGE Retrieval Failure: {e}")
             evidence_chain = []
-        logger.info(f"CSC-V6 Step 2: Retrieved {len(evidence_chain)} evidence chains")
+        logger.info(f"CSC-V6 Step 2: Retrieved {len(evidence_chain) if evidence_chain else 0} evidence chains")
 
         # 3. HASP Shielding (Prescriptive Guardrails)
         # Pre-emptive intervention for known failure modes
@@ -530,6 +530,15 @@ class CognitiveSystemController:
             "causal_impact": causal_impact,
             "reasoning_token": self.discrete_channel[-1] if self.discrete_channel else "none"
         }
+
+    async def _refine_strategy(self, branch: ReasoningBranch, reports: List[Any]) -> ReasoningBranch:
+        """Refines the strategy branch based on negative critique reports."""
+        refined = copy.deepcopy(branch)
+        refined.confidence = round(branch.confidence * 0.9, 3)
+        for r in reports:
+            critique = getattr(r, "critique", "unspecified critique")
+            refined.reasoning_trace.append(f"Correction: {critique}")
+        return refined
 
     def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
         provenance = InstitutionalProvenance()

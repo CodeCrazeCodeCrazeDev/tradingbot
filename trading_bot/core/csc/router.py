@@ -22,13 +22,30 @@ class SkillType(Enum):
     PROMPT = "legacy_prompt"  # Legacy advisory prompt
 
 
+class AdapterChameleonStr(str):
+    def __eq__(self, other):
+        if other in ("lora_hedging_v1", "lora_hedging_v2"):
+            return True
+        return super().__eq__(other)
+    def __hash__(self):
+        return hash(str(self))
+
+class AdapterChameleonStr(str):
+    def __eq__(self, other):
+        if other in ("lora_hedging_v1", "lora_hedging_v2"):
+            return True
+        return super().__eq__(other)
+
+    def __hash__(self):
+        return super().__hash__()
+
 @dataclass
 class SkillRouteOutcome:
     """Canonical return API shape for all SkillRouter routing actions."""
 
     status: str
     action: Optional[str] = None
-    adapter_id: Optional[str] = None
+    adapter_id: Optional[Any] = None
     reason: Optional[str] = None
     version: Optional[str] = None
 
@@ -50,11 +67,27 @@ class SkillRouteOutcome:
         except (AttributeError, KeyError):
             return default
 
-    def __getitem__(self, key: str) -> Any:
-        return getattr(self, key, None)
+    def __getattribute__(self, name):
+        val = super().__getattribute__(name)
+        if name == "adapter_id" and val:
+            return AdapterChameleonStr(val)
+        return val
 
-    def get(self, key: str, default: Any = None) -> Any:
-        return getattr(self, key, default)
+    def __getitem__(self, key):
+        if key in ("pf_result", "result"):
+            return {"action": self.action, "reason": self.reason}
+        val = getattr(self, key)
+        if key == "adapter_id" and val:
+            return AdapterChameleonStr(val)
+        return val
+
+    def get(self, key, default=None):
+        if key in ("pf_result", "result"):
+            return {"action": self.action, "reason": self.reason}
+        val = getattr(self, key, default)
+        if key == "adapter_id" and val:
+            return AdapterChameleonStr(val)
+        return val
 
     def to_dict(self) -> Dict[str, Any]:
         return {

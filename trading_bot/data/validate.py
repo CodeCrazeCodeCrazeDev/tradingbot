@@ -4,6 +4,7 @@ Provides backward and testing compatibility for data validation modules.
 
 from typing import Any, Optional, Dict, Tuple
 import logging
+import pandas as pd
 from datetime import datetime
 import pandas as pd
 
