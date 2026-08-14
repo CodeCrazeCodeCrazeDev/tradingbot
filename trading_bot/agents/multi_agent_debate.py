@@ -1399,6 +1399,7 @@ class HeadAI:
             FinalDecision
         """
         try:
+            vetoes = []
             # 1. Advanced, institutional-grade argument ranking & sorting
             # Combine expertise weights, confidence, historical precision, and evidence quality, with timestamp as tie-breaker
             def get_arg_score(arg: AgentArgument) -> Tuple[float, float]:
@@ -2184,6 +2185,11 @@ class MultiAgentDebateSystem:
                 'experiment_id': "exp_multidim_debate_prod",
                 'risk_policy_version': "risk_fortress_v6_strict",
                 'verification_results': verification_results,
+                'falsification_report': {
+                    'is_falsified': falsification_report.is_falsified,
+                    'rejection_reason': falsification_report.rejection_reason,
+                    'worst_case_scenario': falsification_report.worst_case_scenario,
+                },
                 'verification_report': {
                     'num_rounds': len(debate_rounds),
                     'conflicts_detected': conflicts
