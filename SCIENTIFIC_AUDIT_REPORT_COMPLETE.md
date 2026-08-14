@@ -10,7 +10,7 @@ Through systemic codebase discovery across 30+ sub-agents, we establish a centra
 
 ---
 
-## Phase 1 — Discovery & Dependency Graph
+## Phase 1 — Discovery & Unified Dependency Graph
 
 ### 1.1 Complete Codebase Hypothesis Mapping
 
@@ -36,7 +36,7 @@ We conducted a deep codebase search across every subsystem. Hypotheses exist und
 The lifecycle of hypotheses across AlphaAlgo is fully represented by the following lineage graph:
 
 ```mermaid
-graph TD
+flowchart TD
     %% Origins
     Sensing[Market Ingestion / Orderbook / Orderflow] --> |Step 1: Active Perception| SRE_Obs[SRE: Observation]
     Curiosity[Curiosity Engine] --> |Surprise & Anomaly Monitor| SRE_Anom[SRE: Anomaly Detection]
@@ -184,7 +184,7 @@ The SRE continuously audits its own state history:
 
 ---
 
-## Phase 5 — Mathematical Justification & Validation Framework
+## Phase 5 — Mathematical Justification, Validation, and Roadmap
 
 ### 5.1 Mathematical Justification
 

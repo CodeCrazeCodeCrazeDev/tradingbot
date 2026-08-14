@@ -89,6 +89,16 @@ class SkillRouteOutcome:
             return AdapterChameleonStr(val)
         return val
 
+    def __getitem__(self, item):
+        """Allows dictionary subscripting for compatibility."""
+        if hasattr(self, item):
+            return getattr(self, item)
+        raise KeyError(item)
+
+    def get(self, item, default=None):
+        """Allows dictionary get retrieval for compatibility."""
+        return getattr(self, item, default)
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "status": self.status,
@@ -229,7 +239,6 @@ class SkillRouter:
                     "pf_result": skill.executable(context)
                 }
 
-        # 2. Capability-based Routing
         if "hedge" in task.lower() or "risk" in task.lower() or "derivative" in task.lower():
             required_caps = {"hedging", "risk_reduction"}
             if "derivative" in task.lower():
