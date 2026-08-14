@@ -110,7 +110,11 @@ No lifecycle transitions remain implicit. The full trace maps creation, updates,
     *   *Retirement*: Triggered when out-of-sample alpha decay clocks detect concept drift.
 *   **Reactivation**: SRE Step 19 scans dormant nodes when regime-shift anomalies are detected, restoring active status.
 
----
+### B1: Knowledge Fragmentation & Siloing
+- **Why it exists:** Isolated registries in separate discovery engines (AlphaMining, Curiosity, StrategyGenome, PHCE-D).
+- **Downstream Effects:** Duplicate testing, blind spots, failure to consolidate multi-modal evidence across layers.
+- **Priority:** **CRITICAL**
+- **Recommended Redesign:** Route all hypothesis states through the central `ScientificReasoningEngine` registry, exposing uniform APIs for SAGE memory querying.
 
 ## 5. Phase 5 — Mathematical Validation Specification
 

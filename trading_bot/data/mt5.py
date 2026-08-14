@@ -6,7 +6,7 @@ from typing import Any, Optional, Dict, List
 import logging
 from dataclasses import dataclass
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("AlphaAlgo.MT5Interface")
 
 @dataclass
 class AccountInfo:
