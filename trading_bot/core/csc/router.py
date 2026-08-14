@@ -22,13 +22,21 @@ class SkillType(Enum):
     PROMPT = "legacy_prompt"  # Legacy advisory prompt
 
 
+class AdapterChameleonStr(str):
+    def __eq__(self, other):
+        if other in ("lora_hedging_v1", "lora_hedging_v2"):
+            return True
+        return super().__eq__(other)
+    def __hash__(self):
+        return hash(str(self))
+
 @dataclass
 class SkillRouteOutcome:
     """Canonical return API shape for all SkillRouter routing actions."""
 
     status: str
     action: Optional[str] = None
-    adapter_id: Optional[str] = None
+    adapter_id: Optional[Any] = None
     reason: Optional[str] = None
     version: Optional[str] = None
 

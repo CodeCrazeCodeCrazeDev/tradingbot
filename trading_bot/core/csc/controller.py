@@ -531,6 +531,15 @@ class CognitiveSystemController:
             "reasoning_token": self.discrete_channel[-1] if self.discrete_channel else "none"
         }
 
+    async def _refine_strategy(self, branch: ReasoningBranch, reports: List[Any]) -> ReasoningBranch:
+        """Refines the strategy branch based on negative critique reports."""
+        refined = copy.deepcopy(branch)
+        refined.confidence = round(branch.confidence * 0.9, 3)
+        for r in reports:
+            critique = getattr(r, "critique", "unspecified critique")
+            refined.reasoning_trace.append(f"Correction: {critique}")
+        return refined
+
     def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
         provenance = InstitutionalProvenance()
         return ResearchLedgerEntry(
