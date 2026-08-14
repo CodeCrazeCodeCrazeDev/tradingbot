@@ -398,6 +398,13 @@ class CognitiveSystemController:
     def _calculate_composite_confidence(self, entry: ResearchLedgerEntry) -> ConfidenceVector:
         return ConfidenceVector(statistical=entry.composite_confidence, regime=0.8, execution=0.9, tail_risk=0.85, model_stability=0.7)
 
+    async def _safe_await(self, coro_or_val: Any) -> Any:
+        if coro_or_val is None:
+            return None
+        if asyncio.iscoroutine(coro_or_val) or hasattr(coro_or_val, "__await__"):
+            return await coro_or_val
+        return coro_or_val
+
     async def process_market_observation(self, observation: Any) -> Optional[CoreDecision]:
         """
         12-step Recursive Active Inference Pipeline (UCA V6).
