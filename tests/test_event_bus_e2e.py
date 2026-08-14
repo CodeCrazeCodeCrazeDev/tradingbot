@@ -30,8 +30,12 @@ async def test_event_bus_e2e_approved_consensus():
     async def voter_beta(action: LogAction) -> Dict[str, Any]:
         return {"decision": "APPROVE", "confidence": 0.9}
 
+    async def voter_shield(action: LogAction) -> Dict[str, Any]:
+        return {"decision": "APPROVE", "confidence": 1.0}
+
     bus.register_voter("voter_alpha", voter_alpha)
     bus.register_voter("voter_beta", voter_beta)
+    bus.register_voter("shield", voter_shield)
 
     # Subscribe to dispatch
     received_actions = []
@@ -75,8 +79,12 @@ async def test_event_bus_e2e_vetoed_consensus():
     async def voter_beta(action: LogAction) -> Dict[str, Any]:
         return {"decision": "VETO", "reason": "Risk bounds exceeded"}
 
+    async def voter_shield(action: LogAction) -> Dict[str, Any]:
+        return {"decision": "APPROVE", "confidence": 1.0}
+
     bus.register_voter("voter_alpha", voter_alpha)
     bus.register_voter("voter_beta", voter_beta)
+    bus.register_voter("shield", voter_shield)
 
     await bus.start()
 

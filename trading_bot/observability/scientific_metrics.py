@@ -55,6 +55,7 @@ class ScientificMetrics:
 
     @property
     def total_institutionalized_knowledge(self) -> int:
+        """Alias for institutionalized_count to satisfy the testing suite."""
         return self.institutionalized_count
 
     def update_from_registry(self, registry: Dict[str, Any]):
@@ -105,9 +106,9 @@ class ScientificMetrics:
 
         self.rejection_rate = self.rejected_count / total
         self.survival_rate = (self.confirmed_count + self.institutionalized_count) / total
-        self.detect_bottlenecks()
+        self._detect_bottlenecks()
 
-    def detect_bottlenecks(self):
+    def _detect_bottlenecks(self):
         """Identifies systemic weaknesses in the hypothesis ecosystem."""
         self.bottlenecks_detected = []
 
@@ -118,7 +119,7 @@ class ScientificMetrics:
             if self.rejection_rate > 0.8:
                 self.bottlenecks_detected.append("FILTERING_STRICTNESS")
 
-            if self.avg_validation_score > 0.7 and self.confirmed_count < 2:
+            if self.avg_validation_score > 0.7 and self.confirmed_count + self.institutionalized_count < 2:
                 self.bottlenecks_detected.append("PROMOTION_FRICTION")
 
     def get_summary(self) -> Dict[str, Any]:
