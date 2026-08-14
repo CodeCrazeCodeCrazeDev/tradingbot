@@ -6,6 +6,7 @@ Implements 'HASP' (2026) and 'S2L' (2026).
 
 import logging
 import asyncio
+import threading
 from enum import Enum
 from typing import Any, Dict, List, Optional, Callable, Set
 from dataclasses import dataclass, field
@@ -93,6 +94,7 @@ class SkillRouter:
     """
 
     _instance = None
+    _lock = threading.Lock()
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:

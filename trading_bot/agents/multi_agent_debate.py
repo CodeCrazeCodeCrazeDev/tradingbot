@@ -196,15 +196,56 @@ class VerificationOutcome:
     is_valid: bool
 
 
+@dataclass
+class StructuredMessage:
+    message_id: str
+    task_id: str
+    parent_task_id: str
+    correlation_id: str
+    sender_agent_id: str
+    recipient: str
+    timestamp: datetime
+    schema_version: str
+    message_type: str
+    payload: Dict[str, Any]
+    evidence_refs: List[str] = field(default_factory=list)
+    provenance: Dict[str, Any] = field(default_factory=dict)
+    confidence: float = 0.5
+    uncertainty: float = 0.5
+    status: str = "proposed"
+    expiry: Optional[datetime] = None
+
+    def validate(self) -> bool:
+        """Structured schema validation for canonical messages."""
+        if not self.message_id or not self.sender_agent_id or not self.message_type:
+            return False
+        if self.confidence < 0.0 or self.confidence > 1.0:
+            return False
+        return True
+
+
 class RiskVerifier:
-    """Mock/Stub RiskVerifier for backward compatibility in tests."""
+    """Authoritative, non-negotiable RiskVerifier enforcing strict financial boundaries."""
 
     def verify(self, action: TradeAction, context: MarketContext) -> VerificationOutcome:
+        # Rigid non-negotiable boundaries: LLM intelligence layer cannot override this
         is_valid = True
+
+        # Exposure boundary checks
         if context.portfolio_exposure > 0.5 or context.correlation_risk > 0.7:
             is_valid = False
+            logger.error(f"RiskVerifier: Exposure boundaries violated (portfolio_exposure={context.portfolio_exposure}, correlation_risk={context.correlation_risk})")
+
+        # Hard VIX black swan / volatility boundary checks
         if context.vix_level and context.vix_level > 30:
             is_valid = False
+            logger.error(f"RiskVerifier: VIX black swan boundary violated (vix_level={context.vix_level})")
+
+        # Price sanity check
+        if context.current_price <= 0.0:
+            is_valid = False
+            logger.error(f"RiskVerifier: Malformed current price boundary violated (current_price={context.current_price})")
+
         return VerificationOutcome(is_valid=is_valid)
 
 
@@ -282,15 +323,34 @@ class RiskVerifier:
         return RiskVerifierOutcome(is_valid=True)
 
 
+class AgentStatus(Enum):
+    CREATED = "created"
+    INITIALIZED = "initialized"
+    READY = "ready"
+    RUNNING = "running"
+    WAITING = "waiting"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
 class TradingAgent(ABC):
-    """Base class for trading agents."""
+    """Base class for trading agents with explicit lifecycle and memory isolation."""
 
     def __init__(self, role: AgentRole, config: Optional[Dict] = None):
         try:
             self.role = role
             self.config = config or {}
             self.weight = self.config.get("weight", 1.0)
+            self.status = AgentStatus.CREATED
+
+            # Memory Isolation: separate local, task-scoped, and institutional memories
+            self.local_memory: Dict[str, Any] = {}
+            self.task_memory: Dict[str, Any] = {}
+            self.institutional_memory: Dict[str, Any] = {}
+
+            self.status = AgentStatus.INITIALIZED
         except Exception as e:
+            self.status = AgentStatus.FAILED
             logger.error(f"Error in __init__: {e}")
             raise
 
@@ -1399,6 +1459,7 @@ class HeadAI:
             FinalDecision
         """
         try:
+            vetoes = []
             # 1. Advanced, institutional-grade argument ranking & sorting
             # Combine expertise weights, confidence, historical precision, and evidence quality, with timestamp as tie-breaker
             def get_arg_score(arg: AgentArgument) -> Tuple[float, float]:
@@ -1985,10 +2046,38 @@ class MultiAgentDebateSystem:
             initial_votes = []
             successful_agent_count = 0
             for agent in self.agents:
+                # Set running lifecycle state
+                agent.status = AgentStatus.RUNNING
                 try:
+                    # Isolate memory context per task
+                    agent.task_memory["context"] = context
+
                     arg = agent.analyze(context)
+
+                    # Store results in agent local memory
+                    agent.local_memory[context.symbol] = arg.to_dict()
+
+                    # Canonical message validation under StructuredMessage protocol
+                    msg = StructuredMessage(
+                        message_id=str(uuid.uuid4()),
+                        task_id="debate_task_001",
+                        parent_task_id="",
+                        correlation_id=str(uuid.uuid4()),
+                        sender_agent_id=agent.role.value if hasattr(agent.role, "value") else str(agent.role),
+                        recipient="HeadAI",
+                        timestamp=datetime.utcnow(),
+                        schema_version="1.0.0",
+                        message_type="AgentArgument",
+                        payload=arg.to_dict(),
+                        confidence=arg.confidence
+                    )
+                    if not msg.validate():
+                        raise ValueError("StructuredMessage schema validation failed.")
+
+                    agent.status = AgentStatus.COMPLETED
                     successful_agent_count += 1
                 except Exception as e:
+                    agent.status = AgentStatus.FAILED
                     logger.error(
                         f"Graceful Degradation triggered: Agent {agent.role.value} crashed during analyze: {e}"
                     )
