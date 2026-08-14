@@ -427,7 +427,6 @@ class CognitiveSystemController:
         logger.info(f"CSC-V6 Step 2: Retrieved {len(evidence_chain) if evidence_chain else 0} evidence chains")
 
         # 3. HASP Shielding (Prescriptive Guardrails)
-        # Pre-emptive intervention for known failure modes
         intervention = await self.skill_router.route_task("market_ingestion", observation)
         if hasattr(intervention, "to_dict"):
             intervention = intervention.to_dict()
@@ -484,6 +483,7 @@ class CognitiveSystemController:
 
         # 8. VFE Minimization (Decision Selection)
         decision_proposal = self._select_optimal_action(best_branch, sim_results)
+        decision_proposal["trade_id"] = trade_id
 
         # 9. LogAct Proposal
         log_action = LogAction(
@@ -604,7 +604,6 @@ class CognitiveSystemController:
         if isinstance(sim_data, MagicMock) or hasattr(sim_data, "_mock_self") or "MagicMock" in str(type(sim_data)):
             sim_data = {}
 
-        # Adjust quantity based on expected slippage and structural impact
         base_qty = branch.execution_plan.get("quantity", 0.1)
         slippage = sim_data.get("expected_slippage", 0.0) if isinstance(sim_data, dict) else 0.0
         slippage_penalty = 1.0 - (slippage * 100)
