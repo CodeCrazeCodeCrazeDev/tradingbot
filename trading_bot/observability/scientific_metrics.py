@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 import logging
-import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +55,7 @@ class ScientificMetrics:
 
     @property
     def total_institutionalized_knowledge(self) -> int:
+        """Alias for institutionalized_count to satisfy the testing suite."""
         return self.institutionalized_count
 
     def update_from_registry(self, registry: Dict[str, Any]):
