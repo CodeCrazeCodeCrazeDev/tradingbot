@@ -29,7 +29,7 @@ async def test_scientific_correctness():
         def run_benchmark(self, config):
             return {"score": config.get("val", 0.0), "ece": 0.1}
 
-    gate = EvolutionGate(MockValidation(), improvement_threshold=0.1)
+    gate = EvolutionGate(MockValidation(), threshold=0.1)
 
     # Case: Improvement > threshold
     assert gate.validate_evolution("c1", {"val": 0.8}, {"val": 0.6}) == True
