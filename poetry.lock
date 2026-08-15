@@ -3384,7 +3384,7 @@ reports = ["lxml"]
 
 [[package]]
 name = "mypy"
-version = "2.3.0"
+version = "2.3.1"
 description = "Optional static typing for Python"
 optional = true
 python-versions = ">=3.10"

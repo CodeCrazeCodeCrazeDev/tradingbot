@@ -1,4 +1,3 @@
-from __future__ import annotations
 """
 Secure Credential Management
 
@@ -61,7 +60,7 @@ class SecureCredentialManager:
         # Ensure .gitignore is configured
         self._ensure_gitignore()
     
-    def _setup_encryption(self) -> Optional["Fernet"]:
+    def _setup_encryption(self) -> Optional[Fernet]:
         """Setup encryption key"""
         key_file = Path('.secret_key')
         

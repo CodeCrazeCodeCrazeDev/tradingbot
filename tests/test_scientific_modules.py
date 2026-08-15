@@ -12,16 +12,14 @@ Verifies independent correctness of:
 
 import pytest
 import asyncio
-from unittest.mock import MagicMock, AsyncMock
-from trading_bot.core.csc.controller import CognitiveSystemController, ReasoningBranch
+from trading_bot.core.csc.controller import CognitiveSystemController
 from trading_bot.core.csc.router import SkillRouter, SkillArtifact, SkillType
 from trading_bot.core.hms.memory import HierarchicalMemorySystem
 from trading_bot.governance.evolution_gate import EvolutionGate
 
 # Mock dependencies
 class MockWorldModel:
-    async def simulate_intervention(self, *args, **kwargs):
-        return {"failure_rate": 0.1, "expected_slippage": 0.0, "structural_impact": {}}
+    pass
 
 class MockValidationEngine:
     def run_benchmark(self, config):

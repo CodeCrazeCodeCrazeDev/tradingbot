@@ -24,8 +24,6 @@ from ..verification.confidence_calibrator import ConfidenceCalibrator, Calibrati
 from ..metrics.scorecard import AgentScorecard
 from ..validation.input_validation import TradingContextValidator
 import hashlib
-import uuid
-import time
 
 from trading_bot.verification.confidence_calibrator import (
     ConfidenceCalibrator,
@@ -660,17 +658,17 @@ class TacticalExecutioner(TradingAgent):
             if total_score > 0.3:
                 action = TradeAction.BUY
                 conviction = Conviction.MODERATE
-                state['hypothesis'] = "Bullish momentum breakout in progress."
-                state['predictions'] = ["Upward timing entry confirmed."]
-                state['counter_evidence'] = ["Immediate reversal or volume crash."]
-                state['verification'] = "LTF trend alignment validates breakout timing."
+                hypothesis = "Bullish momentum breakout in progress."
+                predictions = ["Upward timing entry confirmed."]
+                counter_evidence = ["Immediate reversal or volume crash."]
+                verification = "LTF trend alignment validates breakout timing."
             elif total_score < -0.3:
                 action = TradeAction.SELL
                 conviction = Conviction.MODERATE
-                state['hypothesis'] = "Bearish momentum expansion in progress."
-                state['predictions'] = ["Downward timing entry confirmed."]
-                state['counter_evidence'] = ["Immediate micro-trend reversal upward."]
-                state['verification'] = "LTF bearish timing validated."
+                hypothesis = "Bearish momentum expansion in progress."
+                predictions = ["Downward timing entry confirmed."]
+                counter_evidence = ["Immediate micro-trend reversal upward."]
+                verification = "LTF bearish timing validated."
             else:
                 action = TradeAction.HOLD
                 conviction = Conviction.LOW
@@ -886,7 +884,6 @@ class RiskSentinel(TradingAgent):
             total_score = sum(key_factors.values())
 
             # Determine Action
-            total_score = sum(key_factors.values())
             if risk_flags >= 2:
                 action = TradeAction.NO_TRADE
                 conviction = Conviction.VERY_HIGH
@@ -899,18 +896,10 @@ class RiskSentinel(TradingAgent):
                 conviction = Conviction.HIGH
                 reasoning.append("⚠️ Risk flag present - reduce position size")
                 anti_trade_reasoning.append("Partial risk block: single stress indicator active")
-                state['hypothesis'] = "Single active risk flag indicates heightened danger."
-                state['predictions'] = ["Increased volatility and sub-optimal risk reward profile."]
-                state['counter_evidence'] = ["Single active flag contracts below threshold."]
-                state['verification'] = "Hold state to protect capital."
             elif total_score > 0:
                 action = TradeAction.HOLD  # Risk allows trading
                 conviction = Conviction.MODERATE
                 reasoning.append("✅ Risk parameters acceptable")
-                state['hypothesis'] = "Risk parameters within acceptable standard deviation."
-                state['predictions'] = ["Asset behavior complies with standard trading bounds."]
-                state['counter_evidence'] = ["Volatility or correlation exceeds risk bands."]
-                state['verification'] = "Nominal risk check validated."
             else:
                 action = TradeAction.BUY
                 conviction = Conviction.MODERATE
@@ -995,9 +984,8 @@ class DevilsAdvocate(TradingAgent):
         super().__init__(AgentRole.DEVILS_ADVOCATE, config)
 
     def analyze(self, context: MarketContext) -> AgentArgument:
-        state = self._initialize_analysis_state()
-        state['reasoning'] = ["Evaluating counter-trend vulnerability and contrarian thesis"]
-        state['key_factors'] = {"devil_bias": -0.2}
+        reasoning = ["Evaluating counter-trend vulnerability and contrarian thesis"]
+        key_factors = {"devil_bias": -0.2}
 
         # Propose the opposite of any standard direction
         action = TradeAction.HOLD
@@ -1063,9 +1051,8 @@ class RiskProsecutor(TradingAgent):
         super().__init__(AgentRole.RISK_PROSECUTOR, config)
 
     def analyze(self, context: MarketContext) -> AgentArgument:
-        state = self._initialize_analysis_state()
-        reasoning = state['reasoning']
-        key_factors = state['key_factors']
+        reasoning = []
+        key_factors = {}
 
         if context.portfolio_exposure > 0.4:
             reasoning.append(
@@ -1124,11 +1111,8 @@ class OverfittingProsecutor(TradingAgent):
         super().__init__(AgentRole.OVERFITTING_PROSECUTOR, config)
 
     def analyze(self, context: MarketContext) -> AgentArgument:
-        state = self._initialize_analysis_state()
-        reasoning = state['reasoning']
-        key_factors = state['key_factors']
-        reasoning.append("Evaluating signal robustness and checking for lookahead/leakage patterns")
-        key_factors["noise_ratio"] = 0.3
+        reasoning = ["Evaluating signal robustness and checking for lookahead/leakage patterns"]
+        key_factors = {"noise_ratio": 0.3}
 
         # Argue for hold if trends are sideways or volume is too low to sustain moves
         action = TradeAction.HOLD
@@ -1235,11 +1219,8 @@ class ExecutionProsecutor(TradingAgent):
         super().__init__(AgentRole.EXECUTION_PROSECUTOR, config)
 
     def analyze(self, context: MarketContext) -> AgentArgument:
-        state = self._initialize_analysis_state()
-        reasoning = state['reasoning']
-        key_factors = state['key_factors']
-        reasoning.append("Evaluating transaction execution latency and queue position risks")
-        key_factors["latency_threat"] = 0.2
+        reasoning = ["Evaluating transaction execution latency and queue position risks"]
+        key_factors = {"latency_threat": 0.2}
 
         # High volatility implies high spreads and slippage
         action = TradeAction.HOLD
@@ -2518,10 +2499,6 @@ class MultiAgentDebateSystem:
             decision.falsification_report = falsification_report
             original_action = decision.action
 
-            if context.current_price <= 0.0:
-                falsification_report.is_falsified = True
-                falsification_report.rejection_reason = "Invalid current price detected"
-
             if falsification_report.is_falsified:
                 logger.warning(
                     f"MultiAgentDebateSystem: Decision {decision.action.value} falsified: {falsification_report.rejection_reason}"
@@ -2559,7 +2536,6 @@ class MultiAgentDebateSystem:
             config_hash = hashlib.sha256(str(self.config).encode("utf-8")).hexdigest()
             feature_hash = hashlib.sha256(feature_state_str.encode("utf-8")).hexdigest()
 
-            is_price_valid = context.current_price > 0.0
             provenance_data = {
                 'decision_uuid': str(uuid.uuid4()),
                 'git_sha': git_sha,
@@ -2668,8 +2644,6 @@ class MultiAgentDebateSystem:
 
             total = len(arguments)
             max_agreement = max(bullish, bearish, neutral)
-            if total == 3 and max_agreement == 2:
-                return 0.75
             return max_agreement / total
         except Exception as e:
             logger.error(f"Error in _calculate_consensus: {e}")
@@ -2711,20 +2685,6 @@ class MultiAgentDebateSystem:
             "last_decision": self.decisions[-1].to_dict() if self.decisions else None,
             "timestamp": datetime.now().isoformat(),
         }
-
-
-class RiskVerifierOutcome:
-    def __init__(self, is_valid: bool):
-        self.is_valid = is_valid
-
-
-class RiskVerifier:
-    """Legacy compatibility bridge for verification tests."""
-    def verify(self, action: TradeAction, context: MarketContext) -> RiskVerifierOutcome:
-        # Enforces worst-case drawdown bounds and hard exposure limits
-        if context.portfolio_exposure > 0.85:
-            return RiskVerifierOutcome(is_valid=False)
-        return RiskVerifierOutcome(is_valid=True)
 
 
 DebateResult = FinalDecision

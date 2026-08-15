@@ -654,6 +654,7 @@ class CognitiveSystemController:
         if self.shield is not None:
             shield_report = await self._safe_await(self.shield.validate_action("trade", decision_proposal, {"market": observation}))
             if shield_report and getattr(shield_report, "decision", None) != GovernanceDecision.APPROVED:
+                reason = getattr(shield_report, "reason", "Shield veto")
                 return CoreDecision(
                     outcome=DecisionOutcome.TRADE_REJECTED,
                     trade_id=decision_proposal.get("trade_id", trade_id),
