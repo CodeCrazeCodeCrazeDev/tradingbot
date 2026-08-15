@@ -116,6 +116,19 @@ class CognitiveSystemController:
         cls._instance = None
         logger.info("CognitiveSystemController reset completed")
 
+    @classmethod
+    async def reset(cls):
+        """Reset the CognitiveSystemController singleton instance."""
+        if cls._instance:
+            try:
+                cls._instance.continuous_state.clear()
+                cls._instance.discrete_channel.clear()
+                cls._instance.vfe_history.clear()
+                cls._instance.last_prediction = None
+            except Exception:
+                pass
+            cls._instance = None
+
     def __init__(
         self,
         world_model: Any = None,
