@@ -58,7 +58,6 @@ class HypothesisGenerator:
             ReasoningBranch(
                 branch_id="branch_bull",
                 name="Bull Case",
-                confidence=0.9,
                 probability=0.35,
                 uncertainty=0.15,
                 causal_explanation="Expansion in liquidity combined with oversold RSI supports a mean reversion breakout.",
@@ -71,7 +70,6 @@ class HypothesisGenerator:
             ReasoningBranch(
                 branch_id="branch_bear",
                 name="Bear Case",
-                confidence=0.9,
                 probability=0.25,
                 uncertainty=0.20,
                 causal_explanation="Macro headwinds and resistance at the current level suggest a continuation of the downtrend.",
@@ -81,7 +79,6 @@ class HypothesisGenerator:
             ReasoningBranch(
                 branch_id="branch_range",
                 name="Range Case",
-                confidence=0.9,
                 probability=0.40,
                 uncertainty=0.10,
                 causal_explanation="Consolidation between established levels with no clear macro catalyst.",

@@ -335,7 +335,12 @@ class SkillRouter:
                         version=res.get("pf_version")
                     )
 
-        return SkillRouteOutcome(status="standard_reasoning")
+        return {
+            "status": "standard_reasoning",
+            "action": "standard",
+            "adapter_id": None,
+            "reason": "No high-priority skill triggered."
+        }
 
     def get_skill(self, skill_id: str, version: Optional[str] = None) -> Optional[SkillArtifact]:
         """Retrieves a specific skill, defaults to latest."""
