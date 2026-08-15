@@ -6,10 +6,12 @@ Implements 'HASP' (2026) and 'S2L' (2026).
 
 import logging
 import asyncio
+import threading
 from enum import Enum
 from typing import Any, Dict, List, Optional, Callable, Set
 from dataclasses import dataclass, field
-from enum import Enum
+from datetime import datetime
+from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -21,52 +23,13 @@ class SkillType(Enum):
     PROMPT = "legacy_prompt"  # Legacy advisory prompt
 
 
-class AdapterChameleonStr(str):
-    def __eq__(self, other):
-        if other in ("lora_hedging_v1", "lora_hedging_v2"):
-            return True
-        return super().__eq__(other)
-    def __hash__(self):
-        return hash(str(self))
-
-class AdapterChameleonStr(str):
-    def __eq__(self, other):
-        if other in ("lora_hedging_v1", "lora_hedging_v2"):
-            return True
-        return super().__eq__(other)
-
-    def __hash__(self):
-        return super().__hash__()
-
-class AdapterChameleonStr(str):
-    """
-    A chameleon string that compares equal to both 'lora_hedging_v1' and 'lora_hedging_v2'
-    to maintain dual-version compatibility under testing assertions.
-    """
-    def __eq__(self, other):
-        if other in ("lora_hedging_v1", "lora_hedging_v2"):
-            return True
-        return super().__eq__(other)
-
-    def __hash__(self):
-        return hash(str(self))
-
-class AdapterChameleonStr(str):
-    def __eq__(self, other):
-        if other in ("lora_hedging_v1", "lora_hedging_v2"):
-            return True
-        return super().__eq__(other)
-
-    def __hash__(self):
-        return super().__hash__()
-
 @dataclass
 class SkillRouteOutcome:
     """Canonical return API shape for all SkillRouter routing actions."""
 
     status: str
     action: Optional[str] = None
-    adapter_id: Optional[Any] = None
+    adapter_id: Optional[str] = None
     reason: Optional[str] = None
     version: Optional[str] = None
 
@@ -87,75 +50,6 @@ class SkillRouteOutcome:
             return self[item]
         except (AttributeError, KeyError):
             return default
-
-    def __getattribute__(self, name):
-        val = super().__getattribute__(name)
-        if name == "adapter_id" and val:
-            return AdapterChameleonStr(val)
-        return val
-
-    def __getitem__(self, key):
-        if key in ("pf_result", "result"):
-            return {"action": self.action, "reason": self.reason}
-        val = getattr(self, key)
-        if key == "adapter_id" and val:
-            return AdapterChameleonStr(val)
-        return val
-
-    def get(self, key, default=None):
-        if key in ("pf_result", "result"):
-            return {"action": self.action, "reason": self.reason}
-        val = getattr(self, key, default)
-        if key == "adapter_id" and val:
-            return AdapterChameleonStr(val)
-        return val
-
-    def __getitem__(self, item):
-        """Allows dictionary subscripting for compatibility."""
-        if hasattr(self, item):
-            return getattr(self, item)
-        raise KeyError(item)
-
-    def get(self, item, default=None):
-        """Allows dictionary get retrieval for compatibility."""
-        return getattr(self, item, default)
-
-    def __getitem__(self, key):
-        if key == "status":
-            return self.status
-        elif key == "action":
-            return self.action
-        elif key == "adapter_id":
-            return self.adapter_id
-        elif key == "reason":
-            return self.reason
-        raise KeyError(key)
-
-    def get(self, key, default=None):
-        try:
-            return self[key]
-        except KeyError:
-            return default
-
-    def __getitem__(self, key: str) -> Any:
-        # Dictionary emulation
-        if key == "pf_result":
-            return {"action": self.action, "reason": self.reason}
-        if hasattr(self, key):
-            return getattr(self, key)
-        raise KeyError(key)
-
-    def get(self, key: str, default: Any = None) -> Any:
-        try:
-            return self[key]
-        except KeyError:
-            return default
-
-    def keys(self) -> List[str]:
-        return ["status", "action", "adapter_id", "reason", "pf_result"]
-
-    def __iter__(self):
-        return iter(self.keys())
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -193,28 +87,6 @@ class ChameleonStr(str):
     def __hash__(self):
         return super().__hash__()
 
-class AdapterChameleonStr(str):
-    def __eq__(self, other):
-        return other in ("lora_hedging_v1", "lora_hedging_v2")
-    def __hash__(self):
-        return hash(str(self))
-
-class AdapterChameleonStr(str):
-    def __eq__(self, other):
-        return other in ("lora_hedging_v1", "lora_hedging_v2")
-    def __hash__(self):
-        return hash(str(self))
-
-class ChameleonDict(dict):
-    def __getattr__(self, name: str) -> Any:
-        try:
-            return self[name]
-        except KeyError:
-            raise AttributeError(f"'ChameleonDict' object has no attribute '{name}'")
-
-    def __setattr__(self, name: str, value: Any):
-        self[name] = value
-
 class SkillRouter:
     """
     Authoritative router for mapping strategic tasks to specialized skills (UCA V6).
@@ -222,24 +94,23 @@ class SkillRouter:
     """
 
     _instance = None
+    _lock = threading.Lock()
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
-            cls._instance = super(SkillRouter, cls).__new__(cls)
-            cls._instance._initialized = False
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(SkillRouter, cls).__new__(cls)
+                    cls._instance._initialized = False
         return cls._instance
 
     def __init__(self):
-        if getattr(self, "_initialized", False):
+        if self._initialized:
             return
         self._registry: Dict[str, List[SkillArtifact]] = {}
         self._initialize_default_skills()
         self._initialized = True
         logger.info("SkillRouter V6: Initialized with Versioning and Conflict Resolution")
-
-    def reset(self):
-        self._registry.clear()
-        self._initialize_default_skills()
 
     def _initialize_default_skills(self):
         # Register standard HASP programs
@@ -254,12 +125,12 @@ class SkillRouter:
             )
         )
 
-        # Register standard S2L adapters with AdapterChameleonStr
+        # Register standard S2L adapters
         self.register_skill(SkillArtifact(
             skill_id="hedging_behavior",
             skill_type=SkillType.LORA,
             version="2.0.4",
-            adapter_id="lora_hedging_v1",
+            adapter_id="lora_hedging_v2",
             capabilities={"hedging", "risk_reduction"},
             metadata={"archetype": "risk_averse"}
         ))
@@ -308,11 +179,14 @@ class SkillRouter:
             skill = self.get_skill("volatility_guardrail")
             if skill and skill.executable:
                 res = skill.executable(context)
-                return {
-                    "status": "pf_intervention",
-                    "pf_result": skill.executable(context)
-                }
+                return SkillRouteOutcome(
+                    status="pf_intervention",
+                    action=res.get("action"),
+                    reason=res.get("reason"),
+                    version=res.get("pf_version")
+                )
 
+        # 2. Capability-based Routing
         if "hedge" in task.lower() or "risk" in task.lower() or "derivative" in task.lower():
             required_caps = {"hedging", "risk_reduction"}
             if "derivative" in task.lower():
