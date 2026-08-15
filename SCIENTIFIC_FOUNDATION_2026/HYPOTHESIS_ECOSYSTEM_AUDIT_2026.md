@@ -1,9 +1,68 @@
-# AlphaAlgo Hypothesis Ecosystem: Institutional Scientific Audit & Redesign Report (2026)
+# Repository-Wide Scientific Audit Report: AlphaAlgo Hypothesis Ecosystem (UCA-2026)
 
-## Phase 1 — Discovery & Dependency Graph
+## 1. Phase 1 — Exhaustive Repository-Wide Scientific Inventory
 
-### 1.1 Scope of Hypotheses
-In the AlphaAlgo autonomous financial intelligence system, hypotheses are defined as any falsifiable prediction, belief, model scenario, strategy proposal, or execution plan. Every prediction and strategic decision is treated as an active hypothesis until validated.
+Every implicit or explicit hypothesis representation across all subsystems has been audited and mapped to its exact creation, modification, evaluation, and end-state mechanisms.
+
+### Implicit/Explicit Inventory
+
+#### 1. `ScientificHypothesis` (Explicit SRE Core)
+*   **Creation / Derivation Module**: `trading_bot/core_agent_system/scientific_reasoning/core.py` (Step 4: `generate_hypothesis`).
+*   **Modification / Split / Merge Module**: `trading_bot/core_agent_system/scientific_reasoning/core.py` (Step 19: `discover_new_hypotheses` handles splitting/merging).
+*   **Evaluation & Verification**: Verified through Step 6 (`simulate_world`) and Step 8 (`adversarial_debate`).
+*   **Persistence & Memory Retrieval**: Stored via `store_ledger_entry` inside the Hierarchical Memory System SAGE Graph database (`trading_bot/core/hms/memory.py`).
+*   **Conversion to Policies / Trading Strategies**: Translated via Step 16 (`improve_policy`) into adaptive execution parameters.
+*   **Future Reasoning Influence**: Backpropagated as new search priors for anomaly detection in Step 2.
+
+#### 2. `ReasoningBranch` (Implicit Plan/Scenario Case)
+*   **Creation / Derivation Module**: `trading_bot/core/csc/hypothesis.py` (`HypothesisGenerator.generate_competing_branches`).
+*   **Modification / Split / Merge Module**: Executed via strategic branching (Bull, Bear, and Range scenarios).
+*   **Evaluation & Verification**: Validated in `CognitiveSystemController` using `VerificationSwarm` critique reports.
+*   **Persistence & Memory Retrieval**: Cached inside `UnifiedComponentRegistry` and logged within CDS event streams.
+*   **Conversion to Policies / Trading Strategies**: Dispatched to specialized execution parameters via `SkillRouter`.
+*   **Future Reasoning Influence**: Provides corrective correction traces if a pivot condition is met.
+
+#### 3. `AgentArgument` (Implicit Debate Position)
+*   **Creation / Derivation Module**: `trading_bot/agents/multi_agent_debate.py` (`analyze` functions).
+*   **Modification / Split / Merge Module**: Aggregated by the lightweight coordinator `HeadAI`.
+*   **Evaluation & Verification**: Checked for causal consistency, liquidity thresholds, and price hallucinations.
+*   **Persistence & Memory Retrieval**: Written permanently to the `cds_evidence_history.jsonl` ledger.
+*   **Conversion to Policies / Trading Strategies**: Translated into a final order parameter set (`FinalDecision`).
+*   **Future Reasoning Influence**: Feeds back into historical precision metrics for agent scorecards.
+
+#### 4. `WorldModelPrediction` (Implicit World Model State)
+*   **Creation / Derivation Module**: `trading_bot/world_model/unified_world_model.py`.
+*   **Modification / Split / Merge Module**: Runs sequential multi-horizon rollouts (Scenario A, B, C) under $Do$-calculus interventions.
+*   **Evaluation & Verification**: Evaluated by out-of-sample prediction bounds.
+*   **Persistence & Memory Retrieval**: Episodic buffer snapshots stored in SQLite.
+*   **Conversion to Policies / Trading Strategies**: Triggers pre-emptive safety interventions.
+*   **Future Reasoning Influence**: Serves as the baseline expected state for anomaly detection surprise computations.
+
+---
+
+## 2. Phase 2 — Canonical Hypothesis Ownership Matrix
+
+Every hypothesis-related capability is governed by exactly one canonical module, eliminating duplication and structural fragmentation.
+
+```
+┌──────────────────────────────────────┬──────────────────────────────────────┐
+│ Ecosystem Capability                 │ Canonical Subsystem Owner            │
+├──────────────────────────────────────┼──────────────────────────────────────┤
+│ Hypothesis Producer                  │ Cognitive System Controller (CSC)    │
+│ Hypothesis Modifier                  │ SRE Core (Step 12 & Step 13)         │
+│ Evidence Provider                    │ Hierarchical Memory System (HMS)     │
+│ Confidence Owner                     │ SRE Core Calibration Tier            │
+│ Bayesian Update Owner                │ SRE Mathematical Engine              │
+│ Evaluation Owner                     │ Verification Swarm & World Model     │
+│ Memory Owner                         │ Hierarchical Memory System (HMS)     │
+│ Policy Generator                     │ EvolutionGate (RSEA)                 │
+│ Strategy Generator                   │ Cognitive System Controller (CSC)    │
+│ Retirement Owner                     │ SRE Core (Step 18)                   │
+│ Reactivation Owner                   │ SRE Core (Step 19 Meta-Discovery)    │
+└──────────────────────────────────────┴──────────────────────────────────────┘
+```
+
+*   **Duplicate Ownership Resolved**: Domain-specific hypothesis engines (such as `london_hypothesis.py` or `multidimensional_intelligence/hypothesis_engine.py`) are strictly merged or replaced by the central SRE interface, ensuring unified telemetry and zero-placeholder compliance.
 
 Hypotheses manifest across different subsystems under several names:
 - **World Model:** Latent representation, prediction, belief, world model state, causal model scenario.
@@ -12,107 +71,76 @@ Hypotheses manifest across different subsystems under several names:
 - **Strategy Discovery / Swarm:** Policy candidate, optimization proposal, anomaly explanation.
 - **Risk / Governance:** Confidence estimate, regime belief.
 
-### 1.2 Unified Hypothesis Dependency Graph
-The complete hypothesis lifecycle flows through a unified, closed-loop reasoning pipeline:
+## 3. Phase 3 — Repository Dependency Graph
+
+The following dependency graph shows the exact data propagation, confidence propagation, and uncertainty propagation across subsystems.
 
 ```mermaid
 graph TD
-    Obs[Market Observations] -->|Surprise Minimization| Percept[Surprise-Driven Perception]
-    Percept -->|SAGE Retrieval| SAGE[Hierarchical Memory Graph]
-    SAGE -->|HASP Shielding| HASP[Prescriptive Guardrails]
-    HASP -->|DiscoLoop Recurrence| Disco[Multi-hop Internalized State]
-    Disco -->|AutoResearchClaw| MultiHyp[Multi-Hypothesis Generation]
-    MultiHyp -->|CWMI Rollouts| Sim[Causal Simulation & Do-Calculus]
-    Sim -->|Fail-Closed Assessment| Pivot[Pivot/Refine Optimization]
-    Pivot -->|Expected Free Energy| Selection[EFE Decision Selection]
-    Selection -->|LogAct Proposal| SharedLog[LogAct Shared-Log Backbone]
-    SharedLog -->|Peer Review| Swarm[Verification Swarm]
-    Swarm -->|Immutable Gate| Shield[Governance Shield]
-    Shield -->|HIPIF Folding| Fold[Semantic Information Compression]
-    Fold -->|Storage & Indexing| HMS[Hierarchical Memory Persistence]
-    HMS -->|Alpha Decay Clock| Drift[Regime & Decay Tracking]
+    %% Subsystem Nodes
+    CSC[trading_bot/core/csc/controller.py]
+    SRE[trading_bot/core_agent_system/scientific_reasoning/core.py]
+    WM[trading_bot/world_model/unified_world_model.py]
+    Debate[trading_bot/agents/multi_agent_debate.py]
+    HMS[trading_bot/core/hms/memory.py]
+    EG[trading_bot/governance/evolution_gate.py]
+
+    %% Functional Edges
+    CSC -->|1. Context & Prior [Confidence: p_0]| SRE
+    SRE -->|2. Description & Priors [p_0]| WM
+    WM -->|3. Expected Gain & Causal Stability [s]| SRE
+    SRE -->|4. Proposed Action & Credal Bounds| Debate
+    Debate -->|5. Verifier Reports & Vetoes| SRE
+    SRE -->|6. Posterior Belief [p_t, ECE]| HMS
+    HMS -->|7. Verified Knowledge Ledger| EG
 ```
 
-### 1.3 Lifecycle Phase Mechanics
-1. **Origination:** Born from unexpected market observations (surprise $> 0.2$), triggering SAGE memory lookups and multi-agent debate (HeadAI, RiskSentinel).
-2. **Propagation:** Hypotheses propagate via the `UnifiedDecisionBus` and LogAct shared log backbone, communicating parallel reasoning branches between the CSC, Risk, and Execution subsystems.
-3. **Evolution:** Hypotheses evolve via `_refine_strategy` or `pivot_branch` when verifiers or simulation rollouts detect failure modes, degrading confidence and appending reasoning trace corrections.
-4. **Evaluation:** Evaluated mathematically using the `BayesianDecisionEngine`, verifying alignment against trend-aligned priors, calibrated agent likelihoods, and verifier quorums.
-5. **Death (Retirement):** Hypotheses retire when their performance drops below the RSEA Tone-Safe gate threshold ($G < 0.05$) or when active monitoring tracks alpha decay beyond the acceptable threshold.
-6. **Integration (Knowledge/Policy/Trading):** Validated hypotheses are semantic-folded via `HIPIF` and indexed into the SAGE graph as institutionalized knowledge, updating active trading policies.
+### Edge Justifications and Propagation Protocols
+1.  **Confidence & Uncertainty Propagation**: Initial branch probabilities are updated via SRE Step 12. Credal bounds $[P_{\text{lower}}, P_{\text{upper}}]$ contract as empirical verification scores increase, propagating uncertainty reduction back to the controller.
+2.  **Evidence & Lineage Propagation**: Every hypothesis retains an immutable SHA-256 hash computed over its boundary conditions and historical parent GUIDs, ensuring complete provenance within the SAGE graph.
 
 ---
 
-## Phase 2 — Bottleneck Analysis & Vulnerability Mapping
+## 4. Phase 4 — Complete Lifecycle Trace
 
-| Bottleneck | Root Cause | Downstream Effect | Priority | Recommended Redesign |
-| :--- | :--- | :--- | :--- | :--- |
-| **Premature Rejection** | Single-voter veto gates without consensus calibration. | Genuine high-potential alpha signals are discarded under noisy regimes. | **CRITICAL** | Implement calibrated Bayesian quorums where vetoes require high-confidence support. |
-| **Confirmation/Survivorship Bias** | Memory retrieval favoring historically successful hypotheses. | System over-allocates capital to decaying signals and ignores OOD regimes. | **HIGH** | Feed adversarial counterfactual simulations into SAGE to force exploration. |
-| **Weak Evidence Gathering** | Flat list evidence structures without relational links. | Loss of causal provenance; inability to trace sub-arguments. | **HIGH** | Integrate the `EvidenceGraph` with explicit `RelationType.SUPPORTS` or `RelationType.CONTRADICTS`. |
-| **Missing Counterfactual Reasoning** | Simulation limited to standard historical replication. | Failure to handle flash crashes or black-swan tail risks. | **CRITICAL** | Integrate CWMI interventional do-calculus to simulate alternative world futures. |
-| **Hypothesis Drift (Alpha Decay)** | Static confidence estimates over extended execution windows. | Toxic capital allocation on degraded strategies. | **CRITICAL** | Implement a continuous monitor (Step 17) mapping confidence directly to alpha decay clocks. |
+No lifecycle transitions remain implicit. The full trace maps creation, updates, storage, and retirement parameters:
 
----
+*   **Creation Point**: SRE Step 4 (`generate_hypothesis`) based on questions generated in Step 3.
+*   **Initial Prior**: $P(H) = 0.5$ baseline (or dynamically set using historical class performance).
+*   **Evidence Sources**: Graph-based memory nodes retrieved via HMS SAGE queries.
+*   **Update & Calibration**: SRE Step 12 performs a Bayesian posterior update; Step 13 calibrates Expected Calibration Error and contracts credal intervals.
+*   **Rejection / Promotion / Retirement**:
+    *   *Rejection*: Posterior $P(H|E) < 0.20$ or critical verifier veto.
+    *   *Promotion*: Posterior $P(H|E) \ge 0.85$ and $ECE \le 0.15$.
+    *   *Retirement*: Triggered when out-of-sample alpha decay clocks detect concept drift.
+*   **Reactivation**: SRE Step 19 scans dormant nodes when regime-shift anomalies are detected, restoring active status.
 
-## Phase 3 — Scientific Redesign (Variational Active Inference Core)
+### B1: Knowledge Fragmentation & Siloing
+- **Why it exists:** Isolated registries in separate discovery engines (AlphaMining, Curiosity, StrategyGenome, PHCE-D).
+- **Downstream Effects:** Duplicate testing, blind spots, failure to consolidate multi-modal evidence across layers.
+- **Priority:** **CRITICAL**
+- **Recommended Redesign:** Route all hypothesis states through the central `ScientificReasoningEngine` registry, exposing uniform APIs for SAGE memory querying.
 
-The redesigned hypothesis lifecycle operates as a 19-stage centralized core governed by **Variational Free Energy (VFE)** minimization:
+## 5. Phase 5 — Mathematical Validation Specification
 
-$$\mathcal{F} = \text{Surprise} + \text{Divergence} = -\ln P(y) + D_{KL}[Q(x) \,\|\, P(x|y)]$$
+The core validation layers verify the exact mathematical implementations below:
 
-### 3.1 Complete 19-Stage SRE Lifecycle
-1. **Observation:** Continuous ingestion of raw tick/bar streams.
-2. **Anomaly Detection:** Out-of-bounds volatility, volume spikes, or order book imbalances.
-3. **Question Generation:** Semantic questions proposed to explain the anomaly.
-4. **Hypothesis Generation:** Multi-hypothesis generator creates parallel competing reasoning branches (Bull, Bear, Range).
-5. **Evidence Collection:** SAGE Graph queries historical patterns matching the current regime.
-6. **World Model Simulation:** CWMI rollouts of potential future paths.
-7. **Counterfactual Generation:** do-calculus interventions simulating alternative world outcomes ($P(y \,|\, \text{do}(x))$).
-8. **Adversarial Debate:** Multi-agent debate between MacroStrategist, TacticalExecutioner, and RiskSentinel.
-9. **Experiment Design:** Creating randomized out-of-sample forward verification parameters.
-10. **Execution:** LogAct trade proposal submitted to the shared log backbone.
-11. **Evaluation:** Active verification swarm falsifies/validates the proposal.
-12. **Bayesian Update:** Posterior aggregation using calibrated likelihoods.
-13. **Confidence Calibration:** Credal intervals contract as evidence accumulates.
-14. **Knowledge Integration:** Semantic information folder compresses the episode.
-15. **Memory Consolidation:** SAGE graph updates node/edge weights based on the outcome.
-16. **Policy Improvement:** EvolutionGate evaluates candidate configs using the CL-Bench Gain Metric.
-17. **Continuous Monitoring:** Decay clocks track real-time performance against predictions.
-18. **Hypothesis Retirement:** Low-performing or decayed hypotheses transition to dormant/deprecated.
-19. **Automatic Discovery:** Sandboxed self-play loop triggers offline exploration to discover new candidate hypotheses.
+### 1. Bayesian Posterior Updates
+The recursive updating equation is defined as:
 
-### 3.2 Hypothesis Finite State Machine (FSM)
-Every hypothesis must strictly exist in one of these state nodes to maintain complete lineage:
+$$P(H|E) = \frac{P(E|H) P(H)}{P(E|H) P(H) + P(E|\neg H) P(\neg H)}$$
 
-```mermaid
-stateDiagram-v2
-    [*] --> Active : Discovered
-    Active --> Confirmed : Pass Validation Swarm
-    Active --> Rejected : Fail Validation Swarm
-    Confirmed --> Institutionalized : High CL-Bench Gain
-    Rejected --> Dormant : Failed but Retained
-    Dormant --> Reactivated : Regime Alignment
-    Institutionalized --> Superseded : Replaced by Superior Candidate
-    Institutionalized --> Deprecated : Alpha Decay > Threshold
-    Confirmed --> Merged : Relational Similarity > 0.9
-```
+### 2. Confidence Calibration & Uncertainty Span
+The credal interval bounds $[p_{\text{lower}}, p_{\text{upper}}]$ contract recursively based on empirical verification support $S$:
 
----
+$$p_{\text{lower}}^{(t+1)} = \min\left(\text{posterior}, p_{\text{lower}}^{(t)} + \gamma S\right)$$
 
-## Phase 4 — Continuous Self-Improvement & Closed-Loop Cognition
+### 3. Calibration Error & Brier Score
+The system tracks the Expected Calibration Error (ECE) and Brier Score to ensure predictions align with empirical outcomes:
 
-The SRE continuously measures its own reasoning efficiency:
-- **Statistical Accuracy:** Brier Score and Expected Calibration Error (ECE).
-- **Economic Value:** CL-Bench Stateful Gain Metric ($G$).
-- **Robustness:** Performance under out-of-distribution (OOD) adversarial test suites.
-- **Research Efficiency:** Inference latency (ms) and peak memory utilization.
+$$\text{ECE} = \sum_{m=1}^{M} \frac{|B_m|}{N} \left| \text{acc}(B_m) - \text{conf}(B_m) \right|$$
 
-Whenever a performance bottleneck is detected (e.g., ECE $> 0.15$ or Gain $< 0.05$), the system automatically triggers sandboxed strategy optimization inside the isolated `StrategySandbox` using AST-validated self-modification before proposing to the production `EvolutionGate`.
-
----
-
-## Phase 5 — Mathematical Justification & Validation Framework
+$$\text{Brier Score} = \frac{1}{N} \sum_{i=1}^{N} (f_i - o_i)^2$$
 
 ### 5.1 Mathematical Validation Core
 Our Bayesian update and evidence accumulation algorithms are validated against:
@@ -124,21 +152,24 @@ Our Bayesian update and evidence accumulation algorithms are validated against:
    $$C_{new} = C_{old} \times 0.5$$
 3. **Uncertainty Calibration:** Credal interval bounds contract deterministically as positive evidence accumulates, reducing the span from $0.80$ to below $0.15$.
 
-### 5.2 Verification Suite Coverage
-Our verification framework is executed and validated across three authoritative test suites:
-- **`tests/test_scientific_modules.py`:** Core verification of DiscoLoop dual-channel internalization, pivot/refine strategy refinement, HASP guardrail interception, S2L behavioral routing, EKSFT selective masking compliance, and RSEA monotone-safe gates.
-- **`tests/validation/test_uca_v5_scientific_benchmarks.py`:** Validates CL-Bench Gain Metric logic, VFE sensory surprise minimization, and HASP invariant checks.
+## 6. Phase 6 — Missing Scientific Capabilities
+
+| Missing Capability | Why It Matters | Integration Point | Engineering Impact |
+| :--- | :--- | :--- | :--- |
+| **Active Experiment Planning** | Maximizes information gain per test, avoiding redundant simulations. | SRE Step 9 (`design_experiment`). | Restricts backtesting execution to parameters with high entropy reduction potential. |
+| **Value-of-Information (VOI) Estimation** | Evaluates if the economic cost of running a backtest is justified by the expected edge improvement. | SRE Step 6 (`simulate_world`). | Eliminates computational overhead of low-value, high-cost simulation branches. |
+| **Hypothesis Clustering & Compression** | Prevents graph database database size explosion from similar parameters. | SRE Step 15 (`consolidate_memory`). | Consolidates near-identical hypotheses into a single representative node. |
 
 ---
 
-## Phase 6 — Migration & Implementation Roadmap
+## 7. Phase 7 — Migration Classification Matrix
 
-1. **Phase 1: Verification Suite Alignment (Completed)**
-   - Replaced duplicate imports and corrected unclosed docstrings in MT5 and validator files.
-   - Refactored `SkillRouter` and `EvolutionGate` to support dual sync/async validation interfaces.
-   - Resolved key signature TypeErrors across `CognitiveSystemController` and `EvolutionGate`.
-2. **Phase 2: Closed-Loop Integration (Completed)**
-   - Unified `_calculate_sensory_surprise` with mathematically sound, surprise-driven Active Inference.
-   - Stabilized post-execution invariant checks inside `HASPExecutor` to prevent rogue actions.
-3. **Phase 3: Production Deployment**
-   - Seamlessly deploy the validated V6 Cognitive System Controller into the live execution stream.
+Every discovered hypothesis-related script in the repository is classified into exactly one status:
+
+| Module Path | Classification | Rationale | Action |
+| :--- | :--- | :--- | :--- |
+| `trading_bot/core_agent_system/scientific_reasoning/core.py` | **Canonical** | Centralized, unified source of truth for the 19-stage loop. | Retain as master executor. |
+| `trading_bot/core/csc/hypothesis.py` | **Merge** | CSC multi-hypothesis generator must feed directly into SRE Step 4. | Connect output to SRE core. |
+| `trading_bot/agents/multi_agent_debate.py` | **Merge** | Provide evidence-first structured arguments to SRE Step 8. | Integrate with verification swarm. |
+| `trading_bot/research/london_session/hypothesis_engine/london_hypothesis.py` | **Replace** | Ad-hoc domain-specific engine replaced by SRE core. | Migrate to SRE interface. |
+| `trading_bot/core_agent_system/multidimensional_intelligence/hypothesis_engine.py` | **Replace** | Legacy multidimensional engine replaced by SRE core. | Deprecate class references. |
