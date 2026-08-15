@@ -13,11 +13,11 @@ from typing import Dict, Any, List
 from trading_bot.core.unified_event_bus import UnifiedDecisionBus, LogAction, ActionStatus, EventPriority
 
 @pytest.fixture
-def stress_bus(event_loop):
+async def stress_bus():
     bus = UnifiedDecisionBus()
-    event_loop.run_until_complete(bus.start())
+    await bus.start()
     yield bus
-    event_loop.run_until_complete(bus.stop())
+    await bus.stop()
 
 @pytest.mark.asyncio
 async def test_concurrent_action_processing(stress_bus):
