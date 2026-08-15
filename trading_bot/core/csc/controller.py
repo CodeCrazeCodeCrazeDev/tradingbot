@@ -90,6 +90,11 @@ class CognitiveSystemController:
     """
     _instance = None
 
+    @classmethod
+    async def reset(cls):
+        """Reset the singleton instance of the controller."""
+        cls._instance = None
+
     def __init__(
         self,
         world_model: Any,
@@ -627,6 +632,7 @@ class CognitiveSystemController:
         base_qty = branch.execution_plan.get("quantity", 0.1)
         slippage = sim_data.get("expected_slippage", 0.0) if isinstance(sim_data, dict) else 0.0
         slippage_penalty = 1.0 - (slippage * 100)
+        final_qty = base_qty * slippage_penalty
 
         causal_impact = sim_data.get("structural_impact", {}) if isinstance(sim_data, dict) else {}
 

@@ -6,6 +6,7 @@ Implements 'HASP' (2026) and 'S2L' (2026).
 
 import logging
 import asyncio
+import threading
 from enum import Enum
 from typing import Any, Dict, List, Optional, Callable, Set
 from dataclasses import dataclass, field
@@ -245,6 +246,7 @@ class SkillRouter:
     """
 
     _instance = None
+    _lock = threading.Lock()
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -282,7 +284,7 @@ class SkillRouter:
             skill_id="hedging_behavior",
             skill_type=SkillType.LORA,
             version="2.0.4",
-            adapter_id="lora_hedging_v1",
+            adapter_id="lora_hedging_v2",
             capabilities={"hedging", "risk_reduction"},
             metadata={"archetype": "risk_averse"}
         ))
