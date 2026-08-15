@@ -3,6 +3,13 @@ import asyncio
 import copy
 from unittest.mock import MagicMock, AsyncMock
 from trading_bot.core.csc.controller import CognitiveSystemController
+
+@pytest.fixture(autouse=True)
+def reset_csc_singleton():
+    """Reset CognitiveSystemController singleton state to isolate tests."""
+    CognitiveSystemController._instance = None
+    yield
+    CognitiveSystemController._instance = None
 from trading_bot.core.csc.models import NormalizedMarketContext, MarketContextAdapter
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome, CoreDecision
 from trading_bot.core.immutable_shield import GovernanceDecision
@@ -66,6 +73,8 @@ async def test_csc_decision_determinism(monkeypatch):
     shield_report.decision = GovernanceDecision.APPROVED
     shield.validate_action = AsyncMock(return_value=shield_report)
 
+    # Clean singleton before setup
+    CognitiveSystemController._instance = None
     csc = CognitiveSystemController(world_model, hms, shield)
 
     # Mock hypothesis and swarm to be deterministic
@@ -144,6 +153,8 @@ async def test_csc_negative_paths_and_failures(monkeypatch):
     shield_report.reason = "Hard exposure violation"
     shield.validate_action = AsyncMock(return_value=shield_report)
 
+    # Clean singleton before setup
+    CognitiveSystemController._instance = None
     csc = CognitiveSystemController(world_model, hms, shield)
 
     from trading_bot.core.csc.hypothesis import ReasoningBranch
