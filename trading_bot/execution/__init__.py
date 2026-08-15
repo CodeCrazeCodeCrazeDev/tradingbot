@@ -108,7 +108,8 @@ try:
         MarketDepth,
         OrderBookLevel,
         ImpactModel,
-        ExecutionTimingOptimizer
+        ExecutionTimingOptimizer,
+        LiquidityConstraints
     )
 except ImportError as e:
     # liquidity_aware_sizer not available
@@ -148,6 +149,7 @@ __all__ = [
     'OrderBookLevel',
     'ImpactModel',
     'ExecutionTimingOptimizer',
+    'LiquidityConstraints',
     'SlippageMinimizer',
     'AdaptiveExecutionEngine',
     'DynamicParameterAdjuster',
