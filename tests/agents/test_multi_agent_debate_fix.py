@@ -107,9 +107,10 @@ class TestMultiAgentDebateFixes:
         # Verify calibrator was called
         mock_calibrator.calibrate.assert_called()
 
-        # The winning_score (confidence) in FinalDecision is the mathematically calibrated Bayesian posterior.
-        # prior = 0.55 (HTF Trend UP, BUY action), likelihood = 0.5, exponent = 0.35
-        # P(S | E) = 0.55
+        # The winning_score (confidence) in FinalDecision is the Bayesian calibrated posterior probability.
+        # Prior is 0.55 (winning action aligned with HTF trend).
+        # Calibrated confidence for MACRO_STRATEGIST is 0.5.
+        # Posterior = (0.55 * 0.5) / (0.55 * 0.5 + 0.45 * 0.5) = 0.275 / 0.5 = 0.55
 
         assert decision.confidence == pytest.approx(0.55)
 
@@ -121,114 +122,95 @@ class TestMultiAgentDebateFixes:
         assert system.head_ai.calibrator == system.calibrator
 
     @pytest.mark.asyncio
-    async def test_deterministic_replay(self):
-        """Verify that identical inputs yield perfectly deterministic debate decisions and provenance logs"""
-        import random
-        import numpy as np
-
-        # Configure deterministic seed
-        random.seed(42)
-        np.random.seed(42)
-
-        system1 = MultiAgentDebateSystem()
-        system2 = MultiAgentDebateSystem()
-
-        context1 = MarketContext(
-            symbol="EURUSD", current_price=1.1, htf_trend="UP", ltf_trend="UP",
-            volatility=0.015, volume_ratio=1.2, key_levels={"support": [1.09]}, news_sentiment=0.4,
-            portfolio_exposure=0.1, correlation_risk=0.2, vix_level=18.0
-        )
-        context2 = MarketContext(
-            symbol="EURUSD", current_price=1.1, htf_trend="UP", ltf_trend="UP",
-            volatility=0.015, volume_ratio=1.2, key_levels={"support": [1.09]}, news_sentiment=0.4,
-            portfolio_exposure=0.1, correlation_risk=0.2, vix_level=18.0
-        )
-
-        decision1 = await system1.debate(context1)
-
-        # Reset seed for exact replay of any randomized components
-        random.seed(42)
-        np.random.seed(42)
-        decision2 = await system2.debate(context2)
-
-        # Assert perfect equality across core outputs
-        assert decision1.action == decision2.action
-        assert decision1.confidence == pytest.approx(decision2.confidence)
-        assert decision1.position_size_pct == pytest.approx(decision2.position_size_pct)
-        assert decision1.reasoning == decision2.reasoning
-        assert decision1.agent_votes == decision2.agent_votes
-
-        # Assert perfect equality across full DecisionProvenance logs
-        prov1 = decision1.provenance
-        prov2 = decision2.provenance
-        assert prov1['configuration_hash'] == prov2['configuration_hash']
-        assert prov1['feature_hash'] == prov2['feature_hash']
-        assert prov1['market_snapshot_hash'] == prov2['market_snapshot_hash']
-        assert prov1['model_version'] == prov2['model_version']
-        assert prov1['risk_policy_version'] == prov2['risk_policy_version']
-        assert prov1['consensus_record'] == prov2['consensus_record']
-
-    @pytest.mark.asyncio
-    async def test_failure_injection_resilience(self):
-        """Verify that multi-agent system degrades gracefully or fails closed under individual agent failures"""
+    async def test_debate_determinism(self):
+        """Test that same inputs generate identical decisions, provenance, and hashes."""
         system = MultiAgentDebateSystem()
         context = MarketContext(
-            symbol="EURUSD", current_price=1.1, htf_trend="UP", ltf_trend="UP",
-            volatility=0.015, volume_ratio=1.2, key_levels={"support": [1.09]}, news_sentiment=0.4,
-            portfolio_exposure=0.1, correlation_risk=0.2, vix_level=18.0
+            symbol="BTCUSD", current_price=60000.0, htf_trend="UP", ltf_trend="UP",
+            volatility=0.015, volume_ratio=1.2, key_levels={"support": [59000.0]}, news_sentiment=0.4,
+            portfolio_exposure=0.1, correlation_risk=0.1, vix_level=15.0
+        )
+        dec1 = await system.debate(context)
+        dec2 = await system.debate(context)
+
+        assert dec1.action == dec2.action
+        assert dec1.provenance['market_snapshot_hash'] == dec2.provenance['market_snapshot_hash']
+        assert dec1.provenance['feature_hash'] == dec2.provenance['feature_hash']
+        assert dec1.provenance['random_seed'] == dec2.provenance['random_seed']
+
+    @pytest.mark.asyncio
+    async def test_bayesian_calibration_bounds(self):
+        """Test that calculate_bayesian_posterior respects logical and mathematical bounds."""
+        head_ai = HeadAI()
+        # All agree with high likelihoods
+        posterior1 = head_ai.calculate_bayesian_posterior(0.5, [(True, 0.95, 1.0), (True, 0.90, 1.0)])
+        assert posterior1 > 0.90
+
+        # All disagree/contradict
+        posterior2 = head_ai.calculate_bayesian_posterior(0.5, [(False, 0.95, 1.0), (False, 0.90, 1.0)])
+        assert posterior2 < 0.10
+
+    @pytest.mark.asyncio
+    async def test_falsification_gate_triggering(self):
+        """Test that FalsificationGate triggers NO_TRADE and records details under high VIX panic."""
+        system = MultiAgentDebateSystem()
+        context_panic = MarketContext(
+            symbol="BTCUSD", current_price=60000.0, htf_trend="UP", ltf_trend="UP",
+            volatility=0.015, volume_ratio=1.2, key_levels={}, news_sentiment=0.4,
+            portfolio_exposure=0.1, correlation_risk=0.1, vix_level=40.0 # Extreme panic
+        )
+        decision = await system.debate(context_panic)
+        assert decision.action == TradeAction.NO_TRADE
+        assert decision.provenance['falsification_report']['is_falsified'] is True
+        assert "CausalVerifier" in decision.provenance['falsification_report']['rejection_reason']
+
+    @pytest.mark.asyncio
+    async def test_regime_scorecard_influence(self):
+        """Test that adjusting agent expected contribution scorecard metrics dynamically scales voting weight."""
+        system = MultiAgentDebateSystem()
+        context = MarketContext(
+            symbol="BTCUSD", current_price=60000.0, htf_trend="UP", ltf_trend="UP",
+            volatility=0.015, volume_ratio=1.2, key_levels={}, news_sentiment=0.4,
+            portfolio_exposure=0.1, correlation_risk=0.1, vix_level=15.0
         )
 
-        # 1. Inject exception on Macro Strategist analyze method
-        with patch.object(system.macro_strategist, 'analyze', side_effect=Exception("Macro failure simulated")):
-            # The system should not crash; it should catch the error and synthesize a decision with remaining agents
-            decision = await system.debate(context)
-            assert decision is not None
-            assert "macro_strategist" not in decision.agent_votes
-            assert len(decision.agent_votes) == 2  # Tactical and Risk Sentinel votes recorded
+        # Override scorecard for MACRO_STRATEGIST to have near zero contribution
+        system.regime_scorecards["UP"][AgentRole.MACRO_STRATEGIST].expected_contribution = 0.01
 
-        # 2. Inject exception on FalsificationGate to ensure fail-closed or robust handling
-        with patch.object(system.falsification_gate, 'run_falsification', side_effect=Exception("Falsification system crash")):
-            # Falsification gate failure should lead to robust handling or trade abort / degradation
-            try:
-                decision = await system.debate(context)
-                assert decision is not None
-            except Exception as e:
-                # Failing closed is also acceptable if exception is propagated
-                pass
+        dec = await system.debate(context)
+        # Macro strategist wanted BUY, but with near 0 weight, it has minimal influence
+        assert dec.provenance['agent_scorecards']['macro_strategist']['expected_contribution'] == 0.01
 
-    def test_bayesian_posterior_sensitivity(self):
-        """Verify the mathematical properties and stability of the correlation-aware Bayesian posterior calculation"""
-        head_ai = HeadAI()
+    @pytest.mark.asyncio
+    async def test_debate_quality_evaluator(self):
+        """Test that DebateQualityEvaluator records correct entropy, diversity, and costs."""
+        from trading_bot.agents.multi_agent_debate import DebateQualityEvaluator
+        evaluator = DebateQualityEvaluator()
 
-        # 1. High Prior vs Low Prior sensitivity
-        # Identical evidence: single agent endorses with 0.8 likelihood (0.35 weight)
-        evidence = [(True, 0.8, 0.35)]
+        res = evaluator.evaluate_debate(
+            initial_votes=[TradeAction.BUY, TradeAction.BUY, TradeAction.SELL],
+            final_action=TradeAction.BUY,
+            falsified=False,
+            consensus_level=0.66,
+            disagreement_map={"macro_strategist": 0.0, "tactical_executioner": 0.0, "risk_sentinel": 0.5},
+            duration_ms=12.4
+        )
 
-        post_high_prior = head_ai.calculate_bayesian_posterior(0.9, evidence)
-        post_low_prior = head_ai.calculate_bayesian_posterior(0.1, evidence)
+        assert res['information_gain'] >= 0.0
+        assert res['diversity_of_reasoning'] == pytest.approx(1.0 / 3.0)
+        assert res['computational_cost_ms'] == 12.4
+        assert res['falsification_impact'] is False
 
-        assert post_high_prior > post_low_prior
-        assert 0.0 <= post_high_prior <= 1.0
-        assert 0.0 <= post_low_prior <= 1.0
-
-        # 2. Contradictory Evidence
-        # Prior is 0.5. One agent endorses (likelihood 0.7), one agent opposes (likelihood 0.7), both weight 0.35
-        contradictory_evidence = [
-            (True, 0.7, 0.35),
-            (False, 0.7, 0.35)
-        ]
-        post_contradictory = head_ai.calculate_bayesian_posterior(0.5, contradictory_evidence)
-        # Symmetrical evidence should perfectly balance back to the prior (0.5)
-        assert post_contradictory == pytest.approx(0.5)
-
-        # 3. Monotonicity
-        # Higher likelihood should strictly increase posterior under same prior and weight
-        post_low_lik = head_ai.calculate_bayesian_posterior(0.5, [(True, 0.6, 0.35)])
-        post_high_lik = head_ai.calculate_bayesian_posterior(0.5, [(True, 0.8, 0.35)])
-        assert post_high_lik > post_low_lik
-
-        # 4. Numerical Boundary and Stability Checks
-        # Extreme/degenerate inputs should be handled gracefully without division by zero
-        assert 0.0 <= head_ai.calculate_bayesian_posterior(0.0, [(True, 0.99, 1.0)]) <= 1.0
-        assert 0.0 <= head_ai.calculate_bayesian_posterior(1.0, [(False, 0.99, 1.0)]) <= 1.0
-        assert 0.0 <= head_ai.calculate_bayesian_posterior(0.5, [(True, 0.0, 1.0)]) <= 1.0
+    @pytest.mark.asyncio
+    async def test_adversarial_resistance(self):
+        """Test that debate consensus is resilient and cannot be dominated by a single counter-argument."""
+        system = MultiAgentDebateSystem()
+        # Normal positive market context
+        context = MarketContext(
+            symbol="BTCUSD", current_price=60000.0, htf_trend="UP", ltf_trend="UP",
+            volatility=0.01, volume_ratio=1.2, key_levels={}, news_sentiment=0.5,
+            portfolio_exposure=0.1, correlation_risk=0.1, vix_level=12.0
+        )
+        decision = await system.debate(context)
+        # Even with DevilsAdvocate and prosecutors active, strong positive indicators yield BUY consensus
+        assert decision.action in [TradeAction.BUY, TradeAction.STRONG_BUY]

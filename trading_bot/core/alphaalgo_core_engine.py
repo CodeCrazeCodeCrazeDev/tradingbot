@@ -176,7 +176,7 @@ class TradeProposal:
 class CoreDecision:
     """Final decision from AlphaAlgo Core"""
     outcome: DecisionOutcome
-    trade_id: str = "default_id"
+    trade_id: str = ""
     timestamp: datetime = field(default_factory=datetime.utcnow)
     
     # Rejection details
@@ -192,6 +192,10 @@ class CoreDecision:
     market_hostility: Optional[MarketHostility] = None
     killer_verdict: Optional[AgentVerdict] = None
     all_verdicts: List[AgentVerdict] = field(default_factory=list)
+
+    # Institutional Reproducibility (UCA V5)
+    provenance_hash: str = ""
+    pipeline_version: str = "UCA-V5"
 
 
 class MarketHostilityDetector:
