@@ -1,21 +1,14 @@
 """
-Multi-Agent Trading Debate System - Research Lab Grade
-
 Three specialized AI models that "debate" each other with evidence-first reasoning:
-- The Macro Strategist: Operates on HTF, identifies overarching themes and key levels
-- The Tactical Executioner: Works on LTF, specializes in precise entry/exit timing
-- The Risk Sentinel: Monitors overall portfolio exposure, correlation, and black swan signals
+1. Macro Strategist (higher timeframe context, resistance/support zones)
+2. Tactical Executioner (lower timeframe local structure, order blocks, volume profile)
+3. Risk Sentinel (enforces drawdown limits, risk metrics, and hard veto logic)
 
-A "Head AI" coordinates the debate, weights expertise, calibrates confidence, resolves disagreements,
-and publishes the final decision.
-
-Features:
-- Evidence-first debate loop (Observation -> Evidence -> Hypothesis -> Predictions -> Counter-evidence)
-- Verification Swarm independent gate (Risk, Liquidity, Market Structure, Causal, Regime, Hallucination, Execution)
-- Standardized Decision Provenance with 17 key fields
-- Byzantine Fault Tolerance & Graceful Degradation
-- Bayesian Confidence Calibration
-- Deterministic replay support
+Evidence-first debate loop (Observation -> Evidence -> Hypothesis -> Predictions -> Counter-evidence)
+Verifiers gate consensus (Risk, Liquidity, Market Structure, Causal, Regime, Hallucination, Execution).
+Traceability of 17 fields in Decision Provenance.
+Byzantine fault tolerance and graceful degradation.
+Coordinated via lightweight HeadAI without independent market opinions.
 """
 
 import logging
@@ -34,11 +27,19 @@ import hashlib
 import uuid
 import time
 
-logger = logging.getLogger(__name__)
+from trading_bot.verification.confidence_calibrator import (
+    ConfidenceCalibrator,
+    CalibrationResult,
+    CalibrationMethod
+)
 
+logger = logging.getLogger("trading_bot.agents.multi_agent_debate")
 
-def sys_git_commit() -> str:
-    """Helper to dynamically fetch current git commit."""
+# -----------------------------------------------------------------------------
+# Metaclasses / Utilities
+# -----------------------------------------------------------------------------
+
+def get_git_commit() -> str:
     try:
         return (
             subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL)
@@ -62,6 +63,21 @@ class AgentRole(Enum):
     LIQUIDITY_PROSECUTOR = "liquidity_prosecutor"
     EXECUTION_PROSECUTOR = "execution_prosecutor"
     DATA_PROSECUTOR = "data_prosecutor"
+
+
+@dataclass
+class AgentScorecard:
+    """Scorecard evaluating agent performance historically."""
+    expected_contribution: float = 1.0
+    precision: float = 0.8
+    recall: float = 0.8
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'expected_contribution': self.expected_contribution,
+            'precision': self.precision,
+            'recall': self.recall
+        }
 
 
 class Conviction(Enum):
@@ -232,6 +248,7 @@ class DebateResult:
     debate_rounds: int
     consensus_level: float
     dissenting_views: List[str]
+    disagreement_map: Dict[str, float] = field(default_factory=dict)
     provenance: Dict[str, Any] = field(default_factory=dict)
     disagreement_map: Dict[str, float] = field(default_factory=dict)
     
@@ -471,7 +488,7 @@ class MacroStrategist(TradingAgent):
             # Calculate overall score
             total_score = sum(key_factors.values())
 
-            # Formulate Hypothesis & Predictions
+            # Determine Action
             if total_score > 0.4:
                 action = TradeAction.BUY
                 conviction = Conviction.HIGH
@@ -529,10 +546,13 @@ class MacroStrategist(TradingAgent):
         self, argument: AgentArgument, context: MarketContext
     ) -> Optional[AgentArgument]:
         try:
-            if argument.agent_role == AgentRole.RISK_SENTINEL:
-                if argument.conviction.value >= Conviction.HIGH.value:
-                    if argument.action == TradeAction.NO_TRADE:
-                        # Modify macro view based on extreme risk sentinel feedback
+            if argument.agent_role == AgentRole.TACTICAL_EXECUTIONER:
+                # If tactical proposed buy but macro sees heavy resistance, advocate caution
+                if argument.action in [TradeAction.BUY, TradeAction.STRONG_BUY]:
+                    current = context.current_price
+                    resistances = context.key_levels.get('resistance', [])
+                    near_resistance = any(abs(current - r) / current < 0.005 for r in resistances)
+                    if near_resistance:
                         return AgentArgument(
                             agent_role=self.role,
                             action=TradeAction.HOLD,
@@ -665,9 +685,9 @@ class TacticalExecutioner(TradingAgent):
 
             key_factors["volatility"] = vol_score
 
-            total_score = sum(key_factors.values())
+            total_score = ltf_score + volume_score + vol_score
 
-            # Formulate Hypothesis & Predictions
+            # Determine Action
             if total_score > 0.3:
                 action = TradeAction.BUY
                 conviction = Conviction.MODERATE
@@ -868,7 +888,9 @@ class RiskSentinel(TradingAgent):
                     evidence.append(f"VIX normal/healthy market state at {context.vix_level}.")
                 key_factors["vix"] = vix_score
 
-            # Volatility risk
+            key_factors['systemic_fear'] = vix_score
+
+            # Volatility check
             if context.volatility > 0.03:
                 vol_score = -0.3
                 risk_flags += 1
@@ -1345,10 +1367,9 @@ class FalsificationReport:
     """Report generated by the FalsificationGate."""
 
     is_falsified: bool
-    rejection_reason: Optional[str]
-    verifier_outcomes: Dict[str, bool]  # verifier_name -> is_passed
-    worst_case_scenario: Optional[str]
-    timestamp: datetime = field(default_factory=datetime.now)
+    rejection_reason: Optional[str] = None
+    verifier_outcomes: Dict[str, bool] = field(default_factory=dict)
+    worst_case_scenario: Optional[str] = None
 
 
 class RiskVerifierResult:
@@ -1365,8 +1386,8 @@ class RiskVerifier:
 
 class FalsificationGate:
     """
-    Active peer-review style verification and falsification swarm.
-    Meticulously screens every trade proposal across multiple dimensions to find counter-arguments.
+    SRE Falsification Gate implementing 'Falsification Gate' principles (Ludik, 2025).
+    Attempts to actively falsify the proposed trade using 5 distinct validators.
     """
 
     def __init__(self, config: Optional[Dict] = None):
@@ -1422,8 +1443,9 @@ class FalsificationGate:
             "HallucinationDetector": hallucination_res.is_valid,
         }
 
-        # Counterexample generator constructs hypothetical hostile regimes
-        worst_case = self._generate_counterexample(action, context)
+            is_falsified = not all(verifier_outcomes.values())
+            reason = None
+            worst_case = None
 
         is_falsified = not all(verifier_outcomes.values())
         rejection_reason = None
@@ -1444,10 +1466,8 @@ class FalsificationGate:
             worst_case_scenario=worst_case,
         )
 
-    def _run_causal_verifier(self, action: TradeAction, context: MarketContext) -> bool:
-        """Checks macro causal relationships and external factors like elevated VIX."""
-        if context.vix_level and context.vix_level > 35.0:
-            logger.warning("CausalVerifier: Falsified due to extreme market-wide VIX panic regime.")
+    def _check_macro_causal(self, action: TradeAction, context: MarketContext) -> bool:
+        if context.vix_level is not None and context.vix_level > 30.0:
             return False
         return True
 
@@ -1661,6 +1681,10 @@ class HeadAI:
                 # Defensive check for conviction type
                 if hasattr(arg.conviction, "value"):
                     conviction_mult = arg.conviction.value / 5.0
+                elif isinstance(arg.conviction, str):
+                    conv_map = {"VERY_LOW": 1.0, "LOW": 2.0, "MODERATE": 3.0, "HIGH": 4.0, "VERY_HIGH": 5.0}
+                    conv_mult_val = conv_map.get(arg.conviction.upper(), 3.0)
+                    conviction_mult = conv_mult_val / 5.0
                 elif isinstance(arg.conviction, (int, float)):
                     conviction_mult = max(1.0, min(5.0, arg.conviction)) / 5.0
                 else:
@@ -1985,14 +2009,19 @@ class HeadAI:
         try:
             if action in [TradeAction.HOLD, TradeAction.NO_TRADE]:
                 return 0.0
-            base_size = 0.02
-            size = base_size * (1 + score)
-            size *= consensus
-            if context.volatility > 0.02:
-                size *= 0.5
-            max_size = 0.05
-            remaining_capacity = max(0.0, 1.0 - context.portfolio_exposure)
-            return min(size, max_size, remaining_capacity)
+
+            base_size = self.config.get('base_position_size', 0.02)
+            adjusted_size = base_size * (score * 1.5) * (0.5 + consensus * 0.5)
+
+            # Volatility cap
+            vol_cap = 1.0 - min(0.8, context.volatility * 20.0)
+            adjusted_size *= vol_cap
+
+            # Risk Cap
+            exposure_buffer = max(0.0, 1.0 - (context.portfolio_exposure / self.weights.get(AgentRole.RISK_SENTINEL, 0.5)))
+            adjusted_size *= exposure_buffer
+
+            return max(0.001, min(0.10, adjusted_size))
         except Exception as e:
             logger.error(f"Error in HeadAI _calculate_position_size: {e}")
             raise
@@ -2003,8 +2032,10 @@ class HeadAI:
         try:
             if action in [TradeAction.HOLD, TradeAction.NO_TRADE]:
                 return None, None, None
+
             entry = context.current_price
-            atr = context.volatility * context.current_price
+            atr = entry * context.volatility
+
             if action in [TradeAction.BUY, TradeAction.STRONG_BUY]:
                 stop = entry - atr * 1.5
                 target = entry + atr * 2.5
@@ -2020,7 +2051,8 @@ class HeadAI:
         self, action: TradeAction, arguments: List[AgentArgument], consensus: float
     ) -> str:
         try:
-            parts = [f"Decision: {action.value.upper()}", f"Consensus: {consensus:.0%}"]
+            action_val = action.value if hasattr(action, 'value') else str(action)
+            parts = [f"Decision: {action_val.upper()}", f"Consensus: {consensus:.0%}"]
             for arg in arguments:
                 if arg.reasoning:
                     agent_reasoning = " ".join(arg.reasoning)
@@ -2053,8 +2085,6 @@ class DebateQualityEvaluator:
         disagreement_map: Dict[str, float],
         duration_ms: float,
     ) -> Dict[str, Any]:
-        """Runs meta-evaluation metrics on the completed debate process."""
-        # 1. Information Gain: Entropy reduction from Round 1 to Final Consensus
         try:
             initial_counts = {}
             for v in initial_votes:
@@ -2102,11 +2132,14 @@ class DebateQualityEvaluator:
             "economic_value_added_bps": economic_value_added,
         }
 
+# -----------------------------------------------------------------------------
+# System Orchestrator
+# -----------------------------------------------------------------------------
 
 class MultiAgentDebateSystem:
     """
-    Main multi-agent debate system implementing Byzantine Fault Tolerance,
-    Graceful Degradation, and Evidence-First reasoning.
+    Authoritative Multi-Agent Debate System (UCA V6 / July 2026).
+    Orchestrates the asynchronous debate process.
     """
 
     def __init__(self, config: Optional[Dict] = None):
@@ -2132,10 +2165,11 @@ class MultiAgentDebateSystem:
                 DataProsecutor(config),
             ]
 
-            # Initialize Falsification Gate
-            self.falsification_gate = FalsificationGate(config)
+            # Strategic Aggregation authority
+            self.head_ai = HeadAI(self.config, self.calibrator)
 
-            # Initialize Debate Quality Evaluator
+            # SRE Falsification gates
+            self.falsification_gate = FalsificationGate(self.config)
             self.quality_evaluator = DebateQualityEvaluator(config)
 
             # Continuous Evaluation scorecards partitioned by market regimes
@@ -2189,17 +2223,12 @@ class MultiAgentDebateSystem:
         Adapts the multi-agent 'consensus_threshold' based on downstream task performance reward
         using the MIT SEAL paper reinforcement learning adaptation framework.
         """
-        # Outer loop adjustment
-        # If reward is high (good decisions), keep threshold stable or slightly lower it to speed up consensus.
-        # If reward is low (bad decisions), increase threshold to require higher consensus rigor before trade approval.
         if downstream_utility_reward < 1.5:
-            # Decisions were sub-optimal -> require stricter consensus
             self.consensus_threshold = min(self.consensus_threshold + 0.05, 0.95)
             logger.info(
                 f"SEAL: Downstream decision utility was sub-optimal. Adapted debate consensus threshold to {self.consensus_threshold:.2f} for higher rigor."
             )
         else:
-            # Decisions were excellent -> we can slightly lower consensus requirement to save computational cycles
             self.consensus_threshold = max(self.consensus_threshold - 0.02, 0.50)
             logger.info(
                 f"SEAL: Downstream decision utility was excellent. Adapted debate consensus threshold to {self.consensus_threshold:.2f} for improved performance."
@@ -2357,7 +2386,7 @@ class MultiAgentDebateSystem:
                     if critique:
                         adversary_arguments.append(critique)
 
-                # 2. Each core agent responds to either other core agents or adversarial critiques
+                # 2. Re-debate round execution
                 for agent in self.agents:
                     try:
                         # Find previous arguments from others
@@ -2407,9 +2436,11 @@ class MultiAgentDebateSystem:
             )
             scorecards = self.regime_scorecards.get(regime, self.regime_scorecards["SIDEWAYS"])
 
-            # Head AI synthesizes decision using calibrated Bayesian probabilities and current scorecards
             decision = self.head_ai.synthesize_decision(
-                all_arguments, context, debate_rounds, scorecards=scorecards
+                arguments=all_arguments,
+                context=context,
+                debate_rounds=debate_rounds,
+                scorecards=scorecards
             )
 
             # Fail-closed price / hallucination validation
