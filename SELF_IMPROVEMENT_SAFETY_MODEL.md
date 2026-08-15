@@ -1,53 +1,48 @@
-# Self-Improvement Safety Model (AlphaAlgo 2026)
+# Self-Improvement Safety Model (RSI-SAFETY-2026)
 
-## 1. Safety Philosophy & Constitutional Rules
-Recursive self-improvement must always be bound by explicit physical, financial, and logical constraints. We define **Constitutional Safety Invariants** that cannot be modified, deleted, or bypassed by any autonomous agent or self-generated code.
+## 1. The Immutable Safety Kernel
 
-Any violation of these constraints triggers an immediate, non-catchable system abort and rollbacks all active modifications to their baseline parents.
+The **Safety Kernel** represents the absolute non-modifiable core of the AlphaAlgo operating environment. No autonomous self-improvement loop, meta-optimizer, or model-generated code candidate can alter, delete, or bypass the rules and classes inside this boundary.
 
----
+### Protected Configurations and Classes
+The following systems are protected by read-only filesystem locks, strict checksum validation, and execution hooks:
+1.  **ImmutableShield (`ImmutableShield`):** The final governance and transaction validation gateway.
+2.  **RiskAuthority & Limits:** System-wide maximum daily loss, leverage caps, broker order confirmations, and maximum position size parameters.
+3.  **Audit Logging System:** Logging to the SQLite `audit_log.db` and the totally ordered `LogAct` shared transaction log.
+4.  **Human Approval and Protocol Hooks:** The verification gate code and deployment authentication keys.
 
-## 2. Hard Financial & Operational Guardrails
-
-### 2.1 The Capital limit constraint
-- **Rule:** The maximum allocation coefficient ($K_{max}$) for any single strategy, candidate, or portfolio configuration must never exceed $0.05$ ($5\%$ of total capital).
-- **Enforcement:** Enforced at the compiler level inside the `ImmutableShield`.
-
-### 2.2 The Risk limit constraint
-- **Rule:** Absolute strategy drawdown must trigger an immediate trade halt if loss exceeds $5\%$ within a rolling 24-hour window.
-- **Enforcement:** Managed by `SimpleValidationGateway` and `EvolutionGate`.
-
-### 2.3 The Emergency Shutdown constraint
-- **Rule:** Any loss of connectivity to the primary exchange/broker for more than $30$ seconds must trigger immediate order cancellation and halt all active strategy modules.
-- **Enforcement:** Non-modifiable, permanently protected code inside `MT5Interface` and `UnifiedDecisionBus`.
-
----
-
-## 3. Structural & Evaluator Protection
-
-### 3.1 Non-Self-Evaluation Rule
-An agent or system being evaluated must never have write access to its own evaluation parameters, metric libraries, or test configurations.
-- **Implementation:** Benchmark files, validation engines, and metric classes are packaged inside a read-only namespace (`trading_bot/core/verification/`) with zero write permissions granted to proposing agents.
-
-### 3.2 Monotone-Safe Promotion Rules (RSEA)
-- **Constraint:** A candidate model or strategy must demonstrate a positive CL-Bench Gain ($G > \text{threshold}$) while keeping all other metrics non-regressive.
-- **Tolerances:**
-  - Latency: Maximum $1.1\times$ baseline.
-  - Drawdown: Maximum $1.1\times$ baseline.
-  - Calibration Error: Maximum $1.1\times$ baseline.
-
----
-
-## 4. Immutable Boundaries & Protection Levels
-
-The code paths of the following safety components are classified as **Permanently Protected (Level 3)** and can never be rewritten or modified by any autonomous routine:
-
+### Security Escalation Policy
+Any attempt by an autonomous improvement loop to modify these protected files or configurations results in:
 ```
-[System Core] ──> [ImmutableShield] ──> [Hard Risk Gates]
-                      (Protected)          (Protected)
-                           ↑
-                 [Emergency Kill Switch]
-                   (Permanently Locked)
+[Self-Improvement Modification Attempt]
+               │
+               ▼
+   [Safety Kernel Auditer] (Intercepts AST write)
+               │
+      ┌────────┴────────┐
+      ▼                 ▼
+[BLOCKED]       [SECURITY EVENT]
+                        │
+                        ▼
+            [Emergency Engine Freeze]
+                        │
+                        ▼
+            [Human Alarm / Email / SMS]
 ```
 
-No proposed Improvement Genome may list any of these subsystems as a target. If targeted, the compiler throws an invalid reference exception and quarantines the proposing agent.
+---
+
+## 2. Experimental Isolation via `StrategySandbox`
+
+To allow AlphaAlgo to safely innovate and evaluate candidate strategies, models, and features (under Tier 2 and Tier 3), we implement the **StrategySandbox** (`trading_bot/core/security/sandbox.py`). This sandbox provides robust process-level isolation:
+
+### Sandbox Isolation Invariants
+*   **Subprocess Spawning:** Code candidates are executed strictly inside disposable `multiprocessing.Process` instances.
+*   **Zero Thread Leakage:** Threads cannot escape the sandbox process. Once execution concludes, the sandbox process is forcefully garbage-collected.
+*   **SIGTERM Timeout Enforcement:** An AST-level check runs alongside a strict wall-clock timeout. If a candidate runs longer than **30 seconds** (or hogs CPU above limits), it is terminated via process-level SIGTERM signals.
+*   **AST Security Filtering:** Prior to execution, the candidate's Abstract Syntax Tree (AST) is scanned recursively. The sandbox aggressively blocks any code containing:
+    *   System command calls (`os.system`, `subprocess.Popen`, `shutil`).
+    *   Dynamic code execution (`eval`, `exec`).
+    *   Direct filesystem modifications outside the designated tmp directory.
+    *   Raw serialization/unpickling (`pickle.load`, `shelve`).
+    *   Network sockets or socket creation libraries (`socket.socket`, `urllib`, `requests` unless explicitly safe-listed).

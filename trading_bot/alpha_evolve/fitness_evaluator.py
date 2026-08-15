@@ -188,6 +188,10 @@ class MultiObjectiveFitness:
         if len(returns) < 60:
             return 0.5
         
+        if 'returns' not in market_data.columns:
+            market_data = market_data.copy()
+            market_data['returns'] = market_data['close'].pct_change()
+
         market_returns = market_data['returns'].loc[returns.index]
         
         bull_mask = market_returns > market_returns.quantile(0.6)
