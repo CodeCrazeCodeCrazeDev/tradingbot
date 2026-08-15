@@ -1,3 +1,23 @@
+```
+
+---
+
+## 3. High-Concurrency Stress Test Suite
+
+To verify the endurance, safety, and reproducibility of the UCA system under load, we ran the stress test suite:
+
+Command: `pytest tests/test_uca_stress_suite.py`
+```
+tests/test_uca_stress_suite.py::test_concurrency_load PASSED             [ 33%]
+tests/test_uca_stress_suite.py::test_endurance_resource_tracking PASSED  [ 66%]
+tests/test_uca_stress_suite.py::test_decision_reproducibility PASSED     [100%]
+
+```
+
+### Verification Findings
+- **Concurrency**: Parallel async observation handling on CSC loop resolved without blocking.
+- **Endurance**: Confirmed that `discrete_channel` correctly bounds itself to prevent resource leaks.
+- **Reproducibility**: Repeated observations feed identically through the SRE pipeline and produce deterministic outcomes and confidence values.
 platform linux -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
 plugins: mock-3.15.1, cov-7.1.0, anyio-4.14.2, asyncio-1.4.0, timeout-2.4.0
 collected 26 items
