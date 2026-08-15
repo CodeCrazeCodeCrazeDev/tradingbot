@@ -28,6 +28,9 @@ class InformationFolder:
     Compresses execution history into semantic strategic updates.
     Prevents 'Strategic Drift' in long-horizon tasks by extracting sufficient statistics.
     """
+    def __init__(self, fold_interval: int = 10):
+        self.fold_interval = fold_interval
+        self.step_counter = 0
 
     def __init__(self, hms: Any = None):
         self.hms = hms
