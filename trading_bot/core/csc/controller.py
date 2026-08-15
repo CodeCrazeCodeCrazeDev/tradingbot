@@ -709,3 +709,16 @@ class CognitiveSystemController:
             tail_risk=0.85,
             model_stability=0.7,
         )
+
+    @classmethod
+    async def reset(cls):
+        """
+        Explicit, safe class-level lifecycle reset.
+        Frees singleton instances and resets internal continuous/discrete working memory tracks.
+        """
+        if cls._instance is not None:
+            cls._instance.discrete_channel.clear()
+            cls._instance.continuous_state.clear()
+            cls._instance.vfe_history.clear()
+            cls._instance = None
+        logger.info("CognitiveSystemController successfully reset.")

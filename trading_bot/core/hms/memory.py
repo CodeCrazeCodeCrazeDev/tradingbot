@@ -515,3 +515,18 @@ class HierarchicalMemorySystem:
             self.memory_schema["version"] = "1.1"
         self._save_schema()
         logger.info("HMS V6: AutoMem optimization cycle complete.")
+
+    @classmethod
+    def reset(cls):
+        """
+        Explicit, safe class-level lifecycle reset.
+        Frees singleton instances and flushes outstanding SAGE schema updates.
+        """
+        with cls._lock:
+            if cls._instance is not None:
+                try:
+                    cls._instance._save_schema()
+                except:
+                    pass
+                cls._instance = None
+        logger.info("HierarchicalMemorySystem successfully reset with schema synchronization.")

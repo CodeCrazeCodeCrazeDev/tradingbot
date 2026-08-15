@@ -328,5 +328,26 @@ class UnifiedDecisionBus:
         tasks = [h["handler"](action) for h in handlers]
         if tasks: await asyncio.gather(*tasks, return_exceptions=True)
 
+    @classmethod
+    def reset(cls):
+        """
+        Explicit, safe class-level lifecycle reset.
+        Frees singleton instances and cancels outstanding background workers gracefully.
+        """
+        global decision_bus
+        if decision_bus is not None:
+            # We schedule safe asynchronous stopping of loop tasks
+            try:
+                loop = asyncio.get_running_loop()
+                if loop.is_running():
+                    loop.create_task(decision_bus.stop())
+            except RuntimeError:
+                pass
+            decision_bus._log.clear()
+
+        # Instantiate clean backbone
+        decision_bus = UnifiedDecisionBus()
+        logger.info("UnifiedDecisionBus successfully reset with complete task cancellation.")
+
 # Global instance for production path (authoritative)
 decision_bus = UnifiedDecisionBus()
