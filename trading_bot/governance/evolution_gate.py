@@ -143,7 +143,7 @@ class EvolutionGate:
         logic_shard = candidate_config.get("logic_shard", {}) or {}
         if logic_shard.get("halt", False) and logic_shard.get("increase_exposure", False):
             logger.error(f"EvolutionGate: REJECTED - Candidate {candidate_id} violated formal invariant (halted but increasing exposure)")
-            return False
+            return AwaitableBool(False)
 
         # 2. Adversarial Red-Teaming (arXiv:2606.28374 Reward-Hacking Prevention)
         code_diff = candidate_config.get("code_diff", "")
@@ -152,7 +152,7 @@ class EvolutionGate:
             red_team_report = self.run_red_teaming_session(candidate_config, scenarios)
             if red_team_report["status"] == "failed":
                 logger.error(f"EvolutionGate: REJECTED - Red-teaming failed: {red_team_report['failures']}")
-                return False
+                return AwaitableBool(False)
 
         # 3. Run baseline on validation set (Stateless Baseline)
         if isinstance(baseline_config, dict):
@@ -240,14 +240,6 @@ class EvolutionGate:
             return False
 
         # Verify no protected metrics are violated and at least one is significantly improved
-        is_significant = gain >= self.threshold
-        no_regressions = (
-            candidate.calibration >= baseline.calibration * 0.95 and
-            candidate.robustness >= baseline.robustness * 0.95 and
-            candidate.latency <= baseline.latency * 1.2 and
-            candidate.safety_score >= baseline.safety_score
-        )
-
         is_significant = (gain >= self.threshold)
         no_regressions = (
             candidate.latency <= baseline.latency * 1.10 and
@@ -304,7 +296,7 @@ class EvolutionGate:
                 },
                 "status": "PROMOTED"
             })
-            return True
+            return AwaitableBool(True)
         else:
             reasons = []
             if not is_significant:
@@ -315,7 +307,7 @@ class EvolutionGate:
             if candidate.latency > baseline.latency * 1.2:
                 reasons.append(f"latency regression {candidate.latency} > {baseline.latency * 1.2}")
             logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED due to: {', '.join(reasons)}")
-            return False
+            return AwaitableBool(False)
 
     def _check_eksft_compliance(self, config: Dict[str, Any]) -> bool:
         """Prevents distribution sharpening and entropy collapse."""
