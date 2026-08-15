@@ -5,11 +5,11 @@ AlphaAlgo World Model Subsystem
 The World Model provides market simulation, latent dynamics prediction,
 and counterfactual reasoning capabilities.
 
-Canonical Architecture: WM-V2 (Institutional Predictive Planning)
+Canonical Architecture: WM-V3 / SCM V5
 Backbone: Hybrid Transformer-Mamba (SSM)
 """
 
-# Core WM-V2 Components
+# Core WM-V2/V3 Components
 from .v2_core import (
     WorldModelV2,
     MarketScenario,
@@ -93,7 +93,7 @@ from .experience_replay import (
 # Maintenance of Legacy Core for transition
 
 __all__ = [
-    # Canonical WM-V2
+    # Canonical WM-V2/V3
     'WorldModelV2',
     'MarketScenario',
     'PredictiveMarketCore',

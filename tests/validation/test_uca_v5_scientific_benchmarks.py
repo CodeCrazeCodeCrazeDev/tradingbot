@@ -9,7 +9,6 @@ Implements validation metrics from the 2026 research package:
 """
 
 import pytest
-import asyncio
 import numpy as np
 from typing import Dict, Any, List
 from trading_bot.core.csc.controller import CognitiveSystemController
@@ -51,8 +50,7 @@ def mock_csc():
         shield=mock
     )
 
-@pytest.mark.asyncio
-async def test_cl_bench_gain_metric():
+def test_cl_bench_gain_metric():
     """
     Validates the CL-Bench 'Gain Metric' logic in the Evolution Gate.
     Gain = Perf(stateful) - Perf(stateless).
@@ -63,8 +61,8 @@ async def test_cl_bench_gain_metric():
     baseline = {"id": "baseline", "mode": "stateless"}
     candidate = {"id": "candidate", "mode": "stateful", "logic_shard": {"halt": False}}
 
-    # Validation is now async in UCA V5
-    is_promoted = await gate.validate_evolution("test_v5", candidate, baseline)
+    # Validation is now synchronous in UCA V5
+    is_promoted = gate.validate_evolution("test_v5", candidate, baseline)
     assert is_promoted is True
 
     # Verify provenance in report
