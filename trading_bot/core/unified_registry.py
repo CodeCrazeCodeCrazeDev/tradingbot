@@ -103,6 +103,13 @@ class UnifiedComponentRegistry:
         self._dependencies.clear()
         logger.info("UnifiedComponentRegistry cleared")
 
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance for testing purposes."""
+        with cls._lock:
+            cls._instance = None
+        logger.info("UnifiedComponentRegistry singleton reset")
+
     def unregister(self, name: str):
         """
         Unregister a component.
