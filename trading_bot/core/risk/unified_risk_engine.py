@@ -27,7 +27,19 @@ class UnifiedRiskEngine:
     Orchestrates specialized evaluators for VaR, Kelly, OOD, Liquidity, Drawdown, etc.
     """
     _instance = None
-    _lock = asyncio.Lock()
+    _lock_instance = None
+
+    @classmethod
+    def _get_lock(cls) -> asyncio.Lock:
+        """Lazily initialize lock bound to the running event loop."""
+        if cls._lock_instance is None:
+            cls._lock_instance = asyncio.Lock()
+        return cls._lock_instance
+
+    @property
+    def _lock(self) -> asyncio.Lock:
+        """Forward access to cls._get_lock() for backward compatibility."""
+        return self._get_lock()
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
