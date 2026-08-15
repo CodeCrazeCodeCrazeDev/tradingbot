@@ -31,7 +31,7 @@ class MockValidationEngine:
 def test_evolution_gate_monotone_safety_accepts_good_gains():
     """Verify that EvolutionGate accepts candidates with improvement exceeding threshold."""
     engine = MockValidationEngine()
-    gate = EvolutionGate(validation_engine=engine, improvement_threshold=0.10)
+    gate = EvolutionGate(validation_engine=engine, threshold=0.10)
 
     # Baseline = 0.50, Candidate = 0.65 (Improvement of +0.15 > +0.10)
     baseline_config = {"config_id": "baseline_config"}
@@ -48,7 +48,7 @@ def test_evolution_gate_monotone_safety_accepts_good_gains():
 def test_evolution_gate_monotone_safety_rejects_minor_gains():
     """Verify that EvolutionGate rejects candidates with improvement below threshold."""
     engine = MockValidationEngine()
-    gate = EvolutionGate(validation_engine=engine, improvement_threshold=0.10)
+    gate = EvolutionGate(validation_engine=engine, threshold=0.10)
 
     # Baseline = 0.50, Candidate = 0.55 (Improvement of +0.05 < +0.10)
     baseline_config = {"config_id": "baseline_config"}
@@ -64,7 +64,7 @@ def test_evolution_gate_monotone_safety_rejects_minor_gains():
 def test_evolution_gate_monotone_safety_rejects_regressions():
     """Verify that EvolutionGate rejects regressive candidates."""
     engine = MockValidationEngine()
-    gate = EvolutionGate(validation_engine=engine, improvement_threshold=0.10)
+    gate = EvolutionGate(validation_engine=engine, threshold=0.10)
 
     # Baseline = 0.50, Candidate = 0.45 (Regression of -0.05)
     baseline_config = {"config_id": "baseline_config"}
@@ -80,7 +80,7 @@ def test_evolution_gate_monotone_safety_rejects_regressions():
 def test_evolution_gate_rollback_expectations():
     """Verify that failed or rejected candidates trigger rollback (preserving the active baseline)."""
     engine = MockValidationEngine()
-    gate = EvolutionGate(validation_engine=engine, improvement_threshold=0.10)
+    gate = EvolutionGate(validation_engine=engine, threshold=0.10)
 
     active_baseline = {"config_id": "baseline_config"}
     engine.set_performance("baseline_config", 0.50)

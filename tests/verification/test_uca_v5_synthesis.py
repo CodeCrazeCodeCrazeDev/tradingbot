@@ -76,7 +76,7 @@ async def test_sage_graph_evolution(hms):
 
 def test_evolution_gate_monotone_safety():
     """Verifies RSEA Monotone-Safe gate."""
-    gate = EvolutionGate(validation_engine=MockValidationEngine(), improvement_threshold=0.1)
+    gate = EvolutionGate(validation_engine=MockValidationEngine(), threshold=0.1)
 
     baseline = {"perf": 0.5}
     candidate_bad = {"perf": 0.55}  # Gain 0.05 < 0.1
