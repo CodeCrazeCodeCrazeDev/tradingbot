@@ -671,7 +671,7 @@
     },
     "timestamp": "2026-07-20T12:51:37.387399"
   },
-  "biology_strategy_mutation_20260814_133318": {
+  "biology_strategy_mutation_20260809_094907": {
     "domain": "biology",
     "concept": "Strategy Mutation",
     "mathematical_representation": "GA(params, mutation_rate, fitness_func)",
@@ -683,9 +683,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:33:18.370601"
+    "timestamp": "2026-08-09T09:49:07.669122"
   },
-  "biology_neural_attention_filtering_20260814_133318": {
+  "biology_neural_attention_filtering_20260809_094907": {
     "domain": "biology",
     "concept": "Neural Attention Filtering",
     "mathematical_representation": "Attention(Query, Key, Value) where Query is market state",
@@ -697,9 +697,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:33:18.373267"
+    "timestamp": "2026-08-09T09:49:07.672888"
   },
-  "physics_market_entropy_20260814_133318": {
+  "physics_market_entropy_20260809_094907": {
     "domain": "physics",
     "concept": "Market Entropy",
     "mathematical_representation": "H(P) = -\u03a3 p_i log(p_i)",
@@ -711,9 +711,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:33:18.375289"
+    "timestamp": "2026-08-09T09:49:07.674714"
   },
-  "physics_liquidity_laminar_flow_20260814_133318": {
+  "physics_liquidity_laminar_flow_20260809_094907": {
     "domain": "physics",
     "concept": "Liquidity Laminar Flow",
     "mathematical_representation": "Re = \u03c1vd / \u03bc (Reynolds number analogy)",
@@ -725,9 +725,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:33:18.377168"
+    "timestamp": "2026-08-09T09:49:07.676454"
   },
-  "physics_price_potential_energy_20260814_133318": {
+  "physics_price_potential_energy_20260809_094907": {
     "domain": "physics",
     "concept": "Price Potential Energy",
     "mathematical_representation": "PE = mgh (Analogy: distance from moving average)",
@@ -739,9 +739,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:33:18.379243"
+    "timestamp": "2026-08-09T09:49:07.678178"
   },
-  "physics_lyapunov_exponents_20260814_133318": {
+  "physics_lyapunov_exponents_20260809_094907": {
     "domain": "physics",
     "concept": "Lyapunov Exponents",
     "mathematical_representation": "\u03bb = lim(t\u2192\u221e) 1/t ln|\u03b4Z(t)|/|\u03b4Z(0)|",
@@ -753,9 +753,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:33:18.381214"
+    "timestamp": "2026-08-09T09:49:07.679993"
   },
-  "chemistry_market_catalysts_20260814_133318": {
+  "chemistry_market_catalysts_20260809_094907": {
     "domain": "chemistry",
     "concept": "Market Catalysts",
     "mathematical_representation": "Rate = k[News][Liquidity]",
@@ -767,9 +767,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:33:18.383071"
+    "timestamp": "2026-08-09T09:49:07.681830"
   },
-  "chemistry_price_saturation_20260814_133318": {
+  "chemistry_price_saturation_20260809_094907": {
     "domain": "chemistry",
     "concept": "Price Saturation",
     "mathematical_representation": "S = [Reacted] / [Total]",
@@ -781,9 +781,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:33:18.385001"
+    "timestamp": "2026-08-09T09:49:07.684024"
   },
-  "chemistry_inhibitor_concentration_20260814_133318": {
+  "chemistry_inhibitor_concentration_20260809_094907": {
     "domain": "chemistry",
     "concept": "Inhibitor Concentration",
     "mathematical_representation": "V_max / (1 + [Inhibitor]/Ki)",
@@ -795,9 +795,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:33:18.387263"
+    "timestamp": "2026-08-09T09:49:07.685951"
   },
-  "mathematics_topological_invariants_20260814_133318": {
+  "mathematics_topological_invariants_20260809_094907": {
     "domain": "mathematics",
     "concept": "Topological Invariants",
     "mathematical_representation": "Betti numbers (\u03b2\u2080, \u03b2\u2081)",
@@ -809,9 +809,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:33:18.389242"
+    "timestamp": "2026-08-09T09:49:07.687995"
   },
-  "mathematics_bayesian_regime_updating_20260814_133318": {
+  "mathematics_bayesian_regime_updating_20260809_094907": {
     "domain": "mathematics",
     "concept": "Bayesian Regime Updating",
     "mathematical_representation": "P(Regime | Data) \u221d P(Data | Regime) * P(Regime)",
@@ -823,9 +823,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:33:18.391221"
+    "timestamp": "2026-08-09T09:49:07.689924"
   },
-  "mathematics_information_transfer_20260814_133318": {
+  "mathematics_information_transfer_20260809_094907": {
     "domain": "mathematics",
     "concept": "Information Transfer",
     "mathematical_representation": "T_{X\u2192Y} = \u03a3 p(y_{t+1}, y_t, x_t) log [ p(y_{t+1}|y_t, x_t) / p(y_{t+1}|y_t) ]",
@@ -837,9 +837,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:33:18.393176"
+    "timestamp": "2026-08-09T09:49:07.691985"
   },
-  "mathematics_liquidity_graph_centrality_20260814_133318": {
+  "mathematics_liquidity_graph_centrality_20260809_094907": {
     "domain": "mathematics",
     "concept": "Liquidity Graph Centrality",
     "mathematical_representation": "C(v) = \u03a3 1/d(v, u)",
@@ -851,9 +851,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:33:18.395259"
+    "timestamp": "2026-08-09T09:49:07.693959"
   },
-  "nature_fractal_persistence_20260814_133318": {
+  "nature_fractal_persistence_20260809_094907": {
     "domain": "nature",
     "concept": "Fractal Persistence",
     "mathematical_representation": "H = log(R/S) / log(N)",
@@ -865,9 +865,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:33:18.397497"
+    "timestamp": "2026-08-09T09:49:07.696009"
   },
-  "nature_liquidity_predator-prey_20260814_133318": {
+  "nature_liquidity_predator-prey_20260809_094907": {
     "domain": "nature",
     "concept": "Liquidity Predator-Prey",
     "mathematical_representation": "dx/dt = \u03b1x - \u03b2xy, dy/dt = \u03b4xy - \u03b3y",
@@ -879,9 +879,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:33:18.399473"
+    "timestamp": "2026-08-09T09:49:07.698043"
   },
-  "nature_strategy_niche_competition_20260814_133318": {
+  "nature_strategy_niche_competition_20260809_094907": {
     "domain": "nature",
     "concept": "Strategy Niche Competition",
     "mathematical_representation": "Lotka-Volterra Competition Model",
@@ -893,9 +893,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:33:18.401628"
+    "timestamp": "2026-08-09T09:49:07.700157"
   },
-  "biology_strategy_mutation_20260814_134951": {
+  "biology_strategy_mutation_20260809_101544": {
     "domain": "biology",
     "concept": "Strategy Mutation",
     "mathematical_representation": "GA(params, mutation_rate, fitness_func)",
@@ -907,9 +907,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:49:51.718609"
+    "timestamp": "2026-08-09T10:15:44.992902"
   },
-  "biology_neural_attention_filtering_20260814_134951": {
+  "biology_neural_attention_filtering_20260809_101544": {
     "domain": "biology",
     "concept": "Neural Attention Filtering",
     "mathematical_representation": "Attention(Query, Key, Value) where Query is market state",
@@ -921,9 +921,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:49:51.721057"
+    "timestamp": "2026-08-09T10:15:44.995308"
   },
-  "physics_market_entropy_20260814_134951": {
+  "physics_market_entropy_20260809_101544": {
     "domain": "physics",
     "concept": "Market Entropy",
     "mathematical_representation": "H(P) = -\u03a3 p_i log(p_i)",
@@ -935,9 +935,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:49:51.723409"
+    "timestamp": "2026-08-09T10:15:44.997771"
   },
-  "physics_liquidity_laminar_flow_20260814_134951": {
+  "physics_liquidity_laminar_flow_20260809_101545": {
     "domain": "physics",
     "concept": "Liquidity Laminar Flow",
     "mathematical_representation": "Re = \u03c1vd / \u03bc (Reynolds number analogy)",
@@ -949,9 +949,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:49:51.725863"
+    "timestamp": "2026-08-09T10:15:45.000176"
   },
-  "physics_price_potential_energy_20260814_134951": {
+  "physics_price_potential_energy_20260809_101545": {
     "domain": "physics",
     "concept": "Price Potential Energy",
     "mathematical_representation": "PE = mgh (Analogy: distance from moving average)",
@@ -963,9 +963,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:49:51.728059"
+    "timestamp": "2026-08-09T10:15:45.002810"
   },
-  "physics_lyapunov_exponents_20260814_134951": {
+  "physics_lyapunov_exponents_20260809_101545": {
     "domain": "physics",
     "concept": "Lyapunov Exponents",
     "mathematical_representation": "\u03bb = lim(t\u2192\u221e) 1/t ln|\u03b4Z(t)|/|\u03b4Z(0)|",
@@ -977,9 +977,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:49:51.730286"
+    "timestamp": "2026-08-09T10:15:45.005705"
   },
-  "chemistry_market_catalysts_20260814_134951": {
+  "chemistry_market_catalysts_20260809_101545": {
     "domain": "chemistry",
     "concept": "Market Catalysts",
     "mathematical_representation": "Rate = k[News][Liquidity]",
@@ -991,9 +991,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:49:51.732591"
+    "timestamp": "2026-08-09T10:15:45.007949"
   },
-  "chemistry_price_saturation_20260814_134951": {
+  "chemistry_price_saturation_20260809_101545": {
     "domain": "chemistry",
     "concept": "Price Saturation",
     "mathematical_representation": "S = [Reacted] / [Total]",
@@ -1005,9 +1005,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:49:51.735003"
+    "timestamp": "2026-08-09T10:15:45.010396"
   },
-  "chemistry_inhibitor_concentration_20260814_134951": {
+  "chemistry_inhibitor_concentration_20260809_101545": {
     "domain": "chemistry",
     "concept": "Inhibitor Concentration",
     "mathematical_representation": "V_max / (1 + [Inhibitor]/Ki)",
@@ -1019,9 +1019,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:49:51.737340"
+    "timestamp": "2026-08-09T10:15:45.012794"
   },
-  "mathematics_topological_invariants_20260814_134951": {
+  "mathematics_topological_invariants_20260809_101545": {
     "domain": "mathematics",
     "concept": "Topological Invariants",
     "mathematical_representation": "Betti numbers (\u03b2\u2080, \u03b2\u2081)",
@@ -1033,9 +1033,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:49:51.739709"
+    "timestamp": "2026-08-09T10:15:45.015196"
   },
-  "mathematics_bayesian_regime_updating_20260814_134951": {
+  "mathematics_bayesian_regime_updating_20260809_101545": {
     "domain": "mathematics",
     "concept": "Bayesian Regime Updating",
     "mathematical_representation": "P(Regime | Data) \u221d P(Data | Regime) * P(Regime)",
@@ -1047,9 +1047,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:49:51.742119"
+    "timestamp": "2026-08-09T10:15:45.017706"
   },
-  "mathematics_information_transfer_20260814_134951": {
+  "mathematics_information_transfer_20260809_101545": {
     "domain": "mathematics",
     "concept": "Information Transfer",
     "mathematical_representation": "T_{X\u2192Y} = \u03a3 p(y_{t+1}, y_t, x_t) log [ p(y_{t+1}|y_t, x_t) / p(y_{t+1}|y_t) ]",
@@ -1061,9 +1061,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:49:51.744386"
+    "timestamp": "2026-08-09T10:15:45.020080"
   },
-  "mathematics_liquidity_graph_centrality_20260814_134951": {
+  "mathematics_liquidity_graph_centrality_20260809_101545": {
     "domain": "mathematics",
     "concept": "Liquidity Graph Centrality",
     "mathematical_representation": "C(v) = \u03a3 1/d(v, u)",
@@ -1075,9 +1075,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:49:51.746788"
+    "timestamp": "2026-08-09T10:15:45.022405"
   },
-  "nature_fractal_persistence_20260814_134951": {
+  "nature_fractal_persistence_20260809_101545": {
     "domain": "nature",
     "concept": "Fractal Persistence",
     "mathematical_representation": "H = log(R/S) / log(N)",
@@ -1089,9 +1089,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:49:51.749263"
+    "timestamp": "2026-08-09T10:15:45.024982"
   },
-  "nature_liquidity_predator-prey_20260814_134951": {
+  "nature_liquidity_predator-prey_20260809_101545": {
     "domain": "nature",
     "concept": "Liquidity Predator-Prey",
     "mathematical_representation": "dx/dt = \u03b1x - \u03b2xy, dy/dt = \u03b4xy - \u03b3y",
@@ -1103,9 +1103,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:49:51.751734"
+    "timestamp": "2026-08-09T10:15:45.028115"
   },
-  "nature_strategy_niche_competition_20260814_134951": {
+  "nature_strategy_niche_competition_20260809_101545": {
     "domain": "nature",
     "concept": "Strategy Niche Competition",
     "mathematical_representation": "Lotka-Volterra Competition Model",
@@ -1117,6 +1117,6 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-14T13:49:51.754502"
+    "timestamp": "2026-08-09T10:15:45.031411"
   }
 }
