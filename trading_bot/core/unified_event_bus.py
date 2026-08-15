@@ -136,6 +136,8 @@ class UnifiedDecisionBus:
         cls._instance = decision_bus
 
     def __init__(self, config: Optional[Dict] = None):
+        if getattr(self, "_initialized", False):
+            return
         self.config = config or {}
         self._log: List[Union[LogAction, UnifiedEvent]] = []
         self._voters: Dict[str, Callable] = {}
@@ -143,6 +145,7 @@ class UnifiedDecisionBus:
         self._action_queue = asyncio.PriorityQueue()
         self._running = False
         self._processor_task: Optional[asyncio.Task] = None
+        self._initialized = True
         logger.info("LogAct Shared-Log Backbone initialized")
 
     @classmethod
