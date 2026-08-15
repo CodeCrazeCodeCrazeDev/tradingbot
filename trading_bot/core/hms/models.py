@@ -11,6 +11,7 @@ from datetime import datetime
 from enum import Enum, auto
 from typing import Any, Dict, List, Optional, Union, Tuple
 import uuid
+from ..governance.determinism import determinism
 
 class EvidenceSourceType(Enum):
     MARKET_DATA = auto()
@@ -32,7 +33,7 @@ class RelationType(Enum):
 @dataclass
 class EvidencePackage:
     """A single piece of verified market evidence."""
-    evidence_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    evidence_id: str = field(default_factory=lambda: determinism.get_uuid())
     timestamp: datetime = field(default_factory=datetime.utcnow)
     source_type: EvidenceSourceType = EvidenceSourceType.MARKET_DATA
     source_name: str = ""
@@ -83,7 +84,7 @@ class EvidenceEdge:
 @dataclass
 class EvidenceGraph:
     """A snapshot of the Causal Evidence Graph for a specific decision."""
-    graph_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    graph_id: str = field(default_factory=lambda: determinism.get_uuid())
     nodes: Dict[str, EvidenceNode] = field(default_factory=dict)
     edges: List[EvidenceEdge] = field(default_factory=list)
 
@@ -96,7 +97,7 @@ class EvidenceGraph:
 @dataclass
 class Hypothesis:
     """A falsifiable market hypothesis."""
-    hypothesis_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    hypothesis_id: str = field(default_factory=lambda: determinism.get_uuid())
     description: str = ""
     base_assumptions: List[str] = field(default_factory=list)
     predicted_outcome: str = ""
@@ -134,13 +135,13 @@ class InstitutionalProvenance:
     risk_policy_version: str = "v1.0"
     verification_signatures: Dict[str, str] = field(default_factory=dict)
     source_feed: str = "unknown"
-    timestamp: Optional[datetime] = None
+    timestamp: datetime = field(default_factory=datetime.utcnow)
     raw_payload_checksum: str = ""
 
 @dataclass
 class ResearchLedgerEntry:
     """Permanent audit trail for a single trading decision."""
-    entry_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    entry_id: str = field(default_factory=lambda: determinism.get_uuid())
     trade_id: Optional[str] = None
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
@@ -181,7 +182,7 @@ class ResearchLedgerEntry:
 @dataclass
 class ScientificMemoryObject:
     """A generalized lesson or pattern stored in Persistent Research Memory."""
-    object_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    object_id: str = field(default_factory=lambda: determinism.get_uuid())
     pattern_type: str = ""  # "SUCCESSFUL_STRATEGY", "FAILURE_MODE", "REGIME_CORRELATION"
     hypothesis_ref: str = ""
     outcome_summary: str = ""
