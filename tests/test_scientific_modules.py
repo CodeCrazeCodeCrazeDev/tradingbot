@@ -48,7 +48,7 @@ async def test_discoloop_internalization():
     assert "latent" in csc.continuous_state
 
 @pytest.mark.asyncio
-async def test_pivot_refine_logic(csc_instance):
+async def test_pivot_refine_logic():
     """Verify Pivot/Refine severity detection and logic."""
     csc = CognitiveSystemController()
     from trading_bot.core.hms.models import VerifierReport
