@@ -203,7 +203,9 @@ class EvolutionGate:
                 calibration=calibration,
                 robustness=robustness,
                 latency=latency,
-                safety_score=safety_score
+                safety_score=safety_score,
+                drawdown=candidate_raw.get("drawdown", 0.0),
+                calibration_error=candidate_raw.get("calibration_error", 1.0 - calibration)
             )
         else:
             candidate = candidate_raw
@@ -230,14 +232,14 @@ class EvolutionGate:
         # Verify no protected metrics are violated and at least one is significantly improved
         is_significant = (gain >= self.threshold)
         no_regressions = (
-            candidate.latency <= baseline.latency * 1.10 and
-            candidate.drawdown <= baseline.drawdown * 1.10 and
-            candidate.calibration_error <= baseline.calibration_error * 1.10 and
-            candidate.calibration >= baseline.calibration * 0.90 and
-            candidate.robustness >= baseline.robustness * 0.90 and
-            candidate.safety_score >= baseline.safety_score and
-            candidate.hms_retrieval_quality >= baseline.hms_retrieval_quality * 0.90 and
-            candidate.deterministic_replay_success >= baseline.deterministic_replay_success
+            _get_metric(candidate, "latency", 10.0) <= _get_metric(baseline, "latency", 10.0) * 1.10 and
+            _get_metric(candidate, "drawdown", 0.0) <= _get_metric(baseline, "drawdown", 0.0) * 1.10 and
+            _get_metric(candidate, "calibration_error", 0.0) <= _get_metric(baseline, "calibration_error", 0.0) * 1.10 and
+            _get_metric(candidate, "calibration", 0.9) >= _get_metric(baseline, "calibration", 0.9) * 0.90 and
+            _get_metric(candidate, "robustness", 0.8) >= _get_metric(baseline, "robustness", 0.8) * 0.90 and
+            _get_metric(candidate, "safety_score", 1.0) >= _get_metric(baseline, "safety_score", 1.0) and
+            _get_metric(candidate, "hms_retrieval_quality", 1.0) >= _get_metric(baseline, "hms_retrieval_quality", 1.0) * 0.90 and
+            _get_metric(candidate, "deterministic_replay_success", 1.0) >= _get_metric(baseline, "deterministic_replay_success", 1.0)
         )
 
         # Fix NameErrors: Define is_significant, no_regressions and candidate_perf
@@ -275,7 +277,7 @@ class EvolutionGate:
             self.evolution_history.append({
                 "timestamp": datetime.utcnow().isoformat(),
                 "candidate_id": candidate_id,
-                "metrics": candidate.__dict__,
+                "metrics": candidate.__dict__ if hasattr(candidate, "__dict__") else candidate,
                 "provenance": {
                     "baseline_id": baseline_config.get("id") if isinstance(baseline_config, dict) else getattr(baseline_config, "id", "unknown"),
                     "validation_mode": "CL-Bench-Stateful",
@@ -292,8 +294,10 @@ class EvolutionGate:
             calibration_drift = abs(candidate.calibration - baseline.calibration)
             if calibration_drift > 0.05:
                 reasons.append(f"calibration drift {calibration_drift:.4f} > 0.05")
-            if candidate.latency > baseline.latency * 1.2:
-                reasons.append(f"latency regression {candidate.latency} > {baseline.latency * 1.2}")
+            cand_lat = _get_metric(candidate, "latency", 10.0)
+            base_lat = _get_metric(baseline, "latency", 10.0)
+            if cand_lat > base_lat * 1.2:
+                reasons.append(f"latency regression {cand_lat} > {base_lat * 1.2}")
             logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED due to: {', '.join(reasons)}")
             return AwaitableBool(False)
 
