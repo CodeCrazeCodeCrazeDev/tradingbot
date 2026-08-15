@@ -508,7 +508,7 @@ class ModelRegistry:
             return None
         try:
             with open(mv.model_path, 'rb') as f:
-                model_obj = pickle.load(f)
+                model_obj = safe_load(f)
 
             # Update cache
             with self._lock:
