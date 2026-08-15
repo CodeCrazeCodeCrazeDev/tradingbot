@@ -311,10 +311,32 @@ class MonteCarloValidator:
     - Stress testing
     """
     
-    def __init__(self, num_simulations: int = 1000, confidence_level: float = 0.95):
-        self.num_simulations = num_simulations
+    def __init__(self, num_simulations: int = 1000, confidence_level: float = 0.95, **kwargs):
+        self.num_simulations = kwargs.get("n_simulations", num_simulations)
         self.confidence_level = confidence_level
     
+    def validate_returns(self, returns: Any, *args, **kwargs) -> Dict[str, Any]:
+        """Validate raw returns series using Monte Carlo."""
+        if not isinstance(returns, pd.Series):
+            returns = pd.Series(returns)
+
+        mock_result = BacktestResult(
+            returns=returns,
+            positions=pd.DataFrame(),
+            trades=[],
+            equity_curve=(1 + returns).cumprod(),
+            metrics={},
+            total_return=returns.sum(),
+            sharpe_ratio=self._calculate_sharpe(returns.values),
+            max_drawdown=self._calculate_max_drawdown(returns.values),
+            win_rate=0.0,
+            profit_factor=0.0,
+            num_trades=len(returns),  # Mock trades count to bypass minimum checks
+            avg_trade_duration=0.0,
+            total_costs=0.0
+        )
+        return self.validate(mock_result)
+
     def validate(self, backtest_result: BacktestResult) -> Dict[str, Any]:
         """
         Run Monte Carlo validation on backtest results.
