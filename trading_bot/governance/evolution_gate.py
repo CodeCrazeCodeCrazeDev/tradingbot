@@ -6,32 +6,13 @@ Implements 'RSEA' (arXiv:2606.28374), 'EKSFT' (arXiv:2605.29303), and 'NanoResea
 """
 
 import logging
-import math
-import copy
-import sys
-import inspect
+import asyncio
 from typing import Any, Dict, List, Optional
 from datetime import datetime
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
-class AwaitableBool:
-    def __init__(self, val: bool):
-        self.val = val
-
-    def __await__(self):
-        async def _async_val():
-            return self.val
-        return _async_val().__await__()
-
-    def __bool__(self):
-        return self.val
-
-    def __eq__(self, other):
-        if isinstance(other, AwaitableBool):
-            return self.val == other.val
-        return self.val == other
 
 @dataclass
 class EvolutionMetrics:
@@ -46,13 +27,21 @@ class EvolutionMetrics:
     hms_retrieval_quality: float = 1.0
     deterministic_replay_success: float = 1.0
 
-class AwaitableBool(int):
-    def __new__(cls, val):
-        return super().__new__(cls, 1 if val else 0)
-    def __await__(self):
-        async def _async_val():
-            return bool(self)
-        return _async_val().__await__()
+    def __getitem__(self, item: str) -> Any:
+        if item in ("perf", "reward"):
+            return self.reward
+        if item == "decision_latency":
+            return self.latency
+        if hasattr(self, item):
+            return getattr(self, item)
+        raise KeyError(item)
+
+    def get(self, item: str, default: Any = None) -> Any:
+        try:
+            return self[item]
+        except (KeyError, AttributeError):
+            return default
+
 
 class EvolutionGate:
     """
@@ -120,32 +109,22 @@ class EvolutionGate:
                 setattr(m, k, v)
         return m
 
-    def _validate_evolution_sync(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
+    def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
+        """RSEA Gate: Evaluates candidate self-evolution against baseline."""
         logger.info(f"EvolutionGate: Performing monotone-safe audit for candidate {candidate_id}")
 
-        def _return_val(val: bool):
-            try:
-                loop = asyncio.get_running_loop()
-                if loop.is_running():
-                    async def _async_val():
-                        return val
-                    return _async_val()
-            except RuntimeError:
-                pass
-            return val
-
-        # 1. EKSFT Compliance Check (arXiv:2605.29303)
+        # 1. EKSFT Compliance Check
         if not self._check_eksft_compliance(candidate_config):
             logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED due to EKSFT non-compliance.")
             return False
 
-        # Formal Invariant safety check: exposure cannot be increased while halted
+        # Invariant safety check: exposure cannot be increased while halted
         logic_shard = candidate_config.get("logic_shard", {}) or {}
         if logic_shard.get("halt", False) and logic_shard.get("increase_exposure", False):
             logger.error(f"EvolutionGate: REJECTED - Candidate {candidate_id} violated formal invariant (halted but increasing exposure)")
             return AwaitableBool(False)
 
-        # 2. Adversarial Red-Teaming (arXiv:2606.28374 Reward-Hacking Prevention)
+        # 2. Adversarial Red-Teaming
         code_diff = candidate_config.get("code_diff", "")
         if code_diff:
             scenarios = self.generate_adversarial_tests(code_diff)
@@ -171,10 +150,10 @@ class EvolutionGate:
 
         baseline = parse_metrics(baseline_raw)
 
-        # 4. Run candidate on validation set (Stateful Candidate)
+        # 4. Run candidate benchmark
         candidate_mode = candidate_config.get("mode", "stateful")
         try:
-            candidate_raw = self.validation_engine.run_benchmark(candidate_config, mode=candidate_mode)
+            candidate = self.validation_engine.run_benchmark(candidate_config, mode=candidate_mode)
         except TypeError:
             # Fallback if validation engine doesn't accept mode keyword
             candidate_raw = self.validation_engine.run_benchmark(candidate_config)
@@ -210,15 +189,13 @@ class EvolutionGate:
         else:
             candidate = candidate_raw
 
-        # 4. Monotone-Safe Verification
-        if candidate.safety_score < 1.0:
-            logger.error(f"EvolutionGate: REJECTED - Safety regression detected ({candidate.safety_score} < 1.0)")
-            return _return_val(False)
+        # 5. Calculate gain and evaluate monotonicity
+        cand_perf = float(self._get_metric(candidate, "perf", 0.5))
+        base_perf = float(self._get_metric(baseline, "perf", 0.5))
+        gain = cand_perf - base_perf
 
-        # 5. Latency Check
-        if candidate.latency > baseline.latency * 1.2:
-            logger.error(f"EvolutionGate: REJECTED - Latency regression exceeds limits ({baseline.latency}ms -> {candidate.latency}ms)")
-            return _return_val(False)
+        cand_latency = float(self._get_metric(candidate, "latency", 10.0))
+        base_latency = float(self._get_metric(baseline, "latency", 10.0))
 
         # 5. Monotone-Safe Check: Gain Metric (arXiv:2606.05661 CL-Bench)
         gain = candidate.reward - baseline.reward
@@ -242,35 +219,20 @@ class EvolutionGate:
             _get_metric(candidate, "deterministic_replay_success", 1.0) >= _get_metric(baseline, "deterministic_replay_success", 1.0)
         )
 
-        # Fix NameErrors: Define is_significant, no_regressions and candidate_perf
         is_significant = gain >= self.threshold
         no_regressions = (
-            candidate.calibration >= baseline.calibration - 0.05 and
-            candidate.robustness >= baseline.robustness - 0.05 and
-            candidate.latency <= baseline.latency * 1.5
+            cand_safety >= base_safety and
+            cand_latency <= base_latency * 1.2 and
+            cand_calibration >= base_calibration - 0.05 and
+            cand_robustness >= base_robustness - 0.05
         )
-        candidate_perf = {
-            "reward": candidate.reward,
-            "calibration": candidate.calibration,
-            "robustness": candidate.robustness,
-            "latency": candidate.latency,
-            "safety_score": candidate.safety_score,
-            "gain": candidate.gain
-        }
 
-        if is_significant and no_regressions:
-            logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain (G): {gain:.4f}")
-
-        # Custom metrics check (like drawdown, calibration, etc.)
-        if hasattr(candidate, "drawdown") and hasattr(baseline, "drawdown"):
-            if candidate.drawdown > baseline.drawdown + 0.01:
-                logger.error(f"EvolutionGate: REJECTED - Drawdown regression detected ({baseline.drawdown} -> {candidate.drawdown})")
+        # Custom metrics check (e.g. drawdown)
+        cand_drawdown = self._get_metric(candidate, "drawdown")
+        base_drawdown = self._get_metric(baseline, "drawdown")
+        if cand_drawdown is not None and base_drawdown is not None:
+            if cand_drawdown > base_drawdown + 0.01:
                 no_regressions = False
-
-        # Calibration check: higher calibration is better
-        if candidate.calibration < baseline.calibration - 0.05:
-            logger.error(f"EvolutionGate: REJECTED - Calibration regression detected ({baseline.calibration} -> {candidate.calibration})")
-            no_regressions = False
 
         if is_significant and no_regressions:
             logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain (G): {gain:.4f}")
@@ -324,7 +286,6 @@ class EvolutionGate:
             {"name": "calibration_drift_regime_shift", "severity": "HIGH", "target": "world_model"}
         ]
 
-        # Reward-Hacking Detection
         hacking_patterns = ["score =", "reward =", "profit =", "confidence = 1.0", "bypass", "disable"]
         for pattern in hacking_patterns:
             if pattern in code_diff.lower():
@@ -338,15 +299,9 @@ class EvolutionGate:
         red_team_results = {"status": "passed", "failures": []}
         for scenario in scenarios:
             if scenario["severity"] == "CRITICAL":
-                 red_team_results["status"] = "failed"
-                 red_team_results["failures"].append(scenario["name"])
+                red_team_results["status"] = "failed"
+                red_team_results["failures"].append(scenario["name"])
         return red_team_results
-
-    async def generate_adversarial_tests(self, code_diff: str) -> List[Dict[str, Any]]:
-        return self.generate_adversarial_tests_sync(code_diff)
-
-    async def run_red_teaming_session(self, candidate_config: Dict[str, Any], scenarios: List[Dict[str, Any]]) -> Dict[str, Any]:
-        return self.run_red_teaming_session_sync(candidate_config, scenarios)
 
     def get_evolution_report(self) -> List[Dict[str, Any]]:
         return self.evolution_history.copy()

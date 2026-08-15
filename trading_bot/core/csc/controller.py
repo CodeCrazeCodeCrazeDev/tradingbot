@@ -15,9 +15,12 @@ import torch
 import time
 import logging
 import asyncio
+import copy
+import threading
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 from uuid import uuid4
+from unittest.mock import MagicMock
 
 from .hypothesis import HypothesisGenerator, ReasoningBranch, Hypothesis
 from .folding import InformationFolder
@@ -87,7 +90,7 @@ class CognitiveSystemController:
     """
     UCA V6 Controller - Authoritative Strategic Brain.
     Implements 12-step Recursive Active Inference.
-    Supports backward compatibility for legacy 3-positional signatures.
+    Supports backward compatibility for legacy positional signatures.
     """
     _instance = None
     _lock = threading.Lock()
@@ -167,11 +170,8 @@ class CognitiveSystemController:
         self.execution_planner = kwargs.get("execution_planner")
         self.evolution_gate = kwargs.get("evolution_gate")
 
-        # Map positional arguments
-        # If we got CognitiveSystemController(world_model, hms, shield)
         if len(args) == 1:
             self.shield = args[0]
-        # Or if we have V6 signature: (world_model, hms, skill_router, verifier_swarm, risk_engine, consensus_engine, execution_planner, evolution_gate, shield=None)
         elif len(args) >= 6:
             self.skill_router = args[0]
             self.verifier_swarm = args[1]
@@ -182,7 +182,6 @@ class CognitiveSystemController:
             if len(args) >= 7:
                 self.shield = args[6]
         elif len(args) > 1:
-            # General fallback pairing by type or index
             for arg in args:
                 if isinstance(arg, ImmutableShield):
                     self.shield = arg
@@ -191,7 +190,6 @@ class CognitiveSystemController:
                 elif isinstance(arg, VerificationSwarm):
                     self.verifier_swarm = arg
 
-        # Inject default functional components if not explicitly provided
         self.skill_router = self.skill_router or SkillRouter()
         self.verifier_swarm = self.verifier_swarm or VerificationSwarm()
 
@@ -210,7 +208,7 @@ class CognitiveSystemController:
         self.last_prediction = None
         self.vfe_history = []
 
-        self._max_loops = getattr(self, "_max_loops", 3)
+        self._max_loops = 3
         self._initialized = True
         CognitiveSystemController._instance = self
         logger.info("CSC-V6: Brain initialized with dynamic argument mapping.")
@@ -266,13 +264,12 @@ class CognitiveSystemController:
     async def _safe_await(self, val_or_coro: Any) -> Any:
         if val_or_coro is None:
             return None
-        # Handle cases where the argument is a callable or mock returned an unawaited mock
-        if asyncio.iscoroutine(coro_or_val) or hasattr(coro_or_val, "__await__"):
+        if asyncio.iscoroutine(val_or_coro) or hasattr(val_or_coro, "__await__"):
             try:
-                return await coro_or_val
+                return await val_or_coro
             except TypeError:
-                return coro_or_val
-        return coro_or_val
+                return val_or_coro
+        return val_or_coro
 
     def _calculate_sensory_surprise(self, observation: Dict[str, Any]) -> float:
         """Minimizing surprise is the core of Active Inference."""
@@ -301,8 +298,8 @@ class CognitiveSystemController:
         e_k[0] = 1.0  # Initial discrete state
         input_signal = np.random.normal(0, 0.1, (512,))
 
-        for k in range(self._max_loops):
-            h_next, token = self.discoloop.transition(input_signal, e_k, k)
+        for i in range(loops):
+            h_next, token = self.discoloop.transition(input_signal, e_k, i)
             self.discrete_channel.append(token)
             idx = int(token.split('_')[-2])
             e_k = np.zeros_like(h_next)
@@ -325,7 +322,7 @@ class CognitiveSystemController:
             failure_rate = sim_data.get("failure_rate", 0.0)
 
         if isinstance(failure_rate, (int, float)) and failure_rate > 0.4:
-            logger.warning(f"CSC-V6: High simulation failure detected. Pivoting strategy...")
+            logger.warning("CSC-V6: High simulation failure detected. Pivoting strategy...")
             pivoted_branch = await self.hypothesis_gen.pivot_branch(best, "high_risk_detected")
             if pivoted_branch:
                 return pivoted_branch
@@ -352,7 +349,7 @@ class CognitiveSystemController:
             sim_data = {}
 
         base_qty = branch.execution_plan.get("quantity", 0.1) if isinstance(branch.execution_plan, dict) else 0.1
-        if isinstance(base_qty, MagicMock):
+        if isinstance(base_qty, MagicMock) or not isinstance(base_qty, (int, float)):
             base_qty = 0.1
 
         # Validate NaN/Inf and negative quantities
@@ -410,7 +407,7 @@ class CognitiveSystemController:
             "action": branch.execution_plan.get("action", "WAIT") if isinstance(branch.execution_plan, dict) else "WAIT",
             "quantity": max(0.01, final_qty),
             "confidence": branch.confidence,
-            "causal_impact": structural_impact,
+            "causal_impact": causal_impact,
             "reasoning_token": self.discrete_channel[-1] if self.discrete_channel else "none"
         }
 
@@ -552,8 +549,8 @@ class CognitiveSystemController:
         logger.info("CSC-V6: Starting 12-step Recursive Active Inference Pipeline")
         t0 = time.perf_counter()
 
-        # Check for dict-like interface, handle object-like as well
         obs_dict = observation if isinstance(observation, dict) else getattr(observation, "__dict__", {})
+        trade_id = obs_dict.get("trade_id", str(uuid4()))
 
         # 1. Surprise-Driven Perception
         # VFE Minimization: F = U(q) - H(q)
@@ -574,20 +571,17 @@ class CognitiveSystemController:
         intervention = await self.skill_router.route_task("market_ingestion", observation)
         if hasattr(intervention, "to_dict"):
             intervention = intervention.to_dict()
-        if intervention.get("status") == "pf_intervention":
+        if isinstance(intervention, dict) and intervention.get("status") == "pf_intervention":
             pf_result = intervention.get("pf_result", {})
             reason = pf_result.get("reason", intervention.get("reason", "unknown"))
             logger.warning(f"CSC-V6 Step 3: HASP PF Intervention: {reason}")
             if pf_result.get("action") == "override_to_hold" or intervention.get("action") == "override_to_hold":
                 return CoreDecision(
                     outcome=DecisionOutcome.TRADE_REJECTED,
-                    trade_id=observation.get("trade_id", str(uuid4())),
+                    trade_id=trade_id,
                     dominant_rejection_reason=f"HASP PF Intervention: {reason}"
                 )
-            if isinstance(intervention, dict):
-                observation.update(intervention)
-            elif hasattr(intervention, "to_dict"):
-                observation.update(intervention.to_dict())
+            obs_dict.update(intervention)
 
         # 4. Recursive DiscoLoop Reasoning (arXiv:2607.00341)
         # Recurrence carrier S_t = [h_t ; e_t]
@@ -603,7 +597,6 @@ class CognitiveSystemController:
         latent_z = torch.tensor([self.continuous_state.get("latent", [0.0]*512)])
         sim_results = {}
 
-        # Fallback to simulate_branches if mocked on hypothesis_gen for testing compatibility
         if hasattr(self.hypothesis_gen, "simulate_branches"):
             try:
                 sim_res_call = self.hypothesis_gen.simulate_branches(branches)
@@ -611,27 +604,20 @@ class CognitiveSystemController:
             except Exception as e:
                 logger.error(f"Error calling simulate_branches: {e}")
 
-        for branch in branches:
-            # Simulate each branch interpretation
-            sim_results[branch.branch_id] = await self._safe_await(self.world_model.simulate_intervention(
-                observation, branch.execution_plan, latent_z=latent_z
-            ))
-
-        # 6. Causal Simulation
-        sim_results = await self._safe_await(self.hypothesis_gen.simulate_branches(branches))
-
-        # 6. Causal Simulation
-        sim_results = await self._safe_await(self.hypothesis_gen.simulate_branches(branches))
+        if not sim_results and self.world_model is not None and hasattr(self.world_model, "simulate_intervention"):
+            for branch in branches:
+                sim_results[branch.branch_id] = await self._safe_await(self.world_model.simulate_intervention(
+                    observation, branch.execution_plan, latent_z=latent_z
+                ))
 
         # 7. Pivot/Refine Optimization
-        # Self-healing strategy adjustment
         best_branch = await self._safe_await(self._pivot_refine_loop(branches, sim_results))
         if not best_branch:
-             return CoreDecision(
-                 outcome=DecisionOutcome.TRADE_REJECTED,
-                 trade_id=obs_dict.get("trade_id", str(uuid4())),
-                 dominant_rejection_reason="No viable reasoning branches after Pivot/Refine"
-             )
+            return CoreDecision(
+                outcome=DecisionOutcome.TRADE_REJECTED,
+                trade_id=trade_id,
+                dominant_rejection_reason="No viable reasoning branches after Pivot/Refine"
+            )
 
         # 8. VFE Minimization (Decision Selection)
         # Selecting actions that minimize expected free energy (EFE)
@@ -663,18 +649,17 @@ class CognitiveSystemController:
                 dominant_rejection_reason="Insufficient evidence / Verification Swarm rejection"
             )
 
-        # 11. Immutable Commitment
+        # 11. Immutable Shield Governance Gate
         if self.shield is not None:
             shield_report = await self._safe_await(self.shield.validate_action("trade", decision_proposal, {"market": observation}))
             if shield_report and getattr(shield_report, "decision", None) != GovernanceDecision.APPROVED:
                 return CoreDecision(
                     outcome=DecisionOutcome.TRADE_REJECTED,
-                    trade_id=decision_proposal.get("trade_id", "NO_BRANCH"),
+                    trade_id=decision_proposal.get("trade_id", trade_id),
                     dominant_rejection_reason=f"Shield Veto: {getattr(shield_report, 'reason', 'Vetoed by Immutable Shield')}"
                 )
 
         # 12. HIPIF Folding & Persistence
-        # Semantic compression of the episode
         logger.info("CSC-V6: Step 12: Folding and persisting ledger entry")
         self.folder.fold_history(ledger_entry)
         if hasattr(self.hms, "store_ledger_entry"):
@@ -691,18 +676,18 @@ class CognitiveSystemController:
         await self._safe_await(self.decision_bus.propose_action(action))
         status = await self._safe_await(action.wait_for_decision(timeout=5.0))
 
-        if status != ActionStatus.APPROVED and status != ActionStatus.EXECUTED:
+        if status not in (ActionStatus.APPROVED, ActionStatus.EXECUTED):
             reason = f"LogAct consensus failure: {status.value if hasattr(status, 'value') else status}"
             return CoreDecision(
                 outcome=DecisionOutcome.TRADE_REJECTED,
-                trade_id=decision_proposal.get("trade_id"),
+                trade_id=decision_proposal.get("trade_id", trade_id),
                 dominant_rejection_reason=reason,
             )
 
-        logger.info(f"CSC-V6: Decision COMMITTED in {time.perf_counter()-t0:.3f}s")
+        logger.info(f"CSC-V6: Decision COMMITTED in {time.perf_counter() - t0:.3f}s")
         return CoreDecision(
             outcome=DecisionOutcome.TRADE_APPROVED,
-            trade_id=decision_proposal.get("trade_id"),
+            trade_id=decision_proposal.get("trade_id", trade_id),
             confidence_vector=self._calculate_composite_confidence(ledger_entry),
         )
 
