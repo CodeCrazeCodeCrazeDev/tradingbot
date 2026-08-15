@@ -250,8 +250,10 @@ class SkillRouter:
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
-            cls._instance = super(SkillRouter, cls).__new__(cls)
-            cls._instance._initialized = False
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(SkillRouter, cls).__new__(cls)
+                    cls._instance._initialized = False
         return cls._instance
 
     def __init__(self):
