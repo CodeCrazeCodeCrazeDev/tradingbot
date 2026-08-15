@@ -64,7 +64,12 @@ Every hypothesis-related capability is governed by exactly one canonical module,
 
 *   **Duplicate Ownership Resolved**: Domain-specific hypothesis engines (such as `london_hypothesis.py` or `multidimensional_intelligence/hypothesis_engine.py`) are strictly merged or replaced by the central SRE interface, ensuring unified telemetry and zero-placeholder compliance.
 
----
+Hypotheses manifest across different subsystems under several names:
+- **World Model:** Latent representation, prediction, belief, world model state, causal model scenario.
+- **Autonomous Research:** Research proposal, trade idea, alpha, signal, forecast, thesis.
+- **Cognitive OS / CSC:** Parallel reasoning branch, expectation, assumption.
+- **Strategy Discovery / Swarm:** Policy candidate, optimization proposal, anomaly explanation.
+- **Risk / Governance:** Confidence estimate, regime belief.
 
 ## 3. Phase 3 — Repository Dependency Graph
 
@@ -137,7 +142,15 @@ $$\text{ECE} = \sum_{m=1}^{M} \frac{|B_m|}{N} \left| \text{acc}(B_m) - \text{con
 
 $$\text{Brier Score} = \frac{1}{N} \sum_{i=1}^{N} (f_i - o_i)^2$$
 
----
+### 5.1 Mathematical Validation Core
+Our Bayesian update and evidence accumulation algorithms are validated against:
+
+1. **Bayesian Posterior Normalization:**
+   $$P(\theta | E) = \frac{P(E | \theta) P(\theta)}{P(E)}$$
+   Bounds are strictly normalized to $[0.0, 1.0]$.
+2. **Contradiction Penalty:** Injected contradicted verifier vetoes with high confidence trigger an immediate posterior confidence penalty:
+   $$C_{new} = C_{old} \times 0.5$$
+3. **Uncertainty Calibration:** Credal interval bounds contract deterministically as positive evidence accumulates, reducing the span from $0.80$ to below $0.15$.
 
 ## 6. Phase 6 — Missing Scientific Capabilities
 

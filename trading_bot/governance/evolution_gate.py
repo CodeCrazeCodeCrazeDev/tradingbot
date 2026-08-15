@@ -59,8 +59,7 @@ class EvolutionGate:
     RSEA: Recursive Self-Evolving Agents Gate (arXiv:2606.28374).
     Enforces the 'Monotone-Safe' update rule using the CL-Bench Gain Metric.
     Integrates EKSFT for selective strategy internalization and automated red-teaming.
-    """
-    def __init__(self, validation_engine: Any, threshold: float = 0.05, **kwargs):
+    """    def __init__(self, validation_engine: Any, threshold: float = 0.05, **kwargs):
         self.validation_engine = validation_engine
         self.evolution_history = []
         self.threshold = kwargs.get("improvement_threshold", threshold)
@@ -185,7 +184,10 @@ class EvolutionGate:
             # Fallback if validation engine doesn't accept mode keyword
             candidate_raw = self.validation_engine.run_benchmark(candidate_config)
 
-        # Parse raw candidate benchmark output robustly
+        try:
+            candidate_raw = self.validation_engine.run_benchmark(candidate_config, mode="stateful")
+        except TypeError:
+            candidate_raw = self.validation_engine.run_benchmark(candidate_config)
         if isinstance(candidate_raw, (int, float)):
             candidate = EvolutionMetrics(
                 reward=float(candidate_raw),

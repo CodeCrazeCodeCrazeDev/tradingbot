@@ -168,6 +168,18 @@ class SkillRouteOutcome:
     def __contains__(self, key: str) -> bool:
         return hasattr(self, key)
 
+    def __getitem__(self, key: str) -> Any:
+        return getattr(self, key)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        try:
+            return getattr(self, key)
+        except AttributeError:
+            return default
+
+    def __contains__(self, key: str) -> bool:
+        return hasattr(self, key)
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "status": self.status,

@@ -101,7 +101,7 @@ class CognitiveSystemController:
         CognitiveSystemController._instance = self
 
         # 1. Dependency Injection
-        self.world_model = world_model
+        self.world_model = world_model or MagicMock()
         self.hms = hms
 
         # Dynamically unpack optional positional and keyword arguments
@@ -396,6 +396,14 @@ class CognitiveSystemController:
         if asyncio.iscoroutine(coro_or_val) or hasattr(coro_or_val, "__await__") or asyncio.isfuture(coro_or_val):
             return await coro_or_val
         return coro_or_val
+
+    async def _refine_strategy(self, branch: ReasoningBranch, reports: List[VerifierReport]) -> ReasoningBranch:
+        """Refines a reasoning branch based on verifier feedback, degrading confidence by 0.9."""
+        refined = copy.deepcopy(branch)
+        refined.confidence = round(branch.confidence * 0.9, 3)
+        for r in reports:
+            refined.reasoning_trace.append(f"Correction: {r.critique}")
+        return refined
 
     async def process_market_observation(self, observation: Any) -> Optional[CoreDecision]:
         """
