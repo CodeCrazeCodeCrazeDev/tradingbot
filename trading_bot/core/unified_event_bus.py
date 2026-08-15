@@ -97,6 +97,10 @@ class UnifiedEvent:
     _completed_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
 
     @property
+    def action_id(self) -> str:
+        return self.event_id
+
+    @property
     def action_type(self) -> str:
         return self.event_type
 

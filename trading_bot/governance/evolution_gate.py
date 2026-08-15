@@ -62,7 +62,7 @@ class EvolutionGate:
     """    def __init__(self, validation_engine: Any, threshold: float = 0.05, **kwargs):
         self.validation_engine = validation_engine
         self.evolution_history = []
-        self.threshold = kwargs.get("improvement_threshold", threshold)
+        self.threshold = kwargs.get("improvement_threshold", kwargs.get("gain_threshold", threshold))
         # EKSFT Thresholds
         self.tau_h = 0.8  # Entropy threshold
         self.tau_kl = 0.5 # KL Divergence threshold
@@ -192,7 +192,7 @@ class EvolutionGate:
                 safety_score=1.0
             )
         elif isinstance(candidate_raw, dict):
-            reward = candidate_raw.get("reward", candidate_raw.get("perf", 0.5))
+            reward = candidate_raw.get("reward", candidate_raw.get("perf", candidate_raw.get("sharpe_ratio", 0.5)))
             ece = candidate_raw.get("ece", 1.0 - candidate_raw.get("calibration", 0.95))
             calibration = candidate_raw.get("calibration", 1.0 - ece)
             robustness = candidate_raw.get("robustness", 0.8)
