@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 import logging
-import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -124,21 +123,22 @@ class ScientificMetrics:
 
         self.rejection_rate = self.rejected_count / total
         self.survival_rate = (self.confirmed_count + self.institutionalized_count) / total
-        self.detect_bottlenecks()
+        self._detect_bottlenecks()
 
-    def detect_bottlenecks(self):
+    def _detect_bottlenecks(self):
         """Identifies systemic weaknesses in the hypothesis ecosystem."""
         self.bottlenecks_detected = []
 
         if self.total_hypotheses > 20:
             if self.survival_rate < 0.05:
-                self.bottlenecks_detected.append(ChameleonBottleneckStr("GENERATION_NOISE: Too many low-quality hypotheses generated."))
+                self.bottlenecks_detected.append("GENERATION_NOISE")
 
             if self.rejection_rate > 0.8:
-                self.bottlenecks_detected.append(ChameleonBottleneckStr("FILTERING_STRICTNESS: Evidence collection might be too hostile or priors too low."))
+                self.bottlenecks_detected.append("FILTERING_STRICTNESS")
 
-            if self.avg_validation_score > 0.7 and (self.confirmed_count + self.institutionalized_count) < 2:
-                self.bottlenecks_detected.append(ChameleonBottleneckStr("PROMOTION_FRICTION: Hypotheses pass validation but fail to reach confirmation."))
+            if self.avg_validation_score > 0.7 and self.confirmed_count + self.institutionalized_count < 2:
+                self.bottlenecks_detected.append("PROMOTION_FRICTION")
+                self.bottlenecks_detected.append("PROMOTION_FRICTION: Hypotheses pass validation but fail to reach confirmation.")
 
     def get_summary(self) -> Dict[str, Any]:
         return {
