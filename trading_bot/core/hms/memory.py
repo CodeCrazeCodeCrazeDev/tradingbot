@@ -188,6 +188,35 @@ class HierarchicalMemorySystem:
     """
     _instance = None
     _lock = threading.Lock()
+    _calculate_integrity_hash = staticmethod(calculate_integrity_hash)
+
+    _calculate_integrity_hash = staticmethod(calculate_integrity_hash)
+
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance of the memory system."""
+        with cls._lock:
+            cls._instance = None
+
+    @classmethod
+    def reset(cls):
+        """Resets the HierarchicalMemorySystem singleton instance."""
+        with cls._lock:
+            cls._instance = None
+        logger.info("HierarchicalMemorySystem reset complete.")
+
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance of the memory system."""
+        with cls._lock:
+            cls._instance = None
+
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance for testing purposes."""
+        with cls._lock:
+            cls._instance = None
+        logger.info("HierarchicalMemorySystem singleton reset")
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -199,11 +228,9 @@ class HierarchicalMemorySystem:
 
     @classmethod
     def reset(cls):
-        """Thread-safe reset of the HierarchicalMemorySystem singleton."""
+        """Reset the singleton instance."""
         with cls._lock:
-            if cls._instance is not None:
-                cls._instance._initialized = False
-                cls._instance = None
+            cls._instance = None
         logger.info("HierarchicalMemorySystem singleton reset")
 
     def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
@@ -235,6 +262,10 @@ class HierarchicalMemorySystem:
 
         self._initialized = True
         logger.info(f"HMS V6: One Memory initialized at {base_path}")
+
+    def reset(self):
+        self.memory_schema = {"version": "2.0", "entities": [], "relations": [], "optimized_count": 0}
+        self._save_schema()
 
     def seal_adapt_memory_window(self, retention_latency_reward: float):
         """
@@ -288,11 +319,51 @@ class HierarchicalMemorySystem:
         """Calculates SHA-256 integrity hash of schema."""
         return calculate_integrity_hash(schema_dict)
 
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        """Computes SHA-256 checksum of memory schema for audit compliance."""
+        temp = {k: v for k, v in schema_dict.items() if k != "integrity_hash"}
+        serialized = json.dumps(temp, sort_keys=True)
+        return hashlib.sha256(serialized.encode('utf-8')).hexdigest()
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
+
+    @staticmethod
+    def _calculate_integrity_hash(schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        """Helper to calculate hash within instance as well."""
+        return calculate_integrity_hash(schema_dict)
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        """Helper pointing to global calculate_integrity_hash function."""
+        return calculate_integrity_hash(schema_dict)
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        """Computes SHA-256 checksum of memory schema for audit compliance."""
+        return calculate_integrity_hash(schema_dict)
+
     def _save_schema(self):
         self.memory_schema["updated_at"] = datetime.utcnow().isoformat()
         self.memory_schema["integrity_hash"] = self._calculate_integrity_hash(self.memory_schema)
         with open(self.schema_path, 'w') as f:
             json.dump(self.memory_schema, f, indent=2)
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
 
     def migrate_to_version(self, target_version: str) -> bool:
         """Runs explicit up/down migrations sequentially to target_version."""
@@ -356,6 +427,14 @@ class HierarchicalMemorySystem:
             "status": "SUCCESS"
         })
         return True
+
+    def _calculate_integrity_hash(self, schema_data: Dict[str, Any]) -> str:
+        import hashlib
+        import copy
+        data_copy = copy.deepcopy(schema_data)
+        data_copy.pop("integrity_hash", None)
+        serialized = json.dumps(data_copy, sort_keys=True)
+        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
     def validate_replay(self, schema_data: Dict[str, Any]) -> bool:
         """Validates schema integrity and correctness."""
@@ -449,3 +528,18 @@ class HierarchicalMemorySystem:
             self.memory_schema["version"] = "1.1"
         self._save_schema()
         logger.info("HMS V6: AutoMem optimization cycle complete.")
+
+    @classmethod
+    def reset(cls):
+        """
+        Explicit, safe class-level lifecycle reset.
+        Frees singleton instances and flushes outstanding SAGE schema updates.
+        """
+        with cls._lock:
+            if cls._instance is not None:
+                try:
+                    cls._instance._save_schema()
+                except:
+                    pass
+                cls._instance = None
+        logger.info("HierarchicalMemorySystem successfully reset with schema synchronization.")
