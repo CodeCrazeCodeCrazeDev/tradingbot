@@ -7,6 +7,7 @@ Implements 'LogAct: Enabling Agentic Reliability via Shared Logs' (Paper 1).
 """
 
 import asyncio
+import time
 import logging
 import json
 import time
@@ -125,6 +126,15 @@ class UnifiedEvent:
         return self.status
 
 class UnifiedDecisionBus:
+    _instance: Optional['UnifiedDecisionBus'] = None
+
+    @classmethod
+    def reset(cls):
+        """Reset the global decision_bus instance or clear configuration state."""
+        global decision_bus
+        decision_bus = UnifiedDecisionBus()
+        cls._instance = decision_bus
+
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
         self._log: List[Union[LogAction, UnifiedEvent]] = []
@@ -137,18 +147,20 @@ class UnifiedDecisionBus:
 
     @classmethod
     def reset(cls):
-        """Reset the global decision_bus instance state."""
+        """Resets the global decision bus instance state."""
         global decision_bus
-        decision_bus._log.clear()
-        decision_bus._voters.clear()
-        decision_bus._subscribers.clear()
-        try:
+        if 'decision_bus' in globals() and decision_bus is not None:
+            # Stop the task if running
+            decision_bus._running = False
+            if decision_bus._processor_task:
+                decision_bus._processor_task.cancel()
+                decision_bus._processor_task = None
+            decision_bus._log.clear()
+            decision_bus._voters.clear()
+            decision_bus._subscribers.clear()
+            # Re-initialize the queue
             decision_bus._action_queue = asyncio.PriorityQueue()
-        except Exception:
-            decision_bus._action_queue = None
-        decision_bus._running = False
-        decision_bus._processor_task = None
-        logger.info("UnifiedDecisionBus state reset")
+        logger.info("UnifiedDecisionBus reset complete.")
 
     async def start(self):
         if self._processor_task and not self._processor_task.done():
