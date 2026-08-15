@@ -49,10 +49,6 @@ class HypothesisGenerator:
         """
         logger.info("HypothesisGenerator creating competing branches")
 
-        # 1. Ask World Model for raw scenarios (Price/Vol/Liq futures)
-        # 2. Assign specialized reasoning agents to each scenario
-        # 3. Each agent produces a ReasoningBranch with its own EvidenceGraph
-
         # Multi-Hypothesis Generation
         branches = [
             ReasoningBranch(
@@ -156,7 +152,6 @@ class HypothesisGenerator:
     async def pivot_branch(self, branch: ReasoningBranch, reason: str) -> Optional[ReasoningBranch]:
         """AutoResearchClaw Pivot logic: strategically distinct alternative."""
         logger.info(f"HypothesisGen: Pivoting branch {branch.branch_id} due to {reason}")
-        # Implementation of strategically distinct pivot
         pivoted = ReasoningBranch(
             branch_id=f"pivoted_{branch.branch_id}",
             name=f"Pivoted {branch.name}",
