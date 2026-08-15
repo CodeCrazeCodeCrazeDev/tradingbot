@@ -90,6 +90,21 @@ class CognitiveSystemController:
     Supports backward compatibility for legacy 3-positional signatures.
     """
     _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(CognitiveSystemController, cls).__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+
+    @classmethod
+    async def reset(cls):
+        """Reset the singleton instance of the controller."""
+        with cls._lock:
+            cls._instance = None
 
     @classmethod
     async def reset(cls):
@@ -103,6 +118,9 @@ class CognitiveSystemController:
         *args,
         **kwargs
     ):
+        if getattr(self, "_initialized", False):
+            return
+        self._initialized = True
         # Setup class instance reference for backward compatibility in tests
         CognitiveSystemController._instance = self
 
