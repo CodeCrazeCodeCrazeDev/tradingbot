@@ -144,7 +144,7 @@ class CognitiveSystemController:
         from ..unified_event_bus import decision_bus as real_decision_bus
         self.decision_bus = kwargs.get("decision_bus") or real_decision_bus
 
-        # Core Functional Components
+        # Reset functional/state attributes to fully isolate states across test invocations
         self.hypothesis_gen = HypothesisGenerator(world_model)
         self.folder = InformationFolder(hms)
         self.discoloop = DiscoLoopCell(latent_dim=512)
@@ -393,7 +393,7 @@ class CognitiveSystemController:
     async def _safe_await(self, coro_or_val: Any) -> Any:
         if coro_or_val is None:
             return None
-        if asyncio.iscoroutine(coro_or_val) or hasattr(coro_or_val, "__await__"):
+        if asyncio.iscoroutine(coro_or_val) or hasattr(coro_or_val, "__await__") or asyncio.isfuture(coro_or_val):
             return await coro_or_val
         return coro_or_val
 
@@ -526,7 +526,8 @@ class CognitiveSystemController:
         # Semantic compression of the episode
         logger.info("CSC-V6: Step 12: Folding and persisting ledger entry")
         self.folder.fold_history(ledger_entry)
-        self.hms.store_ledger_entry(ledger_entry)
+        if hasattr(self.hms, "store_ledger_entry"):
+            self.hms.store_ledger_entry(ledger_entry)
 
         # Final LogAct write-through for approved trade
         logger.info("CSC-V6: Proposing final trade execution to decision bus")
@@ -599,7 +600,7 @@ class CognitiveSystemController:
 
         if sim_data and isinstance(sim_data, dict) and sim_data.get("failure_rate", 0) > 0.4:
             logger.warning(f"CSC-V6: High simulation failure detected. Pivoting strategy...")
-            pivoted_branch = await self.hypothesis_gen.pivot_branch(best, "high_risk_detected")
+            pivoted_branch = await self._safe_await(self.hypothesis_gen.pivot_branch(best, "high_risk_detected"))
             if pivoted_branch:
                 return pivoted_branch
 
