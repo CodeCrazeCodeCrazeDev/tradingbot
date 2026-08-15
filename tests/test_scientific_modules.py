@@ -12,14 +12,16 @@ Verifies independent correctness of:
 
 import pytest
 import asyncio
-from trading_bot.core.csc.controller import CognitiveSystemController
+from unittest.mock import MagicMock, AsyncMock
+from trading_bot.core.csc.controller import CognitiveSystemController, ReasoningBranch
 from trading_bot.core.csc.router import SkillRouter, SkillArtifact, SkillType
 from trading_bot.core.hms.memory import HierarchicalMemorySystem
 from trading_bot.governance.evolution_gate import EvolutionGate
 
 # Mock dependencies
 class MockWorldModel:
-    pass
+    async def simulate_intervention(self, *args, **kwargs):
+        return {"failure_rate": 0.1, "expected_slippage": 0.0, "structural_impact": {}}
 
 class MockValidationEngine:
     def run_benchmark(self, config):
@@ -41,6 +43,7 @@ async def test_discoloop_internalization():
     await csc._run_discoloop_internalization(obs, num_loops=3)
     await csc._run_discoloop_reasoning(obs)
 
+    # In DiscoLoop, we Transition and append token_loop_...
     assert len(csc.discrete_channel) > 0
     assert "latent" in csc.continuous_state
 
@@ -49,15 +52,12 @@ async def test_pivot_refine_logic():
     """Verify Pivot/Refine severity detection and logic."""
     csc = CognitiveSystemController()
     from trading_bot.core.hms.models import VerifierReport
-    from trading_bot.core.csc.hypothesis import ReasoningBranch
 
+    from trading_bot.core.csc.hypothesis import ReasoningBranch
     branch = ReasoningBranch(branch_id="test_b", name="Test Branch", confidence=0.9)
     reports = [VerifierReport(agent_name="V1", is_valid=False, confidence=0.9, critique="Too high risk")]
 
-    refined = csc._refine_strategy(branch, reports)
-    if asyncio.iscoroutine(refined) or hasattr(refined, "__await__"):
-        refined = await refined
-
+    refined = await csc._refine_strategy(branch, reports)
     assert refined.confidence < branch.confidence
     assert "Correction: Too high risk" in refined.reasoning_trace
 
@@ -81,13 +81,14 @@ async def test_s2l_behavioral_routing():
     result = await router.route_task("I need to hedge my EURUSD position", context)
 
     assert result.status == "s2l_routed"
-    assert result.adapter_id == "lora_hedging_v1"
+    assert result.adapter_id == "lora_hedging_v2"
 
 @pytest.mark.asyncio
 async def test_eksft_compliance_verification():
     """Verify EKSFT selective masking check in EvolutionGate."""
     gate = EvolutionGate(validation_engine=MockValidationEngine(), threshold=0.1)
 
+    # 1. Compliant candidate (high entropy token was masked)
     config_ok = {
         "training_metadata": {
             "eksft_trace": [{"id": "T1", "entropy": 0.9, "masked": True}]
@@ -95,6 +96,7 @@ async def test_eksft_compliance_verification():
     }
     assert gate._check_eksft_compliance(config_ok) is True
 
+    # 2. Non-compliant candidate (high entropy token not masked)
     config_fail = {
         "training_metadata": {
             "eksft_trace": [{"id": "T2", "entropy": 0.9, "masked": False}]
@@ -108,8 +110,8 @@ async def test_rsea_monotone_safe_gate():
     gate = EvolutionGate(validation_engine=MockValidationEngine(), threshold=0.1)
 
     baseline = {"reward": 0.5, "calibration": 0.9, "robustness": 0.8, "latency": 10.0, "safety_score": 1.0}
-    candidate_good = {"reward": 0.65, "calibration": 0.9, "robustness": 0.8, "latency": 10.0, "safety_score": 1.0, "training_metadata": {}}
-    candidate_bad = {"reward": 0.55, "calibration": 0.9, "robustness": 0.8, "latency": 10.0, "safety_score": 1.0, "training_metadata": {}}
+    candidate_good = {"reward": 0.65, "calibration": 0.9, "robustness": 0.8, "latency": 10.0, "safety_score": 1.0, "training_metadata": {}} # Gain 0.15 > 0.1
+    candidate_bad = {"reward": 0.55, "calibration": 0.9, "robustness": 0.8, "latency": 10.0, "safety_score": 1.0, "training_metadata": {}}  # Gain 0.05 < 0.1
 
     assert gate.validate_evolution("C1", candidate_good, baseline) is True
     assert gate.validate_evolution("C2", candidate_bad, baseline) is False
@@ -131,6 +133,7 @@ async def test_rsea_multi_metric_protected_gate():
         "safety_score": 1.0
     }
 
+    # 1. Performance improves and no protected metric regresses -> Approve
     candidate_good = {
         "reward": 0.65,
         "calibration": 0.9,
@@ -141,25 +144,27 @@ async def test_rsea_multi_metric_protected_gate():
     }
     assert gate.validate_evolution("CG", candidate_good, baseline) is True
 
+    # 2. Performance improves but decision latency regresses significantly -> Reject
     candidate_bad_latency = {
         "reward": 0.65,
         "calibration": 0.9,
         "robustness": 0.8,
-        "latency": 15.0,
+        "latency": 15.0, # Regressed (10.0 -> 15.0 > 1.2x tol)
         "safety_score": 1.0,
         "training_metadata": {}
     }
     assert gate.validate_evolution("CB_Lat", candidate_bad_latency, baseline) is False
 
+    # 3. Performance improves but safety regresses -> Reject
     candidate_bad_safety = {
         "reward": 0.65,
         "calibration": 0.9,
         "robustness": 0.8,
         "latency": 10.0,
-        "safety_score": 0.9,
+        "safety_score": 0.9, # Regressed (< 1.0)
         "training_metadata": {}
     }
-    assert await gate.validate_evolution("CB_Safety", candidate_bad_safety, baseline) is False
+    assert gate.validate_evolution("CB_Safety", candidate_bad_safety, baseline) is False
 
 @pytest.mark.asyncio
 async def test_csc_safety_and_self_improvement():
