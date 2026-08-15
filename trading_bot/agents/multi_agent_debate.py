@@ -913,6 +913,9 @@ class RiskSentinel(TradingAgent):
 
             total_score = sum(key_factors.values())
 
+            # Calculate overall score
+            total_score = sum(key_factors.values())
+
             # Determine Action
             total_score = sum(key_factors.values())
             if risk_flags >= 2:

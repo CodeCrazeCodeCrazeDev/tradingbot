@@ -1,5 +1,6 @@
 """
 Provides backward and testing compatibility for MT5-connected modules.
+Provides direct integration or fallback mocks for MT5 and brokers.
 """
 
 from typing import Any, Optional, Dict, List

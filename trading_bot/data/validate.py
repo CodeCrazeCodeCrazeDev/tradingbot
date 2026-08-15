@@ -1,5 +1,6 @@
 """
 Provides backward and testing compatibility for data validation modules.
+Provides validation and sanitization checks for historical and streaming datasets.
 """
 
 from typing import Any, Optional, Dict, Tuple
@@ -8,7 +9,7 @@ import pandas as pd
 from datetime import datetime
 import pandas as pd
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("AlphaAlgo.DataValidator")
 
 
 class DataValidator:
