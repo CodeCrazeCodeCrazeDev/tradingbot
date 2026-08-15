@@ -177,7 +177,11 @@ class EnhancedFitnessEvaluator:
                 'stability_score': stability_score,
                 'num_trades': backtest_result.num_trades,
                 'win_rate': backtest_result.win_rate,
-                'profit_factor': backtest_result.profit_factor
+                'profit_factor': backtest_result.profit_factor,
+                'var_95': var_95,
+                'cvar_95': cvar_95,
+                'var_99': var_99,
+                'cvar_99': cvar_99
             }
         )
     
@@ -242,6 +246,11 @@ class EnhancedFitnessEvaluator:
         
         Higher complexity = higher penalty (Occam's razor).
         """
+        if not isinstance(complexity, (int, float)) and hasattr(complexity, "get_complexity"):
+            complexity = complexity.get_complexity()
+        elif not isinstance(complexity, (int, float)):
+            complexity = 1
+
         # Soft penalty that increases with complexity
         return np.log(1 + complexity) / 5.0
     

@@ -13,6 +13,7 @@ from typing import Dict, List, Any
 try:
     from hypothesis import given, strategies as st, settings, assume, HealthCheck
     from hypothesis.extra.numpy import arrays
+    from_hypothesis_extra_pandas = True
     from hypothesis.extra.pandas import column, data_frames, series
     HYPOTHESIS_AVAILABLE = True
     # Default settings to suppress fixture health check
@@ -54,6 +55,7 @@ except ImportError:
         return decorator
     
     def assume(condition):
+        pass
     
     DEFAULT_SETTINGS = settings()
 
@@ -464,8 +466,6 @@ class TestSignalLifecycleProperties:
     def manager(self):
         """Create signal lifecycle manager"""
         from trading_bot.signals.signal_lifecycle import SignalLifecycleManager
-import numpy
-import pandas
         return SignalLifecycleManager(default_ttl_seconds=60, auto_cleanup=False)
     
     @given(

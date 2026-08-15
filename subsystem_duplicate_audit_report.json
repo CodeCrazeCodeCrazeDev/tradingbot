@@ -1,0 +1,95 @@
+{
+  "Orchestrator": {
+    "authoritative": "CognitiveSystemController",
+    "occurrences": [
+      "/app/trading_bot/core/csc/controller.py"
+    ],
+    "deprecated_occurrences": [
+      {
+        "file": "/app/trading_bot/__init__.py",
+        "class": "MasterOrchestrator"
+      },
+      {
+        "file": "/app/trading_bot/core_agent_system/master_orchestrator.py",
+        "class": "MasterOrchestrator"
+      },
+      {
+        "file": "/app/trading_bot/core_agent_system/meta_orchestrator.py",
+        "class": "MetaOrchestrator"
+      },
+      {
+        "file": "/app/trading_bot/neuros_evolution/meta_intelligence_orchestrator.py",
+        "class": "MetaIntelligenceOrchestrator"
+      },
+      {
+        "file": "/app/trading_bot/neuros_evolution/neuros_orchestrator.py",
+        "class": "NeurosEvolutionOrchestrator"
+      },
+      {
+        "file": "/app/trading_bot/unified_architecture/layer6_orchestration.py",
+        "class": "MasterOrchestrator"
+      }
+    ],
+    "status": "DEPRECATED_ACTIVE_WARNING"
+  },
+  "World Model": {
+    "authoritative": "CausalWorldModel",
+    "occurrences": [
+      "/app/trading_bot/aads/core/causal_world_model.py"
+    ],
+    "deprecated_occurrences": [],
+    "status": "PASS"
+  },
+  "Planner": {
+    "authoritative": "FoldingOperator",
+    "occurrences": [
+      "/app/trading_bot/core/csc/folding.py"
+    ],
+    "deprecated_occurrences": [],
+    "status": "PASS"
+  },
+  "Risk Engine": {
+    "authoritative": "UnifiedRiskEngine",
+    "occurrences": [],
+    "deprecated_occurrences": [],
+    "status": "PASS"
+  },
+  "Memory Authority": {
+    "authoritative": "HierarchicalMemorySystem",
+    "occurrences": [
+      "/app/trading_bot/core/hms/memory.py"
+    ],
+    "deprecated_occurrences": [],
+    "status": "PASS"
+  },
+  "Event Bus": {
+    "authoritative": "UnifiedDecisionBus",
+    "occurrences": [
+      "/app/trading_bot/core/unified_event_bus.py"
+    ],
+    "deprecated_occurrences": [],
+    "status": "PASS"
+  },
+  "Registry": {
+    "authoritative": "UnifiedComponentRegistry",
+    "occurrences": [
+      "/app/trading_bot/core/unified_registry.py"
+    ],
+    "deprecated_occurrences": [],
+    "status": "PASS"
+  },
+  "Model Manager": {
+    "authoritative": "ModelArtifactManager",
+    "occurrences": [],
+    "deprecated_occurrences": [],
+    "status": "PASS"
+  },
+  "Serialization Framework": {
+    "authoritative": "SerializerRegistry",
+    "occurrences": [
+      "/app/trading_bot/core/governance/serialization.py"
+    ],
+    "deprecated_occurrences": [],
+    "status": "PASS"
+  }
+}
