@@ -155,33 +155,21 @@ class EvolutionGate:
                 return AwaitableBool(False)
 
         # 3. Run baseline on validation set (Stateless Baseline)
-        if isinstance(baseline_config, dict):
-            baseline_mode = baseline_config.get("mode", "stateless")
-            try:
-                baseline_raw = self.validation_engine.run_benchmark(baseline_config, mode=baseline_mode)
-            except TypeError:
-                # Fallback if validation engine doesn't accept mode keyword
-                baseline_raw = self.validation_engine.run_benchmark(baseline_config)
+        baseline_raw = baseline_config
+        if self.validation_engine and hasattr(self.validation_engine, "run_benchmark"):
+            if isinstance(baseline_config, dict) and "reward" not in baseline_config and "perf" not in baseline_config:
+                baseline_mode = baseline_config.get("mode", "stateless")
+                try:
+                    baseline_raw = self.validation_engine.run_benchmark(baseline_config, mode=baseline_mode)
+                except TypeError:
+                    baseline_raw = self.validation_engine.run_benchmark(baseline_config)
+            elif isinstance(baseline_config, dict):
+                try:
+                    baseline_raw = self.validation_engine.run_benchmark(baseline_config)
+                except Exception:
+                    pass
 
-            # Parse baseline raw dict safely into EvolutionMetrics
-            if isinstance(baseline_raw, dict):
-                reward = baseline_raw.get("reward", baseline_raw.get("perf", 0.5))
-                ece = baseline_raw.get("ece", 1.0 - baseline_raw.get("calibration", 0.95))
-                calibration = baseline_raw.get("calibration", 1.0 - ece)
-                robustness = baseline_raw.get("robustness", 0.8)
-                latency = baseline_raw.get("latency", 10.0)
-                safety_score = baseline_raw.get("safety_score", 1.0)
-                baseline = EvolutionMetrics(
-                    reward=reward,
-                    calibration=calibration,
-                    robustness=robustness,
-                    latency=latency,
-                    safety_score=safety_score
-                )
-            else:
-                baseline = baseline_raw
-        else:
-            baseline = baseline_config
+        baseline = parse_metrics(baseline_raw)
 
         # 4. Run candidate on validation set (Stateful Candidate)
         candidate_mode = candidate_config.get("mode", "stateful")

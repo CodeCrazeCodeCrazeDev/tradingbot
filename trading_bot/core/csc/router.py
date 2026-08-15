@@ -296,7 +296,9 @@ class SkillRouter:
     def reset(cls):
         """Reset the singleton instance for testing purposes."""
         with cls._lock:
-            cls._instance = None
+            if cls._instance is not None:
+                cls._instance._initialized = False
+                cls._instance = None
         logger.info("SkillRouter singleton reset")
 
     def _setup_default_skills(self):
