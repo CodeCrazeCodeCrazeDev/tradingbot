@@ -1,33 +1,48 @@
-# SELF_IMPROVEMENT_SAFETY_MODEL.md
-## Self-Improvement Safety Model and Human Governance Boundaries
+# Self-Improvement Safety Model (RSI-SAFETY-2026)
 
-This document defines the strict, non-bypassable safety models, risk boundaries, and human-in-the-loop gates for AlphaAlgo's self-improvement layers.
+## 1. The Immutable Safety Kernel
+
+The **Safety Kernel** represents the absolute non-modifiable core of the AlphaAlgo operating environment. No autonomous self-improvement loop, meta-optimizer, or model-generated code candidate can alter, delete, or bypass the rules and classes inside this boundary.
+
+### Protected Configurations and Classes
+The following systems are protected by read-only filesystem locks, strict checksum validation, and execution hooks:
+1.  **ImmutableShield (`ImmutableShield`):** The final governance and transaction validation gateway.
+2.  **RiskAuthority & Limits:** System-wide maximum daily loss, leverage caps, broker order confirmations, and maximum position size parameters.
+3.  **Audit Logging System:** Logging to the SQLite `audit_log.db` and the totally ordered `LogAct` shared transaction log.
+4.  **Human Approval and Protocol Hooks:** The verification gate code and deployment authentication keys.
+
+### Security Escalation Policy
+Any attempt by an autonomous improvement loop to modify these protected files or configurations results in:
+```
+[Self-Improvement Modification Attempt]
+               │
+               ▼
+   [Safety Kernel Auditer] (Intercepts AST write)
+               │
+      ┌────────┴────────┐
+      ▼                 ▼
+[BLOCKED]       [SECURITY EVENT]
+                        │
+                        ▼
+            [Emergency Engine Freeze]
+                        │
+                        ▼
+            [Human Alarm / Email / SMS]
+```
 
 ---
 
-## 1. Governance Boundary Classification
+## 2. Experimental Isolation via `StrategySandbox`
 
-To ensure that the self-improving brain remains structurally aligned with risk objectives, capabilities are segregated into three explicit governance zones:
+To allow AlphaAlgo to safely innovate and evaluate candidate strategies, models, and features (under Tier 2 and Tier 3), we implement the **StrategySandbox** (`trading_bot/core/security/sandbox.py`). This sandbox provides robust process-level isolation:
 
-### Zone A: Autonomous (No Human Intervention Required)
-*   **Research**: Academic literature parsing, paper database indexing.
-*   **Hypothesis Generation**: Proposing candidate alphas and strategies in the sandbox.
-*   **Simulation & Benchmarking**: Running backtests, tracing lineage, and computing out-of-sample metrics.
-*   **Diagnostics**: Parsing logs to locate performance bottlenecks or trace memory leaks.
-
-### Zone B: Restricted (Automated Safety Check + Human Notification)
-*   **Model Promotion**: Moving an evaluated neural model from the sandbox to the active registry.
-*   **Policy & Strategy Activation**: Engaging a candidate strategy within low-exposure paper/canary trading.
-
-### Zone C: Human Approval Required (Hard Cryptographic Verification Gate)
-*   **Risk Limits Modification**: Any change to drawdown tolerances, leverage, or daily loss bounds.
-*   **Disabling Safety Gates**: Pausing or bypassing verification swarms or the `ImmutableShield`.
-*   **Self-Modification Authority**: Altering the code of the `EvolutionGate` or rollback scripts themselves.
-
----
-
-## 2. Preventing Self-Improvement Reward Hacking
-
-The system differentiates between **improving capability** and **improving capability measurement**.
-*   **The Constraint**: Any candidate proposal that improves its reported evaluation scores by degrading confidence estimates, increasing calibration errors, or modifying the target reward function itself is instantly and permanently rejected.
-*   **Independent Evaluation**: The evaluator component is structurally independent of the candidate code and is written in read-only modules that cannot be accessed by self-evolution loops.
+### Sandbox Isolation Invariants
+*   **Subprocess Spawning:** Code candidates are executed strictly inside disposable `multiprocessing.Process` instances.
+*   **Zero Thread Leakage:** Threads cannot escape the sandbox process. Once execution concludes, the sandbox process is forcefully garbage-collected.
+*   **SIGTERM Timeout Enforcement:** An AST-level check runs alongside a strict wall-clock timeout. If a candidate runs longer than **30 seconds** (or hogs CPU above limits), it is terminated via process-level SIGTERM signals.
+*   **AST Security Filtering:** Prior to execution, the candidate's Abstract Syntax Tree (AST) is scanned recursively. The sandbox aggressively blocks any code containing:
+    *   System command calls (`os.system`, `subprocess.Popen`, `shutil`).
+    *   Dynamic code execution (`eval`, `exec`).
+    *   Direct filesystem modifications outside the designated tmp directory.
+    *   Raw serialization/unpickling (`pickle.load`, `shelve`).
+    *   Network sockets or socket creation libraries (`socket.socket`, `urllib`, `requests` unless explicitly safe-listed).
