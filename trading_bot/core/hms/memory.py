@@ -211,6 +211,13 @@ class HierarchicalMemorySystem:
         with cls._lock:
             cls._instance = None
 
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance for testing purposes."""
+        with cls._lock:
+            cls._instance = None
+        logger.info("HierarchicalMemorySystem singleton reset")
+
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             with cls._lock:

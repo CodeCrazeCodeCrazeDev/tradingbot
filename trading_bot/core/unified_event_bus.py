@@ -101,6 +101,10 @@ class UnifiedEvent:
         return self.event_type
 
     @property
+    def action_id(self) -> str:
+        return self.event_id
+
+    @property
     def agent_id(self) -> str:
         return self.source
 

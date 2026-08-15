@@ -197,6 +197,11 @@ class CognitiveSystemController:
         logger.info("CognitiveSystemController reset complete.")
 
     @property
+    def router(self) -> Any:
+        """Alias to skill_router for backward compatibility with integrated agent systems."""
+        return self.skill_router
+
+    @property
     def variational_free_energy(self) -> float:
         """Globally managed objective score."""
         return 0.15

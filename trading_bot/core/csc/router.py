@@ -260,6 +260,7 @@ class SkillRouter:
         if getattr(self, "_initialized", False):
             return
         self._registry: Dict[str, List[SkillArtifact]] = {}
+        self._specialists: Dict[str, List[SkillDomain]] = {}
         self._initialize_default_skills()
         self._initialized = True
         logger.info("SkillRouter V6: Initialized with Versioning and Conflict Resolution")
