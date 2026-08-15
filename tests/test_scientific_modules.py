@@ -12,14 +12,16 @@ Verifies independent correctness of:
 
 import pytest
 import asyncio
-from trading_bot.core.csc.controller import CognitiveSystemController
+from unittest.mock import MagicMock, AsyncMock
+from trading_bot.core.csc.controller import CognitiveSystemController, ReasoningBranch
 from trading_bot.core.csc.router import SkillRouter, SkillArtifact, SkillType
 from trading_bot.core.hms.memory import HierarchicalMemorySystem
 from trading_bot.governance.evolution_gate import EvolutionGate
 
 # Mock dependencies
 class MockWorldModel:
-    pass
+    async def simulate_intervention(self, *args, **kwargs):
+        return {"failure_rate": 0.1, "expected_slippage": 0.0, "structural_impact": {}}
 
 class MockValidationEngine:
     def run_benchmark(self, config):
@@ -46,7 +48,7 @@ async def test_discoloop_internalization():
     assert "latent" in csc.continuous_state
 
 @pytest.mark.asyncio
-async def test_pivot_refine_logic():
+async def test_pivot_refine_logic(csc_instance):
     """Verify Pivot/Refine severity detection and logic."""
     csc = CognitiveSystemController()
     from trading_bot.core.hms.models import VerifierReport
@@ -113,8 +115,8 @@ async def test_rsea_monotone_safe_gate():
     candidate_good = {"reward": 0.65, "calibration": 0.9, "robustness": 0.8, "latency": 10.0, "safety_score": 1.0, "training_metadata": {}} # Gain 0.15 > 0.1
     candidate_bad = {"reward": 0.55, "calibration": 0.9, "robustness": 0.8, "latency": 10.0, "safety_score": 1.0, "training_metadata": {}}  # Gain 0.05 < 0.1
 
-    assert await gate.validate_evolution("C1", candidate_good, baseline) is True
-    assert await gate.validate_evolution("C2", candidate_bad, baseline) is False
+    assert gate.validate_evolution("C1", candidate_good, baseline) is True
+    assert gate.validate_evolution("C2", candidate_bad, baseline) is False
 
 @pytest.mark.asyncio
 async def test_rsea_multi_metric_protected_gate():
@@ -142,7 +144,7 @@ async def test_rsea_multi_metric_protected_gate():
         "safety_score": 1.0,
         "training_metadata": {}
     }
-    assert await gate.validate_evolution("CG", candidate_good, baseline) is True
+    assert gate.validate_evolution("CG", candidate_good, baseline) is True
 
     # 2. Performance improves but decision latency regresses significantly -> Reject
     candidate_bad_latency = {
@@ -153,7 +155,7 @@ async def test_rsea_multi_metric_protected_gate():
         "safety_score": 1.0,
         "training_metadata": {}
     }
-    assert await gate.validate_evolution("CB_Lat", candidate_bad_latency, baseline) is False
+    assert gate.validate_evolution("CB_Lat", candidate_bad_latency, baseline) is False
 
     # 3. Performance improves but safety regresses -> Reject
     candidate_bad_safety = {
@@ -165,3 +167,22 @@ async def test_rsea_multi_metric_protected_gate():
         "training_metadata": {}
     }
     assert await gate.validate_evolution("CB_Safety", candidate_bad_safety, baseline) is False
+
+@pytest.mark.asyncio
+async def test_csc_safety_and_self_improvement():
+    """Verify execution correctness of the safety checking and self-improvement validation pipeline."""
+    csc = CognitiveSystemController()
+    obs = {"impact": 0.9, "confidence": 0.8, "cost": 0.1, "target": "execution_optimizer"}
+
+    result = await csc.execute_self_improvement_loop(obs)
+
+    assert result["status"] == "completed"
+    assert result["promoted"] is True
+    assert result["triage_score"] > 5.0
+    assert "observe" in result["trace"]
+    assert "archive" in result["trace"]
+
+    # Test dropped triage path
+    obs_low = {"impact": 0.1, "confidence": 0.1, "cost": 0.9}
+    result_low = await csc.execute_self_improvement_loop(obs_low)
+    assert result_low["status"] == "dropped"
