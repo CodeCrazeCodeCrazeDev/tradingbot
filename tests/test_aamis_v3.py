@@ -35,13 +35,10 @@ class TestAAMISV3Init:
     
     def test_import(self):
         """Test module can be imported."""
-
         from trading_bot import aamis_v3
-import numpy
-import pandas
-assert aamis_v3 is not None
-
-
+        import numpy
+        import pandas
+        assert aamis_v3 is not None
 
 
 if __name__ == "__main__":
