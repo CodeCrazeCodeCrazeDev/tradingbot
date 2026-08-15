@@ -10,13 +10,14 @@ import asyncio
 import logging
 from unittest.mock import Mock, patch, MagicMock
 
+from pathlib import Path
 try:
-    from trading_bot.event_bus import *
+    from trading_bot.core.unified_event_bus import *
 except ImportError:
     # Fallback import
     import sys
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.event_bus import *
+    from trading_bot.core.unified_event_bus import *
 
 logger = logging.getLogger(__name__)
 

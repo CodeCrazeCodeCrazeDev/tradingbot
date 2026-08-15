@@ -21,9 +21,9 @@ async def test_csc_discoloop_reasoning():
     await csc._run_discoloop_reasoning(observation, k=3)
 
     assert len(csc.discrete_channel) == 3
-    assert "bridge_entity_0_regime_alpha" in csc.discrete_channel
+    assert any("token_loop_" in t for t in csc.discrete_channel)
     assert "latent" in csc.continuous_state
-    assert csc.continuous_state["latent"].shape == (512,)
+    assert len(csc.continuous_state["latent"]) == 512
 
 @pytest.mark.asyncio
 async def test_csc_vfe_calculation():

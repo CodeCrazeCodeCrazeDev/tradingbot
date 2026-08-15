@@ -43,7 +43,8 @@ from trading_bot.alpha_evolve import (
 
 from trading_bot.execution import (
     LiquidityAwareSizer, MarketDepth,
-    AdaptiveExecutionEngine, OrderType
+    AdaptiveExecutionEngine, OrderType,
+    LiquidityConstraints
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -345,9 +346,11 @@ class TestPhase5StressTests(unittest.TestCase):
         
         # First evaluation (cache miss)
         start = time.time()
-        backtester = LeakageFreeBacktester(self.large_data)
-        result1 = backtester.backtest(strategy)
-        cache.put(strategy, self.large_data, result1)
+        result1 = cache.get(strategy, self.large_data)
+        if result1 is None:
+            backtester = LeakageFreeBacktester(self.large_data)
+            result1 = backtester.backtest(strategy)
+            cache.put(strategy, self.large_data, result1)
         time_first = time.time() - start
         
         # Second evaluation (cache hit)

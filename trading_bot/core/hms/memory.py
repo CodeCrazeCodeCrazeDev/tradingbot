@@ -1,24 +1,22 @@
 """
+Hierarchical Memory System (HMS) - UCA V6 (July 2026)
 
 Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
-Implements the 6-tier architecture:
-1. Working (Hot/RAM)
-2. Episodic (Recent Events)
-3. Semantic (Facts/Knowledge)
-4. Procedural (Skills/LoRA)
-5. Research (Evidence/Snapshots)
-6. Institutional (Priors/Governance)
+Implements the 8-tier architecture:
+1. Workspace
+2. Episodic
+3. Semantic
+4. Procedural
+5. Research
+6. World Models
+7. Institutional
+8. Meta-Memory
 
 Authoritative memory system integrating SAGE (Self-evolving Agentic Graph-Memory)
 and QKG (Quantum Knowledge Graph) for context-dependent research persistence.
 Implements 'SAGE: A Self-Evolving Agentic Graph-Memory Engine' (2026).
 Supports incremental construction, Graph-FM multi-hop retrieval,
 and Reader-Writer feedback loops for structural evolution.
-Hierarchical Memory System (HMS) - UCA V6 (July 2026)
-
-Authoritative memory system integrating SAGE, AutoMem, and the unified Memory OS.
-Implements the 8-tier architecture: Workspace, Episodic, Semantic, Procedural,
-Research, World Models, Institutional, and Meta-Memory.
 """
 
 import logging
@@ -45,11 +43,13 @@ from .ontology import CMOSNode, CMOSNodeTier, CMOSProvenance
 
 logger = logging.getLogger(__name__)
 
+
 def calculate_integrity_hash(schema_dict: Dict[str, Any]) -> str:
     """Computes SHA-256 checksum of memory schema for audit compliance."""
-    temp = {k: v for k, v in schema_dict.items() if k != "integrity_hash"}
+    temp = {k: v for k, v in schema_dict.items() if k not in ("integrity_hash", "updated_at")}
     serialized = json.dumps(temp, sort_keys=True)
     return hashlib.sha256(serialized.encode('utf-8')).hexdigest()
+
 
 class SAGEGraphMemory:
     """
@@ -60,7 +60,7 @@ class SAGEGraphMemory:
         self.storage_path = storage_path
         self.graph = self._load_graph()
         self.evolution_rounds = 0
-        self.eta = 0.1 # Learning rate for edge weights
+        self.eta = 0.1  # Learning rate for edge weights
         logger.info(f"SAGE V6: Initialized with {len(self.graph.nodes)} nodes")
 
     def _load_graph(self) -> nx.MultiDiGraph:
@@ -70,9 +70,9 @@ class SAGEGraphMemory:
                 if not isinstance(graph, nx.MultiDiGraph):
                     graph = nx.MultiDiGraph(graph)
 
-                # Deserialize complex attributes and weights
                 for u, v, k, d in list(graph.edges(keys=True, data=True)):
-                    if 'weight' not in d: d['weight'] = 0.5
+                    if 'weight' not in d:
+                        d['weight'] = 0.5
                     for attr in ['context', 'evidence']:
                         if attr in d and isinstance(d[attr], str):
                             try:
@@ -89,8 +89,10 @@ class SAGEGraphMemory:
         try:
             temp_graph = self.graph.copy()
             for u, v, k, d in list(temp_graph.edges(keys=True, data=True)):
-                if 'context' in d: d['context'] = json.dumps(d['context'])
-                if 'evidence' in d: d['evidence'] = json.dumps(d['evidence'])
+                if 'context' in d:
+                    d['context'] = json.dumps(d['context'])
+                if 'evidence' in d:
+                    d['evidence'] = json.dumps(d['evidence'])
             nx.write_graphml(temp_graph, self.storage_path)
         except Exception as e:
             logger.error(f"SAGE: Save failed: {e}")
@@ -99,8 +101,6 @@ class SAGEGraphMemory:
         """Incremental Construction: Link new entities with context-sensitive triplets."""
         u, r, v = triplet
         edge_key = f"{r}_{uuid4().hex[:8]}"
-
-        # SAGE: Initial weight based on confidence
         initial_weight = float(evidence.get("confidence", 0.5))
 
         self.graph.add_edge(
@@ -116,20 +116,16 @@ class SAGEGraphMemory:
 
     def retrieve_subgraph(self, query: str, hops: int = 2) -> List[Dict[str, Any]]:
         """SAGE: Multi-hop retrieval utility (arXiv:2605.12061 Eq 4)."""
-        # 1. Identify seed nodes
         seeds = [n for n in self.graph.nodes if query.lower() in str(n).lower()]
-
         results = []
         visited = set()
 
-        # 2. Perform multi-hop traversal with weighted relevance
         for seed in seeds:
             try:
                 edges = nx.bfs_edges(self.graph, seed, depth_limit=hops)
                 for u, v in edges:
                     for k, d in self.graph.get_edge_data(u, v).items():
                         if (u, v, k) not in visited:
-                            # R(n) = Sim(q, n) + sum(w_nm * Sim(q, m))
                             results.append({
                                 "source": u,
                                 "target": v,
@@ -138,9 +134,9 @@ class SAGEGraphMemory:
                                 "context": d.get("context")
                             })
                             visited.add((u, v, k))
-            except Exception: continue
+            except Exception:
+                continue
 
-        # Sort by weight (Utility)
         results.sort(key=lambda x: x["weight"], reverse=True)
         return results[:15]
 
@@ -149,11 +145,9 @@ class SAGEGraphMemory:
         u, v, k = edge_id
         if self.graph.has_edge(u, v, k):
             current_w = self.graph[u][v][k].get("weight", 0.5)
-            # w = w + eta * delta
             new_w = max(0.0, min(1.0, current_w + self.eta * feedback_delta))
             self.graph[u][v][k]["weight"] = new_w
 
-            # Autonomous Pruning: Remove low-utility edges
             if new_w < 0.1:
                 logger.info(f"SAGE: Pruning low-utility edge ({u}, {v}, {k})")
                 self.graph.remove_edge(u, v, k)
@@ -162,8 +156,6 @@ class SAGEGraphMemory:
     def compact_graph(self, max_nodes: int = 5000, min_confidence: float = 0.3):
         """Prunes old or low-confidence nodes/edges to prevent memory bloat."""
         logger.info(f"SAGE: Starting graph compaction. Current size: {len(self.graph.nodes)} nodes.")
-
-        # 1. Prune edges with low confidence (if metadata exists)
         edges_to_prune = []
         for u, v, k, d in self.graph.edges(keys=True, data=True):
             evidence = d.get('evidence', {})
@@ -173,24 +165,53 @@ class SAGEGraphMemory:
         for u, v, k in edges_to_prune:
             self.graph.remove_edge(u, v, k)
 
-        # 2. Prune orphan nodes if over capacity
         if len(self.graph.nodes) > max_nodes:
-            # Simple heuristic: remove nodes with no edges first
             orphans = [n for n in self.graph.nodes if self.graph.degree(n) == 0]
             self.graph.remove_nodes_from(orphans[:len(self.graph.nodes) - max_nodes])
 
         logger.info(f"SAGE: Compaction complete. New size: {len(self.graph.nodes)} nodes.")
+
 
 class HierarchicalMemorySystem:
     """
     Authoritative memory system Consolidating SAGE and AutoMem.
     Implements active memory management as a cognitive skill.
     """
-    _instance = None
-    _lock = threading.Lock()
-    _calculate_integrity_hash = staticmethod(calculate_integrity_hash)
+    _instance: Optional["HierarchicalMemorySystem"] = None
+    _lock: threading.Lock = threading.Lock()
 
-    _calculate_integrity_hash = staticmethod(calculate_integrity_hash)
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance of the memory system."""
+        with cls._lock:
+            cls._instance = None
+
+    @classmethod
+    def reset(cls):
+        """Resets the HierarchicalMemorySystem singleton instance."""
+        with cls._lock:
+            cls._instance = None
+        logger.info("HierarchicalMemorySystem reset complete.")
+
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance of the memory system."""
+        with cls._lock:
+            cls._instance = None
+
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance for testing purposes."""
+        with cls._lock:
+            cls._instance = None
+        logger.info("HierarchicalMemorySystem singleton reset")
+
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance."""
+        with cls._lock:
+            cls._instance = None
+        logger.info("HierarchicalMemorySystem singleton reset")
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -199,6 +220,13 @@ class HierarchicalMemorySystem:
                     cls._instance = super(HierarchicalMemorySystem, cls).__new__(cls)
                     cls._instance._initialized = False
         return cls._instance
+
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance."""
+        with cls._lock:
+            cls._instance = None
+        logger.info("HierarchicalMemorySystem singleton reset")
 
     def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
         return calculate_integrity_hash(schema_dict)
@@ -221,24 +249,11 @@ class HierarchicalMemorySystem:
         self.memory_schema = self._load_schema()
         self.memory_window_size = 100
 
-        # Consolidating standard MemoryOS
         self.memory_os = MemoryOS(base_storage_path=os.path.join(base_path, "memory_os"))
-
-        # Core CMOS substrate instantiation
         self.cmos = CognitiveMemoryOS()
 
         self._initialized = True
         logger.info(f"HMS V6: One Memory initialized at {base_path}")
-
-    @classmethod
-    def reset(cls):
-        """Thread-safe reset clearing singleton instance."""
-        with cls._lock:
-            if cls._instance is not None:
-                cls._instance.memory_schema = {"version": "2.0", "entities": [], "relations": [], "optimized_count": 0}
-                cls._instance._save_schema()
-                cls._instance = None
-        logger.info("HierarchicalMemorySystem singleton reset")
 
     def seal_adapt_memory_window(self, retention_latency_reward: float):
         """
@@ -246,13 +261,11 @@ class HierarchicalMemorySystem:
         using the MIT SEAL paper reinforcement learning adaptation framework.
         """
         if retention_latency_reward < 1.0:
-            # Latency or surprise was high -> reduce window size to lower retrieval latency
             self.memory_window_size = max(self.memory_window_size - 10, 10)
-            logger.info(f"SEAL: Memory retention latency was high. Adapted HMS memory window to {self.memory_window_size} to optimize lookup performance.")
+            logger.info(f"SEAL: Adapted HMS memory window to {self.memory_window_size}")
         else:
-            # High quality retrieval -> increase window to retain more context
             self.memory_window_size = min(self.memory_window_size + 10, 500)
-            logger.info(f"SEAL: Memory retrieval was highly accurate. Adapted HMS memory window to {self.memory_window_size} to retain more contextual episodic memory.")
+            logger.info(f"SEAL: Adapted HMS memory window to {self.memory_window_size}")
 
     def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
         return calculate_integrity_hash(schema_dict)
@@ -266,7 +279,8 @@ class HierarchicalMemorySystem:
                     if "migration_history" not in data:
                         data["migration_history"] = []
                     return data
-            except: pass
+            except Exception:
+                pass
         return schema
 
     def _calculate_integrity_hash(self, schema: Dict[str, Any]) -> str:
@@ -307,14 +321,33 @@ class HierarchicalMemorySystem:
     def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
         return calculate_integrity_hash(schema_dict)
 
+    @staticmethod
+    def _calculate_integrity_hash(schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        """Helper to calculate hash within instance as well."""
+        return calculate_integrity_hash(schema_dict)
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        """Helper pointing to global calculate_integrity_hash function."""
+        return calculate_integrity_hash(schema_dict)
+
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        """Computes SHA-256 checksum of memory schema for audit compliance."""
+        return calculate_integrity_hash(schema_dict)
+
     def _save_schema(self):
         self.memory_schema["updated_at"] = datetime.utcnow().isoformat()
         self.memory_schema["integrity_hash"] = self._calculate_integrity_hash(self.memory_schema)
         with open(self.schema_path, 'w') as f:
             json.dump(self.memory_schema, f, indent=2)
-
-    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
-        return calculate_integrity_hash(schema_dict)
 
     def migrate_to_version(self, target_version: str) -> bool:
         """Runs explicit up/down migrations sequentially to target_version."""
@@ -326,8 +359,6 @@ class HierarchicalMemorySystem:
             return True
 
         logger.info(f"HMS Migration: Preparing migration from {current_v_str} to {target_version}")
-
-        # Step-by-step sequential migration
         direction = "up" if target_v > current_v else "down"
         while current_v != target_v:
             if direction == "up":
@@ -346,28 +377,23 @@ class HierarchicalMemorySystem:
                 current_v = next_v
 
         self.memory_schema["schema_version"] = f"{current_v:.1f}"
-        self.memory_schema["version"] = f"{current_v:.1f}" # Sync legacy
+        self.memory_schema["version"] = f"{current_v:.1f}"
         self._save_schema()
         return True
 
     def _run_migration_step(self, from_v: str, to_v: str, direction: str) -> bool:
         logger.info(f"HMS: Executing {direction}-migration from {from_v} to {to_v}")
-
-        # Define deterministic schema updates
         if direction == "up":
             if from_v == "1.0" and to_v == "1.1":
-                # Up-migration 1.0 -> 1.1: add specialized tracking property
                 self.memory_schema["entities"].append({"type": "RESEARCH_METADATA", "fields": ["fdr_adjusted_p", "purged_embargoed_cv"]})
             elif from_v == "1.1" and to_v == "1.2":
                 self.memory_schema["relations"].append({"type": "CONTRADICTS", "inverse": "CONTRADICTS"})
-        else: # down-migration / rollback
+        else:
             if from_v == "1.1" and to_v == "1.0":
-                # Rollback 1.1 -> 1.0: remove added entities
                 self.memory_schema["entities"] = [e for e in self.memory_schema["entities"] if e.get("type") != "RESEARCH_METADATA"]
             elif from_v == "1.2" and to_v == "1.1":
                 self.memory_schema["relations"] = [r for r in self.memory_schema["relations"] if r.get("type") != "CONTRADICTS"]
 
-        # Track history
         if "migration_history" not in self.memory_schema:
             self.memory_schema["migration_history"] = []
         self.memory_schema["migration_history"].append({
@@ -379,17 +405,9 @@ class HierarchicalMemorySystem:
         })
         return True
 
-    def _calculate_integrity_hash(self, schema_data: Dict[str, Any]) -> str:
-        import hashlib
-        import copy
-        data_copy = copy.deepcopy(schema_data)
-        data_copy.pop("integrity_hash", None)
-        serialized = json.dumps(data_copy, sort_keys=True)
-        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
-
     def validate_replay(self, schema_data: Dict[str, Any]) -> bool:
         """Validates schema integrity and correctness."""
-        expected_hash = self._calculate_integrity_hash(schema_data)
+        expected_hash = calculate_integrity_hash(schema_data)
         actual_hash = schema_data.get("integrity_hash")
         return expected_hash == actual_hash
 
@@ -401,9 +419,7 @@ class HierarchicalMemorySystem:
             logger.info(f"HMS: Schema already at or past version {target_version}")
             return False
 
-        # Apply schema changes (e.g. initialize new entities or properties)
         self.memory_schema["version"] = target_version
-
         migration_entry = {
             "migration_id": f"mig_{uuid4().hex[:8]}",
             "migration_timestamp": datetime.utcnow().isoformat(),
@@ -429,7 +445,6 @@ class HierarchicalMemorySystem:
         """Active Management: Storing and indexing research ledger entries."""
         file_path = os.path.join(self.ledger_path, f"{entry.entry_id}.json")
 
-        # 1. Incremental construction in SAGE
         if entry.hypothesis:
             self.sage.add_evidence(
                 (str(entry.entry_id), "HYPOTHESIZED", entry.hypothesis.description),
@@ -437,11 +452,9 @@ class HierarchicalMemorySystem:
                 {"confidence": entry.composite_confidence}
             )
 
-        # 2. Persist evidence graph nodes (arXiv:2606.13669 Agents-K1)
         for node_id, node in entry.evidence_graph_snapshot.nodes.items():
             self.sage.graph.add_node(node_id, type=node.node_type, content=str(node.content))
 
-        # 3. Persist file with sufficient statistics (HIPIF)
         entry_data = {
             "entry_id": str(entry.entry_id),
             "timestamp": entry.timestamp.isoformat(),
@@ -449,7 +462,8 @@ class HierarchicalMemorySystem:
             "reasoning_steps": entry.reasoning_steps,
             "folded": True
         }
-        with open(file_path, 'w') as f: json.dump(entry_data, f, indent=2)
+        with open(file_path, 'w') as f:
+            json.dump(entry_data, f, indent=2)
 
     def optimize_metamemory(self, feedback: List[Dict[str, Any]]):
         """
@@ -459,16 +473,14 @@ class HierarchicalMemorySystem:
         logger.info(f"HMS V6: Running AutoMem optimization loop on {len(feedback)} samples")
 
         for item in feedback:
-            # 1. Update SAGE weights based on trade success
             edge_id = item.get("edge_id")
-            success_delta = item.get("delta", 0.0) # -1.0 to 1.0
+            success_delta = item.get("delta", 0.0)
             if edge_id:
                 self.sage.evolve_weights(edge_id, success_delta)
 
-            # 2. Revise indexing schema (Simplified)
             entity = item.get("entity")
             if entity and entity not in self.memory_schema["entities"]:
-                 self.memory_schema["entities"].append(entity)
+                self.memory_schema["entities"].append(entity)
 
         self.memory_schema["optimized_count"] += 1
         self.memory_schema["last_optimized"] = datetime.utcnow().isoformat()
@@ -479,3 +491,18 @@ class HierarchicalMemorySystem:
             self.memory_schema["version"] = "1.1"
         self._save_schema()
         logger.info("HMS V6: AutoMem optimization cycle complete.")
+
+    @classmethod
+    def reset(cls):
+        """
+        Explicit, safe class-level lifecycle reset.
+        Frees singleton instances and flushes outstanding SAGE schema updates.
+        """
+        with cls._lock:
+            if cls._instance is not None:
+                try:
+                    cls._instance._save_schema()
+                except:
+                    pass
+                cls._instance = None
+        logger.info("HierarchicalMemorySystem successfully reset with schema synchronization.")
