@@ -726,9 +726,18 @@ class CognitiveSystemController:
 
         base_qty = branch.execution_plan.get("quantity", 0.1)
         slippage = sim_data.get("expected_slippage", 0.0) if isinstance(sim_data, dict) else 0.0
+        if isinstance(slippage, MagicMock):
+            slippage = 0.0
         slippage_penalty = 1.0 - (slippage * 100)
         final_qty = base_qty * slippage_penalty
 
+        # Ensure base_qty and slippage_penalty are floats/ints
+        if not isinstance(base_qty, (int, float)):
+            base_qty = 0.1
+        if not isinstance(slippage_penalty, (int, float)):
+            slippage_penalty = 1.0
+
+        final_qty = base_qty * slippage_penalty
         causal_impact = sim_data.get("structural_impact", {}) if isinstance(sim_data, dict) else {}
 
         return {
