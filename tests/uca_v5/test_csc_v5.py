@@ -1,9 +1,10 @@
 import pytest
+import asyncio
 from unittest.mock import MagicMock, AsyncMock
 from trading_bot.core.csc.controller import CognitiveSystemController
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome
 from trading_bot.core.immutable_shield import GovernanceDecision
-from trading_bot.core.unified_event_bus import decision_bus, ActionStatus
+from trading_bot.core.unified_event_bus import decision_bus, ActionStatus, UnifiedDecisionBus, LogAction
 
 @pytest.fixture(autouse=True)
 def reset_csc_singleton():

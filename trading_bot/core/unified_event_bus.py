@@ -125,7 +125,23 @@ class UnifiedEvent:
         return self.status
 
 class UnifiedDecisionBus:
+    _instance: Optional["UnifiedDecisionBus"] = None
+    _lock: threading.Lock = threading.Lock()
+
+    def __new__(cls, config: Optional[Dict] = None):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(UnifiedDecisionBus, cls).__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+
     def __init__(self, config: Optional[Dict] = None):
+        if getattr(self, "_initialized", False):
+            if config:
+                self.config.update(config)
+            return
+
         self.config = config or {}
         self._log: List[Union[LogAction, UnifiedEvent]] = []
         self._voters: Dict[str, Callable] = {}
@@ -133,7 +149,24 @@ class UnifiedDecisionBus:
         self._action_queue = asyncio.PriorityQueue()
         self._running = False
         self._processor_task: Optional[asyncio.Task] = None
+        self._initialized = True
         logger.info("LogAct Shared-Log Backbone initialized")
+
+    @classmethod
+    def reset(cls):
+        """Thread-safe reset clearing queue and state directly on instance."""
+        with cls._lock:
+            if cls._instance is not None:
+                inst = cls._instance
+                inst._running = False
+                task = getattr(inst, "_processor_task", None)
+                if task and not task.done():
+                    task.cancel()
+                inst._processor_task = None
+                inst._log.clear()
+                inst._voters.clear()
+                inst._subscribers.clear()
+                inst._action_queue = asyncio.PriorityQueue()
 
     async def start(self):
         if self._processor_task and not self._processor_task.done():

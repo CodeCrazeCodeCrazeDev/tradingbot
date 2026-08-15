@@ -230,9 +230,15 @@ class HierarchicalMemorySystem:
         self._initialized = True
         logger.info(f"HMS V6: One Memory initialized at {base_path}")
 
-    def reset(self):
-        self.memory_schema = {"version": "2.0", "entities": [], "relations": [], "optimized_count": 0}
-        self._save_schema()
+    @classmethod
+    def reset(cls):
+        """Thread-safe reset clearing singleton instance."""
+        with cls._lock:
+            if cls._instance is not None:
+                cls._instance.memory_schema = {"version": "2.0", "entities": [], "relations": [], "optimized_count": 0}
+                cls._instance._save_schema()
+                cls._instance = None
+        logger.info("HierarchicalMemorySystem singleton reset")
 
     def seal_adapt_memory_window(self, retention_latency_reward: float):
         """
