@@ -1,0 +1,261 @@
+{
+  "security": {
+    "findings": [
+      {
+        "file": "trading_bot/ai_engineer/safeguards.py",
+        "line": 149,
+        "type": "eval_usage",
+        "content": "dangerous_keywords = ['exec(', 'eval(', 'os.system(', 'subprocess.call(']"
+      },
+      {
+        "file": "trading_bot/ai_engineer/safeguards.py",
+        "line": 149,
+        "type": "exec_usage",
+        "content": "dangerous_keywords = ['exec(', 'eval(', 'os.system(', 'subprocess.call(']"
+      },
+      {
+        "file": "trading_bot/ai_engineer/safeguards.py",
+        "line": 149,
+        "type": "os_system",
+        "content": "dangerous_keywords = ['exec(', 'eval(', 'os.system(', 'subprocess.call(']"
+      },
+      {
+        "file": "trading_bot/improvement_agent/weakness_detector.py",
+        "line": 55,
+        "type": "hardcoded_key",
+        "content": "HARDCODED_SECRET = \"hardcoded_secret\""
+      },
+      {
+        "file": "trading_bot/improvement_agent/weakness_detector.py",
+        "line": 182,
+        "type": "eval_usage",
+        "content": "(r'eval\\s*\\(', \"Use of eval()\"),"
+      },
+      {
+        "file": "trading_bot/improvement_agent/weakness_detector.py",
+        "line": 183,
+        "type": "exec_usage",
+        "content": "(r'exec\\s*\\(', \"Use of exec()\"),"
+      },
+      {
+        "file": "trading_bot/self_assembly_ai/recursive_self_improvement.py",
+        "line": 196,
+        "type": "exec_usage",
+        "content": "'exec(',"
+      },
+      {
+        "file": "trading_bot/self_assembly_ai/recursive_self_improvement.py",
+        "line": 197,
+        "type": "eval_usage",
+        "content": "'eval(',"
+      },
+      {
+        "file": "trading_bot/integration/verification.py",
+        "line": 112,
+        "type": "os_system",
+        "content": "(\"os.system(\",       \"forbidden: os.system\"),"
+      },
+      {
+        "file": "trading_bot/integration/verification.py",
+        "line": 114,
+        "type": "eval_usage",
+        "content": "(\"eval(\",            \"forbidden: eval\"),"
+      },
+      {
+        "file": "trading_bot/integration/verification.py",
+        "line": 115,
+        "type": "exec_usage",
+        "content": "(\"exec(\",            \"forbidden: exec\"),"
+      },
+      {
+        "file": "trading_bot/integration/module_registry.py",
+        "line": 291,
+        "type": "os_system",
+        "content": "\"os.system(\","
+      },
+      {
+        "file": "trading_bot/integration/module_registry.py",
+        "line": 293,
+        "type": "exec_usage",
+        "content": "\"exec(\","
+      },
+      {
+        "file": "trading_bot/integration/module_registry.py",
+        "line": 294,
+        "type": "eval_usage",
+        "content": "\"eval(\","
+      },
+      {
+        "file": "trading_bot/autonomous_superintelligence/self_modifier.py",
+        "line": 232,
+        "type": "eval_usage",
+        "content": "'eval(',"
+      },
+      {
+        "file": "trading_bot/autonomous_superintelligence/self_modifier.py",
+        "line": 233,
+        "type": "exec_usage",
+        "content": "'exec(',"
+      },
+      {
+        "file": "trading_bot/unified_approval/pipeline_approval.py",
+        "line": 179,
+        "type": "os_system",
+        "content": "os.system('cls' if os.name == 'nt' else 'clear')"
+      },
+      {
+        "file": "trading_bot/research/institution.py",
+        "line": 1012,
+        "type": "eval_usage",
+        "content": "if \"eval(\" in code_content or \"exec(\" in code_content:"
+      },
+      {
+        "file": "trading_bot/research/institution.py",
+        "line": 1012,
+        "type": "exec_usage",
+        "content": "if \"eval(\" in code_content or \"exec(\" in code_content:"
+      },
+      {
+        "file": "trading_bot/system_supervisor/security_supervisor.py",
+        "line": 211,
+        "type": "eval_usage",
+        "content": "'eval(',"
+      },
+      {
+        "file": "trading_bot/system_supervisor/security_supervisor.py",
+        "line": 212,
+        "type": "exec_usage",
+        "content": "'exec(',"
+      },
+      {
+        "file": "trading_bot/autonomous_learner/knowledge_transfer.py",
+        "line": 334,
+        "type": "eval_usage",
+        "content": "'os.system', 'subprocess', 'eval(', 'exec(',"
+      },
+      {
+        "file": "trading_bot/autonomous_learner/knowledge_transfer.py",
+        "line": 334,
+        "type": "exec_usage",
+        "content": "'os.system', 'subprocess', 'eval(', 'exec(',"
+      },
+      {
+        "file": "trading_bot/advanced_ai/infrastructure_systems.py",
+        "line": 671,
+        "type": "exec_usage",
+        "content": "exec(code, globals_dict, locals_dict)"
+      },
+      {
+        "file": "trading_bot/advanced_ai/code_synthesis.py",
+        "line": 772,
+        "type": "exec_usage",
+        "content": "exec(generated.code, namespace)"
+      },
+      {
+        "file": "trading_bot/alpha_research/dynamic_risk_matrix.py",
+        "line": 53,
+        "type": "eval_usage",
+        "content": "def eval(self): pass"
+      },
+      {
+        "file": "trading_bot/radar_ai/superintelligence_core.py",
+        "line": 141,
+        "type": "eval_usage",
+        "content": "'os.system', 'subprocess', 'eval(', 'exec(',"
+      },
+      {
+        "file": "trading_bot/radar_ai/superintelligence_core.py",
+        "line": 141,
+        "type": "exec_usage",
+        "content": "'os.system', 'subprocess', 'eval(', 'exec(',"
+      },
+      {
+        "file": "trading_bot/ml/automl_pipeline.py",
+        "line": 511,
+        "type": "pickle_load",
+        "content": "model_obj = pickle.load(f)"
+      },
+      {
+        "file": "trading_bot/distributed/parallel_backtester.py",
+        "line": 344,
+        "type": "exec_usage",
+        "content": "exec(strategy_code, local_vars)"
+      },
+      {
+        "file": "trading_bot/distributed/parallel_backtester.py",
+        "line": 553,
+        "type": "exec_usage",
+        "content": "exec(strategy_code, local_vars)"
+      },
+      {
+        "file": "trading_bot/distributed/parallel_backtester.py",
+        "line": 680,
+        "type": "exec_usage",
+        "content": "exec(EXAMPLE_STRATEGY, local_vars)"
+      },
+      {
+        "file": "trading_bot/research/eip/pipeline.py",
+        "line": 130,
+        "type": "eval_usage",
+        "content": "cleaned = [l for l in lines if not any(kw in l for kw in [\"import os\", \"subprocess\", \"eval(\"])]"
+      },
+      {
+        "file": "trading_bot/research/ecie/pipeline.py",
+        "line": 234,
+        "type": "eval_usage",
+        "content": "if any(kw in line for kw in [\"import \", \"os.system\", \"subprocess\", \"eval(\", \"exec(\"]):"
+      },
+      {
+        "file": "trading_bot/research/ecie/pipeline.py",
+        "line": 234,
+        "type": "exec_usage",
+        "content": "if any(kw in line for kw in [\"import \", \"os.system\", \"subprocess\", \"eval(\", \"exec(\"]):"
+      },
+      {
+        "file": "trading_bot/research/ecie/scouts.py",
+        "line": 68,
+        "type": "os_system",
+        "content": "\"    os.system('rm -rf /')\\n\"  # Unsafe pattern"
+      },
+      {
+        "file": "trading_bot/aads/core/alpha_evolve_engine.py",
+        "line": 645,
+        "type": "exec_usage",
+        "content": "exec(signal.code, namespace)"
+      }
+    ]
+  },
+  "architecture": {
+    "Strategic Controller": {
+      "authoritative_implemented": true,
+      "authoritative_path": "trading_bot/core/csc/controller.py",
+      "duplicates_found": [],
+      "compliant": true
+    },
+    "Decision Event Bus": {
+      "authoritative_implemented": true,
+      "authoritative_path": "trading_bot/core/unified_event_bus.py",
+      "duplicates_found": [],
+      "compliant": true
+    },
+    "Unified Component Registry": {
+      "authoritative_implemented": true,
+      "authoritative_path": "trading_bot/core/unified_registry.py",
+      "duplicates_found": [],
+      "compliant": true
+    },
+    "Hierarchical Memory System": {
+      "authoritative_implemented": true,
+      "authoritative_path": "trading_bot/core/hms/memory.py",
+      "duplicates_found": [],
+      "compliant": true
+    },
+    "Skill Router": {
+      "authoritative_implemented": true,
+      "authoritative_path": "trading_bot/core/csc/router.py",
+      "duplicates_found": [],
+      "compliant": true
+    }
+  },
+  "all_compliant": false
+}
