@@ -469,7 +469,8 @@ class SelfPlayLoop:
         }
 
     async def _play_game_simulated(self) -> SelfPlayGame:
-        # Legacy simulation code
+        """DEPRECATED: Use _play_game with real data grounding."""
+        logger.warning("DEPRECATED: _play_game_simulated called. Redirecting to grounded _play_game.")
         return await self._play_game()
     
     def _get_initial_state(self) -> Dict[str, Any]:
