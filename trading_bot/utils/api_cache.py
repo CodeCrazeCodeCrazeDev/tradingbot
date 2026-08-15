@@ -139,6 +139,7 @@ class APICache:
         # Set in Redis cache (L2)
         if self.redis_client:
             try:
+                # Security Hardening: Use JSON for cache serialization
                 self.redis_client.setex(
                     key,
                     ttl,
