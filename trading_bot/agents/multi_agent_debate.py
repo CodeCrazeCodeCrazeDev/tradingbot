@@ -285,15 +285,34 @@ class RiskVerifier:
         return RiskVerifierOutcome(is_valid=True)
 
 
+class AgentStatus(Enum):
+    CREATED = "created"
+    INITIALIZED = "initialized"
+    READY = "ready"
+    RUNNING = "running"
+    WAITING = "waiting"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
 class TradingAgent(ABC):
-    """Base class for trading agents."""
+    """Base class for trading agents with explicit lifecycle and memory isolation."""
 
     def __init__(self, role: AgentRole, config: Optional[Dict] = None):
         try:
             self.role = role
             self.config = config or {}
             self.weight = self.config.get("weight", 1.0)
+            self.status = AgentStatus.CREATED
+
+            # Memory Isolation: separate local, task-scoped, and institutional memories
+            self.local_memory: Dict[str, Any] = {}
+            self.task_memory: Dict[str, Any] = {}
+            self.institutional_memory: Dict[str, Any] = {}
+
+            self.status = AgentStatus.INITIALIZED
         except Exception as e:
+            self.status = AgentStatus.FAILED
             logger.error(f"Error in __init__: {e}")
             raise
 
@@ -2320,10 +2339,38 @@ class MultiAgentDebateSystem:
             initial_votes = []
             successful_agent_count = 0
             for agent in self.agents:
+                # Set running lifecycle state
+                agent.status = AgentStatus.RUNNING
                 try:
+                    # Isolate memory context per task
+                    agent.task_memory["context"] = context
+
                     arg = agent.analyze(context)
+
+                    # Store results in agent local memory
+                    agent.local_memory[context.symbol] = arg.to_dict()
+
+                    # Canonical message validation under StructuredMessage protocol
+                    msg = StructuredMessage(
+                        message_id=str(uuid.uuid4()),
+                        task_id="debate_task_001",
+                        parent_task_id="",
+                        correlation_id=str(uuid.uuid4()),
+                        sender_agent_id=agent.role.value if hasattr(agent.role, "value") else str(agent.role),
+                        recipient="HeadAI",
+                        timestamp=datetime.utcnow(),
+                        schema_version="1.0.0",
+                        message_type="AgentArgument",
+                        payload=arg.to_dict(),
+                        confidence=arg.confidence
+                    )
+                    if not msg.validate():
+                        raise ValueError("StructuredMessage schema validation failed.")
+
+                    agent.status = AgentStatus.COMPLETED
                     successful_agent_count += 1
                 except Exception as e:
+                    agent.status = AgentStatus.FAILED
                     logger.error(
                         f"Graceful Degradation triggered: Agent {agent.role.value} crashed during analyze: {e}"
                     )

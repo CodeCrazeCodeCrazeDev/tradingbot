@@ -135,6 +135,12 @@ class CognitiveSystemController:
         cls._instance = None
         logger.info("CognitiveSystemController reset")
 
+    @classmethod
+    async def reset(cls):
+        """Reset the singleton instance."""
+        cls._instance = None
+        logger.info("CognitiveSystemController singleton reset")
+
     def __init__(
         self,
         world_model: Any = None,
