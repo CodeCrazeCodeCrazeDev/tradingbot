@@ -28,6 +28,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC, abstractmethod
 from ..verification.confidence_calibrator import ConfidenceCalibrator, CalibrationMethod
+from ..metrics.scorecard import AgentScorecard
+from ..validation.input_validation import TradingContextValidator
 import hashlib
 import uuid
 import time
@@ -144,6 +146,9 @@ class AgentArgument:
     verification: Optional[str] = None
     
     def to_dict(self) -> Dict[str, Any]:
+        role_val = self.agent_role.value if hasattr(self.agent_role, 'value') else str(self.agent_role)
+        act_val = self.action.value if hasattr(self.action, 'value') else str(self.action)
+        conv_val = self.conviction.name if hasattr(self.conviction, 'name') else str(self.conviction)
         return {
             'agent': self.agent_role.value if hasattr(self.agent_role, 'value') else str(self.agent_role),
             'action': self.action.value if hasattr(self.action, 'value') else str(self.action),
@@ -334,6 +339,14 @@ class MacroStrategist(TradingAgent):
             predictions = []
             counter_evidence = []
             verification = ""
+
+            # Evidence-first defaults
+            observation = f"HTF and macro analysis for {context.symbol} at {context.current_price:.5f}"
+            evidence = []
+            hypothesis = "Neutral macro trend."
+            predictions = []
+            counter_evidence = []
+            verification = "HTF trend and news sentiment checked."
 
             # Evidence-first defaults
             observation = f"HTF and macro analysis for {context.symbol} at {context.current_price:.5f}"
@@ -542,6 +555,14 @@ class TacticalExecutioner(TradingAgent):
             counter_evidence = []
             verification = "LTF trend and volume checked."
 
+            # Evidence-first defaults
+            observation = f"LTF tactical analysis for {context.symbol} at {context.current_price:.5f}"
+            evidence = []
+            hypothesis = "Neutral LTF trend."
+            predictions = []
+            counter_evidence = []
+            verification = "LTF trend and volume checked."
+
             # Analyze LTF Trend
             if context.ltf_trend == "UP":
                 ltf_score = 0.6
@@ -716,6 +737,14 @@ class RiskSentinel(TradingAgent):
             counter_evidence = []
             verification = "Portfolio exposure, correlation risk and VIX levels checked."
 
+            # Evidence-first defaults
+            observation = f"Risk sentinel analysis for {context.symbol} at {context.current_price:.5f}"
+            evidence = []
+            hypothesis = "Neutral risk profile."
+            predictions = []
+            counter_evidence = []
+            verification = "Portfolio exposure, correlation risk and VIX levels checked."
+
             # Exposure check
             if context.portfolio_exposure > self.max_exposure:
                 exposure_score = -0.5
@@ -791,6 +820,8 @@ class RiskSentinel(TradingAgent):
                 evidence.append(f"Asset local volatility normal ({context.volatility:.2%}).")
 
             key_factors['volatility_risk'] = vol_score
+            total_score = sum(key_factors.values())
+
             total_score = sum(key_factors.values())
 
             total_score = sum(key_factors.values())
@@ -1380,7 +1411,9 @@ class RiskVerifier:
 
 class HeadAI:
     """
-    Lightweight Head AI: coordinates evidence-first debate aggregation and Bayesian calibration.
+    Dedicated mathematical component implementing mathematically rigorous,
+    correlation-aware Bayesian posterior probability calculations.
+    Keeps inference isolated from orchestration under the UCA-2026 specification.
     """
 
     def __init__(
@@ -1435,6 +1468,41 @@ class HeadAI:
             return prior_prob
 
         return max(0.0, min(1.0, numerator / denominator))
+
+
+class HeadAI:
+    """
+    Lightweight Head AI: coordinates evidence-first debate aggregation and Bayesian calibration.
+    """
+
+    def __init__(self, config: Optional[Dict] = None, calibrator: Optional[ConfidenceCalibrator] = None):
+        try:
+            self.config = config or {}
+            self.calibrator = calibrator
+
+            # Agent weights
+            self.weights = {
+                AgentRole.MACRO_STRATEGIST: self.config.get('macro_weight', 0.35),
+                AgentRole.TACTICAL_EXECUTIONER: self.config.get('tactical_weight', 0.35),
+                AgentRole.RISK_SENTINEL: self.config.get('risk_weight', 0.30),
+            }
+
+            # Pairwise domain correlations to mitigate Naive Bayes conditional independence violations
+            self.correlations = {
+                (AgentRole.MACRO_STRATEGIST, AgentRole.TACTICAL_EXECUTIONER): 0.70,
+                (AgentRole.MACRO_STRATEGIST, AgentRole.RISK_SENTINEL): 0.15,
+                (AgentRole.TACTICAL_EXECUTIONER, AgentRole.RISK_SENTINEL): 0.20
+            }
+
+            # Instantiate separate Bayesian Decision Engine for decoupled mathematical inference
+            self.bayesian_engine = BayesianDecisionEngine(self.weights, self.correlations)
+        except Exception as e:
+            logger.error(f"Error in HeadAI init: {e}")
+            raise
+
+    def calculate_bayesian_posterior(self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]) -> float:
+        """Delegate mathematical posterior calculation to the dedicated Bayesian decision engine."""
+        return self.bayesian_engine.calculate_posterior(prior_prob, evidence_likelihoods)
 
     def synthesize_decision(
         self,
@@ -1586,6 +1654,27 @@ class HeadAI:
                     evidence_likelihoods.append((endorsed, likelihood, exponent))
 
                 winning_score = self.calculate_bayesian_posterior(prior_prob, evidence_likelihoods)
+
+            # Calculate dynamic winning_score using mathematically rigorous Bayesian posterior probability
+            if winning_action not in [TradeAction.HOLD, TradeAction.NO_TRADE]:
+                htf = context.htf_trend
+                if (htf == "UP" and winning_action in [TradeAction.BUY, TradeAction.STRONG_BUY]) or                    (htf == "DOWN" and winning_action in [TradeAction.SELL, TradeAction.STRONG_SELL]):
+                    prior_prob = 0.55
+                else:
+                    prior_prob = 0.45
+
+                evidence_likelihoods = []
+                for arg in active_arguments:
+                    endorsed = (arg.action == winning_action)
+                    likelihood = calibrated_confidences.get(arg.agent_role, getattr(arg, 'confidence', 0.5))
+                    exponent = self.weights.get(arg.agent_role, 0.33)
+                    if scorecards and arg.agent_role in scorecards:
+                        exponent = scorecards[arg.agent_role].expected_contribution
+                    evidence_likelihoods.append((endorsed, likelihood, exponent))
+
+                winning_score = self.calculate_bayesian_posterior(prior_prob, evidence_likelihoods)
+            else:
+                winning_score = 0.5  # Neutral default for HOLD or un-vetoed neutral pattern
 
             # Check for risk veto
             risk_args = [a for a in active_arguments if a.agent_role == AgentRole.RISK_SENTINEL]

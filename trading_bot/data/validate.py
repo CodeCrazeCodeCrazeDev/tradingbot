@@ -73,3 +73,10 @@ class DataValidator:
 
         is_valid = (nan_counts == 0) and (violations_count == 0)
         return is_valid, report
+
+    def get_status(self) -> Dict:
+        return {
+            'initialized': self.initialized,
+            'timestamp': datetime.now().isoformat(),
+            'config': self.config
+        }
