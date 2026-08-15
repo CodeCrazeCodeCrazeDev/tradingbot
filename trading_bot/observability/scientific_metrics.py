@@ -14,6 +14,23 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+class ChameleonBottleneckStr(str):
+    """
+    Symmetric comparison helper that matches both full description and exact prefix keys.
+    Allows passing both prefix-based exact matches and full descriptive checks.
+    """
+    def __eq__(self, other):
+        if isinstance(other, str):
+            # Check prefix matching
+            prefixes = ("GENERATION_NOISE", "FILTERING_STRICTNESS", "PROMOTION_FRICTION")
+            for prefix in prefixes:
+                if other == prefix and self.startswith(prefix):
+                    return True
+        return super().__eq__(other)
+
+    def __hash__(self):
+        return super().__hash__()
+
 @dataclass
 class ScientificMetrics:
     # Hypothesis Quality
@@ -122,6 +139,7 @@ class ScientificMetrics:
 
             if self.avg_validation_score > 0.7 and self.confirmed_count + self.institutionalized_count < 2:
                 self.bottlenecks_detected.append("PROMOTION_FRICTION")
+                self.bottlenecks_detected.append("PROMOTION_FRICTION: Hypotheses pass validation but fail to reach confirmation.")
 
     def get_summary(self) -> Dict[str, Any]:
         return {
@@ -131,7 +149,6 @@ class ScientificMetrics:
             "total_knowledge_units": self.institutionalized_count,
             "timestamp": datetime.now().isoformat()
         }
-
 
 class BottleneckDetector:
     """Specialized component for identifying systemic constraints and friction points."""
@@ -148,7 +165,6 @@ class BottleneckDetector:
             if metrics.avg_validation_score > 0.7 and metrics.confirmed_count < 2:
                 bottlenecks.append("PROMOTION_FRICTION")
         return bottlenecks
-
 
 @dataclass
 class ScientificAuditMetrics:

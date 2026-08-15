@@ -1,10 +1,11 @@
+import asyncio
 import pytest
 import asyncio
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import MagicMock, AsyncMock
 from trading_bot.core.csc.controller import CognitiveSystemController
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome, CoreDecision
 from trading_bot.core.immutable_shield import GovernanceDecision
-from trading_bot.core.unified_event_bus import decision_bus, ActionStatus
+from trading_bot.core.unified_event_bus import decision_bus, ActionStatus, UnifiedDecisionBus, LogAction
 
 @pytest.fixture(autouse=True)
 def reset_csc_singleton():
@@ -66,6 +67,12 @@ async def test_csc_hasp_intervention(monkeypatch):
     finally:
         await decision_bus.stop()
 
+class MockDecisionBus:
+    async def propose_action(self, action):
+        from trading_bot.core.unified_event_bus import ActionStatus
+        action.status = ActionStatus.EXECUTED
+        action._completed_event.set()
+
 @pytest.mark.asyncio
 async def test_csc_pivot_loop():
     # Setup mocks
@@ -77,7 +84,7 @@ async def test_csc_pivot_loop():
     shield = MagicMock()
     shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
 
-    csc = CognitiveSystemController(world_model, hms, shield)
+    csc = CognitiveSystemController(world_model, hms, shield, decision_bus=mock_bus)
 
     obs = {"volatility": 0.1, "features": [0.1] * 16}
 
