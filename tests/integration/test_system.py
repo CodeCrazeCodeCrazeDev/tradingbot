@@ -177,7 +177,7 @@ class TestRiskSystemIntegration(SignalFlowIntegrationTest):
         }
         
         drawdown = 1 - (account_info["current_equity"] / account_info["initial_balance"])
-        assert drawdown == 0.05
+        assert abs(drawdown - 0.05) < 1e-9
         
         # Check if at limit
         at_limit = drawdown >= account_info["max_drawdown_limit"]

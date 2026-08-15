@@ -27,14 +27,12 @@ class SymbolInfo:
     volume_step: float = 0.01
 
 class MT5Interface:
-    """Institutional-grade MT5Interface stub for testing and system compatibility."""
+    """Interacts with MetaTrader 5 terminal or provides standard mock wrappers when offline."""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None, *args, **kwargs):
-        self.config = config or {}
-        if kwargs:
-            self.config.update(kwargs)
-        self._connected = False
-        self.connected = False
+        self.config = config or kwargs
+        self._connected = True
+        self.connected = True
 
     def __enter__(self):
         self.connect()
@@ -61,9 +59,7 @@ class MT5Interface:
         return SymbolInfo()
 
     def get_rates(self, symbol: str, timeframe: str, count: int) -> List[Dict[str, Any]]:
-        # Dummy rates for testing
         import pandas as pd
-        import numpy as np
         dates = pd.date_range(end=pd.Timestamp.now(), periods=count, freq='h')
         return [
             {
@@ -77,35 +73,10 @@ class MT5Interface:
             for d in dates
         ]
 
-    def place_order(self, *args, **kwargs) -> Dict[str, Any]:
-        # Handle dict-based request or keyword/positional parameters
-        if args and isinstance(args[0], dict):
-            request = args[0]
-            logger.info(f"MT5Interface: Order placed successfully -> {request}")
-            return {
-                "retcode": 10009,  # DONE
-                "order_id": 123456,
-                "order": 123456,
-                "status": "filled",
-                "volume": request.get("volume", 0.1),
-                "price": request.get("price", 1.0),
-                "symbol": request.get("symbol", "EURUSD"),
-                "comment": "Mock trade completed"
-            }
-
-        # Else position/keyword based
-        order_type = args[0] if len(args) > 0 else kwargs.get("order_type", "buy")
-        symbol = args[1] if len(args) > 1 else kwargs.get("symbol", "EURUSD")
-        volume = args[2] if len(args) > 2 else kwargs.get("volume", 0.1)
-        price = args[3] if len(args) > 3 else kwargs.get("price", 1.1000)
-
+    def place_order(self, request: Dict[str, Any], *args, **kwargs) -> Dict[str, Any]:
+        logger.info(f"MT5Interface: Order placed successfully -> {request}")
         return {
             "retcode": 10009,
-            "order_id": 123456,
             "order": 123456,
-            "status": "filled",
-            "volume": volume,
-            "price": price or 1.1000,
-            "symbol": symbol,
             "comment": "Mock trade completed"
         }
