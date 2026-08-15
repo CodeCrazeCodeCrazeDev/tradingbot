@@ -13,8 +13,20 @@ import json
 import hashlib
 
 
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (np.int64, np.int32, np.int16, np.int8)):
+            return int(obj)
+        elif isinstance(obj, (np.float64, np.float32)):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NpEncoder, self).default(obj)
+
+
 class SignalType(Enum):
     MOMENTUM = "momentum"
+    TREND = "momentum"  # Alias for backward compatibility in stress tests
     MEAN_REVERSION = "mean_reversion"
     VOLATILITY = "volatility"
     VOLUME = "volume"
@@ -125,10 +137,10 @@ class StrategyGenome:
     - Selected (based on fitness)
     """
     signals: List[Signal]
-    aggregation_type: AggregationType
-    position_sizing: PositionSizingType
-    risk_control: RiskControl
-    execution_params: ExecutionParams
+    aggregation_type: AggregationType = AggregationType.LINEAR
+    position_sizing: PositionSizingType = PositionSizingType.FIXED
+    risk_control: RiskControl = field(default_factory=RiskControl)
+    execution_params: ExecutionParams = field(default_factory=ExecutionParams)
     rebalance_frequency: int = 1
     universe_size: int = 100
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -143,7 +155,7 @@ class StrategyGenome:
     
     def get_genome_id(self) -> str:
         """Generate unique ID for this genome based on its parameters"""
-        genome_str = json.dumps(self.to_dict(), sort_keys=True)
+        genome_str = json.dumps(self.to_dict(), cls=NpEncoder, sort_keys=True)
         return hashlib.sha256(genome_str.encode()).hexdigest()[:16]
     
     def to_dict(self) -> Dict[str, Any]:
