@@ -41,7 +41,7 @@ class SkillRouteOutcome:
 
     status: str
     action: Optional[str] = None
-    adapter_id: Optional[Any] = None
+    adapter_id: Optional[str] = None
     reason: Optional[str] = None
     version: Optional[str] = None
 
@@ -166,7 +166,7 @@ class SkillRouter:
         logger.info("SkillRouter singleton reset")
 
     def __init__(self):
-        if getattr(self, "_initialized", False):
+        if self._initialized:
             return
         self._registry: Dict[str, List[SkillArtifact]] = {}
         self._specialists: Dict[str, List[SkillDomain]] = {}
@@ -186,7 +186,7 @@ class SkillRouter:
             )
         )
 
-        # Register standard S2L adapters with AdapterChameleonStr
+        # Register standard S2L adapters
         self.register_skill(SkillArtifact(
             skill_id="hedging_behavior",
             skill_type=SkillType.LORA,

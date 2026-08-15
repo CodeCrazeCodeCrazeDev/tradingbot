@@ -12,6 +12,7 @@ and 'AutoResearchClaw' (arXiv:2605.20025) for Pivot/Refine self-healing control.
 
 import numpy as np
 import torch
+import threading
 import time
 import logging
 import asyncio
@@ -261,8 +262,8 @@ class CognitiveSystemController:
             return "critical"
         return "minor"
 
-    async def _safe_await(self, val_or_coro: Any) -> Any:
-        if val_or_coro is None:
+    async def _safe_await(self, coro_or_val: Any) -> Any:
+        if coro_or_val is None:
             return None
         if asyncio.iscoroutine(val_or_coro) or hasattr(val_or_coro, "__await__"):
             try:
@@ -565,9 +566,10 @@ class CognitiveSystemController:
         except Exception as e:
             logger.error(f"CSC-V6 Step 2: SAGE Retrieval Failure: {e}")
             evidence_chain = []
-        logger.info(f"CSC-V6 Step 2: Retrieved {len(evidence_chain) if evidence_chain else 0} evidence chains")
+        logger.info(f"CSC-V6 Step 2: Retrieved {len(evidence_chain)} evidence chains")
 
         # 3. HASP Shielding (Prescriptive Guardrails)
+        # Pre-emptive intervention for known failure modes
         intervention = await self.skill_router.route_task("market_ingestion", observation)
         if hasattr(intervention, "to_dict"):
             intervention = intervention.to_dict()
@@ -622,7 +624,6 @@ class CognitiveSystemController:
         # 8. VFE Minimization (Decision Selection)
         # Selecting actions that minimize expected free energy (EFE)
         decision_proposal = self._select_optimal_action(best_branch, sim_results)
-        decision_proposal["trade_id"] = trade_id
 
         # 9. LogAct Proposal (LogAct Shared-Log Backbone)
         # Totally ordered, tamper-proof audit trail of the trade proposal

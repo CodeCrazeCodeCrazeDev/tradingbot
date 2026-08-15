@@ -66,10 +66,10 @@ class EvolutionGate:
 
     def _validate_evolution_internal(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
         """
-        RSEA Gate: Returns a primitive bool if called from synchronous test contexts,
-        and returns a coroutine otherwise to satisfy asynchronous callers.
+        Wrapper supporting both synchronous and awaited boolean returns.
         """
-        result = self._validate_evolution_sync(candidate_id, candidate_config, baseline_config)
+        res = self._validate_evolution_internal(candidate_id, candidate_config, baseline_config)
+        return AwaitableBool(res)
 
         # Dual synchronous / asynchronous compatibility based on caller context
         import sys
@@ -164,7 +164,7 @@ class EvolutionGate:
             candidate_raw = self.validation_engine.run_benchmark(candidate_config)
         if isinstance(candidate_raw, (int, float)):
             candidate = EvolutionMetrics(
-                reward=float(candidate_raw),
+                reward=candidate_raw,
                 calibration=0.9,
                 robustness=0.8,
                 latency=10.0,
