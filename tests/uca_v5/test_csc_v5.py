@@ -1,11 +1,10 @@
-import asyncio
 import pytest
 import asyncio
 from unittest.mock import MagicMock, AsyncMock
 from trading_bot.core.csc.controller import CognitiveSystemController
-from trading_bot.core.alphaalgo_core_engine import DecisionOutcome, CoreDecision
+from trading_bot.core.alphaalgo_core_engine import DecisionOutcome
 from trading_bot.core.immutable_shield import GovernanceDecision
-from trading_bot.core.unified_event_bus import decision_bus, ActionStatus, UnifiedDecisionBus, LogAction
+from trading_bot.core.unified_event_bus import decision_bus, UnifiedDecisionBus, LogAction, ActionStatus
 
 @pytest.fixture(autouse=True)
 def reset_csc_singleton():
@@ -27,8 +26,6 @@ async def manage_decision_bus():
 
 @pytest.fixture(autouse=True)
 def mock_event_bus_for_csc(monkeypatch):
-    from trading_bot.core.unified_event_bus import LogAction, UnifiedDecisionBus, ActionStatus
-
     async def mock_propose(self, action):
         action.status = ActionStatus.EXECUTED
         action._completed_event.set()
@@ -49,6 +46,13 @@ async def test_csc_hasp_intervention(monkeypatch):
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
     shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
+    from trading_bot.core.csc.router import SkillRouter
+    skill_router = SkillRouter()
+    verifier_swarm = MagicMock()
+    risk_engine = MagicMock()
+    consensus_engine = MagicMock()
+    execution_planner = MagicMock()
+    evolution_gate = MagicMock()
 
     csc = CognitiveSystemController(world_model, hms, shield)
 
@@ -83,7 +87,15 @@ async def test_csc_pivot_loop():
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()
     shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
+    from trading_bot.core.csc.router import SkillRouter
+    skill_router = SkillRouter()
+    verifier_swarm = MagicMock()
+    risk_engine = MagicMock()
+    consensus_engine = MagicMock()
+    execution_planner = MagicMock()
+    evolution_gate = MagicMock()
 
+    mock_bus = MockDecisionBus()
     csc = CognitiveSystemController(world_model, hms, shield, decision_bus=mock_bus)
 
     obs = {"volatility": 0.1, "features": [0.1] * 16}

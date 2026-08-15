@@ -5,6 +5,7 @@ Provides validation and sanitization checks for historical and streaming dataset
 
 from typing import Any, Optional, Dict, Tuple
 import logging
+import pandas as pd
 from datetime import datetime
 import pandas as pd
 
@@ -42,9 +43,11 @@ class DataValidator:
 
         report = {
             "row_count": len(df),
+            "total_records": len(df),
             "missing_values": 0,
             "corrupted_rows": 0,
             "logical_errors": 0,
+            "bad_ticks_count": 0,
             "warnings": []
         }
 
@@ -68,6 +71,7 @@ class DataValidator:
         )
         violations_count = int(logical_violations.sum())
         report["logical_errors"] = violations_count
+        report["bad_ticks_count"] = violations_count
 
         is_valid = (nan_counts == 0) and (violations_count == 0)
         return is_valid, report

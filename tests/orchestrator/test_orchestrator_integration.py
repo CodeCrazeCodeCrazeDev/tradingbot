@@ -88,8 +88,7 @@ class TestMLToExecutionFlow:
     @pytest.mark.asyncio
     async def test_predict_and_execute_flow(self, full_config):
         """Test flow from ML prediction to execution"""
-        from trading_bot.orchestrator import (
-            OpportunityPredictor, ExecutionEngine, TradingDecision
+        OpportunityPredictor, ExecutionEngine, TradingDecision
         )
         predictor = OpportunityPredictor(full_config)
         engine = ExecutionEngine(full_config)
@@ -245,7 +244,6 @@ class TestEndToEndOrchestration:
     @pytest.mark.asyncio
     async def test_full_orchestration_cycle(self, full_config, sample_market_data):
         """Test complete orchestration cycle"""
-        from trading_bot.orchestrator import (
             MasterOrchestrator, ExecutionEngine, OpportunityPredictor,
             PortfolioRiskManager, PerformanceTracker
         )
@@ -293,7 +291,6 @@ class TestComponentCompatibility:
 
     def test_trading_decision_compatibility(self, full_config):
         """Test TradingDecision works with all components"""
-        from trading_bot.orchestrator import (
             TradingDecision, ExecutionEngine, PortfolioRiskManager
         )
 
@@ -356,6 +353,8 @@ class TestErrorHandling:
     async def test_empty_venues_routing(self, full_config):
         """Test routing with empty venues"""
         from trading_bot.orchestrator import SmartOrderRouter
+from enum import auto
+import numpy
         router = SmartOrderRouter()
         params = {'symbols': ['AAPL'], 'quantity': 1000}
         plan = await router.route(params, {})
