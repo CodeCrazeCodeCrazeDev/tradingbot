@@ -1,5 +1,12 @@
 ```
 
+### 2. Verified Assertions per Subsystem
+
+- **Memory Optimization**: `test_hms_automem_optimization` verified that SAGE schema version scales accurately without integrity compromises.
+- **Decision Determinism**: `test_csc_decision_determinism` verified that three consecutive identical market observations produce 100% equivalent decision vectors.
+- **Skill Routing**: `test_router_hasp_routing` and `test_router_s2l_routing` verified that volatility triggers prompt-to-adapter swaps and HASP overrides as expected.
+```
+
 ---
 
 ## 3. High-Concurrency Stress Test Suite
