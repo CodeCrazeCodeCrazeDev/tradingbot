@@ -437,7 +437,6 @@ class ImprovementProposer:
                 # Fix bare except
                 if 'bare except' in w.title.lower() or 'overly broad' in w.title.lower():
                     if 'except Exception as e:' in line:
-                        logger.error(f"Error: {e}")
                         new_lines[line_idx] = line.replace('except:', 'except Exception as e:')
                         changes.append(f"Line {w.line_number}: Changed bare except to 'except Exception as e:'")
                     elif 'except Exception:' in line:

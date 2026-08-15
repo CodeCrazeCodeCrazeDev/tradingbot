@@ -447,7 +447,7 @@
     },
     "timestamp": "2026-07-04T06:47:15.874166"
   },
-  "biology_strategy_mutation_20260803_175309": {
+  "biology_strategy_mutation_20260720_125137": {
     "domain": "biology",
     "concept": "Strategy Mutation",
     "mathematical_representation": "GA(params, mutation_rate, fitness_func)",
@@ -459,9 +459,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-03T17:53:09.115491"
+    "timestamp": "2026-07-20T12:51:37.363240"
   },
-  "biology_neural_attention_filtering_20260803_175309": {
+  "biology_neural_attention_filtering_20260720_125137": {
     "domain": "biology",
     "concept": "Neural Attention Filtering",
     "mathematical_representation": "Attention(Query, Key, Value) where Query is market state",
@@ -473,9 +473,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-03T17:53:09.118217"
+    "timestamp": "2026-07-20T12:51:37.366033"
   },
-  "physics_market_entropy_20260803_175309": {
+  "physics_market_entropy_20260720_125137": {
     "domain": "physics",
     "concept": "Market Entropy",
     "mathematical_representation": "H(P) = -\u03a3 p_i log(p_i)",
@@ -487,9 +487,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-03T17:53:09.120074"
+    "timestamp": "2026-07-20T12:51:37.367519"
   },
-  "physics_liquidity_laminar_flow_20260803_175309": {
+  "physics_liquidity_laminar_flow_20260720_125137": {
     "domain": "physics",
     "concept": "Liquidity Laminar Flow",
     "mathematical_representation": "Re = \u03c1vd / \u03bc (Reynolds number analogy)",
@@ -501,9 +501,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-03T17:53:09.121620"
+    "timestamp": "2026-07-20T12:51:37.369024"
   },
-  "physics_price_potential_energy_20260803_175309": {
+  "physics_price_potential_energy_20260720_125137": {
     "domain": "physics",
     "concept": "Price Potential Energy",
     "mathematical_representation": "PE = mgh (Analogy: distance from moving average)",
@@ -515,9 +515,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-03T17:53:09.123196"
+    "timestamp": "2026-07-20T12:51:37.370415"
   },
-  "physics_lyapunov_exponents_20260803_175309": {
+  "physics_lyapunov_exponents_20260720_125137": {
     "domain": "physics",
     "concept": "Lyapunov Exponents",
     "mathematical_representation": "\u03bb = lim(t\u2192\u221e) 1/t ln|\u03b4Z(t)|/|\u03b4Z(0)|",
@@ -529,9 +529,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-03T17:53:09.124760"
+    "timestamp": "2026-07-20T12:51:37.371722"
   },
-  "chemistry_market_catalysts_20260803_175309": {
+  "chemistry_market_catalysts_20260720_125137": {
     "domain": "chemistry",
     "concept": "Market Catalysts",
     "mathematical_representation": "Rate = k[News][Liquidity]",
@@ -543,9 +543,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-03T17:53:09.126194"
+    "timestamp": "2026-07-20T12:51:37.373194"
   },
-  "chemistry_price_saturation_20260803_175309": {
+  "chemistry_price_saturation_20260720_125137": {
     "domain": "chemistry",
     "concept": "Price Saturation",
     "mathematical_representation": "S = [Reacted] / [Total]",
@@ -557,9 +557,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-03T17:53:09.127817"
+    "timestamp": "2026-07-20T12:51:37.374660"
   },
-  "chemistry_inhibitor_concentration_20260803_175309": {
+  "chemistry_inhibitor_concentration_20260720_125137": {
     "domain": "chemistry",
     "concept": "Inhibitor Concentration",
     "mathematical_representation": "V_max / (1 + [Inhibitor]/Ki)",
@@ -571,9 +571,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-03T17:53:09.129337"
+    "timestamp": "2026-07-20T12:51:37.376087"
   },
-  "mathematics_topological_invariants_20260803_175309": {
+  "mathematics_topological_invariants_20260720_125137": {
     "domain": "mathematics",
     "concept": "Topological Invariants",
     "mathematical_representation": "Betti numbers (\u03b2\u2080, \u03b2\u2081)",
@@ -585,9 +585,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-03T17:53:09.131330"
+    "timestamp": "2026-07-20T12:51:37.377718"
   },
-  "mathematics_bayesian_regime_updating_20260803_175309": {
+  "mathematics_bayesian_regime_updating_20260720_125137": {
     "domain": "mathematics",
     "concept": "Bayesian Regime Updating",
     "mathematical_representation": "P(Regime | Data) \u221d P(Data | Regime) * P(Regime)",
@@ -599,9 +599,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-03T17:53:09.132871"
+    "timestamp": "2026-07-20T12:51:37.379319"
   },
-  "mathematics_information_transfer_20260803_175309": {
+  "mathematics_information_transfer_20260720_125137": {
     "domain": "mathematics",
     "concept": "Information Transfer",
     "mathematical_representation": "T_{X\u2192Y} = \u03a3 p(y_{t+1}, y_t, x_t) log [ p(y_{t+1}|y_t, x_t) / p(y_{t+1}|y_t) ]",
@@ -613,9 +613,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-03T17:53:09.134351"
+    "timestamp": "2026-07-20T12:51:37.380991"
   },
-  "mathematics_liquidity_graph_centrality_20260803_175309": {
+  "mathematics_liquidity_graph_centrality_20260720_125137": {
     "domain": "mathematics",
     "concept": "Liquidity Graph Centrality",
     "mathematical_representation": "C(v) = \u03a3 1/d(v, u)",
@@ -627,9 +627,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-03T17:53:09.135928"
+    "timestamp": "2026-07-20T12:51:37.382621"
   },
-  "nature_fractal_persistence_20260803_175309": {
+  "nature_fractal_persistence_20260720_125137": {
     "domain": "nature",
     "concept": "Fractal Persistence",
     "mathematical_representation": "H = log(R/S) / log(N)",
@@ -641,9 +641,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-03T17:53:09.137519"
+    "timestamp": "2026-07-20T12:51:37.384086"
   },
-  "nature_liquidity_predator-prey_20260803_175309": {
+  "nature_liquidity_predator-prey_20260720_125137": {
     "domain": "nature",
     "concept": "Liquidity Predator-Prey",
     "mathematical_representation": "dx/dt = \u03b1x - \u03b2xy, dy/dt = \u03b4xy - \u03b3y",
@@ -655,9 +655,9 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-03T17:53:09.139167"
+    "timestamp": "2026-07-20T12:51:37.385756"
   },
-  "nature_strategy_niche_competition_20260803_175309": {
+  "nature_strategy_niche_competition_20260720_125137": {
     "domain": "nature",
     "concept": "Strategy Niche Competition",
     "mathematical_representation": "Lotka-Volterra Competition Model",
@@ -669,902 +669,6 @@
     "performance_metrics": {
       "sharpe_improvement": 0.05
     },
-    "timestamp": "2026-08-03T17:53:09.140826"
-  },
-  "biology_strategy_mutation_20260803_175736": {
-    "domain": "biology",
-    "concept": "Strategy Mutation",
-    "mathematical_representation": "GA(params, mutation_rate, fitness_func)",
-    "trading_application": "Trading strategy derived from Strategy Mutation",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T17:57:36.421205"
-  },
-  "biology_neural_attention_filtering_20260803_175736": {
-    "domain": "biology",
-    "concept": "Neural Attention Filtering",
-    "mathematical_representation": "Attention(Query, Key, Value) where Query is market state",
-    "trading_application": "Trading strategy derived from Neural Attention Filtering",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T17:57:36.423325"
-  },
-  "physics_market_entropy_20260803_175736": {
-    "domain": "physics",
-    "concept": "Market Entropy",
-    "mathematical_representation": "H(P) = -\u03a3 p_i log(p_i)",
-    "trading_application": "Trading strategy derived from Market Entropy",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T17:57:36.425387"
-  },
-  "physics_liquidity_laminar_flow_20260803_175736": {
-    "domain": "physics",
-    "concept": "Liquidity Laminar Flow",
-    "mathematical_representation": "Re = \u03c1vd / \u03bc (Reynolds number analogy)",
-    "trading_application": "Trading strategy derived from Liquidity Laminar Flow",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T17:57:36.427592"
-  },
-  "physics_price_potential_energy_20260803_175736": {
-    "domain": "physics",
-    "concept": "Price Potential Energy",
-    "mathematical_representation": "PE = mgh (Analogy: distance from moving average)",
-    "trading_application": "Trading strategy derived from Price Potential Energy",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T17:57:36.429571"
-  },
-  "physics_lyapunov_exponents_20260803_175736": {
-    "domain": "physics",
-    "concept": "Lyapunov Exponents",
-    "mathematical_representation": "\u03bb = lim(t\u2192\u221e) 1/t ln|\u03b4Z(t)|/|\u03b4Z(0)|",
-    "trading_application": "Trading strategy derived from Lyapunov Exponents",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T17:57:36.431527"
-  },
-  "chemistry_market_catalysts_20260803_175736": {
-    "domain": "chemistry",
-    "concept": "Market Catalysts",
-    "mathematical_representation": "Rate = k[News][Liquidity]",
-    "trading_application": "Trading strategy derived from Market Catalysts",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T17:57:36.433634"
-  },
-  "chemistry_price_saturation_20260803_175736": {
-    "domain": "chemistry",
-    "concept": "Price Saturation",
-    "mathematical_representation": "S = [Reacted] / [Total]",
-    "trading_application": "Trading strategy derived from Price Saturation",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T17:57:36.435685"
-  },
-  "chemistry_inhibitor_concentration_20260803_175736": {
-    "domain": "chemistry",
-    "concept": "Inhibitor Concentration",
-    "mathematical_representation": "V_max / (1 + [Inhibitor]/Ki)",
-    "trading_application": "Trading strategy derived from Inhibitor Concentration",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T17:57:36.437641"
-  },
-  "mathematics_topological_invariants_20260803_175736": {
-    "domain": "mathematics",
-    "concept": "Topological Invariants",
-    "mathematical_representation": "Betti numbers (\u03b2\u2080, \u03b2\u2081)",
-    "trading_application": "Trading strategy derived from Topological Invariants",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T17:57:36.439737"
-  },
-  "mathematics_bayesian_regime_updating_20260803_175736": {
-    "domain": "mathematics",
-    "concept": "Bayesian Regime Updating",
-    "mathematical_representation": "P(Regime | Data) \u221d P(Data | Regime) * P(Regime)",
-    "trading_application": "Trading strategy derived from Bayesian Regime Updating",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T17:57:36.441831"
-  },
-  "mathematics_information_transfer_20260803_175736": {
-    "domain": "mathematics",
-    "concept": "Information Transfer",
-    "mathematical_representation": "T_{X\u2192Y} = \u03a3 p(y_{t+1}, y_t, x_t) log [ p(y_{t+1}|y_t, x_t) / p(y_{t+1}|y_t) ]",
-    "trading_application": "Trading strategy derived from Information Transfer",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T17:57:36.443969"
-  },
-  "mathematics_liquidity_graph_centrality_20260803_175736": {
-    "domain": "mathematics",
-    "concept": "Liquidity Graph Centrality",
-    "mathematical_representation": "C(v) = \u03a3 1/d(v, u)",
-    "trading_application": "Trading strategy derived from Liquidity Graph Centrality",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T17:57:36.446159"
-  },
-  "nature_fractal_persistence_20260803_175736": {
-    "domain": "nature",
-    "concept": "Fractal Persistence",
-    "mathematical_representation": "H = log(R/S) / log(N)",
-    "trading_application": "Trading strategy derived from Fractal Persistence",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T17:57:36.448329"
-  },
-  "nature_liquidity_predator-prey_20260803_175736": {
-    "domain": "nature",
-    "concept": "Liquidity Predator-Prey",
-    "mathematical_representation": "dx/dt = \u03b1x - \u03b2xy, dy/dt = \u03b4xy - \u03b3y",
-    "trading_application": "Trading strategy derived from Liquidity Predator-Prey",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T17:57:36.450964"
-  },
-  "nature_strategy_niche_competition_20260803_175736": {
-    "domain": "nature",
-    "concept": "Strategy Niche Competition",
-    "mathematical_representation": "Lotka-Volterra Competition Model",
-    "trading_application": "Trading strategy derived from Strategy Niche Competition",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T17:57:36.453089"
-  },
-  "biology_strategy_mutation_20260803_180007": {
-    "domain": "biology",
-    "concept": "Strategy Mutation",
-    "mathematical_representation": "GA(params, mutation_rate, fitness_func)",
-    "trading_application": "Trading strategy derived from Strategy Mutation",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:00:07.917341"
-  },
-  "biology_neural_attention_filtering_20260803_180007": {
-    "domain": "biology",
-    "concept": "Neural Attention Filtering",
-    "mathematical_representation": "Attention(Query, Key, Value) where Query is market state",
-    "trading_application": "Trading strategy derived from Neural Attention Filtering",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:00:07.920138"
-  },
-  "physics_market_entropy_20260803_180007": {
-    "domain": "physics",
-    "concept": "Market Entropy",
-    "mathematical_representation": "H(P) = -\u03a3 p_i log(p_i)",
-    "trading_application": "Trading strategy derived from Market Entropy",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:00:07.922204"
-  },
-  "physics_liquidity_laminar_flow_20260803_180007": {
-    "domain": "physics",
-    "concept": "Liquidity Laminar Flow",
-    "mathematical_representation": "Re = \u03c1vd / \u03bc (Reynolds number analogy)",
-    "trading_application": "Trading strategy derived from Liquidity Laminar Flow",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:00:07.924282"
-  },
-  "physics_price_potential_energy_20260803_180007": {
-    "domain": "physics",
-    "concept": "Price Potential Energy",
-    "mathematical_representation": "PE = mgh (Analogy: distance from moving average)",
-    "trading_application": "Trading strategy derived from Price Potential Energy",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:00:07.926260"
-  },
-  "physics_lyapunov_exponents_20260803_180007": {
-    "domain": "physics",
-    "concept": "Lyapunov Exponents",
-    "mathematical_representation": "\u03bb = lim(t\u2192\u221e) 1/t ln|\u03b4Z(t)|/|\u03b4Z(0)|",
-    "trading_application": "Trading strategy derived from Lyapunov Exponents",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:00:07.928469"
-  },
-  "chemistry_market_catalysts_20260803_180007": {
-    "domain": "chemistry",
-    "concept": "Market Catalysts",
-    "mathematical_representation": "Rate = k[News][Liquidity]",
-    "trading_application": "Trading strategy derived from Market Catalysts",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:00:07.930506"
-  },
-  "chemistry_price_saturation_20260803_180007": {
-    "domain": "chemistry",
-    "concept": "Price Saturation",
-    "mathematical_representation": "S = [Reacted] / [Total]",
-    "trading_application": "Trading strategy derived from Price Saturation",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:00:07.932751"
-  },
-  "chemistry_inhibitor_concentration_20260803_180007": {
-    "domain": "chemistry",
-    "concept": "Inhibitor Concentration",
-    "mathematical_representation": "V_max / (1 + [Inhibitor]/Ki)",
-    "trading_application": "Trading strategy derived from Inhibitor Concentration",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:00:07.934979"
-  },
-  "mathematics_topological_invariants_20260803_180007": {
-    "domain": "mathematics",
-    "concept": "Topological Invariants",
-    "mathematical_representation": "Betti numbers (\u03b2\u2080, \u03b2\u2081)",
-    "trading_application": "Trading strategy derived from Topological Invariants",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:00:07.937126"
-  },
-  "mathematics_bayesian_regime_updating_20260803_180007": {
-    "domain": "mathematics",
-    "concept": "Bayesian Regime Updating",
-    "mathematical_representation": "P(Regime | Data) \u221d P(Data | Regime) * P(Regime)",
-    "trading_application": "Trading strategy derived from Bayesian Regime Updating",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:00:07.939402"
-  },
-  "mathematics_information_transfer_20260803_180007": {
-    "domain": "mathematics",
-    "concept": "Information Transfer",
-    "mathematical_representation": "T_{X\u2192Y} = \u03a3 p(y_{t+1}, y_t, x_t) log [ p(y_{t+1}|y_t, x_t) / p(y_{t+1}|y_t) ]",
-    "trading_application": "Trading strategy derived from Information Transfer",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:00:07.941700"
-  },
-  "mathematics_liquidity_graph_centrality_20260803_180007": {
-    "domain": "mathematics",
-    "concept": "Liquidity Graph Centrality",
-    "mathematical_representation": "C(v) = \u03a3 1/d(v, u)",
-    "trading_application": "Trading strategy derived from Liquidity Graph Centrality",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:00:07.944057"
-  },
-  "nature_fractal_persistence_20260803_180007": {
-    "domain": "nature",
-    "concept": "Fractal Persistence",
-    "mathematical_representation": "H = log(R/S) / log(N)",
-    "trading_application": "Trading strategy derived from Fractal Persistence",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:00:07.946288"
-  },
-  "nature_liquidity_predator-prey_20260803_180007": {
-    "domain": "nature",
-    "concept": "Liquidity Predator-Prey",
-    "mathematical_representation": "dx/dt = \u03b1x - \u03b2xy, dy/dt = \u03b4xy - \u03b3y",
-    "trading_application": "Trading strategy derived from Liquidity Predator-Prey",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:00:07.948674"
-  },
-  "nature_strategy_niche_competition_20260803_180007": {
-    "domain": "nature",
-    "concept": "Strategy Niche Competition",
-    "mathematical_representation": "Lotka-Volterra Competition Model",
-    "trading_application": "Trading strategy derived from Strategy Niche Competition",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:00:07.951104"
-  },
-  "biology_strategy_mutation_20260803_180329": {
-    "domain": "biology",
-    "concept": "Strategy Mutation",
-    "mathematical_representation": "GA(params, mutation_rate, fitness_func)",
-    "trading_application": "Trading strategy derived from Strategy Mutation",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:03:29.945762"
-  },
-  "biology_neural_attention_filtering_20260803_180329": {
-    "domain": "biology",
-    "concept": "Neural Attention Filtering",
-    "mathematical_representation": "Attention(Query, Key, Value) where Query is market state",
-    "trading_application": "Trading strategy derived from Neural Attention Filtering",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:03:29.950626"
-  },
-  "physics_market_entropy_20260803_180329": {
-    "domain": "physics",
-    "concept": "Market Entropy",
-    "mathematical_representation": "H(P) = -\u03a3 p_i log(p_i)",
-    "trading_application": "Trading strategy derived from Market Entropy",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:03:29.956030"
-  },
-  "physics_liquidity_laminar_flow_20260803_180329": {
-    "domain": "physics",
-    "concept": "Liquidity Laminar Flow",
-    "mathematical_representation": "Re = \u03c1vd / \u03bc (Reynolds number analogy)",
-    "trading_application": "Trading strategy derived from Liquidity Laminar Flow",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:03:29.960980"
-  },
-  "physics_price_potential_energy_20260803_180329": {
-    "domain": "physics",
-    "concept": "Price Potential Energy",
-    "mathematical_representation": "PE = mgh (Analogy: distance from moving average)",
-    "trading_application": "Trading strategy derived from Price Potential Energy",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:03:29.964107"
-  },
-  "physics_lyapunov_exponents_20260803_180329": {
-    "domain": "physics",
-    "concept": "Lyapunov Exponents",
-    "mathematical_representation": "\u03bb = lim(t\u2192\u221e) 1/t ln|\u03b4Z(t)|/|\u03b4Z(0)|",
-    "trading_application": "Trading strategy derived from Lyapunov Exponents",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:03:29.967087"
-  },
-  "chemistry_market_catalysts_20260803_180329": {
-    "domain": "chemistry",
-    "concept": "Market Catalysts",
-    "mathematical_representation": "Rate = k[News][Liquidity]",
-    "trading_application": "Trading strategy derived from Market Catalysts",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:03:29.970046"
-  },
-  "chemistry_price_saturation_20260803_180329": {
-    "domain": "chemistry",
-    "concept": "Price Saturation",
-    "mathematical_representation": "S = [Reacted] / [Total]",
-    "trading_application": "Trading strategy derived from Price Saturation",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:03:29.973006"
-  },
-  "chemistry_inhibitor_concentration_20260803_180329": {
-    "domain": "chemistry",
-    "concept": "Inhibitor Concentration",
-    "mathematical_representation": "V_max / (1 + [Inhibitor]/Ki)",
-    "trading_application": "Trading strategy derived from Inhibitor Concentration",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:03:29.976040"
-  },
-  "mathematics_topological_invariants_20260803_180329": {
-    "domain": "mathematics",
-    "concept": "Topological Invariants",
-    "mathematical_representation": "Betti numbers (\u03b2\u2080, \u03b2\u2081)",
-    "trading_application": "Trading strategy derived from Topological Invariants",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:03:29.979262"
-  },
-  "mathematics_bayesian_regime_updating_20260803_180329": {
-    "domain": "mathematics",
-    "concept": "Bayesian Regime Updating",
-    "mathematical_representation": "P(Regime | Data) \u221d P(Data | Regime) * P(Regime)",
-    "trading_application": "Trading strategy derived from Bayesian Regime Updating",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:03:29.984572"
-  },
-  "mathematics_information_transfer_20260803_180329": {
-    "domain": "mathematics",
-    "concept": "Information Transfer",
-    "mathematical_representation": "T_{X\u2192Y} = \u03a3 p(y_{t+1}, y_t, x_t) log [ p(y_{t+1}|y_t, x_t) / p(y_{t+1}|y_t) ]",
-    "trading_application": "Trading strategy derived from Information Transfer",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:03:29.987763"
-  },
-  "mathematics_liquidity_graph_centrality_20260803_180329": {
-    "domain": "mathematics",
-    "concept": "Liquidity Graph Centrality",
-    "mathematical_representation": "C(v) = \u03a3 1/d(v, u)",
-    "trading_application": "Trading strategy derived from Liquidity Graph Centrality",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:03:29.992041"
-  },
-  "nature_fractal_persistence_20260803_180329": {
-    "domain": "nature",
-    "concept": "Fractal Persistence",
-    "mathematical_representation": "H = log(R/S) / log(N)",
-    "trading_application": "Trading strategy derived from Fractal Persistence",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:03:29.995473"
-  },
-  "nature_liquidity_predator-prey_20260803_180330": {
-    "domain": "nature",
-    "concept": "Liquidity Predator-Prey",
-    "mathematical_representation": "dx/dt = \u03b1x - \u03b2xy, dy/dt = \u03b4xy - \u03b3y",
-    "trading_application": "Trading strategy derived from Liquidity Predator-Prey",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:03:30.001289"
-  },
-  "nature_strategy_niche_competition_20260803_180330": {
-    "domain": "nature",
-    "concept": "Strategy Niche Competition",
-    "mathematical_representation": "Lotka-Volterra Competition Model",
-    "trading_application": "Trading strategy derived from Strategy Niche Competition",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:03:30.004923"
-  },
-  "biology_strategy_mutation_20260803_183038": {
-    "domain": "biology",
-    "concept": "Strategy Mutation",
-    "mathematical_representation": "GA(params, mutation_rate, fitness_func)",
-    "trading_application": "Trading strategy derived from Strategy Mutation",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:30:38.170360"
-  },
-  "biology_neural_attention_filtering_20260803_183038": {
-    "domain": "biology",
-    "concept": "Neural Attention Filtering",
-    "mathematical_representation": "Attention(Query, Key, Value) where Query is market state",
-    "trading_application": "Trading strategy derived from Neural Attention Filtering",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:30:38.174435"
-  },
-  "physics_market_entropy_20260803_183038": {
-    "domain": "physics",
-    "concept": "Market Entropy",
-    "mathematical_representation": "H(P) = -\u03a3 p_i log(p_i)",
-    "trading_application": "Trading strategy derived from Market Entropy",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:30:38.178095"
-  },
-  "physics_liquidity_laminar_flow_20260803_183038": {
-    "domain": "physics",
-    "concept": "Liquidity Laminar Flow",
-    "mathematical_representation": "Re = \u03c1vd / \u03bc (Reynolds number analogy)",
-    "trading_application": "Trading strategy derived from Liquidity Laminar Flow",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:30:38.181514"
-  },
-  "physics_price_potential_energy_20260803_183038": {
-    "domain": "physics",
-    "concept": "Price Potential Energy",
-    "mathematical_representation": "PE = mgh (Analogy: distance from moving average)",
-    "trading_application": "Trading strategy derived from Price Potential Energy",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:30:38.184914"
-  },
-  "physics_lyapunov_exponents_20260803_183038": {
-    "domain": "physics",
-    "concept": "Lyapunov Exponents",
-    "mathematical_representation": "\u03bb = lim(t\u2192\u221e) 1/t ln|\u03b4Z(t)|/|\u03b4Z(0)|",
-    "trading_application": "Trading strategy derived from Lyapunov Exponents",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:30:38.188166"
-  },
-  "chemistry_market_catalysts_20260803_183038": {
-    "domain": "chemistry",
-    "concept": "Market Catalysts",
-    "mathematical_representation": "Rate = k[News][Liquidity]",
-    "trading_application": "Trading strategy derived from Market Catalysts",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:30:38.191481"
-  },
-  "chemistry_price_saturation_20260803_183038": {
-    "domain": "chemistry",
-    "concept": "Price Saturation",
-    "mathematical_representation": "S = [Reacted] / [Total]",
-    "trading_application": "Trading strategy derived from Price Saturation",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:30:38.194912"
-  },
-  "chemistry_inhibitor_concentration_20260803_183038": {
-    "domain": "chemistry",
-    "concept": "Inhibitor Concentration",
-    "mathematical_representation": "V_max / (1 + [Inhibitor]/Ki)",
-    "trading_application": "Trading strategy derived from Inhibitor Concentration",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:30:38.198228"
-  },
-  "mathematics_topological_invariants_20260803_183038": {
-    "domain": "mathematics",
-    "concept": "Topological Invariants",
-    "mathematical_representation": "Betti numbers (\u03b2\u2080, \u03b2\u2081)",
-    "trading_application": "Trading strategy derived from Topological Invariants",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:30:38.201811"
-  },
-  "mathematics_bayesian_regime_updating_20260803_183038": {
-    "domain": "mathematics",
-    "concept": "Bayesian Regime Updating",
-    "mathematical_representation": "P(Regime | Data) \u221d P(Data | Regime) * P(Regime)",
-    "trading_application": "Trading strategy derived from Bayesian Regime Updating",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:30:38.205124"
-  },
-  "mathematics_information_transfer_20260803_183038": {
-    "domain": "mathematics",
-    "concept": "Information Transfer",
-    "mathematical_representation": "T_{X\u2192Y} = \u03a3 p(y_{t+1}, y_t, x_t) log [ p(y_{t+1}|y_t, x_t) / p(y_{t+1}|y_t) ]",
-    "trading_application": "Trading strategy derived from Information Transfer",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:30:38.208634"
-  },
-  "mathematics_liquidity_graph_centrality_20260803_183038": {
-    "domain": "mathematics",
-    "concept": "Liquidity Graph Centrality",
-    "mathematical_representation": "C(v) = \u03a3 1/d(v, u)",
-    "trading_application": "Trading strategy derived from Liquidity Graph Centrality",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:30:38.212009"
-  },
-  "nature_fractal_persistence_20260803_183038": {
-    "domain": "nature",
-    "concept": "Fractal Persistence",
-    "mathematical_representation": "H = log(R/S) / log(N)",
-    "trading_application": "Trading strategy derived from Fractal Persistence",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:30:38.215525"
-  },
-  "nature_liquidity_predator-prey_20260803_183038": {
-    "domain": "nature",
-    "concept": "Liquidity Predator-Prey",
-    "mathematical_representation": "dx/dt = \u03b1x - \u03b2xy, dy/dt = \u03b4xy - \u03b3y",
-    "trading_application": "Trading strategy derived from Liquidity Predator-Prey",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:30:38.218958"
-  },
-  "nature_strategy_niche_competition_20260803_183038": {
-    "domain": "nature",
-    "concept": "Strategy Niche Competition",
-    "mathematical_representation": "Lotka-Volterra Competition Model",
-    "trading_application": "Trading strategy derived from Strategy Niche Competition",
-    "result": {
-      "success": true,
-      "significance": 0.85
-    },
-    "performance_metrics": {
-      "sharpe_improvement": 0.05
-    },
-    "timestamp": "2026-08-03T18:30:38.222430"
+    "timestamp": "2026-07-20T12:51:37.387399"
   }
 }

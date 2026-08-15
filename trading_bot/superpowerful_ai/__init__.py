@@ -1,9 +1,8 @@
-"""
-Superpowerful Ai Module
-============================================================
+import logging
+from typing import Any, Dict, Optional
+from trading_bot.core.csc.controller import CognitiveSystemController
 
-Auto-generated integration file.
-"""
+logger = logging.getLogger(__name__)
 
 # self_discovery_engine
 try:
@@ -24,24 +23,21 @@ except ImportError as e:
 __all__ = [
     'SelfDiscoveryEngine',
     'SuperPowerfulAI',
+    'SuperpowerfulOrchestrator',
 ]
 
 class SuperpowerfulOrchestrator:
-    """Auto-generated stub orchestrator for module integration."""
-    def __init__(self, config=None):
+    """Compatibility shim for legacy SuperpowerfulOrchestrator. Delegates to CSC."""
+    def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
-        self.running = False
-        self._initialized = True
-    
-    async def start(self):
-        """Start the orchestrator."""
-        self.running = True
-    
-    async def stop(self):
-        """Stop the orchestrator."""
-        self.running = False
-    
-    def get_status(self):
-        """Get orchestrator status."""
-        return {"running": self.running, "initialized": self._initialized}
+        self.csc = CognitiveSystemController()
+        logger.info("SuperpowerfulOrchestrator (Shim) initialized. Routing to CSC.")
 
+    async def start(self):
+        logger.info("SuperpowerfulOrchestrator (Shim) started.")
+
+    async def stop(self):
+        logger.info("SuperpowerfulOrchestrator (Shim) stopped.")
+
+    def get_status(self) -> Dict[str, Any]:
+        return {"status": "operational", "mode": "shim", "delegated_to": "CSC"}

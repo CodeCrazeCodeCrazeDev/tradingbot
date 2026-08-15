@@ -329,25 +329,24 @@ class DiskCache:
         
         # Check if file exists
         if not os.path.exists(file_path):
-            try:
-                # Remove from index
-                if key in self.index:
-                    del self.index[key]
-                    self._save_index()
-                return None
-
-                # Load from file
-                with open(file_path, 'r') as f:
-                    value = json.load(f)
-
-                # Update access info
-                self.index[key]['last_accessed'] = time.time()
-                self.index[key]['access_count'] += 1
+            if key in self.index:
+                del self.index[key]
                 self._save_index()
+            return None
 
-                return value
+        try:
+            # Load from file
+            with open(file_path, 'r') as f:
+                value = json.load(f)
 
-            except Exception as e:
+            # Update access info
+            self.index[key]['last_accessed'] = time.time()
+            self.index[key]['access_count'] += 1
+            self._save_index()
+
+            return value
+
+        except Exception as e:
                 logger.error(f"Error loading cache item {key}: {str(e)}")
                 return None
 

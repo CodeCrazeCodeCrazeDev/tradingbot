@@ -105,8 +105,7 @@ class APICache:
             try:
                 cached = self.redis_client.get(key)
                 if cached:
-                    # Security Hardening: Use JSON for cache serialization
-                    value = json.loads(cached.decode('utf-8'))
+                    value = json.loads(cached)
                     # Promote to memory cache
                     ttl = self.redis_client.ttl(key)
                     if ttl > 0:
@@ -144,7 +143,7 @@ class APICache:
                 self.redis_client.setex(
                     key,
                     ttl,
-                    json.dumps(value).encode('utf-8')
+                    json.dumps(value, default=str)
                 )
             except Exception as e:
                 print(f"Redis set error: {e}")

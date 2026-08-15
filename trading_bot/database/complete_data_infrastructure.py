@@ -129,7 +129,7 @@ class CheckpointManager:
         """Save state checkpoint"""
         path = f"{self.checkpoint_dir}/{checkpoint_id}.json"
         with open(path, 'w') as f:
-            json.dump(state, f, indent=2)
+            json.dump(state, f, default=str)
         logger.info(f"Checkpoint saved: {checkpoint_id}")
     
     def load_checkpoint(self, checkpoint_id: str) -> Optional[Dict]:

@@ -9,7 +9,10 @@ try:
         BacktestResults,
         BacktestTrade,
         OrderType,
-        TestMode
+        TestMode,
+        InstitutionalBacktester,
+        InstitutionalTrade,
+        InstitutionalBacktestResult
     )
     from .backtester import (
         BacktestResult,
@@ -55,6 +58,9 @@ __all__ = [
     'ValidationMethod',
     'WalkForwardResult',
     'retry',
+    'InstitutionalBacktester',
+    'InstitutionalTrade',
+    'InstitutionalBacktestResult'
 ]
 class BacktestingEngine:
     """Stub implementation for BacktestingEngine."""

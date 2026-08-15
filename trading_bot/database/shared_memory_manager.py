@@ -205,9 +205,18 @@ class SharedMemoryManager:
     
     def _put_dataframe(self, df: pd.DataFrame, obj_id: str) -> str:
         """Store a pandas DataFrame in shared memory"""
-        from trading_bot.core.governance.serialization import SerializerRegistry
-        serialized = SerializerRegistry.serialize_dataframe(df)
-        return self._put_json(serialized, obj_id)
+        # Convert to dict of arrays
+        arrays = {
+            'index': df.index.values,
+            'columns': np.array(df.columns),
+            'dtypes': np.array([str(dt) for dt in df.dtypes])
+        }
+        
+        for col in df.columns:
+            arrays[f'data_{col}'] = df[col].values
+        
+        # Store dict in shared memory
+        return self._put_json(arrays, obj_id)
     
     def _put_json(self, data: Any, obj_id: str) -> str:
         """Store a JSON-serialized object in shared memory"""
@@ -218,10 +227,8 @@ class SharedMemoryManager:
                 self.current_size -= old_obj.size
                 old_obj.close()
             
-            # Serialize to JSON
-            # Note: We use a custom encoder or handle non-serializable objects if necessary
-            # For now, assume data is JSON serializable
-            json_data = json.dumps(data).encode('utf-8')
+            # JSON serialize data
+            json_data = json.dumps(data, default=str).encode('utf-8')
             size = len(json_data)
             
             # Create shared memory

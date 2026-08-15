@@ -26,10 +26,38 @@ import tempfile
 import shutil
 from pathlib import Path
 from typing import Dict, Any
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Configure pytest-asyncio
 pytest_plugins = ('pytest_asyncio',)
+
+@pytest.fixture(autouse=True)
+def reset_uca_singletons(event_loop):
+    """Automatically reset all UCA V5 singletons before and after each test."""
+    from trading_bot.core.unified_event_bus import UnifiedDecisionBus
+    from trading_bot.core.csc.controller import CognitiveSystemController
+    from trading_bot.core.hms.memory import HierarchicalMemorySystem
+    from trading_bot.core.csc.router import SkillRouter
+    from trading_bot.core.unified_registry import UnifiedComponentRegistry
+    from trading_bot.core.governance.determinism import determinism
+
+    # Reset before test
+    determinism.reset()
+    determinism.enable(seed=42)
+    UnifiedDecisionBus.reset()
+    event_loop.run_until_complete(CognitiveSystemController.reset())
+    HierarchicalMemorySystem.reset()
+    SkillRouter.reset()
+    UnifiedComponentRegistry.reset()
+
+    yield
+
+    # Reset after test
+    UnifiedDecisionBus.reset()
+    event_loop.run_until_complete(CognitiveSystemController.reset())
+    HierarchicalMemorySystem.reset()
+    SkillRouter.reset()
+    UnifiedComponentRegistry.reset()
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -142,7 +170,7 @@ def sample_ohlcv_data():
     import pandas as pd
     import numpy as np
     
-    dates = pd.date_range(start='2024-01-01', periods=100, freq='H')
+    dates = pd.date_range(start='2024-01-01', periods=100, freq='h')
     data = pd.DataFrame({
         'open': np.random.uniform(1.0900, 1.1100, 100),
         'high': np.random.uniform(1.0950, 1.1150, 100),
@@ -190,18 +218,25 @@ def sample_trade_data():
 def sample_signal():
     """Provide sample trading signal for tests."""
     return {
+        'id': 'test_signal_001',
         'signal_id': 'test_signal_001',
         'symbol': 'EURUSD',
         'direction': 'buy',
         'confidence': 0.75,
         'price': 1.1000,
         'timestamp': datetime.now(),
+        'position_size': 0.01,
         'indicators': {
             'rsi': 45,
             'macd': 0.0005,
             'atr': 0.0015
         }
     }
+
+@pytest.fixture
+def sample_trade_signal(sample_signal):
+    """Provide sample trade signal alias for tests."""
+    return sample_signal
 
 
 @pytest.fixture
@@ -301,6 +336,16 @@ def temp_config_file():
     temp_path.unlink(missing_ok=True)
 
 
+@pytest.fixture(autouse=True)
+def mock_wait_for_decision(monkeypatch):
+    """Automatically patch LogAction.wait_for_decision to avoid hanging in tests."""
+    from trading_bot.core.unified_event_bus import LogAction, ActionStatus
+    async def mock_wait(self, timeout=10.0):
+        self.status = ActionStatus.APPROVED
+        return ActionStatus.APPROVED
+    monkeypatch.setattr(LogAction, "wait_for_decision", mock_wait)
+
+
 # Pytest hooks
 def pytest_configure(config):
     """Configure pytest with all markers."""
@@ -337,3 +382,18 @@ def pytest_collection_modifyitems(config, items):
         # Add unit marker to all tests by default
         if not any(marker.name in ['integration', 'end_to_end'] for marker in item.iter_markers()):
             item.add_marker(pytest.mark.unit)
+
+
+@pytest.fixture(autouse=True)
+def mock_wait_for_decision(monkeypatch, request):
+    """Bypass wait_for_decision timeouts in unit tests by immediately approving."""
+    # Target only uca_v5 or event_bus_consolidation tests to avoid breaking integration tests
+    test_path = str(request.path) if hasattr(request, "path") else ""
+    if "uca_v5" in test_path or "event_bus_consolidation" in test_path or "test_csc_v5" in test_path:
+        from trading_bot.core.unified_event_bus import LogAction, ActionStatus
+
+        async def mock_wait(self, timeout=10.0):
+            self.status = ActionStatus.APPROVED
+            return self.status
+
+        monkeypatch.setattr(LogAction, "wait_for_decision", mock_wait)

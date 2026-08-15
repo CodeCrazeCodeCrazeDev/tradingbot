@@ -5,6 +5,7 @@ This module provides specialized API client functionality for interacting with
 financial market data providers and trading platforms.
 """
 
+import numpy as np
 import asyncio
 import json
 import logging
@@ -16,9 +17,9 @@ from .web_client import WebClient, RequestMethod
 from .auth_manager import AuthManager
 from .rate_limiter import RateLimiter
 
-# Evolution: Added retry decorator
-def retry(max_attempts=3, delay=1.0):
-    """Retry decorator for resilient operations"""
+# Evolution: Added retry decorator with exponential backoff
+def retry(max_attempts=5, initial_delay=1.0, max_delay=60.0):
+    """Retry decorator with exponential backoff for resilient operations"""
     def decorator(func):
         async def wrapper(*args, **kwargs):
             last_error = None
@@ -28,7 +29,13 @@ def retry(max_attempts=3, delay=1.0):
                 except Exception as e:
                     last_error = e
                     if attempt < max_attempts - 1:
-                        await asyncio.sleep(delay * (attempt + 1))
+                        # Exponential backoff: delay * (2^attempt)
+                        delay = min(initial_delay * (2 ** attempt), max_delay)
+                        # Add jitter
+                        import random
+                        delay *= (0.5 + random.random())
+                        logger.warning(f"Retry {attempt + 1}/{max_attempts} for {func.__name__} after {delay:.2f}s due to: {e}")
+                        await asyncio.sleep(delay)
             raise last_error
         return wrapper
     return decorator

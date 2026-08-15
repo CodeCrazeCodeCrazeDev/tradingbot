@@ -11,8 +11,8 @@ from datetime import datetime, timedelta
 import re
 import json
 import os
-import pickle
 from collections import defaultdict, Counter
+from trading_bot.security.safe_pickle import safe_load
 
 # NLP libraries
 import nltk
@@ -643,19 +643,26 @@ class SentimentAnalyzer:
         """Save sentiment history to cache"""
         try:
             # Convert SentimentResult objects to dicts for JSON serialization
-            serializable_history = {
-                ticker: [res.to_dict() if hasattr(res, 'to_dict') else res for res in results]
-                for ticker, results in self.sentiment_history.items()
-            }
+            serializable_history = {}
+            for ticker, results in self.sentiment_history.items():
+                serializable_history[ticker] = [
+                    res.to_dict() if hasattr(res, 'to_dict') else res
+                    for res in results
+                ]
+
             with open(self.cache_path, 'w') as f:
-                json.dump(serializable_history, f, indent=2)
+                json.dump(serializable_history, f, indent=4)
             logger.debug(f"Saved sentiment history to {self.cache_path}")
         except Exception as e:
             logger.warning(f"Error saving sentiment cache: {e}")
     
     def _load_cache(self):
         """Load sentiment history from cache"""
-        if os.path.exists(self.cache_path):
+        json_path = self.cache_path
+        if json_path.endswith('.db') or json_path.endswith('.pkl'):
+            json_path = json_path.rsplit('.', 1)[0] + '.json'
+
+        if os.path.exists(json_path):
             try:
                 with open(self.cache_path, 'r') as f:
                     data = json.load(f)
@@ -663,9 +670,18 @@ class SentimentAnalyzer:
                 # Reconstruct SentimentResult objects
                 self.sentiment_history = defaultdict(list)
                 for ticker, results in data.items():
-                    for res_dict in results:
-                        res_dict['timestamp'] = datetime.fromisoformat(res_dict['timestamp'])
-                        self.sentiment_history[ticker].append(SentimentResult(**res_dict))
+                    for res_data in results:
+                        if isinstance(res_data, dict) and 'text' in res_data:
+                            # Parse timestamp
+                            if 'timestamp' in res_data:
+                                try:
+                                    res_data['timestamp'] = datetime.fromisoformat(res_data['timestamp'])
+                                except (ValueError, TypeError):
+                                    res_data['timestamp'] = datetime.now()
+
+                            self.sentiment_history[ticker].append(SentimentResult(**res_data))
+                        else:
+                            self.sentiment_history[ticker].append(res_data)
 
                 logger.info(f"Loaded sentiment history from {self.cache_path}")
             except Exception as e:

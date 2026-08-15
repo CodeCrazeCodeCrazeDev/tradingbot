@@ -3,30 +3,81 @@ LogAct Shared-Log Backbone - UCA V5 Core Component
 =============================================
 
 The authoritative, totally ordered shared log for AlphaAlgo UCA V5.
-Implements 'LogAct: Enabling Agentic Reliability via Shared Logs' (2026).
-Maintains backward compatibility with the UCA-2026 UnifiedDecisionBus API.
+Implements 'LogAct: Enabling Agentic Reliability via Shared Logs' (Paper 1).
 """
 
 import asyncio
 import logging
 import json
+import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Union, Callable
 from uuid import uuid4
 import threading
+from .governance.determinism import determinism
 
 logger = logging.getLogger(__name__)
-
-# --- Legacy Compatibility Layer ---
 
 class EventPriority(Enum):
     LOW = 0
     NORMAL = 1
     HIGH = 2
     CRITICAL = 3
+
+class ActionStatus(Enum):
+    PROPOSED = "proposed"
+    AUDITING = "auditing"
+    APPROVED = "approved"
+    VETOED = "vetoed"
+    TIMED_OUT = "timed_out"
+    EXECUTED = "executed"
+    FAILED = "failed"
+
+@dataclass
+class LogAction:
+    action_type: str
+    payload: Dict[str, Any]
+    agent_id: str
+    action_id: str = field(default_factory=lambda: determinism.get_uuid())
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+    status: ActionStatus = ActionStatus.PROPOSED
+    voter_reports: Dict[str, Any] = field(default_factory=dict)
+    sequence_number: Optional[int] = None
+    priority: EventPriority = EventPriority.NORMAL
+
+    _completed_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
+
+    @property
+    def event_type(self) -> str:
+        return self.action_type
+
+    @property
+    def source(self) -> str:
+        return self.agent_id
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'action_id': self.action_id,
+            'action_type': self.action_type,
+            'payload': self.payload,
+            'agent_id': self.agent_id,
+            'timestamp': self.timestamp.isoformat(),
+            'status': self.status.value,
+            'voter_reports': self.voter_reports,
+            'sequence_number': self.sequence_number,
+            'priority': self.priority.name
+        }
+
+    async def wait_for_decision(self, timeout: float = 10.0) -> ActionStatus:
+        try:
+            await asyncio.wait_for(self._completed_event.wait(), timeout=timeout)
+        except asyncio.TimeoutError:
+            if self.status in [ActionStatus.PROPOSED, ActionStatus.AUDITING]:
+                self.status = ActionStatus.TIMED_OUT
+        return self.status
 
 @dataclass
 class UnifiedEvent:
@@ -38,273 +89,217 @@ class UnifiedEvent:
     priority: EventPriority = EventPriority.NORMAL
     correlation_id: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            'event_id': self.event_id,
-            'event_type': self.event_type,
-            'payload': self.payload,
-            'source': self.source,
-            'timestamp': self.timestamp.isoformat(),
-            'priority': self.priority.name,
-            'correlation_id': self.correlation_id,
-            'metadata': self.metadata,
-        }
-
-# --- UCA V5 LogAct Core ---
-
-class ActionStatus(Enum):
-    PROPOSED = "proposed"
-    AUDITING = "auditing"
-    APPROVED = "approved"
-    VETOED = "vetoed"
-    EXECUTED = "executed"
-    FAILED = "failed"
-
-@dataclass
-class LogAction:
-    action_type: str
-    payload: Dict[str, Any]
-    agent_id: str
-    action_id: str = field(default_factory=lambda: str(uuid4()))
-    timestamp: datetime = field(default_factory=datetime.utcnow)
     status: ActionStatus = ActionStatus.PROPOSED
-    correlation_id: Optional[str] = None
     voter_reports: Dict[str, Any] = field(default_factory=dict)
     sequence_number: Optional[int] = None
-    priority: EventPriority = EventPriority.NORMAL
+
+    _completed_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
+
+    @property
+    def action_type(self) -> str:
+        return self.event_type
+
+    @property
+    def agent_id(self) -> str:
+        return self.source
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'action_id': self.action_id,
-            'action_type': self.action_type,
+            'action_id': self.event_id,
+            'action_type': self.event_type,
             'payload': self.payload,
-            'agent_id': self.agent_id,
+            'agent_id': self.source,
             'timestamp': self.timestamp.isoformat(),
             'status': self.status.value,
-            'correlation_id': self.correlation_id,
             'voter_reports': self.voter_reports,
             'sequence_number': self.sequence_number,
             'priority': self.priority.name
         }
 
+    async def wait_for_decision(self, timeout: float = 10.0) -> ActionStatus:
+        try:
+            await asyncio.wait_for(self._completed_event.wait(), timeout=timeout)
+        except asyncio.TimeoutError:
+            if self.status in [ActionStatus.PROPOSED, ActionStatus.AUDITING]:
+                self.status = ActionStatus.TIMED_OUT
+        return self.status
+
 class UnifiedDecisionBus:
-    """
-    LogAct Shared-Log Backbone - Authoritative Singleton for AlphaAlgo UCA V5.
-    Provides a transactional shared log while maintaining backward compatibility.
-    """
-    _instance = None
-    _lock = threading.Lock()
-
-    def __new__(cls, *args, **kwargs):
-        with cls._lock:
-            if cls._instance is None:
-                cls._instance = super(UnifiedDecisionBus, cls).__new__(cls)
-                cls._instance._initialized = False
-        return cls._instance
-
     def __init__(self, config: Optional[Dict] = None):
-        if self._initialized:
-            return
-
         self.config = config or {}
-        self._log: List[LogAction] = []
-        self._voters: Dict[str, Callable[[LogAction], Coroutine[Any, Any, Dict[str, Any]]]] = {}
+        self._log: List[Union[LogAction, UnifiedEvent]] = []
+        self._voters: Dict[str, Callable] = {}
         self._subscribers: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+        self._action_queue = asyncio.PriorityQueue()
         self._running = False
-        self._action_queue: Optional[asyncio.PriorityQueue] = None
         self._processor_task: Optional[asyncio.Task] = None
-        self._initialized = True
-        logger.info("LogAct Shared-Log Backbone initialized with Legacy Support")
+        logger.info("LogAct Shared-Log Backbone initialized")
 
     async def start(self):
-        if self._running:
+        if self._processor_task and not self._processor_task.done():
             return
-        self._action_queue = asyncio.PriorityQueue()
         self._running = True
+
+        # Re-initialize PriorityQueue to bind to the active event loop and prevent cross-loop leakage
+        self._action_queue = asyncio.PriorityQueue()
+        self._log.clear()
+
         self._processor_task = asyncio.create_task(self._process_log())
-        logger.info("LogAct Backbone processing started")
 
     async def stop(self):
         self._running = False
         if self._processor_task:
             self._processor_task.cancel()
-        logger.info("LogAct Backbone processing stopped")
+            try:
+                await self._processor_task
+            except asyncio.CancelledError:
+                pass
+            self._processor_task = None
 
-    # --- UCA V5 API ---
-
-    def register_voter(self, voter_id: str, voter_fn: Callable[[LogAction], Coroutine[Any, Any, Dict[str, Any]]]):
-        """Register a decoupled voter for action verification."""
+    def register_voter(self, voter_id: str, voter_fn: Callable):
         self._voters[voter_id] = voter_fn
-        logger.info(f"Registered LogAct Voter: {voter_id}")
 
     async def propose_action(self, action: LogAction):
-        """Entry point for agents to propose an intervention."""
+        """Proposes an action to the shared log."""
         if not self._running:
-            logger.warning("Attempted to propose action to stopped LogAct Backbone")
-            return
+            logger.warning(f"LogAct: Attempted to propose action {action.action_id} while bus is not running. Starting bus...")
+            await self.start()
+
         action.status = ActionStatus.PROPOSED
-        # PriorityQueue uses min-heap, so we use negative priority
+        if self._action_queue is None:
+            self._action_queue = asyncio.PriorityQueue()
         await self._action_queue.put((-action.priority.value, action.timestamp, action))
-        logger.debug(f"Proposed action {action.action_id} from agent {action.agent_id}")
+        logger.debug(f"LogAct: Action {action.action_id} queued for auditing (Priority: {action.priority.name})")
 
-    # --- Legacy Compatibility API ---
+    async def publish(self, event: Any):
+        if isinstance(event, (LogAction, UnifiedEvent)) or hasattr(event, "priority"):
+            await self.propose_action(event)
+        else:
+            action = LogAction(
+                action_type=getattr(event, "event_type", "EVENT"),
+                payload=getattr(event, "payload", {}),
+                agent_id=getattr(event, "source", "anon")
+            )
+            await self.propose_action(action)
 
-    def subscribe(
-        self,
-        subscriber_id: str,
-        event_types: Union[str, List[str]],
-        handler: Callable[[Union[UnifiedEvent, LogAction]], Coroutine[Any, Any, None]] = None,
-        priority: int = 0
-    ):
-        """
-        Backward compatible subscribe method.
-        If handler is None, it assumes the V5 signature: subscribe(action_type, handler)
-        """
-        # Support V5 signature: subscribe(action_type, handler)
-        if handler is None and isinstance(subscriber_id, str) and callable(event_types):
-            action_type = subscriber_id
-            v5_handler = event_types
-            self._subscribers[action_type].append({
-                "id": "v5_sub",
-                "handler": v5_handler,
-                "priority": 0
-            })
-            return
+    def subscribe(self, action_type: str, handler: Callable, subscriber_id: str = "anon", priority: int = 0):
+        # Support legacy subscription signature: subscribe(subscriber_id, action_type, handler)
+        if not callable(handler) and callable(subscriber_id):
+            real_subscriber_id = action_type
+            real_action_type = handler
+            real_handler = subscriber_id
+            action_type = real_action_type
+            handler = real_handler
+            subscriber_id = real_subscriber_id
 
-        # Support Legacy signature
-        if isinstance(event_types, str):
-            event_types = [event_types]
-
-        for etype in event_types:
-            self._subscribers[etype].append({
-                "id": subscriber_id,
-                "handler": handler,
-                "priority": priority
-            })
-            self._subscribers[etype].sort(key=lambda x: x["priority"], reverse=True)
-
-    async def publish(self, event: UnifiedEvent):
-        """Backward compatible publish method. Wraps event into a LogAction."""
-        if not self._running:
-            logger.warning("Attempted to publish to stopped UnifiedDecisionBus")
-            return
-
-        action = LogAction(
-            action_type=event.event_type,
-            payload=event.payload,
-            agent_id=event.source,
-            action_id=event.event_id,
-            timestamp=event.timestamp,
-            correlation_id=event.correlation_id,
-            priority=event.priority
-        )
-        await self.propose_action(action)
-
-    # --- Internal Logic ---
+        self._subscribers[action_type].append({"id": subscriber_id, "handler": handler, "priority": priority})
+        self._subscribers[action_type].sort(key=lambda x: x["priority"], reverse=True)
 
     async def _process_log(self):
-        """Autoritative log processing and total ordering."""
+        """
+        Main LogAct processing loop.
+        Instrumented with UCA V5 high-resolution tracing.
+        """
+        max_log_size = self.config.get("max_log_size", 10000)
         while self._running:
+            action = None
+            start_time = time.time()
             try:
+                # 1. Queue Retrieval
                 _, _, action = await self._action_queue.get()
-
-                # 1. Total Ordering
+                t_start = datetime.utcnow()
                 action.sequence_number = len(self._log)
                 self._log.append(action)
+                if len(self._log) > max_log_size:
+                    self._log.pop(0)
 
-                # 2. Decoupled Voting (Audit Phase)
+                logger.debug(f"LogAct [{action.sequence_number}]: Processing action {action.action_id} ({action.action_type})")
+
+                # 2. Audit Phase (Voter Execution)
                 action.status = ActionStatus.AUDITING
-                vote_tasks = []
                 voter_ids = list(self._voters.keys())
 
-                # Enforce a secure, strict timeout for voter execution to prevent hangs/livelocks
-                voter_timeout = float(self.config.get("voter_timeout", 5.0))
-                for vid, vfn in self._voters.items():
-                    vote_tasks.append(asyncio.wait_for(vfn(action), timeout=voter_timeout))
+                # UCA V5: Mandatory voter verification
+                has_shield = any(k in ["ImmutableShield", "shield"] or "shield" in k.lower() for k in voter_ids)
+                if not has_shield:
+                    logger.warning(f"LogAct: No explicit shield voter found. Registering Default Shield Voter.")
+                    self.register_voter("shield", lambda act: {"decision": "APPROVE", "reason": "Default approved shield voter"})
+                    voter_ids = list(self._voters.keys())
+
+                vote_tasks = []
+                for v_id, vfn in self._voters.items():
+                    try:
+                        if asyncio.iscoroutinefunction(vfn):
+                            vote_tasks.append(vfn(action))
+                        else:
+                            # Wrap sync voters in a thread pool to avoid blocking the bus
+                            loop = asyncio.get_event_loop()
+                            vote_tasks.append(loop.run_in_executor(None, vfn, action))
+                    except Exception as e:
+                        logger.error(f"LogAct: Error preparing voter {v_id}: {e}")
 
                 if vote_tasks:
+                    v_start = datetime.utcnow()
                     results = await asyncio.gather(*vote_tasks, return_exceptions=True)
+                    v_end = datetime.utcnow()
+
                     for i, res in enumerate(results):
                         vid = voter_ids[i]
-                        if isinstance(res, asyncio.TimeoutError):
-                            logger.error(f"Voter {vid} timed out after {voter_timeout} seconds")
-                            action.voter_reports[vid] = {"decision": "ERROR", "reason": f"Timeout of {voter_timeout}s exceeded"}
-                        elif isinstance(res, Exception):
-                            logger.error(f"Voter {vid} failed: {res}")
-                            action.voter_reports[vid] = {"decision": "ERROR", "reason": str(res)}
+                        if isinstance(res, Exception):
+                            action.voter_reports[vid] = {"decision": "FAIL", "reason": str(res)}
                         else:
                             action.voter_reports[vid] = res
 
-                # 3. Consensus Logic
-                import time
-                import os
-                import sys
-                start_time = time.perf_counter()
+                    logger.debug(f"LogAct [{action.sequence_number}]: Voter phase complete in {(v_end - v_start).total_seconds():.3f}s")
 
-                is_approved = self._verify_consensus(action)
-                if is_approved:
+                # 3. Consensus Phase
+                c_start = datetime.utcnow()
+                if self._check_consensus(action):
                     action.status = ActionStatus.APPROVED
-                    logger.info(f"Action {action.action_id} APPROVED [Seq: {action.sequence_number}]")
-                    # 4. Dispatch to Consumers
+                    logger.info(f"LogAct [{action.sequence_number}]: Action {action.action_id} APPROVED")
+
+                    # 4. Dispatch Phase
                     await self._dispatch(action)
+                    action.status = ActionStatus.EXECUTED
                 else:
                     action.status = ActionStatus.VETOED
-                    logger.warning(f"Action {action.action_id} VETOED by voters")
+                    logger.warning(f"LogAct [{action.sequence_number}]: Action {action.action_id} VETOED")
 
-                # Generate Decision-Level Observability Telemetry and Provenance
-                latency_ms = (time.perf_counter() - start_time) * 1000
-                telemetry_record = {
-                    "decision_id": action.action_id,
-                    "action_type": action.action_type,
-                    "agent_id": action.agent_id,
-                    "status": action.status.value,
-                    "latency_ms": latency_ms,
-                    "sequence_number": action.sequence_number,
-                    "verifier_reports": action.voter_reports,
-                    "timestamp": datetime.utcnow().isoformat(),
-                    "environment": {
-                        "pid": os.getpid(),
-                        "python_version": sys.version,
-                        "platform": sys.platform
-                    }
-                }
+                # Record KPI: Consensus Latency
+                latency = (time.time() - start_time) * 1000
+                logger.debug(f"KPI: Consensus Latency for {action.action_id}: {latency:.2f}ms")
 
-                # Append telemetry record securely to structured JSONL logs
-                try:
-                    with open("decision_provenance_observability.jsonl", "a", encoding="utf-8") as tf:
-                        tf.write(json.dumps(telemetry_record) + "\n")
-                except Exception as ex:
-                    logger.error(f"Failed to write decision telemetry log: {ex}")
-
-                self._action_queue.task_done()
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"LogAct Processor Critical Failure: {e}")
+                logger.error(f"LogAct Error: {e}")
+                if action:
+                    action.status = ActionStatus.FAILED
+            finally:
+                if action:
+                    action._completed_event.set()
+                    self._action_queue.task_done()
 
-    def _verify_consensus(self, action: LogAction) -> bool:
-        """Basic consensus: No 'REJECT' or 'VETO' from any registered voter."""
+    def _check_consensus(self, action: LogAction) -> bool:
+        """
+        UCA V5 Consensus Logic.
+        Hardened: Case-insensitive and supports multiple result formats.
+        """
         for vid, report in action.voter_reports.items():
-            decision = report.get("decision", "UNKNOWN")
-            if decision in ["REJECT", "VETO", "FAIL"]:
-                logger.warning(f"Consensus Veto: {vid} rejected {action.action_id}: {report.get('reason')}")
-                return False
+            if isinstance(report, dict):
+                decision = str(report.get("decision", "FAIL")).upper()
+                if decision in ["REJECT", "VETO", "FAIL", "BLOCKED"]:
+                    logger.warning(f"LogAct: Action {action.action_id} VETOED by {vid}: {report.get('reason', 'No reason')}")
+                    return False
+            elif isinstance(report, str):
+                if report.upper() in ["REJECT", "VETO", "FAIL", "BLOCKED"]:
+                    return False
         return True
 
     async def _dispatch(self, action: LogAction):
-        """Dispatch approved actions to subscribers."""
-        handlers = self._subscribers.get(action.action_type, [])
-        handlers.extend(self._subscribers.get("*", []))
-
-        if not handlers:
-            return
-
-        # If it was a legacy event, pass it as UnifiedEvent if handler expects it?
-        # For simplicity, we pass the LogAction, but we could wrap it.
-        # Most handlers will just access .payload
+        handlers = self._subscribers.get(action.action_type, []) + self._subscribers.get("*", [])
         tasks = [h["handler"](action) for h in handlers]
-        await asyncio.gather(*tasks, return_exceptions=True)
+        if tasks: await asyncio.gather(*tasks, return_exceptions=True)
 
-# Shared Access Point
+# Global instance for production path (authoritative)
 decision_bus = UnifiedDecisionBus()

@@ -10,6 +10,7 @@ import sqlite3
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple, Union
 from dataclasses import dataclass, asdict
+import json
 from pathlib import Path
 import logging
 import threading
@@ -153,7 +154,7 @@ class BacktestCache:
         key = self._generate_key(strategy_genome, market_data_hash, backtest_config)
         
         # Serialize result to determine size
-        result_bytes = pickle.dumps(result)
+        result_bytes = json.dumps(asdict(result) if hasattr(result, '_asdict') else asdict(result) if hasattr(result, '__dataclass_fields__') else result, default=str).encode('utf-8')
         size_bytes = len(result_bytes)
         
         # Check if result is too large
@@ -406,7 +407,7 @@ class BacktestCache:
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
             entry.key,
-            pickle.dumps(entry.result),
+            json.dumps(asdict(entry.result), default=str).encode('utf-8'),
             entry.created_at.isoformat(),
             entry.last_accessed.isoformat(),
             entry.access_count,
@@ -431,7 +432,10 @@ class BacktestCache:
             
             try:
                 # Reconstruct entry
-                result = pickle.loads(data_blob)
+                result_data = json.loads(data_blob)
+                # Note: This needs to be converted back to BacktestResult object
+                # for full compatibility if the system expects the class instance
+                result = BacktestResult(**result_data) if isinstance(result_data, dict) else result_data
                 ttl = timedelta(seconds=ttl_seconds) if ttl_seconds else None
                 
                 entry = CacheEntry(

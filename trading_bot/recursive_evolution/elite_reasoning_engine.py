@@ -176,7 +176,8 @@ class EliteReasoningEngine:
         
         # Step 7: Final decision
         step7 = self._make_decision(reasoning.steps, reasoning.bull_case, 
-                                   reasoning.bear_case, reasoning.neutral_case)
+                                   reasoning.bear_case, reasoning.neutral_case,
+                                   reasoning.symbol)
         reasoning.steps.append(step7)
         
         reasoning.direction = step7.outputs.get('direction', 'hold')
@@ -625,7 +626,8 @@ class EliteReasoningEngine:
     def _make_decision(self, steps: List[ReasoningStep],
                       bull_case: Dict[str, Any],
                       bear_case: Dict[str, Any],
-                      neutral_case: Dict[str, Any]) -> ReasoningStep:
+                      neutral_case: Dict[str, Any],
+                      symbol: str) -> ReasoningStep:
         """Step 7: Make final decision"""
         
         # Get synthesis from step 4

@@ -677,7 +677,6 @@ class EnhancedSelfDiagnosis:
         # Create emergency backup
         backup_path = f"emergency_backup_{int(time.time())}"
         try:
-            # Security Hardening: Use list-based subprocess.run to avoid shell=True
             subprocess.run(["cp", "-r", ".", backup_path], shell=False, check=True)
             self.logger.info(f"Emergency backup created: {backup_path}")
         except Exception as e:

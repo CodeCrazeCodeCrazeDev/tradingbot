@@ -7,6 +7,7 @@ ClickHouse for hot data, S3 for cold archival.
 
 from __future__ import annotations
 
+import lz4.frame
 import asyncio
 import logging
 import time

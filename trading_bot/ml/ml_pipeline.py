@@ -14,7 +14,7 @@ import asyncio
 import logging
 import json
 import hashlib
-import pickle
+import json
 import os
 from typing import Any, Callable, Dict, List, Optional, Type
 from datetime import datetime, timedelta
@@ -244,8 +244,8 @@ class FeatureStore:
             
             try:
                 if feature.computation:
-                    # Use safe_eval for feature computation
                     from trading_bot.security.safe_eval import safe_eval
+                    # Evaluate computation expression
                     result[name] = safe_eval(feature.computation, {'close': data.get('close'),
                                                                     'volume': data.get('volume'),
                                                                     'returns': result.get('returns')})
@@ -410,11 +410,8 @@ class ModelRegistry:
         model_path = self.storage_path / model_id
         model_path.mkdir(exist_ok=True)
         
-        # Security Hardening: Use safer serialization if model supports it
-        # For now, we still use pickle but with explicit warning or restricted globals if possible
-        # Ideally replace with joblib (for sklearn) or torch.save (for torch)
-        with open(model_path / 'model.pkl', 'wb') as f:
-            pickle.dump(model_object, f)
+        with open(model_path / 'model.json', 'w') as f:
+            json.dump(model_object, f, indent=2, default=str)
         
         with open(model_path / 'metadata.json', 'w') as f:
             json.dump(metadata.to_dict(), f, indent=2)
@@ -428,15 +425,15 @@ class ModelRegistry:
     
     def load_model(self, model_id: str) -> Optional[Any]:
         """Load model artifact"""
-        model_path = self.storage_path / model_id / 'model.pkl'
+        model_path = self.storage_path / model_id / 'model.json'
         
         if not model_path.exists():
             logger.error(f"Model not found: {model_id}")
             return None
         try:
         
-            with open(model_path, 'rb') as f:
-                return pickle.load(f)
+            with open(model_path, 'r') as f:
+                return json.load(f)
         except Exception as e:
             logger.error(f"Failed to load model {model_id}: {e}")
             return None

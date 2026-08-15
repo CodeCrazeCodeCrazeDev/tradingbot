@@ -382,7 +382,7 @@ class AlphaDeploymentManager:
         """Build Docker image for feature"""
         try:
             cmd = f"docker build -t alphaalgo:week{self.current_week} -f Dockerfile ."
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=300)
+            result = subprocess.run(cmd, shell=False, capture_output=True, text=True, timeout=300)
             return result.returncode == 0
         except Exception as e:
             logger.error(f"Docker build error: {e}")

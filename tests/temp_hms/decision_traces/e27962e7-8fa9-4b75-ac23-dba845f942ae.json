@@ -1,0 +1,54 @@
+{
+  "decision_id": "e27962e7-8fa9-4b75-ac23-dba845f942ae",
+  "timestamp": "2026-07-14T05:56:03.985342",
+  "market_snapshot_id": "N/A",
+  "model_versions": {
+    "csc": "V5-RC1",
+    "world_model": "V3"
+  },
+  "feature_hashes": {
+    "market": "6499235014556706173"
+  },
+  "scenarios_evaluated": [],
+  "consensus_results": {
+    "voter_count": 4,
+    "approved": true
+  },
+  "risk_metrics": {
+    "composite_confidence": 0.0
+  },
+  "verification_outcomes": [
+    {
+      "agent": "CausalVerifier",
+      "valid": true
+    },
+    {
+      "agent": "HallucinationDetector",
+      "valid": true
+    },
+    {
+      "agent": "CalculationReproducer",
+      "valid": true
+    },
+    {
+      "agent": "RegimeConsistencyChecker",
+      "valid": true
+    }
+  ],
+  "final_action": "TRADE_APPROVED",
+  "confidence_estimate": 0.0,
+  "latency_breakdown_ms": {
+    "perception": 0.0015390000953630079,
+    "reasoning_discoloop": 0.003820000074483687,
+    "skill_routing": 0.0009309999313700246,
+    "memory_retrieval": 0.08628599994153774,
+    "guardrails_hasp": 0.0009670000054029515,
+    "hypothesis_gen": 0.3166909998526535,
+    "causal_sim": 0.0037540000903391046,
+    "decision_selection": 0.0018069999896397348,
+    "verification_swarm": 101.28897599997799,
+    "governance_shield": 0.32489799991708423,
+    "execution_folding": 2.4060380001174053
+  },
+  "total_latency_ms": 104.59384600017074
+}

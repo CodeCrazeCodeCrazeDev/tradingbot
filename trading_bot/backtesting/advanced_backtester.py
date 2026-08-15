@@ -8,7 +8,7 @@ with walk-forward analysis, Monte Carlo simulation, and performance attribution.
 
 import numpy as np
 import pandas as pd
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, Literal
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum, auto
@@ -391,18 +391,27 @@ class AdvancedBacktester:
         return False
     
     def _calculate_fill_price(self, order: BacktestOrder, market_data: Dict[str, float]) -> float:
-        """Calculate order fill price."""
-        if order.order_type == OrderType.MARKET:
-            # Use open price with slippage
-            base_price = market_data['open']
-            slippage_factor = 1 + self.config["slippage"] if order.side == 'buy' else 1 - self.config["slippage"]
-            return base_price * slippage_factor
-        elif order.order_type == OrderType.LIMIT:
-            return order.price
-        elif order.order_type == OrderType.STOP:
-            return order.stop_price
+        """Calculate order fill price with variable spread and market impact."""
+        # 1. Base price from market data
+        base_price = market_data['open'] if order.order_type == OrderType.MARKET else (order.price if order.price else market_data['close'])
+
+        # 2. Variable Spread modeling
+        volatility = market_data.get('volatility', (market_data['high'] - market_data['low']) / market_data['close'])
+        spread = self.config.get("base_spread", 0.0001) + (volatility * 0.1)
+
+        # 3. Market Impact (Linear model based on quantity/volume)
+        volume = market_data.get('volume', 1000000)
+        market_impact = (order.quantity / volume) * self.config.get("impact_coefficient", 0.1)
         
-        return market_data['close']
+        # 4. Realistic Slippage (linked to volatility)
+        slippage = self.config["slippage"] + (volatility * np.random.uniform(0.05, 0.2))
+
+        if order.side == 'buy':
+            fill_price = base_price * (1 + spread/2 + market_impact + slippage)
+        else:
+            fill_price = base_price * (1 - spread/2 - market_impact - slippage)
+
+        return fill_price
     
     def _fill_order(self, order: BacktestOrder, fill_price: float):
         """Fill an order."""
@@ -764,4 +773,281 @@ class AdvancedBacktester:
                 '95%': np.percentile(returns, 5),
                 '99%': np.percentile(returns, 1)
             }
+        }
+
+
+# ===========================================================================
+# Institutional-Grade Backtesting Extensions (High Fidelity Costs & Limits)
+# ===========================================================================
+
+from trading_bot.strategy.strategy_engine import StrategyEngine, Signal
+
+Direction = Literal["buy", "sell"]
+
+
+@dataclass(slots=True)
+class InstitutionalTrade:
+    symbol: str
+    direction: Direction
+    entry_idx: int
+    entry_time: float
+    entry_price: float
+    sl_price: float
+    tp_price: float
+
+    # Cost & Execution tracking fields
+    spread_paid_pips: float = 0.0
+    slippage_paid_pips: float = 0.0
+    commission_paid_usd: float = 0.0
+
+    exit_idx: int | None = None
+    exit_price: float | None = None
+    exit_reason: str | None = None  # "tp" | "sl" | "end" | "risk_breaker"
+
+    def is_open(self) -> bool:
+        return self.exit_idx is None
+
+    def gross_pnl(self) -> float:
+        if self.exit_price is None:
+            return 0.0
+        delta = self.exit_price - self.entry_price
+        return delta if self.direction == "buy" else -delta
+
+    def net_pnl_pips(self) -> float:
+        """Calculates Net P&L in pips, deducting spread and slippage cost."""
+        if self.exit_price is None:
+            return 0.0
+        gross_pips = self.gross_pnl() * 10000.0
+        # Subtract costs
+        net_pips = gross_pips - self.spread_paid_pips - self.slippage_paid_pips
+        return net_pips
+
+    def net_pnl_usd(self, lot_size_usd: float = 100000.0) -> float:
+        """Translates Net P&L to USD based on lot size and commission drag."""
+        pips = self.net_pnl_pips()
+        # Pip value is typically $10 for 1 standard lot (100,000 units) on standard currency pairs
+        pip_value_usd = (lot_size_usd * 0.0001)
+        gross_net_usd = pips * pip_value_usd
+        return gross_net_usd - self.commission_paid_usd
+
+
+@dataclass(slots=True)
+class InstitutionalBacktestResult:
+    trades: List[InstitutionalTrade] = field(default_factory=list)
+    total_commission_paid: float = 0.0
+    total_slippage_paid_pips: float = 0.0
+    sharpe_ratio: float = 0.0
+    max_drawdown_pct: float = 0.0
+    total_return_pct: float = 0.0
+    passed_objectives: bool = True
+    objectives_report: Dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def n_trades(self) -> int:
+        return len(self.trades)
+
+    @property
+    def win_rate(self) -> float:
+        if not self.trades:
+            return 0.0
+        wins = sum(1 for t in self.trades if t.exit_reason == "tp")
+        return (wins / len(self.trades)) * 100.0
+
+
+class InstitutionalBacktester:
+    """
+    Simulates high-fidelity backtests with transaction costs, slippage, and spread modeling.
+    """
+
+    def __init__(
+        self,
+        bars: pd.DataFrame,
+        strategy: StrategyEngine,
+        config: Dict[str, Any] = None,
+        lookback: int = 100,
+    ) -> None:
+        self.bars = bars.reset_index(drop=True)
+        self.strategy = strategy
+        self.lookback = lookback
+        self.open_trades: List[InstitutionalTrade] = []
+        self.result = InstitutionalBacktestResult()
+
+        # Load Institutional Config defaults if not provided
+        self.config = config or {
+            "execution_cost": {
+                "commission_per_million_usd": 15.0,
+                "fixed_commission_per_trade": 2.0,
+                "default_spread_pips": 0.8,
+                "default_slippage_pips": 0.4
+            },
+            "risk_limits": {
+                "max_positions": 5,
+                "max_spread_pips_limit": 2.5
+            },
+            "objectives": {
+                "target_sharpe": 2.5,
+                "max_drawdown_pct": 10.0
+            }
+        }
+
+    def run(self) -> InstitutionalBacktestResult:
+        logger.info(f"Starting Institutional Backtest - {len(self.bars)} bars.")
+
+        # Initial stats tracking
+        equity_curve = [100000.0]  # Start with $100,000 standard capital
+
+        for i in range(self.lookback, len(self.bars)):
+            window = self.bars.iloc[i - self.lookback : i + 1]
+            signals = self.strategy.analyse(window)
+
+            # Filter signals on the current bar
+            current_idx = window.index[-1]
+            if current_idx == i:
+                for sig in signals:
+                    # Enforce Hard Risk Limits before opening trade
+                    if len(self.open_trades) >= self.config["risk_limits"]["max_positions"]:
+                        logger.warning("Risk Limit: Max positions exceeded. Trade rejected.")
+                        continue
+
+                    spread = self.config["execution_cost"]["default_spread_pips"]
+                    if spread > self.config["risk_limits"]["max_spread_pips_limit"]:
+                        logger.warning("Risk Limit: Spread circuit breaker triggered. Trade rejected.")
+                        continue
+
+                    self._open_trade_with_costs(sig, i)
+
+            self._update_open_trades(i)
+
+            # Record current equity
+            current_equity = 100000.0 + sum(t.net_pnl_usd() for t in self.result.trades) + sum(self._calculate_floating_pnl_usd(t, i) for t in self.open_trades)
+            equity_curve.append(current_equity)
+
+        # Force-close remaining positions
+        last_idx = len(self.bars) - 1
+        last_close = float(self.bars.iloc[last_idx].close)
+        for t in list(self.open_trades):
+            t.exit_idx = last_idx
+            t.exit_price = last_close
+            t.exit_reason = "end"
+            self.result.trades.append(t)
+        self.open_trades.clear()
+
+        # Compute Institutional Performance Metrics
+        self._calculate_performance_metrics(equity_curve)
+        return self.result
+
+    def _open_trade_with_costs(self, sig: Signal, idx: int) -> None:
+        bar = self.bars.iloc[idx]
+        price = float(bar.close)
+
+        # Apply cost parameters
+        spread = self.config["execution_cost"]["default_spread_pips"]
+        # Slippage varies slightly based on market volatility/randomness
+        slippage = self.config["execution_cost"]["default_slippage_pips"] + np.random.uniform(0, 0.2)
+        fixed_comm = self.config["execution_cost"]["fixed_commission_per_trade"]
+
+        # Calculate entry price adjusted for cost (slippage and half spread paid on entry)
+        cost_drag_pips = (spread / 2.0) + slippage
+        cost_drag_price_delta = cost_drag_pips * 0.0001
+
+        if sig.direction == "buy":
+            entry_price = price + cost_drag_price_delta
+            sl_price = entry_price - sig.stop_loss_pips * 0.0001
+            tp_price = entry_price + sig.stop_loss_pips * sig.take_profit_rr * 0.0001
+        else:
+            entry_price = price - cost_drag_price_delta
+            sl_price = entry_price + sig.stop_loss_pips * 0.0001
+            tp_price = entry_price - sig.stop_loss_pips * sig.take_profit_rr * 0.0001
+
+        trade = InstitutionalTrade(
+            symbol=sig.symbol,
+            direction=sig.direction,
+            entry_idx=idx,
+            entry_time=float(bar.time) if "time" in bar else float(idx),
+            entry_price=entry_price,
+            sl_price=sl_price,
+            tp_price=tp_price,
+            spread_paid_pips=spread,
+            slippage_paid_pips=slippage,
+            commission_paid_usd=fixed_comm
+        )
+        self.open_trades.append(trade)
+
+    def _update_open_trades(self, idx: int) -> None:
+        bar = self.bars.iloc[idx]
+        for trade in list(self.open_trades):
+            if trade.direction == "buy":
+                # Check for SL hit
+                if bar.low <= trade.sl_price:
+                    trade.exit_idx = idx
+                    trade.exit_price = trade.sl_price
+                    trade.exit_reason = "sl"
+                # Check for TP hit
+                elif bar.high >= trade.tp_price:
+                    trade.exit_idx = idx
+                    trade.exit_price = trade.tp_price
+                    trade.exit_reason = "tp"
+            else:  # sell
+                # Check for SL hit
+                if bar.high >= trade.sl_price:
+                    trade.exit_idx = idx
+                    trade.exit_price = trade.sl_price
+                    trade.exit_reason = "sl"
+                # Check for TP hit
+                elif bar.low <= trade.tp_price:
+                    trade.exit_idx = idx
+                    trade.exit_price = trade.tp_price
+                    trade.exit_reason = "tp"
+
+            if not trade.is_open():
+                self.open_trades.remove(trade)
+                self.result.trades.append(trade)
+
+    def _calculate_floating_pnl_usd(self, trade: InstitutionalTrade, idx: int) -> float:
+        bar = self.bars.iloc[idx]
+        curr_price = float(bar.close)
+        gross_delta = curr_price - trade.entry_price
+        pips = (gross_delta if trade.direction == "buy" else -gross_delta) * 10000.0
+        # Subtract floating cost drag (remaining half spread + slippage)
+        net_pips = pips - (trade.spread_paid_pips / 2.0) - trade.slippage_paid_pips
+        return (net_pips * 10.0) - trade.commission_paid_usd
+
+    def _calculate_performance_metrics(self, equity_curve: List[float]) -> None:
+        eq = np.array(equity_curve)
+        returns = np.diff(eq) / eq[:-1]
+
+        # Cumulative return
+        self.result.total_return_pct = ((eq[-1] - eq[0]) / eq[0]) * 100.0
+
+        # Sharpe Ratio (annualized assuming standard bars/daily intervals or high turnover)
+        if len(returns) > 1 and np.std(returns) > 0:
+            avg_ret = np.mean(returns)
+            std_ret = np.std(returns)
+            # Standard Sharpe (non-annualized daily representation first, then scale by standard 252 days)
+            self.result.sharpe_ratio = float((avg_ret / std_ret) * np.sqrt(252))
+        else:
+            self.result.sharpe_ratio = 0.0
+
+        # Max Peak-to-Trough Drawdown
+        cum_max = np.maximum.accumulate(eq)
+        drawdowns = (cum_max - eq) / cum_max * 100.0
+        self.result.max_drawdown_pct = float(np.max(drawdowns))
+
+        # Commission and Slippage aggregates
+        self.result.total_commission_paid = sum(t.commission_paid_usd for t in self.result.trades)
+        self.result.total_slippage_paid_pips = sum(t.slippage_paid_pips for t in self.result.trades)
+
+        # Validate Objectives
+        target_sharpe = self.config["objectives"]["target_sharpe"]
+        max_dd_allowed = self.config["objectives"]["max_drawdown_pct"]
+
+        passed_sharpe = self.result.sharpe_ratio >= target_sharpe
+        passed_drawdown = self.result.max_drawdown_pct <= max_dd_allowed
+
+        self.result.passed_objectives = passed_sharpe and passed_drawdown
+        self.result.objectives_report = {
+            "sharpe_ratio": {"value": self.result.sharpe_ratio, "target": target_sharpe, "status": "PASS" if passed_sharpe else "FAIL"},
+            "max_drawdown": {"value": self.result.max_drawdown_pct, "target": max_dd_allowed, "status": "PASS" if passed_drawdown else "FAIL"},
+            "commission_paid_usd": self.result.total_commission_paid,
+            "slippage_paid_pips": self.result.total_slippage_paid_pips
         }
