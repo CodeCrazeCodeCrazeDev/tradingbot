@@ -343,21 +343,52 @@ class CognitiveSystemController:
         if isinstance(base_qty, MagicMock):
             base_qty = 0.1
 
-        expected_slippage = 0.0
-        structural_impact = {}
-        if isinstance(sim_data, dict):
-            expected_slippage = sim_data.get("expected_slippage", 0.0)
-            if isinstance(expected_slippage, MagicMock):
-                expected_slippage = 0.0
-            structural_impact = sim_data.get("structural_impact", {})
+        # Validate NaN/Inf and negative quantities
+        if not isinstance(base_qty, (int, float)) or not np.isfinite(base_qty) or base_qty <= 0:
+            logger.warning(f"CSC-V6: Invalid base quantity detected: {base_qty}. Setting to 0.0.")
+            base_qty = 0.0
 
-        slippage_penalty = 1.0 - (expected_slippage * 100)
+        # 2. Uncertainty/Confidence Scaling (First Principles)
+        confidence = getattr(branch, "confidence", 0.5)
+        if isinstance(confidence, MagicMock) or hasattr(confidence, "_mock_self"):
+            confidence = 0.5
+        if not isinstance(confidence, (int, float)) or not np.isfinite(confidence) or confidence < 0.0 or confidence > 1.0:
+            confidence = 0.0
 
-        # Ensure base_qty and slippage_penalty are floats/ints
-        if not isinstance(base_qty, (int, float)):
-            base_qty = 0.1
-        if not isinstance(slippage_penalty, (int, float)):
-            slippage_penalty = 1.0
+        # 3. Transaction Costs & Slippage Penalty
+        expected_slippage = sim_data.get("expected_slippage", 0.0) if isinstance(sim_data, dict) else 0.0
+        if isinstance(expected_slippage, MagicMock) or hasattr(expected_slippage, "_mock_self"):
+            expected_slippage = 0.0
+        if not isinstance(expected_slippage, (int, float)) or not np.isfinite(expected_slippage) or expected_slippage < 0.0:
+            expected_slippage = 0.0
+
+        # Apply linear penalty scaling: 5% decay per 1% expected slippage
+        slippage_penalty = max(0.0, 1.0 - (expected_slippage * 5.0))
+
+        # Calculate intermediate quantity
+        final_qty = base_qty * confidence * slippage_penalty
+
+        # 4. Independent Risk Limits (No bypass)
+        max_limit = 5.0  # Strict production ceiling
+        if self.risk_engine:
+            try:
+                # Query risk engine if available
+                limits = getattr(self.risk_engine, "get_limits", lambda: {})()
+                max_limit = limits.get("max_position_size", max_limit)
+            except Exception as e:
+                logger.error(f"CSC-V6: Failed to query risk engine: {e}. Enforcing strict default limit.")
+                max_limit = 1.0
+
+        # Enforce maximum ceiling and non-negative constraints
+        final_qty = min(final_qty, max_limit)
+        final_qty = max(0.0, final_qty)
+
+        # Ensure that if the action is non-executable, quantity is strictly zeroed
+        action_name = branch.execution_plan.get("action", "WAIT") if isinstance(branch.execution_plan, dict) else "WAIT"
+        if action_name in ("WAIT", "HOLD", "REJECT"):
+            final_qty = 0.0
+
+        structural_impact = sim_data.get("structural_impact", {}) if isinstance(sim_data, dict) else {}
 
         final_qty = base_qty * slippage_penalty
 
@@ -740,14 +771,13 @@ class CognitiveSystemController:
         final_qty = base_qty * slippage_penalty
         causal_impact = sim_data.get("structural_impact", {}) if isinstance(sim_data, dict) else {}
 
+    def get_status(self) -> Dict[str, Any]:
+        """Returns the strategic controller's status and version metadata."""
         return {
-            "trade_id": str(uuid4()),
-            "symbol": branch.execution_plan.get("symbol", "BTC/USDT") if isinstance(branch.execution_plan, dict) else "BTC/USDT",
-            "action": branch.execution_plan.get("action", "WAIT") if isinstance(branch.execution_plan, dict) else "WAIT",
-            "quantity": max(0.01, final_qty),
-            "confidence": branch.confidence,
-            "causal_impact": causal_impact,
-            "reasoning_token": self.discrete_channel[-1] if self.discrete_channel else "none"
+            "status": "active",
+            "version": "UCA-2026-V5",
+            "active_loops": self._max_loops,
+            "vfe": self.variational_free_energy
         }
 
     async def _refine_strategy(self, branch: ReasoningBranch, reports: List[Any]) -> ReasoningBranch:

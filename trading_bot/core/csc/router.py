@@ -74,19 +74,22 @@ class SkillRouteOutcome:
     def __getitem__(self, item):
         if item in ("result", "pf_result"):
             return {
-                "action": self.action,
+                "action": self.action or "override_to_hold",
                 "reason": self.reason,
                 "pf_version": self.version
             }
         try:
-            return getattr(self, item)
+            val = getattr(self, item)
+            if val is None and item == "status":
+                return self.status
+            return val
         except AttributeError:
             raise KeyError(item)
 
     def get(self, item, default=None):
         try:
             return self[item]
-        except (AttributeError, KeyError):
+        except KeyError:
             return default
 
     def __getattribute__(self, name):
@@ -189,16 +192,6 @@ class SkillRouteOutcome:
             "reason": self.reason,
             "version": self.version
         }
-
-    def __getitem__(self, key):
-        if key == "pf_result" and self.status == "pf_intervention":
-            return {"action": self.action or "override_to_hold", "reason": self.reason}
-        return getattr(self, key, None)
-
-    def get(self, key, default=None):
-        if key == "pf_result" and self.status == "pf_intervention":
-            return {"action": self.action or "override_to_hold", "reason": self.reason}
-        return getattr(self, key, default)
 
 @dataclass
 class SkillArtifact:
