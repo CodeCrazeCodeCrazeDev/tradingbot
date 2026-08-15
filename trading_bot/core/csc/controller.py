@@ -98,8 +98,8 @@ class CognitiveSystemController:
 
     def __init__(
         self,
-        world_model: Any,
-        hms: Any,
+        world_model: Any = None,
+        hms: Any = None,
         *args,
         **kwargs
     ):

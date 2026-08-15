@@ -340,7 +340,8 @@ class DistributedEvaluationFramework:
     def __init__(self, 
                  max_workers: int = 4,
                  cache_size: int = 1000,
-                 use_redis: bool = False):
+                 use_redis: bool = False,
+                 **kwargs):
         """
         Initialize distributed evaluation framework.
         
