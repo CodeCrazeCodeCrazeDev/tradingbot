@@ -6,7 +6,7 @@ from typing import Any, Optional, Dict, List
 import logging
 from dataclasses import dataclass
 
-logger = logging.getLogger("AlphaAlgo.MT5Interface")
+logger = logging.getLogger(__name__)
 
 @dataclass
 class AccountInfo:
@@ -59,6 +59,7 @@ class MT5Interface:
         return SymbolInfo()
 
     def get_rates(self, symbol: str, timeframe: str, count: int) -> List[Dict[str, Any]]:
+        # Dummy rates for testing
         import pandas as pd
         dates = pd.date_range(end=pd.Timestamp.now(), periods=count, freq='h')
         return [
