@@ -266,19 +266,7 @@ class DebateResult:
 FinalDecision = DebateResult
 
 
-@dataclass
-class AgentScorecard:
-    """Scorecard evaluating expected contribution, precision, and recall of an agent."""
-    expected_contribution: float
-    precision: float
-    recall: float
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            'expected_contribution': self.expected_contribution,
-            'precision': self.precision,
-            'recall': self.recall
-        }
+# Consolidated AgentScorecard definition moved to top, removing duplicate definitions.
 
 
 class RiskVerifierOutcome:
@@ -1943,6 +1931,8 @@ class HeadAI:
             reasoning = self._generate_reasoning(
                 winning_action, active_arguments, consensus_level
             )
+            if vetoes:
+                reasoning += f" | ACTIVE VETOES: {', '.join(vetoes)}"
 
             evidence_summary = []
             for arg in active_arguments:
