@@ -168,7 +168,7 @@ To ensure rigorous auditing, every hypothesis must permanently reside in one of 
 
 ---
 
-## Phase 2 — Bottleneck Analysis
+## Phase 2 — Downstream Bottleneck Analysis
 
 | ID | Bottleneck | Root Cause | Downstream Effect | Priority | Recommended Redesign |
 | :--- | :--- | :--- | :--- | :--- | :--- |
