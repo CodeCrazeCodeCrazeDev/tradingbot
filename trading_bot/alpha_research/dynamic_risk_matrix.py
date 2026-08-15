@@ -199,11 +199,6 @@ class RiskFactors:
     economic_calendar_risk: float = 0.0
 
 
-if not TORCH_AVAILABLE:
-    class nn:
-        class Module:
-            pass
-
 class RiskNeuralNetwork(nn.Module):
     """Neural network for risk prediction"""
     

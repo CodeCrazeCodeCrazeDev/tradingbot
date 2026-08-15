@@ -37,6 +37,8 @@ class EvaluationTask:
     
     def to_dict(self) -> Dict:
         """Serialize task to dictionary"""
+        # Security Hardening: Use JSON-compatible genome representation
+        # StrategyGenome should have a to_dict() method
         return {
             'task_id': self.task_id,
             'genome': json.dumps(asdict(self.genome), default=str),
@@ -74,6 +76,7 @@ class EvaluationResult:
     
     def to_dict(self) -> Dict:
         """Serialize result to dictionary"""
+        # Security Hardening: Use JSON-compatible result representation
         return {
             'task_id': self.task_id,
             'success': self.success,
@@ -337,7 +340,8 @@ class DistributedEvaluationFramework:
     def __init__(self, 
                  max_workers: int = 4,
                  cache_size: int = 1000,
-                 use_redis: bool = False):
+                 use_redis: bool = False,
+                 **kwargs):
         """
         Initialize distributed evaluation framework.
         

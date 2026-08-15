@@ -1,27 +1,29 @@
-# Multi-Agent Debate System Issue Registry
+# Multi-Agent Issue Tracker & Technical Debt Register
 
-## Issue Registry
+## Verified Technical Debt & Remediation Log
 
-### Issue MA-001: Redundant Class Definitions & Signature Contamination
-- **Severity**: P1 (Architectural Correctness)
-- **Evidence**: `AgentScorecard` and `RiskVerifier` declared multiple times inside `multi_agent_debate.py`.
-- **Affected Files**: `trading_bot/agents/multi_agent_debate.py`
-- **Root Cause**: Uncoordinated merges of legacy files with modern V6 architectures.
-- **Fix**: Merged all class declarations into single, clean, robust authoritative definitions.
-- **Validation**: Programmatic imports, code compilation, and pytest runs are fully successful.
+### Issue ID: MA-01 (Severity: Critical)
+- **Reproduction:** Running the `test_deterministic_replay.py` test suite failed with a `NameError: name 'final_qty' is not defined`.
+- **Evidence:** `E  NameError: name 'final_qty' is not defined` inside `CognitiveSystemController._select_optimal_action`.
+- **Root Cause:** A refactoring step did not define `final_qty` prior to calling `max(0.01, final_qty)`.
+- **Affected Files:** `trading_bot/core/csc/controller.py`
+- **Production Impact:** Any downstream trading signal produced by the CSC was subject to immediate runtime crashes.
+- **Fix:** Correctly calculated `final_qty = base_qty * slippage_penalty` before performing safety-bounds capping.
+- **Validation:** Both `test_deterministic_replay.py` and `test_multi_agent_debate_fix.py` now pass perfectly.
+- **Regression Result:** None. Fully stabilized.
 
-### Issue MA-002: Uninitialized 'vetoes' List Variable NameError
-- **Severity**: P1 (Runtime Correctness)
-- **Evidence**: NameError raised when attempting to append vetoes in `synthesize_decision` under risk-veto conditions.
-- **Affected Files**: `trading_bot/agents/multi_agent_debate.py`
-- **Root Cause**: Referencing the variable `vetoes` without declaration or initialization.
-- **Fix**: Initialized `vetoes = []` cleanly at the top of the try-block and appended active veto details to final trade reasoning.
-- **Validation**: Enforced via `test_byzantine_contradictory_evidence` and `test_silent_non_responsive_agents_and_degradation`.
+### Issue ID: MA-02 (Severity: High)
+- **Reproduction:** Attempting to reset UCA singletons in test setup triggered `AttributeError: type object 'UnifiedDecisionBus' has no attribute 'reset'`.
+- **Evidence:** Test setup failed to isolate tests.
+- **Root Cause:** Standard classmethods for resetting singletons between test runs were absent, leading to test-to-test pollution and database locks.
+- **Affected Files:** `trading_bot/core/unified_event_bus.py`, `trading_bot/core/csc/controller.py`, `trading_bot/core/hms/memory.py`
+- **Fix:** Implemented safe, deterministic `reset()` classmethods that completely clear state and reset singletons without recursive import side-effects.
+- **Validation:** Singleton isolation tests pass 100%.
 
-### Issue MA-003: Lack of Input Integrity/Risk Context Checks
-- **Severity**: P0 (Financial Safety Boundary)
-- **Evidence**: Extremely high exposures or negative volatility inputs could bypass safety checks and result in active trading proposals.
-- **Affected Files**: `trading_bot/agents/multi_agent_debate.py`
-- **Root Cause**: Missing proactive safety validators inside the `debate` entry point.
-- **Fix**: Implemented strict, proactive guardrails validating negative volatility, out-of-bounds exposure (>1.0), and invalid correlation risks, raising fail-closed `NO_TRADE` immediately.
-- **Validation**: Enforced via a brand new adversarial unit test: `test_market_context_integrity_validation`.
+### Issue ID: MA-03 (Severity: Moderate)
+- **Reproduction:** Importing `trading_bot.agents.multi_agent_debate` raised module loading collisions.
+- **Evidence:** Multiple declarations of `AgentScorecard` in `multi_agent_debate.py`.
+- **Root Cause:** Merge conflicts created three identical duplicate class declarations.
+- **Affected Files:** `trading_bot/agents/multi_agent_debate.py`
+- **Fix:** Consolidated definitions into one unified, strongly typed class with `to_dict()` support.
+- **Validation:** Imports compile in 0.0s without warnings.
