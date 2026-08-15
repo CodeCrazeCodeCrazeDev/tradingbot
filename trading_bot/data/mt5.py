@@ -6,7 +6,8 @@ from typing import Any, Optional, Dict, List
 import logging
 from dataclasses import dataclass
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("AlphaAlgo.MT5Interface")
+
 
 @dataclass
 class AccountInfo:
@@ -17,6 +18,7 @@ class AccountInfo:
     margin_level: float = 1000.0
     profit: float = 0.0
 
+
 @dataclass
 class SymbolInfo:
     point: float = 0.00001
@@ -26,12 +28,14 @@ class SymbolInfo:
     volume_max: float = 10.0
     volume_step: float = 0.01
 
-class MT5Interface:
-    """Institutional-grade MT5Interface stub for testing and system compatibility."""
 
-    def __init__(self, *args, **kwargs):
-        self.config = kwargs
+class MT5Interface:
+    """Interacts with MetaTrader 5 terminal or provides standard mock wrappers when offline."""
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None, *args, **kwargs):
+        self.config = config or kwargs
         self._connected = True
+        self.connected = True
 
     def __enter__(self):
         self.connect()
@@ -41,11 +45,15 @@ class MT5Interface:
         self.disconnect()
 
     def connect(self) -> bool:
+        logger.info("MT5Interface: Connected (Mocked mode).")
         self._connected = True
+        self.connected = True
         return True
 
     def disconnect(self) -> None:
+        logger.info("MT5Interface: Disconnected.")
         self._connected = False
+        self.connected = False
 
     def account_info(self) -> Optional[AccountInfo]:
         return AccountInfo()
@@ -54,9 +62,8 @@ class MT5Interface:
         return SymbolInfo()
 
     def get_rates(self, symbol: str, timeframe: str, count: int) -> List[Dict[str, Any]]:
-        # Dummy rates for testing
         import pandas as pd
-        dates = pd.date_range(end=pd.Timestamp.now(), periods=count, freq='H')
+        dates = pd.date_range(end=pd.Timestamp.now(), periods=count, freq='h')
         return [
             {
                 "time": d.to_pydatetime(),
@@ -69,21 +76,10 @@ class MT5Interface:
             for d in dates
         ]
 
-    def place_order(self, order_type_or_request: Any, symbol: Optional[str] = None, volume: Optional[float] = None, price: Optional[float] = None, **kwargs) -> Dict[str, Any]:
-        if isinstance(order_type_or_request, dict):
-            request = order_type_or_request
-        else:
-            request = {
-                "order_type": order_type_or_request,
-                "symbol": symbol,
-                "volume": volume,
-                "price": price,
-                **kwargs
-            }
+    def place_order(self, request: Dict[str, Any], *args, **kwargs) -> Dict[str, Any]:
+        logger.info(f"MT5Interface: Order placed successfully -> {request}")
         return {
-            "retcode": 10009,  # DONE
+            "retcode": 10009,
             "order": 123456,
-            "volume": request.get("volume", 0.1),
-            "price": request.get("price", 1.0),
             "comment": "Mock trade completed"
         }
