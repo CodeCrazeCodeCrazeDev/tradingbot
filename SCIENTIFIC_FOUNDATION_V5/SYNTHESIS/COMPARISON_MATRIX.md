@@ -13,6 +13,7 @@ This matrix maps the 28 core research papers (16 Foundation + 12 New) across Alp
 | **Coordination** | MATM, Effective Agents | LogAct, CORAL, HyEvo | **LogAct + CORAL**: Shared-log consensus evolution. |
 | **Memory** | Memory Survey | (Integrated in LogAct) | **LogAct Shared Logs**: Transactional state memory. |
 | **World Model** | CWMI (Causal) | (Integrated in Hyperagents) | **SCM V5**: Causal World Model with self-refinement. |
+| **Harness Opt** | Self-Harness | Meta-Harness | **Meta-Harness**: Autonomous wrapper optimization. |
 | **Tool Use** | (Baseline Tools) | Meta-Harness, ReTool | **Strategic Tool Integration**: RL-trained tool selection. |
 | **Efficiency** | Skill-to-LoRA (S2L) | Grow, Don't Overwrite | **Function-Preserving Growth**: Capacity expansion vs adapters. |
 | **Benchmarking** | CL-Bench, HORIZON | FIRE | **Unified Suite**: Expand with Domain (FIRE) + Horizon (HORIZON). |

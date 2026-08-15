@@ -4,7 +4,6 @@ Accumulates labeled examples and retrains models.
 """
 
 import json
-import pickle
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from datetime import datetime
@@ -140,10 +139,10 @@ class ContinuousLearner:
             
             # Save to sandbox
             new_version = self._get_next_version()
-            sandbox_path = self.sandbox_dir / f"model_v{new_version}.pkl"
+            sandbox_path = self.sandbox_dir / f"model_v{new_version}.json"
             
-            with open(sandbox_path, 'wb') as f:
-                pickle.dump(model, f)
+            with open(sandbox_path, 'w') as f:
+                json.dump(model, f, indent=2)
             
             # Save metrics
             metrics_path = self.sandbox_dir / f"model_v{new_version}_metrics.json"
@@ -181,7 +180,7 @@ class ContinuousLearner:
         """
         try:
             # Load sandbox model
-            sandbox_path = self.sandbox_dir / f"model_v{version}.pkl"
+            sandbox_path = self.sandbox_dir / f"model_v{version}.json"
             if not sandbox_path.exists():
                 logger.error(f"Sandbox model not found: {sandbox_path}")
                 return False
@@ -227,14 +226,14 @@ class ContinuousLearner:
                 return False
             
             # Backup current model
-            current_path = self.model_dir / "current_model.pkl"
+            current_path = self.model_dir / "current_model.json"
             if current_path.exists():
-                backup_path = self.model_dir / f"model_v{self.current_model_version}_backup.pkl"
+                backup_path = self.model_dir / f"model_v{self.current_model_version}_backup.json"
                 current_path.rename(backup_path)
                 logger.info(f"Backed up current model to {backup_path}")
             
             # Copy sandbox model to production
-            sandbox_path = self.sandbox_dir / f"model_v{version}.pkl"
+            sandbox_path = self.sandbox_dir / f"model_v{version}.json"
             sandbox_path.replace(current_path)
             
             # Copy metrics

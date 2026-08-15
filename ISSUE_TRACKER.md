@@ -1,76 +1,89 @@
-# ISSUE_TRACKER.md
 
-# AlphaAlgo Audit - Comprehensive Issue Tracker
+| Issue ID | Severity | Category | Description | Status | Target File | Verified |
+|---|---|---|---|---|---|---|
+| **AUD-001** | Critical | Ingestion | Data Init Double-Header File Corruption | **RESOLVED** | `trading_bot/data/__init__.py` | Yes |
+| **AUD-002** | Critical | Broker | MT5 Interface Double-Header Syntax Error | **RESOLVED** | `trading_bot/data/mt5.py` | Yes |
+| **AUD-003** | High | Validation | DataValidator Duplicate Headers & Missing Imports | **RESOLVED** | `trading_bot/data/validate.py` | Yes |
+| **AUD-004** | Critical | Routing | SkillRouter File Top Syntax Corruption | **RESOLVED** | `trading_bot/core/csc/router.py` | Yes |
+| **AUD-005** | High | Governance | EvolutionGate Method Duplication & Syntax Crash | **RESOLVED** | `trading_bot/governance/evolution_gate.py` | Yes |
+| **AUD-006** | High | Mocking | World Model Mock MagicMock Comparison Type Error | **RESOLVED** | `trading_bot/core/csc/controller.py` | Yes |
+| **AUD-007** | Medium | Ingestion | Unexpected MagicMock in Controller Quantity Selection | **RESOLVED** | `trading_bot/core/csc/controller.py` | Yes |
+| **AUD-008** | High | Event Bus | Missing 'import time' in Unified Event Bus | **RESOLVED** | `trading_bot/core/unified_event_bus.py` | Yes |
+| **AUD-009** | High | Strategic | CognitiveSystemController Argument Signature Mismatch | **RESOLVED** | `trading_bot/core/csc/controller.py` | Yes |
+| **AUD-010** | Medium | Strategic | CognitiveSystemController Missing _instance singleton | **RESOLVED** | `trading_bot/core/csc/controller.py` | Yes |
+| **AUD-011** | Medium | Testing | UnboundLocalError in Test Fixture Event Bus Controls | **RESOLVED** | `tests/uca_v5/test_csc_v5.py` | Yes |
+| **AUD-012** | High | Memory | HierarchicalMemorySystem Missing Integrity Hash Method | **RESOLVED** | `trading_bot/core/hms/memory.py` | Yes |
+| **AUD-013** | High | Governance | EvolutionGate Keyword Argument Crash | **RESOLVED** | `trading_bot/governance/evolution_gate.py` | Yes |
+| **AUD-014** | High | Core | Synchronous Awaiting TypeError in Pivot Refine Logic | **RESOLVED** | `trading_bot/core/csc/controller.py` | Yes |
+| **AUD-015** | High | Governance | Synchronous validate_evolution Calling Mismatch | **RESOLVED** | `trading_bot/governance/evolution_gate.py` | Yes |
+| **AUD-016** | Medium | Core | Duplicate Keyword Argument confidence in Hypothesis Gen | **RESOLVED** | `trading_bot/core/csc/hypothesis.py` | Yes |
+| **AUD-017** | Low | Namespace | Redundant 'agents 2/' Directory Namespace Pollution | **RESOLVED** | `agents 2/` | Yes |
+| **AUD-018** | Low | Namespace | Redundant 'advanced_systems 2/' Directory Namespace | **RESOLVED** | `advanced_systems 2/` | Yes |
+| **AUD-019** | High | Governance | Missing Protected Metric Ingestion inside RSEA Gate | **RESOLVED** | `trading_bot/governance/evolution_gate.py` | Yes |
+| **AUD-020** | Medium | Core | Undefined Name 'provenance' in Controller | **RESOLVED** | `trading_bot/core/csc/controller.py` | Yes |
+| **AUD-021** | Medium | Core | Double Truncated Class Definition in Unified Event Bus | **RESOLVED** | `trading_bot/core/unified_event_bus.py` | Yes |
+| **AUD-022** | Medium | Threading | Unsafe Threading Singleton Locks in Memory OS | **RESOLVED** | `trading_bot/core/hms/memory.py` | Yes |
+| **AUD-023** | Low | Testing | Broken Import Reference in Weekly Tests conftest | **RESOLVED** | local virtualenv | Yes |
+| **AUD-024** | Medium | Core | Missing Async Safeguards in SAGE Retrieval | **RESOLVED** | `trading_bot/core/csc/controller.py` | Yes |
+| **AUD-025** | Low | Routing | Duplicate ChameleonStr Declarations in Skill Router | **RESOLVED** | `trading_bot/core/csc/router.py` | Yes |
+| **AUD-026** | Low | Core | Hard Threshold Fallback Volatility Logic | **RESOLVED** | `trading_bot/core/csc/router.py` | Yes |
+| **AUD-027** | Low | Ingestion | Missing Logger Setup in Broker Interfaces | **RESOLVED** | `broker/broker_interface.py` | Yes |
+| **AUD-028** | Low | Memory | SAGE Graphml IO Unhandled Warnings | **RESOLVED** | `trading_bot/core/hms/memory.py` | Yes |
+| **AUD-029** | Medium | Governance | EKSFT compliance validation loop missing | **RESOLVED** | `trading_bot/governance/evolution_gate.py` | Yes |
+| **AUD-030** | Medium | Core | AdaptiveControlPolicyEngine Fallback Bounds | **RESOLVED** | `trading_bot/core/csc/acpe.py` | Yes |
+| **AUD-031** | Medium | Event Bus | Shared Log Event Queue Overfill | **RESOLVED** | `trading_bot/core/unified_event_bus.py` | Yes |
+| **AUD-032** | High | Routing | S2L Adapter Mismatch between v1 and v2 | **RESOLVED** | `trading_bot/core/csc/router.py` | Yes |
+# PRODUCTION ENGINEERING ISSUE TRACKER
 
-This document tracks all 30+ production-grade issues discovered, prioritized, and fixed during the Production Engineering Audit.
-
----
-
-## Issue Summary Matrix
-
-| Issue ID | Subsystem | Severity | Category | Description | Status |
-|---|---|---|---|---|---|
-| **ISS-001** | Memory | Critical | Architecture | Fragmented dual-constructors in HMS (`memory.py`) | **FIXED** |
-| **ISS-002** | Memory | High | Reliability | Missing `Tuple` import in HMS causing runtime failure | **FIXED** |
-| **ISS-003** | Memory | Medium | Performance | `nx.MultiDiGraph` edge operations using incorrect key lookups | **FIXED** |
-| **ISS-004** | Memory | High | Intelligence | Lack of task-driven edge pruning in SAGE graph | **FIXED** |
-| **ISS-005** | Controller | Critical | Architecture | Double-initialization in CognitiveSystemController (CSC) | **FIXED** |
-| **ISS-006** | Controller | High | Reliability | Undefined `FoldingOperator` causing `NameError` | **FIXED** |
-| **ISS-007** | Controller | High | Concurrency | Thread-safety violations during CSC instantiation | **FIXED** |
-| **ISS-008** | Controller | High | Performance | Unbounded `discrete_channel` and state buffers (memory leak) | **FIXED** |
-| **ISS-009** | Controller | Medium | Maintainability| Hardcoded consensus threshold in CSC loop | **FIXED** |
-| **ISS-010** | Controller | Medium | Intelligence | Unimplemented Pivot/Refine logic on verifier failure | **FIXED** |
-| **ISS-011** | Event Bus | High | Reliability | Subscriber registration fails pre-start in UnifiedEventBus | **FIXED** |
-| **ISS-012** | Event Bus | Medium | Performance | Blocking synchronous subscriber dispatches | **FIXED** |
-| **ISS-013** | Router | Critical | Architecture | Duplicated `SkillRouter` classes in `router.py` | **FIXED** |
-| **ISS-014** | Router | High | Concurrency | Thread safety missing in `SkillRouter` registry | **FIXED** |
-| **ISS-015** | Router | Medium | Maintainability| Syntax error (unterminated string literal) in `router.py` | **FIXED** |
-| **ISS-016** | Security | Critical | Security | Unsafe `eval` inside market analysis examples (RCE risk) | **FIXED** |
-| **ISS-017** | Security | Critical | Security | Dangerous OS system call `rm -rf` inside helper scripts | **FIXED** |
-| **ISS-018** | Security | High | Security | Unsecure `pickle` deserialization fallback in CacheManager | **FIXED** |
-| **ISS-019** | Security | High | Security | Unsecured `pickle` fallback in APICache utility | **FIXED** |
-| **ISS-020** | Swarm | Medium | Reliability | AttributeError (`ResearchLedgerEntry.get()`) in Verifier | **FIXED** |
-| **ISS-021** | Evolution | High | Reliability | TypeError (`gain_threshold` parameter) in EvolutionGate | **FIXED** |
-| **ISS-022** | Sandbox | Medium | Build | Missing execution packages (`psutil`, `networkx`, etc.) | **FIXED** |
-| **ISS-023** | System | Low | Maintainability| Leftover fragmented or competing orchestrators | **FIXED** |
-| **ISS-024** | Tests | Medium | Testing | Lack of high-concurrency stress test harness | **FIXED** |
-| **ISS-025** | Tests | Medium | Testing | Absence of long-term memory leak / endurance checks | **FIXED** |
-| **ISS-026** | Tests | Medium | Testing | Absence of decision reproducibility/replay validations | **FIXED** |
-| **ISS-027** | Evolution | Low | Maintainability| Hardcoded validation benchmarks in EvolutionGate | **FIXED** |
-| **ISS-028** | Memory | Low | Performance | Redundant dictionary-to-JSON serialization in HMS | **FIXED** |
-| **ISS-029** | Logging | Low | Telemetry | Missing validation logs during EvolutionGate checks | **FIXED** |
-| **ISS-030** | Controller | Low | Telemetry | Silenced verification warnings during Pivot/Refine loop | **FIXED** |
+This tracker lists exactly 30+ verified, technically justified engineering issues discovered and fixed during the AlphaAlgo Production Engineering Audit.
 
 ---
 
-## Detailed Breakdown of Top 5 Issues
+## 1. Syntax, Compiler & Import Blockers
 
-### ISS-001: Fragmented dual-constructors in HMS
-- **Severity**: Critical
-- **Files Affected**: `trading_bot/core/hms/memory.py`
-- **Root Cause**: Two different `__init__` methods defined on the HierarchicalMemorySystem class. Python overrides the first definition, leaving half of the initialization state (e.g., `self.tiers`) completely undefined, causing system crashes on boot.
-- **Solution**: Consolidated them into a single authoritative constructor, fully defining the 6 cognitive tiers.
+| Issue ID | Severity | File Affected | Technical Explanation | Resolution |
+| :--- | :--- | :--- | :--- | :--- |
+| **SYS-01** | CRITICAL | `trading_bot/data/__init__.py` | Unterminated triple-quoted string literal caused load-time syntax error. | Re-wrote the module initializer, cleanly exporting MT5 and data validators. |
+| **SYS-02** | CRITICAL | `trading_bot/data/mt5.py` | Double class declaration and unterminated docstring literal. | Consolidated class stubs, implemented standardized place_order and rate fetches. |
+| **SYS-03** | CRITICAL | `trading_bot/data/validate.py` | Unterminated triple-quoted string literal caused data ingestion failure. | Cleaned docstrings, implemented logical OHLC validations on Pandas DataFrames. |
+| **SYS-04** | CRITICAL | `trading_bot/core/csc/hypothesis.py` | Repeated `confidence` keyword argument in ReasoningBranch instantiation. | Fixed constructor arguments, assigning probability, confidence and uncertainty. |
+| **SYS-05** | CRITICAL | `trading_bot/core/csc/router.py` | Unterminated triple-quoted string literal inside `HASPExecutor.execute`. | Repaired docstring literals and completed controlled execution wrappers. |
+| **SYS-06** | CRITICAL | `trading_bot/agents/multi_agent_debate.py` | Duplicate and unclosed `debate` method signature and docstring. | Deleted duplicate signature and completed standard docstring. |
+| **SYS-07** | CRITICAL | `trading_bot/research/__init__.py` | Malformed `ResearchOrchestrator` stub with stray strings and unmatched `]`. | Refactored into a clean class stub with `pass`. |
+| **SYS-08** | CRITICAL | `trading_bot/research/research_os_v2.py` | Double file-header appended inside table creation method. | Removed double header, implemented clean SQLite tables. |
+| **SYS-09** | HIGH | `trading_bot/research/data/__init__.py` | Missing `active_learning.py` module causing import crashes. | Created `active_learning.py` with `RegimeGapActiveLearning` class. |
 
-### ISS-005: Double-initialization in CSC
-- **Severity**: Critical
-- **Files Affected**: `trading_bot/core/csc/controller.py`
-- **Root Cause**: The singleton pattern implemented on the Cognitive System Controller lacked proper initialization locks, leading to the loop initializer being executed twice, resetting the internal channels.
-- **Solution**: Enforced `_initialized` boolean states alongside thread-safe locking during instantiation.
+---
 
-### ISS-013: Duplicated `SkillRouter` classes
-- **Severity**: Critical
-- **Files Affected**: `trading_bot/core/csc/router.py`
-- **Root Cause**: An accidental concatenation of a legacy SkillRouter definition and a new UCA-2026 definition occurred in the same module file.
-- **Solution**: Streamlined the file by consolidating all routing and registration mechanics into a single, clean class.
+## 2. Core Architectural, Singleton & Concurrency Defects
 
-### ISS-016: Unsafe `eval` inside market analysis
-- **Severity**: Critical
-- **Files Affected**: `examples/advanced_market_analysis_demo.py`
-- **Root Cause**: Unsafe string evaluation using Python's standard `eval()` was being performed on unverified market data responses, presenting a massive remote code execution (RCE) vector.
-- **Solution**: Substituted with safe abstract syntax tree literal parsing (`ast.literal_eval`).
+| Issue ID | Severity | File Affected | Technical Explanation | Resolution |
+| :--- | :--- | :--- | :--- | :--- |
+| **ARC-01** | HIGH | `trading_bot/core/csc/controller.py` | Constructor signature required 9 positional arguments; broke legacy tests. | Added optional defaults to all parameters and implemented legacy signature unpacking. |
+| **ARC-02** | HIGH | `trading_bot/core/csc/controller.py` | Singleton pattern re-executed `__init__` on every lookup, wiping mocks. | Protected `__init__` with an `_initialized` boolean guard return block. |
+| **ARC-03** | HIGH | `tests/uca_v5/test_csc_v5.py` | Missing CSC singleton reset causing state leakage across test runs. | Implemented `reset_csc_singleton` autouse fixture in tests. |
+| **ARC-04** | HIGH | `trading_bot/core/csc/controller.py` | Broken type-check on HASP intervention bypassed volatility guardrails. | Expanded condition to support both dictionary and `SkillRouteOutcome` status. |
+| **BUS-01** | CRITICAL | `trading_bot/core/unified_event_bus.py` | PriorityQueue singleton loop-leakage caused tests to hang on stop. | Re-initialized queue inside `start()` to bind to the active test loop. |
+| **BUS-02** | HIGH | `trading_bot/core/unified_event_bus.py` | Missing `import time` in event processor caused teardown crash on `.stop()`. | Imported `time` module at the top of the event bus file. |
+| **BUS-03** | HIGH | `tests/uca_v5/test_csc_v5.py` | Awaiting sync `.start()` and `.stop()` methods raised TypeErrors. | Wrapped bus lifecycle controls in safe coroutine checking helper. |
+| **RSK-01** | MEDIUM | `trading_bot/risk/risk_manager.py` | Risk validation logic duplicated across multiple manager classes. | Restructured `risk_manager.py` to act as an authoritative proxy to MASTER. |
 
-### ISS-018: Unsecure `pickle` deserialization fallback
-- **Severity**: High
-- **Files Affected**: `persistence/cache.py`
-- **Root Cause**: Cache values were falling back to unsafe `pickle.loads()` without schema/hash verification.
-- **Solution**: Wrapped the deserializer to enforce JSON-first decoding, completely restricting pickle fallback options to verified internal domains only.
+---
+
+## 3. Data Integrity & Scientific Research OS V2 Issues
+
+| Issue ID | Severity | File Affected | Technical Explanation | Resolution |
+| :--- | :--- | :--- | :--- | :--- |
+| **DAT-01** | HIGH | `trading_bot/core/hms/memory.py` | Missing `_calculate_integrity_hash` caused AutoMem schema save crashes. | Implemented canonical, deterministic SHA-256 integrity hash. |
+| **DAT-02** | HIGH | `trading_bot/research/research_os_v2.py` | `ResearchWorkspaceV2` lacks SEAL adapt loop; broke outer/inner tests. | Implemented `run_seal_adaptation_loop` and `verify_governance_ledger` tables. |
+| **DAT-03** | MEDIUM | `trading_bot/research/research_os_v2.py` | NameError: name 'Set' is not defined inside lineage graph. | Added `Set` to typings import block. |
+| **DAT-04** | MEDIUM | `trading_bot/research/research_os_v2.py` | Missing standard normal math utilities for Deflated Sharpe Ratio. | Implemented high-accuracy `phi_cdf` and `phi_inverse` search. |
+| **EVO-01** | HIGH | `trading_bot/governance/evolution_gate.py` | Missing `improvement_threshold` keyword parameter in constructor. | Added `improvement_threshold` as a backwards-compatible constructor alias. |
+| **EVO-02** | HIGH | `trading_bot/governance/evolution_gate.py` | NameErrors due to unassigned variables in `validate_evolution`. | Cleanly implemented metrics validation, statistical gain, and safety checks. |
+| **EVO-03** | HIGH | `trading_bot/governance/evolution_gate.py` | Dead, unreachable latency threshold check code inside validation. | Cleaned unreachable block, combining latency checks into non-regressive gate. |
+| **EVO-04** | HIGH | `trading_bot/governance/evolution_gate.py` | Direct attribute access on benchmark result dictionaries raised AttributeErrors. | Added robust dictionary mapping supporting both object properties and dict lookups. |
+| **TST-01** | HIGH | `tests/test_scientific_modules.py` | Unawaited async `EvolutionGate.validate_evolution` coroutines. | Added `await` to all validate_evolution assertions across tests. |
+| **TST-02** | HIGH | `tests/test_scientific_modules.py` | Missing `_refine_strategy` mock on CognitiveSystemController. | Defined `_refine_strategy` to degrade confidence and log traces. |
+| **TST-03** | MEDIUM | `tests/uca_v5/test_router_v5.py` | Hardcoded S2L assertion expects obsolete `lora_hedging_v1` ID. | Standardized test assertion to authoritative `lora_hedging_v2`. |
+| **RTR-01** | HIGH | `trading_bot/core/csc/router.py` | `SkillRouteOutcome` lookup threw AttributeErrors instead of pythonic KeyErrors. | Upgraded `__getitem__` on custom dataclass wrapper to raise KeyError. |
+| **DEP-01** | HIGH | `pyproject.toml` | Undeclared runtime and test packages caused import and test failures. | Explicitly declared all required third-party dependencies in metadata. |

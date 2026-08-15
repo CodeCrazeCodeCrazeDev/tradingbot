@@ -66,6 +66,22 @@ class SafeguardSystem:
             "trading_bot/master_orchestrator.py"
         ]
         
+    def validate_ast_syntax(self, code_string: str) -> Tuple[bool, str]:
+        """
+        Syntactically parses Python code using the native AST compiler.
+        Ensures 100% syntactical correctness and zero SyntaxErrors before files are committed to disk.
+
+        Part of the Anthropic / Leni and Leno restomod engineering safeguards.
+        """
+        import ast
+        try:
+            ast.parse(code_string)
+            return True, "AST syntax check passed successfully."
+        except SyntaxError as e:
+            return False, f"AST Syntax Error: {e.msg} at line {e.lineno}, col {e.offset}"
+        except Exception as e:
+            return False, f"Unexpected compilation error during AST validation: {str(e)}"
+
     def evaluate_change(self, file_path: str, old_code: str, new_code: str, 
                        explanation: str) -> CodeChange:
         """
@@ -88,6 +104,13 @@ class SafeguardSystem:
         # Determine risk level
         risk_level = self._determine_risk_level(file_path, diff)
         
+        # Override safety score and trigger rejection if AST syntax fails (Leno/Leni Principle)
+        if file_path.endswith('.py'):
+            ast_passed, ast_reason = self.validate_ast_syntax(new_code)
+            if not ast_passed:
+                logger.error(f"[AST PRE-EXECUTION BLOCKED] {file_path} failed syntax check: {ast_reason}")
+                safety_score = 0.0  # Force lowest safety score on compilation error
+
         change = CodeChange(
             file_path=file_path,
             change_id=f"ch_{len(self.audit_log) + 1}",
@@ -293,6 +316,12 @@ class SafeQwenEngineer:
             change.status = ApprovalStatus.PENDING
             return False
         
+        # Hard check: reject if AST syntax fails (0.0 safety_score)
+        if change.safety_score == 0.0 and file_path.endswith('.py'):
+            logger.error(f"[AST PRE-EXECUTION REJECTED] Code change contains SyntaxErrors. Blocked write to {file_path}")
+            change.status = ApprovalStatus.REJECTED
+            return False
+
         # Apply via sandbox
         if self.sandbox.apply_change(file_path, new_code, explanation):
             # Actually apply if sandbox not enabled
@@ -303,6 +332,43 @@ class SafeQwenEngineer:
         
         return False
     
+    async def validate_structured_json_with_retries(self, json_string: str, expected_schema: Any,
+                                                   max_retries: int = 3) -> Tuple[Dict[str, Any], bool]:
+        """
+        Implements an Instructor-style validation schema retry loop.
+        Allows up to max_retries self-healing loops to format LLM outputs safely.
+        Falls back to a safe baseline default configuration if retries are fully exhausted.
+        """
+        retry_count = 0
+        current_json = json_string
+
+        while retry_count < max_retries:
+            try:
+                parsed_data = json.loads(current_json)
+                if expected_schema:
+                    # Enforce type-safety and contract structure via Pydantic model construct / validate
+                    if hasattr(expected_schema, 'model_validate'):
+                        expected_schema.model_validate(parsed_data)
+                    elif hasattr(expected_schema, 'validate'):
+                        expected_schema.validate(parsed_data)
+                logger.info("Instructor schema validation passed successfully.")
+                return parsed_data, True
+            except (json.JSONDecodeError, Exception) as e:
+                retry_count += 1
+                logger.warning(f"[INSTRUCTOR RETRY {retry_count}/{max_retries}] Validation failed: {str(e)}")
+                # In real execution, we would request a healed JSON string from the LLM model backbone.
+                # Here we mock the self-healing transition by removing any extra markdown text wraps around JSON
+                cleaned = current_json.strip()
+                if "```json" in cleaned:
+                    cleaned = cleaned.split("```json")[1].split("```")[0].strip()
+                elif "```" in cleaned:
+                    cleaned = cleaned.split("```")[1].split("```")[0].strip()
+                current_json = cleaned
+
+        logger.error("[INSTRUCTOR RETRIES EXHAUSTED] Falling back to baseline safe parameters to prevent pipeline crash.")
+        # Graceful fallback configuration (Leno engineering resilience)
+        return {"status": "fallback", "safe_mode": True, "timestamp": datetime.now().isoformat()}, False
+
     async def process_approved_changes(self):
         """Apply all approved changes"""
         for change in self.safeguards.get_pending_changes():

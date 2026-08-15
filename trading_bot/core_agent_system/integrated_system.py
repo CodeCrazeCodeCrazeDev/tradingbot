@@ -14,9 +14,6 @@ from typing import Any, Dict, List, Optional
 from pathlib import Path
 import redis
 
-from .master_orchestrator import MasterOrchestrator, SystemContext, Decision
-from .meta_orchestrator import MetaOrchestrator
-from trading_bot.neuros_evolution.controlled_objects import ControlledObjectRegistry
 from .react_loop import ReActLoop
 from .constitutional_layer import ConstitutionalAI
 from trading_bot.execution.trade_executor import TradeExecutor
@@ -33,7 +30,6 @@ from .agent_registry import (
     LegacyAgentWrapper
 )
 from .migrated_agents.planner import MigratedPlannerAgent
-from .multidimensional_intelligence.agent import MultidimensionalResearchAgent
 from trading_bot.agents2.specialized_agents import (
     TrendFollowingAgent,
     MeanReversionAgent,
@@ -49,12 +45,28 @@ from .specialized_planners import (
 from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
+from trading_bot.core.unified_event_bus import decision_bus
 from .self_coordinating_core import SelfCoordinatingCore
-from .meta_orchestrator import MetaOrchestrator
 from .swarm.usis import UnifiedSwarmIntelligenceSystem
 from .swarm.experts import MarketScientist, QuantAnalyst, SwarmRiskManager
 
+# One Brain Canonical Subsystems
+from trading_bot.core.csc.controller import CognitiveSystemController
+from trading_bot.core.unified_registry import registry as unified_registry
+from trading_bot.core.alphaalgo_core_engine import CoreDecision, DecisionOutcome
+from dataclasses import dataclass
+
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class SystemContext:
+    """Canonical system context for reasoning cycles"""
+    timestamp: datetime
+    market_state: Dict
+    portfolio_state: Dict
+    agent_states: Dict
+    risk_metrics: Dict
 
 
 class IntegratedAgentSystem:
@@ -70,10 +82,8 @@ class IntegratedAgentSystem:
         storage_base.mkdir(parents=True, exist_ok=True)
         self.storage_path = storage_base
         
-        # 0. Unified Registry (Section 4)
-        self.object_registry = ControlledObjectRegistry(
-            str(self.storage_path / 'controlled_objects.json')
-        )
+        # 0. Unified Registry
+        self.unified_registry = unified_registry
 
         # Initialize components
         self._init_components()
@@ -158,14 +168,13 @@ class IntegratedAgentSystem:
             max_iterations=self.config.get('max_react_iterations', 10)
         )
         
-        # 8. Master Orchestrator
-        self.orchestrator = MasterOrchestrator({
-            'search_depth': self.config.get('search_depth', 5),
-            'num_simulations': self.config.get('num_simulations', 100),
-            'safety_threshold': self.config.get('safety_threshold', 0.7),
-            'max_history': 10000
-        })
-        
+        # 8. Cognitive System Controller (One Brain Authority)
+        self.csc = CognitiveSystemController(
+            world_model=self.world_model,
+            hms=self.memory_system,
+            shield=None # Will use default ImmutableShield
+        )
+
         # 9. Self-Play Loop
         self.self_play_loop = SelfPlayLoop(
             policy_network=self.policy_network,
@@ -191,9 +200,6 @@ class IntegratedAgentSystem:
             config=self.config
         )
 
-        # 11. Meta-Orchestrator
-        self.meta_orchestrator = MetaOrchestrator(self.config)
-
         # 12. Unified Swarm Intelligence System (USIS)
         self.swarm_system = UnifiedSwarmIntelligenceSystem(
             self.agent_registry,
@@ -204,6 +210,9 @@ class IntegratedAgentSystem:
         """Initialize all components"""
         logger.info("INITIALIZING INTEGRATED AGENT SYSTEM")
         
+        # Start Decision Bus (LogAct Backbone)
+        await decision_bus.start()
+
         await self.memory_system.initialize()
         await self.tool_registry.initialize()
         await self.agent_registry.initialize()
@@ -211,23 +220,17 @@ class IntegratedAgentSystem:
         # Register default agents
         await self._register_default_agents()
         
+        # Register specialists in CSC Router
+        from trading_bot.core.csc.router import SkillDomain
+        self.csc.router.register_specialist("MainPlanner", [SkillDomain.MARKET_STRUCTURE, SkillDomain.LIQUIDITY])
+        self.csc.router.register_specialist("MainEvaluator", [SkillDomain.STATISTICAL_ARBITRAGE, SkillDomain.DATA_QUALITY])
+        self.csc.router.register_specialist("MainSafety", [SkillDomain.RISK_MANAGEMENT])
+
         await self.policy_network.initialize()
         await self.value_network.initialize()
         await self.constitutional_layer.initialize()
         await self.react_loop.initialize()
 
-        self.orchestrator.inject_dependencies(
-            policy_network=self.policy_network,
-            value_network=self.value_network,
-            constitutional_layer=self.constitutional_layer,
-            react_loop=self.react_loop,
-            agent_registry=self.agent_registry,
-            tool_registry=self.tool_registry,
-            memory_system=self.memory_system,
-            world_model=self.world_model
-        )
-        await self.orchestrator.initialize()
-        
         self.self_play_loop.audit_system = self.coordination_core.governance
         await self.self_play_loop.initialize()
         
@@ -249,7 +252,6 @@ class IntegratedAgentSystem:
             ExecutorAgent(executor=trade_executor, config={'name': 'MainExecutor'}),
             EvaluatorAgent(config={'name': 'MainEvaluator'}),
             ResearchAgent(config={'name': 'MainResearcher'}),
-            MultidimensionalResearchAgent(config={'name': 'MultidimensionalResearcher'}),
             SafetyAgent(config={'name': 'MainSafety'}),
 
             # Swarm Experts
@@ -307,7 +309,6 @@ class IntegratedAgentSystem:
         tasks = [
             asyncio.create_task(self._main_loop(), name="main_loop"),
             asyncio.create_task(self._self_improvement_loop(), name="self_improvement"),
-            asyncio.create_task(self._multidimensional_intelligence_loop(), name="multidimensional_intelligence"),
             asyncio.create_task(self._monitoring_loop(), name="monitoring"),
         ]
         
@@ -362,11 +363,12 @@ class IntegratedAgentSystem:
         while self.running:
             try:
                 context = await self._gather_context()
-                decision = await self.orchestrator.think(context)
+                decision = await self.think(context)
                 
-                if decision.is_safe() and decision.expected_value > 0.5:
+                # Check outcome from CSC decision (CoreDecision)
+                if decision and decision.outcome == DecisionOutcome.TRADE_APPROVED:
                     result = await self.execute_task(
-                        task=f"Execute {decision.decision_type}",
+                        task=f"Execute TRADE_APPROVED",
                         context={
                             'decision': decision,
                             'market_state': context.market_state,
@@ -374,13 +376,6 @@ class IntegratedAgentSystem:
                             'use_coordination': True
                         }
                     )
-                    
-                    await self.orchestrator.learn({
-                        'decision': decision,
-                        'result': result,
-                        'success': result.get('success', False),
-                        'actual_value': decision.expected_value if result.get('success') else 0.0
-                    })
                 
                 await asyncio.sleep(1)
             except Exception as e:
@@ -398,27 +393,6 @@ class IntegratedAgentSystem:
             except Exception as e:
                 logger.error(f"Error in self-improvement loop: {e}")
                 await asyncio.sleep(60)
-
-    async def _multidimensional_intelligence_loop(self):
-        """Scientific self-improvement through Multidimensional Intelligence"""
-        while self.running:
-            try:
-                agents = self.agent_registry.get_agents_by_role(AgentRole.RESEARCHER)
-                multi_agent = next((a for a in agents if isinstance(a, MultidimensionalResearchAgent)), None)
-
-                if multi_agent:
-                    context = await self._gather_context()
-                    result = await multi_agent.execute({
-                        'operation': 'scientific_improvement',
-                        'context': context.__dict__ if hasattr(context, '__dict__') else context
-                    })
-                    if result.get('success'):
-                        logger.info("Successfully completed multidimensional intelligence cycle")
-
-                await asyncio.sleep(3600)
-            except Exception as e:
-                logger.error(f"Error in multidimensional intelligence loop: {e}")
-                await asyncio.sleep(300)
     
     async def _monitoring_loop(self):
         """System monitoring and health checks"""
@@ -431,12 +405,8 @@ class IntegratedAgentSystem:
                 logger.error(f"Error in monitoring loop: {e}")
                 await asyncio.sleep(60)
     
-    async def _gather_context(self) -> SystemContext:
+    async def _gather_context(self) -> Any:
         """Gather current system context"""
-        if not hasattr(self, 'tool_registry'):
-            # Empty context
-            return SystemContext(datetime.now(), {}, {}, {}, [], [], {})
-
         # Get market state from tools
         market_tool = await self.tool_registry.get_tool('market_data')
         if market_tool:
@@ -469,8 +439,6 @@ class IntegratedAgentSystem:
             market_state=market_state,
             portfolio_state=portfolio_state,
             agent_states=agent_states,
-            pending_decisions=[],
-            recent_outcomes=[],
             risk_metrics=risk_metrics
         )
     
@@ -484,132 +452,72 @@ class IntegratedAgentSystem:
         Primary entry point for external callers.
         """
         context = context or {}
-        start_time = datetime.now()
-        answer_part = "No specific result returned."
-        final_answer = "Task execution failed or returned no result."
         
         # Check for swarm-specific tasks
         if context.get('use_swarm') or 'swarm' in task.lower():
             logger.info(f"IAS routing task to USIS: {task}")
             return await self.swarm_system.analyze(task, context)
 
-        logger.info(f"IAS executing task: {task}")
+        logger.info(f"IAS executing task via Coordination Core: {task}")
 
-        # 1. Use Meta-Orchestrator for self-scaffolding workflow
-        meta_result = await self.meta_orchestrator.execute_task(
-            task=task,
-            context=context,
-            core_system=self
+        # Use SelfCoordinatingCore directly for task decomposition and execution
+        from .coordination_core import TaskType, TaskPriority
+
+        # Determine task type from context or task string
+        task_type = context.get('task_type', TaskType.ANALYSIS)
+        if isinstance(task_type, str):
+            try:
+                task_type = TaskType(task_type.lower())
+            except ValueError:
+                task_type = TaskType.ANALYSIS
+
+        result = await self.coordination_core.execute_task(
+            task_name=f"Task: {task[:30]}",
+            task_type=task_type,
+            description=task,
+            priority=context.get('priority', TaskPriority.MEDIUM),
+            metadata=context
         )
 
-        # 2. Record deep observability data
-        duration = (datetime.now() - start_time).total_seconds()
-        obs_trace = {}
-
-        obs_trace["selected_workflow"] = meta_result.get('policy_id')
-        obs_trace["workflow_trace"] = meta_result.get('trace', [])
-
-        # Extract activated agents and tools from the trace
-        activated_agents = []
-        tools_used = []
-        for step in obs_trace["workflow_trace"]:
-            res = step.get('result', {})
-            if 'agents' in res:
-                activated_agents.extend(res['agents'])
-            if step.get('type') == 'call_tool':
-                tools_used.append(step.get('node'))
-
-        obs_trace["activated_agents"] = list(set(activated_agents))
-        obs_trace["tools_used"] = list(set(tools_used))
-        obs_trace["duration"] = duration
-        obs_trace["success"] = meta_result.get('success', False)
-
-        # 3. Store in Semantic Memory
-        await self.memory_system.store_knowledge(
-            f"obs_trace_{uuid.uuid4().hex[:8]}",
-            obs_trace,
-            tags=["observability", "execution_trace", meta_result.get('policy_id')]
-        )
-
-        # Standardized Response Formatting
-        from .adapters import ReasoningTrace, ResponseFormatter
-
-        # Extract results from trace
-        if meta_result.get('result'):
-            if isinstance(meta_result['result'], dict):
-                answer_part = meta_result['result'].get('result', meta_result['result'].get('answer', str(meta_result['result'])))
-            else:
-                answer_part = str(meta_result['result'])
-
-        trace_data = meta_result.get('trace', [])
-        # We need a ReasoningTrace object for format_response
-        trace_obj = ReasoningTrace(
-            goal=task,
-            analysis_summary=f"Executed workflow {meta_result.get('policy_id')}",
-            plan=[step.get('node', 'step') for step in trace_data],
-            reflection=meta_result.get('reflection')
-        )
-        formatted_response = ResponseFormatter.format_response(trace_obj, [])
-
-        if context.get('use_coordination'):
-            # If using multi-agent coordination explicitly
-            from .coordination_core import TaskType, TaskPriority
-
-            # Determine task type from context or task string
-            task_type = context.get('task_type', TaskType.ANALYSIS)
-            if isinstance(task_type, str):
-                try:
-                    task_type = TaskType(task_type.lower())
-                except ValueError:
-                    task_type = TaskType.ANALYSIS
-
-            result = await self.coordination_core.execute_task(
-                task_name=f"Task: {task[:30]}",
-                task_type=task_type,
-                description=task,
-                priority=context.get('priority', TaskPriority.MEDIUM),
-                metadata=context
-            )
-
-            # Extract final answer from results
-            answer_part = "No specific result returned."
-            if result.get('results'):
-                for r in reversed(result['results']):
-                    if r.get('result'):
-                        answer_part = r['result']
-                        break
-                    elif r.get('answer'):
-                        answer_part = r['answer']
-                        break
-
-            return {
-                'success': result.get('success', False),
-                'answer': f"Task completed by coordinated team. Result: {answer_part}",
-                'coordination_report': result,
-                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
-                'iterations': len(result.get('results', []))
-            }
-
-        # Format standardized response
-        final_answer = f"Task completed by Meta-Orchestrator. Result: {answer_part}"
+        # Extract final answer from results
+        answer_part = "No specific result returned."
+        if result.get('results'):
+            for r in reversed(result['results']):
+                if r.get('result'):
+                    answer_part = r['result']
+                    break
+                elif r.get('answer'):
+                    answer_part = r['answer']
+                    break
 
         return {
-            'success': meta_result.get('success', False),
-            'answer': final_answer,
-            'reasoning': f"Workflow policy '{meta_result.get('policy_id')}' executed with {len(meta_result.get('trace', []))} steps.",
-            'coordination_report': meta_result,
-            'iterations': len(meta_result.get('trace', []))
+            'success': result.get('success', False),
+            'answer': f"Task completed by coordinated team. Result: {answer_part}",
+            'coordination_report': result,
+            'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
+            'iterations': len(result.get('results', []))
         }
 
-    async def think(self, context: Optional[SystemContext] = None) -> Decision:
+    async def think(self, context: Optional[Any] = None) -> CoreDecision:
         """
         Perform a reasoning cycle based on the current context.
-        Returns a strategic Decision object.
+        Delegates strategic logic to the Cognitive System Controller (CSC).
         """
         if not context:
             context = await self._gather_context()
 
-        return await self.orchestrator.think(context)
+        # authoritative One Brain delegation
+        logger.info("IAS: Delegating strategic reasoning to CSC")
+
+        # Convert context to observation dict for CSC
+        observation = {
+            'market_state': context.market_state,
+            'portfolio_state': context.portfolio_state,
+            'risk_metrics': context.risk_metrics,
+            'timestamp': context.timestamp
+        }
+
+        return await self.csc.process_market_observation(observation)
 
     async def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -638,7 +546,6 @@ class IntegratedAgentSystem:
         return {
             'running': self.running,
             'initialized': self.initialized,
-            'orchestrator': self.orchestrator.get_status(),
             'agents': self.agent_registry.get_status(),
             'tools': self.tool_registry.get_status(),
             'memory': self.memory_system.get_status(),
@@ -655,10 +562,6 @@ class IntegratedAgentSystem:
         print("\n" + "=" * 60)
         print("INTEGRATED AGENT SYSTEM - STATUS")
         print("=" * 60)
-        
-        print(f"\n🧠 ORCHESTRATOR")
-        print(f"   State: {status['orchestrator']['state']}")
-        print(f"   Safety Threshold: {status['orchestrator']['safety_threshold']}")
         
         print(f"\n🤖 AGENTS")
         print(f"   Total: {status['agents']['total_agents']}")
@@ -695,6 +598,7 @@ class IntegratedAgentSystem:
         await self.agent_registry.shutdown()
         await self.tool_registry.shutdown()
         await self.memory_system.shutdown()
+        await decision_bus.stop()
 
 # ============================================================================
 # STANDALONE BACKGROUND SERVICES (Async Robust)

@@ -47,6 +47,12 @@ class UnifiedComponentRegistry:
         """
         Register a component with the system.
         """
+        # Architectural drift prevention
+        if name.endswith("Registry") and name != "UnifiedComponentRegistry":
+            raise ValueError(f"Unauthorized registry registration: {name}. Only UnifiedComponentRegistry is allowed.")
+        if name.endswith("Orchestrator") and name not in ["AIPOrchestrator", "SimulationOrchestrator"]:
+            raise ValueError(f"Unauthorized orchestrator: {name}. All orchestration must route through CognitiveSystemController or authorized Ontologies.")
+
         if name in self._components:
             logger.warning(f"Component '{name}' already registered. Overwriting.")
 
@@ -58,13 +64,11 @@ class UnifiedComponentRegistry:
         self._dependencies[name] = dependencies or []
         logger.debug(f"Registered {component_type}: {name}")
 
-    def get(self, name: str) -> Any:
+    def get(self, name: str, default: Any = None) -> Any:
         """
         Retrieve a component by name.
         """
-        if name not in self._components:
-            raise KeyError(f"Component '{name}' not found in registry")
-        return self._components[name]
+        return self._components.get(name, default)
 
     def get_by_type(self, component_type: str) -> List[Any]:
         """
@@ -98,6 +102,13 @@ class UnifiedComponentRegistry:
         self._metadata.clear()
         self._dependencies.clear()
         logger.info("UnifiedComponentRegistry cleared")
+
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance for testing purposes."""
+        with cls._lock:
+            cls._instance = None
+        logger.info("UnifiedComponentRegistry singleton reset")
 
     def unregister(self, name: str):
         """

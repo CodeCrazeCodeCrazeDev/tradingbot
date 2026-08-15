@@ -11,6 +11,8 @@ Enables agents to share insights and knowledge:
 Based on the Foundation Agents paper multi-agent systems.
 """
 
+from typing import Tuple
+import numpy as np
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
