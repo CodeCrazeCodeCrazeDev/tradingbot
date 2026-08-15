@@ -308,6 +308,9 @@ class HierarchicalMemorySystem:
     def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
         return calculate_integrity_hash(schema_dict)
 
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
+
     def _save_schema(self):
         self.memory_schema["updated_at"] = datetime.utcnow().isoformat()
         self.memory_schema["integrity_hash"] = self._calculate_integrity_hash(self.memory_schema)

@@ -130,7 +130,7 @@ class EvolutionGate:
 
         # 1. EKSFT Compliance Check (arXiv:2605.29303)
         if not self._check_eksft_compliance(candidate_config):
-            logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED due to EKSFT non-compliance (distribution shift risk).")
+            logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED due to EKSFT non-compliance.")
             return False
 
         # Formal Invariant safety check: exposure cannot be increased while halted
