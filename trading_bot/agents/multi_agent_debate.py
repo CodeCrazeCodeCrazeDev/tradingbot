@@ -235,9 +235,38 @@ class DebateResult:
     provenance: Dict[str, Any] = field(default_factory=dict)
     disagreement_map: Dict[str, float] = field(default_factory=dict)
     
+    # Canonical DebateResult Interface Contract (Institutional Upgrades)
+    decision: Optional[TradeAction] = None
+    consensus_score: float = 0.5
+    consensus_method: str = "weighted_bayesian"
+    winning_action: str = ""
+    winning_score: float = 0.5
+    minority_opinions: List[Dict[str, Any]] = field(default_factory=list)
+    vetoes: List[str] = field(default_factory=list)
+    confidence_distribution: Dict[str, float] = field(default_factory=dict)
+    supporting_evidence: List[str] = field(default_factory=list)
+    rejected_hypotheses: List[str] = field(default_factory=list)
+    verification_results: Dict[str, Any] = field(default_factory=dict)
+    uncertainty: float = 0.0
+    reasoning_trace: str = ""
+    schema_version: str = "1.0.0"
+    disagreement_map: Dict[str, float] = field(default_factory=dict)
+
+    def __post_init__(self):
+        if self.decision is None:
+            self.decision = self.action
+        if not self.consensus_score:
+            self.consensus_score = self.consensus_level
+        if not self.winning_action:
+            self.winning_action = self.action.value if hasattr(self.action, 'value') else str(self.action)
+        if not self.winning_score:
+            self.winning_score = self.confidence
+        if not self.reasoning_trace:
+            self.reasoning_trace = self.reasoning
+
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'timestamp': self.timestamp.isoformat(),
+            'timestamp': self.timestamp.isoformat() if hasattr(self.timestamp, 'isoformat') else str(self.timestamp),
             'symbol': self.symbol,
             'action': self.action.value if hasattr(self.action, 'value') else str(self.action),
             'confidence': self.confidence,
@@ -363,6 +392,22 @@ class MacroStrategist(TradingAgent):
             predictions = []
             counter_evidence = []
             verification = "HTF trend and news sentiment checked."
+
+            # Evidence-first local parameters
+            observation = f"Symbol: {context.symbol}, price: {context.current_price}, HTF trend: {context.htf_trend}"
+            evidence = []
+            hypothesis = "Neutral macro outlook, consolidation expected."
+            predictions = []
+            counter_evidence = []
+            verification = "No macro triggers active"
+
+            # Evidence-first local parameters
+            observation = f"Symbol: {context.symbol}, price: {context.current_price}, HTF trend: {context.htf_trend}"
+            evidence = []
+            hypothesis = "Neutral macro outlook, consolidation expected."
+            predictions = []
+            counter_evidence = []
+            verification = "No macro triggers active"
 
             # Analyze HTF trend
             if context.htf_trend == "UP":
@@ -563,6 +608,14 @@ class TacticalExecutioner(TradingAgent):
             counter_evidence = []
             verification = "LTF trend and volume checked."
 
+            # Evidence-first local parameters
+            observation = f"Symbol: {context.symbol}, price: {context.current_price}, LTF trend: {context.ltf_trend}"
+            evidence = []
+            hypothesis = "Neutral tactical stance, awaiting momentum signal."
+            predictions = []
+            counter_evidence = []
+            verification = "No tactical breakout timing active"
+
             # Analyze LTF Trend
             if context.ltf_trend == "UP":
                 ltf_score = 0.6
@@ -745,6 +798,14 @@ class RiskSentinel(TradingAgent):
             counter_evidence = []
             verification = "Portfolio exposure, correlation risk and VIX levels checked."
 
+            # Evidence-first local parameters
+            observation = f"Symbol: {context.symbol}, price: {context.current_price}, risk flags: {risk_flags}"
+            evidence = []
+            hypothesis = "Neutral risk stance, monitor exposure limits."
+            predictions = []
+            counter_evidence = []
+            verification = "No active risk exceptions"
+
             # Exposure check
             if context.portfolio_exposure > self.max_exposure:
                 exposure_score = -0.5
@@ -820,6 +881,8 @@ class RiskSentinel(TradingAgent):
                 evidence.append(f"Asset local volatility normal ({context.volatility:.2%}).")
 
             key_factors['volatility_risk'] = vol_score
+            total_score = sum(key_factors.values())
+
             total_score = sum(key_factors.values())
 
             total_score = sum(key_factors.values())
@@ -1308,6 +1371,11 @@ class FalsificationGate:
 
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
+        self.causal_verifier = CausalVerifier()
+        self.liquidity_verifier = LiquidityVerifier()
+        self.regime_verifier = RegimeVerifier()
+        self.risk_verifier = RiskVerifier()
+        self.hallucination_detector = HallucinationDetector()
 
     async def run_falsification(
         self, action: TradeAction, context: MarketContext
@@ -1316,6 +1384,22 @@ class FalsificationGate:
         Runs comprehensive falsification checks on the proposed action.
         Returns FalsificationReport indicating if the proposal was successfully falsified (rejected).
         """
+        # Always run hallucination detector first to validate raw market state
+        hallucination_res = self.hallucination_detector.verify(action, context)
+        if not hallucination_res.is_valid:
+            return FalsificationReport(
+                is_falsified=True,
+                rejection_reason=hallucination_res.rejection_reason,
+                verifier_outcomes={
+                    "CausalVerifier": True,
+                    "LiquidityVerifier": True,
+                    "RegimeVerifier": True,
+                    "RiskVerifier": True,
+                    "HallucinationDetector": False
+                },
+                worst_case_scenario="Invalid market pricing/hallucination"
+            )
+
         if action in [TradeAction.HOLD, TradeAction.NO_TRADE]:
             return FalsificationReport(
                 is_falsified=False,
@@ -1324,11 +1408,18 @@ class FalsificationGate:
                 worst_case_scenario=None,
             )
 
+        causal_res = self.causal_verifier.verify(action, context)
+        liquidity_res = self.liquidity_verifier.verify(action, context)
+        regime_res = self.regime_verifier.verify(action, context)
+        risk_res = self.risk_verifier.verify(action, context)
+        hallucination_res = self.hallucination_detector.verify(action, context)
+
         verifier_outcomes = {
-            "CausalVerifier": self._run_causal_verifier(action, context),
-            "LiquidityVerifier": self._run_liquidity_verifier(action, context),
-            "RegimeVerifier": self._run_regime_verifier(action, context),
-            "RiskVerifier": self._run_risk_verifier(action, context),
+            "CausalVerifier": causal_res.is_valid,
+            "LiquidityVerifier": liquidity_res.is_valid,
+            "RegimeVerifier": regime_res.is_valid,
+            "RiskVerifier": risk_res.is_valid,
+            "HallucinationDetector": hallucination_res.is_valid,
         }
 
         # Counterexample generator constructs hypothetical hostile regimes
@@ -1337,8 +1428,14 @@ class FalsificationGate:
         is_falsified = not all(verifier_outcomes.values())
         rejection_reason = None
         if is_falsified:
-            failed_verifiers = [name for name, passed in verifier_outcomes.items() if not passed]
-            rejection_reason = f"Falsified by: {', '.join(failed_verifiers)}. Hypothetical tail threat: {worst_case}"
+            failed_reasons = []
+            if not causal_res.is_valid: failed_reasons.append(causal_res.rejection_reason)
+            if not liquidity_res.is_valid: failed_reasons.append(liquidity_res.rejection_reason)
+            if not regime_res.is_valid: failed_reasons.append(regime_res.rejection_reason)
+            if not risk_res.is_valid: failed_reasons.append(risk_res.rejection_reason)
+            if not hallucination_res.is_valid: failed_reasons.append(hallucination_res.rejection_reason)
+
+            rejection_reason = " | ".join(filter(None, failed_reasons))
 
         return FalsificationReport(
             is_falsified=is_falsified,
@@ -1676,6 +1773,37 @@ class HeadAI:
             else:
                 winning_score = 0.5  # Neutral default for HOLD or un-vetoed neutral pattern
 
+            # Prior probability based on trend alignment
+            aligned = False
+            if context.htf_trend == "UP" and winning_action in [TradeAction.BUY, TradeAction.STRONG_BUY]:
+                aligned = True
+            elif context.htf_trend == "DOWN" and winning_action in [TradeAction.SELL, TradeAction.STRONG_SELL]:
+                aligned = True
+
+            prior_prob = 0.55 if aligned else 0.45
+
+            evidence_likelihoods = []
+            for arg in active_arguments:
+                # Exponent is the weight or expected contribution
+                role_sc = scorecards.get(arg.agent_role) if scorecards else None
+                exponent = role_sc.expected_contribution if role_sc else self.weights.get(arg.agent_role, 0.33)
+
+                # Retrieve confidence calibrated or fallback
+                confidence = getattr(arg, 'confidence', 0.5)
+                # Apply Bayesian calibration if calibrator is active
+                if self.calibrator:
+                    cal_result = self.calibrator.calibrate(
+                        confidence,
+                        method=CalibrationMethod.BAYESIAN,
+                        prediction_type=arg.agent_role.value if hasattr(arg.agent_role, 'value') else str(arg.agent_role)
+                    )
+                    confidence = cal_result.calibrated_confidence
+
+                endorsed = (arg.action == winning_action)
+                evidence_likelihoods.append((endorsed, confidence, exponent))
+
+            winning_score = self.calculate_bayesian_posterior(prior_prob, evidence_likelihoods)
+
             # Check for risk veto
             risk_args = [a for a in active_arguments if a.agent_role == AgentRole.RISK_SENTINEL]
             if risk_args:
@@ -1849,6 +1977,7 @@ class HeadAI:
         except Exception as e:
             logger.error(f"Error in HeadAI synthesize_decision: {e}")
             raise
+
 
     def _calculate_position_size(
         self, action: TradeAction, score: float, consensus: float, context: MarketContext
