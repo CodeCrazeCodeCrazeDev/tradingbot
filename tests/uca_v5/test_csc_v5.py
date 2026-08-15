@@ -71,6 +71,12 @@ async def test_csc_hasp_intervention(monkeypatch):
     finally:
         await decision_bus.stop()
 
+class MockDecisionBus:
+    async def propose_action(self, action):
+        from trading_bot.core.unified_event_bus import ActionStatus
+        action.status = ActionStatus.EXECUTED
+        action._completed_event.set()
+
 @pytest.mark.asyncio
 async def test_csc_pivot_loop():
     # Setup mocks
@@ -89,7 +95,7 @@ async def test_csc_pivot_loop():
     execution_planner = MagicMock()
     evolution_gate = MagicMock()
 
-    csc = CognitiveSystemController(world_model, hms, shield)
+    csc = CognitiveSystemController(world_model, hms, shield, decision_bus=mock_bus)
 
     obs = {"volatility": 0.1, "features": [0.1] * 16}
 

@@ -1,5 +1,6 @@
 """
 Provides backward and testing compatibility for MT5-connected modules.
+Provides direct integration or fallback mocks for MT5 and brokers.
 """
 
 from typing import Any, Optional, Dict, List
@@ -7,6 +8,7 @@ import logging
 from dataclasses import dataclass
 
 logger = logging.getLogger("AlphaAlgo.MT5Interface")
+
 
 @dataclass
 class AccountInfo:
@@ -17,6 +19,7 @@ class AccountInfo:
     margin_level: float = 1000.0
     profit: float = 0.0
 
+
 @dataclass
 class SymbolInfo:
     point: float = 0.00001
@@ -25,6 +28,7 @@ class SymbolInfo:
     volume_min: float = 0.01
     volume_max: float = 10.0
     volume_step: float = 0.01
+
 
 class MT5Interface:
     """Interacts with MetaTrader 5 terminal or provides standard mock wrappers when offline."""
