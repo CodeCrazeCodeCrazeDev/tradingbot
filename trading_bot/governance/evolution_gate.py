@@ -48,7 +48,8 @@ class EvolutionGate:
     RSEA: Recursive Self-Evolving Agents Gate (arXiv:2606.28374).
     Enforces the 'Monotone-Safe' update rule using the CL-Bench Gain Metric.
     Integrates EKSFT for selective strategy internalization and automated red-teaming.
-    """    def __init__(self, validation_engine: Any, threshold: float = 0.05, **kwargs):
+    """
+    def __init__(self, validation_engine: Any, threshold: float = 0.05, **kwargs):
         self.validation_engine = validation_engine
         self.evolution_history = []
         self.threshold = kwargs.get("improvement_threshold", kwargs.get("gain_threshold", threshold))
@@ -57,57 +58,47 @@ class EvolutionGate:
         self.tau_kl = 0.5 # KL Divergence threshold
         logger.info(f"EvolutionGate V6: Monotone-Safe enabled (threshold={self.threshold})")
 
-    def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> AwaitableBool:
-        """
-        Wrapper supporting both synchronous and awaited boolean returns.
-        """
-        res = self._validate_evolution_internal(candidate_id, candidate_config, baseline_config)
-        return AwaitableBool(res)
-
-    def _validate_evolution_internal(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
-        """
-        Wrapper supporting both synchronous and awaited boolean returns.
-        """
-        res = self._validate_evolution_internal(candidate_id, candidate_config, baseline_config)
-        return AwaitableBool(res)
-
-        # Dual synchronous / asynchronous compatibility based on caller context
-        import sys
+    def _get_metric(self, obj: Any, key: str, default: Any = None) -> Any:
+        if isinstance(obj, (int, float)):
+            if key in ("reward", "perf"):
+                return float(obj)
+            return default
+        if isinstance(obj, dict):
+            if key == "perf" and "perf" not in obj and "reward" in obj:
+                return obj["reward"]
+            return obj.get(key, default)
+        if hasattr(obj, key):
+            return getattr(obj, key)
         try:
-            frame = sys._getframe(1)
-            filename = frame.f_code.co_filename.lower()
-            if any(x in filename for x in ["test_evolution_gate_v5", "test_uca_v5_scientific_benchmarks", "test_evolution_gate_v6"]):
-                return AwaitableBool(result)
-        except Exception:
-            pass
-        return result
+            return obj[key]
+        except (KeyError, AttributeError, TypeError):
+            return default
 
     def _parse_metrics(self, raw: Any) -> EvolutionMetrics:
+        if isinstance(raw, EvolutionMetrics):
+            return raw
         if isinstance(raw, (int, float)):
             return EvolutionMetrics(reward=float(raw), calibration=0.9, robustness=0.8, latency=10.0, safety_score=1.0)
-
-        if not isinstance(raw, dict):
-            return EvolutionMetrics(reward=0.5, calibration=0.9, robustness=0.8, latency=10.0, safety_score=1.0)
-
-        # Map possible alternative names
-        reward = raw.get("reward", raw.get("perf", 0.5))
-        calibration = raw.get("calibration", 1.0 - raw.get("calibration_error", 0.05))
-        robustness = raw.get("robustness", 0.8)
-        latency = raw.get("latency", raw.get("decision_latency", 10.0))
-        safety_score = raw.get("safety_score", 1.0)
-
-        m = EvolutionMetrics(
-            reward=reward,
-            calibration=calibration,
-            robustness=robustness,
-            latency=latency,
-            safety_score=safety_score
-        )
-        # Store arbitrary raw fields for custom validation check
-        for k, v in raw.items():
-            if not hasattr(m, k):
-                setattr(m, k, v)
-        return m
+        if isinstance(raw, dict):
+            reward = raw.get("reward", raw.get("perf", raw.get("sharpe_ratio", 0.5)))
+            calibration = raw.get("calibration", 1.0 - raw.get("calibration_error", raw.get("ece", 0.05)))
+            robustness = raw.get("robustness", 0.8)
+            latency = raw.get("latency", raw.get("decision_latency", 10.0))
+            safety_score = raw.get("safety_score", 1.0)
+            m = EvolutionMetrics(
+                reward=float(reward),
+                calibration=float(calibration),
+                robustness=float(robustness),
+                latency=float(latency),
+                safety_score=float(safety_score),
+                drawdown=float(raw.get("drawdown", 0.0)),
+                calibration_error=float(raw.get("calibration_error", 1.0 - calibration))
+            )
+            for k, v in raw.items():
+                if not hasattr(m, k):
+                    setattr(m, k, v)
+            return m
+        return EvolutionMetrics(reward=0.5, calibration=0.9, robustness=0.8, latency=10.0, safety_score=1.0)
 
     def validate_evolution(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
         """RSEA Gate: Evaluates candidate self-evolution against baseline."""
@@ -122,7 +113,7 @@ class EvolutionGate:
         logic_shard = candidate_config.get("logic_shard", {}) or {}
         if logic_shard.get("halt", False) and logic_shard.get("increase_exposure", False):
             logger.error(f"EvolutionGate: REJECTED - Candidate {candidate_id} violated formal invariant (halted but increasing exposure)")
-            return AwaitableBool(False)
+            return False
 
         # 2. Adversarial Red-Teaming
         code_diff = candidate_config.get("code_diff", "")
@@ -131,9 +122,9 @@ class EvolutionGate:
             red_team_report = self.run_red_teaming_session(candidate_config, scenarios)
             if red_team_report["status"] == "failed":
                 logger.error(f"EvolutionGate: REJECTED - Red-teaming failed: {red_team_report['failures']}")
-                return AwaitableBool(False)
+                return False
 
-        # 3. Run baseline on validation set (Stateless Baseline)
+        # 3. Run baseline on validation set
         baseline_raw = baseline_config
         if self.validation_engine and hasattr(self.validation_engine, "run_benchmark"):
             if isinstance(baseline_config, dict) and "reward" not in baseline_config and "perf" not in baseline_config:
@@ -148,46 +139,18 @@ class EvolutionGate:
                 except Exception:
                     pass
 
-        baseline = parse_metrics(baseline_raw)
+        baseline = self._parse_metrics(baseline_raw)
 
         # 4. Run candidate benchmark
         candidate_mode = candidate_config.get("mode", "stateful")
-        try:
-            candidate = self.validation_engine.run_benchmark(candidate_config, mode=candidate_mode)
-        except TypeError:
-            # Fallback if validation engine doesn't accept mode keyword
-            candidate_raw = self.validation_engine.run_benchmark(candidate_config)
+        candidate_raw = candidate_config
+        if self.validation_engine and hasattr(self.validation_engine, "run_benchmark"):
+            try:
+                candidate_raw = self.validation_engine.run_benchmark(candidate_config, mode=candidate_mode)
+            except TypeError:
+                candidate_raw = self.validation_engine.run_benchmark(candidate_config)
 
-        try:
-            candidate_raw = self.validation_engine.run_benchmark(candidate_config, mode="stateful")
-        except TypeError:
-            candidate_raw = self.validation_engine.run_benchmark(candidate_config)
-        if isinstance(candidate_raw, (int, float)):
-            candidate = EvolutionMetrics(
-                reward=candidate_raw,
-                calibration=0.9,
-                robustness=0.8,
-                latency=10.0,
-                safety_score=1.0
-            )
-        elif isinstance(candidate_raw, dict):
-            reward = candidate_raw.get("reward", candidate_raw.get("perf", candidate_raw.get("sharpe_ratio", 0.5)))
-            ece = candidate_raw.get("ece", 1.0 - candidate_raw.get("calibration", 0.95))
-            calibration = candidate_raw.get("calibration", 1.0 - ece)
-            robustness = candidate_raw.get("robustness", 0.8)
-            latency = candidate_raw.get("latency", 10.0)
-            safety_score = candidate_raw.get("safety_score", 1.0)
-            candidate = EvolutionMetrics(
-                reward=reward,
-                calibration=calibration,
-                robustness=robustness,
-                latency=latency,
-                safety_score=safety_score,
-                drawdown=candidate_raw.get("drawdown", 0.0),
-                calibration_error=candidate_raw.get("calibration_error", 1.0 - calibration)
-            )
-        else:
-            candidate = candidate_raw
+        candidate = self._parse_metrics(candidate_raw)
 
         # 5. Calculate gain and evaluate monotonicity
         cand_perf = float(self._get_metric(candidate, "perf", 0.5))
@@ -197,29 +160,16 @@ class EvolutionGate:
         cand_latency = float(self._get_metric(candidate, "latency", 10.0))
         base_latency = float(self._get_metric(baseline, "latency", 10.0))
 
-        # 5. Monotone-Safe Check: Gain Metric (arXiv:2606.05661 CL-Bench)
-        gain = candidate.reward - baseline.reward
+        cand_safety = float(self._get_metric(candidate, "safety_score", 1.0))
+        base_safety = float(self._get_metric(baseline, "safety_score", 1.0))
 
-        # Check all protected metrics against tolerances
-        # 1. Latency (10% tolerance: max 1.1x baseline)
-        if candidate.latency > baseline.latency * 1.1:
-            logger.warning(f"EvolutionGate: REJECTED - Latency regressed: {candidate.latency} > {baseline.latency * 1.1}")
-            return False
+        cand_calibration = float(self._get_metric(candidate, "calibration", 0.9))
+        base_calibration = float(self._get_metric(baseline, "calibration", 0.9))
 
-        # Verify no protected metrics are violated and at least one is significantly improved
+        cand_robustness = float(self._get_metric(candidate, "robustness", 0.8))
+        base_robustness = float(self._get_metric(baseline, "robustness", 0.8))
+
         is_significant = (gain >= self.threshold)
-        no_regressions = (
-            _get_metric(candidate, "latency", 10.0) <= _get_metric(baseline, "latency", 10.0) * 1.10 and
-            _get_metric(candidate, "drawdown", 0.0) <= _get_metric(baseline, "drawdown", 0.0) * 1.10 and
-            _get_metric(candidate, "calibration_error", 0.0) <= _get_metric(baseline, "calibration_error", 0.0) * 1.10 and
-            _get_metric(candidate, "calibration", 0.9) >= _get_metric(baseline, "calibration", 0.9) * 0.90 and
-            _get_metric(candidate, "robustness", 0.8) >= _get_metric(baseline, "robustness", 0.8) * 0.90 and
-            _get_metric(candidate, "safety_score", 1.0) >= _get_metric(baseline, "safety_score", 1.0) and
-            _get_metric(candidate, "hms_retrieval_quality", 1.0) >= _get_metric(baseline, "hms_retrieval_quality", 1.0) * 0.90 and
-            _get_metric(candidate, "deterministic_replay_success", 1.0) >= _get_metric(baseline, "deterministic_replay_success", 1.0)
-        )
-
-        is_significant = gain >= self.threshold
         no_regressions = (
             cand_safety >= base_safety and
             cand_latency <= base_latency * 1.2 and
@@ -227,9 +177,8 @@ class EvolutionGate:
             cand_robustness >= base_robustness - 0.05
         )
 
-        # Custom metrics check (e.g. drawdown)
-        cand_drawdown = self._get_metric(candidate, "drawdown")
-        base_drawdown = self._get_metric(baseline, "drawdown")
+        cand_drawdown = self._get_metric(candidate, "drawdown", None)
+        base_drawdown = self._get_metric(baseline, "drawdown", None)
         if cand_drawdown is not None and base_drawdown is not None:
             if cand_drawdown > base_drawdown + 0.01:
                 no_regressions = False
@@ -248,20 +197,18 @@ class EvolutionGate:
                 },
                 "status": "PROMOTED"
             })
-            return AwaitableBool(True)
+            return True
         else:
             reasons = []
             if not is_significant:
                 reasons.append(f"insignificant gain {gain:.4f} < {self.threshold}")
-            calibration_drift = abs(candidate.calibration - baseline.calibration)
+            calibration_drift = abs(cand_calibration - base_calibration)
             if calibration_drift > 0.05:
                 reasons.append(f"calibration drift {calibration_drift:.4f} > 0.05")
-            cand_lat = _get_metric(candidate, "latency", 10.0)
-            base_lat = _get_metric(baseline, "latency", 10.0)
-            if cand_lat > base_lat * 1.2:
-                reasons.append(f"latency regression {cand_lat} > {base_lat * 1.2}")
+            if cand_latency > base_latency * 1.2:
+                reasons.append(f"latency regression {cand_latency} > {base_latency * 1.2}")
             logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED due to: {', '.join(reasons)}")
-            return AwaitableBool(False)
+            return False
 
     def _check_eksft_compliance(self, config: Dict[str, Any]) -> bool:
         """Prevents distribution sharpening and entropy collapse."""
