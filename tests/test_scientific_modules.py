@@ -159,7 +159,7 @@ async def test_rsea_multi_metric_protected_gate():
         "safety_score": 0.9,
         "training_metadata": {}
     }
-    assert await gate.validate_evolution("CB_Safety", candidate_bad_safety, baseline) is False
+    assert gate.validate_evolution("CB_Safety", candidate_bad_safety, baseline) is False
 
 @pytest.mark.asyncio
 async def test_csc_safety_and_self_improvement():

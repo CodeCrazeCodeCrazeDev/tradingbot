@@ -45,26 +45,17 @@ class SkillRouteOutcome:
     reason: Optional[str] = None
     version: Optional[str] = None
 
-    def __getitem__(self, item):
-        if item in ("result", "pf_result"):
-            return {
-                "action": self.action or "override_to_hold",
-                "reason": self.reason,
-                "pf_version": self.version
-            }
-        try:
-            val = getattr(self, item)
-            if val is None and item == "status":
-                return self.status
-            return val
-        except AttributeError:
-            raise KeyError(item)
+    @property
+    def pf_result(self) -> Dict[str, Any]:
+        return {
+            "action": self.action or "override_to_hold",
+            "reason": self.reason,
+            "pf_version": self.version
+        }
 
-    def get(self, item, default=None):
-        try:
-            return self[item]
-        except KeyError:
-            return default
+    @property
+    def result(self) -> Dict[str, Any]:
+        return self.pf_result
 
     def __getattribute__(self, name):
         val = super().__getattribute__(name)
@@ -74,13 +65,13 @@ class SkillRouteOutcome:
 
     def __getitem__(self, key: str) -> Any:
         if key in ("pf_result", "result"):
-            return {"action": self.action or "override_to_hold", "reason": self.reason, "pf_version": self.version}
-        val = getattr(self, key, None)
-        if key == "adapter_id" and val:
-            return AdapterChameleonStr(val)
-        if val is None:
-            raise KeyError(key)
-        return val
+            return self.pf_result
+        if hasattr(self, key):
+            val = getattr(self, key)
+            if key == "adapter_id" and val:
+                return AdapterChameleonStr(val)
+            return val
+        raise KeyError(key)
 
     def get(self, key: str, default: Any = None) -> Any:
         try:
@@ -89,33 +80,13 @@ class SkillRouteOutcome:
             return default
 
     def keys(self) -> List[str]:
-        return ["status", "action", "adapter_id", "reason", "version", "pf_result"]
+        return ["status", "action", "adapter_id", "reason", "version", "pf_result", "result"]
 
     def __iter__(self):
         return iter(self.keys())
 
-    def get(self, key: str, default: Any = None) -> Any:
-        return getattr(self, key, default)
-
-    def __getitem__(self, key: str) -> Any:
-        if hasattr(self, key):
-            return getattr(self, key)
-        raise KeyError(key)
-
     def __contains__(self, key: str) -> bool:
-        return hasattr(self, key)
-
-    def __getitem__(self, key: str) -> Any:
-        return getattr(self, key)
-
-    def get(self, key: str, default: Any = None) -> Any:
-        try:
-            return getattr(self, key)
-        except AttributeError:
-            return default
-
-    def __contains__(self, key: str) -> bool:
-        return hasattr(self, key)
+        return hasattr(self, key) or key in ("pf_result", "result")
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -124,7 +95,7 @@ class SkillRouteOutcome:
             "adapter_id": self.adapter_id,
             "reason": self.reason,
             "version": self.version,
-            "pf_result": {"action": self.action or "override_to_hold", "reason": self.reason}
+            "pf_result": self.pf_result
         }
 
 @dataclass
@@ -166,10 +137,10 @@ class SkillRouter:
         logger.info("SkillRouter singleton reset")
 
     def __init__(self):
-        if self._initialized:
+        if getattr(self, "_initialized", False):
             return
         self._registry: Dict[str, List[SkillArtifact]] = {}
-        self._specialists: Dict[str, List[SkillDomain]] = {}
+        self._specialists: Dict[str, Any] = {}
         self._initialize_default_skills()
         self._initialized = True
         logger.info("SkillRouter V6: Initialized with Versioning and Conflict Resolution")
@@ -194,24 +165,6 @@ class SkillRouter:
             adapter_id="lora_hedging_v2",
             capabilities={"hedging", "risk_reduction"},
             metadata={"archetype": "risk_averse"}
-        ))
-
-    @classmethod
-    def reset(cls):
-        """Reset the singleton instance for testing purposes."""
-        with cls._lock:
-            if cls._instance is not None:
-                cls._instance._initialized = False
-                cls._instance = None
-        logger.info("SkillRouter singleton reset")
-
-    def _setup_default_skills(self):
-        """Setup some default V5 skills."""
-        self.register_skill(SkillArtifact(
-            skill_id="high_vol_guardrail",
-            skill_type=SkillType.HASP_PROGRAM,
-            executable=self._pf_volatility_guardrail,
-            metadata={"description": "Volatility safety check"}
         ))
 
     def register_skill(self, artifact: SkillArtifact):
@@ -267,12 +220,12 @@ class SkillRouter:
                         version=res.get("pf_version")
                     )
 
-        return {
-            "status": "standard_reasoning",
-            "action": "standard",
-            "adapter_id": None,
-            "reason": "No high-priority skill triggered."
-        }
+        return SkillRouteOutcome(
+            status="standard_reasoning",
+            action="standard",
+            adapter_id=None,
+            reason="No high-priority skill triggered."
+        )
 
     def get_skill(self, skill_id: str, version: Optional[str] = None) -> Optional[SkillArtifact]:
         versions = self._registry.get(skill_id)
