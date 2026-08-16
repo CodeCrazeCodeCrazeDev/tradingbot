@@ -84,7 +84,7 @@ async def test_csc_pivot_loop():
     shield = MagicMock()
     shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
 
-    csc = CognitiveSystemController(world_model, hms, shield, decision_bus=mock_bus)
+    csc = CognitiveSystemController(world_model, hms, shield, decision_bus=MockDecisionBus())
 
     obs = {"volatility": 0.1, "features": [0.1] * 16}
 
