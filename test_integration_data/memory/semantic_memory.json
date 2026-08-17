@@ -1,9 +1,9 @@
 {
-  "agent_react_reasoner_1_19eee20c": {
-    "memory_id": "6485335e-07b8-45cf-86b1-33fc61b6ceb4",
+  "agent_react_reasoner_1_6d93c790": {
+    "memory_id": "3db17c67-a711-4bcd-a666-a78bc9cca30d",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "react_reasoner_1_19eee20c",
+      "agent_id": "react_reasoner_1_6d93c790",
       "name": "MainReasoner",
       "archetype": "react_reasoner",
       "role": "planner",
@@ -12,25 +12,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-08T01:13:21.252024"
+      "created_at": "2026-07-05T10:00:17.408602"
     },
     "metadata": {
-      "key": "agent_react_reasoner_1_e3779727",
+      "key": "agent_react_reasoner_1_6d93c790",
       "related": [
         "dynamic_agents",
         "react_reasoner"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-07T01:12:01.968471",
+    "timestamp": "2026-07-05T10:00:17.408975",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_constitutional_guardian_1_5d3f36b3": {
-    "memory_id": "613d588b-49c3-4a76-b054-06cd00e8d3ca",
+  "agent_constitutional_guardian_1_4c55e296": {
+    "memory_id": "47f7e4a7-6f16-45db-98f9-c8952f9fa586",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "constitutional_guardian_1_5d3f36b3",
+      "agent_id": "constitutional_guardian_1_4c55e296",
       "name": "SafetyGuardian",
       "archetype": "constitutional_guardian",
       "role": "safety",
@@ -39,25 +39,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-07T01:12:01.968597"
+      "created_at": "2026-07-05T10:00:17.409149"
     },
     "metadata": {
-      "key": "agent_constitutional_guardian_1_5d3f36b3",
+      "key": "agent_constitutional_guardian_1_4c55e296",
       "related": [
         "dynamic_agents",
         "constitutional_guardian"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-07T01:12:01.968764",
+    "timestamp": "2026-07-05T10:00:17.409365",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_1_cf5f3f4d": {
-    "memory_id": "2eb66ab2-d8ce-4410-8d3f-0fde09cc7ce7",
+  "agent_analyst_1_8214efe7": {
+    "memory_id": "800b0c48-9a66-4dea-b31f-a447330a455a",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_1_cf5f3f4d",
+      "agent_id": "analyst_1_8214efe7",
       "name": "MarketAnalyst",
       "archetype": "analyst",
       "role": "planner",
@@ -66,25 +66,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-07T01:12:01.968857"
+      "created_at": "2026-07-05T10:00:17.409517"
     },
     "metadata": {
-      "key": "agent_analyst_1_cf5f3f4d",
+      "key": "agent_analyst_1_8214efe7",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-07T01:12:01.969072",
+    "timestamp": "2026-07-05T10:00:17.409848",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_monitor_1_9a932603": {
-    "memory_id": "82082ee7-5691-4aa7-9547-4b023558f41b",
+  "agent_monitor_1_d996dbf1": {
+    "memory_id": "0050b178-0220-4de5-9a70-0330a6f91586",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "monitor_1_9a932603",
+      "agent_id": "monitor_1_d996dbf1",
       "name": "SystemMonitor",
       "archetype": "monitor",
       "role": "monitor",
@@ -93,25 +93,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-07T01:12:01.969167"
+      "created_at": "2026-07-05T10:00:17.410011"
     },
     "metadata": {
-      "key": "agent_monitor_1_9a932603",
+      "key": "agent_monitor_1_d996dbf1",
       "related": [
         "dynamic_agents",
         "monitor"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-07T01:12:01.969309",
+    "timestamp": "2026-07-05T10:00:17.410205",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_2_27cddfc6": {
-    "memory_id": "c365501a-f412-43dc-ba17-336de716a96c",
+  "agent_analyst_2_4fceef8f": {
+    "memory_id": "8dd5fae3-5b06-4b25-a918-966214df199c",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_2_27cddfc6",
+      "agent_id": "analyst_2_4fceef8f",
       "name": "Request: Analyze market and provide a c... - Data Collection_Agent",
       "archetype": "analyst",
       "role": "planner",
@@ -120,25 +120,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-07T01:12:01.971295"
+      "created_at": "2026-07-05T10:00:17.412192"
     },
     "metadata": {
-      "key": "agent_analyst_2_27cddfc6",
+      "key": "agent_analyst_2_4fceef8f",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-07T01:12:01.971491",
+    "timestamp": "2026-07-05T10:00:17.412396",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_3_fa7d0c48": {
-    "memory_id": "b7b48174-8dac-470a-8fab-419575aa027f",
+  "agent_analyst_3_fe54e3b5": {
+    "memory_id": "0185c568-e8e7-4c33-9600-5ba2db77cc8b",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_3_fa7d0c48",
+      "agent_id": "analyst_3_fe54e3b5",
       "name": "Request: Analyze market and provide a c... - Reporting_Agent",
       "archetype": "analyst",
       "role": "planner",
@@ -147,46 +147,46 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-07T01:12:01.973014"
+      "created_at": "2026-07-05T10:00:17.414417"
     },
     "metadata": {
-      "key": "agent_analyst_3_fa7d0c48",
+      "key": "agent_analyst_3_fe54e3b5",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-07T01:12:01.973179",
+    "timestamp": "2026-07-05T10:00:17.414616",
     "access_count": 0,
     "last_accessed": null
   },
   "coordination_pattern_hierarchical": {
-    "memory_id": "7160e3be-dadd-4b59-b89e-9dac51f15189",
+    "memory_id": "08321689-0098-4d4b-b5e8-4e25eded3eda",
     "memory_type": "semantic",
     "content": {
       "total_uses": 1,
       "successes": 1,
-      "avg_duration": 0.001618,
+      "avg_duration": 0.002296,
       "avg_efficiency": 1.0,
-      "avg_quality": 0.8
+      "avg_quality": 0.8000000000000002
     },
     "metadata": {
       "key": "coordination_pattern_hierarchical",
       "related": [
-        "task_type_<Task pending name='Task-1' coro=<test_integrated_system_flow() running at /app/tests/core_agent_system/test_integration.py:19> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>"
+        "task_type_<Task pending name='Task-11' coro=<test_integrated_system_flow() running at /app/tests/core_agent_system/test_integration.py:19> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-04T06:47:14.118894",
+    "timestamp": "2026-07-07T07:56:52.735089",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_react_reasoner_1_0bcf9afa": {
-    "memory_id": "f808846d-310e-4afb-b22c-aa983f1a3388",
+  "agent_react_reasoner_1_3e953e1e": {
+    "memory_id": "daf7f831-6dc6-4154-a933-cbf9bd8b508d",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "react_reasoner_1_0bcf9afa",
+      "agent_id": "react_reasoner_1_3e953e1e",
       "name": "MainReasoner",
       "archetype": "react_reasoner",
       "role": "planner",
@@ -195,25 +195,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-07T01:13:11.304688"
+      "created_at": "2026-07-05T10:06:45.767887"
     },
     "metadata": {
-      "key": "agent_react_reasoner_1_0bcf9afa",
+      "key": "agent_react_reasoner_1_3e953e1e",
       "related": [
         "dynamic_agents",
         "react_reasoner"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-07T01:13:11.306103",
+    "timestamp": "2026-07-05T10:06:45.768155",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_constitutional_guardian_1_66eea0dd": {
-    "memory_id": "e68fded4-e1db-4628-bc30-3717d392a6fa",
+  "agent_constitutional_guardian_1_5f3a411a": {
+    "memory_id": "b15c35e7-7160-43ed-9140-d3cd8820c1a2",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "constitutional_guardian_1_66eea0dd",
+      "agent_id": "constitutional_guardian_1_5f3a411a",
       "name": "SafetyGuardian",
       "archetype": "constitutional_guardian",
       "role": "safety",
@@ -222,25 +222,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-07T01:13:11.306348"
+      "created_at": "2026-07-05T10:06:45.768314"
     },
     "metadata": {
-      "key": "agent_constitutional_guardian_1_66eea0dd",
+      "key": "agent_constitutional_guardian_1_5f3a411a",
       "related": [
         "dynamic_agents",
         "constitutional_guardian"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-07T01:13:11.306574",
+    "timestamp": "2026-07-05T10:06:45.768509",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_1_2c3056ef": {
-    "memory_id": "41624367-35fc-4aa6-84f1-40e2462ba5c7",
+  "agent_analyst_1_15840ca9": {
+    "memory_id": "08e44ce8-8e76-435f-86f6-2f7a2d8c2860",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_1_2c3056ef",
+      "agent_id": "analyst_1_15840ca9",
       "name": "MarketAnalyst",
       "archetype": "analyst",
       "role": "planner",
@@ -249,25 +249,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-07T01:13:11.306739"
+      "created_at": "2026-07-05T10:06:45.768715"
     },
     "metadata": {
-      "key": "agent_analyst_1_2c3056ef",
+      "key": "agent_analyst_1_15840ca9",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-07T01:13:11.306919",
+    "timestamp": "2026-07-05T10:06:45.768932",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_monitor_1_0c851fda": {
-    "memory_id": "e2d4fcef-e540-4270-bdb8-078439399c42",
+  "agent_monitor_1_442504d0": {
+    "memory_id": "ef972c92-19dd-40b8-9e5b-c5bbb42c6d5f",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "monitor_1_0c851fda",
+      "agent_id": "monitor_1_442504d0",
       "name": "SystemMonitor",
       "archetype": "monitor",
       "role": "monitor",
@@ -276,79 +276,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-07T01:13:11.307065"
+      "created_at": "2026-07-05T10:06:45.769079"
     },
     "metadata": {
-      "key": "agent_monitor_1_0c851fda",
+      "key": "agent_monitor_1_442504d0",
       "related": [
         "dynamic_agents",
         "monitor"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-07T01:13:11.307310",
+    "timestamp": "2026-07-05T10:06:45.769262",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_2_ab586503": {
-    "memory_id": "9f51ae08-bd73-4cb7-bf8a-c79a42263488",
+  "agent_react_reasoner_1_2487c180": {
+    "memory_id": "15a79de6-775f-477f-8bfd-c530be487726",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_2_ab586503",
-      "name": "Request: Analyze market and provide a c... - Data Collection_Agent",
-      "archetype": "analyst",
-      "role": "planner",
-      "capabilities": [],
-      "status": "active",
-      "current_tasks": 0,
-      "tasks_completed": 0,
-      "success_rate": 1.0,
-      "created_at": "2026-06-07T01:13:11.309784"
-    },
-    "metadata": {
-      "key": "agent_analyst_2_ab586503",
-      "related": [
-        "dynamic_agents",
-        "analyst"
-      ]
-    },
-    "importance": 0.5,
-    "timestamp": "2026-06-07T01:13:11.310074",
-    "access_count": 0,
-    "last_accessed": null
-  },
-  "agent_analyst_3_46d722e1": {
-    "memory_id": "9ad766ce-540c-4f02-976f-fa8aab4b45e0",
-    "memory_type": "semantic",
-    "content": {
-      "agent_id": "analyst_3_46d722e1",
-      "name": "Request: Analyze market and provide a c... - Reporting_Agent",
-      "archetype": "analyst",
-      "role": "planner",
-      "capabilities": [],
-      "status": "active",
-      "current_tasks": 0,
-      "tasks_completed": 0,
-      "success_rate": 1.0,
-      "created_at": "2026-06-07T01:13:11.311895"
-    },
-    "metadata": {
-      "key": "agent_analyst_3_46d722e1",
-      "related": [
-        "dynamic_agents",
-        "analyst"
-      ]
-    },
-    "importance": 0.5,
-    "timestamp": "2026-06-07T01:13:11.312250",
-    "access_count": 0,
-    "last_accessed": null
-  },
-  "agent_react_reasoner_1_c67dc993": {
-    "memory_id": "f282b519-30c7-4114-8f83-515ff5a17611",
-    "memory_type": "semantic",
-    "content": {
-      "agent_id": "react_reasoner_1_c67dc993",
+      "agent_id": "react_reasoner_1_2487c180",
       "name": "MainReasoner",
       "archetype": "react_reasoner",
       "role": "planner",
@@ -357,25 +303,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-29T17:47:05.845323"
+      "created_at": "2026-07-05T10:10:31.667018"
     },
     "metadata": {
-      "key": "agent_react_reasoner_1_c67dc993",
+      "key": "agent_react_reasoner_1_2487c180",
       "related": [
         "dynamic_agents",
         "react_reasoner"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-29T17:47:05.845573",
+    "timestamp": "2026-07-05T10:10:31.667351",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_constitutional_guardian_1_329407dd": {
-    "memory_id": "7cec0774-855e-4436-84d3-9a78c5b5d657",
+  "agent_constitutional_guardian_1_4b63066c": {
+    "memory_id": "26ffcc36-6f45-4a65-a00a-1b169350c0da",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "constitutional_guardian_1_329407dd",
+      "agent_id": "constitutional_guardian_1_4b63066c",
       "name": "SafetyGuardian",
       "archetype": "constitutional_guardian",
       "role": "safety",
@@ -384,25 +330,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-29T17:47:05.845676"
+      "created_at": "2026-07-05T10:10:31.667531"
     },
     "metadata": {
-      "key": "agent_constitutional_guardian_1_329407dd",
+      "key": "agent_constitutional_guardian_1_4b63066c",
       "related": [
         "dynamic_agents",
         "constitutional_guardian"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-29T17:47:05.845900",
+    "timestamp": "2026-07-05T10:10:31.667738",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_1_176d8eb3": {
-    "memory_id": "1a0990fd-4fa5-4e27-962e-5a444ad19dc1",
+  "agent_analyst_1_867996c3": {
+    "memory_id": "80a99767-e6c9-4489-8fce-557fd73de13c",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_1_176d8eb3",
+      "agent_id": "analyst_1_867996c3",
       "name": "MarketAnalyst",
       "archetype": "analyst",
       "role": "planner",
@@ -411,25 +357,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-29T17:47:05.845995"
+      "created_at": "2026-07-05T10:10:31.667884"
     },
     "metadata": {
-      "key": "agent_analyst_1_176d8eb3",
+      "key": "agent_analyst_1_867996c3",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-29T17:47:05.846136",
+    "timestamp": "2026-07-05T10:10:31.668116",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_monitor_1_5f1d841d": {
-    "memory_id": "05089a0a-d42e-453c-abb4-8f7767dd4579",
+  "agent_monitor_1_79c34c15": {
+    "memory_id": "4ff770e4-e037-44b6-b7d5-e858b82b4ef9",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "monitor_1_5f1d841d",
+      "agent_id": "monitor_1_79c34c15",
       "name": "SystemMonitor",
       "archetype": "monitor",
       "role": "monitor",
@@ -438,25 +384,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-29T17:47:05.846222"
+      "created_at": "2026-07-05T10:10:31.668290"
     },
     "metadata": {
-      "key": "agent_monitor_1_5f1d841d",
+      "key": "agent_monitor_1_79c34c15",
       "related": [
         "dynamic_agents",
         "monitor"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-29T17:47:05.846427",
+    "timestamp": "2026-07-05T10:10:31.668478",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_react_reasoner_1_88c10cf6": {
-    "memory_id": "9f8ed07f-311c-47ef-8d59-0268c21e8c14",
+  "agent_react_reasoner_1_6a0092ea": {
+    "memory_id": "f5bc0e14-0703-4b11-a5cd-37b4aa55b4da",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "react_reasoner_1_88c10cf6",
+      "agent_id": "react_reasoner_1_6a0092ea",
       "name": "MainReasoner",
       "archetype": "react_reasoner",
       "role": "planner",
@@ -465,25 +411,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-30T00:56:10.604026"
+      "created_at": "2026-07-05T10:17:32.814313"
     },
     "metadata": {
-      "key": "agent_react_reasoner_1_88c10cf6",
+      "key": "agent_react_reasoner_1_6a0092ea",
       "related": [
         "dynamic_agents",
         "react_reasoner"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-30T00:56:10.604552",
+    "timestamp": "2026-07-05T10:17:32.814586",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_constitutional_guardian_1_857b393b": {
-    "memory_id": "257ed972-e492-4f7e-bf74-5731a6a2df75",
+  "agent_constitutional_guardian_1_0b04e4ce": {
+    "memory_id": "8b9b1d10-a919-46fd-82b1-b279686e11ac",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "constitutional_guardian_1_857b393b",
+      "agent_id": "constitutional_guardian_1_0b04e4ce",
       "name": "SafetyGuardian",
       "archetype": "constitutional_guardian",
       "role": "safety",
@@ -492,25 +438,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-30T00:56:10.604962"
+      "created_at": "2026-07-05T10:17:32.814753"
     },
     "metadata": {
-      "key": "agent_constitutional_guardian_1_857b393b",
+      "key": "agent_constitutional_guardian_1_0b04e4ce",
       "related": [
         "dynamic_agents",
         "constitutional_guardian"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-30T00:56:10.605372",
+    "timestamp": "2026-07-05T10:17:32.815035",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_1_b5008113": {
-    "memory_id": "99216b1d-063a-484f-b0a6-86c5bd59aff6",
+  "agent_analyst_1_6b1ced9e": {
+    "memory_id": "7f3a2c17-9f3e-4bfa-aa6f-98af4d00d2ce",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_1_b5008113",
+      "agent_id": "analyst_1_6b1ced9e",
       "name": "MarketAnalyst",
       "archetype": "analyst",
       "role": "planner",
@@ -519,25 +465,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-30T00:56:10.605813"
+      "created_at": "2026-07-05T10:17:32.815210"
     },
     "metadata": {
-      "key": "agent_analyst_1_b5008113",
+      "key": "agent_analyst_1_6b1ced9e",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-30T00:56:10.606262",
+    "timestamp": "2026-07-05T10:17:32.815411",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_monitor_1_18768a98": {
-    "memory_id": "e753922e-50d3-4668-af47-e9e86a1ed1a5",
+  "agent_monitor_1_247b7ebe": {
+    "memory_id": "9a729af1-0068-4520-abbf-ac0a85c211a4",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "monitor_1_18768a98",
+      "agent_id": "monitor_1_247b7ebe",
       "name": "SystemMonitor",
       "archetype": "monitor",
       "role": "monitor",
@@ -546,25 +492,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-30T00:56:10.606546"
+      "created_at": "2026-07-05T10:17:32.815558"
     },
     "metadata": {
-      "key": "agent_monitor_1_18768a98",
+      "key": "agent_monitor_1_247b7ebe",
       "related": [
         "dynamic_agents",
         "monitor"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-30T00:56:10.606964",
+    "timestamp": "2026-07-05T10:17:32.815729",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_react_reasoner_1_7fb8a316": {
-    "memory_id": "d6abdc71-ed42-4825-8b95-46493374e306",
+  "agent_react_reasoner_1_246d32ad": {
+    "memory_id": "08ff9405-5aae-4283-827a-acfe5bd65dac",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "react_reasoner_1_7fb8a316",
+      "agent_id": "react_reasoner_1_246d32ad",
       "name": "MainReasoner",
       "archetype": "react_reasoner",
       "role": "planner",
@@ -573,25 +519,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-30T01:08:15.223557"
+      "created_at": "2026-07-05T10:31:39.101464"
     },
     "metadata": {
-      "key": "agent_react_reasoner_1_7fb8a316",
+      "key": "agent_react_reasoner_1_246d32ad",
       "related": [
         "dynamic_agents",
         "react_reasoner"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-30T01:08:15.223919",
+    "timestamp": "2026-07-05T10:31:39.101817",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_constitutional_guardian_1_782147dd": {
-    "memory_id": "9a1121c8-83a5-4895-8fbb-8a585ea9ec89",
+  "agent_constitutional_guardian_1_c7e55b56": {
+    "memory_id": "ca7338d4-b323-4331-8097-fb401bbc808c",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "constitutional_guardian_1_782147dd",
+      "agent_id": "constitutional_guardian_1_c7e55b56",
       "name": "SafetyGuardian",
       "archetype": "constitutional_guardian",
       "role": "safety",
@@ -600,25 +546,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-30T01:08:15.224219"
+      "created_at": "2026-07-05T10:31:39.102006"
     },
     "metadata": {
-      "key": "agent_constitutional_guardian_1_782147dd",
+      "key": "agent_constitutional_guardian_1_c7e55b56",
       "related": [
         "dynamic_agents",
         "constitutional_guardian"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-30T01:08:15.224470",
+    "timestamp": "2026-07-05T10:31:39.102278",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_1_72e4bff3": {
-    "memory_id": "09e5890f-af36-43ea-af51-9d6cc812aeca",
+  "agent_analyst_1_c84d38ca": {
+    "memory_id": "d0428718-c42c-412c-82c8-9877dccba133",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_1_72e4bff3",
+      "agent_id": "analyst_1_c84d38ca",
       "name": "MarketAnalyst",
       "archetype": "analyst",
       "role": "planner",
@@ -627,25 +573,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-30T01:08:15.224634"
+      "created_at": "2026-07-05T10:31:39.102431"
     },
     "metadata": {
-      "key": "agent_analyst_1_72e4bff3",
+      "key": "agent_analyst_1_c84d38ca",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-30T01:08:15.224818",
+    "timestamp": "2026-07-05T10:31:39.102606",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_monitor_1_1b7385c4": {
-    "memory_id": "44ce04c1-6580-497c-b799-30fb804daa53",
+  "agent_monitor_1_63580b2b": {
+    "memory_id": "0ae3bfcd-3c1b-40e6-a759-6bba209c612e",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "monitor_1_1b7385c4",
+      "agent_id": "monitor_1_63580b2b",
       "name": "SystemMonitor",
       "archetype": "monitor",
       "role": "monitor",
@@ -654,25 +600,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-30T01:08:15.224987"
+      "created_at": "2026-07-05T10:31:39.102766"
     },
     "metadata": {
-      "key": "agent_monitor_1_1b7385c4",
+      "key": "agent_monitor_1_63580b2b",
       "related": [
         "dynamic_agents",
         "monitor"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-30T01:08:15.225260",
+    "timestamp": "2026-07-05T10:31:39.102949",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_react_reasoner_1_914942b3": {
-    "memory_id": "94f22422-05b6-4b23-bd4e-dc3ee84d57e9",
+  "agent_react_reasoner_1_ab1a663a": {
+    "memory_id": "7e926dec-4f57-42c7-8720-a023a63d6800",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "react_reasoner_1_914942b3",
+      "agent_id": "react_reasoner_1_ab1a663a",
       "name": "MainReasoner",
       "archetype": "react_reasoner",
       "role": "planner",
@@ -681,25 +627,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-30T01:09:18.128632"
+      "created_at": "2026-07-05T11:20:50.755742"
     },
     "metadata": {
-      "key": "agent_react_reasoner_1_914942b3",
+      "key": "agent_react_reasoner_1_ab1a663a",
       "related": [
         "dynamic_agents",
         "react_reasoner"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-30T01:09:18.129068",
+    "timestamp": "2026-07-05T11:20:50.756113",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_constitutional_guardian_1_cd6f4cfe": {
-    "memory_id": "f85f846e-22c9-4993-901a-3fb347a04056",
+  "agent_constitutional_guardian_1_884ef199": {
+    "memory_id": "ed1324f9-fac0-498f-910d-e5c3d4a348ed",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "constitutional_guardian_1_cd6f4cfe",
+      "agent_id": "constitutional_guardian_1_884ef199",
       "name": "SafetyGuardian",
       "archetype": "constitutional_guardian",
       "role": "safety",
@@ -708,25 +654,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-30T01:09:18.129252"
+      "created_at": "2026-07-05T11:20:50.756288"
     },
     "metadata": {
-      "key": "agent_constitutional_guardian_1_cd6f4cfe",
+      "key": "agent_constitutional_guardian_1_884ef199",
       "related": [
         "dynamic_agents",
         "constitutional_guardian"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-30T01:09:18.129470",
+    "timestamp": "2026-07-05T11:20:50.756561",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_1_d9df46a7": {
-    "memory_id": "6a93a40e-3a42-43b7-a47a-5c8c0e2fbe52",
+  "agent_analyst_1_207e5959": {
+    "memory_id": "2fba17b6-a995-4188-978a-5037db30877c",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_1_d9df46a7",
+      "agent_id": "analyst_1_207e5959",
       "name": "MarketAnalyst",
       "archetype": "analyst",
       "role": "planner",
@@ -735,25 +681,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-30T01:09:18.129624"
+      "created_at": "2026-07-05T11:20:50.756738"
     },
     "metadata": {
-      "key": "agent_analyst_1_d9df46a7",
+      "key": "agent_analyst_1_207e5959",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-30T01:09:18.129889",
+    "timestamp": "2026-07-05T11:20:50.756936",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_monitor_1_dc447067": {
-    "memory_id": "5536dee6-6149-4dcd-9106-fedcae08bf0f",
+  "agent_monitor_1_b39a4860": {
+    "memory_id": "363c76cb-8011-41af-b027-ccc0701a5873",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "monitor_1_dc447067",
+      "agent_id": "monitor_1_b39a4860",
       "name": "SystemMonitor",
       "archetype": "monitor",
       "role": "monitor",
@@ -762,25 +708,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-30T01:09:18.130105"
+      "created_at": "2026-07-05T11:20:50.757157"
     },
     "metadata": {
-      "key": "agent_monitor_1_dc447067",
+      "key": "agent_monitor_1_b39a4860",
       "related": [
         "dynamic_agents",
         "monitor"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-30T01:09:18.130322",
+    "timestamp": "2026-07-05T11:20:50.757356",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_react_reasoner_1_ed32aac8": {
-    "memory_id": "586eba3d-1273-4d0a-867a-8530a03fae99",
+  "agent_react_reasoner_1_dc7a90f1": {
+    "memory_id": "58b91fdf-03a8-4b73-8dcc-291c3414700c",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "react_reasoner_1_ed32aac8",
+      "agent_id": "react_reasoner_1_dc7a90f1",
       "name": "MainReasoner",
       "archetype": "react_reasoner",
       "role": "planner",
@@ -789,25 +735,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-30T01:10:44.156582"
+      "created_at": "2026-07-05T11:27:12.948472"
     },
     "metadata": {
-      "key": "agent_react_reasoner_1_ed32aac8",
+      "key": "agent_react_reasoner_1_dc7a90f1",
       "related": [
         "dynamic_agents",
         "react_reasoner"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-30T01:10:44.156890",
+    "timestamp": "2026-07-05T11:27:12.948954",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_constitutional_guardian_1_44f1adbf": {
-    "memory_id": "f6a955d9-80db-48f8-8a4c-5316ad0f6549",
+  "agent_constitutional_guardian_1_57bde5a8": {
+    "memory_id": "80ea2eff-0c22-4f17-b831-3956b5341cce",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "constitutional_guardian_1_44f1adbf",
+      "agent_id": "constitutional_guardian_1_57bde5a8",
       "name": "SafetyGuardian",
       "archetype": "constitutional_guardian",
       "role": "safety",
@@ -816,25 +762,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-30T01:10:44.157061"
+      "created_at": "2026-07-05T11:27:12.949231"
     },
     "metadata": {
-      "key": "agent_constitutional_guardian_1_44f1adbf",
+      "key": "agent_constitutional_guardian_1_57bde5a8",
       "related": [
         "dynamic_agents",
         "constitutional_guardian"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-30T01:10:44.157237",
+    "timestamp": "2026-07-05T11:27:12.949461",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_1_66e2497c": {
-    "memory_id": "5e5cb164-2fb4-409b-8dbb-8b53eb04bbd2",
+  "agent_analyst_1_9248c12e": {
+    "memory_id": "5ab8d652-f9af-405c-b138-9a79645876b3",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_1_66e2497c",
+      "agent_id": "analyst_1_9248c12e",
       "name": "MarketAnalyst",
       "archetype": "analyst",
       "role": "planner",
@@ -843,25 +789,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-30T01:10:44.157441"
+      "created_at": "2026-07-05T11:27:12.949612"
     },
     "metadata": {
-      "key": "agent_analyst_1_66e2497c",
+      "key": "agent_analyst_1_9248c12e",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-30T01:10:44.157640",
+    "timestamp": "2026-07-05T11:27:12.949942",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_monitor_1_84ba0714": {
-    "memory_id": "21ecc539-acbb-45da-a60b-3ef5b3ef8263",
+  "agent_monitor_1_377079b5": {
+    "memory_id": "dd937972-8597-4936-9977-43adc61d2838",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "monitor_1_84ba0714",
+      "agent_id": "monitor_1_377079b5",
       "name": "SystemMonitor",
       "archetype": "monitor",
       "role": "monitor",
@@ -870,25 +816,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-06-30T01:10:44.157775"
+      "created_at": "2026-07-05T11:27:12.950126"
     },
     "metadata": {
-      "key": "agent_monitor_1_84ba0714",
+      "key": "agent_monitor_1_377079b5",
       "related": [
         "dynamic_agents",
         "monitor"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-06-30T01:10:44.157935",
+    "timestamp": "2026-07-05T11:27:12.950394",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_react_reasoner_1_1a98b8b4": {
-    "memory_id": "437654d2-bf0e-4d8d-b6ba-e60f04119488",
+  "agent_react_reasoner_1_10b90348": {
+    "memory_id": "c25b3996-1e8a-4885-8d47-663e030b0e92",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "react_reasoner_1_1a98b8b4",
+      "agent_id": "react_reasoner_1_10b90348",
       "name": "MainReasoner",
       "archetype": "react_reasoner",
       "role": "planner",
@@ -897,25 +843,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-03T01:02:19.336363"
+      "created_at": "2026-07-05T12:12:15.130454"
     },
     "metadata": {
-      "key": "agent_react_reasoner_1_1a98b8b4",
+      "key": "agent_react_reasoner_1_10b90348",
       "related": [
         "dynamic_agents",
         "react_reasoner"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-03T01:02:19.336639",
+    "timestamp": "2026-07-05T12:12:15.130782",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_constitutional_guardian_1_57cbb497": {
-    "memory_id": "3a765a17-dfb3-4741-85fa-92bbf85ea58f",
+  "agent_constitutional_guardian_1_31986fdf": {
+    "memory_id": "c7e61620-ec40-486b-a470-ccea98fdb4a0",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "constitutional_guardian_1_57cbb497",
+      "agent_id": "constitutional_guardian_1_31986fdf",
       "name": "SafetyGuardian",
       "archetype": "constitutional_guardian",
       "role": "safety",
@@ -924,25 +870,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-03T01:02:19.336796"
+      "created_at": "2026-07-05T12:12:15.131011"
     },
     "metadata": {
-      "key": "agent_constitutional_guardian_1_57cbb497",
+      "key": "agent_constitutional_guardian_1_31986fdf",
       "related": [
         "dynamic_agents",
         "constitutional_guardian"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-03T01:02:19.337075",
+    "timestamp": "2026-07-05T12:12:15.131434",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_1_e8b2d4fc": {
-    "memory_id": "8c542be8-d238-4764-b867-2f40846b9cfa",
+  "agent_analyst_1_7f191ca3": {
+    "memory_id": "28605a10-3a41-4566-b719-60eb618e8373",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_1_e8b2d4fc",
+      "agent_id": "analyst_1_7f191ca3",
       "name": "MarketAnalyst",
       "archetype": "analyst",
       "role": "planner",
@@ -951,25 +897,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-03T01:02:19.337268"
+      "created_at": "2026-07-05T12:12:15.131590"
     },
     "metadata": {
-      "key": "agent_analyst_1_e8b2d4fc",
+      "key": "agent_analyst_1_7f191ca3",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-03T01:02:19.337469",
+    "timestamp": "2026-07-05T12:12:15.131835",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_monitor_1_4d8c0d08": {
-    "memory_id": "ccd6d7cd-da8b-4691-affc-82cd89ac878c",
+  "agent_monitor_1_7048a0c7": {
+    "memory_id": "df623433-d54f-45a2-b43b-9bb61d9096fb",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "monitor_1_4d8c0d08",
+      "agent_id": "monitor_1_7048a0c7",
       "name": "SystemMonitor",
       "archetype": "monitor",
       "role": "monitor",
@@ -978,76 +924,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-03T01:02:19.337614"
+      "created_at": "2026-07-05T12:12:15.131980"
     },
     "metadata": {
-      "key": "agent_monitor_1_4d8c0d08",
+      "key": "agent_monitor_1_7048a0c7",
       "related": [
         "dynamic_agents",
         "monitor"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-03T01:02:19.337786",
+    "timestamp": "2026-07-05T12:12:15.132164",
     "access_count": 0,
     "last_accessed": null
   },
-  "obs_trace_80157332": {
-    "memory_id": "f78197c4-7539-4353-9039-a81ef083e898",
+  "agent_react_reasoner_1_3905f9d3": {
+    "memory_id": "6f694ba9-55fd-4dd2-9a05-49393d6bdf04",
     "memory_type": "semantic",
     "content": {
-      "selected_workflow": "standard_analysis_v1",
-      "workflow_trace": [
-        {
-          "node": "start",
-          "type": "decompose",
-          "result": {
-            "success": true,
-            "task_id": "<Task pending name='Task-1' coro=<test_integrated_system_flow() running at /app/tests/core_agent_system/test_integration.py:19> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>",
-            "subtasks_completed": 1,
-            "duration": 0.001424,
-            "efficiency": 1.0,
-            "results": [
-              {
-                "success": true,
-                "result": null,
-                "reasoning": "=== ReAct Trace: Analyze market and provide a clear buy/sell/hold signal with reasoning ===\nStep 1: THOUGHT [assessment]: Task: Analyze market and provide a clear buy/sell/hold signal with reasoning. Current market shows price=unknown, volatility=unknown. Portfolio has equity=unknown, exposure=unknown. I need to analyze the situation and determine the best course of action.\nStep 2: ACTION [market_data]: {'symbol': 'EURUSD'}\nStep 3: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-03T01:02:19.339343'}\nStep 4: THOUGHT [planning]: Previous action succeeded with result: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-03T01:02:19.339343'}. Based on this, I should proceed with the next step towards: Analyze market and provide a clear buy/sell/hold signal with reasoning.\nStep 5: ACTION [strategy_analyzer]: {'analysis_type': 'signal', 'market_data': {}}\nStep 6: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'Unknown', 'signal': 'buy', 'confidence': 0.7, 'reasoning': 'Bullish trend with momentum confirmation for Unknown'}",
-                "iterations": 6,
-                "agent_id": "react_reasoner_1_1a98b8b4",
-                "agent_name": "MainReasoner",
-                "quality": 0.8
-              }
-            ]
-          }
-        },
-        {
-          "node": "end",
-          "type": "conclude",
-          "result": {
-            "success": true,
-            "concluded": true
-          }
-        }
-      ],
-      "activated_agents": [],
-      "tools_used": [],
-      "duration": 0.001827,
-      "success": true
-    },
-    "metadata": {
-      "key": "obs_trace_80157332",
-      "related": []
-    },
-    "importance": 0.5,
-    "timestamp": "2026-07-03T01:02:19.339957",
-    "access_count": 0,
-    "last_accessed": null
-  },
-  "agent_react_reasoner_1_2f58cbf3": {
-    "memory_id": "6c39ba97-b532-4785-951c-79e4fc87758a",
-    "memory_type": "semantic",
-    "content": {
-      "agent_id": "react_reasoner_1_2f58cbf3",
+      "agent_id": "react_reasoner_1_3905f9d3",
       "name": "MainReasoner",
       "archetype": "react_reasoner",
       "role": "planner",
@@ -1056,25 +951,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-03T01:11:18.652668"
+      "created_at": "2026-07-05T12:45:49.815720"
     },
     "metadata": {
-      "key": "agent_react_reasoner_1_2f58cbf3",
+      "key": "agent_react_reasoner_1_3905f9d3",
       "related": [
         "dynamic_agents",
         "react_reasoner"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-03T01:11:18.653013",
+    "timestamp": "2026-07-05T12:45:49.816005",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_constitutional_guardian_1_4723ae6d": {
-    "memory_id": "14b6ac39-39fe-4e66-9dfc-3580a469fe26",
+  "agent_constitutional_guardian_1_42a6d426": {
+    "memory_id": "b6abb039-9a7b-4f41-800d-7ed5b8606d7f",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "constitutional_guardian_1_4723ae6d",
+      "agent_id": "constitutional_guardian_1_42a6d426",
       "name": "SafetyGuardian",
       "archetype": "constitutional_guardian",
       "role": "safety",
@@ -1083,25 +978,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-03T01:11:18.653306"
+      "created_at": "2026-07-05T12:45:49.816164"
     },
     "metadata": {
-      "key": "agent_constitutional_guardian_1_4723ae6d",
+      "key": "agent_constitutional_guardian_1_42a6d426",
       "related": [
         "dynamic_agents",
         "constitutional_guardian"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-03T01:11:18.653552",
+    "timestamp": "2026-07-05T12:45:49.816359",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_1_2a1f027a": {
-    "memory_id": "2876bd1f-e7f9-41fa-9afd-90818b2a6950",
+  "agent_analyst_1_f8961120": {
+    "memory_id": "1072351f-ddd3-4df9-ac95-019d6c5506fc",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_1_2a1f027a",
+      "agent_id": "analyst_1_f8961120",
       "name": "MarketAnalyst",
       "archetype": "analyst",
       "role": "planner",
@@ -1110,25 +1005,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-03T01:11:18.653708"
+      "created_at": "2026-07-05T12:45:49.816573"
     },
     "metadata": {
-      "key": "agent_analyst_1_2a1f027a",
+      "key": "agent_analyst_1_f8961120",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-03T01:11:18.653902",
+    "timestamp": "2026-07-05T12:45:49.816763",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_monitor_1_1c4a8b2a": {
-    "memory_id": "3c685457-dbb7-41fe-b832-9a7e482c2d47",
+  "agent_monitor_1_f45e3d71": {
+    "memory_id": "3a11a0d6-f9e4-45d3-84d2-2a4dc699971a",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "monitor_1_1c4a8b2a",
+      "agent_id": "monitor_1_f45e3d71",
       "name": "SystemMonitor",
       "archetype": "monitor",
       "role": "monitor",
@@ -1137,76 +1032,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-03T01:11:18.654051"
+      "created_at": "2026-07-05T12:45:49.816918"
     },
     "metadata": {
-      "key": "agent_monitor_1_1c4a8b2a",
+      "key": "agent_monitor_1_f45e3d71",
       "related": [
         "dynamic_agents",
         "monitor"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-03T01:11:18.654296",
+    "timestamp": "2026-07-05T12:45:49.817223",
     "access_count": 0,
     "last_accessed": null
   },
-  "obs_trace_83b18739": {
-    "memory_id": "58cbb45a-62c6-4995-b4a9-b01436fd7849",
+  "agent_react_reasoner_1_37bd7a9b": {
+    "memory_id": "5c227db3-6a5b-42e6-ac9f-2be341f7ab65",
     "memory_type": "semantic",
     "content": {
-      "selected_workflow": "standard_analysis_v1",
-      "workflow_trace": [
-        {
-          "node": "start",
-          "type": "decompose",
-          "result": {
-            "success": true,
-            "task_id": "<Task pending name='Task-1' coro=<test_integrated_system_flow() running at /app/tests/core_agent_system/test_integration.py:19> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>",
-            "subtasks_completed": 1,
-            "duration": 0.001867,
-            "efficiency": 1.0,
-            "results": [
-              {
-                "success": true,
-                "result": null,
-                "reasoning": "=== ReAct Trace: Analyze market and provide a clear buy/sell/hold signal with reasoning ===\nStep 1: THOUGHT [assessment]: Task: Analyze market and provide a clear buy/sell/hold signal with reasoning. Current market shows price=unknown, volatility=unknown. Portfolio has equity=unknown, exposure=unknown. I need to analyze the situation and determine the best course of action.\nStep 2: ACTION [market_data]: {'symbol': 'EURUSD'}\nStep 3: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-03T01:11:18.656348'}\nStep 4: THOUGHT [planning]: Previous action succeeded with result: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-03T01:11:18.656348'}. Based on this, I should proceed with the next step towards: Analyze market and provide a clear buy/sell/hold signal with reasoning.\nStep 5: ACTION [strategy_analyzer]: {'analysis_type': 'signal', 'market_data': {}}\nStep 6: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'Unknown', 'signal': 'buy', 'confidence': 0.7, 'reasoning': 'Bullish trend with momentum confirmation for Unknown'}",
-                "iterations": 6,
-                "agent_id": "react_reasoner_1_2f58cbf3",
-                "agent_name": "MainReasoner",
-                "quality": 0.8
-              }
-            ]
-          }
-        },
-        {
-          "node": "end",
-          "type": "conclude",
-          "result": {
-            "success": true,
-            "concluded": true
-          }
-        }
-      ],
-      "activated_agents": [],
-      "tools_used": [],
-      "duration": 0.002287,
-      "success": true
-    },
-    "metadata": {
-      "key": "obs_trace_83b18739",
-      "related": []
-    },
-    "importance": 0.5,
-    "timestamp": "2026-07-03T01:11:18.656995",
-    "access_count": 0,
-    "last_accessed": null
-  },
-  "agent_react_reasoner_1_98bce014": {
-    "memory_id": "940e0507-ca32-4210-86c5-b19c40ecc711",
-    "memory_type": "semantic",
-    "content": {
-      "agent_id": "react_reasoner_1_98bce014",
+      "agent_id": "react_reasoner_1_37bd7a9b",
       "name": "MainReasoner",
       "archetype": "react_reasoner",
       "role": "planner",
@@ -1215,25 +1059,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-03T01:12:09.975662"
+      "created_at": "2026-07-05T16:37:45.921674"
     },
     "metadata": {
-      "key": "agent_react_reasoner_1_98bce014",
+      "key": "agent_react_reasoner_1_37bd7a9b",
       "related": [
         "dynamic_agents",
         "react_reasoner"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-03T01:12:09.975961",
+    "timestamp": "2026-07-05T16:37:45.922040",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_constitutional_guardian_1_b1a6e7a7": {
-    "memory_id": "20aaf981-61be-424c-b258-36006be1044f",
+  "agent_constitutional_guardian_1_5fb96222": {
+    "memory_id": "9b3fae57-8991-4b9e-bce3-c9cdc7ff1e12",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "constitutional_guardian_1_b1a6e7a7",
+      "agent_id": "constitutional_guardian_1_5fb96222",
       "name": "SafetyGuardian",
       "archetype": "constitutional_guardian",
       "role": "safety",
@@ -1242,25 +1086,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-03T01:12:09.976187"
+      "created_at": "2026-07-05T16:37:45.922204"
     },
     "metadata": {
-      "key": "agent_constitutional_guardian_1_b1a6e7a7",
+      "key": "agent_constitutional_guardian_1_5fb96222",
       "related": [
         "dynamic_agents",
         "constitutional_guardian"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-03T01:12:09.976428",
+    "timestamp": "2026-07-05T16:37:45.922490",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_1_70d6e682": {
-    "memory_id": "03f7f746-f503-43d3-9209-b4bd8bcb2685",
+  "agent_analyst_1_2dc703c1": {
+    "memory_id": "04394876-cac4-450c-ac64-2b4e759eaaed",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_1_70d6e682",
+      "agent_id": "analyst_1_2dc703c1",
       "name": "MarketAnalyst",
       "archetype": "analyst",
       "role": "planner",
@@ -1269,25 +1113,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-03T01:12:09.976613"
+      "created_at": "2026-07-05T16:37:45.922704"
     },
     "metadata": {
-      "key": "agent_analyst_1_70d6e682",
+      "key": "agent_analyst_1_2dc703c1",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-03T01:12:09.976810",
+    "timestamp": "2026-07-05T16:37:45.922898",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_monitor_1_d49e322e": {
-    "memory_id": "722634b7-febd-4b2a-b799-2773a712eb12",
+  "agent_monitor_1_43f7df99": {
+    "memory_id": "b7ec0bb3-1975-4359-9ec9-a32727b583a4",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "monitor_1_d49e322e",
+      "agent_id": "monitor_1_43f7df99",
       "name": "SystemMonitor",
       "archetype": "monitor",
       "role": "monitor",
@@ -1296,76 +1140,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-03T01:12:09.976992"
+      "created_at": "2026-07-05T16:37:45.923043"
     },
     "metadata": {
-      "key": "agent_monitor_1_d49e322e",
+      "key": "agent_monitor_1_43f7df99",
       "related": [
         "dynamic_agents",
         "monitor"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-03T01:12:09.977365",
+    "timestamp": "2026-07-05T16:37:45.923216",
     "access_count": 0,
     "last_accessed": null
   },
-  "obs_trace_1a6fe2ce": {
-    "memory_id": "a03e466f-67e2-4055-89fa-64b455037b22",
+  "agent_react_reasoner_1_66dca258": {
+    "memory_id": "0d21347a-722d-4662-9724-412d07df7093",
     "memory_type": "semantic",
     "content": {
-      "selected_workflow": "standard_analysis_v1",
-      "workflow_trace": [
-        {
-          "node": "start",
-          "type": "decompose",
-          "result": {
-            "success": true,
-            "task_id": "<Task pending name='Task-1' coro=<test_integrated_system_flow() running at /app/tests/core_agent_system/test_integration.py:19> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>",
-            "subtasks_completed": 1,
-            "duration": 0.002019,
-            "efficiency": 1.0,
-            "results": [
-              {
-                "success": true,
-                "result": null,
-                "reasoning": "=== ReAct Trace: Analyze market and provide a clear buy/sell/hold signal with reasoning ===\nStep 1: THOUGHT [assessment]: Task: Analyze market and provide a clear buy/sell/hold signal with reasoning. Current market shows price=unknown, volatility=unknown. Portfolio has equity=unknown, exposure=unknown. I need to analyze the situation and determine the best course of action.\nStep 2: ACTION [market_data]: {'symbol': 'EURUSD'}\nStep 3: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-03T01:12:09.979577'}\nStep 4: THOUGHT [planning]: Previous action succeeded with result: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-03T01:12:09.979577'}. Based on this, I should proceed with the next step towards: Analyze market and provide a clear buy/sell/hold signal with reasoning.\nStep 5: ACTION [strategy_analyzer]: {'analysis_type': 'signal', 'market_data': {}}\nStep 6: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'Unknown', 'signal': 'buy', 'confidence': 0.7, 'reasoning': 'Bullish trend with momentum confirmation for Unknown'}",
-                "iterations": 6,
-                "agent_id": "react_reasoner_1_98bce014",
-                "agent_name": "MainReasoner",
-                "quality": 0.8
-              }
-            ]
-          }
-        },
-        {
-          "node": "end",
-          "type": "conclude",
-          "result": {
-            "success": true,
-            "concluded": true
-          }
-        }
-      ],
-      "activated_agents": [],
-      "tools_used": [],
-      "duration": 0.002603,
-      "success": true
-    },
-    "metadata": {
-      "key": "obs_trace_1a6fe2ce",
-      "related": []
-    },
-    "importance": 0.5,
-    "timestamp": "2026-07-03T01:12:09.980475",
-    "access_count": 0,
-    "last_accessed": null
-  },
-  "agent_react_reasoner_1_fa98860e": {
-    "memory_id": "939678b3-ab09-43a1-a58a-374f67491941",
-    "memory_type": "semantic",
-    "content": {
-      "agent_id": "react_reasoner_1_fa98860e",
+      "agent_id": "react_reasoner_1_66dca258",
       "name": "MainReasoner",
       "archetype": "react_reasoner",
       "role": "planner",
@@ -1374,25 +1167,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-04T06:37:05.536374"
+      "created_at": "2026-07-05T21:26:22.629152"
     },
     "metadata": {
-      "key": "agent_react_reasoner_1_fa98860e",
+      "key": "agent_react_reasoner_1_66dca258",
       "related": [
         "dynamic_agents",
         "react_reasoner"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-04T06:37:05.536805",
+    "timestamp": "2026-07-05T21:26:22.629534",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_constitutional_guardian_1_63c3aa01": {
-    "memory_id": "c097f820-c87d-4f0b-85be-03b63ecabfd1",
+  "agent_constitutional_guardian_1_ac5bcabe": {
+    "memory_id": "fdc9b65f-825c-4eb2-9e7f-d04b71064fb5",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "constitutional_guardian_1_63c3aa01",
+      "agent_id": "constitutional_guardian_1_ac5bcabe",
       "name": "SafetyGuardian",
       "archetype": "constitutional_guardian",
       "role": "safety",
@@ -1401,25 +1194,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-04T06:37:05.537067"
+      "created_at": "2026-07-05T21:26:22.629854"
     },
     "metadata": {
-      "key": "agent_constitutional_guardian_1_63c3aa01",
+      "key": "agent_constitutional_guardian_1_ac5bcabe",
       "related": [
         "dynamic_agents",
         "constitutional_guardian"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-04T06:37:05.537521",
+    "timestamp": "2026-07-05T21:26:22.630086",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_1_3346e210": {
-    "memory_id": "2c68c7f1-5aba-4388-92d6-53c8873cd175",
+  "agent_analyst_1_5d2f26fe": {
+    "memory_id": "a2459d9a-e52f-4037-9dbd-bbc247a3e8d3",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_1_3346e210",
+      "agent_id": "analyst_1_5d2f26fe",
       "name": "MarketAnalyst",
       "archetype": "analyst",
       "role": "planner",
@@ -1428,25 +1221,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-04T06:37:05.537857"
+      "created_at": "2026-07-05T21:26:22.630237"
     },
     "metadata": {
-      "key": "agent_analyst_1_3346e210",
+      "key": "agent_analyst_1_5d2f26fe",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-04T06:37:05.538062",
+    "timestamp": "2026-07-05T21:26:22.630573",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_monitor_1_1660f1e1": {
-    "memory_id": "90932ccb-2ce2-4ec5-bfdb-aa589d0f2587",
+  "agent_monitor_1_c80b9879": {
+    "memory_id": "90a9f28e-3913-45d8-9e1b-4dcebf88c6a1",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "monitor_1_1660f1e1",
+      "agent_id": "monitor_1_c80b9879",
       "name": "SystemMonitor",
       "archetype": "monitor",
       "role": "monitor",
@@ -1455,76 +1248,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-04T06:37:05.538242"
+      "created_at": "2026-07-05T21:26:22.630727"
     },
     "metadata": {
-      "key": "agent_monitor_1_1660f1e1",
+      "key": "agent_monitor_1_c80b9879",
       "related": [
         "dynamic_agents",
         "monitor"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-04T06:37:05.538446",
+    "timestamp": "2026-07-05T21:26:22.630907",
     "access_count": 0,
     "last_accessed": null
   },
-  "obs_trace_e5d2e041": {
-    "memory_id": "bb66fc41-92aa-441d-93e8-2584c75feb4c",
+  "agent_react_reasoner_1_362cfa3c": {
+    "memory_id": "7e3be17c-ea99-43d7-b5e2-c0ef3fccd5f4",
     "memory_type": "semantic",
     "content": {
-      "selected_workflow": "standard_analysis_v1",
-      "workflow_trace": [
-        {
-          "node": "start",
-          "type": "decompose",
-          "result": {
-            "success": true,
-            "task_id": "<Task pending name='Task-1' coro=<test_integrated_system_flow() running at /app/tests/core_agent_system/test_integration.py:19> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>",
-            "subtasks_completed": 1,
-            "duration": 0.002433,
-            "efficiency": 1.0,
-            "results": [
-              {
-                "success": true,
-                "result": null,
-                "reasoning": "=== ReAct Trace: Analyze market and provide a clear buy/sell/hold signal with reasoning ===\nStep 1: THOUGHT [assessment]: Task: Analyze market and provide a clear buy/sell/hold signal with reasoning. Current market shows price=unknown, volatility=unknown. Portfolio has equity=unknown, exposure=unknown. I need to analyze the situation and determine the best course of action.\nStep 2: ACTION [market_data]: {'symbol': 'EURUSD'}\nStep 3: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-04T06:37:05.541075'}\nStep 4: THOUGHT [planning]: Previous action succeeded with result: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-04T06:37:05.541075'}. Based on this, I should proceed with the next step towards: Analyze market and provide a clear buy/sell/hold signal with reasoning.\nStep 5: ACTION [strategy_analyzer]: {'analysis_type': 'signal', 'market_data': {}}\nStep 6: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'Unknown', 'signal': 'buy', 'confidence': 0.7, 'reasoning': 'Bullish trend with momentum confirmation for Unknown'}",
-                "iterations": 6,
-                "agent_id": "react_reasoner_1_fa98860e",
-                "agent_name": "MainReasoner",
-                "quality": 0.8
-              }
-            ]
-          }
-        },
-        {
-          "node": "end",
-          "type": "conclude",
-          "result": {
-            "success": true,
-            "concluded": true
-          }
-        }
-      ],
-      "activated_agents": [],
-      "tools_used": [],
-      "duration": 0.003097,
-      "success": true
-    },
-    "metadata": {
-      "key": "obs_trace_e5d2e041",
-      "related": []
-    },
-    "importance": 0.5,
-    "timestamp": "2026-07-04T06:37:05.542062",
-    "access_count": 0,
-    "last_accessed": null
-  },
-  "agent_react_reasoner_1_978c0313": {
-    "memory_id": "fe6189aa-667f-4e22-8451-8e217f598006",
-    "memory_type": "semantic",
-    "content": {
-      "agent_id": "react_reasoner_1_978c0313",
+      "agent_id": "react_reasoner_1_362cfa3c",
       "name": "MainReasoner",
       "archetype": "react_reasoner",
       "role": "planner",
@@ -1533,25 +1275,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-04T06:47:14.114471"
+      "created_at": "2026-07-07T07:56:52.724981"
     },
     "metadata": {
-      "key": "agent_react_reasoner_1_978c0313",
+      "key": "agent_react_reasoner_1_362cfa3c",
       "related": [
         "dynamic_agents",
         "react_reasoner"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-04T06:47:14.114762",
+    "timestamp": "2026-07-07T07:56:52.725299",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_constitutional_guardian_1_0475078d": {
-    "memory_id": "9cfd8022-1744-4d77-8378-5a52f9c4647f",
+  "agent_constitutional_guardian_1_cd5af4ae": {
+    "memory_id": "ba1dd506-3638-4b74-acb9-f3999e7282ef",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "constitutional_guardian_1_0475078d",
+      "agent_id": "constitutional_guardian_1_cd5af4ae",
       "name": "SafetyGuardian",
       "archetype": "constitutional_guardian",
       "role": "safety",
@@ -1560,25 +1302,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-04T06:47:14.115051"
+      "created_at": "2026-07-07T07:56:52.725560"
     },
     "metadata": {
-      "key": "agent_constitutional_guardian_1_0475078d",
+      "key": "agent_constitutional_guardian_1_cd5af4ae",
       "related": [
         "dynamic_agents",
         "constitutional_guardian"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-04T06:47:14.115323",
+    "timestamp": "2026-07-07T07:56:52.725794",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_analyst_1_8adbef9d": {
-    "memory_id": "56f94f62-bdab-408f-8159-74ae1ce80f4b",
+  "agent_analyst_1_cf8c0c5d": {
+    "memory_id": "dd85af79-4bf8-4d77-ae8f-313227ff057a",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "analyst_1_8adbef9d",
+      "agent_id": "analyst_1_cf8c0c5d",
       "name": "MarketAnalyst",
       "archetype": "analyst",
       "role": "planner",
@@ -1587,25 +1329,25 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-04T06:47:14.115676"
+      "created_at": "2026-07-07T07:56:52.725972"
     },
     "metadata": {
-      "key": "agent_analyst_1_8adbef9d",
+      "key": "agent_analyst_1_cf8c0c5d",
       "related": [
         "dynamic_agents",
         "analyst"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-04T06:47:14.116080",
+    "timestamp": "2026-07-07T07:56:52.726165",
     "access_count": 0,
     "last_accessed": null
   },
-  "agent_monitor_1_2a50f719": {
-    "memory_id": "3b8d832f-d5fc-4bcf-98dc-82a93277424f",
+  "agent_monitor_1_f44dc1f2": {
+    "memory_id": "064e2e35-9ddd-41e5-9040-1b98750c8016",
     "memory_type": "semantic",
     "content": {
-      "agent_id": "monitor_1_2a50f719",
+      "agent_id": "monitor_1_f44dc1f2",
       "name": "SystemMonitor",
       "archetype": "monitor",
       "role": "monitor",
@@ -1614,68 +1356,17 @@
       "current_tasks": 0,
       "tasks_completed": 0,
       "success_rate": 1.0,
-      "created_at": "2026-07-04T06:47:14.116232"
+      "created_at": "2026-07-07T07:56:52.726318"
     },
     "metadata": {
-      "key": "agent_monitor_1_2a50f719",
+      "key": "agent_monitor_1_f44dc1f2",
       "related": [
         "dynamic_agents",
         "monitor"
       ]
     },
     "importance": 0.5,
-    "timestamp": "2026-07-04T06:47:14.116471",
-    "access_count": 0,
-    "last_accessed": null
-  },
-  "obs_trace_09bf41bd": {
-    "memory_id": "f433aa65-db86-403f-866a-984ef9129fff",
-    "memory_type": "semantic",
-    "content": {
-      "selected_workflow": "standard_analysis_v1",
-      "workflow_trace": [
-        {
-          "node": "start",
-          "type": "decompose",
-          "result": {
-            "success": true,
-            "task_id": "<Task pending name='Task-1' coro=<test_integrated_system_flow() running at /app/tests/core_agent_system/test_integration.py:19> cb=[_run_until_complete_cb() at /home/jules/.pyenv/versions/3.12.13/lib/python3.12/asyncio/base_events.py:181]>",
-            "subtasks_completed": 1,
-            "duration": 0.001618,
-            "efficiency": 1.0,
-            "results": [
-              {
-                "success": true,
-                "result": null,
-                "reasoning": "=== ReAct Trace: Analyze market and provide a clear buy/sell/hold signal with reasoning ===\nStep 1: THOUGHT [assessment]: Task: Analyze market and provide a clear buy/sell/hold signal with reasoning. Current market shows price=unknown, volatility=unknown. Portfolio has equity=unknown, exposure=unknown. I need to analyze the situation and determine the best course of action.\nStep 2: ACTION [market_data]: {'symbol': 'EURUSD'}\nStep 3: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-04T06:47:14.118087'}\nStep 4: THOUGHT [planning]: Previous action succeeded with result: {'success': True, 'symbol': 'EURUSD', 'price': 1.085, 'bid': 1.0849, 'ask': 1.0851, 'volatility': 0.012, 'trend': 'bullish', 'momentum': 0.3, 'rsi': 55, 'macd': 0.0002, 'sma_20': 1.082, 'sma_50': 1.078, 'timestamp': '2026-07-04T06:47:14.118087'}. Based on this, I should proceed with the next step towards: Analyze market and provide a clear buy/sell/hold signal with reasoning.\nStep 5: ACTION [strategy_analyzer]: {'analysis_type': 'signal', 'market_data': {}}\nStep 6: OBSERVATION [SUCCESS]: {'success': True, 'symbol': 'Unknown', 'signal': 'buy', 'confidence': 0.7, 'reasoning': 'Bullish trend with momentum confirmation for Unknown'}",
-                "iterations": 6,
-                "agent_id": "react_reasoner_1_978c0313",
-                "agent_name": "MainReasoner",
-                "quality": 0.8
-              }
-            ]
-          }
-        },
-        {
-          "node": "end",
-          "type": "conclude",
-          "result": {
-            "success": true,
-            "concluded": true
-          }
-        }
-      ],
-      "activated_agents": [],
-      "tools_used": [],
-      "duration": 0.002312,
-      "success": true
-    },
-    "metadata": {
-      "key": "obs_trace_09bf41bd",
-      "related": []
-    },
-    "importance": 0.5,
-    "timestamp": "2026-07-04T06:47:14.119084",
+    "timestamp": "2026-07-07T07:56:52.726602",
     "access_count": 0,
     "last_accessed": null
   }

@@ -24,7 +24,6 @@ from enum import Enum
 from abc import ABC, abstractmethod
 import uuid
 from trading_bot.execution.trade_executor import TradeExecutor, Order, OrderType, OrderSide
-from trading_bot.core.unified_registry import registry
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +58,7 @@ class AgentCapability:
     input_schema: Dict[str, Any]
     output_schema: Dict[str, Any]
     async_capable: bool = True
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             'name': self.name,
@@ -79,14 +78,14 @@ class AgentMetrics:
     average_execution_time: float = 0.0
     success_rate: float = 1.0
     last_active: datetime = field(default_factory=datetime.now)
-    
+
     def update(self, success: bool, execution_time: float):
         """Update metrics after task completion"""
         if success:
             self.tasks_completed += 1
         else:
             self.tasks_failed += 1
-        
+
         self.total_execution_time += execution_time
         total_tasks = self.tasks_completed + self.tasks_failed
         self.average_execution_time = self.total_execution_time / total_tasks
@@ -97,11 +96,11 @@ class AgentMetrics:
 class BaseAgent(ABC):
     """
     Base class for all agents in the system.
-    
+
     Provides standardized interface that all agents must implement.
     Inspired by OpenAI's function calling convention.
     """
-    
+
     def __init__(
         self,
         agent_id: Optional[str] = None,
@@ -114,134 +113,90 @@ class BaseAgent(ABC):
         self.name = name
         self.role = role
         self.config = config or {}
-        
+
         self.status = AgentStatus.INITIALIZING
         self.capabilities: List[AgentCapability] = []
         self.metrics = AgentMetrics()
-        
+
         self.created_at = datetime.now()
         self.memory: Dict[str, Any] = {}
-        
+
         # Register default capabilities
         self._register_capabilities()
-    
+
     @abstractmethod
     def _register_capabilities(self):
         """Register agent capabilities - must be implemented by subclasses"""
         pass
-    
+
     @abstractmethod
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute an action - must be implemented by subclasses"""
         pass
 
     async def execute_task(self, task: Any) -> Dict[str, Any]:
-        """
-        Execute a task. Default implementation wraps execute().
-        Subclasses can override this for more complex task handling.
-        """
-        from .coordination_core import TaskType
+        """Execute a task - for compatibility with SelfCoordinatingCore"""
+        # Map task to execute call
 
-        self.status = AgentStatus.BUSY
-        start_time = datetime.now()
+        # Determine operation based on task type
+        task_type_val = task.task_type.value if hasattr(task.task_type, 'value') else str(task.task_type)
+
+        operation = 'execute'
+        if task_type_val == 'analysis':
+            operation = 'analyze'
+        elif task_type_val == 'research':
+            operation = 'research'
+        elif task_type_val == 'optimization':
+            operation = 'optimize'
+
+        action = {
+            'operation': operation,
+            'task': task.to_dict() if hasattr(task, 'to_dict') else str(task),
+            'context': task.metadata if hasattr(task, 'metadata') else {},
+            'data': task.metadata.get('market_state', {}) if hasattr(task, 'metadata') else {}
+        }
 
         try:
-            # Map task to action for execute()
-            operation = 'execute'
-            task_id = getattr(task, 'task_id', str(uuid.uuid4()))
-            description = getattr(task, 'description', getattr(task, 'name', str(task)))
-            metadata = getattr(task, 'metadata', {})
-
-            # Intelligent operation mapping based on role and task type
-            if hasattr(task, 'task_type'):
-                if task.task_type == TaskType.ANALYSIS:
-                    operation = 'propose' if self.role == AgentRole.PLANNER else 'analyze'
-                elif task.task_type == TaskType.RESEARCH:
-                    operation = 'research'
-                elif task.task_type == TaskType.PLANNING:
-                    operation = 'propose'
-                elif task.task_type == TaskType.EXECUTION:
-                    operation = 'execute'
-            else:
-                # Fallback to role-based mapping if task_type is not present
-                if self.role == AgentRole.PLANNER:
-                    operation = 'analyze'
-                elif self.role == AgentRole.RESEARCHER:
-                    operation = 'research'
-                elif self.role == AgentRole.EVALUATOR:
-                    operation = 'evaluate'
-                elif self.role == AgentRole.SAFETY:
-                    operation = 'check'
-
-            # If task metadata specifies an operation, use it
-            if isinstance(metadata, dict):
-                operation = metadata.get('operation', operation)
-
-            action = {
-                'operation': operation,
-                'task_id': task_id,
-                'description': description,
-                'context': metadata if isinstance(metadata, dict) else {'task_data': metadata},
-                'data': metadata if isinstance(metadata, dict) else {'task_data': metadata},
-                'metadata': metadata if isinstance(metadata, dict) else {'task_data': metadata}
-            }
-
             result = await self.execute(action)
-
-            # Ensure result has success flag
-            if not isinstance(result, dict):
-                result = {'result': result, 'success': True}
-
             if 'success' not in result:
-                result['success'] = 'error' not in result
-
-            execution_time = (datetime.now() - start_time).total_seconds()
-            self.metrics.update(result.get('success', False), execution_time)
-
+                result['success'] = True
             return result
-
         except Exception as e:
-            logger.error(f"Error executing task in {self.name}: {e}")
-            execution_time = (datetime.now() - start_time).total_seconds()
-            self.metrics.update(False, execution_time)
+            logger.error(f"Error in {self.name} executing task {task.task_id}: {e}")
             return {'success': False, 'error': str(e)}
-
-        finally:
-            self.status = AgentStatus.READY
 
     async def initialize(self):
         """Initialize the agent"""
         self.status = AgentStatus.READY
         logger.info(f"Agent {self.name} ({self.agent_id}) initialized")
-    
+
     async def shutdown(self):
         """Shutdown the agent"""
         self.status = AgentStatus.TERMINATED
         logger.info(f"Agent {self.name} ({self.agent_id}) terminated")
-    
+
     def add_capability(self, capability: AgentCapability):
         """Add a capability to the agent"""
         self.capabilities.append(capability)
-    
+
     def has_capability(self, capability_name: str) -> bool:
         """Check if agent has a specific capability"""
         return any(c.name == capability_name for c in self.capabilities)
-    
+
     def get_capability(self, capability_name: str) -> Optional[AgentCapability]:
         """Get a specific capability"""
         for cap in self.capabilities:
             if cap.name == capability_name:
                 return cap
         return None
-    
+
     def store_memory(self, key: str, value: Any):
         """Store something in agent memory"""
         self.memory[key] = value
-    
+
     def recall_memory(self, key: str, default: Any = None) -> Any:
         """Recall something from agent memory"""
         return self.memory.get(key, default)
-
 
     def get_status(self) -> Dict[str, Any]:
         """Get agent status"""
@@ -259,22 +214,21 @@ class BaseAgent(ABC):
             },
             'created_at': self.created_at.isoformat()
         }
-    
+
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.agent_id}, name={self.name}, role={self.role.value})"
-
 
 
 class AgentRegistry:
     """
     Centralized Agent Registry
-    
+
     Manages all agents in the system:
     - Registration and discovery
     - Capability matching
     - Health monitoring
     - Dynamic scaling
-    
+
     ┌─────────────────────────────────────────────────────────────┐
     │                    AGENT REGISTRY                            │
     │                                                              │
@@ -304,162 +258,142 @@ class AgentRegistry:
     │  └─────────────────────────────────────────────────────┘    │
     └─────────────────────────────────────────────────────────────┘
     """
-    
-    def __init__(self, config: Optional[Dict] = None, object_registry: Any = None):
+
+    def __init__(self, config: Optional[Dict] = None):
         config = config or {}
         self.config = config
-        self.object_registry = object_registry
-        
-        # Use Unified Registry for storage
-        self.unified_registry = registry
 
-        # Internal cache for fast lookup (subset of Unified Registry)
+        # Agent storage
         self.agents: Dict[str, BaseAgent] = {}
-        
+
         # Capability index for fast lookup
         self.capability_index: Dict[str, List[str]] = {}  # capability -> [agent_ids]
-        
+
         # Role index
         self.role_index: Dict[AgentRole, List[str]] = {
             role: [] for role in AgentRole
         }
-        
+
         # Agent factories for dynamic spawning
         self.agent_factories: Dict[str, Type[BaseAgent]] = {}
-        
+
         # Health monitoring
         self.health_check_interval = self.config.get('health_check_interval', 30)
         self.auto_restart = self.config.get('auto_restart', True)
-        
+
         self.running = False
-        
-        logger.info("Agent Registry initialized (bridged to Unified Registry)")
-    
+
+        logger.info("Agent Registry initialized")
+
     async def initialize(self):
         """Initialize the registry"""
         logger.info("Initializing Agent Registry")
         self.running = True
-        
+
         # Start health monitoring
         asyncio.create_task(self._health_monitor_loop())
-        
+
         logger.info("Agent Registry ready")
-    
+
     def register_factory(
-        self, 
-        agent_type: str, 
+        self,
+        agent_type: str,
         factory: Type[BaseAgent]
     ):
         """Register an agent factory for dynamic spawning"""
         self.agent_factories[agent_type] = factory
         logger.debug(f"Registered factory for agent type: {agent_type}")
-    
+
     async def register_agent(self, agent: BaseAgent) -> str:
         """
         Register an agent with the registry.
-        
+
         Args:
             agent: The agent to register
-            
+
         Returns:
             Agent ID
         """
         # Initialize agent if needed
         if agent.status == AgentStatus.INITIALIZING:
             await agent.initialize()
-        
-        # Store in Unified Registry
-        self.unified_registry.register(
-            name=agent.agent_id,
-            component=agent,
-            component_type="agent",
-            metadata={
-                "name": agent.name,
-                "role": agent.role.value,
-                "capabilities": [c.name for c in agent.capabilities]
-            }
-        )
 
-        # Update local cache for backward compatibility
+        # Store agent
         self.agents[agent.agent_id] = agent
-        
+
         # Index by role
         self.role_index[agent.role].append(agent.agent_id)
-        
+
         # Index by capabilities
         for capability in agent.capabilities:
             if capability.name not in self.capability_index:
                 self.capability_index[capability.name] = []
             self.capability_index[capability.name].append(agent.agent_id)
-        
+
         logger.info(f"Registered agent: {agent.name} ({agent.agent_id})")
-        
+
         return agent.agent_id
-    
+
     async def unregister_agent(self, agent_id: str):
         """Unregister an agent"""
         if agent_id not in self.agents:
             return
-        
+
         agent = self.agents[agent_id]
-        
+
         # Shutdown agent
         await agent.shutdown()
-        
+
         # Remove from indices
         if agent_id in self.role_index[agent.role]:
             self.role_index[agent.role].remove(agent_id)
-        
+
         for capability in agent.capabilities:
             if capability.name in self.capability_index:
                 if agent_id in self.capability_index[capability.name]:
                     self.capability_index[capability.name].remove(agent_id)
-        
+
         # Remove from storage
         del self.agents[agent_id]
-        
+
         logger.info(f"Unregistered agent: {agent.name} ({agent_id})")
-    
+
     async def spawn_agent(
-        self, 
-        agent_type: str, 
+        self,
+        agent_type: str,
         config: Optional[Dict] = None
     ) -> Optional[BaseAgent]:
         """
         Spawn a new agent of the given type.
-        
+
         Args:
             agent_type: Type of agent to spawn
             config: Configuration for the agent
-            
+
         Returns:
             The spawned agent or None if factory not found
         """
         if agent_type not in self.agent_factories:
             logger.warning(f"No factory registered for agent type: {agent_type}")
             return None
-        
+
         factory = self.agent_factories[agent_type]
         agent = factory(config=config)
-        
+
         await self.register_agent(agent)
-        
+
         logger.info(f"Spawned new agent: {agent.name} ({agent_type})")
-        
+
         return agent
-    
+
     def get_agent(self, agent_id: str) -> Optional[BaseAgent]:
         """Get an agent by ID"""
         return self.agents.get(agent_id)
 
-    def get_all_agents(self) -> List[BaseAgent]:
-        """Get all registered agents"""
-        return list(self.agents.values())
-
     async def get_executor(self, action_type: str) -> Optional[BaseAgent]:
         """
         Get an executor agent for a given action type.
-        
+
         Finds the best available agent that can execute the action.
         """
         # First, try to find by capability
@@ -469,15 +403,19 @@ class AgentRegistry:
                 agent = self.agents.get(agent_id)
                 if agent and agent.status == AgentStatus.READY:
                     return agent
-        
+
         # Fall back to executor role
         for agent_id in self.role_index[AgentRole.EXECUTOR]:
             agent = self.agents.get(agent_id)
             if agent and agent.status == AgentStatus.READY:
                 return agent
-        
+
         return None
-    
+
+    def get_all_agents(self) -> List[BaseAgent]:
+        """Get all registered agent instances"""
+        return list(self.agents.values())
+
     def get_agents_by_role(self, role: AgentRole) -> List[BaseAgent]:
         """Get all agents with a specific role"""
         if isinstance(role, str):
@@ -491,26 +429,26 @@ class AgentRegistry:
             for agent_id in self.role_index.get(role, [])
             if agent_id in self.agents
         ]
-    
+
     def get_agents_by_capability(self, capability: str) -> List[BaseAgent]:
         """Get all agents with a specific capability"""
         if capability not in self.capability_index:
             return []
-        
+
         return [
             self.agents[agent_id]
             for agent_id in self.capability_index[capability]
             if agent_id in self.agents
         ]
-    
+
     async def get_all_proposals(self, context) -> List[Dict[str, Any]]:
         """
         Get proposals from all planner agents.
-        
+
         Used by the orchestrator to gather candidate actions.
         """
         proposals = []
-        
+
         for agent in self.get_agents_by_role(AgentRole.PLANNER):
             status = agent.status.value if hasattr(agent.status, 'value') else agent.status
             if status in [AgentStatus.READY.value, "ready", "active"]:
@@ -535,16 +473,16 @@ class AgentRegistry:
                 except Exception as e:
                     logger.error(f"Error getting proposal from {agent.name}: {e}")
                     agent.status = AgentStatus.ERROR
-        
+
         return proposals
-    
+
     async def get_all_states(self) -> Dict[str, Any]:
         """Get states of all agents"""
         return {
             agent_id: agent.get_status()
             for agent_id, agent in self.agents.items()
         }
-    
+
     async def _health_monitor_loop(self):
         """Monitor agent health and restart failed agents"""
         while self.running:
@@ -553,35 +491,35 @@ class AgentRegistry:
                     # Check for error state
                     if agent.status == AgentStatus.ERROR:
                         logger.warning(f"Agent {agent.name} in error state")
-                        
+
                         if self.auto_restart:
                             await self._restart_agent(agent)
-                    
+
                     # Check for stale agents
                     time_since_active = (
                         datetime.now() - agent.metrics.last_active
                     ).total_seconds()
-                    
+
                     if time_since_active > 3600:  # 1 hour
                         logger.warning(f"Agent {agent.name} has been inactive for {time_since_active}s")
-                
+
                 await asyncio.sleep(self.health_check_interval)
-                
+
             except Exception as e:
                 logger.error(f"Error in health monitor: {e}")
                 await asyncio.sleep(self.health_check_interval)
-    
+
     async def _restart_agent(self, agent: BaseAgent):
         """Restart a failed agent"""
         logger.info(f"Restarting agent: {agent.name}")
-        
+
         try:
             await agent.shutdown()
             await agent.initialize()
             logger.info(f"Agent {agent.name} restarted successfully")
         except Exception as e:
             logger.error(f"Failed to restart agent {agent.name}: {e}")
-    
+
     def get_status(self) -> Dict[str, Any]:
         """Get registry status"""
         status_counts = {}
@@ -589,13 +527,13 @@ class AgentRegistry:
             count = sum(1 for a in self.agents.values() if a.status == status)
             if count > 0:
                 status_counts[status.value] = count
-        
+
         role_counts = {}
         for role in AgentRole:
-            count = len(self.role_index.get(role, []))
+            count = len(self.role_index.get(role, self.role_index.get(AgentRole(role), [])) if isinstance(role, str) else self.role_index[role])
             if count > 0:
                 role_counts[role.value] = count
-        
+
         return {
             'total_agents': len(self.agents),
             'status_distribution': status_counts,
@@ -603,16 +541,16 @@ class AgentRegistry:
             'capabilities': list(self.capability_index.keys()),
             'factories_registered': list(self.agent_factories.keys())
         }
-    
+
     async def shutdown(self):
         """Shutdown the registry and all agents"""
         logger.info("Shutting down Agent Registry")
         self.running = False
-        
+
         # Shutdown all agents
         for agent in list(self.agents.values()):
             await agent.shutdown()
-        
+
         self.agents.clear()
         logger.info("Agent Registry shutdown complete")
 
@@ -622,10 +560,10 @@ class AgentRegistry:
 class PlannerAgent(BaseAgent):
     """
     Planner Agent - Analyzes situations and proposes actions.
-    
+
     Inspired by AlphaGo's policy network - suggests promising moves.
     """
-    
+
     def __init__(self, config: Optional[Dict] = None):
         super().__init__(
             name=config.get("name", "PlannerAgent"),
@@ -647,37 +585,20 @@ class PlannerAgent(BaseAgent):
             input_schema={"market_data": "Dict"},
             output_schema={"analysis": "Dict"}
         ))
-        self.add_capability(AgentCapability(
-            name="data_access",
-            description="Access market and system data",
-            input_schema={"query": "Dict"},
-            output_schema={"data": "Dict"}
-        ))
-    
+
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute planning action"""
         operation = action.get('operation', 'propose')
-        
+
         if operation == 'propose':
             context = action.get('context', {})
             return await self._generate_proposal(context)
         elif operation == 'analyze':
             data = action.get('data', {})
-            if not data or len(data) <= 1: # Might only have task_id or similar
-                data = action.get('context', {}).get('market_state', action.get('context', {}))
             return await self._analyze(data)
-        elif operation == 'execute_task':
-            # For general tasks, we can try to propose based on metadata
-            context = action.get('metadata', {})
-            proposal = await self._generate_proposal(context)
-            return {
-                'success': True,
-                'result': proposal.get('reasoning', 'Task completed'),
-                'proposal': proposal
-            }
-        
-        return {'success': False, 'error': f'Unknown operation: {operation}'}
-    
+
+        return {'success': False, 'error': 'Unknown operation'}
+
     async def _generate_proposal(self, context) -> Dict[str, Any]:
         """Generate action proposal"""
         # Extract relevant information
@@ -688,7 +609,7 @@ class PlannerAgent(BaseAgent):
         else:
             trend = 'neutral'
             volatility = 0
-        
+
         # Generate proposal based on analysis
         if trend in ['bullish', 'strong_bullish'] and volatility < 0.02:
             return {
@@ -711,7 +632,7 @@ class PlannerAgent(BaseAgent):
                 'confidence': 0.5,
                 'reasoning': 'No clear signal'
             }
-    
+
     async def _analyze(self, data: Dict) -> Dict[str, Any]:
         """Analyze market data"""
         return {
@@ -724,19 +645,18 @@ class PlannerAgent(BaseAgent):
 class ExecutorAgent(BaseAgent):
     """
     Executor Agent - Executes approved actions.
-    
+
     Handles the actual execution of trades and other operations.
     """
-    
-    def __init__(self, executor: TradeExecutor, config: Optional[Dict] = None):
+
+    def __init__(self, config: Optional[Dict] = None):
         super().__init__(
             name="ExecutorAgent",
             role=AgentRole.EXECUTOR,
             config=config
         )
         self.config = config or {}
-        self.executor = TradeExecutor(config)
-    
+
     def _register_capabilities(self):
         self.add_capability(AgentCapability(
             name="trade_execution",
@@ -745,58 +665,38 @@ class ExecutorAgent(BaseAgent):
             output_schema={"result": "ExecutionResult"}
         ))
         self.add_capability(AgentCapability(
-            name="execution",
-            description="Execute general actions",
-            input_schema={"action": "Dict"},
-            output_schema={"result": "Dict"}
-        ))
-        self.add_capability(AgentCapability(
             name="order_management",
             description="Manage open orders",
             input_schema={"operation": "str", "order_id": "str"},
             output_schema={"result": "Dict"}
         ))
-        self.add_capability(AgentCapability(
-            name="validation",
-            description="Validate execution parameters",
-            input_schema={"parameters": "Dict"},
-            output_schema={"valid": "bool", "errors": "List"}
-        ))
-    
+
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute action"""
         operation = action.get('operation', 'execute')
-        
+
         start_time = datetime.now()
-        
+
         try:
-            if operation in ['execute', 'trade_execution']:
+            if operation == 'execute':
                 result = await self._execute_trade(action)
             elif operation == 'cancel':
                 result = await self._cancel_order(action)
             elif operation == 'modify':
                 result = await self._modify_order(action)
-            elif operation == 'validate':
-                result = {'success': True, 'valid': True}
-            elif operation == 'execute_task':
-                result = await self._execute_trade(action.get('metadata', {}))
             else:
-                # Fallback to trade execution for unknown operations if it looks like a trade
-                if any(k in action for k in ['symbol', 'side', 'size']):
-                    result = await self._execute_trade(action)
-                else:
-                    result = {'success': False, 'error': f'Unknown operation: {operation}'}
-            
+                result = {'success': False, 'error': 'Unknown operation'}
+
             execution_time = (datetime.now() - start_time).total_seconds()
             self.metrics.update(result.get('success', False), execution_time)
-            
+
             return result
-            
+
         except Exception as e:
             execution_time = (datetime.now() - start_time).total_seconds()
             self.metrics.update(False, execution_time)
             return {'success': False, 'error': str(e)}
-    
+
     async def _execute_trade(self, action: Dict) -> Dict[str, Any]:
         """Execute a trade using real/paper executor"""
         try:
@@ -821,12 +721,12 @@ class ExecutorAgent(BaseAgent):
             )
 
             # Execute via TradeExecutor
-            result = await self.executor.execute_trade(order)
+            result = self.executor.execute_trade(order)
             return result
         except Exception as e:
             logger.error(f"Trade execution failed in ExecutorAgent: {e}")
             return {'success': False, 'error': str(e)}
-    
+
     async def _cancel_order(self, action: Dict) -> Dict[str, Any]:
         """Cancel an order"""
         order_id = action.get('order_id')
@@ -834,7 +734,7 @@ class ExecutorAgent(BaseAgent):
             return {'success': False, 'error': 'No order_id provided'}
 
         return self.executor.cancel_order(order_id)
-    
+
     async def _modify_order(self, action: Dict) -> Dict[str, Any]:
         """Modify an order"""
         return {
@@ -846,10 +746,10 @@ class ExecutorAgent(BaseAgent):
 class EvaluatorAgent(BaseAgent):
     """
     Evaluator Agent - Evaluates outcomes and provides feedback.
-    
+
     Inspired by AlphaGo's value network - estimates expected outcomes.
     """
-    
+
     def __init__(self, config: Optional[Dict] = None):
         super().__init__(
             name="EvaluatorAgent",
@@ -857,7 +757,7 @@ class EvaluatorAgent(BaseAgent):
             config=config
         )
         self.config = config or {}
-    
+
     def _register_capabilities(self):
         self.add_capability(AgentCapability(
             name="evaluation",
@@ -871,39 +771,25 @@ class EvaluatorAgent(BaseAgent):
             input_schema={"strategy": "Strategy", "data": "HistoricalData"},
             output_schema={"backtest_result": "BacktestResult"}
         ))
-        self.add_capability(AgentCapability(
-            name="reporting",
-            description="Generate evaluation reports",
-            input_schema={"data": "Dict"},
-            output_schema={"report": "Dict"}
-        ))
-    
+
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute evaluation"""
         operation = action.get('operation', 'evaluate')
-        
-        if operation in ['evaluate', 'evaluation', 'analyze', 'reporting', 'report']:
-            # Robust data gathering for evaluation
-            if operation == 'analyze' and (not action.get('trade') or not action.get('outcome')):
-                data = action.get('data', {})
-                if not data or len(data) <= 1:
-                    data = action.get('context', {})
-                return await self._evaluate(data)
+
+        if operation == 'evaluate':
             return await self._evaluate(action)
-        elif operation in ['backtest', 'backtesting']:
+        elif operation == 'backtest':
             return await self._backtest(action)
-        elif operation == 'execute_task':
-            return await self._evaluate(action.get('metadata', {}))
-        
-        return {'success': False, 'error': f'Unknown operation: {operation}'}
-    
+
+        return {'success': False, 'error': 'Unknown operation'}
+
     async def _evaluate(self, action: Dict) -> Dict[str, Any]:
         """Evaluate an outcome"""
         trade = action.get('trade', {})
         outcome = action.get('outcome', {})
-        
+
         pnl = outcome.get('pnl', 0)
-        
+
         return {
             'success': True,
             'evaluation': {
@@ -912,7 +798,7 @@ class EvaluatorAgent(BaseAgent):
                 'feedback': 'Good trade' if pnl > 0 else 'Review strategy'
             }
         }
-    
+
     async def _backtest(self, action: Dict) -> Dict[str, Any]:
         """Run backtest"""
         return {
@@ -929,10 +815,10 @@ class EvaluatorAgent(BaseAgent):
 class ResearchAgent(BaseAgent):
     """
     Research Agent - Conducts research and discovers patterns.
-    
+
     Implements autonomous research capabilities.
     """
-    
+
     def __init__(self, config: Optional[Dict] = None):
         super().__init__(
             name="ResearchAgent",
@@ -940,7 +826,7 @@ class ResearchAgent(BaseAgent):
             config=config
         )
         self.config = config or {}
-    
+
     def _register_capabilities(self):
         self.add_capability(AgentCapability(
             name="research",
@@ -954,36 +840,22 @@ class ResearchAgent(BaseAgent):
             input_schema={"data": "MarketData"},
             output_schema={"patterns": "List[Pattern]"}
         ))
-        self.add_capability(AgentCapability(
-            name="analysis",
-            description="Analyze research findings",
-            input_schema={"data": "Dict"},
-            output_schema={"analysis": "Dict"}
-        ))
-    
+
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute research"""
         operation = action.get('operation', 'research')
-        
-        if operation in ['research', 'analyze', 'analysis']:
-            # Robust data gathering for research/analysis
-            if operation == 'analyze' and not action.get('topic'):
-                data = action.get('data', {})
-                if not data or len(data) <= 1:
-                    data = action.get('context', {})
-                return await self._research(data)
+
+        if operation == 'research':
             return await self._research(action)
-        elif operation in ['discover', 'discovery']:
+        elif operation == 'discover':
             return await self._discover(action)
-        elif operation == 'execute_task':
-            return await self._research(action.get('metadata', {}))
-        
-        return {'success': False, 'error': f'Unknown operation: {operation}'}
-    
+
+        return {'success': False, 'error': 'Unknown operation'}
+
     async def _research(self, action: Dict) -> Dict[str, Any]:
         """Conduct research"""
         topic = action.get('topic', 'general')
-        
+
         return {
             'success': True,
             'findings': {
@@ -992,7 +864,7 @@ class ResearchAgent(BaseAgent):
                 'recommendations': ['Recommendation 1']
             }
         }
-    
+
     async def _discover(self, action: Dict) -> Dict[str, Any]:
         """Discover patterns"""
         return {
@@ -1007,10 +879,10 @@ class ResearchAgent(BaseAgent):
 class SafetyAgent(BaseAgent):
     """
     Safety Agent - Performs safety checks and verification.
-    
+
     Implements Constitutional AI safety verification.
     """
-    
+
     def __init__(self, config: Optional[Dict] = None):
         super().__init__(
             name="SafetyAgent",
@@ -1018,7 +890,7 @@ class SafetyAgent(BaseAgent):
             config=config
         )
         self.config = config or {}
-    
+
     def _register_capabilities(self):
         self.add_capability(AgentCapability(
             name="safety_check",
@@ -1032,72 +904,41 @@ class SafetyAgent(BaseAgent):
             input_schema={"action": "Action", "rules": "List[Rule]"},
             output_schema={"verification_result": "VerificationResult"}
         ))
-    
+
     async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Execute safety check"""
         operation = action.get('operation', 'check')
-        
-        if operation in ['check', 'analyze']:
+
+        if operation == 'check':
             return await self._safety_check(action)
         elif operation == 'verify':
             return await self._verify(action)
-        elif operation == 'execute_task':
-            return await self._safety_check(action.get('metadata', {}))
-        
-        return {'success': False, 'error': f'Unknown operation: {operation}'}
-    
+
+        return {'success': False, 'error': 'Unknown operation'}
+
     async def _safety_check(self, action: Dict) -> Dict[str, Any]:
         """Perform safety check"""
         target_action = action.get('target_action', {})
-        
+
         # Check for risky parameters
         size = target_action.get('size', 0)
         leverage = target_action.get('leverage', 1)
-        
+
         is_safe = size <= 0.1 and leverage <= 5
-        
+
         return {
             'success': True,
             'is_safe': is_safe,
             'safety_score': 0.9 if is_safe else 0.3,
             'warnings': [] if is_safe else ['Position size or leverage too high']
         }
-    
+
     async def _verify(self, action: Dict) -> Dict[str, Any]:
         """Verify compliance"""
         return {
             'success': True,
             'compliant': True,
             'violations': []
-        }
-
-class OptimizerAgent(BaseAgent):
-    """
-    Optimizer Agent - Optimizes system and strategy performance.
-    """
-
-    def __init__(self, config: Optional[Dict] = None):
-        super().__init__(
-            name=config.get("name", "OptimizerAgent"),
-            role=AgentRole.OPTIMIZER,
-            config=config
-        )
-        self.config = config or {}
-
-    def _register_capabilities(self):
-        self.add_capability(AgentCapability(
-            name="optimization",
-            description="Optimize system parameters",
-            input_schema={"target": "str", "metrics": "Dict"},
-            output_schema={"optimized_params": "Dict"}
-        ))
-
-    async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute optimization"""
-        return {
-            'success': True,
-            'result': 'Optimization completed',
-            'optimized_params': {'rebalance_frequency': 1}
         }
 
 class LegacyAgentWrapper(BaseAgent):
@@ -1129,7 +970,7 @@ class LegacyAgentWrapper(BaseAgent):
         """Execute legacy agent logic"""
         operation = action.get('operation', 'propose')
 
-        if operation in ['propose', 'execute_task']:
+        if operation == 'propose':
             # Handle both SystemContext and raw Dict
             context = action.get('context', {})
             market_data = getattr(context, 'market_state', context)

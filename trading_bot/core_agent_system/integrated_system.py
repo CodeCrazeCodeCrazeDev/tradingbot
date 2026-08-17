@@ -3,33 +3,77 @@ Integrated Agent System - Research Lab Grade Architecture
 
 This module integrates all components into a unified system following
 patterns from DeepMind, OpenAI, and Anthropic.
+
+Architecture Overview:
+┌─────────────────────────────────────────────────────────────────────┐
+│                    INTEGRATED AGENT SYSTEM                           │
+│                                                                      │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │                   MASTER ORCHESTRATOR                          │ │
+│  │  - Hierarchical control (DeepMind)                             │ │
+│  │  - Decision fusion with MCTS                                   │ │
+│  │  - Safety verification (Anthropic)                             │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                              │                                       │
+│         ┌────────────────────┼────────────────────┐                 │
+│         ▼                    ▼                    ▼                 │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐           │
+│  │   Policy    │     │   Value     │     │Constitutional│           │
+│  │   Network   │     │   Network   │     │    Layer    │           │
+│  │ (AlphaGo)   │     │ (AlphaGo)   │     │ (Anthropic) │           │
+│  └─────────────┘     └─────────────┘     └─────────────┘           │
+│         │                    │                    │                 │
+│         └────────────────────┼────────────────────┘                 │
+│                              ▼                                       │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │                      ReAct LOOP                                │ │
+│  │  Thought → Action → Observation (OpenAI GPT-4)                 │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                              │                                       │
+│         ┌────────────────────┼────────────────────┐                 │
+│         ▼                    ▼                    ▼                 │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐           │
+│  │   Agent     │     │    Tool     │     │   Memory    │           │
+│  │  Registry   │     │  Registry   │     │   System    │           │
+│  └─────────────┘     └─────────────┘     └─────────────┘           │
+│         │                    │                    │                 │
+│         └────────────────────┼────────────────────┘                 │
+│                              ▼                                       │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │                   SELF-PLAY LOOP                               │ │
+│  │  Continuous improvement through self-play (DeepMind)           │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
+
+Usage:
+    from trading_bot.core_agent_system import IntegratedAgentSystem
+
+    system = IntegratedAgentSystem(config)
+    await system.initialize()
+    await system.start()
 """
 
 import asyncio
 import logging
-import uuid
-import multiprocessing
+import psutil
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from pathlib import Path
-import redis
 
+from .master_orchestrator import MasterOrchestrator, SystemContext
 from .react_loop import ReActLoop
 from .constitutional_layer import ConstitutionalAI
-from trading_bot.execution.trade_executor import TradeExecutor
 from .policy_value_network import PolicyNetwork, ValueNetwork, DualNetwork
 from .agent_registry import (
-    AgentRegistry, 
+    AgentRegistry,
     AgentRole,
-    PlannerAgent, 
-    ExecutorAgent, 
+    PlannerAgent,
+    ExecutorAgent,
     EvaluatorAgent,
     ResearchAgent,
     SafetyAgent,
-    OptimizerAgent,
     LegacyAgentWrapper
 )
-from .migrated_agents.planner import MigratedPlannerAgent
 from trading_bot.agents2.specialized_agents import (
     TrendFollowingAgent,
     MeanReversionAgent,
@@ -45,137 +89,146 @@ from .specialized_planners import (
 from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
-from trading_bot.core.unified_event_bus import decision_bus
 from .self_coordinating_core import SelfCoordinatingCore
-from .swarm.usis import UnifiedSwarmIntelligenceSystem
-from .swarm.experts import MarketScientist, QuantAnalyst, SwarmRiskManager
-
-# One Brain Canonical Subsystems
-from trading_bot.core.csc.controller import CognitiveSystemController
-from trading_bot.core.unified_registry import registry as unified_registry
-from trading_bot.core.alphaalgo_core_engine import CoreDecision, DecisionOutcome
-from dataclasses import dataclass
+from trading_bot.world_model.latent_dynamics import WorldModel
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class SystemContext:
-    """Canonical system context for reasoning cycles"""
-    timestamp: datetime
-    market_state: Dict
-    portfolio_state: Dict
-    agent_states: Dict
-    risk_metrics: Dict
+class MetricsCollector:
+    """
+    Metrics Collector - Aggregates real-time telemetry from the agent system.
+    """
+
+    def __init__(self, system):
+        self.system = system
+        self.start_time = datetime.now()
+        self.process = psutil.Process()
+
+    def get_all_metrics(self) -> Dict[str, Any]:
+        """Collect all metrics from the system"""
+        status = self.system.get_comprehensive_status()
+        uptime = datetime.now() - self.start_time
+
+        # System resource metrics
+        cpu_usage = self.process.cpu_percent()
+        memory_info = self.process.memory_info()
+
+        return {
+            'timestamp': datetime.now().isoformat(),
+            'uptime': str(uptime),
+            'uptime_seconds': uptime.total_seconds(),
+            'status': 'running' if self.system.running else 'stopped',
+            'cpu_usage': cpu_usage,
+            'memory_usage': memory_info.rss / (1024 * 1024),  # MB
+            'active_connections': len(self.process.connections()),
+            'error_rate': status.get('coordination_core', {}).get('metrics', {}).get('failed_tasks', 0) /
+                         max(status.get('coordination_core', {}).get('metrics', {}).get('total_tasks', 1), 1),
+            'components': {
+                'coordination': 'active' if status.get('coordination_core', {}).get('running') else 'inactive',
+                'memory': 'healthy',
+                'agents': 'healthy' if status.get('agents', {}).get('total_agents', 0) > 0 else 'warning',
+                'tools': 'healthy'
+            },
+            **status
+        }
 
 
 class IntegratedAgentSystem:
     """
     Integrated Agent System - Research Lab Grade
+
+    Combines all components into a unified, production-ready system
+    following patterns from leading AI research labs.
     """
-    
+
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
-        
+
+        # Metrics
+        self.metrics_collector = MetricsCollector(self)
+
         # Storage path
-        storage_base = Path(self.config.get('storage_path', 'core_agent_data'))
+        storage_base = Path(config.get('storage_path', 'core_agent_data'))
         storage_base.mkdir(parents=True, exist_ok=True)
         self.storage_path = storage_base
-        
-        # 0. Unified Registry
-        self.unified_registry = unified_registry
 
         # Initialize components
         self._init_components()
-        
+
         # State
         self.running = False
         self.initialized = False
-        self.background_processes = {}
-        
+
         logger.info("=" * 60)
         logger.info("INTEGRATED AGENT SYSTEM - RESEARCH LAB GRADE")
         logger.info("=" * 60)
+        logger.info("Patterns: DeepMind AlphaGo + OpenAI GPT-4 + Anthropic Constitutional AI")
+        logger.info("=" * 60)
 
-    def _init_redis(self):
-        """Initialize Redis connection for IPC."""
-        try:
-            self.redis_client = redis.Redis(
-                host=self.config.get('redis_host', 'localhost'),
-                port=self.config.get('redis_port', 6379),
-                db=0,
-                decode_responses=True
-            )
-            self.redis_client.ping()
-            logger.info("✓ Redis connection established")
-        except Exception as e:
-            logger.warning(f"✗ Redis connection failed: {e}. Background services may be restricted.")
-            self.redis_client = None
-    
     def _init_components(self):
         """Initialize all system components"""
-        # 1. Memory System
+
+        # 1. Memory System (foundation for all learning)
         self.memory_system = MemorySystem({
             'storage_path': str(self.storage_path / 'memory'),
             'working_memory_capacity': self.config.get('working_memory_capacity', 20),
             'max_episodes': self.config.get('max_episodes', 50000)
         })
-        
-        # 2. Tool Registry
+
+        # 2. Tool Registry (standardized tool interface)
         self.tool_registry = ToolRegistry({
             'storage_path': str(self.storage_path / 'tools')
         })
-        
-        # 3. Agent Registry
+
+        # 3. Agent Registry (unified agent management)
         self.agent_registry = AgentRegistry({
             'storage_path': str(self.storage_path / 'agents'),
             'health_check_interval': 30,
             'auto_restart': True
         })
-        
-        # 4. Policy Network
+
+        # 4. Policy Network (DeepMind - what to do)
         self.policy_network = PolicyNetwork({
             'learning_rate': self.config.get('policy_lr', 0.001),
             'temperature': self.config.get('temperature', 1.0)
         })
-        
-        # 5. Value Network
+
+        # 5. Value Network (DeepMind - how good)
         self.value_network = ValueNetwork({
             'learning_rate': self.config.get('value_lr', 0.001)
         })
-        
-        # 5b. World Model (V2 - Institutional Predictive Planning)
-        from trading_bot.world_model import WorldModelV2, LegacyWorldModelAdapter
-        asset_dims = self.config.get('asset_dims', {'equities': 20, 'fx': 10, 'macro': 5})
-        latent_dim = self.config.get('latent_dim', 256)
 
-        self.world_model_v2 = WorldModelV2(asset_dims, latent_dim=latent_dim)
+        # 5b. World Model (DreamerV3/JEPA - imagination)
+        self.world_model = WorldModel({
+            'input_dim': self.config.get('market_input_dim', 20),
+            'latent_dim': self.config.get('latent_dim', 64),
+            'hidden_dim': self.config.get('hidden_dim', 128)
+        })
 
-        # Use Adapter for legacy compatibility with agents expecting JEPA API
-        self.world_model = LegacyWorldModelAdapter(self.world_model_v2)
-
-        # 6. Constitutional Layer
+        # 6. Constitutional Layer (Anthropic - safety)
         self.constitutional_layer = ConstitutionalAI({
             'safety_threshold': self.config.get('safety_threshold', 0.7),
             'red_team_enabled': self.config.get('red_team_enabled', True),
             'red_team_iterations': 3
         })
-        
-        # 7. ReAct Loop
+
+        # 7. ReAct Loop (OpenAI - reasoning)
         self.react_loop = ReActLoop(
             tool_registry=self.tool_registry,
             memory_system=self.memory_system,
             max_iterations=self.config.get('max_react_iterations', 10)
         )
-        
-        # 8. Cognitive System Controller (One Brain Authority)
-        self.csc = CognitiveSystemController(
-            world_model=self.world_model,
-            hms=self.memory_system,
-            shield=None # Will use default ImmutableShield
-        )
 
-        # 9. Self-Play Loop
+        # 8. Master Orchestrator (central coordination)
+        self.orchestrator = MasterOrchestrator({
+            'search_depth': self.config.get('search_depth', 5),
+            'num_simulations': self.config.get('num_simulations', 100),
+            'safety_threshold': self.config.get('safety_threshold', 0.7),
+            'max_history': 10000
+        })
+
+        # 9. Self-Play Loop (DeepMind - continuous improvement)
         self.self_play_loop = SelfPlayLoop(
             policy_network=self.policy_network,
             value_network=self.value_network,
@@ -188,7 +241,7 @@ class IntegratedAgentSystem:
             }
         )
 
-        # 10. Self-Coordinating Core
+        # 10. Self-Coordinating Core (Advanced Multi-Agent Coordination)
         self.coordination_core = SelfCoordinatingCore(
             policy_network=self.policy_network,
             value_network=self.value_network,
@@ -197,72 +250,95 @@ class IntegratedAgentSystem:
             memory_system=self.memory_system,
             tool_registry=self.tool_registry,
             agent_registry=self.agent_registry,
-            config=self.config
+            config={
+                **self.config,
+                'coordination_storage_path': str(self.storage_path / 'coordination')
+            }
         )
 
-        # 12. Unified Swarm Intelligence System (USIS)
-        self.swarm_system = UnifiedSwarmIntelligenceSystem(
-            self.agent_registry,
-            self.config.get('swarm', {})
-        )
-    
     async def initialize(self):
         """Initialize all components"""
+        logger.info("=" * 60)
         logger.info("INITIALIZING INTEGRATED AGENT SYSTEM")
-        
-        # Start Decision Bus (LogAct Backbone)
-        await decision_bus.start()
+        logger.info("=" * 60)
 
+        # Initialize in dependency order
+        logger.info("1. Initializing Memory System...")
         await self.memory_system.initialize()
+
+        logger.info("2. Initializing Tool Registry...")
         await self.tool_registry.initialize()
+
+        logger.info("3. Initializing Agent Registry...")
         await self.agent_registry.initialize()
-        
+
         # Register default agents
         await self._register_default_agents()
-        
-        # Register specialists in CSC Router
-        from trading_bot.core.csc.router import SkillDomain
-        self.csc.router.register_specialist("MainPlanner", [SkillDomain.MARKET_STRUCTURE, SkillDomain.LIQUIDITY])
-        self.csc.router.register_specialist("MainEvaluator", [SkillDomain.STATISTICAL_ARBITRAGE, SkillDomain.DATA_QUALITY])
-        self.csc.router.register_specialist("MainSafety", [SkillDomain.RISK_MANAGEMENT])
 
+        logger.info("4. Initializing Policy Network...")
         await self.policy_network.initialize()
+
+        logger.info("5. Initializing Value Network...")
         await self.value_network.initialize()
+
+        logger.info("6. Initializing Constitutional Layer...")
         await self.constitutional_layer.initialize()
+
+        logger.info("7. Initializing ReAct Loop...")
         await self.react_loop.initialize()
 
-        self.self_play_loop.audit_system = self.coordination_core.governance
+        logger.info("7b. Initializing World Model...")
+        # Note: WorldModel doesn't have an async initialize, but it's good practice
+
+        logger.info("8. Initializing Master Orchestrator...")
+        # Inject dependencies into orchestrator
+        self.orchestrator.inject_dependencies(
+            policy_network=self.policy_network,
+            value_network=self.value_network,
+            constitutional_layer=self.constitutional_layer,
+            react_loop=self.react_loop,
+            agent_registry=self.agent_registry,
+            tool_registry=self.tool_registry,
+            memory_system=self.memory_system,
+            world_model=self.world_model
+        )
+        await self.orchestrator.initialize()
+
+        logger.info("9. Initializing Self-Play Loop...")
         await self.self_play_loop.initialize()
-        
+
+        logger.info("10. Initializing Self-Coordinating Core...")
         await self.coordination_core.initialize()
+
+        # 11. Assign default agents to teams for teamwork
         await self._assign_agents_to_teams()
 
         self.initialized = True
 
-    async def _register_default_agents(self):
-        """Register default agents"""
-        trade_executor = TradeExecutor(self.config.get('executor', {}))
+        logger.info("=" * 60)
+        logger.info("INTEGRATED AGENT SYSTEM READY")
+        logger.info("=" * 60)
 
+        self._print_system_status()
+
+    async def _register_default_agents(self):
+        """Register default agents including legacy ones"""
         default_agents = [
-            MigratedPlannerAgent(config={'name': 'ComprehensivePlanner'}),
             PlannerAgent(config={'name': 'MainPlanner'}),
-            TrendFollowingPlanner(config={'name': 'TrendFollowingPlanner'}),
+            TrendFollowingPlanner(config={'name': 'TrendPlanner'}),
             MeanReversionPlanner(config={'name': 'MeanReversionPlanner'}),
             VolatilityPlanner(config={'name': 'VolatilityPlanner'}),
-            ExecutorAgent(executor=trade_executor, config={'name': 'MainExecutor'}),
+            ExecutorAgent(config={'name': 'MainExecutor'}),
             EvaluatorAgent(config={'name': 'MainEvaluator'}),
             ResearchAgent(config={'name': 'MainResearcher'}),
             SafetyAgent(config={'name': 'MainSafety'}),
-
-            # Swarm Experts
-            MarketScientist(config={'name': 'SwarmMarketScientist'}),
-            QuantAnalyst(config={'name': 'SwarmQuantAnalyst'}),
-            SwarmRiskManager(config={'name': 'SwarmRiskManager'}),
         ]
-        
+
+        # Register standard agents
         for agent in default_agents:
             await self.agent_registry.register_agent(agent)
 
+        # Register legacy specialized agents via wrapper
         legacy_agents = [
             LegacyAgentWrapper(TrendFollowingAgent()),
             LegacyAgentWrapper(MeanReversionAgent()),
@@ -273,102 +349,74 @@ class IntegratedAgentSystem:
 
         for agent in legacy_agents:
             await self.agent_registry.register_agent(agent)
-        
+
         logger.info(f"Registered {len(default_agents)} standard and {len(legacy_agents)} legacy agents")
 
     async def _assign_agents_to_teams(self):
-        """Assign registered agents to functional teams in coordination core"""
-        logger.info("Assigning agents to functional teams...")
+        """Assign agents to functional teams"""
+        # Find agents by role or name and add them to teams in shared memory
+        trading_team = self.agent_registry.get_agents_by_role(AgentRole.PLANNER)
+        trading_team.extend(self.agent_registry.get_agents_by_role(AgentRole.EXECUTOR))
 
-        role_to_team = {
-            AgentRole.PLANNER: 'trading_team',
-            AgentRole.EXECUTOR: 'trading_team',
-            AgentRole.COORDINATOR: 'trading_team',
-            AgentRole.RESEARCHER: 'research_team',
-            AgentRole.EVALUATOR: 'research_team',
-            AgentRole.SAFETY: 'safety_team'
-        }
+        research_team = self.agent_registry.get_agents_by_role(AgentRole.RESEARCHER)
 
-        for agent_id, agent in self.agent_registry.agents.items():
-            team = role_to_team.get(agent.role)
-            if team:
-                self.coordination_core.shared_memory.add_to_team(team, agent_id)
-                logger.debug(f"Assigned agent {agent.name} to team {team}")
+        safety_team = self.agent_registry.get_agents_by_role(AgentRole.SAFETY)
+        safety_team.extend(self.agent_registry.get_agents_by_role(AgentRole.EVALUATOR))
+
+        for agent in trading_team:
+            self.coordination_core.shared_memory.add_to_team('trading_team', agent.agent_id)
+
+        for agent in research_team:
+            self.coordination_core.shared_memory.add_to_team('research_team', agent.agent_id)
+
+        for agent in safety_team:
+            self.coordination_core.shared_memory.add_to_team('safety_team', agent.agent_id)
+
+        logger.info(f"Assigned agents to teams: trading={len(trading_team)}, research={len(research_team)}, safety={len(safety_team)}")
 
     async def start(self):
         """Start the integrated system"""
         if not self.initialized:
             await self.initialize()
-        
+
+        logger.info("=" * 60)
         logger.info("STARTING INTEGRATED AGENT SYSTEM")
+        logger.info("=" * 60)
+
         self.running = True
 
-        # Start Layer 2: Background Services
-        self.start_background_services()
-        
+        # Start all async loops
         tasks = [
             asyncio.create_task(self._main_loop(), name="main_loop"),
             asyncio.create_task(self._self_improvement_loop(), name="self_improvement"),
             asyncio.create_task(self._monitoring_loop(), name="monitoring"),
         ]
-        
+
+        logger.info(f"Started {len(tasks)} system loops")
+
         try:
             await asyncio.gather(*tasks)
         except Exception as e:
             logger.error(f"Error in system operation: {e}")
             await self.shutdown()
 
-    def start_background_services(self):
-        """Start Layer 2 background intelligence services."""
-        logger.info("Starting background services...")
-
-        services = [
-            ('market_student', run_market_student_service),
-            ('eternal_evolution', run_eternal_evolution_service),
-            ('sentiment_analysis', run_sentiment_analysis_service),
-            ('market_monitor', run_market_monitor_service),
-        ]
-
-        for name, func in services:
-            try:
-                # Use standalone functions to avoid pickling 'self'
-                process = multiprocessing.Process(
-                    target=func,
-                    args=(self.config,),
-                    name=name
-                )
-                process.daemon = True
-                process.start()
-                self.background_processes[name] = process
-                logger.info(f"✓ Started: {name} (PID: {process.pid})")
-            except Exception as e:
-                logger.error(f"✗ Failed to start {name}: {e}")
-
-    def stop_background_services(self):
-        """Stop all background services."""
-        logger.info("Stopping background services...")
-
-        for name, process in self.background_processes.items():
-            if process.is_alive():
-                process.terminate()
-                process.join(timeout=5)
-                if process.is_alive():
-                    process.kill()
-                logger.info(f"✓ Stopped: {name}")
-
-        self.background_processes.clear()
-    
     async def _main_loop(self):
         """Main orchestration loop"""
+        logger.info("Starting main orchestration loop")
+
         while self.running:
             try:
+                # Gather current context
                 context = await self._gather_context()
-                decision = await self.think(context)
-                
-                # Check outcome from CSC decision (CoreDecision)
-                if decision and decision.outcome == DecisionOutcome.TRADE_APPROVED:
+
+                # Think and decide (AlphaGo + Constitutional AI)
+                decision = await self.orchestrator.think(context)
+
+                # Execute if safe and valuable
+                if decision.is_safe() and decision.expected_value > 0.5:
+                    # Use coordinated teamwork for execution
                     result = await self.execute_task(
-                        task=f"Execute TRADE_APPROVED",
+                        task=f"Execute {decision.decision_type}",
                         context={
                             'decision': decision,
                             'market_state': context.market_state,
@@ -376,36 +424,66 @@ class IntegratedAgentSystem:
                             'use_coordination': True
                         }
                     )
-                
+
+                    # Learn from outcome
+                    await self.orchestrator.learn({
+                        'decision': decision,
+                        'result': result,
+                        'success': result.get('success', False),
+                        'actual_value': decision.expected_value if result.get('success') else 0.0
+                    })
+
                 await asyncio.sleep(1)
+
             except Exception as e:
                 logger.error(f"Error in main loop: {e}")
                 await asyncio.sleep(5)
-    
+
     async def _self_improvement_loop(self):
         """Self-improvement through self-play"""
+        logger.info("Starting self-improvement loop")
+
         while self.running:
             try:
+                # Run one iteration of self-play
                 results = await self.self_play_loop.run_iteration()
+
                 if results['improved']:
-                    await self.memory_system.store_knowledge(f"improvement_{results['iteration']}", results)
+                    logger.info(f"System improved at iteration {results['iteration']}")
+
+                    # Store improvement in memory
+                    await self.memory_system.store_knowledge(
+                        f"improvement_{results['iteration']}",
+                        results
+                    )
+
+                # Longer interval for self-play
                 await asyncio.sleep(60)
+
             except Exception as e:
                 logger.error(f"Error in self-improvement loop: {e}")
                 await asyncio.sleep(60)
-    
+
     async def _monitoring_loop(self):
         """System monitoring and health checks"""
+        logger.info("Starting monitoring loop")
+
         while self.running:
             try:
                 status = self.get_comprehensive_status()
-                logger.info(f"System Status: agents={status['agents']['total_agents']}, tools={status['tools']['total_tools']}")
-                await asyncio.sleep(300)
+
+                # Log periodic status
+                logger.info(f"System Status: agents={status['agents']['total_agents']}, "
+                           f"tools={status['tools']['total_tools']}, "
+                           f"memory={status['memory']['episodic']['total_episodes']}")
+
+                await asyncio.sleep(300)  # Every 5 minutes
+
             except Exception as e:
                 logger.error(f"Error in monitoring loop: {e}")
                 await asyncio.sleep(60)
-    
-    async def _gather_context(self) -> Any:
+
+    async def _gather_context(self) -> SystemContext:
         """Gather current system context"""
         # Get market state from tools
         market_tool = await self.tool_registry.get_tool('market_data')
@@ -414,7 +492,7 @@ class IntegratedAgentSystem:
             market_state = market_result if (market_result and market_result.get('success')) else {}
         else:
             market_state = {}
-        
+
         # Get portfolio state
         portfolio_tool = await self.tool_registry.get_tool('portfolio')
         if portfolio_tool:
@@ -422,7 +500,7 @@ class IntegratedAgentSystem:
             portfolio_state = portfolio_result if (portfolio_result and portfolio_result.get('success')) else {}
         else:
             portfolio_state = {}
-        
+
         # Get risk metrics
         risk_tool = await self.tool_registry.get_tool('risk_calculator')
         if risk_tool:
@@ -430,336 +508,203 @@ class IntegratedAgentSystem:
             risk_metrics = risk_result if (risk_result and risk_result.get('success')) else {}
         else:
             risk_metrics = {}
-        
+
         # Get agent states
         agent_states = await self.agent_registry.get_all_states()
-        
+
         return SystemContext(
             timestamp=datetime.now(),
             market_state=market_state,
             portfolio_state=portfolio_state,
             agent_states=agent_states,
+            pending_decisions=[],
+            recent_outcomes=[],
             risk_metrics=risk_metrics
         )
-    
-    # ========================================================================
-    # EXECUTION INTERFACE (Standardized)
-    # ========================================================================
 
     async def execute_task(self, task: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         """
-        Execute a high-level task using the unified brain.
-        Primary entry point for external callers.
+        Execute a task using the full system with multi-agent coordination.
+
+        This is the main entry point for external requests.
+        It uses the Self-Coordinating Core to leverage teamwork.
         """
         context = context or {}
-        
-        # Check for swarm-specific tasks
-        if context.get('use_swarm') or 'swarm' in task.lower():
-            logger.info(f"IAS routing task to USIS: {task}")
-            return await self.swarm_system.analyze(task, context)
 
-        logger.info(f"IAS executing task via Coordination Core: {task}")
+        logger.info(f"Integrated System executing task: {task}")
 
-        # Use SelfCoordinatingCore directly for task decomposition and execution
+        # For complex tasks, use the Self-Coordinating Core to enable teamwork
         from .coordination_core import TaskType, TaskPriority
 
-        # Determine task type from context or task string
-        task_type = context.get('task_type', TaskType.ANALYSIS)
-        if isinstance(task_type, str):
-            try:
-                task_type = TaskType(task_type.lower())
-            except ValueError:
-                task_type = TaskType.ANALYSIS
+        # Determine if we should use coordination core or simple ReAct
+        # Heuristic: if task contains multiple keywords, or explicitly requested
+        use_coordination = context.get('use_coordination', True)
 
-        result = await self.coordination_core.execute_task(
-            task_name=f"Task: {task[:30]}",
-            task_type=task_type,
-            description=task,
-            priority=context.get('priority', TaskPriority.MEDIUM),
-            metadata=context
-        )
+        if use_coordination:
+            result = await self.coordination_core.execute_task(
+                task_name=f"Request: {task[:30]}...",
+                task_type=TaskType.ANALYSIS,
+                description=task,
+                priority=TaskPriority.MEDIUM,
+                metadata=context
+            )
 
-        # Extract final answer from results
-        answer_part = "No specific result returned."
-        if result.get('results'):
-            for r in reversed(result['results']):
-                if r.get('result'):
-                    answer_part = r['result']
-                    break
-                elif r.get('answer'):
-                    answer_part = r['answer']
-                    break
+            # Extract final answer from results
+            final_answer = "Task completed by coordinated team."
+            if result.get('results'):
+                # Try to find the most relevant result
+                for r in reversed(result['results']):
+                    if r.get('result'):
+                        final_answer = r['result']
+                        break
+                    elif r.get('answer'):
+                        final_answer = r['answer']
+                        break
 
-        return {
-            'success': result.get('success', False),
-            'answer': f"Task completed by coordinated team. Result: {answer_part}",
-            'coordination_report': result,
-            'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
-            'iterations': len(result.get('results', []))
-        }
+            return {
+                'success': result.get('success', False),
+                'answer': final_answer,
+                'coordination_report': result,
+                'reasoning': f"Multi-agent coordination used. {len(result.get('results', []))} agents involved.",
+                'iterations': len(result.get('results', []))
+            }
+        else:
+            # Fallback to simple ReAct loop for simpler tasks
+            trace = await self.react_loop.run(
+                task=task,
+                context=context,
+                available_tools=list(self.tool_registry.tools.keys())
+            )
 
-    async def think(self, context: Optional[Any] = None) -> CoreDecision:
-        """
-        Perform a reasoning cycle based on the current context.
-        Delegates strategic logic to the Cognitive System Controller (CSC).
-        """
-        if not context:
-            context = await self._gather_context()
-
-        # authoritative One Brain delegation
-        logger.info("IAS: Delegating strategic reasoning to CSC")
-
-        # Convert context to observation dict for CSC
-        observation = {
-            'market_state': context.market_state,
-            'portfolio_state': context.portfolio_state,
-            'risk_metrics': context.risk_metrics,
-            'timestamp': context.timestamp
-        }
-
-        return await self.csc.process_market_observation(observation)
-
-    async def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Process a structured request (JSON/Dict).
-        Maps requests to either execute_task or think based on content.
-        """
-        task = request.get('task') or request.get('instruction')
-        context = request.get('context', {})
-
-        if task:
-            return await self.execute_task(task, context)
-
-        # If no explicit task, perform a general reasoning cycle
-        decision = await self.think()
-        return {
-            'success': True,
-            'decision': decision.to_dict() if hasattr(decision, 'to_dict') else str(decision)
-        }
-
-    # ========================================================================
-    # UTILITIES
-    # ========================================================================
+            return {
+                'success': trace.success,
+                'answer': trace.final_answer,
+                'reasoning': trace.to_string(),
+                'iterations': len(trace.steps)
+            }
 
     def get_comprehensive_status(self) -> Dict[str, Any]:
         """Get comprehensive system status"""
         return {
             'running': self.running,
             'initialized': self.initialized,
+            'orchestrator': self.orchestrator.get_status(),
             'agents': self.agent_registry.get_status(),
             'tools': self.tool_registry.get_status(),
             'memory': self.memory_system.get_status(),
             'policy_network': self.policy_network.get_status(),
             'value_network': self.value_network.get_status(),
             'self_play': self.self_play_loop.get_status(),
+            'coordination_core': self.coordination_core.get_comprehensive_status(),
             'timestamp': datetime.now().isoformat()
         }
-    
+
     def _print_system_status(self):
         """Print system status"""
         status = self.get_comprehensive_status()
-        
+
         print("\n" + "=" * 60)
         print("INTEGRATED AGENT SYSTEM - STATUS")
         print("=" * 60)
-        
+
+        print(f"\n🧠 ORCHESTRATOR")
+        print(f"   State: {status['orchestrator']['state']}")
+        print(f"   Safety Threshold: {status['orchestrator']['safety_threshold']}")
+
         print(f"\n🤖 AGENTS")
         print(f"   Total: {status['agents']['total_agents']}")
         print(f"   Roles: {status['agents']['role_distribution']}")
-        
+
         print(f"\n🔧 TOOLS")
         print(f"   Total: {status['tools']['total_tools']}")
         print(f"   Categories: {status['tools']['category_distribution']}")
-        
+
         print(f"\n💾 MEMORY")
         print(f"   Working: {status['memory']['working']['used']}/{status['memory']['working']['capacity']}")
         print(f"   Episodic: {status['memory']['episodic']['total_episodes']}")
         print(f"   Semantic: {status['memory']['semantic']['total_knowledge']}")
-        
+
         print(f"\n📊 NETWORKS")
         print(f"   Policy: {len(status['policy_network']['action_weights'])} actions")
         print(f"   Value: {status['value_network']['update_count']} updates")
-        
+
         print(f"\n🔄 SELF-PLAY")
         print(f"   Iteration: {status['self_play']['iteration']}")
         print(f"   Games: {status['self_play']['total_games']}")
         print(f"   Best Policy: v{status['self_play']['best_policy_version']}")
-        
+
         print("\n" + "=" * 60)
 
     async def shutdown(self):
         """Graceful shutdown"""
+        logger.info("=" * 60)
+        logger.info("SHUTTING DOWN INTEGRATED AGENT SYSTEM")
+        logger.info("=" * 60)
+
         self.running = False
-        self.stop_background_services()
+
+        # Shutdown in reverse order
+        logger.info("Shutting down Self-Coordinating Core...")
         await self.coordination_core.shutdown()
+
+        logger.info("Shutting down Self-Play Loop...")
         await self.self_play_loop.shutdown()
+
+        logger.info("Shutting down ReAct Loop...")
         await self.react_loop.shutdown()
+
+        logger.info("Shutting down Constitutional Layer...")
         await self.constitutional_layer.shutdown()
+
+        logger.info("Shutting down Agent Registry...")
         await self.agent_registry.shutdown()
+
+        logger.info("Shutting down Tool Registry...")
         await self.tool_registry.shutdown()
+
+        logger.info("Shutting down Memory System...")
         await self.memory_system.shutdown()
-        await decision_bus.stop()
 
-# ============================================================================
-# STANDALONE BACKGROUND SERVICES (Async Robust)
-# ============================================================================
+        logger.info("=" * 60)
+        logger.info("SHUTDOWN COMPLETE")
+        logger.info("=" * 60)
 
-def _init_redis_for_service(config):
-    """Initialize Redis in child process."""
-    try:
-        import redis
-        client = redis.Redis(
-            host=config.get('redis_host', 'localhost'),
-            port=config.get('redis_port', 6379),
-            db=0,
-            decode_responses=True
-        )
-        client.ping()
-        return client
-    except Exception:
-        return None
-
-def run_market_student_service(config):
-    """Background service: Market Student."""
-    logging.basicConfig(level=logging.INFO)
-    srv_logger = logging.getLogger("Background.MarketStudent")
-
-    async def run_loop():
-        redis_client = _init_redis_for_service(config)
-        try:
-            from trading_bot.market_student import MarketStudentOrchestrator
-            orchestrator = MarketStudentOrchestrator({})
-
-            while True:
-                try:
-                    if redis_client:
-                        trade_data = redis_client.lpop('trade_results')
-                        if trade_data:
-                            import json
-                            trade = json.loads(trade_data)
-                            lesson = await orchestrator.learn_from_trade(trade)
-                            if lesson:
-                                srv_logger.info(f"Insight: {lesson.get('insight', 'Learned')}")
-
-                    await asyncio.sleep(10)
-                except Exception as e:
-                    srv_logger.error(f"Loop error: {e}")
-                    await asyncio.sleep(30)
-        except ImportError:
-            srv_logger.error("Market Student not available")
-
-    try:
-        asyncio.run(run_loop())
-    except KeyboardInterrupt:
-        pass
-
-def run_eternal_evolution_service(config):
-    """Background service: Eternal Evolution."""
-    logging.basicConfig(level=logging.INFO)
-    srv_logger = logging.getLogger("Background.EternalEvolution")
-
-    async def run_loop():
-        redis_client = _init_redis_for_service(config)
-        try:
-            from trading_bot.eternal_evolution import EternalEvolutionOrchestrator
-            orchestrator = EternalEvolutionOrchestrator({})
-            await orchestrator.start()
-
-            while True:
-                try:
-                    await asyncio.sleep(3600)
-                except Exception as e:
-                    srv_logger.error(f"Loop error: {e}")
-                    await asyncio.sleep(300)
-        except ImportError:
-            srv_logger.error("Eternal Evolution not available")
-        except Exception as e:
-            srv_logger.error(f"Initialization error: {e}")
-
-    try:
-        asyncio.run(run_loop())
-    except KeyboardInterrupt:
-        pass
-
-def run_sentiment_analysis_service(config):
-    """Background service: Sentiment Analysis."""
-    logging.basicConfig(level=logging.INFO)
-    srv_logger = logging.getLogger("Background.Sentiment")
-
-    async def run_loop():
-        redis_client = _init_redis_for_service(config)
-        try:
-            from trading_bot.sentiment import SentimentAnalyzer
-            analyzer = SentimentAnalyzer()
-
-            while True:
-                try:
-                    symbols = config.get('trading', {}).get('symbols', ['EURUSD', 'GBPUSD', 'USDJPY'])
-                    for symbol in symbols:
-                        sentiment = analyzer.analyze_symbol(symbol)
-                        if sentiment and redis_client:
-                            import json
-                            redis_client.setex(f'sentiment:{symbol}', 300, json.dumps(sentiment))
-
-                    await asyncio.sleep(300)
-                except Exception as e:
-                    srv_logger.error(f"Loop error: {e}")
-                    await asyncio.sleep(60)
-        except ImportError:
-            srv_logger.error("Sentiment Analyzer not available")
-
-    try:
-        asyncio.run(run_loop())
-    except KeyboardInterrupt:
-        pass
-
-def run_market_monitor_service(config):
-    """Background service: Market Intelligence Monitor."""
-    logging.basicConfig(level=logging.INFO)
-    srv_logger = logging.getLogger("Background.MarketMonitor")
-
-    async def run_loop():
-        redis_client = _init_redis_for_service(config)
-        try:
-            from trading_bot.market_intelligence import MarketDataMonitor
-            monitor = MarketDataMonitor()
-
-            symbols = config.get('trading', {}).get('symbols', ['EURUSD', 'GBPUSD', 'USDJPY'])
-            for symbol in symbols:
-                monitor.start_monitoring(symbol=symbol, timeframe='M15')
-
-            while True:
-                try:
-                    for symbol in symbols:
-                        state = monitor.get_current_state(symbol)
-                        if state and redis_client:
-                            import json
-                            redis_client.setex(f'market_state:{symbol}', 60, json.dumps(state))
-
-                    await asyncio.sleep(60)
-                except Exception as e:
-                    srv_logger.error(f"Loop error: {e}")
-                    await asyncio.sleep(30)
-        except ImportError:
-            srv_logger.error("Market Intelligence not available")
-
-    try:
-        asyncio.run(run_loop())
-    except KeyboardInterrupt:
-        pass
 
 async def main():
+    """Main entry point"""
     import signal
-    system = IntegratedAgentSystem()
+
+    # Configure logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(name)s] %(levelname)s: %(message)s'
+    )
+
+    # Create system
+    system = IntegratedAgentSystem({
+        'storage_path': 'core_agent_data',
+        'safety_threshold': 0.7,
+        'games_per_iteration': 20,
+        'training_batch_size': 16
+    })
+
+    # Handle shutdown signals
     def signal_handler(sig, frame):
+        logger.info("Shutdown signal received")
         asyncio.create_task(system.shutdown())
+
     signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     try:
         await system.start()
+    except KeyboardInterrupt:
+        logger.info("Interrupted by user")
     except Exception as e:
         logger.error(f"Fatal error: {e}")
     finally:
         await system.shutdown()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
