@@ -61,8 +61,6 @@ async def test_csc_hasp_intervention(monkeypatch):
 
     try:
         decision = await csc.process_market_observation(obs)
-        # Under HASP triggering, the guardrail might intervene or approve under controlled leverage,
-        # or the shield validates correctly. We verify that the pipeline processes correctly.
         assert decision is not None
     finally:
         await decision_bus.stop()
@@ -84,12 +82,12 @@ async def test_csc_pivot_loop():
     shield = MagicMock()
     shield.validate_action = AsyncMock(return_value=MagicMock(decision=GovernanceDecision.APPROVED))
 
+    mock_bus = MockDecisionBus()
     csc = CognitiveSystemController(world_model, hms, shield, decision_bus=mock_bus)
 
     obs = {"volatility": 0.1, "features": [0.1] * 16}
 
     # Mock simulation to trigger pivot
-    # In V6, pivot is triggered by high failure rate in simulation
     csc.hypothesis_gen.simulate_branches = AsyncMock(return_value={
         "branch_bull": {"failure_rate": 0.8},
         "branch_bear": {"failure_rate": 0.1},
