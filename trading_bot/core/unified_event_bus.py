@@ -1,8 +1,8 @@
 """
-LogAct Shared-Log Backbone - UCA V5 Core Component
+LogAct Shared-Log Backbone - UCA V6 Core Component
 =============================================
 
-The authoritative, totally ordered shared log for AlphaAlgo UCA V5.
+The authoritative, totally ordered shared log for AlphaAlgo UCA V6.
 Implements 'LogAct: Enabling Agentic Reliability via Shared Logs' (Paper 1).
 """
 
@@ -10,7 +10,6 @@ import asyncio
 import time
 import logging
 import json
-import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -105,10 +104,6 @@ class UnifiedEvent:
         return self.event_type
 
     @property
-    def action_id(self) -> str:
-        return self.event_id
-
-    @property
     def agent_id(self) -> str:
         return self.source
 
@@ -135,13 +130,13 @@ class UnifiedEvent:
 
 class UnifiedDecisionBus:
     _instance: Optional['UnifiedDecisionBus'] = None
+    _lock = threading.Lock()
 
-    @classmethod
-    def reset(cls):
-        """Reset the global decision_bus instance or clear configuration state."""
-        global decision_bus
-        decision_bus = UnifiedDecisionBus()
-        cls._instance = decision_bus
+    def __new__(cls, *args, **kwargs):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super(UnifiedDecisionBus, cls).__new__(cls)
+            return cls._instance
 
     def __init__(self, config: Optional[Dict] = None):
         if getattr(self, "_initialized", False):
@@ -158,23 +153,29 @@ class UnifiedDecisionBus:
 
     @classmethod
     def reset(cls):
-        """Resets the global decision bus instance state."""
+        """Resets the global decision bus instance state in-place."""
         global decision_bus
-        if 'decision_bus' in globals() and decision_bus is not None:
-            # Stop the task if running
-            decision_bus._running = False
-            if decision_bus._processor_task:
-                decision_bus._processor_task.cancel()
-                decision_bus._processor_task = None
-            decision_bus._log.clear()
-            decision_bus._voters.clear()
-            decision_bus._subscribers.clear()
-            # Re-initialize the queue
-            decision_bus._action_queue = asyncio.PriorityQueue()
+        with cls._lock:
+            if decision_bus is not None:
+                decision_bus._running = False
+                task = getattr(decision_bus, '_processor_task', None)
+                if task and not task.done():
+                    task.cancel()
+                    decision_bus._processor_task = None
+                decision_bus._log.clear()
+                decision_bus._voters.clear()
+                decision_bus._subscribers.clear()
+                try:
+                    decision_bus._action_queue = asyncio.PriorityQueue()
+                except Exception:
+                    pass
+            else:
+                decision_bus = UnifiedDecisionBus()
+                cls._instance = decision_bus
         logger.info("UnifiedDecisionBus reset complete.")
 
     async def start(self):
-        if self._processor_task and not self._processor_task.done():
+        if getattr(self, '_processor_task', None) and not self._processor_task.done():
             return
         self._running = True
 
@@ -186,7 +187,7 @@ class UnifiedDecisionBus:
 
     async def stop(self):
         self._running = False
-        if self._processor_task:
+        if getattr(self, '_processor_task', None):
             self._processor_task.cancel()
             try:
                 await self._processor_task
@@ -236,7 +237,7 @@ class UnifiedDecisionBus:
     async def _process_log(self):
         """
         Main LogAct processing loop.
-        Instrumented with UCA V5 high-resolution tracing.
+        Instrumented with UCA V6 high-resolution tracing.
         """
         max_log_size = self.config.get("max_log_size", 10000)
         while self._running:
@@ -257,7 +258,7 @@ class UnifiedDecisionBus:
                 action.status = ActionStatus.AUDITING
                 voter_ids = list(self._voters.keys())
 
-                # UCA V5: Mandatory voter verification
+                # UCA V6: Mandatory voter verification
                 has_shield = any(k in ["ImmutableShield", "shield"] or "shield" in k.lower() for k in voter_ids)
                 if not has_shield:
                     logger.warning(f"LogAct: No explicit shield voter found. Registering Default Shield Voter.")
@@ -270,7 +271,6 @@ class UnifiedDecisionBus:
                         if asyncio.iscoroutinefunction(vfn):
                             vote_tasks.append(vfn(action))
                         else:
-                            # Wrap sync voters in a thread pool to avoid blocking the bus
                             loop = asyncio.get_event_loop()
                             vote_tasks.append(loop.run_in_executor(None, vfn, action))
                     except Exception as e:
@@ -320,7 +320,7 @@ class UnifiedDecisionBus:
 
     def _check_consensus(self, action: LogAction) -> bool:
         """
-        UCA V5 Consensus Logic.
+        UCA V6 Consensus Logic.
         Hardened: Case-insensitive and supports multiple result formats.
         """
         for vid, report in action.voter_reports.items():
@@ -337,28 +337,8 @@ class UnifiedDecisionBus:
     async def _dispatch(self, action: LogAction):
         handlers = self._subscribers.get(action.action_type, []) + self._subscribers.get("*", [])
         tasks = [h["handler"](action) for h in handlers]
-        if tasks: await asyncio.gather(*tasks, return_exceptions=True)
-
-    @classmethod
-    def reset(cls):
-        """
-        Explicit, safe class-level lifecycle reset.
-        Frees singleton instances and cancels outstanding background workers gracefully.
-        """
-        global decision_bus
-        if decision_bus is not None:
-            # We schedule safe asynchronous stopping of loop tasks
-            try:
-                loop = asyncio.get_running_loop()
-                if loop.is_running():
-                    loop.create_task(decision_bus.stop())
-            except RuntimeError:
-                pass
-            decision_bus._log.clear()
-
-        # Instantiate clean backbone
-        decision_bus = UnifiedDecisionBus()
-        logger.info("UnifiedDecisionBus successfully reset with complete task cancellation.")
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
 
 # Global instance for production path (authoritative)
 decision_bus = UnifiedDecisionBus()
