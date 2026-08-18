@@ -1,3 +1,7 @@
+from datetime import datetime, timezone
+import time
+from typing import List, Dict, Any, Optional, Tuple, Set, Union
+from typing import List, Dict, Any, Optional, Tuple, Set, Union
 """
 Hierarchical Memory System (HMS) - UCA V6 (July 2026)
 
@@ -22,6 +26,48 @@ and Reader-Writer feedback loops for structural evolution.
 import logging
 import os
 import json
+
+from enum import Enum
+from dataclasses import dataclass, field
+import uuid
+
+class MemoryValidationStatus(Enum):
+    UNVERIFIED = "UNVERIFIED"
+    CANDIDATE = "CANDIDATE"
+    VALIDATED = "VALIDATED"
+    TRUSTED = "TRUSTED"
+    REVOKED = "REVOKED"
+    QUARANTINED = "QUARANTINED"
+
+@dataclass
+class ProvenanceAwareMemoryRecord:
+    memory_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    source: str = "unknown"
+    creator: str = "unknown"
+    timestamp: float = field(default_factory=lambda: datetime.now(timezone.utc).timestamp())
+    evidence_refs: List[str] = field(default_factory=list)
+    confidence: float = 0.5
+    validation_status: MemoryValidationStatus = MemoryValidationStatus.UNVERIFIED
+    integrity_hash: str = ""
+    version: int = 1
+    parent_memory: Optional[str] = None
+    supersedes: Optional[str] = None
+    sensitivity: str = "CONFIDENTIAL"
+    expiration: Optional[float] = None
+    access_policy: str = "RBAC_DEFAULT"
+    content: str = ""
+
+    def __post_init__(self):
+        if not self.integrity_hash:
+            self.integrity_hash = self.compute_hash()
+
+    def compute_hash(self) -> str:
+        payload = f"{self.memory_id}:{self.source}:{self.creator}:{self.timestamp}:{self.content}:{self.validation_status.value}"
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    def is_valid(self) -> bool:
+        return self.integrity_hash == self.compute_hash() and self.validation_status not in (MemoryValidationStatus.REVOKED, MemoryValidationStatus.QUARANTINED)
+
 import hashlib
 import networkx as nx
 from typing import Any, Dict, List, Optional, Tuple
