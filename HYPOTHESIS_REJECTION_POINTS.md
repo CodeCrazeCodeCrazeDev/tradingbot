@@ -1,19 +1,26 @@
-# Hypothesis Rejection Points (Institutional Audit 2026)
+# Codebase Hypothesis Rejection Points (Comprehensive Audit 2026)
 
-## Logical & Structural Rejection
-1. **`trading_bot/alpha_research/hypothesis_extraction.py`**: `HypothesisValidator` (Lacks mechanism/falsification).
-2. **`trading_bot/core/talos_cerberus_v23.py`**: `EvidenceScorecard` (Source unreliability, compliance failure).
+## Executive Summary
+This document inventories every subsystem point where hypotheses are invalidated, vetoed, discarded, or moved to a terminal invalid state.
 
-## Performance & Decay Rejection
-1. **`trading_bot/apex_fi/alpha_mining.py`**: `LivingFactorLibrary._retire_factor()` (Sharpe/Entropy decay).
-2. **`trading_bot/signals/auto_disable_sick_signals.py`**: `SignalHealthMonitor` (Recent failure rate).
-3. **`trading_bot/strategy_discovery/evolutionary_engine.py`**: Fitness-based selection (Natural selection of genomes).
+---
 
-## Safety & Governance Rejection
-1. **`trading_bot/core/unified_event_bus.py`**: `LogAction` status `REJECTED` or `VETOED` (Voter consensus).
-2. **`trading_bot/core/immutable_shield.py`**: Hard constraint violation (Risk/Exposure).
-3. **`trading_bot/core/phce_d_engine.py`**: `SimpleValidationGateway` (Market hostility).
+## Rejection Points Inventory
 
-## Scientific Rejection
-1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `HypothesisState.REJECTED` (Posterior belief < 0.2).
-2. **`trading_bot/core/adversarial_failure_analysis.py`**: `AdversarialAnalyzer` (Successful falsification simulation).
+### 1. Risk & Deterministic Rejection
+- **`trading_bot/core/phce_d_engine.py`**
+  - *Method*: `PHCEDEngine.veto_hypothesis()`
+  - *Description*: Immediately rejects trade ideas or factor proposals violating drawdown, leverage, or volatility limits.
+- **`trading_bot/agents/multi_agent_debate.py`**
+  - *Method*: `RiskVerifier.issue_risk_veto()`
+  - *Description*: Issues binding risk vetoes rejecting trade execution hypotheses.
+
+### 2. Scientific Reasoning Engine Rejection
+- **`trading_bot/core_agent_system/scientific_reasoning/core.py`**
+  - *Method*: `ScientificReasoningEngine.reject()`
+  - *Description*: Marks hypotheses as `Rejected` when out-of-sample calibration error exceeds threshold or Sharpe ratio is negative.
+
+### 3. Self-Improvement Safety Rejection
+- **`trading_bot/governance/evolution_gate.py`**
+  - *Method*: `EvolutionGate.validate_evolution()`
+  - *Description*: Synchronously rejects code modification hypotheses that attempt to alter governance limits or core evaluator routines.
