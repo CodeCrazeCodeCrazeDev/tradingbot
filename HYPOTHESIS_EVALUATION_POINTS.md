@@ -1,20 +1,29 @@
-# Hypothesis Evaluation Points (Institutional Audit 2026)
+# Codebase Hypothesis Evaluation Points (Comprehensive Audit 2026)
 
-## Core Scientific Evaluation
-1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `ScientificReasoningEngine.evaluate_results()` & `bayesian_update()`.
-2. **`trading_bot/core_agent_system/cds/epistemology_engine.py`**: `EpistemologyEngine.analyze_hypothesis()` (Adversarial questioning).
+## Executive Summary
+This document maps every location in the AlphaAlgo codebase where hypotheses (predictions, signals, factor expressions, regime models) are subjected to quantitative, empirical, or deterministic evaluation.
 
-## Tactical Evaluation (Decision Layer)
-1. **`trading_bot/core/phce_d_engine.py`**: `ParallelHypothesisCorrectionEngine.process()` (Evidence synthesis).
-2. **`trading_bot/core/csc/controller.py`**: `CSC._verify_evidence_hard_constraint()` (Graph-based verification).
-3. **`trading_bot/core_agent_system/cds/verdict_engine.py`**: `VerdictEngine.synthesize_verdict()` (Weighted consensus).
+---
 
-## Statistical & Technical Evaluation
-1. **`trading_bot/alpha_research/strategy_diagnostics.py`**: `StrategyDiagnostics` (Overfitting, health, and robustness).
-2. **`trading_bot/strategy_discovery/validation.py`**: `StrategyValidationPipeline` (Regime testing, transaction costs).
-3. **`trading_bot/alpha_research/alpha_death_clock.py`**: `AlphaDeathClockManager` (Decay monitoring).
-4. **`trading_bot/world_model/imagination.py`**: `PlanEvaluator.evaluate_plan()` (Lookahead utility across scenarios).
+## Evaluation Points Inventory
 
-## Governance & Institutional Evaluation
-1. **`trading_bot/core/unified_event_bus.py`**: `LogAction.wait_for_decision()` (Consensus/Voter auditing).
-2. **`trading_bot/core/immutable_shield.py`**: `ImmutableShield.validate_action()` (Hard safety rails).
+### 1. Deterministic & Risk Boundaries
+- **`trading_bot/core/phce_d_engine.py`**
+  - *Method*: `PHCEDEngine.evaluate_falsification_checks()`
+  - *Description*: Runs deterministic verification routines evaluating leverage, execution friction, drawdowns, and tail-risk bounds.
+- **`trading_bot/core/security/defense.py`**
+  - *Method*: `HardenedGovernanceRoot.verify_risk_invariants()`
+  - *Description*: Evaluates execution candidate proposals against immutable financial risk safety invariants.
+
+### 2. Scientific & Statistical Reasoning
+- **`trading_bot/core_agent_system/scientific_reasoning/core.py`**
+  - *Method*: `ScientificReasoningEngine.evaluate()`
+  - *Description*: Evaluates hypothesis empirical performance using Expected Calibration Error (ECE), Sharpe ratio, and Bayesian evidence scores.
+- **`trading_bot/world_model/counterfactual_engine.py`**
+  - *Method*: `CounterfactualEngine.evaluate_intervention()`
+  - *Description*: Evaluates state trajectories under counterfactual market conditions.
+
+### 3. Swarm & Governance Review
+- **`trading_bot/agents/multi_agent_debate.py`**
+  - *Method*: `StrategicPeerReviewer.falsify_proposal()`
+  - *Description*: Conducts multi-agent peer review falsification looking for logical fallacies or risk oversights in trade ideas.
