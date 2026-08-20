@@ -1450,21 +1450,19 @@ class FalsificationGate:
             "HallucinationDetector": hallucination_res.is_valid,
         }
 
-            is_falsified = not all(verifier_outcomes.values())
-            reason = None
-            worst_case = None
-
         is_falsified = not all(verifier_outcomes.values())
         rejection_reason = None
+        worst_case = None
         if is_falsified:
             failed_reasons = []
-            if not causal_res.is_valid: failed_reasons.append(causal_res.rejection_reason)
-            if not liquidity_res.is_valid: failed_reasons.append(liquidity_res.rejection_reason)
-            if not regime_res.is_valid: failed_reasons.append(regime_res.rejection_reason)
-            if not risk_res.is_valid: failed_reasons.append(risk_res.rejection_reason)
-            if not hallucination_res.is_valid: failed_reasons.append(hallucination_res.rejection_reason)
+            if not causal_res.is_valid: failed_reasons.append(getattr(causal_res, 'rejection_reason', 'Causal failure'))
+            if not liquidity_res.is_valid: failed_reasons.append(getattr(liquidity_res, 'rejection_reason', 'Liquidity failure'))
+            if not regime_res.is_valid: failed_reasons.append(getattr(regime_res, 'rejection_reason', 'Regime failure'))
+            if not risk_res.is_valid: failed_reasons.append(getattr(risk_res, 'rejection_reason', 'Risk failure'))
+            if not hallucination_res.is_valid: failed_reasons.append(getattr(hallucination_res, 'rejection_reason', 'Hallucination failure'))
 
             rejection_reason = " | ".join(filter(None, failed_reasons))
+            worst_case = self._generate_counterexample(action, context)
 
         return FalsificationReport(
             is_falsified=is_falsified,
@@ -2564,27 +2562,21 @@ class MultiAgentDebateSystem:
                     'num_rounds': len(debate_rounds),
                     'conflicts_detected': conflicts
                 },
-                agent_contributions={
+                'agent_contributions': {
                     role.value: sc.expected_contribution for role, sc in scorecards.items()
                 },
-                agent_scorecards={role.value: sc.to_dict() for role, sc in scorecards.items()},
-                consensus_record={
+                'agent_scorecards': {role.value: sc.to_dict() for role, sc in scorecards.items()},
+                'consensus_record': {
                     "consensus_level": decision.consensus_level,
                     "votes": decision.agent_votes,
                 },
-                random_seed="seed_42",
-                environment_fingerprint=hashlib.sha256(
+                "random_seed": "seed_42",
+                "environment_fingerprint": hashlib.sha256(
                     f"{git_sha}_{config_hash}".encode("utf-8")
                 ).hexdigest(),
                 "execution_latency": duration_ms,
                 "decision_timestamp": datetime.now().isoformat(),
                 "debate_quality_evaluation": evaluation,
-                "falsification_report": {
-                    "is_falsified": falsification_report.is_falsified,
-                    "rejection_reason": falsification_report.rejection_reason,
-                    "verifier_outcomes": falsification_report.verifier_outcomes,
-                    "worst_case_scenario": falsification_report.worst_case_scenario
-                }
             }
             decision.provenance = provenance_data
 
