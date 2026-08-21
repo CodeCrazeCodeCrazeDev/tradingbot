@@ -1,8 +1,18 @@
 """
-Evolution Gate - UCA V6 (July 2026)
-==================================
+Evolution Gate - UCA V6 (August 2026)
+=====================================
 Monotone-safe gate for recursive agent self-evolution.
-Implements 'RSEA' (arXiv:2606.28374), 'EKSFT' (arXiv:2605.29303), and 'NanoResearch' (arXiv:2605.10813).
+
+Scientific Literature Alignment & Traceability Matrix:
+- EKSFT: Entropy-KL Selective Fine-Tuning (arXiv:2605.29303)
+- NanoResearch: Tri-level Co-evolving Research Automation (arXiv:2605.10813)
+- RSEA: Recursive Self-Evolving Agents Gate (arXiv:2606.28374)
+- DiscoLoop: Discrete Embeddings & Continuous States (arXiv:2607.00341)
+- AutoMem: Automated Learning of Memory as a Cognitive Skill (arXiv:2607.01224)
+- SAGE: Self-evolving Agentic Graph-memory Engine (arXiv:2605.12061)
+- AutoResearchClaw: Self-Reinforcing Autonomous Research (arXiv:2605.20025)
+- HASP: Harnessing LLM Agents with Skill Programs (arXiv:2605.17734)
+- DeepWeb-Bench: Massive Cross-Source Evidence Benchmark (arXiv:2605.21482)
 """
 
 import logging

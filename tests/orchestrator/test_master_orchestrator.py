@@ -1,3 +1,4 @@
+from pathlib import Path
 """
 Comprehensive tests for master_orchestrator
 
@@ -11,12 +12,9 @@ import logging
 from unittest.mock import Mock, patch, MagicMock
 
 try:
-    from trading_bot.master_orchestrator import *
+    from trading_bot._archive.orchestrator.master_orchestrator import *
 except ImportError:
-    # Fallback import
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.master_orchestrator import *
+    pytest.skip('master_orchestrator module in archive', allow_module_level=True)
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +77,7 @@ class TestMasterOrchestrator:
         if instance is not None and hasattr(instance, "orchestrate_trading"):
             try:
                 result = instance.orchestrate_trading()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method orchestrate_trading failed: {e}")

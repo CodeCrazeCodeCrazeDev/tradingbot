@@ -1,3 +1,4 @@
+from pathlib import Path
 """
 Comprehensive tests for execution_engine
 
@@ -11,12 +12,12 @@ import logging
 from unittest.mock import Mock, patch, MagicMock
 
 try:
-    from trading_bot.execution_engine import *
+    from trading_bot.orchestrator.execution_engine import *
 except ImportError:
     # Fallback import
     import sys
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.execution_engine import *
+    from trading_bot.orchestrator.execution_engine import *
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +116,7 @@ class TestExecutionEngine:
         if instance is not None and hasattr(instance, "execute_order"):
             try:
                 result = instance.execute_order()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method execute_order failed: {e}")
@@ -126,7 +127,7 @@ class TestExecutionEngine:
         if instance is not None and hasattr(instance, "execute"):
             try:
                 result = instance.execute()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method execute failed: {e}")
@@ -155,7 +156,7 @@ class TestSmartOrderRouter:
         if instance is not None and hasattr(instance, "route"):
             try:
                 result = instance.route()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method route failed: {e}")

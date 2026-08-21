@@ -1,3 +1,4 @@
+from pathlib import Path
 """
 Comprehensive tests for ml_predictor
 
@@ -11,12 +12,12 @@ import logging
 from unittest.mock import Mock, patch, MagicMock
 
 try:
-    from trading_bot.ml_predictor import *
+    from trading_bot.orchestrator.ml_predictor import *
 except ImportError:
     # Fallback import
     import sys
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.ml_predictor import *
+    from trading_bot.orchestrator.ml_predictor import *
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +62,7 @@ class TestOpportunityPredictor:
         if instance is not None and hasattr(instance, "predict_batch"):
             try:
                 result = instance.predict_batch()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method predict_batch failed: {e}")
@@ -90,7 +91,7 @@ class TestMLFeatureExtractor:
         if instance is not None and hasattr(instance, "extract_features"):
             try:
                 result = instance.extract_features()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method extract_features failed: {e}")
@@ -101,7 +102,7 @@ class TestMLFeatureExtractor:
         if instance is not None and hasattr(instance, "get_feature_names"):
             try:
                 result = instance.get_feature_names()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method get_feature_names failed: {e}")
@@ -130,7 +131,7 @@ class TestSuccessPredictor:
         if instance is not None and hasattr(instance, "predict_success"):
             try:
                 result = instance.predict_success()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method predict_success failed: {e}")
@@ -159,7 +160,7 @@ class TestModelEnsemble:
         if instance is not None and hasattr(instance, "predict_proba"):
             try:
                 result = instance.predict_proba()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method predict_proba failed: {e}")
@@ -188,7 +189,7 @@ class TestProbabilityCalibrator:
         if instance is not None and hasattr(instance, "calibrate"):
             try:
                 result = instance.calibrate()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method calibrate failed: {e}")

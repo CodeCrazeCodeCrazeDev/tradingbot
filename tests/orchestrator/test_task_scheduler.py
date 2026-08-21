@@ -1,3 +1,4 @@
+from pathlib import Path
 """
 Comprehensive tests for task_scheduler
 
@@ -11,12 +12,12 @@ import logging
 from unittest.mock import Mock, patch, MagicMock
 
 try:
-    from trading_bot.task_scheduler import *
+    from trading_bot.orchestrator.task_scheduler import *
 except ImportError:
     # Fallback import
     import sys
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.task_scheduler import *
+    from trading_bot.orchestrator.task_scheduler import *
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ class TestTaskScheduler:
         if instance is not None and hasattr(instance, "initialize"):
             try:
                 result = instance.initialize()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method initialize failed: {e}")
@@ -54,7 +55,7 @@ class TestTaskScheduler:
         if instance is not None and hasattr(instance, "start"):
             try:
                 result = instance.start()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method start failed: {e}")
@@ -65,7 +66,7 @@ class TestTaskScheduler:
         if instance is not None and hasattr(instance, "stop"):
             try:
                 result = instance.stop()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method stop failed: {e}")
