@@ -1,3 +1,4 @@
+from pathlib import Path
 """
 Comprehensive tests for position_rotator
 
@@ -11,12 +12,12 @@ import logging
 from unittest.mock import Mock, patch, MagicMock
 
 try:
-    from trading_bot.position_rotator import *
+    from trading_bot.orchestrator.position_rotator import *
 except ImportError:
     # Fallback import
     import sys
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.position_rotator import *
+    from trading_bot.orchestrator.position_rotator import *
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +62,7 @@ class TestPosition:
         if instance is not None and hasattr(instance, "update_metrics"):
             try:
                 result = instance.update_metrics()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method update_metrics failed: {e}")
@@ -108,7 +109,7 @@ class TestPositionRotator:
         if instance is not None and hasattr(instance, "add_position"):
             try:
                 result = instance.add_position()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method add_position failed: {e}")
@@ -119,7 +120,7 @@ class TestPositionRotator:
         if instance is not None and hasattr(instance, "remove_position"):
             try:
                 result = instance.remove_position()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method remove_position failed: {e}")
@@ -130,7 +131,7 @@ class TestPositionRotator:
         if instance is not None and hasattr(instance, "update_position_metrics"):
             try:
                 result = instance.update_position_metrics()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method update_position_metrics failed: {e}")
@@ -141,7 +142,7 @@ class TestPositionRotator:
         if instance is not None and hasattr(instance, "evaluate_rotation"):
             try:
                 result = instance.evaluate_rotation()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method evaluate_rotation failed: {e}")
@@ -152,7 +153,7 @@ class TestPositionRotator:
         if instance is not None and hasattr(instance, "get_statistics"):
             try:
                 result = instance.get_statistics()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method get_statistics failed: {e}")

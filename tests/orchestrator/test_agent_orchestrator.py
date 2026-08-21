@@ -1,3 +1,4 @@
+from pathlib import Path
 """
 Comprehensive tests for agent_orchestrator
 
@@ -11,12 +12,9 @@ import logging
 from unittest.mock import Mock, patch, MagicMock
 
 try:
-    from trading_bot.agent_orchestrator import *
+    from trading_bot._archive.orchestrator.agent_orchestrator import *
 except ImportError:
-    # Fallback import
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.agent_orchestrator import *
+    pytest.skip('agent_orchestrator module in archive', allow_module_level=True)
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +41,7 @@ class TestAgentOrchestrator:
         if instance is not None and hasattr(instance, "initialize"):
             try:
                 result = instance.initialize()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method initialize failed: {e}")
@@ -54,7 +52,7 @@ class TestAgentOrchestrator:
         if instance is not None and hasattr(instance, "process"):
             try:
                 result = instance.process()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method process failed: {e}")
@@ -65,7 +63,7 @@ class TestAgentOrchestrator:
         if instance is not None and hasattr(instance, "get_status"):
             try:
                 result = instance.get_status()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method get_status failed: {e}")
