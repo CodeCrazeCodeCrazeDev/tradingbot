@@ -266,7 +266,6 @@ class TestClockDrift:
     @pytest.mark.asyncio
     async def test_clock_drift_pauses_trading(self):
         """Excessive clock drift should pause trading"""
-from typing import Set
 from enum import auto
         
 config = {

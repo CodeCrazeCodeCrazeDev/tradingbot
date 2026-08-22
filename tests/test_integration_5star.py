@@ -292,7 +292,6 @@ class TestEndToEnd:
     @pytest.mark.asyncio
     async def test_complete_trading_cycle(self):
         """Test complete trading cycle from data to validation."""
-import numpy
 import pandas
         
         # Initialize system

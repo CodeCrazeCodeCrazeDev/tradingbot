@@ -263,6 +263,7 @@ class TestDatabasePersistence(unittest.TestCase):
         try:
             os.unlink(self.temp_db.name)
         except Exception:
+            pass
     
     def test_trade_creation(self):
         """Test trade record creation."""

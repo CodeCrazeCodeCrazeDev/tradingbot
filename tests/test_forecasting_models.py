@@ -161,7 +161,6 @@ class TestForecastingEnsemble:
     
     def test_ensemble_predictions(self):
     pass
-import numpy
 import pandas
         
         # Create multiple models

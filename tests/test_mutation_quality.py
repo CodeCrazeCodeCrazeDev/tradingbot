@@ -411,7 +411,6 @@ class TestSignalLifecycleMutations:
         """Test confidence only decreases - catches sign mutations"""
         from trading_bot.signals.signal_lifecycle import DecayFunction
         import time
-import numpy
 import pandas
         
 signal = manager.create_signal(

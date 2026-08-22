@@ -161,6 +161,7 @@ class TestPositionSizer:
                         stop_loss=1.0999  # Very tight stop
                     )
                 except (ValueError, ZeroDivisionError, TypeError):
+                    pass
         except ImportError:
             pytest.skip("Module not available")
     
@@ -550,8 +551,8 @@ class TestCompleteRiskSystem:
     def test_complete_risk_system_full_check(self):
         """Test full risk check."""
         try:
+            pass
     pass
-import numpy
 import pandas
             
             system = CompleteRiskSystem({})
