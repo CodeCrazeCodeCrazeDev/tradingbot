@@ -1,306 +1,133 @@
-# Complete Institutional Scientific Audit & Architectural Redesign: AlphaAlgo Hypothesis Ecosystem (2026)
+# Master Scientific Audit and Redesign Specification: AlphaAlgo Hypothesis Ecosystem (2026)
 
-## 1. Executive Summary
+## Executive Summary
 
-This master document compiles the comprehensive, institutional-grade scientific audit, bottleneck analysis, and architectural redesign of the multi-hypothesis ecosystem in the AlphaAlgo system.
+AlphaAlgo’s Unified Cognitive Architecture (UCA V6) integrates active trading, multi-agent reasoning, deep research extraction, and autonomous evolution into a unified framework.
 
-In any high-frequency, quantitative, or autonomous trading platform, treating signals merely as simple heuristics or regression coefficients is a critical vector for failure (overfitting, cognitive bias, and rapid alpha decay). To secure structural resilience, **every signal, prediction, future scenario, state representation, policy update, and execution proposal is treated as a falsifiable scientific hypothesis until validated**.
-
-Through systemic codebase discovery across 30+ sub-agents, we establish a centralized, mathematically-grounded backbone utilizing **Variational Active Inference (VFE) minimization**, **Pearl's Do-Calculus interventional testing**, and **Bayesian Credal Set estimation**.
+This report synthesizes the complete scientific audit and redesign of AlphaAlgo's hypothesis ecosystem. It bridges the Phase 1 Discovery taxonomy, Phase 2 Bottleneck Analysis, Phase 3 Scientific Redesign (19-stage SRE lifecycle & 10 deterministic states), Phase 4 Continuous Self-Improvement Loop, Phase 5 Mathematical Justification, Validation Framework, and Migration Roadmap.
 
 ---
 
-## Phase 1 — Discovery & Unified Dependency Graph
+## 1. Phase 1 — Discovery & Systemic Inventory
 
-### 1.1 Complete Codebase Hypothesis Mapping
+Hypotheses in AlphaAlgo exist in explicit forms (`ScientificHypothesis`, `ResearchHypothesis`, `AlphaGenome`) and implicit forms (regime belief vectors, structural causal DAG edges, policy value function estimates, options volatility skew fits).
 
-We conducted a deep codebase search across every subsystem. Hypotheses exist under several names and formal structures, summarized below:
-
-| Subsystem / Module | Class / Method | Name in Code | Mathematical/Logical Role |
-| :--- | :--- | :--- | :--- |
-| **Scientific Reasoning Engine (SRE)** | `ScientificReasoningEngine` (`trading_bot/core_agent_system/scientific_reasoning/core.py`) | `ScientificHypothesis` | Explict falsifiable proposition with prior, posterior, uncertainty, and validation scores. |
-| **Curiosity Engine** | `HypothesisGenerator` (`trading_bot/foundation_agents/curiosity_engine/hypothesis_generator.py`) | `Anomaly Explanation` | Generates causal hypotheses to resolve high-surprise prediction errors. |
-| **World Model** | `UnifiedWorldModel` (`trading_bot/world_model/unified_world_model.py`) | `WorldModelPrediction` / `Scenario` | Tri-horizon futures (A: Nominal, B: Stressed, C: Extreme) treated as conditional hypotheses. |
-| **Alpha Mining** | `GeneticAlphaSearch` (`trading_bot/apex_fi/alpha_mining.py`) | `AlphaCandidate` | Symbolic indicator expressions hypothesized to correlate with market returns. |
-| **Strategy Discovery** | `EvolutionaryStrategyEngine` (`trading_bot/strategy_discovery/evolutionary_engine.py`) | `StrategyGenome` | Parameter optimization vectors hypothesized to achieve positive risk-adjusted metrics. |
-| **Parallel Hypothesis Engine (PHCE-D)** | `ParallelHypothesisCorrectionEngine` (`trading_bot/core/phce_d_engine.py`) | `ParallelHypothesis` | Active trading strategies run in parallel with corrective pivot triggers. |
-| **Verification Swarm** | `VerifierSwarm` (`trading_bot/core/verification/swarm.py`) | `VerifierReport` | Multi-agent critiques challenging primary trading assumptions. |
-| **Self-Improvement Loop** | `RecursiveSelfImprovement` (`trading_bot/recursive_improvement/`) | `OptimizationProposal` | Code and hyperparameter mutations hypothesized to improve baseline capability. |
-| **Decision Layer** | `UnifiedDecisionBus` (`trading_bot/core/unified_event_bus.py`) | `ProposeAction` | Immediate trade proposals treated as falsifiable short-term execution hypotheses. |
-| **TALOS & Aletheia** | `TALOSValidator` & `AletheiaBrowser` | `ResearchProposal` | Outside-in academic hypotheses or web-mined regime insights. |
+### Key Discovery Highlights:
+- **Origination**: Micro-structure anomaly detection, curiosity-driven surprise spikes, ArXiv paper extraction, symbolic expression search, and competing execution branch generators.
+- **Propagation**: Moves from observation $\rightarrow$ curiosity $\rightarrow$ causal simulation $\rightarrow$ swarm debate $\rightarrow$ backtesting $\rightarrow$ Bayesian updating $\rightarrow$ memory consolidation $\rightarrow$ live execution routing.
+- **Conversion to Knowledge**: Validated hypotheses ($P(\mathcal{H} \mid \mathcal{E}) \ge 0.85$, $ECE < 0.05$) are stored as immutable nodes in the Hierarchical Memory System (HMS) and converted into background domain axioms.
 
 ---
 
-### 1.2 Unified Hypothesis Lifecycle Dependency Graph
+## 2. Phase 2 — Bottleneck Analysis Summary
 
-The lifecycle of hypotheses across AlphaAlgo is fully represented by the following lineage graph:
+The audit identified 25 structural bottlenecks (analyzed in detail within `HYPOTHESIS_BOTTLENECK_REPORT.md`):
+1. *Missing Hypothesis Generation* (Static templates)
+2. *Duplicate Hypotheses* (Decoupled research engines)
+3. *Premature Rejection* (Rigid thresholding on short windows)
+4. *Confirmation Bias* (Lack of counter-evidence queries)
+5. *Survivorship Bias* (Delisted assets omitted from historical backtests)
+6. *Lack of Adversarial Testing* (Isolated backtesting without red-teaming)
+7. *Insufficient Exploration* (Exploitation dominance)
+8. *Insufficient Exploitation* (Premature strategy deprecation)
+9. *Weak Evidence Gathering* (Single-source price data)
+10. *Poor Uncertainty Estimation* (Point estimates without credal sets)
+11. *Missing Causal Reasoning* (Correlation dependence)
+12. *Missing Counterfactual Reasoning* (Inability to run $do(X)$ interventions)
+13. *Missing Bayesian Updating* (Static confidence scores)
+14. *Missing Confidence Calibration* (High ECE error)
+15. *Missing Experiment Design* (Informal backtest criteria)
+16. *Poor Memory Integration* (Siloed databases)
+17. *Poor Reuse of Historical Failures* (Discarded rejections)
+18. *Knowledge Fragmentation* (Private agent stores)
+19. *Hypothesis Drift* (Unmonitored alpha decay)
+20. *Reward Hacking* (Single-metric Sharpe maximization)
+21. *Overfitting* (High PBO in genetic search)
+22. *Under-Exploration* (Family-bound search space)
+23. *Local Optima Trap* (Incremental mutation limits)
+24. *Long Feedback Cycles* (Slow real-world feedback)
+25. *Missing Scientific Methodology* (Heuristic-driven design)
 
-```mermaid
-flowchart TD
-    %% Origins
-    Sensing[Market Ingestion / Orderbook / Orderflow] --> |Step 1: Active Perception| SRE_Obs[SRE: Observation]
-    Curiosity[Curiosity Engine] --> |Surprise & Anomaly Monitor| SRE_Anom[SRE: Anomaly Detection]
-    Academic[Academic Scraper / Aletheia / TALOS] --> |Step 3: Questioning| SRE_QGen[SRE: Question Generation]
+---
 
-    %% Generation
-    SRE_Obs --> SRE_Anom
-    SRE_Anom --> SRE_QGen
-    SRE_QGen --> |Step 4: Formulation| SRE_HGen[SRE: Hypothesis Generation]
-    AlphaMine[Alpha Mining / Factor Search] --> |Candidate Expressions| SRE_HGen
-    Genome[Strategy Genome Evolution] --> |Genome Vectors| SRE_HGen
+## 3. Phase 3 — Scientific Redesign: The 19-Stage SRE Lifecycle
 
-    %% Evaluation
-    SRE_HGen --> |Step 5: Multi-hop Querying| SRE_Evid[SRE: Evidence Collection]
-    SRE_Evid --> |Step 6: Tri-Horizon Forecasting| SRE_WM[SRE: World Model Simulation]
-    SRE_WM --> |Step 7: Do-Calculus Interventions| SRE_CF[SRE: Counterfactual Generation]
-    SRE_CF --> |Step 8: Red-Teaming Vetoes| SRE_Debate[SRE: Adversarial Debate]
+To eliminate all 25 bottlenecks, the ecosystem is governed by the Unified Scientific Reasoning Engine (`ScientificReasoningEngine`), executing a continuous 19-stage adaptive loop:
 
-    %% Execution & Empirical Testing
-    SRE_Debate --> |Step 9: Stat-Sandbox Setup| SRE_Exp[SRE: Experiment Design]
-    SRE_Exp --> |Step 10: Backtest / Paper Trade| SRE_Exec[SRE: Execution]
-    SRE_Exec --> |Step 11: Metric Computation| SRE_Eval[SRE: Evaluation]
-
-    %% Learning & Calibration
-    SRE_Eval --> |Step 12: Bayes Synthesizer| SRE_Bayes[SRE: Bayesian Update]
-    SRE_Bayes --> |Step 13: ECE Minimization| SRE_Calib[SRE: Confidence Calibration]
-    SRE_Calib --> |Step 14: Monotone Gain Verification| SRE_Int[SRE: Knowledge Integration]
-    SRE_Int --> |Step 15: T0-T7 Persistence Tiers| SRE_Mem[SRE: Memory Consolidation]
-
-    %% Policy Tuning & Retirement
-    SRE_Mem --> |Step 16: Kelly / RL Parameter Tuning| SRE_Policy[SRE: Policy Improvement]
-    SRE_Policy --> |Step 17: Alpha Decay Watchdog| SRE_Mon[SRE: Continuous Monitoring]
-    SRE_Mon --> |Step 18: Decay Clock Violation| SRE_Retire[SRE: Hypothesis Retirement]
-    SRE_Retire --> |Step 19: Meta-Learning Feedback| SRE_Meta[SRE: Auto Discovery of Hypotheses]
-    SRE_Meta --> |Adjust Generative Priors| SRE_HGen
+```
+Step  1: Observation ──> Ingest sensory market feeds & state vectors
+Step  2: Anomaly Detection ──> Measure surprise via Variational Free Energy (VFE)
+Step  3: Question Generation ──> Formulate research questions on statistical drift
+Step  4: Hypothesis Generation ──> Synthesize falsifiable competing branches
+Step  5: Evidence Collection ──> Query multi-modal evidence with Leni AI trust scores
+Step  6: World Model Simulation ──> Forecast scenario rollouts
+Step  7: Counterfactual Generation ──> Execute do(X) interventional testing
+Step  8: Adversarial Debate ──> Multi-agent Verification Swarm peer review
+Step  9: Experiment Design ──> Define explicit falsification triggers
+Step 10: Execution ──> Run out-of-sample sandbox & paper trading
+Step 11: Evaluation ──> Calculate statistical significance & effect sizes
+Step 12: Bayesian Update ──> Update posterior probabilities P(H|E)
+Step 13: Confidence Calibration ──> Contract credal bounds & evaluate ECE
+Step 14: Knowledge Integration ──> Abstract rules into semantic knowledge
+Step 15: Memory Consolidation ──> Store immutable snapshots in HMS graph
+Step 16: Policy Improvement ──> Re-tune active CSC execution parameters
+Step 17: Continuous Monitoring ──> Track alpha decay via Alpha Death Clock
+Step 18: Hypothesis Retirement ──> Transition to 1 of 10 deterministic end-states
+Step 19: Automatic Discovery ──> Meta-discovery of new hypothesis directions (SEAL)
 ```
 
-### 2.3 Comprehensive Mapping of Lifecycle Points
-
-#### 2.3.1 Hypothesis Creation Points
-##### Explicit Creation Points
-1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `ScientificReasoningEngine.observe()`
-2. **`trading_bot/foundation_agents/curiosity_engine/hypothesis_generator.py`**: `HypothesisGenerator.generate_from_anomaly()`
-3. **`trading_bot/alpha_research/hypothesis_extraction.py`**: `HypothesisExtractionEngine.extract_from_research()`
-4. **`trading_bot/core/csc/hypothesis.py`**: `HypothesisGenerator.generate_competing_branches()`
-5. **`trading_bot/apex_fi/alpha_mining.py`**: `GeneticAlphaSearch._generate_random_expression()`
-6. **`trading_bot/world_model/imagination.py`**: `ImaginationEngine.simulate_scenarios()`
-7. **`trading_bot/market_teacher/absolute_laws.py`**: `AbsoluteLaws._create_draft_strategy()`
-8. **`trading_bot/core/phce_d_engine.py`**: `PHCEDAI._generate_hypothesis()`
-
-##### Implicit Creation Points
-1. **`trading_bot/strategy_discovery/evolutionary_engine.py`**: `StrategyGenome` (Implicit signal-reward hypothesis).
-2. **`trading_bot/ml/offline_rl/alphaalgo_autonomous_system.py`**: Policy updates (Implicit state-action value hypothesis).
-3. **`trading_bot/world_model/v2_training.py`**: Reasoning traces (Implicit causal chain hypothesis).
-4. **`trading_bot/profit_maximizer/market_regime_adapter.py`**: Regime classification (Implicit environment hypothesis).
-5. **`trading_bot/world_model/causal_model.py`**: Causal World Model Induction (Implicit causal mechanism).
-
-#### 2.3.2 Hypothesis Evaluation Points
-##### Core Scientific Evaluation
-1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `ScientificReasoningEngine.evaluate_results()` & `bayesian_update()`.
-2. **`trading_bot/core_agent_system/cds/epistemology_engine.py`**: `EpistemologyEngine.analyze_hypothesis()` (Adversarial questioning).
-
-##### Tactical Evaluation (Decision Layer)
-1. **`trading_bot/core/phce_d_engine.py`**: `ParallelHypothesisCorrectionEngine.process()` (Evidence synthesis).
-2. **`trading_bot/core/csc/controller.py`**: `CSC._verify_evidence_hard_constraint()` (Graph-based verification).
-3. **`trading_bot/core_agent_system/cds/verdict_engine.py`**: `VerdictEngine.synthesize_verdict()` (Weighted consensus).
-
-##### Statistical & Technical Evaluation
-1. **`trading_bot/alpha_research/strategy_diagnostics.py`**: `StrategyDiagnostics` (Overfitting, health, and robustness).
-2. **`trading_bot/strategy_discovery/validation.py`**: `StrategyValidationPipeline` (Regime testing, transaction costs).
-3. **`trading_bot/alpha_research/alpha_death_clock.py`**: `AlphaDeathClockManager` (Decay monitoring).
-4. **`trading_bot/world_model/imagination.py`**: `PlanEvaluator.evaluate_plan()` (Lookahead utility across scenarios).
-
-##### Governance & Institutional Evaluation
-1. **`trading_bot/core/unified_event_bus.py`**: `LogAction.wait_for_decision()` (Consensus/Voter auditing).
-2. **`trading_bot/core/immutable_shield.py`**: `ImmutableShield.validate_action()` (Hard safety rails).
-
-#### 2.3.3 Hypothesis Rejection Points
-##### Logical & Structural Rejection
-1. **`trading_bot/alpha_research/hypothesis_extraction.py`**: `HypothesisValidator` (Lacks mechanism/falsification).
-2. **`trading_bot/core/talos_cerberus_v23.py`**: `EvidenceScorecard` (Source unreliability, compliance failure).
-
-##### Performance & Decay Rejection
-1. **`trading_bot/apex_fi/alpha_mining.py`**: `LivingFactorLibrary._retire_factor()` (Sharpe/Entropy decay).
-2. **`trading_bot/signals/auto_disable_sick_signals.py`**: `SignalHealthMonitor` (Recent failure rate).
-3. **`trading_bot/strategy_discovery/evolutionary_engine.py`**: Fitness-based selection (Natural selection of genomes).
-
-##### Safety & Governance Rejection
-1. **`trading_bot/core/unified_event_bus.py`**: `LogAction` status `REJECTED` or `VETOED` (Voter consensus).
-2. **`trading_bot/core/immutable_shield.py`**: Hard constraint violation (Risk/Exposure).
-3. **`trading_bot/core/phce_d_engine.py`**: `SimpleValidationGateway` (Market hostility).
-
-##### Scientific Rejection
-1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `HypothesisState.REJECTED` (Posterior belief < 0.2).
-2. **`trading_bot/core/adversarial_failure_analysis.py`**: `AdversarialAnalyzer` (Successful falsification simulation).
-
-#### 2.3.4 Hypothesis Promotion Points
-##### Tactical Promotion (Decision Path)
-1. **`trading_bot/core/csc/controller.py`**: `_select_optimal_branch()` (Selection for execution).
-2. **`trading_bot/core/phce_d_engine.py`**: `SimpleValidationGateway.promote()` (Signal to Trade Action).
-
-##### Strategic Promotion (Research Path)
-1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `HypothesisState.INSTITUTIONALIZED` (High posterior confidence).
-2. **`trading_bot/alpha_research/hypothesis_extraction.py`**: `HypothesisPromotionEngine` (Research to Candidate).
-3. **`trading_bot/apex_fi/alpha_mining.py`**: `LivingFactorLibrary._promote_factor()` (Candidate to Production Alpha).
-
-##### Knowledge Promotion
-1. **`trading_bot/core/hms/memory.py`**: `SAGE.consolidate()` (Working memory to Long-term Graph Memory).
-2. **`trading_bot/market_teacher/market_teacher.py`**: Lessons extracted from successful trades.
+### Authoritative Deterministic End-States:
+Hypotheses never disappear. Every hypothesis must resolve into one of 10 immutable states:
+`Confirmed`, `Rejected`, `Inconclusive`, `Merged`, `Split`, `Dormant`, `Reactivated`, `Deprecated`, `Superseded`, or `Institutionalized`.
 
 ---
 
-### 1.3 Hypothesis Lifecycle State Transition Matrix
+## 4. Phase 4 — Continuous Self-Improvement (SEAL)
 
-To ensure rigorous auditing, every hypothesis must permanently reside in one of the following states, transitioning deterministically based on empirical thresholds:
-
-| Current State | Target State | Triggering Condition | Verification Metric |
-| :--- | :--- | :--- | :--- |
-| **OBSERVATION** | **ANOMALY_DETECTION** | Prediction Error exceeds surprise threshold $\tau_{surprise} > 0.5$. | Variational Surprise |
-| **HYPOTHESIS_GENERATION** | **EVIDENCE_COLLECTION** | Parameter space and invalidation conditions defined. | Formulated schema validation |
-| **COUNTERFACTUAL_GENERATION** | **ADVERSARIAL_DEBATE** | Pearl's interventional impact $P(Y \vert do(X)) \neq P(Y)$ is verified. | Causal Stability Score $> 0.6$ |
-| **ADVERSARIAL_DEBATE** | **REJECTED** | Red-team verifiers trigger a high-confidence veto. | Verification Consensus Score $< 0.4$ |
-| **ADVERSARIAL_DEBATE** | **EXPERIMENT_DESIGN** | Argument passes the verifier board with zero vetoes. | Debate Approval Score $\ge 0.8$ |
-| **EXECUTION** | **EVALUATION** | Out-of-sample execution window completes. | Sample size $\ge 500$ trades |
-| **BAYESIAN_UPDATE** | **CONFIDENCE_CALIBRATION** | Posterior $P(H \vert E)$ calculated. | Normalized Bayes bounds $[0.0, 1.0]$ |
-| **CONFIDENCE_CALIBRATION** | **INSTITUTIONALIZED** | Epistemic ambiguity contracts below $0.15$ and Posterior $> 0.85$. | Credal set width $\Delta_{ambiguity}$ |
-| **CONTINUOUS_MONITORING** | **DEPRECATED** | Performance drops below baseline for $> 3$ successive regimes. | Monotone Safety Gain $< 0.0$ |
-| **RETIRED** | **REACTIVATED** | Current market regime shifts back to matching original bounds. | Regime matching likelihood $> 0.85$ |
+The SRE incorporates the Self-Improving Evolutionary Algorithm Loop (SEAL). When the SRE detects high historical rejection rates ($> 60\%$) or calibration regressions, it automatically triggers recursive self-modification:
+1. **Adaptive Anomaly Thresholding**: Raises surprise thresholds to block low-quality inputs.
+2. **Credal Contraction Tuning**: Adjusts learning rates and credal contraction factors.
+3. **Search Strategy Realignment**: Redirects `ApexAlphaMining` toward under-explored causal features.
+4. **Failure Ledger Querying**: Feeds past rejected hypothesis hashes back into generator prompts as explicit negative search constraints.
 
 ---
 
-## Phase 2 — Downstream Bottleneck Analysis
+## 5. Phase 5 — Mathematical Foundations
 
-| ID | Bottleneck | Root Cause | Downstream Effect | Priority | Recommended Redesign |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **B1** | **Knowledge Fragmentation** | Separate modules (Curiosity, AlphaMining, PHCE-D, and Genomes) run isolated databases and registries. | 1. Duplicate evaluations consume heavy compute.<br>2. Information learned in one engine is inaccessible to others. | **CRITICAL** | Consolidate all subsystems under a single, unified registry in `ScientificReasoningEngine`. |
-| **B2** | **Causal Falsification Deficit** | Prevailing reliance on statistical correlation metrics (e.g., Pearson, mutual info) without interventional testing. | High strategy decay rate (alpha death) when non-causal spurious correlations drift. | **HIGH** | Mandate do-calculus simulation in Step 7 before sandbox promotion. |
-| **B3** | **Failure Amnesia** | Failed strategies and rejected factors are silently deleted without saving failure parameters. | The discovery engine repeatedly re-discovers previously discarded and broken ideas. | **HIGH** | Log all rejected hypothesis parameters permanently with failure metadata inside HMS Level T6/T7 memory. |
-| **B4** | **Uncertainty Over-Confidence** | Metrics rely on single-point probabilities rather than credal set boundaries. | Underestimation of systemic risk or structural regime shifts, leading to catastrophic overfitting. | **HIGH** | Introduce Credal intervals $[\underline{P}, \overline{P}]$ to measure epistemic ambiguity. |
-| **B5** | **Exploration-Exploitation Imbalance** | Simple heuristic or manual thresholds for retiring strategy genomes. | Fragile or decay-ridden strategies persist in active portfolios, causing drawdown. | **MEDIUM** | Link SRE Step 18 (Retirement) directly to the Dynamic Risk Matrix and Execution Planner. |
+### 1. Active Inference & Variational Free Energy (VFE)
+Anomalies and sensory surprise are quantified by minimizing Variational Free Energy:
+$$F = \mathbb{E}_{q(\theta)}[\ln q(\theta) - \ln p(y, \theta)] = D_{KL}(q(\theta) \parallel p(\theta)) - \mathbb{E}_{q(\theta)}[\ln p(y \mid \theta)]$$
+High $F$ indicates structural market drift requiring hypothesis generation.
 
----
+### 2. Governed Bayesian Updating with Trust Multipliers
+Posterior probabilities are computed recursively:
+$$P(\mathcal{H} \mid \mathcal{E}) = \frac{L(\mathcal{E} \mid \mathcal{H}) \cdot \omega_{\text{trust}} \cdot P(\mathcal{H})}{L(\mathcal{E} \mid \mathcal{H}) \cdot \omega_{\text{trust}} \cdot P(\mathcal{H}) + (1 - L(\mathcal{E} \mid \mathcal{H})) \cdot (1 - P(\mathcal{H}))}$$
+where $\omega_{\text{trust}}$ is the Leni AI trust score derived from human review and assumption auditing.
 
-## 4. Phase 3 — Scientific Redesign
+### 3. Pearl's Causal Interventions ($do$-Calculus)
+To distinguish causal relationships from spurious correlations, interventional distribution expectations are evaluated under structural causal models:
+$$\mathbb{E}[Y \mid do(X = x)] = \sum_{z} P(Y \mid X = x, Z = z) P(Z = z)$$
 
-The redesigned **Scientific Reasoning Engine (SRE)** integrates all 19 autonomous steps into a single state-machine backbone.
-
-### 3.1 The 19-Step SRE Loop
-
-1.  **Observation**: Streams real-time order books, order flow imbalances, and macro-economic announcements, tokenizing them into structured environment frames.
-2.  **Anomaly Detection**: Runs the Global World Model (GWM) to generate nominal expectations. Any deviation exceeding surprise threshold triggers an anomaly frame.
-3.  **Question Generation**: Generates research questions seeking the causal driver of the surprise (e.g., "Why did spread widen during low volume?").
-4.  **Hypothesis Generation**: Spawns multiple competing hypothesis models with parameter bounds, representing different market interpretations.
-5.  **Evidence Collection**: Performs a multi-hop query on the HMS Graph database to retrieve historically similar anomalies and their results.
-6.  **World Model Simulation**: Simulates the trajectory of the hypothesis across tri-horizon scenarios (Nominal, Stressed, Extreme).
-7.  **Counterfactual Generation**: Applies Pearl's interventional logic ($do$-calculus) in GWM simulation to verify causal stability.
-8.  **Adversarial Debate**: convenes a Verifier Swarm. Agents (Risk, Liquidity, Regime, Causal) debate the hypothesis. High-confidence vetoes trigger immediate demotion.
-9.  **Experiment Design**: Setup a strict out-of-sample (OOS) statistical sandbox with pre-defined falsification boundaries.
-10. **Execution**: Deploys the candidate hypothesis to paper-trading or a highly constrained live sandbox.
-11. **Evaluation**: Calculates empirical metrics (Returns, Sharpe, Drawdown, expected calibration error).
-12. **Bayesian Update**: Computes recursive Bayesian posterior $P(H \vert E)$ based on incoming execution evidence.
-13. **Confidence Calibration**: Contracts the credal interval $[\underline{P}, \overline{P}]$, quantifying epistemic ambiguity.
-14. **Knowledge Integration**: Passes the hypothesis to the Evolution Gate to check if monotone safety gains are satisfied.
-15. **Memory Consolidation**: Pushes the structured findings down into the HMS permanent semantic memory network.
-16. **Policy Improvement**: Updates the central reinforcement learning (RL) parameter mappings to optimize asset allocation weights.
-17. **Continuous Monitoring**: Tracks real-time feature drift, concept drift, and performance metrics.
-18. **Hypothesis Retirement**: Triggers automated decommissioning once performance or parameter thresholds are breached.
-19. **Automatic Discovery of New Hypotheses**: Re-evaluates retired or inconclusive candidates to spawn new, higher-quality research questions.
+### 4. Credal Sets & Expected Calibration Error (ECE)
+Uncertainty is represented using credal bounds $[p_{\text{lower}}, p_{\text{upper}}]$. Model calibration is continuously tracked:
+$$ECE = \sum_{m=1}^{M} \frac{|B_m|}{N} \left| \text{acc}(B_m) - \text{conf}(B_m) \right|$$
+Hypotheses are promoted to production only if $ECE < 0.05$.
 
 ---
 
-### 3.2 Perfect Hypothesis Lineage & Provenance Registry
+## 6. Validation Framework & Migration Roadmap
 
-Every hypothesis maintains a structured lineage map:
+### Validation Framework
+The redesigned hypothesis ecosystem is verified against a 4-tier testing suit:
+1. **Unit Verification**: Tests individual SRE stages, state transitions, and credal bounds.
+2. **Integration Verification**: Tests end-to-end flow from sensory anomaly to HMS memory store.
+3. **Adversarial & Safety Verification**: Tests risk verifier vetoes, red-team attacks, and sandbox isolation.
+4. **Out-of-Sample Performance Benchmarks**: Validates DSR, PBO, and ECE across multi-regime historical market data.
 
-```json
-{
-  "hypothesis_id": "hyp-order-imbalance-v6",
-  "parent_ids": ["hyp-volatility-drift-v2", "hyp-liquidity-drain-v1"],
-  "child_ids": ["hyp-execution-routing-v1"],
-  "creation_timestamp": "2026-07-30T12:00:00Z",
-  "authoritative_state": "INSTITUTIONALIZED",
-  "lineage": {
-    "merged_from": ["hyp-volatility-drift-v2"],
-    "split_from": null,
-    "immutable_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-  },
-  "metrics": {
-    "prior": 0.5,
-    "posterior": 0.945,
-    "credal_bounds": [0.92, 0.97],
-    "ambiguity": 0.05,
-    "ece": 0.082
-  }
-}
-```
-
----
-
-## 5. Phase 4 — Continuous Self-Improvement
-
-The SRE includes an active parameter self-improvement loop (Step 19) that adaptively tunes its own behavior.
-
-### 4.1 Meta-Optimization Metrics
-
-1.  **Hypothesis Quality (HQ)**:
-    $$HQ = \frac{\text{Accuracy} \times \text{Robustness}}{\text{Epistemic Ambiguity}}$$
-2.  **Research Efficiency (RE)**:
-    $$\eta = \frac{\text{Confirmed Hypotheses}}{\text{Compute Hours}}$$
-3.  **Economic Value (EV)**:
-    $$EV = \text{PnL}(h) - \text{ExecutionCost}(h)$$
-
-### 4.2 Auto-Healing Generation Bottlenecks
-
-The SRE continuously audits its own state history:
--   **If Rejection Rate exceeds $70\%$**: The engine automatically relaxes generative constraints or shifts search spaces in `AlphaMining` to prevent local optima stagnation.
--   **If Ambiguity fails to contract**: The engine adjusts Step 5's depth to retrieve higher-quality, multi-hop semantic evidence.
-
----
-
-## Phase 5 — Mathematical Justification, Validation, and Roadmap
-
-### 5.1 Mathematical Justification
-
-#### 1. Variational Active Inference (VFE)
-The global target is minimizing Variational Free Energy, driving the platform to select hypotheses with high epistemic value:
-$$G(h) \approx \sum_{\tau} E_{q(s_\tau, o_\tau | h)} \left[ \ln q(s_\tau | h) - \ln p(s_\tau, o_\tau) \right]$$
-
-#### 2. Pearl's do-calculus Interventions
-To guarantee causal stability, we apply interventional calculus on the hypothesis causal variables:
-$$P(Y \vert do(X))$$
-This separates correlation from true causal vectors, eliminating spurious features.
-
-#### 3. Bayesian Credal Bounds
-We handle epistemic ambiguity by updating lower and upper probability bounds rather than a point estimate:
-$$\Delta_{ambiguity} = \overline{P} - \underline{P}$$
-
----
-
-### 5.2 Automated Validation Framework
-
-To guarantee zero-regression execution, we provide a complete, programmatic validation suite verifying:
-1.  **Mathematical Bound Safety**: Asserting that Bayesian updates do not exceed $[0.0, 1.0]$.
-2.  **State Monotonicity**: Verifying that a hypothesis cannot reach `CONFIRMED` or `INSTITUTIONALIZED` status without transitioning through evaluation and debate.
-3.  **Failure Blockers**: Ensuring that the SRE successfully blocks duplicate generation of historically failed or rejected structures.
-
----
-
-## Phase 6 — Migration Roadmap
-
-We define a 4-phase non-disruptive migration strategy:
-
-### Phase 1: Foundation (Weeks 1-2)
-- Deploy unified `ScientificHypothesis` models system-wide.
-- Activate the SRE 19-step state machine core in `core.py`.
-
-### Phase 2: Interconnection & Shadowing (Weeks 3-6)
-- Route outputs from `CuriosityEngine`, `AlphaMining`, and `PHCE-D` into the SRE.
-- Run the SRE in **Shadow Mode**, tracking live portfolio decisions and logging "What I would have decided" without executing trades.
-
-### Phase 3: Active Alignment (Weeks 7-10)
-- Connect SRE to HMS (T0-T7) to consolidate semantic research files.
-- Enable automatic generation of structured research files.
-
-### Phase 4: Full Autonomy (Weeks 11-12)
-- Promote the SRE to live capital allocation authority.
-- Activate Step 19 recursive self-improvement loops.
+### 6-Stage Migration Roadmap
+- **Stage 1: Canonical State Standardization**: Enforce `ScientificHypothesis` schema across all discovery engines.
+- **Stage 2: Causal World Model Integration**: Wire $do(X)$ intervention engine into SRE Step 7.
+- **Stage 3: Verification Swarm Enforcement**: Mandate multi-agent debate and skeptic counter-evidence search.
+- **Stage 4: Epistemic Calibration & Credal Set Binding**: Enable ECE calibration and credal interval contraction in SRE Step 13.
+- **Stage 5: HMS Memory Consolidation**: Connect research ledgers and failure graphs to central HMS.
+- **Stage 6: Autonomous SEAL Loop Activation**: Enable recursive self-improvement and adaptive parameter tuning.
