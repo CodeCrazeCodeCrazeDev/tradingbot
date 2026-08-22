@@ -10,13 +10,16 @@ import asyncio
 import logging
 from unittest.mock import Mock, patch, MagicMock
 
+from pathlib import Path
 try:
-    from trading_bot.task_scheduler import *
+    from trading_bot.orchestrator.task_scheduler import *
 except ImportError:
-    # Fallback import
     import sys
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.task_scheduler import *
+    try:
+        from trading_bot.orchestrator.task_scheduler import *
+    except ImportError:
+        pass
 
 logger = logging.getLogger(__name__)
 
