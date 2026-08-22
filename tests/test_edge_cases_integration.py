@@ -669,7 +669,6 @@ class TestIntegrationPaths:
     
     def test_full_trade_lifecycle(self):
         """Test full trade lifecycle integration"""
-import numpy
 import pandas
         
         # 1. Validate market data

@@ -523,7 +523,6 @@ class TestErrorHandlingAndRobustness:
         """Test systems don't have memory leaks with repeated operations."""
         import psutil
         import os
-from typing import Set
 import numpy
 import pandas
         

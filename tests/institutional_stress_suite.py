@@ -225,11 +225,6 @@ async def test_production_performance_sla():
     assert p99 < 500, f"p99 latency SLA violated: {p99:.2f}ms"
 
     await decision_bus.stop()
-AlphaAlgo UCA V5+ Institutional Stress-Testing Suite (July 2026)
-
-Comprehensive validation suite testing institutional robustness, safety,
-scientific integrity, and resilience under extreme conditions.
-"""
 
 import pytest
 import asyncio

@@ -419,8 +419,8 @@ class NetworkMonitorTester:
         logger.info("Testing concurrent operations...")
         
         try:
+            pass
     pass
-from typing import Set
 from enum import auto
             
             config = {

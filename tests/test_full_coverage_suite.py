@@ -1280,7 +1280,6 @@ class TestMLVisualizerComprehensive(unittest.TestCase):
     def setUpClass(cls):
         try:
             from trading_bot.visualization.ml_visualizer import MLVisualizer
-from typing import Set
 import numpy
 import pandas
             cls.visualizer_class = MLVisualizer

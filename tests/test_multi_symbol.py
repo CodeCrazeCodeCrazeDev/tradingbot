@@ -26,7 +26,6 @@ def mock_mt5_interface():
 @pytest.fixture
 def multi_symbol_trader():
     from main import MultiSymbolTrader
-import numpy
 import pandas
 trader = MultiSymbolTrader(
         primary_symbol="EURUSD",

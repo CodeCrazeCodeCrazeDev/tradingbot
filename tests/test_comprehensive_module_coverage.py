@@ -1061,6 +1061,7 @@ class TestAdvancedBacktester:
     def test_run_backtest(self):
         """Test running backtest."""
         try:
+            pass
     pass
 import asyncio
 import numpy

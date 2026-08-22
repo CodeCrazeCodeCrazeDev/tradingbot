@@ -1507,8 +1507,8 @@ class TestIntegration:
     def test_validation_to_signal_flow(self):
         """Test validation to signal flow."""
         try:
+            pass
     pass
-from enum import auto
 import numpy
 import pandas
             
