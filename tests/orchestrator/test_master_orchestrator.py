@@ -8,15 +8,21 @@ All classes, methods, and functions tested.
 import pytest
 import asyncio
 import logging
+import sys
+from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
 try:
-    from trading_bot.master_orchestrator import *
+    from trading_bot.orchestrator.master_orchestrator import *
 except ImportError:
-    # Fallback import
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.master_orchestrator import *
+    try:
+        from trading_bot.master_orchestrator import *
+    except ImportError:
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        try:
+            from trading_bot.orchestrator.master_orchestrator import *
+        except ImportError:
+            pass
 
 logger = logging.getLogger(__name__)
 
