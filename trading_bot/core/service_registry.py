@@ -1,4 +1,4 @@
-
+"""
 Provides backward compatibility for consolidated service layers.
 """
 
@@ -25,13 +25,3 @@ class ServicePriority:
     HIGH = 2
     NORMAL = 3
     LOW = 4
-from trading_bot._archive.legacy_core.service_registry import (
-    ServiceState,
-    ServicePriority,
-    ServiceHealth,
-    ServiceInfo,
-    BaseService,
-    ServiceRegistry,
-    get_service_registry,
-    create_service_registry
-)

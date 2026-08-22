@@ -371,6 +371,9 @@ class RiskManager:
         if summary['metrics'] is None:
             return f"RISK MANAGEMENT REPORT\n{'=' * 50}\nRisk Level: {summary['risk_level'].upper()}\nNo metrics available yet."
         
+        limits_lines = [f"- {sym}: {limit:.2f}" for sym, limit in summary['limits'].items()] or ["- None"]
+        restrictions_lines = [f"- {sym}" for sym in summary['restrictions']] or ["- None"]
+
         report = [
             "RISK MANAGEMENT REPORT",
             "=" * 50,
@@ -387,10 +390,10 @@ class RiskManager:
             f"- Correlation: {summary['metrics']['correlation']:.2f}",
             
             "\nPosition Limits:",
-            *[f"- {sym}: {limit:.2f}" for sym, limit in summary['limits'].items()] or ["- None"],
+            *limits_lines,
             
             "\nTrading Restrictions:",
-            *[f"- {sym}" for sym in summary['restrictions']] or ["- None"],
+            *restrictions_lines,
         ]
         
         return "\n".join(report)

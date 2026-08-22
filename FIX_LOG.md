@@ -99,3 +99,16 @@ This document provides a chronological, high-fidelity log of technical fixes, co
           await bus.stop()
       ```
     - This ensures the `asyncio.PriorityQueue` and background loop tasks are instantiated inside the same loop scope as the test case, resolving all asyncio timeout and cross-loop exceptions.
+
+---
+
+## 6. Targeted Codebase Syntax & AST Remediation (August 2026)
+
+### **Components**: `trading_bot/agents/multi_agent_debate.py`, `master_orchestrator.py`, `service_registry.py`, `production_database.py`, `risk/risk_manager.py`, `tests/orchestrator/test_orchestrator_master.py`
+*   **Fix Applied**:
+    - Corrected dict keyword formatting and indentation in `multi_agent_debate.py`.
+    - Restored opening/closing docstrings in `master_orchestrator.py` and `service_registry.py`.
+    - Fixed SQLAlchemy fallback structure in `production_database.py`.
+    - Fixed list unpacking syntax in `risk/risk_manager.py`.
+    - Cleaned up unindented imports in `tests/orchestrator/test_orchestrator_master.py`.
+*   **Result**: 100% clean AST compilation across core modules and full green pytest execution for scientific and orchestrator test suites.
