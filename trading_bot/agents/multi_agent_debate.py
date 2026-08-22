@@ -1450,10 +1450,6 @@ class FalsificationGate:
             "HallucinationDetector": hallucination_res.is_valid,
         }
 
-            is_falsified = not all(verifier_outcomes.values())
-            reason = None
-            worst_case = None
-
         is_falsified = not all(verifier_outcomes.values())
         rejection_reason = None
         if is_falsified:
@@ -1528,9 +1524,8 @@ class FalsificationGate:
 
 class HeadAI:
     """
-    Dedicated mathematical component implementing mathematically rigorous,
-    correlation-aware Bayesian posterior probability calculations.
-    Keeps inference isolated from orchestration under the UCA-2026 specification.
+    Dedicated mathematical Head AI component: coordinates evidence-first debate aggregation
+    and correlation-aware Bayesian posterior probability calculations.
     """
 
     def __init__(
@@ -1561,14 +1556,13 @@ class HeadAI:
         self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]
     ) -> float:
         """
-        Computes mathematically rigorous, correlation-aware Bayesian posterior probability of strategy success:
+        Computes mathematically rigorous Bayesian posterior probability of strategy success:
         P(S | E) = [ P(S) * Prod P(E_i | S)^w_i ] / [ P(S) * Prod P(E_i | S)^w_i + P(~S) * Prod P(E_i | ~S)^w_i ]
         """
         prod_s = 1.0
         prod_ns = 1.0
 
         for endorsed, likelihood, exponent in evidence_likelihoods:
-            # Bound likelihood to avoid division by zero or extreme certainties
             p_e_given_s = max(0.01, min(0.99, likelihood))
 
             if endorsed:
@@ -1585,41 +1579,6 @@ class HeadAI:
             return prior_prob
 
         return max(0.0, min(1.0, numerator / denominator))
-
-
-class HeadAI:
-    """
-    Lightweight Head AI: coordinates evidence-first debate aggregation and Bayesian calibration.
-    """
-
-    def __init__(self, config: Optional[Dict] = None, calibrator: Optional[ConfidenceCalibrator] = None):
-        try:
-            self.config = config or {}
-            self.calibrator = calibrator
-
-            # Agent weights
-            self.weights = {
-                AgentRole.MACRO_STRATEGIST: self.config.get('macro_weight', 0.35),
-                AgentRole.TACTICAL_EXECUTIONER: self.config.get('tactical_weight', 0.35),
-                AgentRole.RISK_SENTINEL: self.config.get('risk_weight', 0.30),
-            }
-
-            # Pairwise domain correlations to mitigate Naive Bayes conditional independence violations
-            self.correlations = {
-                (AgentRole.MACRO_STRATEGIST, AgentRole.TACTICAL_EXECUTIONER): 0.70,
-                (AgentRole.MACRO_STRATEGIST, AgentRole.RISK_SENTINEL): 0.15,
-                (AgentRole.TACTICAL_EXECUTIONER, AgentRole.RISK_SENTINEL): 0.20
-            }
-
-            # Instantiate separate Bayesian Decision Engine for decoupled mathematical inference
-            self.bayesian_engine = BayesianDecisionEngine(self.weights, self.correlations)
-        except Exception as e:
-            logger.error(f"Error in HeadAI init: {e}")
-            raise
-
-    def calculate_bayesian_posterior(self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]) -> float:
-        """Delegate mathematical posterior calculation to the dedicated Bayesian decision engine."""
-        return self.bayesian_engine.calculate_posterior(prior_prob, evidence_likelihoods)
 
     def synthesize_decision(
         self,
@@ -2564,22 +2523,22 @@ class MultiAgentDebateSystem:
                     'num_rounds': len(debate_rounds),
                     'conflicts_detected': conflicts
                 },
-                agent_contributions={
+                'agent_contributions': {
                     role.value: sc.expected_contribution for role, sc in scorecards.items()
                 },
-                agent_scorecards={role.value: sc.to_dict() for role, sc in scorecards.items()},
-                consensus_record={
+                'agent_scorecards': {role.value: sc.to_dict() for role, sc in scorecards.items()},
+                'consensus_record': {
                     "consensus_level": decision.consensus_level,
                     "votes": decision.agent_votes,
                 },
-                random_seed="seed_42",
-                environment_fingerprint=hashlib.sha256(
+                'random_seed': "seed_42",
+                'environment_fingerprint': hashlib.sha256(
                     f"{git_sha}_{config_hash}".encode("utf-8")
                 ).hexdigest(),
                 "execution_latency": duration_ms,
                 "decision_timestamp": datetime.now().isoformat(),
                 "debate_quality_evaluation": evaluation,
-                "falsification_report": {
+                "falsification_report_summary": {
                     "is_falsified": falsification_report.is_falsified,
                     "rejection_reason": falsification_report.rejection_reason,
                     "verifier_outcomes": falsification_report.verifier_outcomes,
