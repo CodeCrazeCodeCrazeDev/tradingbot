@@ -1450,10 +1450,7 @@ class FalsificationGate:
             "HallucinationDetector": hallucination_res.is_valid,
         }
 
-            is_falsified = not all(verifier_outcomes.values())
-            reason = None
-            worst_case = None
-
+        worst_case = None
         is_falsified = not all(verifier_outcomes.values())
         rejection_reason = None
         if is_falsified:
@@ -2564,15 +2561,15 @@ class MultiAgentDebateSystem:
                     'num_rounds': len(debate_rounds),
                     'conflicts_detected': conflicts
                 },
-                agent_contributions={
+                'agent_contributions': {
                     role.value: sc.expected_contribution for role, sc in scorecards.items()
                 },
-                agent_scorecards={role.value: sc.to_dict() for role, sc in scorecards.items()},
-                consensus_record={
+                'agent_scorecards': {role.value: sc.to_dict() for role, sc in scorecards.items()},
+                'consensus_record': {
                     "consensus_level": decision.consensus_level,
                     "votes": decision.agent_votes,
                 },
-                random_seed="seed_42",
+                'random_seed': "seed_42",
                 environment_fingerprint=hashlib.sha256(
                     f"{git_sha}_{config_hash}".encode("utf-8")
                 ).hexdigest(),

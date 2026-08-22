@@ -38,6 +38,46 @@ This document tracks identified, resolved, and monitored engineering defects and
 *   **Status**: **RESOLVED**
 *   **Verification**: Python compile and collection succeed cleanly.
 
+### **DEFECT-UCA-2026-05**: Multi-Agent Debate Dictionary Formatting & Variable Scoping Errors
+*   **Component**: `trading_bot/agents/multi_agent_debate.py`
+*   **Severity**: **CRITICAL**
+*   **Description**: Line 1453 and line 2564 contained bad indentation and dict keyword syntax errors (`agent_contributions={...}` without key prefix), causing module compilation failures.
+*   **Resolution**: Fixed dictionary key formatting and corrected block indentation inside FalsificationGate and MultiAgentDebateSystem.
+*   **Status**: **RESOLVED**
+*   **Verification**: `python3 -m py_compile trading_bot/agents/multi_agent_debate.py` compiles cleanly.
+
+### **DEFECT-UCA-2026-06**: Unterminated Docstring Literals in Master Orchestrator & Service Registry
+*   **Component**: `trading_bot/core_agent_system/master_orchestrator.py`, `trading_bot/core/service_registry.py`
+*   **Severity**: **HIGH**
+*   **Description**: Unterminated triple-quoted docstring literals caused file import failures during module loading.
+*   **Resolution**: Added opening/closing triple quotes and restored clean stub structures.
+*   **Status**: **RESOLVED**
+*   **Verification**: Both modules compile cleanly and import without errors.
+
+### **DEFECT-UCA-2026-07**: Production Database Fallback Block Indentation Mismatch
+*   **Component**: `trading_bot/database/production_database.py`
+*   **Severity**: **HIGH**
+*   **Description**: Invalid `else:` block placement in SQLAlchemy fallback declarations caused syntax errors on line 218.
+*   **Resolution**: Consolidated dummy ORM model definitions at the top level under `if not SQLALCHEMY_AVAILABLE:`.
+*   **Status**: **RESOLVED**
+*   **Verification**: `production_database.py` compiles cleanly.
+
+### **DEFECT-UCA-2026-08**: Risk Manager List Unpacking Expression Syntax Failure
+*   **Component**: `risk/risk_manager.py`
+*   **Severity**: **HIGH**
+*   **Description**: Line 390 used invalid Python list unpacking syntax inside a list literal (`*[...] or ["- None"]`).
+*   **Resolution**: Separated list construction into explicit variables (`limits_lines`, `restrictions_lines`) prior to list assembly.
+*   **Status**: **RESOLVED**
+*   **Verification**: `risk/risk_manager.py` compiles cleanly.
+
+### **DEFECT-UCA-2026-09**: Orchestrator Master Test Indentation & Stray Import Failure
+*   **Component**: `tests/orchestrator/test_orchestrator_master.py`
+*   **Severity**: **HIGH**
+*   **Description**: Line 222 contained an unindented `import numpy` statement inside `test_orchestrate_trading`, causing test collection errors.
+*   **Resolution**: Cleaned up stray import lines and restored correct function body indentation.
+*   **Status**: **RESOLVED**
+*   **Verification**: `poetry run pytest tests/orchestrator/` passes completely.
+
 ---
 
 ## 2. Monitored Issues

@@ -1,4 +1,4 @@
-
+"""
 Provides backward compatibility for consolidated hierarchical orchestrators.
 """
 
@@ -15,10 +15,6 @@ class DecisionPriority(Enum):
     NORMAL = "normal"
     HIGH = "high"
     CRITICAL = "critical"
-import logging
-from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any, Dict, List, Optional
 
 @dataclass
 class SystemContext:
