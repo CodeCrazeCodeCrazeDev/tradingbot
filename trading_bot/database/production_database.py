@@ -215,7 +215,6 @@ else:
         __table_args__ = (
             Index('ix_audit_user_timestamp', 'user_id', 'timestamp'),
         )
-else:
     class DummyBase:
         pass
     Base = DummyBase
