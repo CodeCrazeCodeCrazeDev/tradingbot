@@ -1,6 +1,6 @@
 # Research Synthesis Matrix: AlphaAlgo Scientific Foundation (2026)
 
-This document provides a rigorous scientific synthesis of the highest-impact research papers and core engineering domains identified for the AlphaAlgo Institutional Financial Intelligence system.
+This document provides a rigorous scientific synthesis of the highest-impact research papers and core engineering domains identified for the AlphaAlgo Institutional Financial Intelligence system across all 9 research domains (Self-Improvement, Continual Learning, Evolution, Agents, Planning, Memory, World Models, Scientific Reasoning, Financial AI).
 
 ---
 

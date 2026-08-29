@@ -1,4 +1,18 @@
-# Phase 6 (Part 5): Migration Plan
+# Phase 6: Component Classification & Refactoring Blueprint
+
+Categorization of all repository components according to scientific literature evidence:
+
+| Classification | Component(s) | Scientific Literature Justification | Targeted Refactoring Action |
+| :--- | :--- | :--- | :--- |
+| **KEEP** | `CognitiveSystemController`, `HierarchicalMemorySystem`, `SkillRouter`, `ImmutableShield` | Grounded in Friston (2010) Active Inference, SAGE (arXiv:2605.12061), S2L (arXiv:2606.16769), HASP (arXiv:2605.17734) | Preserve core singletons and enforce thread-safe resets. |
+| **REDESIGN** | `MultiAgentDebateSystem`, `BayesianDecisionEngine`, `FalsificationGate` | Grounded in AutoResearchClaw (arXiv:2605.20025), LogAct (arXiv:2605.29303), Ghahramani (2015) | Fix dictionary key syntax flaws, resolve variable scoping, and restore verifier instantiation. |
+| **MERGE** | Fragmented Verifiers (`CausalVerifier`, `LiquidityVerifier`, `RegimeVerifier`, `RiskVerifier`) | Grounded in HASP (arXiv:2605.17734) and AutoResearchClaw (arXiv:2605.20025) | Consolidate into unified verification swarm pipeline under `MultiAgentDebateSystem`. |
+| **REPLACE** | Legacy prompt sheets, uncalibrated heuristics | Grounded in Skill-to-LoRA (arXiv:2606.16769) | Replace static text prompts with dynamic LoRA adapter routing and program functions. |
+| **REMOVE** | Duplicate sidecar databases, un-sandboxed `eval`/`exec` calls | Grounded in LogAct (arXiv:2605.29303) and Security Invariants | Purge un-sandboxed script runners and consolidate onto HMS SAGE graph substrate. |
+
+---
+
+# Phased Migration Plan
 
 Phased strategy for the deployment of UCA-2026 in institutional production.
 
