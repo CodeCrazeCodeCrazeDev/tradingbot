@@ -219,8 +219,6 @@ class TestRiskValidation:
 @pytest.mark.asyncio
 class TestAsyncOrchestration:
     async def test_orchestrate_trading(self, sample_config):
-    pass
-import numpy
         orchestrator = MasterOrchestrator(sample_config)
         mock_scanner = MagicMock()
         mock_scanner.scan_all_opportunities = AsyncMock(return_value=[
