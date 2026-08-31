@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from contextlib import asynccontextmanager
 import json
 import os
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +36,6 @@ try:
 except ImportError:
     SQLALCHEMY_AVAILABLE = False
     logger.warning("SQLAlchemy not installed. Install with: pip install sqlalchemy asyncpg")
-    class TradeRecord: pass
-    class PositionRecord: pass
-    class OrderRecord: pass
-    class AccountSnapshot: pass
-    class MetricRecord: pass
-    class SignalRecord: pass
-    class AuditLog: pass
 
 # Alembic for migrations
 try:
@@ -215,17 +209,6 @@ else:
         __table_args__ = (
             Index('ix_audit_user_timestamp', 'user_id', 'timestamp'),
         )
-else:
-    class DummyBase:
-        pass
-    Base = DummyBase
-    class TradeRecord: pass
-    class PositionRecord: pass
-    class OrderRecord: pass
-    class AccountSnapshot: pass
-    class MetricRecord: pass
-    class SignalRecord: pass
-    class AuditLog: pass
 
 
 class DatabaseManager:
@@ -603,10 +586,6 @@ class DatabaseManager:
             }
 
 
-# Import uuid for trade_id generation
-import uuid
-
-# Evolution: Added retry decorator
 def retry(max_attempts=3, delay=1.0):
     """Retry decorator for resilient operations"""
     def decorator(func):
@@ -622,8 +601,6 @@ def retry(max_attempts=3, delay=1.0):
             raise last_error
         return wrapper
     return decorator
-
-
 
 
 # Export
