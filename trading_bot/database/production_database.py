@@ -54,13 +54,14 @@ except ImportError:
 if not SQLALCHEMY_AVAILABLE:
     class DummyBase:
         pass
-    TradeRecord = DummyBase
-    PositionRecord = DummyBase
-    OrderRecord = DummyBase
-    AccountSnapshot = DummyBase
-    MetricRecord = DummyBase
-    SignalRecord = DummyBase
-    AuditLog = DummyBase
+    Base = DummyBase
+    class TradeRecord: pass
+    class PositionRecord: pass
+    class OrderRecord: pass
+    class AccountSnapshot: pass
+    class MetricRecord: pass
+    class SignalRecord: pass
+    class AuditLog: pass
 else:
     Base = declarative_base()
     
@@ -215,17 +216,6 @@ else:
         __table_args__ = (
             Index('ix_audit_user_timestamp', 'user_id', 'timestamp'),
         )
-else:
-    class DummyBase:
-        pass
-    Base = DummyBase
-    class TradeRecord: pass
-    class PositionRecord: pass
-    class OrderRecord: pass
-    class AccountSnapshot: pass
-    class MetricRecord: pass
-    class SignalRecord: pass
-    class AuditLog: pass
 
 
 class DatabaseManager:
