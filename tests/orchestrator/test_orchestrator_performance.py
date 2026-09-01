@@ -71,7 +71,6 @@ class TestTradeTracking:
     def test_track_multiple_trades(self, sample_config, sample_trades):
         tracker = PerformanceTracker(sample_config)
         for trade in sample_trades[:10]:
-    pass
             tracker.track_trade(trade)
         assert len(tracker.trade_history) == 10
         assert len(tracker.equity_curve) == 10
