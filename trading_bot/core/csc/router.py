@@ -1,7 +1,9 @@
 """
-Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral behaviors (Skill-to-LoRA).
-Implements 'HASP' (2026) and 'S2L' (2026).
+Skill Router (UCA-2026 Skill & LoRA Adapter Router)
+
+Paper Traceability Matrix:
+- arXiv:2605.17734 (HASP): Hierarchical active safety program orchestration & routing.
+- arXiv:2605.12061 (S2L): Sparse strategic LoRA hedging and behavioral adapter selection.
 """
 
 import logging

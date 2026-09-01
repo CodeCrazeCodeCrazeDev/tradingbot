@@ -1,13 +1,11 @@
 """
-Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
-Implements the Active Inference (VFE minimization) loop and
-HIPIF (Hierarchical Planning with Information Folding).
-The "One Brain" authoritative controller orchestrating the LogAct pipeline.
-Cognitive System Controller (CSC) - UCA V6
+Cognitive System Controller (CSC) — UCA-2026 Authoritative Cognitive Engine
 
-Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
-Implements 'DiscoLoop' (arXiv:2607.00341) for multi-hop reasoning, 'HIPIF' (arXiv:2606.10507) for information folding,
-and 'AutoResearchClaw' (arXiv:2605.20025) for Pivot/Refine self-healing control.
+Paper Traceability Matrix:
+- arXiv:2607.00341 (DiscoLoop): 12-step Active Inference VFE minimization & multi-hop reasoning.
+- arXiv:2606.10507 (HIPIF): Hierarchical planning with information folding.
+- arXiv:2605.20025 (AutoResearchClaw): Pivot/Refine self-healing control loops.
+- arXiv:2605.17734 (HASP): Counterfactual active safety intervention.
 """
 
 import numpy as np
