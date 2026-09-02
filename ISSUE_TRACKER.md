@@ -1,50 +1,63 @@
-# AlphaAlgo Elite Production Issue Tracker (2026)
+# Production Engineering Issue Tracker (2026)
 
-This document tracks identified, resolved, and monitored engineering defects and scientific regressions across the AlphaAlgo codebase.
-
----
-
-## 1. Registry of Resolved Defects
-
-### **DEFECT-UCA-2026-01**: UCA Singleton Reset & Lifecycle Regression
-*   **Component**: `UnifiedDecisionBus`, `CognitiveSystemController`, `HierarchicalMemorySystem`, `SkillRouter`
-*   **Severity**: **CRITICAL (BLOCKER)**
-*   **Description**: In some legacy code revisions, the explicit class-level `reset()` methods on core singletons had been omitted or simplified into stubs. This caused pytest-asyncio to fail under test teardown/setup due to cross-test singleton contamination, resulting in 26/26 `AttributeError` errors.
-*   **Resolution**: Implemented high-fidelity, thread-safe class-level `reset()` methods across all singletons. Restored `_lock` in `SkillRouter` and synchronized schema serialization in `HierarchicalMemorySystem`.
-*   **Status**: **RESOLVED**
-*   **Verification**: Unit test suite `tests/uca_v5/` passes 26/26 test cases.
-
-### **DEFECT-UCA-2026-02**: Cross-Loop Event Loop Contamination in Stress Tests
-*   **Component**: `tests/stress/test_logact_pressure.py`
-*   **Severity**: **HIGH**
-*   **Description**: The stress-testing suite initialized `UnifiedDecisionBus` using `event_loop.run_until_complete()`, which bound queue tasks to the session-scoped loop, while pytest-asyncio ran tests in function-scoped loops. This caused `wait_for_decision` to time out.
-*   **Resolution**: Converted the `stress_bus` fixture into an asynchronous fixture (`async def stress_bus()`), letting the bus bind to the running loop of the active test case.
-*   **Status**: **RESOLVED**
-*   **Verification**: `poetry run pytest tests/stress/` passes 4/4 concurrent stress tests in 3.10s.
-
-### **DEFECT-UCA-2026-03**: SkillRouter Default Adapter Name Discrepancy
-*   **Component**: `SkillRouter` / `tests/uca_v5/test_router_v5.py`
-*   **Severity**: **MEDIUM**
-*   **Description**: The default S2L adapter ID registered in `SkillRouter` was named `lora_hedging_v1`, whereas unit tests expected `lora_hedging_v2`. This discrepancy led to assertions failing on route outputs.
-*   **Resolution**: Aligned the default registered skill artifact adapter ID to `lora_hedging_v2`.
-*   **Status**: **RESOLVED**
-*   **Verification**: `test_router_v5.py` passes completely.
-
-### **DEFECT-UCA-2026-04**: Missing imports and undefined name warnings
-*   **Component**: `tests conftest.py` / `weekly_tests` conftest references
-*   **Severity**: **MEDIUM**
-*   **Description**: Some autouse conftest setups reference `Path` or `sys` before importing them, or run checks on missing directories.
-*   **Resolution**: Cleaned up the imports in conftest files and added missing pathlib imports.
-*   **Status**: **RESOLVED**
-*   **Verification**: Python compile and collection succeed cleanly.
+This document contains the granular registry of all 34 engineering-significant issues identified and remediated during the 2026 Production Engineering Audit.
 
 ---
 
-## 2. Monitored Issues
+## Issue Registry Table
 
-### **MONITOR-UCA-2026-01**: FAISS Search Fallback to NumPy
-*   **Component**: `trading_bot.world_model.experience_replay`
-*   **Severity**: **LOW**
-*   **Description**: When FAISS is not installed in the execution environment, the system displays a warning and falls back to NumPy-based similarity search.
-*   **Impact**: Performance-only. Under local sandbox loads, NumPy distance calculation is extremely fast and doesn't affect accuracy.
-*   **Mitigation**: NumPy fallback is programmatically validated and verified. Will install `faiss-cpu` if sub-millisecond vector indexing is needed over large-horizon tables.
+| Issue ID | Severity | Category | Affected File(s) | Short Description | Status |
+| :--- | :---: | :--- | :--- | :--- | :---: |
+| **SEC-001** | Critical | Security | `trading_bot/ml/automl_pipeline.py` | Unsafe `pickle.load` deserialization risk | Resolved |
+| **SEC-002** | Critical | Security | `trading_bot/distributed/parallel_backtester.py` | Unsanitized `exec` strategy evaluation | Resolved |
+| **SEC-003** | High | Security | `trading_bot/core/security/sandbox.py` | Incomplete module import whitelist | Resolved |
+| **REL-001** | High | Reliability | `trading_bot/foundation_agents/causal_engine/causal_discovery.py` | Bare `except:` catching SystemExit in lstsq | Resolved |
+| **REL-002** | High | Reliability | `trading_bot/foundation_agents/causal_engine/causal_discovery.py` | Bare `except:` in independence test | Resolved |
+| **REL-003** | High | Reliability | `trading_bot/foundation_agents/causal_engine/granger_causality.py` | Silent exception swallowing in optimal VAR lag search | Resolved |
+| **REL-004** | High | Reliability | `trading_bot/foundation_agents/cognitive_core/attention_mechanism.py` | Bare exception swallowing in novelty z-score calculation | Resolved |
+| **REL-005** | Medium | Reliability | `trading_bot/foundation_agents/knowledge_pipeline/citation_network.py` | Bare `except:` swallow in PageRank network calculations | Resolved |
+| **REL-006** | Medium | Reliability | `trading_bot/foundation_agents/knowledge_pipeline/citation_network.py` | Bare `except:` swallow in degree centrality calculation | Resolved |
+| **REL-007** | High | Reliability | `trading_bot/foundation_agents/multi_agent/collective_intelligence.py` | Silent fallback in logit extremization | Resolved |
+| **REL-008** | Critical | Reliability | `trading_bot/autonomous/alpha_factor_discovery.py` | Mutable default argument `nodes=[]` causing cross-call state leak | Resolved |
+| **REL-009** | High | Reliability | `trading_bot/ai_core/forecasting/temporal_fusion_transformer.py` | Mutable default argument in prediction function | Resolved |
+| **REL-010** | High | Reliability | `trading_bot/ai_core/rl/offline_policy_evaluation.py` | Mutable default argument in offline policy evaluation | Resolved |
+| **SYN-001** | High | Syntax/Build | `trading_bot/agents/multi_agent_debate.py` | Unexpected indentation in falsification gate check | Resolved |
+| **SYN-002** | Medium | Syntax/Build | `trading_bot/agents/multi_agent_debate.py` | Missing quotes in dict keys (`agent_contributions`) | Resolved |
+| **SYN-003** | Medium | Syntax/Build | `trading_bot/agents/multi_agent_debate.py` | Missing quotes in dict keys (`consensus_record`) | Resolved |
+| **PERF-001** | Medium | Performance | `trading_bot/world_model/causal_model.py` | Un-memoized cycle finding in causal DAGs | Resolved |
+| **PERF-002** | Medium | Performance | `trading_bot/core/hms/memory.py` | Uncached multi-hop SAGE graph traversal | Resolved |
+| **DATA-001** | High | Data Integrity | `trading_bot/unified_architecture/layer1_data_foundation.py` | Silent exception swallowing during tick ingestion | Resolved |
+| **DATA-002** | Medium | Data Integrity | `trading_bot/database/production_database.py` | Unhandled transaction aborts during high-concurrency writes | Resolved |
+| **CONC-001** | High | Concurrency | `trading_bot/core/unified_event_bus.py` | Unhandled task cancellation during shutdown | Resolved |
+| **CONC-002** | High | Concurrency | `trading_bot/core/csc/controller.py` | Potential lock race during fast strategy pivots | Resolved |
+| **ARCH-001** | Medium | Architecture | `trading_bot/core/service_registry.py` | Duplicate fallback handlers | Resolved |
+| **ARCH-002** | Medium | Architecture | `trading_bot/core_agent_system/master_orchestrator.py` | Misplaced import statements in error recovery | Resolved |
+| **GOV-001** | Critical | Governance | `trading_bot/governance/orchestrator.py` | Missing governance orchestrator export | Resolved |
+| **GOV-002** | High | Governance | `trading_bot/core/security/defense.py` | Unenforced risk parameter immutability in emergency mode | Resolved |
+| **SEC-004** | Low | Security | `trading_bot/distributed/parallel_backtester.py` | Missing input validation for backtest config dictionary | Resolved |
+| **REL-011** | Low | Reliability | `trading_bot/neuros_evolution/code_evolution_engine.py` | Incomplete string stripping on coverage calculation | Resolved |
+| **PERF-003** | Low | Performance | `trading_bot/ml/automl_pipeline.py` | Redundant model re-loading on evaluation calls | Resolved |
+| **MAINT-001** | Low | Maintainability | `trading_bot/agents/multi_agent_debate.py` | Duplicate docstrings in HeadAI class | Resolved |
+| **MAINT-002** | Low | Maintainability | `trading_bot/foundation_agents/causal_engine/causal_discovery.py` | Unused local import inside function body | Resolved |
+| **MAINT-003** | Low | Maintainability | `trading_bot/foundation_agents/cognitive_core/attention_mechanism.py` | Magic number `0.3` for moderate novelty fallback | Resolved |
+| **MAINT-004** | Low | Maintainability | `trading_bot/world_model/causal_model.py` | Missing type hint annotations on path strengths | Resolved |
+| **MAINT-005** | Low | Maintainability | `trading_bot/distributed/parallel_backtester.py` | Print statements instead of logger invocations | Resolved |
+
+---
+
+## Detailed Technical Breakdowns
+
+### Issue SEC-001: Unsafe Deserialization
+* **Severity**: Critical
+* **Root Cause**: Use of standard `pickle.load` without class filtering allowed arbitrary code execution.
+* **Solution**: Switched to `safe_load` from `trading_bot.security.safe_pickle` which checks module/class origin against an explicit safety whitelist.
+
+### Issue SEC-002: Dynamic Code Execution
+* **Severity**: Critical
+* **Root Cause**: In `parallel_backtester.py`, strategy code submitted as strings was executed directly with `exec()`.
+* **Solution**: Integrated `SecureASTVisitor().validate_code(strategy_code)` before executing strategy blocks.
+
+### Issue REL-008: Shared Mutable Default Argument State
+* **Severity**: Critical
+* **Root Cause**: `def get_random_node(expr, nodes=[]):` accumulated nodes across successive function calls.
+* **Solution**: Modified function signature to `def get_random_node(expr, nodes=None):` and instantiated `nodes = []` if `None`.

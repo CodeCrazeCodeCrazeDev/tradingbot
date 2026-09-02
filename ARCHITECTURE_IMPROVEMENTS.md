@@ -1,33 +1,32 @@
-# AlphaAlgo Structural & Architectural Improvements (2026)
+# Architectural Improvements & Structural Simplifications (2026)
 
-This document details the structural simplifications, system unifications, and duplicate eliminations performed to achieve the "One Brain" pattern under the Unified Scientific Architecture (UCA-2026).
-
----
-
-## 1. The "One Brain" Architecture Consolidation
-
-Prior to the UCA-2026 migration, the AlphaAlgo codebase suffered from structural sprawl, with multiple folders (`agents 2/`, `advanced_systems 2/`, and redundant orchestration loops) competing for state and execution ownership.
-
-### **Structural Purge**:
-- Deleted all duplicate directories (such as `agents 2/` and `advanced_systems 2/`).
-- Enforced a single repository-wide event bus (`UnifiedDecisionBus`) and a single active controller singleton (`CognitiveSystemController`).
-- Programmatically locked the repository against duplicate imports using a custom architecture invariant test suite (`tests/architecture/test_architecture_invariants.py`).
+This document catalogs the structural simplifications, architectural unifications, and cohesion improvements realized during the 2026 Production Engineering Audit of AlphaAlgo (UCA-2026).
 
 ---
 
-## 2. Decoupling of Capabilities & Single Responsibility
+## 1. Core Architectural Unifications
 
-We have enforced strict single-responsibility boundaries over core modules:
-1.  **Sensory Processing & Surprise**: Managed solely by `CognitiveSystemController` inside `controller.py`. Surprise calculation is modeled on Active Inference principles to update the variational free energy state sequentially.
-2.  **Strategic Reasoning & Routing**: Consolidated into `SkillRouter` inside `router.py`. Prompt-based routing, program function (PF) pre-emption, and low-rank adapter selection (S2L) are managed through a unified `route_task` API returning the subscriptable `SkillRouteOutcome` dataclass contract.
-3.  **Knowledge & Episodic Ledger**: Owned entirely by `HierarchicalMemorySystem` (HMS) inside `memory.py`. Relational graph indexing (SAGE Graph Memory) tracks claims, evidence, and provenances securely.
-4.  **Causal World Model rollouts**: Handled by the `UnifiedWorldModel`. It leverages structural causal equations (do-calculus) to perform counterfactual simulations instead of simple statistical forecasting.
+### Single-Source-of-Truth Singletons
+* **Unified Decision Bus (`UnifiedDecisionBus`)**: Consolidated event bus and decision dispatching into a single thread-safe singleton. Added clean `reset()` semantics for fast test isolation.
+* **Cognitive System Controller (`CognitiveSystemController`)**: Centralized strategic planning, active inference, and HASP guardrail interception.
+* **Skill Router (`SkillRouter`)**: Unified domain specialization routing across cognitive and execution agents.
+* **Hierarchical Memory System (`HierarchicalMemorySystem`)**: Streamlined the 8-tier memory hierarchy with graph-native SAGE linking and AutoMem retrieval.
 
 ---
 
-## 3. Eliminating Fragile Shims & Hardening Interfaces
+## 2. Structural Simplifications
 
-To avoid technical debt and eliminate guess-work, we have unified interface contracts:
-*   **NormalizedMarketContext**: Immutable market context contract that prevents state modification during pipeline iterations.
-*   **SkillRouteOutcome**: Standardized return shape for all skill-related queries with dual dict and attribute interfaces to ensure backward-compatibility with legacy unit tests.
-*   **ImmutableShield**: An un-bypassable security gate that validates all final proposals against physical portfolio limits. It cannot be overridden by self-improving python scripts.
+### Consolidation of Duplicate Orchestrators
+* Archived legacy, competing orchestrators under `trading_bot/_archive/legacy_orchestrators/` (including `realtime_orchestrator.py`, `sentient_orchestrator.py`, `delegation_orchestrator.py`).
+* Promoted `MasterOrchestrator` (`trading_bot/core_agent_system/master_orchestrator.py`) as the sole authoritative platform orchestrator.
+
+### Security Boundary Enforcement
+* Enforced in-process sandboxing via `SecureASTVisitor` across distributed parallel backtesting and strategy code parsing.
+* Consolidated model deserialization under `trading_bot.security.safe_pickle.safe_load`.
+
+---
+
+## 3. Coupling & Cohesion Improvements
+
+* **Module Separation**: Disentangled risk limits from AI intelligence layers by establishing `HardenedGovernanceRoot` and `RiskVerifier` as rigid, un-overrideable financial boundaries.
+* **Defensive Guardrails**: Added defensive checks in `CognitiveSystemController` to handle optional world model simulation capabilities cleanly without raising `AttributeError`.
