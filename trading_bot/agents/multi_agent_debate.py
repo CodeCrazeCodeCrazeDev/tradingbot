@@ -836,6 +836,7 @@ class RiskSentinel(TradingAgent):
             key_factors["correlation"] = corr_score
 
             # VIX check
+            vix_score = 0.0
             if context.vix_level:
                 if context.vix_level > 30:
                     vix_score = -0.5
@@ -1325,16 +1326,97 @@ class FalsificationReport:
     worst_case_scenario: Optional[str] = None
 
 
-class RiskVerifierResult:
-    def __init__(self, is_valid: bool):
+@dataclass
+class StructuredMessage:
+    """Structured message protocol for inter-agent communication."""
+    message_id: str
+    task_id: str
+    parent_task_id: str
+    correlation_id: str
+    sender_agent_id: str
+    recipient: str
+    timestamp: datetime
+    schema_version: str
+    message_type: str
+    payload: Dict[str, Any]
+    confidence: float = 1.0
+
+    def validate(self) -> bool:
+        return bool(self.message_id and self.sender_agent_id and self.message_type)
+
+
+class VerifierResult:
+    """Result returned by verifier components during falsification checks."""
+    def __init__(self, is_valid: bool, rejection_reason: Optional[str] = None):
         self.is_valid = is_valid
+        self.rejection_reason = rejection_reason
+        self.reason = rejection_reason
+
+
+class RiskVerifierResult(VerifierResult):
+    pass
 
 
 class RiskVerifier:
     def verify(self, action: TradeAction, context: MarketContext) -> RiskVerifierResult:
-        if context.portfolio_exposure > 0.85 or context.correlation_risk > 0.8:
-            return RiskVerifierResult(is_valid=False)
-        return RiskVerifierResult(is_valid=True)
+        if action in [TradeAction.BUY, TradeAction.STRONG_BUY, TradeAction.SELL, TradeAction.STRONG_SELL]:
+            if context.portfolio_exposure > 0.85 or context.correlation_risk > 0.8 or (context.vix_level and context.vix_level > 30.0):
+                return RiskVerifierResult(False, "RiskVerifier: Risk exposure limits exceeded")
+        return RiskVerifierResult(True)
+
+
+class CausalVerifier:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
+        if context.vix_level is not None and context.vix_level > 30.0:
+            return VerifierResult(False, "CausalVerifier: Extreme market panic (VIX > 30.0)")
+        return VerifierResult(True)
+
+
+class LiquidityVerifier:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
+        if context.volume_ratio < 0.6 and context.volatility > 0.035:
+            return VerifierResult(False, "LiquidityVerifier: Severe slippage trap (low volume + high volatility)")
+        return VerifierResult(True)
+
+
+class RegimeVerifier:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
+        if action in [TradeAction.STRONG_BUY, TradeAction.BUY] and context.htf_trend == "DOWN":
+            return VerifierResult(False, "RegimeVerifier: Counter-trend BUY against HTF DOWN trend")
+        if action in [TradeAction.STRONG_SELL, TradeAction.SELL] and context.htf_trend == "UP":
+            return VerifierResult(False, "RegimeVerifier: Counter-trend SELL against HTF UP trend")
+        return VerifierResult(True)
+
+
+class HallucinationDetector:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
+        if context.current_price <= 0.0:
+            return VerifierResult(False, "HallucinationDetector: Malformed non-positive price anomaly")
+        return VerifierResult(True)
+
+
+class BayesianDecisionEngine:
+    """Engine for computing correlation-aware Bayesian posterior probability distributions."""
+    def __init__(self, weights: Optional[Dict] = None, correlations: Optional[Dict] = None):
+        self.weights = weights or {}
+        self.correlations = correlations or {}
+
+    def calculate_posterior(self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]) -> float:
+        prod_s = 1.0
+        prod_ns = 1.0
+        for endorsed, likelihood, exponent in evidence_likelihoods:
+            p_e_given_s = max(0.01, min(0.99, likelihood))
+            if endorsed:
+                prod_s *= (p_e_given_s ** exponent)
+                prod_ns *= ((1.0 - p_e_given_s) ** exponent)
+            else:
+                prod_s *= ((1.0 - p_e_given_s) ** exponent)
+                prod_ns *= (p_e_given_s ** exponent)
+        numerator = prior_prob * prod_s
+        denominator = (prior_prob * prod_s) + ((1.0 - prior_prob) * prod_ns)
+        if denominator == 0.0:
+            return prior_prob
+        return max(0.0, min(1.0, numerator / denominator))
 
 
 @dataclass
@@ -1450,12 +1532,9 @@ class FalsificationGate:
             "HallucinationDetector": hallucination_res.is_valid,
         }
 
-            is_falsified = not all(verifier_outcomes.values())
-            reason = None
-            worst_case = None
-
         is_falsified = not all(verifier_outcomes.values())
         rejection_reason = None
+        worst_case = None
         if is_falsified:
             failed_reasons = []
             if not causal_res.is_valid: failed_reasons.append(causal_res.rejection_reason)
@@ -1465,6 +1544,7 @@ class FalsificationGate:
             if not hallucination_res.is_valid: failed_reasons.append(hallucination_res.rejection_reason)
 
             rejection_reason = " | ".join(filter(None, failed_reasons))
+            worst_case = self._generate_counterexample(action, context)
 
         return FalsificationReport(
             is_falsified=is_falsified,
@@ -1751,54 +1831,7 @@ class HeadAI:
 
                 winning_score = self.calculate_bayesian_posterior(prior_prob, evidence_likelihoods)
 
-            # Compute default winning_score based on arguments advocating the winning action
-            winning_score = 0.5
-            winning_action_args = [a for a in active_arguments if a.action == winning_action]
-            if winning_action_args:
-                winning_score = max(getattr(a, 'confidence', 0.5) for a in winning_action_args)
-
-            # Calculate Bayesian posterior probability of strategy success if a calibrator is present
-            if self.calibrator:
-                htf = context.htf_trend
-                if (htf == "UP" and winning_action in [TradeAction.BUY, TradeAction.STRONG_BUY]) or \
-                   (htf == "DOWN" and winning_action in [TradeAction.SELL, TradeAction.STRONG_SELL]):
-                    prior_prob = 0.55
-                else:
-                    prior_prob = 0.45
-
-                evidence_likelihoods = []
-                for arg in active_arguments:
-                    endorsed = (arg.action == winning_action)
-                    likelihood = getattr(arg, 'confidence', 0.5)
-                    exponent = self.weights.get(arg.agent_role, 0.33)
-                    if scorecards and arg.agent_role in scorecards:
-                        exponent = scorecards[arg.agent_role].expected_contribution
-                    evidence_likelihoods.append((endorsed, likelihood, exponent))
-
-                winning_score = self.calculate_bayesian_posterior(prior_prob, evidence_likelihoods)
-
-            # Calculate dynamic winning_score using mathematically rigorous Bayesian posterior probability
-            if winning_action not in [TradeAction.HOLD, TradeAction.NO_TRADE]:
-                htf = context.htf_trend
-                if (htf == "UP" and winning_action in [TradeAction.BUY, TradeAction.STRONG_BUY]) or                    (htf == "DOWN" and winning_action in [TradeAction.SELL, TradeAction.STRONG_SELL]):
-                    prior_prob = 0.55
-                else:
-                    prior_prob = 0.45
-
-                evidence_likelihoods = []
-                for arg in active_arguments:
-                    endorsed = (arg.action == winning_action)
-                    likelihood = calibrated_confidences.get(arg.agent_role, getattr(arg, 'confidence', 0.5))
-                    exponent = self.weights.get(arg.agent_role, 0.33)
-                    if scorecards and arg.agent_role in scorecards:
-                        exponent = scorecards[arg.agent_role].expected_contribution
-                    evidence_likelihoods.append((endorsed, likelihood, exponent))
-
-                winning_score = self.calculate_bayesian_posterior(prior_prob, evidence_likelihoods)
-            else:
-                winning_score = 0.5  # Neutral default for HOLD or un-vetoed neutral pattern
-
-            # Prior probability based on trend alignment
+            # Calculate dynamic winning_score using mathematically calibrated Bayesian posterior probability
             aligned = False
             if context.htf_trend == "UP" and winning_action in [TradeAction.BUY, TradeAction.STRONG_BUY]:
                 aligned = True
@@ -1809,13 +1842,10 @@ class HeadAI:
 
             evidence_likelihoods = []
             for arg in active_arguments:
-                # Exponent is the weight or expected contribution
                 role_sc = scorecards.get(arg.agent_role) if scorecards else None
                 exponent = role_sc.expected_contribution if role_sc else self.weights.get(arg.agent_role, 0.33)
 
-                # Retrieve confidence calibrated or fallback
                 confidence = getattr(arg, 'confidence', 0.5)
-                # Apply Bayesian calibration if calibrator is active
                 if self.calibrator:
                     cal_result = self.calibrator.calibrate(
                         confidence,
@@ -1977,7 +2007,7 @@ class HeadAI:
                     "HeadAI": "UCA-v5.3",
                 },
                 "configuration_hash": hash(str(self.weights)),
-                "git_commit": (lambda: sys_git_commit())(),
+                "git_commit": get_git_commit(),
             }
 
             # 5. Debate invariants validation
@@ -2447,7 +2477,18 @@ class MultiAgentDebateSystem:
                 if not current_round_args:
                     # Try a fallback analyze if no responses were generated
                     for agent in self.agents:
-                        fallback_arg = agent.analyze(context)
+                        try:
+                            fallback_arg = agent.analyze(context)
+                        except Exception as e:
+                            fallback_arg = AgentArgument(
+                                agent_role=agent.role,
+                                action=TradeAction.NO_TRADE if agent.role == AgentRole.RISK_SENTINEL else TradeAction.HOLD,
+                                conviction=Conviction.VERY_HIGH if agent.role == AgentRole.RISK_SENTINEL else Conviction.LOW,
+                                reasoning=[f"Fallback re-analyze failed: {e}"],
+                                key_factors={},
+                                confidence=0.95 if agent.role == AgentRole.RISK_SENTINEL else 0.2,
+                                timestamp=datetime.now()
+                            )
                         current_round_args.append(fallback_arg)
                         all_arguments.append(fallback_arg)
 
@@ -2537,6 +2578,7 @@ class MultiAgentDebateSystem:
             feature_hash = hashlib.sha256(feature_state_str.encode("utf-8")).hexdigest()
 
             provenance_data = {
+                'schema_version': '1.0.0',
                 'decision_uuid': str(uuid.uuid4()),
                 'git_sha': git_sha,
                 'configuration_hash': config_hash,
@@ -2564,16 +2606,16 @@ class MultiAgentDebateSystem:
                     'num_rounds': len(debate_rounds),
                     'conflicts_detected': conflicts
                 },
-                agent_contributions={
+                'agent_contributions': {
                     role.value: sc.expected_contribution for role, sc in scorecards.items()
                 },
-                agent_scorecards={role.value: sc.to_dict() for role, sc in scorecards.items()},
-                consensus_record={
+                'agent_scorecards': {role.value: sc.to_dict() for role, sc in scorecards.items()},
+                'consensus_record': {
                     "consensus_level": decision.consensus_level,
                     "votes": decision.agent_votes,
                 },
-                random_seed="seed_42",
-                environment_fingerprint=hashlib.sha256(
+                'random_seed': "seed_42",
+                'environment_fingerprint': hashlib.sha256(
                     f"{git_sha}_{config_hash}".encode("utf-8")
                 ).hexdigest(),
                 "execution_latency": duration_ms,
@@ -2599,6 +2641,7 @@ class MultiAgentDebateSystem:
     ) -> FinalDecision:
         decision_uuid = str(uuid.uuid4())
         provenance = {
+            'schema_version': '1.0.0',
             'decision_uuid': decision_uuid,
             'timestamp': datetime.now().isoformat(),
             'consensus_score': 0.0,
