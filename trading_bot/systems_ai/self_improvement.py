@@ -1,7 +1,12 @@
 """
-Self-Improvement Loop
-=====================
-Feedback loop for continuous system improvement.
+Self-Improvement Loop & Safe Self-Modification Engine - UCA V6 Architecture
+Monotonic safe self-modification engine and falsification-driven governance.
+
+LITERATURE TRACEABILITY MATRIX:
+- EKSFT (arXiv:2605.29303): Epistemic Knowledge Synthesis & Safe Monotonic Evolution
+- AutoResearchClaw (arXiv:2605.20025): Autonomous Research & Falsification Gates
+- HASP (arXiv:2605.17734): Program-Enforced Invariant Guardrails
+- AutoMem (arXiv:2607.01224): Meta-Memory Performance Optimization
 
 LOOP STAGES:
 1. OUTCOME LABELING: Tag every trade with result

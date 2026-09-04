@@ -1,7 +1,11 @@
 """
-Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral behaviors (Skill-to-LoRA).
-Implements 'HASP' (2026) and 'S2L' (2026).
+SkillRouter & HASP Execution Infrastructure - UCA V6 Architecture
+Dynamic behavioral adapter selection and pre-emptive guardrail interception.
+
+LITERATURE TRACEABILITY MATRIX:
+- HASP (arXiv:2605.17734): Hierarchical Agentic Skill Programs with Prescriptive Guardrails
+- Skill-to-LoRA (arXiv:2606.16769): Behavioral Adapters for Specialized Routing
+- AutoResearchClaw (arXiv:2605.20025): Self-Refinement and Falsification Control
 """
 
 import logging
