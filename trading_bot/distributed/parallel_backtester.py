@@ -17,6 +17,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 import multiprocessing as mp
 import uuid
 import time
+from trading_bot.core.security.sandbox import SecureASTVisitor
 
 logger = logging.getLogger(__name__)
 
@@ -339,7 +340,18 @@ def _run_single_backtest(args: Tuple) -> BacktestResult:
     if 'timestamp' in data.columns:
         data.set_index('timestamp', inplace=True)
         
-    # Create strategy function from code
+    # Validate strategy code via SecureASTVisitor before execution
+    try:
+        SecureASTVisitor().validate_code(strategy_code)
+    except Exception as e:
+        return BacktestResult(
+            job_id="",
+            status=BacktestStatus.FAILED,
+            config=config,
+            error=f"Security validation failed: {e}"
+        )
+
+    # Create strategy function from validated code
     local_vars = {}
     exec(strategy_code, local_vars)
     strategy = local_vars.get('strategy')
@@ -548,6 +560,13 @@ class ParallelBacktester:
             # Test on out-of-sample
             engine = BacktestEngine(config)
             
+            # Validate strategy code
+            try:
+                SecureASTVisitor().validate_code(strategy_code)
+            except Exception as e:
+                logger.error(f"Strategy validation failed in walk-forward analysis: {e}")
+                continue
+
             # Create strategy function
             local_vars = {}
             exec(strategy_code, local_vars)
@@ -676,6 +695,7 @@ if __name__ == "__main__":
         try:
             # Single backtest
             print("1. Single backtest:")
+            SecureASTVisitor().validate_code(EXAMPLE_STRATEGY)
             local_vars = {}
             exec(EXAMPLE_STRATEGY, local_vars)
             strategy = local_vars['strategy']

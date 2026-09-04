@@ -50,12 +50,14 @@ class TestPerformanceTrackerImport:
 
 class TestPerformanceTrackerInit:
     def test_initialization(self, sample_config):
+        from trading_bot.orchestrator.performance_tracker import PerformanceTracker
         tracker = PerformanceTracker(sample_config)
         assert len(tracker.trade_history) == 0
         assert len(tracker.equity_curve) == 0
         assert tracker.strategy_performance == {}
 
     def test_default_initialization(self):
+        from trading_bot.orchestrator.performance_tracker import PerformanceTracker
         tracker = PerformanceTracker()
         assert tracker.auto_optimizer is not None
         assert tracker.metrics_calculator is not None
@@ -63,26 +65,29 @@ class TestPerformanceTrackerInit:
 
 class TestTradeTracking:
     def test_track_single_trade(self, sample_config, sample_trades):
+        from trading_bot.orchestrator.performance_tracker import PerformanceTracker
         tracker = PerformanceTracker(sample_config)
         tracker.track_trade(sample_trades[0])
         assert len(tracker.trade_history) == 1
         assert len(tracker.equity_curve) == 1
 
     def test_track_multiple_trades(self, sample_config, sample_trades):
+        from trading_bot.orchestrator.performance_tracker import PerformanceTracker
         tracker = PerformanceTracker(sample_config)
         for trade in sample_trades[:10]:
-    pass
             tracker.track_trade(trade)
         assert len(tracker.trade_history) == 10
         assert len(tracker.equity_curve) == 10
 
     def test_strategy_performance_tracking(self, sample_config, sample_trades):
+        from trading_bot.orchestrator.performance_tracker import PerformanceTracker
         tracker = PerformanceTracker(sample_config)
         for trade in sample_trades:
             tracker.track_trade(trade)
         assert len(tracker.strategy_performance) > 0
 
     def test_opportunity_performance_tracking(self, sample_config, sample_trades):
+        from trading_bot.orchestrator.performance_tracker import PerformanceTracker
         tracker = PerformanceTracker(sample_config)
         for trade in sample_trades:
             tracker.track_trade(trade)
@@ -91,17 +96,20 @@ class TestTradeTracking:
 
 class TestEquityCurve:
     def test_update_equity_curve_positive(self, sample_config):
+        from trading_bot.orchestrator.performance_tracker import PerformanceTracker
         tracker = PerformanceTracker(sample_config)
         tracker._update_equity_curve({'pnl': 500})
         assert tracker.equity_curve[-1] == 100500
 
     def test_update_equity_curve_negative(self, sample_config):
+        from trading_bot.orchestrator.performance_tracker import PerformanceTracker
         tracker = PerformanceTracker(sample_config)
         tracker._update_equity_curve({'pnl': 500})
         tracker._update_equity_curve({'pnl': -200})
         assert tracker.equity_curve[-1] == 100300
 
     def test_daily_returns_calculation(self, sample_config):
+        from trading_bot.orchestrator.performance_tracker import PerformanceTracker
         tracker = PerformanceTracker(sample_config)
         tracker._update_equity_curve({'pnl': 500})
         tracker._update_equity_curve({'pnl': 500})
@@ -110,6 +118,7 @@ class TestEquityCurve:
 
 class TestStrategyComparison:
     def test_get_strategy_comparison(self, sample_config, sample_trades):
+        from trading_bot.orchestrator.performance_tracker import PerformanceTracker
         tracker = PerformanceTracker(sample_config)
         for trade in sample_trades:
             tracker.track_trade(trade)
@@ -117,6 +126,7 @@ class TestStrategyComparison:
         assert isinstance(comparison, dict)
 
     def test_strategy_comparison_metrics(self, sample_config, sample_trades):
+        from trading_bot.orchestrator.performance_tracker import PerformanceTracker
         tracker = PerformanceTracker(sample_config)
         for trade in sample_trades:
             tracker.track_trade(trade)
@@ -128,16 +138,19 @@ class TestStrategyComparison:
 
 class TestMetricsCalculator:
     def test_initialization(self):
+        from trading_bot.orchestrator.performance_tracker import MetricsCalculator
         calculator = MetricsCalculator()
         assert calculator is not None
 
     def test_calculate_metrics_empty(self):
+        from trading_bot.orchestrator.performance_tracker import MetricsCalculator
         calculator = MetricsCalculator()
         metrics = calculator.calculate_metrics([], [], [])
         assert metrics.total_trades == 0
         assert metrics.win_rate == 0
 
     def test_calculate_metrics(self, sample_trades):
+        from trading_bot.orchestrator.performance_tracker import MetricsCalculator
         calculator = MetricsCalculator()
         equity_curve = [100000]
         for trade in sample_trades:
@@ -148,35 +161,41 @@ class TestMetricsCalculator:
         assert 0 <= metrics.win_rate <= 1
 
     def test_sharpe_ratio_calculation(self):
+        from trading_bot.orchestrator.performance_tracker import MetricsCalculator
         calculator = MetricsCalculator()
         returns = [0.01, 0.02, -0.01, 0.015, 0.005]
         sharpe = calculator._calculate_sharpe_ratio(returns)
         assert sharpe > 0
 
     def test_sharpe_ratio_empty(self):
+        from trading_bot.orchestrator.performance_tracker import MetricsCalculator
         calculator = MetricsCalculator()
         sharpe = calculator._calculate_sharpe_ratio([])
         assert sharpe == 0
 
     def test_sortino_ratio_calculation(self):
+        from trading_bot.orchestrator.performance_tracker import MetricsCalculator
         calculator = MetricsCalculator()
         returns = [0.01, 0.02, -0.01, 0.015, 0.005]
         sortino = calculator._calculate_sortino_ratio(returns)
         assert sortino != 0
 
     def test_max_drawdown_calculation(self):
+        from trading_bot.orchestrator.performance_tracker import MetricsCalculator
         calculator = MetricsCalculator()
         equity_curve = [100, 110, 105, 115, 100]
         max_dd = calculator._calculate_max_drawdown(equity_curve)
         assert max_dd == pytest.approx(0.13, rel=0.01)
 
     def test_max_drawdown_no_drawdown(self):
+        from trading_bot.orchestrator.performance_tracker import MetricsCalculator
         calculator = MetricsCalculator()
         equity_curve = [100, 110, 120, 130]
         max_dd = calculator._calculate_max_drawdown(equity_curve)
         assert max_dd == 0
 
     def test_total_return_calculation(self):
+        from trading_bot.orchestrator.performance_tracker import MetricsCalculator
         calculator = MetricsCalculator()
         equity_curve = [100000, 110000]
         total_return = calculator._calculate_total_return(equity_curve)
@@ -185,12 +204,14 @@ class TestMetricsCalculator:
 
 class TestAutoOptimizer:
     def test_initialization(self):
+        from trading_bot.orchestrator.performance_tracker import AutoOptimizer
         optimizer = AutoOptimizer()
         assert optimizer.optimization_history == []
         assert optimizer.current_parameters == {}
         assert 'sharpe_ratio' in optimizer.optimization_targets
 
     def test_analyze_performance(self, sample_trades):
+        from trading_bot.orchestrator.performance_tracker import AutoOptimizer
         optimizer = AutoOptimizer()
         performance = optimizer._analyze_performance(sample_trades)
         assert 'win_rate' in performance
@@ -200,6 +221,7 @@ class TestAutoOptimizer:
         assert 'by_time' in performance
 
     def test_generate_suggestions_low_win_rate(self):
+        from trading_bot.orchestrator.performance_tracker import AutoOptimizer
         optimizer = AutoOptimizer()
         performance = {
             'win_rate': 0.4, 'avg_win': 100, 'avg_loss': 150,
@@ -210,6 +232,7 @@ class TestAutoOptimizer:
         assert 'reduce_size' in suggestions['position_sizing']
 
     def test_generate_suggestions_high_win_rate(self):
+        from trading_bot.orchestrator.performance_tracker import AutoOptimizer
         optimizer = AutoOptimizer()
         performance = {
             'win_rate': 0.75, 'avg_win': 200, 'avg_loss': 100,
@@ -220,6 +243,7 @@ class TestAutoOptimizer:
         assert 'increase_size' in suggestions['position_sizing']
 
     def test_identify_best_strategies(self, sample_trades):
+        from trading_bot.orchestrator.performance_tracker import AutoOptimizer
         optimizer = AutoOptimizer()
         strategy_performance = {}
         for trade in sample_trades:
@@ -232,6 +256,7 @@ class TestAutoOptimizer:
         assert len(best) <= 3
 
     def test_get_recommendations(self, sample_trades):
+        from trading_bot.orchestrator.performance_tracker import AutoOptimizer
         optimizer = AutoOptimizer()
         strategy_performance = {}
         opportunity_performance = {}
@@ -251,13 +276,12 @@ class TestAutoOptimizer:
 
 class TestBacktestEngine:
     def test_initialization(self):
+        from trading_bot.orchestrator.performance_tracker import BacktestEngine
         engine = BacktestEngine()
         assert engine.backtest_results == {}
 
     def test_backtest_strategy(self):
-    pass
-import numpy
-import pandas
+        from trading_bot.orchestrator.performance_tracker import BacktestEngine
         engine = BacktestEngine()
         dates = pd.date_range(start='2023-01-01', periods=100, freq='D')
         historical_data = pd.DataFrame({

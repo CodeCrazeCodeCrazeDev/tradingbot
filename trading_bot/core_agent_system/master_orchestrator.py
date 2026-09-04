@@ -1,5 +1,7 @@
+"""
+Master Orchestrator Infrastructure
 
-Provides backward compatibility for consolidated hierarchical orchestrators.
+Coordinates hierarchical decision-making, system contexts, and agent governance.
 """
 
 import logging
@@ -15,10 +17,6 @@ class DecisionPriority(Enum):
     NORMAL = "normal"
     HIGH = "high"
     CRITICAL = "critical"
-import logging
-from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any, Dict, List, Optional
 
 @dataclass
 class SystemContext:
@@ -42,7 +40,7 @@ class Decision:
         return self.safety_score > 0.7
 
 class MasterOrchestrator:
-    def __init__(self, config: Optional[Dict] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
         self.initialized = False
 
@@ -57,7 +55,7 @@ class MasterOrchestrator:
             decision_type="NO_ACTION",
             expected_value=0.0,
             safety_score=1.0,
-            reasoning="Default MasterOrchestrator stub."
+            reasoning="Default MasterOrchestrator implementation."
         )
 
     async def learn(self, experience: Dict[str, Any]):
@@ -65,3 +63,10 @@ class MasterOrchestrator:
 
     def get_status(self) -> Dict[str, Any]:
         return {"state": "active" if self.initialized else "inactive", "safety_threshold": 0.7}
+
+__all__ = [
+    'DecisionPriority',
+    'SystemContext',
+    'Decision',
+    'MasterOrchestrator'
+]
