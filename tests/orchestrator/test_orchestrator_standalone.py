@@ -343,7 +343,6 @@ class TestPerformanceTracker:
     def test_track_trade(self, sample_config, sample_trades):
         tracker = PerformanceTracker(sample_config)
         for trade in sample_trades[:10]:
-    pass
             tracker.track_trade(trade)
         assert len(tracker.trade_history) == 10
         assert len(tracker.equity_curve) == 10
@@ -429,8 +428,6 @@ class TestSmartOrderRouter:
 
     @pytest.mark.asyncio
     async def test_score_venues(self):
-    pass
-import numpy
         router = SmartOrderRouter()
         venues = {
             'exchange1': {'fee_rate': 0.001, 'latency': 5, 'liquidity': 10000, 'fill_rate': 0.98},

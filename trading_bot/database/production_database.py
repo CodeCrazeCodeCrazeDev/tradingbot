@@ -12,6 +12,7 @@ Complete database infrastructure:
 
 import asyncio
 import logging
+import uuid
 from typing import Any, Dict, List, Optional, Type
 from datetime import datetime, timedelta
 from dataclasses import dataclass
@@ -35,13 +36,6 @@ try:
 except ImportError:
     SQLALCHEMY_AVAILABLE = False
     logger.warning("SQLAlchemy not installed. Install with: pip install sqlalchemy asyncpg")
-    class TradeRecord: pass
-    class PositionRecord: pass
-    class OrderRecord: pass
-    class AccountSnapshot: pass
-    class MetricRecord: pass
-    class SignalRecord: pass
-    class AuditLog: pass
 
 # Alembic for migrations
 try:
@@ -54,13 +48,14 @@ except ImportError:
 if not SQLALCHEMY_AVAILABLE:
     class DummyBase:
         pass
-    TradeRecord = DummyBase
-    PositionRecord = DummyBase
-    OrderRecord = DummyBase
-    AccountSnapshot = DummyBase
-    MetricRecord = DummyBase
-    SignalRecord = DummyBase
-    AuditLog = DummyBase
+    Base = DummyBase
+    class TradeRecord(DummyBase): pass
+    class PositionRecord(DummyBase): pass
+    class OrderRecord(DummyBase): pass
+    class AccountSnapshot(DummyBase): pass
+    class MetricRecord(DummyBase): pass
+    class SignalRecord(DummyBase): pass
+    class AuditLog(DummyBase): pass
 else:
     Base = declarative_base()
     
@@ -215,17 +210,6 @@ else:
         __table_args__ = (
             Index('ix_audit_user_timestamp', 'user_id', 'timestamp'),
         )
-else:
-    class DummyBase:
-        pass
-    Base = DummyBase
-    class TradeRecord: pass
-    class PositionRecord: pass
-    class OrderRecord: pass
-    class AccountSnapshot: pass
-    class MetricRecord: pass
-    class SignalRecord: pass
-    class AuditLog: pass
 
 
 class DatabaseManager:
@@ -348,7 +332,7 @@ class DatabaseManager:
                 entry_time=trade_data['entry_time'],
                 exit_time=trade_data.get('exit_time'),
                 status=trade_data.get('status', 'open'),
-                metadata=trade_data.get('metadata')
+                extra_data=trade_data.get('metadata')
             )
             session.add(trade)
             await session.flush()
@@ -398,7 +382,7 @@ class DatabaseManager:
             'entry_time': trade.entry_time.isoformat() if trade.entry_time else None,
             'exit_time': trade.exit_time.isoformat() if trade.exit_time else None,
             'status': trade.status,
-            'metadata': trade.metadata
+            'extra_data': trade.extra_data
         }
     
     # ==========================================
@@ -423,7 +407,7 @@ class DatabaseManager:
                 commission=order_data.get('commission', 0),
                 status=order_data.get('status', 'pending'),
                 submitted_at=order_data.get('submitted_at', datetime.utcnow()),
-                metadata=order_data.get('metadata')
+                extra_data=order_data.get('metadata')
             )
             session.add(order)
             await session.flush()
@@ -603,10 +587,6 @@ class DatabaseManager:
             }
 
 
-# Import uuid for trade_id generation
-import uuid
-
-# Evolution: Added retry decorator
 def retry(max_attempts=3, delay=1.0):
     """Retry decorator for resilient operations"""
     def decorator(func):
@@ -624,9 +604,6 @@ def retry(max_attempts=3, delay=1.0):
     return decorator
 
 
-
-
-# Export
 __all__ = [
     'DatabaseManager',
     'TradeRecord',
