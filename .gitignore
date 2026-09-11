@@ -89,3 +89,5 @@ test_reports/*.json
 
 .secret_key
 secrets.json
+.hypothesis/
+.pytest_cache/
