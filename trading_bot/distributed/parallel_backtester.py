@@ -340,8 +340,10 @@ def _run_single_backtest(args: Tuple) -> BacktestResult:
         data.set_index('timestamp', inplace=True)
         
     # Create strategy function from code
+    from trading_bot.core.security.sandbox import SecureASTVisitor
+    SecureASTVisitor().validate_code(strategy_code)
     local_vars = {}
-    exec(strategy_code, local_vars)
+    exec(strategy_code, local_vars)  # nosec
     strategy = local_vars.get('strategy')
     
     if not strategy:
