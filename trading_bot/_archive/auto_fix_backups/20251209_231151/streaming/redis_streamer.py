@@ -217,21 +217,15 @@ class MockRedisStreamer:
         self.subscribers = {}
         logger.warning("Using mock Redis streamer (Redis not available)")
     
-    """Auto-implemented by DeepSeek Elite Engine."""
-    logger.warning(f"Auto-implemented function called: {self.__class__.__name__ if hasattr(self, "__class__") else ""}")
-    return None  # DONE (auto-completed): Implement full functionality
-        """Auto-implemented by DeepSeek Elite Engine."""
-        logger.warning(f"Auto-implemented function called: {self.__class__.__name__ if hasattr(self, "__class__") else ""}")
-        return None  # DONE (auto-completed): Implement full functionality
+    async def connect(self):
+        pass
     
     async def disconnect(self):
         pass
     
     async def publish_market_data(self, symbol: str, data: Dict):
         logger.debug(f"Mock publish: {symbol}")
-    """Auto-implemented by DeepSeek Elite Engine."""
-    logger.warning(f"Auto-implemented function called: {self.__class__.__name__ if hasattr(self, "__class__") else ""}")
-    return None  # DONE (auto-completed): Implement full functionality
+
     async def subscribe_market_data(self, symbols: List[str], callback: Callable):
         logger.debug(f"Mock subscribe: {symbols}")
     

@@ -5,16 +5,20 @@ import sys
 import os
 
 # Minimal mock for dependencies that are causing issues during import
-class MockObj:
+class MockModule:
+    __file__ = __file__
+    __path__ = []
     def __getattr__(self, name):
-        return MockObj()
+        if name.startswith('__') and name.endswith('__'):
+            raise AttributeError(name)
+        return MockModule()
     def __call__(self, *args, **kwargs):
-        return MockObj()
+        return MockModule()
 
 # Mocking modules that are failing due to missing dependencies or complex circular imports
-sys.modules['trading_bot.advanced_features.quantum_computing'] = MockObj()
-sys.modules['trading_bot.advanced_features'] = MockObj()
-sys.modules['trading_bot.elite_system.regime_detection'] = MockObj()
+sys.modules['trading_bot.advanced_features.quantum_computing'] = MockModule()
+sys.modules['trading_bot.advanced_features'] = MockModule()
+sys.modules['trading_bot.elite_system.regime_detection'] = MockModule()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
