@@ -1,22 +1,19 @@
 """
-Hierarchical Memory System (HMS) - UCA V6 (July 2026)
-
+Hierarchical Memory System (HMS) - UCA V6 Authoritative Singleton Memory OS
 Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
 Implements the 8-tier architecture:
-1. Workspace
-2. Episodic
-3. Semantic
-4. Procedural
-5. Research
-6. World Models
-7. Institutional
-8. Meta-Memory
+1. Workspace, 2. Episodic, 3. Semantic, 4. Procedural,
+5. Research, 6. World Models, 7. Institutional, 8. Meta-Memory
 
-Authoritative memory system integrating SAGE (Self-evolving Agentic Graph-Memory)
-and QKG (Quantum Knowledge Graph) for context-dependent research persistence.
-Implements 'SAGE: A Self-Evolving Agentic Graph-Memory Engine' (2026).
-Supports incremental construction, Graph-FM multi-hop retrieval,
-and Reader-Writer feedback loops for structural evolution.
+Research Traceability Matrix:
+- SAGE (arXiv:2605.12061): Dynamic Graph-Memory substrate with edge reinforcement & compaction
+- AutoMem (arXiv:2607.01224): Learnable metamemory management, schema evolution & utility optimization
+- DiscoLoop (arXiv:2607.00341): Working memory workspace for continuous-discrete recurrent states
+- AutoResearchClaw (arXiv:2605.20025): Research ledger trace persistence for pivot verification
+- HASP (arXiv:2605.17734): Procedural memory storage for deterministic program functions
+- EKSFT (arXiv:2605.29303): Epistemic reference model state persistence
+- NanoResearch (arXiv:2605.10813): Tri-plane memory state consolidation
+- DeepWeb-Bench (arXiv:2605.21482): Evidence lineage provenance tracking
 """
 
 import logging
