@@ -148,7 +148,7 @@ class QuantResearchDomain(BaseDomain):
             from trading_bot import analysis
             self.register_module('analysis', analysis)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
     
     async def _load_intelligence_systems(self):
         """Load intelligence systems."""
@@ -156,7 +156,7 @@ class QuantResearchDomain(BaseDomain):
             from trading_bot import intelligence_core
             self.register_module('intelligence_core', intelligence_core)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
     
     async def _load_research_systems(self):
         """Load research systems."""
@@ -164,7 +164,7 @@ class QuantResearchDomain(BaseDomain):
             from trading_bot import research
             self.register_module('research', research)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
     
     async def analyze_market(self, symbol: str, **kwargs) -> Dict[str, Any]:
         """Perform comprehensive market analysis."""

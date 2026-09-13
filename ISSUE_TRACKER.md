@@ -1,68 +1,143 @@
-# AlphaAlgo Elite Production Issue Tracker (2026)
+# AlphaAlgo Issue Tracker (2026 Production Engineering Audit)
 
-This document tracks identified, resolved, and monitored engineering defects and scientific regressions across the AlphaAlgo codebase.
-
----
-
-## 1. Registry of Resolved Defects
-
-### **DEFECT-UCA-2026-01**: Database ORM Model Structure & Syntax Malformation
-*   **Component**: `trading_bot/database/production_database.py`
-*   **Severity**: **CRITICAL (BLOCKER)**
-*   **Root Cause**: Unindented and misplaced `else:` block dangling after `AuditLog` ORM model declaration causing Python compilation `SyntaxError`.
-*   **Files Affected**: `trading_bot/database/production_database.py`
-*   **Technical Explanation**: An extra `else:` block from an earlier fallback import check was duplicated at line 218 without proper nesting or matching `if`, breaking Python AST parsing.
-*   **Solution Implemented**: Removed the orphaned `else:` block and unified the SQLAlchemy import fallback logic higher in the file header.
-*   **Verification Performed**: `python3 -m py_compile trading_bot/database/production_database.py` returned success with zero errors.
-*   **Remaining Risks**: None.
-
-### **DEFECT-UCA-2026-02**: ServiceRegistry Unterminated String Syntax Error
-*   **Component**: `trading_bot/core/service_registry.py`
-*   **Severity**: **CRITICAL (BLOCKER)**
-*   **Root Cause**: Missing opening triple-quotes on the module docstring.
-*   **Files Affected**: `trading_bot/core/service_registry.py`
-*   **Technical Explanation**: The top docstring began directly with `Provides backward compatibility...` followed by closing `"""`, producing an `unterminated triple-quoted string literal` SyntaxError.
-*   **Solution Implemented**: Added opening `"""` to close the docstring correctly.
-*   **Verification Performed**: `python3 -m py_compile trading_bot/core/service_registry.py` compiled cleanly.
-*   **Remaining Risks**: None.
-
-### **DEFECT-UCA-2026-03**: MasterOrchestrator Unterminated String Syntax Error
-*   **Component**: `trading_bot/core_agent_system/master_orchestrator.py`
-*   **Severity**: **CRITICAL (BLOCKER)**
-*   **Root Cause**: Missing opening triple-quotes on the module docstring.
-*   **Files Affected**: `trading_bot/core_agent_system/master_orchestrator.py`
-*   **Technical Explanation**: Docstring began without opening `"""`, causing AST parser failure.
-*   **Solution Implemented**: Fixed string literal syntax at the top of the module.
-*   **Verification Performed**: `python3 -m py_compile trading_bot/core_agent_system/master_orchestrator.py` compiled cleanly.
-*   **Remaining Risks**: None.
-
-### **DEFECT-UCA-2026-04**: MultiAgentDebate Indentation & Keyword Syntax Error
-*   **Component**: `trading_bot/agents/multi_agent_debate.py`
-*   **Severity**: **CRITICAL (BLOCKER)**
-*   **Root Cause**: Indentation misalignment in `run_falsification` and dictionary key assignment syntax errors in `provenance_data`.
-*   **Files Affected**: `trading_bot/agents/multi_agent_debate.py`
-*   **Technical Explanation**: Unindented lines inside `run_falsification` and missing colon separator on `agent_contributions` dict key in `provenance_data` prevented test collection.
-*   **Solution Implemented**: Cleaned indentation and fixed dictionary syntax, aligning with verified UCA V6 specification.
-*   **Verification Performed**: `poetry run pytest tests/agents/` passed 48/48 multi-agent test cases.
-*   **Remaining Risks**: None.
-
-### **DEFECT-UCA-2026-05**: Parallel Backtester AST Security Sandboxing
-*   **Component**: `trading_bot/distributed/parallel_backtester.py`
-*   **Severity**: **HIGH**
-*   **Root Cause**: Execution of dynamically compiled strategy code without AST security validation.
-*   **Files Affected**: `trading_bot/distributed/parallel_backtester.py`
-*   **Technical Explanation**: Strategy strings executed via `exec` could contain forbidden builtins or malicious calls.
-*   **Solution Implemented**: Integrated `SecureASTVisitor().validate_code(...)` from `trading_bot.core.security.sandbox` before executing dynamic strategies.
-*   **Verification Performed**: Security AST audit confirmed all dynamic executions pass through `SecureASTVisitor`.
-*   **Remaining Risks**: None.
+This document tracks all identified engineering defects, security vulnerabilities, and reliability issues across the AlphaAlgo repository.
 
 ---
 
-## 2. Monitored Issues
+## Registry of Discovered & Remediated Defects
 
-### **MONITOR-UCA-2026-01**: FAISS Vector Indexing Fallback to NumPy
-*   **Component**: `trading_bot/world_model/experience_replay.py`
-*   **Severity**: **LOW**
-*   **Description**: Environment falls back to NumPy matrix operations when CPU-bound FAISS binary is omitted.
-*   **Impact**: Performance only; exact distance calculation remains identical.
-*   **Mitigation**: Fallback path tested and verified in UCA V5 suites.
+### **DEFECT-AUDIT-01**: RiskManager List Comprehension Syntax Error
+- **Severity**: **CRITICAL**
+- **Category**: Architecture / Syntax
+- **File**: `risk/risk_manager.py`
+- **Root Cause**: Malformed list comprehension expansion with a dangling `or` inside a list literal in `get_risk_report()`.
+- **Solution**: Wrapped the expanded list comprehensions in explicit parenthesized expressions.
+- **Verification**: `python3 -m py_compile risk/risk_manager.py` succeeded.
+
+### **DEFECT-AUDIT-02**: AlphaEvolve Code Execution Sandboxing Defect
+- **Severity**: **HIGH**
+- **Category**: Security
+- **File**: `trading_bot/aads/core/alpha_evolve_engine.py`
+- **Root Cause**: Dynamic code generated by LLM was executed via `exec()` without passing through `SecureASTVisitor`.
+- **Solution**: Injected `SecureASTVisitor().validate_code(signal.code)` before `exec()`.
+- **Verification**: Compiled cleanly and verified via `python3 -m py_compile`.
+
+### **DEFECT-AUDIT-03**: Blocking `time.sleep()` in SystemValidator Async Audit
+- **Severity**: **HIGH**
+- **Category**: Concurrency / Performance
+- **File**: `trading_bot/core/validation.py`
+- **Root Cause**: `benchmark_latency()` was calling `time.sleep(0.01)` inside an `async def` function, blocking the event loop.
+- **Solution**: Replaced `time.sleep` with `await asyncio.sleep(0.01)`.
+- **Verification**: Verified async method execution and compilation.
+
+### **DEFECT-AUDIT-04**: O(N) DataFrame row iteration in VolumeDeltaHeatmap
+- **Severity**: **MEDIUM**
+- **Category**: Performance
+- **File**: `trading_bot/indicators/advanced_liquidity.py`
+- **Root Cause**: `df.iterrows()` loop over thousands of candles during footprint heatmap generation.
+- **Solution**: Replaced `iterrows()` loop with 2D NumPy array broadcasting (`lows[:, None]`, `highs[:, None]`).
+- **Verification**: Verified array shapes and clean compilation.
+
+### **DEFECT-AUDIT-05**: Silent Exception Swallowing in CognitiveSystemController
+- **Severity**: **MEDIUM**
+- **Category**: Reliability
+- **File**: `trading_bot/core/csc/controller.py`
+- **Root Cause**: `except Exception: pass` swallowed internal errors during decision dispatch.
+- **Solution**: Replaced `pass` with `logger.warning(...)`.
+- **Verification**: Confirmed log output during test suite execution.
+
+### **DEFECT-AUDIT-06**: Silent Exception Swallowing in HierarchicalMemorySystem
+- **Severity**: **MEDIUM**
+- **Category**: Reliability
+- **File**: `trading_bot/core/hms/memory.py`
+- **Root Cause**: Memory link graph errors were silently suppressed.
+- **Solution**: Replaced `pass` with `logger.warning(...)`.
+- **Verification**: Confirmed clean test execution.
+
+### **DEFECT-AUDIT-07**: Silent Exception Swallowing in SandboxEnvironment
+- **Severity**: **MEDIUM**
+- **Category**: Reliability
+- **File**: `trading_bot/core/security/sandbox.py`
+- **Root Cause**: AST security validation failures were swallowed without diagnostic logs.
+- **Solution**: Replaced `pass` with `logger.warning(...)`.
+- **Verification**: Confirmed clean compilation.
+
+### **DEFECT-AUDIT-08**: Silent Exception Swallowing in ClaimChallenger
+- **Severity**: **MEDIUM**
+- **Category**: Reliability
+- **File**: `trading_bot/autonomous_financial_intelligence/adversarial_verification/claim_challenger.py`
+- **Root Cause**: Claim verification failures suppressed silently.
+- **Solution**: Added explicit `logger.warning(...)`.
+- **Verification**: Confirmed clean compilation.
+
+### **DEFECT-AUDIT-09**: Silent Exception Swallowing in HallucinationDetector
+- **Severity**: **MEDIUM**
+- **Category**: Reliability
+- **File**: `trading_bot/autonomous_financial_intelligence/anti_hallucination/hallucination_detector.py`
+- **Root Cause**: Citation graph parsing exceptions swallowed.
+- **Solution**: Added explicit `logger.warning(...)`.
+- **Verification**: Confirmed clean compilation.
+
+### **DEFECT-AUDIT-10**: Silent Exception Swallowing in Infrastructure Validator
+- **Severity**: **MEDIUM**
+- **Category**: Reliability
+- **File**: `trading_bot/self_healing_ai/validators/infrastructure.py`
+- **Root Cause**: Infrastructure health check exceptions swallowed.
+- **Solution**: Added explicit `logger.warning(...)`.
+- **Verification**: Confirmed clean compilation.
+
+### **DEFECT-AUDIT-11**: Silent Exception Swallowing in Data Integrity Validator
+- **Severity**: **MEDIUM**
+- **Category**: Reliability
+- **File**: `trading_bot/self_healing_ai/validators/data_integrity.py`
+- **Root Cause**: Data corruption recovery errors suppressed.
+- **Solution**: Added explicit `logger.warning(...)`.
+- **Verification**: Confirmed clean compilation.
+
+### **DEFECT-AUDIT-12**: Silent Exception Swallowing in CodeModifier
+- **Severity**: **MEDIUM**
+- **Category**: Reliability
+- **File**: `trading_bot/adaptive_systems/code_generation/code_modifier.py`
+- **Root Cause**: Code AST diffing errors suppressed.
+- **Solution**: Added explicit `logger.warning(...)`.
+- **Verification**: Confirmed clean compilation.
+
+### **DEFECT-AUDIT-13**: Silent Exception Swallowing in MainPyIntegration
+- **Severity**: **MEDIUM**
+- **Category**: Reliability
+- **File**: `trading_bot/ml/offline_rl/main_py_integration.py`
+- **Root Cause**: Policy evaluation errors suppressed.
+- **Solution**: Added explicit `logger.warning(...)`.
+- **Verification**: Confirmed clean compilation.
+
+### **DEFECT-AUDIT-14**: Silent Exception Swallowing in AttentionMechanism
+- **Severity**: **MEDIUM**
+- **Category**: Reliability
+- **File**: `trading_bot/foundation_agents/cognitive_core/attention_mechanism.py`
+- **Root Cause**: Cognitive attention calculation exceptions swallowed.
+- **Solution**: Added explicit `logger.warning(...)`.
+- **Verification**: Confirmed clean compilation.
+
+### **DEFECT-AUDIT-15**: Silent Exception Swallowing in CitationNetwork
+- **Severity**: **MEDIUM**
+- **Category**: Reliability
+- **File**: `trading_bot/foundation_agents/knowledge_pipeline/citation_network.py`
+- **Root Cause**: Knowledge graph link failures suppressed.
+- **Solution**: Added explicit `logger.warning(...)`.
+- **Verification**: Confirmed clean compilation.
+
+### **DEFECT-AUDIT-16**: Silent Exception Swallowing in Research ValidationFramework
+- **Severity**: **MEDIUM**
+- **Category**: Reliability
+- **File**: `trading_bot/foundation_agents/research_orchestrator/validation_framework.py`
+- **Root Cause**: Hypothesis validation failures suppressed.
+- **Solution**: Added explicit `logger.warning(...)`.
+- **Verification**: Confirmed clean compilation.
+
+### **DEFECT-AUDIT-17**: Silent Exception Swallowing across Subsystem Domain Modules
+- **Severity**: **MEDIUM**
+- **Category**: Reliability
+- **Files**: `trading_bot/domains/governance_control/__init__.py`, `trading_bot/domains/risk_management/__init__.py`, `trading_bot/domains/technology_infrastructure/__init__.py`, `trading_bot/domains/research_development/__init__.py`, `trading_bot/domains/data_infrastructure/__init__.py`, `trading_bot/domains/compliance/__init__.py`, `trading_bot/domains/operations/__init__.py`, `trading_bot/domains/quant_research/__init__.py`, `trading_bot/domains/execution/__init__.py`, `trading_bot/domains/portfolio_analytics/__init__.py`, `trading_bot/domains/machine_learning/__init__.py`.
+- **Root Cause**: Module loading exceptions were silently suppressed without diagnostic logs.
+- **Solution**: Added explicit `logger.warning(...)`.
+- **Verification**: Confirmed clean compilation.

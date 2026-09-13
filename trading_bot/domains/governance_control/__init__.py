@@ -127,12 +127,12 @@ class GovernanceControlDomain(BaseDomain):
             from trading_bot import alphaalgo_core
             self.register_module('alphaalgo_core', alphaalgo_core)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
         try:
             from trading_bot import governance
             self.register_module('governance', governance)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
     
     async def check_authorization(self, action: str, context: Dict[str, Any]) -> bool:
         """Check if an action is authorized."""

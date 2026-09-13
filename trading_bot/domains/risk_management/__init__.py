@@ -121,14 +121,14 @@ class RiskManagementDomain(BaseDomain):
             from trading_bot import risk
             self.register_module('risk', risk)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
     
     async def _load_safety_systems(self):
         try:
             from trading_bot import safety
             self.register_module('safety', safety)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
     
     async def check_risk(self, trade: Dict[str, Any]) -> Dict[str, Any]:
         """Check if a trade passes risk checks."""

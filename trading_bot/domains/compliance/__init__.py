@@ -110,7 +110,7 @@ class ComplianceDomain(BaseDomain):
             from trading_bot import compliance
             self.register_module('compliance', compliance)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
     
     async def check_compliance(self, trade: Dict[str, Any]) -> Dict[str, Any]:
         """Check if a trade is compliant."""

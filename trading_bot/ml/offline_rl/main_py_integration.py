@@ -202,7 +202,7 @@ class MainPyIntegrator:
 """
         
         except Exception:
-            pass
+            logger.warning(f"Handled exception in main_py_integration.py")
         try:
             with open(self.main_py_path, 'r', encoding='utf-8') as f:
                 content = f.read()

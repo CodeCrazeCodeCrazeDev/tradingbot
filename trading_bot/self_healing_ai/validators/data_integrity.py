@@ -562,7 +562,7 @@ class DataIntegrityValidator(BaseValidator):
                     remediation_action="archive_old_data"
                 ))
         except Exception:
-            pass
+            logger.warning(f"Handled exception in data_integrity.py")
         
         return issues
     

@@ -126,14 +126,14 @@ class ExecutionDomain(BaseDomain):
             from trading_bot import execution
             self.register_module('execution', execution)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
     
     async def _load_broker_connections(self):
         try:
             from trading_bot import brokers
             self.register_module('brokers', brokers)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
     
     async def execute_order(self, order: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a trading order."""

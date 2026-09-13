@@ -301,21 +301,21 @@ class VolumeDeltaHeatmap:
             data=0.0
         )
         
-        # Fill heatmap
-        for idx, row in df.iterrows():
-            # Determine which price levels this candle touched
-            touched_levels = price_levels[
-                (price_levels >= row['low']) & (price_levels <= row['high'])
-            ]
-            
-            # Distribute volume across touched levels
-            if len(touched_levels) > 0:
-                # Approximate delta
-                delta = row['volume'] if row['close'] > row['open'] else -row['volume']
-                volume_per_level = delta / len(touched_levels)
-                
-                for level in touched_levels:
-                    heatmap.loc[idx, level] = volume_per_level
+        # Vectorized heatmap construction
+        lows = df['low'].values[:, None]
+        highs = df['high'].values[:, None]
+        closes = df['close'].values[:, None]
+        opens = df['open'].values[:, None]
+        volumes = df['volume'].values[:, None]
+
+        # Touch mask: shape (num_df_rows, num_price_levels)
+        touch_mask = (price_levels[None, :] >= lows) & (price_levels[None, :] <= highs)
+        touch_counts = touch_mask.sum(axis=1, keepdims=True)
+        touch_counts[touch_counts == 0] = 1  # prevent division by zero
+
+        deltas = np.where(closes > opens, volumes, -volumes)
+        vol_per_level = touch_mask * (deltas / touch_counts)
+        heatmap = pd.DataFrame(vol_per_level, index=df.index, columns=price_levels)
         
         return heatmap
     

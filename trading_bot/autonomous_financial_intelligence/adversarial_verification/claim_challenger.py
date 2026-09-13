@@ -347,7 +347,7 @@ class ClaimChallenger:
                             'age_seconds': age,
                         })
                 except Exception:
-                    pass
+                    logger.warning(f"Handled exception in claim_challenger.py")
         
         if stale_evidence:
             return Challenge(
@@ -636,7 +636,7 @@ class ClaimChallenger:
                                 raised_by="temporal_validity_checker",
                             )
             except Exception:
-                pass
+                logger.warning(f"Handled exception in claim_challenger.py")
         
         return None
     

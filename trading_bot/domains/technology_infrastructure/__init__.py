@@ -109,12 +109,12 @@ class TechnologyInfrastructureDomain(BaseDomain):
             from trading_bot import core
             self.register_module('core', core)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
         try:
             from trading_bot import services
             self.register_module('services', services)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
 
 
 __all__ = ['TechnologyInfrastructureDomain']
