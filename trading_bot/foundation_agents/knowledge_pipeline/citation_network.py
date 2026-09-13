@@ -202,7 +202,7 @@ class CitationNetwork:
                 if paper_id in self.papers:
                     self.papers[paper_id].centrality = cent
         except:
-            pass
+            logger.warning(f"Handled exception in citation_network.py")
         
         # Calculate author influence
         for author_id, author in self.authors.items():

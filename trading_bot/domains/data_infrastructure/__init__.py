@@ -117,19 +117,19 @@ class DataInfrastructureDomain(BaseDomain):
             from trading_bot import database
             self.register_module('database', database)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
         try:
             from trading_bot import ingestion
             self.register_module('ingestion', ingestion)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
     
     async def _load_monitoring_systems(self):
         try:
             from trading_bot import monitoring
             self.register_module('monitoring', monitoring)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
     
     async def get_market_data(self, symbol: str, timeframe: str = "1H") -> Dict[str, Any]:
         """Get market data for a symbol."""

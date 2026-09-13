@@ -130,14 +130,14 @@ class MachineLearningDomain(BaseDomain):
             from trading_bot import ml
             self.register_module('ml', ml)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
     
     async def _load_training_systems(self):
         try:
             from trading_bot import training
             self.register_module('training', training)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
     
     async def predict(self, model_name: str, features: Dict[str, Any]) -> Dict[str, Any]:
         """Make a prediction using a model."""

@@ -460,7 +460,7 @@ class ValidationFramework:
                         acc = np.mean(np.sign(np.diff(y_boot)) == np.sign(np.diff(pred_boot)))
                         bootstrap_accuracies.append(acc)
                 except:
-                    pass
+                    logger.warning(f"Handled exception in validation_framework.py")
             
             if bootstrap_accuracies:
                 # Calculate confidence interval
