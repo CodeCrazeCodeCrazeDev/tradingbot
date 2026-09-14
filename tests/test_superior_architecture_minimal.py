@@ -7,6 +7,8 @@ import os
 # Minimal mock for dependencies that are causing issues during import
 class MockObj:
     def __getattr__(self, name):
+        if name.startswith("__") and name.endswith("__"):
+            raise AttributeError(name)
         return MockObj()
     def __call__(self, *args, **kwargs):
         return MockObj()

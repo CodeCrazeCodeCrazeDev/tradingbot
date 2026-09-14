@@ -11,12 +11,9 @@ import logging
 from unittest.mock import Mock, patch, MagicMock
 
 try:
-    from trading_bot.execution_engine import *
+    from trading_bot.orchestrator.execution_engine import *
 except ImportError:
-    # Fallback import
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.execution_engine import *
+    pass
 
 logger = logging.getLogger(__name__)
 
