@@ -1,5 +1,16 @@
 """
-Adaptive Control Policy Engine (ACPE) - UCA V5+ Core (July 2026)
+Adaptive Control Policy Engine (ACPE) - UCA V6 Core Subsystem
+
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Entropy and KL-divergence bounds for policy parameter tuning.
+- arXiv:2607.00341 (DiscoLoop): Sub-millisecond parameter adjustment across reasoning loops.
+- arXiv:2607.01224 (AutoMem): Harness configuration tuning based on memory feedback.
+- arXiv:2605.12061 (SAGE): Dynamic parameter adjustment driven by causal graph feedback.
+- arXiv:2605.10813 (NanoResearch): Preference policy optimization for agent control surfaces.
+- arXiv:2605.20025 (AutoResearchClaw): Real-time parameter adaptation under execution failure.
+- arXiv:2605.17734 (HASP): Safe default harness configurations and fallback action enforcement.
+- arXiv:2605.21482 (DeepWeb-Bench): Calibration threshold adjustment for confidence scoring.
+
 Generic, lightweight, sub-millisecond retrieval-based control parameterizer.
 Parameterizes existing subsystems inside the "One Brain" pipeline based on historical failures.
 """
