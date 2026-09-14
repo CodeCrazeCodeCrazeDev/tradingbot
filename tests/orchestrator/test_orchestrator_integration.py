@@ -88,9 +88,8 @@ class TestMLToExecutionFlow:
     @pytest.mark.asyncio
     async def test_predict_and_execute_flow(self, full_config):
         """Test flow from ML prediction to execution"""
-        from trading_bot.orchestrator import (
-            OpportunityPredictor, ExecutionEngine, TradingDecision
-        )
+        from trading_bot.orchestrator.ml_predictor import OpportunityPredictor
+        from trading_bot.orchestrator.execution_engine import ExecutionEngine
         predictor = OpportunityPredictor(full_config)
         engine = ExecutionEngine(full_config)
 
@@ -245,10 +244,11 @@ class TestEndToEndOrchestration:
     @pytest.mark.asyncio
     async def test_full_orchestration_cycle(self, full_config, sample_market_data):
         """Test complete orchestration cycle"""
-        from trading_bot.orchestrator import (
-            MasterOrchestrator, ExecutionEngine, OpportunityPredictor,
-            PortfolioRiskManager, PerformanceTracker
-        )
+        from trading_bot.orchestrator.master_orchestrator import MasterOrchestrator
+        from trading_bot.orchestrator.execution_engine import ExecutionEngine
+        from trading_bot.orchestrator.ml_predictor import OpportunityPredictor
+        from trading_bot.orchestrator.risk_manager import PortfolioRiskManager
+        from trading_bot.orchestrator.performance_tracker import PerformanceTracker
 
         # Initialize all components
         orchestrator = MasterOrchestrator(full_config)
@@ -293,9 +293,9 @@ class TestComponentCompatibility:
 
     def test_trading_decision_compatibility(self, full_config):
         """Test TradingDecision works with all components"""
-        from trading_bot.orchestrator import (
-            TradingDecision, ExecutionEngine, PortfolioRiskManager
-        )
+        from trading_bot.orchestrator.execution_engine import ExecutionEngine
+        from trading_bot.orchestrator.risk_manager import PortfolioRiskManager
+        from trading_bot.orchestrator.master_orchestrator import TradingDecision
 
         decision = TradingDecision(
             decision_id="DEC_001", timestamp=datetime.now(),
