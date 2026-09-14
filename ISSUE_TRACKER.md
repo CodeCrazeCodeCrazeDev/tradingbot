@@ -56,6 +56,36 @@ This document tracks identified, resolved, and monitored engineering defects and
 *   **Verification Performed**: Security AST audit confirmed all dynamic executions pass through `SecureASTVisitor`.
 *   **Remaining Risks**: None.
 
+### **DEFECT-UCA-2026-06**: RiskManager Unpacked List Comprehension Syntax Error
+*   **Component**: `risk/risk_manager.py`
+*   **Severity**: **CRITICAL (BLOCKER)**
+*   **Root Cause**: Unparenthesized iterable unpacking combined with boolean `or` operation in `get_risk_report()`.
+*   **Files Affected**: `risk/risk_manager.py`
+*   **Technical Explanation**: `*[f"..."] or ["- None"]` produced a Python `SyntaxError` on line 390.
+*   **Solution Implemented**: Added surrounding parentheses `*([f"..."] or ["- None"])` to correctly prioritize the expression evaluation before unpacking.
+*   **Verification Performed**: `python3 -m py_compile risk/risk_manager.py` compiled with 0 errors.
+*   **Remaining Risks**: None.
+
+### **DEFECT-UCA-2026-07**: Script Utilities Indentation and Scoping Errors
+*   **Component**: `scripts/fixes/auto_fix_critical_issues_v2.py`, `scripts/deployment/deploy_5star_production.py`, `scripts/launchers/run_alphaalgo_5star.py`, `scripts/utilities/alphaalgo_autonomous_operator.py`
+*   **Severity**: **HIGH**
+*   **Root Cause**: Indentation mismatches, orphaned try blocks, and class method unindentations in operational scripts.
+*   **Files Affected**: `scripts/fixes/auto_fix_critical_issues_v2.py`, `scripts/deployment/deploy_5star_production.py`, `scripts/launchers/run_alphaalgo_5star.py`, `scripts/utilities/alphaalgo_autonomous_operator.py`
+*   **Technical Explanation**: Misaligned logging initialization statements broke block scoping, placing class methods outside `AlphaAlgoOperator` and leaving try blocks orphaned.
+*   **Solution Implemented**: Repaired indentation across all four scripts, ensuring method nesting and error handling blocks match Python language specifications.
+*   **Verification Performed**: `python3 -m py_compile` across all `scripts/` returned 0 errors.
+*   **Remaining Risks**: None.
+
+### **DEFECT-UCA-2026-08**: Hypothesis Test Collection MockObj Dunder Attribute Handling
+*   **Component**: `tests/test_superior_architecture_minimal.py`
+*   **Severity**: **HIGH**
+*   **Root Cause**: `MockObj.__getattr__` returned another `MockObj` instance for dunder attributes like `__file__`, causing `TypeError: argument of type 'MockObj' is not iterable` during Hypothesis test collection.
+*   **Files Affected**: `tests/test_superior_architecture_minimal.py`
+*   **Technical Explanation**: `hypothesis.internal.constants_ast.is_local_module_file` checks `"site-packages" not in getattr(module, "__file__", "")`. Returning a mock object instead of raising `AttributeError` caused string membership checks to fail.
+*   **Solution Implemented**: Updated `MockObj.__getattr__` to raise `AttributeError` for double-underscore attribute names.
+*   **Verification Performed**: `poetry run pytest --collect-only` collected 5,388 test items without `TypeError`.
+*   **Remaining Risks**: None.
+
 ---
 
 ## 2. Monitored Issues

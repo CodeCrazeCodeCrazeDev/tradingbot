@@ -1,3 +1,4 @@
+from pathlib import Path
 """
 Comprehensive tests for task_scheduler
 
@@ -11,12 +12,12 @@ import logging
 from unittest.mock import Mock, patch, MagicMock
 
 try:
-    from trading_bot.task_scheduler import *
+    from trading_bot.orchestrator.task_scheduler import *
 except ImportError:
     # Fallback import
     import sys
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.task_scheduler import *
+    from trading_bot.orchestrator.task_scheduler import *
 
 logger = logging.getLogger(__name__)
 
