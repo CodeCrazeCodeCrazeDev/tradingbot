@@ -12,11 +12,15 @@ Implements the 8-tier architecture:
 7. Institutional
 8. Meta-Memory
 
-Authoritative memory system integrating SAGE (Self-evolving Agentic Graph-Memory)
-and QKG (Quantum Knowledge Graph) for context-dependent research persistence.
-Implements 'SAGE: A Self-Evolving Agentic Graph-Memory Engine' (2026).
-Supports incremental construction, Graph-FM multi-hop retrieval,
-and Reader-Writer feedback loops for structural evolution.
+Paper Traceability Matrix:
+- arXiv:2607.01224 (AutoMem): Automated metamemory schema optimization and active consolidation loops.
+- arXiv:2605.12061 (SAGE): Self-evolving agentic dynamic graph memory substrate and edge evolution.
+- arXiv:2605.29303 (EKSFT): Entropy-KL compliant knowledge filtering and provenance hash validation.
+- arXiv:2607.00341 (DiscoLoop): Memory persistence for coupled discrete symbolic tokens and continuous states.
+- arXiv:2605.10813 (NanoResearch): Tri-level shared research memory ledger and schema versioning.
+- arXiv:2605.20025 (AutoResearchClaw): Historical hypothesis and pivot step graph indexing.
+- arXiv:2605.17734 (HASP): Procedural memory storage for executable safety program functions.
+- arXiv:2605.21482 (DeepWeb-Bench): Evidence lineage tracking and calibration scoring of retrieved entries.
 """
 
 import logging
