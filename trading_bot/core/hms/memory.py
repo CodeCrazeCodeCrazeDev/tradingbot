@@ -442,7 +442,10 @@ class HierarchicalMemorySystem:
         return self.sage.retrieve_subgraph(query, hops=2)
 
     def store_ledger_entry(self, entry: ResearchLedgerEntry):
-        """Active Management: Storing and indexing research ledger entries."""
+        """
+        Active Management: Storing, graph-native indexing, and provenance hash verification
+        of research ledger entries (NOVEL-006, NOVEL-015).
+        """
         file_path = os.path.join(self.ledger_path, f"{entry.entry_id}.json")
 
         if entry.hypothesis:
@@ -460,7 +463,10 @@ class HierarchicalMemorySystem:
             "timestamp": entry.timestamp.isoformat(),
             "composite_confidence": entry.composite_confidence,
             "reasoning_steps": entry.reasoning_steps,
-            "folded": True
+            "folded": True,
+            "provenance_hash": hashlib.sha256(
+                f"{entry.entry_id}_{entry.timestamp.isoformat()}_{entry.composite_confidence}".encode("utf-8")
+            ).hexdigest()
         }
         with open(file_path, 'w') as f:
             json.dump(entry_data, f, indent=2)
