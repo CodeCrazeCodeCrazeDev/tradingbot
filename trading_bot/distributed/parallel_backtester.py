@@ -551,6 +551,8 @@ class ParallelBacktester:
             engine = BacktestEngine(config)
             
             # Create strategy function
+            from trading_bot.core.security.sandbox import SecureASTVisitor
+            SecureASTVisitor().validate_code(strategy_code)
             local_vars = {}
             exec(strategy_code, local_vars)
             strategy = local_vars.get('strategy')

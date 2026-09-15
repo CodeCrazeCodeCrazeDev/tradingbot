@@ -32,10 +32,8 @@ async def main():
         # Create sample data
         import numpy as np
 
-logger = logging.getLogger(__name__)
-
-dates = pd.date_range('2024-01-01', periods=1000, freq='15min')
-df = pd.DataFrame({
+        dates = pd.date_range('2024-01-01', periods=1000, freq='15min')
+        df = pd.DataFrame({
             'timestamp': dates,
             'open': 1.1000 + np.random.randn(1000) * 0.001,
             'high': 1.1010 + np.random.randn(1000) * 0.001,

@@ -387,10 +387,10 @@ class RiskManager:
             f"- Correlation: {summary['metrics']['correlation']:.2f}",
             
             "\nPosition Limits:",
-            *[f"- {sym}: {limit:.2f}" for sym, limit in summary['limits'].items()] or ["- None"],
+            *([f"- {sym}: {limit:.2f}" for sym, limit in summary['limits'].items()] or ["- None"]),
             
             "\nTrading Restrictions:",
-            *[f"- {sym}" for sym in summary['restrictions']] or ["- None"],
+            *([f"- {sym}" for sym in summary['restrictions']] or ["- None"]),
         ]
         
         return "\n".join(report)

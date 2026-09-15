@@ -156,18 +156,16 @@ class AlphaAlgoOperator:
         # Check critical env vars
         from dotenv import load_dotenv
 
-logger = logging.getLogger(__name__)
-
-load_dotenv(env_file)
+        load_dotenv(env_file)
         
-critical_vars = ["MT5_LOGIN", "MT5_PASSWORD", "MT5_SERVER"]
-for var in critical_vars:
+        critical_vars = ["MT5_LOGIN", "MT5_PASSWORD", "MT5_SERVER"]
+        for var in critical_vars:
             if not os.getenv(var):
                 issues.append(f"Missing environment variable: {var}")
         
-return len(issues) == 0, issues
+        return len(issues) == 0, issues
     
-def run_system_diagnostic(self) -> SystemHealth:
+    def run_system_diagnostic(self) -> SystemHealth:
         """Run complete system diagnostic"""
         logger.info("🔍 Running system diagnostic...")
         
@@ -231,13 +229,13 @@ def run_system_diagnostic(self) -> SystemHealth:
         logger.info(f"✅ Diagnostic complete: {status.upper()}")
         return health
     
-def is_bot_running(self) -> bool:
+    def is_bot_running(self) -> bool:
         """Check if trading bot is running"""
         if self.bot_process and self.bot_process.poll() is None:
             return True
         return False
     
-def start_bot(self) -> bool:
+    def start_bot(self) -> bool:
         """Start the trading bot"""
         logger.info("🚀 Starting AlphaAlgo trading bot...")
         
@@ -277,7 +275,7 @@ def start_bot(self) -> bool:
             logger.error(traceback.format_exc())
             return False
     
-def stop_bot(self):
+    def stop_bot(self):
         """Stop the trading bot gracefully"""
         if self.bot_process:
             logger.info("🛑 Stopping AlphaAlgo...")
@@ -291,7 +289,7 @@ def stop_bot(self):
             except Exception as e:
                 logger.error(f"❌ Error stopping bot: {e}")
     
-def restart_bot(self):
+    def restart_bot(self):
         """Restart the trading bot"""
         logger.info("🔄 Restarting AlphaAlgo...")
         self.stop_bot()
@@ -306,7 +304,7 @@ def restart_bot(self):
         self.state["restarts"] += 1
         return self.start_bot()
     
-def monitor_bot_logs(self) -> Tuple[int, int]:
+    def monitor_bot_logs(self) -> Tuple[int, int]:
         """Monitor bot logs for errors and warnings"""
         errors = 0
         warnings = 0
@@ -335,7 +333,7 @@ def monitor_bot_logs(self) -> Tuple[int, int]:
         
         return errors, warnings
     
-def auto_fix_issues(self, health: SystemHealth) -> int:
+    def auto_fix_issues(self, health: SystemHealth) -> int:
         """Automatically fix detected issues"""
         fixes_applied = 0
         
@@ -366,7 +364,7 @@ def auto_fix_issues(self, health: SystemHealth) -> int:
         self.state["errors_fixed"] += fixes_applied
         return fixes_applied
     
-def generate_hourly_report(self) -> str:
+    def generate_hourly_report(self) -> str:
         """Generate hourly performance report"""
         health = self.run_system_diagnostic()
         
@@ -403,7 +401,7 @@ OPERATOR STATS
 """
         return report
     
-async def run_continuous_operation(self):
+    async def run_continuous_operation(self):
         """Main continuous operation loop"""
         logger.info("🤖 AlphaAlgo Autonomous Operator Starting...")
         logger.info("=" * 60)
