@@ -401,8 +401,8 @@ class CognitiveSystemController:
         if hasattr(self.hypothesis_gen, "simulate_branches"):
             try:
                 sim_results = await self._safe_await(self.hypothesis_gen.simulate_branches(branches)) or {}
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"CSC-V6: Causal simulation fallback: {e}")
 
         # 7. Pivot/Refine
         best_branch = await self._safe_await(self._pivot_refine_loop(branches, sim_results))
