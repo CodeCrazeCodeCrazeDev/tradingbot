@@ -212,15 +212,23 @@ class CognitiveSystemController:
         self.continuous_state = {"v": 1.0, "latent": self.discoloop.hidden_state.tolist()}
 
     def _calculate_sensory_surprise(self, observation: Dict[str, Any]) -> float:
-        """Minimizing surprise is the core of Active Inference."""
+        """
+        Minimizing surprise via continuous Variational Free Energy (VFE) state estimation
+        (NOVEL-001, NOVEL-009). Incorporates volatility-scaled prediction error.
+        """
         if not self.last_prediction:
             return 1.0
 
         pred_price = self.last_prediction.get("price", 100.0)
         obs_price = observation.get("price") if isinstance(observation, dict) else None
-        if obs_price is not None:
-            error = abs(obs_price - pred_price)
-            return 0.1 + float(error) / 100.0
+        volatility = observation.get("volatility", 0.01) if isinstance(observation, dict) else 0.01
+
+        if obs_price is not None and pred_price > 0:
+            rel_error = abs(obs_price - pred_price) / pred_price
+            # Scale surprise by local regime volatility
+            scaled_error = rel_error / max(0.001, volatility)
+            vfe_surprise = 0.05 + min(1.5, scaled_error)
+            return float(vfe_surprise)
 
         return 0.2
 

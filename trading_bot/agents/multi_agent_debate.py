@@ -1592,15 +1592,18 @@ class BayesianDecisionEngine:
         self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]
     ) -> float:
         """
-        Computes mathematically rigorous, correlation-aware Bayesian posterior probability of strategy success:
+        Computes mathematically rigorous, correlation-aware Bayesian posterior probability of strategy success
+        with epistemic uncertainty bounds (NOVEL-004, NOVEL-014):
         P(S | E) = [ P(S) * Prod P(E_i | S)^w_i ] / [ P(S) * Prod P(E_i | S)^w_i + P(~S) * Prod P(E_i | ~S)^w_i ]
         """
         prod_s = 1.0
         prod_ns = 1.0
+        confidences = []
 
         for endorsed, likelihood, exponent in evidence_likelihoods:
             # Bound likelihood to avoid division by zero or extreme certainties
             p_e_given_s = max(0.01, min(0.99, likelihood))
+            confidences.append(p_e_given_s)
 
             if endorsed:
                 prod_s *= p_e_given_s**exponent
@@ -1613,9 +1616,19 @@ class BayesianDecisionEngine:
         denominator = (prior_prob * prod_s) + ((1.0 - prior_prob) * prod_ns)
 
         if denominator == 0.0:
-            return prior_prob
+            posterior = prior_prob
+        else:
+            posterior = max(0.0, min(1.0, numerator / denominator))
 
-        return max(0.0, min(1.0, numerator / denominator))
+        # NOVEL-014: Epistemic Variance penalty dampening posterior when agent confidences diverge
+        if len(confidences) > 1:
+            mean_conf = sum(confidences) / len(confidences)
+            epistemic_var = sum((c - mean_conf) ** 2 for c in confidences) / len(confidences)
+            # Scale down posterior towards prior if epistemic uncertainty is elevated
+            uncertainty_penalty = max(0.0, min(0.3, epistemic_var * 2.0))
+            posterior = posterior * (1.0 - uncertainty_penalty) + prior_prob * uncertainty_penalty
+
+        return max(0.0, min(1.0, posterior))
 
     def calculate_bayesian_posterior(
         self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]
