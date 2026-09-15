@@ -1,4 +1,3 @@
-import logging
 """
 Production deployment script for AlphaAlgo 5-Star system.
 Handles multi-symbol deployment with optimization and monitoring.
@@ -170,10 +169,8 @@ class ProductionDeployment:
         # Start health check server in background
         import threading
 
-logger = logging.getLogger(__name__)
-
-health_thread = threading.Thread(target=self.health_check.start, daemon=True)
-health_thread.start()
+        health_thread = threading.Thread(target=self.health_check.start, daemon=True)
+        health_thread.start()
         
         # Start system monitor
         system_monitor = SystemMonitor(self.metrics)
@@ -189,7 +186,7 @@ health_thread.start()
         
         while True:
             iteration += 1
-                
+            try:
                 # Fetch market data for all symbols
                 market_data = await self._fetch_market_data()
                 
