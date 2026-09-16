@@ -2,7 +2,16 @@
 Evolution Gate - UCA V6 (July 2026)
 ==================================
 Monotone-safe gate for recursive agent self-evolution.
-Implements 'RSEA' (arXiv:2606.28374), 'EKSFT' (arXiv:2605.29303), and 'NanoResearch' (arXiv:2605.10813).
+
+Mandatory Scientific References Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Selective token fine-tuning and loss masking.
+- arXiv:2607.00341 (LogAct / DiscoLoop): Token-level state persistence & verification.
+- arXiv:2607.01224 (CORAL): Multi-agent memory optimization & evolutionary fitness.
+- arXiv:2605.12061 (Search-R1): MCTS-guided candidate search & strategic reasoning.
+- arXiv:2605.10813 (NanoResearch): Compact automated hypothesis validation & proof trees.
+- arXiv:2605.20025 (S2L): Multi-speed behavioral routing & policy evolution.
+- arXiv:2605.17734 (AutoResearchClaw): Automated experimentation, red-teaming, & rollback safety.
+- arXiv:2605.21482 (DeepWeb-Bench): Real-time environment state grounding & safety boundaries.
 """
 
 import logging

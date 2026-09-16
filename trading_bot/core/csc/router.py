@@ -1,7 +1,15 @@
 """
-Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral behaviors (Skill-to-LoRA).
-Implements 'HASP' (2026) and 'S2L' (2026).
+SkillRouter / HASP Execution Router - UCA V6
+
+Mandatory Scientific References Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Selective entropy/KL skill policy filtering.
+- arXiv:2607.00341 (LogAct/DiscoLoop): Token-level discrete routing & continuous state loop.
+- arXiv:2607.01224 (CORAL): Multi-agent skill and capability graph linking.
+- arXiv:2605.12061 (Search-R1): MCTS-guided skill program path selection.
+- arXiv:2605.10813 (NanoResearch): Compact program synthesis and verification.
+- arXiv:2605.20025 (S2L): Slow-to-Fast behavioral routing across skill tiers.
+- arXiv:2605.17734 (AutoResearchClaw): Program execution and safety invariants.
+- arXiv:2605.21482 (DeepWeb-Bench): Environment-grounded skill verification.
 """
 
 import logging

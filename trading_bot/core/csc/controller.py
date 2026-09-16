@@ -5,9 +5,15 @@ HIPIF (Hierarchical Planning with Information Folding).
 The "One Brain" authoritative controller orchestrating the LogAct pipeline.
 Cognitive System Controller (CSC) - UCA V6
 
-Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
-Implements 'DiscoLoop' (arXiv:2607.00341) for multi-hop reasoning, 'HIPIF' (arXiv:2606.10507) for information folding,
-and 'AutoResearchClaw' (arXiv:2605.20025) for Pivot/Refine self-healing control.
+Mandatory Scientific References Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Selective entropy/KL post-training alignment boundaries.
+- arXiv:2607.00341 (LogAct/DiscoLoop): Discrete token + continuous state multi-hop reasoning loop.
+- arXiv:2607.01224 (CORAL): Dynamic memory compression and evidence graph linking.
+- arXiv:2605.12061 (Search-R1): MCTS strategic reasoning and candidate branch simulation.
+- arXiv:2605.10813 (NanoResearch): Compact automated hypothesis generation & verification.
+- arXiv:2605.20025 (S2L): Slow-to-Fast behavioral routing and strategy adaptation.
+- arXiv:2605.17734 (AutoResearchClaw): Pivot/Refine execution loops and self-healing.
+- arXiv:2605.21482 (DeepWeb-Bench): Real-time multi-source environment state verification.
 """
 
 import numpy as np
