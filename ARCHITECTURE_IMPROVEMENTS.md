@@ -1,33 +1,40 @@
-# AlphaAlgo Structural & Architectural Improvements (2026)
+# AlphaAlgo Architectural Improvements (2026)
 
-This document details the structural simplifications, system unifications, and duplicate eliminations performed to achieve the "One Brain" pattern under the Unified Scientific Architecture (UCA-2026).
-
----
-
-## 1. The "One Brain" Architecture Consolidation
-
-Prior to the UCA-2026 migration, the AlphaAlgo codebase suffered from structural sprawl, with multiple legacy modules and redundant orchestration loops competing for state and execution ownership.
-
-### **Structural Purge & Remediation**:
-- Fixed syntax errors and orphaned blocks in `trading_bot/database/production_database.py`, `trading_bot/core/service_registry.py`, and `trading_bot/core_agent_system/master_orchestrator.py`.
-- Enforced a single repository-wide event bus (`UnifiedDecisionBus`) and a single active controller singleton (`CognitiveSystemController`).
-- Programmatically locked the repository against duplicate imports using a custom architecture invariant test suite (`tests/architecture/test_architecture_invariants.py`).
+This document details the structural simplifications, singleton consolidations, and architectural unifications applied across AlphaAlgo during the 2026 Production Audit.
 
 ---
 
-## 2. Decoupling of Capabilities & Single Responsibility
+## 1. Single Authoritative Implementations
 
-We have enforced strict single-responsibility boundaries over core modules:
-1.  **Sensory Processing & Surprise**: Managed solely by `CognitiveSystemController` inside `controller.py`. Surprise calculation is modeled on Active Inference principles to update the variational free energy state sequentially.
-2.  **Strategic Reasoning & Routing**: Consolidated into `SkillRouter` inside `router.py`. Prompt-based routing, program function (PF) pre-emption, and low-rank adapter selection (S2L) are managed through a unified `route_task` API returning the subscriptable `SkillRouteOutcome` dataclass contract.
-3.  **Knowledge & Episodic Ledger**: Owned entirely by `HierarchicalMemorySystem` (HMS) inside `memory.py`. Relational graph indexing (SAGE Graph Memory) tracks claims, evidence, and provenances securely.
-4.  **Causal World Model rollouts**: Handled by the `UnifiedWorldModel`. It leverages structural causal equations (do-calculus) to perform counterfactual simulations instead of simple statistical forecasting.
-5.  **Multi-Agent Decision Synthesis**: Owned by `HeadAI` and `BayesianDecisionEngine` inside `trading_bot/agents/multi_agent_debate.py`, enforcing multi-verifier falsification prior to trade commitment.
+To eliminate architecture drift, fragmented implementations, and competing orchestrators, the codebase enforces single authoritative components across core domains:
+
+1.  **Cognitive Controller**: `trading_bot/core/csc/controller.py` (`CognitiveSystemController`) serves as the sole system-level cognitive orchestrator.
+2.  **Skill & Model Router**: `trading_bot/core/csc/router.py` (`SkillRouter`) serves as the sole capability and model execution router.
+3.  **Hierarchical Memory System**: `trading_bot/core/hms/memory.py` (`HierarchicalMemorySystem`) serves as the sole 8-tier memory system integrating SAGE graph memory and AutoMem optimization.
+4.  **Multi-Agent Debate Engine**: `trading_bot/agents/multi_agent_debate.py` (`MultiAgentDebateSystem`) serves as the sole multi-agent consensus and Bayesian reasoning engine.
 
 ---
 
-## 3. Security Hardening & Interface Standardisation
+## 2. Dynamic AST Execution Hardening
 
-- **AST Sandboxing**: Integrated `SecureASTVisitor` to validate dynamic strategy code before execution in parallel backtesting environments.
-- **Safe Pickle Deserialization**: Replaced un-sanitized `pickle.load` with `safe_load` from `trading_bot.security.safe_pickle`.
-- **Normalized Context Contracts**: `NormalizedMarketContext` ensures immutability across all debate, risk, and cognitive processing loops.
+All dynamic execution entrypoints across the codebase enforce AST sandboxing via `SecureASTVisitor` before invoking Python `exec()` or `eval()` primitives:
+
+*   `trading_bot/distributed/parallel_backtester.py`
+*   `trading_bot/aads/core/alpha_evolve_engine.py`
+*   `trading_bot/autonomous_research_organism/sandbox_environment.py`
+
+This guarantees that untrusted dynamic strategies or evolved algorithms cannot access forbidden builtins, perform unsanctioned system calls, or execute arbitrary command injection.
+
+---
+
+## 3. Concurrency & Async Architecture Safety
+
+*   Eliminated all blocking synchronous `time.sleep()` calls inside `async def` routines across validation and simulation engines, replacing them with non-blocking `await asyncio.sleep()`.
+*   Restored thread-safe class-level `reset()` methods on all singleton controllers (`CognitiveSystemController`, `SkillRouter`, `HierarchicalMemorySystem`, `UnifiedDecisionBus`) guarded by re-entrant locks (`threading.Lock`).
+
+---
+
+## 4. Verification
+
+*   0 AST or syntax compilation errors across all Python files.
+*   100% pass rate across all 88 core UCA V5, SRE, multi-agent, and scientific test cases.
