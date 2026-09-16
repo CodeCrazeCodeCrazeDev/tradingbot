@@ -2,7 +2,7 @@
 
 ## 1. First-Principles Mathematical Foundations
 
-The SRE hypothesis ecosystem is mathematically grounded in Active Inference, Causal Interventional Calculus, Bayesian Credal Bounds, and Calibration Theory.
+The SRE hypothesis ecosystem is mathematically grounded in Active Inference, Causal Interventional Calculus, Bayesian Credal Bounds, Calibration Theory, and Deflated Sharpe Ratio statistical testing.
 
 ### 1.1 Active Inference & Variational Free Energy (VFE)
 The system selects hypotheses and designs experiments to minimize Variational Free Energy ($F$) and maximize Expected Information Gain (Epistemic Value $G(h)$):
@@ -53,35 +53,56 @@ $$\text{ECE} = \sum_{m=1}^{M} \frac{\left|B_m\right|}{N} \left| \text{acc}(B_m) 
 
 $$\text{Brier Score} = \frac{1}{N} \sum_{i=1}^{N} \left( f_i - o_i \right)^2$$
 
-A hypothesis is only promoted to `Institutionalized` status if $ECE \le 0.15$ and Brier Score $\le 0.10$.
+A hypothesis is only promoted to `Institutionalized` status if $\text{ECE} \le 0.05$ and Brier Score $\le 0.10$.
 
 ---
 
-## 2. Continuous Self-Improvement & Meta-Optimization
+## 2. Quantitative Evaluation Metrics & SEAL Engine Mechanics
 
-The hypothesis ecosystem improves its own generation and evaluation pipelines via a recursive meta-learning loop (SRE Step 19):
+The hypothesis ecosystem improves its own generation and evaluation pipelines via a recursive meta-learning loop (SRE Step 19) driven by the Self-Evolutionary Adaptation Loop (SEAL) Engine:
 
-### 2.1 Meta-Metrics
+### 2.1 Quantitative Meta-Metrics
 
-1. **Hypothesis Quality Score (HQS)**:
-   $$\text{HQS}(h) = \frac{\text{Sharpe}(h) \times I_c(h)}{1 + \text{ECE}(h) + \Delta_{\text{ambiguity}}(h)}$$
+| Metric Name | Mathematical Definition / Formula | Target Threshold | Subsystem Owner |
+| :--- | :--- | :--- | :--- |
+| **Hypothesis Quality Score (HQS)** | $\text{HQS}(h) = \frac{\text{Sharpe}(h) \times I_c(h)}{1 + \text{ECE}(h) + \Delta_{\text{ambiguity}}(h)}$ | $\ge 1.85$ | SRE Core Evaluator |
+| **Novelty Score ($\mathcal{N}$)** | $\mathcal{N}(h) = 1 - \max_{g \in \text{HMS}} \cos(\mathbf{e}_h, \mathbf{e}_g)$ | $\ge 0.35$ | HMS Semantic Index |
+| **Accuracy / Win Rate** | $A(h) = \frac{N_{\text{correct}}}{N_{\text{total}}}$ | $\ge 0.58$ | Backtest & Live Journal |
+| **Scientific Value ($S_v$)** | $S_v(h) = \Delta H(S) \times \text{Replicability}(h)$ | $\ge 0.70$ | World Model Causal DAG |
+| **Economic Value (EV)** | $\text{EV}(h) = \text{Net PnL}(h) - \text{Costs}(h) - \text{Slippage}(h)$ | $> 0$ | Order Execution Engine |
+| **Predictive Value (PV)** | $\text{PV}(h) = \text{Information Coefficient (IC)}(h)$ | $\ge 0.04$ | Alpha Research Engine |
+| **Robustness ($\mathcal{R}$)** | $\mathcal{R}(h) = \min_{r \in \text{Regimes}} \text{Sharpe}_r(h)$ | $> 0.50$ | Regime Verification Engine |
+| **Generalization Score ($G_s$)** | $G_s(h) = 1 - \frac{|\text{Sharpe}_{\text{IS}} - \text{Sharpe}_{\text{OOS}}|}{\text{Sharpe}_{\text{IS}}}$ | $\ge 0.75$ | Out-of-Sample Evaluator |
+| **Survival Rate ($\mathcal{S}_r$)** | $\mathcal{S}_r = \frac{N_{\text{confirmed}}}{N_{\text{generated}}}$ | $15\% - 25\%$ | SRE Lifecycle Controller |
+| **Research Efficiency ($\eta_r$)** | $\eta_r = \frac{N_{\text{confirmed hypotheses}}}{T_{\text{compute hours}}}$ | $\ge 0.50 \text{ hyp/hr}$ | Resource Allocation Engine |
 
-2. **Research Efficiency ($\eta_r$)**:
-   $$\eta_r = \frac{N_{\text{confirmed hypotheses}}}{T_{\text{compute hours}}}$$
+---
 
-3. **Economic Edge Contribution (EEC)**:
-   $$\text{EEC}(h) = \text{Net PnL}(h) - \text{Transaction Costs}(h) - \text{Slippage}(h)$$
+### 2.2 SEAL Engine Auto-Healing & Meta-Redesign Rules
 
-### 2.2 Auto-Healing Failure Bottlenecks
-SRE Step 19 monitors pipeline execution telemetry:
-- **High Rejection Rate Alert ($> 70\%$)**: Automatically expands parameter space in `GeneticAlphaSearch` and relaxes prompt constraints in `HypothesisExtractionEngine`.
-- **High Ambiguity Alert ($\Delta > 0.40$)**: Triggers deep multi-hop evidence queries in `HierarchicalMemorySystem` (HMS) to gather additional historical context.
+The SEAL Engine continuously inspects the telemetry of the 19 SRE stages and executes automated meta-redesigns whenever bottlenecks are detected:
+
+1. **High Premature Rejection Bottleneck ($> 75\%$ rejection at Stage 10)**:
+   - *Detection*: Over $75\%$ of hypotheses fail out-of-sample backtest gates.
+   - *Action*: Automatically broaden parameter search spaces in `ApexAlphaMining`, inject regime-stratified boundaries, and adjust default Sharpe thresholds based on market volatility.
+
+2. **High Duplicate / Low Novelty Bottleneck ($\mathcal{N} < 0.20$)**:
+   - *Detection*: Generated candidates show cosine similarity $> 0.80$ to existing HMS entries.
+   - *Action*: Trigger symbolic expression structural mutation jumps and force orthogonal feature cross-products in SRE Stage 4.
+
+3. **High Epistemic Ambiguity Bottleneck ($\Delta_{\text{ambiguity}} > 0.40$)**:
+   - *Detection*: Credal set spans remain wide across evaluation trials.
+   - *Action*: Initiate deep multi-hop evidence queries in `HierarchicalMemorySystem` (HMS) to harvest additional tick-level and order-flow micro-structure data.
+
+4. **Alpha Drift & Decay Trigger**:
+   - *Detection*: Information Coefficient (IC) drops below $0.02$ over a rolling 14-day execution window.
+   - *Action*: Move hypothesis to `DORMANT` or `DEPRECATED` status via `AlphaDeathClockManager` and trigger automatic discovery of replacement candidates (Stage 19).
 
 ---
 
 ## 3. Automated Validation Framework
 
-Programmatic unit and integration tests under `tests/scientific_audit_validation.py` verify that:
+Programmatic unit and integration tests verify system integrity:
 1. All 19 SRE stages execute in strict order without skipping steps.
 2. Bayesian updates preserve mathematical bounds $[0.0, 1.0]$.
 3. Failure parameters are permanently logged in HMS Level T6/T7 memory.
