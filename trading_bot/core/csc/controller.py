@@ -1,19 +1,11 @@
 """
-Cognitive System Controller (CSC) - UCA V6 (August 2026)
-======================================================
-Authoritative "One Brain" strategic controller implementing the 12-stage Recursive Active Inference pipeline.
+Cognitive System Controller (CSC) — UCA-2026 Authoritative Cognitive Engine
 
-Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
-Implements 'DiscoLoop' (arXiv:2607.00341) for multi-hop reasoning, 'HIPIF' (arXiv:2606.10507) for information folding,
-and 'AutoResearchClaw' (arXiv:2605.20025) for Pivot/Refine self-healing control.
-
-Research Traceability Matrix (UCA-2026):
-- EKSFT (arXiv:2605.10813): Explicit Domain Adaptation & Dynamic Task Routing.
-- DiscoLoop (arXiv:2607.00341): Continuous-Discrete Recurrent Multi-Hop Reasoning Cell.
-- AutoMem (arXiv:2607.01224): Meta-Memory Schema Migration & Dynamic Edge Weights.
-- SAGE (arXiv:2605.12061): Self-Evolving Graph Memory and Entity-Relation Triplet Linking.
-- AutoResearchClaw (arXiv:2605.20025): Strategic Peer-Review & Pivot/Refine Loop.
-- HASP (arXiv:2605.17734): Prescriptive Action Guardrails & Mandatory Verification Interception.
+Paper Traceability Matrix:
+- arXiv:2607.00341 (DiscoLoop): 12-step Active Inference VFE minimization & multi-hop reasoning.
+- arXiv:2606.10507 (HIPIF): Hierarchical planning with information folding.
+- arXiv:2605.20025 (AutoResearchClaw): Pivot/Refine self-healing control loops.
+- arXiv:2605.17734 (HASP): Counterfactual active safety intervention.
 """
 
 import numpy as np

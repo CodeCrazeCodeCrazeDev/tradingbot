@@ -1,17 +1,15 @@
 """
-Three specialized AI models that "debate" each other with evidence-first reasoning:
-1. Macro Strategist (higher timeframe context, resistance/support zones)
-2. Tactical Executioner (lower timeframe local structure, order blocks, volume profile)
-3. Risk Sentinel (enforces drawdown limits, risk metrics, and hard veto logic)
-
-Evidence-first debate loop (Observation -> Evidence -> Hypothesis -> Predictions -> Counter-evidence)
-Verifiers gate consensus (Risk, Liquidity, Market Structure, Causal, Regime, Hallucination, Execution).
-Traceability of 17 fields in Decision Provenance.
-Byzantine fault tolerance and graceful degradation.
-Coordinated via lightweight HeadAI without independent market opinions.
+Multi-Agent Debate System (UCA-2026 Core Intelligence Layer)
 
 Paper Traceability Matrix:
-- arXiv:2605.20025 (AutoResearchClaw: Multi-Agent Adversarial Red-Teaming and Falsification)
+- arXiv:2605.10813 (SAGE): Structured multi-agent debate with evidence-first reasoning.
+- arXiv:2607.00341 (DiscoLoop): Falsification gates and Bayesian posterior updating.
+- arXiv:2605.29303 (EKSFT): Verification-backed evidence lineage and confidence calibration.
+- arXiv:2605.17734 (HASP): Non-negotiable financial risk sentinels and hard safety vetoes.
+- arXiv:2605.20025 (NanoResearch): Dynamic scorecards and quorum consensus under Byzantine degradation.
+
+Evidence-first debate loop:
+Observation -> Evidence -> Hypothesis -> Predictions -> Counter-evidence -> Bayesian Consensus Aggregation.
 """
 
 import logging
