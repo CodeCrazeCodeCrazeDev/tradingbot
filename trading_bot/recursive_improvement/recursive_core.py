@@ -40,7 +40,8 @@ class ImprovementDimension(Enum):
     AGENT = "agent"
     WORKFLOW = "workflow"
     WORLD_MODEL = "world_model"
-
+    RESEACH OS =  "reseach os"
+    
 @dataclass
 class ImprovementProposal:
     """Proposal for a specific improvement"""

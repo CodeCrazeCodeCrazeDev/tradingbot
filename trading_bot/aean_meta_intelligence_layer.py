@@ -29,7 +29,7 @@ def _utc() -> str:
 
 @dataclass(frozen=True)
 class AEANConstraints:
-    max_financial_loss_usd: float = 1_000_000.0
+    max_financial_loss_usd: float = 1_000.0
     max_cycle_budget_fraction: float = 0.05
     rollback_hours_on_budget_overrun: int = 24
     posterior_retain_threshold: float = 0.95
