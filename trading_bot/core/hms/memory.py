@@ -7,15 +7,26 @@ Hierarchical Memory System (HMS) - UCA V6 (August 2026)
 =====================================================
 Authoritative memory system integrating SAGE Graph-Memory and AutoMem Metamemory.
 
-Scientific Literature Alignment & Traceability Matrix:
-- SAGE: Self-evolving Agentic Graph-memory Engine (arXiv:2605.12061)
-- AutoMem: Automated Learning of Memory as a Cognitive Skill (arXiv:2607.01224)
-- EKSFT: Entropy-KL Selective Fine-Tuning (arXiv:2605.29303)
-- DiscoLoop: Discrete Embeddings & Continuous States (arXiv:2607.00341)
-- NanoResearch: Tri-level Co-evolving Research Automation (arXiv:2605.10813)
-- AutoResearchClaw: Self-Reinforcing Autonomous Research (arXiv:2605.20025)
-- HASP: Harnessing LLM Agents with Skill Programs (arXiv:2605.17734)
-- DeepWeb-Bench: Massive Cross-Source Evidence Benchmark (arXiv:2605.21482)
+Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
+Implements the 8-tier architecture:
+1. Workspace
+2. Episodic
+3. Semantic
+4. Procedural
+5. Research
+6. World Models
+7. Institutional
+8. Meta-Memory
+
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Epistemic anchor memory preserving base reference state against catastrophic drift.
+- arXiv:2607.00341 (DiscoLoop): Dual discrete-continuous recurrent hidden workspace storage.
+- arXiv:2607.01224 (AutoMem): Automated metamemory optimization and schema utility updates.
+- arXiv:2605.12061 (SAGE): Self-evolving agentic graph-memory with Hebbian edge-weight reinforcement.
+- arXiv:2605.10813 (NanoResearch): Dynamic context experience memory plane for co-evolving policies.
+- arXiv:2605.20025 (AutoResearchClaw): Structural memory trace logging for pivot/refine self-healing loops.
+- arXiv:2605.17734 (HASP): Guardrail memory state tracking and hard risk intercept logging.
+- arXiv:2605.21482 (DeepWeb-Bench): Derivation history logging and ECE calibration trajectory persistence.
 """
 
 import logging

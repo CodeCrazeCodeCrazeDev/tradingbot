@@ -1,9 +1,18 @@
 """
-Skill Router (UCA-2026 Skill & LoRA Adapter Router)
+Skill Router - UCA V6 (July 2026)
+
+Orchestrates the selection and execution of Skill Programs (HASP)
+and behavioral adapters (Skill-to-LoRA / S2L).
 
 Paper Traceability Matrix:
-- arXiv:2605.17734 (HASP): Hierarchical active safety program orchestration & routing.
-- arXiv:2605.12061 (S2L): Sparse strategic LoRA hedging and behavioral adapter selection.
+- arXiv:2605.29303 (EKSFT): Selective adapter routing with entropy/KL-calibrated safety boundaries.
+- arXiv:2607.00341 (DiscoLoop): Discrete skill routing coupled with continuous latent state transitions.
+- arXiv:2607.01224 (AutoMem): Cognitive skill management and dynamic metamemory retrieval routing.
+- arXiv:2605.12061 (SAGE): Dynamic graph edge-weighted skill selection and route optimization.
+- arXiv:2605.10813 (NanoResearch): Procedural Skill Bank management and policy adaptation.
+- arXiv:2605.20025 (AutoResearchClaw): Real-time skill pivot and execution re-routing on verifier critique.
+- arXiv:2605.17734 (HASP): Executable Program Functions (PFs) with deterministic high-volatility guardrails.
+- arXiv:2605.21482 (DeepWeb-Bench): Performance calibration and routing latency validation.
 """
 
 import logging
