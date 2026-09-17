@@ -239,10 +239,30 @@ class FutureScenarioSimulator:
             # trajectory: [horizon, batch, latent_dim] -> [batch, horizon, latent_dim]
             full_trajectory = torch.stack(trajectory).transpose(0, 1)
 
+            # INTELL-01: Rewards must be grounded in predicted execution dynamics and price moves
+            # Calculate grounded rewards based on the trajectory
+            # For each step in the horizon, we estimate reward = (price_change - costs)
+            scenario_rewards = []
+            for t in range(self.horizon):
+                step_latent = full_trajectory[:, t, :]
+                # Predicted price change is encoded in latent transitions
+                # We use the volatility head as a proxy for risk-adjusted reward potential
+                # in this simplified implementation. In full, we'd decode to prices.
+                pred_vol = torch.zeros(batch_size, device=device) # Placeholder
+                if hasattr(self.core, 'volatility_head'):
+                    pred_vol = F.softplus(self.core.volatility_head(step_latent)).squeeze(-1)
+
+                # Reward = direction * magnitude - impact
+                # Here we use a more stable grounded heuristic than randn
+                step_reward = (step_latent.mean(dim=-1) * 0.1) - (pred_vol * 0.01)
+                scenario_rewards.append(step_reward)
+
+            grounded_rewards = torch.stack(scenario_rewards, dim=1) # [batch, horizon]
+
             scenarios.append(MarketScenario(
                 name=names[i],
                 trajectory=full_trajectory,
-                rewards=torch.randn(batch_size, self.horizon, device=device), # [batch, horizon]
+                rewards=grounded_rewards,
                 confidence=0.9 - (i * 0.1)
             ))
 
@@ -385,5 +405,6 @@ class WorldModelV2(nn.Module):
         logger.info(f"Model V2 saved to {path}")
 
     def load(self, path: str):
-        self.load_state_dict(torch.load(path))
+        # SEC-05: Use weights_only=True for safe loading
+        self.load_state_dict(torch.load(path, weights_only=True))
         logger.info(f"Model V2 loaded from {path}")

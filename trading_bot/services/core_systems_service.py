@@ -64,11 +64,14 @@ class CoreSystemsService(BaseService):
     
     async def _load_components(self) -> None:
         try:
-            from trading_bot.core import TradingOrchestrator
-            self._orchestrator = TradingOrchestrator
-            logger.info("TradingOrchestrator loaded")
+            from trading_bot.core_agent_system.legacy_adapter import LegacyOrchestratorAdapter
+            from trading_bot.core_agent_system import IntegratedAgentSystem
+            # ARCH-01: Map to canonical IAS brain via adapter
+            ias = IntegratedAgentSystem(self.config)
+            self._orchestrator = LegacyOrchestratorAdapter(ias, self.config)
+            logger.info("TradingOrchestrator (IAS Adapter) loaded")
         except ImportError as e:
-            logger.warning(f"TradingOrchestrator not available: {e}")
+            logger.warning(f"Canonical brain not available for legacy adapter: {e}")
         
         try:
             from trading_bot.core import CircuitBreakerManager

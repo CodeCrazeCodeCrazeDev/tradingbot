@@ -1,0 +1,1001 @@
+{
+  "generated_at": "2026-07-07T13:37:31.290245",
+  "summary": {
+    "total_modules": 7991,
+    "total_dependencies": 8825,
+    "average_dependencies_per_module": 1.1,
+    "circular_dependencies_found": 0,
+    "hub_modules_count": 50,
+    "leaf_modules_count": 50
+  },
+  "circular_dependencies": [],
+  "hub_modules": [
+    {
+      "module": "trading/__init__.py",
+      "dependents": 5358,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading/order_execution.py",
+      "dependents": 5358,
+      "domain": "D03_execution"
+    },
+    {
+      "module": "trading/order_fill_tracker.py",
+      "dependents": 5358,
+      "domain": "D03_execution"
+    },
+    {
+      "module": "trading/position_manager.py",
+      "dependents": 5358,
+      "domain": "D02_risk_management"
+    },
+    {
+      "module": "trading/risk_calculator.py",
+      "dependents": 5358,
+      "domain": "D02_risk_management"
+    },
+    {
+      "module": "trading_bot/__init__.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/a2a.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/adaptive.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/adaptive_systems.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/advanced_exits.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/aean_meta_intelligence_layer.py",
+      "dependents": 5322,
+      "domain": "D05_ai_ml"
+    },
+    {
+      "module": "trading_bot/agents.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/agents2.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/alphaalgo_5star.py",
+      "dependents": 5322,
+      "domain": "D05_ai_ml"
+    },
+    {
+      "module": "trading_bot/analysis.py",
+      "dependents": 5322,
+      "domain": "D04_signal_generation"
+    },
+    {
+      "module": "trading_bot/analysis_orchestrator.py",
+      "dependents": 5322,
+      "domain": "D04_signal_generation"
+    },
+    {
+      "module": "trading_bot/api.py",
+      "dependents": 5322,
+      "domain": "D10_integration"
+    },
+    {
+      "module": "trading_bot/approval.py",
+      "dependents": 5322,
+      "domain": "D08_governance"
+    },
+    {
+      "module": "trading_bot/arbitrage.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/archive_orchestrator.py",
+      "dependents": 5322,
+      "domain": "D03_execution"
+    },
+    {
+      "module": "trading_bot/audit.py",
+      "dependents": 5322,
+      "domain": "D06_security_compliance"
+    },
+    {
+      "module": "trading_bot/auto_dependency_installer.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/auto_optimizer.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/autonomous.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/background.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/backtesting.py",
+      "dependents": 5322,
+      "domain": "D11_testing"
+    },
+    {
+      "module": "trading_bot/blockchain.py",
+      "dependents": 5322,
+      "domain": "D05_ai_ml"
+    },
+    {
+      "module": "trading_bot/broker.py",
+      "dependents": 5322,
+      "domain": "D03_execution"
+    },
+    {
+      "module": "trading_bot/calendar.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/complete_implementation.py",
+      "dependents": 5322,
+      "domain": "D02_risk_management"
+    },
+    {
+      "module": "trading_bot/complete_integrator.py",
+      "dependents": 5322,
+      "domain": "D05_ai_ml"
+    },
+    {
+      "module": "trading_bot/complete_pipeline_orchestrator.py",
+      "dependents": 5322,
+      "domain": "D01_data_infrastructure"
+    },
+    {
+      "module": "trading_bot/complete_system_integrator.py",
+      "dependents": 5322,
+      "domain": "D05_ai_ml"
+    },
+    {
+      "module": "trading_bot/connectivity.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/constants.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/core_orchestrator.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/critical_fixes.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/documentation.py",
+      "dependents": 5322,
+      "domain": "D12_documentation"
+    },
+    {
+      "module": "trading_bot/elite_integration.py",
+      "dependents": 5322,
+      "domain": "D03_execution"
+    },
+    {
+      "module": "trading_bot/elite_master_system.py",
+      "dependents": 5322,
+      "domain": "D03_execution"
+    },
+    {
+      "module": "trading_bot/evolution_layer.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/exit_strategies.py",
+      "dependents": 5322,
+      "domain": "D04_signal_generation"
+    },
+    {
+      "module": "trading_bot/exits.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/explainability.py",
+      "dependents": 5322,
+      "domain": "D05_ai_ml"
+    },
+    {
+      "module": "trading_bot/features.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/filters.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/governance.py",
+      "dependents": 5322,
+      "domain": "D08_governance"
+    },
+    {
+      "module": "trading_bot/indicators.py",
+      "dependents": 5322,
+      "domain": "D04_signal_generation"
+    },
+    {
+      "module": "trading_bot/integration.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "trading_bot/integrations.py",
+      "dependents": 5322,
+      "domain": "D07_infrastructure"
+    }
+  ],
+  "leaf_modules": [
+    {
+      "module": "DEPLOY_FREE_CLOUD.py",
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "RUN_ALPHA_EVOLVE.py",
+      "domain": "D01_data_infrastructure"
+    },
+    {
+      "module": "__version__.py",
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "_archive_phase1/master_orchestrator.py",
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "_archive_phase1/trading_bot/aamis_v3/aamis_master_orchestrator.py",
+      "domain": "D09_performance"
+    },
+    {
+      "module": "_archive_phase1/trading_bot/core/orchestrator.py",
+      "domain": "D04_signal_generation"
+    },
+    {
+      "module": "_archive_phase1/trading_bot/elite_ai_system/elite_trading_orchestrator.py",
+      "domain": "D02_risk_management"
+    },
+    {
+      "module": "_archive_phase1/trading_bot/intelligence_core/structural_memory.py",
+      "domain": "D05_ai_ml"
+    },
+    {
+      "module": "_archive_phase1/trading_bot/perplexity_trading/orchestrator.py",
+      "domain": "D01_data_infrastructure"
+    },
+    {
+      "module": "_archive_phase1/trading_bot/perplexity_trading/persistent_memory.py",
+      "domain": "D03_execution"
+    },
+    {
+      "module": "_archive_phase1/trading_bot/registry/module_registry.py",
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "_archive_phase1/trading_bot/simulation/market_simulator.py",
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "_archive_phase1/trading_bot/system_registry.py",
+      "domain": "D01_data_infrastructure"
+    },
+    {
+      "module": "_archive_phase1/trading_bot/world_model/fwm_core.py",
+      "domain": "D05_ai_ml"
+    },
+    {
+      "module": "advanced_systems 2/__init__.py",
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "advanced_systems 2/red_team_blue_team.py",
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "agents 2/__init__.py",
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "agents 2/base_agent.py",
+      "domain": "D09_performance"
+    },
+    {
+      "module": "agents 2/coordinator.py",
+      "domain": "D09_performance"
+    },
+    {
+      "module": "agents 2/specialized_agents.py",
+      "domain": "D04_signal_generation"
+    },
+    {
+      "module": "analyze_dirs.py",
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "analyze_market.py",
+      "domain": "D01_data_infrastructure"
+    },
+    {
+      "module": "api/__init__.py",
+      "domain": "D10_integration"
+    },
+    {
+      "module": "api/api_server.py",
+      "domain": "D03_execution"
+    },
+    {
+      "module": "api/authentication.py",
+      "domain": "D10_integration"
+    },
+    {
+      "module": "api/rate_limiter.py",
+      "domain": "D02_risk_management"
+    },
+    {
+      "module": "audit_integration.py",
+      "domain": "D06_security_compliance"
+    },
+    {
+      "module": "automation/__init__.py",
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "automation/trade_journal.py",
+      "domain": "D03_execution"
+    },
+    {
+      "module": "autonomous_superintelligence_launcher.py",
+      "domain": "D04_signal_generation"
+    },
+    {
+      "module": "backtesting/__init__.py",
+      "domain": "D11_testing"
+    },
+    {
+      "module": "backtesting/backtest_engine.py",
+      "domain": "D11_testing"
+    },
+    {
+      "module": "bot_cli.py",
+      "domain": "D05_ai_ml"
+    },
+    {
+      "module": "bot_help.py",
+      "domain": "D05_ai_ml"
+    },
+    {
+      "module": "broker/__init__.py",
+      "domain": "D03_execution"
+    },
+    {
+      "module": "broker/binance_broker.py",
+      "domain": "D03_execution"
+    },
+    {
+      "module": "broker/broker_interface.py",
+      "domain": "D03_execution"
+    },
+    {
+      "module": "broker/ib_broker.py",
+      "domain": "D03_execution"
+    },
+    {
+      "module": "claude_code.py",
+      "domain": "D05_ai_ml"
+    },
+    {
+      "module": "compliance/__init__.py",
+      "domain": "D06_security_compliance"
+    },
+    {
+      "module": "compliance/compliance_monitor.py",
+      "domain": "D06_security_compliance"
+    },
+    {
+      "module": "compliance/trade_surveillance.py",
+      "domain": "D03_execution"
+    },
+    {
+      "module": "comprehensive_module_fix.py",
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "config/setup.py",
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "dashboard/__init__.py",
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "dashboard/dashboard.py",
+      "domain": "D09_performance"
+    },
+    {
+      "module": "dashboard/portfolio_health.py",
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "deploy/__init__.py",
+      "domain": "D07_infrastructure"
+    },
+    {
+      "module": "deploy/deploy_production.py",
+      "domain": "D01_data_infrastructure"
+    },
+    {
+      "module": "deploy/run_production.py",
+      "domain": "D07_infrastructure"
+    }
+  ],
+  "domain_dependency_matrix": {
+    "D01_data_infrastructure": {
+      "D07_infrastructure": 162,
+      "D08_governance": 9,
+      "D05_ai_ml": 16,
+      "D10_integration": 6,
+      "D11_testing": 4,
+      "D02_risk_management": 8,
+      "D03_execution": 9,
+      "D04_signal_generation": 16,
+      "D09_performance": 3
+    },
+    "D09_performance": {
+      "D07_infrastructure": 134,
+      "D05_ai_ml": 16,
+      "D01_data_infrastructure": 15,
+      "D02_risk_management": 12,
+      "D03_execution": 13,
+      "D04_signal_generation": 8,
+      "D11_testing": 2,
+      "D08_governance": 5
+    },
+    "D04_signal_generation": {
+      "D02_risk_management": 18,
+      "D03_execution": 18,
+      "D07_infrastructure": 263,
+      "D01_data_infrastructure": 15,
+      "D09_performance": 8,
+      "D05_ai_ml": 33,
+      "D10_integration": 12,
+      "D11_testing": 7,
+      "D08_governance": 6,
+      "D06_security_compliance": 2
+    },
+    "D02_risk_management": {
+      "D07_infrastructure": 174,
+      "D04_signal_generation": 14,
+      "D03_execution": 10,
+      "D05_ai_ml": 33,
+      "D08_governance": 4,
+      "D01_data_infrastructure": 10,
+      "D06_security_compliance": 7,
+      "D09_performance": 3,
+      "D10_integration": 4,
+      "D11_testing": 3
+    },
+    "D10_integration": {
+      "D06_security_compliance": 2,
+      "D07_infrastructure": 50,
+      "D04_signal_generation": 2,
+      "D01_data_infrastructure": 8,
+      "D08_governance": 1,
+      "D05_ai_ml": 1,
+      "D11_testing": 1
+    },
+    "D05_ai_ml": {
+      "D07_infrastructure": 721,
+      "D09_performance": 16,
+      "D04_signal_generation": 47,
+      "D03_execution": 33,
+      "D01_data_infrastructure": 33,
+      "D02_risk_management": 48,
+      "D10_integration": 4,
+      "D06_security_compliance": 8,
+      "D11_testing": 4,
+      "D08_governance": 17,
+      "D12_documentation": 3
+    },
+    "D07_infrastructure": {
+      "D05_ai_ml": 124,
+      "D12_documentation": 2,
+      "D01_data_infrastructure": 94,
+      "D04_signal_generation": 98,
+      "D02_risk_management": 108,
+      "D03_execution": 70,
+      "D11_testing": 17,
+      "D09_performance": 14,
+      "D08_governance": 27,
+      "D06_security_compliance": 16,
+      "D10_integration": 26
+    },
+    "D12_documentation": {
+      "D07_infrastructure": 160,
+      "D03_execution": 11,
+      "D05_ai_ml": 37,
+      "D04_signal_generation": 13,
+      "D06_security_compliance": 3,
+      "D09_performance": 5,
+      "D02_risk_management": 10,
+      "D01_data_infrastructure": 6,
+      "D10_integration": 1,
+      "D08_governance": 8,
+      "D11_testing": 1
+    },
+    "D11_testing": {
+      "D07_infrastructure": 2517,
+      "D01_data_infrastructure": 147,
+      "D09_performance": 40,
+      "D04_signal_generation": 184,
+      "D05_ai_ml": 267,
+      "D02_risk_management": 180,
+      "D03_execution": 172,
+      "D06_security_compliance": 27,
+      "D08_governance": 23,
+      "D10_integration": 24,
+      "D12_documentation": 3
+    },
+    "D03_execution": {
+      "D11_testing": 2,
+      "D07_infrastructure": 169,
+      "D04_signal_generation": 37,
+      "D02_risk_management": 33,
+      "D05_ai_ml": 22,
+      "D01_data_infrastructure": 16,
+      "D08_governance": 2,
+      "D06_security_compliance": 3,
+      "D10_integration": 3,
+      "D09_performance": 4
+    },
+    "D06_security_compliance": {
+      "D07_infrastructure": 18
+    },
+    "D08_governance": {
+      "D07_infrastructure": 82,
+      "D10_integration": 2,
+      "D05_ai_ml": 9,
+      "D02_risk_management": 5,
+      "D06_security_compliance": 4,
+      "D04_signal_generation": 2,
+      "D03_execution": 1,
+      "D09_performance": 2
+    }
+  },
+  "integration_order_sample": [
+    {
+      "module": "tests/alpha_engine/test_compliance_xai.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_human_gateway.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_algorithms_updated.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_simple_collector.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/complete_implementation.py",
+      "level": 1
+    },
+    {
+      "module": "tests/deepseek_engineer/test_guardrails.py",
+      "level": 1
+    },
+    {
+      "module": "tests/market_teacher/test_curiosity_engine.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_system_health.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_journal_manager.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/adversarial_decision/confidence_vector.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/_archive/event_monitoring/economic_calendar.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_performance.py",
+      "level": 1
+    },
+    {
+      "module": "tests/brain/test_tier6_macro.py",
+      "level": 1
+    },
+    {
+      "module": "tests/ml/federated/test_global_model.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/self_learning/master_orchestrator.py",
+      "level": 1
+    },
+    {
+      "module": "tests/core/test_shared.py",
+      "level": 1
+    },
+    {
+      "module": "examples/intelligence_core_demo.py",
+      "level": 1
+    },
+    {
+      "module": "tests/market_student/test_reward_system.py",
+      "level": 1
+    },
+    {
+      "module": "tests/dashboard/test_performance_attribution.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_multilayerriskmanager.py",
+      "level": 1
+    },
+    {
+      "module": "tests/skills/execution_optimization/test_order_fragmenter.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_algorithms.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/analysis_unified/unified_analyzer.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/foundation_agents/curiosity_engine/__init__.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/psychology/__init__.py",
+      "level": 1
+    },
+    {
+      "module": "tests/skills/alternative_data/test_patent_tracker.py",
+      "level": 1
+    },
+    {
+      "module": "tests/market_student/test_learning_cycle.py",
+      "level": 1
+    },
+    {
+      "module": "tests/production/test_interactive_brokers_live.py",
+      "level": 1
+    },
+    {
+      "module": "examples/integrated_trading_system.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_kafka_streamer.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_page_hinkley.py",
+      "level": 1
+    },
+    {
+      "module": "tests/execution/test_idempotent_executor.py",
+      "level": 1
+    },
+    {
+      "module": "tests/market_intelligence/test_market_context.py",
+      "level": 1
+    },
+    {
+      "module": "tests/ml/federated/test_local_trainer.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_tradingdatabase.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_task_sampler.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_introspector.py",
+      "level": 1
+    },
+    {
+      "module": "tests/core/test_alphaalgo_core_engine.py",
+      "level": 1
+    },
+    {
+      "module": "tests/elite_system/test_market_analysis.py",
+      "level": 1
+    },
+    {
+      "module": "tests/ml/test_xgboost_predictor.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_liquidity_performance.py",
+      "level": 1
+    },
+    {
+      "module": "tests/analysis/test_regime_adaptive_strategy.py",
+      "level": 1
+    },
+    {
+      "module": "examples/aletheia_demo.py",
+      "level": 1
+    },
+    {
+      "module": "validation/ai_ml_validator.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_alert_system.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_meanreversionexpert.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_system_registry.py",
+      "level": 1
+    },
+    {
+      "module": "scripts/launchers/run_orchestrator_tests.py",
+      "level": 1
+    },
+    {
+      "module": "tests/safety/test_circuit_breaker.py",
+      "level": 1
+    },
+    {
+      "module": "examples/autonomous_trading_demo.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/deployment/multi_symbol_manager.py",
+      "level": 1
+    },
+    {
+      "module": "examples/verification_chain_demo.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/autonomous_financial_intelligence/adversarial_verification/__init__.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_centralized_config.py",
+      "level": 1
+    },
+    {
+      "module": "tests/advanced_features/test_ai_macro_scanner.py",
+      "level": 1
+    },
+    {
+      "module": "tests/event_pipeline/test_event_consumer.py",
+      "level": 1
+    },
+    {
+      "module": "tests/skills/market_analysis/test_sweep_detection.py",
+      "level": 1
+    },
+    {
+      "module": "tests/analysis/test_dark_pool_monitor.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_realtime_dependency_manager.py",
+      "level": 1
+    },
+    {
+      "module": "examples/complete_100_percent_system_demo.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/_archive/aamis_v3/awareness/__init__.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/_archive/market_student/learning_cycle.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/alpha_engine/__init__.py",
+      "level": 1
+    },
+    {
+      "module": "tests/alphaalgo_v2/risk_engine/test_engine.py",
+      "level": 1
+    },
+    {
+      "module": "tests/ultimate_production/test_strategy_ensemble.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/recursive_evolution/unified_module_evolution.py",
+      "level": 1
+    },
+    {
+      "module": "tests/skills/user_experience/test_trade_journal.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/_archive/agents/verifier_agent.py",
+      "level": 1
+    },
+    {
+      "module": "tests/aamis_v3/superintelligence/test_memory_systems.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/_archive/deepchart/latent_state_engine.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_ai_ml_cortex.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_brain_trader.py",
+      "level": 1
+    },
+    {
+      "module": "tests/adaptive_systems/test_liquidity_provider.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_changelog_generator.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/foundation_agents/knowledge_pipeline/__init__.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/connectors/binance_connector.py",
+      "level": 1
+    },
+    {
+      "module": "tests/orchestrator/test_position_rotator.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/ultimate_system/__init__.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/self_concepts/__init__.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_news_feeds.py",
+      "level": 1
+    },
+    {
+      "module": "tests/alphaalgo_institutional/test_research_loop.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_encrypteddatabase.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/_archive/tests/test_risk.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/intelligent_delegation/trust_reputation.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/market_intelligence/__init__.py",
+      "level": 1
+    },
+    {
+      "module": "api/__init__.py",
+      "level": 1
+    },
+    {
+      "module": "tests/auto_fix_backups/20251209_232515/strategies/test_institutional_strategies.py",
+      "level": 1
+    },
+    {
+      "module": "tests/position/test_advanced_position_manager.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_data_quarantine.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_paper_executor.py",
+      "level": 1
+    },
+    {
+      "module": "examples/reality_gates_demo.py",
+      "level": 1
+    },
+    {
+      "module": "tests/core/test_multihorizonforecaster.py",
+      "level": 1
+    },
+    {
+      "module": "tests/ai_core/test_neural_network.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_alternative_data_modules.py",
+      "level": 1
+    },
+    {
+      "module": "tests/adaptive_systems/knowledge_acquisition/test_ai_knowledge.py",
+      "level": 1
+    },
+    {
+      "module": "scripts/launchers/run_self_governance.py",
+      "level": 1
+    },
+    {
+      "module": "tests/elite_system/test_risk_management.py",
+      "level": 1
+    },
+    {
+      "module": "trading_bot/risk_unified/unified_risk.py",
+      "level": 1
+    },
+    {
+      "module": "tests/indicators/test_fractal_momentum_divergence.py",
+      "level": 1
+    },
+    {
+      "module": "tests/test_async_fetcher.py",
+      "level": 1
+    }
+  ]
+}

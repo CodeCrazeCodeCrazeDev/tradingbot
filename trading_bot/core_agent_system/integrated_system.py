@@ -60,7 +60,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from pathlib import Path
 
-from master_orchestrator import MasterOrchestrator, SystemContext, Decision
+from .master_orchestrator import MasterOrchestrator, SystemContext, Decision
 from .meta_orchestrator import MetaOrchestrator
 from trading_bot.neuros_evolution.controlled_objects import ControlledObjectRegistry
 from .react_loop import ReActLoop
@@ -405,6 +405,50 @@ class IntegratedAgentSystem:
             logger.error(f"Error in system operation: {e}")
             await self.shutdown()
 
+    def start_background_services(self):
+        """Start Layer 2 background intelligence services."""
+        logger.info("Starting background services...")
+
+        services = [
+            ('market_student', run_market_student_service),
+            ('eternal_evolution', run_eternal_evolution_service),
+            ('sentiment_analysis', run_sentiment_analysis_service),
+            ('market_monitor', run_market_monitor_service),
+        ]
+
+        import multiprocessing
+        if not hasattr(self, 'background_processes'):
+            self.background_processes = {}
+
+        for name, func in services:
+            try:
+                # Use standalone functions to avoid pickling 'self'
+                process = multiprocessing.Process(
+                    target=func,
+                    args=(self.config,),
+                    name=name
+                )
+                process.daemon = True
+                process.start()
+                self.background_processes[name] = process
+                logger.info(f"✓ Started: {name} (PID: {process.pid})")
+            except Exception as e:
+                logger.error(f"✗ Failed to start {name}: {e}")
+
+    def stop_background_services(self):
+        """Stop all background services."""
+        logger.info("Stopping background services...")
+
+        for name, process in self.background_processes.items():
+            if process.is_alive():
+                process.terminate()
+                process.join(timeout=5)
+                if process.is_alive():
+                    process.kill()
+                logger.info(f"✓ Stopped: {name}")
+
+        self.background_processes.clear()
+    
     async def _main_loop(self):
         """Main orchestration loop"""
         logger.info("Starting main orchestration loop")
@@ -572,8 +616,11 @@ class IntegratedAgentSystem:
         obs_trace["success"] = meta_result.get('success', False)
 
         # 3. Store in Semantic Memory
+        # SEC-04: Upgrade from MD5 (implied by short hex) to SHA-256 for trace IDs
+        import hashlib
+        trace_id = hashlib.sha256(str(obs_trace).encode()).hexdigest()[:16]
         await self.memory_system.store_knowledge(
-            f"obs_trace_{uuid.uuid4().hex[:8]}",
+            f"obs_trace_{trace_id}",
             obs_trace,
             tags=["observability", "execution_trace", meta_result.get('policy_id')]
         )

@@ -119,16 +119,26 @@ class DataFusionAgent:
         self.data_sources[source_type.value] = source_connection
         
         # ASI-Evolve: assess source quality and reliability
-        source_quality = self._assess_data_source_quality(source_connection)
-        self.cognition_store.add_cognition_item(CognitionItem(
-            id=f"source_{source_type.value}",
-            content=f"Data source {source_type.value} registered with quality: {source_quality}",
-            source_domain="data_fusion",
-            novelty_score=0.7,
-            actionability_score=0.8
-        ))
+        if self.cognition_store:
+            source_quality = self._assess_data_source_quality(source_connection)
+            # CognitionItem might not be imported or available
+            try:
+                from ...core_agent_system.multidimensional_intelligence.agent import CognitionItem
+                self.cognition_store.add_cognition_item(CognitionItem(
+                    id=f"source_{source_type.value}",
+                    content=f"Data source {source_type.value} registered with quality: {source_quality}",
+                    source_domain="data_fusion",
+                    novelty_score=0.7,
+                    actionability_score=0.8
+                ))
+            except ImportError:
+                pass
         
-        logger.info(f"Registered data source: {source_type.value} with quality assessment")
+        logger.info(f"Registered data source: {source_type.value}")
+
+    def _assess_data_source_quality(self, source: Any) -> float:
+        """Placeholder for data source quality assessment"""
+        return 1.0
     
     async def fuse_market_data(self) -> FusedMarketPicture:
         """
@@ -136,6 +146,7 @@ class DataFusionAgent:
         
         This is perception layer that creates situational awareness.
         """
+        
         # ASI-Evolve: analyze data quality and completeness before fusion
         quality_assessment = await self._assess_data_quality()
         
@@ -186,6 +197,25 @@ class DataFusionAgent:
         
         return picture
     
+    async def _assess_data_quality(self) -> Dict[str, Any]:
+        """Placeholder for data quality assessment"""
+        return {'overall_score': 0.9}
+
+    async def _process_with_quality_control(self, *args) -> Dict[str, Any]:
+        """Placeholder for quality control processing"""
+        return {
+            'prices': args[0],
+            'volumes': args[1],
+            'sentiment': args[2],
+            'news': args[3],
+            'alternative': args[4],
+            'macro': args[5],
+            'on_chain': args[6],
+            'order_books': {},
+            'quality': 0.9,
+            'completeness': 1.0
+        }
+
     async def get_market_picture(self, requesting_agent: str) -> FusedMarketPicture:
         """
         Provide market picture to requesting agent.
