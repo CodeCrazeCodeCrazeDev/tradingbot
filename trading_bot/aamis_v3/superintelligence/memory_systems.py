@@ -402,10 +402,15 @@ class MemorySystem:
             'memory_by_importance': self._count_by_importance()
         }
     
+    def _serialize_enum(self, obj):
+        if isinstance(obj, Enum):
+            return obj.value
+        return obj
+
     def save_to_disk(self, filepath: str):
         """Save memory system to disk using JSON for security"""
         
-        # Convert dataclasses to dicts
+        # Convert objects to dicts for JSON serialization
         data = {
             'long_term_memory': {k: asdict(v) for k, v in self.long_term_memory.items()},
             'market_lessons': {k: asdict(v) for k, v in self.market_lessons.items()},
@@ -413,13 +418,12 @@ class MemorySystem:
             'statistics': self.get_memory_statistics()
         }
         
-        # Custom encoder for Enums and Datetimes
         def default_serializer(obj):
-            if isinstance(obj, (datetime, timedelta)):
+            if isinstance(obj, (datetime, datetime)):
                 return obj.isoformat()
             if isinstance(obj, Enum):
                 return obj.value
-            raise TypeError(f"Type {type(obj)} not serializable")
+            return str(obj)
 
         with open(filepath, 'w') as f:
             json.dump(data, f, indent=2, default=default_serializer)
@@ -432,46 +436,27 @@ class MemorySystem:
         try:
             with open(filepath, 'r') as f:
                 data = json.load(f)
-
-            # Reconstruct dataclasses
-            ltm_raw = data.get('long_term_memory', {})
-            self.long_term_memory = {
-                k: LongTermMemory(
-                    memory_id=v['memory_id'],
-                    memory_type=MemoryType(v['memory_type']),
-                    content=v['content'],
-                    market_regime=v['market_regime'],
-                    asset_class=v['asset_class'],
-                    timeframe=v['timeframe'],
-                    times_validated=v['times_validated'],
-                    times_invalidated=v['times_invalidated'],
-                    confidence=v['confidence'],
-                    importance=MemoryImportance(v['importance']),
-                    created_at=datetime.fromisoformat(v['created_at']),
-                    last_accessed=datetime.fromisoformat(v['last_accessed']) if v['last_accessed'] else None,
-                    access_count=v['access_count'],
-                    related_memories=v['related_memories'],
-                    tags=v['tags'],
-                    notes=v['notes']
-                ) for k, v in ltm_raw.items()
-            }
-
-            lessons_raw = data.get('market_lessons', {})
-            self.market_lessons = {
-                k: MarketLesson(
-                    lesson_id=v['lesson_id'],
-                    title=v['title'],
-                    description=v['description'],
-                    learned_from=v['learned_from'],
-                    learned_at=datetime.fromisoformat(v['learned_at']),
-                    times_applied=v['times_applied'],
-                    success_rate=v['success_rate'],
-                    cost_to_learn=v['cost_to_learn'],
-                    applicable_regimes=v['applicable_regimes'],
-                    applicable_conditions=v['applicable_conditions']
-                ) for k, v in lessons_raw.items()
-            }
             
+            # Reconstruct objects
+            ltm_data = data.get('long_term_memory', {})
+            self.long_term_memory = {}
+            for k, v in ltm_data.items():
+                if 'created_at' in v and v['created_at']:
+                    v['created_at'] = datetime.fromisoformat(v['created_at'])
+                if 'last_accessed' in v and v['last_accessed']:
+                    v['last_accessed'] = datetime.fromisoformat(v['last_accessed'])
+                # Map strings back to Enums
+                v['memory_type'] = MemoryType(v['memory_type'])
+                v['importance'] = MemoryImportance(v['importance'])
+                self.long_term_memory[k] = LongTermMemory(**v)
+
+            lessons_data = data.get('market_lessons', {})
+            self.market_lessons = {}
+            for k, v in lessons_data.items():
+                if 'learned_at' in v and v['learned_at']:
+                    v['learned_at'] = datetime.fromisoformat(v['learned_at'])
+                self.market_lessons[k] = MarketLesson(**v)
+
             self.trading_rules = data.get('trading_rules', {})
             
             logger.info(f"Loaded memory system from {filepath} using JSON")

@@ -626,8 +626,14 @@ class ContinuousOrchestrator:
     async def _apply_memory_fix(self) -> None:
         """Apply memory-related fixes"""
         # Simplified memory fix
-        subprocess.run(["sync"], shell=True)
-        subprocess.run(["echo", "3", ">", "/proc/sys/vm/drop_caches"], shell=True)
+        try:
+            subprocess.run(["sync"], check=False)
+            # Dropping caches requires root, and should not be done with shell=True for security
+            if os.getuid() == 0:
+                with open("/proc/sys/vm/drop_caches", "w") as f:
+                    f.write("3")
+        except Exception as e:
+            self.logger.error(f"Memory fix failed: {e}")
     
     async def _apply_cpu_fix(self) -> None:
         """Apply CPU-related fixes"""

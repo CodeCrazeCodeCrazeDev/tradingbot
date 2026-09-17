@@ -1034,7 +1034,7 @@ class MultiFidelitySimulator:
                     'position': position,
                     'equity': equity
                 })
-            except:
+            except Exception as e:
                 signal = {'action': 'hold'}
             
             action = signal.get('action', 'hold')

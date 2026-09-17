@@ -189,7 +189,7 @@ class CitationNetwork:
                 if paper_id in self.papers:
                     self.papers[paper_id].influence_score = score
                     self.influence_scores[paper_id] = score
-        except:
+        except Exception as e:
             # Fallback to simple citation count
             for paper_id, paper in self.papers.items():
                 paper.influence_score = paper.citation_count / max(1, len(self.papers))
@@ -201,7 +201,7 @@ class CitationNetwork:
             for paper_id, cent in centrality.items():
                 if paper_id in self.papers:
                     self.papers[paper_id].centrality = cent
-        except:
+        except Exception as e:
             pass
         
         # Calculate author influence

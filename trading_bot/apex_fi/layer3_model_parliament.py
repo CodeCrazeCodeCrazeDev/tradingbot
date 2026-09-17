@@ -297,7 +297,7 @@ class ModelParliament:
                 try:
                     pred, _ = model.predict(features)
                     predictions.append(pred)
-                except:
+                except Exception as e:
                     continue
         
         if len(predictions) < 2:

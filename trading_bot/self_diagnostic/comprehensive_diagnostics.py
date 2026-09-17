@@ -318,7 +318,7 @@ class ComprehensiveDiagnosticSuite:
                 value=usage_pct,
                 timestamp=datetime.now(),
             )
-        except:
+        except Exception as e:
             return self._error_result(check_id, category, severity, "Cannot check memory")
     
     def _check_disk_space(self, check_id: str, category: str, severity: DiagnosticSeverity) -> DiagnosticResult:
@@ -337,7 +337,7 @@ class ComprehensiveDiagnosticSuite:
                 value=free_pct,
                 timestamp=datetime.now(),
             )
-        except:
+        except Exception as e:
             return self._error_result(check_id, category, severity, "Cannot check disk")
     
     def _check_cpu_load(self, check_id: str, category: str, severity: DiagnosticSeverity) -> DiagnosticResult:
@@ -355,7 +355,7 @@ class ComprehensiveDiagnosticSuite:
                 value=cpu_pct,
                 timestamp=datetime.now(),
             )
-        except:
+        except Exception as e:
             return self._error_result(check_id, category, severity, "Cannot check CPU")
     
     # Stub implementations for remaining checks

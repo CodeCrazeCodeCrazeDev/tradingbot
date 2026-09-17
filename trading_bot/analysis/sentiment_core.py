@@ -643,10 +643,10 @@ class SentimentAnalyzer:
         """Save sentiment history to cache"""
         try:
             # Convert SentimentResult objects to dicts for JSON serialization
-            serializable_history = {
-                ticker: [result.to_dict() for result in results]
-                for ticker, results in self.sentiment_history.items()
-            }
+            serializable_history = {}
+            for ticker, results in self.sentiment_history.items():
+                serializable_history[ticker] = [r.to_dict() if hasattr(r, 'to_dict') else r for r in results]
+
             with open(self.cache_path, 'w') as f:
                 json.dump(serializable_history, f, indent=2)
             logger.debug(f"Saved sentiment history to {self.cache_path}")
@@ -658,24 +658,17 @@ class SentimentAnalyzer:
         if os.path.exists(self.cache_path):
             try:
                 with open(self.cache_path, 'r') as f:
-                    data = json.load(f)
+                    cached_data = json.load(f)
 
-                for ticker, results_data in data.items():
-                    self.sentiment_history[ticker] = [
-                        SentimentResult(
-                            text=r['text'],
-                            score=r['score'],
-                            magnitude=r['magnitude'],
-                            compound=r['compound'],
-                            polarity=r['polarity'],
-                            subjectivity=r['subjectivity'],
-                            entities=r['entities'],
-                            topics=r['topics'],
-                            timestamp=datetime.fromisoformat(r['timestamp']),
-                            source=r['source']
-                        )
-                        for r in results_data
-                    ]
+                # Reconstruct SentimentResult objects
+                self.sentiment_history = defaultdict(list)
+                for ticker, results in cached_data.items():
+                    for r_dict in results:
+                        # Convert ISO timestamp back to datetime
+                        if 'timestamp' in r_dict:
+                            r_dict['timestamp'] = datetime.fromisoformat(r_dict['timestamp'])
+                        self.sentiment_history[ticker].append(SentimentResult(**r_dict))
+
                 logger.info(f"Loaded sentiment history from {self.cache_path}")
             except Exception as e:
                 logger.warning(f"Error loading sentiment cache: {e}")

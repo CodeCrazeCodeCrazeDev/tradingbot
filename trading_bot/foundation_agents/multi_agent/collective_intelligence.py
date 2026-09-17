@@ -108,7 +108,7 @@ class AggregationMethods:
             logit_mean = logit(mean_pred)
             extremized_logit = logit_mean * extremization
             return expit(extremized_logit)
-        except:
+        except Exception as e:
             return mean_pred
 
 

@@ -1,24 +1,31 @@
-# ARCHITECTURE_IMPROVEMENTS.md - UCA V5 Evolution
+# ARCHITECTURE IMPROVEMENTS - Unified Registry & Grounded Learning
 
-## 1. "One Brain" Enforcement
-*   **Consolidation of Registries:** Fragmented `SystemRegistry` and `AgentRegistry` have been bridged to the authoritative `UnifiedComponentRegistry` (Singleton). This prevents multi-instance hallucinations where different parts of the system use different versions of the same agent.
-*   **Consolidation of Decision Bus:** The legacy `EventBus` now serves as a thin wrapper around the `UnifiedDecisionBus` (LogAct Backbone). This ensures all system events are totally ordered and audited by the LogAct consensus processor.
+This document highlights the major architectural improvements introduced during the 2026 production hardening audit.
 
-## 2. Risk Management Hardening
-*   **Unified Risk Engine:** Consolidated 6 disparate risk implementations into a single `MasterRiskManager`. This eliminates conflicting position sizing logic and ensures drawdown protection is enforced globally.
-*   **Immutable Shield Integration:** The `CognitiveSystemController` now passes every approved trade through the `ImmutableShield` as a final, non-bypassable governance gate.
+## 1. Autoritative Registry Consolidation (ARCH-003)
 
-## 3. Modularization of Autonomy
-*   **Refactored Control Plane:** The 142KB `autonomy_control_plane.py` God-file has been decomposed into a cohesive package structure:
-    *   `autonomy/models.py`: All Pydantic/Dataclass schemas.
-    *   `autonomy/services.py`: Sandbox, Credential, and Approval services.
-    *   `autonomy/factory.py`: The Controlled Software Factory logic.
-*   **Benefit:** Reduced circular dependency risk and improved unit-testability of the safety primitives.
+### Before:
+Multiple conflicting registry classes coexisted across different modules:
+- `registry.py` (simple dict of component module paths)
+- `system_registry.py` (complex dependency injection and lifecycle order)
+- `UnifiedComponentRegistry` (UCA-2026 Core component)
 
-## 4. Scientific Reasoning Upgrades
-*   **World Model V3 (WM-V3):** Replaced simplistic prediction stubs with a hybrid Transformer-Mamba architecture capable ofRelational Attention and Linear-time temporal scanning.
-*   **Evidence-First Gating:** Implemented the `EvidenceGraphGate` which prevents the system from acting on reasoning that cannot be traced back to the research ledger.
+This fragmentation led to circular dependency workarounds, duplicate component registration under different names, and split-brain states where some services registered on one system while others query the other.
 
-## 5. Persistence Integrity
-*   **Security layer:** Implemented a canonical `SafeEvaluator` to replace raw `eval()` in feature engineering, and transitioned from `pickle` to `json`/`joblib` to mitigate arbitrary code execution risks.
-*   **Deterministic Governance:** Added `DeterministicManager` to ensure all AI-driven decisions are 100% reproducible across institutional environments.
+### After:
+- All component registration logic has been unified into a single authoritative `UnifiedComponentRegistry` inside `trading_bot/core/unified_registry.py`.
+- Features from `system_registry` (such as service health states, metadata tracking, and deterministic ordering) have been cleanly incorporated.
+- **Architectural Enforcement:** Implemented AST-based static tests (`tests/test_registry_integrity.py`) that fail the build if any new class ending with `Registry` is introduced outside the approved core namespaces. This structurally protects the registry architecture against future developer degradation.
+
+---
+
+## 2. Grounded Scientific Reasoning & Delusion Loop Prevention (INT-001)
+
+### Before:
+Learning updates (MAML, PPO reinforcement learning, and genetic strategy discovery) could proceed on "delusion loops" where the system optimized against simulated outcomes or random noise when real market data was unavailable.
+
+### After:
+- **Evaluation State Machine:** Introduced a strict `EvaluationState` enum which reports evaluation quality states.
+- **Fail-Closed Pipelines:** Hardened the training pipelines so that if evaluation validity checks fail, the system refuses to train, halts parameter updates, avoids strategy promotions, and skips replay buffer insertions.
+- **Grounded Rewards:** Hardened the reward models to calculate rewards based exclusively on executable, realized outcomes (realized PnL, actual transaction fees, actual slippage), entirely preventing policies from learning from ungrounded outcomes.
+- **Transition Provenance:** Hardened replay buffers to enforce strict transition metadata (symbol, timestamp, slippage, commission, regime, etc.).

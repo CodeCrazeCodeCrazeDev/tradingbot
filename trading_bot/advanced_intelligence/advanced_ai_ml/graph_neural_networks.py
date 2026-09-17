@@ -359,7 +359,7 @@ class GraphNeuralMarketNetwork:
                 communities[community_key].append(node_id)
             
             return communities
-        except:
+        except Exception as e:
             return {"community_0": list(graph.nodes.keys())}
     
     async def compute_centrality(self, graph: Optional[DynamicGraph] = None) -> Dict[str, float]:

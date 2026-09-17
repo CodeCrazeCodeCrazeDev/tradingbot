@@ -198,7 +198,7 @@ class DependencyManager:
             current_major = int(current.split('.')[0])
             new_major = int(new.split('.')[0])
             return new_major > current_major
-        except:
+        except Exception as e:
             return False
     
     def apply_update(
@@ -1006,7 +1006,7 @@ def test_{func.__name__}_property_{i}():
             try:
                 output = func(*inputs)
                 original_outputs.append(output)
-            except:
+            except Exception as e:
                 original_outputs.append(None)
         
         # Generate mutant-killing tests

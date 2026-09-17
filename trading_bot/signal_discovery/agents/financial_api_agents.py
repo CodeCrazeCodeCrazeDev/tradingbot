@@ -64,7 +64,7 @@ class FinancialAPIAgent(BaseAnomalyAgent):
         # Parse index from agent_id (format: financial_api_XXX)
         try:
             idx = int(agent_id.split('_')[-1])
-        except:
+        except Exception as e:
             idx = 0
         
         # Distribute sources across agents

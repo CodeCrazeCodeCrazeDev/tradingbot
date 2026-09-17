@@ -25,7 +25,7 @@ Operational Constraints (Non-Negotiable):
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any, Tuple, Union
 from datetime import datetime, timedelta
 from enum import Enum
 import asyncio
@@ -177,7 +177,7 @@ class AADSUnifiedOrchestrator:
         
         # Evolution
         self.evolution = SakanaEvolutionEngine(
-            config=EvolutionConfig(population_size=50, max_generations=100)
+            config=EvolutionConfig(population_size=50)
         )
         self.alpha_evolve = get_alpha_evolve_engine()
         
@@ -462,10 +462,10 @@ class AADSUnifiedOrchestrator:
         self.state.decision_brief = brief.to_formatted_string()
         
         # Check approval
-        approval = self.maven.approval_gate(brief)
-        self.state.approval_status = approval['status'].value
+        is_approved, reason = self.maven.approval_gate(brief)
+        self.state.approval_status = "approved" if is_approved else "rejected"
         
-        if approval['status'].value == 'approved':
+        if is_approved:
             # Execute trade
             position_size = min(
                 self.limits.max_position_pct,
@@ -488,13 +488,13 @@ class AADSUnifiedOrchestrator:
             self.agents['audit'].execute({
                 'decision_id': hypothesis['id'],
                 'brief': brief.to_dict(),
-                'approval': approval,
+                'approval': {'approved': is_approved, 'reason': reason},
                 'execution': {'position_id': position_id, 'size': position_size}
             })
             
             logger.info(f"Deployed: {asset} {direction} {position_size:.2%}")
         else:
-            logger.info(f"Deployment rejected: {approval['status'].value}")
+            logger.info(f"Deployment rejected: {reason}")
     
     async def _phase_monitor(self) -> None:
         """
@@ -646,8 +646,9 @@ class AADSUnifiedOrchestrator:
             }
         }
     
-    def generate_decision_brief(self, asset: str, current_price: float) -> str:
+    def generate_decision_brief(self, asset: str, current_price: float) -> Any:
         """Generate a decision brief for manual review"""
+        from .core.maven_decision import DecisionBrief
         
         # Run full analysis pipeline
         market_state = self._get_market_state()
@@ -672,7 +673,7 @@ class AADSUnifiedOrchestrator:
             risk_decision={}
         )
         
-        return brief.to_formatted_string()
+        return brief
 
 
 def create_unified_aads(
@@ -719,3 +720,55 @@ async def run_aads_autonomous(
             logger.info(f"Progress: {i}/{max_iterations} iterations")
     
     return aads.get_status()
+
+
+class AADSMode(str, Enum):
+    """AADS operation modes"""
+    RESEARCH = "research"
+    PAPER_TRADING = "paper_trading"
+    PRODUCTION = "production"
+    FULLY_AUTONOMOUS = "fully_autonomous"
+
+
+@dataclass
+class AADSConfig:
+    """Configuration for AADSOrchestrator"""
+    mode: AADSMode = AADSMode.RESEARCH
+    initial_capital: float = 1_000_000.0
+    limits: OperationalLimits = field(default_factory=OperationalLimits)
+    save_dir: str = "aads_data"
+
+
+class AADSOrchestrator(AADSUnifiedOrchestrator):
+    """
+    Canonical production-grade AADSOrchestrator.
+    Extends AADSUnifiedOrchestrator to match standard architecture patterns.
+    """
+    def __init__(
+        self,
+        mode: Union[str, AADSMode] = AADSMode.RESEARCH,
+        initial_capital: float = 1_000_000.0,
+        limits: Optional[OperationalLimits] = None,
+        save_dir: str = "aads_data"
+    ):
+        super().__init__(
+            initial_capital=initial_capital,
+            limits=limits,
+            save_dir=save_dir
+        )
+        self.mode = AADSMode(mode) if isinstance(mode, str) else mode
+
+
+def create_aads(
+    mode: Union[str, AADSMode] = AADSMode.RESEARCH,
+    initial_capital: float = 1_000_000.0,
+    **kwargs
+) -> AADSOrchestrator:
+    """Create a canonical AADS instance"""
+    return AADSOrchestrator(mode=mode, initial_capital=initial_capital, **kwargs)
+
+
+def run_aads_demo() -> None:
+    """Run AADS demo script"""
+    from .examples import demo
+    demo.main()
