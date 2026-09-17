@@ -1,7 +1,17 @@
 """
-Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral behaviors (Skill-to-LoRA).
-Implements 'HASP' (2026) and 'S2L' (2026).
+Skill Router - UCA V6 (August 2026)
+==================================
+Authoritative router for executable Skill Programs (HASP) and Skill-to-LoRA adapters (S2L).
+
+Scientific Literature Alignment & Traceability Matrix:
+- HASP: Harnessing LLM Agents with Skill Programs (arXiv:2605.17734)
+- SAGE: Self-evolving Agentic Graph-memory Engine (arXiv:2605.12061)
+- EKSFT: Entropy-KL Selective Fine-Tuning (arXiv:2605.29303)
+- DiscoLoop: Discrete Embeddings & Continuous States (arXiv:2607.00341)
+- AutoMem: Automated Learning of Memory as a Cognitive Skill (arXiv:2607.01224)
+- NanoResearch: Tri-level Co-evolving Research Automation (arXiv:2605.10813)
+- AutoResearchClaw: Self-Reinforcing Autonomous Research (arXiv:2605.20025)
+- DeepWeb-Bench: Massive Cross-Source Evidence Benchmark (arXiv:2605.21482)
 """
 
 import logging

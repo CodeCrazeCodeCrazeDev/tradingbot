@@ -12,12 +12,12 @@ import logging
 from unittest.mock import Mock, patch, MagicMock
 
 try:
-    from trading_bot.performance_tracker import *
+    from trading_bot.orchestrator.performance_tracker import *
 except ImportError:
     # Fallback import
     import sys
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.performance_tracker import *
+    from trading_bot.orchestrator.performance_tracker import *
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ class TestPerformanceTracker:
         if instance is not None and hasattr(instance, "track_trade"):
             try:
                 result = instance.track_trade()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method track_trade failed: {e}")
@@ -73,7 +73,7 @@ class TestPerformanceTracker:
         if instance is not None and hasattr(instance, "get_performance_metrics"):
             try:
                 result = instance.get_performance_metrics()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method get_performance_metrics failed: {e}")
@@ -84,7 +84,7 @@ class TestPerformanceTracker:
         if instance is not None and hasattr(instance, "get_strategy_comparison"):
             try:
                 result = instance.get_strategy_comparison()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method get_strategy_comparison failed: {e}")
@@ -95,7 +95,7 @@ class TestPerformanceTracker:
         if instance is not None and hasattr(instance, "get_optimization_recommendations"):
             try:
                 result = instance.get_optimization_recommendations()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method get_optimization_recommendations failed: {e}")
@@ -124,7 +124,7 @@ class TestMetricsCalculator:
         if instance is not None and hasattr(instance, "calculate_metrics"):
             try:
                 result = instance.calculate_metrics()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method calculate_metrics failed: {e}")
@@ -153,7 +153,7 @@ class TestAutoOptimizer:
         if instance is not None and hasattr(instance, "optimize"):
             try:
                 result = instance.optimize()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method optimize failed: {e}")
@@ -164,7 +164,7 @@ class TestAutoOptimizer:
         if instance is not None and hasattr(instance, "get_recommendations"):
             try:
                 result = instance.get_recommendations()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method get_recommendations failed: {e}")
@@ -193,7 +193,7 @@ class TestBacktestEngine:
         if instance is not None and hasattr(instance, "backtest_strategy"):
             try:
                 result = instance.backtest_strategy()
-                logger.info(f"Method {method} executed")
+                logger.info("Method executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method backtest_strategy failed: {e}")
