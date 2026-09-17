@@ -1722,7 +1722,7 @@ class FalsificationGate:
             "HallucinationDetector": hallucination_res.is_valid,
         }
 
-
+        worst_case = None
         is_falsified = not all(verifier_outcomes.values())
         reason = None
         worst_case = None
@@ -2532,14 +2532,16 @@ class MultiAgentDebateSystem:
                     'num_rounds': len(debate_rounds),
                     'conflicts_detected': conflicts
                 },
-                'agent_contributions': {role.value: sc.expected_contribution for role, sc in scorecards.items()},
+                'agent_contributions': {
+                    role.value: sc.expected_contribution for role, sc in scorecards.items()
+                },
                 'agent_scorecards': {role.value: sc.to_dict() for role, sc in scorecards.items()},
                 'consensus_record': {
                     "consensus_level": decision.consensus_level,
                     "votes": decision.agent_votes,
                 },
-                'random_seed': 'seed_42',
-                'environment_fingerprint': hashlib.sha256(
+                'random_seed': "seed_42",
+                environment_fingerprint=hashlib.sha256(
                     f"{git_sha}_{config_hash}".encode("utf-8")
                 ).hexdigest(),
                 execution_latency=duration_ms,
