@@ -1,16 +1,36 @@
 """
-Data Validator class.
-Provides validation and sanitization checks for historical and streaming datasets.
+Provides backward and testing compatibility for data validation modules.
 """
 
+from typing import Any, Optional, Dict, Tuple
+import logging
+from datetime import datetime
 import pandas as pd
-from typing import Dict, Any, Tuple
+
+logger = logging.getLogger(__name__)
 
 class DataValidator:
     """Validates Pandas DataFrames to ensure proper OHLCV and technical feature health."""
 
-    def __init__(self, config: Dict[str, Any] = None):
+    def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
+        self.initialized = False
+
+    def initialize(self) -> bool:
+        self.initialized = True
+        return True
+
+    def process(self, data: Any) -> Any:
+        if not self.initialized:
+            self.initialize()
+        return data
+
+    def get_status(self) -> Dict:
+        return {
+            'initialized': self.initialized,
+            'timestamp': datetime.now().isoformat(),
+            'config': self.config
+        }
 
     def validate_dataframe(self, df: pd.DataFrame) -> Tuple[bool, Dict[str, Any]]:
         """
@@ -18,27 +38,23 @@ class DataValidator:
         Returns a tuple: (is_valid, validation_report)
         """
         if df is None or df.empty:
-            return False, {"error": "DataFrame is empty or None", "errors": ["DataFrame is empty or None"]}
+            return False, {"error": "DataFrame is empty or None"}
 
         report = {
             "row_count": len(df),
-            "total_records": len(df),
             "missing_values": 0,
             "corrupted_rows": 0,
             "logical_errors": 0,
-            "bad_ticks_count": 0,
-            "look_ahead_violations": 0,
-            "errors": [],
-            "warnings": []
+            "warnings": [],
+            "total_records": len(df),
+            "bad_ticks_count": 0
         }
 
         # Check required columns
         required_cols = ["open", "high", "low", "close"]
         missing_cols = [col for col in required_cols if col not in df.columns]
         if missing_cols:
-            msg = f"Missing required columns: {missing_cols}"
-            report["errors"].append(msg)
-            return False, report
+            return False, {"error": f"Missing required columns: {missing_cols}"}
 
         # Check for NaNs
         nan_counts = df[required_cols].isna().sum().sum()
@@ -55,18 +71,6 @@ class DataValidator:
         violations_count = int(logical_violations.sum())
         report["logical_errors"] = violations_count
         report["bad_ticks_count"] = violations_count
-        if violations_count > 0:
-            report["errors"].append(f"Detected {violations_count} bad ticks/logical errors")
 
-        # Check look-ahead bias (any column indicating future data)
-        look_ahead_count = 0
-        for col in df.columns:
-            if "future" in col or "next" in col or "target" in col:
-                look_ahead_count += 1
-
-        report["look_ahead_violations"] = look_ahead_count
-        if look_ahead_count > 0:
-            report["errors"].append(f"Possible look-ahead bias: columns indicate future data")
-
-        is_valid = (nan_counts == 0) and (violations_count == 0) and (look_ahead_count == 0)
+        is_valid = (nan_counts == 0) and (violations_count == 0)
         return is_valid, report

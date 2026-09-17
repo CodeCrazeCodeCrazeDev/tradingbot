@@ -678,7 +678,7 @@ class AutonomousAIManager:
         try:
             result = subprocess.run(
                 "docker build -t autonomous-bot:latest .",
-                shell=True,
+                shell=False,
                 capture_output=True,
                 timeout=300
             )
@@ -698,7 +698,7 @@ class AutonomousAIManager:
     
     async def stop_paper_trading_container(self):
         """Stop paper trading container"""
-        subprocess.run("docker stop autonomous-paper", shell=True, capture_output=True)
+        subprocess.run("docker stop autonomous-paper", shell=False, capture_output=True)
     
     async def start_live_trading_container(self, filename: str) -> bool:
         """Start live trading container"""
@@ -707,11 +707,11 @@ class AutonomousAIManager:
     
     async def stop_live_trading_container(self):
         """Stop live trading container"""
-        subprocess.run("docker stop autonomous-live", shell=True, capture_output=True)
+        subprocess.run("docker stop autonomous-live", shell=False, capture_output=True)
     
     async def stop_all_containers(self):
         """Stop all containers"""
-        subprocess.run("docker stop autonomous-paper autonomous-live", shell=True, capture_output=True)
+        subprocess.run("docker stop autonomous-paper autonomous-live", shell=False, capture_output=True)
     
     async def send_urgent_alert(self, details: Dict):
         """Send urgent alert"""

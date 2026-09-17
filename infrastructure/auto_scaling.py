@@ -160,7 +160,8 @@ class AutoScaler:
             else:
                 gpu_usage = None
                 gpu_memory = None
-        except:
+        except Exception as e:
+            logger.debug(f"GPU monitoring not available: {e}")
             gpu_usage = None
             gpu_memory = None
         

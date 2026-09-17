@@ -24,6 +24,7 @@ import hashlib
 import os
 import struct
 import time
+import secrets
 
 logger = logging.getLogger(__name__)
 
@@ -134,10 +135,13 @@ class QuantumCircuitSimulator:
     
     def measure(self) -> int:
         """Measure all qubits, collapsing superposition"""
+        # SEC-005: Use secrets for better randomness
         probabilities = np.abs(self.state) ** 2
         
         # Sample from probability distribution
-        result = np.random.choice(len(probabilities), p=probabilities)
+        # For secure choice, we can use secrets to select the index
+        idx_list = list(range(len(probabilities)))
+        result = secrets.SystemRandom().choices(idx_list, weights=probabilities, k=1)[0]
         
         # Collapse state
         self.state = np.zeros_like(self.state)
@@ -147,9 +151,13 @@ class QuantumCircuitSimulator:
     
     def generate_random_bits(self, num_bits: int) -> List[int]:
         """Generate random bits using quantum superposition"""
+        # SEC-005: Mix with secrets for additional entropy
         bits = []
         
-        for _ in range(num_bits):
+        # Get some initial entropy from secrets
+        secure_bits = bin(secrets.randbits(num_bits))[2:].zfill(num_bits)
+
+        for idx in range(num_bits):
             # Reset and create superposition
             self._initialize_state()
             for q in range(self.num_qubits):
@@ -158,10 +166,9 @@ class QuantumCircuitSimulator:
             # Measure
             result = self.measure()
             
-            # Extract bits
-            for i in range(self.num_qubits):
-                if len(bits) < num_bits:
-                    bits.append((result >> i) & 1)
+            # Extract bits and XOR with secure_bits
+            bit = (result >> (idx % self.num_qubits)) & 1
+            bits.append(bit ^ int(secure_bits[idx]))
         
         return bits[:num_bits]
     

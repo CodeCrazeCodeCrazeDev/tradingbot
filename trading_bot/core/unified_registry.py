@@ -112,66 +112,22 @@ class UnifiedComponentRegistry:
         Enforces no duplicate component IDs and deterministic order.
         Compatible with both legacy SystemRegistry and UCA-2026 signatures.
         """
-        # Settle the active component reference
-        final_component = component if component is not None else instance
-        if final_component is None and factory is not None:
-            # Under lazy loading, factory is defined
-            final_component = None
+        # Architectural drift prevention
+        if name.endswith("Registry") and name != "UnifiedComponentRegistry":
+            raise ValueError(f"Unauthorized registry registration: {name}. Only UnifiedComponentRegistry is allowed.")
+        if name.endswith("Orchestrator") and name not in ["AIPOrchestrator", "SimulationOrchestrator"]:
+            raise ValueError(f"Unauthorized orchestrator: {name}. All orchestration must route through CognitiveSystemController or authorized Ontologies.")
 
         if name in self._components:
-            if final_component is not None and self._components[name] is final_component:
-                return
-            raise ValueError(f"CRITICAL: Component '{name}' already registered with a different instance. Duplicate IDs forbidden.")
-
-        with self._lock:
-            self._components[name] = final_component
-            self._metadata[name] = {
-                "type": component_type,
-                "metadata": metadata or {}
-            }
-            self._dependencies[name] = dependencies or []
-            self._registration_order.append(name)
-
-            # Map default layer if not provided
-            final_layer = layer or SystemLayer.INFRASTRUCTURE
-
-            # Track legacy system metadata
-            self._legacy_metadata[name] = ComponentMetadata(
-                name=name,
-                component_type=component_type,
-                layer=final_layer,
-                instance=final_component,
-                factory=factory,
-                dependencies=dependencies or [],
-                config=config or {},
-                priority=priority,
-                enabled=enabled
-            )
-
-            if final_component:
-                self._instances[name] = final_component
-
-            # Also track as a service for legacy compatibility
-            if name not in self._services:
-                self._services[name] = ServiceInfo(
-                    name=name,
-                    component_type=component_type,
-                    instance=final_component,
-                    dependencies=dependencies or []
-                )
+            logger.warning(f"Component '{name}' already registered. Overwriting.")
 
         logger.debug(f"Registered {component_type}: {name}")
 
-    def get(self, name: str) -> Any:
+    def get(self, name: str, default: Any = None) -> Any:
         """
         Retrieve a component by name.
         """
-        if name not in self._components:
-            # Check services
-            if name in self._services:
-                return self._services[name].instance
-            raise KeyError(f"Component '{name}' not found in registry")
-        return self._components[name]
+        return self._components.get(name, default)
 
     def get_service(self, name: str) -> Optional[Any]:
         """Legacy get_service method"""

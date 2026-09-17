@@ -11,8 +11,6 @@ import logging
 import os
 import json
 from datetime import datetime
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 from trading_bot.brain.tier_structure import (
     AlphaBrain, SignalOutput, MarketStateVector, OrderFlowIntelligence,
@@ -238,6 +236,8 @@ class EliteBrainController:
             logger.error("No decision to visualize")
             return
         try:
+            import matplotlib.pyplot as plt
+            import seaborn as sns
         
             # Create figure
             fig, axes = plt.subplots(3, 1, figsize=(12, 16), gridspec_kw={'height_ratios': [2, 1, 1]})

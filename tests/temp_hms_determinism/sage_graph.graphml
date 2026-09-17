@@ -1,0 +1,87 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"><key id="d7" for="edge" attr.name="id" attr.type="string"/>
+<key id="d6" for="edge" attr.name="timestamp" attr.type="string"/>
+<key id="d5" for="edge" attr.name="weight" attr.type="double"/>
+<key id="d4" for="edge" attr.name="evidence" attr.type="string"/>
+<key id="d3" for="edge" attr.name="context" attr.type="string"/>
+<key id="d2" for="edge" attr.name="relation" attr.type="string"/>
+<key id="d1" for="node" attr.name="content" attr.type="string"/>
+<key id="d0" for="node" attr.name="type" attr.type="string"/>
+<graph edgedefault="directed"><node id="72262022-7f57-4f60-9c2f-ebda3b055447"/>
+<node id="Market will follow Range Case: Consolidation between established levels with no clear macro catalyst."/>
+<node id="hyp_branch_range">
+  <data key="d0">HYPOTHESIS</data>
+  <data key="d1">Market will follow Range Case: Consolidation between established levels with no clear macro catalyst.</data>
+</node>
+<node id="node_branch_range_0">
+  <data key="d0">EVIDENCE</data>
+  <data key="d1">Evidence 0 for Range Case</data>
+</node>
+<node id="node_branch_range_1">
+  <data key="d0">EVIDENCE</data>
+  <data key="d1">Evidence 1 for Range Case</data>
+</node>
+<node id="node_branch_range_2">
+  <data key="d0">EVIDENCE</data>
+  <data key="d1">Evidence 2 for Range Case</data>
+</node>
+<node id="node_branch_range_3">
+  <data key="d0">EVIDENCE</data>
+  <data key="d1">Evidence 3 for Range Case</data>
+</node>
+<node id="node_branch_range_4">
+  <data key="d0">EVIDENCE</data>
+  <data key="d1">Evidence 4 for Range Case</data>
+</node>
+<node id="4e889582-c632-44f8-9467-693b3ac574a2"/>
+<node id="83644fcd-a918-499b-b458-a3b372afd300"/>
+<node id="1ac28db0-5ce0-4ab1-b4e6-d237b8fd21af"/>
+<node id="5370bd35-e23f-4190-92d4-4c0c894b36b2"/>
+<node id="42de350f-47aa-4073-88b7-0a5508eb7e34"/>
+<edge source="72262022-7f57-4f60-9c2f-ebda3b055447" target="Market will follow Range Case: Consolidation between established levels with no clear macro catalyst." id="0">
+  <data key="d2">HYPOTHESIZED</data>
+  <data key="d3">{"context": "research_ledger", "branch": "UCA_V6"}</data>
+  <data key="d4">{"confidence": 0.9}</data>
+  <data key="d5">0.9</data>
+  <data key="d6">2026-08-01T19:54:34.514792</data>
+  <data key="d7">0</data>
+</edge>
+<edge source="4e889582-c632-44f8-9467-693b3ac574a2" target="Market will follow Range Case: Consolidation between established levels with no clear macro catalyst." id="0">
+  <data key="d2">HYPOTHESIZED</data>
+  <data key="d3">{"context": "research_ledger", "branch": "UCA_V6"}</data>
+  <data key="d4">{"confidence": 0.9}</data>
+  <data key="d5">0.9</data>
+  <data key="d6">2026-08-01T19:54:34.569089</data>
+  <data key="d7">0</data>
+</edge>
+<edge source="83644fcd-a918-499b-b458-a3b372afd300" target="Market will follow Range Case: Consolidation between established levels with no clear macro catalyst." id="0">
+  <data key="d2">HYPOTHESIZED</data>
+  <data key="d3">{"context": "research_ledger", "branch": "UCA_V6"}</data>
+  <data key="d4">{"confidence": 0.9}</data>
+  <data key="d5">0.9</data>
+  <data key="d6">2026-08-01T19:59:30.273336</data>
+  <data key="d7">HYPOTHESIZED_4db11980</data>
+</edge>
+<edge source="1ac28db0-5ce0-4ab1-b4e6-d237b8fd21af" target="Market will follow Range Case: Consolidation between established levels with no clear macro catalyst." id="0">
+  <data key="d2">HYPOTHESIZED</data>
+  <data key="d3">{"context": "research_ledger", "branch": "UCA_V6"}</data>
+  <data key="d4">{"confidence": 0.9}</data>
+  <data key="d5">0.9</data>
+  <data key="d6">2026-08-01T19:59:30.328089</data>
+  <data key="d7">HYPOTHESIZED_93a1b932</data>
+</edge>
+<edge source="5370bd35-e23f-4190-92d4-4c0c894b36b2" target="Market will follow Range Case: Consolidation between established levels with no clear macro catalyst." id="HYPOTHESIZED_31099b80">
+  <data key="d2">HYPOTHESIZED</data>
+  <data key="d3">{"context": "research_ledger", "branch": "UCA_V6"}</data>
+  <data key="d4">{"confidence": 0.9}</data>
+  <data key="d5">0.9</data>
+  <data key="d6">2026-08-01T20:07:03.152460</data>
+</edge>
+<edge source="42de350f-47aa-4073-88b7-0a5508eb7e34" target="Market will follow Range Case: Consolidation between established levels with no clear macro catalyst." id="HYPOTHESIZED_d83c4ac4">
+  <data key="d2">HYPOTHESIZED</data>
+  <data key="d3">{"context": "research_ledger", "branch": "UCA_V6"}</data>
+  <data key="d4">{"confidence": 0.9}</data>
+  <data key="d5">0.9</data>
+  <data key="d6">2026-08-01T20:07:03.217507</data>
+</edge>
+</graph></graphml>

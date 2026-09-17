@@ -1,0 +1,79 @@
+# Hypothesis Creation Points (Institutional Audit 2026)
+
+## Explicit Creation Points
+1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `ScientificReasoningEngine.observe()`
+2. **`trading_bot/foundation_agents/curiosity_engine/hypothesis_generator.py`**: `HypothesisGenerator.generate_from_anomaly()`
+3. **`trading_bot/alpha_research/hypothesis_extraction.py`**: `HypothesisExtractionEngine.extract_from_research()`
+4. **`trading_bot/core/csc/hypothesis.py`**: `HypothesisGenerator.generate_competing_branches()`
+5. **`trading_bot/apex_fi/alpha_mining.py`**: `GeneticAlphaSearch._generate_random_expression()`
+6. **`trading_bot/world_model/imagination.py`**: `ImaginationEngine.simulate_scenarios()`
+7. **`trading_bot/market_teacher/absolute_laws.py`**: `AbsoluteLaws._create_draft_strategy()`
+8. **`trading_bot/core/phce_d_engine.py`**: `PHCEDAI._generate_hypothesis()`
+
+## Implicit Creation Points
+1. **`trading_bot/strategy_discovery/evolutionary_engine.py`**: `StrategyGenome` (Implicit signal-reward hypothesis).
+2. **`trading_bot/ml/offline_rl/alphaalgo_autonomous_system.py`**: Policy updates (Implicit state-action value hypothesis).
+3. **`trading_bot/world_model/v2_training.py`**: Reasoning traces (Implicit causal chain hypothesis).
+4. **`trading_bot/profit_maximizer/market_regime_adapter.py`**: Regime classification (Implicit environment hypothesis).
+5. **`trading_bot/world_model/causal_model.py`**: Causal World Model Induction (Implicit causal mechanism).
+# Hypothesis Evaluation Points (Institutional Audit 2026)
+
+## Core Scientific Evaluation
+1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `ScientificReasoningEngine.evaluate_results()` & `bayesian_update()`.
+2. **`trading_bot/core_agent_system/cds/epistemology_engine.py`**: `EpistemologyEngine.analyze_hypothesis()` (Adversarial questioning).
+
+## Tactical Evaluation (Decision Layer)
+1. **`trading_bot/core/phce_d_engine.py`**: `ParallelHypothesisCorrectionEngine.process()` (Evidence synthesis).
+2. **`trading_bot/core/csc/controller.py`**: `CSC._verify_evidence_hard_constraint()` (Graph-based verification).
+3. **`trading_bot/core_agent_system/cds/verdict_engine.py`**: `VerdictEngine.synthesize_verdict()` (Weighted consensus).
+
+## Statistical & Technical Evaluation
+1. **`trading_bot/alpha_research/strategy_diagnostics.py`**: `StrategyDiagnostics` (Overfitting, health, and robustness).
+2. **`trading_bot/strategy_discovery/validation.py`**: `StrategyValidationPipeline` (Regime testing, transaction costs).
+3. **`trading_bot/alpha_research/alpha_death_clock.py`**: `AlphaDeathClockManager` (Decay monitoring).
+4. **`trading_bot/world_model/imagination.py`**: `PlanEvaluator.evaluate_plan()` (Lookahead utility across scenarios).
+
+## Governance & Institutional Evaluation
+1. **`trading_bot/core/unified_event_bus.py`**: `LogAction.wait_for_decision()` (Consensus/Voter auditing).
+2. **`trading_bot/core/immutable_shield.py`**: `ImmutableShield.validate_action()` (Hard safety rails).
+# Hypothesis Rejection Points (Institutional Audit 2026)
+
+## Logical & Structural Rejection
+1. **`trading_bot/alpha_research/hypothesis_extraction.py`**: `HypothesisValidator` (Lacks mechanism/falsification).
+2. **`trading_bot/core/talos_cerberus_v23.py`**: `EvidenceScorecard` (Source unreliability, compliance failure).
+
+## Performance & Decay Rejection
+1. **`trading_bot/apex_fi/alpha_mining.py`**: `LivingFactorLibrary._retire_factor()` (Sharpe/Entropy decay).
+2. **`trading_bot/signals/auto_disable_sick_signals.py`**: `SignalHealthMonitor` (Recent failure rate).
+3. **`trading_bot/strategy_discovery/evolutionary_engine.py`**: Fitness-based selection (Natural selection of genomes).
+
+## Safety & Governance Rejection
+1. **`trading_bot/core/unified_event_bus.py`**: `LogAction` status `REJECTED` or `VETOED` (Voter consensus).
+2. **`trading_bot/core/immutable_shield.py`**: Hard constraint violation (Risk/Exposure).
+3. **`trading_bot/core/phce_d_engine.py`**: `SimpleValidationGateway` (Market hostility).
+
+## Scientific Rejection
+1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `HypothesisState.REJECTED` (Posterior belief < 0.2).
+2. **`trading_bot/core/adversarial_failure_analysis.py`**: `AdversarialAnalyzer` (Successful falsification simulation).
+# Hypothesis Promotion Points (Institutional Audit 2026)
+
+## Tactical Promotion (Decision Path)
+1. **`trading_bot/core/csc/controller.py`**: `_select_optimal_branch()` (Selection for execution).
+2. **`trading_bot/core/phce_d_engine.py`**: `SimpleValidationGateway.promote()` (Signal to Trade Action).
+
+## Strategic Promotion (Research Path)
+1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `HypothesisState.INSTITUTIONALIZED` (High posterior confidence).
+2. **`trading_bot/alpha_research/hypothesis_extraction.py`**: `HypothesisPromotionEngine` (Research to Candidate).
+3. **`trading_bot/apex_fi/alpha_mining.py`**: `LivingFactorLibrary._promote_factor()` (Candidate to Production Alpha).
+
+## Knowledge Promotion
+1. **`trading_bot/core/hms/memory.py`**: `SAGE.consolidate()` (Working memory to Long-term Graph Memory).
+2. **`trading_bot/market_teacher/market_teacher.py`**: Lessons extracted from successful trades.
+
+## Promotion Levels (UCA V5 Standard)
+- **Level 0**: Raw Observation / Anomaly.
+- **Level 1**: Candidate Hypothesis / Reasoning Branch.
+- **Level 2**: Validated / Evidence-Backed Hypothesis.
+- **Level 3**: Research Ledger Entry / Backtest Verified.
+- **Level 4**: Production Strategy / Active Alpha.
+- **Level 5**: Institutional Knowledge / Core World Model Principle.

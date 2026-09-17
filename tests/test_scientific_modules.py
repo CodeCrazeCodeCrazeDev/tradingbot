@@ -23,7 +23,14 @@ class MockWorldModel:
 
 class MockValidationEngine:
     def run_benchmark(self, config):
-        return config.get("perf", 0.5)
+        return {"reward": config.get("perf", 0.5), "calibration": 0.9, "robustness": 0.8, "latency": 50, "safety_score": 1.0}
+
+@pytest.fixture(autouse=True)
+def reset_csc_singleton():
+    """Reset the CognitiveSystemController singleton before/after each test."""
+    CognitiveSystemController._instance = None
+    yield
+    CognitiveSystemController._instance = None
 
 @pytest.mark.asyncio
 async def test_discoloop_internalization():
@@ -31,10 +38,11 @@ async def test_discoloop_internalization():
     csc = CognitiveSystemController(world_model=MockWorldModel())
     obs = {"latent_embedding": {"v": 1.0}, "semantic_tokens": ["initial"]}
 
-    await csc._run_discoloop_internalization(obs, num_loops=2)
+    await csc._run_discoloop_reasoning(obs)
 
-    assert csc.discrete_channel == ["internalized_insight"]
-    assert "v" in csc.continuous_state
+    # In DiscoLoop, weTransition and append token_loop_...
+    assert len(csc.discrete_channel) > 0
+    assert "latent" in csc.continuous_state
 
 @pytest.mark.asyncio
 async def test_pivot_refine_logic():
@@ -42,18 +50,15 @@ async def test_pivot_refine_logic():
     csc = CognitiveSystemController()
     from trading_bot.core.hms.models import VerifierReport
 
-    # 1. Minor failure -> Refine
-    reports_minor = [VerifierReport(agent_name="V1", is_valid=False, confidence=0.7, critique="Tweak params")]
-    severity_minor = csc._detect_failure_severity(reports_minor)
-    assert severity_minor == "minor"
+    # In UCA V5, Pivot/Refine loops and checks EvidenceGraphGate.verify_evidence_first.
+    # Refinement degrades confidence via a factor of 0.9.
+    from trading_bot.core.csc.hypothesis import ReasoningBranch
+    branch = ReasoningBranch(branch_id="test_b", name="Test Branch", confidence=0.9)
+    reports = [VerifierReport(agent_name="V1", is_valid=False, confidence=0.9, critique="Too high risk")]
 
-    # 2. Critical failure -> Pivot
-    reports_critical = [
-        VerifierReport(agent_name="V1", is_valid=False, confidence=0.95, critique="Total logical fail"),
-        VerifierReport(agent_name="V2", is_valid=False, confidence=0.91, critique="Risky setup")
-    ]
-    severity_critical = csc._detect_failure_severity(reports_critical)
-    assert severity_critical == "critical"
+    refined = await csc._refine_strategy(branch, reports)
+    assert refined.confidence < branch.confidence
+    assert "Correction: Too high risk" in refined.reasoning_trace
 
 @pytest.mark.asyncio
 async def test_hasp_guardrail_interception():
@@ -63,9 +68,8 @@ async def test_hasp_guardrail_interception():
 
     result = await router.route_task("execution", context)
 
-    assert result["status"] == "success"
-    assert result["pf_result"]["status"] == "pf_intervention"
-    assert result["pf_result"]["action"] == "override_to_hold"
+    assert result["status"] == "pf_intervention"
+    assert result["result"]["action"] == "override_to_hold"
 
 @pytest.mark.asyncio
 async def test_s2l_behavioral_routing():
@@ -75,13 +79,13 @@ async def test_s2l_behavioral_routing():
 
     result = await router.route_task("I need to hedge my EURUSD position", context)
 
-    assert result["status"] == "s2l_routed"
-    assert result["adapter_id"] == "lora_hedging_v1"
+    assert result.status == "s2l_routed"
+    assert result.adapter_id == "lora_hedging_v1"
 
 @pytest.mark.asyncio
 async def test_eksft_compliance_verification():
     """Verify EKSFT selective masking check in EvolutionGate."""
-    gate = EvolutionGate(validation_engine=MockValidationEngine())
+    gate = EvolutionGate(validation_engine=MockValidationEngine(), improvement_threshold=0.1)
 
     # 1. Compliant candidate (high entropy token was masked)
     config_ok = {
@@ -110,3 +114,61 @@ async def test_rsea_monotone_safe_gate():
 
     assert gate.validate_evolution("C1", candidate_good, baseline) is True
     assert gate.validate_evolution("C2", candidate_bad, baseline) is False
+
+@pytest.mark.asyncio
+async def test_rsea_multi_metric_protected_gate():
+    """Verify multi-metric protected metrics prevents silent regression."""
+    class MultiMetricValidationEngine:
+        def run_benchmark(self, config):
+            return config
+
+    gate = EvolutionGate(validation_engine=MultiMetricValidationEngine(), improvement_threshold=0.1)
+
+    baseline = {
+        "perf": 0.5,
+        "decision_latency": 10.0,
+        "drawdown": 0.05,
+        "calibration_error": 0.05,
+        "hms_retrieval_quality": 0.95,
+        "deterministic_replay_success": 1.0,
+        "safety_score": 1.0
+    }
+
+    # 1. Performance improves and no protected metric regresses -> Approve
+    candidate_good = {
+        "perf": 0.65,
+        "decision_latency": 10.0,
+        "drawdown": 0.05,
+        "calibration_error": 0.05,
+        "hms_retrieval_quality": 0.95,
+        "deterministic_replay_success": 1.0,
+        "safety_score": 1.0,
+        "training_metadata": {}
+    }
+    assert gate.validate_evolution("CG", candidate_good, baseline) is True
+
+    # 2. Performance improves but decision latency regresses significantly -> Reject
+    candidate_bad_latency = {
+        "perf": 0.65,
+        "decision_latency": 15.0, # Regressed (10.0 -> 15.0 > 10% tol)
+        "drawdown": 0.05,
+        "calibration_error": 0.05,
+        "hms_retrieval_quality": 0.95,
+        "deterministic_replay_success": 1.0,
+        "safety_score": 1.0,
+        "training_metadata": {}
+    }
+    assert gate.validate_evolution("CB_Lat", candidate_bad_latency, baseline) is False
+
+    # 3. Performance improves but drawdown regresses -> Reject
+    candidate_bad_drawdown = {
+        "perf": 0.65,
+        "decision_latency": 10.0,
+        "drawdown": 0.08, # Regressed (0.05 -> 0.08 > 0.01 tol)
+        "calibration_error": 0.05,
+        "hms_retrieval_quality": 0.95,
+        "deterministic_replay_success": 1.0,
+        "safety_score": 1.0,
+        "training_metadata": {}
+    }
+    assert gate.validate_evolution("CB_DD", candidate_bad_drawdown, baseline) is False

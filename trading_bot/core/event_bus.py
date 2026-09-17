@@ -2,12 +2,8 @@
 Event Bus - Async Event-Driven Architecture
 ============================================
 
-Central event bus for service communication:
-- Publish/Subscribe pattern
-- Event routing and filtering
-- Async event processing
-- Event history and replay
-- Dead letter queue for failed events
+Bridged legacy event bus for service communication.
+Saves, forwards, and coordinates events between legacy subsystems and UnifiedDecisionBus.
 """
 
 import asyncio
@@ -24,11 +20,43 @@ from trading_bot.core.unified_event_bus import decision_bus, UnifiedEvent, Event
 logger = logging.getLogger(__name__)
 
 
+class LegacyBusUsageCounter:
+    """Tracks and records legacy event bus usage metrics."""
+    _publish_count = 0
+    _subscribe_count = 0
+    _callers = set()
+
+    @classmethod
+    def record_publish(cls, event_type: str, source: str):
+        cls._publish_count += 1
+        cls._callers.add(source)
+        logger.warning(
+            f"LegacyBusUsage: {source} published {event_type}. "
+            f"Total legacy publishes: {cls._publish_count}. Migration to UnifiedDecisionBus recommended."
+        )
+
+    @classmethod
+    def record_subscribe(cls, subscriber_id: str, event_types: List[str]):
+        cls._subscribe_count += 1
+        cls._callers.add(subscriber_id)
+        logger.warning(
+            f"LegacyBusUsage: {subscriber_id} subscribed to {event_types}. "
+            f"Total legacy subscribes: {cls._subscribe_count}. Migration to UnifiedDecisionBus recommended."
+        )
+
+    @classmethod
+    def get_metrics(cls) -> Dict[str, Any]:
+        return {
+            "legacy_publishes": cls._publish_count,
+            "legacy_subscribes": cls._subscribe_count,
+            "active_legacy_callers": list(cls._callers)
+        }
+
+
 class EventPriority(Enum):
     """Event priority levels"""
     LOW = 0
     NORMAL = 1
-    GRID = 2
     HIGH = 2
     CRITICAL = 3
 
@@ -133,8 +161,7 @@ class EventBus:
         priority: int = 0
     ) -> None:
         """Subscribe to events"""
-        if isinstance(event_types, str):
-            event_types = [event_types]
+        LegacyBusUsageCounter.record_subscribe(subscriber_id, event_types)
         subscription = Subscription(
             subscriber_id=subscriber_id,
             event_types=set(event_types),
@@ -161,6 +188,7 @@ class EventBus:
 
     async def publish(self, event: Event) -> None:
         """Publish an event"""
+        LegacyBusUsageCounter.record_publish(event.event_type, event.source)
         # Forward to Unified Decision Bus
         unified_event = UnifiedEvent(
             event_type=event.event_type,
@@ -168,7 +196,7 @@ class EventBus:
             source=event.source,
             event_id=event.event_id,
             timestamp=event.timestamp,
-            priority=UnifiedEventPriority[event.priority.name] if event.priority.name in UnifiedEventPriority.__members__ else UnifiedEventPriority.NORMAL,
+            priority=UnifiedEventPriority[event.priority.name],
             correlation_id=event.correlation_id,
             metadata=event.metadata
         )

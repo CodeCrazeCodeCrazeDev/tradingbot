@@ -8,6 +8,7 @@ import json
 import logging
 import pickle
 from pathlib import Path
+from trading_bot.security.safe_pickle import safe_load
 from typing import Any, Dict, Optional
 from datetime import datetime
 import pandas as pd
@@ -34,7 +35,7 @@ class CorrelationPersistence:
         self.max_state_age_hours = self.config.get('max_state_age_hours', 24)
         
         # File paths
-        self.matrix_file = self.storage_dir / 'correlation_matrix.pkl'
+        self.matrix_file = self.storage_dir / 'correlation_matrix.json'
         self.history_file = self.storage_dir / 'price_history.json'
         self.metadata_file = self.storage_dir / 'metadata.json'
         
@@ -56,13 +57,11 @@ class CorrelationPersistence:
             True if successful, False otherwise
         """
         try:
-            # Save correlation matrix
+            # Save correlation matrix (JSON for DataFrame to avoid pickle)
             if correlation_matrix is not None:
-                # Use JSON for DataFrame persistence to avoid pickle security risks
-                matrix_data = correlation_matrix.to_json(orient='split')
-                with open(self.matrix_file.with_suffix('.json'), 'w') as f:
-                    f.write(matrix_data)
-                logger.info(f"Saved correlation matrix to {self.matrix_file.with_suffix('.json')}")
+                with open(self.matrix_file, 'w') as f:
+                    json.dump(correlation_matrix.to_dict(), f, indent=2)
+                logger.info(f"Saved correlation matrix to {self.matrix_file}")
             
             # Save price history (JSON)
             history_data = {
@@ -127,15 +126,11 @@ class CorrelationPersistence:
             
             # Load correlation matrix (if exists)
             correlation_matrix = None
-            json_matrix_file = self.matrix_file.with_suffix('.json')
-            if json_matrix_file.exists():
-                correlation_matrix = pd.read_json(json_matrix_file, orient='split')
-                logger.info(f"Loaded correlation matrix from {json_matrix_file}")
-            elif self.matrix_file.exists():
-                # Backward compatibility for old pickle files
-                with open(self.matrix_file, 'rb') as f:
-                    correlation_matrix = pickle.load(f)
-                logger.info(f"Loaded legacy correlation matrix from {self.matrix_file}")
+            if self.matrix_file.exists():
+                with open(self.matrix_file, 'r') as f:
+                    matrix_dict = json.load(f)
+                    correlation_matrix = pd.DataFrame.from_dict(matrix_dict)
+                logger.info(f"Loaded correlation matrix from {self.matrix_file}")
             
             # Load price history
             with open(self.history_file, 'r') as f:

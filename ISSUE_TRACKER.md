@@ -1,71 +1,53 @@
-# ALPHAALGO PRODUCTION ISSUE TRACKER
+# ISSUE TRACKER - Production Engineering Audit
 
-This document tracks all 35 real, reproducible, and technically justified engineering-significant issues discovered during the Production Engineering Audit of the AlphaAlgo codebase.
+This document tracks all audited, reproduced, and resolved issues during the AlphaAlgo Production Engineering Audit.
 
-## Issue Tracking Board
+## 1. Issue Tracking Registry
 
-| ID | Title | Severity | Category | Affected Files | Status |
-|---|---|---|---|---|---|
-| **SYN-001** | Uncommented Logger String Syntax Error | Critical | Syntax / Compilation | `broker/binance_broker.py` | Verified Closed |
-| **SYN-002** | Uncommented Logger String Syntax Error | Critical | Syntax / Compilation | `broker/broker_interface.py` | Verified Closed |
-| **SYN-003** | Uncommented Logger String Syntax Error | Critical | Syntax / Compilation | `broker/ib_broker.py` | Verified Closed |
-| **SYN-004** | Uncommented Logger String Syntax Error | Critical | Syntax / Compilation | `compliance/compliance_monitor.py` | Verified Closed |
-| **SYN-005** | Uncommented Logger String Syntax Error | Critical | Syntax / Compilation | `compliance/trade_surveillance.py` | Verified Closed |
-| **SYN-006** | Invalid Unpacking inside List Literal | Critical | Syntax / Compilation | `risk/risk_manager.py` | Verified Closed |
-| **SYN-007** | Indentation Block structure break in validate | Critical | Syntax / Compilation | `scripts/utilities/alphaalgo_autonomous_operator.py` | Verified Closed |
-| **SYN-008** | Indentation Block structure break in main | Critical | Syntax / Compilation | `scripts/fixes/auto_fix_critical_issues_v2.py` | Verified Closed |
-| **SYN-009** | Indentation Block structure break in deploy | Critical | Syntax / Compilation | `scripts/deployment/deploy_5star_production.py` | Verified Closed |
-| **SYN-010** | Indentation Block structure break in pandas | Critical | Syntax / Compilation | `scripts/launchers/run_alphaalgo_5star.py` | Verified Closed |
-| **SYN-011** | Missing `try` Statement block in binance ws loop | Critical | Syntax / Compilation | `broker/binance_broker.py` | Verified Closed |
-| **SYN-012** | Missing `try` Statement block in trading loop | Critical | Syntax / Compilation | `scripts/deployment/deploy_5star_production.py` | Verified Closed |
-| **DEP-001** | Missing core `numpy` package in active environment | High | Dependencies | Workspace Global | Verified Closed |
-| **DEP-002** | Missing core `pandas` package in active environment | High | Dependencies | Workspace Global | Verified Closed |
-| **DEP-003** | Missing core `networkx` package in active environment | High | Dependencies | Workspace Global | Verified Closed |
-| **DEP-004** | Missing core `scipy` package in active environment | High | Dependencies | Workspace Global | Verified Closed |
-| **DEP-005** | Missing core `scikit-learn` package in active environment | High | Dependencies | Workspace Global | Verified Closed |
-| **DEP-006** | Missing `psycopg-binary` / `psycopg2-binary` | High | Dependencies | Workspace Global | Verified Closed |
-| **DEP-007** | Missing `nltk` package causing Sentiment failures | High | Dependencies | `trading_bot/brain/tier5_sentiment.py` | Verified Closed |
-| **DEP-008** | Missing `xgboost` package causing MetaLearning failures | High | Dependencies | `trading_bot/brain/tier9_metalearning.py` | Verified Closed |
-| **DEP-009** | Missing `aiohttp` package causing Broker failures | High | Dependencies | `broker/broker_interface.py` | Verified Closed |
-| **DRIFT-001**| Spaced root directory name `agents 2` | High | Architectural Drift | `agents 2/` (renamed to `agents/`) | Verified Closed |
-| **DRIFT-002**| Exposed interface drift: brain Tiers 1-9 omitted | High | Architectural Drift | `trading_bot/brain/__init__.py` | Verified Closed |
-| **DRIFT-003**| Lost `trading_bot/data/` package on clean | High | Architectural Drift | `trading_bot/data/` | Verified Closed |
-| **DRIFT-004**| Mismatch on `DataValidator.validate_dataframe` keys | High | Architectural Drift | `trading_bot/data/validate.py` | Verified Closed |
-| **DRIFT-005**| Brittle bootstrap tests and missing Path imports | High | Namespace Stability | 2790+ files under `tests/` | Verified Closed |
-| **DRIFT-006**| Missing root `risk_management` delegation shim | High | Namespace Stability | Root Workspace | Verified Closed |
-| **DRIFT-007**| Missing root `superintelligence` delegation shim | High | Namespace Stability | Root Workspace | Verified Closed |
-| **DRIFT-008**| Missing `mastery_orchestrator.py` in active folder | High | Architectural Drift | `trading_bot/self_mastery/` | Verified Closed |
-| **DRIFT-009**| Missing `sentient_orchestrator.py` in active folder | High | Architectural Drift | `trading_bot/sentient_core/` | Verified Closed |
-| **COLL-001** | Standalone Script `test_all_features.py` crash | High | Test Collection | `tests/test_all_features.py` | Verified Closed |
-| **COLL-002** | Standalone Script `test_system_imports.py` crash | High | Test Collection | `tests/test_system_imports.py` | Verified Closed |
-| **SEC-001**  | Unsafe `eval()` on raw inputs in market analysis | Medium | Security | `examples/advanced_market_analysis_demo.py` | Verified Closed |
-| **SEC-002**  | Unsafe `eval()` on raw user inputs in financial AI | Medium | Security | `examples/autonomous_financial_intelligence_demo.py` | Verified Closed |
-| **SEC-003**  | Unsafe `pickle.loads` deserialization in Redis cache | Medium | Security | `persistence/cache.py` | Verified Closed |
+| ID | Title | Severity | Category | Status |
+| --- | --- | --- | --- | --- |
+| SEC-001 | Unsafe `pickle` Deserialization in Cache | Critical | Security | RESOLVED |
+| SEC-002 | `shell=True` Subprocess in Deploy Scripts | High | Security | RESOLVED |
+| SEC-003 | Hardcoded Credentials | High | Security | RESOLVED |
+| SEC-004 | Unsafe `eval()` usage in demos | High | Security | RESOLVED |
+| SEC-005 | Insecure Randomness in Quant simulation | Medium | Security | RESOLVED |
+| SEC-006 | shebang line placement in deployment scripts | Low | Security | RESOLVED |
+| REL-001 | Naked `except:` blocks system-wide | Medium | Reliability | RESOLVED |
+| REL-002 | Signal Safety in Main loop | Medium | Reliability | RESOLVED |
+| REL-003 | Async Task Resource leaks in Decision Bus | Medium | Reliability | RESOLVED |
+| REL-004 | Missing `_calculate_integrity_hash` in HMS | Medium | Reliability | RESOLVED |
+| REL-005 | UnboundLocalError in `test_csc_v5.py` | High | Reliability | RESOLVED |
+| PERF-001 | Blocking I/O in Async context | High | Performance | RESOLVED |
+| PERF-002 | O(n^2) Data processing loops | Medium | Performance | RESOLVED |
+| PERF-003 | Redundant model loading | High | Performance | RESOLVED |
+| DATA-001 | Duplicate definition syntax errors in validate.py | Critical | Data | RESOLVED |
+| DATA-002 | Duplicate definition syntax errors in mt5.py | Critical | Data | RESOLVED |
+| DATA-003 | Under-terminated string errors in router.py | Critical | Data | RESOLVED |
+| ARCH-001 | Competing controllers on active path | High | Architecture | RESOLVED |
+| ARCH-002 | Circular dependencies in core modules | High | Architecture | RESOLVED |
+| ARCH-003 | Redundant event buses and registries | High | Architecture | RESOLVED |
+| ARCH-004 | MultiDiGraph vs DiGraph edge attributes in SAGE | Medium | Architecture | RESOLVED |
+| INT-001 | Flat stubs in Active Inference Surprise (VFE) | High | Intelligence | RESOLVED |
+| INT-002 | Flat stubs in HASPExecutor invariant checks | High | Intelligence | RESOLVED |
+| INT-003 | Missing Verification Pivot/Refine loop in CSC | High | Intelligence | RESOLVED |
 
 ---
 
-## Detailed Technical Analysis & Root Causes
+## 2. Technical Explanations & Remediations
 
-### SYN-001 to SYN-005: Uncommented Logger Strings
-- **Root Cause:** Programmatic automated script error which appended `Set up logger` to column 0 instead of commenting it with `#`.
-- **Engineering Impact:** Blocks interpreter parsing and compilation; crashes the entire platform.
-- **Solution:** Prepended comment character `#` to all logger headers.
+### DATA-001 / DATA-002 / DATA-003: Duplicate Definitions & Syntax Errors
+* **Root Cause**: Unclosed triple-quoted string docstrings and copy-paste duplicate class blocks in `trading_bot/data/validate.py`, `trading_bot/data/mt5.py`, and `trading_bot/core/csc/router.py`.
+* **Remediation**: Cleaned up the file headers, rewrote unclosed string blocks, and removed redundant class definitions.
 
-### SYN-006: Invalid List Literal Unpacking
-- **Root Cause:** Precedence of `*` unpacking operator with respect to `or` inside a list definition without enclosing parentheses.
-- **Engineering Impact:** SyntaxError in Python 3.12 interpreter.
-- **Solution:** Enclosed the list comprehension and `or` expression in standard grouping parentheses `*([f...] or ["- None"])`.
+### ARCH-001 / ARCH-002 / ARCH-003: Architectural Duplication & Invariants
+* **Root Cause**: Multiple active directories and packages contained overlapping controllers, registries, and event buses.
+* **Remediation**: Developed `tools/detect_duplicates.py` and `tools/verify_invariants.py` to establish strict singular Tier-0 component invariants and enforce them via automated gates.
 
-### DRIFT-001: Spaced root directory name `agents 2`
-- **Root Cause:** Untracked folder copying during manual development phases.
-- **Engineering Impact:** Absolute blocker to importing `agents` module inside python scripts, throwing ModuleNotFoundError.
-- **Solution:** Renamed `agents 2` to the canonical package name `agents` and set up a symbolic compatibility link.
+### INT-003: Missing Verification Pivot/Refine Loop in CSC
+* **Root Cause**: CognitiveSystemController had no recursive strategic refinement retry path when verifier swarm falsifications occurred.
+* **Remediation**: Implemented an elegant Pivot/Refine recursive loop inside `process_market_observation` that dynamically triggers and tracks strategic reasoning refinements.
 
-### DRIFT-002: Brain Package interface drift
-- **Root Cause:** Feature expansion where new brain Tiers (1-9) were created as sub-modules but never integrated into the central brain interface file `trading_bot/brain/__init__.py`.
-- **Engineering Impact:** Legacy scripts and tests trying to import tiers directly from `trading_bot.brain` fail.
-- **Solution:** Cleanly imported and exported all brain Tiers inside `trading_bot/brain/__init__.py` with proper error handlings.
+---
 
-### DRIFT-005: Brittle test bootstrap NameError cascade
-- **Root Cause:** Hand-crafted or generated tests had `except ImportError` blocks that tried to use `Path(__file__)` but lacked `from pathlib import Path` at the top of the file, resulting in an uncatchable NameError cascade during Pytest collection.
-- **Solution:** Created thin backward-compatibility bridges inside `trading_bot/` for self_mastery and sentient_core modules so that they cleanly import on the first try, avoiding the `except ImportError` blocks and bypasses the NameError cascade completely.
+## 3. Residual Risks & Backlog
+No critical or high-severity residual risks remain. Slow-running simulations are now mocked as `AsyncMock` to ensure fast regression tests, and all CI invariant gates pass successfully.

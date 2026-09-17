@@ -1,0 +1,65 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d5" for="edge" attr.name="weight" attr.type="double" />
+  <key id="d4" for="edge" attr.name="id" attr.type="string" />
+  <key id="d3" for="edge" attr.name="timestamp" attr.type="string" />
+  <key id="d2" for="edge" attr.name="evidence" attr.type="string" />
+  <key id="d1" for="edge" attr.name="context" attr.type="string" />
+  <key id="d0" for="edge" attr.name="relation" attr.type="string" />
+  <graph edgedefault="directed">
+    <node id="f0c663cb-0b93-4983-ae17-841ca4a3e89b" />
+    <node id="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." />
+    <node id="f3d1f317-e045-44fd-a301-03594a9fb411" />
+    <node id="40e0fd56-cddc-4003-b4b4-a5872bfb17cf" />
+    <node id="03acaeb4-d075-4101-bae0-85298af4738a" />
+    <node id="1b32454f-92c7-4819-b261-8940c2dfe6cb" />
+    <node id="63b6de1d-a7ee-4bde-a91c-ec5ed1ab9597" />
+    <edge source="f0c663cb-0b93-4983-ae17-841ca4a3e89b" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="0">
+      <data key="d0">HYPOTHESIZED</data>
+      <data key="d1">{"context": "research_ledger"}</data>
+      <data key="d2">{"confidence": 0.0}</data>
+      <data key="d3">2026-07-16T07:35:51.287305</data>
+      <data key="d4">0</data>
+      <data key="d5">0.5</data>
+    </edge>
+    <edge source="f3d1f317-e045-44fd-a301-03594a9fb411" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="0">
+      <data key="d0">HYPOTHESIZED</data>
+      <data key="d1">{"context": "research_ledger"}</data>
+      <data key="d2">{"confidence": 0.0}</data>
+      <data key="d3">2026-07-16T07:36:43.042350</data>
+      <data key="d4">0</data>
+      <data key="d5">0.5</data>
+    </edge>
+    <edge source="40e0fd56-cddc-4003-b4b4-a5872bfb17cf" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="0">
+      <data key="d0">HYPOTHESIZED</data>
+      <data key="d1">{"context": "research_ledger"}</data>
+      <data key="d2">{"confidence": 0.0}</data>
+      <data key="d3">2026-07-16T07:37:25.858090</data>
+      <data key="d4">0</data>
+      <data key="d5">0.5</data>
+    </edge>
+    <edge source="03acaeb4-d075-4101-bae0-85298af4738a" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="0">
+      <data key="d0">HYPOTHESIZED</data>
+      <data key="d1">{"context": "research_ledger"}</data>
+      <data key="d2">{"confidence": 0.0}</data>
+      <data key="d3">2026-07-16T07:38:08.296539</data>
+      <data key="d4">0</data>
+      <data key="d5">0.5</data>
+    </edge>
+    <edge source="1b32454f-92c7-4819-b261-8940c2dfe6cb" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="0">
+      <data key="d0">HYPOTHESIZED</data>
+      <data key="d1">{"context": "research_ledger"}</data>
+      <data key="d2">{"confidence": 0.0}</data>
+      <data key="d3">2026-07-16T07:42:02.018679</data>
+      <data key="d4">HYPOTHESIZED_24faf81e</data>
+      <data key="d5">0.5</data>
+    </edge>
+    <edge source="63b6de1d-a7ee-4bde-a91c-ec5ed1ab9597" target="Market will follow Bull Case: Expansion in liquidity combined with oversold RSI supports a mean reversion breakout." id="HYPOTHESIZED_2211c3fb">
+      <data key="d0">HYPOTHESIZED</data>
+      <data key="d1">{"context": "research_ledger", "branch": "UCA_V6"}</data>
+      <data key="d2">{"confidence": 0.0}</data>
+      <data key="d5">0.0</data>
+      <data key="d3">2026-07-16T07:54:30.797816</data>
+    </edge>
+  </graph>
+</graphml>

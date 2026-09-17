@@ -25,6 +25,9 @@ class CacheManager:
         # Default TTL
         self.default_ttl = self.config.get('default_ttl', 3600)  # 1 hour
         
+        # Background cleanup task if async is used elsewhere,
+        # but for this module we'll keep it simple for now.
+
         # Redis configuration
         self.redis_enabled = self.config.get('redis_enabled', False)
         self.redis_client = None
@@ -55,6 +58,17 @@ class CacheManager:
             logger.warning(f"⚠️ Redis initialization failed: {e}")
             self.redis_enabled = False
     
+    async def set_async(
+        self,
+        key: str,
+        value: Any,
+        ttl: Optional[int] = None,
+        serialize: bool = True
+    ):
+        """Set cache value asynchronously to avoid blocking the event loop."""
+        import asyncio
+        return await asyncio.to_thread(self.set, key, value, ttl, serialize)
+
     def set(
         self,
         key: str,
@@ -69,10 +83,15 @@ class CacheManager:
         # Serialize value
         if serialize:
             try:
+                # SEC-001: Use JSON for basic types, but support complex via safe pathing
                 value = json.dumps(value)
             except (TypeError, ValueError) as e:
-                logger.warning(f"⚠️ JSON serialization failed for {key}, falling back to string: {e}")
-                value = str(value)
+                # FALLBACK: If JSON fails, it might be a complex object.
+                # In production, we should only cache serializable data.
+                # Reverting to pickle only for internal system-validated objects
+                # if absolutely necessary, but here we enforce JSON for security.
+                logger.error(f"❌ Cache serialization failed for {key}: {e}. Only JSON-serializable data is allowed.")
+                raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable and cannot be cached.")
         
         # Set in memory cache
         self.cache[key] = value
@@ -85,6 +104,16 @@ class CacheManager:
             except Exception as e:
                 logger.warning(f"⚠️ Redis set error: {e}")
     
+    async def get_async(
+        self,
+        key: str,
+        default: Any = None,
+        deserialize: bool = True
+    ) -> Any:
+        """Get cache value asynchronously."""
+        import asyncio
+        return await asyncio.to_thread(self.get, key, default, deserialize)
+
     def get(
         self,
         key: str,

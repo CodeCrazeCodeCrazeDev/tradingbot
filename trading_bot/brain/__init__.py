@@ -2,104 +2,85 @@
 Brain Module
 ============================================================
 
-Auto-generated integration file.
+Unified brain and intelligence hierarchy initialization.
 """
 
-# adaptive_integration
-try:
-    from .adaptive_integration import (
-        AdaptiveIntegrationSystem,
-    )
-except ImportError as e:
-    pass
+import logging
 
-# alphaalgo_2_0
-try:
-    from .alphaalgo_2_0 import (
-        SystemCapability,
-    )
-except ImportError as e:
-    pass
+logger = logging.getLogger(__name__)
 
-# alphaalgo_2_0_system
-try:
-    from .alphaalgo_2_0_system import (
-        Alphaalgo20System,
-    )
-except ImportError as e:
-    pass
+# Expose Base classes and Orchestrators
+from .elite_brain import EliteBrainController
+BrainOrchestrator = EliteBrainController
 
-# brain_architecture
-try:
-    from .brain_architecture import (
-        BrainDecision,
-        EliteBrain,
-    )
-except ImportError as e:
-    pass
+# Core components
+from .tier_structure import (
+    AlphaBrain,
+    EliteBrainSignal,
+    SignalOutput,
+    MarketStateVector,
+    OrderFlowIntelligence,
+    MarketGeometryModel,
+    RegimeContextVector,
+    SentimentVector,
+    MacroContext,
+    RiskParameters,
+    ExecutionIntelligence,
+)
 
-# brain_trader
-try:
-    from .brain_trader import (
-        BrainTrader,
-    )
-except ImportError as e:
-    pass
+# Analytical Tiers (Tiers 1-9)
+from .tier1_technical import Tier1TechnicalAnalysis
+from .tier2_orderflow import Tier2OrderFlowIntelligence
+from .tier3_structure import Tier3MarketStructure
+from .tier4_regime import Tier4RegimeDetection
+from .tier5_sentiment import Tier5SentimentAnalysis
+from .tier6_macro import Tier6MacroAnalysis
+from .tier7_risk import Tier7RiskManagement
+from .tier8_execution import Tier8ExecutionIntelligence
+from .tier9_metalearning import Tier9MetaLearning
 
-# central_controller
+# Optional components with fallback imports
 try:
-    from .central_controller import (
-        CentralController,
-    )
-except ImportError as e:
-    pass
+    from .brain_architecture import EliteBrain, BrainDecision
+except ImportError:
+    EliteBrain = None
+    class BrainDecision: pass
 
-# elite_brain
 try:
-    from .elite_brain import (
-        EliteBrainController,
-    )
-except ImportError as e:
-    pass
+    from .adaptive_integration import AdaptiveIntegrationSystem
+except ImportError:
+    AdaptiveIntegrationSystem = None
 
-# mt5_brain_trader
 try:
-    from .mt5_brain_trader import (
-        MT5BrainTrader,
-    )
-except ImportError as e:
-    pass
+    from .alphaalgo_2_0 import SystemCapability
+except ImportError:
+    SystemCapability = None
 
-# tier9_metalearning
 try:
-    from .tier9_metalearning import (
-        MetaLearningSystem,
-        Tier9MetaLearning,
-    )
-except ImportError as e:
-    pass
+    from .alphaalgo_2_0_system import Alphaalgo20System
+except ImportError:
+    Alphaalgo20System = None
 
-# tier_structure
 try:
-    from .tier_structure import (
-        AlphaBrain,
-        EliteBrainSignal,
-    )
-except ImportError as e:
-    pass
+    from .brain_trader import BrainTrader
+except ImportError:
+    BrainTrader = None
 
-# Import Tiers 1-8 cleanly
 try:
-    from .tier1_technical import Tier1TechnicalAnalysis
-    from .tier2_orderflow import Tier2OrderFlowIntelligence
-    from .tier3_structure import Tier3MarketStructure
-    from .tier4_regime import Tier4RegimeDetection
-    from .tier5_sentiment import Tier5SentimentAnalysis
-    from .tier6_macro import Tier6MacroAnalysis
-    from .tier7_risk import Tier7RiskManagement
-    from .tier8_execution import Tier8ExecutionIntelligence
-except ImportError as e:
-    pass
+    from .central_controller import CentralController
+except ImportError:
+    CentralController = None
+
+try:
+    from .mt5_brain_trader import MT5BrainTrader
+except ImportError:
+    MT5BrainTrader = None
+
+try:
+    from .tier9_metalearning import MetaLearningSystem
+except ImportError:
+    MetaLearningSystem = None
+
 
 __all__ = [
     'AdaptiveIntegrationSystem',
@@ -115,6 +96,7 @@ __all__ = [
     'MT5BrainTrader',
     'MetaLearningSystem',
     'SystemCapability',
+    # Analytical Tiers 1-9
     'Tier1TechnicalAnalysis',
     'Tier2OrderFlowIntelligence',
     'Tier3MarketStructure',
@@ -125,6 +107,3 @@ __all__ = [
     'Tier8ExecutionIntelligence',
     'Tier9MetaLearning',
 ]
-
-# Alias for backward compatibility
-BrainOrchestrator = EliteBrainController

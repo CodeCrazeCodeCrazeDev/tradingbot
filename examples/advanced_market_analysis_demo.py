@@ -12,6 +12,7 @@ This demo showcases the enhanced market analysis capabilities including:
 import logging
 import os
 import sys
+import ast
 from datetime import datetime, timedelta
 
 # Third-party imports
@@ -370,7 +371,7 @@ class AdvancedMarketAnalysisDemo:
         
         try:
     pass
-            data = eval(liquidity_data)  # Convert string back to dict
+            data = ast.literal_eval(liquidity_data)  # Convert string back to dict
             zones = data['zones']
             
             # Create price chart with liquidity zones
@@ -473,7 +474,7 @@ class AdvancedMarketAnalysisDemo:
         
         try:
     pass
-            data = eval(orderflow_data)
+            data = ast.literal_eval(orderflow_data)
             signals = data['signals']
             
             # Create order flow signals chart
@@ -582,7 +583,7 @@ class AdvancedMarketAnalysisDemo:
         
         try:
     pass
-            data = eval(microstructure_data)
+            data = ast.literal_eval(microstructure_data)
             
             # Create microstructure metrics visualization
             fig = make_subplots(
