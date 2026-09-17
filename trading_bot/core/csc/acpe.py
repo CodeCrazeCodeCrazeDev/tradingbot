@@ -1,5 +1,16 @@
 """
-Adaptive Control Policy Engine (ACPE) - UCA V5+ Core (July 2026)
+Adaptive Control Policy Engine (ACPE) - UCA V6 Core (July 2026)
+
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Token masking compliance gate (`_check_eksft_compliance`) for exploratory policy protection.
+- arXiv:2607.00341 (DiscoLoop): Unrolled discrete-continuous state vector parameterization.
+- arXiv:2607.01224 (AutoMem): Retrospective failure trajectory retrieval for 6D harness adaptation.
+- arXiv:2605.12061 (SAGE): Dynamic causal graph node indexing for parameter retrieval.
+- arXiv:2605.10813 (NanoResearch): Tri-level preference optimization over tool and orchestration harnesses.
+- arXiv:2605.20025 (AutoResearchClaw): Self-reinforcing simulation budget adaptation during strategy pivoting.
+- arXiv:2605.17734 (HASP): Executable skill program trigger threshold parameterization.
+- arXiv:2605.21482 (DeepWeb-Bench): Calibrated confidence threshold tuning for active tool selection.
+
 Generic, lightweight, sub-millisecond retrieval-based control parameterizer.
 Parameterizes existing subsystems inside the "One Brain" pipeline based on historical failures.
 """

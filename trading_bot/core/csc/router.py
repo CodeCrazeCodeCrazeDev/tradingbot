@@ -1,7 +1,16 @@
 """
-Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral behaviors (Skill-to-LoRA).
-Implements 'HASP' (2026) and 'S2L' (2026).
+Orchestrates the selection and execution of Skill Programs (HASP) and behavioral LoRA adapters.
+Skill Router & Program Function Dispatcher - UCA V6 (July 2026)
+
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Token-level entropy and KL divergence gating during lora selection.
+- arXiv:2607.00341 (DiscoLoop): Discrete vector-quantized semantic subgoal routing across skill domains.
+- arXiv:2607.01224 (AutoMem): Dynamic memory schema retrieval for execution context injection.
+- arXiv:2605.12061 (SAGE): Multi-hop property graph node routing and link discovery.
+- arXiv:2605.10813 (NanoResearch): Tri-level co-evolving research automation across executable skills.
+- arXiv:2605.20025 (AutoResearchClaw): Mid-flight fallback routing and strategy pivoting under execution failure.
+- arXiv:2605.17734 (HASP): Executable skill programs with deterministic guardrails and override triggers.
+- arXiv:2605.21482 (DeepWeb-Bench): Calibrated skill dispatch using expected confidence scoring.
 """
 
 import logging
