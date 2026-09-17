@@ -301,21 +301,23 @@ class VolumeDeltaHeatmap:
             data=0.0
         )
         
-        # Vectorized heatmap construction
-        lows = df['low'].values[:, None]
-        highs = df['high'].values[:, None]
-        closes = df['close'].values[:, None]
-        opens = df['open'].values[:, None]
-        volumes = df['volume'].values[:, None]
+        # Vectorized fill of heatmap matrix
+        lows = df['low'].values[:, np.newaxis]
+        highs = df['high'].values[:, np.newaxis]
+        closes = df['close'].values
+        opens = df['open'].values
+        volumes = df['volume'].values
 
-        # Touch mask: shape (num_df_rows, num_price_levels)
-        touch_mask = (price_levels[None, :] >= lows) & (price_levels[None, :] <= highs)
-        touch_counts = touch_mask.sum(axis=1, keepdims=True)
-        touch_counts[touch_counts == 0] = 1  # prevent division by zero
+        # Compute touched boolean mask (num_rows x num_levels)
+        touched_mask = (price_levels >= lows) & (price_levels <= highs)
+        counts = touched_mask.sum(axis=1)
 
         deltas = np.where(closes > opens, volumes, -volumes)
-        vol_per_level = touch_mask * (deltas / touch_counts)
-        heatmap = pd.DataFrame(vol_per_level, index=df.index, columns=price_levels)
+        vol_per_level = np.where(counts > 0, deltas / np.maximum(counts, 1), 0.0)
+
+        # Broadcast values across touched levels
+        heatmap_values = np.where(touched_mask, vol_per_level[:, np.newaxis], 0.0)
+        heatmap = pd.DataFrame(data=heatmap_values, index=df.index, columns=price_levels)
         
         return heatmap
     

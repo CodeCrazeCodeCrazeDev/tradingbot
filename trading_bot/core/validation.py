@@ -67,7 +67,7 @@ class SystemValidator:
         import asyncio
         # Simulated measurement for initial implementation
         start_time = time.perf_counter()
-        # Mocking processing chain
+        # Mocking processing chain safely in async context
         await asyncio.sleep(0.01)
         end_time = time.perf_counter()
 
