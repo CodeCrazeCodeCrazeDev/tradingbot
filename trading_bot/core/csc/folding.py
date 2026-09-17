@@ -8,11 +8,27 @@ from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 
+class FoldingOperator:
+    """
+    UCA V5 Folding Operator (HIPIF strategy).
+    """
+    def __init__(self, hms: Any = None):
+        self.hms = hms
+        self.step_counter = 0
+        self.fold_interval = 10
+
+    async def fold_history(self, ledger_entry: Any):
+        logger.info(f"HIPIF: Folding research snapshot {getattr(ledger_entry, 'entry_id', 'N/A')}")
+        return "Folded summary"
+
 class InformationFolder:
     """
     Compresses execution history into semantic strategic updates.
     Prevents 'Strategic Drift' in long-horizon tasks.
     """
+    def __init__(self, fold_interval: int = 10):
+        self.fold_interval = fold_interval
+        self.step_counter = 0
 
     def __init__(self, hms: Any = None):
         self.hms = hms

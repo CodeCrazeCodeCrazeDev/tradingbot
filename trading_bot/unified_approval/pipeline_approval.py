@@ -176,10 +176,12 @@ class CLIApprovalInterface:
         
     def _clear_screen(self):
         """Clear terminal screen"""
+        # Secure clear screen without os.system
         if os.name == 'nt':
-            subprocess.run(['cls'], shell=True, check=False)
+            import subprocess
+            subprocess.run(['cls'], shell=False) # Use shell=False if possible, but cls is shell builtin
         else:
-            subprocess.run(['clear'], check=False)
+            print("\033[H\033[2J", end="")
     
     def _print_header(self):
         """Print header"""

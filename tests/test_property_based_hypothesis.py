@@ -54,6 +54,7 @@ except ImportError:
         return decorator
     
     def assume(condition):
+        pass
     
     DEFAULT_SETTINGS = settings()
 
@@ -464,8 +465,6 @@ class TestSignalLifecycleProperties:
     def manager(self):
         """Create signal lifecycle manager"""
         from trading_bot.signals.signal_lifecycle import SignalLifecycleManager
-import numpy
-import pandas
         return SignalLifecycleManager(default_ttl_seconds=60, auto_cleanup=False)
     
     @given(

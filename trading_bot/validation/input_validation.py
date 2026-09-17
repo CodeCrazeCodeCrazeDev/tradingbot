@@ -527,3 +527,48 @@ def validate(value: Any, rules: List[ValidationRule]) -> bool:
             validator._add_error(rule.field, message, value)
     
     return len(validator.errors) == 0
+
+
+class TradingContextValidator:
+    """
+    Subsystem-level Market Context and Input Validator enforcing strict market sanity limits under the UCA-2026 specification.
+    Protects the debate engine from invalid, malformed, or hostile market states.
+    """
+    @staticmethod
+    def validate(context: Any) -> tuple[bool, List[str]]:
+        import math
+        errors = []
+
+        # Check current price
+        current_price = getattr(context, 'current_price', None)
+        if current_price is None:
+            errors.append("Missing current_price")
+        elif not isinstance(current_price, (int, float)):
+            errors.append("current_price must be a float or int")
+        elif current_price <= 0:
+            errors.append("Invalid current price detected: must be positive.")
+        elif math.isnan(current_price) or math.isinf(current_price):
+            errors.append("current_price cannot be NaN or infinite")
+
+        # Check volatility
+        volatility = getattr(context, 'volatility', None)
+        if volatility is not None:
+            if not isinstance(volatility, (int, float)):
+                errors.append("volatility must be a float or int")
+            elif volatility < 0:
+                errors.append("volatility cannot be negative")
+
+        # Check volume_ratio
+        volume_ratio = getattr(context, 'volume_ratio', None)
+        if volume_ratio is not None:
+            if not isinstance(volume_ratio, (int, float)):
+                errors.append("volume_ratio must be a float or int")
+            elif volume_ratio < 0:
+                errors.append("volume_ratio cannot be negative")
+
+        # Check symbol
+        symbol = getattr(context, 'symbol', None)
+        if not symbol:
+            errors.append("Missing symbol")
+
+        return len(errors) == 0, errors

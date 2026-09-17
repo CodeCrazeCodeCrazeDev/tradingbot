@@ -316,19 +316,9 @@ class SharedMemoryManager:
             KeyError: If the object ID is not found
             ValueError: If the object is not a DataFrame
         """
-        arrays = self.get(obj_id)
-        
-        if not isinstance(arrays, dict) or 'columns' not in arrays or 'index' not in arrays:
-            raise ValueError(f"Object {obj_id} is not a DataFrame")
-        
-        # Reconstruct DataFrame
-        df_data = {}
-        for col in arrays['columns']:
-            col_str = str(col)
-            if f'data_{col_str}' in arrays:
-                df_data[col_str] = arrays[f'data_{col_str}']
-        
-        return pd.DataFrame(df_data, index=arrays['index'])
+        from trading_bot.core.governance.serialization import SerializerRegistry
+        serialized = self.get(obj_id)
+        return SerializerRegistry.deserialize_dataframe(serialized)
     
     def exists(self, obj_id: str) -> bool:
         """Check if an object exists in shared memory"""

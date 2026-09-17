@@ -136,3 +136,31 @@ class TestMultiAgentDebateSystem:
         # The reasoning now includes "Decision: NO_TRADE" and the risk sentinel's reasoning
         assert "Decision: NO_TRADE" in decision.reasoning
         assert "exceeds limit" in decision.reasoning or "recommending NO TRADE" in decision.reasoning
+
+    @pytest.mark.asyncio
+    async def test_risk_veto_provenance_validation(self):
+        """Test that the vetoes list is populated and falsification_report is validated in provenance"""
+        system = create_debate_system()
+        context = MarketContext(
+            symbol="EURUSD",
+            current_price=1.1000,
+            htf_trend='UP',
+            ltf_trend='UP',
+            volatility=0.05,
+            volume_ratio=1.3,
+            key_levels={'support': [1.0950], 'resistance': [1.1050]},
+            news_sentiment=0.4,
+            portfolio_exposure=0.9,
+            correlation_risk=0.8,
+            vix_level=45.0
+        )
+
+        decision = await system.debate(context)
+
+        assert decision.action == TradeAction.NO_TRADE
+        # Verify the structure-preserving provenance schema
+        assert 'schema_version' in decision.provenance
+        assert decision.provenance['schema_version'] == "1.0.0"
+        assert 'falsification_report' in decision.provenance
+        assert isinstance(decision.provenance['falsification_report'], dict)
+        assert 'is_falsified' in decision.provenance['falsification_report']

@@ -509,7 +509,13 @@ class ModelRegistry:
         try:
             from trading_bot.security.artifact_manager import RestrictedUnpickler
             with open(mv.model_path, 'rb') as f:
-                return RestrictedUnpickler(f).load()
+                model_obj = safe_load(f)
+
+            # Update cache
+            with self._lock:
+                self._model_cache[cache_key] = model_obj
+
+            return model_obj
         except Exception as e:
             logger.error(f"Failed to load model: {e}")
             return None

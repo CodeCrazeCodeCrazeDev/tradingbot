@@ -29,7 +29,9 @@ async def test_deterministic_decision_replay():
     """Verifies that identical seed and observation inputs yield identical decisions."""
     # Run 1
     set_all_seeds(42)
+    CognitiveSystemController._instance = None
     world_model_1 = MagicMock()
+    world_model_1.simulate_intervention = AsyncMock(return_value=[])
     hms_1 = MagicMock()
     hms_1.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield_1 = MagicMock()
@@ -45,7 +47,9 @@ async def test_deterministic_decision_replay():
 
     # Run 2
     set_all_seeds(42)
+    CognitiveSystemController._instance = None
     world_model_2 = MagicMock()
+    world_model_2.simulate_intervention = AsyncMock(return_value=[])
     hms_2 = MagicMock()
     hms_2.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield_2 = MagicMock()

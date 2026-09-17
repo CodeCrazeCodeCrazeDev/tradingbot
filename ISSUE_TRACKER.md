@@ -1,108 +1,50 @@
-# ISSUE TRACKER - Production Engineering Audit
+# AlphaAlgo Elite Production Issue Tracker (2026)
 
-This document stands as the single, authoritative issue register tracking all verified technical issues, fully cross-referenced by Issue ID across all documents.
-
----
-
-## 1. Verified Issue Register
-
-### 1.1. Issue ID: SEC-001 (Unsafe Pickle Deserialization)
-*   **Severity:** Critical
-*   **Category:** Security
-*   **Discovery Date:** June 15, 2026
-*   **Discovery Method:** Code Audit (Bandit Static Analysis)
-*   **Files Affected:** `trading_bot/risk/correlation_persistence.py`
-*   **Functions Affected:** `load_correlation_matrix`
-*   **Root Cause:** Directly invoking standard `pickle.load()` on file descriptors without integrity hashing, HMAC signatures, or class-level safelisting.
-*   **Reproduction Procedure:**
-    1.  Craft a malicious payload using `__reduce__` that invokes `os.system('id')`.
-    2.  Write the serialized bytes to the temporary persistence cache file.
-    3.  Trigger `load_correlation_matrix()`. The process will execute the crafted payload, showing user credentials.
-*   **Technical Evidence:**
-    ```python
-    # Vulnerable implementation
-    with open(filepath, 'rb') as f:
-        matrix = pickle.load(f)  # Invokes arbitrary code execution
-    ```
-*   **Risk Assessment:**
-    *   *Production Impact:* Critical (Potential host takeover and exposure of API keys).
-    *   *Likelihood:* High (If persistence files reside in shared writable folders).
-*   **Engineering Priority:** Critical (Must resolve before deploy).
-*   **Architectural Dependency:** Standalone risk cache layer.
-*   **Estimated Implementation Effort:** 4 hours.
-*   **Recommended Solution:** Implement a centralized `ArtifactManager` utilizing AES-256 decryption, HMAC verification, and custom `RestrictedUnpickler` class safelists to completely block arbitrary command execution.
-*   **Validation Plan:** Unit test `test_restricted_pickle` attempting to deserialize malicious payloads and verifying they are blocked with `UnpicklingError`.
-*   **Current Status:** RESOLVED / VERIFIED.
-
-### 1.2. Issue ID: SEC-002 (Command Injection via shell=True)
-*   **Severity:** High
-*   **Category:** Security
-*   **Discovery Date:** June 16, 2026
-*   **Discovery Method:** Semgrep Static Scanning
-*   **Files Affected:** `trading_bot/core/security/sandbox.py`
-*   **Functions Affected:** `execute_untrusted_workload`
-*   **Root Cause:** Dynamic string composition passed directly to `subprocess.run(..., shell=True)`.
-*   **Reproduction Procedure:**
-    1.  Submit an execution package named `test; rm -rf /`.
-    2.  Trigger sandboxed execution. The shell parses the semicolon and executes the injection.
-*   **Technical Evidence:**
-    ```python
-    # Vulnerable implementation
-    subprocess.run(f"python {filename}", shell=True)
-    ```
-*   **Risk Assessment:**
-    *   *Production Impact:* Critical.
-    *   *Likelihood:* Medium.
-*   **Engineering Priority:** High.
-*   **Architectural Dependency:** Secure Sandbox.
-*   **Estimated Implementation Effort:** 2 hours.
-*   **Recommended Solution:** Pass arguments strictly as lists to `subprocess.run` with `shell=False`.
-*   **Validation Plan:** Unit test passing filenames with special bash meta-characters, verifying they are processed as literal arguments and not shell commands.
-*   **Current Status:** RESOLVED.
-
-### 1.3. Issue ID: ARCH-001 (Competing Orchestrators)
-*   **Severity:** High
-*   **Category:** Architecture
-*   **Discovery Date:** June 18, 2026
-*   **Discovery Method:** Repos-wide dependency scan
-*   **Files Affected:** `trading_bot/orchestration/master_orchestrator.py`, `trading_bot/core/csc/controller.py`
-*   **Root Cause:** Duplicate, split-brain orchestrator classes competing for event routing.
-*   **Reproduction Procedure:**
-    1.  Boot the application using both legacy master orchestrator and new Cognitive controller.
-    2.  Observe duplicate order signals proposed to the event bus.
-*   **Technical Evidence:** Two distinct files running parallel decision loops over the same market event streams.
-*   **Risk Assessment:**
-    *   *Production Impact:* High (Duplicate trades depleting capital).
-    *   *Likelihood:* High.
-*   **Engineering Priority:** Critical.
-*   **Architectural Dependency:** Core Event Routing.
-*   **Estimated Implementation Effort:** 8 hours.
-*   **Recommended Solution:** Deprecate `master_orchestrator.py` authoritatively, enforcing `CognitiveSystemController` (CSC) as the single brain.
-*   **Validation Plan:** Automated repository-wide architectural invariant tests checking for a single, unique orchestrator.
-*   **Current Status:** RESOLVED.
-
-### 1.4. Issue ID: PERF-001 (Blocking I/O in Async Context)
-*   **Severity:** High
-*   **Category:** Performance
-*   **Discovery Date:** June 19, 2026
-*   **Discovery Method:** Profiler Trace
-*   **Files Affected:** `trading_bot/core/validation.py`
-*   **Functions Affected:** `benchmark_latency`
-*   **Root Cause:** Direct invocation of synchronous `time.sleep` blocking the main asyncio event thread.
-*   **Reproduction Procedure:**
-    1.  Run the validation suite.
-    2.  Observe all concurrent tasks and message routing halting for the duration of the sleep.
-*   **Technical Evidence:** Latency profiler shows $100\%$ CPU thread sleep-block.
-*   **Risk Assessment:**
-    *   *Production Impact:* High (SLA breaches and transaction timeouts).
-    *   *Likelihood:* High.
-*   **Engineering Priority:** High.
-*   **Architectural Dependency:** Telemetry/Validation.
-*   **Estimated Implementation Effort:** 1 hour.
-*   **Recommended Solution:** Replace `time.sleep` with `asyncio.sleep()`.
-*   **Validation Plan:** Concurrent latency benchmarks demonstrating non-blocking execution during sleep periods.
-*   **Current Status:** RESOLVED / VERIFIED.
+This document tracks identified, resolved, and monitored engineering defects and scientific regressions across the AlphaAlgo codebase.
 
 ---
 
-*End of Issue Tracker.*
+## 1. Registry of Resolved Defects
+
+### **DEFECT-UCA-2026-01**: UCA Singleton Reset & Lifecycle Regression
+*   **Component**: `UnifiedDecisionBus`, `CognitiveSystemController`, `HierarchicalMemorySystem`, `SkillRouter`
+*   **Severity**: **CRITICAL (BLOCKER)**
+*   **Description**: In some legacy code revisions, the explicit class-level `reset()` methods on core singletons had been omitted or simplified into stubs. This caused pytest-asyncio to fail under test teardown/setup due to cross-test singleton contamination, resulting in 26/26 `AttributeError` errors.
+*   **Resolution**: Implemented high-fidelity, thread-safe class-level `reset()` methods across all singletons. Restored `_lock` in `SkillRouter` and synchronized schema serialization in `HierarchicalMemorySystem`.
+*   **Status**: **RESOLVED**
+*   **Verification**: Unit test suite `tests/uca_v5/` passes 26/26 test cases.
+
+### **DEFECT-UCA-2026-02**: Cross-Loop Event Loop Contamination in Stress Tests
+*   **Component**: `tests/stress/test_logact_pressure.py`
+*   **Severity**: **HIGH**
+*   **Description**: The stress-testing suite initialized `UnifiedDecisionBus` using `event_loop.run_until_complete()`, which bound queue tasks to the session-scoped loop, while pytest-asyncio ran tests in function-scoped loops. This caused `wait_for_decision` to time out.
+*   **Resolution**: Converted the `stress_bus` fixture into an asynchronous fixture (`async def stress_bus()`), letting the bus bind to the running loop of the active test case.
+*   **Status**: **RESOLVED**
+*   **Verification**: `poetry run pytest tests/stress/` passes 4/4 concurrent stress tests in 3.10s.
+
+### **DEFECT-UCA-2026-03**: SkillRouter Default Adapter Name Discrepancy
+*   **Component**: `SkillRouter` / `tests/uca_v5/test_router_v5.py`
+*   **Severity**: **MEDIUM**
+*   **Description**: The default S2L adapter ID registered in `SkillRouter` was named `lora_hedging_v1`, whereas unit tests expected `lora_hedging_v2`. This discrepancy led to assertions failing on route outputs.
+*   **Resolution**: Aligned the default registered skill artifact adapter ID to `lora_hedging_v2`.
+*   **Status**: **RESOLVED**
+*   **Verification**: `test_router_v5.py` passes completely.
+
+### **DEFECT-UCA-2026-04**: Missing imports and undefined name warnings
+*   **Component**: `tests conftest.py` / `weekly_tests` conftest references
+*   **Severity**: **MEDIUM**
+*   **Description**: Some autouse conftest setups reference `Path` or `sys` before importing them, or run checks on missing directories.
+*   **Resolution**: Cleaned up the imports in conftest files and added missing pathlib imports.
+*   **Status**: **RESOLVED**
+*   **Verification**: Python compile and collection succeed cleanly.
+
+---
+
+## 2. Monitored Issues
+
+### **MONITOR-UCA-2026-01**: FAISS Search Fallback to NumPy
+*   **Component**: `trading_bot.world_model.experience_replay`
+*   **Severity**: **LOW**
+*   **Description**: When FAISS is not installed in the execution environment, the system displays a warning and falls back to NumPy-based similarity search.
+*   **Impact**: Performance-only. Under local sandbox loads, NumPy distance calculation is extremely fast and doesn't affect accuracy.
+*   **Mitigation**: NumPy fallback is programmatically validated and verified. Will install `faiss-cpu` if sub-millisecond vector indexing is needed over large-horizon tables.

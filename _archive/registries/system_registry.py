@@ -92,6 +92,11 @@ class SystemRegistry:
         
         if instance:
             self._instances[name] = instance
+            try:
+                from trading_bot.core.unified_registry import UnifiedComponentRegistry
+                UnifiedComponentRegistry().register(name, instance, component_type, dependencies, config)
+            except Exception as e:
+                logger.error(f"Error forwarding registration to UnifiedComponentRegistry: {e}")
         
         logger.info(f"Registered component: {name} ({component_type}) in layer {layer.name}")
         return True
@@ -102,13 +107,25 @@ class SystemRegistry:
             del self._components[name]
             if name in self._instances:
                 del self._instances[name]
+            try:
+                from trading_bot.core.unified_registry import UnifiedComponentRegistry
+                UnifiedComponentRegistry().unregister(name)
+            except Exception:
+                pass
             logger.info(f"Unregistered component: {name}")
             return True
         return False
     
     def get(self, name: str) -> Optional[ISystemComponent]:
         """Get a component instance"""
-        return self._instances.get(name)
+        from trading_bot.core.unified_registry import UnifiedComponentRegistry
+        inst = self._instances.get(name)
+        if not inst:
+            try:
+                inst = UnifiedComponentRegistry().get(name)
+            except Exception:
+                pass
+        return inst
     
     def get_metadata(self, name: str) -> Optional[ComponentMetadata]:
         """Get component metadata"""

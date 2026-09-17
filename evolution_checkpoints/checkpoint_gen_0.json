@@ -1,8 +1,8 @@
 {
   "generation": 0,
   "config": {
-    "population_size": 10,
-    "max_generations": 5,
+    "population_size": 8,
+    "max_generations": 3,
     "elite_size": 10,
     "enable_speciation": true,
     "compatibility_threshold": 3.0,
@@ -31,37 +31,35 @@
   },
   "stats": {
     "generations": 0,
-    "evaluations": 10,
+    "evaluations": 8,
     "cache_hits": 0,
     "convergence_detected": false
   },
   "snapshots": [
     {
       "generation": 0,
-      "timestamp": "2026-06-29 17:57:19.636629",
-      "population_size": 10,
+      "timestamp": "2026-08-09 08:37:04.227761",
+      "population_size": 8,
       "best_fitness": 0.4928112417513179,
-      "avg_fitness": 0.049281124175131794,
+      "avg_fitness": 0.12081403182526088,
       "diversity_score": 1.0,
       "species_count": 0,
       "species_sizes": {},
       "regime_performance": {},
-      "avg_var": 0,
-      "avg_cvar": 0,
-      "best_genome_id": "58d1cfde4a0018ea",
-      "best_genome": "StrategyGenome(signals=[Signal(signal_type=<SignalType.CROSS_ASSET: 'cross_asset'>, lookback_period=206, threshold=-0.50877318911555, weight=-0.5723759848208914, parameters={'ema_alpha': 0.4864780404233655, 'zscore_window': 51, 'percentile': 0.45478936218214494})], aggregation_type=<AggregationType.LINEAR: 'linear'>, position_sizing=<PositionSizingType.FIXED: 'fixed'>, risk_control=RiskControl(max_position_size=0.1938310991825584, max_leverage=2.3166643630976185, stop_loss_pct=0.015041401737048182, take_profit_pct=0.11147114241830548, max_drawdown_limit=0.15, max_correlation=0.7, var_limit=0.05), execution_params=ExecutionParams(slippage_bps=5.0, commission_bps=1.0, market_impact_factor=0.1, min_order_size=100.0, max_order_size=1000000.0, execution_delay_ms=100), rebalance_frequency=16, universe_size=452, metadata={'generation': 0, 'parent_ids': [], 'mutation_history': []})"
+      "avg_var": -7.156655066683273e-05,
+      "avg_cvar": -9.28777362360994e-05,
+      "best_genome_id": "a661f35770cf134c",
+      "best_genome": "StrategyGenome(signals=[Signal(signal_type=<SignalType.VOLUME: 'volume'>, lookback_period=106, threshold=2.4469119179078405, weight=0.4485706162528238, parameters={'ema_alpha': 0.37708920315962874, 'zscore_window': 50, 'percentile': 0.293636012690022})], aggregation_type=<AggregationType.LINEAR: 'linear'>, position_sizing=<PositionSizingType.RISK_PARITY: 'risk_parity'>, risk_control=RiskControl(max_position_size=0.17859159293058496, max_leverage=2.119297366973828, stop_loss_pct=0.005928230504822447, take_profit_pct=0.07202764856635846, max_drawdown_limit=0.15, max_correlation=0.7, var_limit=0.05), execution_params=ExecutionParams(slippage_bps=5.0, commission_bps=1.0, market_impact_factor=0.1, min_order_size=100.0, max_order_size=1000000.0, execution_delay_ms=100), rebalance_frequency=2, universe_size=244, metadata={'generation': 0, 'parent_ids': [], 'mutation_history': []})"
     }
   ],
   "pareto_frontier_ids": [
-    "542d817e7fc921b7",
-    "de2aa1d0fdea9cdd",
-    "acd3c60291954b4a",
-    "6db431fdcdeb1b17",
-    "9e42f4f8d65bab04",
-    "2e7da80ac9fa980c",
-    "15d0f2d151e3d1f2",
-    "f51de68f1b284758",
-    "ca2a3f4a8f17e96e",
-    "58d1cfde4a0018ea"
+    "19bc2553640cb294",
+    "a661f35770cf134c",
+    "4c1e239763718a97",
+    "b5269c61e5938c8c",
+    "c321fca2982ffdf4",
+    "26b6d1499e074d54",
+    "70649c3c49a0497f",
+    "494a9e16188f20d6"
   ]
 }

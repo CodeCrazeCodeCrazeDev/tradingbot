@@ -1,0 +1,29 @@
+{
+  "entry_id": "4c0bec02-69d4-4cfa-bc18-8395612af060",
+  "timestamp": "2026-08-03T18:34:03.214234",
+  "hypothesis": "Market will move in a Bull Scenario direction due to...",
+  "composite_confidence": 0.0,
+  "verifier_reports": [
+    {
+      "agent": "CausalVerifier",
+      "valid": true,
+      "critique": "No issues found."
+    },
+    {
+      "agent": "HallucinationDetector",
+      "valid": true,
+      "critique": "No issues found."
+    },
+    {
+      "agent": "CalculationReproducer",
+      "valid": true,
+      "critique": "No issues found."
+    },
+    {
+      "agent": "RegimeConsistencyChecker",
+      "valid": true,
+      "critique": "No issues found."
+    }
+  ],
+  "sage_sync": true
+}

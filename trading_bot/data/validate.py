@@ -1,5 +1,6 @@
 """
 Provides backward and testing compatibility for data validation modules.
+Provides validation and sanitization checks for historical and streaming datasets.
 """
 
 from typing import Any, Optional, Dict, Tuple
@@ -7,25 +8,24 @@ import logging
 from datetime import datetime
 import pandas as pd
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("AlphaAlgo.DataValidator")
+
 
 class DataValidator:
     """Validates Pandas DataFrames to ensure proper OHLCV and technical feature health."""
 
-    def __init__(self, config: Optional[Dict] = None):
+    def __init__(self, config: Dict[str, Any] = None):
         self.config = config or {}
-        self.initialized = False
+        self.initialized = True
 
     def initialize(self) -> bool:
         self.initialized = True
         return True
 
     def process(self, data: Any) -> Any:
-        if not self.initialized:
-            self.initialize()
         return data
 
-    def get_status(self) -> Dict:
+    def get_status(self) -> Dict[str, Any]:
         return {
             'initialized': self.initialized,
             'timestamp': datetime.now().isoformat(),
@@ -74,3 +74,10 @@ class DataValidator:
 
         is_valid = (nan_counts == 0) and (violations_count == 0)
         return is_valid, report
+
+    def get_status(self) -> Dict:
+        return {
+            'initialized': self.initialized,
+            'timestamp': datetime.now().isoformat(),
+            'config': self.config
+        }

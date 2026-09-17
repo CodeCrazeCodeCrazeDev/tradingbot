@@ -14,7 +14,7 @@ import pandas as pd
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from .strategy_genome import StrategyGenome, Signal, SignalType
+from .strategy_genome import StrategyGenome, Signal, SignalType, PositionSizingType, RiskControl, ExecutionParams
 
 
 @dataclass
@@ -151,7 +151,28 @@ class LeakageFreeBacktester:
         """
         signals_df = pd.DataFrame(index=self.data.index)
         
-        for i, signal in enumerate(genome.signals):
+        # Check if composite strategy
+        sub_strategies = getattr(genome, 'sub_strategies', None)
+        if sub_strategies:
+            # Generate signals for each sub-strategy
+            sub_combined_signals = []
+            for sub in sub_strategies:
+                sub_signals = self._generate_signals(sub)
+                sub_combined_signals.append(sub_signals['combined'])
+
+            # Combine signals
+            combined = []
+            confidences = [1.0] * len(sub_strategies)
+            for idx in range(len(self.data)):
+                # Get signals at this index
+                sigs = [float(sig.iloc[idx]) if not pd.isna(sig.iloc[idx]) else None for sig in sub_combined_signals]
+                combined_sig = genome.combine_signals(sigs, confidences)
+                combined.append(combined_sig if combined_sig is not None else 0.0)
+
+            signals_df['combined'] = pd.Series(combined, index=self.data.index)
+            return signals_df
+
+        for i, signal in enumerate(getattr(genome, 'signals', []) or []):
             signal_values = self._calculate_signal(signal)
             signals_df[f'signal_{i}'] = signal_values
         
@@ -257,21 +278,24 @@ class LeakageFreeBacktester:
         positions = pd.DataFrame(index=self.data.index)
         positions['signal'] = signals['combined']
         
-        if genome.position_sizing.value == 'fixed':
-            positions['target_position'] = positions['signal'] * genome.risk_control.max_position_size
+        position_sizing = getattr(genome, 'position_sizing', None) or PositionSizingType.FIXED
+        risk_control = getattr(genome, 'risk_control', None) or RiskControl()
+
+        if position_sizing.value == 'fixed':
+            positions['target_position'] = positions['signal'] * risk_control.max_position_size
         
-        elif genome.position_sizing.value == 'volatility_scaled':
+        elif position_sizing.value == 'volatility_scaled':
             vol = self.data['volatility'].fillna(self.data['volatility'].mean())
             vol_target = 0.15
             vol_scalar = vol_target / (vol * np.sqrt(252))
-            positions['target_position'] = positions['signal'] * vol_scalar * genome.risk_control.max_position_size
+            positions['target_position'] = positions['signal'] * vol_scalar * risk_control.max_position_size
         
         else:
-            positions['target_position'] = positions['signal'] * genome.risk_control.max_position_size
+            positions['target_position'] = positions['signal'] * risk_control.max_position_size
         
         positions['target_position'] = positions['target_position'].clip(
-            -genome.risk_control.max_position_size,
-            genome.risk_control.max_position_size
+            -risk_control.max_position_size,
+            risk_control.max_position_size
         )
         
         positions['actual_position'] = 0.0
@@ -290,9 +314,11 @@ class LeakageFreeBacktester:
         """
         trades = []
         current_position = 0.0
+        rebalance_frequency = getattr(genome, 'rebalance_frequency', 1) or 1
+        execution_params = getattr(genome, 'execution_params', None) or ExecutionParams()
         
         for i in range(len(positions)):
-            if i % genome.rebalance_frequency != 0:
+            if i % rebalance_frequency != 0:
                 positions.iloc[i, positions.columns.get_loc('actual_position')] = current_position
                 continue
             
@@ -307,14 +333,14 @@ class LeakageFreeBacktester:
             
             execution_price = self._get_execution_price(i, trade_size)
             
-            commission = abs(trade_size) * self.initial_capital * genome.execution_params.commission_bps / 10000
+            commission = abs(trade_size) * self.initial_capital * execution_params.commission_bps / 10000
             
-            slippage = self._calculate_slippage(trade_size, genome.execution_params.slippage_bps)
+            slippage = self._calculate_slippage(trade_size, execution_params.slippage_bps)
             
             market_impact = self._calculate_market_impact(
                 trade_size, 
                 self.data.iloc[i]['volume'],
-                genome.execution_params.market_impact_factor
+                execution_params.market_impact_factor
             )
             
             total_cost = commission + slippage + market_impact

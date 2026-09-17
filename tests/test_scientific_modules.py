@@ -23,24 +23,24 @@ class MockWorldModel:
 
 class MockValidationEngine:
     def run_benchmark(self, config):
-        return {"reward": config.get("perf", 0.5), "calibration": 0.9, "robustness": 0.8, "latency": 50, "safety_score": 1.0}
+        return config
 
 @pytest.fixture(autouse=True)
-def reset_csc_singleton():
-    """Reset the CognitiveSystemController singleton before/after each test."""
-    CognitiveSystemController._instance = None
+def reset_router_singleton():
+    """Reset SkillRouter singleton before and after each test."""
+    SkillRouter._instance = None
     yield
-    CognitiveSystemController._instance = None
+    SkillRouter._instance = None
 
 @pytest.mark.asyncio
 async def test_discoloop_internalization():
-    """Verify DiscoLoop dual-channel state updates."""
-    csc = CognitiveSystemController(world_model=MockWorldModel())
-    obs = {"latent_embedding": {"v": 1.0}, "semantic_tokens": ["initial"]}
+    """Verify DiscoLoop multi-hop reasoning convergence under VFE minimization."""
+    csc = CognitiveSystemController()
+    obs = {"latent_embedding": {"v": 1.15}}
 
+    await csc._run_discoloop_internalization(obs, num_loops=3)
     await csc._run_discoloop_reasoning(obs)
 
-    # In DiscoLoop, weTransition and append token_loop_...
     assert len(csc.discrete_channel) > 0
     assert "latent" in csc.continuous_state
 
@@ -49,14 +49,15 @@ async def test_pivot_refine_logic():
     """Verify Pivot/Refine severity detection and logic."""
     csc = CognitiveSystemController()
     from trading_bot.core.hms.models import VerifierReport
-
-    # In UCA V5, Pivot/Refine loops and checks EvidenceGraphGate.verify_evidence_first.
-    # Refinement degrades confidence via a factor of 0.9.
     from trading_bot.core.csc.hypothesis import ReasoningBranch
+
     branch = ReasoningBranch(branch_id="test_b", name="Test Branch", confidence=0.9)
     reports = [VerifierReport(agent_name="V1", is_valid=False, confidence=0.9, critique="Too high risk")]
 
-    refined = await csc._refine_strategy(branch, reports)
+    refined = csc._refine_strategy(branch, reports)
+    if asyncio.iscoroutine(refined) or hasattr(refined, "__await__"):
+        refined = await refined
+
     assert refined.confidence < branch.confidence
     assert "Correction: Too high risk" in refined.reasoning_trace
 
@@ -64,12 +65,12 @@ async def test_pivot_refine_logic():
 async def test_hasp_guardrail_interception():
     """Verify HASP executable program intervention."""
     router = SkillRouter()
-    context = {"market": {"volatility": 0.4}} # Exceeds 0.3 threshold
+    context = {"market": {"volatility": 0.5}}
 
-    result = await router.route_task("execution", context)
+    result = await router.route_task("any_task", context)
 
-    assert result["status"] == "pf_intervention"
-    assert result["result"]["action"] == "override_to_hold"
+    assert result.status == "pf_intervention"
+    assert result["pf_result"]["action"] == "override_to_hold"
 
 @pytest.mark.asyncio
 async def test_s2l_behavioral_routing():
@@ -85,9 +86,8 @@ async def test_s2l_behavioral_routing():
 @pytest.mark.asyncio
 async def test_eksft_compliance_verification():
     """Verify EKSFT selective masking check in EvolutionGate."""
-    gate = EvolutionGate(validation_engine=MockValidationEngine(), improvement_threshold=0.1)
+    gate = EvolutionGate(validation_engine=MockValidationEngine(), threshold=0.1)
 
-    # 1. Compliant candidate (high entropy token was masked)
     config_ok = {
         "training_metadata": {
             "eksft_trace": [{"id": "T1", "entropy": 0.9, "masked": True}]
@@ -95,10 +95,9 @@ async def test_eksft_compliance_verification():
     }
     assert gate._check_eksft_compliance(config_ok) is True
 
-    # 2. Non-compliant candidate (high entropy token NOT masked)
     config_fail = {
         "training_metadata": {
-            "eksft_trace": [{"id": "T1", "entropy": 0.9, "masked": False}]
+            "eksft_trace": [{"id": "T2", "entropy": 0.9, "masked": False}]
         }
     }
     assert gate._check_eksft_compliance(config_fail) is False
@@ -106,11 +105,11 @@ async def test_eksft_compliance_verification():
 @pytest.mark.asyncio
 async def test_rsea_monotone_safe_gate():
     """Verify RSEA only approves improvements > threshold."""
-    gate = EvolutionGate(validation_engine=MockValidationEngine(), improvement_threshold=0.1)
+    gate = EvolutionGate(validation_engine=MockValidationEngine(), threshold=0.1)
 
-    baseline = {"perf": 0.5}
-    candidate_good = {"perf": 0.65, "training_metadata": {}} # Gain 0.15 > 0.1
-    candidate_bad = {"perf": 0.55, "training_metadata": {}}  # Gain 0.05 < 0.1
+    baseline = {"reward": 0.5, "calibration": 0.9, "robustness": 0.8, "latency": 10.0, "safety_score": 1.0}
+    candidate_good = {"reward": 0.65, "calibration": 0.9, "robustness": 0.8, "latency": 10.0, "safety_score": 1.0, "training_metadata": {}}
+    candidate_bad = {"reward": 0.55, "calibration": 0.9, "robustness": 0.8, "latency": 10.0, "safety_score": 1.0, "training_metadata": {}}
 
     assert gate.validate_evolution("C1", candidate_good, baseline) is True
     assert gate.validate_evolution("C2", candidate_bad, baseline) is False
@@ -122,53 +121,61 @@ async def test_rsea_multi_metric_protected_gate():
         def run_benchmark(self, config):
             return config
 
-    gate = EvolutionGate(validation_engine=MultiMetricValidationEngine(), improvement_threshold=0.1)
+    gate = EvolutionGate(validation_engine=MultiMetricValidationEngine(), threshold=0.1)
 
     baseline = {
-        "perf": 0.5,
-        "decision_latency": 10.0,
-        "drawdown": 0.05,
-        "calibration_error": 0.05,
-        "hms_retrieval_quality": 0.95,
-        "deterministic_replay_success": 1.0,
+        "reward": 0.5,
+        "calibration": 0.9,
+        "robustness": 0.8,
+        "latency": 10.0,
         "safety_score": 1.0
     }
 
-    # 1. Performance improves and no protected metric regresses -> Approve
     candidate_good = {
-        "perf": 0.65,
-        "decision_latency": 10.0,
-        "drawdown": 0.05,
-        "calibration_error": 0.05,
-        "hms_retrieval_quality": 0.95,
-        "deterministic_replay_success": 1.0,
+        "reward": 0.65,
+        "calibration": 0.9,
+        "robustness": 0.8,
+        "latency": 10.0,
         "safety_score": 1.0,
         "training_metadata": {}
     }
     assert gate.validate_evolution("CG", candidate_good, baseline) is True
 
-    # 2. Performance improves but decision latency regresses significantly -> Reject
     candidate_bad_latency = {
-        "perf": 0.65,
-        "decision_latency": 15.0, # Regressed (10.0 -> 15.0 > 10% tol)
-        "drawdown": 0.05,
-        "calibration_error": 0.05,
-        "hms_retrieval_quality": 0.95,
-        "deterministic_replay_success": 1.0,
+        "reward": 0.65,
+        "calibration": 0.9,
+        "robustness": 0.8,
+        "latency": 15.0,
         "safety_score": 1.0,
         "training_metadata": {}
     }
     assert gate.validate_evolution("CB_Lat", candidate_bad_latency, baseline) is False
 
-    # 3. Performance improves but drawdown regresses -> Reject
-    candidate_bad_drawdown = {
-        "perf": 0.65,
-        "decision_latency": 10.0,
-        "drawdown": 0.08, # Regressed (0.05 -> 0.08 > 0.01 tol)
-        "calibration_error": 0.05,
-        "hms_retrieval_quality": 0.95,
-        "deterministic_replay_success": 1.0,
-        "safety_score": 1.0,
+    candidate_bad_safety = {
+        "reward": 0.65,
+        "calibration": 0.9,
+        "robustness": 0.8,
+        "latency": 10.0,
+        "safety_score": 0.9,
         "training_metadata": {}
     }
-    assert gate.validate_evolution("CB_DD", candidate_bad_drawdown, baseline) is False
+    assert gate.validate_evolution("CB_Safety", candidate_bad_safety, baseline) is False
+
+@pytest.mark.asyncio
+async def test_csc_safety_and_self_improvement():
+    """Verify execution correctness of the safety checking and self-improvement validation pipeline."""
+    csc = CognitiveSystemController()
+    obs = {"impact": 0.9, "confidence": 0.8, "cost": 0.1, "target": "execution_optimizer"}
+
+    result = await csc.execute_self_improvement_loop(obs)
+
+    assert result["status"] == "completed"
+    assert result["promoted"] is True
+    assert result["triage_score"] > 5.0
+    assert "observe" in result["trace"]
+    assert "archive" in result["trace"]
+
+    # Test dropped triage path
+    obs_low = {"impact": 0.1, "confidence": 0.1, "cost": 0.9}
+    result_low = await csc.execute_self_improvement_loop(obs_low)
+    assert result_low["status"] == "dropped"

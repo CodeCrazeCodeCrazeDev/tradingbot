@@ -284,7 +284,7 @@ def test_hostile_evolution_gate_rejection():
     validation_engine = MagicMock()
     validation_engine.run_benchmark.side_effect = lambda config: 1.5 if config.get("name") == "baseline" else 1.2
 
-    gate = EvolutionGate(validation_engine, improvement_threshold=0.05)
+    gate = EvolutionGate(validation_engine, threshold=0.05)
 
     baseline = {"name": "baseline", "sharpe": 1.5, "hash": "abc"}
     hostile_candidate = {"name": "fabricated", "sharpe": 3.5, "hash": "corrupted"}
@@ -376,7 +376,7 @@ def test_rejection_of_harmful_self_improvements():
     validation_engine = MagicMock()
     validation_engine.run_benchmark.side_effect = lambda config: 1.0 if config.get("id") == "baseline" else 0.9
 
-    gate = EvolutionGate(validation_engine, improvement_threshold=0.05)
+    gate = EvolutionGate(validation_engine, threshold=0.05)
 
     is_approved = gate.validate_evolution(
         "harmful_change",

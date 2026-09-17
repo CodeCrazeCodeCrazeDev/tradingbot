@@ -317,10 +317,14 @@ class ParallelEvaluator:
         
         # Use timestamp for unique filename
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-        file_path = temp_dir / f"market_data_{timestamp}.parquet"
         
-        # Save as parquet for efficiency
-        market_data.to_parquet(file_path)
+        try:
+            import pyarrow
+            file_path = temp_dir / f"market_data_{timestamp}.parquet"
+            market_data.to_parquet(file_path)
+        except ImportError:
+            file_path = temp_dir / f"market_data_{timestamp}.pkl"
+            market_data.to_pickle(file_path)
         
         return file_path
     
@@ -353,17 +357,40 @@ def _evaluate_strategy_worker(task_id: str,
     try:
         # Load market data
         import pandas as pd
-        market_data = pd.read_parquet(market_data_path)
+        if str(market_data_path).endswith('.pkl'):
+            market_data = pd.read_pickle(market_data_path)
+        else:
+            try:
+                market_data = pd.read_parquet(market_data_path)
+            except ImportError:
+                pkl_path = str(market_data_path).replace('.parquet', '.pkl')
+                market_data = pd.read_pickle(pkl_path)
         
         # Initialize backtester
-        backtester = LeakageFreeBacktester(backtest_config)
+        initial_capital = backtest_config.get('initial_capital', 100000.0)
+        risk_free_rate = backtest_config.get('risk_free_rate', 0.02)
+
+        backtester = LeakageFreeBacktester(
+            data=market_data,
+            initial_capital=initial_capital,
+            risk_free_rate=risk_free_rate
+        )
         
         # Run backtest
-        backtest_result = backtester.run_backtest(genome, market_data)
+        backtest_result = backtester.backtest(genome)
         
         # Calculate fitness
-        fitness_evaluator = MultiObjectiveFitness(backtest_config.get('fitness', {}))
-        fitness_score = fitness_evaluator.evaluate(backtest_result)
+        fitness_config = backtest_config.get('fitness', {})
+        if isinstance(fitness_config, dict):
+            fitness_evaluator = MultiObjectiveFitness(**fitness_config)
+        else:
+            fitness_evaluator = MultiObjectiveFitness()
+
+        fitness_score = fitness_evaluator.evaluate(
+            backtest_result,
+            genome.get_complexity(),
+            market_data
+        )
         
         # Run walk-forward validation if enabled
         walkforward_result = None
@@ -384,6 +411,8 @@ def _evaluate_strategy_worker(task_id: str,
         )
         
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         logger.error(f"Worker {worker_id} failed: {e}")
         return EvaluationResult(
             task_id=task_id,
