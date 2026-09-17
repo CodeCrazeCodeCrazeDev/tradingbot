@@ -560,6 +560,7 @@ class TestSmartOrderRouter:
 
     @pytest.mark.asyncio
     async def test_score_venues(self):
+        pass
         router = SmartOrderRouter()
         venues = {
             'exchange1': {'fee_rate': 0.001, 'latency': 5, 'liquidity': 10000, 'fill_rate': 0.98},

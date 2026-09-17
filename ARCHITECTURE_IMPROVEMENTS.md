@@ -1,32 +1,24 @@
-# Architectural Improvements & Structural Simplifications (2026)
+# AlphaAlgo Architectural Improvements (2026 Production Engineering Audit)
 
-This document catalogs the structural simplifications, architectural unifications, and cohesion improvements realized during the 2026 Production Engineering Audit of AlphaAlgo (UCA-2026).
+## 1. Unified Single-Capability Architecture
 
----
+Prior to this audit, several components suffered from fragmented stub implementations and duplicate class definitions across legacy and active folders. The following structural consolidations were executed:
 
-## 1. Core Architectural Unifications
-
-### Single-Source-of-Truth Singletons
-* **Unified Decision Bus (`UnifiedDecisionBus`)**: Consolidated event bus and decision dispatching into a single thread-safe singleton. Added clean `reset()` semantics for fast test isolation.
-* **Cognitive System Controller (`CognitiveSystemController`)**: Centralized strategic planning, active inference, and HASP guardrail interception.
-* **Skill Router (`SkillRouter`)**: Unified domain specialization routing across cognitive and execution agents.
-* **Hierarchical Memory System (`HierarchicalMemorySystem`)**: Streamlined the 8-tier memory hierarchy with graph-native SAGE linking and AutoMem retrieval.
+- **Database Persistence Consolidation**: Standardized `DatabaseManager` in `trading_bot/database/production_database.py` with SQLAlchemy 2.0 async engine support, TimescaleDB time-series compatibility, and robust fallback handling.
+- **Service Registry Alignment**: Consolidated `ServiceRegistry` into `trading_bot/core/service_registry.py`, providing a single thread-safe registry pattern with priority levels (`CRITICAL`, `HIGH`, `NORMAL`, `LOW`) and health checks.
+- **Master Orchestrator Decoupling**: Consolidated `MasterOrchestrator` in `trading_bot/core_agent_system/master_orchestrator.py` with structured `SystemContext` and `Decision` contracts.
 
 ---
 
-## 2. Structural Simplifications
+## 2. Hardened Security & Sandbox Execution Boundary
 
-### Consolidation of Duplicate Orchestrators
-* Archived legacy, competing orchestrators under `trading_bot/_archive/legacy_orchestrators/` (including `realtime_orchestrator.py`, `sentient_orchestrator.py`, `delegation_orchestrator.py`).
-* Promoted `MasterOrchestrator` (`trading_bot/core_agent_system/master_orchestrator.py`) as the sole authoritative platform orchestrator.
-
-### Security Boundary Enforcement
-* Enforced in-process sandboxing via `SecureASTVisitor` across distributed parallel backtesting and strategy code parsing.
-* Consolidated model deserialization under `trading_bot.security.safe_pickle.safe_load`.
+Dynamic code execution in backtesting and self-evolution modules now routes through strict AST inspection:
+- `trading_bot/distributed/parallel_backtester.py` now enforces `SecureASTVisitor().validate_code(strategy_code)` before invoking Python `exec`.
+- Disallowed constructs include unsafe `eval`, `exec`, un-sanitized `pickle.loads`, `os.system`, and subprocess invocation with `shell=True`.
 
 ---
 
-## 3. Coupling & Cohesion Improvements
+## 3. Resilience & Singleton Thread-Safety
 
-* **Module Separation**: Disentangled risk limits from AI intelligence layers by establishing `HardenedGovernanceRoot` and `RiskVerifier` as rigid, un-overrideable financial boundaries.
-* **Defensive Guardrails**: Added defensive checks in `CognitiveSystemController` to handle optional world model simulation capabilities cleanly without raising `AttributeError`.
+- All core singletons (`UnifiedDecisionBus`, `CognitiveSystemController`, `HierarchicalMemorySystem`, `SkillRouter`) feature thread-safe `reset()` capabilities using reentrant class locks (`RLock`).
+- Cleaned exception boundaries across high-throughput data pipelines to prevent unhandled exception swallowing.

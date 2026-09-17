@@ -332,7 +332,7 @@ class DatabaseManager:
                 entry_time=trade_data['entry_time'],
                 exit_time=trade_data.get('exit_time'),
                 status=trade_data.get('status', 'open'),
-                metadata=trade_data.get('metadata')
+                extra_data=trade_data.get('extra_data')
             )
             session.add(trade)
             await session.flush()
@@ -382,7 +382,7 @@ class DatabaseManager:
             'entry_time': trade.entry_time.isoformat() if trade.entry_time else None,
             'exit_time': trade.exit_time.isoformat() if trade.exit_time else None,
             'status': trade.status,
-            'metadata': trade.metadata
+            'extra_data': trade.extra_data
         }
     
     # ==========================================
@@ -407,7 +407,7 @@ class DatabaseManager:
                 commission=order_data.get('commission', 0),
                 status=order_data.get('status', 'pending'),
                 submitted_at=order_data.get('submitted_at', datetime.utcnow()),
-                metadata=order_data.get('metadata')
+                extra_data=order_data.get('extra_data')
             )
             session.add(order)
             await session.flush()
