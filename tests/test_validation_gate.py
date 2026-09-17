@@ -276,7 +276,6 @@ class TestValidationResponse:
     def test_response_creation(self):
         """Test validation response creation."""
         from trading_bot.validation.risk_validation_gate import ValidationResult
-        from typing import Set
         
         response = ValidationResponse(
             result=ValidationResult.APPROVED,

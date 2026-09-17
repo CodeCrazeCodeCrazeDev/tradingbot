@@ -99,7 +99,6 @@ class SelfDebugger:
             include_stack: Whether to include stack trace
         """
         import traceback
-from typing import Set
 
 logger = logging.getLogger(__name__)
 

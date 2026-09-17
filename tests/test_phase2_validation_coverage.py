@@ -545,8 +545,8 @@ class TestRiskValidationGate:
     def test_risk_validation_gate_check(self):
         """Test risk gate checking."""
         try:
+            pass
     pass
-import numpy
 import pandas
             
             gate = RiskValidationGate({})

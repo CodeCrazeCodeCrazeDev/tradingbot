@@ -350,6 +350,7 @@ class TestTradeValidator:
                 account_equity=10000.0
             )
         except ValidationError:
+            pass
         
         stats = validator.get_validation_stats()
         assert stats['total'] == 2

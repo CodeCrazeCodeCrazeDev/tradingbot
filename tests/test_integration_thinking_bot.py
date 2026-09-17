@@ -395,7 +395,6 @@ class TestEliteIntegration:
         """Test Elite bot initializes with all components"""
 
         from thinking_bot_elite import EliteThinkingBot
-import numpy
             
 with patch('thinking_bot_elite.mt5') as mock_mt5:
                 mock_mt5.initialize.return_value = True

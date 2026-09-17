@@ -228,7 +228,6 @@ class TestQuantumBlockchainIntegration(unittest.TestCase):
     def test_performance_benchmarks(self):
         """Test performance benchmarks for quantum blockchain features."""
         import time
-from typing import Set
 import numpy
 import pandas
         

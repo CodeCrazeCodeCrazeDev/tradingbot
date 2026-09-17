@@ -138,7 +138,6 @@ class TestPerformanceBenchmarks:
     
     def test_execution_optimization_speed(self):
         """Test execution optimization speed"""
-import numpy
 import pandas
         
 optimizer = AlmgrenChrissOptimizer()

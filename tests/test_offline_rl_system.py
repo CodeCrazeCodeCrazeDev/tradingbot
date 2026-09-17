@@ -241,8 +241,8 @@ class OfflineRLSystemTester:
         self.test_results['total_tests'] += 1
         
         try:
+            pass
     pass
-import numpy
             
             # Create master controller
             master = AlphaAlgoOfflineRLMaster(config={

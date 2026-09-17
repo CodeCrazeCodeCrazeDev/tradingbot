@@ -17,14 +17,10 @@ from pathlib import Path
 try:
     from trading_bot.orchestrator.master_orchestrator import *
 except ImportError:
-    try:
-        from trading_bot.master_orchestrator import *
-    except ImportError:
-        sys.path.insert(0, str(Path(__file__).parent.parent))
-        try:
-            from trading_bot.orchestrator.master_orchestrator import *
-        except ImportError:
-            pass
+    # Fallback import
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from trading_bot.orchestrator.master_orchestrator import *
 
 logger = logging.getLogger(__name__)
 

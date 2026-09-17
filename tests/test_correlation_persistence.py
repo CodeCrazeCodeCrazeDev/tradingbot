@@ -105,7 +105,6 @@ class TestCorrelationPersistence:
         
         # Modify metadata to make it old
         import json
-from enum import auto
 import numpy
 import pandas
 with open(persistence.metadata_file, 'r') as f:

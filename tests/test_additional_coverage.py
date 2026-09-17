@@ -498,10 +498,7 @@ class TestInfrastructure(unittest.TestCase):
     def test_health_check_manager_status(self):
         """Test health check manager status."""
         from trading_bot.infrastructure import HealthCheckManager
-from typing import Set
 from enum import auto
-import numpy
-import pandas
         
 manager = HealthCheckManager()
         # Check for available methods

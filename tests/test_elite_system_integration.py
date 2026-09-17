@@ -392,7 +392,6 @@ class TestEliteSystemIntegration(unittest.TestCase):
         print("Testing Performance Benchmarks...")
         
         import time
-from typing import Set
 from dataclasses import dataclass
 import numpy
 import pandas

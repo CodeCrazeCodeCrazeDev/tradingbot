@@ -1722,7 +1722,6 @@ class FalsificationGate:
             "HallucinationDetector": hallucination_res.is_valid,
         }
 
-        worst_case = None
         is_falsified = not all(verifier_outcomes.values())
         reason = None
         worst_case = None
@@ -2541,7 +2540,7 @@ class MultiAgentDebateSystem:
                     "votes": decision.agent_votes,
                 },
                 'random_seed': "seed_42",
-                environment_fingerprint=hashlib.sha256(
+                'environment_fingerprint': hashlib.sha256(
                     f"{git_sha}_{config_hash}".encode("utf-8")
                 ).hexdigest(),
                 execution_latency=duration_ms,
