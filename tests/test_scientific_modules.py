@@ -30,9 +30,9 @@ class MockValidationEngine:
 @pytest.fixture(autouse=True)
 def reset_router_singleton():
     """Reset SkillRouter singleton before and after each test."""
-    SkillRouter._instance = None
+    SkillRouter.reset()
     yield
-    SkillRouter._instance = None
+    SkillRouter.reset()
 
 @pytest.mark.asyncio
 async def test_discoloop_internalization():

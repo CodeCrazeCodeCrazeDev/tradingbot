@@ -45,18 +45,6 @@ class SkillRouteOutcome:
     reason: Optional[str] = None
     version: Optional[str] = None
 
-    @property
-    def pf_result(self) -> Dict[str, Any]:
-        return {
-            "action": self.action or "override_to_hold",
-            "reason": self.reason,
-            "pf_version": self.version
-        }
-
-    @property
-    def result(self) -> Dict[str, Any]:
-        return self.pf_result
-
     def __getattribute__(self, name):
         val = super().__getattribute__(name)
         if name == "adapter_id" and val:
@@ -74,12 +62,18 @@ class SkillRouteOutcome:
         if key == "reason":
             return self.reason
         if key in ("pf_result", "result"):
-            return self.pf_result
-        if hasattr(self, key):
-            val = getattr(self, key)
-            if key == "adapter_id" and val:
-                return AdapterChameleonStr(val)
+            return {
+                "action": self.action or "override_to_hold",
+                "reason": self.reason,
+                "pf_version": self.version
+            }
+        val = getattr(self, key, None)
+        if key == "adapter_id" and val:
+            return AdapterChameleonStr(val)
+        if val is not None:
             return val
+        if hasattr(self, key):
+            return getattr(self, key)
         raise KeyError(key)
 
     def get(self, key: str, default: Any = None) -> Any:
@@ -101,7 +95,7 @@ class SkillRouteOutcome:
         return iter(self.keys())
 
     def __contains__(self, key: str) -> bool:
-        return hasattr(self, key) or key in ("pf_result", "result")
+        return key in self.keys() or hasattr(self, key)
 
     def to_dict(self) -> Dict[str, Any]:
         d = {
@@ -123,6 +117,7 @@ class SkillRouteOutcome:
 
 
 
+
 @dataclass
 class SkillArtifact:
     skill_id: str
@@ -136,8 +131,8 @@ class SkillArtifact:
 
 class SkillRouter:
     """
-    Authoritative router for mapping strategic tasks to specialized skills (UCA V6).
-    Supports skill versioning, capability resolution, and deterministic routing.
+    Authoritative router for mapping specialized tasks to skills/adapters (UCA V6).
+    Supports skill versioning, capability resolution, and HASP/S2L routing.
     """
 
     _instance = None
@@ -157,7 +152,6 @@ class SkillRouter:
         with cls._lock:
             if cls._instance is not None:
                 cls._instance._registry.clear()
-                cls._instance._initialize_default_skills()
                 cls._instance._initialized = False
                 cls._instance = None
         logger.info("SkillRouter singleton reset")
@@ -166,7 +160,6 @@ class SkillRouter:
         if getattr(self, "_initialized", False):
             return
         self._registry: Dict[str, List[SkillArtifact]] = {}
-        self._specialists: Dict[str, Any] = {}
         self._initialize_default_skills()
         if getattr(self, "_initialized", False):
             return
@@ -196,7 +189,6 @@ class SkillRouter:
             )
         )
 
-        # Register standard S2L adapters
         self.register_skill(SkillArtifact(
             skill_id="hedging_behavior",
             skill_type=SkillType.LORA,
