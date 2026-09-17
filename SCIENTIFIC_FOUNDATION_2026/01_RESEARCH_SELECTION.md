@@ -6,7 +6,7 @@ This document details the selection process, rigorous quality filtering, and mul
 
 ## 1. Selection Criteria & Methodology
 
-We filtered paper candidates using a formal multi-attribute process, evaluating candidates on:
+We filtered paper candidates using a formal multi-attribute process across 9 mandatory research domains (Self-Improvement, Continual Learning, Evolution, Agents, Planning, Memory, World Models, Scientific Reasoning, and Financial AI), evaluating candidates on:
 *   **Scientific Merit**: Status of venue/peer-review, or status of leading research labs (DeepMind, OpenAI, Anthropic, Shanghai AI Lab).
 *   **Mathematical Rigor**: Formal definition of state transitions, losses, metrics, or bounds.
 *   **Engineering Maturity**: Practicality of implementation, presence of verifiable open-source baselines, and production applicability.

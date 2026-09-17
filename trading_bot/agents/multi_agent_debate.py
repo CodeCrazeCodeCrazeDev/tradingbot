@@ -457,6 +457,14 @@ class HallucinationDetector:
 
 
 class HallucinationDetector:
+    """Verifies market state integrity and detects pricing anomalies."""
+    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
+        if context.current_price <= 0.0:
+            return VerifierResult(is_valid=False, rejection_reason="HallucinationDetector: Non-positive price anomaly")
+        return VerifierResult(is_valid=True)
+
+
+class HallucinationDetector:
     """Detects pricing anomalies, negative prices, and invalid context feeds."""
     def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
         if context.current_price <= 0.0:
@@ -1780,9 +1788,6 @@ class FalsificationGate:
         )
 
 
-# -----------------------------------------------------------------------------
-# Head AI & Bayesian Engine
-# -----------------------------------------------------------------------------
 
 
 class HeadAI:

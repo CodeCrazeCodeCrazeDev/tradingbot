@@ -1,6 +1,6 @@
 # 🏗️ Phase 2: First-Principles Architectural Synthesis (2026)
 
-This document presents the first-principles architectural redesign of the AlphaAlgo system. It integrates our 100-paper structural, cognitive, and safety insights into a single, cohesive, production-grade model.
+This document presents the first-principles architectural redesign of the AlphaAlgo system across all 9 research domains. It integrates our 100-paper structural, cognitive, and safety insights into a single, cohesive, production-grade model.
 
 ---
 
