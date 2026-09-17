@@ -1568,6 +1568,7 @@ class ProvenanceDataSchema:
 
 @dataclass
 class StructuredMessage:
+    """Canonical message envelope for structured multi-agent debate communication."""
     message_id: str
     task_id: str
     parent_task_id: str
@@ -1581,43 +1582,81 @@ class StructuredMessage:
     confidence: float
 
     def validate(self) -> bool:
+        if not self.message_id or not self.sender_agent_id or not self.recipient:
+            return False
+        if not isinstance(self.payload, dict):
+            return False
         return True
 
 
 class VerifierResult:
-    def __init__(self, is_valid: bool, rejection_reason: str = ""):
+    """Standardized verifier result payload."""
+    def __init__(self, is_valid: bool, rejection_reason: Optional[str] = None):
         self.is_valid = is_valid
         self.rejection_reason = rejection_reason
 
 
 class CausalVerifier:
+    """Verifies causal structure and macro stability constraints."""
     def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
-        if context.vix_level is not None and context.vix_level > 30.0:
-            return VerifierResult(is_valid=False, rejection_reason="High VIX macro causal risk")
-        return VerifierResult(is_valid=True)
+        if context.vix_level is not None and context.vix_level > 35.0:
+            return VerifierResult(False, "Extreme market volatility invalidates causal structural bounds")
+        return VerifierResult(True)
 
 
 class LiquidityVerifier:
+    """Verifies order book depth and volume ratio bounds."""
     def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
-        if context.volume_ratio < 0.6 and context.volatility > 0.035:
-            return VerifierResult(is_valid=False, rejection_reason="Low liquidity trap")
-        return VerifierResult(is_valid=True)
+        if context.volume_ratio < 0.3 and action not in [TradeAction.HOLD, TradeAction.NO_TRADE]:
+            return VerifierResult(False, f"Illiquid trading environment (volume ratio {context.volume_ratio:.2f} < 0.3)")
+        return VerifierResult(True)
 
 
 class RegimeVerifier:
+    """Verifies regime alignment with directional trades."""
     def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
-        if action in [TradeAction.STRONG_BUY, TradeAction.BUY] and context.htf_trend == "DOWN":
-            return VerifierResult(is_valid=False, rejection_reason="Counter-trend risk against HTF DOWN")
-        if action in [TradeAction.STRONG_SELL, TradeAction.SELL] and context.htf_trend == "UP":
-            return VerifierResult(is_valid=False, rejection_reason="Counter-trend risk against HTF UP")
-        return VerifierResult(is_valid=True)
+        if action in [TradeAction.BUY, TradeAction.STRONG_BUY] and context.htf_trend == "DOWN" and context.ltf_trend == "DOWN":
+            return VerifierResult(False, "Counter-trend buy in severe HTF+LTF downtrend regime")
+        if action in [TradeAction.SELL, TradeAction.STRONG_SELL] and context.htf_trend == "UP" and context.ltf_trend == "UP":
+            return VerifierResult(False, "Counter-trend sell in severe HTF+LTF uptrend regime")
+        return VerifierResult(True)
 
 
 class HallucinationDetector:
+    """Detects pricing anomalies and invalid market data states."""
     def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
         if context.current_price <= 0.0:
-            return VerifierResult(is_valid=False, rejection_reason="Invalid current price")
-        return VerifierResult(is_valid=True)
+            return VerifierResult(False, "Invalid/Non-positive market price detected")
+        if context.volatility < 0.0 or context.portfolio_exposure < 0.0:
+            return VerifierResult(False, "Negative metric parameter detected")
+        return VerifierResult(True)
+
+
+class BayesianDecisionEngine:
+    """
+    Decoupled mathematical engine implementing correlation-aware Bayesian posterior probability calculations.
+    """
+    def __init__(self, weights: Optional[Dict] = None, correlations: Optional[Dict] = None):
+        self.weights = weights or {}
+        self.correlations = correlations or {}
+
+    def calculate_posterior(self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]) -> float:
+        prod_s = 1.0
+        prod_ns = 1.0
+        for endorsed, likelihood, exponent in evidence_likelihoods:
+            p_e_given_s = max(0.01, min(0.99, likelihood))
+            if endorsed:
+                prod_s *= p_e_given_s ** exponent
+                prod_ns *= (1.0 - p_e_given_s) ** exponent
+            else:
+                prod_s *= (1.0 - p_e_given_s) ** exponent
+                prod_ns *= p_e_given_s ** exponent
+
+        numerator = prior_prob * prod_s
+        denominator = (prior_prob * prod_s) + ((1.0 - prior_prob) * prod_ns)
+        if denominator == 0.0:
+            return prior_prob
+        return max(0.0, min(1.0, numerator / denominator))
 
 
 class FalsificationGate:
@@ -1676,7 +1715,6 @@ class FalsificationGate:
         worst_case = None
         rejection_reason = None
         worst_case = None
-
         if is_falsified:
             failed_reasons = []
             if not causal_res.is_valid: failed_reasons.append(f"CausalVerifier: {causal_res.rejection_reason}")
@@ -1714,46 +1752,6 @@ class FalsificationGate:
 
 
 class BayesianDecisionEngine:
-    """
-    Decoupled mathematical component for calculating correlation-aware Bayesian posterior probabilities.
-    """
-
-    def __init__(
-        self, weights: Dict[AgentRole, float], correlations: Dict[Tuple[AgentRole, AgentRole], float]
-    ):
-        self.weights = weights
-        self.correlations = correlations
-
-    def calculate_posterior(
-        self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]
-    ) -> float:
-        """
-        Computes mathematically rigorous Bayesian posterior probability:
-        P(S | E) = [ P(S) * Prod P(E_i | S)^w_i ] / [ P(S) * Prod P(E_i | S)^w_i + P(~S) * Prod P(E_i | ~S)^w_i ]
-        """
-        prod_s = 1.0
-        prod_ns = 1.0
-
-        for endorsed, likelihood, exponent in evidence_likelihoods:
-            p_e_given_s = max(0.01, min(0.99, likelihood))
-
-            if endorsed:
-                prod_s *= p_e_given_s**exponent
-                prod_ns *= (1.0 - p_e_given_s) ** exponent
-            else:
-                prod_s *= (1.0 - p_e_given_s) ** exponent
-                prod_ns *= p_e_given_s**exponent
-
-        numerator = prior_prob * prod_s
-        denominator = (prior_prob * prod_s) + ((1.0 - prior_prob) * prod_ns)
-
-        if denominator == 0.0:
-            return prior_prob
-
-        return max(0.0, min(1.0, numerator / denominator))
-
-
-class HeadAI:
     """
     Lightweight Head AI: coordinates evidence-first debate aggregation and Bayesian calibration.
     """
@@ -1849,7 +1847,6 @@ class HeadAI:
                 winning_action = max(action_scores.keys(), key=lambda a: action_scores[a])
             else:
                 winning_action = TradeAction.HOLD
-                winning_score = 0.5
 
             # Prior probability based on trend alignment
             aligned = False
@@ -2393,11 +2390,29 @@ class MultiAgentDebateSystem:
                     for agent in self.agents:
                         try:
                             fallback_arg = agent.analyze(context)
-                            current_round_args.append(fallback_arg)
-                            all_arguments.append(fallback_arg)
                         except Exception as e:
-                            logger.error(f"Fallback analyze failed for agent {agent.role.value}: {e}")
-                            continue
+                            if agent.role == AgentRole.RISK_SENTINEL:
+                                fallback_arg = AgentArgument(
+                                    agent_role=agent.role,
+                                    action=TradeAction.NO_TRADE,
+                                    conviction=Conviction.VERY_HIGH,
+                                    reasoning=[f"Fallback: Risk sentinel crashed: {e}"],
+                                    key_factors={"risk_crash_penalty": -1.0},
+                                    confidence=0.95,
+                                    timestamp=datetime.now(),
+                                )
+                            else:
+                                fallback_arg = AgentArgument(
+                                    agent_role=agent.role,
+                                    action=TradeAction.HOLD,
+                                    conviction=Conviction.LOW,
+                                    reasoning=[f"Fallback: Agent {agent.role.value} failed: {e}"],
+                                    key_factors={},
+                                    confidence=0.2,
+                                    timestamp=datetime.now(),
+                                )
+                        current_round_args.append(fallback_arg)
+                        all_arguments.append(fallback_arg)
 
                 consensus = self._calculate_consensus(all_arguments)
                 conflicts = self._identify_conflicts(current_round_args)
@@ -2488,11 +2503,6 @@ class MultiAgentDebateSystem:
                 'memory_snapshot': f"sage_mem_snap_{hashlib.md5(market_state_str.encode('utf-8')).hexdigest()[:8]}",
                 'experiment_id': "exp_multidim_debate_prod",
                 'risk_policy_version': "risk_fortress_v6_strict",
-                'falsification_report': {
-                    'is_falsified': falsification_report.is_falsified,
-                    'rejection_reason': falsification_report.rejection_reason,
-                    'verifier_outcomes': falsification_report.verifier_outcomes,
-                },
                 'verification_results': verification_results,
                 'falsification_report': {
                     'is_falsified': falsification_report.is_falsified,
@@ -2516,17 +2526,11 @@ class MultiAgentDebateSystem:
                 'environment_fingerprint': hashlib.sha256(
                     f"{git_sha}_{config_hash}".encode("utf-8")
                 ).hexdigest(),
-                execution_latency=duration_ms,
-                decision_timestamp=datetime.now().isoformat(),
-                debate_quality_evaluation=evaluation,
-                falsification_report={
-                    "is_falsified": falsification_report.is_falsified,
-                    "rejection_reason": falsification_report.rejection_reason,
-                    "verifier_outcomes": falsification_report.verifier_outcomes,
-                    "worst_case_scenario": falsification_report.worst_case_scenario
-                }
-            )
-            decision.provenance = provenance_schema.to_dict()
+                "execution_latency": duration_ms,
+                "decision_timestamp": datetime.now().isoformat(),
+                "debate_quality_evaluation": evaluation,
+            }
+            decision.provenance = provenance_data
 
             self.decisions.append(decision)
             return decision
