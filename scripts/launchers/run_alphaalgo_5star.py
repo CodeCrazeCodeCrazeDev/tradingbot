@@ -1,4 +1,3 @@
-import logging
 """
 AlphaAlgo 5-Star Production Launcher
 Fully upgraded trading system with all enhancements integrated.

@@ -1,4 +1,3 @@
-import logging
 """
 Production deployment script for AlphaAlgo 5-Star system.
 Handles multi-symbol deployment with optimization and monitoring.
