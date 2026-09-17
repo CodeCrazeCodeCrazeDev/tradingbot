@@ -12,17 +12,17 @@ Paper Traceability Matrix:
 - arXiv:2605.21482 (DeepWeb-Bench): Performance-calibrated skill routing scores.
 
 Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral adaptations (Skill-to-LoRA).
+and behavioral adapters (Skill-to-LoRA).
 
-Research Traceability Matrix:
-- HASP (arXiv:2605.17734): Harnessing LLM Agents with Skill Programs & non-bypassable Program Functions
-- S2L / NanoResearch (arXiv:2605.10813): Skill-to-LoRA behavioral routing and co-evolving skill banks
-- AutoResearchClaw (arXiv:2605.20025): Adaptive strategy pivot triggering
-- EKSFT (arXiv:2605.29303): Preserving exploratory policy routing entropy
-- SAGE (arXiv:2605.12061): Capability graph resolution
-- AutoMem (arXiv:2607.01224): Procedural skill memory retrieval
-- DiscoLoop (arXiv:2607.00341): Discrete route codebook quantization
-- DeepWeb-Bench (arXiv:2605.21482): Calibrated outcome routing validation
+Paper Traceability Matrix:
+- arXiv:2605.17734 (HASP): Executable, non-bypassable Program Functions (PFs) for risk guardrails.
+- arXiv:2605.29303 (EKSFT): Selective skill routing based on entropy and KL bounds.
+- arXiv:2607.00341 (DiscoLoop): Skill execution integrated with discrete-continuous reasoning states.
+- arXiv:2607.01224 (AutoMem): Procedural skill memory indexing and schema adaptation.
+- arXiv:2605.12061 (SAGE): Capability-based skill resolution over causal graph topologies.
+- arXiv:2605.10813 (NanoResearch): Tri-level co-evolving procedural rule bank.
+- arXiv:2605.20025 (AutoResearchClaw): Mid-flight execution intercept and fallback routing.
+- arXiv:2605.21482 (DeepWeb-Bench): Calibration and derivation checking of skill execution outputs.
 """
 
 import logging

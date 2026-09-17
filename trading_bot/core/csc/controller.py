@@ -1,27 +1,17 @@
 """
-Cognitive System Controller (CSC) - UCA V6 Core Single Brain Orchestrator
-
-Paper Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Selective token fine-tuning parameterization & entropy bounds.
-- arXiv:2607.00341 (DiscoLoop): Mixed discrete-continuous recurrence loop state tracking.
-- arXiv:2607.01224 (AutoMem): Metamemory schema optimization & index versioning.
-- arXiv:2605.12061 (SAGE): Outcome-driven dynamic graph memory evolution.
-- arXiv:2605.10813 (NanoResearch): Tri-level co-evolving skill/memory/policy integration.
-- arXiv:2605.20025 (AutoResearchClaw): Self-healing critique-refinement (Pivot/Refine) control loops.
-- arXiv:2605.17734 (HASP): Non-bypassable deterministic Skill Program guardrails.
-- arXiv:2605.21482 (DeepWeb-Bench): Expected Calibration Error (ECE) and confidence alignment.
+Cognitive System Controller (CSC) - Authoritative Unified AI Brain (UCA V6)
 
 Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
 
-Research Traceability Matrix:
-- DiscoLoop (arXiv:2607.00341): Multi-hop reasoning via continuous-discrete recurrence loops
-- AutoResearchClaw (arXiv:2605.20025): Self-healing Pivot/Refine execution loops and verifier debates
-- HASP (arXiv:2605.17734): Safety guardrail interception and Program Function execution
-- DeepWeb-Bench (arXiv:2605.21482): Expected Calibration Error (ECE) and multi-dimensional valuation
-- EKSFT (arXiv:2605.29303): Epistemic entropy anchoring during strategy adaptation
-- SAGE (arXiv:2605.12061): Causal graph-memory alignment
-- AutoMem (arXiv:2607.01224): Metamemory ledger integration
-- NanoResearch (arXiv:2605.10813): Tri-level co-evolving policy execution
+Paper Traceability Matrix:
+- arXiv:2607.00341 (DiscoLoop): Discrete-continuous hidden state recurrence loops (`DiscoLoopCell`).
+- arXiv:2605.20025 (AutoResearchClaw): Pivot/Refine self-healing research control (`_pivot_refine_loop`).
+- arXiv:2605.17734 (HASP): Non-bypassable program function guardrail interception in Active Inference.
+- arXiv:2607.01224 (AutoMem): Metamemory integration and evidence folding.
+- arXiv:2605.12061 (SAGE): Dynamic graph-based evidence retrieval.
+- arXiv:2605.29303 (EKSFT): Adaptive control policy compliance during online strategy evaluation.
+- arXiv:2605.10813 (NanoResearch): Co-evolving tri-level policy and research ledger storage.
+- arXiv:2605.21482 (DeepWeb-Bench): Calibration and derivation verification before decision execution.
 """
 
 import numpy as np

@@ -2,14 +2,14 @@
 Multi-Agent Debate System (UCA-2026 Core Intelligence Layer)
 
 Paper Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Entropy-KL bounded argument selection and confidence masking.
-- arXiv:2607.00341 (DiscoLoop): Multi-hop falsification gates and discrete-continuous state updates.
-- arXiv:2607.01224 (AutoMem): Historical argument schema retrieval and metamemory logging.
-- arXiv:2605.12061 (SAGE): Structured evidence graph links and causal relation validation.
-- arXiv:2605.10813 (NanoResearch): Dynamic agent scorecards and multi-agent debate consensus.
-- arXiv:2605.20025 (AutoResearchClaw): Self-healing debate loops and pivot mechanisms.
-- arXiv:2605.17734 (HASP): Non-negotiable financial risk sentinels and hard safety vetoes.
-- arXiv:2605.21482 (DeepWeb-Bench): Expected Calibration Error (ECE) and Bayesian confidence calibration.
+- arXiv:2605.10813 (NanoResearch): Dynamic scorecards, tri-level rule banks, and co-evolving agent policies.
+- arXiv:2607.00341 (DiscoLoop): Multi-hop reasoning loops with coupled discrete symbolic and continuous states.
+- arXiv:2605.29303 (EKSFT): Selective token fine-tuning masking and confidence calibration.
+- arXiv:2605.17734 (HASP): Executable program function risk sentinels and non-negotiable financial safety vetoes.
+- arXiv:2605.20025 (AutoResearchClaw): Pivot/Refine self-healing research loops and adversarial multi-agent debate.
+- arXiv:2607.01224 (AutoMem): Metamemory schema integration for debate trajectory logging.
+- arXiv:2605.12061 (SAGE): Dynamic graph-based evidence traversal for prosecutor agents.
+- arXiv:2605.21482 (DeepWeb-Bench): Evidence derivation, calibration scoring, and multi-dimensional quality metrics.
 
 Evidence-first debate loop:
 Observation -> Evidence -> Hypothesis -> Predictions -> Counter-evidence -> Bayesian Consensus Aggregation.
