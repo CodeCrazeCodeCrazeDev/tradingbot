@@ -272,6 +272,66 @@ class BayesianDecisionEngine:
 
 
 class CausalVerifier:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerificationOutcome:
+        if context.vix_level is not None and context.vix_level > 30.0:
+            return VerificationOutcome(is_valid=False, rejection_reason="Extreme market panic (VIX > 30.0)")
+        return VerificationOutcome(is_valid=True)
+
+
+class LiquidityVerifier:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerificationOutcome:
+        if context.volume_ratio < 0.6 and context.volatility > 0.035:
+            return VerificationOutcome(is_valid=False, rejection_reason="Illiquid slippage trap (low volume + extreme volatility)")
+        return VerificationOutcome(is_valid=True)
+
+
+class RegimeVerifier:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerificationOutcome:
+        if action in [TradeAction.STRONG_BUY, TradeAction.BUY] and context.htf_trend == "DOWN":
+            return VerificationOutcome(is_valid=False, rejection_reason="Counter-trend risk against HTF DOWN trend")
+        if action in [TradeAction.STRONG_SELL, TradeAction.SELL] and context.htf_trend == "UP":
+            return VerificationOutcome(is_valid=False, rejection_reason="Counter-trend risk against HTF UP trend")
+        return VerificationOutcome(is_valid=True)
+
+
+class HallucinationDetector:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerificationOutcome:
+        if context.current_price <= 0.0:
+            return VerificationOutcome(is_valid=False, rejection_reason="Invalid current price detected: must be positive")
+        return VerificationOutcome(is_valid=True)
+
+
+class BayesianDecisionEngine:
+    """
+    Dedicated Bayesian Decision Engine for correlation-aware posterior probability calculations.
+    """
+    def __init__(self, weights: Dict[AgentRole, float], correlations: Dict[Tuple[AgentRole, AgentRole], float]):
+        self.weights = weights
+        self.correlations = correlations
+
+    def calculate_posterior(self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]) -> float:
+        prod_s = 1.0
+        prod_ns = 1.0
+
+        for endorsed, likelihood, exponent in evidence_likelihoods:
+            p_e_given_s = max(0.01, min(0.99, likelihood))
+            if endorsed:
+                prod_s *= p_e_given_s ** exponent
+                prod_ns *= (1.0 - p_e_given_s) ** exponent
+            else:
+                prod_s *= (1.0 - p_e_given_s) ** exponent
+                prod_ns *= p_e_given_s ** exponent
+
+        numerator = prior_prob * prod_s
+        denominator = (prior_prob * prod_s) + ((1.0 - prior_prob) * prod_ns)
+
+        if denominator == 0.0:
+            return prior_prob
+
+        return max(0.0, min(1.0, numerator / denominator))
+
+
+class CausalVerifier:
     """Verifier checking causal validity and macro black swan conditions."""
     def verify(self, action: TradeAction, context: MarketContext) -> VerificationOutcome:
         if context.vix_level is not None and context.vix_level > 35.0:
@@ -1901,7 +1961,7 @@ class FalsificationGate:
 class BayesianDecisionEngine:
     """Decoupled mathematical engine for correlation-aware Bayesian posterior inference."""
 
-class BayesianDecisionEngine:
+class HeadAI:
     """
     Lightweight Head AI: coordinates evidence-first debate aggregation and Bayesian calibration.
     """
@@ -2678,16 +2738,16 @@ class MultiAgentDebateSystem:
                     'num_rounds': len(debate_rounds),
                     'conflicts_detected': conflicts
                 },
-                'agent_contributions': {
+                agent_contributions={
                     role.value: sc.expected_contribution for role, sc in scorecards.items()
                 },
-                'agent_scorecards': {role.value: sc.to_dict() for role, sc in scorecards.items()},
-                'consensus_record': {
+                agent_scorecards={role.value: sc.to_dict() for role, sc in scorecards.items()},
+                consensus_record={
                     "consensus_level": decision.consensus_level,
                     "votes": decision.agent_votes,
                 },
-                'random_seed': "seed_42",
-                'environment_fingerprint': hashlib.sha256(
+                random_seed="seed_42",
+                environment_fingerprint=hashlib.sha256(
                     f"{git_sha}_{config_hash}".encode("utf-8")
                 ).hexdigest(),
                 execution_latency=duration_ms,
