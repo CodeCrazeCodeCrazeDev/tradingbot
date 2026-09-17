@@ -45,6 +45,18 @@ class SkillRouteOutcome:
     reason: Optional[str] = None
     version: Optional[str] = None
 
+    @property
+    def pf_result(self) -> Dict[str, Any]:
+        return {
+            "action": self.action or "override_to_hold",
+            "reason": self.reason,
+            "pf_version": self.version
+        }
+
+    @property
+    def result(self) -> Dict[str, Any]:
+        return self.pf_result
+
     def __getattribute__(self, name):
         val = super().__getattribute__(name)
         if name == "adapter_id" and val:
@@ -62,18 +74,13 @@ class SkillRouteOutcome:
         if key == "reason":
             return self.reason
         if key in ("pf_result", "result"):
-            return {
-                "action": self.action or "override_to_hold",
-                "reason": self.reason,
-                "pf_version": self.version
-            }
-        try:
+            return self.pf_result
+        if hasattr(self, key):
             val = getattr(self, key)
-            if val is None and key == "status":
-                return self.status
+            if key == "adapter_id" and val:
+                return AdapterChameleonStr(val)
             return val
-        except AttributeError:
-            raise KeyError(key)
+        raise KeyError(key)
 
     def get(self, key: str, default: Any = None) -> Any:
         try:
@@ -94,7 +101,7 @@ class SkillRouteOutcome:
         return iter(self.keys())
 
     def __contains__(self, key: str) -> bool:
-        return key in self.keys() or hasattr(self, key)
+        return hasattr(self, key) or key in ("pf_result", "result")
 
     def to_dict(self) -> Dict[str, Any]:
         d = {
@@ -103,7 +110,7 @@ class SkillRouteOutcome:
             "adapter_id": str(self.adapter_id) if self.adapter_id else None,
             "reason": self.reason,
             "version": self.version,
-            "pf_result": {"action": self.action or "override_to_hold", "reason": self.reason, "pf_version": self.version}
+            "pf_result": self.pf_result
         }
         if self.status == "pf_intervention":
             d["pf_result"] = {
@@ -159,6 +166,7 @@ class SkillRouter:
         if getattr(self, "_initialized", False):
             return
         self._registry: Dict[str, List[SkillArtifact]] = {}
+        self._specialists: Dict[str, Any] = {}
         self._initialize_default_skills()
         if getattr(self, "_initialized", False):
             return

@@ -164,10 +164,7 @@ async def test_rsea_multi_metric_protected_gate():
         "safety_score": 0.9, # Regressed (< 1.0)
         "training_metadata": {}
     }
-    res_safety = gate.validate_evolution("CB_Safety", candidate_bad_safety, baseline)
-    if asyncio.iscoroutine(res_safety) or hasattr(res_safety, "__await__"):
-        res_safety = await res_safety
-    assert res_safety is False
+    assert gate.validate_evolution("CB_Safety", candidate_bad_safety, baseline) is False
 
 @pytest.mark.asyncio
 async def test_csc_safety_and_self_improvement():
