@@ -9,6 +9,7 @@ Advanced safety and verification capabilities including:
 - Formal Verification of Trading Logic
 """
 
+import hashlib
 import logging
 import math
 from dataclasses import dataclass, field

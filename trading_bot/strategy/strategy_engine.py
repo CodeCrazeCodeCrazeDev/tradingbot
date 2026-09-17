@@ -6,11 +6,17 @@ logger = logging.getLogger(__name__)
 Version 0.1 produces *signal objects* (not orders) so that higher-level
 execution modules can decide whether to enter positions. Later versions will
 embed multiple sub-strategies (Wyckoff, SMC, ICT, etc.).
+
+Upgraded for Institutional Quant Pipeline:
+- Strictly enforces spread circuit breakers and volatility circuit breakers.
+- Enforces hard constraints from config before issuing/passing signals.
 """
 
 import datetime as _dt
+import numpy as np
+import pandas as pd
 from dataclasses import dataclass
-from typing import List, Sequence
+from typing import List, Sequence, Dict, Any
 
 from loguru import logger
 
@@ -55,6 +61,7 @@ class StrategyEngine:  # noqa: B024 – not for subclassing yet
         *,
         swing_len: int = 3,
         symbol: str = "EURUSD",
+        config: Dict[str, Any] = None,
     ) -> None:
         self.mt5 = mt5i
         self.symbol = symbol
@@ -65,6 +72,14 @@ class StrategyEngine:  # noqa: B024 – not for subclassing yet
         self.wyckoff = WyckoffAnalyzer(lookback=50)
         self.tia = TechnicalIndicatorAnalyzer()
         self.risk = RiskManager(mt5i)
+
+        # Institutional parameters & hard risk limit guardrails
+        self.config = config or {
+            "risk_limits": {
+                "max_volatility_threshold": 0.03,
+                "max_spread_pips_limit": 2.5
+            }
+        }
 
     # ------------------------------------------------------------------
     # Public API
@@ -107,8 +122,31 @@ class StrategyEngine:  # noqa: B024 – not for subclassing yet
         curr_vol = bars['volume'].iloc[-1]
         return curr_vol > avg_vol
 
+    def _check_volatility_breaker(self, bars: pd.DataFrame) -> bool:
+        """
+        Enforces a Volatility Circuit Breaker using realized volatility of close prices.
+        Returns True if the volatility is within acceptable limits, False if blocked.
+        """
+        if len(bars) < 10:
+            return True
+
+        close_prices = bars["close"].astype(float).values
+        returns = np.diff(close_prices) / close_prices[:-1]
+        realized_vol = float(np.std(returns) * np.sqrt(252))  # Annualized volatility proxy
+
+        limit = self.config.get("risk_limits", {}).get("max_volatility_threshold", 0.03)
+        if realized_vol > limit:
+            logger.warning(f"Volatility Breaker Triggered! Trailing Vol: {realized_vol:.4f} exceeds target limit: {limit:.4f}")
+            return False
+        return True
+
     def analyse(self, bars) -> List[Signal]:  # noqa: ANN001 – dynamic type
         """Run analyzers on *bars* (DataFrame) and return list of *Signal* objects."""
+        # 1. Volatility Circuit Breaker Check (Pre-flight Risk Guardrail)
+        if not self._check_volatility_breaker(bars):
+            logger.warning("Volatility threshold breached. Signal generation suspended.")
+            return []
+
         # Calculate technical indicators
         bars_with_ind = self.tia.calculate_all(bars)
         tech_signal = self.tia.get_signal(bars_with_ind)

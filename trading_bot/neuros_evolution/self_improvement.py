@@ -312,8 +312,8 @@ class SelfImprovementEngine:
             'total_cycles': total_cycles,
             'successful_cycles': successful_cycles,
             'success_rate': sum(c.success_rate for c in self.improvement_cycles) / total_cycles if total_cycles > 0 else 0,
-            'avg_success_rate': np.mean([c.success_rate for c in self.improvement_cycles]) if self.improvement_cycles else 0),
+            'avg_success_rate': np.mean([c.success_rate for c in self.improvement_cycles]) if self.improvement_cycles else 0,
             'adaptation_strategies_count': len(self.meta_learning.adaptation_strategies),
             'performance_trends': self._analyze_performance_trends(self.performance_history),
-            'avg_improvement_score': np.mean([c.confidence_score for c in self.improvement_cycles]) if self.improvement_cycles else 0),
+            'avg_improvement_score': np.mean([c.confidence_score for c in self.improvement_cycles]) if self.improvement_cycles else 0,
         }

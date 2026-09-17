@@ -16,6 +16,8 @@ Asks:
 - Is this regime underrepresented in training or validation?
 """
 
+from typing import Deque
+import pandas as pd
 from typing import Dict, List, Optional, Any, Tuple, Set
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field

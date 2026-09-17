@@ -5,6 +5,7 @@ Contains the 200 principles derived from DeepMind's Aletheia research methodolog
 adapted for autonomous financial trading strategy research.
 """
 
+from typing import Optional
 from typing import Dict, List, Any
 from dataclasses import dataclass
 

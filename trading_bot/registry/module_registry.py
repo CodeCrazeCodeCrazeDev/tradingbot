@@ -2,6 +2,7 @@
 Module Registry - Dynamic module discovery and management system.
 """
 
+import asyncio
 import os
 import sys
 import importlib

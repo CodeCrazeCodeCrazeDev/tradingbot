@@ -5,6 +5,7 @@ This module provides specialized API client functionality for interacting with
 financial market data providers and trading platforms.
 """
 
+import numpy as np
 import asyncio
 import json
 import logging

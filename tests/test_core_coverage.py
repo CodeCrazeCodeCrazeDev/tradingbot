@@ -21,7 +21,7 @@ class TestStrategyEngine(unittest.TestCase):
     
     def _create_sample_data(self, n=200):
         """Create sample OHLCV data."""
-        dates = pd.date_range(start='2024-01-01', periods=n, freq='H')
+        dates = pd.date_range(start='2024-01-01', periods=n, freq='h')
         np.random.seed(42)
         
         close = 1.1000 + np.cumsum(np.random.randn(n) * 0.001)
@@ -62,7 +62,7 @@ class TestMLStrategy(unittest.TestCase):
     
     def _create_sample_data(self, n=200):
         """Create sample OHLCV data."""
-        dates = pd.date_range(start='2024-01-01', periods=n, freq='H')
+        dates = pd.date_range(start='2024-01-01', periods=n, freq='h')
         np.random.seed(42)
         
         close = 1.1000 + np.cumsum(np.random.randn(n) * 0.001)
@@ -201,7 +201,8 @@ class TestAnalysisModules(unittest.TestCase):
     
     def _create_sample_data(self, n=200):
         """Create sample OHLCV data."""
-        dates = pd.date_range(start='2024-01-01', periods=n, freq='H')
+        dates = pd.date_range(start='2024-01-01', periods=n, freq='h')
+        dates = pd.date_range(start='2024-01-01', periods=n, freq='h')
         np.random.seed(42)
         
         close = 1.1000 + np.cumsum(np.random.randn(n) * 0.001)
@@ -387,7 +388,7 @@ class TestEliteSystemModules(unittest.TestCase):
     
     def _create_sample_data(self, n=500):
         """Create sample OHLCV data."""
-        dates = pd.date_range(start='2024-01-01', periods=n, freq='H')
+        dates = pd.date_range(start='2024-01-01', periods=n, freq='h')
         np.random.seed(42)
         
         close = 1.1000 + np.cumsum(np.random.randn(n) * 0.001)
@@ -548,7 +549,9 @@ class TestFillTracker(unittest.TestCase):
     def test_fill_tracker_initialization(self):
         """Test FillTracker initialization."""
         try:
+            from trading_bot.execution.fill_tracker import FillTracker
         except ImportError:
+            return
         # FillTracker requires a broker_adapter argument
         mock_broker = Mock()
         tracker = FillTracker(mock_broker)
@@ -570,11 +573,9 @@ class TestCorrelationPersistence(unittest.TestCase):
     def test_correlation_persistence_initialization(self):
         """Test CorrelationPersistence initialization."""
         try:
+            from trading_bot.risk import CorrelationPersistence
         except ImportError:
-    pass
-from typing import Set
-import numpy
-import pandas
+            return
         
         persistence = CorrelationPersistence()
         self.assertIsNotNone(persistence)

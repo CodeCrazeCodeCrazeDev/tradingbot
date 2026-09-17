@@ -1,30 +1,23 @@
-# Scientific Migration Roadmap - UCA 2026
+# Scientific Migration Roadmap - UCA 2026 Redesign
 
-The transition from the current fragmented architecture to the Unified Scientific Reasoning Engine (SRE) will follow a 4-phase institutional roadmap.
+This roadmap outlines the transition from the fragmented hypothesis ecosystem to the Unified Scientific Reasoning Engine (SRE).
 
-## Phase 1: Structural Foundation (Weeks 1-2)
-- **Centralize SRE Registry**: Deploy the unified `ScientificHypothesis` data model in `trading_bot/core_agent_system/scientific_reasoning/core.py`.
-- **Alias Bridging**: Implement compatibility wrappers for `PHCE-D`, `AlphaMining`, and `CuriosityEngine` to map their internal "hypotheses" to the SRE standard.
-- **Audit Logging**: Initialize the `LogAct` decision ledger to track all hypothesis state transitions.
+## Phase 1: Foundation & Data Normalization (Current)
+- **Centralize Data Model**: Enforce `ScientificHypothesis` in `trading_bot/core_agent_system/scientific_reasoning/core.py` as the primary entity.
+- **Bridge Legacy Components**: Map existing signals from CSC, PHCE-D, and Alpha Mining to the SRE registry via internal adapters.
+- **Baseline Metrics**: Activate `ScientificMetrics` to track current system performance and identify bottleneck baselines.
 
-## Phase 2: Pipeline Integration (Weeks 3-5)
-- **Unified 19-Step Cycle**: Wire existing modules into the SRE lifecycle.
-  - Curiosity Engine -> Steps 2-4
-  - HMS/GWM -> Steps 5-7
-  - Verification Swarm -> Step 8
-  - Backtest/Paper -> Steps 9-11
-- **Bayesian Layer**: Activate the central `bayesian_update` and `calibrate_confidence` modules.
+## Phase 2: Pipeline Hardening (Weeks 1-4)
+- **Concrete Lifecycle Implementation**: Replace SRE stubs (Steps 2, 7, 19) with full production-grade logic.
+  - Integrate GWM for `detect_anomalies`.
+  - Wire `AdversarialAnalyzer` for `generate_counterfactuals`.
+- **Epistemic Calibration**: Force all Level 3+ hypotheses through the `EpistemologyEngine` for adversarial evaluation before promotion.
 
-## Phase 3: Advanced Reasoning (Weeks 6-8)
-- **Counterfactual Engine**: Integrate the Mamba-based GWM for Step 7 (Do-calculus).
-- **Adversarial Hardening**: Deploy the full `VerificationSwarm` with 80% consensus gate for Step 8.
-- **HMS Optimization**: Implement `AutoMem` for automated memory consolidation (Step 15).
+## Phase 3: SAGE & Memory Integration (Weeks 5-8)
+- **Institutional Memory**: Connect Step 15 (`Memory Consolidation`) to the SAGE Graph memory in HMS.
+- **Scientific Replay**: Implement surprise-driven replay to prevent "Scientific Amnesia" and refine historical hypothesis failures.
 
-## Phase 4: Full Autonomy (Weeks 9+)
-- **Meta-Discovery**: Activate Step 19 for automatic discovery of new research paths.
-- **Legacy Decommissioning**: Gradually archive fragmented logic (e.g., `trading_bot/ai_core/`, `trading_bot/agents2/`) once SRE parity is verified.
-- **Institutional Certification**: Final audit of the Gain Metric and ECE targets.
-
-## Risk Mitigation
-- **Fail-Closed Gate**: The `ImmutableShield` remains active throughout the migration to prevent unverified SRE decisions from controlling capital.
-- **Parallel Run**: The SRE will run in "Shadow Mode" (logging only) for the first 4 weeks to calibrate against existing production strategies.
+## Phase 4: Full Autonomy & Meta-Discovery (Weeks 9+)
+- **Active Inference**: Enable full VFE-driven reasoning where the system autonomously generates research questions based on surprise.
+- **Alpha Evolution**: Connect SRE Meta-Discovery (Step 19) to the `GeneticAlphaSearch` search priors.
+- **Legacy Decommissioning**: Gradual removal of redundant registries once SRE parity is verified in live trading.

@@ -12,6 +12,7 @@ Based on the concept that X Granger-causes Y if past values of X
 help predict Y above and beyond past values of Y alone.
 """
 
+import pandas as pd
 import logging
 import numpy as np
 from dataclasses import dataclass, field

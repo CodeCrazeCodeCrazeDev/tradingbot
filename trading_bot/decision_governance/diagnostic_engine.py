@@ -6,6 +6,8 @@ Answers: Where did this decision come from? What assumptions were made?
 What failed? How can it be fixed?
 """
 
+from collections import Counter
+import numpy as np
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field

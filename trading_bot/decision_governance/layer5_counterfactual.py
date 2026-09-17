@@ -10,6 +10,10 @@ For each approved thesis:
 Tests robustness of thesis under various perturbations.
 """
 
+from collections import Counter
+from collections import defaultdict
+import numpy as np
+from datetime import timedelta
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
 from dataclasses import dataclass, field

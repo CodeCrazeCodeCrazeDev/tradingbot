@@ -15,6 +15,7 @@ This is how DeepMind achieved superhuman performance:
 Reference: "Mastering Chess and Shogi by Self-Play" (Silver et al., 2017)
 """
 
+from datetime import timedelta
 import asyncio
 import logging
 from datetime import datetime

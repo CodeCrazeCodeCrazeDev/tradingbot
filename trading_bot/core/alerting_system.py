@@ -3,6 +3,7 @@ Alerting System
 Multi-channel alert delivery (Slack, Email, Discord, Telegram)
 """
 
+import aiohttp
 import asyncio
 import logging
 import smtplib

@@ -16,6 +16,7 @@ Author: AlphaAlgo Trading System
 Version: 3.0.0
 """
 
+import json
 import asyncio
 import logging
 from datetime import datetime

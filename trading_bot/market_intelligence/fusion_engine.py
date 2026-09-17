@@ -11,6 +11,7 @@ Uses:
 - Temporal aggregation
 """
 
+from typing import Tuple
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta

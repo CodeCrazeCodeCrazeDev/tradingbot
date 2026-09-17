@@ -6,6 +6,7 @@ Combines multiple extracted behaviors into composite capabilities.
 Supports ensembles, chaining, and hybrid approaches.
 """
 
+import hashlib
 import asyncio
 import logging
 from dataclasses import dataclass, field

@@ -42,7 +42,262 @@ except ImportError as e:
     import logging
     logging.getLogger(__name__).debug(f'Optional import failed in research.research_ingestion_pipeline: {e}')
 
+try:
+    from .quant_pipeline import (
+        Hypothesis,
+        ResearchLab,
+        IngestionPipeline,
+        FeatureFactory,
+        AlphaSignal,
+        AlphaDiscoveryEngine,
+        StrategyBuilder,
+        ValidationLab,
+        PortfolioOptimizer,
+        SimulatedPaperEnvironment,
+        StrategyMetricsSnapshot,
+        ProductionMonitor,
+        LiteratureReviewBacklog,
+        RegimeAndMicrostructureAnalyzer,
+        FeatureSelectionSuite,
+        AlphaValidatorAndOrthogonality,
+        AdvancedStatisticalValidation,
+        CapacityAnalyzer,
+        ShadowTradingEnvironment,
+        PerformanceAttribution,
+        AdvancedDriftDetection,
+    )
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in research.quant_pipeline: {e}')
+
+try:
+    from .research_os import (
+        QuantitativeIdea,
+        IdeaRegistry,
+        QuantExperiment,
+        ExperimentRegistry,
+        ReproducibilityAssurer,
+        ReviewVerdict,
+        PeerReviewBoard,
+        FailedIdeaRecord,
+        KnowledgeArchive,
+        ProductionAnomalyAlert,
+        ProductionFeedbackLoop,
+        DatasetVersionNode,
+        DataLineageRegistry,
+        CausalityAndStructuralBreakTester,
+        ExplainabilityAndAttributionEngine,
+        UncertaintyEstimator,
+        StrategyEvolutionEngine,
+        ResearchProject,
+        ResearchQuestion,
+        FeatureSet,
+        ValidationReport,
+        Deployment,
+        PerformanceReport,
+        KnowledgeEntry,
+        ResearchWorkspace,
+    )
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in research.research_os: {e}')
+
+try:
+    from .research_governance import (
+        StrategicMandate,
+        ResearchStrategy,
+        ResourceAllocation,
+        ResearchPortfolioManager,
+        ScienceExperimentDesign,
+        ExperimentDesigner,
+        DecisionRecord,
+        DecisionManager,
+        AuditTrace,
+        GovernanceAuditTrail,
+        MetaLearningEngine,
+        AlphaAlgoQuantitativePlatform,
+    )
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in research.research_governance: {e}')
+
+try:
+    from .discovery_platform import (
+        Observation,
+        Question,
+        HypothesisObject,
+        Evidence,
+        Theory,
+        Decision,
+        Action,
+        ResearchCase,
+        KnowledgeGraph,
+        Belief,
+        BeliefManagementSystem,
+        ScientificJudgmentEngine,
+        ResearchBalanceSheet,
+        QuantitativeDiscoveryPlatform,
+        ConstitutionViolation,
+        ConstitutionalLayer,
+    )
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in research.discovery_platform: {e}')
+
+try:
+    from .research_organization import (
+        PhilosophySpecification,
+        ScientificPhilosophy,
+        ResearchProgram,
+        ResearchProgramManager,
+        ScientificReviewVerdict,
+        ScientificReviewer,
+        KnowledgeIntegrationHub,
+        ProductionPackage,
+        TechnologyTransferOfficer,
+        MetaResearchEngine,
+        AlphaAlgoResearchOrganization,
+    )
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in research.research_organization: {e}')
+
+try:
+    from .research_kernel import (
+        LifecycleState,
+        StateTransition,
+        ImmutabilityViolation,
+        ResearchObject,
+        ResearchDependencyGraph,
+        ResearchCost,
+        ResearchEconomicsEngine,
+        ResearchKernel,
+    )
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in research.research_kernel: {e}')
+
+try:
+    from .research_computer import (
+        EpistemicInstruction,
+        CPUCycleTrace,
+        EpistemicMetrics,
+        EpistemicObjectiveFunction,
+        CompiledPipeline,
+        ResearchCompiler,
+        ResearchMemory,
+        ResearchScheduler,
+        ResearchCPU,
+        QuantitativeResearchComputer,
+    )
+except ImportError as e:
+    import logging
+    logging.getLogger(__name__).debug(f'Optional import failed in research.research_computer: {e}')
+
 __all__ = [
+    'Hypothesis',
+    'ResearchLab',
+    'IngestionPipeline',
+    'FeatureFactory',
+    'AlphaSignal',
+    'AlphaDiscoveryEngine',
+    'StrategyBuilder',
+    'ValidationLab',
+    'PortfolioOptimizer',
+    'SimulatedPaperEnvironment',
+    'StrategyMetricsSnapshot',
+    'ProductionMonitor',
+    'LiteratureReviewBacklog',
+    'RegimeAndMicrostructureAnalyzer',
+    'FeatureSelectionSuite',
+    'AlphaValidatorAndOrthogonality',
+    'AdvancedStatisticalValidation',
+    'CapacityAnalyzer',
+    'ShadowTradingEnvironment',
+    'PerformanceAttribution',
+    'AdvancedDriftDetection',
+    'QuantitativeIdea',
+    'IdeaRegistry',
+    'QuantExperiment',
+    'ExperimentRegistry',
+    'ReproducibilityAssurer',
+    'ReviewVerdict',
+    'PeerReviewBoard',
+    'FailedIdeaRecord',
+    'KnowledgeArchive',
+    'ProductionAnomalyAlert',
+    'ProductionFeedbackLoop',
+    'DatasetVersionNode',
+    'DataLineageRegistry',
+    'CausalityAndStructuralBreakTester',
+    'ExplainabilityAndAttributionEngine',
+    'UncertaintyEstimator',
+    'StrategyEvolutionEngine',
+    'ResearchProject',
+    'ResearchQuestion',
+    'FeatureSet',
+    'ValidationReport',
+    'Deployment',
+    'PerformanceReport',
+    'KnowledgeEntry',
+    'ResearchWorkspace',
+    'StrategicMandate',
+    'ResearchStrategy',
+    'ResourceAllocation',
+    'ResearchPortfolioManager',
+    'ScienceExperimentDesign',
+    'ExperimentDesigner',
+    'DecisionRecord',
+    'DecisionManager',
+    'AuditTrace',
+    'GovernanceAuditTrail',
+    'MetaLearningEngine',
+    'AlphaAlgoQuantitativePlatform',
+    'Observation',
+    'Question',
+    'HypothesisObject',
+    'Evidence',
+    'Theory',
+    'Decision',
+    'Action',
+    'ResearchCase',
+    'KnowledgeGraph',
+    'Belief',
+    'BeliefManagementSystem',
+    'ScientificJudgmentEngine',
+    'ResearchBalanceSheet',
+    'QuantitativeDiscoveryPlatform',
+    'ConstitutionViolation',
+    'ConstitutionalLayer',
+    'PhilosophySpecification',
+    'ScientificPhilosophy',
+    'ResearchProgram',
+    'ResearchProgramManager',
+    'ScientificReviewVerdict',
+    'ScientificReviewer',
+    'KnowledgeIntegrationHub',
+    'ProductionPackage',
+    'TechnologyTransferOfficer',
+    'MetaResearchEngine',
+    'AlphaAlgoResearchOrganization',
+    'LifecycleState',
+    'StateTransition',
+    'ImmutabilityViolation',
+    'ResearchObject',
+    'ResearchDependencyGraph',
+    'ResearchCost',
+    'ResearchEconomicsEngine',
+    'ResearchKernel',
+    'EpistemicInstruction',
+    'CPUCycleTrace',
+    'EpistemicMetrics',
+    'EpistemicObjectiveFunction',
+    'CompiledPipeline',
+    'ResearchCompiler',
+    'ResearchMemory',
+    'ResearchScheduler',
+    'ResearchCPU',
+    'QuantitativeResearchComputer',
     'ABTestVariant',
     'ABTestingFramework',
     'AdvancedBacktester',

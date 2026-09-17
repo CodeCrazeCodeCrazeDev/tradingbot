@@ -629,7 +629,7 @@ class PairsTradingStrategy(BaseStrategy):
             X = np.column_stack([spread_lag.values, np.ones(len(spread_lag))])
             y = spread_diff.values
         
-            result = lstsq(X, y, rcond=None)
+            result = np.linalg.lstsq(X, y, rcond=None)
             lambda_param = result[0][0]
         
             if lambda_param >= 0:

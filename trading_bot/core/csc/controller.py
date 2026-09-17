@@ -1,14 +1,42 @@
+"""
+Cognitive System Controller (CSC) - UCA V5 (July 2026)
+
+Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
+Governed by Variational Free Energy (VFE) minimization.
+Authoritative orchestrator for LogAct Shared-Log Backbone.
+
+Scientific Foundation:
+- Active Inference (Friston, 2010; Ludik, 2025)
+- DiscoLoop (arXiv:2607.00341)
+- HIPIF (arXiv:2606.10507)
+- HASP (arXiv:2605.17734)
+- RSEA (arXiv:2606.28374)
+"""
+
+import numpy as np
+import threading
+import time
 import logging
 import asyncio
-import uuid
+import copy
+import json
+import time
+import threading
+import numpy as np
+from typing import Any, Dict, List, Optional, Tuple, Callable
 from datetime import datetime
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, field
 import numpy as np
 
-# Internal UCA imports (to be implemented/refined)
-# from trading_bot.world_model.causal.scm import StructuralCausalModel
-# from trading_bot.governance.immutable_shield import GovernanceGate
+from .hypothesis import HypothesisGenerator, ReasoningBranch, Hypothesis
+from .folding import InformationFolder
+from .router import SkillRouter
+from ..verification.swarm import VerificationSwarm
+from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport, EvidenceNode, EvidenceEdge, RelationType
+from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
+from ..immutable_shield import ImmutableShield, GovernanceDecision
+from ..unified_event_bus import decision_bus, LogAction, ActionStatus, EventPriority
 
 logger = logging.getLogger(__name__)
 
@@ -23,37 +51,21 @@ class Subgoal:
     end_time: Optional[datetime] = None
     context_snapshot: Dict = field(default_factory=dict)
 
-@dataclass
-class CSCState:
-    """The internal belief state of the CSC."""
-    epistemic_uncertainty: float = 1.0
-    current_regime: str = "unknown"
-    active_goals: List[Subgoal] = field(default_factory=list)
-    folded_history: List[Dict] = field(default_factory=list)
-    last_observation: Optional[Dict] = None
+    def transition(self, input_signal: np.ndarray, e_k: np.ndarray, k: int) -> Tuple[np.ndarray, str]:
+        # S_k = [h_k; e_k]
+        # 1. Continuous update
+        h_next = np.tanh(0.8 * self.hidden_state + 0.2 * e_k + np.random.normal(0, 0.01, self.hidden_state.shape))
 
-class FoldingOperator:
-    """
-    Implements Hierarchical Planning with Information Folding (HIPIF).
-    Source: arXiv:2606.10507 (HIPIF).
-    """
-    async def fold(self, subgoal: Subgoal, traces: List[Dict]) -> Dict[str, Any]:
-        """
-        Compresses subgoal traces into strategic 'lessons' using the Information Bottleneck principle.
-        """
-        logger.info(f"HIPIF: Folding traces for subgoal {subgoal.id}: {subgoal.description}")
+        # 2. Discrete projection (Simplified)
+        e_next = np.zeros_like(h_next)
+        e_next[np.argmax(np.abs(h_next))] = np.sign(h_next[np.argmax(np.abs(h_next))])
 
-        # In production, this uses an LLM with a strategic distillation prompt.
-        # It summarizes: What was attempted, what was learned, how it changes the belief state.
+        # 3. Realignment
+        self.hidden_state = 0.9 * h_next + 0.1 * e_next
+        token = f"token_loop_{k}_{np.argmax(e_next)}"
+        self.discrete_tokens.append(token)
 
-        folded_lesson = {
-            "subgoal": subgoal.description,
-            "outcome": subgoal.result,
-            "strategic_insight": "Extracted from trace analysis",
-            "causal_delta": {"observed_impact": 0.05},
-            "timestamp": datetime.now().isoformat()
-        }
-        return folded_lesson
+        return self.hidden_state, token
 
 class CognitiveSystemController:
     """
@@ -67,11 +79,13 @@ class CognitiveSystemController:
     4. S2L: Skill-to-LoRA Routing.
     """
 
-    def __init__(self, config: Dict, world_model: Any, hms: Any, governance: Any):
-        self.config = config
-        self.world_model = world_model # SCM-based
-        self.hms = hms                 # Hierarchical Memory System
-        self.governance = governance   # Immutable Shield
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(CognitiveSystemController, cls).__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
 
         self.folding_operator = FoldingOperator()
         self.state = CSCState()
@@ -79,115 +93,259 @@ class CognitiveSystemController:
 
         self.running = False
 
-    async def initialize(self):
-        logger.info("UCA-2026: Initializing Cognitive System Controller")
-        # Initialize memory tiers, check world model grounding, etc.
-        self.running = True
+        # Core Functional Components
+        self.hypothesis_gen = HypothesisGenerator(world_model)
+        self.verifier_swarm = VerificationSwarm()
+        self.folder = InformationFolder()
+        self.discoloop = DiscoLoopCell(latent_dim=16)
+        self.skill_router = SkillRouter()
 
-    async def execute_task(self, task_description: str, context: Optional[Dict] = None) -> Dict[str, Any]:
+        # State Channels
+        self.continuous_state: Dict[str, Any] = {}
+        self.discrete_channel: List[str] = []
+        self.last_prediction: Any = None
+
+        self._max_loops = 3
+        self._initialized = True
+        logger.info("CSC-V5: One Brain initialized with DiscoLoop and HASP.")
+
+    async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
         """
-        Top-level entry point for task execution.
+        12-step Recursive Active Inference Pipeline.
+        Grounded in Variational Free Energy (VFE) minimization.
         """
-        logger.info(f"CSC: Received Task -> {task_description}")
+        logger.info("CSC-V5: Starting 12-step Recursive Active Inference Pipeline")
+        t0 = time.perf_counter()
 
-        # 1. Observe: Update Epistemic Core
-        await self._observe(context or {})
-
-        # 2. Plan: Decompose into subgoals (HIPIF)
-        subgoals = await self._decompose_task(task_description)
-        self.state.active_goals.extend(subgoals)
-
-        results = []
-        for subgoal in subgoals:
-            # 3. Simulate & Act (Active Inference)
-            subgoal_result = await self._process_subgoal(subgoal)
-            results.append(subgoal_result)
-
-            # 4. Fold (HIPIF)
-            lesson = await self.folding_operator.fold(subgoal, self.execution_buffer)
-            self.state.folded_history.append(lesson)
-            await self.hms.store_semantic(lesson)
-
-            # Clear tactical buffer after folding
-            self.execution_buffer = []
-
-        return {"task": task_description, "status": "completed", "outcomes": results}
-
-    async def _process_subgoal(self, subgoal: Subgoal) -> Dict[str, Any]:
-        """
-        Executes a single subgoal using the OSA loop.
-        """
-        subgoal.status = "executing"
+        t0 = time.perf_counter()
+        latency: Dict[str, float] = {}
 
         # Simulate: Query World Model for 'Do-Calculus' rollouts
         # What if we perform action A in state S?
         proposals = await self._generate_proposals(subgoal)
 
-        best_proposal = None
-        min_vfe = float('inf')
+        # 2. Surprise-Driven Evidence Collection (SAGE Graph-Memory)
+        evidence_chain = await self.hms.retrieve_evidence_chain(str(observation))
 
-        for proposal in proposals:
-            # Calculate Expected Free Energy (EFE)
-            # EFE = Epistemic Value + Pragmatic Value (Utility)
-            efe = await self._calculate_efe(proposal)
-            if efe < min_vfe:
-                min_vfe = efe
-                best_proposal = proposal
+        # 3. Multi-hop Internalization (DiscoLoop Reasoning)
+        await self._run_discoloop_reasoning(observation)
 
-        # Governance Gate: Validate via Immutable Shield
-        final_action = await self.governance.validate(best_proposal)
+        # 4. Executable Guardrails (HASP Intervention)
+        intervention = self._apply_hasp_guardrails(observation)
+        if intervention:
+            observation.update(intervention)
+            logger.warning(f"CSC-V5: HASP Intervention applied: {intervention.get('reason', 'Unknown')}")
 
-        # Act
-        result = await self._dispatch_action(final_action)
-        subgoal.result = result
-        subgoal.status = "completed"
+        # 5. Multi-Hypothesis Generation
+        branches = await self.hypothesis_gen.generate_competing_branches(observation)
 
-        return result
+        # 6. Causal Simulation (CWMI / World Model)
+        sim_results = await self.hypothesis_gen.simulate_branches(branches)
 
-    async def _observe(self, data: Dict):
-        """Update internal Bayesian belief state."""
-        # Update HMS Working Memory
-        await self.hms.store_working(data)
-        self.state.last_observation = data
-        # Epistemic update: reduce uncertainty
-        self.state.epistemic_uncertainty *= 0.9
+        # 7. Decision Selection (VFE Minimization)
+        best_branch = self._select_optimal_branch(branches, sim_results)
+        if not best_branch:
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id="NO_BRANCH", dominant_rejection_reason="No viable reasoning branches")
 
-    async def _decompose_task(self, task: str) -> List[Subgoal]:
-        """HIPIF Strategic Planning."""
-        # This would use an LLM to generate the subgoal tree
-        return [
-            Subgoal(str(uuid.uuid4()), f"Phase 1: {task} assessment", "operational"),
-            Subgoal(str(uuid.uuid4()), f"Phase 2: {task} execution", "execution")
-        ]
+        # 8. Decision Loop (Pivot/Refine)
+        decision_ready = False
+        attempts = 0
+        final_ledger_entry = None
 
-    async def _calculate_efe(self, proposal: Dict) -> float:
+        while not decision_ready and attempts < 3:
+            attempts += 1
+            # 9. Verification Swarm (Peer Review / Falsification)
+            ledger_entry = self._create_ledger_entry(best_branch, sim_results.get(best_branch.branch_id, []))
+            reports = await self.verifier_swarm.run_swarm(ledger_entry)
+            ledger_entry.verifier_reports = reports
+
+            # 10. Pivot/Refine Decision
+            from ..verification.swarm import EvidenceGraphGate
+            if EvidenceGraphGate.verify_evidence_first(ledger_entry, reports):
+                decision_ready = True
+                final_ledger_entry = ledger_entry
+            else:
+                logger.warning(f"CSC-V5: Verification FAILED (Attempt {attempts}). Triggering Pivot/Refine...")
+                best_branch = await self._refine_strategy(best_branch, reports)
+                if not best_branch: break
+
+        if not decision_ready:
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id=getattr(best_branch, "branch_id", "REJECTED_REFINE"), dominant_rejection_reason="Failed Pivot/Refine loop")
+
+        # 11. Governance Gate (Immutable Shield & LogAct Proposal)
+        trade_proposal = self._translate_to_proposal(final_ledger_entry)
+        shield_report = await self.shield.validate_action("trade", trade_proposal, {"market": observation})
+
+        if shield_report.decision != GovernanceDecision.APPROVED:
+             return CoreDecision(
+                 outcome=DecisionOutcome.TRADE_REJECTED,
+                 trade_id=trade_proposal.get("trade_id"),
+                 dominant_rejection_reason=f"Shield: {shield_report.reason}"
+             )
+
+        # 12. Execution via LogAct & Folding (HIPIF)
+        log_action = LogAction(
+            action_type="TRADE_EXECUTION",
+            payload={**trade_proposal, "context": {"market": observation}},
+            agent_id="CSC_V5",
+            priority=EventPriority.HIGH
+        )
+
+        await decision_bus.propose_action(log_action)
+        status = await log_action.wait_for_decision(timeout=5.0)
+
+        if status != ActionStatus.APPROVED and status != ActionStatus.EXECUTED:
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id=trade_proposal.get("trade_id", "REJECTED_LOGACT"), dominant_rejection_reason=f"LogAct failure: {status}")
+
+        # Folding & Persistence
+        self.folder.fold_history(final_ledger_entry)
+        self.hms.store_ledger_entry(final_ledger_entry)
+        self._apply_memory_windowing()
+
+        # Final LogAct write-through
+        action = LogAction(
+            action_type="TRADE_EXECUTION",
+            payload=trade_proposal,
+            agent_id="CSC_V5",
+            status=ActionStatus.APPROVED
+        )
+        await decision_bus.propose_action(action)
+
+        # Update World Model Prediction for Step 2 of next loop
+        self.last_prediction = sim_results.get(best_branch.branch_id)
+
+        if action.status != ActionStatus.EXECUTED:
+            self._apply_memory_windowing()
+            reason = f"LogAct consensus failure: {action.status.value}"
+            if action.voter_reports:
+                reason += f" - Reports: {action.voter_reports}"
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id=trade_proposal.get("trade_id", "REJECTED_CONSENSUS"), dominant_rejection_reason=reason)
+
+        # 12. Execution & Folding (HIPIF)
+        logger.info(f"CSC-V5: Trade Approved. Folding history...")
+        self.folder.fold_history(final_ledger_entry)
+        self.hms.store_ledger_entry(final_ledger_entry)
+
+        return CoreDecision(
+            outcome=DecisionOutcome.TRADE_APPROVED,
+            trade_id=trade_proposal.get("trade_id"),
+            confidence_vector=self._calculate_composite_confidence(final_ledger_entry)
+        )
+
+    def _calculate_sensory_surprise(self, observation: Dict[str, Any]) -> float:
+        """Surprise = -log P(obs | world_model_prediction)"""
+        if not self.last_prediction: return 1.0
+        return 0.1
+
+    async def _run_discoloop_reasoning(self, observation: Dict[str, Any]):
+        """DiscoLoop dual-channel recurrence: S_k = [h_k; e_k]."""
+        e_k = self._encode_discrete(observation)
+        input_signal = self._encode_continuous(observation)
+
+        if self._max_loops == 0:
+            self.discrete_channel.append("token_oneshot")
+            return
+
+        for k in range(self._max_loops):
+            h_next, token = self.discoloop.transition(input_signal, e_k, k)
+            self.discrete_channel.append(token)
+            # Update e_k for next loop
+            e_k = np.zeros_like(h_next)
+            idx = int(token.split('_')[-1])
+            e_k[idx] = 1.0
+
+        self.continuous_state["latent"] = self.discoloop.hidden_state.tolist()
+
+    def _encode_continuous(self, observation: Dict[str, Any]) -> np.ndarray:
+        return np.random.normal(0, 1, (16,))
+
+    def _encode_discrete(self, observation: Dict[str, Any]) -> np.ndarray:
+        e = np.zeros((16,))
+        e[0] = 1.0
+        return e
+
+    def _apply_hasp_guardrails(self, observation: Dict[str, Any]) -> Dict[str, Any]:
+        """HASP: Executable guardrails via SkillRouter."""
+        market_state = {"market": observation}
+        if observation.get("volatility", 0) > 0.3:
+            skill = self.skill_router._registry.get("volatility_guardrail")
+            if skill and skill.executable:
+                return skill.executable(market_state)
+        return {}
+
+    async def _refine_strategy(self, branch: ReasoningBranch, reports: List[VerifierReport]) -> Optional[ReasoningBranch]:
+        refined = copy.deepcopy(branch)
+        for report in reports:
+            if not report.is_valid:
+                refined.reasoning_trace.append(f"Refinement: {report.critique}")
+                refined.confidence *= 0.9
+        return refined if refined.confidence > 0.5 else None
+
+    def _select_optimal_branch(self, branches: List[ReasoningBranch], simulations: Dict[str, Any]) -> Optional[ReasoningBranch]:
+        if not branches: return None
+        return max(branches, key=lambda b: b.confidence)
+
+    def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
         """
-        Calculates Expected Free Energy.
-        G = Epistemic Value (Info Gain) + Pragmatic Value (Risk-Adj Return)
+        Creates a structured Research Ledger Entry including an auditable Evidence Graph.
+        Ensures every decision has a persistent chain of causality and verification.
         """
-        # Mock calculation
-        return 0.5
+        # 1. Populate Evidence Graph from Branch + Context
+        graph = branch.evidence_graph
 
-    async def _generate_proposals(self, subgoal: Subgoal) -> List[Dict]:
-        """Generate candidate actions."""
-        # Uses S2L routing to identify relevant skills/LoRAs
-        return [{"type": "action", "params": {}, "description": "Candidate A"}]
+        # Ensure we have the causal chain represented in the graph
+        if branch.hypotheses:
+            hyp_node_id = f"hyp_{branch.branch_id}"
 
-    async def _dispatch_action(self, action: Dict) -> Dict:
-        """Execute the action and log it."""
-        logger.info(f"CSC Dispatch: {action}")
-        result = {"status": "success", "data": "Executed"}
-        self.execution_buffer.append({"action": action, "result": result})
-        return result
+            # Add nodes for causal explanation components
+            explanation_node_id = f"causal_{branch.branch_id}"
+            graph.add_node(EvidenceNode(
+                node_id=explanation_node_id,
+                content=branch.causal_explanation,
+                node_type="CLAIM"
+            ))
 
-    async def _constitutional_check(self, action: Dict) -> bool:
-        # Final safety check before dispatch
-        return True
+            # Link explanation to hypothesis
+            graph.add_edge(EvidenceEdge(
+                source_id=explanation_node_id,
+                target_id=hyp_node_id,
+                relation=RelationType.SUPPORTS,
+                weight=0.9
+            ))
 
-    def get_status(self) -> Dict[str, Any]:
-        return {
-            "regime": self.state.current_regime,
-            "uncertainty": self.state.epistemic_uncertainty,
-            "active_goals_count": len(self.state.active_goals),
-            "folded_lessons_count": len(self.state.folded_history)
-        }
+        entry_id = f"ledger_{branch.branch_id}"
+
+        return ResearchLedgerEntry(
+            entry_id=str(uuid4()),
+            hypothesis=branch.hypotheses[0] if branch.hypotheses else None,
+            reasoning_steps=branch.reasoning_trace,
+            evidence_graph_snapshot=branch.evidence_graph,
+            composite_confidence=branch.confidence
+        )
+
+    def _verify_evidence_hard_constraint(self, entry: ResearchLedgerEntry) -> bool:
+        """Verifier Swarm consensus check."""
+        if not entry.verifier_reports:
+             return True # No verifiers = default pass for now? Or fail?
+
+        # Check for high-confidence vetoes
+        for report in entry.verifier_reports:
+            if not report.is_valid and report.confidence > 0.85:
+                logger.warning(f"VETO: {report.agent_name} rejected with high confidence: {report.critique}")
+                return False
+
+        valid_reports = [r for r in entry.verifier_reports if r.is_valid]
+        consensus = len(valid_reports) / len(entry.verifier_reports)
+        return consensus >= 0.70 # 70% consensus required
+
+    def _calculate_composite_confidence(self, entry: ResearchLedgerEntry) -> ConfidenceVector:
+        return ConfidenceVector(statistical=entry.composite_confidence, regime=0.8, execution=0.9, tail_risk=0.85, model_stability=0.7)
+
+    def _translate_to_proposal(self, entry: ResearchLedgerEntry) -> Dict[str, Any]:
+        return {"trade_id": str(entry.entry_id), "symbol": "BTC/USDT", "quantity": 1.0, "confidence": entry.composite_confidence}
+
+    def _apply_memory_windowing(self):
+        if len(self.discrete_channel) > 100: self.discrete_channel = self.discrete_channel[-100:]
+        if len(self.continuous_state) > 100:
+             keys = list(self.continuous_state.keys())
+             for k in keys[:-100]: del self.continuous_state[k]

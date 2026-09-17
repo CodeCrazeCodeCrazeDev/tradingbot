@@ -8,6 +8,7 @@ Supports multi-stage evaluation: exploration → verification → validation.
 Based on ASI-Evolve paper: "executes a user-specified evaluation procedure that runs the experiment end-to-end and returns structured metrics"
 """
 
+import numpy as np
 import asyncio
 import logging
 from dataclasses import dataclass, field

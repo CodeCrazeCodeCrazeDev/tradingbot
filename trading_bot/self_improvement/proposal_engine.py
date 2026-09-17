@@ -431,8 +431,9 @@ class ProposalEngine:
             name_match = re.search(r'(def|class)\s+(\w+)', line)
             name = name_match.group(2) if name_match else "unknown"
             kind = name_match.group(1) if name_match else "def"
-            
-            
+
+            docstring = f'{indent_str}"""TODO: document {kind} {name}."""'
+
             changes = [CodeChange(
                 file_path=issue.file_path,
                 change_type=ChangeType.ADD_CODE,

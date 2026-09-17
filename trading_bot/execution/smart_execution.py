@@ -7,6 +7,9 @@ This module implements advanced order execution algorithms including:
 - Smart Order Routing (SOR)
 """
 
+from typing import Deque
+from collections import defaultdict
+from collections import deque
 import logging
 logger = logging.getLogger(__name__)
 import numpy as np

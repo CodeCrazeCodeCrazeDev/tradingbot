@@ -1,31 +1,45 @@
-# Hypothesis Dependency Graph
+# Hypothesis Dependency Graph (Comprehensive Audit 2026)
 
 ```mermaid
 graph TD
+    %% Origination Points
     Obs[Observation / Market Data] --> Anomaly[Anomaly Detection]
     Anomaly --> QG[Question Generation]
     QG --> HG[Hypothesis Generation]
     HG --> EC[Evidence Collection]
-    EC --> WM[World Model Simulation]
+
+    %% Research & Mining
+    Mining[Alpha Mining Engine] --> HG
+    Extraction[Hypothesis Extraction Engine] --> HG
+    Curiosity[Curiosity Engine] --> Anomaly
+
+    %% Evolution & Evaluation
+    HG --> WM[World Model Simulation]
     WM --> CF[Counterfactual Generation]
     CF --> ADeb[Adversarial Debate]
     ADeb --> ED[Experiment Design]
-    ED --> EXE[Execution]
-    EXE --> EVAL[Evaluation]
+    ED --> EXE[Execution / Backtest]
+    EXE --> EVAL[Evaluation / Diagnostics]
+
+    %% Cognitive Processing
     EVAL --> BU[Bayesian Update]
     BU --> CC[Confidence Calibration]
     CC --> KI[Knowledge Integration]
     KI --> MC[Memory Consolidation]
+
+    %% Lifecycle States
     MC --> PI[Policy Improvement]
     PI --> CM[Continuous Monitoring]
-    CM --> RET[Retirement/End-States]
+    CM --> RET[Retirement / End-States]
 
-    RET --> SRE_CORE[SRE Core Engine]
-    SRE_CORE -->|Internalizes| HMS[HMS Semantic Memory]
-    SRE_CORE -->|Updates| SkillRouter[SkillRouter Policies]
-    SRE_CORE -->|Generates| ResearchLedger[HMS Research Ledger]
+    %% Subsystem Connections
+    CSC[Cognitive System Controller] --> HG
+    PHCE_D[PHCE-D Engine] --> EVAL
+    HMS[Hierarchical Memory System] <--> MC
+    GWM[Global World Model] <--> WM
 
-    subgraph "End-States"
+    %% End-States
+    subgraph "Terminal States"
         RET --> Conf[Confirmed]
         RET --> Rej[Rejected]
         RET --> Inc[Inconclusive]
@@ -39,40 +53,16 @@ graph TD
     end
 ```
 
-    HG --> PHCE_D[PHCE-D Hypothesis]
-    HG --> SRE_Hyp[Scientific Hypothesis]
-    HG --> CSC_Branch[Reasoning Branch]
+## Critical Propagation Paths
 
-    PHCE_D --> Verifier[Deterministic/Statistical Verifiers]
-    SRE_Hyp --> SRE_Cycle[19-Step SRE Cycle]
-    CSC_Branch --> GWM[Global World Model Simulation]
+1. **The Fast Loop (Tactical)**: `Observation` -> `CSC Reasoning` -> `Signal` -> `Execution` -> `Market Teacher Evaluation`.
+2. **The Slow Loop (Strategic)**: `Anomaly` -> `SRE 19-Step Cycle` -> `Validated Hypothesis` -> `HMS Research Ledger` -> `Alpha Promotion`.
+3. **The Research Loop**: `Academic Paper` -> `Extraction Engine` -> `Causal Mechanism` -> `Backtest` -> `Knowledge Base`.
 
-    Verifier --> Gateway[Validation Gateway]
-    SRE_Cycle --> Bayesian[Bayesian Update]
-    GWM --> Counterfactual[Counterfactual Engine]
-
-    Gateway --> PaperTrade[Paper Trade Promotion]
-    Bayesian --> Knowledge[Knowledge Integration]
-    Counterfactual --> Adversarial[Adversarial Debate]
-
-    PaperTrade --> Production[Production Strategy]
-    Knowledge --> HMS[Hierarchical Memory System]
-    Adversarial --> Refine[Hypothesis Refinement]
-
-    Production --> Drift[Drift Monitor]
-    Drift --> Retire[Hypothesis Retirement]
-    Retire --> Institutional[Institutionalized Knowledge]
-    Retire --> Rejected[Rejected / Forgotten]
-```
-
-## Flow Description
-
-1.  **Origination**: Hypotheses originate from `HypothesisGenerator` modules (in PHCE-D and CSC) or via the `observe()` method in the `ScientificReasoningEngine`. They are triggered by anomalies or research objectives.
-2.  **Propagation**: Hypotheses are wrapped in `ReasoningBranch` objects in CSC for parallel simulation, or passed as `Hypothesis` data structures through the `ValidationGateway` in PHCE-D.
-3.  **Evolution**: Hypotheses evolve through the 19-step cycle in the SRE, where they are refined based on experiment results and counterfactual reasoning.
-4.  **Evaluation**: Primary evaluation occurs in `trading_bot/phce_d/verifier.py` (performance metrics) and `trading_bot/core_agent_system/cds/epistemology_engine.py` (epistemic quality).
-5.  **Death**: Hypotheses "die" when they are moved to `REJECTED` or `RETIRED` states due to drift detection, failed validation, or being superseded.
-6.  **Knowledge**: Successful hypotheses are abstracted into Semantic or Institutional memory tiers within the HMS.
-7.  **Policies**: Validated hypotheses influence trading policies via the `SkillRouter` and `PolicyImprovement` steps.
-8.  **Strategies**: Hypotheses become active trading strategies after passing the Paper Trade promotion gate.
-9.  **Feedback**: Retired or failed hypotheses influence future generation by providing negative examples in the `FailureMemory`.
+## Component Mapping
+- **World Model**: `trading_bot/world_model/` (Imagination, Counterfactuals, Causal Model).
+- **Research Engine**: `trading_bot/alpha_research/` (Extraction, Mining).
+- **Core Reasoning**: `trading_bot/core_agent_system/scientific_reasoning/core.py` (SRE).
+- **Decision Layer**: `trading_bot/core/csc/` (Reasoning Branches, Logic Folding).
+- **Validation**: `trading_bot/core/phce_d_engine.py` (Deterministic Verifiers).
+- **Governance**: `trading_bot/core/unified_event_bus.py` (LogAct Consensus).

@@ -5,6 +5,7 @@ Captures alpha from news, social media, and alternative data sources.
 Provides sentiment signals for trading decisions.
 """
 
+import aiohttp
 import numpy as np
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass

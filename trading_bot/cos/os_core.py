@@ -4,6 +4,7 @@ Core Data Models and Utilities for Cognitive OS.
 
 from __future__ import annotations
 
+from uuid import uuid4
 import ast
 import hashlib
 import json

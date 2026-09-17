@@ -14,6 +14,8 @@ This module provides comprehensive liquidity analysis:
 Market Maker + Professional Trader + Risk Manager Perspective
 """
 
+from typing import Deque
+from collections import defaultdict
 import numpy as np
 import pandas as pd
 from typing import Any, Dict, List, Optional, Tuple

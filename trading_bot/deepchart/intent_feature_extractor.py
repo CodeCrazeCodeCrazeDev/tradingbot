@@ -7,6 +7,7 @@ Each feature is mathematically defined and carries specific intent information.
 NON-NEGOTIABLE: All features computable from L1 data only.
 """
 
+import logging
 import numpy as np
 from dataclasses import dataclass, field
 from typing import Deque, Optional, Tuple
@@ -14,6 +15,8 @@ from collections import deque
 import time
 
 from .intent_decomposition_core import ObservableFeatures, MIDEConfig
+
+logger = logging.getLogger(__name__)
 
 
 # =============================================================================

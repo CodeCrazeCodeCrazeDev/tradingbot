@@ -8,6 +8,7 @@ Neural Architecture Search for entire pipeline, and evolution ledger.
 Mission: Become a different, better system every quarter without human architects.
 """
 
+import numpy as np
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum

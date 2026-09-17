@@ -20,6 +20,7 @@ Data Dependencies:
 - Aggregated L2: Top 5-10 levels (when available)
 """
 
+import time
 import numpy as np
 import pandas as pd
 from dataclasses import dataclass, field

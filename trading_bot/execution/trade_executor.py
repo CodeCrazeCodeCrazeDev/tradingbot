@@ -3,10 +3,14 @@ Trade Executor Module - Compatibility Wrapper
 Provides unified interface for trade execution
 """
 
+import logging
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
 from enum import Enum
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
+
 
 class OrderType(Enum):
     """Order types"""

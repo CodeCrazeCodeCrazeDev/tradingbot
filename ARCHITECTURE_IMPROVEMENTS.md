@@ -1,31 +1,37 @@
-# ARCHITECTURE IMPROVEMENTS - Unified Registry & Grounded Learning
+# ARCHITECTURE IMPROVEMENTS - AlphaAlgo Production Audit
 
-This document highlights the major architectural improvements introduced during the 2026 production hardening audit.
-
-## 1. Autoritative Registry Consolidation (ARCH-003)
-
-### Before:
-Multiple conflicting registry classes coexisted across different modules:
-- `registry.py` (simple dict of component module paths)
-- `system_registry.py` (complex dependency injection and lifecycle order)
-- `UnifiedComponentRegistry` (UCA-2026 Core component)
-
-This fragmentation led to circular dependency workarounds, duplicate component registration under different names, and split-brain states where some services registered on one system while others query the other.
-
-### After:
-- All component registration logic has been unified into a single authoritative `UnifiedComponentRegistry` inside `trading_bot/core/unified_registry.py`.
-- Features from `system_registry` (such as service health states, metadata tracking, and deterministic ordering) have been cleanly incorporated.
-- **Architectural Enforcement:** Implemented AST-based static tests (`tests/test_registry_integrity.py`) that fail the build if any new class ending with `Registry` is introduced outside the approved core namespaces. This structurally protects the registry architecture against future developer degradation.
+This document outlines the major architectural improvements made to stabilize and secure the AlphaAlgo codebase during the Production Engineering Audit.
 
 ---
 
-## 2. Grounded Scientific Reasoning & Delusion Loop Prevention (INT-001)
+## 1. Directory & Package Canonicalization
+The directory structure has been completely normalized to adhere to standard Python packaging rules:
+- **`agents/`:** Established as the canonical package name, resolving the spaced folder defect `agents 2`.
+- **`risk_management/`:** Established as an explicit delegation bridge pointing directly to `trading_bot.risk_management`, preventing legacy import path errors.
+- **`superintelligence/`:** Established as a delegation bridge pointing to `trading_bot.superintelligence` to satisfy newer validation tests.
 
-### Before:
-Learning updates (MAML, PPO reinforcement learning, and genetic strategy discovery) could proceed on "delusion loops" where the system optimized against simulated outcomes or random noise when real market data was unavailable.
+---
 
-### After:
-- **Evaluation State Machine:** Introduced a strict `EvaluationState` enum which reports evaluation quality states.
-- **Fail-Closed Pipelines:** Hardened the training pipelines so that if evaluation validity checks fail, the system refuses to train, halts parameter updates, avoids strategy promotions, and skips replay buffer insertions.
-- **Grounded Rewards:** Hardened the reward models to calculate rewards based exclusively on executable, realized outcomes (realized PnL, actual transaction fees, actual slippage), entirely preventing policies from learning from ungrounded outcomes.
-- **Transition Provenance:** Hardened replay buffers to enforce strict transition metadata (symbol, timestamp, slippage, commission, regime, etc.).
+## 2. Backward-Compatibility Layer (Bridges & Shims)
+To prevent namespace fragmentation and support legacy environments, we designed thin, explicit, and lightweight compatibility forwarding layers:
+1. **`agents 2` Symbolic Link:** A filesystem-level symbolic link pointing directly to `agents/`.
+2. **`risk_management/__init__.py`:** A Python-level delegation shim that raises a clear `DeprecationWarning` advising developers to update imports to `trading_bot.risk_management`.
+3. **`superintelligence/__init__.py`:** A delegator pointing to `trading_bot.superintelligence`.
+4. **`trading_bot.core.event_bus`:** Restored `trading_bot/core/event_bus.py` to bridge legacy EventBus callers directly to the LogAct `UnifiedDecisionBus`.
+
+### Exit Strategy
+All compatibility bridges are scheduled for removal in **v3.0** of the AlphaAlgo platform, once all legacy systems have been fully migrated to canonical import paths.
+
+---
+
+## 3. Structural Duplication Cleanup
+To ensure complete compliance with architectural invariants, we conducted a structural audit of all Tier-0 subsystems and resolved duplication:
+- **Pruned duplicate folders:** Completely removed the duplicate legacy package `trading_bot/alphaalgo_v2/` from active source directories.
+- **Exclusion of `_archive/`:** Ensured all deprecated, legacy, or experimental modules reside strictly inside `_archive/` and are fully separated from active production and test code.
+
+---
+
+## 4. Secure Serialization Recommendations
+For future security hardening, we recommend migrating:
+- `persistence/cache.py` from unrestricted `pickle.loads` to `json.loads` or a restricted serialization format.
+- `examples/` scripts from standard `eval()` to `json.loads` or `ast.literal_eval`.

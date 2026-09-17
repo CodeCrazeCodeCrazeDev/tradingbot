@@ -6,6 +6,7 @@ Integration Bridge: Core -> Execution
 Auto-generated bridge for connecting core and execution subsystems.
 """
 
+import asyncio
 import logging
 from typing import Any, Dict, List, Optional
 

@@ -1,0 +1,145 @@
+{
+  "total_files": 4367,
+  "total_lines": 240669,
+  "total_functions": 7662,
+  "total_classes": 3091,
+  "complexity_score": 11.658291457286433,
+  "maintainability_score": 0,
+  "test_coverage": 0.9617586443782917,
+  "documentation_coverage": 75.32904122163919,
+  "flaws_by_type": {
+    "MAINTAINABILITY": 410,
+    "INCOMPLETE": 2736,
+    "CODE_SMELL": 1955,
+    "BUG": 4
+  },
+  "flaws_by_severity": {
+    "MEDIUM": 410,
+    "INFO": 2736,
+    "LOW": 1955,
+    "CRITICAL": 4
+  },
+  "top_issues": [
+    {
+      "id": "8b630a9643a9",
+      "type": "BUG",
+      "severity": "CRITICAL",
+      "location": "trading_bot/_archive/auto_fix_backups/20251209_232515/streaming/redis_streamer.py:223",
+      "description": "Syntax error: unexpected indent",
+      "suggestion": "Fix the syntax error",
+      "code_snippet": "        \"\"\"Auto-implemented by DeepSeek Elite Engine.\"\"\"",
+      "detected_at": "2026-07-31T19:14:14.788111",
+      "fixed": false,
+      "fix_applied": null
+    },
+    {
+      "id": "3f3c506414ba",
+      "type": "BUG",
+      "severity": "CRITICAL",
+      "location": "trading_bot/_archive/auto_fix_backups/20251209_232515/error_handling/comprehensive_recovery.py:601",
+      "description": "Syntax error: unterminated triple-quoted string literal (detected at line 626)",
+      "suggestion": "Fix the syntax error",
+      "code_snippet": "    \"\"\"",
+      "detected_at": "2026-07-31T19:14:14.788941",
+      "fixed": false,
+      "fix_applied": null
+    },
+    {
+      "id": "f33e9819d2ce",
+      "type": "BUG",
+      "severity": "CRITICAL",
+      "location": "trading_bot/_archive/auto_fix_backups/20251209_231151/streaming/redis_streamer.py:223",
+      "description": "Syntax error: unexpected indent",
+      "suggestion": "Fix the syntax error",
+      "code_snippet": "        \"\"\"Auto-implemented by DeepSeek Elite Engine.\"\"\"",
+      "detected_at": "2026-07-31T19:14:15.016613",
+      "fixed": false,
+      "fix_applied": null
+    },
+    {
+      "id": "a077fe638426",
+      "type": "BUG",
+      "severity": "CRITICAL",
+      "location": "trading_bot/_archive/auto_fix_backups/20251209_231151/error_handling/comprehensive_recovery.py:601",
+      "description": "Syntax error: unterminated triple-quoted string literal (detected at line 626)",
+      "suggestion": "Fix the syntax error",
+      "code_snippet": "    \"\"\"",
+      "detected_at": "2026-07-31T19:14:15.017471",
+      "fixed": false,
+      "fix_applied": null
+    },
+    {
+      "id": "470f811bab88",
+      "type": "MAINTAINABILITY",
+      "severity": "MEDIUM",
+      "location": "trading_bot/unicode_fix.py:15",
+      "description": "Function 'apply_unicode_fix' has deep nesting (depth: 5)",
+      "suggestion": "Reduce nesting by extracting logic or using early returns",
+      "code_snippet": null,
+      "detected_at": "2026-07-31T19:12:40.958879",
+      "fixed": false,
+      "fix_applied": null
+    },
+    {
+      "id": "375dc3ae6b8c",
+      "type": "MAINTAINABILITY",
+      "severity": "MEDIUM",
+      "location": "trading_bot/master_system.py:314",
+      "description": "Function '_create_lazy_factory' is too long (62 lines)",
+      "suggestion": "Consider breaking into smaller functions",
+      "code_snippet": null,
+      "detected_at": "2026-07-31T19:12:41.001226",
+      "fixed": false,
+      "fix_applied": null
+    },
+    {
+      "id": "5cf4566f287f",
+      "type": "MAINTAINABILITY",
+      "severity": "MEDIUM",
+      "location": "trading_bot/master_system.py:316",
+      "description": "Function 'factory' is too long (58 lines)",
+      "suggestion": "Consider breaking into smaller functions",
+      "code_snippet": null,
+      "detected_at": "2026-07-31T19:12:41.002453",
+      "fixed": false,
+      "fix_applied": null
+    },
+    {
+      "id": "4812fc5e00a1",
+      "type": "MAINTAINABILITY",
+      "severity": "MEDIUM",
+      "location": "trading_bot/profit_maximizer/brain_integration.py:48",
+      "description": "Function 'enhance_decision' is too long (86 lines)",
+      "suggestion": "Consider breaking into smaller functions",
+      "code_snippet": null,
+      "detected_at": "2026-07-31T19:12:42.127665",
+      "fixed": false,
+      "fix_applied": null
+    },
+    {
+      "id": "6c36ef0129fd",
+      "type": "MAINTAINABILITY",
+      "severity": "MEDIUM",
+      "location": "trading_bot/trade_journal/journal_manager.py:112",
+      "description": "Function 'analyze_entries' is too long (51 lines)",
+      "suggestion": "Consider breaking into smaller functions",
+      "code_snippet": null,
+      "detected_at": "2026-07-31T19:12:42.291407",
+      "fixed": false,
+      "fix_applied": null
+    },
+    {
+      "id": "dbbe3a8990c4",
+      "type": "MAINTAINABILITY",
+      "severity": "MEDIUM",
+      "location": "trading_bot/risk_intelligence/regime_shift_predictor.py:89",
+      "description": "Function 'predict_volatility_regime' is too long (65 lines)",
+      "suggestion": "Consider breaking into smaller functions",
+      "code_snippet": null,
+      "detected_at": "2026-07-31T19:12:42.955970",
+      "fixed": false,
+      "fix_applied": null
+    }
+  ],
+  "generated_at": "2026-07-31T19:14:43.616607"
+}

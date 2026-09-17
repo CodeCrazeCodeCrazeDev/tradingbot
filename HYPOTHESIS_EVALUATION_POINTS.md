@@ -1,50 +1,20 @@
-# Hypothesis Evaluation Points (Verified Audit 2026)
+# Hypothesis Evaluation Points (Institutional Audit 2026)
 
-## Core Evaluation
-1. **`trading_bot/core/phce_d_engine.py`**: `ParallelHypothesisCorrectionEngine.process()` - Main evaluation pipeline using EvidencePackets.
-2. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `ScientificReasoningEngine.evaluate_results()` / `bayesian_update()`.
+## Core Scientific Evaluation
+1. **`trading_bot/core_agent_system/scientific_reasoning/core.py`**: `ScientificReasoningEngine.evaluate_results()` & `bayesian_update()`.
+2. **`trading_bot/core_agent_system/cds/epistemology_engine.py`**: `EpistemologyEngine.analyze_hypothesis()` (Adversarial questioning).
 
-## Deterministic Verification
+## Tactical Evaluation (Decision Layer)
+1. **`trading_bot/core/phce_d_engine.py`**: `ParallelHypothesisCorrectionEngine.process()` (Evidence synthesis).
+2. **`trading_bot/core/csc/controller.py`**: `CSC._verify_evidence_hard_constraint()` (Graph-based verification).
+3. **`trading_bot/core_agent_system/cds/verdict_engine.py`**: `VerdictEngine.synthesize_verdict()` (Weighted consensus).
 
-1.  **`trading_bot/core/phce_d_engine.py`**
-    - `PHCEDAI._verify()`: Performs deterministic/statistical checks (spread, cost, sample size).
-    - `PHCEDAI._apply_policy()`: Final gate for paper-trade promotion.
-2.  **`trading_bot/core/csc/controller.py`**
-    - `CSC._verify_evidence_hard_constraint()`: Enforces graph density and verifier consensus.
+## Statistical & Technical Evaluation
+1. **`trading_bot/alpha_research/strategy_diagnostics.py`**: `StrategyDiagnostics` (Overfitting, health, and robustness).
+2. **`trading_bot/strategy_discovery/validation.py`**: `StrategyValidationPipeline` (Regime testing, transaction costs).
+3. **`trading_bot/alpha_research/alpha_death_clock.py`**: `AlphaDeathClockManager` (Decay monitoring).
+4. **`trading_bot/world_model/imagination.py`**: `PlanEvaluator.evaluate_plan()` (Lookahead utility across scenarios).
 
-## Adversarial Evaluation
-
-1.  **`trading_bot/core_agent_system/cds/epistemology_engine.py`**
-    - `EpistemologyEngine.analyze_hypothesis()`: Calculates belief scores and uncertainty using adversarial questioning.
-2.  **`trading_bot/core/verification/swarm.py`**
-    - `VerificationSwarm.run_swarm()`: Peer-review of hypotheses by specialized agents (Hallucination detector, etc.).
-
-## Statistical & Machine Learning Evaluation
-
-1.  **`trading_bot/strategy_discovery/evolutionary_engine.py`**
-    - `EvolutionaryStrategyEngine._fitness_function()`: Evaluates genomes based on Sharpe, Drawdown, and Win Rate.
-2.  **`trading_bot/alpha_research/alpha_death_clock.py`**
-    - `AlphaDeathClockManager`: Continuously monitors alpha decay (hypothesis degradation).
-3.  **`trading_bot/alpha_research/strategy_diagnostics.py`**
-    - Performs robustness and over-fitting checks.
-4.  **`trading_bot/strategy_discovery/validation.py`**
-    - `StrategyValidationPipeline.validate_strategy()`: Systematic validation including in-sample, out-of-sample, and regime testing.
-5.  **`trading_bot/profit_maximizer/profit_maximizer_core.py`**
-    - `SignalConfluenceScorer.score_signal()`: Evaluates signal confidence by adjusting base confidence with confluence and conflict scores.
-6.  **`trading_bot/market_student/market_teacher.py`**
-    - `MarketTeacher`: Post-hoc evaluation of AI predictions against actual market outcomes to extract lessons.
-7.  **`trading_bot/world_model/v2_training.py`**
-    - Uncertainty Calibration Loss: Evaluates the calibration of the model's predictive distributions.
-
-## Bayesian Updating
-
-1.  **`trading_bot/core_agent_system/scientific_reasoning/core.py`**
-    - `ScientificReasoningEngine.bayesian_update()`: Formal update of posterior probabilities.
-2.  **`trading_bot/foundation_agents/curiosity_engine/hypothesis_generator.py`**
-    - `HypothesisGenerator.update_hypothesis_status()`: Updates confidence scores based on evidence.
-3.  **`trading_bot/verification/confidence_calibrator.py`**
-    - `PredictionRecord`: Audits historical prediction accuracy for recalibration.
-4.  **`trading_bot/signals/auto_disable_sick_signals.py`**
-    - `SignalHealthMonitor`: Evaluates the continuing validity of the "signal-as-hypothesis".
-5.  **`trading_bot/core/adversarial_failure_analysis.py`**
-    - `AdversarialAnalyzer`: Attempts to falsify signal hypotheses by simulating catastrophic market scenarios.
+## Governance & Institutional Evaluation
+1. **`trading_bot/core/unified_event_bus.py`**: `LogAction.wait_for_decision()` (Consensus/Voter auditing).
+2. **`trading_bot/core/immutable_shield.py`**: `ImmutableShield.validate_action()` (Hard safety rails).

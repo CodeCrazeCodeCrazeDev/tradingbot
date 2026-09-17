@@ -222,10 +222,6 @@ PACKAGE_LAYER_MAP: Dict[str, SystemLayer] = {
     'meta_learning': SystemLayer.INTELLIGENCE_CORE,
     'learning': SystemLayer.INTELLIGENCE_CORE,
     'neuro_symbolic': SystemLayer.INTELLIGENCE_CORE,
-    'qwen_codemender': SystemLayer.INTELLIGENCE_CORE,
-    'qwen_codemender': SystemLayer.INTELLIGENCE_CORE,
-    'qwen_codemender': SystemLayer.INTELLIGENCE_CORE,
-    'qwen_codemender': SystemLayer.INTELLIGENCE_CORE,
     'adversarial_curriculum': SystemLayer.INTELLIGENCE_CORE,
     'autonomous_learner': SystemLayer.INTELLIGENCE_CORE,
     

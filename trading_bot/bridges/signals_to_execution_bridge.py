@@ -6,6 +6,7 @@ Integration Bridge: Signals -> Execution
 Auto-generated bridge for connecting signals and execution subsystems.
 """
 
+import asyncio
 import logging
 from typing import Any, Dict, List, Optional
 

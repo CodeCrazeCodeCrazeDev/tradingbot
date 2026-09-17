@@ -5,6 +5,7 @@ AI project managers, performance monitors, resource economists, and
 strategy portfolio managers for autonomous system coordination.
 """
 
+from typing import Tuple
 import asyncio
 import logging
 from dataclasses import dataclass, field

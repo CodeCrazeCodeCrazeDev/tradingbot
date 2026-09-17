@@ -514,15 +514,6 @@ class AlphaAlgoMetaSystem:
         }
         return causes.get(bottleneck_type, "Unknown - requires investigation")
 
-
-# Continued in Part 2...
-"""
-Continuation of AlphaAlgo Meta-System
-Part 2: Improvement Generation, Sandbox Validation, and Safety Controls
-"""
-
-# Continuation of AlphaAlgoMetaSystem class from Part 1
-
     # ==================== Improvement Proposal Generation ====================
     
     async def _analyze_and_propose(self):

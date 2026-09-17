@@ -224,11 +224,9 @@ class RiskValidationGate:
             
         except Exception as e:
             logger.error(f"Validation error: {e}")
-
-        try:
             import traceback
             logger.error(traceback.format_exc())
-            
+
             return ValidationResponse(
                 result=ValidationResult.REJECTED,
                 approved=False,
@@ -237,9 +235,6 @@ class RiskValidationGate:
                 risk_score=100.0,
                 timestamp=datetime.now()
             )
-    
-        except Exception:
-            pass
     def _reset_time_based_limits(self):
         """Reset daily/weekly/monthly limits if time period has passed."""
         now = datetime.now()

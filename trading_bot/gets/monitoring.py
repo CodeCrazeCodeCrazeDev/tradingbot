@@ -35,8 +35,8 @@ class MetricPoint:
         """Convert to Prometheus format."""
         label_str = ",".join([f'{k}="{v}"' for k, v in self.labels.items()])
         if label_str:
-            return f"{name}{{{label_str}}} {value} {int(self.timestamp.timestamp() * 1000)}"
-        return f"{name} {value} {int(self.timestamp.timestamp() * 1000)}"
+            return f"{self.name}{{{label_str}}} {self.value} {int(self.timestamp.timestamp() * 1000)}"
+        return f"{self.name} {self.value} {int(self.timestamp.timestamp() * 1000)}"
 
 
 class MetricsCollector:
