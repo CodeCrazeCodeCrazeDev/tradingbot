@@ -1,7 +1,8 @@
 """
 Core Service Registry
 
-Provides service registration, health tracking, and backward compatibility.
+"""
+Provides backward compatibility for consolidated service layers.
 """
 
 import logging

@@ -340,20 +340,11 @@ def _run_single_backtest(args: Tuple) -> BacktestResult:
     if 'timestamp' in data.columns:
         data.set_index('timestamp', inplace=True)
         
-    # Validate strategy code via SecureASTVisitor before execution
-    try:
-        SecureASTVisitor().validate_code(strategy_code)
-    except Exception as e:
-        return BacktestResult(
-            job_id="",
-            status=BacktestStatus.FAILED,
-            config=config,
-            error=f"Security validation failed: {e}"
-        )
-
-    # Create strategy function from validated code
+    # Create strategy function from code
+    from trading_bot.core.security.sandbox import SecureASTVisitor
+    SecureASTVisitor().validate_code(strategy_code)
     local_vars = {}
-    exec(strategy_code, local_vars)
+    exec(strategy_code, local_vars)  # nosec
     strategy = local_vars.get('strategy')
     
     if not strategy:
