@@ -9,19 +9,22 @@ All classes, methods, and functions tested.
 import pytest
 import asyncio
 import logging
+import sys
+from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
 from pathlib import Path
 try:
     from trading_bot.orchestrator.performance_tracker import *
 except ImportError:
-    import sys
-from pathlib import Path
-    sys.path.insert(0, str(Path(__file__).parent.parent))
     try:
-        from trading_bot.orchestrator.performance_tracker import *
+        from trading_bot.performance_tracker import *
     except ImportError:
-        pass
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        try:
+            from trading_bot.orchestrator.performance_tracker import *
+        except ImportError:
+            pass
 
 logger = logging.getLogger(__name__)
 
