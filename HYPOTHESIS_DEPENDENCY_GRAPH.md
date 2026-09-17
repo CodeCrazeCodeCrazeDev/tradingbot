@@ -1,68 +1,64 @@
-# Hypothesis Dependency Graph (Comprehensive Audit 2026)
+# Hypothesis Dependency Graph (Complete System Audit 2026)
+
+## Overview
+This document outlines the complete multi-horizon dependency and propagation graph of hypotheses across the AlphaAlgo Autonomous Scientific System. In AlphaAlgo, every signal, prediction, regime belief, trade idea, world model projection, and parameter mutation is treated as a falsifiable hypothesis.
+
+---
+
+## 1. Multi-Horizon Dependency Flow Graph
 
 ```mermaid
 graph TD
-    %% Origination Points
-    Obs[Observation / Market Data] --> Anomaly[Anomaly Detection]
-    Anomaly --> QG[Question Generation]
-    QG --> HG[Hypothesis Generation]
-    HG --> EC[Evidence Collection]
-
-    %% Research & Mining
-    Mining[Alpha Mining Engine] --> HG
-    Extraction[Hypothesis Extraction Engine] --> HG
-    Curiosity[Curiosity Engine] --> Anomaly
-
-    %% Evolution & Evaluation
-    HG --> WM[World Model Simulation]
-    WM --> CF[Counterfactual Generation]
-    CF --> ADeb[Adversarial Debate]
-    ADeb --> ED[Experiment Design]
-    ED --> EXE[Execution / Backtest]
-    EXE --> EVAL[Evaluation / Diagnostics]
-
-    %% Cognitive Processing
-    EVAL --> BU[Bayesian Update]
-    BU --> CC[Confidence Calibration]
-    CC --> KI[Knowledge Integration]
-    KI --> MC[Memory Consolidation]
-
-    %% Lifecycle States
-    MC --> PI[Policy Improvement]
-    PI --> CM[Continuous Monitoring]
-    CM --> RET[Retirement / End-States]
-
-    %% Subsystem Connections
-    CSC[Cognitive System Controller] --> HG
-    PHCE_D[PHCE-D Engine] --> EVAL
-    HMS[Hierarchical Memory System] <--> MC
-    GWM[Global World Model] <--> WM
-
-    %% End-States
-    subgraph "Terminal States"
-        RET --> Conf[Confirmed]
-        RET --> Rej[Rejected]
-        RET --> Inc[Inconclusive]
-        RET --> Mer[Merged]
-        RET --> Spl[Split]
-        RET --> Dor[Dormant]
-        RET --> Rea[Reactivated]
-        RET --> Dep[Deprecated]
-        RET --> Sup[Superseded]
-        RET --> Inst[Institutionalized]
+    %% Fast Loop: Tactical Operations (< 1 minute)
+    subgraph Fast_Loop ["Fast Tactical Horizon (< 1 min)"]
+        Obs["1. Market Observation / Tick Feed"] --> CSC["2. Cognitive System Controller (CSC)"]
+        CSC --> SigHyp["3. Tactical Signal Hypothesis"]
+        SigHyp --> Exec["4. Pre-Trade Execution Boundary"]
+        Exec --> Realized["5. Trade Execution / PnL Feedback"]
     end
+
+    %% Slow Loop: Strategic Reasoning (1 min - 1 day)
+    subgraph Slow_Loop ["Slow Strategic Horizon (1 min - 1 day)"]
+        Realized --> Anomaly["6. Anomaly / Volatility Shock Detection"]
+        Anomaly --> SRE["7. Scientific Reasoning Engine (SRE 19-Step Cycle)"]
+        SRE --> WM_Sim["8. Unified World Model (Interventional Simulation)"]
+        WM_Sim --> Deb["9. Swarm Adversarial Debate (LogAct Consensus)"]
+        Deb --> RegBelief["10. Calibrated Regime Belief Hypothesis"]
+    end
+
+    %% Research Loop: Continuous Meta-Learning (> 1 day)
+    subgraph Research_Loop ["Research & Evolution Horizon (> 1 day)"]
+        RegBelief --> Mining["11. Alpha Mining & Extraction Engine"]
+        Mining --> SymDiscovery["12. Symbolic Discovery & Genetic Mutator"]
+        SymDiscovery --> FactorHyp["13. Strategic Factor Expression Hypothesis"]
+        FactorHyp --> Backtest["14. Out-of-Sample Backtest / Stress Test"]
+        Backtest --> HMS_Store["15. Hierarchical Memory System (HMS T6/T7)"]
+        HMS_Store --> Institutional["16. Institutionalized Knowledge Base"]
+    end
+
+    %% Cross-Horizon Feedback Lines
+    Institutional --> CSC
+    RegBelief --> CSC
+    HMS_Store --> SRE
 ```
 
-## Critical Propagation Paths
+---
 
-1. **The Fast Loop (Tactical)**: `Observation` -> `CSC Reasoning` -> `Signal` -> `Execution` -> `Market Teacher Evaluation`.
-2. **The Slow Loop (Strategic)**: `Anomaly` -> `SRE 19-Step Cycle` -> `Validated Hypothesis` -> `HMS Research Ledger` -> `Alpha Promotion`.
-3. **The Research Loop**: `Academic Paper` -> `Extraction Engine` -> `Causal Mechanism` -> `Backtest` -> `Knowledge Base`.
+## 2. Propagation & Transition Pathways
 
-## Component Mapping
-- **World Model**: `trading_bot/world_model/` (Imagination, Counterfactuals, Causal Model).
-- **Research Engine**: `trading_bot/alpha_research/` (Extraction, Mining).
-- **Core Reasoning**: `trading_bot/core_agent_system/scientific_reasoning/core.py` (SRE).
-- **Decision Layer**: `trading_bot/core/csc/` (Reasoning Branches, Logic Folding).
-- **Validation**: `trading_bot/core/phce_d_engine.py` (Deterministic Verifiers).
-- **Governance**: `trading_bot/core/unified_event_bus.py` (LogAct Consensus).
+| Horizon Stage | Subsystem Owner | Input Evidence | Transformation Output | Propagation Target |
+| :--- | :--- | :--- | :--- | :--- |
+| **Observation** | Data Pipelines / Tick Stream | Raw Orderbook & Trades | Anomaly Metric ($z$-score $> 2.5$) | `SRE.observe()` |
+| **Tactical Hypothesis** | `CognitiveSystemController` | Price Action & Latent Features | Position Candidate Vector | `DeterministicFinancialGateway` |
+| **World Model Simulation** | `UnifiedWorldModel` | Structural Causal Graph & $do(X)$ | Tri-Horizon Futures (Nominal, Stressed, Black Swan) | `AdversarialDebate` |
+| **Adversarial Debate** | `GovernanceOrchestrator` | Risk Vetoes & Verifier Scores | Evidence-Weighted Consensus | `SRE.update_bayesian()` |
+| **Memory Consolidation** | `HierarchicalMemorySystem` | Evaluated Performance Ledger | Knowledge Subgraph Entry (SAGE Graph) | `SkillRouter` |
+
+---
+
+## 3. Propagation to Downstream Action Layers
+
+1. **Knowledge Conversion**: Validated hypotheses accumulate epistemic weight and transition to permanent nodes in `HierarchicalMemorySystem` (Level T6/T7).
+2. **Policy Conversion**: Confirmed strategic hypotheses update the action space routing probabilities in `SkillRouter` and execution weights in `CognitiveSystemController`.
+3. **Trading Strategy Conversion**: Factor hypotheses passing out-of-sample stress testing are promoted to active execution candidates managed by the `PHCE-D` deterministic engine.
+4. **Future Reasoning Influence**: Historical failures are recorded with full invalidation DAGs, preventing repeated discovery of rejected structures.
