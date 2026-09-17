@@ -109,6 +109,7 @@ class AggregationMethods:
             extremized_logit = logit_mean * extremization
             return expit(extremized_logit)
         except Exception as e:
+            logger.debug(f"Logit extremization fallback: {e}")
             return mean_pred
 
 

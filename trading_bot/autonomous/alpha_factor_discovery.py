@@ -259,7 +259,9 @@ class GeneticProgramming:
         child = copy.deepcopy(parent1)
         
         # Find random nodes to swap
-        def get_random_node(expr, nodes=[]):
+        def get_random_node(expr, nodes=None):
+            if nodes is None:
+                nodes = []
             nodes.append(expr)
             if expr['type'] == 'function':
                 for arg in expr['args']:

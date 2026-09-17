@@ -190,6 +190,7 @@ class CitationNetwork:
                     self.papers[paper_id].influence_score = score
                     self.influence_scores[paper_id] = score
         except Exception as e:
+            logger.debug(f"PageRank computation fallback: {e}")
             # Fallback to simple citation count
             for paper_id, paper in self.papers.items():
                 paper.influence_score = paper.citation_count / max(1, len(self.papers))
@@ -202,7 +203,7 @@ class CitationNetwork:
                 if paper_id in self.papers:
                     self.papers[paper_id].centrality = cent
         except Exception as e:
-            pass
+            logger.debug(f"Degree centrality calculation fallback: {e}")
         
         # Calculate author influence
         for author_id, author in self.authors.items():

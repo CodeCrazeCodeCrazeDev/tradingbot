@@ -241,6 +241,7 @@ class GrangerCausality:
             residuals = y - X_with_const @ beta
             return np.sum(residuals ** 2)
         except Exception as e:
+            logger.debug(f"Residual SS calculation error: {e}")
             return float('inf')
     
     def _compute_aic(self, x: np.ndarray, y: np.ndarray, lag: int) -> float:
@@ -449,6 +450,7 @@ class PCAlgorithm:
             
             return p_value > self.significance
         except Exception as e:
+            logger.debug(f"Independence test calculation error: {e}")
             return False
 
 

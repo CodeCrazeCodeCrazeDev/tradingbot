@@ -1,39 +1,32 @@
-# AlphaAlgo Architecture Improvements Report (2026 Audit)
+# Architectural Improvements & Structural Simplifications (2026)
 
-## Executive Overview
-
-Following the comprehensive 2026 Production Engineering Audit, key architectural subsystems within AlphaAlgo were refactored to enforce single-source-of-truth principles, eliminate duplicate implementations, establish rigid layer boundaries, and enforce fail-closed security and financial guardrails.
-
-## 2. Hierarchical Memory Integrity
-The `HierarchicalMemorySystem` (HMS) was plagued by redundant constructors and missing dependencies. We have consolidated the initialization logic into a single authoritative `__init__` method and ensured that all required modules (`json`, `networkx`, etc.) are correctly imported and utilized. The SAGE Graph-Memory now consistently uses `MultiDiGraph` to support multi-hop market reasoning.
-
-## Key Subsystem Architectural Improvements
-
-### 1. Multi-Agent Swarm & Bayesian Synthesis Engine
-- **Single Strategic Authority**: Resolved duplicate `HeadAI` class definitions in `trading_bot/agents/multi_agent_debate.py`, establishing a single authoritative coordinator.
-- **Decoupled Mathematical Inference**: Extracted `BayesianDecisionEngine` into a dedicated mathematical component that computes posterior strategy success probabilities considering pairwise domain correlations:
-  $$P(S \mid E) = \frac{P(S) \prod P(E_i \mid S)^{w_i}}{P(S) \prod P(E_i \mid S)^{w_i} + P(\sim S) \prod P(E_i \mid \sim S)^{w_i}}$$
-- **SRE Falsification Gate**: Enforced a fail-closed 5-stage falsification pipeline (`CausalVerifier`, `LiquidityVerifier`, `RegimeVerifier`, `RiskVerifier`, `HallucinationDetector`) that immediately rejects proposals violating portfolio risk or market pricing bounds.
-
-### 2. Database Infrastructure & Relational Fallbacks
-- **Zero-Dependency Fallback Execution**: Updated `trading_bot/database/production_database.py` so that environments lacking SQLAlchemy transparently inherit from `DummyBase`, allowing offline analysis without import crashes.
-- **Connection Pool Resilience**: Implemented `QueuePool` configuration with `pool_pre_ping=True`, 10 connection pool size, 20 max overflow, and 30s timeout parameters to guarantee connection health under concurrent loads.
-
-### 3. Service Layer & Governance Infrastructure
-- **Unified Service Registry**: Resolved unhandled fallback imports in `trading_bot/core/service_registry.py` to support legacy component discovery while maintaining compatibility with UCA V6 singletons.
-- **Master Orchestration Consolidation**: Removed duplicate `DecisionPriority` enums and consolidated `SystemContext` dataclasses in `trading_bot/core_agent_system/master_orchestrator.py`.
-
-### 4. Deterministic Sandboxing & Security Invariants
-- **Unsafely Pickled Data Elimination**: Standardized all ML model loading on `trading_bot.security.safe_pickle.safe_load`, eliminating arbitrary object deserialization vectors.
-- **AST Sandboxing Enforcements**: Added strict dynamic AST check guardrails rejecting un-insulated script execution containing `eval`, `exec`, or `os.system`.
+This document catalogs the structural simplifications, architectural unifications, and cohesion improvements realized during the 2026 Production Engineering Audit of AlphaAlgo (UCA-2026).
 
 ---
 
-## Architectural Compliance Ledger
+## 1. Core Architectural Unifications
 
-| Subsystem Component | Pre-Audit Architecture | Post-Audit Architecture | Target Specification | Status |
-| :--- | :--- | :--- | :--- | :--- |
-| **Multi-Agent Synthesis** | Dual HeadAI classes, Naive Bayes assumption | Single HeadAI + Bayesian Engine with domain correlations | ludik_2025_falsification & UCA-V6 | COMPLIANT |
-| **Database ORM** | Broken `Base` import on non-SQLAlchemy env | Automatic `DummyBase` fallback & clean ORM declarations | DB_INFRA_2026 | COMPLIANT |
-| **Service Layer** | Crashing fallback import | Robust try/except legacy fallback | SERVICE_RECOVERY_SPEC | COMPLIANT |
-| **Deterministic Governance** | Non-deterministic random seed calls | `DeterministicGovernanceRoot` seed protocol | GOV_DETERMINISM_2026 | COMPLIANT |
+### Single-Source-of-Truth Singletons
+* **Unified Decision Bus (`UnifiedDecisionBus`)**: Consolidated event bus and decision dispatching into a single thread-safe singleton. Added clean `reset()` semantics for fast test isolation.
+* **Cognitive System Controller (`CognitiveSystemController`)**: Centralized strategic planning, active inference, and HASP guardrail interception.
+* **Skill Router (`SkillRouter`)**: Unified domain specialization routing across cognitive and execution agents.
+* **Hierarchical Memory System (`HierarchicalMemorySystem`)**: Streamlined the 8-tier memory hierarchy with graph-native SAGE linking and AutoMem retrieval.
+
+---
+
+## 2. Structural Simplifications
+
+### Consolidation of Duplicate Orchestrators
+* Archived legacy, competing orchestrators under `trading_bot/_archive/legacy_orchestrators/` (including `realtime_orchestrator.py`, `sentient_orchestrator.py`, `delegation_orchestrator.py`).
+* Promoted `MasterOrchestrator` (`trading_bot/core_agent_system/master_orchestrator.py`) as the sole authoritative platform orchestrator.
+
+### Security Boundary Enforcement
+* Enforced in-process sandboxing via `SecureASTVisitor` across distributed parallel backtesting and strategy code parsing.
+* Consolidated model deserialization under `trading_bot.security.safe_pickle.safe_load`.
+
+---
+
+## 3. Coupling & Cohesion Improvements
+
+* **Module Separation**: Disentangled risk limits from AI intelligence layers by establishing `HardenedGovernanceRoot` and `RiskVerifier` as rigid, un-overrideable financial boundaries.
+* **Defensive Guardrails**: Added defensive checks in `CognitiveSystemController` to handle optional world model simulation capabilities cleanly without raising `AttributeError`.

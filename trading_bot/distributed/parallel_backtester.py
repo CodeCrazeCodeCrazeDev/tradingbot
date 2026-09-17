@@ -339,7 +339,9 @@ def _run_single_backtest(args: Tuple) -> BacktestResult:
     if 'timestamp' in data.columns:
         data.set_index('timestamp', inplace=True)
         
-    # Create strategy function from code
+    # Create strategy function from code via SecureASTVisitor
+    from trading_bot.core.security.sandbox import SecureASTVisitor, UnsafeCodeError
+    SecureASTVisitor().validate_code(strategy_code)
     local_vars = {}
     exec(strategy_code, local_vars)
     strategy = local_vars.get('strategy')
@@ -548,7 +550,9 @@ class ParallelBacktester:
             # Test on out-of-sample
             engine = BacktestEngine(config)
             
-            # Create strategy function
+            # Create strategy function via SecureASTVisitor
+            from trading_bot.core.security.sandbox import SecureASTVisitor, UnsafeCodeError
+            SecureASTVisitor().validate_code(strategy_code)
             local_vars = {}
             exec(strategy_code, local_vars)
             strategy = local_vars.get('strategy')

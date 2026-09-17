@@ -337,6 +337,7 @@ class GrangerCausalityTester:
                         best_aic = results.aic
                         best_lag = lag
                 except Exception as e:
+                    logger.debug(f"Optimal VAR lag calculation interrupted at lag {lag}: {e}")
                     break
             
             return best_lag

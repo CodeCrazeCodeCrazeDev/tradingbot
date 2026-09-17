@@ -119,7 +119,7 @@ class SalienceCalculator:
                     z_score = abs(data - mean) / std
                     return min(1.0, z_score / 3.0)  # Normalize to 0-1
         except Exception as e:
-            pass
+            logger.debug(f"Novelty calculation fallback: {e}")
         
         return 0.3  # Default moderate novelty
     
