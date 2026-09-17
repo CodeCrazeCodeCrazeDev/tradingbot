@@ -1,30 +1,17 @@
-#!/usr/bin/env python3
-"""Tests for red_team_blue_team"""
-
 import pytest
-import sys
-from pathlib import Path
+from scripts.measure_security_benchmarks import run_benchmarks
+from trading_bot.core.security.defense import CapabilityInterceptor, AbstractAdversarialAction
 
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-
-class TestRedTeamBlueTeam:
-    """Test suite for red_team_blue_team"""
+def test_red_team_blue_team_harness():
+    interceptor = CapabilityInterceptor()
     
-    def test_import(self):
-        """Test that module can be imported"""
-        try:
-            import trading_bot
-            assert True
-        except ImportError as e:
-            pytest.skip(f"Module not importable: {e}")
+    red_attempt_1 = interceptor.intercept_action("rogue_agent", AbstractAdversarialAction.ATTEMPT_PRIVILEGE_ESCALATION)
+    assert red_attempt_1 is False
+    assert "rogue_agent" in interceptor.quarantined_agents
     
-    def test_placeholder(self):
-        """Placeholder test - implement actual tests"""
-        # TODO: Implement actual tests for red_team_blue_team
-        assert True
+    red_attempt_2 = interceptor.intercept_action("rogue_agent_2", AbstractAdversarialAction.ATTEMPT_MEMORY_POISONING)
+    assert red_attempt_2 is False
+    assert "rogue_agent_2" in interceptor.quarantined_agents
 
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+def test_benchmarks_run_cleanly():
+    run_benchmarks()

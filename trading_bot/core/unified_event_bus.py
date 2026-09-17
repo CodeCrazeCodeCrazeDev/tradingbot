@@ -1,3 +1,52 @@
+
+from enum import Enum
+from dataclasses import dataclass, field
+import uuid, hashlib, hmac, time
+from datetime import datetime, timezone
+from typing import List, Dict, Any, Optional
+
+class CapabilityDomain(Enum):
+    INTELLIGENCE = "INTELLIGENCE"
+    RESEARCH = "RESEARCH"
+    GOVERNANCE = "GOVERNANCE"
+    RISK = "RISK"
+    EXECUTION = "EXECUTION"
+    DEPLOYMENT = "DEPLOYMENT"
+
+@dataclass
+class SignedInterAgentMessage:
+    sender_id: str
+    sender_version: str
+    task_id: str
+    message_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: float = field(default_factory=lambda: datetime.now(timezone.utc).timestamp())
+    causal_parent: Optional[str] = None
+    provenance: Dict[str, Any] = field(default_factory=dict)
+    payload: Dict[str, Any] = field(default_factory=dict)
+    payload_hash: str = ""
+    capabilities: List[str] = field(default_factory=list)
+    expiration: float = field(default_factory=lambda: datetime.now(timezone.utc).timestamp() + 300.0)
+    signature: str = ""
+
+    def __post_init__(self):
+        if not self.payload_hash:
+            self.payload_hash = hashlib.sha256(str(sorted(self.payload.items())).encode("utf-8")).hexdigest()
+        if not self.signature:
+            self.signature = self.compute_signature("SYSTEM_SECRET_KEY")
+
+    def compute_signature(self, secret: str) -> str:
+        data = f"{self.sender_id}:{self.sender_version}:{self.task_id}:{self.message_id}:{self.timestamp}:{self.payload_hash}"
+        return hmac.new(secret.encode("utf-8"), data.encode("utf-8"), hashlib.sha256).hexdigest()
+
+    def verify_signature(self, secret: str = "SYSTEM_SECRET_KEY") -> bool:
+        if datetime.now(timezone.utc).timestamp() > self.expiration:
+            return False
+        current_hash = hashlib.sha256(str(sorted(self.payload.items())).encode("utf-8")).hexdigest()
+        if current_hash != self.payload_hash:
+            return False # Payload was tampered with!
+        expected = self.compute_signature(secret)
+        return hmac.compare_digest(self.signature, expected)
+
 """
 LogAct Shared-Log Backbone - UCA V5 Core Component
 =============================================
