@@ -121,12 +121,12 @@ class PortfolioAnalyticsDomain(BaseDomain):
             from trading_bot import analytics
             self.register_module('analytics', analytics)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
         try:
             from trading_bot import performance
             self.register_module('performance', performance)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
     
     async def get_performance_report(self, period: str = "1M") -> Dict[str, Any]:
         """Get performance report for a period."""

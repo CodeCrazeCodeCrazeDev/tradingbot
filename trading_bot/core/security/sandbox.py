@@ -190,7 +190,7 @@ class StrategySandbox:
                 try:
                     p.close()
                 except ValueError:
-                    pass
+                    logger.warning(f"Handled exception in sandbox.py")
                 raise asyncio.TimeoutError()
 
         try:

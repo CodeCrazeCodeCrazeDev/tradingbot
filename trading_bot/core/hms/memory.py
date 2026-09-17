@@ -104,7 +104,7 @@ class SAGEGraphMemory:
                             try:
                                 d[attr] = json.loads(d[attr])
                             except json.JSONDecodeError:
-                                pass
+                                logger.warning(f"Handled exception in memory.py")
                 return graph
             except Exception as e:
                 logger.error(f"SAGE: Load failed: {e}")
@@ -280,7 +280,8 @@ class HierarchicalMemorySystem:
                     if "migration_history" not in data:
                         data["migration_history"] = []
                     return data
-            except: pass
+            except Exception:
+                logger.warning(f"Handled exception in memory.py")
         return schema
 
     def _calculate_integrity_hash(self, schema: Dict[str, Any]) -> str:
@@ -550,7 +551,7 @@ class HierarchicalMemorySystem:
             if cls._instance is not None:
                 try:
                     cls._instance._save_schema()
-                except Exception:
-                    pass
+                except:
+                    logger.warning(f"Handled exception in memory.py")
                 cls._instance = None
         logger.info("HierarchicalMemorySystem successfully reset with schema synchronization.")

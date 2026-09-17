@@ -64,8 +64,10 @@ class SystemValidator:
 
     async def benchmark_latency(self) -> BenchmarkResult:
         """Measure perception-to-execution latency."""
-        # Measure processing chain without blocking async event loop
+        import asyncio
+        # Simulated measurement for initial implementation
         start_time = time.perf_counter()
+        # Mocking processing chain
         await asyncio.sleep(0.01)
         end_time = time.perf_counter()
 

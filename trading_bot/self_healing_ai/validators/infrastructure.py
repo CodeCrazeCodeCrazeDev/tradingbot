@@ -316,7 +316,7 @@ class InfrastructureValidator(BaseValidator):
                     remediation_action="cleanup_storage"
                 ))
         except Exception:
-            pass
+            logger.warning(f"Handled exception in infrastructure.py")
         
         return issues
     

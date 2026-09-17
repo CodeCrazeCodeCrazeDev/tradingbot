@@ -103,7 +103,7 @@ class ResearchDevelopmentDomain(BaseDomain):
             from trading_bot import research
             self.register_module('research', research)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
 
 
 __all__ = ['ResearchDevelopmentDomain']

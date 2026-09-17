@@ -112,7 +112,7 @@ class OperationsDomain(BaseDomain):
             from trading_bot import services
             self.register_module('services', services)
         except ImportError:
-            pass
+            logger.warning(f"Handled exception in __init__.py")
 
 
 __all__ = ['OperationsDomain']

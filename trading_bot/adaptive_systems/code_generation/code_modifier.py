@@ -268,7 +268,7 @@ class CodeModifier:
             # Parse original code
             original_tree = ast.parse(original_code)
         except SyntaxError:
-            pass
+            logger.warning(f"Handled exception in code_modifier.py")
         try:
             # If original code has syntax errors, append new code
             return original_code + "\n\n" + new_code
@@ -326,7 +326,7 @@ class CodeModifier:
             # Parse original code
             original_tree = ast.parse(original_code)
         except SyntaxError:
-            pass
+            logger.warning(f"Handled exception in code_modifier.py")
         try:
             # If original code has syntax errors, replace with new code
             return new_code
@@ -459,7 +459,7 @@ class CodeModifier:
         # Parse original code
             original_tree = ast.parse(original_code)
         except SyntaxError:
-            pass
+            logger.warning(f"Handled exception in code_modifier.py")
         try:
             # If original code has syntax errors, replace with refactored code
             return refactored_code

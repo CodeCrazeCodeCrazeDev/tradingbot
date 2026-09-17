@@ -393,7 +393,7 @@ class HallucinationDetector:
                         suggested_action='Reject content - temporal impossibility',
                     ))
             except Exception:
-                pass
+                logger.warning(f"Handled exception in hallucination_detector.py")
         
         if 'prediction' in content:
             pred = content['prediction']
