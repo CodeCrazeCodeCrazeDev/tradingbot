@@ -15,12 +15,12 @@ from unittest.mock import Mock, patch, MagicMock
 
 from pathlib import Path
 try:
-    from trading_bot.orchestrator.risk_manager import *
+    from risk.risk_manager import *
 except ImportError:
     # Fallback import
     import sys
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.orchestrator.risk_manager import *
+    from risk.risk_manager import *
 
 logger = logging.getLogger(__name__)
 
