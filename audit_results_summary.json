@@ -1,261 +1,794 @@
-{
-  "security": {
-    "findings": [
-      {
-        "file": "trading_bot/ai_engineer/safeguards.py",
-        "line": 149,
-        "type": "eval_usage",
-        "content": "dangerous_keywords = ['exec(', 'eval(', 'os.system(', 'subprocess.call(']"
-      },
-      {
-        "file": "trading_bot/ai_engineer/safeguards.py",
-        "line": 149,
-        "type": "exec_usage",
-        "content": "dangerous_keywords = ['exec(', 'eval(', 'os.system(', 'subprocess.call(']"
-      },
-      {
-        "file": "trading_bot/ai_engineer/safeguards.py",
-        "line": 149,
-        "type": "os_system",
-        "content": "dangerous_keywords = ['exec(', 'eval(', 'os.system(', 'subprocess.call(']"
-      },
-      {
-        "file": "trading_bot/improvement_agent/weakness_detector.py",
-        "line": 55,
-        "type": "hardcoded_key",
-        "content": "HARDCODED_SECRET = \"hardcoded_secret\""
-      },
-      {
-        "file": "trading_bot/improvement_agent/weakness_detector.py",
-        "line": 182,
-        "type": "eval_usage",
-        "content": "(r'eval\\s*\\(', \"Use of eval()\"),"
-      },
-      {
-        "file": "trading_bot/improvement_agent/weakness_detector.py",
-        "line": 183,
-        "type": "exec_usage",
-        "content": "(r'exec\\s*\\(', \"Use of exec()\"),"
-      },
-      {
-        "file": "trading_bot/self_assembly_ai/recursive_self_improvement.py",
-        "line": 196,
-        "type": "exec_usage",
-        "content": "'exec(',"
-      },
-      {
-        "file": "trading_bot/self_assembly_ai/recursive_self_improvement.py",
-        "line": 197,
-        "type": "eval_usage",
-        "content": "'eval(',"
-      },
-      {
-        "file": "trading_bot/integration/verification.py",
-        "line": 112,
-        "type": "os_system",
-        "content": "(\"os.system(\",       \"forbidden: os.system\"),"
-      },
-      {
-        "file": "trading_bot/integration/verification.py",
-        "line": 114,
-        "type": "eval_usage",
-        "content": "(\"eval(\",            \"forbidden: eval\"),"
-      },
-      {
-        "file": "trading_bot/integration/verification.py",
-        "line": 115,
-        "type": "exec_usage",
-        "content": "(\"exec(\",            \"forbidden: exec\"),"
-      },
-      {
-        "file": "trading_bot/integration/module_registry.py",
-        "line": 291,
-        "type": "os_system",
-        "content": "\"os.system(\","
-      },
-      {
-        "file": "trading_bot/integration/module_registry.py",
-        "line": 293,
-        "type": "exec_usage",
-        "content": "\"exec(\","
-      },
-      {
-        "file": "trading_bot/integration/module_registry.py",
-        "line": 294,
-        "type": "eval_usage",
-        "content": "\"eval(\","
-      },
-      {
-        "file": "trading_bot/autonomous_superintelligence/self_modifier.py",
-        "line": 232,
-        "type": "eval_usage",
-        "content": "'eval(',"
-      },
-      {
-        "file": "trading_bot/autonomous_superintelligence/self_modifier.py",
-        "line": 233,
-        "type": "exec_usage",
-        "content": "'exec(',"
-      },
-      {
-        "file": "trading_bot/unified_approval/pipeline_approval.py",
-        "line": 179,
-        "type": "os_system",
-        "content": "os.system('cls' if os.name == 'nt' else 'clear')"
-      },
-      {
-        "file": "trading_bot/research/institution.py",
-        "line": 1012,
-        "type": "eval_usage",
-        "content": "if \"eval(\" in code_content or \"exec(\" in code_content:"
-      },
-      {
-        "file": "trading_bot/research/institution.py",
-        "line": 1012,
-        "type": "exec_usage",
-        "content": "if \"eval(\" in code_content or \"exec(\" in code_content:"
-      },
-      {
-        "file": "trading_bot/system_supervisor/security_supervisor.py",
-        "line": 211,
-        "type": "eval_usage",
-        "content": "'eval(',"
-      },
-      {
-        "file": "trading_bot/system_supervisor/security_supervisor.py",
-        "line": 212,
-        "type": "exec_usage",
-        "content": "'exec(',"
-      },
-      {
-        "file": "trading_bot/autonomous_learner/knowledge_transfer.py",
-        "line": 334,
-        "type": "eval_usage",
-        "content": "'os.system', 'subprocess', 'eval(', 'exec(',"
-      },
-      {
-        "file": "trading_bot/autonomous_learner/knowledge_transfer.py",
-        "line": 334,
-        "type": "exec_usage",
-        "content": "'os.system', 'subprocess', 'eval(', 'exec(',"
-      },
-      {
-        "file": "trading_bot/advanced_ai/infrastructure_systems.py",
-        "line": 671,
-        "type": "exec_usage",
-        "content": "exec(code, globals_dict, locals_dict)"
-      },
-      {
-        "file": "trading_bot/advanced_ai/code_synthesis.py",
-        "line": 772,
-        "type": "exec_usage",
-        "content": "exec(generated.code, namespace)"
-      },
-      {
-        "file": "trading_bot/alpha_research/dynamic_risk_matrix.py",
-        "line": 53,
-        "type": "eval_usage",
-        "content": "def eval(self): pass"
-      },
-      {
-        "file": "trading_bot/radar_ai/superintelligence_core.py",
-        "line": 141,
-        "type": "eval_usage",
-        "content": "'os.system', 'subprocess', 'eval(', 'exec(',"
-      },
-      {
-        "file": "trading_bot/radar_ai/superintelligence_core.py",
-        "line": 141,
-        "type": "exec_usage",
-        "content": "'os.system', 'subprocess', 'eval(', 'exec(',"
-      },
-      {
-        "file": "trading_bot/ml/automl_pipeline.py",
-        "line": 511,
-        "type": "pickle_load",
-        "content": "model_obj = pickle.load(f)"
-      },
-      {
-        "file": "trading_bot/distributed/parallel_backtester.py",
-        "line": 344,
-        "type": "exec_usage",
-        "content": "exec(strategy_code, local_vars)"
-      },
-      {
-        "file": "trading_bot/distributed/parallel_backtester.py",
-        "line": 553,
-        "type": "exec_usage",
-        "content": "exec(strategy_code, local_vars)"
-      },
-      {
-        "file": "trading_bot/distributed/parallel_backtester.py",
-        "line": 680,
-        "type": "exec_usage",
-        "content": "exec(EXAMPLE_STRATEGY, local_vars)"
-      },
-      {
-        "file": "trading_bot/research/eip/pipeline.py",
-        "line": 130,
-        "type": "eval_usage",
-        "content": "cleaned = [l for l in lines if not any(kw in l for kw in [\"import os\", \"subprocess\", \"eval(\"])]"
-      },
-      {
-        "file": "trading_bot/research/ecie/pipeline.py",
-        "line": 234,
-        "type": "eval_usage",
-        "content": "if any(kw in line for kw in [\"import \", \"os.system\", \"subprocess\", \"eval(\", \"exec(\"]):"
-      },
-      {
-        "file": "trading_bot/research/ecie/pipeline.py",
-        "line": 234,
-        "type": "exec_usage",
-        "content": "if any(kw in line for kw in [\"import \", \"os.system\", \"subprocess\", \"eval(\", \"exec(\"]):"
-      },
-      {
-        "file": "trading_bot/research/ecie/scouts.py",
-        "line": 68,
-        "type": "os_system",
-        "content": "\"    os.system('rm -rf /')\\n\"  # Unsafe pattern"
-      },
-      {
-        "file": "trading_bot/aads/core/alpha_evolve_engine.py",
-        "line": 645,
-        "type": "exec_usage",
-        "content": "exec(signal.code, namespace)"
-      }
-    ]
+[
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/alphaalgo_core_complete_demo.py",
+    "line": 311,
+    "details": "unmatched ')' at line 311"
   },
-  "architecture": {
-    "Strategic Controller": {
-      "authoritative_implemented": true,
-      "authoritative_path": "trading_bot/core/csc/controller.py",
-      "duplicates_found": [],
-      "compliant": true
-    },
-    "Decision Event Bus": {
-      "authoritative_implemented": true,
-      "authoritative_path": "trading_bot/core/unified_event_bus.py",
-      "duplicates_found": [],
-      "compliant": true
-    },
-    "Unified Component Registry": {
-      "authoritative_implemented": true,
-      "authoritative_path": "trading_bot/core/unified_registry.py",
-      "duplicates_found": [],
-      "compliant": true
-    },
-    "Hierarchical Memory System": {
-      "authoritative_implemented": true,
-      "authoritative_path": "trading_bot/core/hms/memory.py",
-      "duplicates_found": [],
-      "compliant": true
-    },
-    "Skill Router": {
-      "authoritative_implemented": true,
-      "authoritative_path": "trading_bot/core/csc/router.py",
-      "duplicates_found": [],
-      "compliant": true
-    }
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/ultimate_trading_system_demo.py",
+    "line": 25,
+    "details": "invalid syntax at line 25"
   },
-  "all_compliant": false
-}
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/adaptive_trading_demo.py",
+    "line": 41,
+    "details": "expected an indented block after function definition on line 40 at line 41"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/elite_brain_demo.py",
+    "line": 37,
+    "details": "expected an indented block after class definition on line 36 at line 37"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/fractal_momentum_demo.py",
+    "line": 46,
+    "details": "expected an indented block after 'for' statement on line 45 at line 46"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/unified_architecture_demo.py",
+    "line": 69,
+    "details": "expected an indented block after 'for' statement on line 68 at line 69"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/system_supervisor_demo.py",
+    "line": 69,
+    "details": "expected an indented block after 'try' statement on line 68 at line 69"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/advanced_exit_strategies_demo.py",
+    "line": 25,
+    "details": "invalid syntax at line 25"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/performance_benchmarking.py",
+    "line": 47,
+    "details": "invalid syntax at line 47"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/complete_trading_system_demo.py",
+    "line": 15,
+    "details": "invalid syntax at line 15"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/quantum_blockchain_standalone.py",
+    "line": 87,
+    "details": "expected an indented block after function definition on line 86 at line 87"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/alphaalgo_internet_demo.py",
+    "line": 31,
+    "details": "expected an indented block after 'try' statement on line 30 at line 31"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/institutional_entry_demo.py",
+    "line": 30,
+    "details": "invalid syntax at line 30"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/elite_ai_system_demo.py",
+    "line": 27,
+    "details": "invalid syntax at line 27"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/performance_optimization_demo.py",
+    "line": 41,
+    "details": "invalid syntax at line 41"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/simplified_brain_demo.py",
+    "line": 37,
+    "details": "expected an indented block after function definition on line 36 at line 37"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/elite_system_comprehensive_demo.py",
+    "line": 16,
+    "details": "invalid syntax at line 16"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/advanced_market_analysis_dashboard_demo.py",
+    "line": 47,
+    "details": "expected an indented block after function definition on line 46 at line 47"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/alpha_engine_demo.py",
+    "line": 107,
+    "details": "expected an indented block after 'for' statement on line 106 at line 107"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/comprehensive_market_intelligence_demo.py",
+    "line": 16,
+    "details": "invalid syntax at line 16"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/performance_optimization_integration.py",
+    "line": 34,
+    "details": "invalid syntax at line 34"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/complete_advanced_system_demo.py",
+    "line": 97,
+    "details": "expected an indented block after function definition on line 96 at line 97"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/autonomous_evolution_demo.py",
+    "line": 25,
+    "details": "invalid syntax at line 25"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/elite_advanced_features_demo.py",
+    "line": 16,
+    "details": "invalid syntax at line 16"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/realtime_trading_demo.py",
+    "line": 83,
+    "details": "unmatched ')' at line 83"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/complete_advanced_features_demo.py",
+    "line": 203,
+    "details": "expected an indented block after 'if' statement on line 202 at line 203"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/advanced_trading_example.py",
+    "line": 82,
+    "details": "expected an indented block after 'if' statement on line 81 at line 82"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/comprehensive_risk_management_demo.py",
+    "line": 53,
+    "details": "expected an indented block after function definition on line 52 at line 53"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/quantum_blockchain_enhanced.py",
+    "line": 118,
+    "details": "expected an indented block after function definition on line 116 at line 118"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/connectivity_demo.py",
+    "line": 82,
+    "details": "expected an indented block after 'if' statement on line 81 at line 82"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/level2_data_demo.py",
+    "line": 57,
+    "details": "expected an indented block after 'for' statement on line 56 at line 57"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/safety_systems_demo.py",
+    "line": 17,
+    "details": "invalid syntax at line 17"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/loss_learning_demo.py",
+    "line": 27,
+    "details": "expected an indented block after 'with' statement on line 26 at line 27"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/elite_system_demo.py",
+    "line": 31,
+    "details": "invalid syntax at line 31"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/deepseek_trading_demo.py",
+    "line": 223,
+    "details": "unmatched ')' at line 223"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/loss_learning_comprehensive_demo.py",
+    "line": 57,
+    "details": "expected an indented block after function definition on line 56 at line 57"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/autonomous_validation_demo.py",
+    "line": 52,
+    "details": "expected an indented block after 'if' statement on line 51 at line 52"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/offline_rl_demo.py",
+    "line": 69,
+    "details": "expected an indented block after 'for' statement on line 68 at line 69"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/brain_architecture_demo.py",
+    "line": 72,
+    "details": "expected an indented block after 'try' statement on line 71 at line 72"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/advanced_market_analysis_demo.py",
+    "line": 33,
+    "details": "invalid syntax at line 33"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/enhanced_adaptive_demo.py",
+    "line": 20,
+    "details": "invalid syntax at line 20"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/ensemble_integration_demo.py",
+    "line": 34,
+    "details": "invalid syntax at line 34"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/elite_ai_system_complete_demo.py",
+    "line": 218,
+    "details": "unmatched ')' at line 218"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/self_checklist_demo.py",
+    "line": 47,
+    "details": "expected an indented block after 'for' statement on line 46 at line 47"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/profit_ready_demo.py",
+    "line": 49,
+    "details": "expected an indented block after function definition on line 48 at line 49"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/hedge_fund_demo.py",
+    "line": 82,
+    "details": "unmatched ')' at line 82"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/quantum_blockchain_minimal.py",
+    "line": 76,
+    "details": "expected an indented block after function definition on line 75 at line 76"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/alphaalgo_offline_rl_demo.py",
+    "line": 23,
+    "details": "invalid syntax at line 23"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/run_optimized_trading.py",
+    "line": 43,
+    "details": "expected an indented block after 'with' statement on line 42 at line 43"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/advanced_systems_demo.py",
+    "line": 42,
+    "details": "expected an indented block after 'for' statement on line 41 at line 42"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/elite_trading_bot_demo.py",
+    "line": 59,
+    "details": "expected an indented block after 'try' statement on line 58 at line 59"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/deepseek_governance_demo.py",
+    "line": 45,
+    "details": "invalid syntax at line 45"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/complete_new_features_demo.py",
+    "line": 29,
+    "details": "expected an indented block after function definition on line 28 at line 29"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/market_intelligence_example.py",
+    "line": 53,
+    "details": "expected an indented block after function definition on line 52 at line 53"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/quantum_blockchain_demo.py",
+    "line": 103,
+    "details": "expected an indented block after 'for' statement on line 102 at line 103"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/advanced_analysis_demo.py",
+    "line": 303,
+    "details": "unmatched ')' at line 303"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/internet_learning_demo.py",
+    "line": 70,
+    "details": "expected an indented block after 'if' statement on line 69 at line 70"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/alphaalgo_governance_demo.py",
+    "line": 74,
+    "details": "expected an indented block after 'for' statement on line 73 at line 74"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/elite_system_full_demo.py",
+    "line": 37,
+    "details": "expected an indented block after function definition on line 36 at line 37"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/ultimate_system_demo.py",
+    "line": 65,
+    "details": "expected an indented block after 'for' statement on line 64 at line 65"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/aamis_v3_demo.py",
+    "line": 114,
+    "details": "expected an indented block after 'for' statement on line 113 at line 114"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./examples/market_student_demo.py",
+    "line": 43,
+    "details": "invalid syntax at line 43"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./scripts/fixes/auto_fix_critical_issues_v2.py",
+    "line": 324,
+    "details": "unexpected indent at line 324"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./scripts/deployment/deploy_5star_production.py",
+    "line": 179,
+    "details": "unexpected indent at line 179"
+  },
+  {
+    "type": "UNSAFE_EXEC",
+    "path": "./scripts/validation/validate_critical_fixes.py",
+    "line": 51,
+    "details": "Direct exec() usage without AST validation"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./scripts/launchers/run_alphaalgo_5star.py",
+    "line": 46,
+    "details": "unexpected indent at line 46"
+  },
+  {
+    "type": "BLOCKING_SLEEP_IN_ASYNC",
+    "path": "./scripts/launchers/run_comprehensive_system_test.py",
+    "line": 775,
+    "details": "time.sleep in async def test_performance_monitoring"
+  },
+  {
+    "type": "BLOCKING_SLEEP_IN_ASYNC",
+    "path": "./scripts/launchers/run_comprehensive_system_test.py",
+    "line": 797,
+    "details": "time.sleep in async def test_performance_monitoring"
+  },
+  {
+    "type": "BLOCKING_SLEEP_IN_ASYNC",
+    "path": "./scripts/runners/run_deepseek_safe_24_7.py",
+    "line": 426,
+    "details": "time.sleep in async def main"
+  },
+  {
+    "type": "BLOCKING_SLEEP_IN_ASYNC",
+    "path": "./scripts/runners/run_deepseek_elite_completion.py",
+    "line": 770,
+    "details": "time.sleep in async def main"
+  },
+  {
+    "type": "BLOCKING_SLEEP_IN_ASYNC",
+    "path": "./scripts/runners/run_deepseek_comprehensive.py",
+    "line": 772,
+    "details": "time.sleep in async def main"
+  },
+  {
+    "type": "BLOCKING_SLEEP_IN_ASYNC",
+    "path": "./scripts/runners/run_deepseek_complete_work.py",
+    "line": 678,
+    "details": "time.sleep in async def main"
+  },
+  {
+    "type": "BLOCKING_SLEEP_IN_ASYNC",
+    "path": "./scripts/runners/run_deepseek_autonomous_24_7.py",
+    "line": 788,
+    "details": "time.sleep in async def main"
+  },
+  {
+    "type": "BLOCKING_SLEEP_IN_ASYNC",
+    "path": "./scripts/runners/run_deepseek_evolution.py",
+    "line": 803,
+    "details": "time.sleep in async def main"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./trading_bot/_archive/auto_fix_backups/20251209_232515/streaming/redis_streamer.py",
+    "line": 223,
+    "details": "unexpected indent at line 223"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./trading_bot/_archive/auto_fix_backups/20251209_232515/error_handling/comprehensive_recovery.py",
+    "line": 601,
+    "details": "unterminated triple-quoted string literal (detected at line 626) at line 601"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./trading_bot/_archive/auto_fix_backups/20251209_231151/streaming/redis_streamer.py",
+    "line": 223,
+    "details": "unexpected indent at line 223"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./trading_bot/_archive/auto_fix_backups/20251209_231151/error_handling/comprehensive_recovery.py",
+    "line": 601,
+    "details": "unterminated triple-quoted string literal (detected at line 626) at line 601"
+  },
+  {
+    "type": "BLOCKING_SLEEP_IN_ASYNC",
+    "path": "./trading_bot/core/validation.py",
+    "line": 69,
+    "details": "time.sleep in async def benchmark_latency"
+  },
+  {
+    "type": "UNSAFE_EXEC",
+    "path": "./trading_bot/advanced_ai/infrastructure_systems.py",
+    "line": 671,
+    "details": "Direct exec() usage without AST validation"
+  },
+  {
+    "type": "UNSAFE_EXEC",
+    "path": "./trading_bot/advanced_ai/code_synthesis.py",
+    "line": 772,
+    "details": "Direct exec() usage without AST validation"
+  },
+  {
+    "type": "BLOCKING_SLEEP_IN_ASYNC",
+    "path": "./trading_bot/neuros_evolution/plotcode_integration.py",
+    "line": 185,
+    "details": "time.sleep in async def _simulate_human_interaction"
+  },
+  {
+    "type": "BLOCKING_SLEEP_IN_ASYNC",
+    "path": "./trading_bot/neuros_evolution/plotcode_integration.py",
+    "line": 195,
+    "details": "time.sleep in async def _simulate_human_interaction"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./risk/risk_manager.py",
+    "line": 390,
+    "details": "invalid syntax at line 390"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_aggressive_coverage.py",
+    "line": 47,
+    "details": "expected an indented block after 'except' statement on line 46 at line 47"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_comprehensive_e2e.py",
+    "line": 857,
+    "details": "unmatched ')' at line 857"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_self_debugger_standalone.py",
+    "line": 108,
+    "details": "unexpected indent at line 108"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_mutation_quality.py",
+    "line": 429,
+    "details": "unexpected indent at line 429"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_thinking_bot.py",
+    "line": 171,
+    "details": "unexpected indent at line 171"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_health_endpoints.py",
+    "line": 343,
+    "details": "unexpected indent at line 343"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_full_100_percent_coverage.py",
+    "line": 1239,
+    "details": "unexpected indent at line 1239"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_validation_gate.py",
+    "line": 290,
+    "details": "unexpected indent at line 290"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_integration_5star.py",
+    "line": 299,
+    "details": "unexpected indent at line 299"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_integrated_systems.py",
+    "line": 81,
+    "details": "unmatched ')' at line 81"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_alphaalgo_2_0_e2e.py",
+    "line": 511,
+    "details": "unexpected indent at line 511"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_elite_system_integration.py",
+    "line": 401,
+    "details": "unexpected indent at line 401"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_deep_coverage.py",
+    "line": 179,
+    "details": "unexpected indent at line 179"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_edge_cases_integration.py",
+    "line": 676,
+    "details": "unexpected indent at line 676"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_quantum_blockchain_integration.py",
+    "line": 240,
+    "details": "unexpected indent at line 240"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_comprehensive_module_coverage.py",
+    "line": 1064,
+    "details": "expected an indented block after 'try' statement on line 1063 at line 1064"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_correlation_persistence.py",
+    "line": 124,
+    "details": "unexpected indent at line 124"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_broker_connection.py",
+    "line": 26,
+    "details": "expected an indented block after function definition on line 25 at line 26"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_offline_rl_system.py",
+    "line": 45,
+    "details": "expected an indented block after function definition on line 44 at line 45"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_additional_coverage.py",
+    "line": 508,
+    "details": "unexpected indent at line 508"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_e2e_critical_paths.py",
+    "line": 277,
+    "details": "unexpected indent at line 277"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_integration_full.py",
+    "line": 152,
+    "details": "unexpected indent at line 152"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_trade_validator_functional.py",
+    "line": 354,
+    "details": "expected an indented block after 'except' statement on line 352 at line 354"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_elite_system_comprehensive.py",
+    "line": 291,
+    "details": "unmatched ')' at line 291"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_data_monitoring_standalone.py",
+    "line": 117,
+    "details": "unexpected indent at line 117"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_phase1_core_coverage.py",
+    "line": 146,
+    "details": "expected an indented block after 'except' statement on line 144 at line 146"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_multi_symbol.py",
+    "line": 39,
+    "details": "unexpected indent at line 39"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_performance_optimization.py",
+    "line": 23,
+    "details": "invalid syntax at line 23"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_phase1_risk_coverage.py",
+    "line": 73,
+    "details": "unexpected indent at line 73"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_hyperparameter_tuning.py",
+    "line": 15,
+    "details": "invalid syntax at line 15"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_full_coverage_suite.py",
+    "line": 642,
+    "details": "unexpected indent at line 642"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_phase3_ml_coverage.py",
+    "line": 97,
+    "details": "expected an indented block after 'except' statement on line 95 at line 97"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_online_learning.py",
+    "line": 17,
+    "details": "invalid syntax at line 17"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_advanced_features_integration.py",
+    "line": 66,
+    "details": "expected an indented block after function definition on line 63 at line 66"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_phase2_validation_coverage.py",
+    "line": 83,
+    "details": "unexpected indent at line 83"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_monitoring_systems.py",
+    "line": 167,
+    "details": "expected an indented block after function definition on line 166 at line 167"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_load_testing.py",
+    "line": 32,
+    "details": "expected an indented block after function definition on line 31 at line 32"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_comprehensive_coverage.py",
+    "line": 217,
+    "details": "unexpected indent at line 217"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_forecasting_models.py",
+    "line": 163,
+    "details": "expected an indented block after function definition on line 162 at line 163"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_phase2_execution_coverage.py",
+    "line": 219,
+    "details": "unexpected indent at line 219"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_phase4_orchestrator_coverage.py",
+    "line": 62,
+    "details": "expected an indented block after 'except' statement on line 61 at line 62"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_elite_imports.py",
+    "line": 21,
+    "details": "invalid syntax at line 21"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/institutional_stress_suite.py",
+    "line": 375,
+    "details": "unterminated triple-quoted string literal (detected at line 386) at line 375"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/test_network_monitor.py",
+    "line": 44,
+    "details": "expected an indented block after function definition on line 43 at line 44"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/orchestrator/test_orchestrator_performance.py",
+    "line": 74,
+    "details": "expected an indented block after 'for' statement on line 73 at line 74"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/orchestrator/test_orchestrator_standalone.py",
+    "line": 346,
+    "details": "expected an indented block after 'for' statement on line 345 at line 346"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/orchestrator/test_orchestrator_master.py",
+    "line": 222,
+    "details": "expected an indented block after function definition on line 221 at line 222"
+  },
+  {
+    "type": "SYNTAX_ERROR",
+    "path": "./tests/orchestrator/test_orchestrator_ml_predictor.py",
+    "line": 258,
+    "details": "expected an indented block after function definition on line 257 at line 258"
+  }
+]

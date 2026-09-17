@@ -168,6 +168,7 @@ class ProductionDeployment:
         
         # Start health check server in background
         import threading
+
         health_thread = threading.Thread(target=self.health_check.start, daemon=True)
         health_thread.start()
         

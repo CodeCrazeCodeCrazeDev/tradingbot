@@ -30,6 +30,7 @@ async def main():
         logger.warning("No data file found, creating sample data...")
         # Create sample data
         import numpy as np
+
         dates = pd.date_range('2024-01-01', periods=1000, freq='15min')
         df = pd.DataFrame({
             'timestamp': dates,

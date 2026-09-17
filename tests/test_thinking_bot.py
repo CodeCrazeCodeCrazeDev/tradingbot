@@ -164,7 +164,6 @@ class TestThinkingBot:
     
     def test_detect_patterns(self, bot):
         """Test pattern detection"""
-import pandas
         
         # Create bullish engulfing pattern
         data = {

@@ -20,8 +20,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import mock performance modules
 from tests.mock_performance_modules import (
-import numpy
-import pandas
     ParallelProcessor, MemoryOptimizer, AlgorithmOptimizer, PerformanceMonitor,
     RingBuffer, MemoryEfficientCache, TaskType, DataStructureType, OptimizationTarget,
     OptimizationLevel, MetricType, profile, start_profiling, stop_profiling,
