@@ -1,5 +1,16 @@
 """
-SkillRouter - UCA V6 Authoritative Routing Authority
+SkillRouter & Program Guardrail Engine - UCA V6 Core Subsystem
+
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Parameter masking for fine-tuned LoRA task adapters.
+- arXiv:2607.00341 (DiscoLoop): Discrete skill routing state unrolling.
+- arXiv:2607.01224 (AutoMem): Procedural memory indexing for skill selection.
+- arXiv:2605.12061 (SAGE): Edge-weighted skill graph navigation.
+- arXiv:2605.10813 (NanoResearch): Tri-level skill program co-evolution.
+- arXiv:2605.20025 (AutoResearchClaw): Fallback execution routing under failure.
+- arXiv:2605.17734 (HASP): Non-negotiable deterministic Program Function guardrails.
+- arXiv:2605.21482 (DeepWeb-Bench): Performance-calibrated skill routing scores.
+
 Orchestrates the selection and execution of Skill Programs (HASP)
 and behavioral adaptations (Skill-to-LoRA).
 
