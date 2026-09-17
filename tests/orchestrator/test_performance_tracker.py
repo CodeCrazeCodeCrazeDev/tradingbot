@@ -17,7 +17,10 @@ from pathlib import Path
 try:
     from trading_bot.orchestrator.performance_tracker import *
 except ImportError:
-    pass
+    # Fallback import
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from trading_bot.orchestrator.performance_tracker import *
 
 logger = logging.getLogger(__name__)
 

@@ -9,7 +9,7 @@ class MockModule:
     __file__ = __file__
     __path__ = []
     def __getattr__(self, name):
-        if name.startswith("__") and name.endswith("__"):
+        if name.startswith('__') and name.endswith('__'):
             raise AttributeError(name)
         return MockObj()
     def __call__(self, *args, **kwargs):
