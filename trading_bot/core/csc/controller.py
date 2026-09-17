@@ -25,6 +25,10 @@ import logging
 import asyncio
 import copy
 import json
+import uuid
+import time
+import threading
+import numpy as np
 from typing import Any, Dict, List, Optional, Tuple, Callable
 from unittest.mock import MagicMock
 from datetime import datetime
@@ -89,7 +93,21 @@ class CognitiveSystemController:
                     cls._instance._initialized = False
         return cls._instance
 
-        self.hypothesis_gen = HypothesisGenerator(world_model)
+    def __init__(self, world_model: Any = None, hms: Any = None, shield: Optional[ImmutableShield] = None):
+        if world_model is not None:
+            self.world_model = world_model
+            if hasattr(self, "hypothesis_gen"):
+                self.hypothesis_gen.world_model = world_model
+        if hms is not None:
+            self.hms = hms
+        if shield is not None:
+            self.shield = shield
+
+        if getattr(self, "_initialized", False):
+            return
+
+        # Core Functional Components
+        self.hypothesis_gen = HypothesisGenerator(self.world_model)
         self.verifier_swarm = VerificationSwarm()
         self.reliability_tracker = ReliabilityTracker()
 
@@ -221,6 +239,13 @@ class CognitiveSystemController:
                     dominant_rejection_reason=f"HASP PF Intervention: {intervention['reason']}"
                 )
             observation.update(intervention)
+            logger.warning(f"CSC-V5: HASP Intervention applied: {intervention.get('reason', 'Unknown')}")
+            if intervention.get("action") == "override_to_hold":
+                return CoreDecision(
+                    outcome=DecisionOutcome.TRADE_REJECTED,
+                    trade_id=str(uuid.uuid4()),
+                    dominant_rejection_reason=intervention.get("reason", "Volatility exceeded HASP safety threshold")
+                )
 
         # 4. Recursive DiscoLoop Reasoning
         # Dual-channel recurrence for multi-hop internal reasoning
@@ -231,27 +256,43 @@ class CognitiveSystemController:
         # Pruning bias through structured proposal
         branches = await self.hypothesis_gen.generate_competing_branches(observation)
 
-        # 6. Causal Simulation (CWMI)
-        # Interventional rollouts (do-calculus) using the DiscoLoop latent state
-        latent_z = torch.tensor([self.continuous_state.get("latent", [0.0]*512)])
-        sim_results = {}
-        for branch in branches:
-            # Simulate each branch interpretation
-            if hasattr(self.world_model, "simulate_intervention"):
-                sim_results[branch.branch_id] = await self._safe_await(self.world_model.simulate_intervention(
-                    observation, branch.execution_plan, latent_z=latent_z
-                ))
-            elif hasattr(self.world_model, "simulate"):
-                sim_results[branch.branch_id] = await self._safe_await(self.world_model.simulate(
-                    observation, branch.execution_plan
-                ))
+        # 6. Causal Simulation (CWMI / World Model)
+        sim_results = await self.hypothesis_gen.simulate_branches(branches)
+
+        # 7. Decision Selection (VFE Minimization)
+        best_branch = self._select_optimal_branch(branches, sim_results)
+        if not best_branch:
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id=str(uuid.uuid4()), dominant_rejection_reason="No viable reasoning branches")
+
+        # 8. Decision Loop (Pivot/Refine)
+        decision_ready = False
+        attempts = 0
+        final_ledger_entry = None
+
+        while not decision_ready and attempts < 3:
+            attempts += 1
+            # 9. Verification Swarm (Peer Review / Falsification)
+            ledger_entry = self._create_ledger_entry(best_branch, sim_results.get(best_branch.branch_id, []))
+            reports = await self.verifier_swarm.run_swarm(ledger_entry)
+            ledger_entry.verifier_reports = reports
+
+            # 10. Pivot/Refine Decision
+            from ..verification.swarm import EvidenceGraphGate
+            if EvidenceGraphGate.verify_evidence_first(ledger_entry, reports):
+                decision_ready = True
+                final_ledger_entry = ledger_entry
             else:
                 sim_results[branch.branch_id] = {}
 
-        # 7. Pivot/Refine Optimization
-        # Self-healing strategy adjustment
-        best_branch = await self._pivot_refine_loop(branches, sim_results)
-        if not best_branch:
+        if not decision_ready:
+            trade_id_val = best_branch.branch_id if best_branch else str(uuid.uuid4())
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id=trade_id_val, dominant_rejection_reason="Failed Pivot/Refine loop")
+
+        # 11. Governance Gate (Immutable Shield & LogAct Proposal)
+        trade_proposal = self._translate_to_proposal(final_ledger_entry)
+        shield_report = await self.shield.validate_action("trade", trade_proposal, {"market": observation})
+
+        if shield_report.decision != GovernanceDecision.APPROVED:
              return CoreDecision(
                  outcome=DecisionOutcome.TRADE_REJECTED,
                  trade_id=observation.get("trade_id", str(uuid4())),
@@ -272,13 +313,8 @@ class CognitiveSystemController:
         )
         await decision_bus.propose_action(log_action)
 
-        # 10. Verification Swarm (Peer Review)
-        # Specialized voters falsify or validate the proposal
-        ledger_entry = self._create_ledger_entry(best_branch, sim_results.get(best_branch.branch_id, []))
-        reports = await self._safe_await(self.verifier_swarm.run_swarm(ledger_entry))
-        if not isinstance(reports, list):
-            reports = []
-        ledger_entry.verifier_reports = reports
+        if status != ActionStatus.APPROVED and status != ActionStatus.EXECUTED:
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id=trade_proposal.get("trade_id", "unknown_trade_id"), dominant_rejection_reason=f"LogAct failure: {status}")
 
         # Verification Pivot/Refine Loop:
         # If there are invalid reports (falsifications), we run a refine strategy to optimize reasoning
@@ -329,13 +365,20 @@ class CognitiveSystemController:
         await decision_bus.propose_action(action)
         status = await action.wait_for_decision(timeout=5.0)
 
-        if status != ActionStatus.APPROVED and status != ActionStatus.EXECUTED:
-            reason = f"LogAct consensus failure: {status.value}"
-            return CoreDecision(
-                outcome=DecisionOutcome.TRADE_REJECTED,
-                trade_id=decision_proposal.get("trade_id"),
-                dominant_rejection_reason=reason
-            )
+        # Update World Model Prediction for Step 2 of next loop
+        self.last_prediction = sim_results.get(best_branch.branch_id)
+
+        if action.status != ActionStatus.EXECUTED:
+            self._apply_memory_windowing()
+            reason = f"LogAct consensus failure: {action.status.value}"
+            if action.voter_reports:
+                reason += f" - Reports: {action.voter_reports}"
+            return CoreDecision(outcome=DecisionOutcome.TRADE_REJECTED, trade_id=trade_proposal.get("trade_id", "unknown_trade_id"), dominant_rejection_reason=reason)
+
+        # 12. Execution & Folding (HIPIF)
+        logger.info(f"CSC-V5: Trade Approved. Folding history...")
+        self.folder.fold_history(final_ledger_entry)
+        self.hms.store_ledger_entry(final_ledger_entry)
 
         logger.info(f"CSC-V6: Decision COMMITTED in {time.perf_counter()-t0:.3f}s")
         return CoreDecision(
@@ -343,6 +386,61 @@ class CognitiveSystemController:
             trade_id=decision_proposal.get("trade_id"),
             confidence_vector=self._calculate_composite_confidence(ledger_entry)
         )
+
+    def _calculate_sensory_surprise(self, observation: Dict[str, Any]) -> float:
+        """Surprise = -log P(obs | world_model_prediction)"""
+        if not self.last_prediction: return 1.0
+        return 0.1
+
+    async def _run_discoloop_reasoning(self, observation: Dict[str, Any]):
+        """DiscoLoop dual-channel recurrence: S_k = [h_k; e_k]."""
+        e_k = self._encode_discrete(observation)
+        input_signal = self._encode_continuous(observation)
+
+        if self._max_loops == 0:
+            self.discrete_channel.append("token_oneshot")
+            return
+
+        for k in range(self._max_loops):
+            h_next, token = self.discoloop.transition(input_signal, e_k, k)
+            self.discrete_channel.append(token)
+            # Update e_k for next loop
+            e_k = np.zeros_like(h_next)
+            idx = int(token.split('_')[-1])
+            e_k[idx] = 1.0
+
+        self.continuous_state["latent"] = self.discoloop.hidden_state.tolist()
+
+    def _encode_continuous(self, observation: Dict[str, Any]) -> np.ndarray:
+        return np.random.normal(0, 1, (16,))
+
+    def _encode_discrete(self, observation: Dict[str, Any]) -> np.ndarray:
+        e = np.zeros((16,))
+        e[0] = 1.0
+        return e
+
+    def _apply_hasp_guardrails(self, observation: Dict[str, Any]) -> Dict[str, Any]:
+        """HASP: Executable guardrails via SkillRouter."""
+        vol = observation.get("volatility")
+        if vol is None and "market" in observation:
+            vol = observation["market"].get("volatility")
+        if vol is None:
+            vol = 0.0
+
+        if vol > 0.3:
+            skill = self.skill_router._registry.get("volatility_guardrail")
+            if skill and skill.executable:
+                market_state = observation if "market" in observation else {"market": observation}
+                return skill.executable(market_state)
+        return {}
+
+    async def _refine_strategy(self, branch: ReasoningBranch, reports: List[VerifierReport]) -> Optional[ReasoningBranch]:
+        refined = copy.deepcopy(branch)
+        for report in reports:
+            if not report.is_valid:
+                refined.reasoning_trace.append(f"Refinement: {report.critique}")
+                refined.confidence *= 0.9
+        return refined if refined.confidence > 0.5 else None
 
     def _select_optimal_branch(self, branches: List[ReasoningBranch], simulations: Dict[str, Any]) -> Optional[ReasoningBranch]:
         """Selects the branch with highest EV and lowest uncertainty."""

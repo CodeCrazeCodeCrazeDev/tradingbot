@@ -226,12 +226,14 @@ class OnlineLearner:
         Returns:
             Loaded online learner
         """
-        # SECURITY: Validate path before loading
-        if not path.startswith(('.', '/')):
-             raise ValueError(f"Invalid path: {path}")
-
+        from trading_bot.security.artifact_manager import ArtifactManager, RestrictedUnpickler
         with open(path, 'rb') as f:
-            learner = safe_load(f)
+            content = f.read()
+        try:
+            learner = ArtifactManager.deserialize_model(content, "online_learner", "1.0")
+        except Exception:
+            import io
+            learner = RestrictedUnpickler(io.BytesIO(content)).load()
         
         logger.info(f"Loaded online learner from {path}")
         return learner
@@ -854,8 +856,14 @@ class AsyncOnlineLearner:
         Returns:
             Loaded online learner
         """
+        from trading_bot.security.artifact_manager import ArtifactManager, RestrictedUnpickler
         with open(path, 'rb') as f:
-            learner = safe_load(f)
+            content = f.read()
+        try:
+            learner = ArtifactManager.deserialize_model(content, "online_learner", "1.0")
+        except Exception:
+            import io
+            learner = RestrictedUnpickler(io.BytesIO(content)).load()
         
         logger.info(f"Loaded online learner from {path}")
         return learner

@@ -605,12 +605,9 @@ class LiquidityMLPredictor:
     def load_models(self, filepath: str):
         """Load trained models from file."""
         try:
-            # SECURITY: Validate path
-            if not filepath.startswith(('.', '/')):
-                raise ValueError(f"Invalid path: {filepath}")
-
+            from trading_bot.security.artifact_manager import RestrictedUnpickler
             with open(filepath, 'rb') as f:
-                model_data = safe_load(f)
+                model_data = RestrictedUnpickler(f).load()
             
             self.models = model_data.get('models', {})
             self.model_performance = model_data.get('performance', {})

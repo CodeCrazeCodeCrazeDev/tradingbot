@@ -147,8 +147,9 @@ class ModelRegistry:
         
         model_path = self.registry_path / f"{model_key}.pkl"
         try:
+            from trading_bot.security.artifact_manager import RestrictedUnpickler
             with open(model_path, 'rb') as f:
-                model = safe_load(f)
+                model = RestrictedUnpickler(f).load()
             logger.info(f"Loaded model {model_key}")
             return model
         except Exception as e:

@@ -127,9 +127,9 @@ class CorrelationPersistence:
             # Load correlation matrix (if exists)
             correlation_matrix = None
             if self.matrix_file.exists():
-                with open(self.matrix_file, 'r') as f:
-                    matrix_dict = json.load(f)
-                    correlation_matrix = pd.DataFrame.from_dict(matrix_dict)
+                from trading_bot.security.artifact_manager import RestrictedUnpickler
+                with open(self.matrix_file, 'rb') as f:
+                    correlation_matrix = RestrictedUnpickler(f).load()
                 logger.info(f"Loaded correlation matrix from {self.matrix_file}")
             
             # Load price history

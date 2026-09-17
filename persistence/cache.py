@@ -6,6 +6,8 @@ import logging
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timedelta
 import json
+import pickle
+from trading_bot.security.artifact_manager import ArtifactManager
 
 logger = logging.getLogger(__name__)
 
@@ -82,16 +84,7 @@ class CacheManager:
         
         # Serialize value
         if serialize:
-            try:
-                # SEC-001: Use JSON for basic types, but support complex via safe pathing
-                value = json.dumps(value)
-            except (TypeError, ValueError) as e:
-                # FALLBACK: If JSON fails, it might be a complex object.
-                # In production, we should only cache serializable data.
-                # Reverting to pickle only for internal system-validated objects
-                # if absolutely necessary, but here we enforce JSON for security.
-                logger.error(f"❌ Cache serialization failed for {key}: {e}. Only JSON-serializable data is allowed.")
-                raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable and cannot be cached.")
+            value = ArtifactManager.serialize_data(value)
         
         # Set in memory cache
         self.cache[key] = value
@@ -130,9 +123,7 @@ class CacheManager:
                 # Deserialize value
                 if deserialize and isinstance(value, (str, bytes)):
                     try:
-                        if isinstance(value, bytes):
-                            value = value.decode('utf-8')
-                        value = json.loads(value)
+                        value = ArtifactManager.deserialize_data(value)
                     except Exception as e:
                         logger.debug(f"ℹ️ JSON deserialization skipped/failed for {key}: {e}")
                 
@@ -152,11 +143,9 @@ class CacheManager:
                     self.expiry[key] = datetime.now() + timedelta(seconds=self.default_ttl)
                     
                     # Deserialize value
-                    if deserialize:
+                    if deserialize and isinstance(value, bytes):
                         try:
-                            if isinstance(value, bytes):
-                                value = value.decode('utf-8')
-                            value = json.loads(value)
+                            value = ArtifactManager.deserialize_data(value)
                         except Exception as e:
                             logger.debug(f"ℹ️ JSON deserialization skipped/failed for {key}: {e}")
                     

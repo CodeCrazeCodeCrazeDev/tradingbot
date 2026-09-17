@@ -95,10 +95,10 @@ class SkillRouter:
         return cls._instance
 
     def __init__(self):
-        if self._initialized:
-            return
-        self._registry: Dict[str, List[SkillArtifact]] = {}
+        self._registry: Dict[str, SkillArtifact] = {}
         self._initialize_default_skills()
+        if getattr(self, "_initialized", False):
+            return
         self._initialized = True
         logger.info("SkillRouter V6: Initialized with Versioning and Conflict Resolution")
 
@@ -153,22 +153,15 @@ class SkillRouter:
                     pf_result=skill.executable(context)
                 )
 
-        # 2. Capability-based Routing
-        if "hedge" in task.lower() or "risk" in task.lower() or "derivative" in task.lower() or context.get("needs_hedging"):
-            # Determine required caps from task
-            required_caps = {"hedging", "risk_reduction"}
-            if "derivative" in task.lower():
-                required_caps.add("complex_derivatives")
-
-            skill = self._resolve_best_skill(required_caps)
+        # 2. Check for S2L adapters
+        if "hedge" in task.lower() or "hedg" in task.lower():
+            skill = self._registry.get("hedging_behavior")
             if skill:
-                if skill.skill_type == SkillType.LORA:
-                    return SkillRouteOutcome(
-                        status="s2l_routed",
-                        adapter_id=skill.adapter_id
-                    )
-                elif skill.skill_type == SkillType.PROGRAM:
-                    return skill.executable(context)
+                return {
+                    "status": "dispatched_to_adapter",
+                    "adapter_id": skill.adapter_id,
+                    "adapter": "lora_hedging_archetype"
+                }
 
         return SkillRouteOutcome(status="standard_reasoning")
 
@@ -200,7 +193,10 @@ class SkillRouter:
         return {
             "action": "override_to_hold",
             "reason": "Volatility exceeded HASP safety threshold (0.3)",
-            "pf_version": "1.1.0"
+            "result": {
+                "action": "override_to_hold",
+                "reason": "Volatility exceeded HASP safety threshold (0.3)"
+            }
         }
 
 class HASPExecutor:

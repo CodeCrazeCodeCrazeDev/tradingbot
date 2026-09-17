@@ -262,6 +262,7 @@ class EventBus:
         # Subscriptions by topic
         self._subscriptions: Dict[str, List[Subscription]] = defaultdict(list)
         self._subscription_by_id: Dict[str, Subscription] = {}
+        self._sub_lock = threading.Lock()
         
         # Topic queues
         self._queues: Dict[str, TopicQueue] = {}
@@ -422,33 +423,35 @@ class EventBus:
         )
         
         # Register subscription
-        for topic in topics:
-            self._subscriptions[topic].append(subscription)
-            # Ensure queue exists
-            self._get_or_create_queue(topic)
-        
-        self._subscription_by_id[subscription_id] = subscription
+        with self._sub_lock:
+            for topic in topics:
+                self._subscriptions[topic].append(subscription)
+                # Ensure queue exists
+                self._get_or_create_queue(topic)
+
+            self._subscription_by_id[subscription_id] = subscription
         
         logger.info(f"Subscription {subscription_id} created for topics: {topics}")
         return subscription_id
     
     def unsubscribe(self, subscription_id: str) -> bool:
         """Unsubscribe by subscription ID"""
-        if subscription_id not in self._subscription_by_id:
-            return False
-        
-        subscription = self._subscription_by_id[subscription_id]
-        subscription.active = False
-        
-        # Remove from topic lists
-        for topic in subscription.topics:
-            if topic in self._subscriptions:
-                self._subscriptions[topic] = [
-                    s for s in self._subscriptions[topic]
-                    if s.subscription_id != subscription_id
-                ]
-        
-        del self._subscription_by_id[subscription_id]
+        with self._sub_lock:
+            if subscription_id not in self._subscription_by_id:
+                return False
+
+            subscription = self._subscription_by_id[subscription_id]
+            subscription.active = False
+
+            # Remove from topic lists
+            for topic in subscription.topics:
+                if topic in self._subscriptions:
+                    self._subscriptions[topic] = [
+                        s for s in self._subscriptions[topic]
+                        if s.subscription_id != subscription_id
+                    ]
+
+            del self._subscription_by_id[subscription_id]
         
         logger.info(f"Subscription {subscription_id} removed")
         return True
@@ -478,7 +481,8 @@ class EventBus:
     async def _deliver(self, topic: str, envelope: EventEnvelope):
         """Deliver message to subscribers"""
         event = envelope.event
-        subscriptions = self._subscriptions.get(topic, [])
+        with self._sub_lock:
+            subscriptions = list(self._subscriptions.get(topic, []))
         
         # Filter matching subscriptions
         matching = [s for s in subscriptions if s.matches(event, topic)]

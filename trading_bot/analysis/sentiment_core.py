@@ -162,6 +162,14 @@ class SentimentAnalyzer:
         # Entity mapping
         self.entity_ticker_map = self._load_entity_ticker_map()
         
+        # Pre-compile regex pattern for extremely fast O(N) matching
+        if self.entity_ticker_map:
+            escaped_entities = sorted(self.entity_ticker_map.keys(), key=len, reverse=True)
+            pattern_str = r'\b(' + '|'.join(re.escape(e) for e in escaped_entities) + r')\b'
+            self._entity_regex = re.compile(pattern_str, re.IGNORECASE)
+        else:
+            self._entity_regex = None
+
         # Sentiment history
         self.sentiment_history = defaultdict(list)
         
@@ -452,14 +460,18 @@ class SentimentAnalyzer:
                     'ticker': ticker
                 })
         else:
-            # Simple entity extraction based on entity-ticker map
-            for entity, ticker in self.entity_ticker_map.items():
-                if entity in text.lower():
-                    entities.append({
-                        'text': entity,
-                        'label': 'ORG',
-                        'ticker': ticker
-                    })
+            # High-performance O(N) regex-based entity extraction
+            if self._entity_regex:
+                lower_text = text.lower()
+                for match in self._entity_regex.finditer(lower_text):
+                    matched_entity = match.group(0)
+                    ticker = self.entity_ticker_map.get(matched_entity)
+                    if ticker:
+                        entities.append({
+                            'text': matched_entity,
+                            'label': 'ORG',
+                            'ticker': ticker
+                        })
         
         return entities
     
@@ -642,16 +654,8 @@ class SentimentAnalyzer:
     def _save_cache(self):
         """Save sentiment history to cache"""
         try:
-            # Convert SentimentResult objects to dicts for JSON serialization
-            serializable_history = {}
-            for ticker, results in self.sentiment_history.items():
-                serializable_history[ticker] = [
-                    res.to_dict() if hasattr(res, 'to_dict') else res
-                    for res in results
-                ]
-
-            with open(self.cache_path, 'w') as f:
-                json.dump(serializable_history, f, indent=4)
+            with open(self.cache_path, 'wb') as f:
+                f.write(json.dumps(self.sentiment_history).encode('utf-8'))
             logger.debug(f"Saved sentiment history to {self.cache_path}")
         except Exception as e:
             logger.warning(f"Error saving sentiment cache: {e}")
@@ -664,25 +668,8 @@ class SentimentAnalyzer:
 
         if os.path.exists(json_path):
             try:
-                with open(self.cache_path, 'r') as f:
-                    data = json.load(f)
-
-                # Reconstruct SentimentResult objects
-                self.sentiment_history = defaultdict(list)
-                for ticker, results in data.items():
-                    for res_data in results:
-                        if isinstance(res_data, dict) and 'text' in res_data:
-                            # Parse timestamp
-                            if 'timestamp' in res_data:
-                                try:
-                                    res_data['timestamp'] = datetime.fromisoformat(res_data['timestamp'])
-                                except (ValueError, TypeError):
-                                    res_data['timestamp'] = datetime.now()
-
-                            self.sentiment_history[ticker].append(SentimentResult(**res_data))
-                        else:
-                            self.sentiment_history[ticker].append(res_data)
-
+                with open(self.cache_path, 'rb') as f:
+                    self.sentiment_history = defaultdict(list, json.loads(f.read().decode('utf-8')))
                 logger.info(f"Loaded sentiment history from {self.cache_path}")
             except Exception as e:
                 logger.warning(f"Error loading sentiment cache: {e}")

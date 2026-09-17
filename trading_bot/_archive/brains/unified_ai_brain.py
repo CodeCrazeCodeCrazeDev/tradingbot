@@ -1349,7 +1349,7 @@ class UnifiedAIBrain:
                         result['reason'] = f"Risk: {risk_result.get('reason', 'Rejected')}"
                         return result
                 except Exception as e:
-                    pass
+                    logger.warning(f"UnifiedBrain: Risk check error: {e}")
         
         # Calculate position size
         position_size = self._calculate_position_size(symbol, signal)

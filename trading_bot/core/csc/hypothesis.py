@@ -43,17 +43,42 @@ class HypothesisGenerator:
         """
         logger.info("HypothesisGenerator creating 10 diverse competing branches")
 
-        scenarios = [
-            ("Bull Continuation", "Market maintains current upward trajectory"),
-            ("Bull Exhaustion", "Upward momentum fades, potential for distribution"),
-            ("Bear Continuation", "Downward momentum persists"),
-            ("Bear Reversal", "Market hits support and bounces"),
-            ("Range Continuation", "Price remains bound between key levels"),
-            ("Breakout", "Volatility surge leads to range departure"),
-            ("Liquidity Sweep", "Stop-run before actual move"),
-            ("Volatility Shock", "Unpredictable large move in either direction"),
-            ("Macro Event", "Systemic reaction to external news/data"),
-            ("Black Swan", "Extreme low-probability high-impact tail event")
+        # 1. Ask World Model for raw scenarios (Price/Vol/Liq futures)
+        # 2. Assign specialized reasoning agents to each scenario
+        # 3. Each agent produces a ReasoningBranch with its own EvidenceGraph
+
+        # Multi-Hypothesis Generation
+        branches = [
+            ReasoningBranch(
+                branch_id="branch_bull",
+                name="Bull Case",
+                confidence=0.85,
+                probability=0.35,
+                uncertainty=0.15,
+                causal_explanation="Expansion in liquidity combined with oversold RSI supports a mean reversion breakout.",
+                invalidation_conditions=["Price closes below recent support", "Liquidity drops by >20%"],
+                execution_plan={"action": "BUY", "limit_price": 1.1060}
+            ),
+            ReasoningBranch(
+                branch_id="branch_bear",
+                name="Bear Case",
+                confidence=0.85,
+                probability=0.25,
+                uncertainty=0.20,
+                causal_explanation="Macro headwinds and resistance at the current level suggest a continuation of the downtrend.",
+                invalidation_conditions=["Price breaks resistance at 1.1100"],
+                execution_plan={"action": "SELL", "limit_price": 1.1040}
+            ),
+            ReasoningBranch(
+                branch_id="branch_range",
+                name="Range Case",
+                confidence=0.85,
+                probability=0.40,
+                uncertainty=0.10,
+                causal_explanation="Consolidation between established levels with no clear macro catalyst.",
+                invalidation_conditions=["Expansion in volatility index"],
+                execution_plan={"action": "WAIT"}
+            )
         ]
 
         branches = []

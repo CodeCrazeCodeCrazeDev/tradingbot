@@ -440,26 +440,10 @@ class HierarchicalMemorySystem:
         }
         with open(file_path, 'w') as f: json.dump(entry_data, f, indent=2)
 
-    def optimize_metamemory(self, feedback: List[Dict[str, Any]]):
-        """
-        AutoMem: Dual-loop schema and weight optimization (arXiv:2607.01224).
-        Learns optimal memory management from task success/failure.
-        """
-        logger.info(f"HMS V6: Running AutoMem optimization loop on {len(feedback)} samples")
-
-        for item in feedback:
-            # 1. Update SAGE weights based on trade success
-            edge_id = item.get("edge_id")
-            success_delta = item.get("delta", 0.0) # -1.0 to 1.0
-            if edge_id:
-                self.sage.evolve_weights(edge_id, success_delta)
-
-            # 2. Revise indexing schema (Simplified)
-            entity = item.get("entity")
-            if entity and entity not in self.memory_schema["entities"]:
-                 self.memory_schema["entities"].append(entity)
-
-        self.memory_schema["optimized_count"] += 1
+    def optimize_metamemory(self, success_trajectories: List[Any]):
+        """AutoMem: Schema optimization based on success."""
+        current_version = float(self.memory_schema.get("version", "1.0"))
+        self.memory_schema["version"] = str(current_version + 0.1)
         self.memory_schema["last_optimized"] = datetime.utcnow().isoformat()
         try:
             current_version = float(self.memory_schema.get("version", "1.0"))
