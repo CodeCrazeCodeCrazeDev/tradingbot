@@ -1,5 +1,5 @@
 """
-Master Orchestrator Infrastructure
+Master Orchestrator
 
 """
 Provides backward compatibility for consolidated hierarchical orchestrators.
@@ -69,5 +69,5 @@ __all__ = [
     'DecisionPriority',
     'SystemContext',
     'Decision',
-    'MasterOrchestrator'
+    'MasterOrchestrator',
 ]

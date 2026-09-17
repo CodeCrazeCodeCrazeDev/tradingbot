@@ -281,7 +281,6 @@ class TestBacktestEngine:
         assert engine.backtest_results == {}
 
     def test_backtest_strategy(self):
-        from trading_bot.orchestrator.performance_tracker import BacktestEngine
         engine = BacktestEngine()
         dates = pd.date_range(start='2023-01-01', periods=100, freq='D')
         historical_data = pd.DataFrame({

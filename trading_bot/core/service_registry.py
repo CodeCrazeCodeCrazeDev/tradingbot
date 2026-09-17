@@ -1,8 +1,7 @@
 """
-Service Registry Infrastructure
+Core Service Registry
 
-"""
-Provides backward compatibility for consolidated service layers.
+Provides service registration, health tracking, and backward compatibility.
 """
 
 import logging
@@ -12,97 +11,69 @@ from typing import Dict, Any, Optional, List, Type
 
 logger = logging.getLogger(__name__)
 
-class ServiceState(Enum):
-    UNINITIALIZED = "uninitialized"
-    INITIALIZING = "initializing"
-    RUNNING = "running"
-    PAUSED = "paused"
-    STOPPED = "stopped"
-    FAILED = "failed"
-
-class ServicePriority(Enum):
+class ServicePriority:
     CRITICAL = 1
     HIGH = 2
     NORMAL = 3
     LOW = 4
 
 class ServiceHealth:
-    def __init__(self, healthy: bool, last_check: Optional[datetime] = None, message: str = "", metrics: Optional[Dict[str, Any]] = None):
+    def __init__(self, healthy=True, last_check=None, message="", metrics=None):
         self.healthy = healthy
         self.last_check = last_check or datetime.utcnow()
         self.message = message
         self.metrics = metrics or {}
 
-class ServiceInfo:
-    def __init__(self, name: str, instance: Any, priority: ServicePriority = ServicePriority.NORMAL, dependencies: Optional[List[str]] = None):
-        self.name = name
-        self.instance = instance
-        self.priority = priority
-        self.dependencies = dependencies or []
-        self.state = ServiceState.UNINITIALIZED
-        self.health = ServiceHealth(healthy=True)
-
 class BaseService:
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config=None):
         self.config = config or {}
         self._event_bus = None
         self._running = False
 
-    async def initialize(self):
-        pass
+try:
+    from trading_bot._archive.legacy_core.service_registry import (
+        ServiceState,
+        ServiceInfo,
+        ServiceRegistry,
+        get_service_registry,
+        create_service_registry
+    )
+except ImportError:
+    class ServiceState:
+        STOPPED = "stopped"
+        RUNNING = "running"
+        FAILED = "failed"
 
-    async def start(self):
-        self._running = True
+    class ServiceInfo:
+        def __init__(self, name, service_type=None):
+            self.name = name
+            self.service_type = service_type
 
-    async def stop(self):
-        self._running = False
+    class ServiceRegistry:
+        def __init__(self):
+            self._services = {}
 
-    def check_health(self) -> ServiceHealth:
-        return ServiceHealth(healthy=self._running)
+        def register(self, name, service):
+            self._services[name] = service
 
-class ServiceRegistry:
-    _instance = None
+        def get(self, name):
+            return self._services.get(name)
 
-    def __init__(self):
-        self._services: Dict[str, ServiceInfo] = {}
+    _global_registry = ServiceRegistry()
 
-    @classmethod
-    def get_instance(cls) -> "ServiceRegistry":
-        if cls._instance is None:
-            cls._instance = ServiceRegistry()
-        return cls._instance
+    def get_service_registry():
+        return _global_registry
 
-    def register(self, name: str, service_instance: Any, priority: ServicePriority = ServicePriority.NORMAL, dependencies: Optional[List[str]] = None):
-        info = ServiceInfo(name, service_instance, priority, dependencies)
-        self._services[name] = info
-        logger.info(f"Registered service: {name}")
-
-    def get_service(self, name: str) -> Optional[Any]:
-        info = self._services.get(name)
-        return info.instance if info else None
-
-    def unregister(self, name: str):
-        if name in self._services:
-            del self._services[name]
-
-_global_registry = None
-
-def get_service_registry() -> ServiceRegistry:
-    global _global_registry
-    if _global_registry is None:
-        _global_registry = ServiceRegistry.get_instance()
-    return _global_registry
-
-def create_service_registry() -> ServiceRegistry:
-    return ServiceRegistry()
+    def create_service_registry():
+        return ServiceRegistry()
 
 __all__ = [
-    'ServiceState',
-    'ServicePriority',
-    'ServiceHealth',
-    'ServiceInfo',
     'BaseService',
+    'ServiceHealth',
+    'ServicePriority',
+    'ServiceState',
+    'ServiceInfo',
     'ServiceRegistry',
     'get_service_registry',
-    'create_service_registry'
+    'create_service_registry',
 ]
