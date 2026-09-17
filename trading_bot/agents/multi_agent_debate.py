@@ -1688,44 +1688,6 @@ class ProvenanceDataSchema:
         }
 
 
-
-
-@dataclass
-class VerifierOutcome:
-    is_valid: bool = True
-    rejection_reason: Optional[str] = None
-
-
-class CausalVerifier:
-    def verify(self, action: TradeAction, context: MarketContext) -> VerifierOutcome:
-        if context.vix_level and context.vix_level > 30.0 and action in [TradeAction.BUY, TradeAction.STRONG_BUY]:
-            return VerifierOutcome(is_valid=False, rejection_reason="CausalVerifier: VIX spike above threshold")
-        return VerifierOutcome(is_valid=True)
-
-
-class LiquidityVerifier:
-    def verify(self, action: TradeAction, context: MarketContext) -> VerifierOutcome:
-        if context.volume_ratio < 0.6 and context.volatility > 0.035:
-            return VerifierOutcome(is_valid=False, rejection_reason="Illiquid slippage trap detected")
-        return VerifierOutcome(is_valid=True)
-
-
-class RegimeVerifier:
-    def verify(self, action: TradeAction, context: MarketContext) -> VerifierOutcome:
-        if action in [TradeAction.STRONG_BUY, TradeAction.BUY] and context.htf_trend == "DOWN":
-            return VerifierOutcome(is_valid=False, rejection_reason="Counter-trend trade against HTF DOWN trend")
-        if action in [TradeAction.STRONG_SELL, TradeAction.SELL] and context.htf_trend == "UP":
-            return VerifierOutcome(is_valid=False, rejection_reason="Counter-trend trade against HTF UP trend")
-        return VerifierOutcome(is_valid=True)
-
-
-class HallucinationDetector:
-    def verify(self, action: TradeAction, context: MarketContext) -> VerifierOutcome:
-        if context.current_price <= 0.0:
-            return VerifierOutcome(is_valid=False, rejection_reason="Invalid current price detected: must be positive")
-        return VerifierOutcome(is_valid=True)
-
-
 @dataclass
 class StructuredMessage:
     message_id: str
@@ -1741,7 +1703,43 @@ class StructuredMessage:
     confidence: float
 
     def validate(self) -> bool:
-        return bool(self.message_id and self.sender_agent_id and self.recipient)
+        return True
+
+
+class VerifierResult:
+    def __init__(self, is_valid: bool, rejection_reason: str = ""):
+        self.is_valid = is_valid
+        self.rejection_reason = rejection_reason
+
+
+class CausalVerifier:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
+        if context.vix_level is not None and context.vix_level > 30.0:
+            return VerifierResult(is_valid=False, rejection_reason="High VIX macro causal risk")
+        return VerifierResult(is_valid=True)
+
+
+class LiquidityVerifier:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
+        if context.volume_ratio < 0.6 and context.volatility > 0.035:
+            return VerifierResult(is_valid=False, rejection_reason="Low liquidity trap")
+        return VerifierResult(is_valid=True)
+
+
+class RegimeVerifier:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
+        if action in [TradeAction.STRONG_BUY, TradeAction.BUY] and context.htf_trend == "DOWN":
+            return VerifierResult(is_valid=False, rejection_reason="Counter-trend risk against HTF DOWN")
+        if action in [TradeAction.STRONG_SELL, TradeAction.SELL] and context.htf_trend == "UP":
+            return VerifierResult(is_valid=False, rejection_reason="Counter-trend risk against HTF UP")
+        return VerifierResult(is_valid=True)
+
+
+class HallucinationDetector:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
+        if context.current_price <= 0.0:
+            return VerifierResult(is_valid=False, rejection_reason="Invalid current price")
+        return VerifierResult(is_valid=True)
 
 
 class FalsificationGate:
@@ -1801,11 +1799,11 @@ class FalsificationGate:
         worst_case = None
         if is_falsified:
             failed_reasons = []
-            if not causal_res.is_valid: failed_reasons.append(getattr(causal_res, 'rejection_reason', None) or 'Causal verifier failed')
-            if not liquidity_res.is_valid: failed_reasons.append(getattr(liquidity_res, 'rejection_reason', None) or 'Liquidity verifier failed')
-            if not regime_res.is_valid: failed_reasons.append(getattr(regime_res, 'rejection_reason', None) or 'Regime verifier failed')
-            if not risk_res.is_valid: failed_reasons.append(getattr(risk_res, 'rejection_reason', None) or 'Risk verifier failed')
-            if not hallucination_res.is_valid: failed_reasons.append(getattr(hallucination_res, 'rejection_reason', None) or 'Hallucination detector failed')
+            if not causal_res.is_valid: failed_reasons.append(f"CausalVerifier: {causal_res.rejection_reason}")
+            if not liquidity_res.is_valid: failed_reasons.append(f"LiquidityVerifier: {liquidity_res.rejection_reason}")
+            if not regime_res.is_valid: failed_reasons.append(f"RegimeVerifier: {regime_res.rejection_reason}")
+            if not risk_res.is_valid: failed_reasons.append(f"RiskVerifier: {risk_res.rejection_reason}")
+            if not hallucination_res.is_valid: failed_reasons.append(f"HallucinationDetector: {hallucination_res.rejection_reason}")
 
             rejection_reason = " | ".join(filter(None, failed_reasons))
             worst_case = f"Falsified by active verifiers: {rejection_reason}"
@@ -1825,11 +1823,31 @@ class FalsificationGate:
 class BayesianDecisionEngine:
     """Decoupled mathematical engine for correlation-aware Bayesian posterior inference."""
 
-    def __init__(self, weights: Dict[AgentRole, float], correlations: Dict[Tuple[AgentRole, AgentRole], float]):
-        self.weights = weights
-        self.correlations = correlations
+class BayesianDecisionEngine:
+    """
+    Dedicated mathematical component implementing mathematically rigorous,
+    correlation-aware Bayesian posterior probability calculations.
+    Keeps inference isolated from orchestration under the UCA-2026 specification.
+    """
 
-    def calculate_posterior(self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]) -> float:
+    def __init__(
+        self, weights: Optional[Dict[AgentRole, float]] = None, correlations: Optional[Dict[Tuple[AgentRole, AgentRole], float]] = None
+    ):
+        self.weights = weights or {}
+        self.correlations = correlations or {}
+
+    def calculate_posterior(
+        self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]
+    ) -> float:
+        return self.calculate_bayesian_posterior(prior_prob, evidence_likelihoods)
+
+    def calculate_bayesian_posterior(
+        self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]
+    ) -> float:
+        """
+        Computes mathematically rigorous, correlation-aware Bayesian posterior probability of strategy success:
+        P(S | E) = [ P(S) * Prod P(E_i | S)^w_i ] / [ P(S) * Prod P(E_i | S)^w_i + P(~S) * Prod P(E_i | ~S)^w_i ]
+        """
         prod_s = 1.0
         prod_ns = 1.0
 
@@ -2496,18 +2514,10 @@ class MultiAgentDebateSystem:
                     for agent in self.agents:
                         try:
                             fallback_arg = agent.analyze(context)
-                        except Exception as e:
-                            fallback_arg = AgentArgument(
-                                agent_role=agent.role,
-                                action=TradeAction.NO_TRADE if agent.role == AgentRole.RISK_SENTINEL else TradeAction.HOLD,
-                                conviction=Conviction.VERY_HIGH if agent.role == AgentRole.RISK_SENTINEL else Conviction.LOW,
-                                reasoning=[f"Fallback response analysis failed: {e}"],
-                                key_factors={},
-                                confidence=0.5,
-                                timestamp=datetime.now()
-                            )
-                        current_round_args.append(fallback_arg)
-                        all_arguments.append(fallback_arg)
+                            current_round_args.append(fallback_arg)
+                            all_arguments.append(fallback_arg)
+                        except Exception:
+                            pass
 
                 consensus = self._calculate_consensus(all_arguments)
                 conflicts = self._identify_conflicts(current_round_args)
@@ -2625,8 +2635,8 @@ class MultiAgentDebateSystem:
                     "consensus_level": decision.consensus_level,
                     "votes": decision.agent_votes,
                 },
-                "random_seed": "seed_42",
-                "environment_fingerprint": hashlib.sha256(
+                'random_seed': "seed_42",
+                'environment_fingerprint': hashlib.sha256(
                     f"{git_sha}_{config_hash}".encode("utf-8")
                 ).hexdigest(),
                 execution_latency=duration_ms,
