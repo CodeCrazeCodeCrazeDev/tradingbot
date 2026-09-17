@@ -162,25 +162,27 @@ class AgentArgument:
     predictions: List[str] = field(default_factory=list)
     counter_evidence: List[str] = field(default_factory=list)
     verification: Optional[str] = None
-
+    thought_tokens: List[str] = field(default_factory=list)
+    
     def to_dict(self) -> Dict[str, Any]:
         role_val = self.agent_role.value if hasattr(self.agent_role, "value") else str(self.agent_role)
         act_val = self.action.value if hasattr(self.action, "value") else str(self.action)
         conv_val = self.conviction.name if hasattr(self.conviction, "name") else str(self.conviction)
         return {
-            "agent": role_val,
-            "action": act_val,
-            "conviction": conv_val,
-            "reasoning": getattr(self, "reasoning", []),
-            "anti_trade_reasoning": getattr(self, "anti_trade_reasoning", []),
-            "key_factors": getattr(self, "key_factors", {}),
-            "confidence": getattr(self, "confidence", 0.5),
-            "observation": getattr(self, "observation", ""),
-            "evidence": getattr(self, "evidence", []),
-            "hypothesis": getattr(self, "hypothesis", ""),
-            "predictions": getattr(self, "predictions", []),
-            "counter_evidence": getattr(self, "counter_evidence", []),
-            "verification": getattr(self, "verification", ""),
+            'agent': self.agent_role.value if hasattr(self.agent_role, 'value') else str(self.agent_role),
+            'action': self.action.value if hasattr(self.action, 'value') else str(self.action),
+            'conviction': self.conviction.name if hasattr(self.conviction, 'name') else str(self.conviction),
+            'reasoning': getattr(self, 'reasoning', []),
+            'anti_trade_reasoning': getattr(self, 'anti_trade_reasoning', []),
+            'key_factors': getattr(self, 'key_factors', {}),
+            'confidence': getattr(self, 'confidence', 0.5),
+            'observation': getattr(self, 'observation', ""),
+            'evidence': getattr(self, 'evidence', []),
+            'hypothesis': getattr(self, 'hypothesis', ""),
+            'predictions': getattr(self, 'predictions', []),
+            'counter_evidence': getattr(self, 'counter_evidence', []),
+            'verification': getattr(self, 'verification', ""),
+            'thought_tokens': getattr(self, 'thought_tokens', [])
         }
 
 
