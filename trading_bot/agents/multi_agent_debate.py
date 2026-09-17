@@ -2529,8 +2529,8 @@ class MultiAgentDebateSystem:
                     "consensus_level": decision.consensus_level,
                     "votes": decision.agent_votes,
                 },
-                "random_seed": "seed_42",
-                "environment_fingerprint": hashlib.sha256(
+                'random_seed': "seed_42",
+                'environment_fingerprint': hashlib.sha256(
                     f"{git_sha}_{config_hash}".encode("utf-8")
                 ).hexdigest(),
                 "execution_latency": duration_ms,
