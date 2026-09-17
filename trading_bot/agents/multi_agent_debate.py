@@ -549,13 +549,15 @@ class MacroStrategist(TradingAgent):
             anti_trade_reasoning = []
             key_factors = {}
 
-            observation = f"HTF and macro analysis for {context.symbol} at {context.current_price:.5f}"
+            # Evidence-first defaults
+            observation = f"Symbol: {context.symbol}, price: {context.current_price}, HTF trend: {context.htf_trend}"
             evidence = []
-            hypothesis = "Neutral macro trend."
+            hypothesis = "Neutral macro outlook, consolidation expected."
             predictions = []
             counter_evidence = []
-            verification = "HTF trend and news sentiment checked."
+            verification = "No macro triggers active"
 
+            # Analyze HTF trend
             if context.htf_trend == "UP":
                 trend_score = 0.7
                 evidence.append("HTF trend UP confirmed via macro structure.")
@@ -738,13 +740,15 @@ class TacticalExecutioner(TradingAgent):
             anti_trade_reasoning = []
             key_factors = {}
 
-            observation = f"LTF tactical analysis for {context.symbol} at {context.current_price:.5f}"
+            # Evidence-first local parameters
+            observation = f"Symbol: {context.symbol}, price: {context.current_price}, LTF trend: {context.ltf_trend}"
             evidence = []
-            hypothesis = "Neutral LTF trend."
+            hypothesis = "Neutral tactical stance, awaiting momentum signal."
             predictions = []
             counter_evidence = []
-            verification = "LTF trend and volume checked."
+            verification = "No tactical breakout timing active"
 
+            # Analyze LTF Trend
             if context.ltf_trend == "UP":
                 ltf_score = 0.6
                 evidence.append("LTF micro-trend is UP (bullish momentum).")
@@ -868,6 +872,15 @@ class RiskSentinel(TradingAgent):
             counter_evidence = []
             verification = "Risk Sentinel protection active."
 
+            # Evidence-first local parameters
+            observation = f"Symbol: {context.symbol}, price: {context.current_price}, risk flags: {risk_flags}"
+            evidence = []
+            hypothesis = "Neutral risk stance, monitor exposure limits."
+            predictions = []
+            counter_evidence = []
+            verification = "No active risk exceptions"
+
+            # Exposure check
             if context.portfolio_exposure > self.max_exposure:
                 exposure_score = -0.5
                 risk_flags += 1
@@ -922,9 +935,11 @@ class RiskSentinel(TradingAgent):
             else:
                 vol_score = 0.0
 
-            key_factors["volatility_risk"] = vol_score
+            key_factors['volatility_risk'] = vol_score
+            # Calculate overall score
             total_score = sum(key_factors.values())
 
+            # Determine Action
             if risk_flags >= 2:
                 action = TradeAction.NO_TRADE
                 conviction = Conviction.VERY_HIGH
@@ -2625,11 +2640,6 @@ class MultiAgentDebateSystem:
                 'memory_snapshot': f"sage_mem_snap_{hashlib.md5(market_state_str.encode('utf-8')).hexdigest()[:8]}",
                 'experiment_id': "exp_multidim_debate_prod",
                 'risk_policy_version': "risk_fortress_v6_strict",
-                'falsification_report': {
-                    'is_falsified': falsification_report.is_falsified,
-                    'rejection_reason': falsification_report.rejection_reason,
-                    'verifier_outcomes': falsification_report.verifier_outcomes,
-                },
                 'verification_results': verification_results,
                 'falsification_report': {
                     'is_falsified': falsification_report.is_falsified,
@@ -2653,18 +2663,10 @@ class MultiAgentDebateSystem:
                 "environment_fingerprint": hashlib.sha256(
                     f"{git_sha}_{config_hash}".encode("utf-8")
                 ).hexdigest(),
-                execution_latency=duration_ms,
-                decision_timestamp=datetime.now().isoformat(),
-                debate_quality_evaluation=evaluation,
-                falsification_report={
-                    "is_falsified": falsification_report.is_falsified,
-                    "rejection_reason": falsification_report.rejection_reason,
-                    "verifier_outcomes": falsification_report.verifier_outcomes,
-                    "worst_case_scenario": falsification_report.worst_case_scenario
-                }
-            )
-
-            provenance_data = provenance_schema.to_dict()
+                "execution_latency": duration_ms,
+                "decision_timestamp": datetime.now().isoformat(),
+                "debate_quality_evaluation": evaluation,
+            }
             decision.provenance = provenance_data
 
             self.decisions.append(decision)
