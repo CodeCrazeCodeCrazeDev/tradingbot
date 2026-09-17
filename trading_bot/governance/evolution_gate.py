@@ -1,17 +1,16 @@
 """
-Evolution Gate - UCA V6 (August 2026)
-=====================================
-Monotone-safe gate for recursive agent self-evolution.
+EvolutionGate - UCA V6 Authoritative Self-Evolution Gate
+Monotone-safe gate for recursive agent self-evolution and policy promotion.
 
-Paper Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Entropy-KL divergence token masking validation for self-evolution proposals.
-- arXiv:2607.00341 (DiscoLoop): Internal loop verification for self-evolution step stability.
-- arXiv:2607.01224 (AutoMem): Schema version bumping and metamemory evolution validation.
-- arXiv:2605.12061 (SAGE): Knowledge graph structural consistency checks post-evolution.
-- arXiv:2605.10813 (NanoResearch): Tri-plane co-evolution safety boundaries (Skill, Memory, Policy).
-- arXiv:2605.20025 (AutoResearchClaw): Self-healing self-correction validation during proposal evaluation.
-- arXiv:2605.17734 (HASP): Non-negotiable safety guardrails for self-modification proposals.
-- arXiv:2605.21482 (DeepWeb-Bench): Expected Calibration Error (ECE) and out-of-sample robustness gates.
+Research Traceability Matrix:
+- EKSFT (arXiv:2605.29303): Entropy-KL masking compliance to prevent distribution sharpening & over-fitting
+- NanoResearch (arXiv:2605.10813): Tri-plane (skill, memory, policy) co-evolution validation
+- RSEA (arXiv:2606.28374): Monotone-safe gating rule and CL-Bench Gain Metric (G) evaluation
+- DeepWeb-Bench (arXiv:2605.21482): Expected Calibration Error (ECE) drift bounds
+- HASP (arXiv:2605.17734): Non-negotiable safety invariant verification
+- AutoResearchClaw (arXiv:2605.20025): Adversarial red-teaming and falsification checks
+- AutoMem (arXiv:2607.01224): Schema migration safety verification
+- DiscoLoop (arXiv:2607.00341): State latency regression auditing
 """
 
 import logging

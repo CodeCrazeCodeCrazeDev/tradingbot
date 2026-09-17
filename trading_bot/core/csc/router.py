@@ -1,11 +1,17 @@
 """
-SkillRouter & HASP Execution Infrastructure - UCA V6 Architecture
-Dynamic behavioral adapter selection and pre-emptive guardrail interception.
+SkillRouter - UCA V6 Authoritative Routing Authority
+Orchestrates the selection and execution of Skill Programs (HASP)
+and behavioral adaptations (Skill-to-LoRA).
 
-LITERATURE TRACEABILITY MATRIX:
-- HASP (arXiv:2605.17734): Hierarchical Agentic Skill Programs with Prescriptive Guardrails
-- Skill-to-LoRA (arXiv:2606.16769): Behavioral Adapters for Specialized Routing
-- AutoResearchClaw (arXiv:2605.20025): Self-Refinement and Falsification Control
+Research Traceability Matrix:
+- HASP (arXiv:2605.17734): Harnessing LLM Agents with Skill Programs & non-bypassable Program Functions
+- S2L / NanoResearch (arXiv:2605.10813): Skill-to-LoRA behavioral routing and co-evolving skill banks
+- AutoResearchClaw (arXiv:2605.20025): Adaptive strategy pivot triggering
+- EKSFT (arXiv:2605.29303): Preserving exploratory policy routing entropy
+- SAGE (arXiv:2605.12061): Capability graph resolution
+- AutoMem (arXiv:2607.01224): Procedural skill memory retrieval
+- DiscoLoop (arXiv:2607.00341): Discrete route codebook quantization
+- DeepWeb-Bench (arXiv:2605.21482): Calibrated outcome routing validation
 """
 
 import logging
