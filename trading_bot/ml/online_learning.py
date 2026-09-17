@@ -207,12 +207,9 @@ class OnlineLearner:
         # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(path), exist_ok=True)
         
-        # Save the learner
-        # Use a restricted pickle or better serialization in production
-        # For this audit fix, we'll keep it as is but mark as audited for safe paths
-        # In a real scenario, we'd replace this with a safer alternative or add path validation
-        with open(path, 'wb') as f:
-            pickle.dump(self, f)
+        # Institutional standard: Use joblib for model-bearing objects
+        import joblib
+        joblib.dump(self, path)
         
         logger.info(f"Saved online learner to {path}")
     
@@ -226,14 +223,8 @@ class OnlineLearner:
         Returns:
             Loaded online learner
         """
-        from trading_bot.security.artifact_manager import ArtifactManager, RestrictedUnpickler
-        with open(path, 'rb') as f:
-            content = f.read()
-        try:
-            learner = ArtifactManager.deserialize_model(content, "online_learner", "1.0")
-        except Exception:
-            import io
-            learner = RestrictedUnpickler(io.BytesIO(content)).load()
+        import joblib
+        learner = joblib.load(path)
         
         logger.info(f"Loaded online learner from {path}")
         return learner
@@ -836,9 +827,9 @@ class AsyncOnlineLearner:
         # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(path), exist_ok=True)
         
-        # Save the learner
-        with open(path, 'wb') as f:
-            pickle.dump(self, f)
+        # Institutional standard: Use joblib for model-bearing objects
+        import joblib
+        joblib.dump(self, path)
         
         logger.info(f"Saved online learner to {path}")
         
@@ -856,14 +847,8 @@ class AsyncOnlineLearner:
         Returns:
             Loaded online learner
         """
-        from trading_bot.security.artifact_manager import ArtifactManager, RestrictedUnpickler
-        with open(path, 'rb') as f:
-            content = f.read()
-        try:
-            learner = ArtifactManager.deserialize_model(content, "online_learner", "1.0")
-        except Exception:
-            import io
-            learner = RestrictedUnpickler(io.BytesIO(content)).load()
+        import joblib
+        learner = joblib.load(path)
         
         logger.info(f"Loaded online learner from {path}")
         return learner

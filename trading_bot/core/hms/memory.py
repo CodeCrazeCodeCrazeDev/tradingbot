@@ -24,24 +24,11 @@ Research, World Models, Institutional, and Meta-Memory.
 import logging
 import os
 import json
-import hashlib
 import networkx as nx
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 from uuid import uuid4
-import threading
-
-from .models import (
-    ResearchLedgerEntry,
-    ScientificMemoryObject,
-    EvidenceNode,
-    EvidenceEdge,
-    RelationType,
-    EvidenceGraph
-)
-from .memory_os import MemoryOS, MemoryNode, MemoryTier, MemoryProvenance
-from .cmos import CognitiveMemoryOS
-from .ontology import CMOSNode, CMOSNodeTier, CMOSProvenance
+from .models import ResearchLedgerEntry, ScientificMemoryObject, EvidenceNode, EvidenceEdge, RelationType
 
 logger = logging.getLogger(__name__)
 
@@ -186,61 +173,14 @@ class HierarchicalMemorySystem:
     Authoritative memory system Consolidating SAGE and AutoMem.
     Implements active memory management as a cognitive skill.
     """
-    _instance = None
-    _lock = threading.Lock()
-    _calculate_integrity_hash = staticmethod(calculate_integrity_hash)
-
-    _calculate_integrity_hash = staticmethod(calculate_integrity_hash)
-
-    @classmethod
-    def reset(cls):
-        """Reset the singleton instance of the memory system."""
-        with cls._lock:
-            cls._instance = None
-
-    @classmethod
-    def reset(cls):
-        """Resets the HierarchicalMemorySystem singleton instance."""
-        with cls._lock:
-            cls._instance = None
-        logger.info("HierarchicalMemorySystem reset complete.")
-
-    @classmethod
-    def reset(cls):
-        """Reset the singleton instance of the memory system."""
-        with cls._lock:
-            cls._instance = None
-
-    @classmethod
-    def reset(cls):
-        """Reset the singleton instance for testing purposes."""
-        with cls._lock:
-            cls._instance = None
-        logger.info("HierarchicalMemorySystem singleton reset")
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = super(HierarchicalMemorySystem, cls).__new__(cls)
-                    cls._instance._initialized = False
-        return cls._instance
-
-    @classmethod
-    def reset(cls):
-        """Reset the singleton instance."""
-        with cls._lock:
-            cls._instance = None
-        logger.info("HierarchicalMemorySystem singleton reset")
-
-    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
-        return calculate_integrity_hash(schema_dict)
-
     def __init__(self, base_path: str = "alphaalgo_data/hms"):
         if getattr(self, "_initialized", False) and getattr(self, "base_path", None) == base_path:
             return
         self.base_path = base_path
-        os.makedirs(base_path, exist_ok=True)
+        self.storage_root = base_path # For backward compatibility with malformed store_ledger_entry
+        self.ledger_path = os.path.join(base_path, "research_ledger")
+        self.knowledge_path = os.path.join(base_path, "scientific_memory")
+        self.graph_path = os.path.join(base_path, "sage_graph.graphml")
 
     def __init__(self, config: Dict):
         self.config = config
@@ -257,8 +197,13 @@ class HierarchicalMemorySystem:
         self.memory_schema = self._load_schema()
         self.memory_window_size = 100
 
-        # Consolidating standard MemoryOS
-        self.memory_os = MemoryOS(base_storage_path=os.path.join(base_path, "memory_os"))
+    def _load_graph(self) -> nx.MultiDiGraph:
+        if os.path.exists(self.graph_path):
+            try:
+                return nx.read_graphml(self.graph_path)
+            except Exception as e:
+                logger.error(f"HMS: Failed to load SAGE graph: {e}")
+        return nx.MultiDiGraph()
 
         # Core CMOS substrate instantiation
         self.cmos = CognitiveMemoryOS()
@@ -524,7 +469,10 @@ class HierarchicalMemorySystem:
         }
         with open(file_path, 'w') as f: json.dump(entry_data, f, indent=2)
 
-    def optimize_metamemory(self, feedback: List[Dict[str, Any]]):
+        with open(file_path, 'w') as f:
+            json.dump(entry_data, f, indent=2)
+
+    def retrieve_evidence_chain(self, query: str) -> List[EvidenceNode]:
         """
         AutoMem: Dual-loop schema and weight optimization (arXiv:2607.01224).
         Learns optimal memory management from task success/failure.

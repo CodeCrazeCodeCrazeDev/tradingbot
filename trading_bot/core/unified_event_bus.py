@@ -153,6 +153,7 @@ class UnifiedDecisionBus:
         self._action_queue = asyncio.PriorityQueue()
         self._running = False
         self._processor_task: Optional[asyncio.Task] = None
+        self._tasks: Set[asyncio.Task] = set()
         self._initialized = True
         logger.info("LogAct Shared-Log Backbone initialized")
 
@@ -177,12 +178,11 @@ class UnifiedDecisionBus:
         if self._processor_task and not self._processor_task.done():
             return
         self._running = True
-
-        # Re-initialize PriorityQueue to bind to the active event loop and prevent cross-loop leakage
-        self._action_queue = asyncio.PriorityQueue()
-        self._log.clear()
-
-        self._processor_task = asyncio.create_task(self._process_log())
+        task = asyncio.create_task(self._process_log())
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
+        self._processor_task = task
+        logger.info("LogAct Backbone processing started")
 
     async def stop(self):
         self._running = False
@@ -335,9 +335,17 @@ class UnifiedDecisionBus:
         return True
 
     async def _dispatch(self, action: LogAction):
-        handlers = self._subscribers.get(action.action_type, []) + self._subscribers.get("*", [])
-        tasks = [h["handler"](action) for h in handlers]
-        if tasks: await asyncio.gather(*tasks, return_exceptions=True)
+        """Dispatch approved actions to subscribers."""
+        handlers = self._subscribers.get(action.action_type, [])
+        handlers.extend(self._subscribers.get("*", []))
+
+        if not handlers:
+            return
+
+        # If it was a legacy event, pass it as UnifiedEvent if handler expects it?
+        # For simplicity, we pass the LogAction, but we could wrap it.
+        # Most handlers will just access .payload
+        await asyncio.gather(*[h["handler"](action) for h in handlers], return_exceptions=True)
 
     @classmethod
     def reset(cls):

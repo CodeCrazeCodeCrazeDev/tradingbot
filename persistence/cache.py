@@ -82,9 +82,13 @@ class CacheManager:
         if ttl is None:
             ttl = self.default_ttl
         
-        # Serialize value
+        # Serialize value (Institutional standard: JSON only, no pickle)
         if serialize:
-            value = ArtifactManager.serialize_data(value)
+            try:
+                value = json.dumps(value)
+            except Exception as e:
+                logger.error(f"Cache serialization failed for {key}: {e}")
+                return
         
         # Set in memory cache
         self.cache[key] = value
@@ -121,11 +125,11 @@ class CacheManager:
                 value = self.cache[key]
                 
                 # Deserialize value
-                if deserialize and isinstance(value, (str, bytes)):
+                if deserialize and isinstance(value, str):
                     try:
-                        value = ArtifactManager.deserialize_data(value)
+                        value = json.loads(value)
                     except Exception as e:
-                        logger.debug(f"ℹ️ JSON deserialization skipped/failed for {key}: {e}")
+                        logger.warning(f"⚠️ Deserialization error for {key}: {e}")
                 
                 return value
             else:
@@ -138,6 +142,10 @@ class CacheManager:
             try:
                 value = self.redis_client.get(key)
                 if value is not None:
+                    # Redis bytes to string if needed
+                    if isinstance(value, bytes):
+                        value = value.decode('utf-8')
+
                     # Update memory cache
                     self.cache[key] = value
                     self.expiry[key] = datetime.now() + timedelta(seconds=self.default_ttl)
@@ -145,9 +153,9 @@ class CacheManager:
                     # Deserialize value
                     if deserialize and isinstance(value, bytes):
                         try:
-                            value = ArtifactManager.deserialize_data(value)
+                            value = json.loads(value)
                         except Exception as e:
-                            logger.debug(f"ℹ️ JSON deserialization skipped/failed for {key}: {e}")
+                            logger.warning(f"⚠️ Deserialization error for {key}: {e}")
                     
                     return value
             except Exception as e:

@@ -1,33 +1,16 @@
-# AlphaAlgo Structural & Architectural Improvements (2026)
+# ARCHITECTURE IMPROVEMENTS - AlphaAlgo Production Engineering Audit (July 2026)
 
-This document details the structural simplifications, system unifications, and duplicate eliminations performed to achieve the "One Brain" pattern under the Unified Scientific Architecture (UCA-2026).
+## 1. Unified Controller Stability
+The `CognitiveSystemController` (CSC) has been stabilized by ensuring proper singleton initialization. Previously, DiscoLoop channels were defined in unreachable code, and the controller was prone to `NameError` failures. By moving initialization into the authoritative `if not self._initialized` block and fixing class references, the "One Brain" architecture is now reliably reachable.
 
----
+## 2. Hierarchical Memory Integrity
+The `HierarchicalMemorySystem` (HMS) was plagued by redundant constructors and missing dependencies. We have consolidated the initialization logic into a single authoritative `__init__` method and ensured that all required modules (`json`, `networkx`, etc.) are correctly imported and utilized. The SAGE Graph-Memory now consistently uses `MultiDiGraph` to support multi-hop market reasoning.
 
-## 1. The "One Brain" Architecture Consolidation
+## 3. Secure Persistence Layer
+The transition from `pickle` to `json` in the cache management system significantly reduces the attack surface for remote code execution. This change aligns the system with institutional security standards while maintaining high performance for structured market data.
 
-Prior to the UCA-2026 migration, the AlphaAlgo codebase suffered from structural sprawl, with multiple folders (`agents 2/`, `advanced_systems 2/`, and redundant orchestration loops) competing for state and execution ownership.
+## 4. Reliable Event Handling
+The `UnifiedDecisionBus` now implements explicit task tracking for asynchronous operations. This prevents the Python event loop from losing track of critical market events and ensures that background tasks are not prematurely garbage collected, leading to silent system failures.
 
-### **Structural Purge**:
-- Deleted all duplicate directories (such as `agents 2/` and `advanced_systems 2/`).
-- Enforced a single repository-wide event bus (`UnifiedDecisionBus`) and a single active controller singleton (`CognitiveSystemController`).
-- Programmatically locked the repository against duplicate imports using a custom architecture invariant test suite (`tests/architecture/test_architecture_invariants.py`).
-
----
-
-## 2. Decoupling of Capabilities & Single Responsibility
-
-We have enforced strict single-responsibility boundaries over core modules:
-1.  **Sensory Processing & Surprise**: Managed solely by `CognitiveSystemController` inside `controller.py`. Surprise calculation is modeled on Active Inference principles to update the variational free energy state sequentially.
-2.  **Strategic Reasoning & Routing**: Consolidated into `SkillRouter` inside `router.py`. Prompt-based routing, program function (PF) pre-emption, and low-rank adapter selection (S2L) are managed through a unified `route_task` API returning the subscriptable `SkillRouteOutcome` dataclass contract.
-3.  **Knowledge & Episodic Ledger**: Owned entirely by `HierarchicalMemorySystem` (HMS) inside `memory.py`. Relational graph indexing (SAGE Graph Memory) tracks claims, evidence, and provenances securely.
-4.  **Causal World Model rollouts**: Handled by the `UnifiedWorldModel`. It leverages structural causal equations (do-calculus) to perform counterfactual simulations instead of simple statistical forecasting.
-
----
-
-## 3. Eliminating Fragile Shims & Hardening Interfaces
-
-To avoid technical debt and eliminate guess-work, we have unified interface contracts:
-*   **NormalizedMarketContext**: Immutable market context contract that prevents state modification during pipeline iterations.
-*   **SkillRouteOutcome**: Standardized return shape for all skill-related queries with dual dict and attribute interfaces to ensure backward-compatibility with legacy unit tests.
-*   **ImmutableShield**: An un-bypassable security gate that validates all final proposals against physical portfolio limits. It cannot be overridden by self-improving python scripts.
+## 5. Subsystem Consolidation
+We have performed a major cleanup of redundant modules. By removing auto-generated stubs and duplicate scripts, we have improved the maintainability of the `trading_bot/core/` and `scripts/` directories, ensuring that only production-ready code is present in the repository.

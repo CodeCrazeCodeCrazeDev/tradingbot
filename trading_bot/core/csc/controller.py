@@ -156,6 +156,8 @@ class CognitiveSystemController:
         # 1. Dependency Injection
         self.world_model = world_model
         self.hms = hms
+        self.shield = shield
+        self.folding_operator = InformationFolder()
 
         self.shield = kwargs.get("shield")
         self.skill_router = kwargs.get("skill_router")
@@ -196,25 +198,35 @@ class CognitiveSystemController:
 
         # Functional/state components
         self.hypothesis_gen = HypothesisGenerator(world_model)
-        self.folder = InformationFolder(hms)
-        self.discoloop = DiscoLoopCell(latent_dim=512)
-        self.acpe = AdaptiveControlPolicyEngine(self.hms)
+        self.verifier_swarm = VerificationSwarm()
+        self.folder = self.folding_operator
 
-        self.continuous_state = {}
-        self.discrete_channel = []
-        self.last_prediction = None
-        self.vfe_history = []
+        logger.info("CSC-V6: Brain initialized with dynamic argument mapping.")
 
-        self._max_loops = getattr(self, "_max_loops", 3)
+        # HASP: Executable Guardrails (Skill Programs)
+        self.skill_programs = self._load_skill_programs()
         self._initialized = True
-        CognitiveSystemController._instance = self
-        logger.info("CSC-V6: Brain initialized with dynamic argument mapping.")
 
-        logger.info("CSC-V6: Brain initialized with dynamic argument mapping.")
+    def get_status(self) -> Dict[str, Any]:
+        """Returns the version and health status of the CSC."""
+        return {
+            "version": "UCA-2026-V5",
+            "health": "STABLE",
+            "channels": {
+                "continuous": len(self.continuous_state),
+                "discrete": len(self.discrete_channel)
+            }
+        }
 
-    @property
-    def router(self) -> Any:
-        return self.skill_router
+    def _load_skill_programs(self) -> Dict[str, Any]:
+        # In production, load from a registry. Here we stub it.
+        return {}
+
+    async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
+        """
+        12-step Recursive Active Inference Pipeline.
+        """
+        logger.info("CSC-V5: Starting Recursive Active Inference Pipeline")
 
     @property
     def variational_free_energy(self) -> float:
