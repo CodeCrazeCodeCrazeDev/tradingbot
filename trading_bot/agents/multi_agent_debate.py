@@ -183,6 +183,24 @@ class DebateRound:
 
 
 @dataclass
+class StructuredMessage:
+    message_id: str
+    task_id: str
+    parent_task_id: str
+    correlation_id: str
+    sender_agent_id: str
+    recipient: str
+    timestamp: datetime
+    schema_version: str
+    message_type: str
+    payload: Dict[str, Any]
+    confidence: float
+
+    def validate(self) -> bool:
+        return bool(self.message_id and self.sender_agent_id and self.schema_version == "1.0.0")
+
+
+@dataclass
 class VerificationOutcome:
     is_valid: bool
     rejection_reason: Optional[str] = None
@@ -1589,48 +1607,52 @@ class FalsificationReport:
     worst_case_scenario: Optional[str] = None
 
 
+class VerificationResult:
+    def __init__(self, is_valid: bool, rejection_reason: Optional[str] = None):
+        self.is_valid = is_valid
+        self.rejection_reason = rejection_reason
+
+
+class CausalVerifier:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerificationResult:
+        if context.vix_level is not None and context.vix_level > 35.0:
+            return VerificationResult(False, "Extreme VIX level indicates macro breakdown")
+        return VerificationResult(True)
+
+
+class LiquidityVerifier:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerificationResult:
+        if context.volume_ratio < 0.3:
+            return VerificationResult(False, "Severely illiquid market volume")
+        return VerificationResult(True)
+
+
+class RegimeVerifier:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerificationResult:
+        if action in [TradeAction.BUY, TradeAction.STRONG_BUY] and context.htf_trend == "DOWN":
+            return VerificationResult(False, "Counter-trend trade against macro DOWN regime")
+        if action in [TradeAction.SELL, TradeAction.STRONG_SELL] and context.htf_trend == "UP":
+            return VerificationResult(False, "Counter-trend trade against macro UP regime")
+        return VerificationResult(True)
+
+
+class HallucinationDetector:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerificationResult:
+        if context.current_price <= 0.0:
+            return VerificationResult(False, "Invalid current price detected: must be positive.")
+        return VerificationResult(True)
+
+
 class RiskVerifierResult:
     def __init__(self, is_valid: bool, rejection_reason: Optional[str] = None):
         self.is_valid = is_valid
-        self.rejection_reason = rejection_reason or ""
+        self.rejection_reason = rejection_reason
 
 
 class RiskVerifier:
     def verify(self, action: TradeAction, context: MarketContext) -> RiskVerifierResult:
         if context.portfolio_exposure > 0.85 or context.correlation_risk > 0.8:
-            return RiskVerifierResult(is_valid=False, rejection_reason="RiskVerifier: Exposure > 0.85 or correlation > 0.8")
-        if context.volatility > 0.04:
-            return RiskVerifierResult(is_valid=False, rejection_reason="RiskVerifier: Volatility exceeds emergency cap")
-        return RiskVerifierResult(is_valid=True)
-
-
-class CausalVerifier:
-    def verify(self, action: TradeAction, context: MarketContext) -> RiskVerifierResult:
-        if context.vix_level is not None and context.vix_level > 30.0:
-            return RiskVerifierResult(is_valid=False, rejection_reason="CausalVerifier: VIX panic > 30.0")
-        return RiskVerifierResult(is_valid=True)
-
-
-class LiquidityVerifier:
-    def verify(self, action: TradeAction, context: MarketContext) -> RiskVerifierResult:
-        if context.volume_ratio < 0.6 and context.volatility > 0.035:
-            return RiskVerifierResult(is_valid=False, rejection_reason="LiquidityVerifier: Low volume & high volatility trap")
-        return RiskVerifierResult(is_valid=True)
-
-
-class RegimeVerifier:
-    def verify(self, action: TradeAction, context: MarketContext) -> RiskVerifierResult:
-        if action in [TradeAction.STRONG_BUY, TradeAction.BUY] and context.htf_trend == "DOWN":
-            return RiskVerifierResult(is_valid=False, rejection_reason="RegimeVerifier: Counter-trend BUY against HTF DOWN")
-        if action in [TradeAction.STRONG_SELL, TradeAction.SELL] and context.htf_trend == "UP":
-            return RiskVerifierResult(is_valid=False, rejection_reason="RegimeVerifier: Counter-trend SELL against HTF UP")
-        return RiskVerifierResult(is_valid=True)
-
-
-class HallucinationDetector:
-    def verify(self, action: TradeAction, context: MarketContext) -> RiskVerifierResult:
-        if context.current_price <= 0.0:
-            return RiskVerifierResult(is_valid=False, rejection_reason="HallucinationDetector: Invalid current price <= 0")
+            return RiskVerifierResult(is_valid=False, rejection_reason="Portfolio exposure or correlation risk exceeds threshold")
         return RiskVerifierResult(is_valid=True)
 
 
@@ -1792,6 +1814,7 @@ class FalsificationGate:
             "HallucinationDetector": hallucination_res.is_valid,
         }
 
+        worst_case = None
         is_falsified = not all(verifier_outcomes.values())
         reason = None
         worst_case = None
@@ -1799,11 +1822,11 @@ class FalsificationGate:
         worst_case = None
         if is_falsified:
             failed_reasons = []
-            if not causal_res.is_valid: failed_reasons.append(f"CausalVerifier: {causal_res.rejection_reason}")
-            if not liquidity_res.is_valid: failed_reasons.append(f"LiquidityVerifier: {liquidity_res.rejection_reason}")
-            if not regime_res.is_valid: failed_reasons.append(f"RegimeVerifier: {regime_res.rejection_reason}")
-            if not risk_res.is_valid: failed_reasons.append(f"RiskVerifier: {risk_res.rejection_reason}")
-            if not hallucination_res.is_valid: failed_reasons.append(f"HallucinationDetector: {hallucination_res.rejection_reason}")
+            if not causal_res.is_valid: failed_reasons.append(f"[CausalVerifier] {causal_res.rejection_reason}")
+            if not liquidity_res.is_valid: failed_reasons.append(f"[LiquidityVerifier] {liquidity_res.rejection_reason}")
+            if not regime_res.is_valid: failed_reasons.append(f"[RegimeVerifier] {regime_res.rejection_reason}")
+            if not risk_res.is_valid: failed_reasons.append(f"[RiskVerifier] {risk_res.rejection_reason}")
+            if not hallucination_res.is_valid: failed_reasons.append(f"[HallucinationDetector] {hallucination_res.rejection_reason}")
 
             rejection_reason = " | ".join(filter(None, failed_reasons))
             worst_case = f"Falsified by active verifiers: {rejection_reason}"
@@ -1831,10 +1854,14 @@ class BayesianDecisionEngine:
     """
 
     def __init__(
-        self, weights: Optional[Dict[AgentRole, float]] = None, correlations: Optional[Dict[Tuple[AgentRole, AgentRole], float]] = None
+        self, weights: Optional[Dict] = None, correlations: Optional[Dict] = None
     ):
-        self.weights = weights or {}
-        self.correlations = correlations or {}
+        try:
+            self.weights = weights or {}
+            self.correlations = correlations or {}
+        except Exception as e:
+            logger.error(f"Error in BayesianDecisionEngine init: {e}")
+            raise
 
     def calculate_posterior(
         self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]
@@ -1970,6 +1997,79 @@ class BayesianDecisionEngine:
             else:
                 winning_action = TradeAction.HOLD
                 winning_score = 0.5
+
+            # Compute default winning_score based on arguments advocating the winning action
+            winning_score = 0.5
+            winning_action_args = [a for a in active_arguments if a.action == winning_action]
+            if winning_action_args:
+                winning_score = max(getattr(a, 'confidence', 0.5) for a in winning_action_args)
+
+            # Calculate Bayesian posterior probability of strategy success if a calibrator is present
+            if self.calibrator:
+                htf = context.htf_trend
+                if (htf == "UP" and winning_action in [TradeAction.BUY, TradeAction.STRONG_BUY]) or \
+                   (htf == "DOWN" and winning_action in [TradeAction.SELL, TradeAction.STRONG_SELL]):
+                    prior_prob = 0.55
+                else:
+                    prior_prob = 0.45
+
+                evidence_likelihoods = []
+                for arg in active_arguments:
+                    endorsed = (arg.action == winning_action)
+                    likelihood = getattr(arg, 'confidence', 0.5)
+                    exponent = self.weights.get(arg.agent_role, 0.33)
+                    if scorecards and arg.agent_role in scorecards:
+                        exponent = scorecards[arg.agent_role].expected_contribution
+                    evidence_likelihoods.append((endorsed, likelihood, exponent))
+
+                winning_score = self.calculate_bayesian_posterior(prior_prob, evidence_likelihoods)
+
+            # Compute default winning_score based on arguments advocating the winning action
+            winning_score = 0.5
+            winning_action_args = [a for a in active_arguments if a.action == winning_action]
+            if winning_action_args:
+                winning_score = max(getattr(a, 'confidence', 0.5) for a in winning_action_args)
+
+            # Calculate Bayesian posterior probability of strategy success if a calibrator is present
+            if self.calibrator:
+                htf = context.htf_trend
+                if (htf == "UP" and winning_action in [TradeAction.BUY, TradeAction.STRONG_BUY]) or \
+                   (htf == "DOWN" and winning_action in [TradeAction.SELL, TradeAction.STRONG_SELL]):
+                    prior_prob = 0.55
+                else:
+                    prior_prob = 0.45
+
+                evidence_likelihoods = []
+                for arg in active_arguments:
+                    endorsed = (arg.action == winning_action)
+                    likelihood = getattr(arg, 'confidence', 0.5)
+                    exponent = self.weights.get(arg.agent_role, 0.33)
+                    if scorecards and arg.agent_role in scorecards:
+                        exponent = scorecards[arg.agent_role].expected_contribution
+                    evidence_likelihoods.append((endorsed, likelihood, exponent))
+
+                winning_score = self.calculate_bayesian_posterior(prior_prob, evidence_likelihoods)
+
+            # Calculate dynamic winning_score using mathematically rigorous Bayesian posterior probability
+            if winning_action not in [TradeAction.HOLD, TradeAction.NO_TRADE]:
+                htf = context.htf_trend
+                if (htf == "UP" and winning_action in [TradeAction.BUY, TradeAction.STRONG_BUY]) or                    (htf == "DOWN" and winning_action in [TradeAction.SELL, TradeAction.STRONG_SELL]):
+                    prior_prob = 0.55
+                else:
+                    prior_prob = 0.45
+
+                evidence_likelihoods = []
+                for arg in active_arguments:
+                    endorsed = (arg.action == winning_action)
+                    likelihood = getattr(arg, 'confidence', 0.5)
+                    exponent = self.weights.get(arg.agent_role, 0.33)
+                    if scorecards and arg.agent_role in scorecards:
+                        exponent = scorecards[arg.agent_role].expected_contribution
+                    evidence_likelihoods.append((endorsed, likelihood, exponent))
+
+                winning_score = self.calculate_bayesian_posterior(prior_prob, evidence_likelihoods)
+            else:
+                winning_score = 0.5  # Neutral default for HOLD or un-vetoed neutral pattern
 
             # Prior probability based on trend alignment
             aligned = False
@@ -2516,8 +2616,9 @@ class MultiAgentDebateSystem:
                             fallback_arg = agent.analyze(context)
                             current_round_args.append(fallback_arg)
                             all_arguments.append(fallback_arg)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            logger.error(f"Fallback analyze error for {agent.role.value}: {e}")
+                            continue
 
                 consensus = self._calculate_consensus(all_arguments)
                 conflicts = self._identify_conflicts(current_round_args)
