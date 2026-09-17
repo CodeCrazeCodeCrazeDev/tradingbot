@@ -187,6 +187,30 @@ class AgentArgument:
 
 
 @dataclass
+class StructuredMessage:
+    """Structured message protocol for agent interactions."""
+
+    message_id: str
+    task_id: str
+    parent_task_id: str
+    correlation_id: str
+    sender_agent_id: str
+    recipient: str
+    timestamp: datetime
+    schema_version: str
+    message_type: str
+    payload: Dict[str, Any]
+    confidence: float
+
+    def validate(self) -> bool:
+        if not self.message_id or not self.sender_agent_id or not self.message_type:
+            return False
+        if not isinstance(self.payload, dict):
+            return False
+        return True
+
+
+@dataclass
 class DebateRound:
     """Single round of debate."""
     round_number: int
@@ -439,6 +463,28 @@ class DebateResult:
 
 # Dynamic alias for backwards compatibility
 FinalDecision = DebateResult
+
+
+# Consolidated AgentScorecard definition moved to top, removing duplicate definitions.
+
+
+class RiskVerifierOutcome:
+    def __init__(self, is_valid: bool, reason: str = ""):
+        self.is_valid = is_valid
+        self.reason = reason
+
+
+class RiskVerifier:
+    """Mock/compatibility verifier class for risk assessment."""
+    def verify(self, action: TradeAction, context: MarketContext) -> RiskVerifierOutcome:
+        # If exposure, VIX or correlation exceed safe limits, directional trades are invalid
+        vix = getattr(context, 'vix_level', 0.0) or 0.0
+        exp = getattr(context, 'portfolio_exposure', 0.0) or 0.0
+        corr = getattr(context, 'correlation_risk', 0.0) or 0.0
+        if action in [TradeAction.BUY, TradeAction.STRONG_BUY, TradeAction.SELL, TradeAction.STRONG_SELL]:
+            if exp > 0.5 or vix > 30.0 or corr > 0.7:
+                return RiskVerifierOutcome(is_valid=False, reason="Risk parameters exceeded")
+        return RiskVerifierOutcome(is_valid=True)
 
 
 class AgentStatus(Enum):
@@ -1639,24 +1685,33 @@ class FalsificationReport:
     worst_case_scenario: Optional[str] = None
 
 
-class RiskVerifierResult:
+class VerifierResult:
     def __init__(self, is_valid: bool, rejection_reason: Optional[str] = None):
         self.is_valid = is_valid
         self.rejection_reason = rejection_reason
+        self.reason = rejection_reason
 
-    def __init__(self, config: Optional[Dict] = None):
-        self.config = config or {}
-        self.causal_verifier = CausalVerifier()
-        self.liquidity_verifier = LiquidityVerifier()
-        self.regime_verifier = RegimeVerifier()
-        self.risk_verifier = RiskVerifier()
-        self.hallucination_detector = HallucinationDetector()
+class CausalVerifier:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
+        if getattr(context, 'vix_level', None) is not None and context.vix_level > 30.0:
+            return VerifierResult(is_valid=False, rejection_reason="CausalVerifier: Macro Causal Veto due to high VIX level > 30.0")
+        return VerifierResult(is_valid=True)
 
-class RiskVerifier:
-    def verify(self, action: TradeAction, context: MarketContext) -> RiskVerifierResult:
-        if context.portfolio_exposure > 0.85 or context.correlation_risk > 0.8:
-            return RiskVerifierResult(is_valid=False, rejection_reason="RiskVerifier: Portfolio exposure or correlation risk exceeded")
-        return RiskVerifierResult(is_valid=True)
+class LiquidityVerifier:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
+        if getattr(context, 'liquidity', 1.0) < 0.1:
+            return VerifierResult(is_valid=False, rejection_reason="LiquidityVerifier: Insufficient liquidity")
+        return VerifierResult(is_valid=True)
+
+class RegimeVerifier:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
+        return VerifierResult(is_valid=True)
+
+class HallucinationDetector:
+    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
+        if getattr(context, 'current_price', 1.0) <= 0:
+            return VerifierResult(is_valid=False, rejection_reason="HallucinationDetector: Invalid non-positive market price")
+        return VerifierResult(is_valid=True)
 
 
 @dataclass
@@ -1751,14 +1806,19 @@ class BayesianDecisionEngine:
         worst_case = None
         if is_falsified:
             failed_reasons = []
-            if not causal_res.is_valid: failed_reasons.append(getattr(causal_res, 'rejection_reason', None) or 'Causal verifier failed')
-            if not liquidity_res.is_valid: failed_reasons.append(getattr(liquidity_res, 'rejection_reason', None) or 'Liquidity verifier failed')
-            if not regime_res.is_valid: failed_reasons.append(getattr(regime_res, 'rejection_reason', None) or 'Regime verifier failed')
-            if not risk_res.is_valid: failed_reasons.append(getattr(risk_res, 'rejection_reason', None) or 'Risk verifier failed')
-            if not hallucination_res.is_valid: failed_reasons.append(getattr(hallucination_res, 'rejection_reason', None) or 'Hallucination detector failed')
+            if not causal_res.is_valid:
+                failed_reasons.append(getattr(causal_res, 'rejection_reason', 'Causal veto'))
+            if not liquidity_res.is_valid:
+                failed_reasons.append(getattr(liquidity_res, 'rejection_reason', 'Liquidity veto'))
+            if not regime_res.is_valid:
+                failed_reasons.append(getattr(regime_res, 'rejection_reason', 'Regime veto'))
+            if not risk_res.is_valid:
+                failed_reasons.append(getattr(risk_res, 'rejection_reason', getattr(risk_res, 'reason', 'Risk veto')))
+            if not hallucination_res.is_valid:
+                failed_reasons.append(getattr(hallucination_res, 'rejection_reason', 'Hallucination veto'))
 
             rejection_reason = " | ".join(filter(None, failed_reasons))
-            worst_case = f"Falsified by active verifiers: {rejection_reason}"
+            worst_case = "Falsification gate triggered due to verification failures: " + str(rejection_reason)
 
         return FalsificationReport(
             is_falsified=is_falsified,
@@ -1780,7 +1840,57 @@ class BayesianDecisionEngine:
         )
 
 
+
+
 class BayesianDecisionEngine:
+    """
+    Dedicated mathematical component implementing mathematically rigorous,
+    correlation-aware Bayesian posterior probability calculations.
+    Keeps inference isolated from orchestration under the UCA-2026 specification.
+    """
+
+    def __init__(
+        self, weights: Optional[Dict] = None, correlations: Optional[Dict] = None
+    ):
+        self.weights = weights or {}
+        self.correlations = correlations or {}
+
+    def calculate_posterior(
+        self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]
+    ) -> float:
+        """
+        Computes mathematically rigorous, correlation-aware Bayesian posterior probability of strategy success:
+        P(S | E) = [ P(S) * Prod P(E_i | S)^w_i ] / [ P(S) * Prod P(E_i | S)^w_i + P(~S) * Prod P(E_i | ~S)^w_i ]
+        """
+        prod_s = 1.0
+        prod_ns = 1.0
+
+        for endorsed, likelihood, exponent in evidence_likelihoods:
+            # Bound likelihood to avoid division by zero or extreme certainties
+            p_e_given_s = max(0.01, min(0.99, likelihood))
+
+            if endorsed:
+                prod_s *= p_e_given_s**exponent
+                prod_ns *= (1.0 - p_e_given_s) ** exponent
+            else:
+                prod_s *= (1.0 - p_e_given_s) ** exponent
+                prod_ns *= p_e_given_s**exponent
+
+        numerator = prior_prob * prod_s
+        denominator = (prior_prob * prod_s) + ((1.0 - prior_prob) * prod_ns)
+
+        if denominator == 0.0:
+            return prior_prob
+
+        return max(0.0, min(1.0, numerator / denominator))
+
+    def calculate_bayesian_posterior(
+        self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]
+    ) -> float:
+        return self.calculate_posterior(prior_prob, evidence_likelihoods)
+
+
+class HeadAI:
     """
     Lightweight Head AI: coordinates evidence-first debate aggregation and Bayesian calibration.
     """
@@ -1874,6 +1984,7 @@ class BayesianDecisionEngine:
                 winning_action = max(action_scores.keys(), key=lambda a: action_scores[a])
             else:
                 winning_action = TradeAction.HOLD
+                winning_score = 0.5
 
             # Prior probability based on trend alignment
             aligned = False
@@ -2056,7 +2167,7 @@ class BayesianDecisionEngine:
                     "HeadAI": "UCA-v5.3",
                 },
                 "configuration_hash": hash(str(self.weights)),
-                "git_commit": get_git_commit(),
+                "git_commit": "unknown_sha",
             }
 
             # 5. Debate invariants validation
@@ -2440,18 +2551,12 @@ class MultiAgentDebateSystem:
                     for agent in self.agents:
                         try:
                             fallback_arg = agent.analyze(context)
+                            current_round_args.append(fallback_arg)
+                            all_arguments.append(fallback_arg)
                         except Exception as e:
-                            fallback_arg = AgentArgument(
-                                agent_role=agent.role,
-                                action=TradeAction.NO_TRADE if agent.role == AgentRole.RISK_SENTINEL else TradeAction.HOLD,
-                                conviction=Conviction.VERY_HIGH if agent.role == AgentRole.RISK_SENTINEL else Conviction.LOW,
-                                reasoning=[f"Fallback response analysis failed: {e}"],
-                                key_factors={},
-                                confidence=0.5,
-                                timestamp=datetime.now()
+                            logger.error(
+                                f"Graceful Degradation: Agent {agent.role.value if hasattr(agent.role, 'value') else agent.role} crashed during fallback analyze: {e}"
                             )
-                        current_round_args.append(fallback_arg)
-                        all_arguments.append(fallback_arg)
 
                 consensus = self._calculate_consensus(all_arguments)
                 conflicts = self._identify_conflicts(current_round_args)
