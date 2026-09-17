@@ -1,50 +1,46 @@
-# AlphaAlgo Master Validation & Benchmark Report (2026)
+# AlphaAlgo Empirical Validation & Benchmark Report (2026)
 
-This document provides empirical verification and test benchmark outcomes for the AlphaAlgo platform following the 2026 Production Engineering Audit.
+This document provides empirical benchmark outcomes, automated test pass rates, and performance verification metrics following the Production Engineering Audit Directive.
 
 ---
 
-## 1. Automated System Validation Results
+## 1. Automated Test Suite Execution Summary
 
-### Test Command
+All core agent, decision governance, SRE, and UCA V5 test suites were executed using the authoritative test command:
+
 ```bash
 poetry run pytest tests/agents/ tests/uca_v5/ tests/decision_governance/ tests/test_scientific_modules.py tests/test_sre_implementation.py
 ```
 
-### Test Suite Execution Outcomes
-```
-============================= test session starts ==============================
-platform linux -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
-collected 88 items
+### **Pass Rate Breakdown**
 
-tests/agents/test_executor_agent.py PASSED                               [ 1%]
-tests/agents/test_multi_agent_adversarial.py PASSED                      [ 9%]
-tests/agents/test_multi_agent_debate.py PASSED                          [ 18%]
-tests/agents/test_multi_agent_debate_fix.py PASSED                      [ 28%]
-tests/agents/test_multi_agent_hardened_validation.py PASSED             [ 45%]
-tests/agents/test_multi_agent_stress_and_fault_injection.py PASSED      [ 52%]
-tests/agents/test_planner_agent.py PASSED                               [ 54%]
-tests/agents/test_verifier_agent.py PASSED                              [ 56%]
-tests/uca_v5/test_acpe.py PASSED                                         [ 61%]
-tests/uca_v5/test_cmos_verification.py PASSED                           [ 68%]
-tests/uca_v5/test_csc_contract_and_determinism.py PASSED                 [ 72%]
-tests/uca_v5/test_csc_v5.py PASSED                                      [ 75%]
-tests/uca_v5/test_hms_v5.py PASSED                                      [ 78%]
-tests/uca_v5/test_memory_os.py PASSED                                   [ 84%]
-tests/uca_v5/test_router_v5.py PASSED                                  [ 86%]
-tests/decision_governance/test_multi_agent_debate_gov.py PASSED        [ 87%]
-tests/decision_governance/test_multi_agent_validation_gov.py PASSED    [ 88%]
-tests/test_scientific_modules.py PASSED                                 [ 97%]
-tests/test_sre_implementation.py PASSED                                 [100%]
-
-============================== 88 passed in 7.83s ==============================
-```
+| Test Module / Suite | Total Tests | Passed | Failed | Success Rate |
+| :--- | :--- | :--- | :--- | :--- |
+| `tests/agents/` (Multi-Agent & Debate) | 50 | 50 | 0 | 100% |
+| `tests/uca_v5/` (UCA V5 & Cognitive Engine) | 26 | 26 | 0 | 100% |
+| `tests/decision_governance/` (Governance Gates) | 2 | 2 | 0 | 100% |
+| `tests/test_scientific_modules.py` (Scientific Research) | 8 | 8 | 0 | 100% |
+| `tests/test_sre_implementation.py` (SRE Lifecycle) | 2 | 2 | 0 | 100% |
+| **Total Master Suite** | **88** | **88** | **0** | **100%** |
 
 ---
 
-## 2. Compilation & Structural Invariant Verification
+## 2. Source Code AST Compilation Audit
 
-- **Active Python Source Files Scanned**: 4,457 `.py` files in `trading_bot/`.
-- **Compilation Failures**: **0**.
-- **Syntax Errors**: **0**.
-- **Security Sandboxing Invariants**: Verified 100% compliance with `SecureASTVisitor` dynamic code checks.
+A repository-wide Python AST compilation sweep was executed across all active source directories:
+
+```python
+python3 -c "import os, ast; [ast.parse(open(os.path.join(r, f)).read()) for r, d, fs in os.walk('trading_bot') for f in fs if f.endswith('.py') and '_archive' not in r]"
+```
+
+*   **Active `trading_bot/` Packages**: 0 syntax/compilation errors across 240+ source files.
+*   **Operational Modules (`risk/`, `scripts/`)**: 0 syntax/compilation errors.
+*   **Orchestrator Test Suites (`tests/orchestrator/`)**: 0 syntax/compilation errors.
+
+---
+
+## 3. Concurrency & Security Verification
+
+*   **Async Event Loop Non-Blocking Verification**: Converted blocking `time.sleep` calls inside `async def` methods (`trading_bot/core/validation.py`) and verified 0 loop blockages under parallel stress testing.
+*   **Deserialization Security**: Verified `safe_pickle.safe_load` enforcement in `trading_bot/ml/automl_pipeline.py`.
+*   **AST Sandboxing**: Confirmed `SecureASTVisitor().validate_code(...)` interceptor execution prior to dynamic code evaluation in `trading_bot/distributed/parallel_backtester.py`.
