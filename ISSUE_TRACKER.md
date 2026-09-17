@@ -1,90 +1,38 @@
-# ISSUE TRACKER - AlphaAlgo Production Engineering Audit (July 2026)
+# AlphaAlgo Production Audit Issue Tracker (2026)
 
-This document tracks identified, resolved, and monitored engineering defects and scientific regressions across the AlphaAlgo codebase.
-
----
-
-## 1. Registry of Resolved Defects
-
-### **DEFECT-UCA-2026-01**: UCA Singleton Reset & Lifecycle Regression
-*   **Component**: `UnifiedDecisionBus`, `CognitiveSystemController`, `HierarchicalMemorySystem`, `SkillRouter`
-*   **Severity**: **CRITICAL (BLOCKER)**
-*   **Description**: In some legacy code revisions, the explicit class-level `reset()` methods on core singletons had been omitted or simplified into stubs. This caused pytest-asyncio to fail under test teardown/setup due to cross-test singleton contamination, resulting in 26/26 `AttributeError` errors.
-*   **Resolution**: Implemented high-fidelity, thread-safe class-level `reset()` methods across all singletons. Restored `_lock` in `SkillRouter` and synchronized schema serialization in `HierarchicalMemorySystem`.
-*   **Status**: **RESOLVED**
-*   **Verification**: Unit test suite `tests/uca_v5/` passes 26/26 test cases.
-
-### **DEFECT-UCA-2026-02**: Cross-Loop Event Loop Contamination in Stress Tests
-*   **Component**: `tests/stress/test_logact_pressure.py`
-*   **Severity**: **HIGH**
-*   **Description**: The stress-testing suite initialized `UnifiedDecisionBus` using `event_loop.run_until_complete()`, which bound queue tasks to the session-scoped loop, while pytest-asyncio ran tests in function-scoped loops. This caused `wait_for_decision` to time out.
-*   **Resolution**: Converted the `stress_bus` fixture into an asynchronous fixture (`async def stress_bus()`), letting the bus bind to the running loop of the active test case.
-*   **Status**: **RESOLVED**
-*   **Verification**: `poetry run pytest tests/stress/` passes 4/4 concurrent stress tests in 3.10s.
-
-### **DEFECT-UCA-2026-03**: SkillRouter Default Adapter Name Discrepancy
-*   **Component**: `SkillRouter` / `tests/uca_v5/test_router_v5.py`
-*   **Severity**: **MEDIUM**
-*   **Description**: The default S2L adapter ID registered in `SkillRouter` was named `lora_hedging_v1`, whereas unit tests expected `lora_hedging_v2`. This discrepancy led to assertions failing on route outputs.
-*   **Resolution**: Aligned the default registered skill artifact adapter ID to `lora_hedging_v2`.
-*   **Status**: **RESOLVED**
-*   **Verification**: `test_router_v5.py` passes completely.
-
-### **DEFECT-UCA-2026-04**: Missing imports and undefined name warnings
-*   **Component**: `tests conftest.py` / `weekly_tests` conftest references
-*   **Severity**: **MEDIUM**
-*   **Description**: Some autouse conftest setups reference `Path` or `sys` before importing them, or run checks on missing directories.
-*   **Resolution**: Cleaned up the imports in conftest files and added missing pathlib imports.
-*   **Status**: **RESOLVED**
-*   **Verification**: Python compile and collection succeed cleanly.
-
-### **DEFECT-UCA-2026-05**: Multi-Agent Debate Dictionary Formatting & Variable Scoping Errors
-*   **Component**: `trading_bot/agents/multi_agent_debate.py`
-*   **Severity**: **CRITICAL**
-*   **Description**: Line 1453 and line 2564 contained bad indentation and dict keyword syntax errors (`agent_contributions={...}` without key prefix), causing module compilation failures.
-*   **Resolution**: Fixed dictionary key formatting and corrected block indentation inside FalsificationGate and MultiAgentDebateSystem.
-*   **Status**: **RESOLVED**
-*   **Verification**: `python3 -m py_compile trading_bot/agents/multi_agent_debate.py` compiles cleanly.
-
-### **DEFECT-UCA-2026-06**: Unterminated Docstring Literals in Master Orchestrator & Service Registry
-*   **Component**: `trading_bot/core_agent_system/master_orchestrator.py`, `trading_bot/core/service_registry.py`
-*   **Severity**: **HIGH**
-*   **Description**: Unterminated triple-quoted docstring literals caused file import failures during module loading.
-*   **Resolution**: Added opening/closing triple quotes and restored clean stub structures.
-*   **Status**: **RESOLVED**
-*   **Verification**: Both modules compile cleanly and import without errors.
-
-### **DEFECT-UCA-2026-07**: Production Database Fallback Block Indentation Mismatch
-*   **Component**: `trading_bot/database/production_database.py`
-*   **Severity**: **HIGH**
-*   **Description**: Invalid `else:` block placement in SQLAlchemy fallback declarations caused syntax errors on line 218.
-*   **Resolution**: Consolidated dummy ORM model definitions at the top level under `if not SQLALCHEMY_AVAILABLE:`.
-*   **Status**: **RESOLVED**
-*   **Verification**: `production_database.py` compiles cleanly.
-
-### **DEFECT-UCA-2026-08**: Risk Manager List Unpacking Expression Syntax Failure
-*   **Component**: `risk/risk_manager.py`
-*   **Severity**: **HIGH**
-*   **Description**: Line 390 used invalid Python list unpacking syntax inside a list literal (`*[...] or ["- None"]`).
-*   **Resolution**: Separated list construction into explicit variables (`limits_lines`, `restrictions_lines`) prior to list assembly.
-*   **Status**: **RESOLVED**
-*   **Verification**: `risk/risk_manager.py` compiles cleanly.
-
-### **DEFECT-UCA-2026-09**: Orchestrator Master Test Indentation & Stray Import Failure
-*   **Component**: `tests/orchestrator/test_orchestrator_master.py`
-*   **Severity**: **HIGH**
-*   **Description**: Line 222 contained an unindented `import numpy` statement inside `test_orchestrate_trading`, causing test collection errors.
-*   **Resolution**: Cleaned up stray import lines and restored correct function body indentation.
-*   **Status**: **RESOLVED**
-*   **Verification**: `poetry run pytest tests/orchestrator/` passes completely.
-
----
-
-## 2. Monitored Issues
-
-### **MONITOR-UCA-2026-01**: FAISS Search Fallback to NumPy
-*   **Component**: `trading_bot.world_model.experience_replay`
-*   **Severity**: **LOW**
-*   **Description**: When FAISS is not installed in the execution environment, the system displays a warning and falls back to NumPy-based similarity search.
-*   **Impact**: Performance-only. Under local sandbox loads, NumPy distance calculation is extremely fast and doesn't affect accuracy.
-*   **Mitigation**: NumPy fallback is programmatically validated and verified. Will install `faiss-cpu` if sub-millisecond vector indexing is needed over large-horizon tables.
+| Issue ID | Domain | Severity | Root Cause | Files Affected | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **SEC-01** | Security | Critical | Un-sanitized `pickle.load` call allowing arbitrary code execution | `trading_bot/ml/automl_pipeline.py` | RESOLVED |
+| **SEC-02** | Security | High | Unconstrained dynamic code execution inside sandbox | `trading_bot/core/security/sandbox.py` | RESOLVED |
+| **SEC-03** | Security | Medium | Non-deterministic seed initialization in stochastic processes | `trading_bot/core/governance/determinism.py` | RESOLVED |
+| **DAT-01** | Database | Critical | Missing `Base` dummy class definition when SQLAlchemy is absent | `trading_bot/database/production_database.py` | RESOLVED |
+| **DAT-02** | Database | High | Duplicate `else` block corrupting ORM model declarations | `trading_bot/database/production_database.py` | RESOLVED |
+| **DAT-03** | Database | Medium | Connection pool timeout missing defensive exception handling | `trading_bot/database/production_database.py` | RESOLVED |
+| **DAT-04** | Database | Medium | Stale session leaks on unhandled generator exception | `trading_bot/database/production_database.py` | RESOLVED |
+| **DAT-05** | Database | Low | Missing composite index on `(symbol, entry_time)` in TradeRecord | `trading_bot/database/production_database.py` | RESOLVED |
+| **ORC-01** | Service Layer | High | Unterminated module docstring causing syntax parse error | `trading_bot/core/service_registry.py` | RESOLVED |
+| **ORC-02** | Service Layer | High | Unterminated module docstring causing parse error | `trading_bot/core_agent_system/master_orchestrator.py` | RESOLVED |
+| **ORC-03** | Service Layer | High | Unhandled `ImportError` on legacy service registry fallback | `trading_bot/core/service_registry.py` | RESOLVED |
+| **ORC-04** | Service Layer | Medium | Duplicate `DecisionPriority` enum definition | `trading_bot/core_agent_system/master_orchestrator.py` | RESOLVED |
+| **ORC-05** | Service Layer | Medium | Missing default stub implementation for `SystemContext` | `trading_bot/core_agent_system/master_orchestrator.py` | RESOLVED |
+| **ORC-06** | Service Layer | Low | Missing logger initialization check in registry init | `trading_bot/core/service_registry.py` | RESOLVED |
+| **AGN-01** | Agent Architecture | Critical | Indentation syntax error on line 1453 breaking test collection | `trading_bot/agents/multi_agent_debate.py` | RESOLVED |
+| **AGN-02** | Agent Architecture | Critical | Invalid dictionary key syntax on line 2564 causing parse failure | `trading_bot/agents/multi_agent_debate.py` | RESOLVED |
+| **AGN-03** | Agent Architecture | High | Duplicate class definition of `HeadAI` overriding methods | `trading_bot/agents/multi_agent_debate.py` | RESOLVED |
+| **AGN-04** | Agent Architecture | High | Missing verifier classes (`CausalVerifier`, `LiquidityVerifier`, etc.) | `trading_bot/agents/multi_agent_debate.py` | RESOLVED |
+| **AGN-05** | Agent Architecture | High | Missing `BayesianDecisionEngine` class definition | `trading_bot/agents/multi_agent_debate.py` | RESOLVED |
+| **AGN-06** | Agent Architecture | Medium | Unbound variable `vix_score` referenced in risk loop | `trading_bot/agents/multi_agent_debate.py` | RESOLVED |
+| **AGN-07** | Agent Architecture | Medium | Missing empty iterable check in `debate()` causing quorum crash | `trading_bot/agents/multi_agent_debate.py` | RESOLVED |
+| **AGN-08** | Agent Architecture | Medium | Unhandled exception fallback in `respond_to_argument()` | `trading_bot/agents/multi_agent_debate.py` | RESOLVED |
+| **CSC-01** | Cognitive System | High | Duplicate method definitions (`_select_optimal_action`, etc.) | `trading_bot/core/csc/controller.py` | RESOLVED |
+| **CSC-02** | Cognitive System | High | Unassigned `final_qty` variable scoping bug under zero sizing | `trading_bot/core/csc/controller.py` | RESOLVED |
+| **CSC-03** | Cognitive System | Medium | Missing singleton `reset()` causing test pollution | `trading_bot/core/csc/controller.py` | RESOLVED |
+| **CSC-04** | Cognitive System | Medium | Missing HASP guardrail intervention check on null world model | `trading_bot/core/csc/controller.py` | RESOLVED |
+| **CSC-05** | Cognitive System | Low | Inconsistent dict subscripting vs property access on route outcomes | `trading_bot/core/csc/router.py` | RESOLVED |
+| **TST-01** | Test Harness | High | Misplaced `pass` statement in `test_orchestrator_performance.py` | `tests/orchestrator/test_orchestrator_performance.py` | RESOLVED |
+| **TST-02** | Test Harness | High | Misplaced `pass` statement in `test_orchestrator_standalone.py` | `tests/orchestrator/test_orchestrator_standalone.py` | RESOLVED |
+| **TST-03** | Test Harness | Medium | Missing `numpy`/`scipy` dependencies in test virtualenv | `requirements_no_mt5.txt` | RESOLVED |
+| **TST-04** | Test Harness | Medium | `.hypothesis/` cache directory un-ignored in git | `.gitignore` | RESOLVED |
+| **TST-05** | Test Harness | Medium | Missing async `await` keywords on `validate_evolution()` | `tests/test_scientific_modules.py` | RESOLVED |
+| **TST-06** | Test Harness | Low | Outdated adapter name comparison in S2L routing test | `tests/test_scientific_modules.py` | RESOLVED |
+| **TST-07** | Test Harness | Low | Unhandled exception in SRE teardown fixture | `tests/test_sre_implementation.py` | RESOLVED |
