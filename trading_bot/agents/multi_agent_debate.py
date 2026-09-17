@@ -343,19 +343,9 @@ class DebateResult:
 FinalDecision = DebateResult
 
 
-# -----------------------------------------------------------------------------
-# Verifier Infrastructure
-# -----------------------------------------------------------------------------
-
-@dataclass
-class VerifierResult:
-    is_valid: bool
-    rejection_reason: str = ""
-
-
 @dataclass
 class StructuredMessage:
-    """Structured message protocol for inter-agent debate and validation."""
+    """Canonical message schema for multi-agent system interaction protocol."""
     message_id: str
     task_id: str
     parent_task_id: str
@@ -366,62 +356,103 @@ class StructuredMessage:
     schema_version: str
     message_type: str
     payload: Dict[str, Any]
-    confidence: float = 1.0
+    confidence: float
 
     def validate(self) -> bool:
-        return bool(self.message_id and self.sender_agent_id and self.payload is not None)
+        if not self.message_id or not self.sender_agent_id or not self.recipient:
+            return False
+        if not (0.0 <= self.confidence <= 1.0):
+            return False
+        return True
 
 
-@dataclass
+class BayesianDecisionEngine:
+    """
+    Decoupled mathematical engine for correlation-aware Bayesian posterior probability calculations.
+    """
+    def __init__(self, weights: Dict[AgentRole, float], correlations: Dict[Tuple[AgentRole, AgentRole], float]):
+        self.weights = weights
+        self.correlations = correlations
+
+    def calculate_posterior(
+        self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]
+    ) -> float:
+        prod_s = 1.0
+        prod_ns = 1.0
+
+        for endorsed, likelihood, exponent in evidence_likelihoods:
+            p_e_given_s = max(0.01, min(0.99, likelihood))
+            if endorsed:
+                prod_s *= p_e_given_s**exponent
+                prod_ns *= (1.0 - p_e_given_s) ** exponent
+            else:
+                prod_s *= (1.0 - p_e_given_s) ** exponent
+                prod_ns *= p_e_given_s**exponent
+
+        numerator = prior_prob * prod_s
+        denominator = (prior_prob * prod_s) + ((1.0 - prior_prob) * prod_ns)
+
+        if denominator == 0.0:
+            return prior_prob
+
+        return max(0.0, min(1.0, numerator / denominator))
+
+
+# Consolidated AgentScorecard definition moved to top, removing duplicate definitions.
+
+
 class VerifierResult:
-    is_valid: bool
-    rejection_reason: Optional[str] = None
+    def __init__(self, is_valid: bool, rejection_reason: Optional[str] = None):
+        self.is_valid = is_valid
+        self.rejection_reason = rejection_reason
+
+# Alias for backward compatibility
+RiskVerifierOutcome = VerifierResult
 
 
 class CausalVerifier:
+    """Verifies macro-causal soundness of trade proposals."""
     def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
         if context.vix_level is not None and context.vix_level > 30.0:
-            return VerifierResult(is_valid=False, rejection_reason="Causal veto: VIX > 30.0 high systemic risk")
+            return VerifierResult(is_valid=False, rejection_reason="CausalVerifier: Extreme VIX market panic regime")
         return VerifierResult(is_valid=True)
 
 
 class LiquidityVerifier:
+    """Verifies order book depth and liquidity execution risks."""
     def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
         if context.volume_ratio < 0.6 and context.volatility > 0.035:
-            return VerifierResult(is_valid=False, rejection_reason="Liquidity veto: low volume and extreme volatility")
+            return VerifierResult(is_valid=False, rejection_reason="LiquidityVerifier: Low volume surge with high volatility")
         return VerifierResult(is_valid=True)
 
 
 class RegimeVerifier:
+    """Verifies alignment between trade proposal direction and HTF trend regime."""
     def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
         if action in [TradeAction.STRONG_BUY, TradeAction.BUY] and context.htf_trend == "DOWN":
-            return VerifierResult(is_valid=False, rejection_reason="Regime veto: counter-trend buy against HTF DOWN trend")
+            return VerifierResult(is_valid=False, rejection_reason="RegimeVerifier: Counter-trend BUY against HTF DOWN trend")
         if action in [TradeAction.STRONG_SELL, TradeAction.SELL] and context.htf_trend == "UP":
-            return VerifierResult(is_valid=False, rejection_reason="Regime veto: counter-trend sell against HTF UP trend")
+            return VerifierResult(is_valid=False, rejection_reason="RegimeVerifier: Counter-trend SELL against HTF UP trend")
+        return VerifierResult(is_valid=True)
+
+
+class RiskVerifier:
+    """Verifies portfolio exposure, correlation risk, and VIX stress thresholds."""
+    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
+        exposure = getattr(context, 'portfolio_exposure', 0.0) or 0.0
+        vix = getattr(context, 'vix_level', 0.0) or 0.0
+        correlation = getattr(context, 'correlation_risk', 0.0) or 0.0
+        if action in [TradeAction.BUY, TradeAction.STRONG_BUY, TradeAction.SELL, TradeAction.STRONG_SELL]:
+            if exposure > 0.5 or vix > 30.0 or correlation > 0.7:
+                return VerifierResult(is_valid=False, rejection_reason="RiskVerifier: Risk parameters exceeded")
         return VerifierResult(is_valid=True)
 
 
 class HallucinationDetector:
+    """Verifies market state integrity and detects pricing anomalies."""
     def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
         if context.current_price <= 0.0:
-            return VerifierResult(is_valid=False, rejection_reason="Invalid market pricing/hallucination")
-        return VerifierResult(is_valid=True)
-
-
-class RiskVerifierOutcome:
-    def __init__(self, is_valid: bool, reason: str = ""):
-        self.is_valid = is_valid
-        self.reason = reason
-
-
-class RiskVerifier:
-    """Mock/compatibility verifier class for risk assessment."""
-    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
-        if getattr(context, 'portfolio_exposure', 0.0) > 0.85 or getattr(context, 'correlation_risk', 0.0) > 0.8:
-            return VerifierResult(is_valid=False, rejection_reason="RiskVerifier: portfolio exposure or correlation limit exceeded")
-        if action in [TradeAction.BUY, TradeAction.STRONG_BUY, TradeAction.SELL, TradeAction.STRONG_SELL]:
-            if getattr(context, 'portfolio_exposure', 0.0) > 0.5 or (getattr(context, 'vix_level', 0.0) or 0.0) > 30.0 or getattr(context, 'correlation_risk', 0.0) > 0.7:
-                return VerifierResult(is_valid=False, rejection_reason="Risk parameters exceeded")
+            return VerifierResult(is_valid=False, rejection_reason="HallucinationDetector: Non-positive price anomaly")
         return VerifierResult(is_valid=True)
 
 
@@ -817,6 +848,7 @@ class RiskSentinel(TradingAgent):
                 key_factors["vix"] = vix_score
                 key_factors['systemic_fear'] = vix_score
 
+            # Volatility check
             if context.volatility > 0.03:
                 vol_score = -0.3
                 risk_flags += 1
@@ -1512,6 +1544,8 @@ class FalsificationReport:
     worst_case_scenario: Optional[str] = None
 
 
+
+
 @dataclass
 class ProvenanceDataSchema:
     schema_version: str = "1.0.0"
@@ -1724,7 +1758,7 @@ class FalsificationGate:
             if not hallucination_res.is_valid: failed_reasons.append(f"HallucinationDetector: {hallucination_res.rejection_reason}")
 
             rejection_reason = " | ".join(filter(None, failed_reasons))
-            worst_case = f"Falsified proposal: {rejection_reason}"
+            worst_case = self._generate_counterexample(action, context)
 
         worst_case = self._generate_counterexample(action, context) if is_falsified else None
         return FalsificationReport(
@@ -1751,7 +1785,7 @@ class FalsificationGate:
 # -----------------------------------------------------------------------------
 
 
-class BayesianDecisionEngine:
+class HeadAI:
     """
     Lightweight Head AI: coordinates evidence-first debate aggregation and Bayesian calibration.
     """
@@ -1847,6 +1881,7 @@ class BayesianDecisionEngine:
                 winning_action = max(action_scores.keys(), key=lambda a: action_scores[a])
             else:
                 winning_action = TradeAction.HOLD
+                winning_score = 0.5
 
             # Prior probability based on trend alignment
             aligned = False
@@ -1867,8 +1902,8 @@ class BayesianDecisionEngine:
             for arg in active_arguments:
                 role_sc = scorecards.get(arg.agent_role) if scorecards else None
                 exponent = role_sc.expected_contribution if role_sc else self.weights.get(arg.agent_role, 0.33)
-
                 confidence = getattr(arg, 'confidence', 0.5)
+
                 if self.calibrator:
                     cal_result = self.calibrator.calibrate(
                         confidence,
@@ -2406,7 +2441,7 @@ class MultiAgentDebateSystem:
                                     agent_role=agent.role,
                                     action=TradeAction.HOLD,
                                     conviction=Conviction.LOW,
-                                    reasoning=[f"Fallback: Agent {agent.role.value} failed: {e}"],
+                                    reasoning=[f"Fallback: Agent {agent.role.value} crashed: {e}"],
                                     key_factors={},
                                     confidence=0.2,
                                     timestamp=datetime.now(),
@@ -2504,12 +2539,6 @@ class MultiAgentDebateSystem:
                 'experiment_id': "exp_multidim_debate_prod",
                 'risk_policy_version': "risk_fortress_v6_strict",
                 'verification_results': verification_results,
-                'falsification_report': {
-                    'is_falsified': falsification_report.is_falsified,
-                    'rejection_reason': falsification_report.rejection_reason,
-                    'verifier_outcomes': falsification_report.verifier_outcomes,
-                    'worst_case_scenario': falsification_report.worst_case_scenario,
-                },
                 'verification_report': {
                     'num_rounds': len(debate_rounds),
                     'conflicts_detected': conflicts
