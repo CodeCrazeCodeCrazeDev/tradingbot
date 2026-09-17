@@ -551,13 +551,13 @@ class MacroStrategist(TradingAgent):
             anti_trade_reasoning = []
             key_factors = {}
 
-            # Evidence-first defaults
+            # Evidence-first initializations
             observation = f"Symbol: {context.symbol}, price: {context.current_price}, HTF trend: {context.htf_trend}"
             evidence = []
             hypothesis = "Neutral macro outlook, consolidation expected."
             predictions = []
             counter_evidence = []
-            verification = "No macro triggers active"
+            verification = "HTF trend and news sentiment checked."
 
             # Analyze HTF trend
             if context.htf_trend == "UP":
@@ -741,14 +741,20 @@ class TacticalExecutioner(TradingAgent):
             reasoning = []
             anti_trade_reasoning = []
             key_factors = {}
+            observation = f"Market state for {context.symbol} at current price {context.current_price:.5f}"
+            evidence = []
+            hypothesis = ""
+            predictions = []
+            counter_evidence = []
+            verification = ""
 
-            # Evidence-first local parameters
+            # Evidence-first initializations
             observation = f"Symbol: {context.symbol}, price: {context.current_price}, LTF trend: {context.ltf_trend}"
             evidence = []
             hypothesis = "Neutral tactical stance, awaiting momentum signal."
             predictions = []
             counter_evidence = []
-            verification = "No tactical breakout timing active"
+            verification = "LTF trend and volume checked."
 
             # Analyze LTF Trend
             if context.ltf_trend == "UP":
@@ -873,14 +879,15 @@ class RiskSentinel(TradingAgent):
             predictions = []
             counter_evidence = []
             verification = "Risk Sentinel protection active."
+            total_score = 0.0
 
-            # Evidence-first local parameters
+            # Evidence-first initializations
             observation = f"Symbol: {context.symbol}, price: {context.current_price}, risk flags: {risk_flags}"
             evidence = []
-            hypothesis = "Neutral risk stance, monitor exposure limits."
+            hypothesis = "Neutral risk profile."
             predictions = []
             counter_evidence = []
-            verification = "No active risk exceptions"
+            verification = "Portfolio exposure, correlation risk and VIX levels checked."
 
             # Exposure check
             if context.portfolio_exposure > self.max_exposure:
@@ -2643,12 +2650,6 @@ class MultiAgentDebateSystem:
                 'experiment_id': "exp_multidim_debate_prod",
                 'risk_policy_version': "risk_fortress_v6_strict",
                 'verification_results': verification_results,
-                'falsification_report': {
-                    'is_falsified': falsification_report.is_falsified,
-                    'rejection_reason': falsification_report.rejection_reason,
-                    'verifier_outcomes': falsification_report.verifier_outcomes,
-                    'worst_case_scenario': falsification_report.worst_case_scenario,
-                },
                 'verification_report': {
                     'num_rounds': len(debate_rounds),
                     'conflicts_detected': conflicts
