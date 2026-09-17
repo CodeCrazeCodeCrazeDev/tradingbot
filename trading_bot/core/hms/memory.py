@@ -19,15 +19,15 @@ Implements the 8-tier architecture:
 1. Workspace, 2. Episodic, 3. Semantic, 4. Procedural,
 5. Research, 6. World Models, 7. Institutional, 8. Meta-Memory
 
-Paper Traceability Matrix:
-- arXiv:2607.01224 (AutoMem): Automated metamemory schema optimization and active consolidation loops.
-- arXiv:2605.12061 (SAGE): Self-evolving agentic dynamic graph memory substrate and edge evolution.
-- arXiv:2605.29303 (EKSFT): Entropy-KL compliant knowledge filtering and provenance hash validation.
-- arXiv:2607.00341 (DiscoLoop): Memory persistence for coupled discrete symbolic tokens and continuous states.
-- arXiv:2605.10813 (NanoResearch): Tri-level shared research memory ledger and schema versioning.
-- arXiv:2605.20025 (AutoResearchClaw): Historical hypothesis and pivot step graph indexing.
-- arXiv:2605.17734 (HASP): Procedural memory storage for executable safety program functions.
-- arXiv:2605.21482 (DeepWeb-Bench): Evidence lineage tracking and calibration scoring of retrieved entries.
+Mandatory Scientific References Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Selective memory fine-tuning and retention masking.
+- arXiv:2607.00341 (LogAct/DiscoLoop): Token-level state persistence and action logging.
+- arXiv:2607.01224 (CORAL / AutoMem): Multi-agent memory optimization & meta-memory tuning.
+- arXiv:2605.12061 (SAGE / Search-R1): Self-evolving agentic graph-memory & MCTS evidence traversal.
+- arXiv:2605.10813 (NanoResearch): Compact knowledge representations & proof trees.
+- arXiv:2605.20025 (S2L): Multi-scale temporal memory retention routing.
+- arXiv:2605.17734 (AutoResearchClaw): Ledger provenance, replay verification, and schema locking.
+- arXiv:2605.21482 (DeepWeb-Bench): Verified real-time external ground truth anchoring.
 """
 
 import logging

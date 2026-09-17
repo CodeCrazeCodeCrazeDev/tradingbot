@@ -1,28 +1,15 @@
 """
-SkillRouter & Program Guardrail Engine - UCA V6 Core Subsystem
+SkillRouter / HASP Execution Router - UCA V6
 
-Paper Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Parameter masking for fine-tuned LoRA task adapters.
-- arXiv:2607.00341 (DiscoLoop): Discrete skill routing state unrolling.
-- arXiv:2607.01224 (AutoMem): Procedural memory indexing for skill selection.
-- arXiv:2605.12061 (SAGE): Edge-weighted skill graph navigation.
-- arXiv:2605.10813 (NanoResearch): Tri-level skill program co-evolution.
-- arXiv:2605.20025 (AutoResearchClaw): Fallback execution routing under failure.
-- arXiv:2605.17734 (HASP): Non-negotiable deterministic Program Function guardrails.
-- arXiv:2605.21482 (DeepWeb-Bench): Performance-calibrated skill routing scores.
-
-Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral adapters (Skill-to-LoRA).
-
-Paper Traceability Matrix:
-- arXiv:2605.17734 (HASP): Executable, non-bypassable Program Functions (PFs) for risk guardrails.
-- arXiv:2605.29303 (EKSFT): Selective skill routing based on entropy and KL bounds.
-- arXiv:2607.00341 (DiscoLoop): Skill execution integrated with discrete-continuous reasoning states.
-- arXiv:2607.01224 (AutoMem): Procedural skill memory indexing and schema adaptation.
-- arXiv:2605.12061 (SAGE): Capability-based skill resolution over causal graph topologies.
-- arXiv:2605.10813 (NanoResearch): Tri-level co-evolving procedural rule bank.
-- arXiv:2605.20025 (AutoResearchClaw): Mid-flight execution intercept and fallback routing.
-- arXiv:2605.21482 (DeepWeb-Bench): Calibration and derivation checking of skill execution outputs.
+Mandatory Scientific References Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Selective entropy/KL skill policy filtering.
+- arXiv:2607.00341 (LogAct/DiscoLoop): Token-level discrete routing & continuous state loop.
+- arXiv:2607.01224 (CORAL): Multi-agent skill and capability graph linking.
+- arXiv:2605.12061 (Search-R1): MCTS-guided skill program path selection.
+- arXiv:2605.10813 (NanoResearch): Compact program synthesis and verification.
+- arXiv:2605.20025 (S2L): Slow-to-Fast behavioral routing across skill tiers.
+- arXiv:2605.17734 (AutoResearchClaw): Program execution and safety invariants.
+- arXiv:2605.21482 (DeepWeb-Bench): Environment-grounded skill verification.
 """
 
 import logging

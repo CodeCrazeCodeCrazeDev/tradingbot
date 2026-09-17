@@ -1,17 +1,15 @@
 """
 Cognitive System Controller (CSC) - Authoritative Unified AI Brain (UCA V6)
 
-Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
-
-Paper Traceability Matrix:
-- arXiv:2607.00341 (DiscoLoop): Discrete-continuous hidden state recurrence loops (`DiscoLoopCell`).
-- arXiv:2605.20025 (AutoResearchClaw): Pivot/Refine self-healing research control (`_pivot_refine_loop`).
-- arXiv:2605.17734 (HASP): Non-bypassable program function guardrail interception in Active Inference.
-- arXiv:2607.01224 (AutoMem): Metamemory integration and evidence folding.
-- arXiv:2605.12061 (SAGE): Dynamic graph-based evidence retrieval.
-- arXiv:2605.29303 (EKSFT): Adaptive control policy compliance during online strategy evaluation.
-- arXiv:2605.10813 (NanoResearch): Co-evolving tri-level policy and research ledger storage.
-- arXiv:2605.21482 (DeepWeb-Bench): Calibration and derivation verification before decision execution.
+Mandatory Scientific References Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Selective entropy/KL post-training alignment boundaries.
+- arXiv:2607.00341 (LogAct/DiscoLoop): Discrete token + continuous state multi-hop reasoning loop.
+- arXiv:2607.01224 (CORAL): Dynamic memory compression and evidence graph linking.
+- arXiv:2605.12061 (Search-R1): MCTS strategic reasoning and candidate branch simulation.
+- arXiv:2605.10813 (NanoResearch): Compact automated hypothesis generation & verification.
+- arXiv:2605.20025 (S2L): Slow-to-Fast behavioral routing and strategy adaptation.
+- arXiv:2605.17734 (AutoResearchClaw): Pivot/Refine execution loops and self-healing.
+- arXiv:2605.21482 (DeepWeb-Bench): Real-time multi-source environment state verification.
 """
 
 import numpy as np

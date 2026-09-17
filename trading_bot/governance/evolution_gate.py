@@ -1,16 +1,17 @@
 """
-EvolutionGate - UCA V6 Authoritative Self-Evolution Gate
-Monotone-safe gate for recursive agent self-evolution and policy promotion.
+Evolution Gate - UCA V6 (July 2026)
+==================================
+Monotone-safe gate for recursive agent self-evolution.
 
-Research Traceability Matrix:
-- EKSFT (arXiv:2605.29303): Entropy-KL masking compliance to prevent distribution sharpening & over-fitting
-- NanoResearch (arXiv:2605.10813): Tri-plane (skill, memory, policy) co-evolution validation
-- RSEA (arXiv:2606.28374): Monotone-safe gating rule and CL-Bench Gain Metric (G) evaluation
-- DeepWeb-Bench (arXiv:2605.21482): Expected Calibration Error (ECE) drift bounds
-- HASP (arXiv:2605.17734): Non-negotiable safety invariant verification
-- AutoResearchClaw (arXiv:2605.20025): Adversarial red-teaming and falsification checks
-- AutoMem (arXiv:2607.01224): Schema migration safety verification
-- DiscoLoop (arXiv:2607.00341): State latency regression auditing
+Mandatory Scientific References Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Selective token fine-tuning and loss masking.
+- arXiv:2607.00341 (LogAct / DiscoLoop): Token-level state persistence & verification.
+- arXiv:2607.01224 (CORAL): Multi-agent memory optimization & evolutionary fitness.
+- arXiv:2605.12061 (Search-R1): MCTS-guided candidate search & strategic reasoning.
+- arXiv:2605.10813 (NanoResearch): Compact automated hypothesis validation & proof trees.
+- arXiv:2605.20025 (S2L): Multi-speed behavioral routing & policy evolution.
+- arXiv:2605.17734 (AutoResearchClaw): Automated experimentation, red-teaming, & rollback safety.
+- arXiv:2605.21482 (DeepWeb-Bench): Real-time environment state grounding & safety boundaries.
 """
 
 import logging
