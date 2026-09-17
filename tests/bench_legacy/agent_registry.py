@@ -452,8 +452,8 @@ class AgentRegistry:
         """Get an agent by ID"""
         return self.agents.get(agent_id)
 
-    def get_all_agents(self) -> List[BaseAgent]:
-        """Get all registered agents"""
+    def get_all_agents_sync(self) -> List[BaseAgent]:
+        """Get all registered agents synchronously"""
         return list(self.agents.values())
 
     async def get_executor(self, action_type: str) -> Optional[BaseAgent]:

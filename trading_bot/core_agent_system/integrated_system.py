@@ -90,6 +90,7 @@ from .specialized_planners import (
     MeanReversionPlanner,
     VolatilityPlanner
 )
+from trading_bot.neuros_evolution.controlled_objects import ControlledObjectRegistry
 from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
@@ -537,12 +538,70 @@ class IntegratedAgentSystem:
 
         logger.info(f"Integrated System executing task: {task}")
 
-        # For complex tasks, use the Self-Coordinating Core to enable teamwork
-        from .coordination_core import TaskType, TaskPriority
+        from .adapters import ReasoningTrace, ResponseFormatter
+        start_time = datetime.now()
+        obs_trace = {}
+        trace = ReasoningTrace(goal=task, analysis_summary="Executing task", plan=[])
 
-        # Determine if we should use coordination core or simple ReAct
-        # Heuristic: if task contains multiple keywords, or explicitly requested
-        use_coordination = context.get('use_coordination', True)
+        # 1. Use Meta-Orchestrator for self-scaffolding workflow
+        meta_result = await self.meta_orchestrator.execute_task(
+            task=task,
+            context=context,
+            core_system=self
+        )
+
+        # 2. Record deep observability data
+        duration = (datetime.now() - start_time).total_seconds()
+
+        obs_trace["selected_workflow"] = meta_result.get('policy_id')
+        obs_trace["workflow_trace"] = meta_result.get('trace', [])
+
+        # Extract activated agents and tools from the trace
+        activated_agents = []
+        tools_used = []
+        for step in obs_trace["workflow_trace"]:
+            res = step.get('result', {})
+            if 'agents' in res:
+                activated_agents.extend(res['agents'])
+            if step.get('type') == 'call_tool':
+                tools_used.append(step.get('node'))
+
+        obs_trace["activated_agents"] = list(set(activated_agents))
+        obs_trace["tools_used"] = list(set(tools_used))
+        obs_trace["duration"] = duration
+        obs_trace["success"] = meta_result.get('success', False)
+
+        # 3. Store in Semantic Memory
+        await self.memory_system.store_knowledge(
+            f"obs_trace_{uuid.uuid4().hex[:8]}",
+            obs_trace,
+            tags=["observability", "execution_trace", meta_result.get('policy_id')]
+        )
+
+        # Standardized Response Formatting
+
+        # Extract results from trace
+        answer_part = "No specific result returned."
+        if meta_result.get('result'):
+            if isinstance(meta_result['result'], dict):
+                answer_part = meta_result['result'].get('result', meta_result['result'].get('answer', str(meta_result['result'])))
+            else:
+                answer_part = str(meta_result['result'])
+
+        final_answer = f"Task completed. Result: {answer_part}"
+        formatted_response = ResponseFormatter.format_response(trace, [])
+
+        if context.get('use_coordination'):
+            # If using multi-agent coordination explicitly
+            from .coordination_core import TaskType, TaskPriority
+
+            # Determine task type from context or task string
+            task_type = context.get('task_type', TaskType.ANALYSIS)
+            if isinstance(task_type, str):
+                try:
+                    task_type = TaskType(task_type.lower())
+                except ValueError:
+                    task_type = TaskType.ANALYSIS
 
         if use_coordination:
             result = await self.coordination_core.execute_task(
