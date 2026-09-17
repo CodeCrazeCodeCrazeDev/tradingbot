@@ -60,7 +60,9 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from pathlib import Path
 
-from .master_orchestrator import MasterOrchestrator, SystemContext
+from master_orchestrator import MasterOrchestrator, SystemContext, Decision
+from .meta_orchestrator import MetaOrchestrator
+from trading_bot.neuros_evolution.controlled_objects import ControlledObjectRegistry
 from .react_loop import ReActLoop
 from .constitutional_layer import ConstitutionalAI
 from .policy_value_network import PolicyNetwork, ValueNetwork, DualNetwork
@@ -74,7 +76,9 @@ from .agent_registry import (
     SafetyAgent,
     LegacyAgentWrapper
 )
-from trading_bot.agents2.specialized_agents import (
+from .migrated_agents.planner import MigratedPlannerAgent
+from .multidimensional_intelligence.agent import MultidimensionalResearchAgent
+from .migrated_agents.legacy_agents import (
     TrendFollowingAgent,
     MeanReversionAgent,
     VolatilityAgent,

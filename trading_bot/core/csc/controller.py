@@ -30,10 +30,8 @@ from unittest.mock import MagicMock
 from datetime import datetime
 from uuid import uuid4
 
-from .hypothesis import HypothesisGenerator, ReasoningBranch, Hypothesis
-from .folding import InformationFolder
-from .router import SkillRouter
-from .acpe import AdaptiveControlPolicyEngine
+from .hypothesis import HypothesisGenerator, ReasoningBranch
+from .reliability import ReliabilityTracker
 from ..verification.swarm import VerificationSwarm
 from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport, EvidenceNode, EvidenceEdge, RelationType, InstitutionalProvenance
 from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
@@ -91,38 +89,9 @@ class CognitiveSystemController:
                     cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self, *args, **kwargs):
-        # Parse inputs dynamically to handle legacy 3-positional, standard 8/9-positional, and keyword arguments
-        if len(args) == 3:
-            self.world_model = args[0]
-            self.hms = args[1]
-            self.shield = args[2]
-            self.skill_router = kwargs.get("skill_router") or SkillRouter()
-            self.verifier_swarm = kwargs.get("verifier_swarm") or VerificationSwarm()
-            self.risk_engine = kwargs.get("risk_engine") or MagicMock()
-            self.consensus_engine = kwargs.get("consensus_engine") or MagicMock()
-            self.execution_planner = kwargs.get("execution_planner") or MagicMock()
-            self.evolution_gate = kwargs.get("evolution_gate") or MagicMock()
-        elif len(args) >= 8:
-            self.world_model = args[0]
-            self.hms = args[1]
-            self.skill_router = args[2]
-            self.verifier_swarm = args[3]
-            self.risk_engine = args[4]
-            self.consensus_engine = args[5]
-            self.execution_planner = args[6]
-            self.evolution_gate = args[7]
-            self.shield = args[8] if len(args) > 8 else kwargs.get("shield")
-        else:
-            self.world_model = kwargs.get("world_model") or (args[0] if len(args) > 0 else MagicMock())
-            self.hms = kwargs.get("hms") or (args[1] if len(args) > 1 else MagicMock())
-            self.skill_router = kwargs.get("skill_router") or SkillRouter()
-            self.verifier_swarm = kwargs.get("verifier_swarm") or VerificationSwarm()
-            self.risk_engine = kwargs.get("risk_engine") or MagicMock()
-            self.consensus_engine = kwargs.get("consensus_engine") or MagicMock()
-            self.execution_planner = kwargs.get("execution_planner") or MagicMock()
-            self.evolution_gate = kwargs.get("evolution_gate") or MagicMock()
-            self.shield = kwargs.get("shield") or (args[2] if len(args) > 2 else None)
+        self.hypothesis_gen = HypothesisGenerator(world_model)
+        self.verifier_swarm = VerificationSwarm()
+        self.reliability_tracker = ReliabilityTracker()
 
         from ..unified_event_bus import decision_bus as real_decision_bus
         self.decision_bus = decision_bus or real_decision_bus
@@ -375,111 +344,28 @@ class CognitiveSystemController:
             confidence_vector=self._calculate_composite_confidence(ledger_entry)
         )
 
-    def _detect_failure_severity(self, reports: List[VerifierReport]) -> str:
-        """Determines if a validation/verification failure is minor or critical."""
-        invalid_reports = [r for r in reports if not r.is_valid]
-        if not invalid_reports:
-            return "none"
-        if len(invalid_reports) >= 2 or any(r.confidence >= 0.9 for r in invalid_reports):
-            return "critical"
-        return "minor"
-
-    async def _run_discoloop_internalization(self, observation: Dict[str, Any], num_loops: int = 2):
-        """DiscoLoop dual-channel internalization for reasoning convergence."""
-        self.discrete_channel = ["internalized_insight"]
-        if "latent_embedding" in observation:
-            self.continuous_state.update(observation["latent_embedding"])
-
-    def _calculate_sensory_surprise(self, observation: Dict[str, Any]) -> float:
-        """Minimizing surprise is the core of Active Inference."""
-        if not self.last_prediction: return 1.0
-
-        # Calculate surprise based on price deviation
-        pred_price = self.last_prediction.get("price")
-        obs_price = observation.get("price") if isinstance(observation, dict) else None
-        if pred_price is not None and obs_price is not None:
-            deviation = abs(obs_price - pred_price)
-            return float(deviation / pred_price)
-
-        return 0.2
-
-    async def _run_discoloop_internalization(self, obs: Dict[str, Any], num_loops: int = 2):
-        self._max_loops = num_loops
-        await self._run_discoloop_reasoning(obs)
-        if "latent_embedding" in obs:
-            self.discrete_channel = ["internalized_insight"]
-            self.continuous_state["v"] = obs["latent_embedding"]["v"]
-
-    def _detect_failure_severity(self, reports: List[Any]) -> str:
-        failures = [r for r in reports if not getattr(r, 'is_valid', True)]
-        if not failures:
-            return "none"
-        critical_count = sum(1 for r in failures if getattr(r, 'confidence', 0) > 0.9)
-        if critical_count >= 2 or any(getattr(r, 'confidence', 0) > 0.94 for r in failures):
-            return "critical"
-        return "minor"
-
-    async def _run_discoloop_reasoning(self, observation: Dict[str, Any]):
-        """DiscoLoop recurrence: h_k+1, e_k+1 = f(h_k, e_k)"""
-        e_k = np.zeros((512,))
-        e_k[0] = 1.0 # Initial discrete state
-        input_signal = np.random.normal(0, 0.1, (512,))
-
-        for k in range(self._max_loops):
-            h_next, token = self.discoloop.transition(input_signal, e_k, k)
-            self.discrete_channel.append(token)
-            idx = int(token.split('_')[-2])
-            e_k = np.zeros_like(h_next)
-            e_k[idx] = 1.0
-
-        self.continuous_state["latent"] = self.discoloop.hidden_state.tolist()
-
-    async def _pivot_refine_loop(self, branches: List[ReasoningBranch], simulations: Dict[str, Any]) -> Optional[ReasoningBranch]:
-        """AutoResearchClaw Pivot/Refine logic (arXiv:2605.20025)."""
+    def _select_optimal_branch(self, branches: List[ReasoningBranch], simulations: Dict[str, Any]) -> Optional[ReasoningBranch]:
+        """Selects the branch with highest EV and lowest uncertainty."""
         if not branches: return None
-        best = max(branches, key=lambda b: b.confidence)
 
-        sim_data = simulations.get(best.branch_id, {})
-        failure_rate = 0.0
-        if isinstance(sim_data, dict):
-            failure_rate = sim_data.get("failure_rate", 0.0)
+        # Grounded branch selection: Rank by (Expected Return * Probability) / (Uncertainty + 1)
+        # This replaces the first-branch mock with a selection based on expected utility.
+        scored_branches = []
+        for b in branches:
+            hyp = b.hypotheses[0] if b.hypotheses else None
+            if not hyp: continue
 
-        if failure_rate > 0.4:
-            logger.warning(f"CSC-V6: High simulation failure detected. Pivoting strategy...")
-            pivoted_branch = await self.hypothesis_gen.pivot_branch(best, "high_risk_detected")
-            if pivoted_branch:
-                return pivoted_branch
+            # Simple EV metric
+            ev = hyp.expected_return * hyp.probability
+            risk_penalty = hyp.epistemic_uncertainty + hyp.aleatoric_uncertainty
+            utility = ev / (risk_penalty + 0.1)
 
-        return best
+            scored_branches.append((utility, b))
 
-    def _select_optimal_action(self, branch: ReasoningBranch, simulations: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Synthesizes the final trade proposal from the best reasoning branch and its simulation results.
-        """
-        sim_data = simulations.get(branch.branch_id, {})
+        if not scored_branches: return branches[0]
 
-        # Adjust quantity based on expected slippage and structural impact
-        base_qty = branch.execution_plan.get("quantity", 0.1)
-
-        slippage = 0.0
-        if isinstance(sim_data, dict):
-            slippage = sim_data.get("expected_slippage", 0.0)
-
-        slippage_penalty = 1.0 - (slippage * 100)
-
-        structural_impact = {}
-        if isinstance(sim_data, dict):
-            structural_impact = sim_data.get("structural_impact", {})
-
-        return {
-            "trade_id": str(uuid4()),
-            "symbol": branch.execution_plan.get("symbol", "BTC/USDT"),
-            "action": branch.execution_plan.get("action", "WAIT"),
-            "quantity": max(0.01, base_qty * slippage_penalty),
-            "confidence": branch.confidence,
-            "causal_impact": structural_impact,
-            "reasoning_token": self.discrete_channel[-1] if self.discrete_channel else "none"
-        }
+        scored_branches.sort(key=lambda x: x[0], reverse=True)
+        return scored_branches[0][1]
 
     def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
         provenance = InstitutionalProvenance()
@@ -493,4 +379,50 @@ class CognitiveSystemController:
         )
 
     def _calculate_composite_confidence(self, entry: ResearchLedgerEntry) -> ConfidenceVector:
-        return ConfidenceVector(statistical=entry.composite_confidence, regime=0.8, execution=0.9, tail_risk=0.85, model_stability=0.7)
+        # 1. Base verifier confidence
+        avg_verifier_conf = sum(r.confidence for r in entry.verifier_reports) / len(entry.verifier_reports) if entry.verifier_reports else 0
+
+        # 2. Dynamic Reliability Weighting
+        # In a real cycle, we'd identify which agents contributed to this ledger entry
+        # and adjust their influence based on current regime reliability.
+        regime = entry.hypothesis.predicted_outcome if entry.hypothesis else "unknown"
+
+        # Example: Weight 'HallucinationDetector' contributions
+        detector_weight = self.reliability_tracker.get_agent_weight("HallucinationDetector", regime)
+
+        # 3. Uncertainly quantification from Hypothesis
+        prob = entry.hypothesis.probability if entry.hypothesis else 0.5
+        epistemic = entry.hypothesis.epistemic_uncertainty if entry.hypothesis else 0.5
+
+        return ConfidenceVector(
+            statistical=prob * (1.0 - epistemic),
+            regime=0.8 * detector_weight,
+            execution=0.9,
+            tail_risk=0.85,
+            model_stability=avg_verifier_conf
+        )
+
+    def _translate_to_proposal(self, entry: ResearchLedgerEntry) -> Dict[str, Any]:
+        return {
+            "trade_id": str(entry.entry_id),
+            "symbol": "EURUSD", # Mock
+            "quantity": 1.0,
+            "exposure": 0.5,
+            "confidence": entry.composite_confidence
+        }
+
+    def _store_in_ledger(self, entry: ResearchLedgerEntry):
+        """Persists the research to scientific memory."""
+        logger.info(f"CSC: Storing research snapshot {entry.entry_id} to permanent ledger")
+        try:
+            self.hms.store_ledger_entry(entry)
+        except Exception as e:
+            logger.error(f"CSC: HMS persistence failed: {e}")
+
+    def _store_in_ledger(self, entry: ResearchLedgerEntry):
+        """Final persistence of the research cycle."""
+        try:
+            self.hms.store_ledger_entry(entry)
+            logger.info(f"CSC: Institutional memory persisted for {entry.entry_id}")
+        except Exception as e:
+            logger.warning(f"CSC: Failed to persist memory: {e}")

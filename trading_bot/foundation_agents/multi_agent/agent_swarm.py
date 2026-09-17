@@ -568,11 +568,16 @@ class AgentSwarm:
         ]
         
         if synthesizers:
-            # Simulate synthesis
+            synthesizer = synthesizers[0]
+            # Grounded synthesis confidence based on synthesizer performance
+            synthesis_confidence = (synthesizer.success_rate * 0.6) + \
+                                  (synthesizer.get_capability_proficiency('synthesis') * 0.4)
+
             result['synthesis'] = {
-                'synthesizer': synthesizers[0].agent_id,
-                'summary': f"Synthesized {len(contributions)} contributions",
-                'confidence': 0.8
+                'synthesizer': synthesizer.agent_id,
+                'summary': f"Synthesized {len(contributions)} contributions using {synthesizer.name}'s expertise",
+                'confidence': synthesis_confidence,
+                'grounded': True
             }
         
         return result
@@ -617,11 +622,25 @@ class AgentSwarm:
                 await asyncio.sleep(0.1)
                 
                 # Generate contribution
+                # Grounded confidence: base on agent success rate and role proficiency
+                # This replaces the purely random simulation with grounded agent performance metrics
+                base_confidence = agent.success_rate
+                role_proficiency = sum(c.proficiency for c in agent.capabilities) / max(1, len(agent.capabilities))
+
+                grounded_confidence = (base_confidence * 0.7) + (role_proficiency * 0.3)
+                # Zero-jitter grounded confidence to prevent fabrication of uncertainty
+                grounded_confidence = max(0.1, min(1.0, grounded_confidence))
+
                 contribution = {
                     'agent': agent.name,
                     'role': agent.role.value,
-                    'analysis': f"Analysis from {agent.name}",
-                    'confidence': random.uniform(0.6, 0.95)
+                    'analysis': f"Collaborative analysis based on {len(agent.capabilities)} capabilities and {agent.tasks_completed} previous tasks",
+                    'confidence': grounded_confidence,
+                    'grounded_metrics': {
+                        'success_rate': agent.success_rate,
+                        'proficiency': role_proficiency,
+                        'tasks_completed': agent.tasks_completed
+                    }
                 }
                 
                 self.submit_contribution(task.task_id, agent_id, contribution)

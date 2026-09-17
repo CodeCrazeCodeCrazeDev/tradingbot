@@ -226,8 +226,14 @@ class ArgumentEvaluator:
             return 0.6
     
     def _score_relevance(self, argument: Argument) -> float:
-        """Score relevance (placeholder)"""
-        return argument.confidence
+        """Score relevance based on evidence and claim substance"""
+        # Grounded relevance: higher if evidence is provided and claim is substantive
+        base_relevance = 0.5
+        evidence_bonus = 0.1 * min(3, len(argument.evidence))
+        substance_bonus = 0.2 if len(argument.claim) > 50 else 0.0
+
+        relevance = base_relevance + evidence_bonus + substance_bonus
+        return min(1.0, relevance * argument.confidence)
 
 
 class RebuttalGenerator:

@@ -328,7 +328,7 @@ class CounterfactualReasoner:
         
         # Generate synthetic data for demonstration
         np.random.seed(42)
-        returns = np.random.normal(0.0001, 0.02, n_days)
+        returns = np.full(n_days, 0.0001) # Replace with BacktestEngine.run call in production
         
         # Apply strategy
         if modifications:

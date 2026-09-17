@@ -39,80 +39,48 @@ class HypothesisGenerator:
 
     async def generate_competing_branches(self, market_data: Dict[str, Any]) -> List[ReasoningBranch]:
         """
-        Creates multiple competing reasoning branches (Bull, Bear, Range, etc.).
-        Each scenario contains probability, uncertainty, and causal explanation.
+        Creates 10 diverse reasoning branches to ensure comprehensive scenario coverage.
         """
-        logger.info("HypothesisGenerator creating competing branches")
+        logger.info("HypothesisGenerator creating 10 diverse competing branches")
 
-        # 1. Ask World Model for raw scenarios (Price/Vol/Liq futures)
-        # 2. Assign specialized reasoning agents to each scenario
-        # 3. Each agent produces a ReasoningBranch with its own EvidenceGraph
-
-        # Multi-Hypothesis Generation
-        branches = [
-            ReasoningBranch(
-                branch_id="branch_bull",
-                name="Bull Case",
-                probability=0.35,
-                uncertainty=0.15,
-                confidence=0.85,
-                causal_explanation="Expansion in liquidity combined with oversold RSI supports a mean reversion breakout.",
-                invalidation_conditions=["Price closes below recent support", "Liquidity drops by >20%"],
-                execution_plan={"action": "BUY", "limit_price": 1.1060}
-            ),
-            ReasoningBranch(
-                branch_id="branch_bear",
-                name="Bear Case",
-                probability=0.25,
-                uncertainty=0.20,
-                confidence=0.80,
-                causal_explanation="Macro headwinds and resistance at the current level suggest a continuation of the downtrend.",
-                invalidation_conditions=["Price breaks resistance at 1.1100"],
-                execution_plan={"action": "SELL", "limit_price": 1.1040}
-            ),
-            ReasoningBranch(
-                branch_id="branch_range",
-                name="Range Case",
-                probability=0.40,
-                uncertainty=0.10,
-                confidence=0.90,
-                causal_explanation="Consolidation between established levels with no clear macro catalyst.",
-                invalidation_conditions=["Expansion in volatility index"],
-                execution_plan={"action": "WAIT"}
-            )
+        scenarios = [
+            ("Bull Continuation", "Market maintains current upward trajectory"),
+            ("Bull Exhaustion", "Upward momentum fades, potential for distribution"),
+            ("Bear Continuation", "Downward momentum persists"),
+            ("Bear Reversal", "Market hits support and bounces"),
+            ("Range Continuation", "Price remains bound between key levels"),
+            ("Breakout", "Volatility surge leads to range departure"),
+            ("Liquidity Sweep", "Stop-run before actual move"),
+            ("Volatility Shock", "Unpredictable large move in either direction"),
+            ("Macro Event", "Systemic reaction to external news/data"),
+            ("Black Swan", "Extreme low-probability high-impact tail event")
         ]
 
-        for branch in branches:
-            # Set confidence as the complement of uncertainty
-            branch.confidence = round(1.0 - branch.uncertainty, 3)
+        branches = []
+        for name, desc in scenarios:
+            branch_id = f"branch_{name.lower().replace(' ', '_')}"
+            branch = ReasoningBranch(branch_id=branch_id, name=name)
 
-            # Generate a base hypothesis for each branch
+            # Generate structured hypothesis
             hyp = Hypothesis(
-                description=f"Market will follow {branch.name}: {branch.causal_explanation}",
-                predicted_outcome=branch.name
+                description=desc,
+                predicted_outcome=name,
+                probability=0.1,  # Uniform prior before simulation
+                epistemic_uncertainty=0.5,
+                aleatoric_uncertainty=0.2,
+                expected_return=0.01 if "Bull" in name else -0.01 if "Bear" in name else 0.0,
+                invalidation_conditions=[f"Breach of {name} core assumptions"]
             )
             branch.hypotheses.append(hyp)
 
-            # Initialize a minimal evidence graph for the branch
+            # Initialize Evidence Graph for branch
             branch.evidence_graph.add_node(EvidenceNode(
-                node_id=f"hyp_{branch.branch_id}",
+                node_id=f"hyp_{branch_id}",
                 content=hyp.description,
                 node_type="HYPOTHESIS"
             ))
 
-            # Populate with at least 5 nodes and 3 edges to pass the default EvidenceGraph hard constraints
-            for i in range(5):
-                branch.evidence_graph.add_node(EvidenceNode(
-                    node_id=f"node_{branch.branch_id}_{i}",
-                    content=f"Evidence {i} for {branch.name}",
-                    node_type="EVIDENCE"
-                ))
-            for i in range(3):
-                branch.evidence_graph.add_edge(EvidenceEdge(
-                    source_id=f"node_{branch.branch_id}_0",
-                    target_id=f"node_{branch.branch_id}_{i+1}",
-                    relation=RelationType.SUPPORTS
-                ))
+            branches.append(branch)
 
         return branches
 

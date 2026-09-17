@@ -10,14 +10,13 @@ Implements multi-agent systems:
 - Collective Intelligence: Emergent group intelligence
 """
 
-from .agent_swarm import AgentSwarm, ResearchAgent, AgentRole
+from .agent_swarm import AgentSwarm, AgentRole
 from .debate_protocol import DebateProtocol, Debate, Argument, DebateOutcome
 from .consensus_mechanism import ConsensusMechanism, ConsensusResult, VotingMethod
-from .collective_intelligence import CollectiveIntelligence, SwarmDecision
+from .collective_intelligence import CollectiveIntelligence, CollectiveDecision
 
 __all__ = [
     "AgentSwarm",
-    "ResearchAgent",
     "AgentRole",
     "DebateProtocol",
     "Debate",
@@ -27,5 +26,5 @@ __all__ = [
     "ConsensusResult",
     "VotingMethod",
     "CollectiveIntelligence",
-    "SwarmDecision",
+    "CollectiveDecision",
 ]
