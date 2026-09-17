@@ -21,6 +21,21 @@ class SkillType(Enum):
     PROMPT = "legacy_prompt"  # Legacy advisory prompt
 
 
+class SkillDomain(Enum):
+    RISK = "risk"
+    RISK_MANAGEMENT = "risk_management"
+    EXECUTION = "execution"
+    RESEARCH = "research"
+    STRATEGY = "strategy"
+    PORTFOLIO = "portfolio"
+    ANALYSIS = "analysis"
+    MARKET = "market"
+    MARKET_STRUCTURE = "market_structure"
+    LIQUIDITY = "liquidity"
+    STATISTICAL_ARBITRAGE = "statistical_arbitrage"
+    DATA_QUALITY = "data_quality"
+
+
 class AdapterChameleonStr(str):
     """
     A chameleon string that compares equal to both 'lora_hedging_v1' and 'lora_hedging_v2'
@@ -160,21 +175,19 @@ class SkillRouter:
         if getattr(self, "_initialized", False):
             return
         self._registry: Dict[str, List[SkillArtifact]] = {}
+        self._specialists: Dict[str, List[Any]] = {}
         self._initialize_default_skills()
         if getattr(self, "_initialized", False):
             return
         self._initialized = True
         logger.info("SkillRouter V6: Initialized with Versioning and Conflict Resolution")
 
-    @classmethod
-    def reset(cls):
-        """Reset the singleton instance for testing purposes."""
-        with cls._lock:
-            if cls._instance is not None:
-                cls._instance._registry.clear()
-                cls._instance._initialized = False
-                cls._instance = None
-        logger.info("SkillRouter singleton reset")
+    def register_specialist(self, specialist_id: str, domains: List[Any]):
+        """Registers an agent or module as a specialist for specific skill domains."""
+        if not hasattr(self, "_specialists"):
+            self._specialists = {}
+        self._specialists[specialist_id] = domains
+        logger.debug(f"Registered specialist {specialist_id} for domains {[d.value if hasattr(d, 'value') else str(d) for d in domains]}")
 
     def _initialize_default_skills(self):
         # Register standard HASP programs

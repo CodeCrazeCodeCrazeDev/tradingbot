@@ -179,7 +179,7 @@ class CognitiveSystemController:
         self.decision_bus = kwargs.get("decision_bus") or default_decision_bus
 
         from ..unified_event_bus import decision_bus as real_decision_bus
-        self.decision_bus = kwargs.get("decision_bus") or real_decision_bus
+        self.decision_bus = kwargs.get("decision_bus") or self.consensus_engine or real_decision_bus
 
         # Reset functional/state attributes
         self.hypothesis_gen = HypothesisGenerator(world_model)
