@@ -1547,9 +1547,8 @@ class FalsificationGate:
 
 class HeadAI:
     """
-    Dedicated mathematical component implementing mathematically rigorous,
-    correlation-aware Bayesian posterior probability calculations and coordinating
-    evidence-first debate aggregation.
+    Dedicated mathematical Head AI component: coordinates evidence-first debate aggregation
+    and correlation-aware Bayesian posterior probability calculations.
     """
 
     def __init__(
@@ -1580,14 +1579,13 @@ class HeadAI:
         self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]
     ) -> float:
         """
-        Computes mathematically rigorous, correlation-aware Bayesian posterior probability of strategy success:
+        Computes mathematically rigorous Bayesian posterior probability of strategy success:
         P(S | E) = [ P(S) * Prod P(E_i | S)^w_i ] / [ P(S) * Prod P(E_i | S)^w_i + P(~S) * Prod P(E_i | ~S)^w_i ]
         """
         prod_s = 1.0
         prod_ns = 1.0
 
         for endorsed, likelihood, exponent in evidence_likelihoods:
-            # Bound likelihood to avoid division by zero or extreme certainties
             p_e_given_s = max(0.01, min(0.99, likelihood))
 
             if endorsed:
@@ -2536,6 +2534,12 @@ class MultiAgentDebateSystem:
                 "execution_latency": duration_ms,
                 "decision_timestamp": datetime.now().isoformat(),
                 "debate_quality_evaluation": evaluation,
+                "falsification_report_summary": {
+                    "is_falsified": falsification_report.is_falsified,
+                    "rejection_reason": falsification_report.rejection_reason,
+                    "verifier_outcomes": falsification_report.verifier_outcomes,
+                    "worst_case_scenario": falsification_report.worst_case_scenario
+                }
             }
             decision.provenance = provenance_data
 

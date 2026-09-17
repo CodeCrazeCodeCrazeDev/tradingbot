@@ -14,7 +14,11 @@ from unittest.mock import Mock, patch, MagicMock
 try:
     from trading_bot._archive.orchestrator.agent_orchestrator import *
 except ImportError:
-    pytest.skip('agent_orchestrator module in archive', allow_module_level=True)
+    # Fallback import
+    import sys
+from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from trading_bot.agent_orchestrator import *
 
 logger = logging.getLogger(__name__)
 

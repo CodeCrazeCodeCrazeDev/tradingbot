@@ -1,11 +1,11 @@
-
+"""
 Provides backward compatibility for consolidated hierarchical orchestrators.
 """
 
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 from enum import Enum
 
 logger = logging.getLogger(__name__)
@@ -15,10 +15,6 @@ class DecisionPriority(Enum):
     NORMAL = "normal"
     HIGH = "high"
     CRITICAL = "critical"
-import logging
-from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any, Dict, List, Optional
 
 @dataclass
 class SystemContext:

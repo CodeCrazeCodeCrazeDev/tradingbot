@@ -14,7 +14,11 @@ from unittest.mock import Mock, patch, MagicMock
 try:
     from trading_bot.risk.risk_manager import *
 except ImportError:
-    pytest.skip('risk_manager module in archive', allow_module_level=True)
+    # Fallback import
+    import sys
+from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from trading_bot.risk_manager import *
 
 logger = logging.getLogger(__name__)
 
