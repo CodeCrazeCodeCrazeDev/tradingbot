@@ -318,7 +318,7 @@ logger = logging.getLogger(__name__)
 def main():
     """Main execution"""
     import sys
-
+    
     # Get root directory from command line or use current
     root_dir = sys.argv[1] if len(sys.argv) > 1 else "."
     

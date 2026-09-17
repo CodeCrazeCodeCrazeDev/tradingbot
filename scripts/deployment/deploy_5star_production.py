@@ -168,7 +168,6 @@ class ProductionDeployment:
         
         # Start health check server in background
         import threading
-
         health_thread = threading.Thread(target=self.health_check.start, daemon=True)
         health_thread.start()
         
@@ -185,9 +184,8 @@ class ProductionDeployment:
         iteration = 0
         
         while True:
+            iteration += 1
             try:
-                iteration += 1
-                
                 # Fetch market data for all symbols
                 market_data = await self._fetch_market_data()
                 
