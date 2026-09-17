@@ -1,7 +1,8 @@
 """
 Master Orchestrator Infrastructure
 
-Coordinates hierarchical decision-making, system contexts, and agent governance.
+"""
+Provides backward compatibility for consolidated hierarchical orchestrators.
 """
 
 import logging

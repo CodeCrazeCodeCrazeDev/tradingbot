@@ -1,7 +1,8 @@
 """
 Service Registry Infrastructure
 
-Provides service registration, health monitoring, and dependency management.
+"""
+Provides backward compatibility for consolidated service layers.
 """
 
 import logging
