@@ -64,17 +64,22 @@ class SkillRouteOutcome:
         if key in ("pf_result", "result"):
             return {
                 "action": self.action or "override_to_hold",
-                "reason": self.reason or "Volatility exceeded HASP safety threshold (0.3)",
-                "pf_version": self.version or "1.1.0"
+                "reason": self.reason,
+                "pf_version": self.version
             }
-        if hasattr(self, key):
-            return getattr(self, key)
-        raise KeyError(key)
+        try:
+            val = getattr(self, key)
+            if val is None and key == "status":
+                return self.status
+            return val
+        except AttributeError:
+            raise KeyError(key)
 
     def get(self, key: str, default: Any = None) -> Any:
         try:
-            return self[key]
-        except (KeyError, AttributeError):
+            val = self[key]
+            return val if val is not None else default
+        except (KeyError, AttributeError, TypeError):
             return default
 
     def __contains__(self, key: str) -> bool:
@@ -83,7 +88,13 @@ class SkillRouteOutcome:
         return hasattr(self, key)
 
     def keys(self) -> List[str]:
-        return ["status", "action", "adapter_id", "reason", "version", "pf_result"]
+        return ["status", "action", "adapter_id", "reason", "version", "pf_result", "result"]
+
+    def __iter__(self):
+        return iter(self.keys())
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.keys() or hasattr(self, key)
 
     def to_dict(self) -> Dict[str, Any]:
         d = {
@@ -92,6 +103,7 @@ class SkillRouteOutcome:
             "adapter_id": str(self.adapter_id) if self.adapter_id else None,
             "reason": self.reason,
             "version": self.version,
+            "pf_result": {"action": self.action or "override_to_hold", "reason": self.reason, "pf_version": self.version}
         }
         if self.status == "pf_intervention":
             d["pf_result"] = {
@@ -100,6 +112,7 @@ class SkillRouteOutcome:
                 "pf_version": self.version or "1.1.0"
             }
         return d
+
 
 
 
@@ -130,6 +143,17 @@ class SkillRouter:
                     cls._instance = super(SkillRouter, cls).__new__(cls)
                     cls._instance._initialized = False
         return cls._instance
+
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance for testing isolation."""
+        with cls._lock:
+            if cls._instance is not None:
+                cls._instance._registry.clear()
+                cls._instance._initialize_default_skills()
+                cls._instance._initialized = False
+                cls._instance = None
+        logger.info("SkillRouter singleton reset")
 
     def __init__(self):
         if getattr(self, "_initialized", False):
