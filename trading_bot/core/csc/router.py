@@ -1,18 +1,11 @@
 """
-Skill Router - UCA V6 (July 2026)
+SkillRouter & HASP Execution Infrastructure - UCA V6 Architecture
+Dynamic behavioral adapter selection and pre-emptive guardrail interception.
 
-Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral adapters (Skill-to-LoRA / S2L).
-
-Paper Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Selective adapter routing with entropy/KL-calibrated safety boundaries.
-- arXiv:2607.00341 (DiscoLoop): Discrete skill routing coupled with continuous latent state transitions.
-- arXiv:2607.01224 (AutoMem): Cognitive skill management and dynamic metamemory retrieval routing.
-- arXiv:2605.12061 (SAGE): Dynamic graph edge-weighted skill selection and route optimization.
-- arXiv:2605.10813 (NanoResearch): Procedural Skill Bank management and policy adaptation.
-- arXiv:2605.20025 (AutoResearchClaw): Real-time skill pivot and execution re-routing on verifier critique.
-- arXiv:2605.17734 (HASP): Executable Program Functions (PFs) with deterministic high-volatility guardrails.
-- arXiv:2605.21482 (DeepWeb-Bench): Performance calibration and routing latency validation.
+LITERATURE TRACEABILITY MATRIX:
+- HASP (arXiv:2605.17734): Hierarchical Agentic Skill Programs with Prescriptive Guardrails
+- Skill-to-LoRA (arXiv:2606.16769): Behavioral Adapters for Specialized Routing
+- AutoResearchClaw (arXiv:2605.20025): Self-Refinement and Falsification Control
 """
 
 import logging
