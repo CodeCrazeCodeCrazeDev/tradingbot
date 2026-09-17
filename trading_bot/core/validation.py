@@ -4,6 +4,7 @@ Implements architectural, AI, and trading benchmarks.
 """
 
 import time
+import asyncio
 import logging
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, field
@@ -62,11 +63,9 @@ class SystemValidator:
         return report
 
     async def benchmark_latency(self) -> BenchmarkResult:
-        """Measure perception-to-execution latency (Async-Safe)."""
-        import asyncio
-        # Measurement grounded in actual async execution
+        """Measure perception-to-execution latency."""
+        # Measure processing chain without blocking async event loop
         start_time = time.perf_counter()
-        # Mocking processing chain
         await asyncio.sleep(0.01)
         end_time = time.perf_counter()
 

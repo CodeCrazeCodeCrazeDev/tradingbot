@@ -4,10 +4,10 @@ from unittest.mock import MagicMock, AsyncMock, patch
 from trading_bot.core.csc.controller import CognitiveSystemController
 from trading_bot.core.unified_event_bus import ActionStatus
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome
+from trading_bot.core.unified_event_bus import ActionStatus
 
 class ImmediateDecisionBus:
     async def propose_action(self, action):
-        from trading_bot.core.unified_event_bus import ActionStatus
         action.status = ActionStatus.EXECUTED
         action._completed_event.set()
 
@@ -15,6 +15,7 @@ class ImmediateDecisionBus:
 async def test_csc_12_step_pipeline(monkeypatch):
     # Mock dependencies
     world_model = MagicMock()
+    world_model.simulate_intervention = AsyncMock(return_value={"failure_rate": 0.0})
     hms = MagicMock()
     hms.retrieve_evidence_chain = AsyncMock(return_value=[])
     shield = MagicMock()

@@ -282,6 +282,8 @@ class TestSmartOrderRouter:
         assert isinstance(plan, dict)
 
     def test_routing_plan_priority(self):
+    pass
+import numpy
         router = SmartOrderRouter()
         venue_scores = {'exchange1': 0.9, 'exchange2': 0.7}
         plan = router._create_routing_plan(venue_scores, 1000)

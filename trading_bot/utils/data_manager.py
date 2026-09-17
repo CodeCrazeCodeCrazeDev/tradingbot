@@ -14,9 +14,7 @@ import json
 import numpy as np
 import pandas as pd
 
-# Ensure log directory exists before basicConfig is called at import-time
 os.makedirs('logs', exist_ok=True)
-
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',

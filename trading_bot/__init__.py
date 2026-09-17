@@ -408,6 +408,52 @@ try:
 except Exception as e:
     logging.getLogger(__name__).info(f'ChainOfThoughtReasoner compatibility alias not available: {e}')
 
+# Global counter to track legacy dynamic redirector usage
+_redirector_usage_counts = {}
+
+# Enable backward-compatible dynamic imports for utility submodules with explicit warnings
+class UtilityImportRedirector:
+    def __init__(self, package_name, submodules, target_package):
+        self.package_name = package_name
+        self.submodules = submodules
+        self.target_package = target_package
+
+    def find_spec(self, fullname, path, target=None):
+        if fullname.startswith(self.package_name + "."):
+            sub = fullname[len(self.package_name) + 1:]
+            if sub in self.submodules:
+                target_fullname = f"{self.target_package}.{sub}"
+                try:
+                    import importlib
+                    import warnings
+                    # Increment usage count metric
+                    _redirector_usage_counts[fullname] = _redirector_usage_counts.get(fullname, 0) + 1
+
+                    # Emit explicit deprecation warning
+                    warnings.warn(
+                        f"Legacy import path '{fullname}' is deprecated. Please migrate to '{target_fullname}'.",
+                        DeprecationWarning,
+                        stacklevel=2
+                    )
+                    logging.getLogger(__name__).warning(
+                        f"MIGRATION METRICS: Deprecated import '{fullname}' redirected to '{target_fullname}'. Usage count: {_redirector_usage_counts[fullname]}"
+                    )
+
+                    mod = importlib.import_module(target_fullname)
+                    sys.modules[fullname] = mod
+                    return mod.__spec__
+                except Exception:
+                    pass
+        return None
+
+utils_submodules = [
+    "api_cache", "api_rate_limiter", "bounded_collections", "candle_tracker",
+    "data_manager", "data_validator", "debug_tools", "logger", "profiler",
+    "rate_limiter", "retry_policy", "risk_controller", "risk_management",
+    "safe_access", "safe_write", "validation"
+]
+sys.meta_path.append(UtilityImportRedirector("trading_bot", utils_submodules, "trading_bot.utils"))
+
 __all__ = [
     # Unified AI Brain (PRIMARY)
     'UnifiedAIBrain',

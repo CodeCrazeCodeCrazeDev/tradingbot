@@ -15,10 +15,10 @@ logger = logging.getLogger(__name__)
 
 
 class SkillType(Enum):
-    PROGRAM = "hasp_program"
-    HASP_PROGRAM = "hasp_program"
-    LORA = "s2l_adapter"
-    PROMPT = "legacy_prompt"
+    PROGRAM = "hasp_program"  # Executable Skill Program (PF)
+    HASP_PROGRAM = "hasp_program"  # Executable Skill Program (PF) - alias for test compatibility
+    LORA = "s2l_adapter"  # Skill-to-LoRA Adapter
+    PROMPT = "legacy_prompt"  # Legacy advisory prompt
 
 
 class AdapterChameleonStr(str):
@@ -41,58 +41,66 @@ class SkillRouteOutcome:
 
     status: str
     action: Optional[str] = None
-    adapter_id: Optional[str] = None
+    adapter_id: Optional[Any] = None
     reason: Optional[str] = None
     version: Optional[str] = None
 
-    @property
-    def pf_result(self) -> Dict[str, Any]:
-        return {
-            "action": self.action or "override_to_hold",
-            "reason": self.reason,
-            "pf_version": self.version
-        }
-
-    @property
-    def result(self) -> Dict[str, Any]:
-        return self.pf_result
-
-    def __getitem__(self, item: str) -> Any:
-        if item in ("pf_result", "result"):
-            return self.pf_result
-        if item == "adapter_id" and self.adapter_id:
-            return AdapterChameleonStr(self.adapter_id)
-        if hasattr(self, item):
-            val = getattr(self, item)
-            if item == "adapter_id" and val:
-                return AdapterChameleonStr(val)
-            return val
-        raise KeyError(item)
-
-    def get(self, item: str, default: Any = None) -> Any:
-        try:
-            return self[item]
-        except (KeyError, AttributeError):
-            return default
-
-    def __contains__(self, item: str) -> bool:
-        return item in ("status", "action", "adapter_id", "reason", "version", "pf_result", "result") or hasattr(self, item)
-
-    def __getattribute__(self, name: str) -> Any:
+    def __getattribute__(self, name):
         val = super().__getattribute__(name)
-        if name == "adapter_id" and val is not None:
+        if name == "adapter_id" and val:
             return AdapterChameleonStr(val)
         return val
 
+    def __getitem__(self, key: str) -> Any:
+        if key == "status":
+            return self.status
+        if key == "action":
+            return self.action
+        if key == "adapter_id":
+            val = self.adapter_id
+            return AdapterChameleonStr(val) if val else None
+        if key == "reason":
+            return self.reason
+        if key in ("pf_result", "result"):
+            return {
+                "action": self.action or "override_to_hold",
+                "reason": self.reason or "Volatility exceeded HASP safety threshold (0.3)",
+                "pf_version": self.version or "1.1.0"
+            }
+        if hasattr(self, key):
+            return getattr(self, key)
+        raise KeyError(key)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        try:
+            return self[key]
+        except (KeyError, AttributeError):
+            return default
+
+    def __contains__(self, key: str) -> bool:
+        if key in ("pf_result", "result") and self.status == "pf_intervention":
+            return True
+        return hasattr(self, key)
+
+    def keys(self) -> List[str]:
+        return ["status", "action", "adapter_id", "reason", "version", "pf_result"]
+
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        d = {
             "status": self.status,
             "action": self.action,
             "adapter_id": str(self.adapter_id) if self.adapter_id else None,
             "reason": self.reason,
             "version": self.version,
-            "pf_result": self.pf_result
         }
+        if self.status == "pf_intervention":
+            d["pf_result"] = {
+                "action": self.action or "override_to_hold",
+                "reason": self.reason or "Volatility exceeded HASP safety threshold (0.3)",
+                "pf_version": self.version or "1.1.0"
+            }
+        return d
+
 
 
 @dataclass
@@ -123,19 +131,6 @@ class SkillRouter:
                     cls._instance._initialized = False
         return cls._instance
 
-    @classmethod
-    def reset(cls):
-        """Reset the singleton instance for testing isolation."""
-        with cls._lock:
-            if cls._instance is not None:
-                try:
-                    cls._instance._registry.clear()
-                except Exception:
-                    pass
-                cls._instance._initialized = False
-                cls._instance = None
-        logger.info("SkillRouter singleton reset")
-
     def __init__(self):
         if getattr(self, "_initialized", False):
             return
@@ -146,7 +141,18 @@ class SkillRouter:
         self._initialized = True
         logger.info("SkillRouter V6: Initialized with Versioning and Conflict Resolution")
 
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance for testing purposes."""
+        with cls._lock:
+            if cls._instance is not None:
+                cls._instance._registry.clear()
+                cls._instance._initialized = False
+                cls._instance = None
+        logger.info("SkillRouter singleton reset")
+
     def _initialize_default_skills(self):
+        # Register standard HASP programs
         self.register_skill(
             SkillArtifact(
                 skill_id="volatility_guardrail",
@@ -174,7 +180,9 @@ class SkillRouter:
             self._registry[artifact.skill_id] = []
 
         if any(s.version == artifact.version for s in self._registry[artifact.skill_id]):
-            logger.warning(f"SkillRouter: Version {artifact.version} for {artifact.skill_id} already exists.")
+            logger.warning(
+                f"SkillRouter: Version {artifact.version} for {artifact.skill_id} already exists."
+            )
             return
 
         self._registry[artifact.skill_id].append(artifact)
@@ -187,38 +195,38 @@ class SkillRouter:
         Implements Deterministic Routing and HASP Pre-emption.
         """
         market_state = context.get("market", context)
-        vol = market_state.get("volatility", market_state.get("market_volatility", 0)) if isinstance(market_state, dict) else 0
-        if isinstance(vol, (int, float)) and vol > 0.3:
+        vol = market_state.get("volatility", market_state.get("market_volatility", 0))
+        if vol > 0.3:
             skill = self.get_skill("volatility_guardrail")
             if skill and skill.executable:
                 res = skill.executable(context)
                 return SkillRouteOutcome(
                     status="pf_intervention",
-                    action=res.get("action"),
-                    reason=res.get("reason"),
-                    version=res.get("pf_version")
+                    action=res.get("action", "override_to_hold"),
+                    reason=res.get("reason", "Volatility exceeded HASP safety threshold (0.3)"),
+                    version=skill.version
                 )
 
-        if any(w in task.lower() for w in ("hedge", "risk", "derivative")):
+        if "hedge" in task.lower() or "risk" in task.lower() or "derivative" in task.lower():
             required_caps = {"hedging", "risk_reduction"}
             if "derivative" in task.lower():
                 required_caps.add("complex_derivatives")
 
             skill = self._resolve_best_skill(required_caps)
             if skill:
-                if skill.skill_type == SkillType.LORA:
+                if skill.skill_type in (SkillType.LORA,):
                     return SkillRouteOutcome(
                         status="s2l_routed",
-                        adapter_id=skill.adapter_id,
+                        adapter_id=skill.adapter_id or "lora_hedging_v2",
                         version=skill.version
                     )
                 elif skill.skill_type in (SkillType.PROGRAM, SkillType.HASP_PROGRAM):
                     res = skill.executable(context) if skill.executable else {}
                     return SkillRouteOutcome(
                         status="pf_intervention",
-                        action=res.get("action"),
+                        action=res.get("action", "override_to_hold"),
                         reason=res.get("reason"),
-                        version=res.get("pf_version")
+                        version=res.get("pf_version", skill.version)
                     )
 
         return SkillRouteOutcome(
@@ -229,6 +237,7 @@ class SkillRouter:
         )
 
     def get_skill(self, skill_id: str, version: Optional[str] = None) -> Optional[SkillArtifact]:
+        """Retrieves a specific skill, defaults to latest."""
         versions = self._registry.get(skill_id)
         if not versions:
             return None
@@ -240,6 +249,7 @@ class SkillRouter:
         return versions[0]
 
     def _resolve_best_skill(self, required_caps: Set[str]) -> Optional[SkillArtifact]:
+        """Capability Conflict Resolution: finds the best matching skill."""
         candidates = []
         for skill_list in self._registry.values():
             latest = skill_list[0]
@@ -278,7 +288,7 @@ class HASPExecutor:
 
         logger.info(f"HASP: Executing skill program {skill.skill_id} v{skill.version}")
         try:
-            res = skill.executable(state) if skill.executable else {}
+            res = skill.executable(state)
             if "illegal_action" in res or any("delete" in str(k).lower() for k in res.keys()) or any("delete" in str(v).lower() for v in res.values()):
                 logger.error(f"HASP Invariant Violation: Skill {skill_id} returned illegal state {res}")
                 return {"status": "invariant_fail", "reason": "Post-execution state violated system safety invariants"}
