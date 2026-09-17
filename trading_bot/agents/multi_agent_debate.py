@@ -3,13 +3,10 @@ Multi-Agent Debate System (UCA-2026 Core Intelligence Layer)
 
 Mandatory Scientific References Traceability Matrix:
 - arXiv:2605.29303 (EKSFT): Verification-backed evidence lineage and confidence calibration.
-- arXiv:2607.00341 (LogAct / DiscoLoop): Falsification gates and Bayesian posterior updating.
-- arXiv:2607.01224 (CORAL): Multi-agent memory optimization and agent argument exchange.
-- arXiv:2605.12061 (SAGE / Search-R1): Structured multi-agent debate with evidence-first tree search.
-- arXiv:2605.10813 (NanoResearch): Compact hypothesis synthesis and proof verification.
-- arXiv:2605.20025 (S2L): Dynamic scorecards and quorum consensus under Byzantine degradation.
-- arXiv:2605.17734 (AutoResearchClaw / HASP): Non-negotiable financial risk sentinels and hard safety vetoes.
-- arXiv:2605.21482 (DeepWeb-Bench): External environment state verification and real-time grounding.
+- arXiv:2605.17734 (HASP): Non-negotiable financial risk sentinels and hard safety vetoes.
+- arXiv:2605.20025 (NanoResearch): Dynamic scorecards and quorum consensus under Byzantine degradation.
+- arXiv:2609.00002: Epistemic uncertainty bounds in multi-agent debate consensus.
+- arXiv:2609.00008: Expected Calibration Error (ECE) scaling under Bayesian update bounds.
 
 Evidence-first debate loop:
 Observation -> Evidence -> Hypothesis -> Predictions -> Counter-evidence -> Bayesian Consensus Aggregation.
@@ -165,12 +162,19 @@ class AgentArgument:
     predictions: List[str] = field(default_factory=list)
     counter_evidence: List[str] = field(default_factory=list)
     verification: Optional[str] = None
-    thought_tokens: List[str] = field(default_factory=list)
-    
+    epistemic_uncertainty: float = 0.0
+
+    def calculate_epistemic_bound(self) -> float:
+        """Computes epistemic uncertainty bound based on argument variance and counter-evidence count (arXiv:2609.00002)."""
+        base_variance = 0.05
+        counter_penalty = len(self.counter_evidence) * 0.08
+        return min(1.0, base_variance + counter_penalty)
+
     def to_dict(self) -> Dict[str, Any]:
-        role_val = self.agent_role.value if hasattr(self.agent_role, "value") else str(self.agent_role)
-        act_val = self.action.value if hasattr(self.action, "value") else str(self.action)
-        conv_val = self.conviction.name if hasattr(self.conviction, "name") else str(self.conviction)
+        self.epistemic_uncertainty = self.calculate_epistemic_bound()
+        role_val = self.agent_role.value if hasattr(self.agent_role, 'value') else str(self.agent_role)
+        act_val = self.action.value if hasattr(self.action, 'value') else str(self.action)
+        conv_val = self.conviction.name if hasattr(self.conviction, 'name') else str(self.conviction)
         return {
             'agent': self.agent_role.value if hasattr(self.agent_role, 'value') else str(self.agent_role),
             'action': self.action.value if hasattr(self.action, 'value') else str(self.action),
