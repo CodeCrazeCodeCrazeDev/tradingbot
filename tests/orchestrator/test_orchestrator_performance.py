@@ -281,7 +281,6 @@ class TestBacktestEngine:
         assert engine.backtest_results == {}
 
     def test_backtest_strategy(self):
-        import pandas as pd
         engine = BacktestEngine()
         dates = pd.date_range(start='2023-01-01', periods=100, freq='D')
         historical_data = pd.DataFrame({

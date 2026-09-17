@@ -17,10 +17,7 @@ from pathlib import Path
 try:
     from trading_bot.orchestrator.ml_predictor import *
 except ImportError:
-    # Fallback import
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.orchestrator.ml_predictor import *
+    pass
 
 logger = logging.getLogger(__name__)
 
