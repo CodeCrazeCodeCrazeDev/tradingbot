@@ -1,184 +1,86 @@
-"""
-
-Implements the 6-tier architecture:
-1. Working (Hot/RAM)
-2. Episodic (Recent Events)
-3. Semantic (Facts/Knowledge)
-4. Procedural (Skills/LoRA)
-5. Research (Evidence/Snapshots)
-6. Institutional (Priors/Governance)
-
-Authoritative memory system integrating SAGE (Self-evolving Agentic Graph-Memory)
-and QKG (Quantum Knowledge Graph) for context-dependent research persistence.
-Implements the 'SAGE' (2026) feedback loop between Memory Writers and Readers.
-Hierarchical Memory System (HMS) - UCA V5 (July 2026)
-
-Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
-"""
-
 import logging
-import os
-import json
-import networkx as nx
-from typing import Any, Dict, List, Optional, Tuple
+import asyncio
 from datetime import datetime
-from .models import ResearchLedgerEntry, ScientificMemoryObject, EvidenceNode, EvidenceEdge, RelationType
+from typing import Dict, List, Any, Optional
+import json
 
 logger = logging.getLogger(__name__)
 
-class SAGEGraphMemory:
-    """
-    SAGE Substrate: A dynamic, self-evolving graph memory.
-    Supports incremental construction and Reader-Writer feedback loops.
-    """
-    def __init__(self):
-        self.graph = nx.MultiDiGraph()
-        self.evolution_rounds = 0
-
-    def add_evidence(self, triplet: Tuple[str, str, str], context: Dict[str, Any], evidence: Dict[str, Any]):
-        """Adds context-dependent triplet (QKG principle) to the graph."""
-        u, r, v = triplet
-        # Context-dependent validity key
-        context_key = json.dumps(context, sort_keys=True)
-
-        self.graph.add_edge(u, v, key=r, relation=r, context=context, evidence=evidence, timestamp=datetime.utcnow().isoformat())
-        logger.debug(f"SAGE: Added triplet ({u}, {r}, {v}) under context {context_key}")
-
-    def evolve(self, feedback: List[Dict[str, Any]]):
-        """Self-evolution round: Refine graph structure based on Reader feedback."""
-        self.evolution_rounds += 1
-        logger.info(f"SAGE: Starting Evolution Round {self.evolution_rounds}")
-        # Logic to prune weak links or collapse nodes based on feedback
-        for f in feedback:
-            target = f.get("target_edge")
-            if f.get("action") == "PRUNE":
-                 # Implementation of pruning
-                 pass
-        logger.info(f"SAGE: Evolution Round {self.evolution_rounds} complete.")
-
 class HierarchicalMemorySystem:
     """
-    Authoritative memory system. Integrates:
-    - SAGE: Self-evolving Agentic Graph-Memory.
-    - AutoMem: Automated Learning of Memory as a Cognitive Skill.
+    Unified Hierarchical Memory System (HMS).
+    Implements the WMR (Write-Manage-Read) loop.
+
+    Source: Memory Survey / MATM (Multi-Agent Transactive Memory).
+
+    Tiers:
+    L1: Working Memory (Redis) - High churn, real-time context.
+    L2: Episodic Memory (Vector DB) - Historical traces and outcomes.
+    L3: Semantic Memory (Graph DB) - Causal relationships and facts.
+    L4: Transactive Memory (Shared Artifacts) - Inter-agent knowledge.
+    L5: Institutional Memory (Governance) - Immutable rules.
     """
 
-    def __init__(self, base_path: str = "alphaalgo_data/hms"):
-        self.base_path = base_path
-        self.storage_root = base_path
-        self.ledger_path = os.path.join(base_path, "research_ledger")
-        self.knowledge_path = os.path.join(base_path, "scientific_memory")
-        self.graph_path = os.path.join(base_path, "sage_graph.graphml")
+    def __init__(self, config: Dict):
+        self.config = config
+        # Mocking storage backends
+        self.working_store = {}
+        self.episodic_store = []
+        self.semantic_graph = {}
+        self.transactive_bus = {}
 
-        os.makedirs(self.ledger_path, exist_ok=True)
-        os.makedirs(self.knowledge_path, exist_ok=True)
-        logger.info("HMS V5: SAGE-integrated memory system initialized")
+    async def initialize(self):
+        logger.info("HMS: Initializing Hierarchical Memory System")
 
-        # SAGE: Persistent Graph Memory
-        self.sage_graph = self._load_graph()
+    # --- Write Path ---
+    async def store_working(self, data: Dict):
+        """L1: Store real-time context."""
+        key = data.get('id', 'current_context')
+        self.working_store[key] = {
+            "data": data,
+            "timestamp": datetime.now().isoformat()
+        }
 
-        # AutoMem: Memory Structure
-        self.memory_schema = self._load_schema()
+    async def store_episodic(self, trace: Dict):
+        """L2: Store execution trace."""
+        self.episodic_store.append({
+            "trace": trace,
+            "timestamp": datetime.now().isoformat()
+        })
 
-        # Initialize tiers (Stub for now to prevent attribute errors)
-        self.tiers = {}
+    async def store_semantic(self, fact: Dict):
+        """L3: Store distilled fact in the Evidence Graph."""
+        # This would interface with a Graph DB (Neo4j/FalkorDB)
+        fact_id = fact.get('id', str(len(self.semantic_graph)))
+        self.semantic_graph[fact_id] = fact
+        logger.debug(f"HMS: Distilled semantic fact stored: {fact_id}")
 
-    def _load_graph(self) -> nx.DiGraph:
-        if os.path.exists(self.graph_path):
-            try:
-                return nx.read_graphml(self.graph_path)
-            except Exception as e:
-                logger.error(f"HMS: Failed to load SAGE graph: {e}")
-        return nx.DiGraph()
+    # --- Read Path ---
+    async def retrieve_context(self) -> Dict:
+        return self.working_store.get('current_context', {})
 
-    def _save_graph(self):
-        try:
-            nx.write_graphml(self.sage_graph, self.graph_path)
-        except Exception as e:
-            logger.error(f"HMS: Failed to save SAGE graph: {e}")
+    async def query_semantic(self, query: str) -> List[Dict]:
+        """Search the Causal Evidence Graph."""
+        # Standard RAG or Graph traversal
+        return list(self.semantic_graph.values())[:5]
 
-    def _load_schema(self) -> Dict[str, Any]:
-        schema_path = os.path.join(self.base_path, "memory_schema.json")
-        if os.path.exists(schema_path):
-            with open(schema_path, 'r') as f:
-                return json.load(f)
-        return {"version": "1.0", "entities": [], "relations": []}
-
-    def evolve_memory(self, interaction_history: List[Dict[str, Any]]):
+    # --- Manage Path (Consolidation) ---
+    async def consolidate_memory(self):
         """
-        SAGE: Incremental construction and self-evolution of graph memory.
+        Background process:
+        1. Cluster L2 episodes into L3 semantic facts.
+        2. Prune old working memory.
+        3. Enforce Information Bottleneck (forgetting).
         """
-        logger.info("HMS: Evolving SAGE graph from interaction history")
-        for entry in interaction_history:
-            # Logic to extract nodes/edges (Simplified for implementation)
-            source = entry.get("source")
-            target = entry.get("target")
-            relation = entry.get("relation", "ASSOCIATED_WITH")
-
-            if source and target:
-                self.sage_graph.add_edge(source, target, relation=relation, weight=1.0)
-
-        self._save_graph()
-
-    def optimize_metamemory(self, success_trajectories: List[Any]):
-        """
-        AutoMem: Loop 2 optimization - proficiency in memory actions.
-        Identifies successful memory decisions for agent training.
-        """
-        # This would typically trigger a training job or update a skill-bank
-        logger.info(f"HMS: Running AutoMem Loop 2 on {len(success_trajectories)} trajectories")
+        logger.info("HMS: Running memory consolidation (WMR loop)")
+        # Consolidation logic: LLM-based summarization of recent episodes
         pass
 
-    def store_ledger_entry(self, entry: ResearchLedgerEntry):
-        """Persists a research snapshot and updates the SAGE graph."""
-        file_path = os.path.join(self.ledger_path, f"{entry.entry_id}.json")
+    # --- Transactive Interface ---
+    async def publish_artifact(self, agent_id: str, artifact: Dict):
+        """Share knowledge across the population."""
+        self.transactive_bus[f"{agent_id}_{artifact['type']}"] = artifact
 
-        # Update SAGE graph from evidence graph snapshot
-        for node_id, node in entry.evidence_graph_snapshot.nodes.items():
-            self.sage_graph.add_node(node_id, type=node.node_type, content=str(node.content))
-
-        for edge in entry.evidence_graph_snapshot.edges:
-            self.sage_graph.add_edge(edge.source_id, edge.target_id,
-                                     relation=edge.relation.value,
-                                     weight=edge.weight)
-
-        self._save_graph()
-
-        entry_data = {
-            "entry_id": entry.entry_id,
-            "timestamp": entry.timestamp.isoformat(),
-            "hypothesis": entry.hypothesis.description if entry.hypothesis else "N/A",
-            "composite_confidence": entry.composite_confidence,
-            "verifier_reports": [
-                {"agent": r.agent_name, "valid": r.is_valid, "critique": r.critique}
-                for r in entry.verifier_reports
-            ],
-            "sage_sync": True
-        }
-
-        # Setup persistence
-        for tier_name, tier in self.tiers.items():
-            if tier.persistent:
-                os.makedirs(os.path.join(self.storage_root, tier_name), exist_ok=True)
-
-    def retrieve_evidence_chain(self, query: str) -> List[EvidenceNode]:
-        """
-        SAGE: Graph-FM based multi-hop retrieval.
-        (Simplified: BFS/Shortest Path traversal as proxy for Graph-FM)
-        """
-        # Mock retrieval of related evidence from the graph
-        logger.info(f"HMS: SAGE retrieving evidence chain for: {query}")
-        return []
-
-    def store_scientific_lesson(self, lesson: ScientificMemoryObject):
-        """Stores a generalized lesson derived from research outcomes."""
-        file_path = os.path.join(self.knowledge_path, f"{lesson.object_id}.json")
-        lesson_data = {
-            "object_id": lesson.object_id,
-            "pattern_type": lesson.pattern_type,
-            "lesson": lesson.generalized_lesson,
-            "reproducibility": lesson.reproducibility_score,
-            "timestamp": lesson.last_updated.isoformat()
-        }
-        with open(file_path, 'w') as f:
-            json.dump(lesson_data, f, indent=2)
+    async def get_artifact(self, artifact_type: str) -> Optional[Dict]:
+        # Agents query: "Who has the latest macro insight?"
+        return next((a for a in self.transactive_bus.values() if a['type'] == artifact_type), None)

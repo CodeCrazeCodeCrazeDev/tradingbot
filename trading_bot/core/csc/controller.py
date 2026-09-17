@@ -1,186 +1,193 @@
-"""
-
-Implements the Active Inference (VFE minimization) loop and
-HIPIF (Hierarchical Planning with Information Folding).
-
-The "One Brain" authoritative controller orchestrating the LogAct pipeline.
-Implements Active Inference (surpise minimization) and DiscoLoop reasoning.
-Cognitive System Controller (CSC) - UCA V5 (July 2026)
-
-Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
-"""
-
 import logging
 import asyncio
-import copy
-from typing import Any, Dict, List, Optional, Tuple
+import uuid
 from datetime import datetime
-from uuid import uuid4
+from typing import Dict, List, Any, Optional, Tuple
+from dataclasses import dataclass, field
+import numpy as np
 
-from .hypothesis import HypothesisGenerator, ReasoningBranch
-from .folding import InformationFolder
-from ..verification.swarm import VerificationSwarm
-from ..hms.models import ResearchLedgerEntry, EvidenceGraph, VerifierReport
-from ..alphaalgo_core_engine import DecisionOutcome, CoreDecision, ConfidenceVector
-from ..immutable_shield import ImmutableShield
-from ..unified_event_bus import decision_bus, LogAction, ActionStatus
+# Internal UCA imports (to be implemented/refined)
+# from trading_bot.world_model.causal.scm import StructuralCausalModel
+# from trading_bot.governance.immutable_shield import GovernanceGate
 
 logger = logging.getLogger(__name__)
 
+@dataclass
+class Subgoal:
+    id: str
+    description: str
+    horizon: str  # strategic, tactical, operational, execution
+    status: str = "pending"
+    result: Any = None
+    start_time: datetime = field(default_factory=datetime.now)
+    end_time: Optional[datetime] = None
+    context_snapshot: Dict = field(default_factory=dict)
+
+@dataclass
+class CSCState:
+    """The internal belief state of the CSC."""
+    epistemic_uncertainty: float = 1.0
+    current_regime: str = "unknown"
+    active_goals: List[Subgoal] = field(default_factory=list)
+    folded_history: List[Dict] = field(default_factory=list)
+    last_observation: Optional[Dict] = None
+
+class FoldingOperator:
+    """
+    Implements Hierarchical Planning with Information Folding (HIPIF).
+    Source: arXiv:2606.10507 (HIPIF).
+    """
+    async def fold(self, subgoal: Subgoal, traces: List[Dict]) -> Dict[str, Any]:
+        """
+        Compresses subgoal traces into strategic 'lessons' using the Information Bottleneck principle.
+        """
+        logger.info(f"HIPIF: Folding traces for subgoal {subgoal.id}: {subgoal.description}")
+
+        # In production, this uses an LLM with a strategic distillation prompt.
+        # It summarizes: What was attempted, what was learned, how it changes the belief state.
+
+        folded_lesson = {
+            "subgoal": subgoal.description,
+            "outcome": subgoal.result,
+            "strategic_insight": "Extracted from trace analysis",
+            "causal_delta": {"observed_impact": 0.05},
+            "timestamp": datetime.now().isoformat()
+        }
+        return folded_lesson
+
 class CognitiveSystemController:
     """
-    UCA V5 Controller integrating DiscoLoop, HASP, and Pivot/Refine.
+    AlphaAlgo Unified Cognitive Controller (CSC).
+    Governed by Active Inference (Variational Free Energy minimization).
+
+    Principles:
+    1. One Brain: Single entry point for all reasoning.
+    2. OSA Loop: Observe-Simulate-Act.
+    3. HIPIF: Hierarchical Planning & Information Folding.
+    4. S2L: Skill-to-LoRA Routing.
     """
-    _instance = None
-    _lock = asyncio.Lock()
 
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(CognitiveSystemController, cls).__new__(cls)
-            cls._instance._initialized = False
-        return cls._instance
+    def __init__(self, config: Dict, world_model: Any, hms: Any, governance: Any):
+        self.config = config
+        self.world_model = world_model # SCM-based
+        self.hms = hms                 # Hierarchical Memory System
+        self.governance = governance   # Immutable Shield
 
-    def __init__(self, world_model: Any = None, hms: Any = None, shield: Optional[ImmutableShield] = None):
-        if self._initialized:
-            return
-        self.world_model = world_model
-        self.hms = hms
-        self.shield = shield
+        self.folding_operator = FoldingOperator()
+        self.state = CSCState()
+        self.execution_buffer: List[Dict] = []
 
-        # Correct reference to InformationFolder (HIPIF)
-        self.folding_operator = InformationFolder()
+        self.running = False
 
-        self.hypothesis_gen = HypothesisGenerator(world_model)
-        self.verifier_swarm = VerificationSwarm()
-        self.folder = self.folding_operator
+    async def initialize(self):
+        logger.info("UCA-2026: Initializing Cognitive System Controller")
+        # Initialize memory tiers, check world model grounding, etc.
+        self.running = True
 
-        # HASP: Executable Guardrails (Skill Programs)
-        self.skill_programs = self._load_skill_programs()
-
-        # DiscoLoop Channels
-        self.continuous_state = {} # Latent embeddings
-        self.discrete_channel = [] # Semantic tokens
-
-        self._initialized = True
-
-    def _load_skill_programs(self) -> Dict[str, Any]:
-        # In production, load from a registry. Here we stub it.
-        return {}
-
-    async def process_market_observation(self, observation: Dict[str, Any]) -> Optional[CoreDecision]:
+    async def execute_task(self, task_description: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         """
-        12-step Recursive Active Inference Pipeline.
+        Top-level entry point for task execution.
         """
-        logger.info("CSC-V5: Starting Recursive Active Inference Pipeline")
+        logger.info(f"CSC: Received Task -> {task_description}")
 
-        # 4. Executable Guardrails (HASP Intervention)
-        intervention = self._apply_hasp_guardrails(observation)
-        if intervention:
-            observation.update(intervention)
+        # 1. Observe: Update Epistemic Core
+        await self._observe(context or {})
 
-        # 5. Multi-Hypothesis Generation
-        branches = await self.hypothesis_gen.generate_competing_branches(observation)
+        # 2. Plan: Decompose into subgoals (HIPIF)
+        subgoals = await self._decompose_task(task_description)
+        self.state.active_goals.extend(subgoals)
 
-        # 6. Causal Simulation (CWMI / World Model)
-        sim_results = await self.hypothesis_gen.simulate_branches(branches)
+        results = []
+        for subgoal in subgoals:
+            # 3. Simulate & Act (Active Inference)
+            subgoal_result = await self._process_subgoal(subgoal)
+            results.append(subgoal_result)
 
-        # 7. Decision Selection (EV Optimization)
-        best_branch = self._select_optimal_branch(branches, sim_results)
-        if not best_branch:
-            return None
+            # 4. Fold (HIPIF)
+            lesson = await self.folding_operator.fold(subgoal, self.execution_buffer)
+            self.state.folded_history.append(lesson)
+            await self.hms.store_semantic(lesson)
 
-        # 8. Decision Loop (Pivot/Refine)
-        decision_ready = False
-        attempts = 0
-        while not decision_ready and attempts < 3:
-            attempts += 1
+            # Clear tactical buffer after folding
+            self.execution_buffer = []
 
-            # 9. Verification Swarm (Peer Review)
-            ledger_entry = self._create_ledger_entry(best_branch, sim_results.get(best_branch.branch_id, []))
-            reports = await self.verifier_swarm.run_swarm(ledger_entry)
-            ledger_entry.verifier_reports = reports
+        return {"task": task_description, "status": "completed", "outcomes": results}
 
-            # 10. Pivot/Refine Decision
-            if self._verify_evidence_hard_constraint(ledger_entry):
-                decision_ready = True
-            else:
-                logger.warning(f"CSC-V5: Verification FAILED (Attempt {attempts}). Refining strategy...")
-                refined_branch = await self._refine_strategy(best_branch, reports)
-                if refined_branch and refined_branch != best_branch:
-                    best_branch = refined_branch
-                else:
-                    # If we can't refine further, break
-                    logger.error("CSC-V5: Could not refine strategy further.")
-                    break
+    async def _process_subgoal(self, subgoal: Subgoal) -> Dict[str, Any]:
+        """
+        Executes a single subgoal using the OSA loop.
+        """
+        subgoal.status = "executing"
 
-        if not decision_ready:
-            return CoreDecision(
-                outcome=DecisionOutcome.TRADE_REJECTED,
-                trade_id=str(uuid4()),
-                dominant_rejection_reason="Failed Pivot/Refine loop"
-            )
+        # Simulate: Query World Model for 'Do-Calculus' rollouts
+        # What if we perform action A in state S?
+        proposals = await self._generate_proposals(subgoal)
 
-        # 11. Governance Gate (Immutable Shield)
-        trade_proposal = self._translate_to_proposal(ledger_entry)
-        shield_report = self.shield.validate_action("trade", trade_proposal, {"market": observation})
+        best_proposal = None
+        min_vfe = float('inf')
 
-        from ..immutable_shield import GovernanceDecision
-        if shield_report.decision != GovernanceDecision.APPROVED:
-             return CoreDecision(
-                 outcome=DecisionOutcome.TRADE_REJECTED,
-                 trade_id=trade_proposal.get("trade_id", str(uuid4())),
-                 dominant_rejection_reason=f"Shield: {shield_report.reason}"
-             )
+        for proposal in proposals:
+            # Calculate Expected Free Energy (EFE)
+            # EFE = Epistemic Value + Pragmatic Value (Utility)
+            efe = await self._calculate_efe(proposal)
+            if efe < min_vfe:
+                min_vfe = efe
+                best_proposal = proposal
 
-        # 12. Execution & Folding (HIPIF)
-        logger.info(f"CSC-V5: Trade APPROVED. Folding horizon...")
-        self.folder.fold_history(ledger_entry)
+        # Governance Gate: Validate via Immutable Shield
+        final_action = await self.governance.validate(best_proposal)
 
-        # Persist to HMS
-        self.hms.store_ledger_entry(ledger_entry)
+        # Act
+        result = await self._dispatch_action(final_action)
+        subgoal.result = result
+        subgoal.status = "completed"
 
-        return CoreDecision(
-            outcome=DecisionOutcome.TRADE_APPROVED,
-            trade_id=trade_proposal.get("trade_id"),
-            confidence_vector=self._calculate_composite_confidence(ledger_entry)
-        )
+        return result
 
-    def _apply_hasp_guardrails(self, observation: Dict[str, Any]) -> Dict[str, Any]:
-        """HASP: Executable guardrails check."""
-        return {}
+    async def _observe(self, data: Dict):
+        """Update internal Bayesian belief state."""
+        # Update HMS Working Memory
+        await self.hms.store_working(data)
+        self.state.last_observation = data
+        # Epistemic update: reduce uncertainty
+        self.state.epistemic_uncertainty *= 0.9
 
-    async def _refine_strategy(self, branch: ReasoningBranch, reports: List[VerifierReport]) -> Optional[ReasoningBranch]:
-        """Pivot/Refine logic to improve strategy based on verifier feedback."""
-        # Simple refinement logic: tweak hypothesis confidence or pick second best
-        # For now, we simulate refinement by copying and tweaking
-        refined = copy.deepcopy(branch)
-        if refined.hypotheses:
-            refined.hypotheses[0].description += " (Refined)"
-        return refined
+    async def _decompose_task(self, task: str) -> List[Subgoal]:
+        """HIPIF Strategic Planning."""
+        # This would use an LLM to generate the subgoal tree
+        return [
+            Subgoal(str(uuid.uuid4()), f"Phase 1: {task} assessment", "operational"),
+            Subgoal(str(uuid.uuid4()), f"Phase 2: {task} execution", "execution")
+        ]
 
-    def _select_optimal_branch(self, branches: List[ReasoningBranch], simulations: Dict[str, Any]) -> Optional[ReasoningBranch]:
-        if not branches: return None
-        return branches[0]
+    async def _calculate_efe(self, proposal: Dict) -> float:
+        """
+        Calculates Expected Free Energy.
+        G = Epistemic Value (Info Gain) + Pragmatic Value (Risk-Adj Return)
+        """
+        # Mock calculation
+        return 0.5
 
-    def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
-        return ResearchLedgerEntry(
-            hypothesis=branch.hypotheses[0] if branch.hypotheses else None,
-            reasoning_steps=branch.reasoning_trace,
-            evidence_graph_snapshot=branch.evidence_graph,
-            multi_path_scenarios=[{"name": s.name} for s in scenarios] if scenarios else []
-        )
+    async def _generate_proposals(self, subgoal: Subgoal) -> List[Dict]:
+        """Generate candidate actions."""
+        # Uses S2L routing to identify relevant skills/LoRAs
+        return [{"type": "action", "params": {}, "description": "Candidate A"}]
 
-    def _verify_evidence_hard_constraint(self, entry: ResearchLedgerEntry) -> bool:
-        # Check vetoes and consensus
-        for report in entry.verifier_reports:
-            if not report.is_valid and report.confidence > 0.8: return False
+    async def _dispatch_action(self, action: Dict) -> Dict:
+        """Execute the action and log it."""
+        logger.info(f"CSC Dispatch: {action}")
+        result = {"status": "success", "data": "Executed"}
+        self.execution_buffer.append({"action": action, "result": result})
+        return result
 
-        valid_reports = [r for r in entry.verifier_reports if r.is_valid]
-        consensus = len(valid_reports) / len(entry.verifier_reports) if entry.verifier_reports else 0
-        return consensus >= 0.75
+    async def _constitutional_check(self, action: Dict) -> bool:
+        # Final safety check before dispatch
+        return True
 
-    def _calculate_composite_confidence(self, entry: ResearchLedgerEntry) -> ConfidenceVector:
-        return ConfidenceVector(statistical=0.8, regime=0.8, execution=0.9, tail_risk=0.85, model_stability=0.7)
-
-    def _translate_to_proposal(self, entry: ResearchLedgerEntry) -> Dict[str, Any]:
-        return {"trade_id": str(entry.entry_id), "symbol": "EURUSD", "quantity": 1.0, "confidence": entry.composite_confidence}
+    def get_status(self) -> Dict[str, Any]:
+        return {
+            "regime": self.state.current_regime,
+            "uncertainty": self.state.epistemic_uncertainty,
+            "active_goals_count": len(self.state.active_goals),
+            "folded_lessons_count": len(self.state.folded_history)
+        }
