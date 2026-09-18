@@ -1986,7 +1986,11 @@ class HeadAI:
             adjusted_size *= vol_cap
 
             # Risk Cap
-            exposure_buffer = max(0.0, 1.0 - (context.portfolio_exposure / self.weights.get(AgentRole.RISK_SENTINEL, 0.5)))
+            risk_weight = self.weights.get(AgentRole.RISK_SENTINEL, 0.5)
+            if risk_weight > 0:
+                exposure_buffer = max(0.0, 1.0 - (context.portfolio_exposure / risk_weight))
+            else:
+                exposure_buffer = 1.0
             adjusted_size *= exposure_buffer
 
             return max(0.001, min(0.10, adjusted_size))
