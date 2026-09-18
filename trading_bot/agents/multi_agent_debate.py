@@ -235,7 +235,6 @@ class DebateResult:
     dissenting_views: List[str]
     disagreement_map: Dict[str, float] = field(default_factory=dict)
     provenance: Dict[str, Any] = field(default_factory=dict)
-    disagreement_map: Dict[str, float] = field(default_factory=dict)
     
     # Canonical DebateResult Interface Contract (Institutional Upgrades)
     decision: Optional[TradeAction] = None
@@ -252,7 +251,6 @@ class DebateResult:
     uncertainty: float = 0.0
     reasoning_trace: str = ""
     schema_version: str = "1.0.0"
-    disagreement_map: Dict[str, float] = field(default_factory=dict)
 
     def __post_init__(self):
         if self.decision is None:
@@ -380,38 +378,6 @@ class MacroStrategist(TradingAgent):
             predictions = []
             counter_evidence = []
             verification = ""
-
-            # Evidence-first defaults
-            observation = f"HTF and macro analysis for {context.symbol} at {context.current_price:.5f}"
-            evidence = []
-            hypothesis = "Neutral macro trend."
-            predictions = []
-            counter_evidence = []
-            verification = "HTF trend and news sentiment checked."
-
-            # Evidence-first defaults
-            observation = f"HTF and macro analysis for {context.symbol} at {context.current_price:.5f}"
-            evidence = []
-            hypothesis = "Neutral macro trend."
-            predictions = []
-            counter_evidence = []
-            verification = "HTF trend and news sentiment checked."
-
-            # Evidence-first defaults
-            observation = f"HTF and macro analysis for {context.symbol} at {context.current_price:.5f}"
-            evidence = []
-            hypothesis = "Neutral macro trend."
-            predictions = []
-            counter_evidence = []
-            verification = "HTF trend and news sentiment checked."
-
-            # Evidence-first local parameters
-            observation = f"Symbol: {context.symbol}, price: {context.current_price}, HTF trend: {context.htf_trend}"
-            evidence = []
-            hypothesis = "Neutral macro outlook, consolidation expected."
-            predictions = []
-            counter_evidence = []
-            verification = "No macro triggers active"
 
             # Evidence-first local parameters
             observation = f"Symbol: {context.symbol}, price: {context.current_price}, HTF trend: {context.htf_trend}"
@@ -599,30 +565,6 @@ class TacticalExecutioner(TradingAgent):
             counter_evidence = []
             verification = ""
 
-            # Evidence-first defaults
-            observation = f"LTF tactical analysis for {context.symbol} at {context.current_price:.5f}"
-            evidence = []
-            hypothesis = "Neutral LTF trend."
-            predictions = []
-            counter_evidence = []
-            verification = "LTF trend and volume checked."
-
-            # Evidence-first defaults
-            observation = f"LTF tactical analysis for {context.symbol} at {context.current_price:.5f}"
-            evidence = []
-            hypothesis = "Neutral LTF trend."
-            predictions = []
-            counter_evidence = []
-            verification = "LTF trend and volume checked."
-
-            # Evidence-first defaults
-            observation = f"LTF tactical analysis for {context.symbol} at {context.current_price:.5f}"
-            evidence = []
-            hypothesis = "Neutral LTF trend."
-            predictions = []
-            counter_evidence = []
-            verification = "LTF trend and volume checked."
-
             # Evidence-first local parameters
             observation = f"Symbol: {context.symbol}, price: {context.current_price}, LTF trend: {context.ltf_trend}"
             evidence = []
@@ -789,30 +731,6 @@ class RiskSentinel(TradingAgent):
             verification = "Risk Sentinel protection active."
             total_score = 0.0
 
-            # Evidence-first defaults
-            observation = f"Risk sentinel analysis for {context.symbol} at {context.current_price:.5f}"
-            evidence = []
-            hypothesis = "Neutral risk profile."
-            predictions = []
-            counter_evidence = []
-            verification = "Portfolio exposure, correlation risk and VIX levels checked."
-
-            # Evidence-first defaults
-            observation = f"Risk sentinel analysis for {context.symbol} at {context.current_price:.5f}"
-            evidence = []
-            hypothesis = "Neutral risk profile."
-            predictions = []
-            counter_evidence = []
-            verification = "Portfolio exposure, correlation risk and VIX levels checked."
-
-            # Evidence-first defaults
-            observation = f"Risk sentinel analysis for {context.symbol} at {context.current_price:.5f}"
-            evidence = []
-            hypothesis = "Neutral risk profile."
-            predictions = []
-            counter_evidence = []
-            verification = "Portfolio exposure, correlation risk and VIX levels checked."
-
             # Evidence-first local parameters
             observation = f"Symbol: {context.symbol}, price: {context.current_price}, risk flags: {risk_flags}"
             evidence = []
@@ -899,15 +817,6 @@ class RiskSentinel(TradingAgent):
                 evidence.append(f"Asset local volatility normal ({context.volatility:.2%}).")
 
             key_factors['volatility_risk'] = vol_score
-            total_score = sum(key_factors.values())
-
-            total_score = sum(key_factors.values())
-
-            total_score = sum(key_factors.values())
-
-            total_score = sum(key_factors.values())
-
-            total_score = sum(key_factors.values())
 
             # Calculate overall score
             total_score = sum(key_factors.values())
@@ -2517,11 +2426,6 @@ class MultiAgentDebateSystem:
                 'memory_snapshot': f"sage_mem_snap_{hashlib.md5(market_state_str.encode('utf-8')).hexdigest()[:8]}",
                 'experiment_id': "exp_multidim_debate_prod",
                 'risk_policy_version': "risk_fortress_v6_strict",
-                'falsification_report': {
-                    'is_falsified': falsification_report.is_falsified,
-                    'rejection_reason': falsification_report.rejection_reason,
-                    'verifier_outcomes': falsification_report.verifier_outcomes,
-                },
                 'verification_results': verification_results,
                 'falsification_report': {
                     'is_falsified': falsification_report.is_falsified,
