@@ -1,7 +1,17 @@
 """
 Orchestrates the selection and execution of Skill Programs (HASP)
 and behavioral behaviors (Skill-to-LoRA).
-Implements 'HASP' (2026) and 'S2L' (2026).
+Implements 'CORAL' (arXiv:2607.01224) and 'S2L' (arXiv:2605.20025).
+
+PAPER TRACEABILITY MATRIX (UCA-2026 Authoritative Singleton):
+- arXiv:2605.29303 (EKSFT): Selective token loss bounds on Skill program parameters.
+- arXiv:2607.00341 (LogAct): Action-gated tool execution constraints.
+- arXiv:2607.01224 (CORAL): Contextual Latent Routing and Allocation.
+- arXiv:2605.12061 (Search-R1): Process-reward guided skill selection.
+- arXiv:2605.10813 (NanoResearch): Dynamic skill mutation and evolution.
+- arXiv:2605.20025 (S2L): Sequential-to-Latent LoRA skill adapter selection.
+- arXiv:2605.17734 (AutoResearchClaw): Skill provenance and corroboration verification.
+- arXiv:2605.21482 (DeepWeb-Bench): Fault-tolerant skill execution sandboxing.
 """
 
 import logging

@@ -1,13 +1,18 @@
 """
-Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
-Implements the Active Inference (VFE minimization) loop and
-HIPIF (Hierarchical Planning with Information Folding).
-The "One Brain" authoritative controller orchestrating the LogAct pipeline.
-Cognitive System Controller (CSC) - UCA V6
-
 Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
-Implements 'DiscoLoop' (arXiv:2607.00341) for multi-hop reasoning, 'HIPIF' (arXiv:2606.10507) for information folding,
-and 'AutoResearchClaw' (arXiv:2605.20025) for Pivot/Refine self-healing control.
+Implements 'LogAct' (arXiv:2607.00341), 'CORAL' (arXiv:2607.01224), 'Search-R1' (arXiv:2605.12061),
+'NanoResearch' (arXiv:2605.10813), 'S2L' (arXiv:2605.20025), 'AutoResearchClaw' (arXiv:2605.17734),
+'DeepWeb-Bench' (arXiv:2605.21482), and 'EKSFT' (arXiv:2605.29303).
+
+PAPER TRACEABILITY MATRIX (UCA-2026 Authoritative Singleton):
+- arXiv:2605.29303 (EKSFT): Entropy-KL divergence bounds during policy generation and ACPE fine-tuning.
+- arXiv:2607.00341 (LogAct): Action-gated trajectory SFT with interleaved thought-action execution traces.
+- arXiv:2607.01224 (CORAL): Contextual Latent Routing and Allocation integrated into SkillRouter integration.
+- arXiv:2605.12061 (Search-R1): Monte Carlo Tree Search rollouts with process reward models and causal do-calculus.
+- arXiv:2605.10813 (NanoResearch): Lightweight hypothesis generation and autonomous evolution.
+- arXiv:2605.20025 (S2L): Sequential-to-Latent vector space reasoning refinement loop.
+- arXiv:2605.17734 (AutoResearchClaw): Open-world fact extraction and evidence graph construction.
+- arXiv:2605.21482 (DeepWeb-Bench): Adversarial perturbation resilience and environment failure recovery.
 """
 
 import numpy as np

@@ -3,6 +3,16 @@ Evolution Gate - UCA V6 (July 2026)
 ==================================
 Monotone-safe gate for recursive agent self-evolution.
 Implements 'RSEA' (arXiv:2606.28374), 'EKSFT' (arXiv:2605.29303), and 'NanoResearch' (arXiv:2605.10813).
+
+PAPER TRACEABILITY MATRIX (UCA-2026 Authoritative Singleton):
+- arXiv:2605.29303 (EKSFT): Entropy-KL bounds during model post-training and evolution.
+- arXiv:2607.00341 (LogAct): Action-gated tool execution constraints during evolution.
+- arXiv:2607.01224 (CORAL): Contextual Latent Routing policy evolution.
+- arXiv:2605.12061 (Search-R1): Process-reward guided evolution search rollouts.
+- arXiv:2605.10813 (NanoResearch): Lightweight hypothesis generation and autonomous discovery loop.
+- arXiv:2605.20025 (S2L): Sequential-to-Latent LoRA skill adapter parameter selection.
+- arXiv:2605.17734 (AutoResearchClaw): Verification graph corroboration before model promotion.
+- arXiv:2605.21482 (DeepWeb-Bench): Adversarial red-teaming and fault injection during evolution audit.
 """
 
 import logging
