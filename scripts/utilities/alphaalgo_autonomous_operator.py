@@ -22,7 +22,10 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, asdict
 import requests
+from dotenv import load_dotenv
 from loguru import logger
+
+module_logger = logging.getLogger(__name__)
 
 # Configure logging
 LOG_DIR = Path("logs")
@@ -73,7 +76,7 @@ class AlphaAlgoOperator:
     """Autonomous operator for AlphaAlgo trading bot"""
     
     def __init__(self):
-        self.root_dir = Path(__file__).parent
+        self.root_dir = Path(__file__).parent.parent.parent
         self.state_file = self.root_dir / "operator_state.json"
         self.learning_log = LOG_DIR / "learning_history.log"
         self.bot_process = None
@@ -86,7 +89,7 @@ class AlphaAlgoOperator:
         """Load operator state from disk"""
         if self.state_file.exists():
             with open(self.state_file, 'r') as f:
-                    return json.load(f)
+                return json.load(f)
         return {
             "start_time": datetime.now().isoformat(),
             "total_runtime_hours": 0,
@@ -113,7 +116,7 @@ class AlphaAlgoOperator:
             response = requests.get("https://www.google.com", timeout=5)
             latency = (time.time() - start) * 1000
             return response.status_code == 200, latency
-        except:
+        except Exception:
             return False, None
     
     def check_system_resources(self) -> Dict:
@@ -153,21 +156,16 @@ class AlphaAlgoOperator:
             issues.append(".env file missing")
             return False, issues
         
-        # Check critical env vars
-        from dotenv import load_dotenv
-
-logger = logging.getLogger(__name__)
-
-load_dotenv(env_file)
+        load_dotenv(env_file)
         
-critical_vars = ["MT5_LOGIN", "MT5_PASSWORD", "MT5_SERVER"]
-for var in critical_vars:
+        critical_vars = ["MT5_LOGIN", "MT5_PASSWORD", "MT5_SERVER"]
+        for var in critical_vars:
             if not os.getenv(var):
                 issues.append(f"Missing environment variable: {var}")
         
-return len(issues) == 0, issues
+        return len(issues) == 0, issues
     
-def run_system_diagnostic(self) -> SystemHealth:
+    def run_system_diagnostic(self) -> SystemHealth:
         """Run complete system diagnostic"""
         logger.info("🔍 Running system diagnostic...")
         
@@ -231,13 +229,13 @@ def run_system_diagnostic(self) -> SystemHealth:
         logger.info(f"✅ Diagnostic complete: {status.upper()}")
         return health
     
-def is_bot_running(self) -> bool:
+    def is_bot_running(self) -> bool:
         """Check if trading bot is running"""
         if self.bot_process and self.bot_process.poll() is None:
             return True
         return False
     
-def start_bot(self) -> bool:
+    def start_bot(self) -> bool:
         """Start the trading bot"""
         logger.info("🚀 Starting AlphaAlgo trading bot...")
         
@@ -277,7 +275,7 @@ def start_bot(self) -> bool:
             logger.error(traceback.format_exc())
             return False
     
-def stop_bot(self):
+    def stop_bot(self):
         """Stop the trading bot gracefully"""
         if self.bot_process:
             logger.info("🛑 Stopping AlphaAlgo...")
@@ -291,7 +289,7 @@ def stop_bot(self):
             except Exception as e:
                 logger.error(f"❌ Error stopping bot: {e}")
     
-def restart_bot(self):
+    def restart_bot(self):
         """Restart the trading bot"""
         logger.info("🔄 Restarting AlphaAlgo...")
         self.stop_bot()
@@ -306,7 +304,7 @@ def restart_bot(self):
         self.state["restarts"] += 1
         return self.start_bot()
     
-def monitor_bot_logs(self) -> Tuple[int, int]:
+    def monitor_bot_logs(self) -> Tuple[int, int]:
         """Monitor bot logs for errors and warnings"""
         errors = 0
         warnings = 0
@@ -329,13 +327,13 @@ def monitor_bot_logs(self) -> Tuple[int, int]:
                 elif "WARNING" in line:
                     warnings += 1
             
-        except Exception as e:
+        except Exception:
             # Silently handle log reading errors
             pass
         
         return errors, warnings
     
-def auto_fix_issues(self, health: SystemHealth) -> int:
+    def auto_fix_issues(self, health: SystemHealth) -> int:
         """Automatically fix detected issues"""
         fixes_applied = 0
         
@@ -366,7 +364,7 @@ def auto_fix_issues(self, health: SystemHealth) -> int:
         self.state["errors_fixed"] += fixes_applied
         return fixes_applied
     
-def generate_hourly_report(self) -> str:
+    def generate_hourly_report(self) -> str:
         """Generate hourly performance report"""
         health = self.run_system_diagnostic()
         
@@ -403,7 +401,7 @@ OPERATOR STATS
 """
         return report
     
-async def run_continuous_operation(self):
+    async def run_continuous_operation(self):
         """Main continuous operation loop"""
         logger.info("🤖 AlphaAlgo Autonomous Operator Starting...")
         logger.info("=" * 60)
