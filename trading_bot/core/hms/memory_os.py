@@ -278,7 +278,8 @@ def copy_node_to_tier(node: MemoryNode, tier: MemoryTier) -> MemoryNode:
 def copy_dict(d: Dict[str, Any]) -> Dict[str, Any]:
     try:
         return json.loads(json.dumps(d))
-    except:
+    except Exception as exc:
+        logger.debug("json copy failed, falling back to dict.copy(): %s", exc)
         return d.copy()
 
 

@@ -170,10 +170,8 @@ class ProductionDeployment:
         # Start health check server in background
         import threading
 
-logger = logging.getLogger(__name__)
-
-health_thread = threading.Thread(target=self.health_check.start, daemon=True)
-health_thread.start()
+        health_thread = threading.Thread(target=self.health_check.start, daemon=True)
+        health_thread.start()
         
         # Start system monitor
         system_monitor = SystemMonitor(self.metrics)
@@ -187,8 +185,9 @@ health_thread.start()
         
         iteration = 0
         
-        while True:
-            iteration += 1
+        try:
+            while True:
+                iteration += 1
                 
                 # Fetch market data for all symbols
                 market_data = await self._fetch_market_data()
@@ -204,7 +203,7 @@ health_thread.start()
                     if signal['action'] != 'hold':
                         logger.info(f"{symbol}: {signal['action']} (confidence: {signal['confidence']:.2%})")
                         self.metrics.record_trade(symbol, signal['action'], 0.0)
-                
+
                 # Auto-scaling check
                 if self.config.get('enable_auto_scaling', False):
                     system_metrics = {
@@ -220,7 +219,7 @@ health_thread.start()
                 # Sleep
                 await asyncio.sleep(60)  # 1 minute
                 
-            except KeyboardInterrupt:
+        except KeyboardInterrupt:
                 logger.warning("Received shutdown signal")
                 break
     async def _fetch_market_data(self):

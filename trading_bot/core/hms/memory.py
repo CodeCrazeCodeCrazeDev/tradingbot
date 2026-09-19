@@ -502,7 +502,7 @@ class HierarchicalMemorySystem:
             if cls._instance is not None:
                 try:
                     cls._instance._save_schema()
-                except:
-                    pass
+                except Exception as exc:
+                    logger.warning("Failed to save SAGE schema during reset: %s", exc)
                 cls._instance = None
         logger.info("HierarchicalMemorySystem successfully reset with schema synchronization.")
