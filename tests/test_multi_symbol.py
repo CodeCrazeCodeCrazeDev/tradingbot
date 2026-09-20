@@ -36,7 +36,7 @@ trader = MultiSymbolTrader(
         manage_correlations=True,
         max_correlated_exposure=50
     )
-    return trader
+return trader
 
 @pytest.mark.asyncio
 @pytest.mark.skip(reason="Async correlation update has implementation issues")

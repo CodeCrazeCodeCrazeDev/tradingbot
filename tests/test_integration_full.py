@@ -149,7 +149,7 @@ for _ in range(100):
 latency = time.perf_counter() - start
         
         # Should compute 100 schedules in < 1 second
-        assert latency < 1.0
+assert latency < 1.0
 
 
 if __name__ == "__main__":

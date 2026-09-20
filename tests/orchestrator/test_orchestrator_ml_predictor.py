@@ -255,8 +255,7 @@ class TestProbabilityCalibrator:
         assert 0 <= calibrated <= 1
 
     def test_get_type_adjustment(self):
-    pass
-import numpy
+        from trading_bot.orchestrator.ml_predictor import ProbabilityCalibrator
         calibrator = ProbabilityCalibrator()
         arb_adj = calibrator._get_type_adjustment('ARBITRAGE')
         mom_adj = calibrator._get_type_adjustment('MOMENTUM')
