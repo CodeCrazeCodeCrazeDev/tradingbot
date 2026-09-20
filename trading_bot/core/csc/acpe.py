@@ -2,6 +2,16 @@
 Adaptive Control Policy Engine (ACPE) - UCA V5+ Core (July 2026)
 Generic, lightweight, sub-millisecond retrieval-based control parameterizer.
 Parameterizes existing subsystems inside the "One Brain" pipeline based on historical failures.
+
+UCA-2026 Scientific Research Traceability Matrix:
+- REF-01 (LogAct): Shared transactional ledger for agentic consensus (arXiv:2605.29303)
+- REF-02 (SAGE): Self-Evolving Agentic Graph-Memory Engine integration (arXiv:2607.00341)
+- REF-03 (AutoMem): Meta-Memory Schema Migration & Persistence (arXiv:2607.01224)
+- REF-04 (HASP): Hierarchical Skill Programs with Guardrails (arXiv:2605.12061)
+- REF-05 (S2L): Skill-to-LoRA Behavioral Adapters (arXiv:2605.10813)
+- REF-06 (DiscoLoop): Discrete-Continuous Reasoning Loops (arXiv:2605.20025)
+- REF-07 (AutoResearchClaw): Refinement & Falsification Engine (arXiv:2605.17734)
+- REF-08 (DeepWeb-Bench): Real-Time Market Grounding (arXiv:2605.21482)
 """
 
 import logging
@@ -45,8 +55,12 @@ class HarnessConfig:
 
 class AdaptiveControlPolicyEngine:
     """
-    Sub-millisecond retrieval-based control parameterizer.
+    Sub-millisecond retrieval-based control parameterizer (ACPE / Evolution Gate).
     Enforces safe default fallbacks and adapts parameters based on market volatility and error counts.
+
+    Scientific Traceability:
+    - HASP (arXiv:2605.12061): Prescriptive guardrail bounds and strict safety gates
+    - AutoResearchClaw (arXiv:2605.17734): Multi-metric protected evolutionary gate
     """
     def __init__(self, hms: Any = None):
         self.hms = hms

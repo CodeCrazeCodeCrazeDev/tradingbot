@@ -3,6 +3,7 @@
   "entities": [],
   "relations": [],
   "optimized_count": 0,
-  "updated_at": "2026-08-15T01:04:24.916326",
-  "integrity_hash": "b9cbeaaf875f199f507f0e04ca2a9f9235b0f821f3684305368bebdf290940ed"
+  "updated_at": "2026-09-20T21:44:15.356323",
+  "integrity_hash": "ff7a5acdb24cf15a7f8536c25f708791d38ba5e58d83611fa480b5c5a905f3aa",
+  "migration_history": []
 }
