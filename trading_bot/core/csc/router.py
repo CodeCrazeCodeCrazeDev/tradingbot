@@ -1,7 +1,17 @@
 """
+SkillRouter - UCA V6 Skill & Adapter Routing Engine.
 Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral behaviors (Skill-to-LoRA).
-Implements 'HASP' (2026) and 'S2L' (2026).
+and behavioral adapters (Skill-to-LoRA).
+
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Selective fine-tuning parameter alignment.
+- arXiv:2607.00341 (DiscoLoop): Multi-hop reasoning skill routing.
+- arXiv:2607.01224 (AutoMem): Skill memory consolidation.
+- arXiv:2605.12061 (SAGE): Multi-hop evidence graph routing.
+- arXiv:2605.10813 (NanoResearch / ACPE): Dynamic control policy selection.
+- arXiv:2605.20025 (AutoResearchClaw): Strategy pivot routing.
+- arXiv:2605.17734 (HASP): Skill program execution and guardrail safety.
+- arXiv:2605.21482 (S2L / DeepWeb-Bench): Skill-to-LoRA behavioral routing.
 """
 
 import logging
