@@ -1,6 +1,6 @@
 # Phase 6 (Part 5): Migration Plan
 
-Phased strategy for the deployment of UCA-2026 in institutional production.
+Phased strategy for the deployment of UCA-2026 in institutional production, grounded in eight post-2025 research specifications (arXiv:2605.29303, arXiv:2607.00341, arXiv:2607.01224, arXiv:2605.12061, arXiv:2605.10813, arXiv:2605.20025, arXiv:2605.17734, arXiv:2605.21482).
 
 ---
 

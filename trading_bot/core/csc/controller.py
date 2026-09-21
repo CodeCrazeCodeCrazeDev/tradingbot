@@ -1,13 +1,18 @@
 """
-Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
-Implements the Active Inference (VFE minimization) loop and
-HIPIF (Hierarchical Planning with Information Folding).
-The "One Brain" authoritative controller orchestrating the LogAct pipeline.
-Cognitive System Controller (CSC) - UCA V6
+Cognitive System Controller (CSC) - UCA V6 Strategic One-Brain Executive Controller.
 
-Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
-Implements 'DiscoLoop' (arXiv:2607.00341) for multi-hop reasoning, 'HIPIF' (arXiv:2606.10507) for information folding,
-and 'AutoResearchClaw' (arXiv:2605.20025) for Pivot/Refine self-healing control.
+Integrates the 12-stage Recursive Active Inference pipeline and serves as the single
+authoritative strategic controller in AlphaAlgo.
+
+Research Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Entropy-KL selective token masking and policy entropy preservation.
+- arXiv:2607.00341 (DiscoLoop): Continuous-discrete recurrent hidden state coupling and multi-hop reasoning.
+- arXiv:2607.01224 (AutoMem): Automated memory management as a cognitive skill.
+- arXiv:2605.12061 (SAGE): Self-evolving graph memory navigation and evidence retrieval.
+- arXiv:2605.10813 (NanoResearch / RSEA): Safe recursive self-improvement and monotonic evolution.
+- arXiv:2605.20025 (S2L / Search-to-Learn): Skill-to-LoRA behavioral routing and active search.
+- arXiv:2605.17734 (AutoResearchClaw / HASP): ProgramFunction guardrails and Pivot/Refine self-healing loops.
+- arXiv:2605.21482 (DeepWeb-Bench): Real-time liquidity benchmarks and environment state verification.
 """
 
 import numpy as np

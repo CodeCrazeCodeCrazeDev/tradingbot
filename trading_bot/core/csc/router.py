@@ -1,7 +1,18 @@
 """
+Skill Router (S2L / HASP) - UCA V6 Skill & Capability Dispatcher.
+
 Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral behaviors (Skill-to-LoRA).
-Implements 'HASP' (2026) and 'S2L' (2026).
+and behavioral behaviors (Skill-to-LoRA / S2L) in AlphaAlgo.
+
+Research Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Selective policy update filtering and token masking.
+- arXiv:2607.00341 (DiscoLoop): Multi-hop reasoning loop capability selection.
+- arXiv:2607.01224 (AutoMem): Memory action skill routing and metamemory integration.
+- arXiv:2605.12061 (SAGE): Dynamic graph retrieval skill routing.
+- arXiv:2605.10813 (NanoResearch / RSEA): Code execution safety checks during skill evaluation.
+- arXiv:2605.20025 (S2L / Search-to-Learn): Skill-to-LoRA adapter selection and routing.
+- arXiv:2605.17734 (AutoResearchClaw / HASP): ProgramFunction execution guardrails and interception.
+- arXiv:2605.21482 (DeepWeb-Bench): Environment benchmarks and liquidity execution skill dispatching.
 """
 
 import logging

@@ -1,12 +1,17 @@
 """
-Multi-Agent Debate System (UCA-2026 Core Intelligence Layer)
+Multi-Agent Debate System - UCA V6 Core Intelligence & Consensus Engine.
 
-Paper Traceability Matrix:
-- arXiv:2605.10813 (SAGE): Structured multi-agent debate with evidence-first reasoning.
-- arXiv:2607.00341 (DiscoLoop): Falsification gates and Bayesian posterior updating.
-- arXiv:2605.29303 (EKSFT): Verification-backed evidence lineage and confidence calibration.
-- arXiv:2605.17734 (HASP): Non-negotiable financial risk sentinels and hard safety vetoes.
-- arXiv:2605.20025 (NanoResearch): Dynamic scorecards and quorum consensus under Byzantine degradation.
+Evidence-first multi-agent debate and Bayesian consensus framework in AlphaAlgo.
+
+Research Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Verification-backed evidence lineage, token entropy bounds, and confidence calibration.
+- arXiv:2607.00341 (DiscoLoop): Continuous-discrete debate state transitions and multi-hop falsification loops.
+- arXiv:2607.01224 (AutoMem): Historical argument retrieval and debate state memory optimization.
+- arXiv:2605.12061 (SAGE): Graph-backed evidence verification and multi-agent knowledge graph alignment.
+- arXiv:2605.10813 (NanoResearch / RSEA): Scorecards, trust multipliers, and Byzantine fault resistance.
+- arXiv:2605.20025 (S2L / Search-to-Learn): Specialized agent role dispatching and active debate search.
+- arXiv:2605.17734 (AutoResearchClaw / HASP): Non-negotiable financial risk sentinels and hard safety vetoes.
+- arXiv:2605.21482 (DeepWeb-Bench): Real-time liquidity verifiers and adversarial stress testing.
 
 Evidence-first debate loop:
 Observation -> Evidence -> Hypothesis -> Predictions -> Counter-evidence -> Bayesian Consensus Aggregation.
