@@ -233,7 +233,6 @@ class DebateResult:
     debate_rounds: int
     consensus_level: float
     dissenting_views: List[str]
-    disagreement_map: Dict[str, float] = field(default_factory=dict)
     provenance: Dict[str, Any] = field(default_factory=dict)
     disagreement_map: Dict[str, float] = field(default_factory=dict)
     
@@ -252,7 +251,6 @@ class DebateResult:
     uncertainty: float = 0.0
     reasoning_trace: str = ""
     schema_version: str = "1.0.0"
-    disagreement_map: Dict[str, float] = field(default_factory=dict)
 
     def __post_init__(self):
         if self.decision is None:
@@ -374,47 +372,7 @@ class MacroStrategist(TradingAgent):
             reasoning = []
             anti_trade_reasoning = []
             key_factors = {}
-            observation = f"Market state for {context.symbol} at current price {context.current_price:.5f}"
-            evidence = []
-            hypothesis = ""
-            predictions = []
-            counter_evidence = []
-            verification = ""
-
-            # Evidence-first defaults
-            observation = f"HTF and macro analysis for {context.symbol} at {context.current_price:.5f}"
-            evidence = []
-            hypothesis = "Neutral macro trend."
-            predictions = []
-            counter_evidence = []
-            verification = "HTF trend and news sentiment checked."
-
-            # Evidence-first defaults
-            observation = f"HTF and macro analysis for {context.symbol} at {context.current_price:.5f}"
-            evidence = []
-            hypothesis = "Neutral macro trend."
-            predictions = []
-            counter_evidence = []
-            verification = "HTF trend and news sentiment checked."
-
-            # Evidence-first defaults
-            observation = f"HTF and macro analysis for {context.symbol} at {context.current_price:.5f}"
-            evidence = []
-            hypothesis = "Neutral macro trend."
-            predictions = []
-            counter_evidence = []
-            verification = "HTF trend and news sentiment checked."
-
-            # Evidence-first local parameters
-            observation = f"Symbol: {context.symbol}, price: {context.current_price}, HTF trend: {context.htf_trend}"
-            evidence = []
-            hypothesis = "Neutral macro outlook, consolidation expected."
-            predictions = []
-            counter_evidence = []
-            verification = "No macro triggers active"
-
-            # Evidence-first local parameters
-            observation = f"Symbol: {context.symbol}, price: {context.current_price}, HTF trend: {context.htf_trend}"
+            observation = f"Symbol: {context.symbol}, price: {context.current_price:.5f}, HTF trend: {context.htf_trend}"
             evidence = []
             hypothesis = "Neutral macro outlook, consolidation expected."
             predictions = []
@@ -592,39 +550,7 @@ class TacticalExecutioner(TradingAgent):
             reasoning = []
             anti_trade_reasoning = []
             key_factors = {}
-            observation = f"Market state for {context.symbol} at current price {context.current_price:.5f}"
-            evidence = []
-            hypothesis = ""
-            predictions = []
-            counter_evidence = []
-            verification = ""
-
-            # Evidence-first defaults
-            observation = f"LTF tactical analysis for {context.symbol} at {context.current_price:.5f}"
-            evidence = []
-            hypothesis = "Neutral LTF trend."
-            predictions = []
-            counter_evidence = []
-            verification = "LTF trend and volume checked."
-
-            # Evidence-first defaults
-            observation = f"LTF tactical analysis for {context.symbol} at {context.current_price:.5f}"
-            evidence = []
-            hypothesis = "Neutral LTF trend."
-            predictions = []
-            counter_evidence = []
-            verification = "LTF trend and volume checked."
-
-            # Evidence-first defaults
-            observation = f"LTF tactical analysis for {context.symbol} at {context.current_price:.5f}"
-            evidence = []
-            hypothesis = "Neutral LTF trend."
-            predictions = []
-            counter_evidence = []
-            verification = "LTF trend and volume checked."
-
-            # Evidence-first local parameters
-            observation = f"Symbol: {context.symbol}, price: {context.current_price}, LTF trend: {context.ltf_trend}"
+            observation = f"Symbol: {context.symbol}, price: {context.current_price:.5f}, LTF trend: {context.ltf_trend}"
             evidence = []
             hypothesis = "Neutral tactical stance, awaiting momentum signal."
             predictions = []
@@ -774,47 +700,8 @@ class RiskSentinel(TradingAgent):
             reasoning = []
             anti_trade_reasoning = []
             key_factors = {}
-            observation = f"Market state for {context.symbol} at current price {context.current_price:.5f}"
-            evidence = []
-            hypothesis = ""
-            predictions = []
-            counter_evidence = []
-            verification = ""
             risk_flags = 0
-            observation = f"Exposure={context.portfolio_exposure}, Corr={context.correlation_risk}, Vol={context.volatility}"
-            evidence = []
-            hypothesis = "Portfolio risk exposure verification."
-            predictions = []
-            counter_evidence = []
-            verification = "Risk Sentinel protection active."
-            total_score = 0.0
-
-            # Evidence-first defaults
-            observation = f"Risk sentinel analysis for {context.symbol} at {context.current_price:.5f}"
-            evidence = []
-            hypothesis = "Neutral risk profile."
-            predictions = []
-            counter_evidence = []
-            verification = "Portfolio exposure, correlation risk and VIX levels checked."
-
-            # Evidence-first defaults
-            observation = f"Risk sentinel analysis for {context.symbol} at {context.current_price:.5f}"
-            evidence = []
-            hypothesis = "Neutral risk profile."
-            predictions = []
-            counter_evidence = []
-            verification = "Portfolio exposure, correlation risk and VIX levels checked."
-
-            # Evidence-first defaults
-            observation = f"Risk sentinel analysis for {context.symbol} at {context.current_price:.5f}"
-            evidence = []
-            hypothesis = "Neutral risk profile."
-            predictions = []
-            counter_evidence = []
-            verification = "Portfolio exposure, correlation risk and VIX levels checked."
-
-            # Evidence-first local parameters
-            observation = f"Symbol: {context.symbol}, price: {context.current_price}, risk flags: {risk_flags}"
+            observation = f"Symbol: {context.symbol}, price: {context.current_price}, Exposure={context.portfolio_exposure}, Corr={context.correlation_risk}, Vol={context.volatility}"
             evidence = []
             hypothesis = "Neutral risk stance, monitor exposure limits."
             predictions = []
@@ -899,15 +786,6 @@ class RiskSentinel(TradingAgent):
                 evidence.append(f"Asset local volatility normal ({context.volatility:.2%}).")
 
             key_factors['volatility_risk'] = vol_score
-            total_score = sum(key_factors.values())
-
-            total_score = sum(key_factors.values())
-
-            total_score = sum(key_factors.values())
-
-            total_score = sum(key_factors.values())
-
-            total_score = sum(key_factors.values())
 
             # Calculate overall score
             total_score = sum(key_factors.values())
@@ -1694,16 +1572,12 @@ class HeadAI:
                 ts_float = ts_val.timestamp() if ts_val and hasattr(ts_val, 'timestamp') else 0.0
                 return (priority, ts_float)
 
-            sorted_arguments = sorted(arguments, key=get_arg_score)
-
-            # Only use the latest argument from each agent to prevent double-counting across rounds
-            sorted_arguments = sorted(arguments, key=lambda x: x.timestamp)
-            latest_arguments: Dict[AgentRole, AgentArgument] = {}
-            # Sort arguments by timestamp so that the latest one is processed last and overrides earlier ones
+            # Sort arguments by priority and timestamp so that the latest/highest priority argument is processed last
             sorted_args = sorted(
                 arguments,
-                key=lambda a: a.timestamp if getattr(a, "timestamp", None) else datetime.min,
+                key=lambda a: (get_arg_score(a), a.timestamp if getattr(a, "timestamp", None) else datetime.min),
             )
+            latest_arguments: Dict[AgentRole, AgentArgument] = {}
             for arg in sorted_args:
                 latest_arguments[arg.agent_role] = arg
 
@@ -1854,8 +1728,6 @@ class HeadAI:
             consensus_level = (
                 max(bullish, bearish, neutral) / len(active_arguments) if active_arguments else 0.0
             )
-
-            consensus_level = max(bullish, bearish, neutral) / len(active_arguments) if active_arguments else 0.0
 
             # Collect votes
             agent_votes = {}
@@ -2517,11 +2389,6 @@ class MultiAgentDebateSystem:
                 'memory_snapshot': f"sage_mem_snap_{hashlib.md5(market_state_str.encode('utf-8')).hexdigest()[:8]}",
                 'experiment_id': "exp_multidim_debate_prod",
                 'risk_policy_version': "risk_fortress_v6_strict",
-                'falsification_report': {
-                    'is_falsified': falsification_report.is_falsified,
-                    'rejection_reason': falsification_report.rejection_reason,
-                    'verifier_outcomes': falsification_report.verifier_outcomes,
-                },
                 'verification_results': verification_results,
                 'falsification_report': {
                     'is_falsified': falsification_report.is_falsified,
