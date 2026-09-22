@@ -56,6 +56,56 @@ This document tracks identified, resolved, and monitored engineering defects and
 *   **Verification Performed**: Security AST audit confirmed all dynamic executions pass through `SecureASTVisitor`.
 *   **Remaining Risks**: None.
 
+### **DEFECT-UCA-2026-06**: RiskManager Parenthesized List Unpacking Syntax Error
+*   **Component**: `risk/risk_manager.py`
+*   **Severity**: **CRITICAL (BLOCKER)**
+*   **Root Cause**: Unparenthesized list comprehension unpacking with trailing `or` statement causing Python `SyntaxError`.
+*   **Files Affected**: `risk/risk_manager.py`
+*   **Technical Explanation**: Line 390 in `get_risk_report` attempted to unpack `*[f"- {sym}: {limit:.2f}" ...] or ["- None"]`, which is invalid syntax in Python without enclosing parentheses.
+*   **Solution Implemented**: Enclosed the list comprehension and fallback expression in parentheses: `*( [f"- {sym}: {limit:.2f}" ...] or ["- None"] )`.
+*   **Verification Performed**: `python3 -m py_compile risk/risk_manager.py` returned 0 errors.
+*   **Remaining Risks**: None.
+
+### **DEFECT-UCA-2026-07**: Production Deployment Script Unexpected Indentation
+*   **Component**: `scripts/deployment/deploy_5star_production.py`
+*   **Severity**: **HIGH**
+*   **Root Cause**: Misplaced logger declaration interrupting method indentation inside `ProductionDeployment`.
+*   **Files Affected**: `scripts/deployment/deploy_5star_production.py`
+*   **Technical Explanation**: An unindented `logger = logging.getLogger(__name__)` was placed between method statements inside `start_monitoring()`, breaking AST parser indentation scoping.
+*   **Solution Implemented**: Re-aligned `start_monitoring()` and `run_trading_loop()` method blocks and removed misplaced logger assignment.
+*   **Verification Performed**: `python3 -m py_compile scripts/deployment/deploy_5star_production.py` compiled cleanly.
+*   **Remaining Risks**: None.
+
+### **DEFECT-UCA-2026-08**: Critical Fixes Script Unexpected Indentation
+*   **Component**: `scripts/fixes/auto_fix_critical_issues_v2.py`
+*   **Severity**: **HIGH**
+*   **Root Cause**: Unindented logger assignment placed directly inside `main()` body.
+*   **Files Affected**: `scripts/fixes/auto_fix_critical_issues_v2.py`
+*   **Technical Explanation**: `logger = logging.getLogger(__name__)` was positioned at zero indentation inside `def main()`, producing an `IndentationError`.
+*   **Solution Implemented**: Moved logger definition outside the function scope and re-indented `main()`.
+*   **Verification Performed**: `python3 -m py_compile scripts/fixes/auto_fix_critical_issues_v2.py` compiled cleanly.
+*   **Remaining Risks**: None.
+
+### **DEFECT-UCA-2026-09**: System Launcher Unexpected Indentation
+*   **Component**: `scripts/launchers/run_alphaalgo_5star.py`
+*   **Severity**: **HIGH**
+*   **Root Cause**: Misplaced logger definition and unindented dataframe instantiation.
+*   **Files Affected**: `scripts/launchers/run_alphaalgo_5star.py`
+*   **Technical Explanation**: Zero-indented lines inside `try...except` block in `main()` broke AST parsing.
+*   **Solution Implemented**: Corrected indentation for DataFrame creation and import blocks inside `main()`.
+*   **Verification Performed**: `python3 -m py_compile scripts/launchers/run_alphaalgo_5star.py` compiled cleanly.
+*   **Remaining Risks**: None.
+
+### **DEFECT-UCA-2026-10**: Blocking Time Sleep in Async Validation & PlotCode Routines
+*   **Component**: `trading_bot/core/validation.py`, `trading_bot/neuros_evolution/plotcode_integration.py`
+*   **Severity**: **MEDIUM**
+*   **Root Cause**: Synchronous `time.sleep()` used inside `async def` benchmark and interaction functions.
+*   **Files Affected**: `trading_bot/core/validation.py`, `trading_bot/neuros_evolution/plotcode_integration.py`
+*   **Technical Explanation**: Calling `time.sleep()` blocks the asyncio event loop, causing latency spikes and worker pool starvation.
+*   **Solution Implemented**: Replaced `time.sleep()` with `await asyncio.sleep()`.
+*   **Verification Performed**: Unit tests and py_compile verified non-blocking async execution.
+*   **Remaining Risks**: None.
+
 ---
 
 ## 2. Monitored Issues

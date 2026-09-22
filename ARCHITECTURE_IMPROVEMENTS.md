@@ -1,33 +1,42 @@
-# AlphaAlgo Structural & Architectural Improvements (2026)
+# AlphaAlgo Architectural Improvements (2026)
 
-This document details the structural simplifications, system unifications, and duplicate eliminations performed to achieve the "One Brain" pattern under the Unified Scientific Architecture (UCA-2026).
-
----
-
-## 1. The "One Brain" Architecture Consolidation
-
-Prior to the UCA-2026 migration, the AlphaAlgo codebase suffered from structural sprawl, with multiple legacy modules and redundant orchestration loops competing for state and execution ownership.
-
-### **Structural Purge & Remediation**:
-- Fixed syntax errors and orphaned blocks in `trading_bot/database/production_database.py`, `trading_bot/core/service_registry.py`, and `trading_bot/core_agent_system/master_orchestrator.py`.
-- Enforced a single repository-wide event bus (`UnifiedDecisionBus`) and a single active controller singleton (`CognitiveSystemController`).
-- Programmatically locked the repository against duplicate imports using a custom architecture invariant test suite (`tests/architecture/test_architecture_invariants.py`).
+This document catalogs structural simplifications, singleton consolidations, and architectural unifications across AlphaAlgo under UCA-2026.
 
 ---
 
-## 2. Decoupling of Capabilities & Single Responsibility
+## 1. Modular Cognitive Brain Consolidation
 
-We have enforced strict single-responsibility boundaries over core modules:
-1.  **Sensory Processing & Surprise**: Managed solely by `CognitiveSystemController` inside `controller.py`. Surprise calculation is modeled on Active Inference principles to update the variational free energy state sequentially.
-2.  **Strategic Reasoning & Routing**: Consolidated into `SkillRouter` inside `router.py`. Prompt-based routing, program function (PF) pre-emption, and low-rank adapter selection (S2L) are managed through a unified `route_task` API returning the subscriptable `SkillRouteOutcome` dataclass contract.
-3.  **Knowledge & Episodic Ledger**: Owned entirely by `HierarchicalMemorySystem` (HMS) inside `memory.py`. Relational graph indexing (SAGE Graph Memory) tracks claims, evidence, and provenances securely.
-4.  **Causal World Model rollouts**: Handled by the `UnifiedWorldModel`. It leverages structural causal equations (do-calculus) to perform counterfactual simulations instead of simple statistical forecasting.
-5.  **Multi-Agent Decision Synthesis**: Owned by `HeadAI` and `BayesianDecisionEngine` inside `trading_bot/agents/multi_agent_debate.py`, enforcing multi-verifier falsification prior to trade commitment.
+*   **Canonical Entrypoint**: Unified legacy monolithic entrypoints (`unified_ai_brain.py`, `ultimate_integration.py`, `mega_integration.py`) into backward-compatible wrappers redirecting to `AlphaAlgoCognitiveBrain` (`trading_bot/cognition/alpha_algo_cognitive_brain.py`).
+*   **Sub-layer Architecture**: Structured into 10 explicit cognitive sub-layers (Perception, World Model, State Estimation, Memory, Reasoning, Decision, Risk, Self-Evolution, Verification, Execution).
 
 ---
 
-## 3. Security Hardening & Interface Standardisation
+## 2. Singleton Single-Source-of-Truth Invariant Enforcement
 
-- **AST Sandboxing**: Integrated `SecureASTVisitor` to validate dynamic strategy code before execution in parallel backtesting environments.
-- **Safe Pickle Deserialization**: Replaced un-sanitized `pickle.load` with `safe_load` from `trading_bot.security.safe_pickle`.
-- **Normalized Context Contracts**: `NormalizedMarketContext` ensures immutability across all debate, risk, and cognitive processing loops.
+*   Enforced authoritative singleton access across core AI controllers via `@classmethod get_instance()` thread-safe double-checked locking:
+    *   `CognitiveSystemController` (`trading_bot/core/csc/controller.py`)
+    *   `SkillRouter` (`trading_bot/core/csc/router.py`)
+    *   `HierarchicalMemorySystem` (`trading_bot/core/hms/memory.py`)
+    *   `MultiAgentDebateSystem` (`trading_bot/agents/multi_agent_debate.py`)
+    *   `EvolutionGate` (`trading_bot/core/acpe/gate.py`)
+
+---
+
+## 3. Dynamic Execution Security & AST Sandboxing
+
+*   Integrated `SecureASTVisitor` from `trading_bot.core.security.sandbox` prior to all dynamic strategy executions (`exec()`) in `parallel_backtester.py`.
+*   Restricted unsafe builtins and prohibited non-sandboxed process execution across production environments.
+
+---
+
+## 4. Concurrency & Async I/O Stabilization
+
+*   Replaced all blocking `time.sleep()` calls in `async def` routines with non-blocking `await asyncio.sleep()` in `trading_bot/core/validation.py` and `trading_bot/neuros_evolution/plotcode_integration.py`.
+*   Ensured daemon thread initialization for background health check and monitoring servers to prevent process hanging on exit.
+
+---
+
+## 5. Script & Deployment Standardization
+
+*   Remediated Python AST indentation flaws in deployment and launcher scripts (`deploy_5star_production.py`, `auto_fix_critical_issues_v2.py`, `run_alphaalgo_5star.py`).
+*   Standardized log formatting and exception propagation across operational scripts.

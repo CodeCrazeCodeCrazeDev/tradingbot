@@ -24,14 +24,14 @@ def apply_unicode_fix():
         if hasattr(sys.stdout, 'reconfigure'):
             try:
                 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-            except Exception:
-                pass
+            except Exception as exc:
+                logging.debug(f"stdout reconfigure fallback: {exc}")
         
         if hasattr(sys.stderr, 'reconfigure'):
             try:
                 sys.stderr.reconfigure(encoding='utf-8', errors='replace')
-            except Exception:
-                pass
+            except Exception as exc:
+                logging.debug(f"stderr reconfigure fallback: {exc}")
         
         # Fix existing logging handlers
         for handler in logging.root.handlers[:]:
@@ -39,18 +39,18 @@ def apply_unicode_fix():
                 if hasattr(handler.stream, 'reconfigure'):
                     try:
                         handler.stream.reconfigure(encoding='utf-8', errors='replace')
-                    except Exception:
-                        pass
+                    except Exception as exc:
+                        logging.debug(f"StreamHandler reconfigure fallback: {exc}")
         
         # Set default encoding for file operations
         import locale
         try:
             locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-        except Exception:
+        except Exception as exc1:
             try:
                 locale.setlocale(locale.LC_ALL, 'C.UTF-8')
-            except Exception:
-                pass
+            except Exception as exc2:
+                logging.debug(f"setlocale fallback failed: {exc1}, {exc2}")
 
 
 def setup_utf8_logging(log_dir: str = 'logs'):
