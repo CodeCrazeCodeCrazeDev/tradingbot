@@ -1,0 +1,538 @@
+{
+  "alias_counts": {
+    "signal": 38720,
+    "experiment": 3905,
+    "alpha": 7766,
+    "plan": 5189,
+    "scenario": 4010,
+    "strategy": 21982,
+    "hypothesis": 4421,
+    "thesis": 5352,
+    "prediction": 9286,
+    "explanation": 1850,
+    "causal_model": 40,
+    "forecast": 2582,
+    "assumption": 1652,
+    "expectation": 193,
+    "belief": 243,
+    "world_model_state": 5,
+    "research_proposal": 1,
+    "optimization_proposal": 11
+  },
+  "stage_counts": {
+    "modification": 2266,
+    "evaluation": 13149,
+    "creation": 11718,
+    "promotion": 529,
+    "merged": 810,
+    "rejection": 625,
+    "forgotten": 1205,
+    "reused": 67
+  },
+  "class_count": 2738,
+  "function_count": 6082,
+  "classes_sample": [
+    {
+      "file": "install_service.py",
+      "line_num": 21,
+      "declaration": "class AlphaAlgoService(win32serviceutil.ServiceFramework):"
+    },
+    {
+      "file": "standalone_tests/test_metrics_pure.py",
+      "line_num": 6,
+      "declaration": "class HypothesisState(Enum):"
+    },
+    {
+      "file": "standalone_tests/test_metrics_pure.py",
+      "line_num": 14,
+      "declaration": "class ScientificHypothesis:"
+    },
+    {
+      "file": "examples/alphaalgo_core_complete_demo.py",
+      "line_num": 213,
+      "declaration": "class MockSignalGenerator:"
+    },
+    {
+      "file": "examples/minimal_demo.py",
+      "line_num": 15,
+      "declaration": "class PredictionType(Enum):"
+    },
+    {
+      "file": "examples/data_flow_demo.py",
+      "line_num": 195,
+      "declaration": "class SignalGenerationLayer:"
+    },
+    {
+      "file": "examples/quantum_blockchain_standalone.py",
+      "line_num": 31,
+      "declaration": "class PredictionType(Enum):"
+    },
+    {
+      "file": "examples/quantum_blockchain_standalone.py",
+      "line_num": 183,
+      "declaration": "class TradingPredictionSystem:"
+    },
+    {
+      "file": "examples/quantum_blockchain_enhanced.py",
+      "line_num": 44,
+      "declaration": "class PredictionType(Enum):"
+    },
+    {
+      "file": "examples/quantum_blockchain_enhanced.py",
+      "line_num": 561,
+      "declaration": "class EnhancedTradingPredictionSystem:"
+    },
+    {
+      "file": "examples/alphaalgo_system_validation.py",
+      "line_num": 39,
+      "declaration": "class AlphaAlgoValidationDemo:"
+    },
+    {
+      "file": "examples/self_improvement_demo.py",
+      "line_num": 389,
+      "declaration": "class SimpleMAStrategy:"
+    },
+    {
+      "file": "examples/quantum_blockchain_minimal.py",
+      "line_num": 19,
+      "declaration": "class PredictionType(Enum):"
+    },
+    {
+      "file": "examples/quantum_blockchain_minimal.py",
+      "line_num": 174,
+      "declaration": "class TradingPredictionSystem:"
+    },
+    {
+      "file": "examples/integrated_survival_system.py",
+      "line_num": 102,
+      "declaration": "class ScenarioManager:"
+    },
+    {
+      "file": "perfect_bot/optimized_strategy.py",
+      "line_num": 15,
+      "declaration": "class OptimizedStrategy:"
+    },
+    {
+      "file": "validation/signal_validator.py",
+      "line_num": 24,
+      "declaration": "class SignalValidator:"
+    },
+    {
+      "file": "learning/strategy_optimizer.py",
+      "line_num": 39,
+      "declaration": "class StrategyOptimizer:"
+    },
+    {
+      "file": "scripts/validation/validate_alphaalgo_offline_rl.py",
+      "line_num": 22,
+      "declaration": "class AlphaAlgoValidator:"
+    },
+    {
+      "file": "scripts/validation/comprehensive_qa_validation.py",
+      "line_num": 367,
+      "declaration": "\"Strategy base class loaded successfully\")"
+    },
+    {
+      "file": "scripts/validation/investigate_and_fix_modules.py",
+      "line_num": 387,
+      "declaration": "class SignalType(Enum):"
+    },
+    {
+      "file": "scripts/validation/investigate_and_fix_modules.py",
+      "line_num": 396,
+      "declaration": "class TradingSignal:"
+    },
+    {
+      "file": "scripts/validation/investigate_and_fix_modules.py",
+      "line_num": 408,
+      "declaration": "class BaseStrategy(ABC):"
+    },
+    {
+      "file": "scripts/launchers/thinking_bot_v2.py",
+      "line_num": 49,
+      "declaration": "class SignalType(Enum):"
+    },
+    {
+      "file": "scripts/launchers/thinking_bot_v2.py",
+      "line_num": 55,
+      "declaration": "class SignalStrength(Enum):"
+    },
+    {
+      "file": "scripts/launchers/thinking_bot_v2.py",
+      "line_num": 102,
+      "declaration": "class TradingSignal:"
+    },
+    {
+      "file": "scripts/launchers/run_alphaalgo.py",
+      "line_num": 39,
+      "declaration": "class AlphaAlgoLauncher:"
+    },
+    {
+      "file": "scripts/launchers/learning_bot.py",
+      "line_num": 31,
+      "declaration": "class SignalType(Enum):"
+    },
+    {
+      "file": "scripts/launchers/real_data_trading_bot.py",
+      "line_num": 27,
+      "declaration": "class SignalType(Enum):"
+    },
+    {
+      "file": "scripts/launchers/run_alphaalgo_complete.py",
+      "line_num": 44,
+      "declaration": "class AlphaAlgoSystem:"
+    },
+    {
+      "file": "scripts/launchers/thinking_bot.py",
+      "line_num": 58,
+      "declaration": "class SignalType(Enum):"
+    },
+    {
+      "file": "scripts/launchers/thinking_bot.py",
+      "line_num": 67,
+      "declaration": "class SignalStrength(Enum):"
+    },
+    {
+      "file": "scripts/launchers/thinking_bot.py",
+      "line_num": 125,
+      "declaration": "class TradingSignal:"
+    },
+    {
+      "file": "scripts/utilities/fully_automated_system.py",
+      "line_num": 41,
+      "declaration": "class AutomatedAlphaAlgo:"
+    },
+    {
+      "file": "scripts/utilities/ACTIVATE_OFFLINE_RL_SYSTEM.py",
+      "line_num": 36,
+      "declaration": "class AlphaAlgoActivator:"
+    },
+    {
+      "file": "scripts/utilities/demo_trading_simulator.py",
+      "line_num": 26,
+      "declaration": "class SignalType(Enum):"
+    },
+    {
+      "file": "scripts/utilities/alphaalgo_2_0.py",
+      "line_num": 31,
+      "declaration": "class AlphaAlgo2_0(LearningTradingBot):"
+    },
+    {
+      "file": "scripts/utilities/alphaalgo_autonomous_operator.py",
+      "line_num": 72,
+      "declaration": "class AlphaAlgoOperator:"
+    },
+    {
+      "file": "scripts/utilities/ALPHAALGO_5STAR_IMPLEMENTATION_GUIDE.py",
+      "line_num": 230,
+      "declaration": "class AlphaAlgo5Star:"
+    },
+    {
+      "file": "scripts/utilities/alphaalgo_offline_rl_master.py",
+      "line_num": 40,
+      "declaration": "class AlphaAlgoOfflineRLMaster:"
+    },
+    {
+      "file": "scripts/utilities/performance_optimizer.py",
+      "line_num": 60,
+      "declaration": "class StrategyParameters:"
+    },
+    {
+      "file": "scripts/utilities/alphaalgo_offline_rl_integration.py",
+      "line_num": 32,
+      "declaration": "class AlphaAlgoOfflineRLIntegration:"
+    },
+    {
+      "file": "scripts/utilities/alpha_deployment_manager.py",
+      "line_num": 100,
+      "declaration": "class AlphaDeploymentManager:"
+    },
+    {
+      "file": "meta_learning/evolutionary.py",
+      "line_num": 17,
+      "declaration": "class TradingStrategy:"
+    },
+    {
+      "file": "meta_learning/evolutionary.py",
+      "line_num": 292,
+      "declaration": "class EvolutionaryStrategyOptimizer:"
+    },
+    {
+      "file": "optimization/strategy_optimizer.py",
+      "line_num": 33,
+      "declaration": "class StrategyOptimizer:"
+    },
+    {
+      "file": "learning_path/week3_first_ml_model.py",
+      "line_num": 18,
+      "declaration": "class MLTradingStrategy:"
+    },
+    {
+      "file": "tests_new/unit/test_signals.py",
+      "line_num": 13,
+      "declaration": "class TestSignalSystem:"
+    },
+    {
+      "file": "tests_new/unit/test_signals.py",
+      "line_num": 38,
+      "declaration": "class TestSignalLifecycle:"
+    },
+    {
+      "file": "tests_new/unit/test_signals.py",
+      "line_num": 69,
+      "declaration": "class TestSignalHealthMonitor:"
+    }
+  ],
+  "functions_sample": [
+    {
+      "file": "autonomous_superintelligence_launcher.py",
+      "line_num": 61,
+      "declaration": "def signal_handler(sig, frame):"
+    },
+    {
+      "file": "run_full_autonomous_system.py",
+      "line_num": 53,
+      "declaration": "def signal_handler(sig, frame):"
+    },
+    {
+      "file": "test_autonomous_superintelligence.py",
+      "line_num": 191,
+      "declaration": "async def test_experiment_engine():"
+    },
+    {
+      "file": "main_original.py",
+      "line_num": 1795,
+      "declaration": "def _create_strategy_engine(self, symbol: str, args: argparse.Namespace, mt5i) -> Any:"
+    },
+    {
+      "file": "main_original.py",
+      "line_num": 2664,
+      "declaration": "def handle_shutdown_signal(signum, frame):"
+    },
+    {
+      "file": "main_original.py",
+      "line_num": 3224,
+      "declaration": "def _signal_handler(signum, frame):"
+    },
+    {
+      "file": "_archive/agents 2/specialized_agents.py",
+      "line_num": 22,
+      "declaration": "def get_strategy_name(self) -> str:"
+    },
+    {
+      "file": "_archive/agents 2/specialized_agents.py",
+      "line_num": 81,
+      "declaration": "def get_strategy_name(self) -> str:"
+    },
+    {
+      "file": "_archive/agents 2/specialized_agents.py",
+      "line_num": 140,
+      "declaration": "def get_strategy_name(self) -> str:"
+    },
+    {
+      "file": "_archive/agents 2/specialized_agents.py",
+      "line_num": 207,
+      "declaration": "def get_strategy_name(self) -> str:"
+    },
+    {
+      "file": "_archive/agents 2/specialized_agents.py",
+      "line_num": 285,
+      "declaration": "def get_strategy_name(self) -> str:"
+    },
+    {
+      "file": "_archive/agents 2/base_agent.py",
+      "line_num": 77,
+      "declaration": "def get_strategy_name(self) -> str:"
+    },
+    {
+      "file": "_archive/agents 2/base_agent.py",
+      "line_num": 115,
+      "declaration": "def calculate_confidence(self, signal_strength: float, market_conditions: Dict) -> float:"
+    },
+    {
+      "file": "_archive/legacy_orchestration/master_orchestrator.py",
+      "line_num": 550,
+      "declaration": "def signal_handler(sig, frame):"
+    },
+    {
+      "file": "_archive/legacy_orchestration/latent_dynamics.py",
+      "line_num": 175,
+      "declaration": "def evaluate_performance(self, reality: torch.Tensor, prediction: torch.Tensor) -> Dict[str, float]:"
+    },
+    {
+      "file": "agents/specialized_agents.py",
+      "line_num": 22,
+      "declaration": "def get_strategy_name(self) -> str:"
+    },
+    {
+      "file": "agents/specialized_agents.py",
+      "line_num": 81,
+      "declaration": "def get_strategy_name(self) -> str:"
+    },
+    {
+      "file": "agents/specialized_agents.py",
+      "line_num": 140,
+      "declaration": "def get_strategy_name(self) -> str:"
+    },
+    {
+      "file": "agents/specialized_agents.py",
+      "line_num": 207,
+      "declaration": "def get_strategy_name(self) -> str:"
+    },
+    {
+      "file": "agents/specialized_agents.py",
+      "line_num": 285,
+      "declaration": "def get_strategy_name(self) -> str:"
+    },
+    {
+      "file": "agents/base_agent.py",
+      "line_num": 77,
+      "declaration": "def get_strategy_name(self) -> str:"
+    },
+    {
+      "file": "agents/base_agent.py",
+      "line_num": 115,
+      "declaration": "def calculate_confidence(self, signal_strength: float, market_conditions: Dict) -> float:"
+    },
+    {
+      "file": "multimodal/alt_data.py",
+      "line_num": 307,
+      "declaration": "def explain_signals("
+    },
+    {
+      "file": "examples/alphaalgo_core_complete_demo.py",
+      "line_num": 232,
+      "declaration": "async def demo_signal_generator_wrapping():"
+    },
+    {
+      "file": "examples/autonomous_financial_intelligence_demo.py",
+      "line_num": 220,
+      "declaration": "async def demo_experiment_registry():"
+    },
+    {
+      "file": "examples/autonomous_financial_intelligence_demo.py",
+      "line_num": 241,
+      "declaration": "def momentum_strategy(data, fast=10, slow=30):"
+    },
+    {
+      "file": "examples/autonomous_financial_intelligence_demo.py",
+      "line_num": 310,
+      "declaration": "code=\"def strategy(): pass\","
+    },
+    {
+      "file": "examples/innovative_decision_layer_demo.py",
+      "line_num": 75,
+      "declaration": "def demo_different_scenarios():"
+    },
+    {
+      "file": "examples/ultimate_trading_system_demo.py",
+      "line_num": 323,
+      "declaration": "async def _demo_black_swan_scenarios(self):"
+    },
+    {
+      "file": "examples/minimal_demo.py",
+      "line_num": 32,
+      "declaration": "def demonstrate_prediction_system():"
+    },
+    {
+      "file": "examples/elite_brain_demo.py",
+      "line_num": 67,
+      "declaration": "async def record_prediction(self, *args, **kwargs):"
+    },
+    {
+      "file": "examples/unified_architecture_demo.py",
+      "line_num": 120,
+      "declaration": "async def demo_layer3_strategy():"
+    },
+    {
+      "file": "examples/advanced_exit_strategies_demo.py",
+      "line_num": 567,
+      "declaration": "def _update_exit_signals(self):"
+    },
+    {
+      "file": "examples/advanced_exit_strategies_demo.py",
+      "line_num": 644,
+      "declaration": "def _create_signals_overview(self):"
+    },
+    {
+      "file": "examples/advanced_exit_strategies_demo.py",
+      "line_num": 905,
+      "declaration": "def _format_strategy_info(self, info, strategy_name):"
+    },
+    {
+      "file": "examples/advanced_exit_strategies_demo.py",
+      "line_num": 933,
+      "declaration": "def _create_signals_table(self, trade_id):"
+    },
+    {
+      "file": "examples/quant_analysis_demo.py",
+      "line_num": 55,
+      "declaration": "async def demo_strategy_analysis():"
+    },
+    {
+      "file": "examples/intelligence_core_demo.py",
+      "line_num": 41,
+      "declaration": "def demo_hypothesis_engine():"
+    },
+    {
+      "file": "examples/mega_integration_demo.py",
+      "line_num": 104,
+      "declaration": "async def demo_signal_generation():"
+    },
+    {
+      "file": "examples/data_flow_demo.py",
+      "line_num": 198,
+      "declaration": "async def generate_signal(self, analysis: Dict[str, Any]) -> Dict[str, Any]:"
+    },
+    {
+      "file": "examples/data_flow_demo.py",
+      "line_num": 255,
+      "declaration": "async def validate(self, signal: Dict[str, Any]) -> Dict[str, Any]:"
+    },
+    {
+      "file": "examples/optimized_trading_example.py",
+      "line_num": 134,
+      "declaration": "async def _execute_signal(self, signal: TradingSignal):"
+    },
+    {
+      "file": "examples/optimized_trading_example.py",
+      "line_num": 178,
+      "declaration": "def _validate_trade(self, signal: TradingSignal) -> bool:"
+    },
+    {
+      "file": "examples/self_assembly_ai_v2_demo.py",
+      "line_num": 282,
+      "declaration": "async def demo_strategy_factory():"
+    },
+    {
+      "file": "examples/self_assembly_ai_v2_demo.py",
+      "line_num": 361,
+      "declaration": "def on_strategy(strategy):"
+    },
+    {
+      "file": "examples/autonomous_superintelligence_demo.py",
+      "line_num": 325,
+      "declaration": "async def demo_experiment_engine():"
+    },
+    {
+      "file": "examples/market_intelligence_demo.py",
+      "line_num": 340,
+      "declaration": "def demo_strategy_views(intelligence):"
+    },
+    {
+      "file": "examples/quantum_blockchain_standalone.py",
+      "line_num": 194,
+      "declaration": "def make_prediction(self, prediction_type, asset_symbol, prediction_value,"
+    },
+    {
+      "file": "examples/quantum_blockchain_standalone.py",
+      "line_num": 222,
+      "declaration": "def validate_prediction(self, prediction_id, actual_value):"
+    },
+    {
+      "file": "examples/quantum_blockchain_standalone.py",
+      "line_num": 535,
+      "declaration": "async def optimize_trading_strategy(self, market_data, optimization_type):"
+    }
+  ]
+}
