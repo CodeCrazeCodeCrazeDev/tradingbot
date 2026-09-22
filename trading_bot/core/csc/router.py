@@ -1,7 +1,17 @@
 """
-Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral behaviors (Skill-to-LoRA).
-Implements 'HASP' (2026) and 'S2L' (2026).
+SkillRouter - UCA-2026 Authoritative Capability Layer
+
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Verification of adapter compliance and parameter safety constraints.
+- arXiv:2607.00341 (DiscoLoop): Discrete skill routing tokens generated from continuous reasoning loops.
+- arXiv:2607.01224 (AutoMem): Procedural skill artifact persistence and schema integration.
+- arXiv:2605.12061 (SAGE): Relational mapping between task capabilities and skill artifacts.
+- arXiv:2605.10813 (NanoResearch): Dynamic skill registration and co-evolutionary program selection.
+- arXiv:2605.20025 (AutoResearchClaw): Real-time capability fallbacks and execution retry paths.
+- arXiv:2605.17734 (HASP): Non-bypassable Program Function (PF) interception and execution sandboxing.
+- arXiv:2605.21482 (DeepWeb-Bench): Calibrated outcome verification for routed skill outcomes.
+
+Authoritative Capability Router mapping specialized tasks to HASP Skill Programs and LoRA Adapters.
 """
 
 import logging
