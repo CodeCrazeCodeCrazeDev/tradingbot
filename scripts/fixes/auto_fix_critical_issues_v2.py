@@ -313,13 +313,13 @@ if __name__ == "__main__":
         print("⚠️  IMPORTANT: Review changes before committing")
         print("⚠️  Test thoroughly before deploying")
 
+logger = logging.getLogger(__name__)
+
+
 def main():
     """Main execution"""
     import sys
 
-logger = logging.getLogger(__name__)
-
-    
     # Get root directory from command line or use current
     root_dir = sys.argv[1] if len(sys.argv) > 1 else "."
     
