@@ -1,8 +1,17 @@
 """
-Evolution Gate - UCA V6 (July 2026)
-==================================
-Monotone-safe gate for recursive agent self-evolution.
-Implements 'RSEA' (arXiv:2606.28374), 'EKSFT' (arXiv:2605.29303), and 'NanoResearch' (arXiv:2605.10813).
+Evolution Gate - UCA V6 Monotone-Safe Self-Evolution Gatekeeper
+
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Entropy-KL selective fine-tuning compliance verification.
+- arXiv:2607.00341 (DiscoLoop): Continuous-discrete state consistency checks under evolution.
+- arXiv:2607.01224 (AutoMem): Schema versioning and metamemory evolution tracking.
+- arXiv:2605.12061 (SAGE): Evidence graph edge weight update validation.
+- arXiv:2605.10813 (NanoResearch): Tri-level policy and skill bank co-evolution auditing.
+- arXiv:2605.20025 (AutoResearchClaw): Automated red-teaming and falsification tests.
+- arXiv:2605.17734 (HASP): Invariant program safety enforcement.
+- arXiv:2605.21482 (DeepWeb-Bench): Calibration error (ECE) and latency regression bounds.
+
+Monotone-safe gate for recursive agent self-evolution using CL-Bench Gain Metric.
 """
 
 import logging
