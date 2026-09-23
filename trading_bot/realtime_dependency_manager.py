@@ -502,7 +502,7 @@ class RealTimeDependencyManager:
         # Fix broken packages first (uninstall + reinstall)
         for pkg in packages_to_fix:
             self.log(f"\nFixing broken: {pkg.pip_name}")
-            if self.fix_package(pkg.import_name, pkg.pip_name):
+            if await asyncio.to_thread(self.fix_package, pkg.import_name, pkg.pip_name):
                 self.report.fixed += 1
             else:
                 self.report.failed += 1

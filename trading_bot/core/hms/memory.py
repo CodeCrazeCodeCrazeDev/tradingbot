@@ -502,7 +502,7 @@ class HierarchicalMemorySystem:
             if cls._instance is not None:
                 try:
                     cls._instance._save_schema()
-                except:
-                    pass
+                except Exception as e:
+                    logger.warning(f"HMS: Schema save during reset failed: {e}")
                 cls._instance = None
         logger.info("HierarchicalMemorySystem successfully reset with schema synchronization.")

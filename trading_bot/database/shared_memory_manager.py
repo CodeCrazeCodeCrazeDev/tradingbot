@@ -114,6 +114,15 @@ class SharedMemoryManager:
                 self._cleanup_old_objects()
             except Exception as e:
                 logger.error(f"Error in cleanup loop: {e}")
+
+    async def _async_cleanup_loop(self):
+        """Async background task for periodic cleanup"""
+        while True:
+            await asyncio.sleep(self.cleanup_interval)
+            try:
+                await asyncio.to_thread(self._cleanup_old_objects)
+            except Exception as e:
+                logger.error(f"Error in async cleanup loop: {e}")
     
     def _cleanup_old_objects(self):
         """Clean up old or unused objects"""

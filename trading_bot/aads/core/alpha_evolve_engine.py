@@ -635,6 +635,10 @@ def signal_rsi(data: pd.DataFrame) -> pd.Series:
             return None
         
         try:
+            # Validate AST security before exec
+            from trading_bot.core.security.sandbox import SecureASTVisitor
+            SecureASTVisitor().validate_code(signal.code)
+
             # Create isolated namespace
             namespace = {
                 'np': __import__('numpy'),

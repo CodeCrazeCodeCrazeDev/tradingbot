@@ -282,6 +282,23 @@ class RetryWithCircuitBreaker:
         
         raise last_exception
 
+    async def execute_async(self, func: Callable, *args, **kwargs) -> Any:
+        """Execute async function with retry and circuit breaker."""
+        last_exception = None
+        import asyncio
+        for attempt in range(self.max_retries):
+            try:
+                return await self.circuit_breaker.call_async(func, *args, **kwargs)
+            except CircuitBreakerOpen:
+                raise
+            except Exception as e:
+                last_exception = e
+                delay = min(self.base_delay * (2 ** attempt), self.max_delay)
+                logger.warning(f"Attempt {attempt + 1} failed, retrying in {delay}s: {e}")
+                await asyncio.sleep(delay)
+
+        raise last_exception
+
 
 # Pre-configured circuit breakers for common services
 
