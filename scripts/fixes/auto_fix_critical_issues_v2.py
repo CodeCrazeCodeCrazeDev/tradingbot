@@ -5,14 +5,13 @@ Fixes the top priority issues found in the diagnostic audit
 """
 
 import os
+import sys
 import shutil
 import logging
-import sys
 from pathlib import Path
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
-
 
 class CriticalIssueFixer:
     """Automatically fix critical issues found in audit"""
@@ -290,8 +289,6 @@ class CriticalIssueFixer:
 
 def main():
     """Main execution"""
-    import sys
-    
     # Get root directory from command line or use current
     root_dir = sys.argv[1] if len(sys.argv) > 1 else "."
     
