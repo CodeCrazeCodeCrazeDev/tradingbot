@@ -1,7 +1,16 @@
 """
-Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral behaviors (Skill-to-LoRA).
-Implements 'HASP' (2026) and 'S2L' (2026).
+Skill Router & HASP Guardrail Intercept Engine (UCA V6)
+Orchestrates selection and execution of Skill Programs (HASP) and behavioral adapters (Skill-to-LoRA).
+
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Verification-backed adapter compliance and stability bounds.
+- arXiv:2607.00341 (DiscoLoop): Multi-hop dual discrete-continuous hidden state reasoning loops.
+- arXiv:2607.01224 (AutoMem): Metamemory schema migration and trajectory updates.
+- arXiv:2605.12061 (SAGE): Dynamic TD-updated graph memory interface.
+- arXiv:2605.10813 (NanoResearch): Tri-level co-evolving research automation.
+- arXiv:2605.20025 (AutoResearchClaw): Pivot/Refine self-healing debate routing.
+- arXiv:2605.17734 (HASP): Prescriptive Program Function guardrail intercepts and invariant enforcement.
+- arXiv:2605.21482 (DeepWeb-Bench): Calibration auditing and multi-dimensional verification.
 """
 
 import logging

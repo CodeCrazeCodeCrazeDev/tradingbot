@@ -12,11 +12,15 @@ Implements the 8-tier architecture:
 7. Institutional
 8. Meta-Memory
 
-Authoritative memory system integrating SAGE (Self-evolving Agentic Graph-Memory)
-and QKG (Quantum Knowledge Graph) for context-dependent research persistence.
-Implements 'SAGE: A Self-Evolving Agentic Graph-Memory Engine' (2026).
-Supports incremental construction, Graph-FM multi-hop retrieval,
-and Reader-Writer feedback loops for structural evolution.
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Verification-backed policy history and provenance hash.
+- arXiv:2607.00341 (DiscoLoop): Discrete-continuous reasoning trace state persistence.
+- arXiv:2607.01224 (AutoMem): Automated metamemory schema optimization and migration.
+- arXiv:2605.12061 (SAGE): Self-evolving agentic graph-memory with TD edge weight updates.
+- arXiv:2605.10813 (NanoResearch): Experience ledger integration.
+- arXiv:2605.20025 (AutoResearchClaw): Research ledger hypothesis tracking.
+- arXiv:2605.17734 (HASP): Procedural memory program function intercepts.
+- arXiv:2605.21482 (DeepWeb-Bench): Calibration auditing and evaluation score persistence.
 """
 
 import logging
@@ -180,39 +184,6 @@ class HierarchicalMemorySystem:
     _instance: Optional["HierarchicalMemorySystem"] = None
     _lock: threading.Lock = threading.Lock()
 
-    @classmethod
-    def reset(cls):
-        """Reset the singleton instance of the memory system."""
-        with cls._lock:
-            cls._instance = None
-
-    @classmethod
-    def reset(cls):
-        """Resets the HierarchicalMemorySystem singleton instance."""
-        with cls._lock:
-            cls._instance = None
-        logger.info("HierarchicalMemorySystem reset complete.")
-
-    @classmethod
-    def reset(cls):
-        """Reset the singleton instance of the memory system."""
-        with cls._lock:
-            cls._instance = None
-
-    @classmethod
-    def reset(cls):
-        """Reset the singleton instance for testing purposes."""
-        with cls._lock:
-            cls._instance = None
-        logger.info("HierarchicalMemorySystem singleton reset")
-
-    @classmethod
-    def reset(cls):
-        """Reset the singleton instance."""
-        with cls._lock:
-            cls._instance = None
-        logger.info("HierarchicalMemorySystem singleton reset")
-
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             with cls._lock:
@@ -223,13 +194,18 @@ class HierarchicalMemorySystem:
 
     @classmethod
     def reset(cls):
-        """Reset the singleton instance."""
+        """
+        Explicit, safe class-level lifecycle reset.
+        Frees singleton instances and flushes outstanding SAGE schema updates.
+        """
         with cls._lock:
-            cls._instance = None
-        logger.info("HierarchicalMemorySystem singleton reset")
-
-    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
-        return calculate_integrity_hash(schema_dict)
+            if cls._instance is not None:
+                try:
+                    cls._instance._save_schema()
+                except Exception:
+                    pass
+                cls._instance = None
+        logger.info("HierarchicalMemorySystem successfully reset with schema synchronization.")
 
     def __init__(self, base_path: str = "alphaalgo_data/hms"):
         if getattr(self, "_initialized", False) and getattr(self, "base_path", None) == base_path:
@@ -282,66 +258,6 @@ class HierarchicalMemorySystem:
             except Exception:
                 pass
         return schema
-
-    def _calculate_integrity_hash(self, schema: Dict[str, Any]) -> str:
-        """
-        Calculates a deterministic SHA-256 hash over the canonical JSON representation
-        of the memory schema, excluding derived/volatile fields (integrity_hash, updated_at).
-        """
-        # Create a copy to avoid mutating the original schema
-        clean_schema = {}
-        for k, v in schema.items():
-            if k not in ("integrity_hash", "updated_at"):
-                clean_schema[k] = v
-
-        try:
-            # Deterministic, canonical serialization with sort_keys=True
-            canonical_json = json.dumps(clean_schema, sort_keys=True)
-        except (TypeError, ValueError) as e:
-            raise ValueError(f"HMS Schema contains non-serializable values: {e}")
-
-        return hashlib.sha256(canonical_json.encode("utf-8")).hexdigest()
-
-    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
-        """Calculates SHA-256 integrity hash of schema."""
-        return calculate_integrity_hash(schema_dict)
-
-    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
-        """Computes SHA-256 checksum of memory schema for audit compliance."""
-        temp = {k: v for k, v in schema_dict.items() if k != "integrity_hash"}
-        serialized = json.dumps(temp, sort_keys=True)
-        return hashlib.sha256(serialized.encode('utf-8')).hexdigest()
-
-    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
-        return calculate_integrity_hash(schema_dict)
-
-    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
-        return calculate_integrity_hash(schema_dict)
-
-    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
-        return calculate_integrity_hash(schema_dict)
-
-    @staticmethod
-    def _calculate_integrity_hash(schema_dict: Dict[str, Any]) -> str:
-        return calculate_integrity_hash(schema_dict)
-
-    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
-        return calculate_integrity_hash(schema_dict)
-
-    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
-        return calculate_integrity_hash(schema_dict)
-
-    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
-        """Helper to calculate hash within instance as well."""
-        return calculate_integrity_hash(schema_dict)
-
-    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
-        """Helper pointing to global calculate_integrity_hash function."""
-        return calculate_integrity_hash(schema_dict)
-
-    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
-        """Computes SHA-256 checksum of memory schema for audit compliance."""
-        return calculate_integrity_hash(schema_dict)
 
     def _save_schema(self):
         self.memory_schema["updated_at"] = datetime.utcnow().isoformat()
@@ -491,18 +407,3 @@ class HierarchicalMemorySystem:
             self.memory_schema["version"] = "1.1"
         self._save_schema()
         logger.info("HMS V6: AutoMem optimization cycle complete.")
-
-    @classmethod
-    def reset(cls):
-        """
-        Explicit, safe class-level lifecycle reset.
-        Frees singleton instances and flushes outstanding SAGE schema updates.
-        """
-        with cls._lock:
-            if cls._instance is not None:
-                try:
-                    cls._instance._save_schema()
-                except:
-                    pass
-                cls._instance = None
-        logger.info("HierarchicalMemorySystem successfully reset with schema synchronization.")
