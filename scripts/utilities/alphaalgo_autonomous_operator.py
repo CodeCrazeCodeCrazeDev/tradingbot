@@ -156,9 +156,6 @@ class AlphaAlgoOperator:
             issues.append(".env file missing")
             return False, issues
         
-        # Check critical env vars
-        from dotenv import load_dotenv
-
         load_dotenv(env_file)
         
         critical_vars = ["MT5_LOGIN", "MT5_PASSWORD", "MT5_SERVER"]
@@ -243,14 +240,12 @@ class AlphaAlgoOperator:
         logger.info("🚀 Starting AlphaAlgo trading bot...")
         
         try:
-            # Use the main.py file
             bot_script = self.root_dir / "main.py"
             
             if not bot_script.exists():
                 logger.error("❌ main.py not found")
                 return False
             
-            # Start bot process
             self.bot_process = subprocess.Popen(
                 [sys.executable, str(bot_script)],
                 cwd=str(self.root_dir),
@@ -260,7 +255,6 @@ class AlphaAlgoOperator:
                 bufsize=1
             )
             
-            # Wait a bit to see if it starts successfully
             time.sleep(5)
             
             if self.bot_process.poll() is None:
@@ -268,7 +262,6 @@ class AlphaAlgoOperator:
                 self.restart_count = 0
                 return True
             else:
-                # Process died immediately
                 stdout, stderr = self.bot_process.communicate()
                 logger.error(f"❌ Bot failed to start:\n{stderr}")
                 return False
@@ -317,10 +310,8 @@ class AlphaAlgoOperator:
             if not log_files:
                 return 0, 0
             
-            # Check most recent log
             latest_log = max(log_files, key=lambda p: p.stat().st_mtime)
             
-            # Read last 100 lines with proper encoding handling
             with open(latest_log, 'r', encoding='utf-8', errors='ignore') as f:
                 lines = f.readlines()[-100:]
             
@@ -331,7 +322,6 @@ class AlphaAlgoOperator:
                     warnings += 1
             
         except Exception:
-            # Silently handle log reading errors
             pass
         
         return errors, warnings
@@ -340,25 +330,21 @@ class AlphaAlgoOperator:
         """Automatically fix detected issues"""
         fixes_applied = 0
         
-        # High CPU - restart bot
         if health.cpu_percent > 95:
             logger.warning("🔧 High CPU detected - restarting bot")
             if self.restart_bot():
                 fixes_applied += 1
         
-        # High memory - restart bot
         if health.memory_percent > 90:
             logger.warning("🔧 High memory usage - restarting bot")
             if self.restart_bot():
                 fixes_applied += 1
         
-        # Bot not running - start it
         if not health.bot_running and not self.safe_mode:
             logger.warning("🔧 Bot not running - starting it")
             if self.start_bot():
                 fixes_applied += 1
         
-        # Internet issues - wait and retry
         if health.internet_latency_ms is None:
             logger.warning("🔧 Internet down - entering safe mode")
             self.safe_mode = True
@@ -409,7 +395,6 @@ OPERATOR STATS
         logger.info("🤖 AlphaAlgo Autonomous Operator Starting...")
         logger.info("=" * 60)
         
-        # Initial diagnostic
         health = self.run_system_diagnostic()
         
         if health.status == "critical":
@@ -419,7 +404,6 @@ OPERATOR STATS
                 logger.error(f"  - {health.errors_count} critical errors")
             return
         
-        # Start the bot
         if not self.start_bot():
             logger.error("❌ Failed to start bot. Exiting.")
             return
@@ -432,11 +416,9 @@ OPERATOR STATS
         
         try:
             while True:
-                # Health check every 5 minutes
                 if datetime.now() - last_health_check > timedelta(minutes=5):
                     health = self.run_system_diagnostic()
                     
-                    # Auto-fix issues
                     if health.status != "healthy":
                         fixes = self.auto_fix_issues(health)
                         if fixes > 0:
@@ -446,27 +428,22 @@ OPERATOR STATS
                     self.state["last_health_check"] = last_health_check.isoformat()
                     self._save_state()
                 
-                # Hourly report
                 if datetime.now() - last_hourly_report > timedelta(hours=1):
                     report = self.generate_hourly_report()
                     logger.info(report)
                     last_hourly_report = datetime.now()
                     
-                    # Update runtime
                     self.state["total_runtime_hours"] += 1
                     self._save_state()
                 
-                # Check if bot is still running
                 if not self.is_bot_running() and not self.safe_mode:
                     logger.warning("⚠️ Bot stopped unexpectedly - restarting")
                     self.restart_bot()
                 
-                # Monitor logs
                 errors, warnings = self.monitor_bot_logs()
                 if errors > 10:
                     logger.warning(f"⚠️ High error count ({errors}) - may need intervention")
                 
-                # Sleep for 30 seconds
                 await asyncio.sleep(30)
                 
         except KeyboardInterrupt:
