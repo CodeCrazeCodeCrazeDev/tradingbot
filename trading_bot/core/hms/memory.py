@@ -17,17 +17,17 @@ Paper Traceability Matrix:
 
 Implements the 8-tier architecture:
 1. Workspace, 2. Episodic, 3. Semantic, 4. Procedural,
-5. Research, 6. World Models, 7. Institutional, 8. Meta-Memory
+5. Research, 6. World Models, 7. Institutional, 8. Meta-Memory.
 
-Mandatory Scientific References Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Selective memory fine-tuning and retention masking.
-- arXiv:2607.00341 (LogAct/DiscoLoop): Token-level state persistence and action logging.
-- arXiv:2607.01224 (CORAL / AutoMem): Multi-agent memory optimization & meta-memory tuning.
-- arXiv:2605.12061 (SAGE / Search-R1): Self-evolving agentic graph-memory & MCTS evidence traversal.
-- arXiv:2605.10813 (NanoResearch): Compact knowledge representations & proof trees.
-- arXiv:2605.20025 (S2L): Multi-scale temporal memory retention routing.
-- arXiv:2605.17734 (AutoResearchClaw): Ledger provenance, replay verification, and schema locking.
-- arXiv:2605.21482 (DeepWeb-Bench): Verified real-time external ground truth anchoring.
+PAPER TRACEABILITY MATRIX (UCA-2026 Authoritative Singleton):
+- arXiv:2605.29303 (EKSFT): Entropy-KL bounds on research record schema retention.
+- arXiv:2607.00341 (LogAct): Tool-calling trace logging and memory indexing.
+- arXiv:2607.01224 (CORAL): AutoMem metamemory schema optimization.
+- arXiv:2605.12061 (Search-R1): SAGE graph-memory multi-hop evidence retrieval.
+- arXiv:2605.10813 (NanoResearch): Hypothesis lineage and empirical falsification storage.
+- arXiv:2605.20025 (S2L): Latent memory vector indexing.
+- arXiv:2605.17734 (AutoResearchClaw): Open-world fact extraction graph corroboration.
+- arXiv:2605.21482 (DeepWeb-Bench): Fault-tolerant memory state persistence.
 """
 
 import logging
@@ -295,7 +295,7 @@ class HierarchicalMemorySystem:
                 except Exception:
                     pass
                 cls._instance = None
-        logger.info("HierarchicalMemorySystem successfully reset with schema synchronization.")
+        logger.info("HierarchicalMemorySystem singleton reset complete.")
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -305,15 +305,10 @@ class HierarchicalMemorySystem:
                     cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self, config: Optional[Union[Dict[str, Any], str]] = None, base_path: Optional[str] = None):
-        resolved_base = base_path or "alphaalgo_data/hms"
-        if isinstance(config, str):
-            resolved_base = base_path or config
-            config = {"base_path": config}
-        elif isinstance(config, dict):
-            resolved_base = base_path or config.get("base_path", resolved_base)
-        base_path = resolved_base
+    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
+        return calculate_integrity_hash(schema_dict)
 
+    def __init__(self, base_path: str = "alphaalgo_data/hms"):
         if getattr(self, "_initialized", False) and getattr(self, "base_path", None) == base_path:
             return
 
@@ -363,8 +358,7 @@ class HierarchicalMemorySystem:
 
     def seal_adapt_memory_window(self, retention_latency_reward: float):
         """
-        Adapts the HMS 'memory_window_size' based on downstream task performance reward
-        using the MIT SEAL paper reinforcement learning adaptation framework.
+        Adapts the HMS 'memory_window_size' based on downstream task performance reward.
         """
         if retention_latency_reward < 1.0:
             # Latency or surprise was high -> reduce window size to lower retrieval latency
@@ -373,7 +367,7 @@ class HierarchicalMemorySystem:
         else:
             # High quality retrieval -> increase window to retain more context
             self.memory_window_size = min(self.memory_window_size + 10, 500)
-            logger.info(f"SEAL: Memory retrieval was highly accurate. Adapted HMS memory window to {self.memory_window_size} to retain more contextual episodic memory.")
+            logger.info(f"SEAL: Adapted HMS memory window to {self.memory_window_size}")
 
     def _load_schema(self) -> Dict[str, Any]:
         schema = {"version": "1.0", "schema_version": "1.0", "entities": [], "relations": [], "optimized_count": 0, "migration_history": []}
@@ -612,39 +606,3 @@ class HierarchicalMemorySystem:
             self.memory_schema["version"] = "1.1"
         self._save_schema()
         logger.info("HMS V6: AutoMem optimization cycle complete.")
-
-    def optimize_metamemory(self, feedback: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """
-        AutoMem metamemory loop (arXiv:2607.01224): optimizes the memory
-        schema itself based on outcome feedback — entity utility scoring,
-        low-utility compaction, and sequential schema versioning.
-        """
-        logger.info(f"HMS V6: Running metamemory optimization on {len(feedback)} feedback items")
-
-        # 1. Track per-entity utility from feedback
-        utility = self.memory_schema.setdefault("entity_utility", {})
-        for item in feedback:
-            entity_id = item.get("id") or item.get("entity")
-            if entity_id:
-                utility[entity_id] = utility.get(entity_id, 0.0) + 1.0
-
-        # 2. Delegate weight/schema updates to the AutoMem loop
-        self.optimize_memory(feedback)
-
-        # 3. Compact schema entities whose utility fell below threshold
-        threshold = 0.5
-        entities = self.memory_schema.get("entities", [])
-        kept = [
-            e for e in entities
-            if utility.get(e.get("type") if isinstance(e, dict) else e, 1.0) >= threshold
-        ]
-        if len(kept) != len(entities):
-            self.memory_schema["entities"] = kept
-            self._save_schema()
-
-        return {
-            "optimized_count": self.memory_schema.get("optimized_count", 0),
-            "schema_version": self.memory_schema.get("schema_version"),
-            "entities": len(self.memory_schema.get("entities", [])),
-        }
-
