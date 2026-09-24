@@ -246,7 +246,7 @@ class DebateResult:
     dissenting_views: List[str]
     disagreement_map: Dict[str, float] = field(default_factory=dict)
     provenance: Dict[str, Any] = field(default_factory=dict)
-
+    
     # Canonical DebateResult Interface Contract (Institutional Upgrades)
     decision: Optional[TradeAction] = None
     consensus_score: float = 0.5
@@ -372,6 +372,12 @@ class MacroStrategist(TradingAgent):
             reasoning = []
             anti_trade_reasoning = []
             key_factors = {}
+            observation = f"Market state for {context.symbol} at current price {context.current_price:.5f}"
+            evidence = []
+            hypothesis = ""
+            predictions = []
+            counter_evidence = []
+            verification = ""
 
             # Evidence-first local parameters
             observation = f"Symbol: {context.symbol}, price: {context.current_price}, HTF trend: {context.htf_trend}"
@@ -659,11 +665,24 @@ class RiskSentinel(TradingAgent):
         self.max_correlation = self.config.get("max_correlation", 0.7)
 
     def analyze(self, context: MarketContext) -> AgentArgument:
-        reasoning = []
-        anti_trade_reasoning = []
-        key_factors = {}
-        evidence = []
-        risk_flags = 0
+        try:
+            reasoning = []
+            anti_trade_reasoning = []
+            key_factors = {}
+            observation = f"Market state for {context.symbol} at current price {context.current_price:.5f}"
+            evidence = []
+            hypothesis = ""
+            predictions = []
+            counter_evidence = []
+            verification = ""
+            risk_flags = 0
+            observation = f"Exposure={context.portfolio_exposure}, Corr={context.correlation_risk}, Vol={context.volatility}"
+            evidence = []
+            hypothesis = "Portfolio risk exposure verification."
+            predictions = []
+            counter_evidence = []
+            verification = "Risk Sentinel protection active."
+            total_score = 0.0
 
             # Evidence-first local parameters
             observation = f"Symbol: {context.symbol}, price: {context.current_price}, risk flags: {risk_flags}"
@@ -751,6 +770,8 @@ class RiskSentinel(TradingAgent):
                 evidence.append(f"Asset local volatility normal ({context.volatility:.2%}).")
 
             key_factors['volatility_risk'] = vol_score
+
+            # Calculate overall score
             total_score = sum(key_factors.values())
 
             # Determine Action
@@ -2346,6 +2367,7 @@ class MultiAgentDebateSystem:
                 'memory_snapshot': f"sage_mem_snap_{hashlib.md5(market_state_str.encode('utf-8')).hexdigest()[:8]}",
                 'experiment_id': "exp_multidim_debate_prod",
                 'risk_policy_version': "risk_fortress_v6_strict",
+                'verification_results': verification_results,
                 'falsification_report': {
                     'is_falsified': falsification_report.is_falsified,
                     'rejection_reason': falsification_report.rejection_reason,
