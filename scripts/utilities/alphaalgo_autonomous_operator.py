@@ -22,7 +22,10 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, asdict
 import requests
+from dotenv import load_dotenv
 from loguru import logger
+
+module_logger = logging.getLogger(__name__)
 
 # Configure logging
 LOG_DIR = Path("logs")
@@ -73,7 +76,7 @@ class AlphaAlgoOperator:
     """Autonomous operator for AlphaAlgo trading bot"""
     
     def __init__(self):
-        self.root_dir = Path(__file__).parent
+        self.root_dir = Path(__file__).parent.parent.parent
         self.state_file = self.root_dir / "operator_state.json"
         self.learning_log = LOG_DIR / "learning_history.log"
         self.bot_process = None
@@ -86,7 +89,7 @@ class AlphaAlgoOperator:
         """Load operator state from disk"""
         if self.state_file.exists():
             with open(self.state_file, 'r') as f:
-                    return json.load(f)
+                return json.load(f)
         return {
             "start_time": datetime.now().isoformat(),
             "total_runtime_hours": 0,
@@ -113,7 +116,7 @@ class AlphaAlgoOperator:
             response = requests.get("https://www.google.com", timeout=5)
             latency = (time.time() - start) * 1000
             return response.status_code == 200, latency
-        except:
+        except Exception:
             return False, None
     
     def check_system_resources(self) -> Dict:
@@ -153,9 +156,6 @@ class AlphaAlgoOperator:
             issues.append(".env file missing")
             return False, issues
         
-        # Check critical env vars
-        from dotenv import load_dotenv
-
         load_dotenv(env_file)
         
         critical_vars = ["MT5_LOGIN", "MT5_PASSWORD", "MT5_SERVER"]
@@ -327,7 +327,7 @@ class AlphaAlgoOperator:
                 elif "WARNING" in line:
                     warnings += 1
             
-        except Exception as e:
+        except Exception:
             # Silently handle log reading errors
             pass
         

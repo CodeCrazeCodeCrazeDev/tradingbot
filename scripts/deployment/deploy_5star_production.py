@@ -5,9 +5,12 @@ Handles multi-symbol deployment with optimization and monitoring.
 
 import asyncio
 import argparse
+import logging
+import threading
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
-from pathlib import Path
 from loguru import logger
 
 from trading_bot.alphaalgo_5star import create_5star_system
@@ -17,6 +20,8 @@ from trading_bot.monitoring.prometheus_metrics import PrometheusMetrics, SystemM
 from trading_bot.monitoring.health_check import HealthCheckServer
 from trading_bot.logging.log_config import setup_logging
 from trading_bot.backup.backup_manager import BackupManager
+
+module_logger = logging.getLogger(__name__)
 
 
 class ProductionDeployment:
@@ -166,9 +171,6 @@ class ProductionDeployment:
         # Start Prometheus metrics server
         self.metrics.start_server()
         
-        # Start health check server in background
-        import threading
-
         health_thread = threading.Thread(target=self.health_check.start, daemon=True)
         health_thread.start()
         
@@ -185,8 +187,9 @@ class ProductionDeployment:
         iteration = 0
         
         while True:
-            iteration += 1
             try:
+                iteration += 1
+                
                 # Fetch market data for all symbols
                 market_data = await self._fetch_market_data()
                 
@@ -223,6 +226,7 @@ class ProductionDeployment:
             except Exception as e:
                 logger.error(f"Error in trading loop: {e}")
                 await asyncio.sleep(5)
+
     async def _fetch_market_data(self):
         """Fetch market data for all symbols."""
         # Placeholder - implement actual data fetching
