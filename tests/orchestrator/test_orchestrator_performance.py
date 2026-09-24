@@ -7,6 +7,13 @@ import pytest
 import numpy as np
 from datetime import datetime, timedelta
 
+from trading_bot.orchestrator.performance_tracker import (
+    PerformanceTracker,
+    MetricsCalculator,
+    AutoOptimizer,
+    BacktestEngine,
+)
+
 
 @pytest.fixture
 def sample_config():

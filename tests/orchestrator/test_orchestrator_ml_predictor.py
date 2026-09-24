@@ -8,6 +8,14 @@ import asyncio
 import numpy as np
 from datetime import datetime
 
+from trading_bot.orchestrator.ml_predictor import (
+    OpportunityPredictor,
+    SuccessPredictor,
+    MLFeatureExtractor,
+    ModelEnsemble,
+    ProbabilityCalibrator,
+)
+
 
 @pytest.fixture
 def sample_config():
