@@ -248,7 +248,6 @@ class DebateResult:
     debate_rounds: int
     consensus_level: float
     dissenting_views: List[str]
-    disagreement_map: Dict[str, float] = field(default_factory=dict)
     provenance: Dict[str, Any] = field(default_factory=dict)
     
     # Canonical DebateResult Interface Contract (Institutional Upgrades)
@@ -389,7 +388,7 @@ class MacroStrategist(TradingAgent):
             reasoning = []
             anti_trade_reasoning = []
             key_factors = {}
-            observation = f"Symbol: {context.symbol}, price: {context.current_price}, HTF trend: {context.htf_trend}"
+            observation = f"Symbol: {context.symbol}, price: {context.current_price:.5f}, HTF trend: {context.htf_trend}"
             evidence = []
             hypothesis = "Neutral macro outlook, consolidation expected."
             predictions = []
@@ -549,7 +548,7 @@ class TacticalExecutioner(TradingAgent):
             reasoning = []
             anti_trade_reasoning = []
             key_factors = {}
-            observation = f"Symbol: {context.symbol}, price: {context.current_price}, LTF trend: {context.ltf_trend}"
+            observation = f"Symbol: {context.symbol}, price: {context.current_price:.5f}, LTF trend: {context.ltf_trend}"
             evidence = []
             hypothesis = "Neutral tactical stance, awaiting momentum signal."
             predictions = []
@@ -673,13 +672,14 @@ class RiskSentinel(TradingAgent):
             anti_trade_reasoning = []
             key_factors = {}
             risk_flags = 0
-            observation = f"Symbol: {context.symbol}, Exposure={context.portfolio_exposure}, Corr={context.correlation_risk}, Vol={context.volatility}"
+            observation = f"Symbol: {context.symbol}, price: {context.current_price}, Exposure={context.portfolio_exposure}, Corr={context.correlation_risk}, Vol={context.volatility}"
             evidence = []
-            hypothesis = "Portfolio risk exposure verification."
+            hypothesis = "Neutral risk stance, monitor exposure limits."
             predictions = []
             counter_evidence = []
-            verification = "Risk Sentinel protection active."
+            verification = "No active risk exceptions"
 
+            # Exposure check
             if context.portfolio_exposure > self.max_exposure:
                 exposure_score = -0.5
                 risk_flags += 1
@@ -754,8 +754,11 @@ class RiskSentinel(TradingAgent):
                 evidence.append(f"Asset local volatility normal ({context.volatility:.2%}).")
 
             key_factors['volatility_risk'] = vol_score
+
+            # Calculate overall score
             total_score = sum(key_factors.values())
 
+            # Determine Action
             if risk_flags >= 2:
                 action = TradeAction.NO_TRADE
                 conviction = Conviction.VERY_HIGH
@@ -1640,11 +1643,10 @@ class HeadAI:
                 ts_float = ts_val.timestamp() if ts_val and hasattr(ts_val, 'timestamp') else 0.0
                 return (priority, ts_float)
 
-            sorted_arguments = sorted(arguments, key=get_arg_score)
-
+            # Sort arguments by priority and timestamp so that the latest/highest priority argument is processed last
             sorted_args = sorted(
                 arguments,
-                key=lambda a: a.timestamp if getattr(a, "timestamp", None) else datetime.min,
+                key=lambda a: (get_arg_score(a), a.timestamp if getattr(a, "timestamp", None) else datetime.min),
             )
             latest_arguments: Dict[AgentRole, AgentArgument] = {}
             for arg in sorted_args:
@@ -1768,6 +1770,7 @@ class HeadAI:
                 max(bullish, bearish, neutral) / len(active_arguments) if active_arguments else 0.0
             )
 
+            # Collect votes
             agent_votes = {}
             for a in active_arguments:
                 role_val = a.agent_role.value if hasattr(a.agent_role, "value") else str(a.agent_role)
