@@ -9,7 +9,6 @@ All classes, methods, and functions tested.
 import pytest
 import asyncio
 import logging
-import sys
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
