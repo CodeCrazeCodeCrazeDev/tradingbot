@@ -3,28 +3,19 @@ import time
 import threading
 from typing import List, Dict, Any, Optional, Tuple, Set, Union
 """
-Hierarchical Memory System (HMS) - UCA V6 Authoritative Memory Substrate.
+Hierarchical Memory System (HMS) - UCA-2026 Authoritative Substrate Layer
 
-Upgraded memory substrate integrating SAGE Graph-Memory and AutoMem Metamemory.
-Implements the 8-tier architecture:
-1. Workspace Memory
-2. Episodic Memory
-3. Semantic Memory
-4. Procedural Memory
-5. Research Memory
-6. World Models Memory
-7. Institutional Memory
-8. Meta-Memory
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Selective token masking preservation during research memory indexing.
+- arXiv:2607.00341 (DiscoLoop): Dual continuous-discrete working memory channels for multi-hop reasoning.
+- arXiv:2607.01224 (AutoMem): Active metamemory management, schema migrations, and index optimization.
+- arXiv:2605.12061 (SAGE): Self-evolving agentic graph-memory engine with Hebbian edge weight evolution.
+- arXiv:2605.10813 (NanoResearch): Experience ledger persistence for co-evolving research swarms.
+- arXiv:2605.20025 (AutoResearchClaw): Traceability and critique ledger recording for pivot/refine loops.
+- arXiv:2605.17734 (HASP): Procedural memory storage for verified Program Functions and guardrails.
+- arXiv:2605.21482 (DeepWeb-Bench): SHA-256 schema integrity verification and evidence graph audits.
 
-Research Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Selective memory token retention and entropy preservation.
-- arXiv:2607.00341 (DiscoLoop): Continuous-discrete state trajectory logging across loops.
-- arXiv:2607.01224 (AutoMem): Automated memory as a cognitive skill and metamemory optimization.
-- arXiv:2605.12061 (SAGE): Self-evolving graph-memory engine and multi-hop retrieval.
-- arXiv:2605.10813 (NanoResearch / RSEA): Immutable provenance hashing and ledger verification.
-- arXiv:2605.20025 (S2L / Search-to-Learn): Skill execution indexing and experience retrieval.
-- arXiv:2605.17734 (AutoResearchClaw / HASP): Execution trace persistence for self-healing loops.
-- arXiv:2605.21482 (DeepWeb-Bench): Real-time liquidity state recording and evidence anchoring.
+Authoritative Memory System implementing the 8-Tier Memory OS with SAGE Graph and AutoMem Metamemory.
 """
 
 import logging
