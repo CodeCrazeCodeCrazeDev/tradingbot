@@ -171,6 +171,9 @@ class ProductionDeployment:
         # Start Prometheus metrics server
         self.metrics.start_server()
         
+        # Start health check server in background
+        import threading
+
         health_thread = threading.Thread(target=self.health_check.start, daemon=True)
         health_thread.start()
         
@@ -186,8 +189,8 @@ class ProductionDeployment:
         
         iteration = 0
         
-        while True:
-            try:
+        try:
+            while True:
                 iteration += 1
                 
                 # Fetch market data for all symbols
@@ -204,7 +207,7 @@ class ProductionDeployment:
                     if signal['action'] != 'hold':
                         logger.info(f"{symbol}: {signal['action']} (confidence: {signal['confidence']:.2%})")
                         self.metrics.record_trade(symbol, signal['action'], 0.0)
-                
+
                 # Auto-scaling check
                 if self.config.get('enable_auto_scaling', False):
                     system_metrics = {
@@ -220,7 +223,7 @@ class ProductionDeployment:
                 # Sleep
                 await asyncio.sleep(60)  # 1 minute
                 
-            except KeyboardInterrupt:
+        except KeyboardInterrupt:
                 logger.warning("Received shutdown signal")
                 break
             except Exception as e:
