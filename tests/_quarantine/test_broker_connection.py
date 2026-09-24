@@ -23,7 +23,6 @@ class BrokerConnectionTester:
         self.test_results = []
     
     async def run_all_tests(self) -> Dict[str, Any]:
-    pass
         """Run all broker connection tests"""
         logger.info("=" * 60)
         logger.info("BROKER CONNECTION TESTING")
@@ -80,7 +79,6 @@ class BrokerConnectionTester:
         return results
     
     async def test_connection(self) -> Dict[str, Any]:
-    pass
         """Test broker connection"""
         try:
             # Check if connected
@@ -115,7 +113,6 @@ class BrokerConnectionTester:
             }
     
     async def test_account_info(self) -> Dict[str, Any]:
-    pass
         """Test account information retrieval"""
         try:
             account = await self.broker.get_account_info()
@@ -147,7 +144,6 @@ class BrokerConnectionTester:
             }
     
     async def test_symbol_info(self, symbol: str = 'EURUSD') -> Dict[str, Any]:
-    pass
         """Test symbol information retrieval"""
         try:
             info = await self.broker.get_symbol_info(symbol)
@@ -179,7 +175,6 @@ class BrokerConnectionTester:
             }
     
     async def test_market_data(self, symbol: str = 'EURUSD') -> Dict[str, Any]:
-    pass
         """Test market data retrieval"""
         try:
             # Get multiple ticks
@@ -221,7 +216,6 @@ class BrokerConnectionTester:
             }
     
     async def test_order_placement(self, symbol: str = 'EURUSD') -> Dict[str, Any]:
-    pass
         """Test order placement (small demo order)"""
         try:
             # Place small demo order
@@ -267,7 +261,6 @@ class BrokerConnectionTester:
             }
     
     async def test_position_management(self) -> Dict[str, Any]:
-    pass
         """Test position retrieval"""
         try:
             positions = await self.broker.get_positions()
@@ -294,7 +287,6 @@ class BrokerConnectionTester:
             }
     
     async def test_error_handling(self) -> Dict[str, Any]:
-    pass
         """Test error handling"""
         try:
             # Test 1: Invalid symbol
@@ -337,7 +329,6 @@ class BrokerConnectionTester:
             }
     
     def _generate_summary(self, results: Dict[str, Any]) -> str:
-    pass
         """Generate test summary"""
         summary = []
         summary.append("\nTEST SUMMARY")
@@ -370,11 +361,9 @@ async def test_broker_connection(broker_config: Dict[str, Any]) -> Dict[str, Any
     Standalone function to test broker connection
     
     Args:
-    pass
         broker_config: Broker configuration
     
     Returns:
-    pass
         Test results
     """
     from trading_bot.brokers.mt5_adapter import MT5BrokerAdapter

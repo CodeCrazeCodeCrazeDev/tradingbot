@@ -4,6 +4,7 @@ Standalone Orchestrator Tests - Direct imports without main package
 """
 
 import sys
+from pathlib import Path
 import os
 
 # Add the trading_bot directory to path for direct imports

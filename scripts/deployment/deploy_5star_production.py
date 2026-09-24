@@ -189,10 +189,9 @@ class ProductionDeployment:
         
         iteration = 0
         
-        try:
-            while True:
-                iteration += 1
-                
+        while True:
+            iteration += 1
+            try:
                 # Fetch market data for all symbols
                 market_data = await self._fetch_market_data()
                 
