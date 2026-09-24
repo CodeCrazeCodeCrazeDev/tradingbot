@@ -1,16 +1,17 @@
 """
+SkillRouter - UCA V6 Skill & Adapter Routing Engine.
 Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral behaviors (Skill-to-LoRA).
+and behavioral adapters (Skill-to-LoRA).
 
-UCA-2026 Scientific Research Traceability Matrix:
-- REF-01 (LogAct): Shared transactional ledger for agentic consensus (arXiv:2605.29303)
-- REF-02 (SAGE): Self-Evolving Agentic Graph-Memory Engine integration (arXiv:2607.00341)
-- REF-03 (AutoMem): Meta-Memory Schema Migration & Persistence (arXiv:2607.01224)
-- REF-04 (HASP): Hierarchical Skill Programs with Guardrails (arXiv:2605.12061)
-- REF-05 (S2L): Skill-to-LoRA Behavioral Adapters (arXiv:2605.10813)
-- REF-06 (DiscoLoop): Discrete-Continuous Reasoning Loops (arXiv:2605.20025)
-- REF-07 (AutoResearchClaw): Refinement & Falsification Engine (arXiv:2605.17734)
-- REF-08 (DeepWeb-Bench): Real-Time Market Grounding (arXiv:2605.21482)
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Selective fine-tuning parameter alignment.
+- arXiv:2607.00341 (DiscoLoop): Multi-hop reasoning skill routing.
+- arXiv:2607.01224 (AutoMem): Skill memory consolidation.
+- arXiv:2605.12061 (SAGE): Multi-hop evidence graph routing.
+- arXiv:2605.10813 (NanoResearch / ACPE): Dynamic control policy selection.
+- arXiv:2605.20025 (AutoResearchClaw): Strategy pivot routing.
+- arXiv:2605.17734 (HASP): Skill program execution and guardrail safety.
+- arXiv:2605.21482 (S2L / DeepWeb-Bench): Skill-to-LoRA behavioral routing.
 """
 
 import logging

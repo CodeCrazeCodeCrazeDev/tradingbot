@@ -4,15 +4,15 @@ Multi-Agent Debate System (UCA-2026 Core Intelligence Layer)
 Authoritative multi-agent consensus system incorporating Bayesian decision engine,
 falsification gating, and verifier swarms.
 
-UCA-2026 Scientific Research Traceability Matrix:
-- REF-01 (LogAct): Shared transactional ledger for agentic consensus (arXiv:2605.29303)
-- REF-02 (SAGE): Self-Evolving Agentic Graph-Memory Engine integration (arXiv:2607.00341)
-- REF-03 (AutoMem): Meta-Memory Schema Migration & Persistence (arXiv:2607.01224)
-- REF-04 (HASP): Hierarchical Skill Programs with Guardrails (arXiv:2605.12061)
-- REF-05 (S2L): Skill-to-LoRA Behavioral Adapters (arXiv:2605.10813)
-- REF-06 (DiscoLoop): Discrete-Continuous Reasoning Loops (arXiv:2605.20025)
-- REF-07 (AutoResearchClaw): Refinement & Falsification Engine (arXiv:2605.17734)
-- REF-08 (DeepWeb-Bench): Real-Time Market Grounding (arXiv:2605.21482)
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Verification-backed evidence lineage and confidence calibration.
+- arXiv:2607.00341 (DiscoLoop): Falsification gates and Bayesian posterior updating.
+- arXiv:2607.01224 (AutoMem): Debate memory consolidation and argument indexing.
+- arXiv:2605.12061 (SAGE): Structured multi-agent debate with evidence-first reasoning graph.
+- arXiv:2605.10813 (NanoResearch / ACPE): Dynamic scorecards and quorum consensus under Byzantine degradation.
+- arXiv:2605.20025 (AutoResearchClaw): Pivot/Refine hypothesis debate loops.
+- arXiv:2605.17734 (HASP): Non-negotiable financial risk sentinels and hard safety vetoes.
+- arXiv:2605.21482 (S2L / DeepWeb-Bench): Behavioral agent strategy routing and skill adaptation.
 
 Evidence-first debate loop:
 Observation -> Evidence -> Hypothesis -> Predictions -> Counter-evidence -> Bayesian Consensus Aggregation.

@@ -1,18 +1,16 @@
 """
 Evolution Gate - UCA V6 (July 2026)
-==================================
 Monotone-safe gate for recursive agent self-evolution.
 
-Scientific Research Traceability Matrix:
-----------------------------------------
-- arXiv:2605.29303 (EKSFT): Dynamic entropy-KL compliance check on candidate models.
-- arXiv:2607.00341 (DiscoLoop): Multi-hop reasoning evaluation across candidate steps.
-- arXiv:2607.01224 (AutoMem): Metamemory schema migration safety validation.
-- arXiv:2605.12061 (SAGE): Evidence graph integrity validation on self-evolution candidates.
-- arXiv:2605.10813 (NanoResearch): Lightweight hypothesis generation and falsification gate.
-- arXiv:2605.20025 (AutoResearchClaw): Closed-loop strategy pivot and candidate self-healing.
-- arXiv:2605.17734 (HASP): Skill program invariant preservation under self-evolution.
-- arXiv:2605.21482 (S2L): LoRA adapter performance gain audit and non-regression check.
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Entropy-KL token fine-tuning and policy shift bounds.
+- arXiv:2607.00341 (DiscoLoop): Multi-hop reasoning verification.
+- arXiv:2607.01224 (AutoMem): Memory consolidation for self-evolution history.
+- arXiv:2605.12061 (SAGE): Evidence-based evolution validation.
+- arXiv:2605.10813 (NanoResearch / ACPE): Monotone-safe self-improvement gating.
+- arXiv:2605.20025 (AutoResearchClaw): Automated red-teaming and strategy evolution.
+- arXiv:2605.17734 (HASP): Guardrail policy enforcement during evolution.
+- arXiv:2605.21482 (S2L / DeepWeb-Bench): Skill adaptation gate verification.
 """
 
 import logging

@@ -1,17 +1,16 @@
 """
-Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
-Implements the Active Inference (VFE minimization) loop, HIPIF (Hierarchical Planning
-with Information Folding), LogAct state machine replication, and AutoResearchClaw self-healing control.
+Cognitive System Controller (CSC) - UCA V6
+Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
 
-UCA-2026 Scientific Research Traceability Matrix:
-- REF-01 (LogAct): Shared transactional ledger for agentic consensus (arXiv:2605.29303)
-- REF-02 (SAGE): Self-Evolving Agentic Graph-Memory Engine integration (arXiv:2607.00341)
-- REF-03 (AutoMem): Meta-Memory Schema Migration & Persistence (arXiv:2607.01224)
-- REF-04 (HASP): Hierarchical Skill Programs with Guardrails (arXiv:2605.12061)
-- REF-05 (S2L): Skill-to-LoRA Behavioral Adapters (arXiv:2605.10813)
-- REF-06 (DiscoLoop): Discrete-Continuous Reasoning Loops (arXiv:2605.20025)
-- REF-07 (AutoResearchClaw): Refinement & Falsification Engine (arXiv:2605.17734)
-- REF-08 (DeepWeb-Bench): Real-Time Market Grounding (arXiv:2605.21482)
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Entropy-KL selective token fine-tuning and policy shift bounds.
+- arXiv:2607.00341 (DiscoLoop): Discrete embeddings and continuous hidden state loops for multi-hop reasoning.
+- arXiv:2607.01224 (AutoMem): Automated memory consolidation and cognitive skill learning.
+- arXiv:2605.12061 (SAGE): Multi-hop graph retrieval and evidence-based reasoning.
+- arXiv:2605.10813 (NanoResearch / ACPE): Adaptive control policy engine and dynamic policy selection.
+- arXiv:2605.20025 (AutoResearchClaw): Pivot/Refine self-healing control loops.
+- arXiv:2605.17734 (HASP): Dynamic guardrail interception and safety gating.
+- arXiv:2605.21482 (S2L / DeepWeb-Bench): Behavioral skill routing and long-horizon execution.
 """
 
 import numpy as np

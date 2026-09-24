@@ -4,29 +4,17 @@ import threading
 from typing import List, Dict, Any, Optional, Tuple, Set, Union
 """
 Hierarchical Memory System (HMS) - UCA V6 (July 2026)
-=====================================================
-Authoritative 8-tier memory system integrating SAGE and AutoMem.
-
 Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
-Implements the 8-tier architecture:
-1. Workspace
-2. Episodic
-3. Semantic
-4. Procedural
-5. Research
-6. World Models
-7. Institutional
-8. Meta-Memory
 
-UCA-2026 Scientific Research Traceability Matrix:
-- REF-01 (LogAct): Shared transactional ledger for agentic consensus (arXiv:2605.29303)
-- REF-02 (SAGE): Self-Evolving Agentic Graph-Memory Engine integration (arXiv:2607.00341)
-- REF-03 (AutoMem): Meta-Memory Schema Migration & Persistence (arXiv:2607.01224)
-- REF-04 (HASP): Hierarchical Skill Programs with Guardrails (arXiv:2605.12061)
-- REF-05 (S2L): Skill-to-LoRA Behavioral Adapters (arXiv:2605.10813)
-- REF-06 (DiscoLoop): Discrete-Continuous Reasoning Loops (arXiv:2605.20025)
-- REF-07 (AutoResearchClaw): Refinement & Falsification Engine (arXiv:2605.17734)
-- REF-08 (DeepWeb-Bench): Real-Time Market Grounding (arXiv:2605.21482)
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Selective fine-tuning parameter alignment.
+- arXiv:2607.00341 (DiscoLoop): Multi-hop reasoning hidden state persistence.
+- arXiv:2607.01224 (AutoMem): Active memory management as a cognitive skill.
+- arXiv:2605.12061 (SAGE): Self-evolving agentic graph memory substrate.
+- arXiv:2605.10813 (NanoResearch / ACPE): Memory-guided adaptive control policy engine.
+- arXiv:2605.20025 (AutoResearchClaw): Strategy pivot memory tracking.
+- arXiv:2605.17734 (HASP): Guardrail interaction memory logs.
+- arXiv:2605.21482 (S2L / DeepWeb-Bench): Skill-to-LoRA memory indexing.
 """
 
 import logging
