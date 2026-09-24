@@ -1,18 +1,18 @@
 """
-Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
-Implements 'LogAct' (arXiv:2607.00341), 'CORAL' (arXiv:2607.01224), 'Search-R1' (arXiv:2605.12061),
-'NanoResearch' (arXiv:2605.10813), 'S2L' (arXiv:2605.20025), 'AutoResearchClaw' (arXiv:2605.17734),
-'DeepWeb-Bench' (arXiv:2605.21482), and 'EKSFT' (arXiv:2605.29303).
+Cognitive System Controller (CSC) - UCA V6 (July 2026)
+======================================================
+Authoritative Strategic Brain implementing the 12-stage Recursive Active Inference pipeline.
 
-PAPER TRACEABILITY MATRIX (UCA-2026 Authoritative Singleton):
-- arXiv:2605.29303 (EKSFT): Entropy-KL divergence bounds during policy generation and ACPE fine-tuning.
-- arXiv:2607.00341 (LogAct): Action-gated trajectory SFT with interleaved thought-action execution traces.
-- arXiv:2607.01224 (CORAL): Contextual Latent Routing and Allocation integrated into SkillRouter integration.
-- arXiv:2605.12061 (Search-R1): Monte Carlo Tree Search rollouts with process reward models and causal do-calculus.
-- arXiv:2605.10813 (NanoResearch): Lightweight hypothesis generation and autonomous evolution.
-- arXiv:2605.20025 (S2L): Sequential-to-Latent vector space reasoning refinement loop.
-- arXiv:2605.17734 (AutoResearchClaw): Open-world fact extraction and evidence graph construction.
-- arXiv:2605.21482 (DeepWeb-Bench): Adversarial perturbation resilience and environment failure recovery.
+Scientific Research Traceability Matrix:
+----------------------------------------
+- arXiv:2605.29303 (EKSFT): Selective token fine-tuning and entropy-KL compliance gating.
+- arXiv:2607.00341 (DiscoLoop): Discrete-continuous looped multi-hop reasoning cell.
+- arXiv:2607.01224 (AutoMem): Schema and metamemory weight adaptation feedback.
+- arXiv:2605.12061 (SAGE): Multi-hop graph-memory evidence retrieval interface.
+- arXiv:2605.10813 (NanoResearch): Dynamic hypothesis branch generation and falsification.
+- arXiv:2605.20025 (AutoResearchClaw): Closed-loop Pivot/Refine strategy self-healing.
+- arXiv:2605.17734 (HASP): Hierarchical agent skill program guardrail interception.
+- arXiv:2605.21482 (S2L): Skill-to-LoRA task-conditioned behavioral adapter routing.
 """
 
 import numpy as np

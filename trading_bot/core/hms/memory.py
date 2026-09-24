@@ -3,31 +3,20 @@ import time
 import threading
 from typing import List, Dict, Any, Optional, Tuple, Set, Union
 """
-Hierarchical Memory System (HMS) - UCA V6 Core Memory Engine
+Hierarchical Memory System (HMS) - UCA V6 (July 2026)
+=====================================================
+Authoritative 8-tier memory system integrating SAGE and AutoMem.
 
-Paper Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Epistemic reference anchors for historical memory schemas.
-- arXiv:2607.00341 (DiscoLoop): Discrete and continuous working memory channel tracking.
-- arXiv:2607.01224 (AutoMem): Dynamic metamemory schema utility optimization & versioning.
-- arXiv:2605.12061 (SAGE): Self-evolving agentic graph-memory with edge weight updating.
-- arXiv:2605.10813 (NanoResearch): Contextual experience ledger co-evolution.
-- arXiv:2605.20025 (AutoResearchClaw): Memory-guided plan pivot tracking.
-- arXiv:2605.17734 (HASP): Procedural memory program storage and safety verification.
-- arXiv:2605.21482 (DeepWeb-Bench): Evidence-grounded memory derivation and calibration logging.
-
-Implements the 8-tier architecture:
-1. Workspace, 2. Episodic, 3. Semantic, 4. Procedural,
-5. Research, 6. World Models, 7. Institutional, 8. Meta-Memory.
-
-PAPER TRACEABILITY MATRIX (UCA-2026 Authoritative Singleton):
-- arXiv:2605.29303 (EKSFT): Entropy-KL bounds on research record schema retention.
-- arXiv:2607.00341 (LogAct): Tool-calling trace logging and memory indexing.
-- arXiv:2607.01224 (CORAL): AutoMem metamemory schema optimization.
-- arXiv:2605.12061 (Search-R1): SAGE graph-memory multi-hop evidence retrieval.
-- arXiv:2605.10813 (NanoResearch): Hypothesis lineage and empirical falsification storage.
-- arXiv:2605.20025 (S2L): Latent memory vector indexing.
-- arXiv:2605.17734 (AutoResearchClaw): Open-world fact extraction graph corroboration.
-- arXiv:2605.21482 (DeepWeb-Bench): Fault-tolerant memory state persistence.
+Scientific Research Traceability Matrix:
+----------------------------------------
+- arXiv:2605.29303 (EKSFT): Memory preservation without distribution collapse.
+- arXiv:2607.00341 (DiscoLoop): Internalized discrete token log storage and retrieval.
+- arXiv:2607.01224 (AutoMem): Dual-loop metamemory schema and weight optimization.
+- arXiv:2605.12061 (SAGE): Self-evolving agentic graph-memory with BFS retrieval.
+- arXiv:2605.10813 (NanoResearch): Lightweight hypothesis ledger indexing.
+- arXiv:2605.20025 (AutoResearchClaw): Closed-loop strategy pivot memory tracking.
+- arXiv:2605.17734 (HASP): Program execution memory artifact indexing.
+- arXiv:2605.21482 (S2L): LoRA adapter metadata and performance history tracking.
 """
 
 import logging

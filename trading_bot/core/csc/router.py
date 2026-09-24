@@ -1,17 +1,18 @@
 """
-Orchestrates the selection and execution of Skill Programs (HASP)
-and behavioral behaviors (Skill-to-LoRA).
-Implements 'CORAL' (arXiv:2607.01224) and 'S2L' (arXiv:2605.20025).
+SkillRouter - UCA V6 (July 2026)
+================================
+Authoritative router for mapping specialized tasks to skills/adapters.
 
-PAPER TRACEABILITY MATRIX (UCA-2026 Authoritative Singleton):
-- arXiv:2605.29303 (EKSFT): Selective token loss bounds on Skill program parameters.
-- arXiv:2607.00341 (LogAct): Action-gated tool execution constraints.
-- arXiv:2607.01224 (CORAL): Contextual Latent Routing and Allocation.
-- arXiv:2605.12061 (Search-R1): Process-reward guided skill selection.
-- arXiv:2605.10813 (NanoResearch): Dynamic skill mutation and evolution.
-- arXiv:2605.20025 (S2L): Sequential-to-Latent LoRA skill adapter selection.
-- arXiv:2605.17734 (AutoResearchClaw): Skill provenance and corroboration verification.
-- arXiv:2605.21482 (DeepWeb-Bench): Fault-tolerant skill execution sandboxing.
+Scientific Research Traceability Matrix:
+----------------------------------------
+- arXiv:2605.29303 (EKSFT): Entropy-KL compliance check on registered skills.
+- arXiv:2607.00341 (DiscoLoop): Discrete token routing interface with continuous latents.
+- arXiv:2607.01224 (AutoMem): Skill utility feedback and metamemory integration.
+- arXiv:2605.12061 (SAGE): Dynamic skill node mapping and evidence graph linking.
+- arXiv:2605.10813 (NanoResearch): Lightweight skill hypothesis evaluation.
+- arXiv:2605.20025 (AutoResearchClaw): Closed-loop skill program pivot/refine execution.
+- arXiv:2605.17734 (HASP): Hierarchical agent skill program pre-emption and execution.
+- arXiv:2605.21482 (S2L): Skill-to-LoRA task-conditioned behavioral adapter routing.
 """
 
 import logging

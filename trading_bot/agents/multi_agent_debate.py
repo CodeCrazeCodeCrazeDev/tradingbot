@@ -1,15 +1,19 @@
 """
 Multi-Agent Debate System (UCA-2026 Core Intelligence Layer)
+=============================================================
+Authoritative multi-agent consensus system incorporating Bayesian decision engine,
+falsification gating, and verifier swarms.
 
-PAPER TRACEABILITY MATRIX (UCA-2026 Authoritative Singleton):
-- arXiv:2605.29303 (EKSFT): Selective token loss bounds and evidence lineage calibration.
-- arXiv:2607.00341 (LogAct): Action-gated tool execution constraints and interleaved reasoning.
-- arXiv:2607.01224 (CORAL): Contextual Latent Routing and Allocation integration.
-- arXiv:2605.12061 (Search-R1): Process-reward guided multi-agent deliberation.
-- arXiv:2605.10813 (NanoResearch): Lightweight hypothesis generation and dynamic scorecards.
-- arXiv:2605.20025 (S2L): Sequential-to-Latent reasoning vector refinement loop.
-- arXiv:2605.17734 (AutoResearchClaw): Non-negotiable financial risk sentinels and hard safety vetoes.
-- arXiv:2605.21482 (DeepWeb-Bench): Adversarial debate perturbation testing and fault resilience.
+Scientific Research Traceability Matrix:
+----------------------------------------
+- arXiv:2605.29303 (EKSFT): Verification-backed evidence lineage and confidence calibration.
+- arXiv:2607.00341 (DiscoLoop): Discrete token reasoning loops across debate rounds.
+- arXiv:2607.01224 (AutoMem): Debate history indexing and schema metamemory tracking.
+- arXiv:2605.12061 (SAGE): Multi-hop evidence graph validation in prosecutor agents.
+- arXiv:2605.10813 (NanoResearch): Dynamic hypothesis falsification in debate rounds.
+- arXiv:2605.20025 (AutoResearchClaw): Closed-loop debate pivot and critique refinement.
+- arXiv:2605.17734 (HASP): Skill program guardrail enforcement during debate voting.
+- arXiv:2605.21482 (S2L): Task-conditioned agent persona and LoRA adapter routing.
 """
 
 import logging
