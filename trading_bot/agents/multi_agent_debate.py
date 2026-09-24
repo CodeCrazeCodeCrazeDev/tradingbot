@@ -393,7 +393,7 @@ class MacroStrategist(TradingAgent):
             hypothesis = "Neutral macro outlook, consolidation expected."
             predictions = []
             counter_evidence = []
-            verification = "No macro triggers active"
+            verification = "HTF trend and news sentiment checked."
 
             # Analyze HTF trend
             if context.htf_trend == "UP":
@@ -553,7 +553,7 @@ class TacticalExecutioner(TradingAgent):
             hypothesis = "Neutral tactical stance, awaiting momentum signal."
             predictions = []
             counter_evidence = []
-            verification = "No tactical breakout timing active"
+            verification = "LTF trend and volume checked."
 
             if context.ltf_trend == "UP":
                 ltf_score = 0.6
@@ -672,12 +672,12 @@ class RiskSentinel(TradingAgent):
             anti_trade_reasoning = []
             key_factors = {}
             risk_flags = 0
-            observation = f"Symbol: {context.symbol}, price: {context.current_price}, Exposure={context.portfolio_exposure}, Corr={context.correlation_risk}, Vol={context.volatility}"
+            observation = f"Symbol: {context.symbol}, price: {context.current_price:.5f}, Exposure={context.portfolio_exposure}, Corr={context.correlation_risk}"
             evidence = []
-            hypothesis = "Neutral risk stance, monitor exposure limits."
+            hypothesis = "Portfolio risk exposure verification."
             predictions = []
             counter_evidence = []
-            verification = "No active risk exceptions"
+            verification = "Portfolio exposure, correlation risk and VIX levels checked."
 
             # Exposure check
             if context.portfolio_exposure > self.max_exposure:
@@ -2339,7 +2339,6 @@ class MultiAgentDebateSystem:
                 'memory_snapshot': f"sage_mem_snap_{hashlib.md5(market_state_str.encode('utf-8')).hexdigest()[:8]}",
                 'experiment_id': "exp_multidim_debate_prod",
                 'risk_policy_version': "risk_fortress_v6_strict",
-                'verification_results': verification_results,
                 'falsification_report': {
                     'is_falsified': falsification_report.is_falsified,
                     'rejection_reason': falsification_report.rejection_reason,
