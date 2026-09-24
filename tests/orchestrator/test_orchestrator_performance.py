@@ -7,6 +7,13 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 
+from trading_bot.orchestrator.performance_tracker import (
+    PerformanceTracker,
+    MetricsCalculator,
+    AutoOptimizer,
+    BacktestEngine,
+)
+
 
 @pytest.fixture
 def sample_config():
@@ -71,7 +78,6 @@ class TestTradeTracking:
     def test_track_multiple_trades(self, sample_config, sample_trades):
         tracker = PerformanceTracker(sample_config)
         for trade in sample_trades[:10]:
-    pass
             tracker.track_trade(trade)
         assert len(tracker.trade_history) == 10
         assert len(tracker.equity_curve) == 10
@@ -255,9 +261,6 @@ class TestBacktestEngine:
         assert engine.backtest_results == {}
 
     def test_backtest_strategy(self):
-    pass
-import numpy
-import pandas
         engine = BacktestEngine()
         dates = pd.date_range(start='2023-01-01', periods=100, freq='D')
         historical_data = pd.DataFrame({

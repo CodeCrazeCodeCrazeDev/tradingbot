@@ -8,6 +8,8 @@ import numpy as np
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, AsyncMock
 
+from trading_bot.orchestrator.master_orchestrator import MasterOrchestrator, TradingMode, TradingDecision
+
 
 @pytest.fixture
 def sample_config():
@@ -219,8 +221,6 @@ class TestRiskValidation:
 @pytest.mark.asyncio
 class TestAsyncOrchestration:
     async def test_orchestrate_trading(self, sample_config):
-    pass
-import numpy
         orchestrator = MasterOrchestrator(sample_config)
         mock_scanner = MagicMock()
         mock_scanner.scan_all_opportunities = AsyncMock(return_value=[

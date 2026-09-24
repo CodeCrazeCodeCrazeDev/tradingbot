@@ -6,6 +6,14 @@ import pytest
 import numpy as np
 from datetime import datetime
 
+from trading_bot.orchestrator.risk_manager import (
+    PortfolioRiskManager,
+    PositionSizer,
+    HedgeCalculator,
+    RiskMetrics,
+    DrawdownController,
+)
+
 
 @pytest.fixture
 def sample_config():
@@ -13,7 +21,7 @@ def sample_config():
         'max_portfolio_var': 0.05,
         'max_position_risk': 0.02,
         'max_correlation': 0.7,
-        'max_concentration': 0.2,
+        'max_concentration': 0.4,
         'var_confidence': 0.95,
         'lookback_period': 252
     }

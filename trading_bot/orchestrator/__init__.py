@@ -1,71 +1,70 @@
 """
-Orchestrator Module
+Orchestrator Package
 ============================================================
-
-Auto-generated integration file.
 """
 
-# agent_orchestrator
-try:
-    from .agent_orchestrator import (
-        AgentOrchestrator,
-    )
-except ImportError as e:
-    # agent_orchestrator not available
-    pass
-
-# execution_engine
-try:
-    from .execution_engine import (
-        ExecutionEngine,
-    )
-except ImportError as e:
-    # execution_engine not available
-    pass
-
-# master_orchestrator
-try:
-    from .master_orchestrator import (
-        MasterOrchestrator,
-    )
-except ImportError as e:
-    # master_orchestrator not available
-    pass
-
-# performance_tracker
-try:
-    from .performance_tracker import (
-        BacktestEngine,
-    )
-except ImportError as e:
-    # performance_tracker not available
-    pass
-
-# risk_manager
-try:
-    from .risk_manager import (
-        DrawdownController,
-        PortfolioRiskManager,
-    )
-except ImportError as e:
-    # risk_manager not available
-    pass
-
-# workflow_manager
-try:
-    from .workflow_manager import (
-        WorkflowManager,
-    )
-except ImportError as e:
-    # workflow_manager not available
-    pass
+from .agent_orchestrator import AgentOrchestrator
+from .execution_engine import (
+    ExecutionEngine,
+    OrderType,
+    ExecutionAlgorithm,
+    ExecutionResult,
+    SmartOrderRouter,
+)
+from .master_orchestrator import (
+    MasterOrchestrator,
+    TradingMode,
+    TradingDecision,
+)
+from .ml_predictor import (
+    OpportunityPredictor,
+    SuccessPredictor,
+    MLFeatureExtractor,
+    ModelEnsemble,
+    ProbabilityCalibrator,
+)
+from .performance_tracker import (
+    PerformanceTracker,
+    MetricsCalculator,
+    AutoOptimizer,
+    BacktestEngine,
+)
+from .position_rotator import PositionRotator
+from .risk_manager import (
+    PortfolioRiskManager,
+    PositionSizer,
+    HedgeCalculator,
+    RiskMetrics,
+    DrawdownController,
+    RiskLevel,
+)
+from .workflow_manager import WorkflowManager
 
 __all__ = [
     'AgentOrchestrator',
+    'AutoOptimizer',
     'BacktestEngine',
     'DrawdownController',
+    'ExecutionAlgorithm',
     'ExecutionEngine',
+    'ExecutionResult',
+    'HedgeCalculator',
     'MasterOrchestrator',
+    'MetricsCalculator',
+    'MLFeatureExtractor',
+    'ModelEnsemble',
+    'OpportunityPredictor',
+    'OrderType',
+    'PerformanceTracker',
     'PortfolioRiskManager',
+    'PositionRotator',
+    'PositionSizer',
+    'ProbabilityCalibrator',
+    'RiskLevel',
+    'RiskMetrics',
+    'SmartOrderRouter',
+    'SuccessPredictor',
+    'TradingDecision',
+    'TradingMode',
     'WorkflowManager',
 ]

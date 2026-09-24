@@ -8,6 +8,14 @@ import numpy as np
 from datetime import datetime
 from unittest.mock import MagicMock, AsyncMock
 
+from trading_bot.orchestrator.execution_engine import (
+    ExecutionEngine,
+    OrderType,
+    ExecutionAlgorithm,
+    ExecutionResult,
+    SmartOrderRouter,
+)
+
 
 @pytest.fixture
 def sample_config():

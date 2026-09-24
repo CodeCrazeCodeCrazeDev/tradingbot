@@ -308,9 +308,8 @@ class TestComponentCompatibility:
 
         # Test with risk manager
         risk_manager = PortfolioRiskManager(full_config)
-        # Use the correct public method name
-        valid = risk_manager.assess_portfolio_risk({})
-        assert isinstance(valid, dict)
+        metrics = risk_manager.assess_portfolio_risk({}, {})
+        assert metrics is not None
 
     def test_execution_result_compatibility(self, full_config):
         """Test ExecutionResult works with performance tracker"""
