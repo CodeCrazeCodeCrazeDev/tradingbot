@@ -1,5 +1,5 @@
-"""Cognition Package Root Exports."""
+"""AlphaAlgo AI Cognition System Module."""
 
-from trading_bot.cognition.orchestrator import AlphaAlgoCognitiveBrain
+from trading_bot.cognition.alpha_algo_cognitive_brain import AlphaAlgoCognitiveBrain
 
 __all__ = ["AlphaAlgoCognitiveBrain"]
