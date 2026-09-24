@@ -2,7 +2,7 @@
 config/api_keys.json
 
 # Cached data
-data/
+/data/
 *.cache
 .hypothesis/
 .pytest_cache/
@@ -93,3 +93,23 @@ test_reports/*.json
 secrets.json
 .hypothesis/
 .pytest_cache/
+
+# Runtime artifacts (databases, coverage, ML tracking)
+*.db
+*.sqlite
+*.sqlite3
+.coverage
+coverage.xml
+mlruns/
+orders.json
+/trade_journal/
+
+# Generated runtime state & session artifacts
+alphaalgo_data/
+alphaalgo_demo_data/
+temp_*/
+htmlcov/
+temp_*.py
+*_census*.txt
+census*_err.log
+tracked_artifacts.txt

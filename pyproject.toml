@@ -271,10 +271,11 @@ skips = [
 # PYTEST CONFIGURATION
 # =============================================================================
 [tool.pytest.ini_options]
-testpaths = ["tests", "trading_bot/tests"]
+testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+norecursedirs = ["*.egg", ".eggs", "dist", "build", ".tox", ".git", ".hg", ".svn", "__pycache__", "venv", ".hypothesis", ".pytest_cache", "node_modules", "_archive", "_quarantine", "*/_archive/*", "*/_quarantine/*"]
 addopts = [
     "-v",
     "--tb=short",

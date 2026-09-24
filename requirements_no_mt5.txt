@@ -1,6 +1,9 @@
 # =============================================================================
-# ALPHAALGO TRADING BOT - MASTER REQUIREMENTS
+# ALPHAALGO TRADING BOT - REQUIREMENTS (NO MetaTrader5)
 # =============================================================================
+# DERIVED FILE: requirements.txt minus the Windows-only MetaTrader5 line.
+# Regenerate by copying requirements.txt and deleting the MetaTrader5 entry.
+
 # All dependencies for real-time trading system
 # Auto-generated for comprehensive real-time operation
 # =============================================================================
@@ -24,6 +27,9 @@ httpx>=0.24.0
 requests>=2.31.0
 asyncio-throttle>=1.0.2
 aiofiles>=23.1.0
+yfinance>=0.2.0
+pytrends>=4.9.0
+ib-insync>=0.9.86
 
 # -----------------------------------------------------------------------------
 # MESSAGE QUEUES & REAL-TIME COMMUNICATION
@@ -88,6 +94,9 @@ statsmodels>=0.14.0
 scikit-optimize>=0.9.0
 optuna>=3.2.0
 cvxpy>=1.4.0
+arch>=6.0.0
+hmmlearn>=0.3.0
+PyWavelets>=1.4.0
 
 # -----------------------------------------------------------------------------
 # NLP & SENTIMENT
@@ -95,6 +104,10 @@ cvxpy>=1.4.0
 nltk>=3.8.0
 textblob>=0.17.1
 vaderSentiment>=3.3.2
+beautifulsoup4>=4.12.0
+selenium>=4.15.0
+spacy>=3.7.0
+python-telegram-bot>=20.0
 
 # -----------------------------------------------------------------------------
 # SECURITY & CRYPTOGRAPHY
@@ -111,6 +124,7 @@ passlib[bcrypt]>=1.7.4
 prometheus-client>=0.17.0
 psutil>=5.9.0
 memory-profiler>=0.61.0
+GPUtil>=1.4.0
 
 # -----------------------------------------------------------------------------
 # CONFIGURATION & UTILITIES
@@ -123,6 +137,7 @@ loguru>=0.7.0
 rich>=13.4.0
 colorama>=0.4.6
 tqdm>=4.65.0
+python-json-logger>=2.0.0
 
 # -----------------------------------------------------------------------------
 # SCHEDULING & TIME
@@ -151,11 +166,13 @@ asyncpg>=0.28.0
 # -----------------------------------------------------------------------------
 # OPTIONAL - TRADING PLATFORMS (may fail on some systems)
 # -----------------------------------------------------------------------------
-# TA-Lib  # Requires C library, install separately
+TA-Lib>=0.4.24  # binary wheels available on PyPI; guarded fallback in code if absent
+faiss-cpu>=1.7.4  # Vector similarity (HMS/SAGE memory)
 
 # -----------------------------------------------------------------------------
 # OPTIONAL - ADVANCED FEATURES
 # -----------------------------------------------------------------------------
 # qiskit>=0.44.0  # Quantum computing
 # web3>=6.0.0  # Blockchain
-# faiss-cpu>=1.7.4  # Vector similarity
+# en-core-web-sm  # spaCy NER model: python -m spacy download en_core_web_sm
+
