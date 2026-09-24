@@ -373,13 +373,13 @@ class MacroStrategist(TradingAgent):
             anti_trade_reasoning = []
             key_factors = {}
 
-            # Evidence-first initializations
+            # Evidence-first local parameters
             observation = f"Symbol: {context.symbol}, price: {context.current_price}, HTF trend: {context.htf_trend}"
             evidence = []
             hypothesis = "Neutral macro outlook, consolidation expected."
             predictions = []
             counter_evidence = []
-            verification = "HTF trend and news sentiment checked."
+            verification = "No macro triggers active"
 
             # Analyze HTF trend
             if context.htf_trend == "UP":
@@ -536,7 +536,7 @@ class TacticalExecutioner(TradingAgent):
             counter_evidence = []
             verification = ""
 
-            # Evidence-first initializations
+            # Evidence-first local parameters
             observation = f"Symbol: {context.symbol}, price: {context.current_price}, LTF trend: {context.ltf_trend}"
             evidence = []
             hypothesis = "Neutral tactical stance, awaiting momentum signal."
@@ -665,19 +665,133 @@ class RiskSentinel(TradingAgent):
         evidence = []
         risk_flags = 0
 
-        observation = f"Risk sentinel analysis for {context.symbol} at {context.current_price:.5f}"
-        hypothesis = "Neutral risk profile."
-        predictions = []
-        counter_evidence = []
-        verification = "Portfolio exposure, correlation risk, and VIX levels checked."
+            # Evidence-first local parameters
+            observation = f"Symbol: {context.symbol}, price: {context.current_price}, risk flags: {risk_flags}"
+            evidence = []
+            hypothesis = "Neutral risk stance, monitor exposure limits."
+            predictions = []
+            counter_evidence = []
+            verification = "No active risk exceptions"
 
-        # Exposure check
-        if context.portfolio_exposure > self.max_exposure:
-            exposure_score = -0.5
-            risk_flags += 1
-            reasoning.append(f"⚠️ Portfolio exposure ({context.portfolio_exposure:.0%}) exceeds limit")
-            anti_trade_reasoning.append(
-                f"Portfolio exposure ({context.portfolio_exposure:.0%}) breaches hard cap of {self.max_exposure:.0%}"
+            # Exposure check
+            if context.portfolio_exposure > self.max_exposure:
+                exposure_score = -0.5
+                risk_flags += 1
+                reasoning.append(
+                    f"⚠️ Portfolio exposure ({context.portfolio_exposure:.0%}) exceeds limit"
+                )
+                anti_trade_reasoning.append(
+                    f"Portfolio exposure ({context.portfolio_exposure:.0%}) breaches hard cap of {self.max_exposure:.0%}"
+                )
+            elif context.portfolio_exposure > self.max_exposure * 0.8:
+                exposure_score = -0.2
+                reasoning.append(
+                    f"Portfolio exposure ({context.portfolio_exposure:.0%}) approaching limit"
+                )
+                anti_trade_reasoning.append(
+                    "Portfolio exposure is nearing maximum threshold; risk buffering recommended"
+                )
+            else:
+                exposure_score = 0.1
+                evidence.append(
+                    f"Portfolio exposure ({context.portfolio_exposure:.1%}) is well within limits."
+                )
+
+            key_factors["exposure"] = exposure_score
+
+            # Correlation risk
+            if context.correlation_risk > self.max_correlation:
+                corr_score = -0.4
+                risk_flags += 1
+                reasoning.append(f"⚠️ High correlation risk ({context.correlation_risk:.0%})")
+                anti_trade_reasoning.append(
+                    f"Correlation risk ({context.correlation_risk:.0%}) exceeds threshold ({self.max_correlation:.0%})"
+                )
+            else:
+                corr_score = 0.1
+                evidence.append(
+                    f"Asset correlation risk ({context.correlation_risk:.1%}) is within safety limit."
+                )
+
+            key_factors["correlation"] = corr_score
+
+            # VIX check
+            vix_score = 0.0
+            if context.vix_level:
+                if context.vix_level > 30:
+                    vix_score = -0.5
+                    risk_flags += 1
+                    reasoning.append(f"⚠️ VIX elevated ({context.vix_level}) - black swan risk")
+                    anti_trade_reasoning.append(
+                        f"System-level tail-risk threat: VIX is extremely elevated ({context.vix_level})"
+                    )
+                elif context.vix_level > 20:
+                    vix_score = -0.2
+                    reasoning.append(f"VIX moderately elevated ({context.vix_level})")
+                    anti_trade_reasoning.append(
+                        f"VIX level moderately elevated ({context.vix_level}), macro risk buffer is compressed"
+                    )
+                else:
+                    vix_score = 0.1
+                    evidence.append(f"VIX normal/healthy market state at {context.vix_level}.")
+                key_factors["vix"] = vix_score
+
+            key_factors['systemic_fear'] = vix_score
+
+            # Volatility check
+            if context.volatility > 0.03:
+                vol_score = -0.3
+                risk_flags += 1
+                reasoning.append(f"⚠️ Extreme volatility detected")
+                anti_trade_reasoning.append(
+                    f"Unacceptable high volatility regime: {context.volatility:.2%}"
+                )
+            else:
+                vol_score = 0.0
+                evidence.append(f"Asset local volatility normal ({context.volatility:.2%}).")
+
+            key_factors['volatility_risk'] = vol_score
+            total_score = sum(key_factors.values())
+
+            # Determine Action
+            if risk_flags >= 2:
+                action = TradeAction.NO_TRADE
+                conviction = Conviction.VERY_HIGH
+                reasoning.append("🛑 Multiple risk flags - recommending NO TRADE")
+                anti_trade_reasoning.append(
+                    "Risk sentinel active veto: severe multiple stress threats detected"
+                )
+            elif risk_flags == 1:
+                action = TradeAction.HOLD
+                conviction = Conviction.HIGH
+                reasoning.append("⚠️ Risk flag present - reduce position size")
+                anti_trade_reasoning.append("Partial risk block: single stress indicator active")
+            elif total_score > 0:
+                action = TradeAction.HOLD  # Risk allows trading
+                conviction = Conviction.MODERATE
+                reasoning.append("✅ Risk parameters acceptable")
+            else:
+                action = TradeAction.BUY
+                conviction = Conviction.MODERATE
+                anti_trade_reasoning.append("Sub-zero overall risk-adjusted fitness score")
+
+            confidence = min(0.95, 0.6 + risk_flags * 0.15)
+
+            return AgentArgument(
+                agent_role=self.role,
+                action=action,
+                conviction=conviction,
+                reasoning=reasoning,
+                anti_trade_reasoning=anti_trade_reasoning,
+                key_factors=key_factors,
+                confidence=confidence,
+                timestamp=datetime.now(),
+                observation=observation,
+                evidence=evidence,
+                hypothesis=hypothesis,
+                predictions=predictions,
+                counter_evidence=counter_evidence,
+                verification=verification,
             )
         elif context.portfolio_exposure > self.max_exposure * 0.8:
             exposure_score = -0.2
@@ -2229,6 +2343,12 @@ class MultiAgentDebateSystem:
                 'memory_snapshot': f"sage_mem_snap_{hashlib.md5(market_state_str.encode('utf-8')).hexdigest()[:8]}",
                 'experiment_id': "exp_multidim_debate_prod",
                 'risk_policy_version': "risk_fortress_v6_strict",
+                'falsification_report': {
+                    'is_falsified': falsification_report.is_falsified,
+                    'rejection_reason': falsification_report.rejection_reason,
+                    'verifier_outcomes': falsification_report.verifier_outcomes,
+                    'worst_case_scenario': falsification_report.worst_case_scenario,
+                },
                 'verification_results': verification_results,
                 'verification_report': {
                     'num_rounds': len(debate_rounds),
