@@ -1,17 +1,18 @@
 """
-Cognitive System Controller (CSC) - UCA-2026 Core Strategic Brain
+Cognitive System Controller (CSC) - UCA V6 "One Brain" Authoritative Core
 
 Paper Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Selective strategy internalization and entropy-preservation audits.
-- arXiv:2607.00341 (DiscoLoop): Dual-channel discrete-continuous recurrence loop (DiscoLoopCell).
-- arXiv:2607.01224 (AutoMem): Automated metamemory optimization and schema integration with HMS.
-- arXiv:2605.12061 (SAGE): Multi-hop evidence retrieval and causal graph memory access.
-- arXiv:2605.10813 (NanoResearch): Tri-level co-evolutionary triage scoring for self-improvement.
-- arXiv:2605.20025 (AutoResearchClaw): Non-linear control featuring Pivot/Refine self-healing decision loops.
-- arXiv:2605.17734 (HASP): Pre-emptive program function safety interception via SkillRouter.
-- arXiv:2605.21482 (DeepWeb-Bench): Calibrated confidence vector synthesis and verification reports.
+- arXiv:2605.29303 (EKSFT): Entropy-KL selective strategy internalization and epistemic anchoring.
+- arXiv:2607.00341 (DiscoLoop): Dual discrete symbolic token & continuous hidden-state recurrence cell.
+- arXiv:2607.01224 (AutoMem): Metamemory schema integration with active memory operations.
+- arXiv:2605.12061 (SAGE): Self-evolving evidence graph traversal and sub-graph retrieval.
+- arXiv:2605.10813 (NanoResearch): Tri-level co-evolving policy tuning and research automation.
+- arXiv:2605.20025 (AutoResearchClaw): Self-reinforcing Pivot/Refine execution loops and debate.
+- arXiv:2605.17734 (HASP): Prescriptive skill program guardrails and non-bypassable pre-emption.
+- arXiv:2605.21482 (DeepWeb-Bench): Cross-source derivation, evidence validation, and calibration.
 
-Authoritative Strategic Brain implementing the 12-stage Recursive Active Inference pipeline.
+Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline (VFE minimization).
+Orchestrates LogAct pipeline, HIPIF information folding, and SRE falsification swarm checks.
 """
 
 import numpy as np

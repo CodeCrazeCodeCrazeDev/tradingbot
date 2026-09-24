@@ -3,19 +3,21 @@ import time
 import threading
 from typing import List, Dict, Any, Optional, Tuple, Set, Union
 """
-Hierarchical Memory System (HMS) - UCA-2026 Authoritative Substrate Layer
+Hierarchical Memory System (HMS) - UCA V6 Authoritative Memory Substrate
 
 Paper Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Selective token masking preservation during research memory indexing.
-- arXiv:2607.00341 (DiscoLoop): Dual continuous-discrete working memory channels for multi-hop reasoning.
-- arXiv:2607.01224 (AutoMem): Active metamemory management, schema migrations, and index optimization.
-- arXiv:2605.12061 (SAGE): Self-evolving agentic graph-memory engine with Hebbian edge weight evolution.
-- arXiv:2605.10813 (NanoResearch): Experience ledger persistence for co-evolving research swarms.
-- arXiv:2605.20025 (AutoResearchClaw): Traceability and critique ledger recording for pivot/refine loops.
-- arXiv:2605.17734 (HASP): Procedural memory storage for verified Program Functions and guardrails.
-- arXiv:2605.21482 (DeepWeb-Bench): SHA-256 schema integrity verification and evidence graph audits.
+- arXiv:2605.29303 (EKSFT): Epistemic memory anchoring and selective pattern persistence.
+- arXiv:2607.00341 (DiscoLoop): Dual-channel Working Memory state storage.
+- arXiv:2607.01224 (AutoMem): Metamemory schema learning, version increments, and self-optimization.
+- arXiv:2605.12061 (SAGE): Dynamic self-evolving agentic knowledge graph and multi-hop retrieval.
+- arXiv:2605.10813 (NanoResearch): Shared contextual experience ledger and tri-level memory.
+- arXiv:2605.20025 (AutoResearchClaw): Verifiable research ledger entries and auditability.
+- arXiv:2605.17734 (HASP): Procedural program memory bank and executable guardrail storage.
+- arXiv:2605.21482 (DeepWeb-Bench): Evidence lineage tracking and integrity verification.
 
-Authoritative Memory System implementing the 8-Tier Memory OS with SAGE Graph and AutoMem Metamemory.
+Authoritative memory system implementing the 8-tier architecture:
+1. Workspace 2. Episodic 3. Semantic 4. Procedural
+5. Research 6. World Models 7. Institutional 8. Meta-Memory
 """
 
 import logging

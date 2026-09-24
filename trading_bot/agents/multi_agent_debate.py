@@ -3,13 +3,13 @@ Multi-Agent Debate System - UCA V6 Core Intelligence & Consensus Engine.
 
 Paper Traceability Matrix:
 - arXiv:2605.29303 (EKSFT): Verification-backed evidence lineage and confidence calibration.
-- arXiv:2607.00341 (DiscoLoop): Discrete-continuous reasoning loops and Bayesian posterior updating.
-- arXiv:2607.01224 (AutoMem): Historical argument retrieval and memory-driven agent context assembly.
-- arXiv:2605.12061 (SAGE): Evidence-first multi-agent debate substrate and graph context linking.
-- arXiv:2605.10813 (NanoResearch): Dynamic scorecards and quorum consensus under Byzantine degradation.
-- arXiv:2605.20025 (AutoResearchClaw): Multi-agent adversarial debate loops with Falsification Gates.
+- arXiv:2607.00341 (DiscoLoop): Falsification gates and Bayesian posterior updating.
+- arXiv:2607.01224 (AutoMem): Schema-directed evidence recording and memory integration.
+- arXiv:2605.12061 (SAGE): Structured multi-agent debate with graph-based evidence reasoning.
+- arXiv:2605.10813 (NanoResearch): Dynamic scorecards and tri-level research consensus.
+- arXiv:2605.20025 (AutoResearchClaw): Self-reinforcing debate, pivot-and-refine loops.
 - arXiv:2605.17734 (HASP): Non-negotiable financial risk sentinels and hard safety vetoes.
-- arXiv:2605.21482 (DeepWeb-Bench): Expected Calibration Error (ECE) and Bayesian probability synthesis.
+- arXiv:2605.21482 (DeepWeb-Bench): Calibrated evidence evaluation and ECE minimization.
 
 Evidence-first debate loop:
 Observation -> Evidence -> Hypothesis -> Predictions -> Counter-evidence -> Bayesian Consensus Aggregation.
