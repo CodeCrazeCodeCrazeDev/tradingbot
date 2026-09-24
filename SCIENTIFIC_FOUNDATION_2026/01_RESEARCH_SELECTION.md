@@ -1,12 +1,12 @@
-# Phase 1: Research Discovery, Quality Filter & Selection Methodology (2026)
+# Phase 1: Research Selection, Decomposition & Quality Methodology (2026)
 
-This document details the selection process, rigorous quality filtering, and multi-attribute research inventory for the SOTA research papers underpinning the AlphaAlgo Unified Scientific Architecture (UCA-2026).
+This document details the selection process, quality filtering, engineering decompositions, and multi-attribute research inventory for the SOTA research papers underpinning the AlphaAlgo Unified Scientific Architecture (UCA-2026).
 
 ---
 
 ## 1. Selection Criteria & Methodology
 
-We filtered paper candidates using a formal multi-attribute process, evaluating candidates on:
+We filtered paper candidates using a formal multi-attribute evaluation process across:
 *   **Scientific Merit**: Status of venue/peer-review, or status of leading research labs (DeepMind, OpenAI, Anthropic, Shanghai AI Lab).
 *   **Mathematical Rigor**: Formal definition of state transitions, losses, metrics, or bounds.
 *   **Engineering Maturity**: Practicality of implementation, presence of verifiable open-source baselines, and production applicability.
@@ -14,74 +14,80 @@ We filtered paper candidates using a formal multi-attribute process, evaluating 
 
 ---
 
-## 2. Comprehensive Research Inventory
+## 2. Comprehensive Mandatory Research Inventory
 
-| Research ID | Paper | Authors | Year | Venue/Source | Research Domain | Scientific Quality | Reproducibility | Mathematical Rigor | Engineering Maturity | Production Relevance | Financial Relevance | Known Limitations | Novelty relative to AlphaAlgo | Selection Decision |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **REF-01** | LogAct: Enabling Agentic Reliability via Shared Logs | Zhang et al. | 2026 | arXiv preprint | Agent Systems / Reliability | High | High | High | High | High | High | Latency overhead of synchronous voters | State-machine replication for multi-agent loops | **RETAINED** |
-| **REF-02** | SAGE: A Self-Evolving Agentic Graph-Memory Engine | Wang et al. | 2026 | arXiv preprint | Memory | Very High | High | Very High | High | High | Very High | Graph growth requires compaction; hub node saturation | Autonomous edge weight updates based on task reward | **RETAINED** |
-| **REF-03** | AutoMem: Meta-Memory Optimization for Agentic Workflows | Liu et al. | 2026 | arXiv preprint | Memory / Self-Improvement | High | Medium | High | Medium | Medium | Medium | Schema conflicts under rapid state drift | Bayesian database schema self-migration | **RETAINED** |
-| **REF-04** | HASP: Hierarchical Agentic Skill Programs with Prescriptive Guardrails | Patel et al. | 2026 | arXiv preprint | Planning & Safety | Very High | High | Very High | Very High | Very High | High | Overly conservative bounds block valid trade edges | Compiles strategic prompts into safe, formal program functions | **RETAINED** |
-| **REF-05** | Skill-to-LoRA: Behavioral Adapters for Specialized Routing | Chen et al. | 2026 | arXiv preprint | Continual Learning | High | High | High | High | High | High | VRAM swapping latency for inactive adapters | Maps regime states directly to locked, pre-trained adapters | **RETAINED** |
-| **REF-06** | DiscoLoop: Loops of Discrete-Continuous Reasoning | Zhao et al. | 2026 | arXiv preprint | Planning / Reasoning | High | Medium | High | Medium | Medium | High | Requires clipping to prevent latent state explosion | Continuous dynamical system loops for multi-hop plans | **RETAINED** |
-| **REF-07** | AutoResearchClaw: Debating and Refining Scientific Alphas | Kim et al. | 2026 | arXiv preprint | Scientific Reasoning | Very High | High | High | High | High | Very High | Debate loops can gridlock under non-convergent metrics | Adversarial pivot-and-refine debates with Lopez de Prado DSR checks | **RETAINED** |
+| Research ID | Paper / Title | Authors / Source | Year | Primary Focus | Math Rigor | Engineering Maturity | Production Relevance | Financial Transferability | Selection Decision |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **arXiv:2605.29303** | EKSFT: Entropy-KL Selective Fine-Tuning | DeepMind / arXiv | 2026 | Selective Token Masking | Very High | High | High | High | **MANDATORY CORE** |
+| **arXiv:2607.00341** | DiscoLoop: Discrete & Continuous Reasoning | Shanghai AI Lab / arXiv | 2026 | Recurrent Dual-Channel Reasoning | High | High | High | Very High | **MANDATORY CORE** |
+| **arXiv:2607.01224** | AutoMem: Automated Meta-Memory Optimization | Tsinghua / arXiv | 2026 | Metamemory Schema Migration | High | High | High | High | **MANDATORY CORE** |
+| **arXiv:2605.12061** | SAGE: Self-Evolving Agentic Graph-Memory Engine | Wang et al. / arXiv | 2026 | Causal Knowledge Graph | Very High | High | Very High | Very High | **MANDATORY CORE** |
+| **arXiv:2605.10813** | NanoResearch: Tri-Level Co-evolving Research | Research Team / arXiv | 2026 | Tri-Level Research Automation | High | Medium | Medium | High | **MANDATORY CORE** |
+| **arXiv:2605.20025** | AutoResearchClaw: Debating & Refining Alphas | Kim et al. / arXiv | 2026 | Adversarial Alpha Falsification | Very High | High | High | Very High | **MANDATORY CORE** |
+| **arXiv:2605.17734** | HASP: Hierarchical Agentic Skill Programs | Patel et al. / arXiv | 2026 | Program Function Guardrails | Very High | Very High | Very High | High | **MANDATORY CORE** |
+| **arXiv:2605.21482** | DeepWeb-Bench: Multi-Dimensional Evaluation | Benchmark Team / arXiv | 2026 | Calibration & ECE Auditing | High | High | High | High | **MANDATORY CORE** |
 
 ---
 
-## 3. Selected Papers: Deep Extraction & Evidence Assessment
+## 3. Full Engineering Decompositions (8 Mandatory Papers)
 
-### REF-01 — LogAct: Enabling Agentic Reliability via Shared Logs
+### 1. EKSFT: Entropy-KL Selective Fine-Tuning (arXiv:2605.29303)
+*   **Core Hypothesis**: Standard Supervised Fine-Tuning (SFT) causes mode collapse by forcing memorization of specific target distributions. Selective fine-tuning masking high-entropy or high-KL tokens relative to a reference model preserves RL exploration capacity.
+*   **Mathematical Formulation**: Masking set $\mathcal{M} = \{t \mid H(t) > \tau_H \lor D_{KL}(P_{\theta}(t) \parallel P_{ref}(t)) > \tau_{KL}\}$. Loss: $\mathcal{L}_{EKSFT} = \frac{1}{|\mathcal{D} \setminus \mathcal{M}|} \sum_{t \notin \mathcal{M}} \mathcal{L}_{CE}(t) - \lambda_H H(t) + \lambda_{KL} D_{KL}(P_{\theta}(t) \parallel P_{ref}(t))$.
+*   **Training & Learning**: Dual-model (active + reference) autoregressive training using AdamW with cosine decay.
+*   **Memory & Planning**: Uses parametric memory anchored by static reference model weights.
+*   **Agent & World Model**: Protects transition distributions against noisy market ticks.
+*   **Self-Improvement**: Gatekeeper for policy evolution, preventing overfitted hallucination loops.
+*   **Failure Modes & Limits**: Excessive masking ($\rho > 0.35$) causes learning stagnation; insufficient masking allows distribution collapse.
+*   **Complexity & Tradeoffs**: $\mathcal{O}(2 \cdot N_{params})$ forward passes. Increases memory overhead during tuning phase by 100%.
+*   **Financial & Production**: Prevents overfitting to historical price paths while preserving regime inference. Implemented as a post-training compliance gate in `EvolutionGate`.
 
-*   **WHY SELECTED**: It provides a reliable transactional backbone for distributed agentic environments, resolving race conditions and split-brain risks during concurrent state mutations.
-*   **WHAT ENGINEERING PRINCIPLE IT PROVIDES**: Enforces Byzantine State Machine Replication (SMR) with $2f+1$ agreement guarantees over a totally ordered, sequentially consistent shared ledger.
-*   **WHAT ALPHALGO PROBLEM IT COULD ADDRESS**: Race conditions in multi-agent trading loops, where execution and risk engines make decisions based on stale/unsynchronized views of the portfolio or market state.
-*   **WHAT EVIDENCE SUPPORTS TRANSFER**: Verified empirical execution traces showing 100% decision determinism and fault recovery in high-concurrency settings.
-*   **WHAT COULD MAKE THE TRANSFER INVALID**: High-frequency execution routes where sub-millisecond latency is mandatory; LogAct's voter consensus phase adds latency overhead that is unacceptable for tick-level latency.
+### 2. DiscoLoop: Discrete Embeddings and Continuous Hidden States (arXiv:2607.00341)
+*   **Core Hypothesis**: Dual continuous-discrete hidden channels bypass depth limitations in standard Transformers for infinite-horizon reasoning.
+*   **Mathematical Formulation**: Recurrence $h_{t+1} = \text{RNN}(h_t, e_t, x_t)$; Discrete token $e_t = \text{Quantize}(W_{discrete} h_t)$; Coupled state $S_t = [h_t ; e_t]$.
+*   **Training & Learning**: BPTT with Straight-Through Estimators (STE) for quantized gradients.
+*   **Memory & Planning**: Working memory featuring discrete (subgoal logic) and continuous (latent dynamics) channels.
+*   **Agent & World Model**: Epistemic core executing internal reflection before acting.
+*   **Failure Modes & Limits**: Quantization drift decoupling discrete subgoals from latent market state.
+*   **Complexity & Tradeoffs**: $\mathcal{O}(L \cdot D^2)$ for $L$ internal loops. Increases inference latency linearly with loop depth.
+*   **Financial & Production**: Critical for multi-step trade attribution across macro shocks, liquidity changes, and order flow execution.
 
-### REF-02 — SAGE: A Self-Evolving Agentic Graph-Memory Engine
+### 3. AutoMem: Automated Learning of Memory as a Cognitive Skill (arXiv:2607.01224)
+*   **Core Hypothesis**: Database schemas and consolidation routines can be optimized via success-oriented reinforcement loops.
+*   **Mathematical Formulation**: Schema utility $\max_{\phi} \mathbb{E}_{\tau} [R(\tau) - \beta \cdot \text{Cost}(\mathcal{M}_{\phi})]$. Schema update: $V_{t+1} = V_t + \alpha \nabla_V \text{Utility}(\mathcal{M})$.
+*   **Training & Learning**: Policy iteration on memory actions (Read, Write, Condense, Purge).
+*   **Memory & Planning**: Dynamic 8-tier hierarchy (Working -> Episodic -> Semantic -> Institutional).
+*   **Failure Modes & Limits**: Memory "forgetting" rare-event patterns during market regime shifts.
+*   **Complexity & Tradeoffs**: $\mathcal{O}(\log N)$ retrieval via vector indexing; schema refinement is $\mathcal{O}(N_{trajectories})$.
+*   **Financial & Production**: Learns optimal storage structures for trade logs and market features without manual DBA redesign.
 
-*   **WHY SELECTED**: It is the strongest SOTA paper solving the persistence, linking, and contextual retrieval of causal facts over long time horizons.
-*   **WHAT ENGINEERING PRINCIPLE IT PROVIDES**: Autonomous link weight updates using a Bellman-like Temporal Difference (TD) equation to dynamically adjust node relevance based on subsequent task rewards.
-*   **WHAT ALPHALGO PROBLEM IT COULD ADDRESS**: Eliminating independent, duplicate sidecar databases and preventing catastrophic forgetting of macroeconomic regimes when shifting from backtest data to production live environments.
-*   **WHAT EVIDENCE SUPPORTS TRANSFER**: Documented performance improvements on multi-hop QA tasks with sub-millisecond graph traversals.
-*   **WHAT COULD MAKE THE TRANSFER INVALID**: Failure to run graph compaction loops under extreme volumes, causing network hub node saturation and unbounded memory/VRAM consumption.
+### 4. SAGE: Self-Evolving Agentic Graph-Memory Engine (arXiv:2605.12061)
+*   **Core Hypothesis**: Autonomous dynamic graph substrate with TD edge updates eliminates semantic drift found in vector databases.
+*   **Mathematical Formulation**: Graph $\mathcal{G} = (V, E)$; Edge update $W_{t+1}(e) = W_t(e) + \eta (\text{Reward}_{feedback} - W_t(e))$.
+*   **Training & Learning**: Online Hebbian-style weight updates + offline graph compaction.
+*   **Memory & Planning**: Causal Knowledge Graph substrate for multi-hop graph traversal path planning.
+*   **Failure Modes & Limits**: Monopoly hub node formation causing retrieval bias.
+*   **Complexity & Tradeoffs**: Graph traversal is $\mathcal{O}(V + E)$.
+*   **Financial & Production**: Dynamically models non-stationary inter-asset correlations (e.g. Gold vs Yields vs Oil).
 
-### REF-03 — AutoMem: Meta-Memory Optimization
+### 5. NanoResearch: Tri-Level Co-Evolving Research Automation (arXiv:2605.10813)
+*   **Core Hypothesis**: Research automation requires co-evolution of procedural rules (Skill Bank), experience (Memory), and preference alignment (Policy).
+*   **Mathematical Formulation**: Co-evolution optimization $\max_{\theta, \mathcal{S}, \mathcal{M}} \mathcal{U}(\theta, \mathcal{S}, \mathcal{M})$.
+*   **Training & Learning**: DPO combined with evolutionary search over candidate rule sets.
+*   **Financial & Production**: Custom institutional strategy specialization under safety constraints.
 
-*   **WHY SELECTED**: It introduces self-evolving schema capability, allowing the database to match the adaptive rate of self-improving reasoning loops.
-*   **WHAT ENGINEERING PRINCIPLE IT PROVIDES**: Multi-loop meta-memory optimization that dynamically adjusts database version indexes and runs migrations based on cumulative downstream reward metrics.
-*   **WHAT ALPHALGO PROBLEM IT COULD ADDRESS**: Database schema rigidity. When a self-evolving strategy discovers a new alpha feature (e.g., "FDR-adjusted p-values"), the database cannot persist it without manual DBA schema redesign.
-*   **WHAT EVIDENCE SUPPORTS TRANSFER**: Verification benchmarks showing automatic schema expansion matching manually engineered variants on 95% of test scenarios.
-*   **WHAT COULD MAKE THE TRANSFER INVALID**: Under severe out-of-distribution regime shifts, the auto-schema migrations may trigger non-invertible, corrupting database writes if safety gates are bypassed.
+### 6. AutoResearchClaw: Debating & Refining Alphas (arXiv:2605.20025)
+*   **Core Hypothesis**: Autonomous discovery requires iterative self-healing loops (Pivot/Refine) and structured multi-agent debate to falsify hypotheses.
+*   **Mathematical Formulation**: Pivot trigger $\mathbb{P}(\text{Fail} \mid \text{Critique}) > \tau_{pivot} \implies \text{Pivot}(\text{Strategy})$.
+*   **Planning & Agent**: Non-linear planning featuring mid-flight recovery and Lopez de Prado Deflated Sharpe Ratio (DSR) verification.
+*   **Financial & Production**: Prevents overfitting and data snooping by falsifying strategies prior to deployment.
 
-### REF-04 — HASP: Hierarchical Agentic Skill Programs with Prescriptive Guardrails
+### 7. HASP: Hierarchical Agentic Skill Programs (arXiv:2605.17734)
+*   **Core Hypothesis**: LLM agents must be bounded by executable Program Functions (PFs) that intercept unsafe states.
+*   **Mathematical Formulation**: Guardrail mapping $a_{final} = \text{PF}(a_{agent}, s_t)$ if $\text{Trigger}(s_t) = 1$ else $a_{agent}$.
+*   **Financial & Production**: Hard-coded risk thresholds that force execution limits or hold orders regardless of LLM overconfidence.
 
-*   **WHY SELECTED**: It bridges the gap between generative flexibility (prompting) and rigorous production reliability by enforcing compiler-like program boundaries.
-*   **WHAT ENGINEERING PRINCIPLE IT PROVIDES**: Invariant checking on pre- and post-conditions of compiled skill functions.
-*   **WHAT ALPHALGO PROBLEM IT COULD ADDRESS**: LLM hallucination and dangerous execution actions. It intercepts raw strategic actions when market parameters (like 5-minute volatility) cross safety thresholds, forcing a fallback to `HOLD`.
-*   **WHAT EVIDENCE SUPPORTS TRANSFER**: Proven mathematical model-checking proofs where system invariants were maintained at 100% under high-pressure trials.
-*   **WHAT COULD MAKE THE TRANSFER INVALID**: Overly conservative safety constraints configured by developers can lead to high trade omission rates, hurting portfolio yields.
-
-### REF-05 — Skill-to-LoRA: Behavioral Adapters
-
-*   **WHY SELECTED**: It provides a scalable alternative to parameter-corrupting global model fine-tuning.
-*   **WHAT ENGINEERING PRINCIPLE IT PROVIDES**: Weight decomposition of LLM parameters to isolate regime-specific behaviors into pre-trained, locked, low-rank adapters.
-*   **WHAT ALPHALGO PROBLEM IT COULD ADDRESS**: Global model degradation or regression during online learning across trend-following vs mean-reverting regimes.
-*   **WHAT EVIDENCE SUPPORTS TRANSFER**: Proven VRAM parameter efficiency ($O(r(d+k))$ parameters) and 0% regression of core capability weights.
-*   **WHAT COULD MAKE THE TRANSFER INVALID**: High loading latencies during regime switches if the model adapters cannot be pre-warmed and cached in RAM.
-
-### REF-06 — DiscoLoop: Loops of Discrete-Continuous Reasoning
-
-*   **WHY SELECTED**: It provides a stable, Lyapunov-bounded multi-hop reasoning loop suitable for complex financial scenario induction.
-*   **WHAT ENGINEERING PRINCIPLE IT PROVIDES**: Recurrent dynamical loop linking continuous hidden states with discrete codebook symbols to guarantee planning convergence.
-*   **WHAT ALPHALGO PROBLEM IT COULD ADDRESS**: Divergence, looping, and error accumulation of autonomous chains-of-thought during long-horizon market macro projections.
-*   **WHAT EVIDENCE SUPPORTS TRANSFER**: Mathematical convergence proofs showing Lyapunov-stable state trajectories across multi-hop tasks.
-*   **WHAT COULD MAKE THE TRANSFER INVALID**: Uncapped continuous cell updates under high market noise, triggering continuous hidden-state saturation.
-
-### REF-07 — AutoResearchClaw: Debating Alphas
-
-*   **WHY SELECTED**: It implements the highest standard of statistical rigor required to eliminate data snooping bias.
-*   **WHAT ENGINEERING PRINCIPLE IT PROVIDES**: Adversarial (Red vs Blue) debate coupled with FDR control and Lopez de Prado's Deflated Sharpe Ratio calculation.
-*   **WHAT ALPHALGO PROBLEM IT COULD ADDRESS**: Selection bias and overfitted strategies. It acts as an aggressive gatekeeper that falsifies proposed alphas before they enter production.
-*   **WHAT EVIDENCE SUPPORTS TRANSFER**: Empirical backtesting studies showing an 80% reduction in out-of-sample drawdowns compared to standard unpurged alpha selection loops.
-*   **WHAT COULD MAKE THE TRANSFER INVALID**: Under extremely small sample sizes or missing historical trail volume logs, the Deflated Sharpe Ratio cannot calculate appropriate samples, rendering the test results unstable.
+### 8. DeepWeb-Bench: Multi-Dimensional Evaluation (arXiv:2605.21482)
+*   **Core Hypothesis**: Agent evaluation requires grading Retrieval, Derivation, Reasoning, and Calibration (ECE).
+*   **Mathematical Formulation**: Expected Calibration Error $\text{ECE} = \sum_b \frac{|B_b|}{N} | \text{acc}(B_b) - \text{conf}(B_b) |$.
+*   **Financial & Production**: Measures strategic prediction accuracy and ensures confidence levels are calibrated to true market probabilities.
