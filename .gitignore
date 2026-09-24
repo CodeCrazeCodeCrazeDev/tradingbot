@@ -113,3 +113,10 @@ temp_*.py
 *_census*.txt
 census*_err.log
 tracked_artifacts.txt
+
+# Merge/backup scratch & encrypted credential material
+.merge_backup/
+.test_credentials.enc
+*.enc
+sweep_results/
+logical_verifier_data/

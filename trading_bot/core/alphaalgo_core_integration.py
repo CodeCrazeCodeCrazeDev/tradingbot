@@ -27,31 +27,31 @@ def initialize_uca_system(config: Dict[str, Any]):
 
     # 1. Memory & State
     hms = HierarchicalMemorySystem()
-    registry.register("hms", hms, "Core")
+    registry.register("hms", hms, "Core", overwrite=True)
 
     # 2. Intelligence Modules
     # Note: asset_dims should come from config
     asset_dims = config.get("asset_dims", {"FX": 64})
     world_model = WorldModelV3(asset_dims=asset_dims)
-    registry.register("world_model", world_model, "Intelligence")
+    registry.register("world_model", world_model, "Intelligence", overwrite=True)
     
     causal_engine = StructuralCausalModel()
-    registry.register("causal_engine", causal_engine, "Intelligence")
+    registry.register("causal_engine", causal_engine, "Intelligence", overwrite=True)
 
     # 3. Simulation & Planning
     simulator = FutureSimulator(world_model)
-    registry.register("simulator", simulator, "Intelligence")
+    registry.register("simulator", simulator, "Intelligence", overwrite=True)
     
     planner = PlanningEngine(simulator, causal_engine)
-    registry.register("planner", planner, "Intelligence")
+    registry.register("planner", planner, "Intelligence", overwrite=True)
 
     # 4. Cognitive Controller
     csc = CognitiveSystemController(world_model=world_model, hms=hms, shield=shield)
-    registry.register("csc", csc, "Controller")
+    registry.register("csc", csc, "Controller", overwrite=True)
 
     # 5. Infrastructure
-    registry.register("decision_bus", decision_bus, "Infrastructure")
-    registry.register("shield", shield, "Governance")
+    registry.register("decision_bus", decision_bus, "Infrastructure", overwrite=True)
+    registry.register("shield", shield, "Governance", overwrite=True)
 
     logger.info("UCA: All components successfully integrated into Unified Registry")
     return csc

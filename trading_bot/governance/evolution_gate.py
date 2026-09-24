@@ -15,11 +15,54 @@ Mandatory Scientific References Traceability Matrix:
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 from datetime import datetime
 from dataclasses import dataclass
 
+import numpy as np
+
 logger = logging.getLogger(__name__)
+
+
+def compute_ece(
+    confidences: Sequence[float],
+    correctness: Sequence[float],
+    n_bins: int = 10,
+) -> float:
+    """
+    Expected Calibration Error (ECE) — DeepWeb-Bench (arXiv:2605.21482).
+
+    Partitions predictions into `n_bins` confidence buckets and returns the
+    weighted mean absolute gap between mean confidence and empirical accuracy
+    per bucket.
+
+    Args:
+        confidences: predicted probabilities/confidence scores in [0, 1].
+        correctness: 1.0/0.0 (or boolean) per prediction — was it correct.
+        n_bins: number of equal-width confidence bins.
+
+    Returns:
+        ECE in [0, 1]; lower is better calibrated.
+    """
+    conf = np.clip(np.asarray(confidences, dtype=np.float64), 0.0, 1.0)
+    corr = np.asarray(correctness, dtype=np.float64)
+    if conf.size == 0:
+        return 0.0
+    if conf.shape != corr.shape:
+        raise ValueError("confidences and correctness must have the same shape")
+
+    bins = np.linspace(0.0, 1.0, n_bins + 1)
+    idx = np.clip(np.digitize(conf, bins[1:-1]), 0, n_bins - 1)
+    ece = 0.0
+    for b in range(n_bins):
+        mask = idx == b
+        count = int(mask.sum())
+        if count == 0:
+            continue
+        acc = float(corr[mask].mean())
+        mean_conf = float(conf[mask].mean())
+        ece += (count / conf.size) * abs(mean_conf - acc)
+    return float(ece)
 
 
 @dataclass
@@ -60,9 +103,15 @@ def parse_metrics(raw: Any) -> EvolutionMetrics:
             return raw
         return EvolutionMetrics(reward=0.5, calibration=0.9, robustness=0.8, latency=10.0, safety_score=1.0)
 
-    reward = raw.get("reward", raw.get("perf", raw.get("sharpe_ratio", 0.5)))
-    ece = raw.get("ece", 1.0 - raw.get("calibration", 0.95))
-    calibration = raw.get("calibration", 1.0 - ece)
+    reward = raw.get("reward", raw.get("perf", raw.get("sharpe_ratio", raw.get("score", 0.5))))
+    if "confidences" in raw and "correctness" in raw:
+        # Real ECE from raw predictions (DeepWeb-Bench calibration audit)
+        ece = compute_ece(raw["confidences"], raw["correctness"],
+                          n_bins=int(raw.get("ece_bins", 10)))
+        calibration = raw.get("calibration", 1.0 - ece)
+    else:
+        ece = raw.get("ece", 1.0 - raw.get("calibration", 0.95))
+        calibration = raw.get("calibration", 1.0 - ece)
     robustness = raw.get("robustness", 0.8)
     latency = raw.get("latency", raw.get("decision_latency", 10.0))
     safety_score = raw.get("safety_score", 1.0)
@@ -105,9 +154,8 @@ class EvolutionGate:
     Integrates EKSFT for selective strategy internalization and automated red-teaming.
     """
 
-    def __init__(self, validation_engine: Any, threshold: float = 0.05, **kwargs):
+    def __init__(self, validation_engine: Any = None, threshold: float = 0.05, **kwargs):
         self.validation_engine = validation_engine
-        self.threshold = kwargs.get('gain_threshold', improvement_threshold)
         self.evolution_history = []
         self.threshold = kwargs.get("improvement_threshold", kwargs.get("gain_threshold", threshold))
         # EKSFT Thresholds
@@ -121,11 +169,104 @@ class EvolutionGate:
     def _parse_metrics(self, raw: Any) -> EvolutionMetrics:
         return parse_metrics(raw)
 
-    async def validate_improvement(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any]) -> bool:
+    def _check_eksft_compliance(self, candidate_config: Dict[str, Any]) -> bool:
+        """
+        EKSFT compliance gate (arXiv:2605.29303).
+
+        A candidate update is compliant when its declared selective-update
+        statistics stay inside the entropy/KL boundaries: mean update entropy
+        >= tau_h (still exploring — no distribution sharpening) and max KL
+        drift vs the baseline policy <= tau_kl.
+        Candidates that carry no selective-update stats are compliant by
+        default (nothing to gate).
+        """
+        # Per-token trace format: training_metadata.eksft_trace is a list of
+        # {id, entropy, masked} — every token whose entropy reaches the
+        # high-uncertainty band (>= tau_h) must be masked out of the update.
+        trace = (candidate_config.get("training_metadata") or {}).get("eksft_trace") or []
+        if isinstance(trace, list):
+            for token in trace:
+                if not isinstance(token, dict):
+                    continue
+                entropy = token.get("entropy")
+                if entropy is not None and float(entropy) >= self.tau_h and not token.get("masked", False):
+                    logger.warning(
+                        f"EKSFT: high-entropy token '{token.get('id')}' (entropy {entropy} >= {self.tau_h}) "
+                        "is unmasked — selective masking required"
+                    )
+                    return False
+
+        stats = candidate_config.get("eksft_stats") or candidate_config.get("update_stats") or {}
+        if not isinstance(stats, dict) or not stats:
+            return True
+
+        entropy = stats.get("entropy")
+        kl = stats.get("kl_divergence", stats.get("kl"))
+        if entropy is not None and float(entropy) < self.tau_h:
+            logger.warning(f"EKSFT: entropy {entropy} < tau_h {self.tau_h} — distribution sharpening detected")
+            return False
+        if kl is not None and float(kl) > self.tau_kl:
+            logger.warning(f"EKSFT: KL divergence {kl} > tau_kl {self.tau_kl} — policy drift beyond compliance gate")
+            return False
+        return True
+
+    def generate_adversarial_tests(self, code_diff: str) -> List[Dict[str, Any]]:
+        """
+        AutoResearchClaw (arXiv:2605.20025): synthesize adversarial scenarios
+        that target the surfaces touched by the candidate diff.
+        """
+        scenarios: List[Dict[str, Any]] = [
+            {"name": "volatility_spike", "shock": {"volatility": 0.5}, "invariant": "no_trade_above_vol_0.3"},
+            {"name": "api_failure", "shock": {"execution_error": True}, "invariant": "graceful_fallback_to_hold"},
+            {"name": "slippage_burst", "shock": {"slippage": 0.02}, "invariant": "ev_must_cover_costs"},
+        ]
+        lowered = code_diff.lower()
+        if "risk" in lowered or "exposure" in lowered:
+            scenarios.append({"name": "exposure_breach", "shock": {"portfolio_exposure": 1.0}, "invariant": "hard_exposure_cap"})
+        if "order" in lowered or "execution" in lowered:
+            scenarios.append({"name": "partial_fill", "shock": {"fill_ratio": 0.3}, "invariant": "no_double_count_fill"})
+        if "reward" in lowered or "loss" in lowered:
+            scenarios.append({"name": "reward_hacking", "shock": {"reward": float("inf")}, "invariant": "finite_reward_only"})
+        return scenarios
+
+    def run_red_teaming_session(self, candidate_config: Dict[str, Any], scenarios: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        AutoResearchClaw (arXiv:2605.20025): run each adversarial scenario and
+        report invariant violations. A scenario fails if the candidate's
+        declared behavior map does not preserve the scenario invariant.
+        """
+        behavior = candidate_config.get("behavior", {}) or {}
+        failures: List[str] = []
+        for scenario in scenarios:
+            name = scenario.get("name", "unnamed")
+            invariant = scenario.get("invariant")
+            respected = behavior.get(invariant, candidate_config.get(invariant, True))
+            if not respected:
+                failures.append(f"{name}: invariant '{invariant}' violated")
+        return {
+            "status": "failed" if failures else "passed",
+            "failures": failures,
+            "scenarios_run": len(scenarios),
+        }
+
+    async def validate_improvement(self, candidate_id: str, candidate_config: Dict[str, Any], baseline_config: Dict[str, Any], drift: Optional[Dict[str, Any]] = None) -> bool:
         """
         Gate: Only commit a rewrite if it improves on a held-out validation set.
+
+        ``drift`` (V4 contract) carries explicit distribution stats
+        (``entropy``/``kl_divergence``) gated against tau_h/tau_kl.
         """
         logger.info(f"EvolutionGate: Validating candidate {candidate_id}")
+
+        if isinstance(drift, dict) and drift:
+            entropy = drift.get("entropy")
+            kl = drift.get("kl_divergence", drift.get("kl"))
+            if entropy is not None and float(entropy) < self.tau_h:
+                logger.warning(f"EvolutionGate: REJECTED - entropy {entropy} < tau_h {self.tau_h} (mode collapse)")
+                return False
+            if kl is not None and float(kl) > self.tau_kl:
+                logger.warning(f"EvolutionGate: REJECTED - KL {kl} > tau_kl {self.tau_kl} (excessive drift)")
+                return False
 
         # 1. EKSFT Compliance Check
         if not self._check_eksft_compliance(candidate_config):
@@ -238,9 +379,19 @@ class EvolutionGate:
             return False
 
     def validate_evolution(self, *args, **kwargs) -> bool:
-        """Legacy sync wrapper."""
+        """Legacy sync wrapper — safe to call inside or outside a running loop."""
         import asyncio
-        return asyncio.run(self.validate_improvement(*args, **kwargs))
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(self.validate_improvement(*args, **kwargs))
+        # Already inside an event loop: run the coroutine on a private loop
+        # in a helper thread (nest_asyncio may not be installed).
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+            return ex.submit(
+                lambda: asyncio.run(self.validate_improvement(*args, **kwargs))
+            ).result()
 
     def get_evolution_report(self) -> List[Dict[str, Any]]:
         return self.evolution_history.copy()

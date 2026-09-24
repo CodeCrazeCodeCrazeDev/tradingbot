@@ -20,6 +20,7 @@ class TestSignalLifecycle:
     def test_initialization(self):
         """Test SignalLifecycle initialization."""
         try:
+            from trading_bot.signals.signal_lifecycle import SignalLifecycle
             lifecycle = SignalLifecycle()
             assert lifecycle is not None
         except (ImportError, TypeError):
@@ -91,11 +92,8 @@ class TestAutoDisableSickSignals:
     
     def test_import(self):
         """Test module can be imported."""
-
         from trading_bot.signals.auto_disable_sick_signals import AutoDisableSickSignals
-import numpy
-import pandas
-assert AutoDisableSickSignals is not None
+        assert AutoDisableSickSignals is not None
 
 
 

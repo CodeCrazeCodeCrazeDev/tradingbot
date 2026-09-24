@@ -23,12 +23,6 @@ def create_alphaalgo(**kwargs):
     return None
 
 
-def create_alphaalgoConfig(**kwargs):
-    """Factory function for alphaalgoConfig."""
-    logger.debug(f"create_alphaalgoConfig called")
-    return None
-
-
 def create_create_alphaalgo(**kwargs):
     """Factory function for alphaalgo."""
     logger.debug(f"create_create_alphaalgo called")

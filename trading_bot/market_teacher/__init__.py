@@ -93,3 +93,22 @@ __all__ = [
     'PopulationManager',
     'SafetySystemProtection',
 ]
+
+# Compat re-exports (names live in package submodules)
+try:
+    from .market_feedback import MarketLesson  # noqa: F401
+except ImportError:
+    pass
+try:
+    from .teacher import MarketTeacher  # noqa: F401
+except ImportError:
+    pass
+
+
+class MarketTeacherOrchestrator:
+    """Orchestrates market-teaching components (minimal reconstruction)."""
+    def __init__(self, *a, **k):
+        self.config = k.get('config', dict(k))
+        self.running = False
+    def get_status(self):
+        return {'status': 'operational', 'running': self.running}

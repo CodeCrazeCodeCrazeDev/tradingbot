@@ -24,3 +24,10 @@ __all__ = [
     'StakeRecord',
     'SlashingEvent',
 ]
+
+
+# EvidenceType lives in evidence_provenance — re-export for package-level callers.
+try:
+    from .evidence_provenance import EvidenceType
+except ImportError:
+    EvidenceType = None

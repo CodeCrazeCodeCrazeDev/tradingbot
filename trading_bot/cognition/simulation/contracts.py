@@ -14,6 +14,7 @@ class SimulationRequest:
     time_horizon_bars: int = 10
     scenario_adjustments: Dict[str, Any] = field(default_factory=dict)
     # e.g., {"volatility_multiplier": 1.5, "spread_expansion": 2.0}
+    monte_carlo_paths: int = 0  # >0 enables fat-tailed MC path sampling (Student-t)
 
 
 @dataclass
@@ -38,3 +39,8 @@ class SimulationResult:
     uncertainty_score: float
     trajectories: List[StateTrajectory]
     invalidation_triggers: List[str] = field(default_factory=list)
+    # Fat-tailed Monte Carlo empiricals (populated when request.monte_carlo_paths > 0)
+    mc_paths: int = 0
+    mc_win_probability: Optional[float] = None
+    mc_expected_value: Optional[float] = None
+    mc_p95_drawdown: Optional[float] = None

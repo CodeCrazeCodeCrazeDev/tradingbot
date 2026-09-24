@@ -16,10 +16,47 @@ Paper Traceability Matrix:
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import time
 
+import numpy as np
+
 logger = logging.getLogger(__name__)
+
+
+def eksft_mask(
+    policy_probs: np.ndarray,
+    reference_probs: np.ndarray,
+    entropy_floor: float = 0.5,
+    kl_ceiling: float = 0.1,
+) -> np.ndarray:
+    """
+    EKSFT (arXiv:2605.29303): Entropy-KL selective token masking.
+
+    A position receives a policy update only when:
+      - its predictive entropy is at or above ``entropy_floor`` (the policy is
+        still uncertain there — updating preserves exploration capacity), AND
+      - its KL divergence from the reference policy is at or below
+        ``kl_ceiling`` (the compliance gate — prevent runaway drift).
+
+    Positions with low entropy (already confident) or excessive KL are masked
+    out, preventing distribution sharpening and policy collapse.
+
+    Args:
+        policy_probs: Current policy distribution, shape (..., vocab).
+        reference_probs: Reference/frozen policy distribution, same shape.
+        entropy_floor: Minimum entropy (nats) for a position to be updated.
+        kl_ceiling: Maximum allowed KL(policy || reference) per position.
+
+    Returns:
+        Boolean mask, shape policy_probs.shape[:-1], True where update applies.
+    """
+    probs = np.clip(np.asarray(policy_probs, dtype=np.float64), 1e-12, 1.0)
+    ref = np.clip(np.asarray(reference_probs, dtype=np.float64), 1e-12, 1.0)
+
+    entropy = -np.sum(probs * np.log(probs), axis=-1)
+    kl = np.sum(probs * np.log(probs / ref), axis=-1)
+    return (entropy >= entropy_floor) & (kl <= kl_ceiling)
 
 @dataclass
 class HarnessConfig:
@@ -120,3 +157,30 @@ class AdaptiveControlPolicyEngine:
         except Exception as e:
             logger.error(f"ACPE: Error during parameterization, falling back to default harness config: {e}")
             return self._policy_cache["default"]
+
+    def masked_policy_update(
+        self,
+        policy_probs: np.ndarray,
+        reference_probs: np.ndarray,
+        update: np.ndarray,
+        entropy_floor: float = 0.5,
+        kl_ceiling: float = 0.1,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Applies the EKSFT selective mask to a candidate policy update.
+
+        Returns (masked_update, mask): updates are zeroed wherever the mask is
+        False, preserving exploration and enforcing the KL compliance gate.
+        """
+        mask = eksft_mask(policy_probs, reference_probs, entropy_floor, kl_ceiling)
+        update = np.asarray(update, dtype=np.float64)
+        # The mask is per-position; expand over trailing vocab dims of the update.
+        expanded = mask
+        while expanded.ndim < update.ndim:
+            expanded = np.expand_dims(expanded, axis=-1)
+        masked = np.where(expanded, update, 0.0)
+        kept = int(mask.sum())
+        total = int(mask.size)
+        logger.debug(f"ACPE: EKSFT mask kept {kept}/{total} update positions "
+                     f"(entropy_floor={entropy_floor}, kl_ceiling={kl_ceiling})")
+        return masked, mask

@@ -3738,4 +3738,11 @@ def _initialize_connectivity(api_source, websocket_feed, news_scraping, cache_di
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    print(
+        "DEPRECATED: main_original.py is superseded by the unified bot.\n"
+        "All modules now run under one brain — use `python main.py` "
+        "(trading_bot.unified_bot.UnifiedTradingBot).\n"
+        "Redirecting to the unified entry point..."
+    )
+    from main import main as _unified_main
+    asyncio.run(_unified_main())

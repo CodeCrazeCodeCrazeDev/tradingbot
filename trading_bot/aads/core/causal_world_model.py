@@ -123,9 +123,13 @@ class InterventionResult:
         }
 
 
-class CausalWorldModel:
+class AADSCausalWorldModel:
     """
-    Structural Causal Model of financial markets.
+    Structural Causal Model of financial markets (AADS-specific).
+
+    Renamed from ``CausalWorldModel`` — the canonical ``CausalWorldModel``
+    lives in ``trading_bot.world_model.causal_model``. This is the AADS
+    subsystem's own SCM with do-calculus interventions.
     
     Implements:
     - Causal graph construction and maintenance
@@ -709,3 +713,8 @@ class AgentBasedSimulator:
             max_dd = max(max_dd, dd)
         
         return max_dd
+
+
+# Backward-compat alias: AADS-internal SCM. The canonical CausalWorldModel
+# is trading_bot.world_model.causal_model.CausalWorldModel.
+CausalWorldModel = AADSCausalWorldModel

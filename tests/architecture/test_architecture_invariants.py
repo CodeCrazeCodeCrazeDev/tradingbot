@@ -11,6 +11,7 @@ from pathlib import Path
 # Paths to inspect
 PRODUCTION_DIR = Path(__file__).resolve().parents[2] / "trading_bot"
 
+@pytest.mark.timeout(600)
 def test_single_csc_implementation():
     """Assert exactly one Cognitive System Controller exists in production."""
     # Find all CSC controller.py files
@@ -23,6 +24,7 @@ def test_single_csc_implementation():
         f"found {len(active_controllers)}: {active_controllers}"
     )
 
+@pytest.mark.timeout(600)
 def test_single_artifact_manager():
     """Assert exactly one central ArtifactManager exists in production."""
     manager_paths = list(PRODUCTION_DIR.glob("**/security/artifact_manager.py"))
@@ -33,6 +35,7 @@ def test_single_artifact_manager():
         f"found {len(active_managers)}: {active_managers}"
     )
 
+@pytest.mark.timeout(600)
 def test_single_risk_engine():
     """Assert exactly one active MASTER risk manager exists in production."""
     risk_paths = list(PRODUCTION_DIR.glob("**/risk/MASTER_risk_manager.py"))
@@ -43,6 +46,7 @@ def test_single_risk_engine():
         f"found {len(active_risks)}: {active_risks}"
     )
 
+@pytest.mark.timeout(600)
 def test_single_decision_bus():
     """Assert exactly one unified decision/event bus exists in production."""
     bus_paths = list(PRODUCTION_DIR.glob("**/event_pipeline/event_bus.py"))
@@ -53,6 +57,7 @@ def test_single_decision_bus():
         f"found {len(active_buses)}: {active_buses}"
     )
 
+@pytest.mark.timeout(600)
 def test_no_active_code_imports_from_archive():
     """Verify no active production code imports from deprecated _archive directories."""
     violations = []

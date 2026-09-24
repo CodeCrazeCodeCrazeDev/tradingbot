@@ -64,3 +64,9 @@ class TAMICOrchestrator:
     
     def get_status(self):
         return {"running": self.running}
+
+# Flat-path compat re-exports (real implementation in .core)
+try:
+    from .core import TAMIC, TAMICConfig, TAMICDecision, TimeHorizon, MarketTimeState, SignalHalfLife, ForbiddenBehaviorType, TAMICGovernanceLayer  # noqa: F401
+except ImportError:
+    pass

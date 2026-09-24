@@ -153,6 +153,13 @@ class IndicatorsOrchestrator:
     
     def __init__(self, config=None):
         self.config = config or {}
+        import warnings
+        warnings.warn(
+            "IndicatorsOrchestrator is a merge-generated stub and is deprecated. "
+            "Route orchestration through CognitiveSystemController "
+            "(trading_bot.core.csc.controller).",
+            DeprecationWarning, stacklevel=2,
+        )
         self.running = False
         self._initialized = True
     
@@ -185,6 +192,13 @@ class IndicatorOrchestrator:
     """Stub for IndicatorOrchestrator."""
     def __init__(self, *args, **kwargs):
         self.config = kwargs.get('config', {})
+        import warnings
+        warnings.warn(
+            "IndicatorOrchestrator is a merge-generated stub and is deprecated. "
+            "Route orchestration through CognitiveSystemController "
+            "(trading_bot.core.csc.controller).",
+            DeprecationWarning, stacklevel=2,
+        )
         self.running = False
     
     async def start(self):

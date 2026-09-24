@@ -78,3 +78,20 @@ def apply_eksft_masking(logits: torch.Tensor, ref_logits: torch.Tensor, entropy_
 
     mask = (entropy <= entropy_tau) & (kl_div <= kl_tau)
     return mask
+
+
+class EKSFTMasker:
+    """Entropy/KL-gated selective fine-tuning masker.
+
+    Wraps :func:`apply_eksft_masking` with configurable thresholds; a
+    permissive no-op mask is returned when masking inputs are absent.
+    """
+
+    def __init__(self, entropy_tau: float = 2.0, kl_tau: float = 0.5):
+        self.entropy_tau = entropy_tau
+        self.kl_tau = kl_tau
+
+    def calculate_masks(self, logits, ref_logits=None):
+        if ref_logits is None:
+            return torch.ones_like(logits)
+        return apply_eksft_masking(logits, ref_logits, self.entropy_tau, self.kl_tau)

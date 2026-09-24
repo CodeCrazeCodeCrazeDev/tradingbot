@@ -56,6 +56,14 @@ class CausalScratchpad:
         except nx.NetworkXNoCycle:
             pass
 
+    def get_parents(self, node: str) -> List[str]:
+        """Return the direct causal parents of a node."""
+        return list(self.dag.predecessors(node))
+
+    def get_children(self, node: str) -> List[str]:
+        """Return the direct causal children of a node."""
+        return list(self.dag.successors(node))
+
     def get_causal_path(self, source: str, target: str) -> List[str]:
         """Finds the strongest causal path between two market variables."""
         try:
@@ -159,8 +167,12 @@ class CausalWorldModel:
         # 4. Impact Assessment
         impact = self.scm.calculate_structural_impact(42, action.get("quantity", 0.0), z)
 
+        market_impact = float(impact.get("total_impact", 0.0))
+        if not market_impact:
+            market_impact = float(np.mean(list(impact.values()))) if impact else 0.0
         return {
             "expected_slippage": 0.0005,
+            "market_impact": market_impact,
             "structural_impact": impact,
             "causal_confidence": 0.85
         }
@@ -171,3 +183,32 @@ class CausalWorldModel:
         for ins in insights:
             links.append((ins["cause"], ins["effect"], ins["strength"]))
         self.scm.scratchpad.update_structure(links)
+
+class StructuralCausalModelV5(StructuralCausalModelV6):
+    """
+    V5 compatibility surface over the V6 SCM.
+
+    Differences vs V6 semantics:
+    - ``do_intervention`` hard-sets intervened nodes in the OUTPUT state as
+      well as pruning parents (V5 contract: the intervened node equals the
+      do-value after the call).
+    - Adds ``counterfactual_query`` (abduction-action-prediction): reuses the
+      factual state, applies the alternative action, and returns the resulting
+      counterfactual state.
+    """
+
+    def do_intervention(self, z: torch.Tensor, interventions: Dict[int, float]) -> torch.Tensor:
+        out = super().do_intervention(z, interventions)
+        out = out.detach().clone()
+        for idx, val in interventions.items():
+            out[:, idx] = val
+        return out
+
+    def counterfactual_query(self, factual_z: torch.Tensor, alternative_action: Dict[int, float]) -> torch.Tensor:
+        """What-if query: hold the factual state, apply the alternative action."""
+        return self.do_intervention(factual_z, alternative_action)
+
+
+
+# Backward-compatible alias: unversioned name maps to the canonical V6 model.
+StructuralCausalModel = StructuralCausalModelV6

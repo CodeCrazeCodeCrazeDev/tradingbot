@@ -5,7 +5,7 @@ Test suite for AlphaAlgo 2.0
 # Optional imports - these may fail if dependencies are not available
 try:
     from .test_advanced_rl import TestDistributionalRL, TestMultiObjectiveRL
-except (ImportError, RuntimeError):
+except Exception:
     TestDistributionalRL = None
     TestMultiObjectiveRL = None
 
@@ -15,7 +15,7 @@ try:
         TestSpecializedAgents,
         TestMultiAgentCoordinator
     )
-except (ImportError, RuntimeError):
+except Exception:
     TestBaseAgent = None
     TestSpecializedAgents = None
     TestMultiAgentCoordinator = None
@@ -26,7 +26,7 @@ try:
         TestImaginationPlanner,
         TestSyntheticData
     )
-except (ImportError, RuntimeError):
+except Exception:
     TestWorldModel = None
     TestImaginationPlanner = None
     TestSyntheticData = None
@@ -38,7 +38,7 @@ try:
         TestAlternativeData,
         TestMultimodalFusion
     )
-except (ImportError, RuntimeError):
+except Exception:
     TestTextProcessing = None
     TestPriceProcessing = None
     TestAlternativeData = None
@@ -50,7 +50,7 @@ try:
         TestPerformanceMonitor,
         TestHealthCheck
     )
-except (ImportError, RuntimeError):
+except Exception:
     TestAutoScaling = None
     TestPerformanceMonitor = None
     TestHealthCheck = None

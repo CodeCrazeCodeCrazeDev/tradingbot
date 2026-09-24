@@ -9,23 +9,24 @@ import pandas as pd
 from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from types import SimpleNamespace
 import logging
 import asyncio
 
 # Import all superintelligence components
-from trading_bot.aamis_v3.superintelligence.self_optimizing_core import (
+from trading_bot.superintelligence.self_optimizing_core import (
     SelfOptimizingCore, LearningExperience, LearningSource
 )
-from trading_bot.aamis_v3.superintelligence.multi_brain_ensemble import (
+from trading_bot.superintelligence.multi_brain_ensemble import (
     MultiBrainEnsemble, VoteWeight
 )
-from trading_bot.aamis_v3.superintelligence.memory_systems import (
+from trading_bot.superintelligence.memory_systems import (
     MemorySystem, MarketLesson, MemoryImportance
 )
-from trading_bot.aamis_v3.superintelligence.regime_strategy_engine import (
+from trading_bot.superintelligence.regime_strategy_engine import (
     RegimeStrategyEngine
 )
-from trading_bot.aamis_v3.superintelligence.self_regulation_engine import (
+from trading_bot.superintelligence.self_regulation_engine import (
     SelfRegulationEngine, RegulationLevel
 )
 
@@ -135,7 +136,10 @@ class SuperintelligenceOrchestrator:
     - Base AAMIS v3.0 capabilities
     """
 
-    def __init__(self):
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        self.opportunity_threshold = float(self.config.get("opportunity_threshold", 0.7))
+
         # Core AAMIS
         self.aamis = AAMISMasterOrchestrator()
 
@@ -154,6 +158,11 @@ class SuperintelligenceOrchestrator:
         # Daily improvement tracking
         self.daily_improvements: List[Dict[str, Any]] = []
 
+        # Autonomous expansion state
+        self.active_agents: List[str] = []
+        self.research_domains: List[str] = []
+        self.agent_deployments: List[Dict[str, Any]] = []
+
         logger.info("🧠 Superintelligence Orchestrator initialized")
         logger.info("   ✓ Self-Optimizing Core")
         logger.info("   ✓ Multi-Brain Ensemble")
@@ -161,6 +170,54 @@ class SuperintelligenceOrchestrator:
         logger.info("   ✓ Regime-Strategy Engine")
         logger.info("   ✓ Self-Regulation Engine")
         logger.info("   ✓ Base AAMIS v3.0")
+
+    def process(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Autonomous coordination cycle: evaluate opportunity signals, spawn
+        agents into qualifying research domains, and record deployments.
+        """
+        compute_budget = payload.get("compute_budget", 0)
+
+        for signal in payload.get("opportunity_signals", []):
+            score = float(signal.get("score", 0.0))
+            if score < self.opportunity_threshold:
+                continue
+
+            domain = signal.get("domain", "unknown")
+            if domain not in self.research_domains:
+                self.research_domains.append(domain)
+
+            for agent in signal.get("suggested_agents", []):
+                if agent not in self.active_agents:
+                    self.active_agents.append(agent)
+                    logger.info(f"Superintelligence: spawned agent '{agent}' for domain '{domain}'")
+
+            self.agent_deployments.append({
+                "domain": domain,
+                "thesis": signal.get("thesis", ""),
+                "score": score,
+                "agents": list(signal.get("suggested_agents", [])),
+                "deployed_at": datetime.now().isoformat(),
+            })
+
+        optimization = self.self_optimizer.optimize_system({
+            "experiment_name": "orchestrated-deployment",
+            "baseline_metric": payload.get("baseline_metric", 0.0),
+            "candidate_metric": payload.get("candidate_metric", 0.0),
+        })
+
+        infrastructure = SimpleNamespace(
+            compute_budget=compute_budget,
+            agent_deployments=list(self.agent_deployments),
+        )
+        return {
+            "coordination": {
+                "active_agents": list(self.active_agents),
+                "research_domains": list(self.research_domains),
+            },
+            "infrastructure": infrastructure,
+            "optimization": optimization,
+        }
 
     async def analyze_with_superintelligence(self, market_data: Dict[str, Any]) -> SuperintelligenceReport:
         """

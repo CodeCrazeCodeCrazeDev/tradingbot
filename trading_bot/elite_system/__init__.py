@@ -106,6 +106,13 @@ class EliteSystemOrchestrator:
     """Auto-generated stub orchestrator for module integration."""
     def __init__(self, config=None):
         self.config = config or {}
+        import warnings
+        warnings.warn(
+            "EliteSystemOrchestrator is a merge-generated stub and is deprecated. "
+            "Route orchestration through CognitiveSystemController "
+            "(trading_bot.core.csc.controller).",
+            DeprecationWarning, stacklevel=2,
+        )
         self.running = False
         self._initialized = True
     
@@ -121,3 +128,9 @@ class EliteSystemOrchestrator:
         """Get orchestrator status."""
         return {"running": self.running, "initialized": self._initialized}
 
+
+# Compat re-export
+try:
+    from .benchmarking import SystemMetrics  # noqa: F401
+except ImportError:
+    pass

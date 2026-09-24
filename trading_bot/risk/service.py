@@ -1,0 +1,206 @@
+"""Canonical portfolio-level risk service for the foundation runtime."""
+
+from __future__ import annotations
+
+import inspect
+from typing import Any, Dict, Mapping, Optional
+
+from trading_bot.foundation.contracts import (
+    DecisionProposal,
+    Instrument,
+    InstrumentType,
+    PortfolioSnapshot,
+    RiskDecision,
+    RiskState,
+    Signal,
+)
+
+
+class LegacyRiskPolicyAdapter:
+    """Convert a legacy risk analyzer into a subordinate veto policy."""
+
+    def __init__(self, name: str, legacy: Any):
+        self.name = name
+        self.legacy = legacy
+
+    async def evaluate(self, proposal: DecisionProposal, state: RiskState) -> Mapping[str, Any]:
+        evaluator = getattr(self.legacy, "evaluate", None)
+        if evaluator is None:
+            evaluator = getattr(self.legacy, "validate_trade", None)
+        if evaluator is None:
+            evaluator = getattr(self.legacy, "assess_risk", None)
+        if evaluator is None and hasattr(self.legacy, "run_all_checks"):
+            order = {
+                "symbol": proposal.signal.instrument.symbol,
+                "action": proposal.signal.direction,
+                "quantity": proposal.signal.metadata.get("quantity", 0.0),
+                "position_value": proposal.signal.metadata.get("position_value", 0.0),
+                "stop_loss": proposal.signal.stop_loss,
+                "take_profit": proposal.signal.take_profit,
+                **dict(proposal.signal.metadata),
+            }
+            portfolio = {
+                "equity": state.equity,
+                "exposure": state.portfolio_exposure,
+                "open_positions": state.open_positions,
+                "daily_pnl": state.daily_pnl,
+                "drawdown": state.drawdown_fraction,
+            }
+            result = self.legacy.run_all_checks(order, portfolio)
+            rejected = [check.reason for check in result if getattr(check.result, "value", "") == "rejected"]
+            return {
+                "approved": not rejected,
+                "reason": "; ".join(rejected) if rejected else f"Legacy policy '{self.name}' passed",
+            }
+        if evaluator is None and hasattr(self.legacy, "can_trade"):
+            result = self.legacy.can_trade()
+            if inspect.isawaitable(result):
+                result = await result
+            return {"approved": bool(result[0]), "reason": str(result[1] or self.name)}
+        if evaluator is None and hasattr(self.legacy, "validate"):
+            evaluator = self.legacy.validate
+        if evaluator is None:
+            return {"approved": False, "reason": f"Legacy policy '{self.name}' has no evaluator"}
+        try:
+            result = evaluator(proposal, state)
+        except TypeError:
+            result = evaluator(proposal.signal, state)
+        if inspect.isawaitable(result):
+            result = await result
+        if isinstance(result, tuple):
+            return {"approved": bool(result[0]), "reason": str(result[1] if len(result) > 1 else "legacy policy")}
+        if isinstance(result, bool):
+            return {"approved": result, "reason": f"Legacy policy '{self.name}'"}
+        if isinstance(result, Mapping):
+            return result
+        return {"approved": bool(result), "reason": f"Legacy policy '{self.name}'"}
+
+
+class CanonicalRiskService:
+    """Deterministic risk authority used before the immutable final gate.
+
+    The existing MasterRiskManager remains available behind the compatibility
+    surface while its broader analytics are migrated into this contract.
+    """
+
+    def __init__(
+        self,
+        limits: Mapping[str, float] = None,
+        policies: Optional[Mapping[str, Any]] = None,
+    ) -> None:
+        self.limits: Dict[str, float] = {
+            "max_quantity": 10.0,
+            "max_exposure": 0.05,
+            "max_drawdown": 0.25,
+            "max_daily_loss": 0.05,
+            "max_open_positions": 10,
+            **dict(limits or {}),
+        }
+        self.policies: Dict[str, Any] = dict(policies or {})
+
+    def register_policy(self, name: str, policy: Any) -> None:
+        """Register a subordinate veto policy; policies cannot approve alone."""
+        if not name.strip() or policy is None or not hasattr(policy, "evaluate"):
+            raise ValueError("Risk policies require a name and evaluate() method")
+        self.policies[name] = policy
+
+    def unregister_policy(self, name: str) -> None:
+        self.policies.pop(name, None)
+
+    async def evaluate(self, proposal: DecisionProposal, state: RiskState) -> RiskDecision:
+        requested_quantity = float(proposal.signal.metadata.get("quantity", 1.0))
+        checks = {
+            "trading_enabled": state.trading_enabled,
+            "data_fresh": state.data_is_fresh,
+            "not_emergency": not state.emergency,
+            "drawdown_limit": state.drawdown_fraction <= self.limits["max_drawdown"],
+            "daily_loss_limit": state.daily_pnl >= -abs(self.limits["max_daily_loss"] * max(state.equity, 0.0)),
+            "exposure_limit": state.portfolio_exposure <= self.limits["max_exposure"],
+            "open_position_limit": state.open_positions < int(self.limits["max_open_positions"]),
+            "quantity_limit": 0.0 < requested_quantity <= self.limits["max_quantity"],
+        }
+        approved = all(checks.values()) and proposal.signal.direction.lower() not in {"hold", "neutral"}
+        reason = "All canonical risk checks passed" if approved else self._rejection_reason(checks)
+        if approved:
+            for name, policy in self.policies.items():
+                try:
+                    result = policy.evaluate(proposal, state)
+                    result = await result if inspect.isawaitable(result) else result
+                except Exception as exc:
+                    checks[f"policy_{name}"] = False
+                    approved = False
+                    reason = f"Risk policy '{name}' failed closed: {exc}"
+                    break
+                allowed = bool(result if isinstance(result, bool) else result.get("approved", False))
+                checks[f"policy_{name}"] = allowed
+                if not allowed:
+                    approved = False
+                    reason = str(result.get("reason", f"Risk policy '{name}' vetoed"))
+                    break
+        return RiskDecision(
+            approved=approved,
+            decision_id=proposal.decision_id,
+            reason=reason,
+            approved_quantity=requested_quantity if approved else 0.0,
+            risk_score=self._risk_score(state),
+            checks=checks,
+        )
+
+    async def evaluate_action(
+        self,
+        action: Mapping[str, Any],
+        observation: Mapping[str, Any],
+    ) -> RiskDecision:
+        """Compatibility bridge for the CSC's current dictionary proposal."""
+        symbol = str(action.get("symbol") or observation.get("symbol") or "UNKNOWN")
+        instrument = Instrument(symbol, InstrumentType.SYNTHETIC, str(observation.get("venue") or "runtime"))
+        equity = float(observation.get("equity", 1.0) or 1.0)
+        quality = str(observation.get("data_quality", "valid")).lower()
+        state = RiskState(
+            account_id=str(observation.get("account_id", "runtime")),
+            equity=equity,
+            portfolio_exposure=float(observation.get("exposure", observation.get("portfolio_exposure", 0.0)) or 0.0),
+            daily_pnl=float(observation.get("daily_pnl", 0.0) or 0.0),
+            drawdown_fraction=float(observation.get("drawdown", observation.get("drawdown_fraction", 0.0)) or 0.0),
+            open_positions=int(observation.get("open_positions", 0) or 0),
+            data_is_fresh=quality not in {"invalid", "stale"},
+            trading_enabled=bool(observation.get("trading_enabled", True)),
+            emergency=bool(observation.get("emergency", False)),
+        )
+        signal = Signal(
+            signal_id=str(action.get("trade_id", "runtime-signal")),
+            instrument=instrument,
+            direction=str(action.get("action", "WAIT")),
+            confidence=float(action.get("confidence", 0.0) or 0.0),
+            metadata={"quantity": action.get("quantity", 0.0)},
+        )
+        proposal = DecisionProposal(
+            decision_id=str(action.get("trade_id", "runtime-decision")),
+            signal=signal,
+            portfolio=PortfolioSnapshot(state.account_id, equity, equity),
+            risk_state=state,
+        )
+        return await self.evaluate(proposal, state)
+
+    async def refresh(self, portfolio: PortfolioSnapshot) -> RiskState:
+        exposure = sum(abs(item.fraction_of_equity) for item in portfolio.exposures)
+        daily_pnl = sum(item.realized_pnl for item in portfolio.positions)
+        return RiskState(
+            account_id=portfolio.account_id,
+            equity=portfolio.equity,
+            portfolio_exposure=exposure,
+            daily_pnl=daily_pnl,
+            drawdown_fraction=portfolio.drawdown_fraction,
+            open_positions=len([item for item in portfolio.positions if item.quantity != 0]),
+            limits=self.limits,
+        )
+
+    def _risk_score(self, state: RiskState) -> float:
+        drawdown_score = state.drawdown_fraction / max(self.limits["max_drawdown"], 1e-9)
+        exposure_score = state.portfolio_exposure / max(self.limits["max_exposure"], 1e-9)
+        return max(0.0, min(1.0, max(drawdown_score, exposure_score)))
+
+    @staticmethod
+    def _rejection_reason(checks: Mapping[str, bool]) -> str:
+        failed = [name for name, passed in checks.items() if not passed]
+        return "Risk checks failed: " + ", ".join(failed or ["direction_not_tradeable"])

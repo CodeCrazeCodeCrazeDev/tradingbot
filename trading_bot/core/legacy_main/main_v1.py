@@ -3519,63 +3519,6 @@ def _run_performance_test(mt5i, symbol, timeframe, bars, use_ml=False):
     logger.info("Performance profiling complete")
 
 
-def _initialize_connectivity(api_source, websocket_feed, news_scraping, cache_dir, api_keys_file):
-    """Initialize internet connectivity components."""
-    components = {}
-
-    # Initialize cache manager
-    try:
-        from trading_bot.connectivity.cache_manager import CacheManager
-        components['cache_manager'] = CacheManager(cache_dir=cache_dir or "cache")
-        logger.info("Cache manager initialized")
-    except Exception as e:
-        logger.warning(f"Could not initialize cache manager: {e}")
-
-    # Initialize API client based on source
-    if api_source:
-        try:
-            from trading_bot.connectivity.api_client import APIClient
-            api_urls = {
-                'yahoo': 'https://query1.finance.yahoo.com',
-                'alphavantage': 'https://www.alphavantage.co',
-                'binance': 'https://api.binance.com',
-                'coinbase': 'https://api.coinbase.com',
-            }
-            base_url = api_urls.get(api_source, api_urls.get('yahoo'))
-            components['api_client'] = APIClient(
-                base_url=base_url,
-                api_name=api_source,
-            )
-            logger.info(f"API client initialized for {api_source}")
-        except Exception as e:
-            logger.warning(f"Could not initialize API client: {e}")
-
-    # Initialize websocket client for real-time feeds
-    if websocket_feed:
-        try:
-            from trading_bot.connectivity.websocket_client import WebsocketClient
-            ws_urls = {
-                'binance': 'wss://stream.binance.com:9443/ws',
-                'coinbase': 'wss://ws-feed.exchange.coinbase.com',
-            }
-            ws_url = ws_urls.get(websocket_feed, ws_urls.get('binance'))
-            components['websocket_client'] = WebsocketClient(url=ws_url)
-            logger.info(f"WebSocket client initialized for {websocket_feed}")
-        except Exception as e:
-            logger.warning(f"Could not initialize WebSocket client: {e}")
-
-    # Initialize web scraper for news
-    if news_scraping:
-        try:
-            from trading_bot.connectivity.web_scraper import WebScraper
-            components['web_scraper'] = WebScraper()
-            logger.info("Web scraper initialized for news scraping")
-        except Exception as e:
-            logger.warning(f"Could not initialize web scraper: {e}")
-
-    logger.info(f"Connectivity initialized with {len(components)} components: {list(components.keys())}")
-    return components
-
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Parse command line arguments."""
     return parse_args(argv)

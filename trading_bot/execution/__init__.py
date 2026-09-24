@@ -5,6 +5,8 @@ Execution Module
 Auto-generated integration file.
 """
 
+from .service import CanonicalExecutionService, LegacyBrokerAdapter, PaperBrokerAdapter
+
 # advanced_algorithms
 try:
     from .advanced_algorithms import (
@@ -152,6 +154,9 @@ __all__ = [
     'LiquidityConstraints',
     'SlippageMinimizer',
     'AdaptiveExecutionEngine',
+    'CanonicalExecutionService',
+    'LegacyBrokerAdapter',
+    'PaperBrokerAdapter',
     'DynamicParameterAdjuster',
     'OrderType',
     'ExecutionSlice',

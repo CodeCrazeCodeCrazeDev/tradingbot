@@ -84,7 +84,7 @@ try:
         DEFAULT_STOP_LOSS_PIPS,
         DEFAULT_TAKE_PROFIT_PIPS
     )
-except ImportError as e:
+except Exception as e:
     logging.getLogger(__name__).info(f'Infrastructure layer not available: {e}')
     
     # Fallback minimal interface
@@ -178,7 +178,7 @@ try:
         quick_start,
         SUBSYSTEM_REGISTRY
     )
-except ImportError as e:
+except Exception as e:
     logging.getLogger(__name__).info(f'Unified AI Brain not available: {e}')
     UnifiedAIBrain = None
     BrainConfig = None
@@ -242,7 +242,7 @@ try:
             'bootstrap': bootstrap_summary,
         }
 
-except ImportError as e:
+except Exception as e:
     logging.getLogger(__name__).info(f'Integration layer not available: {e}')
     MasterIntegrationEngine = None
     EngineConfig = None
@@ -278,7 +278,7 @@ try:
         ValidationResult,
         create_meta_agent_governance_layer,
     )
-except ImportError as e:
+except Exception as e:
     logging.getLogger(__name__).info(f'Meta-governance layer not available: {e}')
     MetaAgentGovernanceLayer = None
     AgentType = None
@@ -312,7 +312,7 @@ try:
         TrapCategory,
         audit_local_secrets,
     )
-except ImportError as e:
+except Exception as e:
     logging.getLogger(__name__).info(f'Golden path layer not available: {e}')
     AccountContext = None
     AgentTrapDefenseConfig = None
@@ -345,7 +345,7 @@ try:
         ValidationResult as AEANValidationResult,
         create_aean_meta_intelligence_layer,
     )
-except ImportError as e:
+except Exception as e:
     logging.getLogger(__name__).info(f'AEAN meta-intelligence layer not available: {e}')
     AEANConstraints = None
     AEANMetaIntelligenceLayer = None
@@ -380,7 +380,7 @@ try:
         sign_decision_bundle,
         create_universal_action_layer,
     )
-except ImportError as e:
+except Exception as e:
     logging.getLogger(__name__).info(f'Universal action layer not available: {e}')
     ActionIntent = None
     ActionPolicy = None
@@ -453,6 +453,57 @@ utils_submodules = [
     "safe_access", "safe_write", "validation"
 ]
 sys.meta_path.append(UtilityImportRedirector("trading_bot", utils_submodules, "trading_bot.utils"))
+
+
+class ModuleMapRedirector:
+    """Redirects flat ``trading_bot.X`` imports to their consolidated
+    subpackage homes for modules relocated by merges."""
+
+    def __init__(self, package_name, redirects):
+        self.package_name = package_name
+        self.redirects = redirects  # flat name -> fully-qualified target
+
+    def find_spec(self, fullname, path, target=None):
+        if not fullname.startswith(self.package_name + "."):
+            return None
+        sub = fullname[len(self.package_name) + 1:]
+        target_fullname = self.redirects.get(sub)
+        if not target_fullname:
+            return None
+        try:
+            import importlib
+            import warnings
+            _redirector_usage_counts[fullname] = _redirector_usage_counts.get(fullname, 0) + 1
+            warnings.warn(
+                f"Legacy import path '{fullname}' is deprecated. Please migrate to '{target_fullname}'.",
+                DeprecationWarning,
+                stacklevel=2
+            )
+            logging.getLogger(__name__).warning(
+                f"MIGRATION METRICS: Deprecated import '{fullname}' redirected to '{target_fullname}'. Usage count: {_redirector_usage_counts[fullname]}"
+            )
+            mod = importlib.import_module(target_fullname)
+            sys.modules[fullname] = mod
+            return mod.__spec__
+        except Exception:
+            return None
+
+
+_consolidated_modules = {
+    "backup": "trading_bot.tools.backup",
+    "core_engine": "trading_bot.ultimate_production.core_engine",
+    "live_monitor": "trading_bot.ultimate_production.live_monitor",
+    "ml_prediction_engine": "trading_bot.ultimate_production.ml_prediction_engine",
+    "risk_fortress": "trading_bot.ultimate_production.risk_fortress",
+    "self_learner": "trading_bot.ultimate_production.self_learner",
+    "smart_executor": "trading_bot.ultimate_production.smart_executor",
+    "strategy_ensemble": "trading_bot.ultimate_production.strategy_ensemble",
+    "circuit_breaker": "trading_bot.core.circuit_breaker",
+    "fail_safe": "trading_bot.safety.fail_safe",
+    "trade_validator": "trading_bot.validation.trade_validator",
+    "ensemble": "trading_bot.alpha_engine.ensemble",
+}
+sys.meta_path.append(ModuleMapRedirector("trading_bot", _consolidated_modules))
 
 __all__ = [
     # Unified AI Brain (PRIMARY)

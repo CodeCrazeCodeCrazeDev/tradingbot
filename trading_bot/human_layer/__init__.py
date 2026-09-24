@@ -24,6 +24,13 @@ class HumanLayerOrchestrator:
     
     def __init__(self, config=None):
         self.config = config or {}
+        import warnings
+        warnings.warn(
+            "HumanLayerOrchestrator is a merge-generated stub and is deprecated. "
+            "Route orchestration through CognitiveSystemController "
+            "(trading_bot.core.csc.controller).",
+            DeprecationWarning, stacklevel=2,
+        )
         self.running = False
         self._initialized = True
     
@@ -35,3 +42,13 @@ class HumanLayerOrchestrator:
     
     def get_status(self):
         return {"running": self.running, "initialized": self._initialized}
+
+
+# Public API re-exports
+try:
+    from .alerts import AlertPriority, get_alert_manager
+    from .approval import get_approval_gate
+    from .override import get_manual_override, is_trading_allowed
+    from .dashboard import get_dashboard
+except ImportError:
+    pass

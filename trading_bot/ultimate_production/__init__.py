@@ -62,6 +62,13 @@ class UltimateProductionOrchestrator:
     """Stub for UltimateProductionOrchestrator."""
     def __init__(self, *args, **kwargs):
         self.config = kwargs.get('config', {})
+        import warnings
+        warnings.warn(
+            "UltimateProductionOrchestrator is a merge-generated stub and is deprecated. "
+            "Route orchestration through CognitiveSystemController "
+            "(trading_bot.core.csc.controller).",
+            DeprecationWarning, stacklevel=2,
+        )
         self.running = False
     
     async def start(self):

@@ -5,6 +5,8 @@ Risk Module
 Auto-generated integration file.
 """
 
+from .service import CanonicalRiskService, LegacyRiskPolicyAdapter
+
 # MASTER_risk_manager
 try:
     from .MASTER_risk_manager import (
@@ -201,6 +203,8 @@ __all__ = [
     'AdvancedRiskManager',
     'AdvancedRiskSystem',
     'AnomalyDetectionSystem',
+    'CanonicalRiskService',
+    'LegacyRiskPolicyAdapter',
     'CircuitBreakerManager',
     'CompleteRiskSystem',
     'CorrelationManager',
@@ -241,3 +245,9 @@ class PositionSizeCalculator:
         """Get maximum position size for account."""
         return account_balance * self.max_risk_per_trade * 10
 
+
+# Compat re-export
+try:
+    from .MASTER_risk_manager import TradeDirection  # noqa: F401
+except ImportError:
+    pass

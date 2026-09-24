@@ -37,3 +37,9 @@ __all__ = [
     'SystemHealthManager',
     'SystemHealthMonitor',
 ]
+
+# Compat re-export
+try:
+    from .alphaalgo_master import AlphaAlgoMaster  # noqa: F401
+except ImportError:
+    pass

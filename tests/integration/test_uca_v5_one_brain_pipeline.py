@@ -18,6 +18,7 @@ from trading_bot.core.verification.swarm import VerificationSwarm
 from trading_bot.core.immutable_shield import ImmutableShield
 from trading_bot.core.unified_event_bus import UnifiedDecisionBus, ActionStatus, LogAction
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome
+from trading_bot.core.execution_bridge import PaperExecutionBridge
 
 # Mock dependencies for E2E testing
 class MockWorldModel:
@@ -47,8 +48,10 @@ def full_system(event_loop):
         report = await shield.validate_action(action.action_type, action.payload, action.payload.get("context", {}))
         return {"decision": report.decision.value, "reason": report.reason}
 
-    # 2. Register mandatory voters
+    # 2. Register mandatory voters and attach the paper-execution bridge —
+    # the bus approves and fans out; the execution layer owns EXECUTED.
     bus.register_voter("ImmutableShield", shield_voter)
+    PaperExecutionBridge(persist_path="tests/temp_hms_e2e/paper_fills.jsonl").attach(bus)
     event_loop.run_until_complete(bus.start())
 
     # 3. Initialize One Brain (CSC)
@@ -92,6 +95,13 @@ async def test_e2e_successful_trade_pipeline(full_system):
     assert decision.confidence_vector.statistical > 0
 
     # Verify audit trail in LogAct
+    import os
+    if os.environ.get("LOGACT_TRACE"):
+        bus = csc.consensus_engine
+        print(f"TRACE-TEST csc.consensus_engine id={id(bus)} csc.decision_bus id={id(csc.decision_bus)}")
+        print(f"TRACE-TEST _log id={id(bus._log)} entries={[(a.action_type, a.status.value, id(a)) for a in bus._log]}")
+        from trading_bot.core.unified_event_bus import decision_bus as gdb
+        print(f"TRACE-TEST global decision_bus id={id(gdb)} same={gdb is bus}")
     assert len(csc.consensus_engine._log) > 0
     last_log = csc.consensus_engine._log[-1]
     assert last_log.status == ActionStatus.EXECUTED

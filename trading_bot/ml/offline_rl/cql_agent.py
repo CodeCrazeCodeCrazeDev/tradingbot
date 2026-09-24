@@ -418,3 +418,9 @@ class CQLAgent:
                 self.target_q_network = self.target_q_network.cuda()
         
         logger.info(f"Agent loaded from {path}")
+
+# Compat aliases
+try:
+    CqlAgent = CQLAgent
+except NameError:
+    pass

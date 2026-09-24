@@ -96,3 +96,23 @@ class RiskAgent(BasePersistentAgent):
     async def think(self, context: Dict, world_model: Any) -> Dict[str, Any]:
         # Bayesian EV optimization and Exposure checks
         return {"max_exposure": 0.05, "hedging_required": True}
+
+class AlphaAgent(BasePersistentAgent):
+    """PCA specialized in alpha discovery and expected-value estimation."""
+    def __init__(self, agent_id: str):
+        super().__init__(agent_id, "AlphaSeeker", "ALPHA_ANALYST")
+
+    async def think(self, context: Dict, world_model: Any) -> Dict[str, Any]:
+        # Expected-value estimate grounded in observed trend and volatility
+        trend = str(context.get("trend", context.get("htf_trend", "FLAT"))).upper()
+        volatility = float(context.get("volatility", 0.02) or 0.02)
+        direction = {"UP": 1.0, "DOWN": -1.0}.get(trend, 0.0)
+        expected_value = direction * max(0.0, 1.0 - volatility * 10.0)
+        conviction = min(0.95, abs(expected_value) + 0.3)
+        artifact = {
+            "expected_value": expected_value,
+            "direction": "LONG" if expected_value > 0 else ("SHORT" if expected_value < 0 else "FLAT"),
+            "conviction": conviction,
+        }
+        self.share_artifact("alpha_estimate", artifact)
+        return artifact

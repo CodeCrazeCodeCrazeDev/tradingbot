@@ -41,6 +41,33 @@ except ImportError as e:
     # signal_ttl_manager not available
     pass
 
+# signal_provenance
+try:
+    from .signal_provenance import (
+        SignalProvenance,
+    )
+except ImportError as e:
+    # signal_provenance not available
+    pass
+
+# adaptive_thresholds
+try:
+    from .adaptive_thresholds import (
+        AdaptiveThresholds,
+    )
+except ImportError as e:
+    # adaptive_thresholds not available
+    pass
+
+# auto_disable_sick_signals
+try:
+    from .auto_disable_sick_signals import (
+        SignalHealthMonitor,
+    )
+except ImportError as e:
+    # auto_disable_sick_signals not available
+    pass
+
 __all__ = [
     'SignalOrchestrator',
     'SignalManager',
@@ -48,6 +75,9 @@ __all__ = [
     'SignalEngine',
     'SignalLifecycleManager',
     'SignalTTLManager',
+    'SignalProvenance',
+    'AdaptiveThresholds',
+    'SignalHealthMonitor',
 ]
 
 
@@ -56,6 +86,13 @@ class SignalsOrchestrator:
     
     def __init__(self, config=None):
         self.config = config or {}
+        import warnings
+        warnings.warn(
+            "SignalsOrchestrator is a merge-generated stub and is deprecated. "
+            "Route orchestration through CognitiveSystemController "
+            "(trading_bot.core.csc.controller).",
+            DeprecationWarning, stacklevel=2,
+        )
         self.running = False
         self._initialized = True
     

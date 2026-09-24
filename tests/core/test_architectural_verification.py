@@ -24,6 +24,7 @@ def test_singleton_integrity():
     assert bus1 is bus2
     assert decision_bus is bus1
 
+@pytest.mark.timeout(600)  # AST-walks every .py in trading_bot/ — slow on this disk
 def test_no_archive_imports_in_production():
     """Verify that no production files in trading_bot import from the _archive directory."""
     root_dir = Path(__file__).parent.parent.parent / "trading_bot"

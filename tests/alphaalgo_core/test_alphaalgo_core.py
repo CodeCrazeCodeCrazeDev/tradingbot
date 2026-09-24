@@ -11,12 +11,12 @@ import logging
 from unittest.mock import Mock, patch, MagicMock
 
 try:
-    from trading_bot.alphaalgo_core import *
+    from trading_bot.alphaalgo_core.alphaalgo_core import *
 except ImportError:
     # Fallback import
     import sys
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.alphaalgo_core import *
+    from trading_bot.alphaalgo_core.alphaalgo_core import *
 
 logger = logging.getLogger(__name__)
 

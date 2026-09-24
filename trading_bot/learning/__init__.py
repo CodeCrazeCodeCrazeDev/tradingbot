@@ -40,3 +40,16 @@ class LearningOrchestrator:
     
     def get_status(self):
         return {"running": self.running, "initialized": self._initialized}
+
+# Internet Learning subsystem
+try:
+    from .internet_learning import (
+        InternetLearningSystem,
+        AdaptiveLearningAgent,
+        LearnedKnowledge,
+        TrustedSource,
+        SourceType,
+        VerificationStatus,
+    )
+except ImportError:
+    pass

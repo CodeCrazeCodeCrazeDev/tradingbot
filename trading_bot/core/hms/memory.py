@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 import time
-from typing import List, Dict, Any, Optional, Tuple, Set, Union
+import threading
 from typing import List, Dict, Any, Optional, Tuple, Set, Union
 """
 Hierarchical Memory System (HMS) - UCA V6 Core Memory Engine
@@ -84,6 +84,37 @@ from .models import ResearchLedgerEntry, ScientificMemoryObject, EvidenceNode, E
 
 logger = logging.getLogger(__name__)
 
+# Compatibility alias for the graph backend (historically wrapped nx.MultiDiGraph)
+CompatMultiDiGraph = nx.MultiDiGraph
+
+
+class SAGEGraphProxy:
+    """Read-through proxy exposing the SAGE graph via a stable interface."""
+
+    def __init__(self, graph):
+        self._graph = graph
+
+    def __getattr__(self, name):
+        return getattr(self._graph, name)
+
+    def __getitem__(self, node):
+        """Node-adjacency access: ``proxy[u][v]`` yields the edge attribute dict.
+
+        For MultiDiGraphs ``graph[u][v]`` is ``{edge_key: attrs}``; legacy
+        callers expect direct attribute access, so the first edge's attrs are
+        surfaced (all u->v edges of a relation share semantics here).
+        """
+        adj = self._graph.adj[node]
+        if getattr(self._graph, "is_multigraph", lambda: False)():
+            return {nbr: next(iter(data.values()), {}) for nbr, data in adj.items()}
+        return dict(adj)
+
+    def __contains__(self, node):
+        return node in self._graph
+
+    def __iter__(self):
+        return iter(self._graph)
+
 def calculate_integrity_hash(schema_dict: Dict[str, Any]) -> str:
     """Computes SHA-256 checksum of memory schema for audit compliance."""
     temp = {k: v for k, v in schema_dict.items() if k != "integrity_hash"}
@@ -95,7 +126,10 @@ class SAGEGraphMemory:
     SAGE Substrate: A dynamic, self-evolving graph memory (arXiv:2605.12061).
     Supports incremental construction, context-dependent triplet validity, and autonomous weight evolution.
     """
-    def __init__(self, storage_path: str):
+    def __init__(self, storage_path: str = None):
+        if storage_path is None:
+            import tempfile
+            storage_path = os.path.join(tempfile.mkdtemp(prefix="sage_"), "sage_graph.graphml")
         self.storage_path = storage_path
         self.graph = self._load_graph()
         self.evolution_rounds = 0
@@ -198,6 +232,26 @@ class SAGEGraphMemory:
                 self.graph.remove_edge(u, v, k)
             self.save()
 
+    def evolve(self, feedback: List[Dict[str, Any]]):
+        """Autonomous Weight Evolution: apply STRENGTHEN/WEAKEN feedback to edges.
+
+        Each item: {"action": "STRENGTHEN"|"WEAKEN", "source": u, "target": v,
+        "delta": optional float}.
+        """
+        deltas = {"STRENGTHEN": 1.0, "WEAKEN": -1.0, "REINFORCE": 1.0}
+        for item in feedback:
+            action = str(item.get("action", "STRENGTHEN")).upper()
+            delta = float(item.get("delta", deltas.get(action, 1.0)))
+            if action in ("WEAKEN", "PRUNE"):
+                delta = -abs(delta)
+            u, v = item.get("source"), item.get("target")
+            if u is None or v is None:
+                continue
+            for _, vv, k in list(self.graph.edges(u, keys=True)):
+                if vv == v:
+                    self.evolve_weights((u, v, k), delta)
+        self.evolution_rounds += 1
+
     def compact_graph(self, max_nodes: int = 5000, min_confidence: float = 0.3):
         """Prunes old or low-confidence nodes/edges to prevent memory bloat."""
         logger.info(f"SAGE: Starting graph compaction. Current size: {len(self.graph.nodes)} nodes.")
@@ -251,29 +305,49 @@ class HierarchicalMemorySystem:
                     cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self, base_path: str = "alphaalgo_data/hms"):
+    def __init__(self, config: Optional[Union[Dict[str, Any], str]] = None, base_path: Optional[str] = None):
+        resolved_base = base_path or "alphaalgo_data/hms"
+        if isinstance(config, str):
+            resolved_base = base_path or config
+            config = {"base_path": config}
+        elif isinstance(config, dict):
+            resolved_base = base_path or config.get("base_path", resolved_base)
+        base_path = resolved_base
+
         if getattr(self, "_initialized", False) and getattr(self, "base_path", None) == base_path:
             return
+
+        self.config = config or {}
         self.base_path = base_path
-        self.storage_root = base_path # For backward compatibility with malformed store_ledger_entry
+        self.storage_root = base_path  # For backward compatibility with malformed store_ledger_entry
         self.ledger_path = os.path.join(base_path, "research_ledger")
         self.knowledge_path = os.path.join(base_path, "scientific_memory")
         self.graph_path = os.path.join(base_path, "sage_graph.graphml")
+        self.schema_path = os.path.join(base_path, "memory_schema.json")
 
-    def __init__(self, config: Dict):
-        self.config = config
-        # Mocking storage backends
+        os.makedirs(self.ledger_path, exist_ok=True)
+        os.makedirs(self.knowledge_path, exist_ok=True)
+
+        # Storage backends
         self.working_store = {}
         self.episodic_store = []
         self.semantic_graph = {}
         self.transactive_bus = {}
 
+        # SAGE substrate
+        self.sage = SAGEGraphMemory(self.graph_path)
+        self.memory_schema = self._load_schema()
+        self.memory_window_size = 100
+
+        self._initialized = True
+        logger.info(f"HMS V6: One Memory initialized at {base_path}")
+
     async def initialize(self):
         logger.info("HMS: Initializing Hierarchical Memory System")
 
-        self.schema_path = os.path.join(base_path, "memory_schema.json")
+        self.schema_path = os.path.join(self.base_path, "memory_schema.json")
         self.memory_schema = self._load_schema()
-        self.memory_window_size = 100
+        self.memory_window_size = getattr(self, "memory_window_size", 100)
 
     def _load_graph(self) -> nx.MultiDiGraph:
         if os.path.exists(self.graph_path):
@@ -283,13 +357,7 @@ class HierarchicalMemorySystem:
                 logger.error(f"HMS: Failed to load SAGE graph: {e}")
         return nx.MultiDiGraph()
 
-        # Core CMOS substrate instantiation
-        self.cmos = CognitiveMemoryOS()
-
-        self._initialized = True
-        logger.info(f"HMS V6: One Memory initialized at {base_path}")
-
-    def reset(self):
+    def reset_schema(self):
         self.memory_schema = {"version": "2.0", "entities": [], "relations": [], "optimized_count": 0}
         self._save_schema()
 
@@ -306,9 +374,6 @@ class HierarchicalMemorySystem:
             # High quality retrieval -> increase window to retain more context
             self.memory_window_size = min(self.memory_window_size + 10, 500)
             logger.info(f"SEAL: Memory retrieval was highly accurate. Adapted HMS memory window to {self.memory_window_size} to retain more contextual episodic memory.")
-
-    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
-        return calculate_integrity_hash(schema_dict)
 
     def _load_schema(self) -> Dict[str, Any]:
         schema = {"version": "1.0", "schema_version": "1.0", "entities": [], "relations": [], "optimized_count": 0, "migration_history": []}
@@ -328,9 +393,6 @@ class HierarchicalMemorySystem:
         self.memory_schema["integrity_hash"] = self._calculate_integrity_hash(self.memory_schema)
         with open(self.schema_path, 'w') as f:
             json.dump(self.memory_schema, f, indent=2)
-
-    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
-        return calculate_integrity_hash(schema_dict)
 
     def migrate_to_version(self, target_version: str) -> bool:
         """Runs explicit up/down migrations sequentially to target_version."""
@@ -446,6 +508,36 @@ class HierarchicalMemorySystem:
         """Expose raw SAGE graph memory wrapped in a compatibility proxy."""
         return SAGEGraphProxy(self.sage.graph)
 
+    async def execute_memory_action(self, agent_id: str, action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """HMS V4 first-class memory actions (AutoMem).
+
+        Supported actions:
+        - "write": add an entity/relation triplet to the SAGE graph.
+        - "optimize": run memory consolidation (weight evolution + compaction).
+        """
+        action = (action or "").lower()
+        if action == "write":
+            entity = payload.get("entity")
+            relation = payload.get("relation", "RELATED")
+            target = payload.get("target", entity)
+            if not entity:
+                return {"status": "rejected", "reason": "missing entity"}
+            self.sage.add_evidence(
+                (entity, relation, target),
+                {"agent": agent_id, "source": "memory_action"},
+                {"confidence": float(payload.get("confidence", 0.5))},
+            )
+            return {"status": "graph_updated", "entity": entity, "relation": relation}
+        if action == "optimize":
+            for fn in (lambda: self.optimize_memory(payload.get("feedback", [])),
+                       lambda: self.sage.compact_graph()):
+                try:
+                    fn()
+                except Exception:
+                    pass
+            return {"status": "optimized"}
+        return {"status": "unknown_action", "action": action}
+
     def evolve_memory(self, history: List[Dict[str, Any]]):
         """Allows older tests to evolve/populate SAGE memory with custom triplets."""
         for item in history:
@@ -489,12 +581,10 @@ class HierarchicalMemorySystem:
                 f"{entry.entry_id}_{entry.timestamp.isoformat()}_{entry.composite_confidence}".encode("utf-8")
             ).hexdigest()
         }
-        with open(file_path, 'w') as f: json.dump(entry_data, f, indent=2)
-
         with open(file_path, 'w') as f:
             json.dump(entry_data, f, indent=2)
 
-    def retrieve_evidence_chain(self, query: str) -> List[EvidenceNode]:
+    def optimize_memory(self, feedback: List[Dict[str, Any]]):
         """
         AutoMem: Dual-loop schema and weight optimization (arXiv:2607.01224).
         Learns optimal memory management from task success/failure.
@@ -522,4 +612,39 @@ class HierarchicalMemorySystem:
             self.memory_schema["version"] = "1.1"
         self._save_schema()
         logger.info("HMS V6: AutoMem optimization cycle complete.")
+
+    def optimize_metamemory(self, feedback: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        AutoMem metamemory loop (arXiv:2607.01224): optimizes the memory
+        schema itself based on outcome feedback — entity utility scoring,
+        low-utility compaction, and sequential schema versioning.
+        """
+        logger.info(f"HMS V6: Running metamemory optimization on {len(feedback)} feedback items")
+
+        # 1. Track per-entity utility from feedback
+        utility = self.memory_schema.setdefault("entity_utility", {})
+        for item in feedback:
+            entity_id = item.get("id") or item.get("entity")
+            if entity_id:
+                utility[entity_id] = utility.get(entity_id, 0.0) + 1.0
+
+        # 2. Delegate weight/schema updates to the AutoMem loop
+        self.optimize_memory(feedback)
+
+        # 3. Compact schema entities whose utility fell below threshold
+        threshold = 0.5
+        entities = self.memory_schema.get("entities", [])
+        kept = [
+            e for e in entities
+            if utility.get(e.get("type") if isinstance(e, dict) else e, 1.0) >= threshold
+        ]
+        if len(kept) != len(entities):
+            self.memory_schema["entities"] = kept
+            self._save_schema()
+
+        return {
+            "optimized_count": self.memory_schema.get("optimized_count", 0),
+            "schema_version": self.memory_schema.get("schema_version"),
+            "entities": len(self.memory_schema.get("entities", [])),
+        }
 

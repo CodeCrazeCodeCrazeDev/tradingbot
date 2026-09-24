@@ -8,8 +8,13 @@ Auto-generated integration file.
 # memory_systems
 try:
     from .memory_systems import (
-        MemorySystems,
+        MemorySystem,
+        MemoryType,
+        MemoryImportance,
+        MarketLesson,
+        MemoryConsolidation,
     )
+    MemorySystems = MemorySystem  # backward-compat alias
 except ImportError as e:
     # memory_systems not available
     pass
@@ -18,6 +23,8 @@ except ImportError as e:
 try:
     from .multi_brain_ensemble import (
         MultiBrainEnsemble,
+        VoteWeight,
+        CollectiveDecision,
     )
 except ImportError as e:
     # multi_brain_ensemble not available
@@ -27,6 +34,7 @@ except ImportError as e:
 try:
     from .regime_strategy_engine import (
         RegimeStrategyEngine,
+        MarketRegime,
     )
 except ImportError as e:
     # regime_strategy_engine not available
@@ -36,6 +44,8 @@ except ImportError as e:
 try:
     from .self_optimizing_core import (
         SelfOptimizingCore,
+        LearningExperience,
+        LearningSource,
     )
 except ImportError as e:
     # self_optimizing_core not available
@@ -45,6 +55,7 @@ except ImportError as e:
 try:
     from .self_regulation_engine import (
         SelfRegulationEngine,
+        RegulationLevel,
     )
 except ImportError as e:
     # self_regulation_engine not available
@@ -60,10 +71,21 @@ except ImportError as e:
     pass
 
 __all__ = [
+    'MemorySystem',
     'MemorySystems',
+    'MemoryType',
+    'MemoryImportance',
+    'MarketLesson',
+    'MemoryConsolidation',
     'MultiBrainEnsemble',
+    'VoteWeight',
+    'CollectiveDecision',
     'RegimeStrategyEngine',
+    'MarketRegime',
     'SelfOptimizingCore',
+    'LearningExperience',
+    'LearningSource',
     'SelfRegulationEngine',
+    'RegulationLevel',
     'SuperintelligenceOrchestrator',
 ]

@@ -603,3 +603,9 @@ class BCQAgent:
                 self.perturbation_network = self.perturbation_network.cuda()
         
         logger.info(f"Agent loaded from {path}")
+
+# Compat aliases for tests referencing PascalCase variant
+try:
+    BcqAgent = BCQAgent
+except NameError:
+    pass

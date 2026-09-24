@@ -20,6 +20,18 @@ import pandas
 
 logger = logging.getLogger(__name__)
 
+from functools import lru_cache
+
+
+@lru_cache(maxsize=256)
+def _risk_of_ruin_mc(win_rate: float, win_loss_ratio: float, fraction: float, num_trades: int) -> float:
+    """Cached Monte Carlo risk-of-ruin estimate (vectorized)."""
+    num_simulations = 1000
+    wins = np.random.random((num_simulations, num_trades)) < win_rate
+    steps = np.where(wins, 1.0 + fraction * win_loss_ratio, 1.0 - fraction)
+    capital_paths = np.cumprod(steps, axis=1)
+    return float(np.any(capital_paths < 0.1, axis=1).sum() / num_simulations)
+
 
 @dataclass
 class KellyResult:
@@ -178,29 +190,12 @@ class KellyCriterion:
         Returns:
             Probability of ruin (0.0 to 1.0)
         """
-        # Run Monte Carlo simulation
-        num_simulations = 1000
-        ruin_count = 0
-        
-        for _ in range(num_simulations):
-            # Start with 1.0 (100%) capital
-            capital = 1.0
-            
-            for _ in range(num_trades):
-                # Simulate trade
-                if np.random.random() < win_rate:
-                    # Win
-                    capital *= (1 + fraction * win_loss_ratio)
-                else:
-                    # Loss
-                    capital *= (1 - fraction)
-                
-                # Check for ruin (less than 10% of initial capital)
-                if capital < 0.1:
-                    ruin_count += 1
-                    break
-        
-        return ruin_count / num_simulations
+        return _risk_of_ruin_mc(
+            round(float(win_rate), 6),
+            round(float(win_loss_ratio), 6),
+            round(float(fraction), 6),
+            int(num_trades),
+        )
     
     def optimize_portfolio_kelly(self, assets: List[Dict[str, Any]]) -> Dict[str, float]:
         """

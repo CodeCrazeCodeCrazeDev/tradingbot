@@ -4,6 +4,8 @@ Exports authoritative interfaces for MT5 connectivity, data validation, and data
 
 from .mt5 import MT5Interface, AccountInfo, SymbolInfo
 from .validate import DataValidator
+from .normalizer import MarketDataNormalizer, normalize_observation
+from .adapters import LegacyMarketDataAdapter
 
 # Dynamic fallback stubs for other imported classes
 class DataManager:
@@ -35,6 +37,9 @@ __all__ = [
     "AccountInfo",
     "SymbolInfo",
     "DataValidator",
+    "MarketDataNormalizer",
+    "normalize_observation",
+    "LegacyMarketDataAdapter",
     "DataManager",
     "Level2Manager",
     "InsiderTradingAnalyzer",

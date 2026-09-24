@@ -117,3 +117,32 @@ __all__ = [
     'ImprovementProposer',
 ]
 
+
+# Compat re-export
+try:
+    from trading_bot.aads.core.simulation_engine import AgentConfig  # noqa: F401
+except ImportError:
+    pass
+
+
+# Agent orchestrator primitives
+try:
+    from .agent_orchestrator import (
+        ImprovementAgent,
+        AgentConfig,
+        AgentMode,
+        AgentState,
+        AgentDirective,
+    )
+except ImportError:
+    ImprovementAgent = AgentConfig = AgentMode = AgentState = AgentDirective = None
+
+try:
+    from .agent_interface import AgentInterface
+except ImportError:
+    AgentInterface = None
+
+try:
+    from .deep_analyzer import AnalysisDepth
+except ImportError:
+    AnalysisDepth = None

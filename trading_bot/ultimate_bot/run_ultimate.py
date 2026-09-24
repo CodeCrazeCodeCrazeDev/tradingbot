@@ -14,8 +14,12 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='repla
 # Add paths
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'perfect_bot'))
 
-from data_fetcher import EnhancedDataFetcher
-from aggressive_strategy import AggressiveStrategy
+try:
+    from data_fetcher import EnhancedDataFetcher
+    from aggressive_strategy import AggressiveStrategy
+except ImportError:
+    from .data_fetcher import EnhancedDataFetcher
+    from .aggressive_strategy import AggressiveStrategy
 import pandas as pd
 import numpy as np
 from datetime import datetime

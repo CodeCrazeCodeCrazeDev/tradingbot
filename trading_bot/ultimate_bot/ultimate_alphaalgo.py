@@ -30,8 +30,12 @@ except ImportError:
     from data_fetcher import EnhancedDataFetcher
     from advanced_ml_models import AdvancedMLEnsemble
 
-from aggressive_strategy import AggressiveStrategy
-from deep_learning_models import SimpleDeepLearning, PYTORCH_AVAILABLE
+try:
+    from aggressive_strategy import AggressiveStrategy
+    from deep_learning_models import SimpleDeepLearning, PYTORCH_AVAILABLE
+except ImportError:
+    from .aggressive_strategy import AggressiveStrategy
+    from .deep_learning_models import SimpleDeepLearning, PYTORCH_AVAILABLE
 
 logging.basicConfig(
     level=logging.INFO,

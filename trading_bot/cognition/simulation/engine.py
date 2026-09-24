@@ -1,8 +1,10 @@
 """Probabilistic World Model and Counterfactual Simulator under temporal causality."""
 
 import math
+import zlib
 import logging
 from typing import Dict, Any, List, Optional
+import numpy as np
 from trading_bot.cognition.state.contracts import MarketState
 from .contracts import SimulationRequest, SimulationResult, StateTrajectory
 
@@ -11,6 +13,47 @@ logger = logging.getLogger("alphaalgo.cognition.simulation")
 
 class CounterfactualSimulator:
     """Evaluates candidate actions under probabilistic future market state trajectories."""
+
+    _MC_DF = 4.0  # Student-t degrees of freedom — fat tails per hostile-audit rec
+
+    def _per_bar_sigma(self, state: MarketState, vol_mult: float) -> float:
+        """Empirical per-bar sigma: prefer observed M15 range, else map the
+        volatility percentile onto a sane return-vol envelope."""
+        struct = getattr(state, "timescale_structure", {}) or {}
+        rng = struct.get("M15", {}).get("range")
+        if isinstance(rng, (int, float)) and rng > 0:
+            return float(rng) * 0.5 * vol_mult  # range ≈ 2σ heuristic
+        pct = float(getattr(state, "volatility_percentile", 0.5) or 0.5)
+        return (0.0002 + 0.004 * pct) * vol_mult
+
+    def _monte_carlo(self, request: SimulationRequest, state: MarketState,
+                     aligned: bool, vol_mult: float) -> Dict[str, float]:
+        """Fat-tailed Monte Carlo: Student-t shocks, seeded by request_id so
+        the same observation always produces the same empiricals (determinism)."""
+        rng = np.random.default_rng(zlib.crc32(request.request_id.encode()))
+        n = max(32, request.monte_carlo_paths)
+        horizon = max(1, request.time_horizon_bars)
+        sigma = self._per_bar_sigma(state, vol_mult)
+        drift = 0.0002 * (1.2 if aligned else -0.8)
+        sign = 1.0 if request.proposed_action == "BUY" else (-1.0 if request.proposed_action == "SELL" else 0.0)
+
+        # Standardized Student-t (unit variance) shocks
+        t_scale = math.sqrt(self._MC_DF / (self._MC_DF - 2.0))
+        shocks = rng.standard_t(self._MC_DF, size=(n, horizon)) / t_scale
+        path_returns = drift + sigma * shocks  # (n, horizon)
+
+        terminal = path_returns.sum(axis=1) * sign
+        # max drawdown of the action-direction cumulative path per sample
+        cum = np.cumsum(path_returns * sign, axis=1)
+        running_max = np.maximum.accumulate(cum, axis=1)
+        max_dd = np.max(running_max - cum, axis=1)
+
+        return {
+            "mc_win_probability": float(np.mean(terminal > 0)),
+            "mc_expected_value": float(np.mean(terminal)) * request.position_size,
+            "mc_p95_drawdown": float(np.quantile(max_dd, 0.95)),
+            "mc_paths": n,
+        }
 
     def simulate(self, request: SimulationRequest) -> SimulationResult:
         state: MarketState = request.current_state
@@ -59,6 +102,15 @@ class CounterfactualSimulator:
         if spread_mult > 1.5:
             invalidation.append("Severe spread expansion scenario detected")
 
+        # Optional fat-tailed Monte Carlo: blend empirical win prob with the
+        # heuristic. MC drawdown is reported separately (mc_p95_drawdown) —
+        # it is measured in different units than the heuristic gate's max_dd
+        # threshold, so it informs rather than vetoes.
+        mc: Dict[str, float] = {}
+        if request.monte_carlo_paths > 0:
+            mc = self._monte_carlo(request, state, aligned, vol_mult)
+            base_win_prob = 0.5 * base_win_prob + 0.5 * mc["mc_win_probability"]
+
         return SimulationResult(
             request_id=request.request_id,
             proposed_action=action,
@@ -67,5 +119,9 @@ class CounterfactualSimulator:
             win_probability=round(base_win_prob, 4),
             uncertainty_score=round(getattr(state, "uncertainty", 0.2) * vol_mult, 4),
             trajectories=trajectories,
-            invalidation_triggers=invalidation
+            invalidation_triggers=invalidation,
+            mc_paths=int(mc.get("mc_paths", 0)),
+            mc_win_probability=mc.get("mc_win_probability"),
+            mc_expected_value=mc.get("mc_expected_value"),
+            mc_p95_drawdown=mc.get("mc_p95_drawdown"),
         )

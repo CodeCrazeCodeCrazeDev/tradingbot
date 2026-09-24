@@ -14,51 +14,75 @@ from .specialists import CausalVerifier, HallucinationDetector, RegimeConsistenc
 
 logger = logging.getLogger(__name__)
 
-class BaseVerificationAgent(ABC):
-    """Abstract base for all verification agents."""
+# Backward compatibility: older code imported the pre-merge ``VerifierReport``
+# name for what is now the canonical ``VerifierVerdict``.
+VerifierReport = VerifierVerdict
 
-    @abstractmethod
-    async def verify(self, ledger_entry: ResearchLedgerEntry) -> VerifierReport:
-        pass
+
+def _eget(obj: Any, key: str, default: Any = None) -> Any:
+    """Tolerant accessor for ledger entries/edges/nodes that may be dicts or objects."""
+    if obj is None:
+        return default
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    return getattr(obj, key, default)
+
+class BaseVerificationAgent(IVerifier):
+    """Abstract base for evidence-graph verification agents.
+
+    Satisfies the ``IVerifier.audit`` contract by delegating to ``verify``,
+    which operates on a research ledger entry.
+    """
+
+    async def audit(self, research_snapshot: Any) -> VerifierVerdict:
+        return await self.verify(research_snapshot)
+
+    async def verify(self, ledger_entry: Any) -> VerifierVerdict:
+        raise NotImplementedError
 
 class HallucinationDetector(BaseVerificationAgent):
     """Detects unsupported narrative claims or hallucinations in reasoning."""
 
-    async def verify(self, ledger_entry: ResearchLedgerEntry) -> VerifierReport:
+    async def verify(self, ledger_entry: Any) -> VerifierVerdict:
         # Implementation would use cross-reference with HMS and literal research
-        logger.info(f"HallucinationDetector analyzing entry {ledger_entry.entry_id}")
+        logger.info(f"HallucinationDetector analyzing entry {_eget(ledger_entry, 'entry_id', 'unknown')}")
 
         hallucinations = []
         # Mock logic: check if any reasoning step isn't linked to a node in the evidence graph
-        evidence_content_ids = {node.node_id for node in ledger_entry.evidence_graph_snapshot.nodes.values()}
+        graph = _eget(ledger_entry, "evidence_graph_snapshot")
+        nodes = _eget(graph, "nodes", {}) or {}
+        evidence_content_ids = {_eget(node, "node_id") for node in nodes.values()} if isinstance(nodes, dict) else set()
 
-        for step in ledger_entry.reasoning_steps:
+        for step in (_eget(ledger_entry, "reasoning_steps", []) or []):
             # Simplistic check: does the step mention data not in evidence?
             pass
 
-        return VerifierReport(
+        return VerifierVerdict(
             agent_name="HallucinationDetector",
             is_valid=len(hallucinations) == 0,
             confidence=0.95,
             critique="No obvious hallucinations detected." if not hallucinations else f"Detected: {hallucinations}",
-            detected_hallucinations=hallucinations
+            failure_modes=hallucinations
         )
 
 class CausalVerifier(BaseVerificationAgent):
     """Verifies that claimed causal relationships are supported by evidence or scientific literature."""
 
-    async def verify(self, ledger_entry: ResearchLedgerEntry) -> VerifierReport:
-        logger.info(f"CausalVerifier checking relations for entry {ledger_entry.entry_id}")
+    async def verify(self, ledger_entry: Any) -> VerifierVerdict:
+        logger.info(f"CausalVerifier checking relations for entry {_eget(ledger_entry, 'entry_id', 'unknown')}")
 
         invalid_relations = []
         # Check all edges in the evidence graph that claim CAUSES
-        for edge in ledger_entry.evidence_graph_snapshot.edges:
-            if edge.relation.value == "CAUSES":
+        graph = _eget(ledger_entry, "evidence_graph_snapshot")
+        for edge in (_eget(graph, "edges", []) or []):
+            relation = _eget(edge, "relation")
+            relation_val = getattr(relation, "value", relation)
+            if relation_val == "CAUSES":
                 # Verify weight and supporting evidence
-                if edge.weight < 0.5:
-                    invalid_relations.append(f"Weak causal link: {edge.source_id} -> {edge.target_id}")
+                if (_eget(edge, "weight", 0.0) or 0.0) < 0.5:
+                    invalid_relations.append(f"Weak causal link: {_eget(edge, 'source_id')} -> {_eget(edge, 'target_id')}")
 
-        return VerifierReport(
+        return VerifierVerdict(
             agent_name="CausalVerifier",
             is_valid=len(invalid_relations) == 0,
             confidence=0.88,
@@ -68,13 +92,13 @@ class CausalVerifier(BaseVerificationAgent):
 class CalculationReproducer(BaseVerificationAgent):
     """Independently reproduces quantitative calculations (EV, risk, etc.)."""
 
-    async def verify(self, ledger_entry: ResearchLedgerEntry) -> VerifierReport:
-        logger.info(f"CalculationReproducer verifying math for entry {ledger_entry.entry_id}")
+    async def verify(self, ledger_entry: Any) -> VerifierVerdict:
+        logger.info(f"CalculationReproducer verifying math for entry {_eget(ledger_entry, 'entry_id', 'unknown')}")
 
         # Verify composite confidence matches component confidences
         # Verify EV calculations from scenarios
 
-        return VerifierReport(
+        return VerifierVerdict(
             agent_name="CalculationReproducer",
             is_valid=True,
             confidence=1.0,
@@ -84,18 +108,19 @@ class CalculationReproducer(BaseVerificationAgent):
 class RiskVerifier(BaseVerificationAgent):
     """Actively searches for risk-based reasons to falsify a trade proposal."""
 
-    async def verify(self, ledger_entry: ResearchLedgerEntry) -> VerifierReport:
-        logger.info(f"RiskVerifier searching for risk falsification for entry {ledger_entry.entry_id}")
+    async def verify(self, ledger_entry: Any) -> VerifierVerdict:
+        logger.info(f"RiskVerifier searching for risk falsification for entry {_eget(ledger_entry, 'entry_id', 'unknown')}")
 
         # In a real implementation, this would pull current exposure and volatility data
         # For now, we enforce strict risk-based falsification logic
         risks = []
 
         # Example: check if tail risk was considered
-        if not any("tail risk" in step.lower() or "black swan" in step.lower() for step in ledger_entry.reasoning_steps):
+        steps = [str(s) for s in (_eget(ledger_entry, "reasoning_steps", []) or [])]
+        if not any("tail risk" in step.lower() or "black swan" in step.lower() for step in steps):
             risks.append("Reasoning fails to explicitly consider tail risk or black swan events.")
 
-        return VerifierReport(
+        return VerifierVerdict(
             agent_name="RiskVerifier",
             is_valid=len(risks) == 0,
             confidence=0.92,
@@ -105,22 +130,25 @@ class RiskVerifier(BaseVerificationAgent):
 class LiquidityVerifier(BaseVerificationAgent):
     """Verifies if the trade size is appropriate for current market liquidity."""
 
-    async def verify(self, ledger_entry: ResearchLedgerEntry) -> VerifierReport:
-        logger.info(f"LiquidityVerifier checking liquidity constraints for entry {ledger_entry.entry_id}")
+    async def verify(self, ledger_entry: Any) -> VerifierVerdict:
+        logger.info(f"LiquidityVerifier checking liquidity constraints for entry {_eget(ledger_entry, 'entry_id', 'unknown')}")
 
         # Check if liquidity evidence exists in the graph
-        liquidity_nodes = [n for n in ledger_entry.evidence_graph_snapshot.nodes.values()
-                          if "liquidity" in n.content.lower() or "volume" in n.content.lower()]
+        graph = _eget(ledger_entry, "evidence_graph_snapshot")
+        nodes = _eget(graph, "nodes", {}) or {}
+        liquidity_nodes = [n for n in (nodes.values() if isinstance(nodes, dict) else [])
+                          if "liquidity" in str(_eget(n, "content", "")).lower()
+                          or "volume" in str(_eget(n, "content", "")).lower()]
 
         if not liquidity_nodes:
-            return VerifierReport(
+            return VerifierVerdict(
                 agent_name="LiquidityVerifier",
                 is_valid=False,
                 confidence=0.85,
                 critique="FALSIFIED: No empirical liquidity evidence found in the decision graph."
             )
 
-        return VerifierReport(
+        return VerifierVerdict(
             agent_name="LiquidityVerifier",
             is_valid=True,
             confidence=0.9,
@@ -130,21 +158,22 @@ class LiquidityVerifier(BaseVerificationAgent):
 class MarketStructureVerifier(BaseVerificationAgent):
     """Searches for structural market reasons why the trade might fail."""
 
-    async def verify(self, ledger_entry: ResearchLedgerEntry) -> VerifierReport:
-        logger.info(f"MarketStructureVerifier analyzing entry {ledger_entry.entry_id}")
+    async def verify(self, ledger_entry: Any) -> VerifierVerdict:
+        logger.info(f"MarketStructureVerifier analyzing entry {_eget(ledger_entry, 'entry_id', 'unknown')}")
 
         # Check for regime alignment
-        regime_consistency = any("regime" in step.lower() for step in ledger_entry.reasoning_steps)
+        steps = [str(s) for s in (_eget(ledger_entry, "reasoning_steps", []) or [])]
+        regime_consistency = any("regime" in step.lower() for step in steps)
 
         if not regime_consistency:
-            return VerifierReport(
+            return VerifierVerdict(
                 agent_name="MarketStructureVerifier",
                 is_valid=False,
                 confidence=0.8,
                 critique="FALSIFIED: Trade reasoning does not explicitly account for current market regime."
             )
 
-        return VerifierReport(
+        return VerifierVerdict(
             agent_name="MarketStructureVerifier",
             is_valid=True,
             confidence=0.88,

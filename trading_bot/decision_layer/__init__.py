@@ -9,6 +9,13 @@ Auto-generated integration file.
 class DecisionLayerOrchestrator:
     def __init__(self, config=None):
         self.config = config or {}
+        import warnings
+        warnings.warn(
+            "DecisionLayerOrchestrator is a merge-generated stub and is deprecated. "
+            "Route orchestration through CognitiveSystemController "
+            "(trading_bot.core.csc.controller).",
+            DeprecationWarning, stacklevel=2,
+        )
     async def start(self):
         pass
     async def stop(self):

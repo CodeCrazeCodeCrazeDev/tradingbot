@@ -205,18 +205,11 @@ class SharedMemoryManager:
     
     def _put_dataframe(self, df: pd.DataFrame, obj_id: str) -> str:
         """Store a pandas DataFrame in shared memory"""
-        # Convert to dict of arrays
-        arrays = {
-            'index': df.index.values,
-            'columns': np.array(df.columns),
-            'dtypes': np.array([str(dt) for dt in df.dtypes])
-        }
-        
-        for col in df.columns:
-            arrays[f'data_{col}'] = df[col].values
-        
-        # Store dict in shared memory
-        return self._put_json(arrays, obj_id)
+        # Serialize through the canonical registry schema so get_dataframe()
+        # can round-trip it; the ad-hoc data_<col> layout was unreadable and
+        # json's default=str mangled the arrays into repr strings.
+        from trading_bot.core.governance.serialization import SerializerRegistry
+        return self._put_json(SerializerRegistry.serialize_dataframe(df), obj_id)
     
     def _put_json(self, data: Any, obj_id: str) -> str:
         """Store a JSON-serialized object in shared memory"""

@@ -12,6 +12,11 @@ logger = logging.getLogger("alphaalgo.cognition.decision")
 class DecisionIntelligenceEngine:
     """Synthesizes observations, state, simulations, and adversarial attacks into a DecisionProposal."""
 
+    def __init__(self, calibrator: Optional[Any] = None):
+        # Optional ProbabilityCalibrator — when present, calibrated_probability
+        # is the empirically-adjusted estimate instead of the raw heuristic.
+        self.calibrator = calibrator
+
     def synthesize_decision(
         self,
         decision_id: str,
@@ -75,6 +80,7 @@ class DecisionIntelligenceEngine:
 
         ev = simulation_result.expected_value if simulation_result else 0.0
         win_p = simulation_result.win_probability if simulation_result else 0.50
+        cal_p = self.calibrator.predict(win_p) if self.calibrator is not None else round(win_p, 4)
 
         return DecisionProposal(
             decision_id=decision_id,
@@ -85,7 +91,7 @@ class DecisionIntelligenceEngine:
             expected_value=ev,
             uncertainty=uncertainty,
             confidence=round(win_p * (1.0 - uncertainty), 4),
-            calibrated_probability=round(win_p, 4),
+            calibrated_probability=round(cal_p, 4),
             regime=market_state.get_dominant_regime() if hasattr(market_state, "get_dominant_regime") else "transitional",
             supporting_evidence=[f"Trend direction is {trend_dir}"],
             contradicting_evidence=[],

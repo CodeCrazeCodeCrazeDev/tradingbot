@@ -14,9 +14,9 @@
 | **Attack Detection & Containment Rate** | 100.00% | 100.0% | [VALIDATED RESULT] PASSED |
 | **False Positive Rate** | 0.0% | < 0.5% | [VALIDATED RESULT] PASSED |
 | **Byzantine & Collusion Lineage Collapse** | 10 Rogue Votes -> 1 Lineage | 1 Lineage Collapse | [VALIDATED RESULT] PASSED |
-| **Inter-Agent Message Signing Latency (p95)** | 0.0692 ms | < 5.0 ms | [VALIDATED RESULT] PASSED |
-| **Inter-Agent Message Signing Latency (p99)** | 0.0981 ms | < 10.0 ms | [VALIDATED RESULT] PASSED |
-| **Memory Provenance & Integrity Latency (p95)** | 0.0269 ms | < 2.0 ms | [VALIDATED RESULT] PASSED |
+| **Inter-Agent Message Signing Latency (p95)** | 0.4193 ms | < 5.0 ms | [VALIDATED RESULT] PASSED |
+| **Inter-Agent Message Signing Latency (p99)** | 1.6974 ms | < 10.0 ms | [VALIDATED RESULT] PASSED |
+| **Memory Provenance & Integrity Latency (p95)** | 0.1235 ms | < 2.0 ms | [VALIDATED RESULT] PASSED |
 | **Containment Time** | Instant (< 0.1 ms) | < 100 ms | [VALIDATED RESULT] PASSED |
 | **Recovery Time** | Snapshot Reload (< 50 ms) | < 1000 ms | [VALIDATED RESULT] PASSED |
 

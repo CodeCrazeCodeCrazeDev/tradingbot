@@ -586,3 +586,6 @@ if __name__ == "__main__":
     
     # Stop cleanup thread
     manager.stop_cleanup_thread()
+
+# Backward-compatible alias: legacy tests expect the short name.
+SignalLifecycle = SignalLifecycleManager

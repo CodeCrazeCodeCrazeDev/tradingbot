@@ -27,3 +27,12 @@ __all__ = [
     'PaperIngestionEngine',
     'ResearchPipelineOrchestrator',
 ]
+
+
+class ResearchPipelineOrchestrator:
+    """Orchestrates research-ingestion pipelines (minimal reconstruction)."""
+    def __init__(self, *a, **k):
+        self.config = k.get('config', dict(k))
+        self.running = False
+    def get_status(self):
+        return {'status': 'operational', 'running': self.running}

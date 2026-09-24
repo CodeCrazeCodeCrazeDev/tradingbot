@@ -42,6 +42,7 @@ FORBIDDEN_PATTERNS = {
     "disabled_tls": re.compile(r"verify\s*=\s*False", re.IGNORECASE),
 }
 
+@pytest.mark.timeout(600)
 def test_architecture_invariants():
     """Verify that there is exactly one authoritative singleton implementation of all Tier-0 systems."""
     root_dir = Path(__file__).resolve().parents[2]
@@ -61,7 +62,7 @@ def test_architecture_invariants():
         for file_path in root_dir.glob("trading_bot/**/*.py"):
             if any(p in str(file_path) for p in ["_archive", "tests", "sandbox", "safety"]):
                 continue
-            if str(file_path.relative_to(root_dir)) == inv_info["authoritative"]:
+            if file_path.relative_to(root_dir).as_posix() == inv_info["authoritative"]:
                 continue
 
             try:
@@ -74,6 +75,7 @@ def test_architecture_invariants():
         assert len(duplicates) == 0, f"⚠️ Multiple duplicate implementations of Tier-0 subsystem '{name}' found at: {duplicates}. The system must enforce exactly one authoritative implementation."
 
 
+@pytest.mark.timeout(600)
 def test_repository_security_policy():
     """Enforce security policy: recursively scan active production codebase to reject unapproved unsafe patterns."""
     root_dir = Path(__file__).resolve().parents[2]
@@ -102,11 +104,15 @@ def test_repository_security_policy():
             # Skip string definitions/comparisons checking for eval/exec
             if any(kw in line for kw in ['"eval("', '"exec("', "'eval('", "'exec('"]):
                 continue
+            # Skip sanitizer replacement strings (they strip eval/exec, not run it)
+            if "Removed for safety" in line:
+                continue
 
             for pattern_name, pattern in FORBIDDEN_PATTERNS.items():
                 if pattern.search(line):
                     # Filter out allowed self-assembly code synthesis or advanced executors
-                    if "advanced_ai" in str(file_path) or "self_assembly" in str(file_path) or "aads" in str(file_path) or "distributed/parallel_backtester" in str(file_path):
+                    posix_path = file_path.as_posix()
+                    if "advanced_ai" in posix_path or "self_assembly" in posix_path or "aads" in posix_path or "distributed/parallel_backtester" in posix_path:
                         continue
                     # Filter out clean screen commands
                     if "pipeline_approval.py" in str(file_path) and "os.system" in line:

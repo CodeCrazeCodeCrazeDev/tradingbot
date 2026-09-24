@@ -403,23 +403,15 @@ def run(config: Optional[Dict[str, Any]] = None) -> None:
 
 
 if __name__ == "__main__":
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="AlphaAlgo Trading Bot")
-    parser.add_argument('--mode', choices=['live', 'paper', 'backtest'], default='paper')
-    parser.add_argument('--config', type=str, help='Path to config file')
-    parser.add_argument('--log-level', choices=['debug', 'info', 'warning', 'error'], default='info')
-    
-    args = parser.parse_args()
-    
-    config = {
-        'trading_mode': args.mode,
-        'log_level': args.log_level,
-    }
-    
-    if args.config:
-        import yaml
-        with open(args.config) as f:
-            config.update(yaml.safe_load(f))
-    
-    run(config)
+    import sys
+    from pathlib import Path
+
+    print(
+        "DEPRECATED: unified_main.py standalone entry is superseded by the "
+        "unified bot.\nAll modules now run under one brain — use "
+        "`python main.py` (trading_bot.unified_bot.UnifiedTradingBot).\n"
+        "Redirecting to the unified entry point..."
+    )
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from main import main as _unified_main
+    asyncio.run(_unified_main())

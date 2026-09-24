@@ -25,6 +25,13 @@ class ConnectivityOrchestrator:
     """Auto-generated stub orchestrator for module integration."""
     def __init__(self, config=None):
         self.config = config or {}
+        import warnings
+        warnings.warn(
+            "ConnectivityOrchestrator is a merge-generated stub and is deprecated. "
+            "Route orchestration through CognitiveSystemController "
+            "(trading_bot.core.csc.controller).",
+            DeprecationWarning, stacklevel=2,
+        )
         self.running = False
         self._initialized = True
     
@@ -46,6 +53,13 @@ class UnifiedConnectivityOrchestrator:
     """Stub for UnifiedConnectivityOrchestrator."""
     def __init__(self, *args, **kwargs):
         self.config = kwargs.get('config', {})
+        import warnings
+        warnings.warn(
+            "UnifiedConnectivityOrchestrator is a merge-generated stub and is deprecated. "
+            "Route orchestration through CognitiveSystemController "
+            "(trading_bot.core.csc.controller).",
+            DeprecationWarning, stacklevel=2,
+        )
         self.running = False
     
     async def start(self):

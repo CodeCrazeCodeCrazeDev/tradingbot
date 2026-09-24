@@ -10,6 +10,7 @@ Now also incorporates legacy ServiceRegistry and SystemRegistry features and enf
 import logging
 import threading
 import asyncio
+import inspect
 from enum import Enum, auto
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union, Callable
 from dataclasses import dataclass, field
@@ -105,13 +106,20 @@ class UnifiedComponentRegistry:
         config: Optional[Dict[str, Any]] = None,
         priority: int = 5,
         enabled: bool = True,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
+        overwrite: bool = False
     ):
         """
         Register a component with the system.
         Enforces no duplicate component IDs and deterministic order.
         Compatible with both legacy SystemRegistry and UCA-2026 signatures.
         """
+        # Legacy call shape: register(component) — the first positional arg is
+        # the component itself (ServiceRegistry façade / register(service)).
+        if not isinstance(name, str):
+            component = name
+            name = getattr(component, "SERVICE_NAME", None) or type(component).__name__
+
         # Architectural drift prevention
         if name.endswith("Registry") and name != "UnifiedComponentRegistry":
             raise ValueError(f"Unauthorized registry registration: {name}. Only UnifiedComponentRegistry is allowed.")
@@ -119,7 +127,46 @@ class UnifiedComponentRegistry:
             raise ValueError(f"Unauthorized orchestrator: {name}. All orchestration must route through CognitiveSystemController or authorized Ontologies.")
 
         if name in self._components:
+            if not overwrite:
+                raise ValueError(
+                    f"Component '{name}' already registered. Duplicate registration "
+                    "is forbidden — pass overwrite=True for intentional re-registration."
+                )
             logger.warning(f"Component '{name}' already registered. Overwriting.")
+
+        comp = component if component is not None else instance
+        deps = dependencies or []
+
+        with self._lock:
+            self._components[name] = comp
+            self._metadata[name] = {
+                "type": component_type,
+                "metadata": metadata or {},
+            }
+            self._dependencies[name] = deps
+            self._services[name] = ServiceInfo(
+                name=name,
+                component_type=component_type,
+                instance=comp,
+                factory=factory,
+                dependencies=deps,
+                config=config or {},
+            )
+            self._legacy_metadata[name] = ComponentMetadata(
+                name=name,
+                component_type=component_type,
+                layer=layer or SystemLayer.INTELLIGENCE_CORE,
+                instance=comp,
+                factory=factory,
+                dependencies=deps,
+                config=config or {},
+                priority=priority,
+                enabled=enabled,
+            )
+            if comp is not None:
+                self._instances[name] = comp
+            if name not in self._registration_order:
+                self._registration_order.append(name)
 
         logger.debug(f"Registered {component_type}: {name}")
 
@@ -171,6 +218,45 @@ class UnifiedComponentRegistry:
             for name in self._registration_order
         ]
 
+    def validate_dependencies(self) -> Dict[str, List[str]]:
+        """Return registered components whose declared dependencies are missing."""
+        registered = set(self._components)
+        return {
+            name: [dependency for dependency in dependencies if dependency not in registered]
+            for name, dependencies in self._dependencies.items()
+            if any(dependency not in registered for dependency in dependencies)
+        }
+
+    def initialization_order(self) -> List[str]:
+        """Return deterministic dependency order and fail on missing/cyclic edges."""
+        missing = self.validate_dependencies()
+        if missing:
+            details = "; ".join(
+                f"{name}: {', '.join(dependencies)}"
+                for name, dependencies in missing.items()
+            )
+            raise ValueError(f"Unresolved component dependencies: {details}")
+
+        order: List[str] = []
+        visiting = set()
+        visited = set()
+
+        def visit(name: str) -> None:
+            if name in visited:
+                return
+            if name in visiting:
+                raise ValueError(f"Circular component dependency detected at '{name}'")
+            visiting.add(name)
+            for dependency in self._dependencies.get(name, []):
+                visit(dependency)
+            visiting.remove(name)
+            visited.add(name)
+            order.append(name)
+
+        for name in self._registration_order:
+            visit(name)
+        return order
+
     def set_event_bus(self, event_bus):
         """Legacy set_event_bus"""
         self._event_bus = event_bus
@@ -191,10 +277,26 @@ class UnifiedComponentRegistry:
 
     @classmethod
     def reset(cls):
-        """Reset the singleton instance for testing purposes."""
+        """Reset the singleton in place for testing purposes.
+
+        Keeps the same object identity so previously-imported references
+        (e.g. module-level ``registry``) stay valid — matching the in-place
+        reset contract of ``UnifiedDecisionBus.reset()``.
+        """
         with cls._lock:
-            cls._instance = None
-        logger.info("UnifiedComponentRegistry singleton reset")
+            inst = cls._instance
+            if inst is None:
+                return
+            # ``self._lock`` is class-level — the same lock guards all
+            # mutations, so a single critical section suffices.
+            inst._components.clear()
+            inst._metadata.clear()
+            inst._dependencies.clear()
+            inst._services.clear()
+            inst._legacy_metadata.clear()
+            inst._instances.clear()
+            inst._registration_order.clear()
+        logger.info("UnifiedComponentRegistry state reset in place")
 
     def unregister(self, name: str):
         """
@@ -231,11 +333,35 @@ class UnifiedComponentRegistry:
         }
 
     async def initialize_all(self) -> bool:
-        """Initialize all registered components in dependency order"""
+        """Initialize all registered components in deterministic dependency order."""
         logger.info("Initializing all components in registry")
-        # Enforce readiness of all components
-        for name, meta in self._legacy_metadata.items():
-            meta.status = ComponentStatus.READY
+        for name in self.initialization_order():
+            meta = self._legacy_metadata[name]
+            meta.status = ComponentStatus.INITIALIZING
+            service = self._services[name]
+            try:
+                if service.instance is None and service.factory is not None:
+                    service.instance = service.factory()
+                    self._components[name] = service.instance
+                    self._instances[name] = service.instance
+                    meta.instance = service.instance
+                component = service.instance
+                initialize = getattr(component, "initialize", None)
+                if initialize is not None:
+                    parameters = inspect.signature(initialize).parameters
+                    result = initialize() if not parameters else initialize(service.config)
+                    if asyncio.iscoroutine(result):
+                        await result
+                meta.status = ComponentStatus.READY
+                service.state = ServiceState.READY
+                service.initialized_at = datetime.utcnow()
+                meta.initialized_at = service.initialized_at
+            except Exception as exc:
+                meta.status = ComponentStatus.ERROR
+                service.state = ServiceState.ERROR
+                service.last_error = str(exc)
+                logger.error("Failed to initialize component %s: %s", name, exc)
+                return False
         return True
 
     async def health_check_all(self) -> Dict[str, ComponentHealth]:

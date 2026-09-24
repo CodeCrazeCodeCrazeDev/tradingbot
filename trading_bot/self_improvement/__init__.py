@@ -67,3 +67,9 @@ __all__ = [
     'SelfImprovementOrchestrator',
     'SystemMetrics',
 ]
+
+# Compat re-export
+try:
+    from trading_bot.autonomous import AutonomousOrchestrator  # noqa: F401
+except ImportError:
+    pass

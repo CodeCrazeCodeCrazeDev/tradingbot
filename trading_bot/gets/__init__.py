@@ -51,3 +51,10 @@ def create_gets(config: dict = None) -> "GETS":
     """Factory function to create a GETS instance."""
     from .gets_system import GETS
     return GETS(config)
+
+
+# GETSConfig lives in gets.types — export at package level for legacy callers.
+try:
+    from .types import GETSConfig
+except ImportError:
+    GETSConfig = None

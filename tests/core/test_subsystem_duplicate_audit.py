@@ -105,6 +105,7 @@ def generate_subsystem_duplicate_report() -> Dict[str, Any]:
 
     return report
 
+@pytest.mark.timeout(600)
 def test_central_subsystem_duplicate_audit():
     """Verify that there is exactly one authoritative class definition for each major subsystem."""
     report = generate_subsystem_duplicate_report()

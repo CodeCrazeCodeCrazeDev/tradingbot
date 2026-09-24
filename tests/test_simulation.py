@@ -74,7 +74,7 @@ class TestPaperTradingSimulation:
         price_diff = position["current_price"] - position["entry_price"]
         pnl = price_diff * position["quantity"] * 100000  # Standard lot size
         
-        assert pnl == 30.0  # (1.0880 - 1.0850) * 0.01 * 100000 = 30
+        assert pnl == pytest.approx(3.0)  # (1.0880 - 1.0850) * 0.01 * 100000 = 3
     
     def _simulate_paper_execution(self, order: Dict[str, Any]) -> Dict[str, Any]:
         """Simulate paper trading order execution."""

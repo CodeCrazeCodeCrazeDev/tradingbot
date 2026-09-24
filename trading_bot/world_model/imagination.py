@@ -1,6 +1,8 @@
 import logging
 from typing import Any, Dict, List, Optional
 
+import torch
+
 logger = logging.getLogger(__name__)
 
 class PlanResult:
@@ -10,7 +12,7 @@ class PlanResult:
 
 class ImaginationPlanner:
     """Canonical V2-compatible Imagination Planner."""
-    def __init__(self, world_model: Any):
+    def __init__(self, world_model: Any = None):
         self.world_model = world_model
 
     async def generate_plan(self, observation: Dict) -> PlanResult:
@@ -22,15 +24,29 @@ class CEMPlanner(ImaginationPlanner):
     pass
 
 class FutureSimulator:
-    pass
+    """Deterministic scenario rollout for the PlanningEngine."""
+    def __init__(self, n_scenarios: int = 4, horizon: int = 8):
+        self.n_scenarios = n_scenarios
+        self.horizon = horizon
+
+    def simulate_scenarios(self, z_plan: torch.Tensor) -> List[Dict[str, Any]]:
+        # Deterministic rollouts: mean-reverting drift with fixed seeds.
+        scenarios = []
+        for i in range(self.n_scenarios):
+            g = torch.Generator().manual_seed(i)
+            drift = (i / max(self.n_scenarios - 1, 1) - 0.5) * 0.02
+            noise = torch.randn(self.horizon, *z_plan.shape, generator=g) * 0.01
+            trajectory = z_plan.unsqueeze(0) + drift + noise.cumsum(dim=0)
+            scenarios.append({"trajectory": trajectory, "probability": 1.0 / self.n_scenarios})
+        return scenarios
 
 class PlanningEngine:
     """
     Predictive Planning Engine.
     Evaluates candidate plans across all generated future scenarios.
     """
-    def __init__(self, simulator: FutureSimulator, causal_engine: Any):
-        self.simulator = simulator
+    def __init__(self, simulator: Optional[FutureSimulator] = None, causal_engine: Any = None):
+        self.simulator = simulator or FutureSimulator()
         self.causal_engine = causal_engine
 
     def find_optimal_plan(self, z_t: torch.Tensor, candidates: List[Dict]) -> Dict[str, Any]:
@@ -64,9 +80,3 @@ class PlanningEngine:
     def _estimate_reward(self, trajectory: torch.Tensor) -> float:
         # Mock: in production this uses the Risk/Alpha heads
         return float(trajectory.mean())
-
-# Backward-compatibility aliases for UCA V5 Architecture
-ImaginationPlanner = PlanningEngine
-CEMPlanner = PlanningEngine
-class PlanResult:
-    pass

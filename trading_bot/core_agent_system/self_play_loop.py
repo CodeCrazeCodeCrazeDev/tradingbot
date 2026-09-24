@@ -414,6 +414,25 @@ class SelfPlayLoop:
 
         return estimated_pnl - cost_bps, {'slippage': slippage, 'spread': spread}
 
+    def validate_market_data(self, df: pd.DataFrame) -> None:
+        """
+        Gatekeeper for replay grounding: reject malformed market datasets
+        before they can contaminate self-play evaluation.
+        """
+        if df is None or df.empty:
+            raise ValueError("Dataset is empty")
+        if not df.index.is_monotonic_increasing:
+            raise ValueError("Timestamps not sorted monotonically")
+        nan_density = df.isna().mean()
+        heavy = nan_density[nan_density > 0.3]
+        if not heavy.empty:
+            raise ValueError(f"High NaN density in column '{heavy.index[0]}': {heavy.iloc[0]:.0%}")
+        price_cols = [c for c in ("open", "high", "low", "close") if c in df.columns]
+        if price_cols and (df[price_cols] <= 0).any().any():
+            raise ValueError("Impossible prices detected (non-positive values)")
+        if {"high", "low"}.issubset(df.columns) and (df["high"] < df["low"]).any():
+            raise ValueError("Unrealistic spreads detected (high < low)")
+
     def _load_production_data(self) -> Dict[str, pd.DataFrame]:
         """
         Load historical tick/bar data from the SQLite database, or fallback
@@ -658,58 +677,6 @@ class SelfPlayLoop:
             'size': np.random.rand() * 0.02
         }
     
-    async def _simulate_step(
-        self,
-        state: Dict,
-        action: Dict
-    ) -> Tuple[Dict, float, bool]:
-        """
-        Simulate one step of the environment.
-        
-        Returns (next_state, reward, done)
-        """
-        # Simulate market movement
-        price_change = np.random.randn() * state['market_state']['volatility']
-        
-        # Calculate reward based on action and market movement
-        action_type = action.get('type', 'hold')
-        size = action.get('size', 0)
-        
-        if action_type == 'buy':
-            reward = price_change * size * 10000  # Scale reward
-        elif action_type == 'sell':
-            reward = -price_change * size * 10000
-        else:
-            reward = 0
-        
-        # Add small penalty for trading (transaction costs)
-        if action_type != 'hold':
-            reward -= abs(size) * 10
-        
-        # Update state
-        next_state = {
-            'market_state': {
-                'price': state['market_state']['price'] * (1 + price_change),
-                'volatility': state['market_state']['volatility'] * (0.95 + np.random.rand() * 0.1),
-                'trend': state['market_state']['trend'],
-                'momentum': state['market_state']['momentum'] * 0.9 + np.random.randn() * 0.1
-            },
-            'portfolio_state': {
-                'equity': state['portfolio_state']['equity'] + reward,
-                'exposure': state['portfolio_state']['exposure'] + (size if action_type == 'buy' else -size if action_type == 'sell' else 0),
-                'pnl': state['portfolio_state']['pnl'] + reward
-            },
-            'risk_metrics': state['risk_metrics']
-        }
-        
-        # Check if done (bankrupt or max profit)
-        done = (
-            next_state['portfolio_state']['equity'] < 5000 or  # Bankrupt
-            next_state['portfolio_state']['equity'] > 15000    # Target reached
-        )
-        
-        return next_state, reward, done
-    
     def _collect_experiences(self, games: List[SelfPlayGame]) -> List[Dict]:
         """
         Collect experiences from games for training.
@@ -791,14 +758,17 @@ class SelfPlayLoop:
         
         wins = 0
         total = self.evaluation_games
-        
+
+        # Grounded baseline: incumbent mean outcome from real replayed games.
+        # No Gaussian noise — the baseline is derived from actual execution
+        # outcomes on historical data (Reality-as-Signal requirement).
+        incumbent_outcomes = [g.outcome for g in self.games if g.outcome is not None]
+        baseline_outcome = float(np.mean(incumbent_outcomes)) if incumbent_outcomes else 0.0
+
         for _ in range(total):
             # Play game with new network
             new_game = await self._play_game()
-            
-            # Compare to baseline (random or previous best)
-            baseline_outcome = np.random.randn() * 100  # Simplified baseline
-            
+
             if new_game.outcome > baseline_outcome:
                 wins += 1
         

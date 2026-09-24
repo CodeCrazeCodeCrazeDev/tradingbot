@@ -111,22 +111,6 @@ class DebateTopic:
     timestamp: datetime = field(default_factory=datetime.now)
 
 
-@dataclass
-class StructuredMessage:
-    message_id: str
-    task_id: str
-    parent_task_id: str
-    correlation_id: str
-    sender_agent_id: str
-    recipient: str
-    timestamp: datetime
-    schema_version: str
-    message_type: str
-    payload: Dict[str, Any]
-    confidence: float
-
-    def validate(self) -> bool:
-        return bool(self.message_id and self.sender_agent_id and self.message_type and self.schema_version == "1.0.0")
 
 
 @dataclass
@@ -193,28 +177,6 @@ class AgentArgument:
         }
 
 
-@dataclass
-class StructuredMessage:
-    """Structured message protocol for agent interactions."""
-
-    message_id: str
-    task_id: str
-    parent_task_id: str
-    correlation_id: str
-    sender_agent_id: str
-    recipient: str
-    timestamp: datetime
-    schema_version: str
-    message_type: str
-    payload: Dict[str, Any]
-    confidence: float
-
-    def validate(self) -> bool:
-        if not self.message_id or not self.sender_agent_id or not self.message_type:
-            return False
-        if not isinstance(self.payload, dict):
-            return False
-        return True
 
 
 @dataclass
@@ -234,63 +196,16 @@ class DebateRound:
         }
 
 
-@dataclass
-class StructuredMessage:
-    """Dataclass for inter-agent structured messages with validation capability."""
-    message_id: str
-    task_id: str
-    parent_task_id: str
-    correlation_id: str
-    sender_agent_id: str
-    recipient: str
-    timestamp: datetime
-    schema_version: str
-    message_type: str
-    payload: Dict[str, Any]
-    confidence: float
-
-    def validate(self) -> bool:
-        if not self.message_id or not self.sender_agent_id or not self.recipient:
-            return False
-        if not (0.0 <= self.confidence <= 1.0):
-            return False
-        return True
 
 
-@dataclass
-class VerifierResult:
-    is_valid: bool
-    rejection_reason: Optional[str] = None
 
 
-class CausalVerifier:
-    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
-        if context.vix_level is not None and context.vix_level > 30.0:
-            return VerifierResult(is_valid=False, rejection_reason="CausalVerifier: High VIX market panic exceeds causal threshold")
-        return VerifierResult(is_valid=True)
 
 
-class LiquidityVerifier:
-    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
-        if context.volume_ratio < 0.6 and context.volatility > 0.035:
-            return VerifierResult(is_valid=False, rejection_reason="LiquidityVerifier: Illiquid market condition with severe volatility")
-        return VerifierResult(is_valid=True)
 
 
-class RegimeVerifier:
-    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
-        if action in [TradeAction.BUY, TradeAction.STRONG_BUY] and context.htf_trend == "DOWN":
-            return VerifierResult(is_valid=False, rejection_reason="RegimeVerifier: Counter-trend BUY against HTF DOWN trend")
-        if action in [TradeAction.SELL, TradeAction.STRONG_SELL] and context.htf_trend == "UP":
-            return VerifierResult(is_valid=False, rejection_reason="RegimeVerifier: Counter-trend SELL against HTF UP trend")
-        return VerifierResult(is_valid=True)
 
 
-class HallucinationDetector:
-    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
-        if context.current_price <= 0.0:
-            return VerifierResult(is_valid=False, rejection_reason="HallucinationDetector: Invalid negative or zero price detected")
-        return VerifierResult(is_valid=True)
 
 
 @dataclass
@@ -299,107 +214,18 @@ class VerificationOutcome:
     rejection_reason: Optional[str] = None
 
 
-class CausalVerifier:
-    """Verifier checking causal validity and macro black swan conditions."""
-    def verify(self, action: TradeAction, context: MarketContext) -> VerificationOutcome:
-        if context.vix_level is not None and context.vix_level > 35.0:
-            return VerificationOutcome(is_valid=False, rejection_reason="CausalVerifier: Extreme macro volatility regime (VIX > 35)")
-        return VerificationOutcome(is_valid=True)
 
 
-class LiquidityVerifier:
-    """Verifier checking order book liquidity, spread, and volume traps."""
-    def verify(self, action: TradeAction, context: MarketContext) -> VerificationOutcome:
-        if context.volume_ratio < 0.5 and context.volatility > 0.035:
-            return VerificationOutcome(is_valid=False, rejection_reason="Illiquid slippage trap (low volume + high volatility)")
-        return VerificationOutcome(is_valid=True)
 
 
-class RegimeVerifier:
-    """Verifier ensuring trade direction aligns with HTF market regime."""
-    def verify(self, action: TradeAction, context: MarketContext) -> VerificationOutcome:
-        if action in [TradeAction.STRONG_BUY, TradeAction.BUY] and context.htf_trend == "DOWN":
-            return VerificationOutcome(is_valid=False, rejection_reason="Counter-trend risk against HTF DOWN trend")
-        if action in [TradeAction.STRONG_SELL, TradeAction.SELL] and context.htf_trend == "UP":
-            return VerificationOutcome(is_valid=False, rejection_reason="Counter-trend risk against HTF UP trend")
-        return VerificationOutcome(is_valid=True)
 
 
-class HallucinationDetector:
-    """Detector for market pricing anomalies and malformed data inputs."""
-    def verify(self, action: TradeAction, context: MarketContext) -> VerificationOutcome:
-        if context.current_price <= 0.0:
-            return VerificationOutcome(is_valid=False, rejection_reason="Invalid or negative market price detected")
-        return VerificationOutcome(is_valid=True)
 
 
-class BayesianDecisionEngine:
-    """
-    Decoupled Bayesian engine for correlation-aware probability calculation.
-    """
-    def __init__(self, weights: Dict[AgentRole, float], correlations: Dict[Tuple[AgentRole, AgentRole], float]):
-        self.weights = weights
-        self.correlations = correlations
-
-    def calculate_posterior(
-        self, prior_prob: float, evidence_likelihoods: List[Tuple[bool, float, float]]
-    ) -> float:
-        prod_s = 1.0
-        prod_ns = 1.0
-
-        for endorsed, likelihood, exponent in evidence_likelihoods:
-            p_e_given_s = max(0.01, min(0.99, likelihood))
-            if endorsed:
-                prod_s *= p_e_given_s**exponent
-                prod_ns *= (1.0 - p_e_given_s) ** exponent
-            else:
-                prod_s *= (1.0 - p_e_given_s) ** exponent
-                prod_ns *= p_e_given_s**exponent
-
-        numerator = prior_prob * prod_s
-        denominator = (prior_prob * prod_s) + ((1.0 - prior_prob) * prod_ns)
-        if denominator == 0.0:
-            return prior_prob
-        return max(0.0, min(1.0, numerator / denominator))
 
 
-@dataclass
-class StructuredMessage:
-    """Schema for protocol message exchange between agents."""
-    message_id: str
-    task_id: str
-    parent_task_id: str
-    correlation_id: str
-    sender_agent_id: str
-    recipient: str
-    timestamp: datetime
-    schema_version: str
-    message_type: str
-    payload: Dict[str, Any]
-    confidence: float = 1.0
-
-    def validate(self) -> bool:
-        return bool(self.message_id and self.sender_agent_id and self.message_type)
 
 
-@dataclass
-class StructuredMessage:
-    """Canonical message schema for inter-agent debate communication."""
-
-    message_id: str
-    task_id: str
-    parent_task_id: str
-    correlation_id: str
-    sender_agent_id: str
-    recipient: str
-    timestamp: datetime
-    schema_version: str
-    message_type: str
-    payload: Dict[str, Any]
-    confidence: float = 1.0
-
-    def validate(self) -> bool:
-        return bool(self.message_id and self.sender_agent_id and self.payload is not None)
 
 
 @dataclass
@@ -481,17 +307,6 @@ class RiskVerifierOutcome:
         self.reason = reason
 
 
-class RiskVerifier:
-    """Mock/compatibility verifier class for risk assessment."""
-    def verify(self, action: TradeAction, context: MarketContext) -> RiskVerifierOutcome:
-        # If exposure, VIX or correlation exceed safe limits, directional trades are invalid
-        vix = getattr(context, 'vix_level', 0.0) or 0.0
-        exp = getattr(context, 'portfolio_exposure', 0.0) or 0.0
-        corr = getattr(context, 'correlation_risk', 0.0) or 0.0
-        if action in [TradeAction.BUY, TradeAction.STRONG_BUY, TradeAction.SELL, TradeAction.STRONG_SELL]:
-            if exp > 0.5 or vix > 30.0 or corr > 0.7:
-                return RiskVerifierOutcome(is_valid=False, reason="Risk parameters exceeded")
-        return RiskVerifierOutcome(is_valid=True)
 
 
 class AgentStatus(Enum):
@@ -585,11 +400,13 @@ class MacroStrategist(TradingAgent):
             supports = context.key_levels.get("support", [])
             resistances = context.key_levels.get("resistance", [])
 
+            level_score = 0.0
             if supports:
                 nearest_support = min(supports, key=lambda x: abs(x - context.current_price))
                 support_distance = (context.current_price - nearest_support) / context.current_price
                 if support_distance < 0.01:
                     reasoning.append(f"Price near support at {nearest_support:.5f}")
+                    level_score += 0.3
                 else:
                     anti_trade_reasoning.append(
                         f"Price is far from nearest support ({support_distance:.1%}), risk reward is sub-optimal"
@@ -605,6 +422,7 @@ class MacroStrategist(TradingAgent):
                     anti_trade_reasoning.append(
                         f"Price is extremely close to resistance level {nearest_resistance:.5f}, breakout unconfirmed"
                     )
+                    level_score -= 0.3
 
             key_factors["key_levels"] = level_score
             key_factors["sentiment"] = context.news_sentiment * 0.5
@@ -613,6 +431,8 @@ class MacroStrategist(TradingAgent):
                 reasoning.append("Positive news sentiment supports bullish bias")
             elif context.news_sentiment < -0.3:
                 reasoning.append("Negative news sentiment supports bearish bias")
+            else:
+                anti_trade_reasoning.append("Neutral news sentiment suggests lack of strong market catalyst")
 
             total_score = sum(key_factors.values())
 
@@ -645,66 +465,27 @@ class MacroStrategist(TradingAgent):
                 conviction = Conviction.MODERATE
                 anti_trade_reasoning.append("Overall macro score suggests range-bound consolidation")
 
-        key_factors["key_levels"] = level_score
+            confidence = min(0.95, 0.5 + abs(total_score) * 0.3)
 
-        # News sentiment
-        key_factors["sentiment"] = context.news_sentiment * 0.5
-        if context.news_sentiment > 0.3:
-            reasoning.append("Positive news sentiment supports bullish bias")
-        elif context.news_sentiment < -0.3:
-            reasoning.append("Negative news sentiment supports bearish bias")
-        else:
-            anti_trade_reasoning.append("Neutral news sentiment suggests lack of strong market catalyst")
-
-        total_score = sum(key_factors.values())
-
-        if total_score > 0.4:
-            action = TradeAction.BUY
-            conviction = Conviction.HIGH
-            hypothesis = "Bullish macro trend continuation from supports."
-            predictions = [
-                f"Price expected to rise and test nearest resistance at {min(resistances) if resistances else context.current_price * 1.02:.5f}."
-            ]
-            counter_evidence = [
-                "HTF trend structure changes to sideways or down.",
-                f"Violation of support level at {min(supports) if supports else context.current_price * 0.98:.5f}.",
-            ]
-            verification = f"Aligns with positive news sentiment {context.news_sentiment:.2f}."
-        elif total_score < -0.4:
-            action = TradeAction.SELL
-            conviction = Conviction.HIGH
-            hypothesis = "Bearish macro trend continuation from resistances."
-            predictions = [
-                f"Price expected to fall and test nearest support at {max(supports) if supports else context.current_price * 0.98:.5f}."
-            ]
-            counter_evidence = [
-                "HTF trend structure changes to sideways or up.",
-                f"Breach of resistance level at {max(resistances) if resistances else context.current_price * 1.02:.5f}.",
-            ]
-            verification = f"Aligns with negative news sentiment {context.news_sentiment:.2f}."
-        else:
-            action = TradeAction.HOLD
-            conviction = Conviction.MODERATE
-            anti_trade_reasoning.append("Overall macro score suggests range-bound consolidation; hold pattern indicated")
-
-        confidence = min(0.95, 0.5 + abs(total_score) * 0.3)
-
-        return AgentArgument(
-            agent_role=self.role,
-            action=action,
-            conviction=conviction,
-            reasoning=reasoning,
-            anti_trade_reasoning=anti_trade_reasoning,
-            key_factors=key_factors,
-            confidence=confidence,
-            timestamp=datetime.now(),
-            observation=observation,
-            evidence=evidence,
-            hypothesis=hypothesis,
-            predictions=predictions,
-            counter_evidence=counter_evidence,
-            verification=verification,
-        )
+            return AgentArgument(
+                agent_role=self.role,
+                action=action,
+                conviction=conviction,
+                reasoning=reasoning,
+                anti_trade_reasoning=anti_trade_reasoning,
+                key_factors=key_factors,
+                confidence=confidence,
+                timestamp=datetime.now(),
+                observation=observation,
+                evidence=evidence,
+                hypothesis=hypothesis,
+                predictions=predictions,
+                counter_evidence=counter_evidence,
+                verification=verification,
+            )
+        except Exception as e:
+            logger.error(f"Error in MacroStrategist analyze: {e}")
+            raise
 
     def respond_to_argument(
         self, argument: AgentArgument, context: MarketContext
@@ -865,235 +646,8 @@ class TacticalExecutioner(TradingAgent):
             raise
 
 
-class RiskSentinel(TradingAgent):
-    """The Risk Sentinel agent focusing on risk exposure and veto logic."""
-
-    def __init__(self, config: Optional[Dict] = None):
-        super().__init__(AgentRole.RISK_SENTINEL, config)
-        self.max_exposure = self.config.get("max_exposure", 0.5)
-        self.max_correlation = self.config.get("max_correlation", 0.7)
-
-    def analyze(self, context: MarketContext) -> AgentArgument:
-        try:
-            reasoning = []
-            anti_trade_reasoning = []
-            key_factors = {}
-            risk_flags = 0
-
-            observation = f"Exposure={context.portfolio_exposure:.2f}, Corr={context.correlation_risk:.2f}, Vol={context.volatility:.4f}"
-            evidence = []
-            hypothesis = "Portfolio risk exposure verification."
-            predictions = []
-            counter_evidence = []
-            verification = "Risk Sentinel protection active."
-            total_score = 0.0
-
-            # Evidence-first initializations
-            observation = f"Symbol: {context.symbol}, price: {context.current_price}, risk flags: {risk_flags}"
-            evidence = []
-            hypothesis = "Neutral risk profile."
-            predictions = []
-            counter_evidence = []
-            verification = "Portfolio exposure, correlation risk and VIX levels checked."
-
-            # Exposure check
-            if context.portfolio_exposure > self.max_exposure:
-                exposure_score = -0.5
-                risk_flags += 1
-                reasoning.append(f"⚠️ Portfolio exposure ({context.portfolio_exposure:.0%}) exceeds limit")
-                anti_trade_reasoning.append(
-                    f"Portfolio exposure ({context.portfolio_exposure:.0%}) breaches hard cap of {self.max_exposure:.0%}"
-                )
-            elif context.portfolio_exposure > self.max_exposure * 0.8:
-                exposure_score = -0.2
-                reasoning.append(f"Portfolio exposure ({context.portfolio_exposure:.0%}) approaching limit")
-                anti_trade_reasoning.append("Portfolio exposure nearing max threshold")
-            else:
-                exposure_score = 0.1
-                evidence.append(f"Portfolio exposure ({context.portfolio_exposure:.1%}) within limits.")
-
-            key_factors["exposure"] = exposure_score
-
-            if context.correlation_risk > self.max_correlation:
-                corr_score = -0.4
-                risk_flags += 1
-                reasoning.append(f"⚠️ High correlation risk ({context.correlation_risk:.0%})")
-                anti_trade_reasoning.append(f"Correlation risk ({context.correlation_risk:.0%}) exceeds limit")
-            else:
-                corr_score = 0.1
-                evidence.append(f"Asset correlation risk ({context.correlation_risk:.1%}) within safety limit.")
-
-            key_factors["correlation"] = corr_score
-
-            # VIX check
-            vix_score = 0.0
-            if context.vix_level:
-                if context.vix_level > 30:
-                    vix_score = -0.5
-                    risk_flags += 1
-                    reasoning.append(f"⚠️ VIX elevated ({context.vix_level}) - black swan risk")
-                    anti_trade_reasoning.append(f"VIX elevated ({context.vix_level})")
-                elif context.vix_level > 20:
-                    vix_score = -0.2
-                    reasoning.append(f"VIX moderately elevated ({context.vix_level})")
-                else:
-                    vix_score = 0.1
-                    evidence.append(f"VIX normal/healthy market state at {context.vix_level}.")
-                key_factors["vix"] = vix_score
-                key_factors['systemic_fear'] = vix_score
-
-            # Volatility check
-            if context.volatility > 0.03:
-                vol_score = -0.3
-                risk_flags += 1
-                reasoning.append("⚠️ Extreme volatility detected")
-                anti_trade_reasoning.append(f"Unacceptable high volatility regime: {context.volatility:.2%}")
-            else:
-                vol_score = 0.0
-
-            key_factors['volatility_risk'] = vol_score
-            # Calculate overall score
-            total_score = sum(key_factors.values())
-
-            # Determine Action
-            if risk_flags >= 2:
-                action = TradeAction.NO_TRADE
-                conviction = Conviction.VERY_HIGH
-                reasoning.append("🛑 Multiple risk flags - recommending NO TRADE")
-                anti_trade_reasoning.append("Risk sentinel active veto: severe multiple stress threats detected")
-            elif risk_flags == 1:
-                action = TradeAction.HOLD
-                conviction = Conviction.HIGH
-                reasoning.append("⚠️ Risk flag present - reduce position size")
-            elif total_score > 0:
-                action = TradeAction.HOLD
-                conviction = Conviction.MODERATE
-                reasoning.append("✅ Risk parameters acceptable")
-                hypothesis = "Risk parameters within acceptable standard deviation."
-                predictions = ["Asset behavior complies with standard trading bounds."]
-                counter_evidence = ["Volatility or correlation exceeds risk bands."]
-                verification = "Nominal risk check validated."
-            else:
-                action = TradeAction.BUY
-                conviction = Conviction.MODERATE
-
-            confidence = min(0.95, 0.6 + risk_flags * 0.15)
-
-            return AgentArgument(
-                agent_role=self.role,
-                action=action,
-                conviction=conviction,
-                reasoning=reasoning,
-                anti_trade_reasoning=anti_trade_reasoning,
-                key_factors=key_factors,
-                confidence=confidence,
-                timestamp=datetime.now(),
-                observation=observation,
-                evidence=evidence,
-                hypothesis=hypothesis,
-                predictions=predictions,
-                counter_evidence=counter_evidence,
-                verification=verification,
-            )
-        except Exception as e:
-            logger.error(f"Error in RiskSentinel analyze: {e}")
-            raise
-
-    def respond_to_argument(
-        self, argument: AgentArgument, context: MarketContext
-    ) -> Optional[AgentArgument]:
-        try:
-            risk_flags = 0
-            if context.portfolio_exposure > self.max_exposure:
-                risk_flags += 1
-            if context.correlation_risk > self.max_correlation:
-                risk_flags += 1
-            if context.vix_level and context.vix_level > 30:
-                risk_flags += 1
-            if context.volatility > 0.03:
-                risk_flags += 1
-
-            if risk_flags >= 2:
-                return None
-
-            if argument.action in [TradeAction.STRONG_BUY, TradeAction.STRONG_SELL]:
-                if context.portfolio_exposure > self.max_exposure * 0.7:
-                    return AgentArgument(
-                        agent_role=self.role,
-                        action=TradeAction.HOLD,
-                        conviction=Conviction.HIGH,
-                        reasoning=["Approaching maximum portfolio capacity - restricting aggressive sizing."],
-                        key_factors={"position_reduction": -0.3},
-                        confidence=0.75,
-                        timestamp=datetime.now(),
-                        observation=f"Proposing {argument.action.value} near exposure limit",
-                        evidence=[f"Exposure {context.portfolio_exposure:.1%} is near cap."],
-                        hypothesis="Restricting leverage prevents drawdown spikes.",
-                        predictions=["Reduced drawdown vulnerability."],
-                        counter_evidence=["Exposure instantly drops."],
-                        verification="Verified by capacity buffer calculation.",
-                    )
-        return None
 
 
-class DevilsAdvocate(TradingAgent):
-    """Devil's Advocate agent challenging consensus."""
-
-    def __init__(self, config: Optional[Dict] = None):
-        super().__init__(AgentRole.TACTICAL_EXECUTIONER, config)
-
-    def analyze(self, context: MarketContext) -> AgentArgument:
-        reasoning = []
-        anti_trade_reasoning = []
-        key_factors = {}
-        evidence = []
-
-        action = TradeAction.HOLD
-        if context.htf_trend == "UP":
-            action = TradeAction.SELL
-            reasoning.append("Warning: HTF up-trend might be overextended; looking for exhaustion signals")
-        elif context.htf_trend == "DOWN":
-            action = TradeAction.BUY
-            reasoning.append("Warning: HTF down-trend might be near capitulation; looking for support bounce")
-
-        return AgentArgument(
-            agent_role=self.role,
-            action=action,
-            conviction=conviction,
-            reasoning=reasoning,
-            anti_trade_reasoning=anti_trade_reasoning,
-            key_factors=key_factors,
-            confidence=confidence,
-            timestamp=datetime.now(),
-            observation=observation,
-            evidence=evidence,
-            hypothesis=hypothesis,
-            predictions=predictions,
-            counter_evidence=counter_evidence,
-            verification=verification,
-        )
-
-    def respond_to_argument(
-        self, argument: AgentArgument, context: MarketContext
-    ) -> Optional[AgentArgument]:
-        if argument.agent_role == AgentRole.MACRO_STRATEGIST:
-            if context.ltf_trend == context.htf_trend and context.ltf_trend in ["UP", "DOWN"]:
-                return AgentArgument(
-                    agent_role=self.role,
-                    action=argument.action,
-                    conviction=Conviction.HIGH,
-                    reasoning=["LTF confirms HTF direction - strong multi-timeframe alignment"],
-                    key_factors={"alignment_bonus": 0.3},
-                    confidence=0.8,
-                    timestamp=datetime.now(),
-                    observation=f"Macro action: {argument.action.value}",
-                    evidence=["Macro trend aligns with local trend direction."],
-                    hypothesis="Dual timeframe trend alignment significantly increases entry timing probability.",
-                    predictions=["High probability timing entry launched."],
-                    counter_evidence=["Price breaches HTF major levels."],
-                    verification="Verified by dual-trend alignment.",
-                )
-        return None
 
 
 class RiskSentinel(TradingAgent):
@@ -1574,11 +1128,6 @@ class CausalVerifierResult:
         self.rejection_reason = rejection_reason
 
 
-class CausalVerifier:
-    def verify(self, action: TradeAction, context: MarketContext) -> CausalVerifierResult:
-        if context.vix_level is not None and context.vix_level > 30.0:
-            return CausalVerifierResult(is_valid=False, rejection_reason="CausalVerifier: Causal link broken by VIX black swan level")
-        return CausalVerifierResult(is_valid=True)
 
 
 class LiquidityVerifierResult:
@@ -1587,14 +1136,6 @@ class LiquidityVerifierResult:
         self.rejection_reason = rejection_reason
 
 
-class LiquidityVerifier:
-    def verify(self, action: TradeAction, context: MarketContext) -> LiquidityVerifierResult:
-        if context.volume_ratio < 0.6 and context.volatility > 0.035:
-            return LiquidityVerifierResult(
-                is_valid=False,
-                rejection_reason="Illiquid slippage trap detected (low volume + extreme volatility)",
-            )
-        return LiquidityVerifierResult(is_valid=True)
 
 
 class RegimeVerifierResult:
@@ -1603,17 +1144,6 @@ class RegimeVerifierResult:
         self.rejection_reason = rejection_reason
 
 
-class RegimeVerifier:
-    def verify(self, action: TradeAction, context: MarketContext) -> RegimeVerifierResult:
-        if action in [TradeAction.STRONG_BUY, TradeAction.BUY] and context.htf_trend == "DOWN":
-            return RegimeVerifierResult(
-                is_valid=False, rejection_reason="Counter-trend risk against HTF DOWN trend"
-            )
-        if action in [TradeAction.STRONG_SELL, TradeAction.SELL] and context.htf_trend == "UP":
-            return RegimeVerifierResult(
-                is_valid=False, rejection_reason="Counter-trend risk against HTF UP trend"
-            )
-        return RegimeVerifierResult(is_valid=True)
 
 
 class HallucinationDetectorResult:
@@ -1622,13 +1152,6 @@ class HallucinationDetectorResult:
         self.rejection_reason = rejection_reason
 
 
-class HallucinationDetector:
-    def verify(self, action: TradeAction, context: MarketContext) -> HallucinationDetectorResult:
-        if context.current_price <= 0.0:
-            return HallucinationDetectorResult(
-                is_valid=False, rejection_reason="Malformed/Negative price detected in market context"
-            )
-        return HallucinationDetectorResult(is_valid=True)
 
 
 class RiskVerifierResult:
@@ -1669,40 +1192,14 @@ class StructuredMessage:
         return bool(self.message_id and self.sender_agent_id and self.message_type)
 
 
-class VerifierResult:
-    def __init__(self, is_valid: bool, rejection_reason: Optional[str] = None):
-        self.is_valid = is_valid
-        self.rejection_reason = rejection_reason
 
 
-class CausalVerifier:
-    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
-        if context.vix_level is not None and context.vix_level > 30.0:
-            return VerifierResult(False, "CausalVerifier: Macro volatility VIX > 30.0")
-        return VerifierResult(True)
 
 
-class LiquidityVerifier:
-    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
-        if context.volume_ratio < 0.6 and context.volatility > 0.035:
-            return VerifierResult(False, "LiquidityVerifier: Low volume ratio with high volatility")
-        return VerifierResult(True)
 
 
-class RegimeVerifier:
-    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
-        if action in [TradeAction.STRONG_BUY, TradeAction.BUY] and context.htf_trend == "DOWN":
-            return VerifierResult(False, "RegimeVerifier: Counter-trend BUY in HTF DOWN trend")
-        if action in [TradeAction.STRONG_SELL, TradeAction.SELL] and context.htf_trend == "UP":
-            return VerifierResult(False, "RegimeVerifier: Counter-trend SELL in HTF UP trend")
-        return VerifierResult(True)
 
 
-class HallucinationDetector:
-    def verify(self, action: TradeAction, context: MarketContext) -> VerifierResult:
-        if context.current_price <= 0.0:
-            return VerifierResult(False, "HallucinationDetector: Non-positive market price")
-        return VerifierResult(True)
 
 
 @dataclass
@@ -1741,6 +1238,142 @@ class HallucinationDetector:
         if getattr(context, 'current_price', 1.0) <= 0:
             return VerifierResult(is_valid=False, rejection_reason="HallucinationDetector: Invalid non-positive market price")
         return VerifierResult(is_valid=True)
+
+
+class FalsificationGate:
+    """
+    SRE Falsification Gate implementing 'Falsification Gate' principles (Ludik, 2025).
+    Attempts to actively falsify the proposed trade using 5 distinct validators.
+    """
+
+    def __init__(self, config: Optional[Dict] = None):
+        self.config = config or {}
+        self.causal_verifier = CausalVerifier()
+        self.liquidity_verifier = LiquidityVerifier()
+        self.regime_verifier = RegimeVerifier()
+        self.risk_verifier = RiskVerifier()
+        self.hallucination_detector = HallucinationDetector()
+
+    async def run_falsification(
+        self, action: TradeAction, context: MarketContext
+    ) -> FalsificationReport:
+        """
+        Runs comprehensive falsification checks on the proposed action.
+        Returns FalsificationReport indicating if the proposal was successfully falsified (rejected).
+        """
+        # Always run hallucination detector first to validate raw market state
+        hallucination_res = self.hallucination_detector.verify(action, context)
+        if not hallucination_res.is_valid:
+            return FalsificationReport(
+                is_falsified=True,
+                rejection_reason=hallucination_res.rejection_reason,
+                verifier_outcomes={
+                    "CausalVerifier": True,
+                    "LiquidityVerifier": True,
+                    "RegimeVerifier": True,
+                    "RiskVerifier": True,
+                    "HallucinationDetector": False
+                },
+                worst_case_scenario="Invalid market pricing/hallucination"
+            )
+
+        if action in [TradeAction.HOLD, TradeAction.NO_TRADE]:
+            return FalsificationReport(
+                is_falsified=False,
+                rejection_reason=None,
+                verifier_outcomes={},
+                worst_case_scenario=None,
+            )
+
+        causal_res = self.causal_verifier.verify(action, context)
+        liquidity_res = self.liquidity_verifier.verify(action, context)
+        regime_res = self.regime_verifier.verify(action, context)
+        risk_res = self.risk_verifier.verify(action, context)
+        hallucination_res = self.hallucination_detector.verify(action, context)
+
+        verifier_outcomes = {
+            "CausalVerifier": causal_res.is_valid,
+            "LiquidityVerifier": liquidity_res.is_valid,
+            "RegimeVerifier": regime_res.is_valid,
+            "RiskVerifier": risk_res.is_valid,
+            "HallucinationDetector": hallucination_res.is_valid,
+        }
+
+        is_falsified = not all(verifier_outcomes.values())
+        rejection_reason = None
+        worst_case = None
+        if is_falsified:
+            failed_reasons = []
+            if not causal_res.is_valid:
+                failed_reasons.append(getattr(causal_res, 'rejection_reason', 'Causal veto'))
+            if not liquidity_res.is_valid:
+                failed_reasons.append(getattr(liquidity_res, 'rejection_reason', 'Liquidity veto'))
+            if not regime_res.is_valid:
+                failed_reasons.append(getattr(regime_res, 'rejection_reason', 'Regime veto'))
+            if not risk_res.is_valid:
+                failed_reasons.append(getattr(risk_res, 'rejection_reason', getattr(risk_res, 'reason', 'Risk veto')))
+            if not hallucination_res.is_valid:
+                failed_reasons.append(getattr(hallucination_res, 'rejection_reason', 'Hallucination veto'))
+
+            rejection_reason = " | ".join(filter(None, failed_reasons))
+            worst_case = "Falsification gate triggered due to verification failures: " + str(rejection_reason)
+
+        return FalsificationReport(
+            is_falsified=is_falsified,
+            rejection_reason=rejection_reason,
+            verifier_outcomes=verifier_outcomes,
+            worst_case_scenario=worst_case,
+        )
+
+    def _check_macro_causal(self, action: TradeAction, context: MarketContext) -> bool:
+        if context.vix_level is not None and context.vix_level > 30.0:
+            return False
+        return True
+
+    def _run_liquidity_verifier(self, action: TradeAction, context: MarketContext) -> bool:
+        """Checks if thin liquidity or wide spread risks invalidating expected profit margins."""
+        # Low volume ratio coupled with high volatility suggests illiquid slippage traps
+        if context.volume_ratio < 0.6 and context.volatility > 0.035:
+            logger.warning(
+                "LiquidityVerifier: Falsified due to illiquid slippage trap (low volume + extreme volatility)."
+            )
+            return False
+        return True
+
+    def _run_regime_verifier(self, action: TradeAction, context: MarketContext) -> bool:
+        """Ensures the strategy direction aligns with broader higher timeframe regime trends."""
+        if action in [TradeAction.STRONG_BUY, TradeAction.BUY] and context.htf_trend == "DOWN":
+            logger.warning(
+                "RegimeVerifier: Falsified due to counter-trend risk against HTF DOWN trend."
+            )
+            return False
+        if action in [TradeAction.STRONG_SELL, TradeAction.SELL] and context.htf_trend == "UP":
+            logger.warning(
+                "RegimeVerifier: Falsified due to counter-trend risk against HTF UP trend."
+            )
+            return False
+        return True
+
+    def _run_risk_verifier(self, action: TradeAction, context: MarketContext) -> bool:
+        """Enforces worst-case drawdown bounds and hard exposure limits."""
+        if context.portfolio_exposure > 0.85:
+            logger.warning(
+                "RiskVerifier: Falsified because active portfolio exposure exceeds maximum safety ceiling (85%)."
+            )
+            return False
+        return True
+
+    def _generate_counterexample(self, action: TradeAction, context: MarketContext) -> str:
+        """Constructs active counterexamples simulating adverse volatility and correlation shifts."""
+        trend_reversal = (
+            "downward capitulation"
+            if action in [TradeAction.BUY, TradeAction.STRONG_BUY]
+            else "upward squeeze breakout"
+        )
+        return (
+            f"Regime shock where VIX spikes to {max(30.0, (context.vix_level or 15.0) + 15.0):.1f}, "
+            f"leading to sudden correlation convergence and {trend_reversal}."
+        )
 
 
 @dataclass
@@ -1801,72 +1434,6 @@ class ProvenanceDataSchema:
 # Mathematical Decision Engine
 # -----------------------------------------------------------------------------
 
-class BayesianDecisionEngine:
-    """Dedicated mathematical engine implementing correlation-aware Bayesian posterior probabilities."""
-
-    def __init__(self, weights: Dict[AgentRole, float], correlations: Dict[Tuple[AgentRole, AgentRole], float]):
-        self.weights = weights
-        self.correlations = correlations
-
-        if action in [TradeAction.HOLD, TradeAction.NO_TRADE]:
-            return FalsificationReport(
-                is_falsified=False,
-                rejection_reason=None,
-                verifier_outcomes={},
-                worst_case_scenario=None,
-            )
-
-        causal_res = self.causal_verifier.verify(action, context)
-        liquidity_res = self.liquidity_verifier.verify(action, context)
-        regime_res = self.regime_verifier.verify(action, context)
-        risk_res = self.risk_verifier.verify(action, context)
-        hallucination_res = self.hallucination_detector.verify(action, context)
-
-        verifier_outcomes = {
-            "CausalVerifier": causal_res.is_valid,
-            "LiquidityVerifier": liquidity_res.is_valid,
-            "RegimeVerifier": regime_res.is_valid,
-            "RiskVerifier": risk_res.is_valid,
-            "HallucinationDetector": hallucination_res.is_valid,
-        }
-
-        is_falsified = not all(verifier_outcomes.values())
-        rejection_reason = None
-        worst_case = None
-        if is_falsified:
-            failed_reasons = []
-            if not causal_res.is_valid:
-                failed_reasons.append(getattr(causal_res, 'rejection_reason', 'Causal veto'))
-            if not liquidity_res.is_valid:
-                failed_reasons.append(getattr(liquidity_res, 'rejection_reason', 'Liquidity veto'))
-            if not regime_res.is_valid:
-                failed_reasons.append(getattr(regime_res, 'rejection_reason', 'Regime veto'))
-            if not risk_res.is_valid:
-                failed_reasons.append(getattr(risk_res, 'rejection_reason', getattr(risk_res, 'reason', 'Risk veto')))
-            if not hallucination_res.is_valid:
-                failed_reasons.append(getattr(hallucination_res, 'rejection_reason', 'Hallucination veto'))
-
-            rejection_reason = " | ".join(filter(None, failed_reasons))
-            worst_case = "Falsification gate triggered due to verification failures: " + str(rejection_reason)
-
-        return FalsificationReport(
-            is_falsified=is_falsified,
-            rejection_reason=rejection_reason,
-            verifier_outcomes=verifier_outcomes,
-            worst_case_scenario=worst_case,
-        )
-
-    def _generate_counterexample(self, action: TradeAction, context: MarketContext) -> str:
-        """Constructs active counterexamples simulating adverse volatility and correlation shifts."""
-        trend_reversal = (
-            "downward capitulation"
-            if action in [TradeAction.BUY, TradeAction.STRONG_BUY]
-            else "upward squeeze breakout"
-        )
-        return (
-            f"Regime shock where VIX spikes to {max(30.0, (context.vix_level or 15.0) + 15.0):.1f}, "
-            f"leading to sudden correlation convergence and {trend_reversal}."
-        )
 
 
 
@@ -1983,7 +1550,7 @@ class HeadAI:
             for arg in sorted_args:
                 latest_arguments[arg.agent_role] = arg
 
-            final_arguments = list(latest_arguments.values())
+            active_arguments = list(latest_arguments.values())
 
             # Perform action scoring
             action_scores: Dict[TradeAction, float] = {}
@@ -2210,7 +1777,7 @@ class HeadAI:
                 },
                 "configuration_hash": hash(str(self.weights)),
                 "git_commit": "unknown_sha",
-            }
+            })
 
             # 5. Debate invariants validation
             assert winning_score >= 0.0, "Invariant violation: winning_score must be non-negative"
@@ -2245,16 +1812,16 @@ class HeadAI:
         if action in [TradeAction.HOLD, TradeAction.NO_TRADE]:
             return 0.0
 
-            base_size = self.config.get("base_position_size", 0.02)
-            adjusted_size = base_size * (score * 1.5) * (0.5 + consensus * 0.5)
+        base_size = self.config.get("base_position_size", 0.02)
+        adjusted_size = base_size * (score * 1.5) * (0.5 + consensus * 0.5)
 
-            vol_cap = 1.0 - min(0.8, context.volatility * 20.0)
-            adjusted_size *= vol_cap
+        vol_cap = 1.0 - min(0.8, context.volatility * 20.0)
+        adjusted_size *= vol_cap
 
-            exposure_buffer = max(
-                0.0, 1.0 - (context.portfolio_exposure / self.weights.get(AgentRole.RISK_SENTINEL, 0.5))
-            )
-            adjusted_size *= exposure_buffer
+        exposure_buffer = max(
+            0.0, 1.0 - (context.portfolio_exposure / self.weights.get(AgentRole.RISK_SENTINEL, 0.5))
+        )
+        adjusted_size *= exposure_buffer
 
         return max(0.001, min(0.10, adjusted_size))
 
@@ -2362,22 +1929,15 @@ class MultiAgentDebateSystem:
     """Authoritative Multi-Agent Debate System (UCA V6)."""
 
     def __init__(self, config: Optional[Dict] = None):
-        self.config = config or {}
-        self.calibrator = ConfidenceCalibrator(self.config.get("calibrator_config"))
+        try:
+            self.config = config or {}
+            self.calibrator = ConfidenceCalibrator(self.config.get("calibrator_config"))
 
             self.macro_strategist = MacroStrategist(config)
             self.tactical_executioner = TacticalExecutioner(config)
             self.risk_sentinel = RiskSentinel(config)
+            self.agents = [self.macro_strategist, self.tactical_executioner, self.risk_sentinel]
             self.head_ai = HeadAI(self.config, self.calibrator)
-
-        self.adversaries = [
-            DevilsAdvocate(config),
-            RiskProsecutor(config),
-            OverfittingProsecutor(config),
-            LiquidityProsecutor(config),
-            ExecutionProsecutor(config),
-            DataProsecutor(config),
-        ]
 
             self.adversaries = [
                 DevilsAdvocate(config),
@@ -2637,8 +2197,8 @@ class MultiAgentDebateSystem:
                 decision.reasoning += f" | REJECTED BY FALSIFICATION GATES: {falsification_report.rejection_reason}"
                 decision.confidence *= 0.5
 
-        t_end = time.perf_counter()
-        duration_ms = (t_end - t_start) * 1000.0
+            t_end = time.perf_counter()
+            duration_ms = (t_end - t_start) * 1000.0
 
             evaluation = self.quality_evaluator.evaluate_debate(
                 initial_votes=initial_votes,
@@ -2736,18 +2296,15 @@ class MultiAgentDebateSystem:
             latest_arguments[arg.agent_role] = arg
         arguments = list(latest_arguments.values())
 
-            bullish = sum(1 for a in arguments if a.action in [TradeAction.BUY, TradeAction.STRONG_BUY])
-            bearish = sum(1 for a in arguments if a.action in [TradeAction.SELL, TradeAction.STRONG_SELL])
-            neutral = sum(1 for a in arguments if a.action in [TradeAction.HOLD, TradeAction.NO_TRADE])
+        bullish = sum(1 for a in arguments if a.action in [TradeAction.BUY, TradeAction.STRONG_BUY])
+        bearish = sum(1 for a in arguments if a.action in [TradeAction.SELL, TradeAction.STRONG_SELL])
+        neutral = sum(1 for a in arguments if a.action in [TradeAction.HOLD, TradeAction.NO_TRADE])
 
-            total = len(arguments)
-            max_agreement = max(bullish, bearish, neutral)
-            if total == 3 and max_agreement == 2:
-                return 0.75
-            return max_agreement / total
-        except Exception as e:
-            logger.error(f"Error in _calculate_consensus: {e}")
-            raise
+        total = len(arguments)
+        max_agreement = max(bullish, bearish, neutral)
+        if total == 3 and max_agreement == 2:
+            return 0.75
+        return max_agreement / total
 
     def _identify_conflicts(self, all_arguments: List[AgentArgument]) -> List[str]:
         try:

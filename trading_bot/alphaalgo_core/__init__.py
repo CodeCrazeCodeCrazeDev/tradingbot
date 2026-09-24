@@ -167,3 +167,9 @@ __all__ = [
     'WorkflowType',
     'create_alphaalgo_meta_system',
 ]
+
+# Compat re-export
+try:
+    from trading_bot.alphaalgo_orchestrator import AlphaAlgoOrchestrator, AlphaAlgoConfig  # noqa: F401
+except ImportError:
+    pass

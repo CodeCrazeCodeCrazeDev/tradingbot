@@ -38,3 +38,9 @@ __all__ = [
     'ChainOfThoughtReasoner',
     'AlphaAlgoCoreEngine',
 ]
+
+# Compat re-exports for legacy `from trading_bot.core import ...` callers
+try:
+    from trading_bot.tamic import TimeHorizon, MarketTimeState  # noqa: F401
+except ImportError:
+    pass

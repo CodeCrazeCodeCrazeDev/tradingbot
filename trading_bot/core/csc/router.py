@@ -127,7 +127,7 @@ class SkillRouteOutcome:
             "adapter_id": str(self.adapter_id) if self.adapter_id else None,
             "reason": self.reason,
             "version": self.version,
-            "pf_result": self.pf_result
+            "pf_result": getattr(self, "pf_result", None)
         }
         if self.status == "pf_intervention":
             d["pf_result"] = {
@@ -234,11 +234,21 @@ class SkillRouter:
         self._registry[artifact.skill_id].sort(key=lambda x: x.version, reverse=True)
         logger.debug(f"Registered skill: {artifact.skill_id} v{artifact.version}")
 
-    async def route_task(self, task: str, context: Dict[str, Any]) -> SkillRouteOutcome:
+    async def route_task(self, *args) -> SkillRouteOutcome:
         """
         Routes a task to the appropriate skill or adapter.
         Implements Deterministic Routing and HASP Pre-emption.
+
+        Accepts both ``route_task(task, context)`` and the legacy V4 form
+        ``route_task(agent_or_skill, task, context)``.
         """
+        if len(args) >= 3:
+            _, task, context = args[0], args[1], args[2]
+        elif len(args) == 2:
+            task, context = args
+        else:
+            raise TypeError(f"route_task expects (task, context) or (agent, task, context); got {len(args)} args")
+        context = context or {}
         market_state = context.get("market", context)
         vol = market_state.get("volatility", market_state.get("market_volatility", 0))
         if vol > 0.3:

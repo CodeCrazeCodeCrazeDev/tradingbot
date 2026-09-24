@@ -420,3 +420,9 @@ class IQLAgent:
             self.v_optimizer.load_state_dict(checkpoint['v_optimizer'])
         
         logger.info(f"IQL agent loaded from {path}")
+
+# Compat aliases
+try:
+    IqlAgent = IQLAgent
+except NameError:
+    pass

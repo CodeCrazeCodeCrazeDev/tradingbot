@@ -47,8 +47,8 @@ class AdaptationStrategy:
     name: str
     description: str
     apply_condition: str  # When to apply this adaptation
-    parameters: Dict[str, Any] = field(default_factory=dict)
     impact_score: float  # Expected improvement magnitude
+    parameters: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
