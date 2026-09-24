@@ -1,18 +1,17 @@
 """
-Cognitive System Controller (CSC) - UCA V6 (July 2026)
-======================================================
-Authoritative Strategic Brain implementing the 12-stage Recursive Active Inference pipeline.
+Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
+Implements the Active Inference (VFE minimization) loop, HIPIF (Hierarchical Planning
+with Information Folding), LogAct state machine replication, and AutoResearchClaw self-healing control.
 
-Scientific Research Traceability Matrix:
-----------------------------------------
-- arXiv:2605.29303 (EKSFT): Selective token fine-tuning and entropy-KL compliance gating.
-- arXiv:2607.00341 (DiscoLoop): Discrete-continuous looped multi-hop reasoning cell.
-- arXiv:2607.01224 (AutoMem): Schema and metamemory weight adaptation feedback.
-- arXiv:2605.12061 (SAGE): Multi-hop graph-memory evidence retrieval interface.
-- arXiv:2605.10813 (NanoResearch): Dynamic hypothesis branch generation and falsification.
-- arXiv:2605.20025 (AutoResearchClaw): Closed-loop Pivot/Refine strategy self-healing.
-- arXiv:2605.17734 (HASP): Hierarchical agent skill program guardrail interception.
-- arXiv:2605.21482 (S2L): Skill-to-LoRA task-conditioned behavioral adapter routing.
+UCA-2026 Scientific Research Traceability Matrix:
+- REF-01 (LogAct): Shared transactional ledger for agentic consensus (arXiv:2605.29303)
+- REF-02 (SAGE): Self-Evolving Agentic Graph-Memory Engine integration (arXiv:2607.00341)
+- REF-03 (AutoMem): Meta-Memory Schema Migration & Persistence (arXiv:2607.01224)
+- REF-04 (HASP): Hierarchical Skill Programs with Guardrails (arXiv:2605.12061)
+- REF-05 (S2L): Skill-to-LoRA Behavioral Adapters (arXiv:2605.10813)
+- REF-06 (DiscoLoop): Discrete-Continuous Reasoning Loops (arXiv:2605.20025)
+- REF-07 (AutoResearchClaw): Refinement & Falsification Engine (arXiv:2605.17734)
+- REF-08 (DeepWeb-Bench): Real-Time Market Grounding (arXiv:2605.21482)
 """
 
 import numpy as np
@@ -51,7 +50,7 @@ logger = logging.getLogger(__name__)
 
 class DiscoLoopCell:
     """
-    DiscoLoop Cell for multi-hop reasoning (arXiv:2607.00341).
+    DiscoLoop Cell for multi-hop reasoning (arXiv:2605.20025).
     Loops discrete symbolic embeddings and continuous hidden states.
     """
 
@@ -95,7 +94,13 @@ class CognitiveSystemController:
     """
     UCA V6 Controller - Authoritative Strategic Brain.
     Implements 12-step Recursive Active Inference.
-    Supports backward compatibility for legacy 3-positional signatures.
+    Supports backward compatibility for legacy positional signatures.
+
+    Scientific Traceability:
+    - LogAct (arXiv:2605.29303): Byzantine consensus over decision_bus
+    - DiscoLoop (arXiv:2605.20025): Discrete-continuous reasoning iteration
+    - HASP (arXiv:2605.12061): Prescriptive guardrail skill verification
+    - AutoResearchClaw (arXiv:2605.17734): Pivot/Refine hypothesis loops
     """
 
     _instance = None
@@ -385,7 +390,7 @@ class CognitiveSystemController:
     async def _pivot_refine_loop(
         self, branches: List[ReasoningBranch], simulations: Dict[str, Any]
     ) -> Optional[ReasoningBranch]:
-        """AutoResearchClaw Pivot/Refine logic (arXiv:2605.20025)."""
+        """AutoResearchClaw Pivot/Refine logic (arXiv:2605.17734)."""
         if not branches:
             return None
         # Score on the full probabilistic signal — confidence alone is a

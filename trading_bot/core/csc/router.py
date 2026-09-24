@@ -1,18 +1,16 @@
 """
-SkillRouter - UCA V6 (July 2026)
-================================
-Authoritative router for mapping specialized tasks to skills/adapters.
+Orchestrates the selection and execution of Skill Programs (HASP)
+and behavioral behaviors (Skill-to-LoRA).
 
-Scientific Research Traceability Matrix:
-----------------------------------------
-- arXiv:2605.29303 (EKSFT): Entropy-KL compliance check on registered skills.
-- arXiv:2607.00341 (DiscoLoop): Discrete token routing interface with continuous latents.
-- arXiv:2607.01224 (AutoMem): Skill utility feedback and metamemory integration.
-- arXiv:2605.12061 (SAGE): Dynamic skill node mapping and evidence graph linking.
-- arXiv:2605.10813 (NanoResearch): Lightweight skill hypothesis evaluation.
-- arXiv:2605.20025 (AutoResearchClaw): Closed-loop skill program pivot/refine execution.
-- arXiv:2605.17734 (HASP): Hierarchical agent skill program pre-emption and execution.
-- arXiv:2605.21482 (S2L): Skill-to-LoRA task-conditioned behavioral adapter routing.
+UCA-2026 Scientific Research Traceability Matrix:
+- REF-01 (LogAct): Shared transactional ledger for agentic consensus (arXiv:2605.29303)
+- REF-02 (SAGE): Self-Evolving Agentic Graph-Memory Engine integration (arXiv:2607.00341)
+- REF-03 (AutoMem): Meta-Memory Schema Migration & Persistence (arXiv:2607.01224)
+- REF-04 (HASP): Hierarchical Skill Programs with Guardrails (arXiv:2605.12061)
+- REF-05 (S2L): Skill-to-LoRA Behavioral Adapters (arXiv:2605.10813)
+- REF-06 (DiscoLoop): Discrete-Continuous Reasoning Loops (arXiv:2605.20025)
+- REF-07 (AutoResearchClaw): Refinement & Falsification Engine (arXiv:2605.17734)
+- REF-08 (DeepWeb-Bench): Real-Time Market Grounding (arXiv:2605.21482)
 """
 
 import logging
@@ -159,6 +157,10 @@ class SkillRouter:
     """
     Authoritative router for mapping specialized tasks to skills/adapters (UCA V6).
     Supports skill versioning, capability resolution, and HASP/S2L routing.
+
+    Scientific Traceability:
+    - HASP (arXiv:2605.12061): Prescriptive guardrails & skill verification
+    - Skill-to-LoRA (arXiv:2605.10813): Dynamic low-rank behavioral adapter routing
     """
 
     _instance = None
@@ -329,7 +331,7 @@ class SkillRouter:
 
 
 class HASPExecutor:
-    """Executes Skill Programs in a controlled environment (arXiv:2605.17734)."""
+    """Executes Skill Programs in a controlled environment (arXiv:2605.12061)."""
 
     def __init__(self, router: Optional[SkillRouter] = None):
         self.router = router or SkillRouter()

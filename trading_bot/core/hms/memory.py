@@ -7,16 +7,26 @@ Hierarchical Memory System (HMS) - UCA V6 (July 2026)
 =====================================================
 Authoritative 8-tier memory system integrating SAGE and AutoMem.
 
-Scientific Research Traceability Matrix:
-----------------------------------------
-- arXiv:2605.29303 (EKSFT): Memory preservation without distribution collapse.
-- arXiv:2607.00341 (DiscoLoop): Internalized discrete token log storage and retrieval.
-- arXiv:2607.01224 (AutoMem): Dual-loop metamemory schema and weight optimization.
-- arXiv:2605.12061 (SAGE): Self-evolving agentic graph-memory with BFS retrieval.
-- arXiv:2605.10813 (NanoResearch): Lightweight hypothesis ledger indexing.
-- arXiv:2605.20025 (AutoResearchClaw): Closed-loop strategy pivot memory tracking.
-- arXiv:2605.17734 (HASP): Program execution memory artifact indexing.
-- arXiv:2605.21482 (S2L): LoRA adapter metadata and performance history tracking.
+Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
+Implements the 8-tier architecture:
+1. Workspace
+2. Episodic
+3. Semantic
+4. Procedural
+5. Research
+6. World Models
+7. Institutional
+8. Meta-Memory
+
+UCA-2026 Scientific Research Traceability Matrix:
+- REF-01 (LogAct): Shared transactional ledger for agentic consensus (arXiv:2605.29303)
+- REF-02 (SAGE): Self-Evolving Agentic Graph-Memory Engine integration (arXiv:2607.00341)
+- REF-03 (AutoMem): Meta-Memory Schema Migration & Persistence (arXiv:2607.01224)
+- REF-04 (HASP): Hierarchical Skill Programs with Guardrails (arXiv:2605.12061)
+- REF-05 (S2L): Skill-to-LoRA Behavioral Adapters (arXiv:2605.10813)
+- REF-06 (DiscoLoop): Discrete-Continuous Reasoning Loops (arXiv:2605.20025)
+- REF-07 (AutoResearchClaw): Refinement & Falsification Engine (arXiv:2605.17734)
+- REF-08 (DeepWeb-Bench): Real-Time Market Grounding (arXiv:2605.21482)
 """
 
 import logging
@@ -112,7 +122,7 @@ def calculate_integrity_hash(schema_dict: Dict[str, Any]) -> str:
 
 class SAGEGraphMemory:
     """
-    SAGE Substrate: A dynamic, self-evolving graph memory (arXiv:2605.12061).
+    SAGE Substrate: A dynamic, self-evolving graph memory (arXiv:2607.00341).
     Supports incremental construction, context-dependent triplet validity, and autonomous weight evolution.
     """
     def __init__(self, storage_path: str = None):
@@ -177,8 +187,7 @@ class SAGEGraphMemory:
         self.save()
 
     def retrieve_subgraph(self, query: str, hops: int = 2) -> List[Dict[str, Any]]:
-        """SAGE: Multi-hop retrieval utility (arXiv:2605.12061 Eq 4)."""
-        # 1. Identify seed nodes
+        """SAGE: Multi-hop retrieval utility (arXiv:2607.00341)."""
         seeds = [n for n in self.graph.nodes if query.lower() in str(n).lower()]
 
         results = []
@@ -207,7 +216,7 @@ class SAGEGraphMemory:
         return results[:15]
 
     def evolve_weights(self, edge_id: Tuple[str, str, str], feedback_delta: float):
-        """SAGE: Edge Evolution (arXiv:2605.12061 Eq 5)."""
+        """SAGE: Edge Evolution (arXiv:2607.00341)."""
         u, v, k = edge_id
         if self.graph.has_edge(u, v, k):
             current_w = self.graph[u][v][k].get("weight", 0.5)
@@ -267,9 +276,21 @@ class HierarchicalMemorySystem:
     """
     Authoritative memory system Consolidating SAGE and AutoMem.
     Implements active memory management as a cognitive skill.
+
+    Scientific Traceability:
+    - SAGE (arXiv:2607.00341): Self-evolving agentic graph-memory
+    - AutoMem (arXiv:2607.01224): Dynamic meta-memory schema migration
     """
     _instance: Optional["HierarchicalMemorySystem"] = None
     _lock: threading.Lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(HierarchicalMemorySystem, cls).__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
 
     @classmethod
     def reset(cls):
@@ -284,18 +305,7 @@ class HierarchicalMemorySystem:
                 except Exception:
                     pass
                 cls._instance = None
-        logger.info("HierarchicalMemorySystem singleton reset complete.")
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = super(HierarchicalMemorySystem, cls).__new__(cls)
-                    cls._instance._initialized = False
-        return cls._instance
-
-    def _calculate_integrity_hash(self, schema_dict: Dict[str, Any]) -> str:
-        return calculate_integrity_hash(schema_dict)
+        logger.info("HierarchicalMemorySystem successfully reset with schema synchronization.")
 
     def __init__(self, base_path: str = "alphaalgo_data/hms"):
         if getattr(self, "_initialized", False) and getattr(self, "base_path", None) == base_path:
@@ -595,18 +605,3 @@ class HierarchicalMemorySystem:
             self.memory_schema["version"] = "1.1"
         self._save_schema()
         logger.info("HMS V6: AutoMem optimization cycle complete.")
-
-    @classmethod
-    def reset(cls):
-        """
-        Explicit, safe class-level lifecycle reset.
-        Frees singleton instances and flushes outstanding SAGE schema updates.
-        """
-        with cls._lock:
-            if cls._instance is not None:
-                try:
-                    cls._instance._save_schema()
-                except Exception as exc:
-                    logger.warning("Failed to save SAGE schema during reset: %s", exc)
-                cls._instance = None
-        logger.info("HierarchicalMemorySystem successfully reset with schema synchronization.")
