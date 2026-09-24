@@ -156,6 +156,9 @@ class AlphaAlgoOperator:
             issues.append(".env file missing")
             return False, issues
         
+        # Check critical env vars
+        from dotenv import load_dotenv
+
         load_dotenv(env_file)
         
         critical_vars = ["MT5_LOGIN", "MT5_PASSWORD", "MT5_SERVER"]

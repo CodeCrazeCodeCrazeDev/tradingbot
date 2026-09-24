@@ -1,22 +1,42 @@
 # AlphaAlgo Architectural Improvements (2026)
 
-## Overview
-This document outlines the system architecture enhancements implemented during the 2026 Engineering Audit Directive.
+This document catalogs structural simplifications, singleton consolidations, and architectural unifications across AlphaAlgo under UCA-2026.
 
 ## Key Architectural Enhancements
 
-### 1. Hardened Dynamic Execution Sandbox
-- **Previous State**: Parallel backtesting and strategy evaluation modules executed generated code using raw Python `exec()`, introducing security vulnerabilities and unverified code execution risks.
-- **Enhanced State**: Integrated `SecureASTVisitor` across all parallel backtester workers. Before any strategy string is evaluated, its AST tree is inspected to ensure forbid prohibited imports, unsafe OS calls, and dynamic file manipulations.
+## 1. Modular Cognitive Brain Consolidation
 
-### 2. Event-Loop-Safe Async Concurrency
-- **Previous State**: Synchronous `time.sleep()` calls inside async benchmark and integration functions froze the main event loop, stalling concurrent trading signals and latency monitoring tasks.
-- **Enhanced State**: Enforced non-blocking `await asyncio.sleep()` concurrency standards across all async workflows, ensuring zero event-loop blocking during system benchmarks.
+*   **Canonical Entrypoint**: Unified legacy monolithic entrypoints (`unified_ai_brain.py`, `ultimate_integration.py`, `mega_integration.py`) into backward-compatible wrappers redirecting to `AlphaAlgoCognitiveBrain` (`trading_bot/cognition/alpha_algo_cognitive_brain.py`).
+*   **Sub-layer Architecture**: Structured into 10 explicit cognitive sub-layers (Perception, World Model, State Estimation, Memory, Reasoning, Decision, Risk, Self-Evolution, Verification, Execution).
 
-### 3. Edge-Case Division & Sizing Guardrails
-- **Previous State**: Trading position sizing in multi-agent debate was susceptible to `ZeroDivisionError` when risk weights approached zero under extreme market volatility.
-- **Enhanced State**: Implemented continuous non-zero lower bounds (`1e-6`) on all volatility and risk weights, guaranteeing numerical stability across all market regimes.
+---
 
-### 4. Structured Exception Telemetry in Core Singletons
-- **Previous State**: Bare `except:` blocks in singletons (`HierarchicalMemorySystem`, `MemoryOS`) silently swallowed errors during schema resets and object copying.
-- **Enhanced State**: Replaced silent error suppression with structured logging (`logger.warning` / `logger.debug`), preserving error context while ensuring fault-tolerant fallbacks.
+## 2. Singleton Single-Source-of-Truth Invariant Enforcement
+
+*   Enforced authoritative singleton access across core AI controllers via `@classmethod get_instance()` thread-safe double-checked locking:
+    *   `CognitiveSystemController` (`trading_bot/core/csc/controller.py`)
+    *   `SkillRouter` (`trading_bot/core/csc/router.py`)
+    *   `HierarchicalMemorySystem` (`trading_bot/core/hms/memory.py`)
+    *   `MultiAgentDebateSystem` (`trading_bot/agents/multi_agent_debate.py`)
+    *   `EvolutionGate` (`trading_bot/core/acpe/gate.py`)
+
+---
+
+## 3. Dynamic Execution Security & AST Sandboxing
+
+*   Integrated `SecureASTVisitor` from `trading_bot.core.security.sandbox` prior to all dynamic strategy executions (`exec()`) in `parallel_backtester.py`.
+*   Restricted unsafe builtins and prohibited non-sandboxed process execution across production environments.
+
+---
+
+## 4. Concurrency & Async I/O Stabilization
+
+*   Replaced all blocking `time.sleep()` calls in `async def` routines with non-blocking `await asyncio.sleep()` in `trading_bot/core/validation.py` and `trading_bot/neuros_evolution/plotcode_integration.py`.
+*   Ensured daemon thread initialization for background health check and monitoring servers to prevent process hanging on exit.
+
+---
+
+## 5. Script & Deployment Standardization
+
+*   Remediated Python AST indentation flaws in deployment and launcher scripts (`deploy_5star_production.py`, `auto_fix_critical_issues_v2.py`, `run_alphaalgo_5star.py`).
+*   Standardized log formatting and exception propagation across operational scripts.
