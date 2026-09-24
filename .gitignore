@@ -120,3 +120,7 @@ tracked_artifacts.txt
 *.enc
 sweep_results/
 logical_verifier_data/
+merge_progress.txt
+test_*_data/
+test_coordination_data/
+test_integration_data/

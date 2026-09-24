@@ -95,13 +95,6 @@ async def test_e2e_successful_trade_pipeline(full_system):
     assert decision.confidence_vector.statistical > 0
 
     # Verify audit trail in LogAct
-    import os
-    if os.environ.get("LOGACT_TRACE"):
-        bus = csc.consensus_engine
-        print(f"TRACE-TEST csc.consensus_engine id={id(bus)} csc.decision_bus id={id(csc.decision_bus)}")
-        print(f"TRACE-TEST _log id={id(bus._log)} entries={[(a.action_type, a.status.value, id(a)) for a in bus._log]}")
-        from trading_bot.core.unified_event_bus import decision_bus as gdb
-        print(f"TRACE-TEST global decision_bus id={id(gdb)} same={gdb is bus}")
     assert len(csc.consensus_engine._log) > 0
     last_log = csc.consensus_engine._log[-1]
     assert last_log.status == ActionStatus.EXECUTED

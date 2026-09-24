@@ -658,9 +658,6 @@ class CognitiveSystemController:
         if self.decision_bus is not None and hasattr(self.decision_bus, "propose_action"):
             await self._safe_await(self.decision_bus.propose_action(action))
             status = await self._safe_await(action.wait_for_decision(timeout=5.0))
-        import os as _os
-        if _os.environ.get("LOGACT_TRACE"):
-            print(f"TRACE-CSC exec action id={action.action_id} status={status} completed_set={action._completed_event.is_set()} bus={id(self.decision_bus)} loop={id(asyncio.get_running_loop())}", flush=True)
 
         if status not in (ActionStatus.APPROVED, ActionStatus.EXECUTED):
             # Surface the veto/timeout reason from the audit trail so callers

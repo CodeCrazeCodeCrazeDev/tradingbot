@@ -132,3 +132,36 @@ def test_process_cycle_accepts_lob():
     assert res["microstructure"]["mid"] == pytest.approx(1.08)
     res2 = brain.process_cycle("EURUSD", raw, "BUY", 1.078)
     assert res2["microstructure"] is None
+
+
+# ---------- shield spread guard ----------
+
+def test_shield_spread_guard():
+    from trading_bot.core.immutable_shield import ImmutableShield, GovernanceDecision
+
+    s = ImmutableShield()
+    s.config["max_spread_bps"] = 5.0
+    params = {"quantity": 1.0, "action": "buy"}
+    wide = {"market": {"microstructure": {"spread_bps": 20.0}}}
+    tight = {"market": {"microstructure": {"spread_bps": 2.0}}}
+
+    rep = asyncio.run(s.validate_action("trade", params, wide))
+    assert rep.decision == GovernanceDecision.BLOCKED
+    rep = asyncio.run(s.validate_action("trade", params, tight))
+    assert rep.decision == GovernanceDecision.APPROVED
+    # exits are never spread-blocked
+    rep = asyncio.run(s.validate_action(
+        "trade", {"quantity": 1.0, "action": "exit_position"}, wide))
+    assert rep.decision == GovernanceDecision.APPROVED
+    s.config.pop("max_spread_bps")
+
+
+def test_unified_bot_injects_microstructure():
+    from trading_bot.unified_bot import UnifiedTradingBot
+
+    class _Feed:
+        async def next(self):
+            return _snap()
+
+    bot = UnifiedTradingBot({"lob_feed": _Feed()})
+    assert bot.lob_feed is not None

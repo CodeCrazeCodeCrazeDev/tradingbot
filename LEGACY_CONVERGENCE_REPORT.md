@@ -77,7 +77,15 @@ normalize the existing callback stream into typed events. Legacy broker
 reconciliation now compares expected versus actual typed positions instead of
 returning success when position data is unavailable or mismatched. User
 execution-bus changes are preserved, including terminal `EXECUTED` marking for
-deliberate paper no-ops and loop-safe queue migration.
+deliberate paper no-ops and loop-safe queue migration. Added
+`FoundationBrokerAdapter` over the existing `brokers/broker_adapter.py` API;
+MockBrokerAdapter paper execution, typed position conversion, repository
+persistence, and reconciliation are now covered by conformance tests. Added
+`LegacyStrategyAdapter` so legacy strategy engines emit typed signals only and
+cannot own sizing, approval, or execution. Added `StrategyRegistry` and runtime
+registration for signal-only strategy capabilities. Added the opt-in
+`DebateCapabilityAdapter` so legacy multi-agent debate returns advisory evidence
+only and cannot authorize risk or execution.
 
 ## Next wave
 
@@ -85,8 +93,9 @@ Wave 1 will continue migrating the remaining 73 compatibility-facade/authority c
 orchestrator and registry families. Wave 2 will continue converting legacy
 risk/governance analyzers into typed subordinate policies. Wave 3 will continue
 converging data, broker, persistence, and execution modules. The first lifecycle
-slice now persists cancellation/status transitions and compares typed broker
-positions during reconciliation. It must produce:
+slice now persists cancellation/status transitions, normalizes legacy broker
+position objects, and compares typed broker positions during reconciliation. It
+must produce:
 
 1. Canonical delegation shims.
 2. One-wave deprecation warnings.

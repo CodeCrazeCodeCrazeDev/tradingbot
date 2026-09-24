@@ -371,9 +371,6 @@ class UnifiedDecisionBus:
                 t_start = datetime.utcnow()
                 action.sequence_number = len(self._log)
                 self._log.append(action)
-                import os as _os
-                if _os.environ.get("LOGACT_TRACE"):
-                    print(f"TRACE got {action.action_type} id={action.action_id} log_len={len(self._log)} bus={id(self)} loop={id(asyncio.get_running_loop())}", flush=True)
                 if len(self._log) > max_log_size:
                     self._log.pop(0)
 
@@ -422,8 +419,6 @@ class UnifiedDecisionBus:
                     v_start = datetime.utcnow()
                     results = await asyncio.gather(*vote_tasks, return_exceptions=True)
                     v_end = datetime.utcnow()
-                    if _os.environ.get("LOGACT_TRACE"):
-                        print(f"TRACE gather done {action.action_type} results={results}", flush=True)
 
                     for i, res in enumerate(results):
                         vid = voter_ids[i]
@@ -446,14 +441,10 @@ class UnifiedDecisionBus:
                 if self._check_consensus(action):
                     action.status = ActionStatus.APPROVED
                     logger.info(f"LogAct [{action.sequence_number}]: Action {action.action_id} APPROVED")
-                    if _os.environ.get("LOGACT_TRACE"):
-                        print(f"TRACE approved {action.action_type}, dispatching", flush=True)
 
                     # 4. Dispatch Phase — the bus approves and fans out; the
                     # execution layer (e.g. PaperExecutionBridge) owns EXECUTED.
                     await self._dispatch(action)
-                    if _os.environ.get("LOGACT_TRACE"):
-                        print(f"TRACE dispatch done {action.action_type} status={action.status}", flush=True)
                 else:
                     action.status = ActionStatus.VETOED
                     logger.warning(f"LogAct [{action.sequence_number}]: Action {action.action_id} VETOED")

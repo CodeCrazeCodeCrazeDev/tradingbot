@@ -795,19 +795,14 @@ class RiskSentinel(TradingAgent):
                 counter_evidence=counter_evidence,
                 verification=verification,
             )
-        elif context.portfolio_exposure > self.max_exposure * 0.8:
-            exposure_score = -0.2
-            reasoning.append(f"Portfolio exposure ({context.portfolio_exposure:.0%}) approaching limit")
-            anti_trade_reasoning.append("Portfolio exposure nearing maximum threshold; risk buffering recommended")
-        else:
-            exposure_score = 0.1
-            evidence.append(f"Portfolio exposure ({context.portfolio_exposure:.1%}) is well within limits.")
+        except Exception as e:
+            logger.error(f"Error in RiskSentinel analyze: {e}")
+            raise
 
-        key_factors["exposure"] = exposure_score
-
-            if risk_flags >= 2:
-                return None
-
+    def respond_to_argument(
+        self, argument: AgentArgument, context: MarketContext
+    ) -> Optional[AgentArgument]:
+        try:
             if argument.action in [TradeAction.STRONG_BUY, TradeAction.STRONG_SELL]:
                 if context.portfolio_exposure > self.max_exposure * 0.7:
                     return AgentArgument(
@@ -1874,15 +1869,15 @@ class HeadAI:
         base_size = self.config.get("base_position_size", 0.02)
         adjusted_size = base_size * (score * 1.5) * (0.5 + consensus * 0.5)
 
-            vol_cap = 1.0 - min(0.8, context.volatility * 20.0)
-            adjusted_size *= vol_cap
+        vol_cap = 1.0 - min(0.8, context.volatility * 20.0)
+        adjusted_size *= vol_cap
 
-            risk_weight = self.weights.get(AgentRole.RISK_SENTINEL, 0.5)
-            if risk_weight <= 0:
-                exposure_buffer = 1.0
-            else:
-                exposure_buffer = max(0.0, 1.0 - (context.portfolio_exposure / risk_weight))
-            adjusted_size *= exposure_buffer
+        risk_weight = self.weights.get(AgentRole.RISK_SENTINEL, 0.5)
+        if risk_weight <= 0:
+            exposure_buffer = 1.0
+        else:
+            exposure_buffer = max(0.0, 1.0 - (context.portfolio_exposure / risk_weight))
+        adjusted_size *= exposure_buffer
 
         return max(0.001, min(0.10, adjusted_size))
 

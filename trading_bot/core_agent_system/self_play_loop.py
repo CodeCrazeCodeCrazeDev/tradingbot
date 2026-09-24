@@ -159,6 +159,32 @@ class SelfPlayLoop:
             audit_system=audit_system
         )
 
+        # Hypothesis and experiment tracking
+        self.hypotheses: List[Hypothesis] = []
+        self.experiments: List[Experiment] = []
+        self.games: List[SelfPlayGame] = []
+
+        # Version tracking
+        self.policy_version = 0
+        self.value_version = 0
+        self.best_policy_version = 0
+        self.best_value_version = 0
+
+        # Self-play parameters
+        self.games_per_iteration = self.config.get('games_per_iteration', 100)
+        self.training_batch_size = self.config.get('training_batch_size', 32)
+        self.evaluation_games = self.config.get('evaluation_games', 50)
+        self.improvement_threshold = self.config.get('improvement_threshold', 0.55)
+
+        # Experience buffer
+        self.experience_buffer: List[Dict] = []
+        self.max_buffer_size = self.config.get('max_buffer_size', 100000)
+
+        self.running = False
+        self.iteration = 0
+
+        logger.info("Self-Play Loop initialized with RL Framework")
+
     @property
     def audit_system(self):
         return self._audit_system
@@ -168,32 +194,6 @@ class SelfPlayLoop:
         self._audit_system = value
         if hasattr(self, 'rl_framework'):
             self.rl_framework.audit_system = value
-        
-        # Hypothesis and experiment tracking
-        self.hypotheses: List[Hypothesis] = []
-        self.experiments: List[Experiment] = []
-        self.games: List[SelfPlayGame] = []
-        
-        # Version tracking
-        self.policy_version = 0
-        self.value_version = 0
-        self.best_policy_version = 0
-        self.best_value_version = 0
-        
-        # Self-play parameters
-        self.games_per_iteration = self.config.get('games_per_iteration', 100)
-        self.training_batch_size = self.config.get('training_batch_size', 32)
-        self.evaluation_games = self.config.get('evaluation_games', 50)
-        self.improvement_threshold = self.config.get('improvement_threshold', 0.55)
-        
-        # Experience buffer
-        self.experience_buffer: List[Dict] = []
-        self.max_buffer_size = self.config.get('max_buffer_size', 100000)
-        
-        self.running = False
-        self.iteration = 0
-        
-        logger.info("Self-Play Loop initialized with RL Framework")
     
     async def initialize(self):
         """Initialize the self-play loop"""

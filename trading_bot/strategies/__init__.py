@@ -5,6 +5,9 @@ Strategies Module
 Auto-generated integration file.
 """
 
+from .adapter import LegacyStrategyAdapter
+from .registry import StrategyRegistry, StrategyRegistration
+
 # cross_exchange_arbitrage
 try:
     from .cross_exchange_arbitrage import (
@@ -15,6 +18,9 @@ except ImportError as e:
     pass
 
 __all__ = [
+    'LegacyStrategyAdapter',
+    'StrategyRegistry',
+    'StrategyRegistration',
     'CrossExchangeArbitrageSystem',
 ]
 

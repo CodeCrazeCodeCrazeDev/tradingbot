@@ -21,21 +21,13 @@ from typing import Any, Dict, Iterator, Optional
 
 import numpy as np
 
-from trading_bot.core.csc.controller import CognitiveSystemController
-from trading_bot.core.csc.router import SkillRouter, SkillArtifact, SkillType
-from trading_bot.core.execution_bridge import PaperExecutionBridge
-from trading_bot.core.hms.memory import HierarchicalMemorySystem
+# Heavy layer imports (CSC, risk service, world model, execution) are deferred
+# into start()/method bodies so `import trading_bot.unified_bot` stays cheap.
 from trading_bot.core.immutable_shield import shield
 from trading_bot.core.unified_event_bus import decision_bus
 from trading_bot.core.unified_registry import registry
-from trading_bot.core.verification.swarm import VerificationSwarm
 from trading_bot.data.normalizer import MarketDataNormalizer
-from trading_bot.execution.service import CanonicalExecutionService
-from trading_bot.governance.evolution_gate import EvolutionGate
-from trading_bot.governance.policy_adapter import HumanApprovalPolicy
-from trading_bot.persistence.repositories import SqliteTradingRepository
-from trading_bot.risk.service import CanonicalRiskService, LegacyRiskPolicyAdapter
-from trading_bot.world_model.v2_core import WorldModelV2
+from trading_bot.strategies.registry import StrategyRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -69,9 +61,13 @@ class UnifiedTradingBot:
         ).lower()
         self._price_window: deque = deque(maxlen=int(self.config.get("rsi_window", 64)))
         self.data_normalizer = MarketDataNormalizer()
+        self.strategy_registry = StrategyRegistry()
         self._shutdown = asyncio.Event()
         self.running = False
         self.layers: Dict[str, Any] = {}
+        # Optional LOB feed (market_feeds.LOBFeed) — when wired, each cycle's
+        # observation carries microstructure features the shield spread-guards on.
+        self.lob_feed = self.config.get("lob_feed")
 
         # Set in start()
         self.hms: Optional[HierarchicalMemorySystem] = None
@@ -95,6 +91,17 @@ class UnifiedTradingBot:
                 "refusing to silently fall back to paper trading."
             )
 
+        from trading_bot.core.csc.controller import CognitiveSystemController
+        from trading_bot.core.csc.router import SkillRouter
+        from trading_bot.core.execution_bridge import PaperExecutionBridge
+        from trading_bot.core.hms.memory import HierarchicalMemorySystem
+        from trading_bot.core.verification.swarm import VerificationSwarm
+        from trading_bot.execution.service import CanonicalExecutionService
+        from trading_bot.governance.evolution_gate import EvolutionGate
+        from trading_bot.persistence.repositories import SqliteTradingRepository
+        from trading_bot.risk.service import CanonicalRiskService, LegacyRiskPolicyAdapter
+        from trading_bot.world_model.v2_core import WorldModelV2
+
         # 1. LogAct backbone
         await decision_bus.start()
         registry.register("decision_bus", decision_bus, "Infrastructure", overwrite=True)
@@ -109,14 +116,17 @@ class UnifiedTradingBot:
             "max_quantity": self.config.get("max_quantity", 10.0),
             "trading_enabled": self.config.get("trading_enabled", True),
         })
+        if self.config.get("max_spread_bps") is not None:
+            shield.config["max_spread_bps"] = self.config["max_spread_bps"]
         registry.register("shield", shield, "Governance", overwrite=True)
 
         # 4. World model
         self.world_model = WorldModelV2(asset_dims={"FX": 64, "Equities": 128})
         registry.register("world_model", self.world_model, "Intelligence", overwrite=True)
 
-        # 5. Data foundation and skill routing
+        # 5. Data foundation and capability registries
         registry.register("market_data_normalizer", self.data_normalizer, "Data", overwrite=True)
+        registry.register("strategy_registry", self.strategy_registry, "Strategy", overwrite=True)
         self.skill_router = SkillRouter()
         self._register_signal_skills()
         registry.register("skill_router", self.skill_router, "Intelligence", overwrite=True)
@@ -126,6 +136,14 @@ class UnifiedTradingBot:
         self.verifier_swarm = VerificationSwarm()
         registry.register("evolution_gate", self.evolution_gate, "Governance", overwrite=True)
         registry.register("verification_swarm", self.verifier_swarm, "Governance", overwrite=True)
+        if self.config.get("enable_debate_capability", False):
+            from trading_bot.agents.capability_adapter import DebateCapabilityAdapter
+            from trading_bot.agents.multi_agent_debate import MultiAgentDebateSystem
+
+            debate_capability = DebateCapabilityAdapter(
+                MultiAgentDebateSystem(self.config.get("debate_config", {}))
+            )
+            registry.register("debate_capability", debate_capability, "Intelligence", overwrite=True)
 
         # 7. Canonical portfolio risk authority
         self.risk_service = CanonicalRiskService({
@@ -193,6 +211,8 @@ class UnifiedTradingBot:
 
     def _register_signal_skills(self) -> None:
         """Register indicator skills into the S2L/HASP router."""
+        from trading_bot.core.csc.router import SkillArtifact, SkillType
+
         self.skill_router.register_skill(SkillArtifact(
             skill_id="rsi_signal",
             skill_type=SkillType.PROGRAM,
@@ -230,6 +250,7 @@ class UnifiedTradingBot:
             logger.warning(f"UnifiedTradingBot: evolution layer unavailable: {exc}")
 
         try:
+            from trading_bot.governance.policy_adapter import HumanApprovalPolicy
             from trading_bot.human_layer import (
                 get_approval_gate, get_alert_manager, is_trading_allowed,
             )
@@ -272,6 +293,18 @@ class UnifiedTradingBot:
             return bool(human["is_trading_allowed"]())
         except Exception:
             return True
+
+    def register_strategy_adapter(self, strategy: Any, *, metadata: Optional[Dict[str, Any]] = None) -> Any:
+        """Register a signal-only strategy capability in the canonical graph."""
+        registration = self.strategy_registry.register(strategy, metadata=metadata)
+        registry.register(
+            f"strategy_{registration.strategy_id}",
+            strategy,
+            "Strategy",
+            metadata=dict(metadata or {}),
+            overwrite=True,
+        )
+        return registration
 
     def component_graph(self) -> list:
         """Return the canonical modular-monolith component inventory."""
@@ -316,6 +349,16 @@ class UnifiedTradingBot:
         obs = self.enrich_observation(raw_observation)
         obs["market_event_id"] = market_event.event_id
         obs["data_quality"] = market_event.quality.value
+
+        # Attach live microstructure when a LOB feed is wired — the Immutable
+        # Shield's spread guard reads spread_bps from this context.
+        if self.lob_feed is not None:
+            try:
+                snap = await self.lob_feed.next()
+                if snap is not None and hasattr(snap, "features"):
+                    obs["microstructure"] = snap.features()
+            except Exception as exc:
+                logger.debug(f"UnifiedTradingBot: LOB feed unavailable this cycle: {exc}")
 
         if not self.trading_allowed():
             logger.info("UnifiedTradingBot: trading paused by human override")

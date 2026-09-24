@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import inspect
 from dataclasses import replace
 from datetime import datetime, timezone
@@ -155,15 +156,22 @@ class LegacyBrokerAdapter:
         legacy_side: Any = order.side
         legacy_type: Any = order.order_type
         try:
-            from trading_bot.broker.broker_interface import (
-                OrderSide as LegacyOrderSide,
-                OrderType as LegacyOrderType,
-            )
-
+            module = importlib.import_module(type(self.broker).__module__)
+            LegacyOrderSide = getattr(module, "OrderSide")
+            LegacyOrderType = getattr(module, "OrderType")
             legacy_side = LegacyOrderSide.BUY if order.side is OrderSide.BUY else LegacyOrderSide.SELL
             legacy_type = getattr(LegacyOrderType, order.order_type.name)
         except (ImportError, AttributeError):
-            pass
+            try:
+                from trading_bot.broker.broker_interface import (
+                    OrderSide as LegacyOrderSide,
+                    OrderType as LegacyOrderType,
+                )
+
+                legacy_side = LegacyOrderSide.BUY if order.side is OrderSide.BUY else LegacyOrderSide.SELL
+                legacy_type = getattr(LegacyOrderType, order.order_type.name)
+            except (ImportError, AttributeError):
+                pass
 
         result = await self._invoke(
             "place_order",
@@ -280,12 +288,31 @@ class LegacyBrokerAdapter:
             result = function(*args, **kwargs)
         except TypeError:
             if method == "place_order":
-                result = function(
-                    symbol=kwargs["symbol"],
-                    side=kwargs["side"],
-                    type=kwargs["type"],
-                    quantity=kwargs["quantity"],
-                )
+                variants = [
+                    {
+                        "symbol": kwargs["symbol"],
+                        "side": kwargs["side"],
+                        "order_type": kwargs["type"],
+                        "quantity": kwargs["quantity"],
+                        "price": kwargs.get("price"),
+                        "stop_price": kwargs.get("stop_price"),
+                    },
+                    {
+                        "symbol": kwargs["symbol"],
+                        "side": kwargs["side"],
+                        "type": kwargs["type"],
+                        "quantity": kwargs["quantity"],
+                    },
+                ]
+                last_error = None
+                for variant in variants:
+                    try:
+                        result = function(**variant)
+                        break
+                    except TypeError as exc:
+                        last_error = exc
+                else:
+                    raise last_error
             else:
                 raise
         return await result if inspect.isawaitable(result) else result

@@ -88,6 +88,22 @@ class RiskService(Protocol):
 
 
 @runtime_checkable
+class StrategyPort(Protocol):
+    strategy_id: str
+
+    async def generate_signal(self, market: Mapping[str, Any]) -> Optional[List[Any]]:
+        ...
+
+
+@runtime_checkable
+class AgentCapabilityPort(Protocol):
+    capability_id: str
+
+    async def analyze(self, context: Mapping[str, Any]) -> Mapping[str, Any]:
+        ...
+
+
+@runtime_checkable
 class RiskPolicy(Protocol):
     """Subordinate risk policy; it may veto but never independently approve."""
 

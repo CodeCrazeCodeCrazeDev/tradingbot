@@ -246,6 +246,9 @@ class IntegratedAgentSystem:
             }
         )
 
+        # 9b. Meta-Orchestrator (self-scaffolding task workflows)
+        self.meta_orchestrator = MetaOrchestrator(config=self.config)
+
         # 10. Self-Coordinating Core (Advanced Multi-Agent Coordination)
         self.coordination_core = SelfCoordinatingCore(
             policy_network=self.policy_network,
@@ -650,10 +653,9 @@ class IntegratedAgentSystem:
                 except ValueError:
                     task_type = TaskType.ANALYSIS
 
-        if use_coordination:
             result = await self.coordination_core.execute_task(
                 task_name=f"Request: {task[:30]}...",
-                task_type=TaskType.ANALYSIS,
+                task_type=task_type,
                 description=task,
                 priority=TaskPriority.MEDIUM,
                 metadata=context
@@ -711,39 +713,48 @@ class IntegratedAgentSystem:
 
     def _print_system_status(self):
         """Print system status"""
+        import sys
+
+        def _p(text: str = "") -> None:
+            try:
+                print(text)
+            except UnicodeEncodeError:
+                enc = getattr(sys.stdout, "encoding", None) or "ascii"
+                print(text.encode(enc, errors="replace").decode(enc))
+
         status = self.get_comprehensive_status()
 
-        print("\n" + "=" * 60)
-        print("INTEGRATED AGENT SYSTEM - STATUS")
-        print("=" * 60)
+        _p("\n" + "=" * 60)
+        _p("INTEGRATED AGENT SYSTEM - STATUS")
+        _p("=" * 60)
 
-        print(f"\n🧠 ORCHESTRATOR")
-        print(f"   State: {status['orchestrator']['state']}")
-        print(f"   Safety Threshold: {status['orchestrator']['safety_threshold']}")
+        _p(f"\n🧠 ORCHESTRATOR")
+        _p(f"   State: {status['orchestrator']['state']}")
+        _p(f"   Safety Threshold: {status['orchestrator']['safety_threshold']}")
 
-        print(f"\n🤖 AGENTS")
-        print(f"   Total: {status['agents']['total_agents']}")
-        print(f"   Roles: {status['agents']['role_distribution']}")
+        _p(f"\n🤖 AGENTS")
+        _p(f"   Total: {status['agents']['total_agents']}")
+        _p(f"   Roles: {status['agents']['role_distribution']}")
 
-        print(f"\n🔧 TOOLS")
-        print(f"   Total: {status['tools']['total_tools']}")
-        print(f"   Categories: {status['tools']['category_distribution']}")
+        _p(f"\n🔧 TOOLS")
+        _p(f"   Total: {status['tools']['total_tools']}")
+        _p(f"   Categories: {status['tools']['category_distribution']}")
 
-        print(f"\n💾 MEMORY")
-        print(f"   Working: {status['memory']['working']['used']}/{status['memory']['working']['capacity']}")
-        print(f"   Episodic: {status['memory']['episodic']['total_episodes']}")
-        print(f"   Semantic: {status['memory']['semantic']['total_knowledge']}")
+        _p(f"\n💾 MEMORY")
+        _p(f"   Working: {status['memory']['working']['used']}/{status['memory']['working']['capacity']}")
+        _p(f"   Episodic: {status['memory']['episodic']['total_episodes']}")
+        _p(f"   Semantic: {status['memory']['semantic']['total_knowledge']}")
 
-        print(f"\n📊 NETWORKS")
-        print(f"   Policy: {len(status['policy_network']['action_weights'])} actions")
-        print(f"   Value: {status['value_network']['update_count']} updates")
+        _p(f"\n📊 NETWORKS")
+        _p(f"   Policy: {len(status['policy_network']['action_weights'])} actions")
+        _p(f"   Value: {status['value_network']['update_count']} updates")
 
-        print(f"\n🔄 SELF-PLAY")
-        print(f"   Iteration: {status['self_play']['iteration']}")
-        print(f"   Games: {status['self_play']['total_games']}")
-        print(f"   Best Policy: v{status['self_play']['best_policy_version']}")
+        _p(f"\n🔄 SELF-PLAY")
+        _p(f"   Iteration: {status['self_play']['iteration']}")
+        _p(f"   Games: {status['self_play']['total_games']}")
+        _p(f"   Best Policy: v{status['self_play']['best_policy_version']}")
 
-        print("\n" + "=" * 60)
+        _p("\n" + "=" * 60)
 
     async def shutdown(self):
         """Graceful shutdown"""

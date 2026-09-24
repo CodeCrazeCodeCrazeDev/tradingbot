@@ -6,12 +6,13 @@ execution, telemetry, evolution, human oversight) runs as a service under the
 CognitiveSystemController via ``trading_bot.unified_bot.UnifiedTradingBot``.
 
 Observation sources:
-    --replay   real historical bars from market_data.db (grounded)
-    default    deterministic synthetic feed (Ornstein-Uhlenbeck, seeded)
+    default      real historical bars from market_data.db (grounded)
+    --synthetic  deterministic synthetic feed (Ornstein-Uhlenbeck, seeded)
+                 — labeled stand-in, never presented as real evidence
 
 Run:
-    python main.py --symbol EURUSD --replay --cycles 100
-    python main.py --symbol BTC/USDT --interval 5 --cycles 10
+    python main.py --symbol EURUSD --cycles 100
+    python main.py --synthetic --symbol BTC/USDT --interval 5 --cycles 10
 """
 
 import argparse
@@ -99,12 +100,13 @@ async def main():
         "max_exposure": args.max_exposure,
         "max_quantity": args.max_quantity,
         "trading_enabled": args.mode != "analysis",
+        "max_spread_bps": args.max_spread_bps,
     })
 
-    if args.replay:
-        source = replay_observations(DB_PATH, args.symbol)
-    else:
+    if args.synthetic:
         source = synthetic_observations(args.symbol, args.seed, args.base_price)
+    else:
+        source = replay_observations(DB_PATH, args.symbol)
 
     try:
         await bot.run(source, cycles=args.cycles, interval=args.interval)
@@ -114,7 +116,7 @@ async def main():
 
 def parse_args():
     parser = argparse.ArgumentParser(description="AlphaAlgo UCA-2026 Unified Trading Bot")
-    parser.add_argument("--symbol", type=str, default="BTC/USDT", help="Primary trading symbol")
+    parser.add_argument("--symbol", type=str, default="EURUSD", help="Primary trading symbol")
     parser.add_argument("--interval", type=float, default=1.0, help="Seconds between observations")
     parser.add_argument("--cycles", type=int, default=0, help="Max loop cycles (0 = run forever)")
     parser.add_argument("--mode", choices=["paper", "analysis"], default="paper")
@@ -122,8 +124,10 @@ def parse_args():
     parser.add_argument("--base-price", type=float, default=50000.0)
     parser.add_argument("--max-exposure", type=float, default=0.05)
     parser.add_argument("--max-quantity", type=float, default=10.0)
-    parser.add_argument("--replay", action="store_true",
-                        help="Replay real observations from market_data.db instead of the synthetic feed")
+    parser.add_argument("--max-spread-bps", type=float, default=None,
+                        help="Immutable Shield spread guard: veto entries when live spread exceeds this (bps)")
+    parser.add_argument("--synthetic", action="store_true",
+                        help="Use the labeled synthetic feed instead of real market_data.db replay")
     return parser.parse_args()
 
 

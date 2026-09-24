@@ -298,11 +298,20 @@ class HierarchicalMemorySystem:
                 cls._instance = None
         logger.info("HierarchicalMemorySystem successfully reset with schema synchronization.")
 
-    def __init__(self, base_path: str = "alphaalgo_data/hms"):
+    def __init__(self, config: Optional[Union[Dict[str, Any], str]] = None,
+                 base_path: Optional[str] = None):
+        # Dual-mode signature: accepts a config dict, a plain path string, or
+        # an explicit base_path kwarg (all three call styles exist in-tree).
+        if isinstance(config, str) and base_path is None:
+            base_path = config
+            config = None
+        if base_path is None:
+            base_path = (config or {}).get("base_path", "alphaalgo_data/hms") \
+                if isinstance(config, dict) else "alphaalgo_data/hms"
         if getattr(self, "_initialized", False) and getattr(self, "base_path", None) == base_path:
             return
 
-        self.config = config or {}
+        self.config = config if isinstance(config, dict) else {}
         self.base_path = base_path
         self.storage_root = base_path  # For backward compatibility with malformed store_ledger_entry
         self.ledger_path = os.path.join(base_path, "research_ledger")
@@ -596,6 +605,10 @@ class HierarchicalMemorySystem:
             self.memory_schema["version"] = "1.1"
         self._save_schema()
         logger.info("HMS V6: AutoMem optimization cycle complete.")
+
+    def optimize_metamemory(self, feedback: List[Dict[str, Any]]):
+        """AutoMem entry point (canonical name used by the UCA V5 test suite)."""
+        return self.optimize_memory(feedback)
 
     @classmethod
     def reset(cls):

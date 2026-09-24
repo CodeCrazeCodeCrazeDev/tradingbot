@@ -5,6 +5,8 @@ Brokers Module
 Auto-generated integration file.
 """
 
+from .adapter_bridge import FoundationBrokerAdapter
+
 # connection_manager
 try:
     from .connection_manager import (
@@ -25,6 +27,7 @@ except ImportError as e:
     pass
 
 __all__ = [
+    'FoundationBrokerAdapter',
     'BrokerConnectionManager',
     'MultiBrokerConnectionManager',
     'UnifiedBrokerManager',

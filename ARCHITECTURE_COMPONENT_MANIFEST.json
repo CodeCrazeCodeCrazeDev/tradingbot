@@ -83,6 +83,27 @@
       "status": "paper_replay_adapter_ready",
       "rule": "Legacy feed callbacks are normalized to MarketEvent before entering cognition."
     },
+    "concrete_broker_adapter": {
+      "owner": "FoundationBrokerAdapter",
+      "path": "trading_bot/brokers/adapter_bridge.py",
+      "legacy_source": "trading_bot/brokers/broker_adapter.py",
+      "status": "paper_mock_conformance_ready",
+      "rule": "No production broker connection is implicit; paper/testnet conformance precedes live activation."
+    },
+    "strategy_adapter": {
+      "owner": "LegacyStrategyAdapter",
+      "path": "trading_bot/strategies/adapter.py",
+      "registry": "trading_bot/strategies/registry.py::StrategyRegistry",
+      "status": "signal_only_adapter_ready",
+      "rule": "Legacy strategy engines may emit typed signals only; they cannot size, approve, or execute orders."
+    },
+    "agent_capability_adapter": {
+      "owner": "DebateCapabilityAdapter",
+      "path": "trading_bot/agents/capability_adapter.py",
+      "legacy_source": "trading_bot/agents/multi_agent_debate.py",
+      "status": "advisory_only_opt_in",
+      "rule": "Legacy debate may return evidence only; it cannot authorize risk or execution."
+    },
     "recursive_self_improvement": {
       "owner": "HumanGuidedRecursiveImprovementLoop",
       "path": "trading_bot/recursive_self_improvement/rsi_loop.py",

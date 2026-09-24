@@ -12,7 +12,7 @@ import py_compile
 import subprocess
 import sys
 
-SKIP_DIRS = {"_archive", "__pycache__", ".pytest_cache"}
+SKIP_DIRS = {"_archive", "__pycache__", ".pytest_cache", "_quarantine"}
 
 REQUIRED_DOCS = [
     "MASTER_AUDIT_REPORT.md",
@@ -162,8 +162,9 @@ def run_automated_audits():
     py_files = list(iter_py_files("trading_bot"))
     test_files = list(iter_py_files("tests", skip_archive=False)) + \
         list(iter_py_files("tests_new", skip_archive=False))
+    quarantined = list(iter_py_files("tests/_quarantine", skip_archive=False))
     print(f"  - Active Production Py Files: {len(py_files)}")
-    print(f"  - Automated Unit/Integration Tests: {len(test_files)}")
+    print(f"  - Automated Unit/Integration Tests: {len(test_files)} (+{len(quarantined)} quarantined)")
 
     # 2. Required documents
     print("\n[2/7] VERIFYING CROSS-DOCUMENT CONSISTENCY...")

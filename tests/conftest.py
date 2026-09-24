@@ -40,12 +40,8 @@ if not hasattr(builtins, "Path"):
 for _mod in ("time", "os", "sys", "json", "math", "datetime"):
     if not hasattr(builtins, _mod):
         setattr(builtins, _mod, __import__(_mod))
-try:
-    if not hasattr(builtins, "torch"):
-        import torch as _torch
-        builtins.torch = _torch
-except ImportError:
-    pass
+# torch intentionally NOT imported eagerly here (~60s cold import on this
+# box): the lazy builtins.__getattr__ below resolves it on first real use.
 
 # Lazy fallback: bare names that match an importable module resolve on demand.
 import importlib as _importlib
@@ -77,9 +73,11 @@ try:
     import importlib.abc as _importlib_abc
     import importlib.machinery as _importlib_machinery
     import importlib.util as _importlib_util
-    import trading_bot as _tb_pkg
 
-    _tb_root = Path(_tb_pkg.__file__).parent
+    # Locate the package WITHOUT executing it — ``import trading_bot`` costs
+    # ~60s (heavy eager chain); find_spec only resolves the package path.
+    _tb_spec = _importlib_util.find_spec("trading_bot")
+    _tb_root = Path(list(_tb_spec.submodule_search_locations)[0])
     _flat_map: dict = {}
     for _dirpath, _dirnames, _filenames in os.walk(_tb_root):
         _dirnames[:] = sorted(d for d in _dirnames if d not in {"__pycache__", "_archive", "tests"})
@@ -440,16 +438,6 @@ def temp_config_file():
     temp_path.unlink(missing_ok=True)
 
 
-@pytest.fixture(autouse=True)
-def mock_wait_for_decision(monkeypatch):
-    """Automatically patch LogAction.wait_for_decision to avoid hanging in tests."""
-    from trading_bot.core.unified_event_bus import LogAction, ActionStatus
-    async def mock_wait(self, timeout=10.0):
-        self.status = ActionStatus.APPROVED
-        return ActionStatus.APPROVED
-    monkeypatch.setattr(LogAction, "wait_for_decision", mock_wait)
-
-
 # Pytest hooks
 def pytest_configure(config):
     """Configure pytest with all markers."""
@@ -539,8 +527,13 @@ def pytest_runtest_makereport(item, call):
 @pytest.fixture(autouse=True)
 def mock_wait_for_decision(monkeypatch, request):
     """Bypass wait_for_decision timeouts in unit tests by immediately approving."""
-    # Target only uca_v5 or event_bus_consolidation tests to avoid breaking integration tests
+    # Target only uca_v5 or event_bus_consolidation tests to avoid breaking
+    # integration tests. Match the uca_v5 *directory* (tests/uca_v5/...) — a
+    # bare substring also matches tests/integration/test_uca_v5_one_brain_pipeline.py,
+    # whose e2e contract requires the real wait_for_decision.
     test_path = str(request.path) if hasattr(request, "path") else ""
+    if "integration" in test_path or "chaos" in test_path:
+        return
     if "uca_v5" in test_path or "event_bus_consolidation" in test_path or "test_csc_v5" in test_path:
         from trading_bot.core.unified_event_bus import LogAction, ActionStatus
 

@@ -25,6 +25,7 @@ from .contracts import (
     Venue,
 )
 from .ports import (
+    AgentCapabilityPort,
     BrokerAdapter,
     ComponentLifecycle,
     ExecutionService,
@@ -32,11 +33,13 @@ from .ports import (
     PortfolioRepository,
     RiskPolicy,
     RiskService,
+    StrategyPort,
     TradingRepository,
     WorldModelPort,
 )
 
 __all__ = [
+    "AgentCapabilityPort",
     "ApprovalDecision",
     "AuditEvent",
     "BrokerAdapter",
@@ -64,6 +67,7 @@ __all__ = [
     "RiskPolicy",
     "RiskService",
     "RiskState",
+    "StrategyPort",
     "TradingRepository",
     "Signal",
     "Venue",
