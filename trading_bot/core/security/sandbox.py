@@ -17,6 +17,12 @@ class SecureASTVisitor(ast.NodeVisitor):
     AST Visitor that checks python source code for dangerous statements,
     attributes, and function calls.
     """
+    def validate_code(self, code_str: str) -> bool:
+        """Convenience method to parse and validate code string."""
+        tree = ast.parse(code_str)
+        self.visit(tree)
+        return True
+
     def __init__(self):
         # Whitelist of allowed modules to import (only if safe)
         self.allowed_modules = {"math", "numpy", "pandas"}

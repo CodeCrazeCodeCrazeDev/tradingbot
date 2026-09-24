@@ -225,9 +225,6 @@ class ProductionDeployment:
         except KeyboardInterrupt:
                 logger.warning("Received shutdown signal")
                 break
-            except Exception as e:
-                logger.error(f"Error in trading loop: {e}")
-                await asyncio.sleep(5)
 
     async def _fetch_market_data(self):
         """Fetch market data for all symbols."""

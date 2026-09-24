@@ -528,6 +528,7 @@ class CognitiveSystemController:
         try:
             evidence_chain = await self._safe_await(self.hms.retrieve_evidence_chain(str(observation)))
         except Exception as e:
+            logger.warning(f"CSC-V6: Evidence chain retrieval failed, falling back to empty chain: {e}")
             evidence_chain = []
 
         # 3. HASP Guardrail
@@ -559,7 +560,8 @@ class CognitiveSystemController:
             try:
                 sim_results = await self._safe_await(self.hypothesis_gen.simulate_branches(branches)) or {}
             except Exception as e:
-                logger.warning(f"CSC-V6: Causal simulation fallback: {e}")
+                logger.warning(f"CSC-V6: Causal simulation error: {e}")
+                sim_results = {}
 
         # 7. Pivot/Refine
         best_branch = await self._safe_await(self._pivot_refine_loop(branches, sim_results))

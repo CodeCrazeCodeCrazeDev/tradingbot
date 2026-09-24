@@ -216,8 +216,8 @@ class SecureCredentialsManager:
                     fernet = self._get_fernet()
                     decrypted_data = fernet.decrypt(encrypted_data)
                     credentials = json.loads(decrypted_data.decode())
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Failed to decrypt existing credentials file: {e}")
             
             # Update and save
             credentials[key] = value

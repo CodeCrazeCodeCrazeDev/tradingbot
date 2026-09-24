@@ -1,118 +1,39 @@
-# AlphaAlgo Production Issue Tracker (2026)
+# AlphaAlgo Production Issue Tracker — 2026 Audit
 
-This document tracks identified, resolved, and monitored engineering defects and scientific regressions across the AlphaAlgo codebase.
-
----
-
-## 1. Registry of Resolved Defects
-
-### **DEFECT-UCA-2026-01**: Database ORM Model Structure & Syntax Malformation
-*   **Component**: `trading_bot/database/production_database.py`
-*   **Severity**: **CRITICAL (BLOCKER)**
-*   **Root Cause**: Unindented and misplaced `else:` block dangling after `AuditLog` ORM model declaration causing Python compilation `SyntaxError`.
-*   **Files Affected**: `trading_bot/database/production_database.py`
-*   **Technical Explanation**: An extra `else:` block from an earlier fallback import check was duplicated at line 218 without proper nesting or matching `if`, breaking Python AST parsing.
-*   **Solution Implemented**: Removed the orphaned `else:` block and unified the SQLAlchemy import fallback logic higher in the file header.
-*   **Verification Performed**: `python3 -m py_compile trading_bot/database/production_database.py` returned success with zero errors.
-*   **Remaining Risks**: None.
-
-### **DEFECT-UCA-2026-02**: ServiceRegistry Unterminated String Syntax Error
-*   **Component**: `trading_bot/core/service_registry.py`
-*   **Severity**: **CRITICAL (BLOCKER)**
-*   **Root Cause**: Missing opening triple-quotes on the module docstring.
-*   **Files Affected**: `trading_bot/core/service_registry.py`
-*   **Technical Explanation**: The top docstring began directly with `Provides backward compatibility...` followed by closing `"""`, producing an `unterminated triple-quoted string literal` SyntaxError.
-*   **Solution Implemented**: Added opening `"""` to close the docstring correctly.
-*   **Verification Performed**: `python3 -m py_compile trading_bot/core/service_registry.py` compiled cleanly.
-*   **Remaining Risks**: None.
-
-### **DEFECT-UCA-2026-03**: MasterOrchestrator Unterminated String Syntax Error
-*   **Component**: `trading_bot/core_agent_system/master_orchestrator.py`
-*   **Severity**: **CRITICAL (BLOCKER)**
-*   **Root Cause**: Missing opening triple-quotes on the module docstring.
-*   **Files Affected**: `trading_bot/core_agent_system/master_orchestrator.py`
-*   **Technical Explanation**: Docstring began without opening `"""`, causing AST parser failure.
-*   **Solution Implemented**: Fixed string literal syntax at the top of the module.
-*   **Verification Performed**: `python3 -m py_compile trading_bot/core_agent_system/master_orchestrator.py` compiled cleanly.
-*   **Remaining Risks**: None.
-
-### **DEFECT-UCA-2026-04**: MultiAgentDebate Indentation & Keyword Syntax Error
-*   **Component**: `trading_bot/agents/multi_agent_debate.py`
-*   **Severity**: **CRITICAL (BLOCKER)**
-*   **Root Cause**: Indentation misalignment in `run_falsification` and dictionary key assignment syntax errors in `provenance_data`.
-*   **Files Affected**: `trading_bot/agents/multi_agent_debate.py`
-*   **Technical Explanation**: Unindented lines inside `run_falsification` and missing colon separator on `agent_contributions` dict key in `provenance_data` prevented test collection.
-*   **Solution Implemented**: Cleaned indentation and fixed dictionary syntax, aligning with verified UCA V6 specification.
-*   **Verification Performed**: `poetry run pytest tests/agents/` passed 48/48 multi-agent test cases.
-*   **Remaining Risks**: None.
-
-### **DEFECT-UCA-2026-05**: Parallel Backtester AST Security Sandboxing
-*   **Component**: `trading_bot/distributed/parallel_backtester.py`
-*   **Severity**: **HIGH**
-*   **Root Cause**: Execution of dynamically compiled strategy code without AST security validation.
-*   **Files Affected**: `trading_bot/distributed/parallel_backtester.py`
-*   **Technical Explanation**: Strategy strings executed via `exec` could contain forbidden builtins or malicious calls.
-*   **Solution Implemented**: Integrated `SecureASTVisitor().validate_code(...)` from `trading_bot.core.security.sandbox` before executing dynamic strategies.
-*   **Verification Performed**: Security AST audit confirmed all dynamic executions pass through `SecureASTVisitor`.
-*   **Remaining Risks**: None.
-
-### **DEFECT-UCA-2026-06**: RiskManager Parenthesized List Unpacking Syntax Error
-*   **Component**: `risk/risk_manager.py`
-*   **Severity**: **CRITICAL (BLOCKER)**
-*   **Root Cause**: Unparenthesized list comprehension unpacking with trailing `or` statement causing Python `SyntaxError`.
-*   **Files Affected**: `risk/risk_manager.py`
-*   **Technical Explanation**: Line 390 in `get_risk_report` attempted to unpack `*[f"- {sym}: {limit:.2f}" ...] or ["- None"]`, which is invalid syntax in Python without enclosing parentheses.
-*   **Solution Implemented**: Enclosed the list comprehension and fallback expression in parentheses: `*( [f"- {sym}: {limit:.2f}" ...] or ["- None"] )`.
-*   **Verification Performed**: `python3 -m py_compile risk/risk_manager.py` returned 0 errors.
-*   **Remaining Risks**: None.
-
-### **DEFECT-UCA-2026-07**: Production Deployment Script Unexpected Indentation
-*   **Component**: `scripts/deployment/deploy_5star_production.py`
-*   **Severity**: **HIGH**
-*   **Root Cause**: Misplaced logger declaration interrupting method indentation inside `ProductionDeployment`.
-*   **Files Affected**: `scripts/deployment/deploy_5star_production.py`
-*   **Technical Explanation**: An unindented `logger = logging.getLogger(__name__)` was placed between method statements inside `start_monitoring()`, breaking AST parser indentation scoping.
-*   **Solution Implemented**: Re-aligned `start_monitoring()` and `run_trading_loop()` method blocks and removed misplaced logger assignment.
-*   **Verification Performed**: `python3 -m py_compile scripts/deployment/deploy_5star_production.py` compiled cleanly.
-*   **Remaining Risks**: None.
-
-### **DEFECT-UCA-2026-08**: Critical Fixes Script Unexpected Indentation
-*   **Component**: `scripts/fixes/auto_fix_critical_issues_v2.py`
-*   **Severity**: **HIGH**
-*   **Root Cause**: Unindented logger assignment placed directly inside `main()` body.
-*   **Files Affected**: `scripts/fixes/auto_fix_critical_issues_v2.py`
-*   **Technical Explanation**: `logger = logging.getLogger(__name__)` was positioned at zero indentation inside `def main()`, producing an `IndentationError`.
-*   **Solution Implemented**: Moved logger definition outside the function scope and re-indented `main()`.
-*   **Verification Performed**: `python3 -m py_compile scripts/fixes/auto_fix_critical_issues_v2.py` compiled cleanly.
-*   **Remaining Risks**: None.
-
-### **DEFECT-UCA-2026-09**: System Launcher Unexpected Indentation
-*   **Component**: `scripts/launchers/run_alphaalgo_5star.py`
-*   **Severity**: **HIGH**
-*   **Root Cause**: Misplaced logger definition and unindented dataframe instantiation.
-*   **Files Affected**: `scripts/launchers/run_alphaalgo_5star.py`
-*   **Technical Explanation**: Zero-indented lines inside `try...except` block in `main()` broke AST parsing.
-*   **Solution Implemented**: Corrected indentation for DataFrame creation and import blocks inside `main()`.
-*   **Verification Performed**: `python3 -m py_compile scripts/launchers/run_alphaalgo_5star.py` compiled cleanly.
-*   **Remaining Risks**: None.
-
-### **DEFECT-UCA-2026-10**: Blocking Time Sleep in Async Validation & PlotCode Routines
-*   **Component**: `trading_bot/core/validation.py`, `trading_bot/neuros_evolution/plotcode_integration.py`
-*   **Severity**: **MEDIUM**
-*   **Root Cause**: Synchronous `time.sleep()` used inside `async def` benchmark and interaction functions.
-*   **Files Affected**: `trading_bot/core/validation.py`, `trading_bot/neuros_evolution/plotcode_integration.py`
-*   **Technical Explanation**: Calling `time.sleep()` blocks the asyncio event loop, causing latency spikes and worker pool starvation.
-*   **Solution Implemented**: Replaced `time.sleep()` with `await asyncio.sleep()`.
-*   **Verification Performed**: Unit tests and py_compile verified non-blocking async execution.
-*   **Remaining Risks**: None.
-
----
-
-## 2. Monitored Issues
-
-### **MONITOR-UCA-2026-01**: FAISS Vector Indexing Fallback to NumPy
-*   **Component**: `trading_bot/world_model/experience_replay.py`
-*   **Severity**: **LOW**
-*   **Description**: Environment falls back to NumPy matrix operations when CPU-bound FAISS binary is omitted.
-*   **Impact**: Performance only; exact distance calculation remains identical.
-*   **Mitigation**: Fallback path tested and verified in UCA V5 suites.
+| Issue ID | Domain | Severity | Root Cause | Affected File(s) | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **ISSUE-001** | Risk Management | High | Parenthesized list comprehension unpacking syntax error. | `risk/risk_manager.py` | **RESOLVED** |
+| **ISSUE-002** | Operations | Medium | Unexpected indentation error in script definition. | `scripts/fixes/auto_fix_critical_issues_v2.py` | **RESOLVED** |
+| **ISSUE-003** | Deployment | High | Indentation/scoping error in deploy loop. | `scripts/deployment/deploy_5star_production.py` | **RESOLVED** |
+| **ISSUE-004** | Launchers | Medium | Indentation error in data generation block. | `scripts/launchers/run_alphaalgo_5star.py` | **RESOLVED** |
+| **ISSUE-005** | Validation / Benchmarks | High | Blocking `time.sleep` in async benchmark method. | `trading_bot/core/validation.py` | **RESOLVED** |
+| **ISSUE-006** | Realtime Dependencies | High | Sync `fix_package` blocking async loop. | `trading_bot/realtime_dependency_manager.py` | **RESOLVED** |
+| **ISSUE-007** | Security / AADS | Critical | Unsanitized `exec()` invocation without AST security check. | `trading_bot/aads/core/alpha_evolve_engine.py` | **RESOLVED** |
+| **ISSUE-008** | Security / Backtester | Critical | Unchecked strategy code `exec()` execution. | `trading_bot/distributed/parallel_backtester.py` | **RESOLVED** |
+| **ISSUE-009** | Security / Sandbox | Medium | Missing `validate_code` helper on `SecureASTVisitor`. | `trading_bot/core/security/sandbox.py` | **RESOLVED** |
+| **ISSUE-010** | Core Brain (CSC) | Medium | Silent exception swallowing in evidence/simulation. | `trading_bot/core/csc/controller.py` | **RESOLVED** |
+| **ISSUE-011** | Memory System (HMS) | Medium | Silent exception swallowing during reset schema save. | `trading_bot/core/hms/memory.py` | **RESOLVED** |
+| **ISSUE-012** | Security Credentials | Low | Silent exception swallowing during file decryption. | `trading_bot/security/secure_credentials.py` | **RESOLVED** |
+| **ISSUE-013** | Rate Limiter | High | Synchronous sleep in `wait_for_token_async`. | `trading_bot/utils/api_rate_limiter.py` | **RESOLVED** |
+| **ISSUE-014** | Resilience | Medium | Synchronous retry loop in circuit breaker. | `trading_bot/resilience/circuit_breaker.py` | **RESOLVED** |
+| **ISSUE-015** | Data Management | Medium | Synchronous background cleanup in shared memory manager. | `trading_bot/database/shared_memory_manager.py` | **RESOLVED** |
+| **ISSUE-016** | Brain Controller | High | Blocking sleep in central controller loop. | `trading_bot/brain/central_controller.py` | **RESOLVED** |
+| **ISSUE-017** | Brain Architecture | High | Synchronous loop delay in brain architecture. | `trading_bot/brain/brain_architecture.py` | **RESOLVED** |
+| **ISSUE-018** | COS Core | Medium | Blocking sleep in COS core execution loop. | `trading_bot/cos/cos_core.py` | **RESOLVED** |
+| **ISSUE-019** | Exception Handler | High | Synchronous sleep in async exception handler. | `trading_bot/core/exception_handler.py` | **RESOLVED** |
+| **ISSUE-020** | Liquidity Analysis | High | Blocking sleep in realtime liquidity streamer. | `trading_bot/analysis/realtime_liquidity.py` | **RESOLVED** |
+| **ISSUE-021** | Eternal Evolution | High | Blocking sleep in architecture evolution. | `trading_bot/eternal_evolution/architecture_evolution.py` | **RESOLVED** |
+| **ISSUE-022** | Distributed Systems | High | Blocking sleep in task distributor. | `trading_bot/distributed/task_distributor.py` | **RESOLVED** |
+| **ISSUE-023** | Self Coordinating AI | Critical | Unsandboxed `exec()` in sandbox executor. | `trading_bot/self_coordinating_ai/sandbox_executor.py` | **RESOLVED** |
+| **ISSUE-024** | Autonomous Organism | Critical | Unchecked `exec()` in sandbox environment. | `trading_bot/autonomous_research_organism/sandbox_environment.py` | **RESOLVED** |
+| **ISSUE-025** | Advanced AI | Critical | Unchecked `exec()` in code synthesis. | `trading_bot/advanced_ai/code_synthesis.py` | **RESOLVED** |
+| **ISSUE-026** | Survival Core | Medium | Bare exception swallowing in survival core. | `trading_bot/core/survival_core.py` | **RESOLVED** |
+| **ISSUE-027** | Error Recovery | Medium | Bare exception swallowing in error recovery. | `trading_bot/core/error_recovery.py` | **RESOLVED** |
+| **ISSUE-028** | Compute Budget | Medium | Bare exception swallowing in budget controller. | `trading_bot/autonomous_research_organism/compute_budget_controller.py` | **RESOLVED** |
+| **ISSUE-029** | Unified Approvals | Low | Bare exception swallowing in notifications. | `trading_bot/unified_approval/notification_system.py` | **RESOLVED** |
+| **ISSUE-030** | Safety Systems | High | Bare exception swallowing in connectivity monitor. | `trading_bot/safety/connectivity_monitor.py` | **RESOLVED** |
+| **ISSUE-031** | Integration | Medium | Bare exception swallowing in cTrader integration. | `trading_bot/ctrader/ctrader_integration.py` | **RESOLVED** |
+| **ISSUE-032** | Monitoring | Medium | Bare exception swallowing in live monitor. | `trading_bot/monitoring/live_monitor.py` | **RESOLVED** |
+| **ISSUE-033** | Operational Utilities | High | Mis-indented try block in autonomous operator. | `scripts/utilities/alphaalgo_autonomous_operator.py` | **RESOLVED** |
+| **ISSUE-034** | Indicator Calculations | Medium | Un-vectorized loop computation in liquidity heatmap. | `trading_bot/indicators/advanced_liquidity.py` | **RESOLVED** |
+| **ISSUE-035** | ML Model Monitoring | Medium | Un-vectorized metric computation in model monitor. | `trading_bot/ml/model_monitoring.py` | **RESOLVED** |
