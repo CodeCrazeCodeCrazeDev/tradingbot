@@ -3,18 +3,28 @@ import time
 import threading
 from typing import List, Dict, Any, Optional, Tuple, Set, Union
 """
-Hierarchical Memory System (HMS) - UCA V6 (July 2026)
-Upgraded memory system with SAGE Graph-Memory and AutoMem Metamemory.
+Hierarchical Memory System (HMS) - UCA V6 Authoritative Memory Substrate.
 
-Paper Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Selective fine-tuning parameter alignment.
-- arXiv:2607.00341 (DiscoLoop): Multi-hop reasoning hidden state persistence.
-- arXiv:2607.01224 (AutoMem): Active memory management as a cognitive skill.
-- arXiv:2605.12061 (SAGE): Self-evolving agentic graph memory substrate.
-- arXiv:2605.10813 (NanoResearch / ACPE): Memory-guided adaptive control policy engine.
-- arXiv:2605.20025 (AutoResearchClaw): Strategy pivot memory tracking.
-- arXiv:2605.17734 (HASP): Guardrail interaction memory logs.
-- arXiv:2605.21482 (S2L / DeepWeb-Bench): Skill-to-LoRA memory indexing.
+Upgraded memory substrate integrating SAGE Graph-Memory and AutoMem Metamemory.
+Implements the 8-tier architecture:
+1. Workspace Memory
+2. Episodic Memory
+3. Semantic Memory
+4. Procedural Memory
+5. Research Memory
+6. World Models Memory
+7. Institutional Memory
+8. Meta-Memory
+
+Research Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Selective memory token retention and entropy preservation.
+- arXiv:2607.00341 (DiscoLoop): Continuous-discrete state trajectory logging across loops.
+- arXiv:2607.01224 (AutoMem): Automated memory as a cognitive skill and metamemory optimization.
+- arXiv:2605.12061 (SAGE): Self-evolving graph-memory engine and multi-hop retrieval.
+- arXiv:2605.10813 (NanoResearch / RSEA): Immutable provenance hashing and ledger verification.
+- arXiv:2605.20025 (S2L / Search-to-Learn): Skill execution indexing and experience retrieval.
+- arXiv:2605.17734 (AutoResearchClaw / HASP): Execution trace persistence for self-healing loops.
+- arXiv:2605.21482 (DeepWeb-Bench): Real-time liquidity state recording and evidence anchoring.
 """
 
 import logging

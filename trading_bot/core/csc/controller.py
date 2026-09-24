@@ -1,16 +1,18 @@
 """
-Cognitive System Controller (CSC) - UCA V6
-Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
+Cognitive System Controller (CSC) - UCA V6 Strategic One-Brain Executive Controller.
 
-Paper Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Entropy-KL selective token fine-tuning and policy shift bounds.
-- arXiv:2607.00341 (DiscoLoop): Discrete embeddings and continuous hidden state loops for multi-hop reasoning.
-- arXiv:2607.01224 (AutoMem): Automated memory consolidation and cognitive skill learning.
-- arXiv:2605.12061 (SAGE): Multi-hop graph retrieval and evidence-based reasoning.
-- arXiv:2605.10813 (NanoResearch / ACPE): Adaptive control policy engine and dynamic policy selection.
-- arXiv:2605.20025 (AutoResearchClaw): Pivot/Refine self-healing control loops.
-- arXiv:2605.17734 (HASP): Dynamic guardrail interception and safety gating.
-- arXiv:2605.21482 (S2L / DeepWeb-Bench): Behavioral skill routing and long-horizon execution.
+Integrates the 12-stage Recursive Active Inference pipeline and serves as the single
+authoritative strategic controller in AlphaAlgo.
+
+Research Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Entropy-KL selective token masking and policy entropy preservation.
+- arXiv:2607.00341 (DiscoLoop): Continuous-discrete recurrent hidden state coupling and multi-hop reasoning.
+- arXiv:2607.01224 (AutoMem): Automated memory management as a cognitive skill.
+- arXiv:2605.12061 (SAGE): Self-evolving graph memory navigation and evidence retrieval.
+- arXiv:2605.10813 (NanoResearch / RSEA): Safe recursive self-improvement and monotonic evolution.
+- arXiv:2605.20025 (S2L / Search-to-Learn): Skill-to-LoRA behavioral routing and active search.
+- arXiv:2605.17734 (AutoResearchClaw / HASP): ProgramFunction guardrails and Pivot/Refine self-healing loops.
+- arXiv:2605.21482 (DeepWeb-Bench): Real-time liquidity benchmarks and environment state verification.
 """
 
 import numpy as np
