@@ -8,7 +8,7 @@ This document represents the repository-wide master audit report for the AlphaAl
 
 AlphaAlgo has been audited and verified under the **Unified Scientific Architecture (UCA-2026)**. The architecture integrates 16 state-of-the-art research domains (including Active Inference, Recursive Self-Improvement, Causal World Models, and Information Folding) into a single, cohesive, production-grade intelligence backbone.
 
-*   **Compilation Integrity**: 0 compilation or syntax errors across all active Python source files in `trading_bot/`.
+*   **Compilation Integrity**: 0 compilation or syntax errors across all active Python source files in the repository.
 *   **Tested Correctness**: 88/88 test cases pass with a 100% success rate across core agent, scientific, governance, SRE, and UCA V5 suites.
 *   **Production Concurrency**: High-concurrency stress tests and background daemon threads have been stabilized to prevent resource leaks and event loop contention.
 *   **Security Posture**: Repository-wide keyword and AST-level scans have been performed, enforcing AST sandboxing (`SecureASTVisitor`) and sanitized deserialization (`safe_pickle`).
