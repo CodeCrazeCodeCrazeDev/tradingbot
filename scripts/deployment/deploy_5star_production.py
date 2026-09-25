@@ -1,4 +1,3 @@
-import logging
 """
 Production deployment script for AlphaAlgo 5-Star system.
 Handles multi-symbol deployment with optimization and monitoring.
@@ -6,6 +5,7 @@ Handles multi-symbol deployment with optimization and monitoring.
 
 import asyncio
 import argparse
+import logging
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -170,10 +170,8 @@ class ProductionDeployment:
         # Start health check server in background
         import threading
 
-logger = logging.getLogger(__name__)
-
-health_thread = threading.Thread(target=self.health_check.start, daemon=True)
-health_thread.start()
+        health_thread = threading.Thread(target=self.health_check.start, daemon=True)
+        health_thread.start()
         
         # Start system monitor
         system_monitor = SystemMonitor(self.metrics)
@@ -188,7 +186,8 @@ health_thread.start()
         iteration = 0
         
         while True:
-            iteration += 1
+            try:
+                iteration += 1
                 
                 # Fetch market data for all symbols
                 market_data = await self._fetch_market_data()
@@ -223,6 +222,10 @@ health_thread.start()
             except KeyboardInterrupt:
                 logger.warning("Received shutdown signal")
                 break
+            except Exception as e:
+                logger.error(f"Error in trading loop: {e}")
+                await asyncio.sleep(5)
+
     async def _fetch_market_data(self):
         """Fetch market data for all symbols."""
         # Placeholder - implement actual data fetching
