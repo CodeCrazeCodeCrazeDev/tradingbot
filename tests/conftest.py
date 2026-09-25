@@ -63,7 +63,27 @@ def _tb_lazy_getattr(name):
             return _importlib.import_module(candidate)
         except Exception:
             continue
+    # Generated tests also reference CLASSES bare (``IQLAgent()``, ``VolatilityAnalyzer``)
+    # without importing them. Resolve CamelCase -> snake_case module names via the
+    # flat-map index built below, then pull the attribute off the canonical module.
+    # Unresolvable names still raise AttributeError -> file stays in the manifest.
+    if name[:1].isupper() and globals().get("_flat_map") is not None:
+        _build_flat_map()
+        snake = _re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", "_", name)
+        snake = _re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", snake).lower()
+        for dirpath in _flat_map.get(snake, []):
+            rel = Path(dirpath).relative_to(_tb_root)
+            canonical = "trading_bot." + ".".join(rel.parts) + "." + snake
+            try:
+                module = _importlib.import_module(canonical)
+            except Exception:
+                continue
+            obj = getattr(module, name, None)
+            if obj is not None:
+                return obj
     raise AttributeError(f"module 'builtins' has no attribute {name!r}")
+
+import re as _re
 
 builtins.__getattr__ = _tb_lazy_getattr
 
@@ -143,12 +163,31 @@ collect_ignore = ["_quarantine"]
 # Note: tests/core/test_dependency_manager.py is listed — it performs REAL
 # pip installs (torchvision, ta-lib) during test runs.
 _known_broken_manifest = Path(__file__).parent / "known_broken_merge.txt"
+_known_broken_paths: frozenset = frozenset()
 if _known_broken_manifest.exists():
-    collect_ignore += [
-        line.strip()
+    # Set-membership hook below replaces ``collect_ignore`` for the manifest:
+    # pytest's builtin ignore check compares every collected node against every
+    # entry with Path.__eq__ — 1,677 entries x ~3,200 files is minutes of pure
+    # CPU. A normalized string set makes it O(depth) per node.
+    _base = Path(__file__).parent
+    _known_broken_paths = frozenset(
+        os.path.normcase(str((_base / line.strip()).resolve()))
         for line in _known_broken_manifest.read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.startswith("#")
-    ]
+    )
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_ignore_collect(collection_path, config):
+    if not _known_broken_paths:
+        return None
+    p = os.path.normcase(str(collection_path))
+    if p in _known_broken_paths:
+        return True
+    for parent in collection_path.parents:
+        if os.path.normcase(str(parent)) in _known_broken_paths:
+            return True
+    return None
 
 # Configure pytest-asyncio
 pytest_plugins = ('pytest_asyncio',)

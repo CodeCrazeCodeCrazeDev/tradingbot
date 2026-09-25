@@ -26,6 +26,7 @@ async def test_walk_forward_runner_emits_oos_provenance() -> None:
     result = await runner("strategy", {})
 
     assert result["evidence_source"] == "chronological_walk_forward"
-    assert result["promotion_eligible"] is True
+    assert result["promotion_eligible"] is False
+    assert "sharpe_ratio" not in result
     assert result["oos_score"] == 0.2
     assert result["provenance"]["test_split"] == "chronological_oos"

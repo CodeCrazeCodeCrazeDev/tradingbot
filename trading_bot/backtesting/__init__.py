@@ -15,11 +15,14 @@ try:
         InstitutionalBacktestResult
     )
     from .backtester import (
-        BacktestResult,
+        # .rigorous_backtest.BacktestResult is the richer canonical result and
+        # keeps the public ``BacktestResult`` name; expose this one explicitly.
+        BacktestResult as BasicBacktestResult,
         Backtester,
         Direction,
         Trade
     )
+    from .backtesting_engine import BacktestingEngine
     from .complete_backtest_runner import BacktestMetrics, CompleteBacktestRunner
     from .rigorous_backtest import (
         BacktestResult,
@@ -44,6 +47,7 @@ __all__ = [
     'BacktestResults',
     'BacktestTrade',
     'Backtester',
+    'BasicBacktestResult',
     'CompleteBacktestRunner',
     'Direction',
     'MonteCarloResult',
@@ -62,17 +66,3 @@ __all__ = [
     'InstitutionalTrade',
     'InstitutionalBacktestResult'
 ]
-class BacktestingEngine:
-    """Stub implementation for BacktestingEngine."""
-    def __init__(self, *args, **kwargs):
-        self.config = kwargs.get('config', {})
-        self.running = False
-    
-    async def start(self):
-        self.running = True
-    
-    async def stop(self):
-        self.running = False
-    
-    def get_status(self):
-        return {"running": self.running}

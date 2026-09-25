@@ -474,10 +474,10 @@ class CognitiveSystemController:
             }
 
         return {
-            "status": "completed",
-            "promoted": True,
+            "status": "triaged_for_research",
+            "promoted": False,
             "triage_score": triage_score,
-            "trace": ["observe", "triage", "propose", "verify", "archive"]
+            "trace": ["observe", "triage"]
         }
 
     def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:

@@ -1,6 +1,9 @@
-"""
-api package
-"""
+"""API compatibility layer over the modular-monolith read models."""
+
+import warnings
+
+from trading_bot.foundation.runtime import ModularMonolithRuntime
+from trading_bot.interfaces.read_models import ModularMonolithReadModel
 
 try:
     from .rate_limiter import (
@@ -55,23 +58,38 @@ class APIManager:
 
 
 class APIOrchestrator:
-    """Stub for APIOrchestrator."""
+    """One-wave read-only compatibility facade over the runtime boundary."""
+
     def __init__(self, *args, **kwargs):
-        self.config = kwargs.get('config', {})
-        import warnings
+        self.config = kwargs.get("config", {})
         warnings.warn(
-            "APIOrchestrator is a merge-generated stub and is deprecated. "
-            "Route orchestration through CognitiveSystemController "
-            "(trading_bot.core.csc.controller).",
-            DeprecationWarning, stacklevel=2,
+            "APIOrchestrator is a compatibility facade; use ModularMonolithRuntime and read models.",
+            DeprecationWarning,
+            stacklevel=2,
         )
+        self.runtime = ModularMonolithRuntime(self.config)
+        self.read_model = ModularMonolithReadModel(self.runtime)
         self.running = False
-    
+
     async def start(self):
+        await self.runtime.start()
         self.running = True
-    
+
     async def stop(self):
+        await self.runtime.stop()
         self.running = False
-    
+
     def get_status(self):
-        return {"running": self.running}
+        return {**self.read_model.status(), "running": self.running}
+
+    async def health(self):
+        return await self.read_model.health()
+
+    async def portfolio(self, account_id: str = "runtime"):
+        return await self.read_model.portfolio(account_id)
+
+    async def dashboard_snapshot(self, account_id: str = "runtime"):
+        return await self.read_model.dashboard_snapshot(account_id)
+
+    async def report_snapshot(self, account_id: str = "runtime"):
+        return await self.read_model.report_snapshot(account_id)

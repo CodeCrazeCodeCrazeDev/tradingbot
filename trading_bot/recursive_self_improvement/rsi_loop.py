@@ -58,6 +58,10 @@ class HumanGuidedRecursiveImprovementLoop:
         evolution_gate: Any = None,
         rollback_manager: Any = None,
         memory: Any = None,
+        contract: Optional[Mapping[str, Any]] = None,
+        contract_signature: str = "",
+        operator_public_key: Any = None,
+        verifier_public_key: Any = None,
     ) -> None:
         self.observer = observer
         self.proposer = proposer
@@ -68,6 +72,10 @@ class HumanGuidedRecursiveImprovementLoop:
         self.evolution_gate = evolution_gate
         self.rollback_manager = rollback_manager
         self.memory = memory
+        self.contract = contract
+        self.contract_signature = contract_signature
+        self.operator_public_key = operator_public_key
+        self.verifier_public_key = verifier_public_key
         self.archive: Dict[str, ImprovementGenome] = {}
         self.evidence: Dict[str, EvaluationEvidence] = {}
         self.decisions: List[PromotionDecision] = []
@@ -76,23 +84,48 @@ class HumanGuidedRecursiveImprovementLoop:
         """Run observe -> propose -> dream/replay -> evaluate -> approve -> stage."""
         decisions: List[PromotionDecision] = []
         selected = list(domains or ImprovementDomain)
+        remaining = max(0, self.policy.max_candidates_per_cycle)
         for domain in selected:
+            if remaining == 0:
+                break
             baseline = await self._call(self.observer, domain)
             proposals = await self._call(self.proposer, domain, baseline)
             if isinstance(proposals, ImprovementGenome):
                 proposals = [proposals]
-            for genome in list(proposals or [])[: self.policy.max_candidates_per_cycle]:
+            for genome in list(proposals or [])[:remaining]:
+                remaining -= 1
                 if genome.domain is not domain:
                     decisions.append(self._reject(genome, "domain mismatch"))
                     continue
                 self.archive[genome.genome_id] = genome
                 raw_evidence = await self._call(self.evaluator, genome, baseline)
-                evidence = self._coerce_evidence(genome, raw_evidence)
-                self.evidence[genome.genome_id] = evidence
-                decision = await self._decide(genome, evidence, baseline)
+                from .evaluation import EvaluationEngine
+                signed_report = raw_evidence if isinstance(raw_evidence, Mapping) else {}
+                verdict = EvaluationEngine().evaluate_verified(
+                    genome, self.contract or {}, self.contract_signature, self.operator_public_key,
+                    signed_report.get("report", {}), signed_report.get("signature", ""),
+                    self.verifier_public_key,
+                )
+                if self.memory is None:
+                    if verdict.get("status") == "eligible_for_operator_review":
+                        verdict = {"status": "insufficient_evidence", "reason": "durable experiment ledger unavailable",
+                                   "promotion_eligible": False}
+                else:
+                    try:
+                        trial_id = signed_report.get("report", {}).get("trial_id", genome.genome_id)
+                        self.memory.record_experiment(trial_id, genome.domain.value, genome.objective,
+                                                      dict(genome.change_set),
+                                                      {"contract_id": (self.contract or {}).get("contract_id"),
+                                                       "genome_id": genome.genome_id})
+                        self.memory.update_experiment_result(trial_id, verdict["status"], 0.0, verdict)
+                    except Exception:
+                        verdict = {"status": "insufficient_evidence", "reason": "trial replay or ledger write failure",
+                                   "promotion_eligible": False}
+                decision = PromotionDecision(
+                    genome_id=genome.genome_id, status=verdict["status"],
+                    reason=verdict["reason"], evidence=verdict,
+                )
                 decisions.append(decision)
-                if decision.approved and not self.policy.dry_run and self.promoter is not None:
-                    await self._call(self.promoter, genome, evidence)
         self.decisions.extend(decisions)
         return decisions
 
@@ -102,53 +135,7 @@ class HumanGuidedRecursiveImprovementLoop:
         evidence: EvaluationEvidence,
         baseline: Mapping[str, Any],
     ) -> PromotionDecision:
-        violations = list(evidence.violations)
-        if not evidence.safety_passed:
-            violations.append("safety evaluator failed")
-        if self.policy.require_deterministic_replay and not evidence.deterministic_replay_passed:
-            violations.append("deterministic replay failed")
-        if self.policy.require_data_provenance and not evidence.data_provenance:
-            violations.append("missing data provenance")
-        if evidence.candidate_gain < self.policy.min_candidate_gain:
-            violations.append("candidate gain below threshold")
-        if evidence.oos_gain < self.policy.min_oos_gain:
-            violations.append("out-of-sample gain is not positive")
-        if evidence.robustness_metrics.get("score", 0.0) < self.policy.min_robustness:
-            violations.append("robustness below threshold")
-        baseline_dd = float(baseline.get("max_drawdown", 0.0))
-        candidate_dd = float(evidence.oos_metrics.get("max_drawdown", baseline_dd))
-        if candidate_dd > baseline_dd + self.policy.max_drawdown_increase:
-            violations.append("drawdown regression")
-
-        if self.evolution_gate is not None and not await self._evolution_gate(genome, evidence):
-            violations.append("EvolutionGate rejected candidate")
-        if violations:
-            return self._reject(genome, "; ".join(dict.fromkeys(violations)), evidence)
-
-        if self.policy.require_human_approval:
-            if self.approver is None:
-                return self._reject(genome, "human approval is required but no approver is configured", evidence)
-            approved = bool(await self._call(self.approver, genome, evidence))
-            if not approved:
-                return self._reject(genome, "human approval rejected or unavailable", evidence)
-
-        snapshot_id = ""
-        if self.rollback_manager is not None:
-            snapshot_id = self.rollback_manager.create_snapshot(
-                genome.domain.value,
-                genome.genome_id,
-                dict(genome.change_set),
-                metadata={"fingerprint": genome.fingerprint},
-            )
-        return PromotionDecision(
-            genome_id=genome.genome_id,
-            status="approved",
-            reason="all safety, replay, OOS, robustness, and human gates passed",
-            requires_human_approval=self.policy.require_human_approval,
-            human_approved_by="human_gate",
-            rollback_snapshot_id=snapshot_id,
-            evidence=evidence.to_dict(),
-        )
+        return self._reject(genome, "legacy unverified evaluation path disabled", evidence)
 
     async def _evolution_gate(self, genome: ImprovementGenome, evidence: EvaluationEvidence) -> bool:
         validator = getattr(self.evolution_gate, "validate_improvement", None)

@@ -27,6 +27,7 @@ from trading_bot.core.immutable_shield import shield
 from trading_bot.core.unified_event_bus import decision_bus
 from trading_bot.core.unified_registry import registry
 from trading_bot.data.normalizer import MarketDataNormalizer
+from trading_bot.foundation.capability_registry import CapabilityRegistry
 from trading_bot.strategies.registry import StrategyRegistry
 
 logger = logging.getLogger(__name__)
@@ -62,6 +63,7 @@ class UnifiedTradingBot:
         self._price_window: deque = deque(maxlen=int(self.config.get("rsi_window", 64)))
         self.data_normalizer = MarketDataNormalizer()
         self.strategy_registry = StrategyRegistry()
+        self.capability_registry = CapabilityRegistry()
         self._shutdown = asyncio.Event()
         self.running = False
         self.layers: Dict[str, Any] = {}
@@ -127,6 +129,7 @@ class UnifiedTradingBot:
         # 5. Data foundation and capability registries
         registry.register("market_data_normalizer", self.data_normalizer, "Data", overwrite=True)
         registry.register("strategy_registry", self.strategy_registry, "Strategy", overwrite=True)
+        registry.register("capability_registry", self.capability_registry, "Intelligence", overwrite=True)
         self.skill_router = SkillRouter()
         self._register_signal_skills()
         registry.register("skill_router", self.skill_router, "Intelligence", overwrite=True)
@@ -142,6 +145,11 @@ class UnifiedTradingBot:
 
             debate_capability = DebateCapabilityAdapter(
                 MultiAgentDebateSystem(self.config.get("debate_config", {}))
+            )
+            self.capability_registry.register(
+                debate_capability,
+                domain="debate",
+                metadata={"advisory_only": True},
             )
             registry.register("debate_capability", debate_capability, "Intelligence", overwrite=True)
 

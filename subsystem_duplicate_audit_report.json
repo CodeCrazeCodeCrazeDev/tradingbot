@@ -6,10 +6,6 @@
     ],
     "deprecated_occurrences": [
       {
-        "file": "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\__init__.py",
-        "class": "MasterOrchestrator"
-      },
-      {
         "file": "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\autonomous_superintelligence\\meta_orchestrator.py",
         "class": "MetaOrchestrator"
       },
@@ -31,6 +27,10 @@
       },
       {
         "file": "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\orchestration\\master_orchestrator.py",
+        "class": "MasterOrchestrator"
+      },
+      {
+        "file": "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\orchestrator\\master_orchestrator.py",
         "class": "MasterOrchestrator"
       },
       {

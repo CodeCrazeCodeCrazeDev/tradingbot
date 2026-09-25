@@ -197,3 +197,32 @@ Recommend `AlphaAlgoCognitiveBrain` (`cognition/`) as the **runtime brain** — 
 - `COGNITIVE_BRAIN_HOSTILE_AUDIT_REPORT.md` is the most empirically grounded doc (real metrics, ablations, stated limits) — but its "production-ready" verdict predates the merge damage.
 - `ARCHITECTURE_GAP_MATRIX.md` component statuses ("partially implemented") proved accurate where checked — usable as the gap baseline.
 - Recommendation: add a `VERIFIED_AT` + commit-hash header to audit docs; several reports assert states that were already false when written.
+
+---
+
+## 8. Post-merge import-performance + regression repair (this session)
+
+Parallel PR merges (#424/#431 research-paper integration, etc.) introduced an
+eager-import chain and a stub-shadowing regression. Fixed:
+
+- `trading_bot/__init__.py`: PEP 562 lazy export map — `import trading_bot`
+  68s -> 0.19s; all `__all__` names resolve on first access.
+- `trading_bot/unified_bot.py`: heavy service imports (CSC, risk.service ->
+  sklearn chain, world_model, execution) deferred into `start()` — module
+  import 70.8s -> ~2s.
+- `trading_bot/data/__init__.py`: lazy exports — `.mt5` (aiohttp) and
+  `.validate`/`.adapters` (pandas) no longer eager (~14s edge removed).
+- `trading_bot/core/__init__.py`, `trading_bot/integration/__init__.py`:
+  lazy exports; `chainofthoughtreasoner` compat now via ModuleMapRedirector.
+- REGRESSION FIXED: merge-added `cognition/alpha_algo_cognitive_brain.py`
+  (68-line paper stub, `process_market_update`) shadowed the canonical
+  `orchestrator.AlphaAlgoCognitiveBrain` via `cognition/__init__.py` —
+  restored; stub file retained but no longer exported as the brain.
+- `tests/conftest.py`: eager torch import removed (lazy builtins shim),
+  `find_spec` instead of eager `import trading_bot`, flat-map package walk
+  deferred + depth-bounded, dunder fast-fail, and the 1,677-entry
+  `known_broken_merge.txt` manifest moved from `collect_ignore` (O(N x M)
+  pathlib compares) to a set-membership `pytest_ignore_collect` hook.
+
+Verified: 50/50 cognition+feeds tests pass WITH conftest (~46s end-to-end);
+`main.py --cycles 2` runs the full UnifiedTradingBot pipeline cleanly.

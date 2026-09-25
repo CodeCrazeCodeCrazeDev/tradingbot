@@ -41,15 +41,24 @@ logger = logging.getLogger("trading_bot.agents.multi_agent_debate")
 def sys_git_commit() -> str:
     try:
         return (
-            subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL)
+            subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL, timeout=5
+            )
             .decode("ascii")
             .strip()
         )
     except Exception:
         return "ba46e82"
 
+_GIT_COMMIT_CACHE: Optional[str] = None
+
 def get_git_commit() -> str:
-    return sys_git_commit()
+    # The commit cannot change mid-process; shelling out per debate call
+    # dominates latency on slow filesystems.
+    global _GIT_COMMIT_CACHE
+    if _GIT_COMMIT_CACHE is None:
+        _GIT_COMMIT_CACHE = sys_git_commit()
+    return _GIT_COMMIT_CACHE
 
 
 # -----------------------------------------------------------------------------
@@ -246,7 +255,8 @@ class DebateResult:
     consensus_level: float
     dissenting_views: List[str]
     provenance: Dict[str, Any] = field(default_factory=dict)
-    
+    disagreement_map: Dict[str, float] = field(default_factory=dict)
+
     # Canonical DebateResult Interface Contract (Institutional Upgrades)
     decision: Optional[TradeAction] = None
     consensus_score: float = 0.5

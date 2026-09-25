@@ -95,6 +95,7 @@ from .tool_registry import ToolRegistry
 from .memory_system import MemorySystem
 from .self_play_loop import SelfPlayLoop
 from .self_coordinating_core import SelfCoordinatingCore
+from .swarm.usis import UnifiedSwarmIntelligenceSystem
 from trading_bot.world_model.latent_dynamics import WorldModel
 
 logger = logging.getLogger(__name__)
@@ -248,6 +249,12 @@ class IntegratedAgentSystem:
 
         # 9b. Meta-Orchestrator (self-scaffolding task workflows)
         self.meta_orchestrator = MetaOrchestrator(config=self.config)
+
+        # 9c. Unified Swarm Intelligence System (USIS)
+        self.swarm_system = UnifiedSwarmIntelligenceSystem(
+            self.agent_registry,
+            self.config.get('swarm', {})
+        )
 
         # 10. Self-Coordinating Core (Advanced Multi-Agent Coordination)
         self.coordination_core = SelfCoordinatingCore(
@@ -585,6 +592,11 @@ class IntegratedAgentSystem:
 
         logger.info(f"Integrated System executing task: {task}")
 
+        # Swarm-specific tasks route to USIS (returns direction/consensus/dominant_factors)
+        if context.get('use_swarm') or 'swarm' in task.lower():
+            logger.info(f"IAS routing task to USIS: {task}")
+            return await self.swarm_system.analyze(task, context)
+
         from .adapters import ReasoningTrace, ResponseFormatter
         start_time = datetime.now()
         obs_trace = {}
@@ -690,7 +702,7 @@ class IntegratedAgentSystem:
 
             return {
                 'success': trace.success,
-                'answer': trace.final_answer,
+                'answer': trace.final_answer or final_answer,
                 'reasoning': trace.to_string(),
                 'iterations': len(trace.steps)
             }

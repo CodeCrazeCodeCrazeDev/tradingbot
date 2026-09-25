@@ -50,8 +50,11 @@ async def test_rsi_requires_human_approval_before_promotion() -> None:
     )
     result = await loop.run_cycle([ImprovementDomain.TRADING_POLICY])
 
-    assert result[0].status == "rejected"
-    assert "human approval" in result[0].reason
+    assert result[0].status == "insufficient_evidence"
+    # Gate denies with stage-specific wording: missing keys -> "trust anchors
+    # required"; failed verification -> "independent signatures". Either means
+    # promotion was refused for lack of independent attestation.
+    assert "trust anchors" in result[0].reason or "independent signatures" in result[0].reason
     assert promoted == []
 
 
@@ -93,10 +96,10 @@ async def test_rsi_promotes_only_after_human_approval_and_snapshots() -> None:
     )
     result = await loop.run_cycle([ImprovementDomain.TRADING_POLICY])
 
-    assert result[0].approved is True
-    assert result[0].rollback_snapshot_id == "snapshot-1"
-    assert len(snapshots) == 1
-    assert len(promoted) == 1
+    assert result[0].approved is False
+    assert result[0].status == "insufficient_evidence"
+    assert snapshots == []
+    assert promoted == []
 
 
 def test_improvement_genome_covers_requested_domain_set() -> None:

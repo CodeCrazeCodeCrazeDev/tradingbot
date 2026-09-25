@@ -4,11 +4,11 @@ Protocol:
   1. Chronological split of real OHLCV history (TRAIN | TEST).
   2. TRAIN warmup: cycles run normally; realized outcomes feed the
      calibrator (in-sample fit of Platt/isotonic).
-  3. TEST: strict out-of-sample. For every authorized trade a position is
-     simulated (entry at bar close, exit at horizon close or intrabar
-     stop, whichever comes first). The realized outcome is scored
-     against the cycle's predicted probability *before* it is fed into
-     the calibrator — so ECE measures pre-update calibration honestly.
+  3. TEST: chronological diagnostic only. For every authorized trade a
+     position is simulated (entry at bar close, exit at horizon close or
+     intrabar stop, whichever comes first). TRAIN outcomes update the
+     calibrator only after their horizon; TEST outcomes are never fed back.
+     This replay omits executable fills/costs and is not promotion evidence.
   4. Report: win rate, mean/total return, max drawdown of the equity
      curve, abstain rate, drift events, raw-vs-calibrated ECE.
 
@@ -163,8 +163,14 @@ class WalkForwardEvaluator:
         cal_pairs: List[Tuple[float, bool]] = []
         equity = [1.0]
         peak = 1.0
+        pending_outcomes: List[Tuple[int, float, bool]] = []
 
         for i in range(len(df)):
+            if feed_calibration:
+                due = [outcome for outcome in pending_outcomes if outcome[0] <= i]
+                pending_outcomes = [outcome for outcome in pending_outcomes if outcome[0] > i]
+                for _, probability, outcome in due:
+                    self.brain.record_outcome(probability, outcome)
             row = df.iloc[i]
             bar = {"open": float(row["open"]), "high": float(row["high"]),
                    "low": float(row["low"]), "close": float(row["close"]),
@@ -195,7 +201,7 @@ class WalkForwardEvaluator:
                 rep.drift_events += 1
 
             action = res["authorized_action"]
-            if action not in ("BUY", "SELL"):
+            if action not in ("BUY", "SELL") or i + self.horizon >= len(df):
                 continue
             sim = self._simulate_trade(df, i, action, stop if action == proposal else None)
             if sim is None:
@@ -212,7 +218,7 @@ class WalkForwardEvaluator:
                 stopped_out=stopped, correct=correct,
             ))
             if feed_calibration:
-                self.brain.record_outcome(raw_p, correct)
+                pending_outcomes.append((i + self.horizon, raw_p, correct))
 
             equity.append(equity[-1] * (1.0 + ret * 0.01))  # 1% fixed fractional
             peak = max(peak, equity[-1])
@@ -234,9 +240,10 @@ class WalkForwardEvaluator:
         df = self.load_ohlcv(db_path, symbol)
         cut = int(len(df) * self.train_frac)
         train_df, test_df = df.iloc[:cut].reset_index(drop=True), df.iloc[cut:].reset_index(drop=True)
+        self._last = {}
         logger.info("Walk-forward: %d bars total | train %d | test %d", len(df), len(train_df), len(test_df))
         train = self._run_split(train_df, symbol, "TRAIN(warmup)", feed_calibration=True)
-        test = self._run_split(test_df, symbol, "TEST(OOS)", feed_calibration=True)
+        test = self._run_split(test_df, symbol, "TEST(OOS)", feed_calibration=False)
         return {"train": train, "test": test}
 
 

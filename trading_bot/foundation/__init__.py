@@ -1,5 +1,6 @@
 """Stable AlphaAlgo domain contracts and adapter ports."""
 
+from .capability_registry import CapabilityRegistration, CapabilityRegistry
 from .contracts import (
     ApprovalDecision,
     AuditEvent,
@@ -40,6 +41,8 @@ from .ports import (
 
 __all__ = [
     "AgentCapabilityPort",
+    "CapabilityRegistration",
+    "CapabilityRegistry",
     "ApprovalDecision",
     "AuditEvent",
     "BrokerAdapter",

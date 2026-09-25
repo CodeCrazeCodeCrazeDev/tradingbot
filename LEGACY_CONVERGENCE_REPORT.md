@@ -87,7 +87,15 @@ registration for signal-only strategy capabilities. Added the opt-in
 `DebateCapabilityAdapter` so legacy multi-agent debate returns advisory evidence
 only and cannot authorize risk or execution. Research/evaluation convergence
 now requires an injected deterministic simulation runner; missing runners fail
-closed and explicitly enabled synthetic fallback is non-promotable.
+closed and explicitly enabled synthetic fallback is non-promotable. Added
+`WalkForwardSimulationRunner` to connect ExperimentManager to chronological
+TRAIN/OOS evaluation with provenance and calibration metrics. Added
+`PairedStrategyReplay` for costed, paired, diagnostic-only parameter replay;
+it cannot produce promotion evidence by itself. Wave 7 started
+with `ModularMonolithReadModel` and an API compatibility facade exposing only
+health, graph, portfolio, dashboard, reporting, and status projections. The root `main.py` CLI now
+constructs `ModularMonolithRuntime` directly and analysis-mode synthetic smoke
+completed through the canonical graph with the kill switch rejecting capital.
 
 ## Next wave
 

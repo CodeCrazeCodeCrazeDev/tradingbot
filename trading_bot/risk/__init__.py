@@ -16,10 +16,11 @@ except ImportError as e:
     # MASTER_risk_manager not available
     pass
 
-# advanced_risk_manager
+# advanced_risk_manager — compatibility stub; the quantum_risk_manager
+# implementation below is the real class bound to ``AdvancedRiskManager``.
 try:
     from .advanced_risk_manager import (
-        AdvancedRiskManager,
+        AdvancedRiskManager as CompatAdvancedRiskManager,
     )
 except ImportError as e:
     # advanced_risk_manager not available
@@ -206,6 +207,7 @@ __all__ = [
     'CanonicalRiskService',
     'LegacyRiskPolicyAdapter',
     'CircuitBreakerManager',
+    'CompatAdvancedRiskManager',
     'CompleteRiskSystem',
     'CorrelationManager',
     'DrawdownManager',

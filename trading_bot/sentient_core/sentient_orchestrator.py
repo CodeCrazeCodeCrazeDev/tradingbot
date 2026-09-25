@@ -14,6 +14,7 @@ Coordinates all sentient systems:
 import asyncio
 import json
 import threading
+import warnings
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum, auto
@@ -194,6 +195,14 @@ class SentientOrchestrator:
         if self.is_running:
             return
 
+        warnings.warn(
+            "SentientOrchestrator is a legacy compatibility surface, not an "
+            "orchestration authority: the canonical production loop is "
+            "CognitiveSystemController via ModularMonolithRuntime/"
+            "UnifiedTradingBot (see ARCHITECTURE_COMPONENT_MANIFEST.json).",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         logger.info("Starting SentientOrchestrator...")
         self.is_running = True
         self.start_time = datetime.now()

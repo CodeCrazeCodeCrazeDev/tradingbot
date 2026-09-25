@@ -23,11 +23,8 @@ from trading_bot.recursive_self_improvement.governance_bridge import RSIGovernan
 from trading_bot.core_agent_system.governance_system import GovernanceSystem
 
 @pytest.fixture
-def rsi_setup():
-    test_dir = "test_rsi_pytest"
-    if os.path.exists(test_dir):
-        shutil.rmtree(test_dir)
-    os.makedirs(test_dir)
+def rsi_setup(tmp_path):
+    test_dir = str(tmp_path)
 
     memory = ImprovementMemory(db_path=f"{test_dir}/memory.db")
     evaluation = EvaluationEngine()
@@ -41,7 +38,6 @@ def rsi_setup():
 
     yield engine, memory, evaluation, exp_manager, rollback, gov_bridge, optimizer
 
-    shutil.rmtree(test_dir)
 
 @pytest.mark.asyncio
 async def test_full_improvement_cycle(rsi_setup):
@@ -74,7 +70,7 @@ async def test_full_improvement_cycle(rsi_setup):
     assert "strategy" in domains
     assert "resource" in domains
 
-    # Verify deployment occurred (mock simulation returns improvement)
+    # Verify deployment did not occur without independent promotion evidence
     deployments = []
     import sqlite3
     with sqlite3.connect(memory.db_path) as conn:
@@ -83,8 +79,7 @@ async def test_full_improvement_cycle(rsi_setup):
         cursor.execute("SELECT * FROM deployments")
         deployments = [dict(row) for row in cursor.fetchall()]
 
-    assert len(deployments) > 0
-    assert deployments[0]["domain"] == "strategy"
+    assert deployments == []
 
 @pytest.mark.asyncio
 async def test_meta_optimizer_learning(rsi_setup):

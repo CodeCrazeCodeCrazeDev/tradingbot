@@ -54,6 +54,7 @@
         "trading_bot/core/execution_bridge.py",
         "trading_bot/execution/trade_executor.py"
       ],
+      "legacy_set_summary": "58 additional execution-side adapter modules (live/paper executors, TWAP/VWAP/iceberg algorithms, broker-specific connectors) remain inside the execution boundary; only service.py is runtime-reachable",
       "status": "paper_runtime_wired_live_opt_in",
       "reference_adapter": "PaperBrokerAdapter",
       "legacy_adapter": "LegacyBrokerAdapter",
@@ -101,14 +102,54 @@
       "owner": "DebateCapabilityAdapter",
       "path": "trading_bot/agents/capability_adapter.py",
       "legacy_source": "trading_bot/agents/multi_agent_debate.py",
+      "registry": "trading_bot/foundation/capability_registry.py::CapabilityRegistry",
       "status": "advisory_only_opt_in",
       "rule": "Legacy debate may return evidence only; it cannot authorize risk or execution."
+    },
+    "backtesting_family": {
+      "owner": "RigorousBacktester",
+      "path": "trading_bot/backtesting/rigorous_backtest.py",
+      "research_runner": "trading_bot/evaluation/runner.py::WalkForwardSimulationRunner",
+      "legacy_set": [
+        "trading_bot/backtesting/backtester.py",
+        "trading_bot/backtesting/advanced_backtester.py",
+        "trading_bot/backtesting/backtesting_engine.py",
+        "trading_bot/backtesting/strategy_backtester.py",
+        "trading_bot/backtesting/complete_backtest_runner.py",
+        "trading_bot/backtesting/replay.py",
+        "trading_bot/backtesting/simulator_validator.py"
+      ],
+      "status": "research_only_not_runtime_reachable",
+      "rule": "Backtesters produce evidence only; no backtesting module may reach broker execution paths. Simulated order calls must target in-memory engine objects, and promotion evidence requires the deterministic research runner."
+    },
+    "orchestrator_fleet": {
+      "owner": "CognitiveSystemController via UnifiedTradingBot",
+      "paths": [
+        "trading_bot/core/csc/controller.py",
+        "trading_bot/unified_bot.py"
+      ],
+      "legacy_set_summary": "55 orchestrator/controller modules across 30+ subpackages classified compatibility_facade or adapter; none are runtime-reachable",
+      "loop_starters_flagged": [
+        "trading_bot/orchestration/master_orchestrator.py",
+        "trading_bot/orchestration/service_managers.py",
+        "trading_bot/sentient_core/sentient_orchestrator.py"
+      ],
+      "status": "single_authority_enforced_by_reachability",
+      "rule": "No legacy orchestrator may start a production trading loop, own lifecycle, or authorize capital movement; they remain compatibility facades until wave consolidation."
     },
     "research_evaluator": {
       "owner": "ExperimentManager with injected simulation_runner",
       "path": "trading_bot/recursive_self_improvement/experiment_manager.py",
+      "runner": "trading_bot/evaluation/runner.py::WalkForwardSimulationRunner",
       "status": "deterministic_runner_required",
       "rule": "Unmarked random/mock metrics cannot create promotion evidence; synthetic fallback is explicitly non-promotable."
+    },
+    "read_model_interfaces": {
+      "owner": "ModularMonolithReadModel",
+      "path": "trading_bot/interfaces/read_models.py",
+      "adapters": "trading_bot/interfaces/adapters.py",
+      "status": "read_only_runtime_facade_ready",
+      "rule": "Interfaces expose health, graph, portfolio, dashboard, reporting, and notification projections without domain authority or broker access."
     },
     "recursive_self_improvement": {
       "owner": "HumanGuidedRecursiveImprovementLoop",

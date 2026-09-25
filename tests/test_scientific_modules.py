@@ -174,11 +174,11 @@ async def test_csc_safety_and_self_improvement():
 
     result = await csc.execute_self_improvement_loop(obs)
 
-    assert result["status"] == "completed"
-    assert result["promoted"] is True
+    assert result["status"] == "triaged_for_research"
+    assert result["promoted"] is False
     assert result["triage_score"] > 5.0
     assert "observe" in result["trace"]
-    assert "archive" in result["trace"]
+    assert "verify" not in result["trace"]
 
     # Test dropped triage path
     obs_low = {"impact": 0.1, "confidence": 0.1, "cost": 0.9}

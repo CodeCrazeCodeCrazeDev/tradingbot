@@ -111,7 +111,8 @@ class RecursiveSelfImprovementEngine:
         """
         Deploy an approved improvement after governance checks.
         """
-        logger.info(f"Deploying improvement to {domain}: {proposal['hypothesis']}")
+        logger.warning("Legacy RSI deployment denied: independent review-only evidence is required")
+        return False
 
         # 1. Governance check
         if self.governance:

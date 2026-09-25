@@ -52,7 +52,17 @@ class ExperimentManager:
             # 3. Evaluate results
             baseline = context.get("baseline_metrics", {}) if context else {}
             eval_report = self.evaluation.evaluate_improvement(baseline, results)
-            eval_report.setdefault("promotion_eligible", True)
+            # Promotion eligibility requires both a real improvement and a
+            # deterministic evidence source: the injected replay runner is the
+            # only promotable origin; synthetic/unmarked output stays diagnostic.
+            if results.get("evidence_source") == "injected_replay_runner":
+                eval_report["is_improved"] = bool(
+                    eval_report.get("overall_score", 0.0) > self.evaluation.min_improvement_threshold
+                    and not eval_report.get("regressions")
+                )
+                eval_report["promotion_eligible"] = eval_report["is_improved"]
+            else:
+                eval_report["promotion_eligible"] = False
             if results.get("evidence_source") == "synthetic_fallback":
                 eval_report["is_improved"] = False
                 eval_report["recommendation"] = "research_only_synthetic"
@@ -97,7 +107,7 @@ class ExperimentManager:
                 raise TypeError("simulation_runner must return a metrics dictionary")
             if not result.get("evidence_source"):
                 result["evidence_source"] = "injected_replay_runner"
-            result.setdefault("promotion_eligible", True)
+            result["promotion_eligible"] = False
             return result
 
         if not self.allow_synthetic_fallback:

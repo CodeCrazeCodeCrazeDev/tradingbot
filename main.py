@@ -25,7 +25,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, Iterator
 
-from trading_bot.unified_bot import UnifiedTradingBot
+from trading_bot.foundation.runtime import ModularMonolithRuntime
 
 logging.basicConfig(
     level=logging.INFO,
@@ -95,12 +95,13 @@ async def main():
     logger.info("ALPHAALGO UCA-2026: UNIFIED TRADING BOT")
     logger.info("=" * 60)
 
-    bot = UnifiedTradingBot({
+    runtime = ModularMonolithRuntime({
         "latent_dim": 256,
         "max_exposure": args.max_exposure,
         "max_quantity": args.max_quantity,
         "trading_enabled": args.mode != "analysis",
         "max_spread_bps": args.max_spread_bps,
+        "mode": args.mode,
     })
 
     if args.synthetic:
@@ -109,7 +110,7 @@ async def main():
         source = replay_observations(DB_PATH, args.symbol)
 
     try:
-        await bot.run(source, cycles=args.cycles, interval=args.interval)
+        await runtime.run(source, cycles=args.cycles, interval=args.interval)
     except KeyboardInterrupt:
         logger.info("Shutdown requested.")
 

@@ -42,6 +42,22 @@ LOOP_CALLS = {
     "multiprocessing.Process",
     "asyncio.create_task",
 }
+# Reviewed exceptions: capital-named calls inside these paths target in-memory
+# simulators, not broker adapters (e.g. ``backtester.execute_trade(...)`` on a
+# Backtester instance in strategy_backtester.py). Verified non-live; do NOT add
+# entries without confirming the receiver is a simulator.
+SIMULATED_CAPITAL_PATHS = {
+    "trading_bot/backtesting/strategy_backtester.py",
+}
+
+# Declared execution adapters living outside the execution/|broker(s)/ trees.
+# Mirrors ARCHITECTURE_COMPONENT_MANIFEST.json -> execution_service
+# .compatibility_paths: the bridge delegates to an injected broker adapter and
+# is itself the typed execution surface, not an uncontrolled capital path.
+EXECUTION_BOUNDARY_PATHS = {
+    "trading_bot/core/execution_bridge.py",
+}
+
 CANONICAL_FILES = {
     "trading_bot/foundation/runtime.py": ("canonical", "composition", "ModularMonolithRuntime"),
     "trading_bot/unified_bot.py": ("canonical", "composition", "UnifiedTradingBot"),
@@ -211,8 +227,13 @@ def _classification(path: str, scan: Mapping[str, object]) -> Tuple[str, Optiona
     canonical = CANONICAL_FILES.get(path)
     if canonical:
         return "canonical", None
-    if scan["direct_capital_path"] and not any(
-        allowed in path for allowed in ("trading_bot/execution/", "trading_bot/broker/", "trading_bot/brokers/")
+    if (
+        scan["direct_capital_path"]
+        and path not in SIMULATED_CAPITAL_PATHS
+        and path not in EXECUTION_BOUNDARY_PATHS
+        and not any(
+            allowed in path for allowed in ("trading_bot/execution/", "trading_bot/broker/", "trading_bot/brokers/")
+        )
     ):
         return "quarantine", "direct_capital_path_outside_execution_boundary"
     lowered = path.lower()
@@ -339,8 +360,13 @@ def boundary_violations(source: str, path: str) -> List[str]:
     violations: List[str] = []
     if any(tag == "archive_import" for tag in scan["secondary_tags"]):
         violations.append("active module imports from _archive")
-    if scan["direct_capital_path"] and not any(
-        allowed in path for allowed in ("trading_bot/execution/", "trading_bot/broker/", "trading_bot/brokers/")
+    if (
+        scan["direct_capital_path"]
+        and path not in SIMULATED_CAPITAL_PATHS
+        and path not in EXECUTION_BOUNDARY_PATHS
+        and not any(
+            allowed in path for allowed in ("trading_bot/execution/", "trading_bot/broker/", "trading_bot/brokers/")
+        )
     ):
         violations.append("direct capital call outside execution/broker adapter")
     if scan["starts_loop"] and path not in CANONICAL_FILES and "foundation/runtime.py" not in path:
