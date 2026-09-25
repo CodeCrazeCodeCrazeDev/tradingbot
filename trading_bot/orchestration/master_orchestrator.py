@@ -601,6 +601,10 @@ class MasterOrchestrator:
         })
         self.initialized = False
         self.running = False
+        # Legacy attribute surface: callers iterate service_managers.values().
+        # Managers live in the canonical runtime graph now; kept as an empty
+        # mapping so legacy introspection/mocking still works.
+        self.service_managers: Dict[str, Any] = {}
 
     async def initialize(self, config: OrchestratorConfig = None) -> bool:
         if config is not None:

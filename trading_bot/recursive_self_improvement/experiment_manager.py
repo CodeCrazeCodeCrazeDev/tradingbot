@@ -1,9 +1,9 @@
-import asyncio
+import hashlib
+import inspect
 import logging
 import uuid
 from typing import Any, Dict, List, Optional
 from datetime import datetime
-import numpy as np
 from .memory import ImprovementMemory
 from .evaluation import EvaluationEngine
 
@@ -15,10 +15,18 @@ class ExperimentManager:
     Interfaces with backtesting and simulation environments.
     """
 
-    def __init__(self, memory: ImprovementMemory, evaluation: EvaluationEngine, config: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        memory: ImprovementMemory,
+        evaluation: EvaluationEngine,
+        config: Optional[Dict[str, Any]] = None,
+        simulation_runner: Any = None,
+    ):
         self.memory = memory
         self.evaluation = evaluation
         self.config = config or {}
+        self.simulation_runner = simulation_runner
+        self.allow_synthetic_fallback = bool(self.config.get("allow_synthetic_fallback", False))
         self.active_experiments: Dict[str, Dict[str, Any]] = {}
 
     async def run_experiment(self, domain: str, hypothesis: str, parameters: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -44,6 +52,11 @@ class ExperimentManager:
             # 3. Evaluate results
             baseline = context.get("baseline_metrics", {}) if context else {}
             eval_report = self.evaluation.evaluate_improvement(baseline, results)
+            eval_report.setdefault("promotion_eligible", True)
+            if results.get("evidence_source") == "synthetic_fallback":
+                eval_report["is_improved"] = False
+                eval_report["recommendation"] = "research_only_synthetic"
+                eval_report["promotion_eligible"] = False
 
             # 4. Record results
             status = "completed" if eval_report["is_improved"] else "failed"
@@ -74,28 +87,36 @@ class ExperimentManager:
         Internal dispatcher for different types of simulations.
         Integrates with the system's actual backtesting and validation engines.
         """
-        logger.info(f"Executing actual simulation for {domain}")
+        logger.info(f"Executing simulation for {domain}")
 
-        try:
-            if domain == "strategy":
-                # Integration with advanced_backtester
-                # from ..backtesting.advanced_backtester import AdvancedBacktester
-                # backtester = AdvancedBacktester()
-                # results = await backtester.run_parameter_sweep(parameters)
-                pass
-            elif domain == "model":
-                # Integration with ML training-first architecture
-                pass
+        if self.simulation_runner is not None:
+            result = self.simulation_runner(domain, parameters)
+            if inspect.isawaitable(result):
+                result = await result
+            if not isinstance(result, dict):
+                raise TypeError("simulation_runner must return a metrics dictionary")
+            if not result.get("evidence_source"):
+                result["evidence_source"] = "injected_replay_runner"
+            result.setdefault("promotion_eligible", True)
+            return result
 
-            # Fallback to high-fidelity mock if actual component fails or is not yet fully linked
-            await asyncio.sleep(0.1)
+        if not self.allow_synthetic_fallback:
+            raise RuntimeError(
+                "No deterministic simulation_runner configured; refusing to create "
+                "promotion evidence from synthetic metrics."
+            )
 
-            return {
-                "sharpe_ratio": 1.8 + (np.random.random() * 0.2),
-                "total_return": 0.15 + (np.random.random() * 0.05),
-                "max_drawdown": 0.05 - (np.random.random() * 0.01),
-                "win_rate": 0.62 + (np.random.random() * 0.03)
-            }
-        except Exception as e:
-            logger.error(f"Simulation failed for {domain}: {e}")
-            raise
+        # Explicitly labeled fallback for development smoke tests only. Its
+        # stable hash makes tests reproducible, but it remains non-promotable.
+        digest = hashlib.sha256(
+            f"{domain}:{sorted(parameters.items())}".encode("utf-8")
+        ).digest()
+        offset = digest[0] / 2550.0
+        return {
+            "sharpe_ratio": 1.8 + offset,
+            "total_return": 0.15 + offset / 10.0,
+            "max_drawdown": 0.05 - offset / 20.0,
+            "win_rate": 0.62 + offset / 10.0,
+            "evidence_source": "synthetic_fallback",
+            "promotion_eligible": False,
+        }

@@ -35,7 +35,7 @@ class MockEvolutionGate:
     def validate_evolution(self, *args, **kwargs): return True
 
 @pytest.fixture(scope="function")
-def full_system(event_loop):
+async def full_system():
     # 1. Initialize core infrastructure
     hms = HierarchicalMemorySystem(base_path="tests/temp_hms_e2e")
     bus = UnifiedDecisionBus()
@@ -50,9 +50,12 @@ def full_system(event_loop):
 
     # 2. Register mandatory voters and attach the paper-execution bridge —
     # the bus approves and fans out; the execution layer owns EXECUTED.
+    # Async fixture: bus.start() runs on the SAME function-scoped loop as the
+    # test (pytest-asyncio 1.x runs each async test on its own loop — starting
+    # the bus on the session event_loop deadlocks wait_for_decision).
     bus.register_voter("ImmutableShield", shield_voter)
     PaperExecutionBridge(persist_path="tests/temp_hms_e2e/paper_fills.jsonl").attach(bus)
-    event_loop.run_until_complete(bus.start())
+    await bus.start()
 
     # 3. Initialize One Brain (CSC)
     csc = CognitiveSystemController(
@@ -68,7 +71,7 @@ def full_system(event_loop):
     )
 
     yield csc
-    event_loop.run_until_complete(bus.stop())
+    await bus.stop()
 
 @pytest.mark.asyncio
 async def test_e2e_successful_trade_pipeline(full_system):

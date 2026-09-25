@@ -1647,6 +1647,7 @@ class HeadAI:
             active_arguments = list(latest_arguments.values())
 
             action_scores: Dict[TradeAction, float] = {}
+            calibrated_confidences: Dict[AgentRole, float] = {}
             for arg in active_arguments:
                 weight = self.weights.get(arg.agent_role, 0.33)
 
@@ -2197,13 +2198,12 @@ class MultiAgentDebateSystem:
             conflicts = self._identify_conflicts(current_round_args)
             debate_rounds.append(
                 DebateRound(
-                    round_number=round_num,
+                    round_number=1,
                     arguments=current_round_args,
                     consensus_level=consensus,
                     conflicts=conflicts,
                 )
             )
-            round_num += 1
 
             round_num = 2
             while consensus < self.consensus_threshold and round_num <= self.max_rounds:

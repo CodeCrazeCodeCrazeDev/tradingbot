@@ -43,7 +43,9 @@ async def test_concurrent_action_processing(stress_bus):
     # Wait for all with timeout
     results = await asyncio.gather(*[a.wait_for_decision(timeout=10.0) for a in actions])
 
-    assert all(r == ActionStatus.EXECUTED for r in results)
+    # The bus approves and fans out; EXECUTED belongs to the execution layer,
+    # which no subscriber provides here.
+    assert all(r == ActionStatus.APPROVED for r in results)
     assert len(bus._log) >= n_actions
 
 @pytest.mark.asyncio
@@ -64,7 +66,7 @@ async def test_delayed_voter_handling(stress_bus):
 
     # Wait for decision
     status = await action.wait_for_decision(timeout=5.0)
-    assert status == ActionStatus.EXECUTED
+    assert status == ActionStatus.APPROVED
 
 @pytest.mark.asyncio
 async def test_voter_failure_propagation(stress_bus):
@@ -117,4 +119,4 @@ async def test_priority_ordering(stress_bus):
     # If the queue was processed fast, it might just be the last one,
     # but in a backed up system it would jump.
     # Here we just verify it eventually completes.
-    assert critical.status == ActionStatus.EXECUTED
+    assert critical.status == ActionStatus.APPROVED

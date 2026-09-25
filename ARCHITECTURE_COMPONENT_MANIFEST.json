@@ -104,6 +104,12 @@
       "status": "advisory_only_opt_in",
       "rule": "Legacy debate may return evidence only; it cannot authorize risk or execution."
     },
+    "research_evaluator": {
+      "owner": "ExperimentManager with injected simulation_runner",
+      "path": "trading_bot/recursive_self_improvement/experiment_manager.py",
+      "status": "deterministic_runner_required",
+      "rule": "Unmarked random/mock metrics cannot create promotion evidence; synthetic fallback is explicitly non-promotable."
+    },
     "recursive_self_improvement": {
       "owner": "HumanGuidedRecursiveImprovementLoop",
       "path": "trading_bot/recursive_self_improvement/rsi_loop.py",

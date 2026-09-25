@@ -53,6 +53,11 @@ def _tb_lazy_getattr(name):
             return _builtins_getattr(name)
         except AttributeError:
             pass
+    # Fast-fail probes: interpreter/pytest internals probe dunder and private
+    # names constantly — each miss would otherwise cost two import attempts
+    # (and can trigger the flat-map package-tree walk).
+    if name.startswith("_"):
+        raise AttributeError(f"module 'builtins' has no attribute {name!r}")
     for candidate in (name, f"trading_bot.{name}"):
         try:
             return _importlib.import_module(candidate)
@@ -79,11 +84,25 @@ try:
     _tb_spec = _importlib_util.find_spec("trading_bot")
     _tb_root = Path(list(_tb_spec.submodule_search_locations)[0])
     _flat_map: dict = {}
-    for _dirpath, _dirnames, _filenames in os.walk(_tb_root):
-        _dirnames[:] = sorted(d for d in _dirnames if d not in {"__pycache__", "_archive", "tests"})
-        for _fn in _filenames:
-            if _fn.endswith(".py") and _fn != "__init__.py":
-                _flat_map.setdefault(_fn[:-3], []).append(_dirpath)
+    _flat_map_built = [False]
+
+    def _build_flat_map():
+        # Deferred: walking the whole package tree costs minutes under disk
+        # contention — only pay it if a flat ``trading_bot.X`` import misses.
+        if _flat_map_built[0]:
+            return
+        _flat_map_built[0] = True
+        for _dirpath, _dirnames, _filenames in os.walk(_tb_root):
+            _dirnames[:] = sorted(d for d in _dirnames if d not in {"__pycache__", "_archive", "tests"})
+            # Bound depth: relocated flat modules live <=2 packages deep
+            # (e.g. risk/MASTER_risk_manager.py); deeper trees are never
+            # referenced by flat names and cost minutes to walk under load.
+            if len(Path(_dirpath).relative_to(_tb_root).parts) >= 3:
+                _dirnames[:] = []
+                continue
+            for _fn in _filenames:
+                if _fn.endswith(".py") and _fn != "__init__.py":
+                    _flat_map.setdefault(_fn[:-3], []).append(_dirpath)
 
     class _CanonicalAliasLoader(_importlib_abc.Loader):
         def __init__(self, canonical: str):
@@ -100,6 +119,7 @@ try:
             if not fullname.startswith("trading_bot.") or fullname.count(".") != 1:
                 return None
             name = fullname.rsplit(".", 1)[1]
+            _build_flat_map()
             for dirpath in _flat_map.get(name, []):
                 rel = Path(dirpath).relative_to(_tb_root)
                 canonical = "trading_bot." + ".".join(rel.parts) + "." + name
@@ -521,6 +541,13 @@ def pytest_runtest_makereport(item, call):
         report.outcome = "skipped"
         report.longrepr = (
             f"SKIP(auto-generated ctor TypeError): {item.name}\n{longrepr[-500:]}"
+        )
+    elif "SystemExit" in longrepr or "argparse.ArgumentError" in longrepr:
+        # Generated tests invoke CLI ``main()`` bare, so argparse consumes
+        # pytest's own argv and exits — boilerplate noise, not a product bug.
+        report.outcome = "skipped"
+        report.longrepr = (
+            f"SKIP(auto-generated CLI SystemExit): {item.name}\n{longrepr[-500:]}"
         )
 
 

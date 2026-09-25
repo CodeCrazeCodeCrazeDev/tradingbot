@@ -85,7 +85,9 @@ persistence, and reconciliation are now covered by conformance tests. Added
 cannot own sizing, approval, or execution. Added `StrategyRegistry` and runtime
 registration for signal-only strategy capabilities. Added the opt-in
 `DebateCapabilityAdapter` so legacy multi-agent debate returns advisory evidence
-only and cannot authorize risk or execution.
+only and cannot authorize risk or execution. Research/evaluation convergence
+now requires an injected deterministic simulation runner; missing runners fail
+closed and explicitly enabled synthetic fallback is non-promotable.
 
 ## Next wave
 

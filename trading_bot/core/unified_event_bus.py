@@ -396,8 +396,6 @@ class UnifiedDecisionBus:
                     }
                     if not self._check_consensus(action):
                         action.status = ActionStatus.VETOED
-                        action._completed_event.set()
-                        self._action_queue.task_done()
                         continue
 
                 vote_tasks = []
