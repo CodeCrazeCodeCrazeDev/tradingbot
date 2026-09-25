@@ -1,7 +1,15 @@
 """
 Adaptive Control Policy Engine (ACPE) - UCA V5+ Core (July 2026)
-Generic, lightweight, sub-millisecond retrieval-based control parameterizer.
-Parameterizes existing subsystems inside the "One Brain" pipeline based on historical failures.
+
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Epistemic control parameter alignment under entropy bounds.
+- arXiv:2607.00341 (LogAct / DiscoLoop): Real-time parameterization over shared log channels.
+- arXiv:2607.01224 (CORAL / AutoMem): Metamemory-driven harness adaptation.
+- arXiv:2605.12061 (Search-R1 / SAGE): Causal graph-informed policy adjustment.
+- arXiv:2605.10813 (NanoResearch): Tri-level co-evolving control surfaces.
+- arXiv:2605.20025 (S2L / AutoResearchClaw): Sub-millisecond policy routing & adapter tuning.
+- arXiv:2605.17734 (HASP): Prescriptive guardrail parameterization & fallback harness configuration.
+- arXiv:2605.21482 (DeepWeb-Bench): Calibration-driven policy thresholds.
 """
 
 import logging
