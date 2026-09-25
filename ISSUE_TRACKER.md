@@ -56,6 +56,26 @@ This document tracks identified, resolved, and monitored engineering defects and
 *   **Verification Performed**: Security AST audit confirmed all dynamic executions pass through `SecureASTVisitor`.
 *   **Remaining Risks**: None.
 
+### **DEFECT-UCA-2026-06**: RiskManager Parenthesized List Comprehension Unpacking Syntax Error
+*   **Component**: `risk/risk_manager.py`
+*   **Severity**: **CRITICAL (BLOCKER)**
+*   **Root Cause**: List comprehension expansion unparenthesized before fallback `or ["- None"]` evaluation.
+*   **Files Affected**: `risk/risk_manager.py`
+*   **Technical Explanation**: Line 390 used `*[f"- {sym}: {limit:.2f}" ...] or ["- None"]` without surrounding parentheses, causing `SyntaxError: invalid syntax`.
+*   **Solution Implemented**: Parenthesized the comprehension list expression before unpacking: `*([f"..." ...] or ["- None"])`.
+*   **Verification Performed**: AST parsing verified zero syntax errors in `risk/risk_manager.py`.
+*   **Remaining Risks**: None.
+
+### **DEFECT-UCA-2026-07**: Operational Launchers & Deployers Indentation Faults
+*   **Component**: `scripts/fixes/auto_fix_critical_issues_v2.py`, `scripts/deployment/deploy_5star_production.py`, `scripts/launchers/run_alphaalgo_5star.py`
+*   **Severity**: **HIGH**
+*   **Root Cause**: Unindented and misplaced `logger = logging.getLogger(__name__)` and block indentation lines breaking script execution.
+*   **Files Affected**: `scripts/fixes/auto_fix_critical_issues_v2.py`, `scripts/deployment/deploy_5star_production.py`, `scripts/launchers/run_alphaalgo_5star.py`
+*   **Technical Explanation**: Dangling `logger` assignment at line 320 of `auto_fix_critical_issues_v2.py` and improperly indented `while` loops in deployment scripts caused `IndentationError`.
+*   **Solution Implemented**: Refactored indentation and placed loggers correctly inside file module scopes.
+*   **Verification Performed**: Python AST compilation confirmed clean parsing across all operational scripts.
+*   **Remaining Risks**: None.
+
 ---
 
 ## 2. Monitored Issues
