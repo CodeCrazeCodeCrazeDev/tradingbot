@@ -7,7 +7,8 @@ Cognitive System Controller (CSC) - UCA V6
 
 Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
 Implements 'DiscoLoop' (arXiv:2607.00341) for multi-hop reasoning, 'HIPIF' (arXiv:2606.10507) for information folding,
-and 'AutoResearchClaw' (arXiv:2605.20025) for Pivot/Refine self-healing control.
+'AutoResearchClaw' (arXiv:2605.20025) for Pivot/Refine self-healing control,
+and 'Implicit Active Inference in Auto-Regressive Scratchpads' (REG-301 through REG-400).
 """
 
 import numpy as np
@@ -26,6 +27,7 @@ from .hypothesis import HypothesisGenerator, ReasoningBranch, Hypothesis
 from .folding import InformationFolder
 from .router import SkillRouter
 from .acpe import AdaptiveControlPolicyEngine
+from trading_bot.cognition.alpha_algo_cognitive_brain import AlphaAlgoCognitiveBrain
 from ..verification.swarm import VerificationSwarm
 from ..hms.models import (
     ResearchLedgerEntry,
@@ -164,6 +166,7 @@ class CognitiveSystemController:
         self.folder = InformationFolder(hms)
         self.discoloop = DiscoLoopCell(latent_dim=512)
         self.acpe = AdaptiveControlPolicyEngine(hms)
+        self.cognitive_brain = AlphaAlgoCognitiveBrain()
 
         # State Channels
         self.continuous_state = {}
