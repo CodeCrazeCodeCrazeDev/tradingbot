@@ -772,7 +772,7 @@ class ComprehensiveSystemTester:
                     "test_operation",
                     MetricType.EXECUTION_TIME
                 )
-                time.sleep(0.01)  # Simulate work
+                await asyncio.sleep(0.01)  # Simulate work
                 result = monitor.stop_profiling(profiler_id)
                 assert result.value > 0
                 results.append(TestResult(
