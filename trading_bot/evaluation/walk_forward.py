@@ -30,6 +30,12 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_DB = Path(__file__).resolve().parents[2] / "market_data.db"
 
+# This harness is diagnostic instrumentation, not promotion evidence: the
+# replay omits executable fills and realistic costs. Consumers checking
+# whether a report may feed a promotion decision must require
+# EVIDENCE_CLASS == "promotion" — which this module never emits.
+EVIDENCE_CLASS = "diagnostic"
+
 
 @dataclass
 class TradeRecord:
@@ -48,6 +54,7 @@ class TradeRecord:
 class EvaluationReport:
     symbol: str
     split: str
+    evidence_class: str = EVIDENCE_CLASS
     cycles: int = 0
     trades: int = 0
     abstain_rate: float = 0.0
