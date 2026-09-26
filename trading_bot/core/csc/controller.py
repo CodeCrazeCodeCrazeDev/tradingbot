@@ -521,29 +521,44 @@ class CognitiveSystemController:
             "vfe": self.variational_free_energy
         }
 
-    async def process_market_observation(self, observation: Any) -> Optional[CoreDecision]:
-        """
-        12-step Recursive Active Inference Pipeline (UCA V6).
-        """
+    # -- 12-stage pipeline internals ------------------------------------------
+    # Extracted from process_market_observation so each stage is independently
+    # testable (TD-02). _Terminal wraps a stage-produced terminal result:
+    # `None` must not be conflated with "continue" since a missing branch
+    # legitimately produces a None decision at stage 7.
+
+    class _Terminal:
+        __slots__ = ("decision",)
+
+        def __init__(self, decision: Optional["CoreDecision"]) -> None:
+            self.decision = decision
+
+    def _normalize_observation(self, observation: Any) -> Tuple[Dict[str, Any], str]:
+        """Stage 0: accept dict or object-like observation; resolve trade_id."""
         trade_id = _determinism.get_uuid()
 
         # Check for dict-like interface, handle object-like as well
         obs_dict = observation if isinstance(observation, dict) else getattr(observation, "__dict__", {})
         trade_id = obs_dict.get("trade_id", _determinism.get_uuid())
+        return obs_dict, trade_id
 
-        # 1. Perception
+    async def _stage_perception(self, obs_dict: Dict[str, Any]) -> float:
+        """Stage 1: sensory surprise -> VFE history."""
         surprise = self._calculate_sensory_surprise(obs_dict)
         self.vfe_history.append(surprise)
+        return surprise
 
-        # 2. Evidence Retrieval
+    async def _stage_evidence_retrieval(self, observation: Any) -> List[Any]:
+        """Stage 2: HMS evidence chain with empty-chain fallback."""
         try:
             evidence_chain = await self._safe_await(self.hms.retrieve_evidence_chain(str(observation)))
         except Exception as e:
             logger.warning(f"CSC-V6: Evidence chain retrieval failed, falling back to empty chain: {e}")
             evidence_chain = []
+        return evidence_chain
 
-        # 3. HASP Guardrail — synchronous volatility check first, then the
-        # skill-router prescriptive guardrail.
+    async def _stage_guardrails(self, observation: Any, obs_dict: Dict[str, Any]) -> Optional["_Terminal"]:
+        """Stage 3: HASP volatility check, then skill-router guardrail."""
         intervention = self._apply_hasp_guardrails(observation)
         if isinstance(intervention, dict) and intervention.get("status") != "pf_intervention":
             intervention = await self.skill_router.route_task("market_ingestion", observation)
@@ -553,22 +568,26 @@ class CognitiveSystemController:
             pf_result = intervention.get("pf_result", {})
             reason = pf_result.get("reason", intervention.get("reason", "unknown"))
             if pf_result.get("action") == "override_to_hold" or intervention.get("action") == "override_to_hold":
-                return CoreDecision(
+                return self._Terminal(CoreDecision(
                     outcome=DecisionOutcome.TRADE_REJECTED,
                     trade_id=obs_dict.get("trade_id", _determinism.get_uuid()),
                     dominant_rejection_reason=f"HASP PF Intervention: {reason}"
-                )
+                ))
+        return None
 
-        # 4. DiscoLoop
+    async def _stage_internalization(self, obs_dict: Dict[str, Any]) -> None:
+        """Stages 4 + 4.5: DiscoLoop recurrence and PCA consultation."""
         await self._run_discoloop_reasoning(obs_dict)
 
-        # 4.5 PCA Consultation — persistent agents share compressed artifacts
+        # PCA Consultation — persistent agents share compressed artifacts
         await self._consult_agent_population(obs_dict)
 
-        # 5. Hypothesis Generation
+    async def _stage_hypothesis_and_simulation(
+        self, observation: Any
+    ) -> Tuple[List[ReasoningBranch], Dict[str, Any]]:
+        """Stages 5 + 6: competing branches, then causal simulation."""
         branches = await self._safe_await(self.hypothesis_gen.generate_competing_branches(observation))
 
-        # 6. Causal Simulation
         sim_results = {}
         if hasattr(self.hypothesis_gen, "simulate_branches"):
             try:
@@ -576,35 +595,49 @@ class CognitiveSystemController:
             except Exception as e:
                 logger.warning(f"CSC-V6: Causal simulation error: {e}")
                 sim_results = {}
+        return branches, sim_results
 
-        # 7. Pivot/Refine
+    async def _stage_pivot_refine(
+        self, branches: List[ReasoningBranch], sim_results: Dict[str, Any]
+    ) -> Any:
+        """Stage 7: Pivot/Refine selection; _Terminal(None) if nothing viable."""
         best_branch = await self._safe_await(self._pivot_refine_loop(branches, sim_results))
         if not best_branch:
             # No viable reasoning branches — nothing to decide.
             logger.info("CSC-V6: No viable reasoning branches after Pivot/Refine; returning no decision")
-            return None
+            return self._Terminal(None)
+        return best_branch
 
-        # 8. Decision Synthesis
+    def _stage_synthesis(
+        self, best_branch: ReasoningBranch, sim_results: Dict[str, Any],
+        trade_id: str, obs_dict: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Stage 8: final trade proposal from the winning branch."""
         decision_proposal = self._select_optimal_action(best_branch, sim_results)
         if decision_proposal and isinstance(decision_proposal, dict):
             decision_proposal["trade_id"] = trade_id
             decision_proposal["price"] = obs_dict.get("price", obs_dict.get("close"))
+        return decision_proposal
 
-        # 8.5 Canonical portfolio-risk service. Legacy controllers may not
-        # provide it yet, but the active runtime injects this boundary and
-        # rejects failed checks before an action enters the shared log.
+    async def _stage_risk_check(
+        self, decision_proposal: Optional[Dict[str, Any]],
+        obs_dict: Dict[str, Any], trade_id: str,
+    ) -> Optional["_Terminal"]:
+        """Stage 8.5: canonical portfolio-risk boundary (fail closed)."""
         if self.risk_engine is not None and hasattr(self.risk_engine, "evaluate_action"):
             risk_decision = await self._safe_await(
                 self.risk_engine.evaluate_action(decision_proposal or {}, obs_dict)
             )
             if risk_decision is not None and not getattr(risk_decision, "approved", False):
-                return CoreDecision(
+                return self._Terminal(CoreDecision(
                     outcome=DecisionOutcome.TRADE_REJECTED,
                     trade_id=decision_proposal.get("trade_id", trade_id) if decision_proposal else trade_id,
                     dominant_rejection_reason=f"Risk: {getattr(risk_decision, 'reason', 'Risk checks failed')}",
-                )
+                ))
+        return None
 
-        # 9. LogAct Proposal
+    async def _stage_logact_proposal(self, decision_proposal: Optional[Dict[str, Any]]) -> None:
+        """Stage 9: TRADE_PROPOSAL onto the decision bus."""
         log_action = LogAction(
             action_type="TRADE_PROPOSAL",
             payload=decision_proposal,
@@ -614,7 +647,14 @@ class CognitiveSystemController:
         if self.decision_bus is not None and hasattr(self.decision_bus, "propose_action"):
             await self._safe_await(self.decision_bus.propose_action(log_action))
 
-        # 10. Verification Swarm
+    async def _stage_verification(
+        self, best_branch: ReasoningBranch, sim_results: Dict[str, Any],
+        decision_proposal: Optional[Dict[str, Any]], trade_id: str,
+    ) -> Any:
+        """Stage 10: swarm verification + one bounded refinement pass.
+
+        Returns (best_branch, ledger_entry) on gate pass, else _Terminal.
+        """
         ledger_entry = self._create_ledger_entry(best_branch, sim_results.get(best_branch.branch_id, []))
         reports = await self._safe_await(self.verifier_swarm.run_swarm(ledger_entry))
         if not isinstance(reports, list):
@@ -645,23 +685,33 @@ class CognitiveSystemController:
                 if vetoed
                 else (gate_reason or "Insufficient evidence / Verification Swarm rejection")
             )
-            return CoreDecision(
+            return self._Terminal(CoreDecision(
                 outcome=DecisionOutcome.TRADE_REJECTED,
                 trade_id=decision_proposal.get("trade_id", trade_id) if decision_proposal else trade_id,
                 dominant_rejection_reason=reason
-            )
+            ))
+        return best_branch, ledger_entry
 
-        # 11. Immutable Shield
+    async def _stage_shield(
+        self, decision_proposal: Optional[Dict[str, Any]],
+        obs_dict: Dict[str, Any],
+    ) -> Optional["_Terminal"]:
+        """Stage 11: Immutable Shield validation."""
         if self.shield is not None:
             shield_report = await self._safe_await(self.shield.validate_action("trade", decision_proposal, {"market": obs_dict}))
             if shield_report and getattr(shield_report, "decision", None) != GovernanceDecision.APPROVED:
-                return CoreDecision(
+                return self._Terminal(CoreDecision(
                     outcome=DecisionOutcome.TRADE_REJECTED,
                     trade_id=decision_proposal.get("trade_id", "NO_BRANCH"),
                     dominant_rejection_reason=f"Shield: {getattr(shield_report, 'reason', 'Vetoed by Immutable Shield')}"
-                )
+                ))
+        return None
 
-        # 12. Folding & Persistence
+    async def _stage_execute_and_persist(
+        self, ledger_entry: ResearchLedgerEntry,
+        decision_proposal: Optional[Dict[str, Any]], trade_id: str,
+    ) -> "CoreDecision":
+        """Stage 12: fold + persist, TRADE_EXECUTION consensus, verdict."""
         self.folder.fold_history(ledger_entry)
         if self.hms is not None and hasattr(self.hms, "store_ledger_entry"):
             self.hms.store_ledger_entry(ledger_entry)
@@ -697,6 +747,63 @@ class CognitiveSystemController:
             trade_id=decision_proposal.get("trade_id"),
             confidence_vector=self._calculate_composite_confidence(ledger_entry),
         )
+
+    async def process_market_observation(self, observation: Any) -> Optional[CoreDecision]:
+        """
+        12-step Recursive Active Inference Pipeline (UCA V6).
+        """
+        # 0. Normalize + trade id
+        obs_dict, trade_id = self._normalize_observation(observation)
+
+        # 1. Perception
+        await self._stage_perception(obs_dict)
+
+        # 2. Evidence Retrieval
+        evidence_chain = await self._stage_evidence_retrieval(observation)
+
+        # 3. Guardrails (HASP volatility + skill-router prescriptive)
+        terminal = await self._stage_guardrails(observation, obs_dict)
+        if terminal is not None:
+            return terminal.decision
+
+        # 4/4.5. DiscoLoop + PCA internalization
+        await self._stage_internalization(obs_dict)
+
+        # 5/6. Hypothesis generation + causal simulation
+        branches, sim_results = await self._stage_hypothesis_and_simulation(observation)
+
+        # 7. Pivot/Refine
+        best_branch = await self._stage_pivot_refine(branches, sim_results)
+        if isinstance(best_branch, self._Terminal):
+            return best_branch.decision
+
+        # 8. Decision synthesis
+        decision_proposal = self._stage_synthesis(
+            best_branch, sim_results, trade_id, obs_dict)
+
+        # 8.5. Canonical portfolio-risk boundary
+        terminal = await self._stage_risk_check(decision_proposal, obs_dict, trade_id)
+        if terminal is not None:
+            return terminal.decision
+
+        # 9. LogAct proposal
+        await self._stage_logact_proposal(decision_proposal)
+
+        # 10. Verification swarm + bounded refinement
+        verified = await self._stage_verification(
+            best_branch, sim_results, decision_proposal, trade_id)
+        if isinstance(verified, self._Terminal):
+            return verified.decision
+        best_branch, ledger_entry = verified
+
+        # 11. Immutable shield
+        terminal = await self._stage_shield(decision_proposal, obs_dict)
+        if terminal is not None:
+            return terminal.decision
+
+        # 12. Fold, persist, execute consensus
+        return await self._stage_execute_and_persist(
+            ledger_entry, decision_proposal, trade_id)
 
     async def execute_task(self, task: str, context: Any = None) -> Optional[CoreDecision]:
         """
