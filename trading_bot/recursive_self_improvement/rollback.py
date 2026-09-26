@@ -159,6 +159,8 @@ class ChampionRollback:
                 self.archive.record_rollback(
                     from_genome="", to_snapshot=snapshot_id,
                     reason="operator-requested restore")
-            except Exception:  # noqa: BLE001 - restore must not fail on logging
-                pass
+            except Exception as e:  # noqa: BLE001 - restore must not fail on logging
+                import logging
+                logging.getLogger(__name__).warning(
+                    f"rollback to {snapshot_id} not recorded in evidence archive: {e}")
         return state

@@ -43,3 +43,57 @@ All open findings inside files touched by Waves 1–3 were dispositioned: `sandb
 
 - `tests/foundation/test_weakness_wave1.py`: 5/5 (was 5 failing against the old code — including the wrong-side order risk confirmed by `DID NOT RAISE`).
 - Scoped suite: `tests/foundation + tests/cognition + test_feeds_execution + tests/recursive_self_improvement` → **138/138** after the append-only-trigger test adjustment (parallel process hardened `evidence_ledger` with DB-level UPDATE/DELETE triggers; the tamper test now simulates a file-level attacker who drops triggers — exactly what the hash chain detects).
+
+## Wave 5 — full reachable-surface disposition (complete)
+
+`tools/classify_s5.py` context-classified ~860 S5 findings (optional-import guards, CancelledError shutdowns, cleanup paths) and added a bare `raise NotImplementedError` detector (+14 rows). Every surviving reachable finding was reviewed by context dump — **56 fixed, ~85 classified, 0 open remaining**.
+
+### Wave-5 fixes
+
+- **`unified_ai_brain.py` risk gates (MSOS / risk_manager / circuit_breaker)** — a crashing gate fell through `except: pass` to `approved=True` (fail-open risk gate). Gate exceptions now return the unapproved result with a logged reason; test-proven.
+- `improvement_agent` — all 5 components could fail construction while `_initialized=True`; now per-component warnings + degraded-mode report.
+- `core_agent_system` — whole-init swallow left `_initialized=False` invisibly; now warned.
+- `execution_bridge._mark_executed` — fill recorded but audit status silently stale; now warned.
+- `survival_core` — DB/broker fallback-init failures invisible; now logged.
+- `hms/memory` — schema save during reset silently dropped; now warned.
+- 11 mutable defaults (BCQ/CQL/IQL `hidden_sizes`, `timeframes`, `methods`, `dilations`, `periods`) — `None` + per-instance construction.
+- ~20 observability fixes: canonical `orchestrator` self-registration, `cos_core` probes, `evolution_layer` engine/reward paths, `event_router` callbacks, `layer1` provider fan-out, ensemble skips, MT5 probes, `code_analyzer` coverage loss.
+
+### Wave-5 classifications of note
+
+- `trade_validator` six "always-true" gates signal via `ValidationError` raise — correct.
+- 14 `NotImplementedError` sites are informal-ABC contract methods — classified, not fake-implemented.
+- `immutable_core.is_trading_bot` is an intentional identity canary.
+- JWT invalid/expired -> `None` is deny semantics — correct.
+
+## Wave 6 — safety-gate audit, import-shim quarantine fix, rescan (complete)
+
+### ImmutableShield bypass edges (fixed, test-proven)
+
+| Edge | Fix |
+|---|---|
+| Missing `confidence` defaulted to **1.0** -> floors could never reject confidence-less proposals | Default now `0.0` (fail-closed) |
+| Symbol denylist read dict-form `instrument` only -> typed payloads bypassed | `getattr(instrument, "symbol")` fallback |
+| String numerics (`"0.20"`) skipped exposure/drawdown/spread caps | `_coerce_float` helper applied to all three |
+
+`CanonicalRiskService` audited — verified clean (deterministic limits, veto-only policies, exceptions fail closed).
+
+### Execution service (fixed, test-proven)
+
+- `LegacyBrokerAdapter` recorded zero `Fill` objects for `PARTIALLY_FILLED` results — executed quantity vanished; fills now recorded whenever quantity > 0.
+- New tests: submit idempotency on duplicate `client_order_id`, non-paper mode adapter requirement, `UnifiedDecisionBus` lifecycle.
+
+### Test-shim quarantine leak (fixed)
+
+`tests/conftest.py` archive fallback resolved `trading_bot.<sub>.X` misses to `_archive` for ANY importer — live-package optional-import guards then bound quarantined code, and `find_spec` exec'd archive `__init__` chains eagerly (transformers -> 180s+ timeouts). Now live-tree importers get honest `ImportError`, archive importers still resolve siblings, and archived-name checks use filesystem existence — no parent exec at spec time. Verified: `import trading_bot.execution` 38.7s (was timeout), `alpha_engine.AlphaEngine = None` (was quarantined class).
+
+### Miscellaneous
+
+- `execution/__init__.py`: `__all__` filtered to bound names (`import *` could `AttributeError`).
+- `recursive_self_improvement/rollback.py`: archive-record failure now logged (was silent).
+
+### Rescan state
+
+Post-change rescan: 1,100 findings / 637 reachable — all dispositions re-applied. **0 open reachable findings.** `tests/foundation`: **94/94 pass**. Imports: `trading_bot` 0.12s, `unified_bot` 2.0s.
+
+Note: a parallel process intermittently reverts files mid-session (test files, conftest, shield); every fix above was re-verified against current contents and survives in the final state.

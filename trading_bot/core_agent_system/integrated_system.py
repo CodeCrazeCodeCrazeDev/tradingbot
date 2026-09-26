@@ -581,6 +581,16 @@ class IntegratedAgentSystem:
             risk_metrics=risk_metrics
         )
 
+    async def think(self, context):
+        """Think and decide: delegate to the Cognitive System Controller —
+        the One Brain — returning a CoreDecision."""
+        from trading_bot.core.csc.controller import CognitiveSystemController
+        csc = CognitiveSystemController()
+        observation = context if isinstance(context, dict) else dict(
+            getattr(context, "__dict__", {}) or {}
+        )
+        return await csc.process_market_observation(observation)
+
     async def execute_task(self, task: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         """
         Execute a task using the full system with multi-agent coordination.

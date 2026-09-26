@@ -21,6 +21,11 @@ __all__ = [
     'MockFeatureEngineer',
 ]
 
+try:
+    from .real_alternative_data import RealAlternativeDataProvider
+except ImportError:
+    pass
+
 
 class IntegrationsOrchestrator:
     """Stub for IntegrationsOrchestrator."""
