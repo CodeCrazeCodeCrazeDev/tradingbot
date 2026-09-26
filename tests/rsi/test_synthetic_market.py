@@ -70,3 +70,44 @@ def test_fingerprint_changes_on_any_cell():
     df2 = df.copy()
     df2.loc[3, "close"] += 0.0001
     assert fingerprint(df2) != fp
+
+
+def test_csv_dir_source_loads_and_provenance(tmp_path):
+    """TD-05: governed real-data path — multi-instrument CSVs load with
+    validation and auditable per-file provenance."""
+    import pandas as pd
+    from trading_bot.evaluation.synthetic_market import CsvDirSource
+
+    for sym, n in (("EURUSD", 8), ("GBPUSD", 6)):
+        pd.DataFrame({
+            "timestamp": range(1_700_000_000, 1_700_000_000 + n * 900, 900),
+            "open": [1.10 + i * 0.0001 for i in range(n)],
+            "high": [1.10 + i * 0.0001 + 0.0005 for i in range(n)],
+            "low": [1.10 + i * 0.0001 - 0.0005 for i in range(n)],
+            "close": [1.10 + (i + 1) * 0.0001 for i in range(n)],
+            "volume": [1000.0] * n,
+        }).to_csv(tmp_path / f"{sym}.csv", index=False)
+
+    src = CsvDirSource(str(tmp_path), ("EURUSD", "GBPUSD"))
+    frames = src.load()
+    assert set(frames) == {"EURUSD", "GBPUSD"}
+    assert list(frames["EURUSD"]["timestamp"]) == list(range(8))
+    assert src.dataset_hash() == fingerprint_all(frames)
+    prov = src.provenance()
+    assert prov["EURUSD"]["rows"] == 8 and prov["GBPUSD"]["rows"] == 6
+    assert len(prov["EURUSD"]["file_sha256"]) == 64
+
+
+def test_csv_dir_source_rejects_bad_files(tmp_path):
+    import pandas as pd
+    from trading_bot.evaluation.synthetic_market import CsvDirSource
+
+    with pytest.raises(RuntimeError, match="missing real-data file"):
+        CsvDirSource(str(tmp_path), ("EURUSD",)).load()
+
+    pd.DataFrame({"timestamp": [3, 1, 2], "open": [1, 1, 1],
+                  "high": [1, 1, 1], "low": [1, 1, 1],
+                  "close": [1, 1, 1], "volume": [1, 1, 1]}
+                 ).to_csv(tmp_path / "EURUSD.csv", index=False)
+    with pytest.raises(RuntimeError, match="strictly increasing"):
+        CsvDirSource(str(tmp_path), ("EURUSD",)).load()

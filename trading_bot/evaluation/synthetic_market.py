@@ -186,3 +186,67 @@ class SqliteSource:
 
     def dataset_hash(self) -> str:
         return fingerprint_all(self.load())
+
+
+class CsvDirSource:
+    """Governed multi-instrument real-data path (TD-05).
+
+    Loads one ``<SYMBOL>.csv`` per requested symbol from a directory. Each
+    file must carry the canonical OHLCV columns; timestamps must be
+    strictly increasing. The sequential-timestamp convention of the other
+    sources is preserved after validation, and provenance (file path, row
+    count, SHA-256 of the raw bytes, original timestamp range) is recorded
+    per symbol so dataset hashes stay auditable end to end.
+    """
+
+    REQUIRED_COLUMNS = ("timestamp", "open", "high", "low", "close", "volume")
+
+    def __init__(self, dir_path: str, symbols: Sequence[str]) -> None:
+        from pathlib import Path
+        self.dir_path = Path(dir_path)
+        self.symbols = tuple(symbols)
+        self._frames: Optional[Dict[str, pd.DataFrame]] = None
+        self._provenance: Dict[str, Dict[str, Any]] = {}
+
+    def _load_one(self, symbol: str) -> pd.DataFrame:
+        path = self.dir_path / f"{symbol}.csv"
+        if not path.exists():
+            raise RuntimeError(f"missing real-data file {path}")
+        raw = path.read_bytes()
+        file_sha256 = hashlib.sha256(raw).hexdigest()
+        df = pd.read_csv(path)
+        missing = [c for c in self.REQUIRED_COLUMNS if c not in df.columns]
+        if missing:
+            raise RuntimeError(f"{path} missing columns {missing}")
+        df = df[list(self.REQUIRED_COLUMNS)]
+        if df.empty:
+            raise RuntimeError(f"no rows in {path}")
+        # Validate the file's own ordering before any normalization — a
+        # sort here would silently repair a data-quality defect.
+        ts = df["timestamp"].to_numpy(dtype=float)
+        if not np.all(np.diff(ts) > 0):
+            raise RuntimeError(f"{path} timestamps not strictly increasing")
+        for col in ("open", "high", "low", "close"):
+            if not np.all(df[col].to_numpy(dtype=float) > 0):
+                raise RuntimeError(f"{path} has non-positive {col} prices")
+        self._provenance[symbol] = {
+            "path": str(path),
+            "rows": int(len(df)),
+            "file_sha256": file_sha256,
+            "timestamp_first": float(ts[0]),
+            "timestamp_last": float(ts[-1]),
+        }
+        df["timestamp"] = np.arange(len(df), dtype=float)
+        return df
+
+    def load(self) -> Dict[str, pd.DataFrame]:
+        if self._frames is None:
+            self._frames = {s: self._load_one(s) for s in self.symbols}
+        return dict(self._frames)
+
+    def provenance(self) -> Dict[str, Dict[str, Any]]:
+        self.load()
+        return dict(self._provenance)
+
+    def dataset_hash(self) -> str:
+        return fingerprint_all(self.load())
