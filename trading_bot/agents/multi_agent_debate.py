@@ -395,12 +395,20 @@ class MacroStrategist(TradingAgent):
             reasoning = []
             anti_trade_reasoning = []
             key_factors = {}
-            observation = f"Symbol: {context.symbol}, price: {context.current_price:.5f}, HTF trend: {context.htf_trend}"
+            observation = f"Market state for {context.symbol} at current price {context.current_price:.5f}"
+            evidence = []
+            hypothesis = ""
+            predictions = []
+            counter_evidence = []
+            verification = ""
+
+            # Evidence-first local parameters
+            observation = f"Symbol: {context.symbol}, price: {context.current_price}, HTF trend: {context.htf_trend}"
             evidence = []
             hypothesis = "Neutral macro outlook, consolidation expected."
             predictions = []
             counter_evidence = []
-            verification = "HTF trend and news sentiment checked."
+            verification = "No macro triggers active"
 
             # Analyze HTF trend
             if context.htf_trend == "UP":
@@ -555,7 +563,15 @@ class TacticalExecutioner(TradingAgent):
             reasoning = []
             anti_trade_reasoning = []
             key_factors = {}
-            observation = f"Symbol: {context.symbol}, price: {context.current_price:.5f}, LTF trend: {context.ltf_trend}"
+            observation = f"Market state for {context.symbol} at current price {context.current_price:.5f}"
+            evidence = []
+            hypothesis = ""
+            predictions = []
+            counter_evidence = []
+            verification = ""
+
+            # Evidence-first local parameters
+            observation = f"Symbol: {context.symbol}, price: {context.current_price}, LTF trend: {context.ltf_trend}"
             evidence = []
             hypothesis = "Neutral tactical stance, awaiting momentum signal."
             predictions = []
@@ -681,10 +697,11 @@ class RiskSentinel(TradingAgent):
             risk_flags = 0
             observation = f"Symbol: {context.symbol}, price: {context.current_price:.5f}, Exposure={context.portfolio_exposure}, Corr={context.correlation_risk}"
             evidence = []
-            hypothesis = "Portfolio risk exposure verification."
+            hypothesis = "Neutral risk stance, monitor exposure limits."
             predictions = []
             counter_evidence = []
-            verification = "Portfolio exposure, correlation risk and VIX levels checked."
+            verification = "Risk Sentinel protection active."
+            total_score = 0.0
 
             # Exposure check
             if context.portfolio_exposure > self.max_exposure:

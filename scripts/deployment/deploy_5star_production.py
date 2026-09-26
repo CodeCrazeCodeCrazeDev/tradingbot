@@ -186,8 +186,8 @@ class ProductionDeployment:
         
         iteration = 0
         
-        while True:
-            try:
+        try:
+            while True:
                 iteration += 1
                 
                 # Fetch market data for all symbols
@@ -221,12 +221,7 @@ class ProductionDeployment:
                 await asyncio.sleep(60)  # 1 minute
                 
         except KeyboardInterrupt:
-                logger.warning("Received shutdown signal")
-                break
-            except Exception as e:
-                logger.error(f"Error in trading loop: {e}")
-                await asyncio.sleep(5)
-
+            logger.warning("Received shutdown signal")
     async def _fetch_market_data(self):
         """Fetch market data for all symbols."""
         # Placeholder - implement actual data fetching
