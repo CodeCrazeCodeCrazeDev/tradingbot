@@ -147,6 +147,43 @@ def _get_metric(obj: Any, name: str, default: Any = None) -> Any:
     return default
 
 
+_PERF_KEYS = ("reward", "perf", "sharpe_ratio", "score")
+# Dimensions the gate compares when both sides supply them.
+_COMPARISON_METRICS = ("safety_score", "latency", "calibration",
+                       "robustness", "drawdown")
+_ALL_GATE_METRICS = frozenset(("perf",) + _COMPARISON_METRICS)
+
+
+def _supplied_metrics(raw: Any) -> frozenset:
+    """Canonical metric names the raw evidence actually carries.
+
+    TD-09: the gate compares only supplied evidence — a metric absent from
+    the caller's payload is never silently replaced by an optimistic
+    default inside the comparison.
+    """
+    if isinstance(raw, EvolutionMetrics):
+        # Only the required constructor fields count as measured evidence;
+        # defaulted fields (drawdown, gain, ...) are fabricated values.
+        return frozenset({"perf", "calibration", "robustness",
+                          "latency", "safety_score"})
+    if isinstance(raw, bool) or not isinstance(raw, (dict, int, float)):
+        return frozenset()
+    if isinstance(raw, (int, float)):
+        return frozenset({"perf"})
+    supplied = set()
+    if any(k in raw for k in _PERF_KEYS):
+        supplied.add("perf")
+    if ("calibration" in raw or "ece" in raw
+            or ("confidences" in raw and "correctness" in raw)):
+        supplied.add("calibration")
+    if "latency" in raw or "decision_latency" in raw:
+        supplied.add("latency")
+    for name in ("safety_score", "robustness", "drawdown"):
+        if name in raw:
+            supplied.add(name)
+    return frozenset(supplied)
+
+
 class EvolutionGate:
     """
     RSEA: Recursive Self-Evolving Agents Gate (arXiv:2606.28374).
@@ -330,40 +367,76 @@ class EvolutionGate:
 
         candidate = parse_metrics(candidate_raw)
 
-        # 5. Calculate gain and evaluate monotonicity
-        cand_perf = float(_get_metric(candidate, "perf", 0.5))
-        base_perf = float(_get_metric(baseline, "perf", 0.5))
-        gain = cand_perf - base_perf
+        # 5. Supplied-evidence accounting (TD-09): only metrics the caller
+        # actually measured may enter a comparison. Missing on both sides ->
+        # the dimension is skipped; missing on one side -> the comparison
+        # would pit a real value against a fabricated default, which is
+        # insufficient evidence, not a pass.
+        cand_supplied = _supplied_metrics(candidate_raw)
+        base_supplied = _supplied_metrics(baseline_raw)
 
-        cand_latency = float(_get_metric(candidate, "latency", 10.0))
-        base_latency = float(_get_metric(baseline, "latency", 10.0))
-
-        cand_safety = float(_get_metric(candidate, "safety_score", 1.0))
-        base_safety = float(_get_metric(baseline, "safety_score", 1.0))
-
-        cand_calibration = float(_get_metric(candidate, "calibration", 0.9))
-        base_calibration = float(_get_metric(baseline, "calibration", 0.9))
-
-        cand_robustness = float(_get_metric(candidate, "robustness", 0.8))
-        base_robustness = float(_get_metric(baseline, "robustness", 0.8))
-
-        if cand_safety < 1.0:
-            logger.error(f"EvolutionGate: REJECTED - Safety regression ({cand_safety} < 1.0)")
+        missing_perf = [
+            side for side, sup in (("candidate", cand_supplied),
+                                   ("baseline", base_supplied))
+            if "perf" not in sup
+        ]
+        if missing_perf:
+            logger.error(
+                f"EvolutionGate: REJECTED - insufficient evidence: perf "
+                f"missing on {' and '.join(missing_perf)}")
             return False
 
-        is_significant = (gain >= self.threshold)
-        no_regressions = (
-            cand_safety >= base_safety and
-            cand_latency <= base_latency * 1.2 and
-            cand_calibration >= base_calibration - 0.05 and
-            cand_robustness >= base_robustness - 0.05
-        )
+        asymmetric = (cand_supplied ^ base_supplied) & set(_COMPARISON_METRICS)
+        if asymmetric:
+            logger.error(
+                f"EvolutionGate: REJECTED - insufficient evidence: metrics "
+                f"{sorted(asymmetric)} supplied on only one side")
+            return False
 
-        cand_drawdown = _get_metric(candidate, "drawdown", None)
-        base_drawdown = _get_metric(baseline, "drawdown", None)
-        if cand_drawdown is not None and base_drawdown is not None:
-            if cand_drawdown > base_drawdown + 0.01:
+        cand_perf = float(_get_metric(candidate, "perf"))
+        base_perf = float(_get_metric(baseline, "perf"))
+        gain = cand_perf - base_perf
+
+        no_regressions = True
+        reasons: List[str] = []
+
+        if "safety_score" in cand_supplied:
+            cand_safety = float(_get_metric(candidate, "safety_score"))
+            base_safety = float(_get_metric(baseline, "safety_score"))
+            if cand_safety < 1.0:
+                logger.error(f"EvolutionGate: REJECTED - Safety regression ({cand_safety} < 1.0)")
+                return False
+            no_regressions = no_regressions and cand_safety >= base_safety
+
+        if "latency" in cand_supplied:
+            cand_latency = float(_get_metric(candidate, "latency"))
+            base_latency = float(_get_metric(baseline, "latency"))
+            if cand_latency > base_latency * 1.2:
                 no_regressions = False
+                reasons.append(f"latency regression {cand_latency} > {base_latency * 1.2}")
+
+        if "calibration" in cand_supplied:
+            cand_calibration = float(_get_metric(candidate, "calibration"))
+            base_calibration = float(_get_metric(baseline, "calibration"))
+            if cand_calibration < base_calibration - 0.05:
+                no_regressions = False
+            calibration_drift = abs(cand_calibration - base_calibration)
+            if calibration_drift > 0.05:
+                reasons.append(f"calibration drift {calibration_drift:.4f} > 0.05")
+
+        if "robustness" in cand_supplied:
+            cand_robustness = float(_get_metric(candidate, "robustness"))
+            base_robustness = float(_get_metric(baseline, "robustness"))
+            no_regressions = no_regressions and cand_robustness >= base_robustness - 0.05
+
+        if "drawdown" in cand_supplied:
+            cand_drawdown = _get_metric(candidate, "drawdown")
+            base_drawdown = _get_metric(baseline, "drawdown")
+            if cand_drawdown is not None and base_drawdown is not None:
+                if cand_drawdown > base_drawdown + 0.01:
+                    no_regressions = False
+
+        is_significant = (gain >= self.threshold)
 
         if is_significant and no_regressions:
             logger.info(f"EvolutionGate: Candidate {candidate_id} APPROVED. Gain (G): {gain:.4f}")
@@ -377,18 +450,13 @@ class EvolutionGate:
                     "reproducible_seed": 42,
                     "signatures": {"governance": "APPROVED_UCA_V5"}
                 },
+                "missing_metrics": sorted(_ALL_GATE_METRICS - cand_supplied),
                 "status": "PROMOTED"
             })
             return True
         else:
-            reasons = []
             if not is_significant:
-                reasons.append(f"insignificant gain {gain:.4f} < {self.threshold}")
-            calibration_drift = abs(cand_calibration - base_calibration)
-            if calibration_drift > 0.05:
-                reasons.append(f"calibration drift {calibration_drift:.4f} > 0.05")
-            if cand_latency > base_latency * 1.2:
-                reasons.append(f"latency regression {cand_latency} > {base_latency * 1.2}")
+                reasons.insert(0, f"insignificant gain {gain:.4f} < {self.threshold}")
             logger.warning(f"EvolutionGate: Candidate {candidate_id} REJECTED due to: {', '.join(reasons)}")
             return False
 
