@@ -1,4 +1,11 @@
-"""Orchestrator tests package."""
-# Note: this package previously imported sibling test modules eagerly,
-# which created a circular import during pytest collection. Test modules
-# are discovered by pytest directly; do not re-add eager imports here.
+# Orchestrator tests package
+
+from . import test_master_orchestrator
+from . import test_agent_orchestrator
+from . import test_risk_manager
+from . import test_execution_engine
+from . import test_ml_predictor
+from . import test_performance_tracker
+from . import test_position_rotator
+from . import test_task_scheduler
+from . import test_workflow_manager

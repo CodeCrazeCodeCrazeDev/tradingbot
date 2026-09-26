@@ -4,15 +4,15 @@ Automated Critical Issue Fixer
 Fixes the top priority issues found in the diagnostic audit
 """
 
+import logging
 import os
 import sys
 import shutil
-import logging
+import sys
 from pathlib import Path
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
-
 
 class CriticalIssueFixer:
     """Automatically fix critical issues found in audit"""
@@ -289,10 +289,6 @@ class CriticalIssueFixer:
         print("\n✅ Automated fixes complete!")
         print("⚠️  IMPORTANT: Review changes before committing")
         print("⚠️  Test thoroughly before deploying")
-
-import sys
-
-logger = logging.getLogger(__name__)
 
 def main():
     """Main execution"""

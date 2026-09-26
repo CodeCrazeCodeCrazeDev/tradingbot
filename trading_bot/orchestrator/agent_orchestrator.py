@@ -10,8 +10,6 @@ from dataclasses import dataclass
 from datetime import datetime
 import numpy as np
 import pandas as pd
-import numpy
-import pandas
 
 logger = logging.getLogger(__name__)
 

@@ -118,11 +118,11 @@ class MasterOrchestrator:
         # Step 3: Predict success rates using ML
         scored_opportunities = await self._score_opportunities(filtered_opportunities)
 
-        # Cache opportunities for lookup during decision generation
-        self._last_opportunities = scored_opportunities
-
         # Step 4: Check correlations and dependencies
         uncorrelated_opportunities = self._remove_correlated_trades(scored_opportunities)
+
+        # Cache opportunities for decision lookup
+        self._last_opportunities = uncorrelated_opportunities
 
         # Step 5: Optimize portfolio allocation
         optimal_allocation = self._optimize_allocation(uncorrelated_opportunities)
