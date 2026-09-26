@@ -37,14 +37,15 @@ tests/decision_governance/test_multi_agent_validation_gov.py PASSED    [ 88%]
 tests/test_scientific_modules.py PASSED                                 [ 97%]
 tests/test_sre_implementation.py PASSED                                 [100%]
 
-============================== 88 passed in 7.83s ==============================
+============================== 88 passed in 6.56s ==============================
 ```
 
 ---
 
 ## 2. Compilation & Structural Invariant Verification
 
-- **Active Python Source Files Scanned**: 4,457 `.py` files in `trading_bot/`.
+- **Active Python Source Files Scanned**: 4,457 `.py` files in `trading_bot/`, `risk/`, and `scripts/`.
 - **Compilation Failures**: **0**.
 - **Syntax Errors**: **0**.
 - **Security Sandboxing Invariants**: Verified 100% compliance with `SecureASTVisitor` dynamic code checks.
+- **Async Non-Blocking Concurrency**: Verified zero blocking `time.sleep` calls in active async methods.

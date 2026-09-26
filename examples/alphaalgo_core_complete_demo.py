@@ -306,8 +306,9 @@ async def demo_multi_layer_defense():
     print("DEMO 5: Multi-Layer Defense")
     print("="*80)
     
-    create_core_integration,
-    IntegratedTradeRequest
+    from trading_bot.core.alphaalgo_core_integration import (
+        create_core_integration,
+        IntegratedTradeRequest
     )
     
     # Initialize
@@ -386,6 +387,7 @@ async def demo_market_hostility():
     print("DEMO 6: Market Hostility Detection")
     print("="*80)
     
+    from trading_bot.core.alphaalgo_core_integration import (
         create_core_integration,
         IntegratedTradeRequest
     )
@@ -462,6 +464,7 @@ async def demo_statistics_monitoring():
     print("DEMO 7: Statistics and Monitoring")
     print("="*80)
     
+    from trading_bot.core.alphaalgo_core_integration import (
         create_core_integration,
         IntegratedTradeRequest
     )
@@ -520,6 +523,7 @@ async def demo_confidence_vector():
     print("DEMO 8: Confidence Vector Analysis")
     print("="*80)
     
+    from trading_bot.core.alphaalgo_core_integration import (
         create_core_integration,
         IntegratedTradeRequest
     )
