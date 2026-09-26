@@ -19,7 +19,7 @@ from typing import Dict, Any, List, Optional, Tuple, Set
 from dataclasses import dataclass, field
 from uuid import uuid4
 
-from ..core.unified_registry import registry as unified_registry
+from trading_bot.core.unified_registry import registry as unified_registry
 
 logger = logging.getLogger("AlphaAlgo.SEAL_Discovery")
 

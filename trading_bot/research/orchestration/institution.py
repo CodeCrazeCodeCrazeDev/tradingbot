@@ -35,7 +35,7 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 
 # Import existing systems where possible
-from .discovery_platform import (
+from trading_bot.research.discovery.discovery_platform import (
     Observation, Question, HypothesisObject, Evidence, Theory, Decision, Action,
     ResearchCase, KnowledgeGraph, Belief, BeliefManagementSystem,
     ScientificJudgmentEngine, ResearchBalanceSheet, ConstitutionalLayer
@@ -49,7 +49,7 @@ from .research_os import (
     ResearchProject, ResearchQuestion, FeatureSet, ValidationReport, Deployment,
     PerformanceReport, KnowledgeEntry, ResearchWorkspace
 )
-from .research_computer import (
+from trading_bot.research.core.research_computer import (
     EpistemicInstruction, CPUCycleTrace, EpistemicMetrics, EpistemicObjectiveFunction,
     CompiledPipeline, ResearchCompiler, ResearchMemory, ResearchScheduler, ResearchCPU,
     QuantitativeResearchComputer
@@ -59,8 +59,8 @@ from .research_organization import (
     ScientificReviewVerdict, ScientificReviewer, KnowledgeIntegrationHub, ProductionPackage,
     TechnologyTransferOfficer, MetaResearchEngine, AlphaAlgoResearchOrganization
 )
-from .research_kernel import ResearchKernel, ResearchEconomicsEngine
-from .research_governance import (
+from trading_bot.research.core.research_kernel import ResearchKernel, ResearchEconomicsEngine
+from trading_bot.research.governance.research_governance import (
     StrategicMandate, ResearchStrategy, ResourceAllocation, ResearchPortfolioManager,
     ScienceExperimentDesign, ExperimentDesigner, DecisionRecord, DecisionManager,
     AuditTrace, GovernanceAuditTrail, MetaLearningEngine, AlphaAlgoQuantitativePlatform

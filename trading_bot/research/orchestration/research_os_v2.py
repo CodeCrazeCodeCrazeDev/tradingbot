@@ -6,6 +6,7 @@ immutable cryptographic peer-review governance logs, and closed-loop evolutionar
 """
 
 import os
+import uuid
 import json
 import sqlite3
 import hashlib
@@ -17,7 +18,7 @@ from typing import Dict, Any, List, Optional, Tuple, Union, Set
 from datetime import datetime
 from uuid import uuid4
 
-from ..core.unified_registry import registry as unified_registry
+from trading_bot.core.unified_registry import registry as unified_registry
 
 logger = logging.getLogger("AlphaAlgo.ResearchOS_V2")
 
@@ -149,7 +150,7 @@ class ResearchWorkspaceV2:
         num_iterations: int = 2
     ) -> Tuple[np.ndarray, Dict[str, Any]]:
         """Runs the SEAL self-adaptation loop and persists the adaptation to the database."""
-        from trading_bot.research.seal_adapter import SEALSystem
+        from trading_bot.research.alpha.seal_adapter import SEALSystem
         seal = SEALSystem()
         adapted_weights, best_edit = seal.self_adapt_alpha(
             base_weights=base_weights,
@@ -469,10 +470,24 @@ class ResearchStorageBackend:
         self.db_path = db_path
         self._init_tables()
 
-    def get_connection(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        return conn
+    def get_connection(self) -> "contextlib.AbstractContextManager[sqlite3.Connection]":
+        # `with conn:` on a raw Connection is a *transaction* context — it
+        # never closes the handle and leaks file locks (breaks unlink on
+        # Windows). This wrapper preserves commit/rollback semantics for
+        # every `with ... as conn` call site and guarantees close().
+        import contextlib
+
+        @contextlib.contextmanager
+        def _managed():
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+            try:
+                with conn:
+                    yield conn
+            finally:
+                conn.close()
+
+        return _managed()
 
     def _init_tables(self) -> None:
         """Initializes relational tables mapped in 12-stage redesign schemas."""

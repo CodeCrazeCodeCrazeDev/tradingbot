@@ -17,8 +17,8 @@ from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime
 from dataclasses import dataclass, field
 
-from .quant_pipeline import Hypothesis, ValidationLab
-from .research_os import ResearchProject, ResearchQuestion, QuantExperiment, ResearchWorkspace
+from trading_bot.research.orchestration.quant_pipeline import Hypothesis, ValidationLab
+from trading_bot.research.orchestration.research_os import ResearchProject, ResearchQuestion, QuantExperiment, ResearchWorkspace
 
 logger = logging.getLogger("AlphaAlgo.Governance")
 

@@ -638,14 +638,14 @@ class ResearchWorkspace:
     def get_cse_engine(self):
         """Lazy-loads the CSE Evolution Engine."""
         if self._cse_engine is None:
-            from trading_bot.research.cse_ceda import InvariantGatedEvolutionEngine
+            from trading_bot.research.discovery.cse_ceda import InvariantGatedEvolutionEngine
             self._cse_engine = InvariantGatedEvolutionEngine(self)
         return self._cse_engine
 
     def get_ceda_gate(self):
         """Lazy-loads the CEDA Decision Gate."""
         if self._ceda_gate is None:
-            from trading_bot.research.cse_ceda import CEDADecisionGate
+            from trading_bot.research.discovery.cse_ceda import CEDADecisionGate
             self._ceda_gate = CEDADecisionGate(self)
         return self._ceda_gate
 

@@ -5,7 +5,7 @@ import numpy as np
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
-from trading_bot.research.research_os import ResearchWorkspace, QuantExperiment
+from trading_bot.research.orchestration.research_os import ResearchWorkspace, QuantExperiment
 
 logger = logging.getLogger("AlphaAlgo.CSECEDA")
 
