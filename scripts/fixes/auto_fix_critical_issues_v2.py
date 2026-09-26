@@ -13,6 +13,7 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+
 class CriticalIssueFixer:
     """Automatically fix critical issues found in audit"""
     
@@ -144,6 +145,7 @@ class CriticalIssueFixer:
         
         # Check if main execution block exists
         if 'if __name__ == "__main__":' in content:
+            # Wrap existing main execution in try/except
             self.fixes_applied.append("Added exception handling template (manual review needed)")
             print("✅ Template created: Exception handling (requires manual integration)")
             return True
@@ -210,6 +212,8 @@ class CriticalIssueFixer:
         
         if old_method in content:
             content = content.replace(old_method, new_method)
+            
+            # Add except block before next method
             self.fixes_applied.append("Added error handling to risk_manager (partial)")
             print("✅ Fixed: Added error handling to risk_manager")
             
@@ -242,7 +246,7 @@ class CriticalIssueFixer:
         # Save report to file
         report_file = self.root / "AUTO_FIX_REPORT.md"
         with open(report_file, 'w', encoding='utf-8') as f:
-            f.write("# Automated Fix Report\n\n")
+            f.write(f"# Automated Fix Report\n\n")
             f.write(f"**Date**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
             f.write(f"**Backup Location**: `{self.backup_dir}`\n\n")
             
@@ -286,13 +290,9 @@ class CriticalIssueFixer:
         print("⚠️  IMPORTANT: Review changes before committing")
         print("⚠️  Test thoroughly before deploying")
 
-logger = logging.getLogger(__name__)
-
 
 def main():
     """Main execution"""
-    import sys
-
     # Get root directory from command line or use current
     root_dir = sys.argv[1] if len(sys.argv) > 1 else "."
     

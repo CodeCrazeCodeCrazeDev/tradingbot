@@ -6,9 +6,6 @@ Handles multi-symbol deployment with optimization and monitoring.
 import asyncio
 import argparse
 import logging
-import threading
-from pathlib import Path
-
 import pandas as pd
 import numpy as np
 from loguru import logger
@@ -190,8 +187,9 @@ class ProductionDeployment:
         iteration = 0
         
         while True:
-            iteration += 1
             try:
+                iteration += 1
+                
                 # Fetch market data for all symbols
                 market_data = await self._fetch_market_data()
                 
@@ -225,6 +223,9 @@ class ProductionDeployment:
         except KeyboardInterrupt:
                 logger.warning("Received shutdown signal")
                 break
+            except Exception as e:
+                logger.error(f"Error in trading loop: {e}")
+                await asyncio.sleep(5)
 
     async def _fetch_market_data(self):
         """Fetch market data for all symbols."""
