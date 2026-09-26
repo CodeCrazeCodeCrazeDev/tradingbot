@@ -710,8 +710,9 @@ class TemporalRiskManager:
 class ChronoMomentumOscillator:
     """IDEA 60: Oscillator based on temporal momentum."""
     
-    def calculate(self, prices: np.ndarray, periods: List[int] = [5, 10, 20, 50]) -> Dict:
+    def calculate(self, prices: np.ndarray, periods: Optional[List[int]] = None) -> Dict:
         try:
+            periods = periods if periods is not None else [5, 10, 20, 50]
             oscillators = {}
         
             for period in periods:
@@ -901,8 +902,9 @@ class TemporalMomentumDivergence:
 
 class ChronoVolume:
     """IDEA 72: Volume analysis across time periods."""
-    def analyze(self, volumes: np.ndarray, periods: List[int] = [5, 10, 20]) -> Dict:
+    def analyze(self, volumes: np.ndarray, periods: Optional[List[int]] = None) -> Dict:
         try:
+            periods = periods if periods is not None else [5, 10, 20]
             ratios = {}
             for p in periods:
                 if len(volumes) > p:

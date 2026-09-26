@@ -60,8 +60,8 @@ class FractalMomentumDivergence:
     reversal signals.
     """
     
-    def __init__(self, 
-                 timeframes: List[str] = ['5m', '15m', '1h'],
+    def __init__(self,
+                 timeframes: Optional[List[str]] = None,
                  momentum_period: int = 14,
                  divergence_lookback: int = 50,
                  min_confirmation_timeframes: int = 2):
@@ -74,7 +74,7 @@ class FractalMomentumDivergence:
             divergence_lookback: Lookback period for divergence detection
             min_confirmation_timeframes: Minimum timeframes needed for confirmation
         """
-        self.timeframes = timeframes
+        self.timeframes = timeframes if timeframes is not None else ['5m', '15m', '1h']
         self.momentum_period = momentum_period
         self.divergence_lookback = divergence_lookback
         self.min_confirmation_timeframes = min_confirmation_timeframes
@@ -459,13 +459,13 @@ class MultiTimeframeDivergenceFilter:
     Advanced filter for removing false divergences using multi-timeframe analysis.
     """
     
-    def __init__(self, 
-                 primary_timeframes: List[str] = ['5m', '15m', '1h'],
-                 confirmation_timeframes: List[str] = ['1h', '4h'],
+    def __init__(self,
+                 primary_timeframes: Optional[List[str]] = None,
+                 confirmation_timeframes: Optional[List[str]] = None,
                  filter_strength: float = 0.7):
         """Initialize the divergence filter."""
-        self.primary_timeframes = primary_timeframes
-        self.confirmation_timeframes = confirmation_timeframes
+        self.primary_timeframes = primary_timeframes if primary_timeframes is not None else ['5m', '15m', '1h']
+        self.confirmation_timeframes = confirmation_timeframes if confirmation_timeframes is not None else ['1h', '4h']
         self.filter_strength = filter_strength
         
     def filter_divergences(self, divergence_signals: List[DivergenceSignal]) -> List[DivergenceSignal]:

@@ -6,6 +6,3 @@
 # A file stays listed only while it fails to import; remove an entry when the
 # module it needs is restored or aliased. See tests/conftest.py for the
 # test-scoped flat-name -> canonical resolver.
-# All entries cleared: remaining failures were resolved via
-# convergence stubs (trading_bot/<name>.py deleted-subsystem stubs),
-# deepseek_engineer package restoration, and merge-splice test repairs.

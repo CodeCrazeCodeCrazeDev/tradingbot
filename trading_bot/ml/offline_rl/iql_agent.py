@@ -50,7 +50,7 @@ class IQLAgent:
         tau: float = 0.005,
         discount: float = 0.99,
         lr: float = 3e-4,
-        hidden_sizes: List[int] = [256, 256],
+        hidden_sizes: Optional[List[int]] = None,
         use_gpu: bool = True,
         log_dir: str = "logs/iql",
         use_d3rlpy: bool = True
@@ -78,7 +78,7 @@ class IQLAgent:
         self.tau = tau
         self.discount = discount
         self.lr = lr
-        self.hidden_sizes = hidden_sizes
+        self.hidden_sizes = hidden_sizes if hidden_sizes is not None else [256, 256]
         self.use_gpu = use_gpu and torch.cuda.is_available() if TORCH_AVAILABLE else False
         self.log_dir = log_dir
         self.use_d3rlpy = use_d3rlpy and D3RLPY_AVAILABLE

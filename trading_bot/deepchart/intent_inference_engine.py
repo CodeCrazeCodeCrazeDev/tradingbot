@@ -398,9 +398,10 @@ if TORCH_AVAILABLE:
     class TCNBranch(nn.Module):
         """TCN branch for local pattern extraction."""
         
-        def __init__(self, input_dim: int, hidden_dim: int, 
-                     dilations: List[int] = [1, 2, 4, 8]):
+        def __init__(self, input_dim: int, hidden_dim: int,
+                     dilations: Optional[List[int]] = None):
             super().__init__()
+            dilations = dilations if dilations is not None else [1, 2, 4, 8]
             layers = []
             in_ch = input_dim
             for d in dilations:
