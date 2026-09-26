@@ -14,17 +14,26 @@ import hashlib
 import json
 import logging
 import math
+import os
 import random
 import threading
 import time
 import uuid
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
     Ed25519PublicKey,
+)
+from cryptography.hazmat.primitives.serialization import (
+    Encoding,
+    NoEncryption,
+    PrivateFormat,
+    load_der_private_key,
+    load_pem_private_key,
 )
 
 from trading_bot.evaluation.runner import PairedFamilyReplay
@@ -238,8 +247,9 @@ class CandidateGenerator:
 
 
 # ---------------------------------------------------------------------------
-# Sandbox (in-process thread deadline + protected-path guard; subprocess
-# isolation is documented technical debt on Windows)
+# Sandbox (thread deadline by default; "subprocess" backend gives real
+# process isolation — the only isolation level suitable for hostile
+# candidate code, since a wedged thread cannot be preempted)
 # ---------------------------------------------------------------------------
 
 @dataclass
@@ -249,10 +259,50 @@ class SandboxResult:
     error: str = ""
 
 
+def _report_worker(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Keyless replay+report build; runs inside the sandbox boundary.
+
+    ``adapter_family`` is a string because AdapterSpec carries lambdas and
+    cannot cross the process boundary — the child re-resolves the same
+    canonical adapter.
+    """
+    kwargs = dict(payload)
+    kwargs["adapter"] = get_adapter(kwargs.pop("adapter_family"))
+    return IndependentVerifier.replay_and_build_report(**kwargs)
+
+
+def _report_worker_entry(queue: Any, payload: Dict[str, Any]) -> None:
+    # Warm the replay path's lazy imports during startup so the wall-clock
+    # budget only covers actual candidate work. The "ready" sentinel then
+    # lets the parent start the work deadline after child startup (spawn +
+    # module imports) instead of charging it to the budget.
+    from trading_bot.evaluation import synthetic_market as _synthetic_market  # noqa: F401
+    from trading_bot.strategies import institutional_strategies as _inst  # noqa: F401
+    queue.put(("ready", None, 0.0))
+    started = time.perf_counter()
+    try:
+        result = _report_worker(payload)
+        work_ms = (time.perf_counter() - started) * 1000.0
+        queue.put(("ok", result, work_ms))
+    except Exception as exc:  # noqa: BLE001 - sandbox boundary
+        queue.put(("error", repr(exc),
+                   (time.perf_counter() - started) * 1000.0))
+
+
 class SandboxManager:
-    def __init__(self, guard: ProtectedPathGuard, wall_clock_s: float = 30.0) -> None:
+    """Bounded-execution wrapper around candidate work.
+
+    backend="thread": in-process daemon thread + wall-clock join (kept for
+    lightweight callers; cannot preempt a wedged worker).
+    backend="subprocess": spawned child process killed hard on deadline —
+    the backend used by RecursiveImprovementCycle for real candidate work.
+    """
+
+    def __init__(self, guard: ProtectedPathGuard, wall_clock_s: float = 30.0,
+                 backend: str = "thread") -> None:
         self.guard = guard
         self.wall_clock_s = wall_clock_s
+        self.backend = backend
 
     def run(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> SandboxResult:
         before = self.guard.snapshot()
@@ -278,25 +328,162 @@ class SandboxManager:
             return SandboxResult("error", error=box["error"])
         return SandboxResult("ok", result=box.get("result"))
 
+    def run_report(self, payload: Dict[str, Any]) -> SandboxResult:
+        """Run a keyless verifier-replay payload under the configured backend."""
+        if self.backend == "subprocess":
+            return self._run_subprocess(payload)
+        return self.run(_report_worker, payload)
+
+    def _run_subprocess(self, payload: Dict[str, Any],
+                        startup_grace_s: float = 180.0,
+                        overhead_grace_s: float = 90.0) -> SandboxResult:
+        import multiprocessing as mp
+        import queue as queue_mod
+
+        def _kill(proc: mp.Process) -> None:
+            if not proc.is_alive():
+                return
+            proc.terminate()
+            proc.join(5.0)
+            if proc.is_alive():
+                proc.kill()
+                proc.join()
+
+        before = self.guard.snapshot()
+        ctx = mp.get_context("spawn")
+        result_q: mp.Queue = ctx.Queue()
+        proc = ctx.Process(target=_report_worker_entry,
+                           args=(result_q, payload), daemon=True)
+        proc.start()
+
+        # Phase 1 — bounded startup: wait for the child's "ready" sentinel
+        # (spawn + imports are not candidate work and must not consume the
+        # wall-clock budget, but they are still hard-bounded).
+        startup_deadline = time.monotonic() + max(startup_grace_s,
+                                                  self.wall_clock_s)
+        ready = False
+        while proc.is_alive() and time.monotonic() < startup_deadline:
+            try:
+                msg = result_q.get(timeout=0.2)
+            except queue_mod.Empty:
+                continue
+            except Exception:
+                break
+            if msg[0] == "ready":
+                ready = True
+                break
+        if not ready:
+            _kill(proc)
+            try:
+                self.guard.assert_unchanged(before)
+            except ProtectedPathViolation as exc:
+                return SandboxResult("protected_violation", error=str(exc))
+            if not proc.is_alive() and proc.exitcode not in (0, None):
+                return SandboxResult(
+                    "error", error=f"worker exited with code {proc.exitcode} during startup")
+            return SandboxResult(
+                "interrupted", error="sandbox startup grace exceeded (process killed)")
+
+        # Phase 2 — candidate work. Poll the result queue for the whole
+        # deadline: a large report only flushes while the parent is
+        # reading, so join-before-read deadlocks the child. The semantic
+        # budget applies to the child's self-measured work time; the hard
+        # deadline adds a bounded allowance for process mechanics.
+        deadline = time.monotonic() + self.wall_clock_s + overhead_grace_s
+        msg = None
+        while time.monotonic() < deadline:
+            try:
+                msg = result_q.get(timeout=0.2)
+                break
+            except queue_mod.Empty:
+                if not proc.is_alive():
+                    break
+        proc.join(timeout=5.0)
+        if msg is None:
+            try:
+                msg = result_q.get(timeout=2.0)
+            except queue_mod.Empty:
+                msg = None
+        if proc.is_alive():
+            _kill(proc)
+        try:
+            self.guard.assert_unchanged(before)
+        except ProtectedPathViolation as exc:
+            return SandboxResult("protected_violation", error=str(exc))
+        if msg is None:
+            if proc.exitcode not in (0, None):
+                return SandboxResult("error",
+                                     error=f"worker exited with code {proc.exitcode}")
+            return SandboxResult("interrupted",
+                                 error="wall-clock budget exceeded (process killed)")
+        status, value, work_ms = msg
+        if work_ms > self.wall_clock_s * 1000.0:
+            return SandboxResult(
+                "interrupted",
+                error=f"wall-clock budget exceeded: work took {work_ms:.0f}ms "
+                      f"> {self.wall_clock_s * 1000.0:.0f}ms")
+        if status == "ok":
+            return SandboxResult("ok", result=value)
+        return SandboxResult("error", error=value)
+
 
 # ---------------------------------------------------------------------------
-# Independent verifier (holds its own key; re-runs the replay itself)
+# Independent verifier (re-runs the replay itself; key custody is
+# operator-provisioned in production — a generated in-process key is a
+# development fallback only, not tamper-resistant custody)
 # ---------------------------------------------------------------------------
 
 class IndependentVerifier:
-    """Independent recomputation + attestation of a paired replay."""
+    """Independent recomputation + attestation of a paired replay.
+
+    Key custody (TD-07): the signing key is injected directly, or loaded
+    from ``key_path`` / the ``RSI_VERIFIER_KEY_FILE`` env var (PEM, DER, or
+    raw 32-byte Ed25519 seed). When no key is provisioned a fresh ephemeral
+    key is generated — acceptable for tests and local runs only.
+    The sandboxed subprocess path never receives key material: the child
+    runs :meth:`replay_and_build_report` and the parent signs.
+    """
+
+    KEY_ENV_VAR = "RSI_VERIFIER_KEY_FILE"
 
     def __init__(self, private_key: Optional[Ed25519PrivateKey] = None,
-                 verifier_id: str = "rsi-independent-verifier") -> None:
-        self.private_key = private_key or Ed25519PrivateKey.generate()
+                 verifier_id: str = "rsi-independent-verifier",
+                 key_path: Optional[str] = None) -> None:
+        self.private_key = private_key or self._load_private_key(key_path) \
+            or Ed25519PrivateKey.generate()
         self.verifier_id = verifier_id
+
+    @staticmethod
+    def _load_private_key(key_path: Optional[str]) -> Optional[Ed25519PrivateKey]:
+        path = key_path or os.environ.get(IndependentVerifier.KEY_ENV_VAR)
+        if not path:
+            return None
+        data = Path(path).read_bytes()
+        if b"-----BEGIN" in data:
+            key = load_pem_private_key(data, password=None)
+        else:
+            try:
+                key = load_der_private_key(data, password=None)
+            except ValueError:
+                key = None
+            if key is None and len(data) == 32:
+                key = Ed25519PrivateKey.from_private_bytes(data)
+        if not isinstance(key, Ed25519PrivateKey):
+            raise ValueError(f"{path} does not contain an Ed25519 private key")
+        return key
+
+    def export_private_key(self, path: str) -> None:
+        """Provision the local key to an operator-controlled file path."""
+        Path(path).write_bytes(
+            self.private_key.private_bytes(
+                Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()))
 
     @property
     def public_key(self) -> Ed25519PublicKey:
         return self.private_key.public_key()
 
-    def evaluate(
-        self,
+    @staticmethod
+    def replay_and_build_report(
         *,
         contract: Mapping[str, Any],
         adapter: AdapterSpec,
@@ -307,8 +494,14 @@ class IndependentVerifier:
         trial_id: str,
         trial_count: int,
         latency_ms: float,
+        verifier_id: str,
         fraction: float = 0.01,
-    ) -> Tuple[Dict[str, Any], str]:
+    ) -> Dict[str, Any]:
+        """Re-run the paired replay and build the unsigned report.
+
+        Deliberately keyless so it can execute inside the sandboxed child
+        process — attestation happens in the parent via ``sign()``.
+        """
         from trading_bot.evaluation.synthetic_market import fingerprint_all
 
         actual_hash = fingerprint_all(frames)
@@ -328,7 +521,7 @@ class IndependentVerifier:
         )
         from .candidate_adapters import candidate_code_hash, dependencies_hash
 
-        report: Dict[str, Any] = {
+        return {
             "schema_version": 2,
             "contract_id": contract["contract_id"],
             "baseline_hash": contract["baseline_hash"],
@@ -339,7 +532,7 @@ class IndependentVerifier:
             "latency_ms": float(latency_ms),
             "candidate_parameters": dict(genome.change_set),
             "holdout_attested": True,
-            "verifier_id": self.verifier_id,
+            "verifier_id": verifier_id,
             "cost_model_id": contract["cost_model_id"],
             "code_hash": candidate_code_hash(),
             "dependencies_hash": dependencies_hash(),
@@ -347,8 +540,56 @@ class IndependentVerifier:
             "parameter_effect_verified": effect,
             "bars": bars,
         }
-        signature = self.private_key.sign(canonical(report)).hex()
-        return report, signature
+
+    def sign(self, report: Mapping[str, Any]) -> str:
+        return self.private_key.sign(canonical(report)).hex()
+
+    def evaluate(
+        self,
+        *,
+        contract: Mapping[str, Any],
+        adapter: AdapterSpec,
+        frames: Mapping[str, Any],
+        incumbent_params: Mapping[str, Any],
+        candidate_params: Mapping[str, Any],
+        genome: ImprovementGenome,
+        trial_id: str,
+        trial_count: int,
+        latency_ms: float,
+        fraction: float = 0.01,
+    ) -> Tuple[Dict[str, Any], str]:
+        report = self.replay_and_build_report(
+            contract=contract, adapter=adapter, frames=frames,
+            incumbent_params=incumbent_params,
+            candidate_params=candidate_params, genome=genome,
+            trial_id=trial_id, trial_count=trial_count,
+            latency_ms=latency_ms, verifier_id=self.verifier_id,
+            fraction=fraction)
+        return report, self.sign(report)
+
+
+class ExternalVerifierClient:
+    """Operator-controlled verifier backend (TD-07 wire contract).
+
+    Production custody requires the signing key to live outside the RSI
+    process — an operator-hosted signing service or HSM reachable over an
+    authenticated channel. This client defines the interface the engine
+    expects (``evaluate()`` + ``verifier_id``); it deliberately raises
+    until a real transport is configured, because silently falling back
+    to a local key would defeat custody separation.
+    """
+
+    def __init__(self, endpoint: str,
+                 verifier_id: str = "external-verifier",
+                 timeout_s: float = 30.0) -> None:
+        self.endpoint = endpoint
+        self.verifier_id = verifier_id
+        self.timeout_s = timeout_s
+
+    def evaluate(self, **kwargs: Any) -> Tuple[Dict[str, Any], str]:
+        raise NotImplementedError(
+            "external verifier transport is not configured: provision the "
+            "operator-controlled signing service before enabling this backend")
 
 
 # ---------------------------------------------------------------------------
@@ -437,6 +678,10 @@ class CycleConfig:
     fraction: float = 0.01
     rng_seed: int = 1234
     run_transfer: bool = True
+    # "subprocess" = real process isolation for candidate work (default);
+    # "thread" = in-process deadline only, for environments where spawn is
+    # unavailable. Thread isolation is NOT sufficient for hostile code.
+    sandbox_backend: str = "subprocess"
 
 
 class RecursiveImprovementCycle:
@@ -477,7 +722,8 @@ class RecursiveImprovementCycle:
         hypotheses = HypothesisEngine(self.adapter)
         prioritizer = ExperimentPrioritizer()
         generator = CandidateGenerator()
-        sandbox = SandboxManager(self.guard, self.config.wall_clock_s)
+        sandbox = SandboxManager(self.guard, self.config.wall_clock_s,
+                                 backend=self.config.sandbox_backend)
         transfer = (TransferEvaluator(self.contract, self.adapter, self.config.fraction)
                     if self.config.run_transfer and self.panels else None)
 
@@ -512,16 +758,33 @@ class RecursiveImprovementCycle:
 
         started = time.perf_counter()
 
-        def job() -> Tuple[Dict[str, Any], str]:
-            latency = (time.perf_counter() - started) * 1000.0
-            return self.verifier.evaluate(
-                contract=self.contract, adapter=self.adapter,
-                frames=self.frames, incumbent_params=self.incumbent_params,
-                candidate_params=candidate_params, genome=genome,
-                trial_id=trial_id, trial_count=self._trial_counter,
-                latency_ms=latency, fraction=self.config.fraction)
+        if isinstance(self.verifier, IndependentVerifier):
+            # Keyless replay inside the sandbox; the parent's key signs.
+            payload = {
+                "contract": self.contract,
+                "adapter_family": self.adapter.family,
+                "frames": self.frames,
+                "incumbent_params": self.incumbent_params,
+                "candidate_params": candidate_params,
+                "genome": genome,
+                "trial_id": trial_id,
+                "trial_count": self._trial_counter,
+                "latency_ms": (time.perf_counter() - started) * 1000.0,
+                "verifier_id": self.verifier.verifier_id,
+                "fraction": self.config.fraction,
+            }
+            outcome = sandbox.run_report(payload)
+        else:
+            def job() -> Tuple[Dict[str, Any], str]:
+                latency = (time.perf_counter() - started) * 1000.0
+                return self.verifier.evaluate(
+                    contract=self.contract, adapter=self.adapter,
+                    frames=self.frames, incumbent_params=self.incumbent_params,
+                    candidate_params=candidate_params, genome=genome,
+                    trial_id=trial_id, trial_count=self._trial_counter,
+                    latency_ms=latency, fraction=self.config.fraction)
 
-        outcome = sandbox.run(job)
+            outcome = sandbox.run(job)
         if outcome.status == "protected_violation":
             self._security_event(genome, outcome.error)
             return self._finish(genome, trial_id, "rejected",
@@ -529,7 +792,10 @@ class RecursiveImprovementCycle:
         if outcome.status != "ok":
             return self._finish(genome, trial_id, "insufficient_evidence",
                                 f"sandbox {outcome.status}: {outcome.error}", {}, {})
-        report, signature = outcome.result
+        if isinstance(self.verifier, IndependentVerifier):
+            report, signature = outcome.result, self.verifier.sign(outcome.result)
+        else:
+            report, signature = outcome.result
         verdict = self.evaluator.evaluate(
             genome, report, expected_contract_hash=self.contract_hash,
             holdout_queries_used=self._trial_counter)
