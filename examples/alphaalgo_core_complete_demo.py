@@ -306,10 +306,6 @@ async def demo_multi_layer_defense():
     print("DEMO 5: Multi-Layer Defense")
     print("="*80)
     
-    create_core_integration,
-    IntegratedTradeRequest
-    )
-    
     # Initialize
     core = create_core_integration()
     
@@ -386,10 +382,6 @@ async def demo_market_hostility():
     print("DEMO 6: Market Hostility Detection")
     print("="*80)
     
-        create_core_integration,
-        IntegratedTradeRequest
-    )
-    
     core = create_core_integration()
     
     # Test different market conditions
@@ -462,10 +454,6 @@ async def demo_statistics_monitoring():
     print("DEMO 7: Statistics and Monitoring")
     print("="*80)
     
-        create_core_integration,
-        IntegratedTradeRequest
-    )
-    
     core = create_core_integration()
     
     # Generate multiple trade requests
@@ -519,10 +507,6 @@ async def demo_confidence_vector():
     print("\n" + "="*80)
     print("DEMO 8: Confidence Vector Analysis")
     print("="*80)
-    
-        create_core_integration,
-        IntegratedTradeRequest
-    )
     
     core = create_core_integration()
     
