@@ -179,10 +179,19 @@ class CognitiveSystemController:
         """Alias to skill_router for backward compatibility."""
         return self.skill_router
 
+    def calculate_variational_free_energy(self, observation: Optional[Dict[str, Any]] = None) -> float:
+        """
+        Calculates Variational Free Energy (VFE) according to continuous active inference (DiscoLoop).
+        F = E_q[log q(x) - log p(x, y)]
+        """
+        surprise = self._calculate_sensory_surprise(observation) if observation else (self.vfe_history[-1] if self.vfe_history else 0.15)
+        kl_divergence = 0.05 * len(self.discrete_channel)
+        return float(surprise + kl_divergence)
+
     @property
     def variational_free_energy(self) -> float:
-        """Globally managed objective score."""
-        return 0.15
+        """Globally managed objective score derived from continuous VFE."""
+        return self.calculate_variational_free_energy()
 
     @property
     def discrete_embeddings(self) -> List[str]:
