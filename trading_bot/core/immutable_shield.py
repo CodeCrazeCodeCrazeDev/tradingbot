@@ -87,13 +87,15 @@ class ImmutableShield:
         if action_type not in allowed:
             return ShieldReport(GovernanceDecision.REJECTED, f"Action type '{action_type}' not whitelisted", 0.9)
 
-        # 3. Quantity sanity + cap
-        quantity = params.get("quantity", 0)
-        if not isinstance(quantity, (int, float)) or quantity <= 0:
-            return ShieldReport(GovernanceDecision.REJECTED, f"Invalid quantity: {quantity}", 0.9)
-        max_qty = self.config.get("max_quantity", 10.0)
-        if quantity > max_qty:
-            return ShieldReport(GovernanceDecision.BLOCKED, f"Quantity {quantity} exceeds cap {max_qty}", min(1.0, quantity / max_qty))
+        # 3. Quantity sanity + cap — only enforced when the proposal carries a
+        # quantity (context-only checks like drawdown do not require one).
+        quantity = params.get("quantity")
+        if quantity is not None:
+            if not isinstance(quantity, (int, float)) or quantity <= 0:
+                return ShieldReport(GovernanceDecision.REJECTED, f"Invalid quantity: {quantity}", 0.9)
+            max_qty = self.config.get("max_quantity", 10.0)
+            if quantity > max_qty:
+                return ShieldReport(GovernanceDecision.BLOCKED, f"Quantity {quantity} exceeds cap {max_qty}", min(1.0, quantity / max_qty))
 
         # 4. Symbol denylist; typed OrderRequest payloads nest instrument data.
         instrument = params.get("instrument", {})
@@ -121,6 +123,14 @@ class ImmutableShield:
         max_exp = self.config.get("max_exposure", 0.05)
         if isinstance(exposure, (int, float)) and exposure > max_exp:
             return ShieldReport(GovernanceDecision.BLOCKED, f"Portfolio exposure {exposure:.2%} exceeds cap {max_exp:.2%}", 0.85)
+
+        # 7b. Portfolio drawdown hard stop — beyond the configured cap the
+        # shield blocks all new risk, not merely flags it.
+        portfolio = context.get("portfolio", {})
+        drawdown = portfolio.get("drawdown", 0.0) if isinstance(portfolio, dict) else 0.0
+        max_dd = self.config.get("max_drawdown", 0.15)
+        if isinstance(drawdown, (int, float)) and drawdown > max_dd:
+            return ShieldReport(GovernanceDecision.BLOCKED, f"Portfolio drawdown {drawdown:.2%} exceeds cap {max_dd:.2%}", 1.0)
 
         # 8. Regime veto: under EXTREME_VOLATILITY only exit/close actions pass
         regime = market.get("regime") if isinstance(market, dict) else None

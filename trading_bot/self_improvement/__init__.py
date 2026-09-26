@@ -59,6 +59,22 @@ except ImportError as e:
     # triage not available
     pass
 
+# autonomous_fixer / improvers
+try:
+    from .autonomous_fixer import AutonomousFixer
+except ImportError:
+    pass
+
+try:
+    from .internet_strategy_improver import InternetStrategyImprover
+except ImportError:
+    pass
+
+try:
+    from .mirror_market_tester import MirrorMarketTester
+except ImportError:
+    pass
+
 __all__ = [
     'ApprovalManager',
     'AutonomousOrchestrator',

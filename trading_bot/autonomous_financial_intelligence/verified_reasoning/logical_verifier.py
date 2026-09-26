@@ -131,7 +131,15 @@ class VerificationResult:
             'status': self.status.value,
             'validity_score': self.validity_score,
             'soundness_score': self.soundness_score,
-            'fallacies': self.fallacies,
+            'fallacies': [
+                {
+                    **f,
+                    'type': getattr(f.get('type'), 'value', f.get('type')),
+                }
+                if isinstance(f, dict)
+                else f
+                for f in self.fallacies
+            ],
             'consistency_issues': self.consistency_issues,
             'recommendations': self.recommendations,
             'timestamp': self.timestamp.isoformat(),

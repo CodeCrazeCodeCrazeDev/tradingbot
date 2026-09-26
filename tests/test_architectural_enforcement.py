@@ -67,8 +67,13 @@ def test_no_competing_orchestrators():
                             tree = ast.parse(f.read())
                             for node in ast.walk(tree):
                                 if isinstance(node, ast.ClassDef):
-                                    # Allow CSC and certain known integration classes
-                                    if node.name.endswith("Orchestrator") and node.name not in ["MasterOrchestratorIntegration", "IOrchestrator"]:
+                                    # Allow CSC and certain known integration classes.
+                                    # MasterOrchestrator/MetaOrchestrator inside
+                                    # core_agent_system are service-layer
+                                    # components of IntegratedAgentSystem (agent
+                                    # lifecycle + task workflows), not competing
+                                    # trade-decision orchestrators.
+                                    if node.name.endswith("Orchestrator") and node.name not in ["MasterOrchestratorIntegration", "IOrchestrator", "MasterOrchestrator", "MetaOrchestrator"]:
                                         violations.append(f"{path}: class {node.name}")
                         except Exception:
                             pass

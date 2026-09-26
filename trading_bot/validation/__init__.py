@@ -5,6 +5,12 @@ Validation Module
 Auto-generated integration file.
 """
 
+# risk_validation_gate
+try:
+    from .risk_validation_gate import RiskValidationGate, ValidationResponse, get_validation_gate
+except ImportError as e:
+    pass
+
 # autonomous_validation
 try:
     from .autonomous_validation import (

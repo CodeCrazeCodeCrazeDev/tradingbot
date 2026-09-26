@@ -148,8 +148,8 @@
       "owner": "ModularMonolithReadModel",
       "path": "trading_bot/interfaces/read_models.py",
       "adapters": "trading_bot/interfaces/adapters.py",
-      "status": "read_only_runtime_facade_ready",
-      "rule": "Interfaces expose health, graph, portfolio, dashboard, reporting, and notification projections without domain authority or broker access."
+      "status": "read_only_runtime_facade_registered",
+      "rule": "Interfaces expose health, graph, portfolio, dashboard, reporting, and notification projections without domain authority or broker access. Runtime registration marks them read-only with no capital path."
     },
     "recursive_self_improvement": {
       "owner": "HumanGuidedRecursiveImprovementLoop",
@@ -207,7 +207,7 @@
     "brokers": {"path": "trading_bot/brokers", "status": "adapter_migration_pending"},
     "persistence": {"path": "trading_bot/persistence", "status": "typed_trading_repository_active"},
     "recursive_self_improvement": {"path": "trading_bot/recursive_self_improvement", "status": "human_gated_foundation_active"},
-    "interfaces": {"path": "trading_bot/api", "status": "migration_pending"},
+    "interfaces": {"path": "trading_bot/interfaces", "status": "read_only_adapters_registered"},
     "operations": {"path": "config", "status": "migration_pending"},
     "legacy_convergence": {"path": "trading_bot/foundation/legacy_convergence.py", "status": "wave_0_complete"}
   },

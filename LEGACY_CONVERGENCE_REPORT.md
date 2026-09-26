@@ -83,8 +83,9 @@ MockBrokerAdapter paper execution, typed position conversion, repository
 persistence, and reconciliation are now covered by conformance tests. Added
 `LegacyStrategyAdapter` so legacy strategy engines emit typed signals only and
 cannot own sizing, approval, or execution. Added `StrategyRegistry` and runtime
-registration for signal-only strategy capabilities. Added the opt-in
-`DebateCapabilityAdapter` so legacy multi-agent debate returns advisory evidence
+registration for signal-only strategy capabilities. Registered strategy
+advice is now attached to normalized observations as advisory-only input before
+CSC. Added the opt-in `DebateCapabilityAdapter` so legacy multi-agent debate returns advisory evidence
 only and cannot authorize risk or execution. Research/evaluation convergence
 now requires an injected deterministic simulation runner; missing runners fail
 closed and explicitly enabled synthetic fallback is non-promotable. Added
@@ -96,6 +97,9 @@ with `ModularMonolithReadModel` and an API compatibility facade exposing only
 health, graph, portfolio, dashboard, reporting, and status projections. The root `main.py` CLI now
 constructs `ModularMonolithRuntime` directly and analysis-mode synthetic smoke
 completed through the canonical graph with the kill switch rejecting capital.
+Runtime startup now registers the read model plus dashboard, reporting, and
+notification adapters in the canonical component graph with `read_only` and
+`capital_path=none` metadata.
 
 ## Next wave
 

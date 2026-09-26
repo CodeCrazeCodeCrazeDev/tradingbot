@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 
 from trading_bot.evaluation.walk_forward import WalkForwardEvaluator
 
@@ -44,3 +45,28 @@ def test_parameter_replay_is_paired_costed_and_diagnostic_only():
     assert len(result["bars"]) == 64
     assert any(row["baseline_gross"] != row["candidate_gross"] for row in result["bars"])
     assert all(row["candidate_net"] <= row["candidate_gross"] for row in result["bars"])
+
+
+def test_both_diagnostic_replays_share_one_row_schema_and_cost_convention():
+    from trading_bot.evaluation.runner import (
+        PAIRED_BAR_KEYS,
+        BoundedMeanReversionReplay,
+        PairedStrategyReplay,
+    )
+
+    prices = [1.0 + 0.01 * ((i % 9) - 4) for i in range(65)]
+    df = pd.DataFrame([{"open": p, "close": p + 0.001, "high": p + 0.002,
+                        "low": p - 0.002, "volume": 1000, "timestamp": i}
+                       for i, p in enumerate(prices)])
+    bounded = BoundedMeanReversionReplay(cost_bps=5).run(df, symbol="EURUSD",
+                                                       baseline_lookback=20, candidate_lookback=4)
+    paired = PairedStrategyReplay(cost_bps=5).run(df, symbol="EURUSD",
+                                                baseline_lookback=20, candidate_lookback=4)
+    assert set(PAIRED_BAR_KEYS) == set(bounded["bars"][0]) == set(paired["bars"][0])
+    assert bounded["evidence_source"] == paired["evidence_source"] == "unsealed_diagnostic_replay"
+    for result in (bounded, paired):
+        for row in result["bars"]:
+            for side in ("baseline", "candidate"):
+                expected = row[f"{side}_gross"] - row[f"{side}_turnover"] * row["cost_bps"] / 10000
+                assert row[f"{side}_net"] == pytest.approx(expected)
+            assert result["promotion_eligible"] is False

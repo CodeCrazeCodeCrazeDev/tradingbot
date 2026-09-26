@@ -80,8 +80,9 @@ class PositionState:
     
     @classmethod
     def from_dict(cls, d: Dict) -> 'PositionState':
-        d['opened_at'] = datetime.fromisoformat(d['opened_at'])
-        d['last_updated'] = datetime.fromisoformat(d['last_updated'])
+        for key in ("opened_at", "last_updated"):
+            value = d[key]
+            d[key] = value if isinstance(value, datetime) else datetime.fromisoformat(value)
         d['status'] = PositionStatus(d['status'])
         return cls(**d)
     
@@ -122,20 +123,20 @@ class PositionLock:
         
         lock = self._locks[position_id]
         acquired = lock.acquire(timeout=timeout)
-        
-        if not acquired:
-            try:
-                current_owner = self._lock_owners.get(position_id, 'unknown')
-                raise TimeoutError(
-                    f"Failed to acquire lock for position {position_id}. "
-                    f"Currently held by: {current_owner}"
-                )
 
-                self._lock_owners[position_id] = owner
-                yield
-            finally:
-                self._lock_owners.pop(position_id, None)
-                lock.release()
+        if not acquired:
+            current_owner = self._lock_owners.get(position_id, 'unknown')
+            raise TimeoutError(
+                f"Failed to acquire lock for position {position_id}. "
+                f"Currently held by: {current_owner}"
+            )
+
+        try:
+            self._lock_owners[position_id] = owner
+            yield
+        finally:
+            self._lock_owners.pop(position_id, None)
+            lock.release()
 
     def is_locked(self, position_id: str) -> bool:
         """Check if position is locked"""

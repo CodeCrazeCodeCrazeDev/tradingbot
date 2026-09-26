@@ -190,8 +190,15 @@ class UnifiedDecisionBus:
 
     def __init__(self, config: Optional[Dict] = None):
         if getattr(self, "_initialized", False):
+            # Singleton: re-apply an explicitly passed config (e.g. a fresh
+            # log_path after reset) without re-running full construction.
+            if config:
+                self.config.update(config)
+                if "log_path" in config:
+                    self._log_path = config["log_path"]
             return
         self.config = config or {}
+        self._log_path = self.config.get("log_path")
         self._log: List[Union[LogAction, UnifiedEvent]] = []
         self._voters: Dict[str, Callable] = {}
         self._subscribers: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
@@ -304,7 +311,11 @@ class UnifiedDecisionBus:
         logger.debug(f"LogAct: Action {action.action_id} queued for auditing (Priority: {action.priority.name})")
 
     async def publish(self, event: Any):
-        if isinstance(event, (LogAction, UnifiedEvent)) or hasattr(event, "priority"):
+        if isinstance(event, UnifiedEvent):
+            # Events dispatch directly to subscribers; only LogActions go
+            # through voter consensus (an event has no audit fields).
+            await self._dispatch(event)
+        elif isinstance(event, LogAction) or hasattr(event, "priority"):
             await self.propose_action(event)
         else:
             action = LogAction(
@@ -464,6 +475,12 @@ class UnifiedDecisionBus:
                 if action:
                     action._completed_event.set()
                     self._action_queue.task_done()
+                    if self._log_path:
+                        try:
+                            with open(self._log_path, "a", encoding="utf-8") as f:
+                                f.write(json.dumps(action.to_dict(), default=str) + "\n")
+                        except Exception as e:
+                            logger.error(f"LogAct: persistence write failed: {e}")
 
     def _check_consensus(self, action: LogAction) -> bool:
         """
@@ -482,10 +499,18 @@ class UnifiedDecisionBus:
         return True
 
     async def _dispatch(self, action: LogAction):
-        handlers = self._subscribers.get(action.action_type, []) + self._subscribers.get("*", [])
+        key = getattr(action, "action_type", None) or getattr(action, "event_type", "")
+        handlers = self._subscribers.get(key, []) + self._subscribers.get("*", [])
         tasks = [h["handler"](action) for h in handlers]
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
+
+    def get_action_by_id(self, action_id: str) -> Optional[LogAction]:
+        """Look up a processed action in the shared audit log by id."""
+        for entry in self._log:
+            if getattr(entry, "action_id", None) == action_id:
+                return entry
+        return None
 
 # Global instance for production path (authoritative)
 decision_bus = UnifiedDecisionBus()

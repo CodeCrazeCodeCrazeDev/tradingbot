@@ -3,6 +3,13 @@
 experiment tracking
 """
 
+import warnings as _warnings
+_warnings.warn(
+    "trading_bot.experiment_tracker is deprecated: not on the canonical runtime path and carries no improvement authority; use trading_bot.recursive_self_improvement instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 from typing import Any, Dict
 
 

@@ -2,6 +2,13 @@
 meta_learning package
 """
 
+import warnings as _warnings
+_warnings.warn(
+    "trading_bot.meta_learning is deprecated: not on the canonical runtime path and carries no improvement authority; use trading_bot.recursive_self_improvement instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 try:
     from .maml import Maml, create_maml
 except ImportError as e:

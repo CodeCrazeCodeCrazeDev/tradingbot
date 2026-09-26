@@ -216,21 +216,34 @@ class EvidenceGraphGate:
     Hard constraint gate for the CSC.
     Ensures every claim is backed by the Evidence Graph.
     """
+    # Set by verify_evidence_first for callers that surface the reason upstream.
+    last_rejection_reason: Optional[str] = None
+
     @staticmethod
     def verify_evidence_first(snapshot: Any, verdicts: List[VerifierVerdict]) -> bool:
+        EvidenceGraphGate.last_rejection_reason = None
         if not verdicts:
+            EvidenceGraphGate.last_rejection_reason = "No verifier verdicts produced"
             return False
 
         # 1. Consensus Gate (Institutional SLA: 80%)
         valid_count = sum(1 for v in verdicts if v.is_valid)
         if valid_count / len(verdicts) < 0.8:
+            failing = [v for v in verdicts if not v.is_valid]
+            critiques = "; ".join(v.critique for v in failing if v.critique) or "no critiques"
+            EvidenceGraphGate.last_rejection_reason = (
+                f"Consensus below 80% ({valid_count}/{len(verdicts)}): {critiques}"
+            )
             logger.error("EvidenceGate: REJECTED - Consensus below 80%")
             return False
 
         # 2. High-Confidence Veto check
         for v in verdicts:
             if not v.is_valid and v.confidence > 0.85:
-                logger.error(f"EvidenceGate: REJECTED - High-confidence VETO by {v.agent_name}: {v.critique}")
+                EvidenceGraphGate.last_rejection_reason = (
+                    f"High-confidence VETO by {v.agent_name}: {v.critique}"
+                )
+                logger.error(f"EvidenceGate: REJECTED - {EvidenceGraphGate.last_rejection_reason}")
                 return False
 
         # 3. Evidence Graph Hard Constraints
@@ -240,7 +253,10 @@ class EvidenceGraphGate:
             # Only enforce minimum size if the graph is partially populated (i.e. not empty/mocked out)
             if len(graph.nodes) > 0:
                 if len(graph.nodes) < 5 or len(graph.edges) < 3:
-                    logger.error(f"EvidenceGate: REJECTED - Insufficient evidence. Graph has {len(graph.nodes)} nodes and {len(graph.edges)} edges.")
+                    EvidenceGraphGate.last_rejection_reason = (
+                        f"Insufficient evidence. Graph has {len(graph.nodes)} nodes and {len(graph.edges)} edges."
+                    )
+                    logger.error(f"EvidenceGate: REJECTED - {EvidenceGraphGate.last_rejection_reason}")
                     return False
 
         return True

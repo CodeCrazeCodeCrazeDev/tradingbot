@@ -87,6 +87,10 @@ class AAMISMasterOrchestrator:
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
+        # Compatibility contract: shims expose the canonical CSC singleton so
+        # legacy callers can route cognition through the One Brain.
+        from trading_bot.core.csc.controller import CognitiveSystemController
+        self.csc = CognitiveSystemController()
         self.decision_history: List[AAMISDecision] = []
         self.performance_metrics: Dict[str, float] = {}
         logger.warning(

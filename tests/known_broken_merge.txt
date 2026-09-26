@@ -2,6 +2,9 @@
 # ModuleNotFoundError referencing deleted subsystems). Quarantined via
 # pytest_ignore_collect in tests/conftest.py. Remove entries as files are repaired.
 # Regenerated from a full collection sweep + per-file import recheck.
+# Sweep round 5-6: top-level tests/*.py exercising pre-merge API surface that no
+# longer exists (deleted legacy executors/validators/explainers), plus generated
+# files with module-level NameErrors against deleted subsystem shims.
 advanced_analysis/test_advanced_analysis_orchestrator.py
 adversarial_curriculum/test_curriculum_orchestrator.py
 ai_engineer/test_deepseek_integration.py
@@ -100,10 +103,8 @@ test_analysis_comprehensive.py
 test_autonomous_modules.py
 test_autonomy_control_plane.py
 test_blockchain_modules.py
-test_broker_adapter.py
 test_brokers_comprehensive.py
 test_cognitive_architecture.py
-test_complete_system.py
 test_comprehensive.py
 test_connectivity_comprehensive.py
 test_core_modules.py
@@ -113,7 +114,6 @@ test_database_comprehensive.py
 test_deepseek_engineer.py
 test_execution_comprehensive.py
 test_execution_risk_coverage.py
-test_fill_tracker.py
 test_functional_coverage.py
 test_imaginationplanner.py
 test_infrastructure_comprehensive.py
@@ -121,7 +121,6 @@ test_ingestion_pipeline.py
 test_institutional_modules.py
 test_market_intelligence.py
 test_massive_coverage.py
-test_master_risk_manager.py
 test_maximum_coverage.py
 test_ml_comprehensive.py
 test_opportunity_scanner.py
@@ -134,11 +133,9 @@ test_risk_comprehensive.py
 test_self_healing_ai.py
 test_system_cognitive_os.py
 test_system_registry.py
-test_tamic_system.py
 test_thinking_bot.py
 test_validation_comprehensive.py
 test_validation_coverage.py
-test_validation_gate.py
 test_world_model.py
 tests/test_run_tests.py
 trading_bot/indicators/learned/test_fibonacciretracementindicator.py

@@ -148,7 +148,9 @@ class SAGEGraphMemory:
         return CompatMultiDiGraph()
 
     def save(self):
-        os.makedirs(os.path.dirname(self.storage_path), exist_ok=True)
+        parent_dir = os.path.dirname(self.storage_path)
+        if parent_dir:
+            os.makedirs(parent_dir, exist_ok=True)
         try:
             temp_graph = self.graph.copy()
             for u, v, k, d in list(temp_graph.edges(keys=True, data=True)):
@@ -233,6 +235,19 @@ class SAGEGraphMemory:
             delta = float(item.get("delta", deltas.get(action, 1.0)))
             if action in ("WEAKEN", "PRUNE"):
                 delta = -abs(delta)
+
+            # Direct edge address: (u, v, key) tuples take precedence and PRUNE
+            # removes the edge outright.
+            edge_id = item.get("edge_id")
+            if edge_id is not None:
+                u, v, k = edge_id
+                if action == "PRUNE":
+                    if self.graph.has_edge(u, v, k):
+                        self.graph.remove_edge(u, v, k)
+                    continue
+                self.evolve_weights(edge_id, delta)
+                continue
+
             u, v = item.get("source"), item.get("target")
             if u is None or v is None:
                 continue
@@ -559,9 +574,17 @@ class HierarchicalMemorySystem:
                 {"confidence": entry.composite_confidence}
             )
 
-        # 2. Persist evidence graph nodes (arXiv:2606.13669 Agents-K1)
+        # 2. Persist evidence graph nodes and edges (arXiv:2606.13669 Agents-K1)
         for node_id, node in entry.evidence_graph_snapshot.nodes.items():
             self.sage.graph.add_node(node_id, type=node.node_type, content=str(node.content))
+        for edge in entry.evidence_graph_snapshot.edges:
+            self.sage.graph.add_edge(
+                edge.source_id,
+                edge.target_id,
+                relation=getattr(edge.relation, "value", edge.relation),
+                weight=getattr(edge, "weight", 1.0),
+                timestamp=datetime.utcnow().isoformat(),
+            )
 
         # 3. Persist file with sufficient statistics (HIPIF)
         entry_data = {
@@ -606,9 +629,14 @@ class HierarchicalMemorySystem:
         self._save_schema()
         logger.info("HMS V6: AutoMem optimization cycle complete.")
 
-    def optimize_metamemory(self, feedback: List[Dict[str, Any]]):
+    def optimize_metamemory(
+        self,
+        feedback: Optional[List[Dict[str, Any]]] = None,
+        success_trajectories: Optional[List[Dict[str, Any]]] = None,
+    ):
         """AutoMem entry point (canonical name used by the UCA V5 test suite)."""
-        return self.optimize_memory(feedback)
+        items = feedback if feedback is not None else (success_trajectories or [])
+        return self.optimize_memory(items)
 
     @classmethod
     def reset(cls):

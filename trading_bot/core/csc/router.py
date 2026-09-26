@@ -146,13 +146,53 @@ class SkillRouteOutcome:
 
 @dataclass
 class SkillArtifact:
+    # Field order preserves the V5 positional contract:
+    # SkillArtifact(skill_id, skill_type, executable, capabilities)
     skill_id: str
     skill_type: SkillType
-    version: str = "1.0.0"
     executable: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None
-    adapter_id: Optional[str] = None
     capabilities: Set[str] = field(default_factory=set)
+    version: str = "1.0.0"
+    adapter_id: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
+    # HASP trace ledging: appended by HASPExecutor on each execution.
+    performance_history: List[Dict[str, Any]] = field(default_factory=list)
+
+    def __await__(self):
+        """Allow ``await router.route_task(...)`` to resolve to a
+        SkillRouteOutcome when a V5-style artifact was returned."""
+        async def _resolve():
+            return SkillRouteOutcome(
+                status="skill_resolved",
+                adapter_id=self.adapter_id,
+                version=self.version,
+                reason=f"Explicit mapping resolved to skill {self.skill_id}",
+            )
+        return _resolve().__await__()
+
+
+class _AwaitableResult(dict):
+    """Dict result that is also awaitable — resolves to itself.
+
+    Lets HASPExecutor.execute serve both the V5 synchronous API
+    (``executor.execute(artifact, state)``) and the V6 awaited API
+    (``await executor.execute("skill_id", state)``).
+    """
+    def __await__(self):
+        async def _self():
+            return self
+        return _self().__await__()
+
+
+class _RoutedAwaitable:
+    """Deferred route_task resolution: awaiting runs the V6 async router."""
+    def __init__(self, router: "SkillRouter", task: str, context: Dict[str, Any]):
+        self._router = router
+        self._task = task
+        self._context = context
+
+    def __await__(self):
+        return self._router._route_task_async(self._task, self._context).__await__()
 
 
 class SkillRouter:
@@ -191,6 +231,14 @@ class SkillRouter:
             return
         self._registry: Dict[str, List[SkillArtifact]] = {}
         self._specialists: Dict[str, List[Any]] = {}
+        # Explicit task_type -> skill_id mappings (V5 meta-harness API);
+        # resolvable synchronously by route_task before the async router runs.
+        self._mappings: Dict[str, str] = {
+            "execution": "vwap_hasp_v1",
+            "risk_check": "compliance_gate_hasp",
+            "sentiment": "sentiment_lora_v2",
+            "market_analysis": "default_reasoning",
+        }
         self._initialize_default_skills()
         if getattr(self, "_initialized", False):
             return
@@ -241,13 +289,15 @@ class SkillRouter:
         self._registry[artifact.skill_id].sort(key=lambda x: x.version, reverse=True)
         logger.debug(f"Registered skill: {artifact.skill_id} v{artifact.version}")
 
-    async def route_task(self, *args) -> SkillRouteOutcome:
+    def route_task(self, *args) -> Any:
         """
         Routes a task to the appropriate skill or adapter.
-        Implements Deterministic Routing and HASP Pre-emption.
 
-        Accepts both ``route_task(task, context)`` and the legacy V4 form
-        ``route_task(agent_or_skill, task, context)``.
+        Dual contract (post-consolidation):
+        - Synchronous V5: when an explicit ``_mappings`` entry resolves to a
+          registered skill, returns the ``SkillArtifact`` directly.
+        - Awaitable V6: otherwise returns a deferred awaitable; ``await``
+          resolves to a ``SkillRouteOutcome`` via the async router.
         """
         if len(args) >= 3:
             _, task, context = args[0], args[1], args[2]
@@ -256,6 +306,20 @@ class SkillRouter:
         else:
             raise TypeError(f"route_task expects (task, context) or (agent, task, context); got {len(args)} args")
         context = context or {}
+
+        mapped_id = self._mappings.get(task) if isinstance(task, str) else None
+        if mapped_id:
+            skill = self.get_skill(mapped_id)
+            if skill is not None:
+                return skill
+        return _RoutedAwaitable(self, task, context)
+
+    def update_mapping(self, task_type: str, skill_id: str) -> None:
+        """Meta-Harness Optimization: remap a task type to a skill id."""
+        self._mappings[task_type] = skill_id
+
+    async def _route_task_async(self, task: str, context: Dict[str, Any]) -> SkillRouteOutcome:
+        """Async V6 routing: HASP volatility pre-emption + capability routing."""
         market_state = context.get("market", context)
         vol = market_state.get("volatility", market_state.get("market_volatility", 0))
         if vol > 0.3:
@@ -338,22 +402,34 @@ class HASPExecutor:
     def __init__(self, router: Optional[SkillRouter] = None):
         self.router = router or SkillRouter()
 
-    async def execute(
-        self, skill_id: str, state: Dict[str, Any], version: Optional[str] = None
-    ) -> Dict[str, Any]:
-        skill = self.router.get_skill(skill_id, version)
-        if not skill:
-            return {"status": "error", "message": f"Skill {skill_id} not found"}
+    def execute(
+        self, skill: Any, state: Dict[str, Any], version: Optional[str] = None
+    ) -> "_AwaitableResult":
+        """Execute a skill program under the HASP invariant harness.
 
-        if skill.skill_type not in (SkillType.PROGRAM, SkillType.HASP_PROGRAM):
-            return {"status": "error", "message": f"Skill {skill_id} is not an executable program"}
+        Accepts either a ``SkillArtifact`` (V5 sync contract — returns a
+        ``{"status", "result"}`` wrapper and ledges the run in
+        ``performance_history``) or a skill id string (V6 contract — returns
+        the program's own result dict). The result is awaitable in both cases.
+        """
+        is_artifact = isinstance(skill, SkillArtifact)
+        artifact = skill if is_artifact else self.router.get_skill(str(skill), version)
+        skill_id = artifact.skill_id if artifact else str(skill)
+        if artifact is None:
+            return _AwaitableResult(status="error", message=f"Skill {skill_id} not found")
 
-        logger.info(f"HASP: Executing skill program {skill.skill_id} v{skill.version}")
+        if artifact.skill_type not in (SkillType.PROGRAM, SkillType.HASP_PROGRAM):
+            return _AwaitableResult(status="error", message=f"Skill {skill_id} is not an executable program")
+
+        logger.info(f"HASP: Executing skill program {artifact.skill_id} v{artifact.version}")
         try:
-            res = skill.executable(state)
+            res = artifact.executable(state) if callable(artifact.executable) else {}
+            artifact.performance_history.append({"state": state, "result": res})
             if "illegal_action" in res or any("delete" in str(k).lower() for k in res.keys()) or any("delete" in str(v).lower() for v in res.values()):
                 logger.error(f"HASP Invariant Violation: Skill {skill_id} returned illegal state {res}")
-                return {"status": "invariant_fail", "reason": "Post-execution state violated system safety invariants"}
-            return res
+                return _AwaitableResult(status="invariant_fail", reason="Post-execution state violated system safety invariants")
+            if is_artifact:
+                return _AwaitableResult(status="success", result=res)
+            return _AwaitableResult(res) if isinstance(res, dict) else _AwaitableResult(status="success", result=res)
         except Exception as e:
-            return {"status": "failure", "error": str(e)}
+            return _AwaitableResult(status="failure", error=str(e))

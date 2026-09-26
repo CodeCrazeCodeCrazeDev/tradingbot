@@ -170,14 +170,16 @@ class EvaluationEngine:
                     report["issued_at"] > now + 60 or report["issued_at"] > report["expires_at"] or
                     report["expires_at"] > contract["expires_at"] or now >= report["expires_at"]):
                 return verdict("insufficient_evidence", "stale or inconsistent verifier attestation")
-            if not report["holdout_attested"] or not report["verifier_id"] or not report["trial_id"] or not report["nonce"]:
+            if (report["holdout_attested"] is not True or not isinstance(report["verifier_id"], str) or
+                    not report["verifier_id"] or not isinstance(report["trial_id"], str) or
+                    not report["trial_id"] or not isinstance(report["nonce"], str) or not report["nonce"]):
                 return verdict("insufficient_evidence", "independent holdout attestation absent")
-            if not report["risk_invariants_passed"]:
+            if report["risk_invariants_passed"] is not True:
                 return verdict("rejected", "protected runtime risk invariant failed")
             if (report["code_hash"] != contract["code_hash"] or
                     report["dependencies_hash"] != contract["dependencies_hash"]):
                 return verdict("rejected", "parameter candidate modified code or dependencies")
-            if not report["parameter_effect_verified"]:
+            if report["parameter_effect_verified"] is not True:
                 return verdict("insufficient_evidence", "strategy parameter effect unverified")
             if report["cost_model_id"] != contract["cost_model_id"] or not contract["cost_model_id"]:
                 return verdict("insufficient_evidence", "cost model is not bound to evaluation")

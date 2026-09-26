@@ -7,6 +7,14 @@ Auto-generated integration file.
 
 from .service import CanonicalRiskService, LegacyRiskPolicyAdapter
 
+try:
+    from .MASTER_risk_manager import (
+        TradeDirection, TradeQuality, RiskMode, MarketRegime,
+        TradingStats, PositionSize, RiskLimits,
+    )
+except ImportError:
+    pass
+
 # MASTER_risk_manager
 try:
     from .MASTER_risk_manager import (

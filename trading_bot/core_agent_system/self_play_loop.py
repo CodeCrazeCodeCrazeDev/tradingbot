@@ -149,7 +149,7 @@ class SelfPlayLoop:
         self._audit_system = audit_system
 
         # UCA-2026: Grounded Backtest Engine
-        self.backtester = AdvancedBacktester(self.config)
+        self.backtest_engine = AdvancedBacktester(self.config)
         self.market_replay: Optional[MarketReplay] = None
 
         # RL Framework
@@ -343,6 +343,11 @@ class SelfPlayLoop:
             # In production, this data comes from DataManager
             sample_data = self._load_production_data()
             self.market_replay = MarketReplay(sample_data)
+            # Mirror the grounded dataset onto the backtest engine so
+            # state construction and callers share the same source of truth.
+            self.backtest_engine.data = sample_data
+            if not getattr(self.backtest_engine, "initial_capital", None):
+                self.backtest_engine.initial_capital = self.config.get("initial_capital", 100000.0)
 
         # Start from a random point in the split
         symbol = list(self.market_replay.data.keys())[0]

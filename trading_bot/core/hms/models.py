@@ -73,6 +73,9 @@ class EvidenceEdge:
     weight: float = 1.0
     evidence_package_id: Optional[str] = None
     is_causal: bool = False
+    # QKG context-dependent validity: the set of context keys under which this
+    # edge's relation holds (arXiv:2604.23972).
+    context_validity_mask: Optional[Dict[str, Any]] = None
 
 @dataclass
 class EvidenceGraph:

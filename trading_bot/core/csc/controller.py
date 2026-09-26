@@ -24,7 +24,7 @@ import copy
 import threading
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
-from uuid import uuid4
+from trading_bot.core.governance.determinism import determinism as _determinism
 from unittest.mock import MagicMock, AsyncMock
 
 from .folding import InformationFolder
@@ -420,7 +420,19 @@ class CognitiveSystemController:
         for r in reports:
             critique = getattr(r, 'critique', 'critique')
             new_branch.reasoning_trace.append(f"Correction: {critique}")
+            new_branch.reasoning_trace.append(f"Refinement: {critique}")
         return new_branch
+
+    def _apply_hasp_guardrails(self, observation: Dict[str, Any]) -> Dict[str, Any]:
+        """Synchronous HASP volatility guardrail check on a raw observation."""
+        volatility = observation.get("volatility", 0.0)
+        if isinstance(volatility, (int, float)) and volatility > 0.3:
+            return {
+                "status": "pf_intervention",
+                "result": {"action": "override_to_hold"},
+                "pf_result": {"action": "override_to_hold", "reason": "High volatility guardrail"},
+            }
+        return {"status": "ok"}
 
     def _select_optimal_action(
         self, branch: ReasoningBranch, simulations: Dict[str, Any]
@@ -445,7 +457,7 @@ class CognitiveSystemController:
         causal_impact = sim_data.get("structural_impact", {}) if isinstance(sim_data, dict) else {}
 
         return {
-            "trade_id": str(uuid4()),
+            "trade_id": _determinism.get_uuid(),
             "symbol": branch.execution_plan.get("symbol", "BTC/USDT") if isinstance(branch.execution_plan, dict) else "BTC/USDT",
             "action": branch.execution_plan.get("action", "WAIT") if isinstance(branch.execution_plan, dict) else "WAIT",
             "quantity": final_qty,
@@ -484,7 +496,7 @@ class CognitiveSystemController:
         """Constructs an immutable research ledger entry for decision provenance."""
         provenance = InstitutionalProvenance(pipeline_version="UCA-V6", git_sha="uca-2026-signed")
         return ResearchLedgerEntry(
-            entry_id=str(uuid4()),
+            entry_id=_determinism.get_uuid(),
             hypothesis=branch.hypotheses[0] if getattr(branch, "hypotheses", None) else None,
             reasoning_steps=getattr(branch, "reasoning_trace", []),
             evidence_graph_snapshot=getattr(branch, "evidence_graph", EvidenceGraph()),
@@ -515,11 +527,11 @@ class CognitiveSystemController:
         """
         12-step Recursive Active Inference Pipeline (UCA V6).
         """
-        trade_id = str(uuid4())
+        trade_id = _determinism.get_uuid()
 
         # Check for dict-like interface, handle object-like as well
         obs_dict = observation if isinstance(observation, dict) else getattr(observation, "__dict__", {})
-        trade_id = obs_dict.get("trade_id", str(uuid4()))
+        trade_id = obs_dict.get("trade_id", _determinism.get_uuid())
 
         # 1. Perception
         surprise = self._calculate_sensory_surprise(obs_dict)
@@ -532,8 +544,11 @@ class CognitiveSystemController:
             logger.warning(f"CSC-V6: Evidence chain retrieval failed, falling back to empty chain: {e}")
             evidence_chain = []
 
-        # 3. HASP Guardrail
-        intervention = await self.skill_router.route_task("market_ingestion", observation)
+        # 3. HASP Guardrail — synchronous volatility check first, then the
+        # skill-router prescriptive guardrail.
+        intervention = self._apply_hasp_guardrails(observation)
+        if isinstance(intervention, dict) and intervention.get("status") != "pf_intervention":
+            intervention = await self.skill_router.route_task("market_ingestion", observation)
         if hasattr(intervention, "to_dict"):
             intervention = intervention.to_dict()
         if isinstance(intervention, dict) and intervention.get("status") == "pf_intervention":
@@ -542,7 +557,7 @@ class CognitiveSystemController:
             if pf_result.get("action") == "override_to_hold" or intervention.get("action") == "override_to_hold":
                 return CoreDecision(
                     outcome=DecisionOutcome.TRADE_REJECTED,
-                    trade_id=obs_dict.get("trade_id", str(uuid4())),
+                    trade_id=obs_dict.get("trade_id", _determinism.get_uuid()),
                     dominant_rejection_reason=f"HASP PF Intervention: {reason}"
                 )
 
@@ -622,10 +637,15 @@ class CognitiveSystemController:
 
         if not EvidenceGraphGate.verify_evidence_first(ledger_entry, reports):
             vetoed = any(getattr(r, "is_valid", True) is False for r in reports)
+            # Surface the gate's actual rejection cause (consensus %, vetoing
+            # verifier critique, or evidence-graph sparsity) so callers see why.
+            gate_reason = getattr(EvidenceGraphGate, "last_rejection_reason", None)
             reason = (
-                "Failed Pivot/Refine loop: swarm vetoed surviving branch"
+                f"Failed Pivot/Refine loop: {gate_reason}"
+                if vetoed and gate_reason
+                else "Failed Pivot/Refine loop: swarm vetoed surviving branch"
                 if vetoed
-                else "Insufficient evidence / Verification Swarm rejection"
+                else (gate_reason or "Insufficient evidence / Verification Swarm rejection")
             )
             return CoreDecision(
                 outcome=DecisionOutcome.TRADE_REJECTED,

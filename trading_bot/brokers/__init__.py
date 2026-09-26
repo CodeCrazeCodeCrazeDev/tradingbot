@@ -7,6 +7,19 @@ Auto-generated integration file.
 
 from .adapter_bridge import FoundationBrokerAdapter
 
+# broker_adapter / mt5_adapter — canonical enum + MT5 bridge.
+# NOTE: ``trading_bot.brokers.mt5_adapter`` resolves to the mt5_adapter/
+# PACKAGE (MT5.py SDK wrapper), which shadows the mt5_adapter.py module that
+# also defined an MT5BrokerAdapter. The canonical adapter lives in
+# broker_adapter.py and lazy-imports MetaTrader5 inside connect().
+try:
+    from .broker_adapter import OrderSide, MT5BrokerAdapter
+except ImportError:
+    try:
+        from .broker_adapter import OrderSide
+    except ImportError:
+        pass
+
 # connection_manager
 try:
     from .connection_manager import (
@@ -31,6 +44,8 @@ __all__ = [
     'BrokerConnectionManager',
     'MultiBrokerConnectionManager',
     'UnifiedBrokerManager',
+    'OrderSide',
+    'MT5BrokerAdapter',
 ]
 
 class BrokersOrchestrator:
@@ -62,6 +77,16 @@ class BrokersOrchestrator:
 
 # Compat re-exports
 try:
-    from .broker_adapter import BrokerAdapter, MockBrokerAdapter  # noqa: F401
+    from .broker_adapter import (  # noqa: F401
+        BrokerAdapter,
+        MockBrokerAdapter,
+        AlpacaBrokerAdapter,
+        BinanceBrokerAdapter,
+        OrderStatus,
+        OrderType,
+        Position,
+        OrderResponse,
+        get_broker_adapter,
+    )
 except ImportError:
     pass

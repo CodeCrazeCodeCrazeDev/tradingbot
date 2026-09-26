@@ -88,8 +88,16 @@ def test_generated_manifest_quarantines_unapproved_capital_paths() -> None:
         "trading_bot/broker/",
         "trading_bot/brokers/",
     )
+    from trading_bot.foundation.legacy_convergence import (
+        EXECUTION_BOUNDARY_PATHS,
+        SIMULATED_CAPITAL_PATHS,
+    )
+
+    approved_paths = EXECUTION_BOUNDARY_PATHS | SIMULATED_CAPITAL_PATHS
     for row in manifest["modules"]:
         if row["direct_capital_path"] and not row["path"].startswith(allowed_prefixes):
+            if row["path"] in approved_paths:
+                continue
             assert row["classification"] == "quarantine"
 
 

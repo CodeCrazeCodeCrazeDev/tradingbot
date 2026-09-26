@@ -5,6 +5,18 @@ Tamic Module
 Auto-generated integration file.
 """
 
+# core
+try:
+    from .core import TAMIC, TimeHorizon, MarketTimeState, SignalHalfLife, create_tamic, quick_start
+except ImportError as e:
+    pass
+
+# integration
+try:
+    from .integration import TAMICIntegration, create_tamic_integration
+except ImportError as e:
+    pass
+
 # institutional_time
 try:
     from .institutional_time import (

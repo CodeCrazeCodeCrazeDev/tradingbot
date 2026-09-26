@@ -14,6 +14,12 @@ class SystemHealthManager:
     async def stop(self):
         pass
 
+# alphaalgo_master
+try:
+    from .alphaalgo_master import TradingMode
+except ImportError as e:
+    pass
+
 # auto_repair
 try:
     from .auto_repair import (

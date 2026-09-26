@@ -13,6 +13,13 @@ Core Components:
 - Evolutionary Loop: Generate → Mutate → Evaluate → Select → Repeat
 """
 
+import warnings as _warnings
+_warnings.warn(
+    "trading_bot.alpha_evolve is deprecated: not on the canonical runtime path and carries no improvement authority; use trading_bot.recursive_self_improvement instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 from .strategy_genome import StrategyGenome, Signal, SignalType, SearchSpace
 from .genetic_operators import GeneticOperators
 from .backtesting_engine import LeakageFreeBacktester

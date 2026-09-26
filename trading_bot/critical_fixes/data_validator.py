@@ -124,7 +124,7 @@ class DataValidator:
     """
     
     # Default thresholds
-    DEFAULT_MAX_PRICE_CHANGE_PCT = 0.10  # 10% max single tick change
+    DEFAULT_MAX_PRICE_CHANGE_PCT = 0.05  # 5% max single tick change
     DEFAULT_MAX_STALENESS_SECONDS = 5
     DEFAULT_MAX_SPREAD_PCT = 0.05  # 5% max spread
     DEFAULT_MIN_VOLUME = 0

@@ -517,6 +517,7 @@ def pytest_configure(config):
         ("risk", "Risk management tests"),
         ("simulation", "Paper trading and simulation tests"),
         ("security", "Security-related tests"),
+        ("smoke", "Fast smoke tests"),
     ]
     
     for marker, description in markers:

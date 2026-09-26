@@ -2,6 +2,13 @@
 AutoOptimizerOrchestrator - Auto-generated stub module.
 """
 
+import warnings as _warnings
+_warnings.warn(
+    "trading_bot.auto_optimizer is deprecated: not on the canonical runtime path and carries no improvement authority; use trading_bot.recursive_self_improvement instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 class AutoOptimizerOrchestrator:
     """Stub implementation of AutoOptimizerOrchestrator."""
     

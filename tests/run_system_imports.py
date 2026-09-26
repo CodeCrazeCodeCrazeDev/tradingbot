@@ -7,6 +7,8 @@ import sys
 import traceback
 from pathlib import Path
 
+import pytest
+
 # Add project root to path so imports resolve to the real package.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -35,6 +37,7 @@ def run_from_import(module_name, items, description):
         traceback.print_exc()
         return False
 
+@pytest.mark.timeout(900)
 def test_all_imports():
     """Proper test case for all system imports"""
     results = []

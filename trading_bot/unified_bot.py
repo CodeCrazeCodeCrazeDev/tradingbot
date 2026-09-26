@@ -368,6 +368,17 @@ class UnifiedTradingBot:
             except Exception as exc:
                 logger.debug(f"UnifiedTradingBot: LOB feed unavailable this cycle: {exc}")
 
+        strategy_id = self.config.get("strategy_id")
+        if strategy_id:
+            try:
+                signals = await self.strategy_registry.generate_signals(strategy_id, obs)
+                obs["strategy_signals"] = [signal.to_dict() for signal in signals]
+                obs["strategy_advisory_only"] = True
+            except Exception as exc:
+                logger.warning("UnifiedTradingBot: strategy capability failed closed: %s", exc)
+                obs["strategy_signals"] = []
+                obs["strategy_advisory_only"] = True
+
         if not self.trading_allowed():
             logger.info("UnifiedTradingBot: trading paused by human override")
             return None

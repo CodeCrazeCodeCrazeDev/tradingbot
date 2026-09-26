@@ -7,6 +7,7 @@ from trading_bot.interfaces.adapters import (
     NotificationRuntimeAdapter,
     ReportingRuntimeAdapter,
 )
+from trading_bot.foundation.runtime import ModularMonolithRuntime
 from trading_bot.interfaces.read_models import ModularMonolithReadModel
 
 
@@ -33,3 +34,26 @@ async def test_interface_adapters_are_read_only_projections() -> None:
     assert report["position_count"] == 0
     assert notification["event_type"] == "alphaalgo.health"
     assert notification["read_only"] is True
+
+
+@pytest.mark.asyncio
+async def test_runtime_registers_interface_projections_as_read_only() -> None:
+    runtime = ModularMonolithRuntime({"mode": "paper"})
+
+    async def start_without_side_effects() -> None:
+        runtime.bot.running = True
+
+    runtime.bot.start = start_without_side_effects
+    await runtime.start()
+
+    graph = {component["name"]: component for component in runtime.component_graph()}
+    for name in (
+        "interface_read_model",
+        "interface_dashboard_adapter",
+        "interface_reporting_adapter",
+        "interface_notification_adapter",
+    ):
+        assert graph[name]["type"] == "Interface"
+        assert graph[name]["metadata"]["read_only"] is True
+        assert graph[name]["metadata"]["capital_path"] == "none"
+        assert graph[name]["dependencies"] == ["trading_repository"]

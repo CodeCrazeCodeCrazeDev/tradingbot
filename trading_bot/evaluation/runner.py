@@ -9,6 +9,49 @@ from typing import Any, Callable, Dict, Optional
 
 from .walk_forward import WalkForwardEvaluator
 
+UNSEALED_EVIDENCE_SOURCE = "unsealed_diagnostic_replay"
+PAIRED_BAR_KEYS = (
+    "symbol", "timestamp", "cost_bps",
+    "baseline_gross", "candidate_gross",
+    "baseline_turnover", "candidate_turnover",
+    "baseline_exposure", "candidate_exposure",
+    "baseline_net", "candidate_net",
+)
+
+
+def _net_of_cost(gross: float, turnover: float, cost_bps: float) -> float:
+    """Single authoritative cost convention shared by diagnostic replays."""
+    return gross - turnover * cost_bps / 10000.0
+
+
+def _paired_bar(symbol: str, timestamp: Any, cost_bps: float,
+                baseline_gross: float, candidate_gross: float,
+                baseline_turnover: float, candidate_turnover: float,
+                baseline_exposure: float, candidate_exposure: float) -> Dict[str, Any]:
+    """Emit one paired-return row in the schema evaluate_verified consumes."""
+    return {
+        "symbol": symbol,
+        "timestamp": timestamp,
+        "cost_bps": cost_bps,
+        "baseline_gross": baseline_gross,
+        "candidate_gross": candidate_gross,
+        "baseline_turnover": baseline_turnover,
+        "candidate_turnover": candidate_turnover,
+        "baseline_exposure": baseline_exposure,
+        "candidate_exposure": candidate_exposure,
+        "baseline_net": _net_of_cost(baseline_gross, baseline_turnover, cost_bps),
+        "candidate_net": _net_of_cost(candidate_gross, candidate_turnover, cost_bps),
+    }
+
+
+def _diagnostic_result(symbol: str, rows: list) -> Dict[str, Any]:
+    return {
+        "evidence_source": UNSEALED_EVIDENCE_SOURCE,
+        "promotion_eligible": False,
+        "symbol": symbol,
+        "bars": rows,
+    }
+
 
 class WalkForwardSimulationRunner:
     """Adapt WalkForwardEvaluator to ExperimentManager's runner contract."""
@@ -80,30 +123,19 @@ class PairedStrategyReplay:
             candidate_window = closes[max(0, index - candidate_lookback):index]
             baseline_direction = 1.0 if closes[index - 1] >= sum(baseline_window) / len(baseline_window) else -1.0
             candidate_direction = 1.0 if closes[index - 1] >= sum(candidate_window) / len(candidate_window) else -1.0
-            baseline_gross = baseline_direction * ret
-            candidate_gross = candidate_direction * ret
             baseline_turnover = abs(baseline_direction - previous_baseline)
             candidate_turnover = abs(candidate_direction - previous_candidate)
-            rows.append({
-                "symbol": symbol,
-                "timestamp": timestamps[index],
-                "baseline_gross": baseline_gross,
-                "candidate_gross": candidate_gross,
-                "baseline_turnover": baseline_turnover,
-                "candidate_turnover": candidate_turnover,
-                "baseline_exposure": 0.01,
-                "candidate_exposure": 0.01,
-                "cost_bps": self.cost_bps,
-                "baseline_net": baseline_gross - baseline_turnover * self.cost_bps / 10000.0,
-                "candidate_net": candidate_gross - candidate_turnover * self.cost_bps / 10000.0,
-            })
+            rows.append(_paired_bar(
+                symbol, timestamps[index], self.cost_bps,
+                baseline_gross=baseline_direction * ret,
+                candidate_gross=candidate_direction * ret,
+                baseline_turnover=baseline_turnover,
+                candidate_turnover=candidate_turnover,
+                baseline_exposure=0.01,
+                candidate_exposure=0.01,
+            ))
             previous_baseline, previous_candidate = baseline_direction, candidate_direction
-        return {
-            "evidence_source": "unsealed_diagnostic_replay",
-            "promotion_eligible": False,
-            "symbol": symbol,
-            "bars": rows,
-        }
+        return _diagnostic_result(symbol, rows)
 
 
 class BoundedMeanReversionReplay:
@@ -136,13 +168,13 @@ class BoundedMeanReversionReplay:
                 if i >= strategy.lookback:
                     action = strategy.generate_signal(history)["action"]
                     direction = {"buy": 1, "sell": -1}.get(action, 0)
-                exposure = self.fraction if direction else 0.0
-                turnover = exposure * 2
-                gross = direction * (price_close / price_open - 1) * exposure
-                row[f"{name}_gross"] = gross
-                row[f"{name}_turnover"] = turnover
-                row[f"{name}_exposure"] = exposure
-                row[f"{name}_net"] = gross - turnover * self.cost_bps / 10000
-            rows.append(row)
-        return {"promotion_eligible": False, "evidence_source": "unsealed_diagnostic_replay",
-                "bars": rows}
+                row[f"{name}_exposure"] = self.fraction if direction else 0.0
+                row[f"{name}_turnover"] = row[f"{name}_exposure"] * 2
+                row[f"{name}_gross"] = direction * (price_close / price_open - 1) * row[f"{name}_exposure"]
+            rows.append(_paired_bar(
+                symbol, row["timestamp"], self.cost_bps,
+                baseline_gross=row["baseline_gross"], candidate_gross=row["candidate_gross"],
+                baseline_turnover=row["baseline_turnover"], candidate_turnover=row["candidate_turnover"],
+                baseline_exposure=row["baseline_exposure"], candidate_exposure=row["candidate_exposure"],
+            ))
+        return _diagnostic_result(symbol, rows)
