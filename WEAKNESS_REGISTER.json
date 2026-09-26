@@ -22,12 +22,14 @@
       "sql_interpolation": 10,
       "unseeded_random": 5
     },
-    "classified_s5_context": 865,
-    "not_implemented_added": 14,
+    "classified_s5_context": 0,
+    "not_implemented_added": 1,
     "open_reachable_remaining": 0,
     "fixed_this_round": 1,
     "classified_this_round": 43,
-    "fixed_wave3": 7
+    "fixed_wave3": 7,
+    "wontfix_unreachable": 92,
+    "open_total": 0
   },
   "findings": [
     {
@@ -631,7 +633,7 @@
       "detail": "exec() on dynamic input",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -642,7 +644,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -653,7 +655,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -884,7 +886,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -895,7 +897,7 @@
       "detail": "mutable default argument in __init__",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -939,7 +941,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -1049,7 +1051,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -1060,7 +1062,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -1115,7 +1117,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -1126,7 +1128,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -1137,7 +1139,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -1148,7 +1150,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -2270,7 +2272,7 @@
       "detail": "SQL built by string interpolation",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -2281,7 +2283,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -2292,7 +2294,7 @@
       "detail": "SQL built by string interpolation",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -2303,7 +2305,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -2314,7 +2316,7 @@
       "detail": "SQL built by string interpolation",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -2325,7 +2327,7 @@
       "detail": "SQL built by string interpolation",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -2446,7 +2448,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -2457,7 +2459,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -2468,7 +2470,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -2710,7 +2712,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -2776,7 +2778,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -2787,7 +2789,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -3073,7 +3075,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -3084,7 +3086,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -3095,7 +3097,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -3139,7 +3141,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -3150,7 +3152,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -3161,7 +3163,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -3205,7 +3207,7 @@
       "detail": "gate 'check_system_resources' always returns True",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -3568,7 +3570,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -3579,7 +3581,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -3590,7 +3592,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -3788,7 +3790,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -3799,7 +3801,7 @@
       "detail": "mutable default argument in render_latency_chart",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -3997,7 +3999,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -4008,7 +4010,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -4437,7 +4439,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -5086,7 +5088,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -5273,7 +5275,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -5515,7 +5517,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -5537,7 +5539,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -5746,7 +5748,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -5757,7 +5759,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -6373,7 +6375,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -6384,7 +6386,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -6395,7 +6397,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -6912,7 +6914,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -6923,7 +6925,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -6934,7 +6936,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -6945,7 +6947,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -6956,7 +6958,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -6967,7 +6969,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -7011,7 +7013,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -7132,7 +7134,7 @@
       "detail": "gate 'approve' always returns True",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -7176,7 +7178,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -7187,7 +7189,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -7572,7 +7574,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -7825,7 +7827,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -7836,7 +7838,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -8111,7 +8113,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -8144,7 +8146,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -8155,7 +8157,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -8166,7 +8168,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -8177,7 +8179,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -8210,7 +8212,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -8221,7 +8223,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -8254,7 +8256,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -8265,7 +8267,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -8276,7 +8278,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -8320,7 +8322,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -9167,7 +9169,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -9178,7 +9180,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -9222,7 +9224,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -10410,7 +10412,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -10696,7 +10698,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -10707,7 +10709,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -10718,7 +10720,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -11191,7 +11193,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -11455,7 +11457,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -11466,7 +11468,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -11719,7 +11721,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -11730,7 +11732,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -11741,7 +11743,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -11752,7 +11754,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -11906,7 +11908,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -11917,7 +11919,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -12005,7 +12007,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -12016,7 +12018,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -12027,7 +12029,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -12038,7 +12040,7 @@
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
       "commit": ""
     },
@@ -12325,6 +12327,17 @@
       "line": 138,
       "status": "fixed(w3): __all__ advertised optional names that may not exist -> import * AttributeError; filtered to bound names",
       "reachable": true
+    },
+    {
+      "file": "trading_bot\\recursive_self_improvement\\engine_v2.py",
+      "line": 590,
+      "detector": "not_implemented",
+      "detail": "raise NotImplementedError in _kill",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: intentional fail-closed stub \u2014 external verifier wire contract (TD-07); raises until an operator transport is provisioned",
+      "test": "",
+      "commit": ""
     }
   ]
 }
