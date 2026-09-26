@@ -9,246 +9,166 @@ from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
 try:
-    from trading_bot.ai_core.agents.orchestrator import *
+    from trading_bot.ai_core.agents import (
+        AgentRole,
+        DecisionStatus,
+        TradingContext,
+        TradingProposal,
+        ValidationResult,
+        TradingDecision,
+        BaseAgent,
+        AICorePlannerAgent as PlannerAgent,
+        AICoreVerifierAgent as VerifierAgent,
+        SafetyValidatorAgent,
+        AICoreOrchestrator as AgentOrchestrator,
+    )
 except ImportError:
-    try:
-        from trading_bot.ai_core.agents import HivemindAICoreAdapter as AgentOrchestrator
-    except ImportError:
-        import sys
-        sys.path.insert(0, str(Path(__file__).parent.parent))
-        from trading_bot.orchestrator import *
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from trading_bot.ai_core.agents import (
+        AgentRole,
+        DecisionStatus,
+        TradingContext,
+        TradingProposal,
+        ValidationResult,
+        TradingDecision,
+        BaseAgent,
+        AICorePlannerAgent as PlannerAgent,
+        AICoreVerifierAgent as VerifierAgent,
+        SafetyValidatorAgent,
+        AICoreOrchestrator as AgentOrchestrator,
+    )
 
 logger = logging.getLogger(__name__)
 
 class TestAgentRole:
     """Comprehensive tests for AgentRole"""
 
-    @pytest.fixture
-    def instance(self):
-        """Create AgentRole instance for testing"""
-        try:
-            return AgentRole.PLANNER
-        except Exception as e:
-            logger.warning(f"Could not create AgentRole: {e}")
-            return None
-
-    def test_initialization(self, instance):
-        """Test AgentRole can be initialized"""
-        if instance is not None:
-            assert instance is not None
-            logger.info("AgentRole initialized successfully")
+    def test_initialization(self):
+        """Test AgentRole enum values"""
+        assert AgentRole.PLANNER.value == "planner"
+        assert AgentRole.VERIFIER.value == "verifier"
+        assert AgentRole.EXECUTOR.value == "executor"
 
 class TestDecisionStatus:
     """Comprehensive tests for DecisionStatus"""
 
-    @pytest.fixture
-    def instance(self):
-        """Create DecisionStatus instance for testing"""
-        try:
-            return DecisionStatus.PROPOSED
-        except Exception as e:
-            logger.warning(f"Could not create DecisionStatus: {e}")
-            return None
-
-    def test_initialization(self, instance):
-        """Test DecisionStatus can be initialized"""
-        if instance is not None:
-            assert instance is not None
-            logger.info("DecisionStatus initialized successfully")
+    def test_initialization(self):
+        """Test DecisionStatus enum values"""
+        assert DecisionStatus.PROPOSED.value == "proposed"
+        assert DecisionStatus.VALIDATED.value == "validated"
 
 class TestTradingContext:
     """Comprehensive tests for TradingContext"""
 
-    @pytest.fixture
-    def instance(self):
-        """Create TradingContext instance for testing"""
-        try:
-            from datetime import datetime
-            import pandas as pd
-            return TradingContext(
-                timestamp=datetime.now(),
-                market_data=pd.DataFrame(),
-                portfolio_state={},
-                risk_metrics={},
-                forecasts={},
-                regime="normal",
-                confidence=0.8
-            )
-        except Exception as e:
-            logger.warning(f"Could not create TradingContext: {e}")
-            return None
-
-    def test_initialization(self, instance):
+    def test_initialization(self):
         """Test TradingContext can be initialized"""
-        if instance is not None:
-            assert instance is not None
-            logger.info("TradingContext initialized successfully")
+        from datetime import datetime
+        import pandas as pd
+        context = TradingContext(
+            timestamp=datetime.now(),
+            market_data=pd.DataFrame(),
+            portfolio_state={},
+            risk_metrics={},
+            forecasts={},
+            regime="normal",
+            confidence=0.8
+        )
+        assert context is not None
 
 class TestTradingProposal:
     """Comprehensive tests for TradingProposal"""
 
-    @pytest.fixture
-    def instance(self):
-        """Create TradingProposal instance for testing"""
-        try:
-            from datetime import datetime
-            return TradingProposal(
-                proposal_id="test_001",
-                timestamp=datetime.now(),
-                action="buy",
-                symbol="EURUSD",
-                size=0.1,
-                price=1.1,
-                stop_loss=1.05,
-                take_profit=1.15,
-                rationale="test rationale",
-                confidence=0.8,
-                expected_return=0.01,
-                expected_risk=0.005,
-                features={},
-                model_version="v1",
-                agent_id="test_agent"
-            )
-        except Exception as e:
-            logger.warning(f"Could not create TradingProposal: {e}")
-            return None
-
-    def test_initialization(self, instance):
+    def test_initialization(self):
         """Test TradingProposal can be initialized"""
-        if instance is not None:
-            assert instance is not None
-            logger.info("TradingProposal initialized successfully")
+        from datetime import datetime
+        proposal = TradingProposal(
+            proposal_id="p1",
+            timestamp=datetime.now(),
+            action="buy",
+            symbol="EURUSD",
+            size=1.0,
+            price=1.1,
+            stop_loss=1.05,
+            take_profit=1.2,
+            rationale="test",
+            confidence=0.8,
+            expected_return=0.01,
+            expected_risk=0.005,
+            features={},
+            model_version="v1",
+            agent_id="planner_1"
+        )
+        assert proposal.proposal_id == "p1"
 
 class TestValidationResult:
     """Comprehensive tests for ValidationResult"""
 
-    @pytest.fixture
-    def instance(self):
-        """Create ValidationResult instance for testing"""
-        try:
-            return ValidationResult(
-                is_valid=True,
-                validator_id="test_val",
-                checks_passed=["check1"],
-                checks_failed=[],
-                risk_score=0.1,
-                confidence_adjustment=1.0,
-                recommendations=[]
-            )
-        except Exception as e:
-            logger.warning(f"Could not create ValidationResult: {e}")
-            return None
-
-    def test_initialization(self, instance):
+    def test_initialization(self):
         """Test ValidationResult can be initialized"""
-        if instance is not None:
-            assert instance is not None
-            logger.info("ValidationResult initialized successfully")
+        result = ValidationResult(
+            is_valid=True,
+            validator_id="v1",
+            checks_passed=["c1"],
+            checks_failed=[],
+            risk_score=0.1,
+            confidence_adjustment=1.0,
+            recommendations=[]
+        )
+        assert result.is_valid is True
 
 class TestTradingDecision:
     """Comprehensive tests for TradingDecision"""
 
-    @pytest.fixture
-    def instance(self):
-        """Create TradingDecision instance for testing"""
-        try:
-            return TradingDecision(
-                action="buy",
-                confidence=0.8,
-                reasoning="test reasoning"
-            )
-        except Exception as e:
-            logger.warning(f"Could not create TradingDecision: {e}")
-            return None
-
-    def test_initialization(self, instance):
+    def test_initialization(self):
         """Test TradingDecision can be initialized"""
-        if instance is not None:
-            assert instance is not None
-            logger.info("TradingDecision initialized successfully")
+        decision = TradingDecision(action="buy", confidence=0.8, reasoning="test")
+        assert decision.action == "buy"
 
-    def test_is_actionable(self, instance):
+    def test_is_actionable(self):
         """Test TradingDecision.is_actionable method"""
-        if instance is not None and hasattr(instance, "is_actionable"):
-            try:
-                result = instance.is_actionable
-                logger.info("Method is_actionable executed")
-                assert True
-            except Exception as e:
-                logger.warning(f"Method is_actionable failed: {e}")
-                pytest.skip("Method not fully implemented")
+        decision = TradingDecision(action="buy", confidence=0.8, reasoning="test")
+        assert decision.is_actionable is True
 
 class TestBaseAgent:
     """Comprehensive tests for BaseAgent"""
 
-    @pytest.fixture
-    def instance(self):
-        """Create BaseAgent instance for testing"""
-        try:
-            return BaseAgent(agent_id="base_01", role=AgentRole.PLANNER)
-        except Exception as e:
-            logger.warning(f"Could not create BaseAgent: {e}")
-            return None
-
-    def test_initialization(self, instance):
+    def test_initialization(self):
         """Test BaseAgent can be initialized"""
-        if instance is not None:
-            assert instance is not None
-            logger.info("BaseAgent initialized successfully")
+        agent = BaseAgent(agent_id="a1", role=AgentRole.PLANNER)
+        assert agent.agent_id == "a1"
 
 class TestPlannerAgent:
     """Comprehensive tests for PlannerAgent"""
 
-    @pytest.fixture
-    def instance(self):
-        """Create PlannerAgent instance for testing"""
-        try:
-            return PlannerAgent()
-        except Exception as e:
-            logger.warning(f"Could not create PlannerAgent: {e}")
-            return None
-
-    def test_initialization(self, instance):
+    def test_initialization(self):
         """Test PlannerAgent can be initialized"""
-        if instance is not None:
-            assert instance is not None
-            logger.info("PlannerAgent initialized successfully")
+        agent = PlannerAgent()
+        assert agent is not None
 
 class TestVerifierAgent:
     """Comprehensive tests for VerifierAgent"""
 
-    @pytest.fixture
-    def instance(self):
-        """Create VerifierAgent instance for testing"""
-        try:
-            return VerifierAgent()
-        except Exception as e:
-            logger.warning(f"Could not create VerifierAgent: {e}")
-            return None
-
-    def test_initialization(self, instance):
+    def test_initialization(self):
         """Test VerifierAgent can be initialized"""
-        if instance is not None:
-            assert instance is not None
-            logger.info("VerifierAgent initialized successfully")
+        agent = VerifierAgent()
+        assert agent is not None
 
 class TestSafetyValidatorAgent:
     """Comprehensive tests for SafetyValidatorAgent"""
 
-    @pytest.fixture
-    def instance(self):
-        """Create SafetyValidatorAgent instance for testing"""
-        try:
-            return SafetyValidatorAgent()
-        except Exception as e:
-            logger.warning(f"Could not create SafetyValidatorAgent: {e}")
-            return None
-
-    def test_initialization(self, instance):
+    def test_initialization(self):
         """Test SafetyValidatorAgent can be initialized"""
-        if instance is not None:
-            assert instance is not None
-            logger.info("SafetyValidatorAgent initialized successfully")
+        agent = SafetyValidatorAgent()
+        assert agent is not None
+
+class TestAgentOrchestrator:
+    """Comprehensive tests for AgentOrchestrator"""
+
+    def test_initialization(self):
+        """Test AgentOrchestrator can be initialized"""
+        orchestrator = AgentOrchestrator()
+        assert orchestrator is not None
 
 def test_module_integration():
     """Test orchestrator module integration"""

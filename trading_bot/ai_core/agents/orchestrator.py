@@ -13,6 +13,8 @@ from enum import Enum
 from datetime import datetime
 import numpy as np
 import pandas as pd
+import numpy
+import pandas
 
 logger = logging.getLogger(__name__)
 
@@ -128,8 +130,7 @@ class BaseAgent:
     async def process(self, context: TradingContext) -> Any:
         """Process trading context. Override in subclasses."""
         # Default implementation - log and return context
-        symbol = getattr(context, 'symbol', 'UNKNOWN')
-        logger.info(f"{self.role.value} agent processing context for {symbol}")
+        logger.info(f"{self.role.value} agent processing context for {context.symbol}")
 
         # Basic processing - can be overridden
         return {
@@ -165,10 +166,11 @@ class PlannerAgent(BaseAgent):
 
     def __init__(self, agent_id: str = "planner_001", config: Optional[Dict] = None):
         super().__init__(agent_id, AgentRole.PLANNER, config)
+        config = self.config
 
         self.rl_agents = []  # Will be populated with RL agents
         self.forecasters = []  # Will be populated with forecasting models
-        self.min_confidence = (config or {}).get('min_confidence', 0.6)
+        self.min_confidence = config.get('min_confidence', 0.6)
 
     async def process(self, context: TradingContext) -> List[TradingProposal]:
         """
@@ -309,14 +311,11 @@ class PlannerAgent(BaseAgent):
             confidence = hold_confidence
 
         if action != 'hold':
-            symbol = 'UNKNOWN'
-            if hasattr(context, 'market_data') and hasattr(context.market_data, 'get'):
-                symbol = context.market_data.get('symbol', 'UNKNOWN')
             proposal = TradingProposal(
                 proposal_id=f"prop_{datetime.now().timestamp()}",
                 timestamp=datetime.now(),
                 action=action,
-                symbol=symbol,
+                symbol=context.market_data.get('symbol', 'UNKNOWN'),
                 size=self._calculate_position_size(context, confidence),
                 price=None,  # Will be filled by executor
                 stop_loss=None,
@@ -340,8 +339,7 @@ class PlannerAgent(BaseAgent):
         adjusted_size = base_size * confidence
 
         # Apply risk limits
-        risk_metrics = getattr(context, 'risk_metrics', {}) or {}
-        max_size = risk_metrics.get('max_position_size', 0.2)
+        max_size = context.risk_metrics.get('max_position_size', 0.2)
         return min(adjusted_size, max_size)
 
 
@@ -358,11 +356,12 @@ class VerifierAgent(BaseAgent):
 
     def __init__(self, agent_id: str = "verifier_001", config: Optional[Dict] = None):
         super().__init__(agent_id, AgentRole.VERIFIER, config)
-        cfg = config or {}
-        self.max_exposure = cfg.get('max_exposure', 1.0)
-        self.max_drawdown = cfg.get('max_drawdown', 0.2)
-        self.min_liquidity = cfg.get('min_liquidity', 1000000)
-        self.max_volatility = cfg.get('max_volatility', 0.05)
+        config = self.config
+
+        self.max_exposure = config.get('max_exposure', 1.0)
+        self.max_drawdown = config.get('max_drawdown', 0.2)
+        self.min_liquidity = config.get('min_liquidity', 1000000)
+        self.max_volatility = config.get('max_volatility', 0.05)
 
     async def process(
         self,
@@ -456,29 +455,23 @@ class VerifierAgent(BaseAgent):
 
     def _check_exposure(self, proposal: TradingProposal, context: TradingContext) -> bool:
         """Check if proposal exceeds exposure limits."""
-        portfolio_state = getattr(context, 'portfolio_state', {}) or {}
-        current_exposure = portfolio_state.get('total_exposure', 0.0)
+        current_exposure = context.portfolio_state.get('total_exposure', 0.0)
         new_exposure = current_exposure + proposal.size
         return new_exposure <= self.max_exposure
 
     def _check_drawdown(self, context: TradingContext) -> bool:
         """Check if current drawdown is within limits."""
-        risk_metrics = getattr(context, 'risk_metrics', {}) or {}
-        current_drawdown = risk_metrics.get('current_drawdown', 0.0)
+        current_drawdown = context.risk_metrics.get('current_drawdown', 0.0)
         return abs(current_drawdown) <= self.max_drawdown
 
     def _check_liquidity(self, context: TradingContext) -> bool:
         """Check if market has sufficient liquidity."""
-        market_data = getattr(context, 'market_data', {}) or {}
-        volume = market_data.get('volume', 0) if hasattr(market_data, 'get') else 0
-        close = market_data.get('close', 0) if hasattr(market_data, 'get') else 0
-        liquidity = volume * close
+        liquidity = context.market_data.get('volume', 0) * context.market_data.get('close', 0)
         return liquidity >= self.min_liquidity
 
     def _check_volatility(self, context: TradingContext) -> bool:
         """Check if volatility is within acceptable range."""
-        risk_metrics = getattr(context, 'risk_metrics', {}) or {}
-        volatility = risk_metrics.get('volatility', 0.0)
+        volatility = context.risk_metrics.get('volatility', 0.0)
         return volatility <= self.max_volatility
 
 
@@ -495,9 +488,10 @@ class SafetyValidatorAgent(BaseAgent):
 
     def __init__(self, agent_id: str = "safety_001", config: Optional[Dict] = None):
         super().__init__(agent_id, AgentRole.SAFETY_VALIDATOR, config)
-        cfg = config or {}
-        self.circuit_breaker_threshold = cfg.get('circuit_breaker_threshold', 0.1)
-        self.max_uncertainty = cfg.get('max_uncertainty', 0.5)
+        config = self.config
+
+        self.circuit_breaker_threshold = config.get('circuit_breaker_threshold', 0.1)
+        self.max_uncertainty = config.get('max_uncertainty', 0.5)
 
     async def process(
         self,
@@ -539,15 +533,14 @@ class SafetyValidatorAgent(BaseAgent):
 
     def _circuit_breaker_triggered(self, context: TradingContext) -> bool:
         """Check if circuit breaker should trigger."""
-        portfolio_state = getattr(context, 'portfolio_state', {}) or {}
-        recent_pnl = portfolio_state.get('recent_pnl', 0.0)
+        recent_pnl = context.portfolio_state.get('recent_pnl', 0.0)
         return abs(recent_pnl) > self.circuit_breaker_threshold
 
     def _detect_anomaly(self, context: TradingContext) -> bool:
         """Detect market anomalies."""
-        risk_metrics = getattr(context, 'risk_metrics', {}) or {}
-        if 'price_zscore' in risk_metrics:
-            return abs(risk_metrics['price_zscore']) > 3.0
+        # Simple anomaly detection based on z-score
+        if 'price_zscore' in context.risk_metrics:
+            return abs(context.risk_metrics['price_zscore']) > 3.0
         return False
 
     def _check_regime_compatibility(
@@ -556,7 +549,7 @@ class SafetyValidatorAgent(BaseAgent):
         context: TradingContext
     ) -> bool:
         """Check if proposal is compatible with current regime."""
-        regime = getattr(context, 'regime', 'normal')
+        regime = context.regime
 
         # Example: Don't trade aggressively in high volatility regime
         if regime == 'high_volatility' and proposal.size > 0.05:
@@ -578,9 +571,10 @@ class ExecutorAgent(BaseAgent):
 
     def __init__(self, agent_id: str = "executor_001", config: Optional[Dict] = None):
         super().__init__(agent_id, AgentRole.EXECUTOR, config)
-        cfg = config or {}
-        self.execution_algorithm = cfg.get('execution_algorithm', 'almgren_chriss')
-        self.max_slippage = cfg.get('max_slippage', 0.001)
+        config = self.config
+
+        self.execution_algorithm = config.get('execution_algorithm', 'almgren_chriss')
+        self.max_slippage = config.get('max_slippage', 0.001)
 
     async def process(
         self,
@@ -641,13 +635,12 @@ class ExecutorAgent(BaseAgent):
         context: TradingContext
     ) -> Dict[str, Any]:
         """Execute trade using selected strategy."""
-        market_data = getattr(context, 'market_data', {}) or {}
-        close = market_data.get('close', 0) if hasattr(market_data, 'get') else 0
+        # Placeholder - actual execution would interface with broker
         return {
             'success': True,
             'proposal_id': proposal.proposal_id,
             'executed_size': proposal.size,
-            'executed_price': close,
+            'executed_price': context.market_data.get('close', 0),
             'slippage': 0.0001,
             'commission': 0.0005,
             'strategy': strategy,
@@ -673,13 +666,14 @@ class AgentOrchestrator:
     """
 
     def __init__(self, config: Optional[Dict] = None):
-        cfg = config or {}
+        self.config = config or {}
+        config = self.config
 
         # Initialize agents
-        self.planner = PlannerAgent(config=cfg.get('planner', {}))
-        self.verifier = VerifierAgent(config=cfg.get('verifier', {}))
-        self.safety_validator = SafetyValidatorAgent(config=cfg.get('safety', {}))
-        self.executor = ExecutorAgent(config=cfg.get('executor', {}))
+        self.planner = PlannerAgent(config=config.get('planner', {}))
+        self.verifier = VerifierAgent(config=config.get('verifier', {}))
+        self.safety_validator = SafetyValidatorAgent(config=config.get('safety', {}))
+        self.executor = ExecutorAgent(config=config.get('executor', {}))
 
         # Tracking
         self.decision_history = []
@@ -781,3 +775,42 @@ class AgentOrchestrator:
             'rejection_rate': self.performance_metrics['rejected_trades'] / total if total > 0 else 0.0,
             'success_rate': executed / (executed + self.performance_metrics['failed_trades']) if (executed + self.performance_metrics['failed_trades']) > 0 else 0.0
         }
+
+
+if __name__ == "__main__":
+    # Demo
+    logging.basicConfig(level=logging.INFO)
+
+    async def demo():
+        print("\n" + "="*80)
+        logger.info("AGENTFLOW ORCHESTRATION DEMO")
+        print("="*80)
+
+        # Create orchestrator
+        orchestrator = AgentOrchestrator()
+
+        # Create mock context
+        context = TradingContext(
+            timestamp=datetime.now(),
+            market_data=pd.DataFrame({
+                'close': [1.1000],
+                'volume': [1000000],
+                'symbol': ['EURUSD']
+            }).iloc[0],
+            portfolio_state={'total_exposure': 0.3},
+            risk_metrics={'current_drawdown': 0.05, 'volatility': 0.02},
+            forecasts={},
+            regime='normal',
+            confidence=0.8
+        )
+
+        # Run trading cycle
+        results = await orchestrator.process_trading_cycle(context)
+
+        logger.info(f"\nResults: {len(results)} trades executed")
+        logger.info("\nPerformance Summary:")
+        summary = orchestrator.get_performance_summary()
+        for key, value in summary.items():
+            logger.info(f"  {key}: {value}")
+
+    asyncio.run(demo())
