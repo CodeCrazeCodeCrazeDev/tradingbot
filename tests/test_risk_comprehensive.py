@@ -144,10 +144,7 @@ class TestRiskBudgetAllocator:
         """Test module can be imported."""
 
         from trading_bot.risk.risk_budget_allocator import RiskBudgetAllocator
-from dataclasses import dataclass
-import numpy
-import pandas
-assert RiskBudgetAllocator is not None
+        assert RiskBudgetAllocator is not None
 
 
 

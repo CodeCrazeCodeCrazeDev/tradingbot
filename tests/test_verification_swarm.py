@@ -11,7 +11,7 @@ async def test_verification_swarm_execution():
 
     verdicts = await swarm.run_swarm(snapshot)
 
-    assert len(verdicts) == 3
+    assert len(verdicts) == len(swarm.verifiers)
     assert any(v.agent_name == "CausalVerifier" for v in verdicts)
     assert all(isinstance(v, VerifierVerdict) for v in verdicts)
     assert all(v.is_valid is True for v in verdicts)

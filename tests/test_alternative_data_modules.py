@@ -26,8 +26,7 @@ class TestAlternativeDataInit:
         """Test module can be imported."""
 
         from trading_bot import alternative_data
-import numpy
-assert alternative_data is not None
+        assert alternative_data is not None
 
 
 

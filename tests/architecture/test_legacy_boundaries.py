@@ -101,6 +101,17 @@ def test_generated_manifest_quarantines_unapproved_capital_paths() -> None:
             assert row["classification"] == "quarantine"
 
 
+def test_wave7_interface_facades_have_no_loop_or_capital_paths() -> None:
+    root = Path(__file__).resolve().parents[2]
+    for relative in (
+        "trading_bot/api.py",
+        "trading_bot/api/__init__.py",
+        "trading_bot/unified_main.py",
+    ):
+        source = (root / relative).read_text(encoding="utf-8")
+        assert boundary_violations(source, relative) == []
+
+
 def test_legacy_risk_manager_warns_and_preserves_api() -> None:
     import warnings
 

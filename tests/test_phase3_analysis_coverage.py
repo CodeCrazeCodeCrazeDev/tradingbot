@@ -473,10 +473,7 @@ class TestDataMonitoring:
         """Test news sentiment monitor."""
 
         from trading_bot.market_intelligence.data_monitoring import NewsAndSentimentMonitor
-import numpy
-import pandas
-            
-monitor = NewsAndSentimentMonitor({})
+        monitor = NewsAndSentimentMonitor({})
             
 if hasattr(monitor, 'get_latest_sentiment'):
                 sentiment = monitor.get_latest_sentiment('EURUSD')

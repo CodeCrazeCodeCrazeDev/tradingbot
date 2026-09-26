@@ -10,6 +10,9 @@ import pytest
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
+from trading_bot.risk.position_size_calculator import PositionSizeMethod
+from trading_bot.execution.trade_executor import Order, OrderType, OrderSide
+from trading_bot.risk.var_engine import Position, VaRMethod
 from unittest.mock import Mock, patch, MagicMock, AsyncMock
 from typing import Dict, List, Any
 import sys
@@ -434,7 +437,7 @@ class TestExecutionEdgeCases:
             quantity=0
         )
         
-        result = executor.execute_trade(order)
+        result = asyncio.run(executor.execute_trade(order))
         
         # Should still execute (validation should be separate)
         assert result['success'] is True
@@ -449,7 +452,7 @@ class TestExecutionEdgeCases:
             quantity=-1.0
         )
         
-        result = executor.execute_trade(order)
+        result = asyncio.run(executor.execute_trade(order))
         
         # Should handle gracefully
         assert 'success' in result
@@ -464,7 +467,7 @@ class TestExecutionEdgeCases:
             quantity=1000000.0
         )
         
-        result = executor.execute_trade(order)
+        result = asyncio.run(executor.execute_trade(order))
         
         assert result['success'] is True
     
@@ -478,7 +481,7 @@ class TestExecutionEdgeCases:
             quantity=1.0
         )
         
-        result = executor.execute_trade(order)
+        result = asyncio.run(executor.execute_trade(order))
         
         # Should handle gracefully
         assert 'success' in result
@@ -635,7 +638,7 @@ class TestIntegrationPaths:
             take_profit=1.1100
         )
         
-        result = executor.execute_trade(order)
+        result = asyncio.run(executor.execute_trade(order))
         
         assert result['success'] is True
     
@@ -658,7 +661,7 @@ class TestIntegrationPaths:
             order_type=OrderType.MARKET,
             quantity=1.0
         )
-        result = executor.execute_trade(order)
+        result = asyncio.run(executor.execute_trade(order))
         
         # Record trade result
         circuit_breaker.record_trade(pnl=-100, is_win=False)
@@ -718,7 +721,7 @@ class TestIntegrationPaths:
             stop_loss=signal.stop_loss,
             take_profit=signal.take_profit
         )
-        result = executor.execute_trade(order)
+        result = asyncio.run(executor.execute_trade(order))
         assert result['success'] is True
         
         # 6. Mark signal as executed (may fail due to division by zero bug)

@@ -149,10 +149,11 @@ class TradeAnalyzer:
             lessons.append("Take profit target was appropriate")
         
         # Check holding time
-        if hasattr(trade, 'holding_time') and trade.holding_time:
-            if trade.holding_time < timedelta(hours=1):
+        holding_time = getattr(trade, 'holding_time', None)
+        if isinstance(holding_time, timedelta):
+            if holding_time < timedelta(hours=1):
                 lessons.append("Quick win - market moved in our favor rapidly")
-            elif trade.holding_time > timedelta(days=1):
+            elif holding_time > timedelta(days=1):
                 lessons.append("Patient holding paid off")
         
         # Check if exceeded expectations

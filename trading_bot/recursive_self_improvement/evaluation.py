@@ -129,7 +129,7 @@ class EvaluationEngine:
 
     def evaluate_verified(self, genome: Any, contract: Dict[str, Any], contract_signature: str,
                           operator_public_key: Any, report: Dict[str, Any], report_signature: str,
-                          verifier_public_key: Any) -> Dict[str, Any]:
+                          verifier_public_key: Any, holdout_attestation: Any = None) -> Dict[str, Any]:
         def verdict(status: str, reason: str, **extra: Any) -> Dict[str, Any]:
             return {"status": status, "reason": reason, "promotion_eligible": False, **extra}
 
@@ -164,6 +164,17 @@ class EvaluationEngine:
             if not (contract["train_end"] < contract["validation_start"] <= contract["validation_end"] <
                     contract["holdout_start"] < contract["holdout_end"]):
                 return verdict("insufficient_evidence", "chronological split or embargo is invalid")
+            if contract.get("require_holdout_attestation") is True:
+                from .evidence_boundaries import HoldoutAttestation
+                try:
+                    attestation = HoldoutAttestation.from_dict(holdout_attestation["attestation"])
+                    signature = holdout_attestation["signature"]
+                except (KeyError, TypeError, ValueError):
+                    return verdict("insufficient_evidence", "sealed holdout attestation missing or malformed")
+                if not attestation.verify_signature(signature, operator_public_key):
+                    return verdict("insufficient_evidence", "holdout attestation signature invalid")
+                if not attestation.is_valid(dataset_hash=contract["dataset_hash"]):
+                    return verdict("insufficient_evidence", "holdout attestation stale or binds wrong dataset")
             now = time.time()
             if (not all(isinstance(v, (int, float)) and math.isfinite(v)
                         for v in (contract["expires_at"], report["issued_at"], report["expires_at"])) or
@@ -183,6 +194,9 @@ class EvaluationEngine:
                 return verdict("insufficient_evidence", "strategy parameter effect unverified")
             if report["cost_model_id"] != contract["cost_model_id"] or not contract["cost_model_id"]:
                 return verdict("insufficient_evidence", "cost model is not bound to evaluation")
+            registry = self.config.get("cost_model_registry")
+            if registry is not None and not registry.is_measured(contract["cost_model_id"]):
+                return verdict("insufficient_evidence", "cost model is unregistered or not measured")
             if (type(report["trial_count"]) is not int or type(contract["max_trials"]) is not int or
                     not 0 < report["trial_count"] <= contract["max_trials"]):
                 return verdict("rejected", "trial budget exceeded")

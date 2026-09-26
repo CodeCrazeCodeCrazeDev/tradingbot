@@ -37,9 +37,7 @@ class TestCognitiveArchitectureInit:
         """Test module can be imported."""
 
         from trading_bot import cognitive_architecture
-import numpy
-import pandas
-assert cognitive_architecture is not None
+        assert cognitive_architecture is not None
 
 
 

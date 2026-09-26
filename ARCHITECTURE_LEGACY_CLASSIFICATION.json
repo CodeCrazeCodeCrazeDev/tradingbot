@@ -1400,6 +1400,7 @@
         "dataclasses",
         "datetime",
         "logging",
+        "trading_bot.core.csc.controller",
         "typing"
       ],
       "migration_wave": 1,
@@ -1639,7 +1640,8 @@
         "meta_learning",
         "real_time_sentiment",
         "self_improvement",
-        "system_health"
+        "system_health",
+        "warnings"
       ],
       "migration_wave": 1,
       "module": "trading_bot.adaptive_systems",
@@ -15899,7 +15901,8 @@
       "functions": [],
       "importers": [],
       "imports": [
-        "trading_bot.sentient_core.ai_learner"
+        "trading_bot.sentient_core.ai_learner",
+        "warnings"
       ],
       "migration_wave": 1,
       "module": "trading_bot.ai_learner",
@@ -16084,6 +16087,76 @@
       ],
       "shim_status": "not_applicable",
       "starts_loop": true,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [],
+      "importers": [],
+      "imports": [],
+      "migration_wave": 1,
+      "module": "trading_bot.aletheia_autonomous",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/aletheia_autonomous/__init__.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "AletheiaAuditConfig",
+        "AletheiaFinancialAudit",
+        "AletheiaFinancialDecisionAuditor",
+        "FinancialEvidenceItem",
+        "PrincipleCheck"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__init__",
+        "_append_objective_feedback",
+        "_evidence_items",
+        "_float",
+        "_is_self_approval",
+        "_mapping",
+        "_ratio",
+        "_run_objective_checks",
+        "_run_principle_checks",
+        "audit_decision",
+        "to_dict"
+      ],
+      "importers": [],
+      "imports": [
+        "dataclasses",
+        "datetime",
+        "typing"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.aletheia_autonomous.financial_decision_auditor",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/aletheia_autonomous/financial_decision_auditor.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
       "tests": []
     },
     {
@@ -18183,7 +18256,8 @@
         "regime_aware_backtester",
         "speciated_evolution_engine",
         "strategy_genome",
-        "walk_forward"
+        "walk_forward",
+        "warnings"
       ],
       "migration_wave": 4,
       "module": "trading_bot.alpha_evolve",
@@ -31064,7 +31138,7 @@
       "classes": [
         "APIManager"
       ],
-      "classification": "adapter",
+      "classification": "compatibility_facade",
       "cli_entrypoint": false,
       "direct_capital_path": false,
       "evidence": [],
@@ -31079,7 +31153,13 @@
         "trading_bot/services/api_service.py",
         "trading_bot/services/tier5_services.py"
       ],
-      "imports": [],
+      "imports": [
+        "__future__",
+        "trading_bot.foundation.runtime",
+        "trading_bot.interfaces.read_models",
+        "typing",
+        "warnings"
+      ],
       "migration_wave": 1,
       "module": "trading_bot.api",
       "owner": "infrastructure",
@@ -31092,7 +31172,7 @@
       "secondary_tags": [
         "top_level_module"
       ],
-      "shim_status": "not_applicable",
+      "shim_status": "active_one_wave",
       "starts_loop": false,
       "tests": []
     },
@@ -31102,17 +31182,19 @@
         "APIManager",
         "APIOrchestrator"
       ],
-      "classification": "adapter",
+      "classification": "compatibility_facade",
       "cli_entrypoint": false,
       "direct_capital_path": false,
       "evidence": [],
       "functions": [
         "__init__",
         "__init__",
+        "dashboard_snapshot",
         "get_status",
         "get_status",
         "health",
         "portfolio",
+        "report_snapshot",
         "start",
         "start",
         "stop",
@@ -31137,7 +31219,7 @@
       "removal_ready": false,
       "runtime_reachable": false,
       "secondary_tags": [],
-      "shim_status": "not_applicable",
+      "shim_status": "active_one_wave",
       "starts_loop": false,
       "tests": []
     },
@@ -31860,7 +31942,9 @@
         "trading_bot/services/auto_optimizer_service.py",
         "trading_bot/services/tier5_services.py"
       ],
-      "imports": [],
+      "imports": [
+        "warnings"
+      ],
       "migration_wave": 1,
       "module": "trading_bot.auto_optimizer",
       "owner": "infrastructure",
@@ -31899,7 +31983,8 @@
       ],
       "importers": [],
       "imports": [
-        "strategy_optimizer"
+        "strategy_optimizer",
+        "warnings"
       ],
       "migration_wave": 1,
       "module": "trading_bot.auto_optimizer",
@@ -32000,7 +32085,8 @@
       "importers": [],
       "imports": [
         "trading_bot.systems_ai.training_first",
-        "typing"
+        "typing",
+        "warnings"
       ],
       "migration_wave": 1,
       "module": "trading_bot.auto_rollback",
@@ -34697,7 +34783,8 @@
         "trading_bot/services/autonomous_learner_service.py"
       ],
       "imports": [
-        "learning_orchestrator"
+        "learning_orchestrator",
+        "warnings"
       ],
       "migration_wave": 1,
       "module": "trading_bot.autonomous_learner",
@@ -40468,7 +40555,8 @@
       "functions": [],
       "importers": [],
       "imports": [
-        "trading_bot.self_mastery.code_evolver"
+        "trading_bot.self_mastery.code_evolver",
+        "warnings"
       ],
       "migration_wave": 1,
       "module": "trading_bot.code_evolver",
@@ -45079,7 +45167,8 @@
       ],
       "importers": [],
       "imports": [
-        "typing"
+        "typing",
+        "warnings"
       ],
       "migration_wave": 1,
       "module": "trading_bot.continual_learner",
@@ -45109,7 +45198,6 @@
         "__getattr__"
       ],
       "importers": [
-        "trading_bot/background.py",
         "trading_bot/core/legacy_main/main_v1.py",
         "trading_bot/services/core_systems_service.py"
       ],
@@ -45695,7 +45783,9 @@
       "direct_capital_path": false,
       "evidence": [],
       "functions": [],
-      "importers": [],
+      "importers": [
+        "trading_bot/core/autonomy_control_plane.py"
+      ],
       "imports": [
         "factory",
         "models",
@@ -46051,7 +46141,7 @@
       "functions": [],
       "importers": [],
       "imports": [
-        "autonomy"
+        "trading_bot.core.autonomy"
       ],
       "migration_wave": 1,
       "module": "trading_bot.core.autonomy_control_plane",
@@ -46700,6 +46790,7 @@
         "__init__",
         "__init__",
         "__new__",
+        "_apply_hasp_guardrails",
         "_calculate_composite_confidence",
         "_calculate_sensory_surprise",
         "_calculate_vfe_surprise",
@@ -46724,6 +46815,7 @@
         "variational_free_energy"
       ],
       "importers": [
+        "trading_bot/aamis_v3/aamis_master_orchestrator.py",
         "trading_bot/hivemind/hivemind_orchestrator_v2.py",
         "trading_bot/neuros_evolution/neuros_orchestrator.py",
         "trading_bot/superpowerful_ai/__init__.py",
@@ -46747,11 +46839,11 @@
         "threading",
         "time",
         "torch",
+        "trading_bot.core.governance.determinism",
         "typing",
         "unified_event_bus",
         "unified_registry",
         "unittest.mock",
-        "uuid",
         "verification.swarm"
       ],
       "migration_wave": 0,
@@ -46953,13 +47045,18 @@
         "SkillDomain",
         "SkillRouteOutcome",
         "SkillRouter",
-        "SkillType"
+        "SkillType",
+        "_AwaitableResult",
+        "_RoutedAwaitable"
       ],
       "classification": "adapter",
       "cli_entrypoint": false,
       "direct_capital_path": false,
       "evidence": [],
       "functions": [
+        "__await__",
+        "__await__",
+        "__await__",
         "__contains__",
         "__contains__",
         "__eq__",
@@ -46968,11 +47065,15 @@
         "__hash__",
         "__init__",
         "__init__",
+        "__init__",
         "__iter__",
         "__new__",
         "_initialize_default_skills",
         "_pf_volatility_guardrail",
+        "_resolve",
         "_resolve_best_skill",
+        "_route_task_async",
+        "_self",
         "execute",
         "get",
         "get_skill",
@@ -46981,7 +47082,8 @@
         "register_specialist",
         "reset",
         "route_task",
-        "to_dict"
+        "to_dict",
+        "update_mapping"
       ],
       "importers": [
         "trading_bot/unified_bot.py"
@@ -47684,6 +47786,7 @@
       ],
       "importers": [
         "trading_bot/background.py",
+        "trading_bot/core/service_factory.py",
         "trading_bot/services/adaptive_service.py",
         "trading_bot/services/advanced_ai_service.py",
         "trading_bot/services/advanced_analysis_service.py",
@@ -48445,7 +48548,9 @@
         "reset",
         "set_seed"
       ],
-      "importers": [],
+      "importers": [
+        "trading_bot/core/csc/controller.py"
+      ],
       "imports": [
         "hashlib",
         "logging",
@@ -48465,7 +48570,7 @@
       "path": "trading_bot/core/governance/determinism.py",
       "quarantine_reason": null,
       "removal_ready": false,
-      "runtime_reachable": false,
+      "runtime_reachable": true,
       "secondary_tags": [],
       "shim_status": "not_applicable",
       "starts_loop": false,
@@ -50683,6 +50788,39 @@
       "tests": []
     },
     {
+      "canonical_port": "ModularMonolithRuntime",
+      "classes": [
+        "Position",
+        "SignalType",
+        "TradingSignal"
+      ],
+      "classification": "compatibility_facade",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [],
+      "importers": [],
+      "imports": [
+        "dataclasses",
+        "datetime",
+        "enum",
+        "typing"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.core.orchestrator",
+      "owner": "orchestration",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/core/orchestrator.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [],
+      "shim_status": "active_one_wave",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
       "canonical_port": "ComponentLifecycle",
       "classes": [
         "CorrelationManager",
@@ -52208,6 +52346,56 @@
     {
       "canonical_port": "ComponentLifecycle",
       "classes": [
+        "ServiceDefinition",
+        "ServiceFactory",
+        "ServiceLayer"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__init__",
+        "_create_service",
+        "_import_service_class",
+        "create_all_services",
+        "create_service_factory",
+        "create_tier1_services",
+        "create_tier2_services",
+        "create_tier3_services",
+        "create_tier4_services",
+        "create_tier5_services",
+        "get_creation_report",
+        "rollback_to_default"
+      ],
+      "importers": [
+        "trading_bot/background.py"
+      ],
+      "imports": [
+        "dataclasses",
+        "enum",
+        "logging",
+        "trading_bot.core.event_bus",
+        "trading_bot.core.service_registry",
+        "typing"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.core.service_factory",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/core/service_factory.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
         "BaseService",
         "ServiceHealth",
         "ServicePriority"
@@ -52222,6 +52410,7 @@
       ],
       "importers": [
         "trading_bot/background.py",
+        "trading_bot/core/service_factory.py",
         "trading_bot/services/aamis_service.py",
         "trading_bot/services/adaptive_service.py",
         "trading_bot/services/advanced_ai_service.py",
@@ -53174,6 +53363,7 @@
         "agent_id",
         "compute_signature",
         "event_type",
+        "get_action_by_id",
         "propose_action",
         "publish",
         "publish_contract",
@@ -53342,6 +53532,7 @@
       ],
       "importers": [
         "trading_bot/cognition/orchestrator.py",
+        "trading_bot/foundation/runtime.py",
         "trading_bot/registry/__init__.py",
         "trading_bot/research/london_session/api.py",
         "trading_bot/research/research_os_v2.py",
@@ -54013,6 +54204,45 @@
       "runtime_reachable": false,
       "secondary_tags": [],
       "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "CapabilityPort",
+      "classes": [
+        "CDSOrchestrator"
+      ],
+      "classification": "compatibility_facade",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__init__",
+        "decide"
+      ],
+      "importers": [],
+      "imports": [
+        "__future__",
+        "epistemology_engine",
+        "evidence_graph",
+        "governance_gate",
+        "logging",
+        "time",
+        "typing",
+        "uuid",
+        "verdict_engine"
+      ],
+      "migration_wave": 5,
+      "module": "trading_bot.core_agent_system.cds.orchestrator",
+      "owner": "cognition",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/core_agent_system/cds/orchestrator.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [],
+      "shim_status": "active_one_wave",
       "starts_loop": false,
       "tests": []
     },
@@ -57037,7 +57267,9 @@
         "_subgraph_payload",
         "_tokenize"
       ],
-      "importers": [],
+      "importers": [
+        "trading_bot/cos/system_cognitive_os.py"
+      ],
       "imports": [
         "__future__",
         "ast",
@@ -57101,7 +57333,9 @@
         "update_actual_outcome",
         "update_confidence"
       ],
-      "importers": [],
+      "importers": [
+        "trading_bot/cos/system_cognitive_os.py"
+      ],
       "imports": [
         "__future__",
         "collections",
@@ -57251,9 +57485,9 @@
       "imports": [
         "__future__",
         "datetime",
-        "os_core",
-        "os_services",
         "time",
+        "trading_bot.cos.os_core",
+        "trading_bot.cos.os_services",
         "typing",
         "uuid"
       ],
@@ -57377,8 +57611,15 @@
       ],
       "importers": [],
       "imports": [
+        "config_integrity_monitor",
+        "data_validator",
+        "execution_quality_monitor",
         "master_safety_orchestrator",
+        "multi_layer_kill_switch",
         "position_state_manager",
+        "realtime_risk_calculator",
+        "regulatory_compliance",
+        "silent_failure_detector",
         "warnings"
       ],
       "migration_wave": 1,
@@ -57575,6 +57816,84 @@
       "secondary_tags": [],
       "shim_status": "not_applicable",
       "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "RiskService/GovernanceGate",
+      "classes": [
+        "MasterSafetyOrchestrator",
+        "SafetyStatus",
+        "SystemStatus"
+      ],
+      "classification": "compatibility_facade",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__init__",
+        "_handle_status",
+        "_init_components",
+        "_monitor_loop",
+        "_on_component_dead",
+        "_on_config_drift",
+        "_on_config_error",
+        "_on_config_tampering",
+        "_on_data_issue",
+        "_on_data_quarantined",
+        "_on_drawdown_warning",
+        "_on_execution_degradation",
+        "_on_kill_switch_activated",
+        "_on_position_closed",
+        "_on_position_discrepancy",
+        "_on_risk_limit_breach",
+        "_on_silent_failure",
+        "_on_slippage_alert",
+        "_register_components_for_monitoring",
+        "_send_heartbeats",
+        "_trigger_emergency",
+        "get_safety_status",
+        "get_status",
+        "pre_trade_check",
+        "quick_start",
+        "record_execution",
+        "start",
+        "stop",
+        "to_dict",
+        "update_equity",
+        "validate_market_data"
+      ],
+      "importers": [],
+      "imports": [
+        "asyncio",
+        "config_integrity_monitor",
+        "data_validator",
+        "dataclasses",
+        "datetime",
+        "enum",
+        "execution_quality_monitor",
+        "logging",
+        "multi_layer_kill_switch",
+        "pathlib",
+        "position_state_manager",
+        "realtime_risk_calculator",
+        "silent_failure_detector",
+        "threading",
+        "typing"
+      ],
+      "migration_wave": 2,
+      "module": "trading_bot.critical_fixes.master_safety_orchestrator",
+      "owner": "risk",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/critical_fixes/master_safety_orchestrator.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "starts_loop"
+      ],
+      "shim_status": "active_one_wave",
+      "starts_loop": true,
       "tests": []
     },
     {
@@ -64222,6 +64541,78 @@
       ],
       "shim_status": "not_applicable",
       "starts_loop": true,
+      "tests": []
+    },
+    {
+      "canonical_port": "RiskService/GovernanceGate",
+      "classes": [
+        "AgentBelief",
+        "Argument",
+        "ArgumentType",
+        "DebateResult",
+        "DebateRole",
+        "DebateRound",
+        "DebateSession",
+        "DebateStatus",
+        "DebatingAgent",
+        "MultiAgentDebateSystem"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__init__",
+        "__init__",
+        "__init__",
+        "__post_init__",
+        "_check_consensus",
+        "_check_consensus_emerging",
+        "_check_stalemate",
+        "_determine_initial_confidence",
+        "_determine_initial_position",
+        "_extract_key_points",
+        "_finalize_debate",
+        "_gather_evidence",
+        "_generate_argument_content",
+        "_generate_initial_reasoning",
+        "_generate_recommendation",
+        "_generate_risk_assessment",
+        "_identify_concerns",
+        "_score_argument",
+        "_select_argument_type",
+        "conduct_debate",
+        "conduct_round",
+        "create_debate_system",
+        "generate_argument",
+        "get_audit_trail",
+        "get_debate_statistics",
+        "initialize_belief",
+        "initiate_debate",
+        "update_belief"
+      ],
+      "importers": [],
+      "imports": [
+        "collections",
+        "dataclasses",
+        "datetime",
+        "enum",
+        "logging",
+        "typing",
+        "uuid"
+      ],
+      "migration_wave": 2,
+      "module": "trading_bot.decision_governance.multi_agent_debate",
+      "owner": "risk",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/decision_governance/multi_agent_debate.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
       "tests": []
     },
     {
@@ -71149,7 +71540,8 @@
         "eternal_orchestrator",
         "immutable_core",
         "risk_evolution",
-        "security_evolution"
+        "security_evolution",
+        "warnings"
       ],
       "migration_wave": 1,
       "module": "trading_bot.eternal_evolution",
@@ -71671,6 +72063,8 @@
     {
       "canonical_port": "ResearchCapability",
       "classes": [
+        "BoundedMeanReversionReplay",
+        "PairedStrategyReplay",
         "WalkForwardSimulationRunner"
       ],
       "classification": "research_only",
@@ -71679,13 +72073,22 @@
       "evidence": [],
       "functions": [
         "__call__",
-        "__init__"
+        "__init__",
+        "__init__",
+        "__init__",
+        "_diagnostic_result",
+        "_net_of_cost",
+        "_paired_bar",
+        "run",
+        "run"
       ],
       "importers": [],
       "imports": [
         "__future__",
         "inspect",
+        "math",
         "pathlib",
+        "trading_bot.strategies.institutional_strategies",
         "typing",
         "walk_forward"
       ],
@@ -71695,6 +72098,64 @@
       "parse_error": null,
       "parse_status": "pass",
       "path": "trading_bot/evaluation/runner.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ResearchCapability",
+      "classes": [
+        "MarketHistorySource",
+        "RegimeSpec",
+        "SqliteSource",
+        "SyntheticMarketGenerator",
+        "SyntheticMarketSpec",
+        "SyntheticSource"
+      ],
+      "classification": "research_only",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__init__",
+        "__init__",
+        "__init__",
+        "_instrument_seed",
+        "_shocks",
+        "dataset_hash",
+        "dataset_hash",
+        "dataset_hash",
+        "fingerprint",
+        "fingerprint_all",
+        "generate",
+        "generate_instrument",
+        "load",
+        "load",
+        "load",
+        "n_bars"
+      ],
+      "importers": [],
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "hashlib",
+        "json",
+        "math",
+        "numpy",
+        "pandas",
+        "sqlite3",
+        "typing"
+      ],
+      "migration_wave": 6,
+      "module": "trading_bot.evaluation.synthetic_market",
+      "owner": "research",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/evaluation/synthetic_market.py",
       "quarantine_reason": null,
       "removal_ready": false,
       "runtime_reachable": false,
@@ -77409,7 +77870,8 @@
       "importers": [],
       "imports": [
         "trading_bot.ml.mlflow_tracker",
-        "typing"
+        "typing",
+        "warnings"
       ],
       "migration_wave": 6,
       "module": "trading_bot.experiment_tracker",
@@ -77986,6 +78448,7 @@
       "functions": [],
       "importers": [],
       "imports": [
+        "capability_registry",
         "contracts",
         "ports"
       ],
@@ -78000,6 +78463,47 @@
       "runtime_reachable": false,
       "secondary_tags": [],
       "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "CapabilityRegistration",
+        "CapabilityRegistry"
+      ],
+      "classification": "compatibility_facade",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__init__",
+        "analyze",
+        "get",
+        "list",
+        "register"
+      ],
+      "importers": [
+        "trading_bot/unified_bot.py"
+      ],
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "inspect",
+        "ports",
+        "typing"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.foundation.capability_registry",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/foundation/capability_registry.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": true,
+      "secondary_tags": [],
+      "shim_status": "active_one_wave",
       "starts_loop": false,
       "tests": []
     },
@@ -78254,6 +78758,7 @@
       "evidence": [],
       "functions": [
         "__init__",
+        "_register_interface_projections",
         "component_graph",
         "health_check",
         "run",
@@ -78263,12 +78768,17 @@
       ],
       "importers": [
         "trading_bot/alphaalgo_orchestrator.py",
+        "trading_bot/api.py",
         "trading_bot/api/__init__.py",
         "trading_bot/interfaces/read_models.py",
-        "trading_bot/orchestration/master_orchestrator.py"
+        "trading_bot/orchestration/master_orchestrator.py",
+        "trading_bot/unified_main.py"
       ],
       "imports": [
         "__future__",
+        "trading_bot.core.unified_registry",
+        "trading_bot.interfaces.adapters",
+        "trading_bot.interfaces.read_models",
         "trading_bot.unified_bot",
         "typing"
       ],
@@ -85909,6 +86419,78 @@
       "tests": []
     },
     {
+      "canonical_port": "ModularMonolithRuntime",
+      "classes": [
+        "IngestionOrchestrator",
+        "OrchestratorConfig",
+        "PipelineMetrics"
+      ],
+      "classification": "compatibility_facade",
+      "cli_entrypoint": true,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__init__",
+        "__init__",
+        "_handle_raw_message",
+        "_health_checker",
+        "_metrics_reporter",
+        "_process_event",
+        "add_collector",
+        "add_custom_collector",
+        "avg_latency_us",
+        "create_pipeline",
+        "events_per_second",
+        "get_health",
+        "get_metrics",
+        "get_orderbook",
+        "handle_signal",
+        "initialize",
+        "main",
+        "on_event",
+        "record_event",
+        "reset",
+        "setup_signal_handlers",
+        "start",
+        "stop",
+        "to_dict"
+      ],
+      "importers": [],
+      "imports": [
+        "__future__",
+        "asyncio",
+        "collector",
+        "dataclasses",
+        "datetime",
+        "event_router",
+        "json",
+        "logging",
+        "normalizer",
+        "orderbook_builder",
+        "schema",
+        "signal",
+        "storage",
+        "time",
+        "typing"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.ingestion.orchestrator",
+      "owner": "orchestration",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/ingestion/orchestrator.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "cli_entrypoint",
+        "starts_loop"
+      ],
+      "shim_status": "active_one_wave",
+      "starts_loop": true,
+      "tests": []
+    },
+    {
       "canonical_port": "ComponentLifecycle",
       "classes": [
         "LiquidityPersistenceModel",
@@ -91745,6 +92327,7 @@
       "functions": [],
       "importers": [],
       "imports": [
+        "adapters",
         "read_models"
       ],
       "migration_wave": 1,
@@ -91762,6 +92345,48 @@
       "tests": []
     },
     {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "DashboardRuntimeAdapter",
+        "NotificationRuntimeAdapter",
+        "ReportingRuntimeAdapter"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__init__",
+        "__init__",
+        "__init__",
+        "health_alert",
+        "report",
+        "snapshot"
+      ],
+      "importers": [
+        "trading_bot/foundation/runtime.py"
+      ],
+      "imports": [
+        "__future__",
+        "datetime",
+        "read_models",
+        "typing"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.interfaces.adapters",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/interfaces/adapters.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": true,
+      "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
       "canonical_port": "CapabilityPort",
       "classes": [
         "ModularMonolithReadModel"
@@ -91773,12 +92398,17 @@
       "functions": [
         "__init__",
         "component_graph",
+        "dashboard_snapshot",
         "health",
         "portfolio",
+        "report_snapshot",
         "status"
       ],
       "importers": [
-        "trading_bot/api/__init__.py"
+        "trading_bot/api.py",
+        "trading_bot/api/__init__.py",
+        "trading_bot/foundation/runtime.py",
+        "trading_bot/unified_main.py"
       ],
       "imports": [
         "__future__",
@@ -91793,7 +92423,7 @@
       "path": "trading_bot/interfaces/read_models.py",
       "quarantine_reason": null,
       "removal_ready": false,
-      "runtime_reachable": false,
+      "runtime_reachable": true,
       "secondary_tags": [],
       "shim_status": "not_applicable",
       "starts_loop": false,
@@ -111845,7 +112475,9 @@
         "trading_bot/core/legacy_main/main_v1.py",
         "trading_bot/services/optimization_service.py"
       ],
-      "imports": [],
+      "imports": [
+        "warnings"
+      ],
       "migration_wave": 1,
       "module": "trading_bot.optimization",
       "owner": "infrastructure",
@@ -111878,7 +112510,9 @@
         "stop"
       ],
       "importers": [],
-      "imports": [],
+      "imports": [
+        "warnings"
+      ],
       "migration_wave": 1,
       "module": "trading_bot.optimization",
       "owner": "infrastructure",
@@ -113861,7 +114495,8 @@
       "imports": [
         "trading_bot.ai.self_optimizer",
         "trading_bot.evolution_layer.optimizer",
-        "trading_bot.performance.performance_profiler"
+        "trading_bot.performance.performance_profiler",
+        "warnings"
       ],
       "migration_wave": 1,
       "module": "trading_bot.performance_optimizer",
@@ -119076,7 +119711,8 @@
         "learning_recursion",
         "meta_recursion",
         "orchestrator",
-        "recursive_core"
+        "recursive_core",
+        "warnings"
       ],
       "migration_wave": 1,
       "module": "trading_bot.recursive_improvement",
@@ -119729,6 +120365,56 @@
       "tests": []
     },
     {
+      "canonical_port": "ModularMonolithRuntime",
+      "classes": [
+        "RecursiveImprovementOrchestrator"
+      ],
+      "classification": "compatibility_facade",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__init__",
+        "_approval_monitor_loop",
+        "_continuous_improvement_loop",
+        "get_comprehensive_summary",
+        "integrate_with_trading_bot",
+        "start",
+        "stop"
+      ],
+      "importers": [],
+      "imports": [
+        "approvals",
+        "asyncio",
+        "datetime",
+        "infrastructure",
+        "logging",
+        "loops.evaluation_loop",
+        "loops.feature_loop",
+        "loops.meta_loop",
+        "loops.risk_loop",
+        "loops.strategy_loop",
+        "pathlib",
+        "recursive_core",
+        "typing"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.recursive_improvement.orchestrator",
+      "owner": "orchestration",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/recursive_improvement/orchestrator.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "starts_loop"
+      ],
+      "shim_status": "active_one_wave",
+      "starts_loop": true,
+      "tests": []
+    },
+    {
       "canonical_port": "ComponentLifecycle",
       "classes": [
         "ImprovementCapability",
@@ -119956,6 +120642,7 @@
       "functions": [],
       "importers": [],
       "imports": [
+        "evidence_boundaries",
         "improvement_genome",
         "rsi_loop"
       ],
@@ -120029,16 +120716,29 @@
       "evidence": [],
       "functions": [
         "__init__",
+        "_canonical",
+        "_equity_metrics",
         "assess_robustness",
         "evaluate_improvement",
-        "run_statistical_check"
+        "evaluate_verified",
+        "run_statistical_check",
+        "verdict"
       ],
       "importers": [],
       "imports": [
+        "cryptography.exceptions",
+        "cryptography.hazmat.primitives",
+        "cryptography.hazmat.primitives.asymmetric.ed25519",
         "datetime",
+        "evidence_boundaries",
+        "hashlib",
+        "json",
         "logging",
+        "math",
         "numpy",
+        "random",
         "scipy",
+        "time",
         "typing"
       ],
       "migration_wave": 6,
@@ -120047,6 +120747,58 @@
       "parse_error": null,
       "parse_status": "pass",
       "path": "trading_bot/recursive_self_improvement/evaluation.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "CostModelRegistry",
+        "HoldoutAttestation"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__init__",
+        "_canonical",
+        "build_paired_envelope",
+        "envelope_digest",
+        "from_dict",
+        "get",
+        "is_measured",
+        "is_valid",
+        "load_key_file",
+        "register",
+        "to_dict",
+        "verify_signature"
+      ],
+      "importers": [],
+      "imports": [
+        "__future__",
+        "cryptography.hazmat.primitives",
+        "cryptography.hazmat.primitives.asymmetric.ed25519",
+        "dataclasses",
+        "hashlib",
+        "json",
+        "logging",
+        "math",
+        "pathlib",
+        "time",
+        "typing"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.recursive_self_improvement.evidence_boundaries",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/recursive_self_improvement/evidence_boundaries.py",
       "quarantine_reason": null,
       "removal_ready": false,
       "runtime_reachable": false,
@@ -120273,16 +121025,20 @@
       "evidence": [],
       "functions": [
         "__init__",
+        "_evidence_entry_hash",
         "_init_db",
         "add_lesson",
+        "append_evidence",
         "get_recent_experiments",
         "record_deployment",
         "record_experiment",
-        "update_experiment_result"
+        "update_experiment_result",
+        "verify_evidence_chain"
       ],
       "importers": [],
       "imports": [
         "datetime",
+        "hashlib",
         "json",
         "logging",
         "pathlib",
@@ -120404,6 +121160,7 @@
       "imports": [
         "__future__",
         "dataclasses",
+        "evaluation",
         "improvement_genome",
         "inspect",
         "logging",
@@ -132362,6 +133119,60 @@
       "tests": []
     },
     {
+      "canonical_port": "ModularMonolithRuntime",
+      "classes": [
+        "SelfHealingOrchestrator"
+      ],
+      "classification": "compatibility_facade",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__init__",
+        "_generate_id",
+        "_generate_recommendations",
+        "_remediate_issue",
+        "_run_validator",
+        "get_immutable_limits",
+        "get_last_report",
+        "get_state",
+        "get_system_health",
+        "get_validator_summary",
+        "initialize",
+        "quick_start",
+        "remediate_all_auto",
+        "run_full_validation",
+        "start_continuous_validation",
+        "stop_continuous_validation",
+        "update_state",
+        "validate_category"
+      ],
+      "importers": [],
+      "imports": [
+        "asyncio",
+        "core",
+        "datetime",
+        "hashlib",
+        "logging",
+        "time",
+        "typing",
+        "validators"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.self_healing_ai.orchestrator",
+      "owner": "orchestration",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/self_healing_ai/orchestrator.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [],
+      "shim_status": "active_one_wave",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
       "canonical_port": "ComponentLifecycle",
       "classes": [],
       "classification": "adapter",
@@ -133269,8 +134080,11 @@
       ],
       "imports": [
         "approval_manager",
+        "autonomous_fixer",
         "autonomous_orchestrator",
         "engine",
+        "internet_strategy_improver",
+        "mirror_market_tester",
         "proposal_engine",
         "self_improvement_orchestrator",
         "trading_bot.autonomous",
@@ -134130,7 +134944,9 @@
         "trading_bot/core/legacy_main/main_v1.py",
         "trading_bot/services/tier5_services.py"
       ],
-      "imports": [],
+      "imports": [
+        "warnings"
+      ],
       "migration_wave": 1,
       "module": "trading_bot.self_learning",
       "owner": "infrastructure",
@@ -134168,7 +134984,8 @@
         "distributed_learning",
         "master_orchestrator",
         "self_healing_system",
-        "strategy_evolution"
+        "strategy_evolution",
+        "warnings"
       ],
       "migration_wave": 1,
       "module": "trading_bot.self_learning",
@@ -134639,6 +135456,7 @@
       "functions": [],
       "importers": [
         "trading_bot/core/legacy_main/main_v1.py",
+        "trading_bot/mastery_orchestrator.py",
         "trading_bot/services/tier5_services.py"
       ],
       "imports": [
@@ -134871,74 +135689,6 @@
       "runtime_reachable": false,
       "secondary_tags": [],
       "shim_status": "not_applicable",
-      "starts_loop": false,
-      "tests": []
-    },
-    {
-      "canonical_port": "ModularMonolithRuntime",
-      "classes": [
-        "MasteryConfig",
-        "MasteryOrchestrator",
-        "MasteryPhase",
-        "MasteryStatus"
-      ],
-      "classification": "compatibility_facade",
-      "cli_entrypoint": true,
-      "direct_capital_path": false,
-      "evidence": [],
-      "functions": [
-        "__init__",
-        "_record_skill_applications",
-        "_should_consolidate",
-        "_should_evolve",
-        "_should_reflect",
-        "consolidate",
-        "evolve",
-        "generate_mastery_report",
-        "get_learning_recommendations",
-        "get_status",
-        "quick_start",
-        "record_outcome",
-        "record_trade",
-        "reflect",
-        "run_continuous_learning",
-        "save_state",
-        "stop",
-        "to_dict",
-        "to_dict",
-        "verify_skill_mastery"
-      ],
-      "importers": [
-        "trading_bot/mastery_orchestrator.py"
-      ],
-      "imports": [
-        "asyncio",
-        "code_evolver",
-        "dataclasses",
-        "datetime",
-        "enum",
-        "experience_memory",
-        "hashlib",
-        "json",
-        "knowledge_consolidator",
-        "logging",
-        "pathlib",
-        "self_reflection",
-        "typing"
-      ],
-      "migration_wave": 1,
-      "module": "trading_bot.self_mastery.mastery_orchestrator",
-      "owner": "orchestration",
-      "parse_error": null,
-      "parse_status": "pass",
-      "path": "trading_bot/self_mastery/mastery_orchestrator.py",
-      "quarantine_reason": null,
-      "removal_ready": false,
-      "runtime_reachable": false,
-      "secondary_tags": [
-        "cli_entrypoint"
-      ],
-      "shim_status": "active_one_wave",
       "starts_loop": false,
       "tests": []
     },
@@ -135741,7 +136491,8 @@
         "profit_maximizer",
         "self_defender",
         "threading",
-        "typing"
+        "typing",
+        "warnings"
       ],
       "migration_wave": 1,
       "module": "trading_bot.sentient_core.sentient_orchestrator",
@@ -141670,6 +142421,48 @@
     {
       "canonical_port": "ComponentLifecycle",
       "classes": [
+        "MarketSimulator"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": true,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__init__",
+        "_process_internal",
+        "create_market_simulator",
+        "get_status",
+        "initialize",
+        "process"
+      ],
+      "importers": [],
+      "imports": [
+        "dataclasses",
+        "datetime",
+        "logging",
+        "numpy",
+        "pandas",
+        "typing"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.simulation.market_simulator",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/simulation/market_simulator.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "cli_entrypoint"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
         "SelfPlayTrainer"
       ],
       "classification": "adapter",
@@ -146917,7 +147710,9 @@
         "generate_signal",
         "generate_signal"
       ],
-      "importers": [],
+      "importers": [
+        "trading_bot/evaluation/runner.py"
+      ],
       "imports": [
         "enum",
         "logging",
@@ -151256,6 +152051,7 @@
       "imports": [
         "core",
         "institutional_time",
+        "integration",
         "market_time",
         "optionality",
         "time_risk"
@@ -156376,6 +157172,7 @@
         "trading_bot.data.normalizer",
         "trading_bot.evolution_layer",
         "trading_bot.execution.service",
+        "trading_bot.foundation.capability_registry",
         "trading_bot.governance.evolution_gate",
         "trading_bot.governance.policy_adapter",
         "trading_bot.human_layer",
@@ -156409,46 +157206,40 @@
       "classes": [
         "UnifiedTradingSystem"
       ],
-      "classification": "adapter",
+      "classification": "compatibility_facade",
       "cli_entrypoint": true,
       "direct_capital_path": false,
       "evidence": [],
       "functions": [
+        "__getattr__",
         "__init__",
-        "_check_evolution",
-        "_check_human_layer",
-        "_check_reward_model",
-        "_init_core_api",
-        "_init_evolution_layer",
-        "_init_human_layer",
-        "_init_telemetry",
-        "_trading_cycle",
+        "_approval_gate",
         "approve_request",
         "get_constraints",
         "get_status",
+        "health",
         "main",
+        "portfolio",
         "reject_request",
         "request_approval",
         "run",
         "run",
-        "signal_handler",
+        "running",
         "start",
         "stop"
       ],
       "importers": [],
       "imports": [
+        "__future__",
         "asyncio",
-        "core_api",
-        "datetime",
-        "evolution_layer",
-        "human_layer",
         "logging",
         "main",
         "pathlib",
-        "signal",
         "sys",
-        "telemetry",
-        "typing"
+        "trading_bot.foundation.runtime",
+        "trading_bot.interfaces.read_models",
+        "typing",
+        "warnings"
       ],
       "migration_wave": 7,
       "module": "trading_bot.unified_main",
@@ -156461,11 +157252,10 @@
       "runtime_reachable": false,
       "secondary_tags": [
         "cli_entrypoint",
-        "starts_loop",
         "top_level_module"
       ],
-      "shim_status": "not_applicable",
-      "starts_loop": true,
+      "shim_status": "active_one_wave",
+      "starts_loop": false,
       "tests": []
     },
     {
@@ -163473,6 +164263,7 @@
     {
       "canonical_port": "CapabilityPort",
       "classes": [
+        "AdversarialSelfPlay",
         "CEMPlanner",
         "FutureSimulator",
         "ImaginationPlanner",
@@ -163488,9 +164279,11 @@
         "__init__",
         "__init__",
         "__init__",
+        "__init__",
         "_estimate_reward",
         "find_optimal_plan",
         "generate_plan",
+        "run_round",
         "simulate_scenarios"
       ],
       "importers": [],
@@ -163557,6 +164350,8 @@
       "canonical_port": "CapabilityPort",
       "classes": [
         "AgenticPlanningWorldModel",
+        "LatentDynamicsModel",
+        "MarketStateDecoder",
         "WorldModel"
       ],
       "classification": "adapter",
@@ -163566,10 +164361,15 @@
       "functions": [
         "__init__",
         "__init__",
+        "__init__",
+        "__init__",
         "fc_rl_refine_foresight",
         "fe_sft_format_structure",
         "forward",
+        "forward",
+        "forward",
         "predict",
+        "sample_prediction",
         "wm_amt_inject_latent_predictions"
       ],
       "importers": [
@@ -164425,11 +165225,11 @@
     "physical_moves_performed": false
   },
   "summary": {
-    "compatibility_facades": 74,
+    "compatibility_facades": 83,
     "direct_capital_paths": 50,
-    "modules": 3027,
+    "modules": 3041,
     "parse_errors": 0,
     "quarantined": 32,
-    "runtime_reachable": 31
+    "runtime_reachable": 35
   }
 }

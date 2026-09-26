@@ -63,6 +63,7 @@ class ModularMonolithRuntime:
         cycles: int = 0,
         interval: float = 1.0,
     ) -> None:
+        await self.start()
         await self.bot.run(observations, cycles=cycles, interval=interval)
 
     async def stop(self) -> None:

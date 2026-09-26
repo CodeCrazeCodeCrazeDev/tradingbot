@@ -26,8 +26,7 @@ class TestBlockchainInit:
         """Test module can be imported."""
 
         from trading_bot import blockchain
-import numpy
-assert blockchain is not None
+        assert blockchain is not None
 
 
 

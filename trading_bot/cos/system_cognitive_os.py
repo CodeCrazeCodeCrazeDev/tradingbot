@@ -17,8 +17,8 @@ from datetime import datetime
 from uuid import uuid4
 import time
 
-from .os_core import *
-from .os_services import *
+from trading_bot.cos.os_core import *
+from trading_bot.cos.os_services import *
 
 class PropertyKnowledgeGraph(PropertyKnowledgeGraphBase):
     """In-memory property graph with strict typed nodes and relations."""

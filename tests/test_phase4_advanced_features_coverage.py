@@ -501,10 +501,7 @@ class TestBrainModules:
         """Test strategy selector."""
 
         from trading_bot.brain.strategy_selector import StrategySelector
-import numpy
-import pandas
-            
-selector = StrategySelector({})
+        selector = StrategySelector({})
             
 if hasattr(selector, 'select'):
                 regime = 'trending'

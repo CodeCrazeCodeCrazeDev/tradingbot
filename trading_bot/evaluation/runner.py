@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 import math
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from .walk_forward import WalkForwardEvaluator
 
@@ -136,6 +136,103 @@ class PairedStrategyReplay:
             ))
             previous_baseline, previous_candidate = baseline_direction, candidate_direction
         return _diagnostic_result(symbol, rows)
+
+
+class PairedFamilyReplay:
+    """Paired incumbent/candidate replay for any allow-listed adapter.
+
+    Emits the per-bar rows consumed by
+    ``recursive_self_improvement.evaluation.EvaluationEngine.evaluate_verified``
+    and ``multi_objective``. Signals are computed only from strictly-prior
+    bars; fills use the next bar's open->close. Turnover charges only when
+    the position changes. Costs are explicit and identical for both sides.
+    """
+
+    def __init__(self, adapter: Any, cost_bps: float, fraction: float = 0.01) -> None:
+        if not math.isfinite(cost_bps) or cost_bps <= 0 or not 0 < fraction <= 1:
+            raise ValueError("positive cost and bounded exposure required")
+        self.adapter = adapter
+        self.cost_bps = float(cost_bps)
+        self.fraction = float(fraction)
+
+    def _groups(self, frames: Dict[str, Any]) -> Dict[str, Any]:
+        if self.adapter.pairs:
+            from trading_bot.recursive_self_improvement.candidate_adapters import make_pairs
+
+            groups: Dict[str, Any] = {}
+            symbols = tuple(sorted(frames))
+            ts_sets = {s: tuple(frames[s]["timestamp"]) for s in symbols}
+            if len(set(ts_sets.values())) != 1:
+                raise ValueError("instrument timelines are not aligned")
+            for a, b in make_pairs(symbols):
+                groups[f"{a}/{b}"] = (frames[a], frames[b])
+            return groups
+        return {s: frames[s] for s in sorted(frames)}
+
+    def _signal_dir(self, strategy: Any, hist: Any) -> Tuple[int, float]:
+        if self.adapter.pairs:
+            sig = strategy.generate_signal(hist[0], hist[1])
+            hedge = getattr(strategy, "hedge_ratio", None)
+            return self.adapter.direction_of(sig), float(hedge if hedge else 1.0)
+        sig = strategy.generate_signal(hist)
+        return self.adapter.direction_of(sig), 1.0
+
+    def run(
+        self,
+        frames: Dict[str, Any],
+        *,
+        baseline_params: Dict[str, Any],
+        candidate_params: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        min_hist = self.adapter.min_history(
+            {**baseline_params, **candidate_params}
+        )
+        rows: List[Dict[str, Any]] = []
+        for label, group in self._groups(frames).items():
+            primary = group[0] if self.adapter.pairs else group
+            n = len(primary)
+            timestamps = list(primary["timestamp"]) if "timestamp" in primary else list(range(n))
+            strats = {
+                "baseline": self.adapter.build(baseline_params),
+                "candidate": self.adapter.build(candidate_params),
+            }
+            prev: Dict[str, int] = {"baseline": 0, "candidate": 0}
+            for i in range(1, n):
+                if self.adapter.pairs:
+                    hist = (group[0].iloc[:i], group[1].iloc[:i])
+                    ra = float(group[0]["close"].iloc[i]) / float(group[0]["open"].iloc[i]) - 1.0
+                    rb = float(group[1]["close"].iloc[i]) / float(group[1]["open"].iloc[i]) - 1.0
+                else:
+                    hist = group.iloc[:i]
+                    ra = float(group["close"].iloc[i]) / float(group["open"].iloc[i]) - 1.0
+                    rb = 0.0
+                row: Dict[str, Any] = {
+                    "symbol": label,
+                    "timestamp": timestamps[i],
+                    "cost_bps": self.cost_bps,
+                }
+                for name, strat in strats.items():
+                    direction, hedge = 0, 1.0
+                    if i >= min_hist:
+                        direction, hedge = self._signal_dir(strat, hist)
+                    exposure = self.fraction if direction else 0.0
+                    turnover = abs(direction - prev[name]) * self.fraction
+                    leg = (ra - hedge * rb) if self.adapter.pairs else ra
+                    gross = direction * leg * exposure
+                    net = gross - turnover * self.cost_bps / 10000.0
+                    row[f"{name}_gross"] = gross
+                    row[f"{name}_turnover"] = turnover
+                    row[f"{name}_exposure"] = exposure
+                    row[f"{name}_net"] = net
+                    row[f"{name}_direction"] = direction
+                    prev[name] = direction
+                rows.append(row)
+        return {
+            "promotion_eligible": False,
+            "evidence_source": "unsealed_paired_family_replay",
+            "cost_bps": self.cost_bps,
+            "bars": rows,
+        }
 
 
 class BoundedMeanReversionReplay:

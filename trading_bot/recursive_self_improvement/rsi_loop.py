@@ -112,12 +112,19 @@ class HumanGuidedRecursiveImprovementLoop:
                                    "promotion_eligible": False}
                 else:
                     try:
-                        trial_id = signed_report.get("report", {}).get("trial_id", genome.genome_id)
+                        report = signed_report.get("report", {})
+                        trial_id = report.get("trial_id") or genome.genome_id
                         self.memory.record_experiment(trial_id, genome.domain.value, genome.objective,
                                                       dict(genome.change_set),
                                                       {"contract_id": (self.contract or {}).get("contract_id"),
                                                        "genome_id": genome.genome_id})
                         self.memory.update_experiment_result(trial_id, verdict["status"], 0.0, verdict)
+                        append = getattr(self.memory, "append_evidence", None)
+                        if append is None:
+                            raise RuntimeError("durable evidence ledger unavailable")
+                        append(trial_id=trial_id, nonce=str(report.get("nonce") or trial_id),
+                               payload={"verdict": verdict, "genome_id": genome.genome_id},
+                               status=verdict["status"])
                     except Exception:
                         verdict = {"status": "insufficient_evidence", "reason": "trial replay or ledger write failure",
                                    "promotion_eligible": False}

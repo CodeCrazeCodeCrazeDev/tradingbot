@@ -13,6 +13,7 @@ Target: 100% coverage on all critical modules
 """
 
 import pytest
+import asyncio
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
@@ -23,6 +24,39 @@ import os
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Hoisted from in-def imports (merge repair: names were bound in
+# fixture scope while sibling methods reference them module-wide)
+try:
+    from trading_bot.risk.position_size_calculator import PositionSizeCalculator, PositionSizeMethod
+except ImportError:
+    pass
+
+try:
+    from trading_bot.risk.kelly_criterion import KellyCriterion
+except ImportError:
+    pass
+
+try:
+    from trading_bot.risk.var_engine import Position, VaREngine, VaRMethod, get_var_engine
+except ImportError:
+    pass
+
+try:
+    from trading_bot.risk.circuit_breaker import CircuitBreaker, CircuitBreakerConfig, CircuitState
+except ImportError:
+    pass
+
+try:
+    from trading_bot.risk.drawdown_protector import DrawdownProtector, DrawdownStatus
+except ImportError:
+    pass
+
+try:
+    from trading_bot.execution.trade_executor import Order, OrderSide, OrderStatus, OrderType, TradeExecutor
+except ImportError:
+    pass
+
 
 
 # ============================================================================
@@ -1103,7 +1137,7 @@ class TestTradeExecutor:
             quantity=1.0
         )
         
-        result = executor.execute_trade(order)
+        result = asyncio.run(executor.execute_trade(order))
         
         assert result['success'] is True
         assert 'order_id' in result
@@ -1121,7 +1155,7 @@ class TestTradeExecutor:
             take_profit=1.1100
         )
         
-        result = executor.execute_trade(order)
+        result = asyncio.run(executor.execute_trade(order))
         
         assert result['success'] is True
     
@@ -1136,7 +1170,7 @@ class TestTradeExecutor:
             order_id='CUSTOM_001'
         )
         
-        result = executor.execute_trade(order)
+        result = asyncio.run(executor.execute_trade(order))
         
         assert result['success'] is True
         assert result['order_id'] == 'CUSTOM_001'
@@ -1154,7 +1188,7 @@ class TestTradeExecutor:
             quantity=1.0
         )
         
-        result = executor.execute_trade(order)
+        result = asyncio.run(executor.execute_trade(order))
         
         # Should fail because MT5 is not available
         assert result['success'] is False
@@ -1169,7 +1203,7 @@ class TestTradeExecutor:
             quantity=1.0
         )
         
-        result = executor.execute_trade(order)
+        result = asyncio.run(executor.execute_trade(order))
         order_id = result['order_id']
         
         cancel_result = executor.cancel_order(order_id)
@@ -1194,7 +1228,7 @@ class TestTradeExecutor:
             quantity=1.0
         )
         
-        result = executor.execute_trade(order)
+        result = asyncio.run(executor.execute_trade(order))
         order_id = result['order_id']
         
         status = executor.get_order_status(order_id)
@@ -1219,7 +1253,7 @@ class TestTradeExecutor:
                 order_type=OrderType.MARKET,
                 quantity=1.0
             )
-            executor.execute_trade(order)
+            asyncio.run(executor.execute_trade(order))
         
         # All orders are filled in paper trading, so no open orders
         open_orders = executor.get_open_orders()
@@ -1245,14 +1279,11 @@ class TestTradeExecutor:
     def test_order_statuses(self):
         """Test all order statuses"""
         from trading_bot.execution.trade_executor import OrderStatus
-import numpy
-import pandas
-        
-assert OrderStatus.PENDING.value == 'PENDING'
-assert OrderStatus.FILLED.value == 'FILLED'
-assert OrderStatus.PARTIALLY_FILLED.value == 'PARTIALLY_FILLED'
-assert OrderStatus.CANCELLED.value == 'CANCELLED'
-assert OrderStatus.REJECTED.value == 'REJECTED'
+        assert OrderStatus.PENDING.value == 'PENDING'
+        assert OrderStatus.FILLED.value == 'FILLED'
+        assert OrderStatus.PARTIALLY_FILLED.value == 'PARTIALLY_FILLED'
+        assert OrderStatus.CANCELLED.value == 'CANCELLED'
+        assert OrderStatus.REJECTED.value == 'REJECTED'
 
 
 # ============================================================================

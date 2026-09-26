@@ -28,6 +28,24 @@ Primary-source-led synthesis, checked 2026-09-25. Evidence in a game, math or la
 - Gibbs & Candès, *Adaptive Conformal Inference Under Distribution Shift*, NeurIPS 2021, [paper](https://proceedings.neurips.cc/paper_files/paper/2021/file/0d441de75945e5acbc865406fc9a2559-Paper.pdf) (peer reviewed): online adaptation targets long-run marginal coverage under shift. Does not guarantee finite-horizon conditional coverage or profitability. H: earlier-regime calibration does not retain target coverage under market drift; evaluate chronologically with frozen final holdout.
 - Harvey, Liu & Zhu, *…and the Cross-Section of Expected Returns*, Journal of Finance 2016, [manuscript](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2249314) (peer reviewed): large factor zoo inflates false discoveries and demands multiplicity-aware thresholds. Does not supply AlphaAlgo-specific numeric hurdles. H: apparent factor gain falls below corrected threshold when full trial family is included; keep failed experiments in ledger.
 
+## Registry → implemented gate mapping
+
+Each row ties a research principle to the executable gate it now constrains (verified at `fe553107` plus the trust-boundary layer). A gate being implemented means *rejection capability exists*, not that a candidate has passed.
+
+| Principle (source above) | Constrained AlphaAlgo component | Executable gate |
+|---|---|---|
+| Multiplicity correction (DSR/PBO/Reality Check/SPA/factor zoo) | `evaluation.py::evaluate_verified`; `memory.py` ledger | `trial_count ≤ max_trials`; alpha divided by `trial_count`; hash-chained `evidence_ledger` prevents dropped trials |
+| Dependence-aware inference (stationary bootstrap) | `evaluate_verified` bootstrap block | fixed-block paired resampling, `len // block ≥ 5` effective-sample floor |
+| Safe fallback under weak evidence (Laroche) | `rsi_loop.py` | statuses `insufficient_evidence`/`rejected`/`eligible_for_operator_review`; no promoter invocation |
+| Constrained dominance (NSGA-II) | `evaluate_verified` hard constraints | exposure, drawdown, CVaR, turnover, cost, latency, timeline, hash-binding rejection paths |
+| Frozen calibration (Guo; Gibbs & Candès) | `walk_forward.py` | test split runs with `feed_calibration=False`; outcomes recorded only at realized horizon |
+| Self-judgment prohibition (self-reward, overoptimization, Reflexion/Self-Refine caveats) | `evidence_boundaries.py`, signature path | distinct Ed25519 operator/verifier anchors; strict `is True` attestations; legacy evaluator disabled |
+| Sealed evaluation / candidate isolation (FunSearch/AlphaEvolve caveats) | `evaluate_verified` hash binding | `code_hash`, `dependencies_hash`, `dataset_hash`, `candidate_hash`/`genome.fingerprint` binding; parameter-only `change_set` |
+| Backtest exploitation / leakage (López de Prado purge-embargo) | `evaluate_verified` split ordering | `train_end < validation_start ≤ validation_end < holdout_start < holdout_end`; duplicate timestamp rejection |
+| Execution-cost reality (Busseti & Lillo; adaptive markets) | `evidence_boundaries.CostModelRegistry`; `runner._paired_bar` | single `net = gross − turnover·cost_bps/10⁴` convention; unregistered/assumed models → `insufficient_evidence` |
+| Repeated-holdout protection (factor zoo; SPA) | `memory.py::evidence_ledger` | UNIQUE `trial_id`/`nonce`; `verify_evidence_chain` detects drop, reorder, mutation |
+| Synthetic-evidence exclusion (collapse; self-play limits) | `experiment_manager.py`, `runner.py` | `promotion_eligible=False` on every local/synthetic path; `evidence_source` labels unsealed diagnostics |
+
 ## Coverage and exclusions
 
 Research themes mapped: recursive improvement/self-refinement, self-evolving research agents, self-play/self-training/self-reward, meta/online/continual learning, PBT/evolution/program search/AutoML, verifier quality/process rewards, Goodhart/specification gaming, collapse/forgetting/shift, uncertainty/calibration, constrained/Pareto optimization, safe policy updates, chronological/purged validation, multiple testing/PBO/DSR, regimes and execution costs. Further primary-paper extraction should be appended for process rewards and purged CV rather than implying the brief examples above establish a theorem for this codebase. Existing `DOCS/ASRS/13_RESEARCH_LEDGER.md` is a **proposed** ledger with illustrative records, not verified performed experiments. This review has no invented empirical AlphaAlgo results.

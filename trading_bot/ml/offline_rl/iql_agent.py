@@ -86,8 +86,14 @@ class IQLAgent:
         os.makedirs(log_dir, exist_ok=True)
         
         if self.use_d3rlpy:
-            self._init_d3rlpy()
-        else:
+            try:
+                self._init_d3rlpy()
+            except Exception as e:
+                # d3rlpy API drift (constructor kwargs changed across versions):
+                # fall back to the in-repo custom implementation.
+                logger.warning(f"d3rlpy IQL init failed ({e}); falling back to custom IQL")
+                self.use_d3rlpy = False
+        if not self.use_d3rlpy:
             if not TORCH_AVAILABLE:
                 raise ImportError("PyTorch is required for custom IQL implementation")
             self._init_custom()

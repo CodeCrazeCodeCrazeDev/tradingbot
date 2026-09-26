@@ -928,15 +928,10 @@ class TestSignalEnums:
     def test_decay_function_values(self):
         """Test DecayFunction enum values"""
         from trading_bot.signals.signal_lifecycle import DecayFunction
-from dataclasses import field
-from enum import auto
-import numpy
-import pandas
-        
-assert DecayFunction.LINEAR.value == 'linear'
-assert DecayFunction.EXPONENTIAL.value == 'exponential'
-assert DecayFunction.STEP.value == 'step'
-assert DecayFunction.SIGMOID.value == 'sigmoid'
+        assert DecayFunction.LINEAR.value == 'linear'
+        assert DecayFunction.EXPONENTIAL.value == 'exponential'
+        assert DecayFunction.STEP.value == 'step'
+        assert DecayFunction.SIGMOID.value == 'sigmoid'
 
 
 # ============================================================================

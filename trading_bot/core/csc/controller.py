@@ -386,6 +386,10 @@ class CognitiveSystemController:
             e_k = np.zeros_like(h_next)
             e_k[idx] = 1.0
 
+        # Bounded channel: retain only the most recent 100 tokens.
+        if len(self.discrete_channel) > 100:
+            self.discrete_channel = self.discrete_channel[-100:]
+
         self.continuous_state["latent"] = np.asarray(self.discoloop.hidden_state)
 
     async def _pivot_refine_loop(
@@ -721,4 +725,4 @@ class CognitiveSystemController:
         self.state.folded_history.append({"task": task, "result": result})
         self.state.epistemic_uncertainty = max(0.05, self.state.epistemic_uncertainty * 0.9)
         # "status" refers to task completion — a vetoed trade is still a completed cycle.
-        return {"status": "completed", "decision": result}
+        return {"status": "completed", "success": True, "decision": result}

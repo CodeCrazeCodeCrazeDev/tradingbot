@@ -58,6 +58,15 @@ EXECUTION_BOUNDARY_PATHS = {
     "trading_bot/core/execution_bridge.py",
 }
 
+# Interface modules that now preserve imports while delegating to
+# ModularMonolithRuntime/read-only projections. They are one-wave shims rather
+# than authorities.
+INTERFACE_FACADE_PATHS = {
+    "trading_bot/api.py",
+    "trading_bot/api/__init__.py",
+    "trading_bot/unified_main.py",
+}
+
 CANONICAL_FILES = {
     "trading_bot/foundation/runtime.py": ("canonical", "composition", "ModularMonolithRuntime"),
     "trading_bot/unified_bot.py": ("canonical", "composition", "UnifiedTradingBot"),
@@ -227,6 +236,8 @@ def _classification(path: str, scan: Mapping[str, object]) -> Tuple[str, Optiona
     canonical = CANONICAL_FILES.get(path)
     if canonical:
         return "canonical", None
+    if path in INTERFACE_FACADE_PATHS:
+        return "compatibility_facade", None
     if (
         scan["direct_capital_path"]
         and path not in SIMULATED_CAPITAL_PATHS

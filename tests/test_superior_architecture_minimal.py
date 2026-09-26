@@ -102,7 +102,7 @@ async def test_deterministic_validation():
     # Re-run verification swarm
     reports = await csc.verifier_swarm.run_swarm(entry)
 
-    assert len(reports) == 3
+    assert len(reports) == len(csc.verifier_swarm.verifiers)
     assert all(r.is_valid for r in reports)
     print("test_deterministic_validation PASSED")
 

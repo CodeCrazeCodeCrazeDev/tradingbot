@@ -93,9 +93,7 @@ class TestMarketAnalysis:
         """Test module can be imported."""
 
         from trading_bot.analysis.market_analysis import MarketAnalyzer
-import numpy
-import pandas
-assert MarketAnalyzer is not None
+        assert MarketAnalyzer is not None
 
 
 

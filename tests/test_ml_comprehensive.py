@@ -5,6 +5,44 @@ import pandas as pd
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
+# Hoisted from in-def imports (merge repair: names were bound in
+# fixture scope while sibling methods reference them module-wide)
+try:
+    from trading_bot.ml import complete_ai_system, confidence_calibration, data_leakage_guard, ensemble_models, explainable_ai, feature_engineering, feature_versioning, offline_rl, online_learning, personalized_learning, pipeline, predictive_models, reinforcement
+except ImportError:
+    pass
+
+try:
+    from trading_bot.ml.predictive_models import TransformerModel
+except ImportError:
+    pass
+
+try:
+    from trading_bot.ml.reinforcement import PPOAgent
+except ImportError:
+    pass
+
+try:
+    from trading_bot.ml.ensemble_models import ModelEnsemble
+except ImportError:
+    pass
+
+try:
+    from trading_bot.ml.offline_rl.cql_agent import CQLAgent
+except ImportError:
+    pass
+
+try:
+    from trading_bot.ml.offline_rl.bcq_agent import BCQAgent
+except ImportError:
+    pass
+
+try:
+    from trading_bot.ml.offline_rl.iql_agent import IQLAgent
+except ImportError:
+    pass
+
+
 
 # Test Predictive Models
 class TestPredictiveModels:
@@ -223,10 +261,8 @@ class TestOfflineRL:
         """Test IQL agent."""
 
         from trading_bot.ml.offline_rl.iql_agent import IQLAgent
-import numpy
-import pandas
-agent = IQLAgent()
-assert agent is not None
+        agent = IQLAgent(state_dim=4, action_dim=2)
+        assert agent is not None
 
 
 

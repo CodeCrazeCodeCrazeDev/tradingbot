@@ -99,7 +99,9 @@ constructs `ModularMonolithRuntime` directly and analysis-mode synthetic smoke
 completed through the canonical graph with the kill switch rejecting capital.
 Runtime startup now registers the read model plus dashboard, reporting, and
 notification adapters in the canonical component graph with `read_only` and
-`capital_path=none` metadata.
+`capital_path=none` metadata. `trading_bot/unified_main.py` and the legacy
+`trading_bot/api.py` manager are now one-wave compatibility facades over
+`ModularMonolithRuntime`; they no longer own independent lifecycle loops.
 
 ## Next wave
 

@@ -1,5 +1,7 @@
 """Tests for read-only dashboard/reporting/notification adapters."""
 
+import warnings
+
 import pytest
 
 from trading_bot.interfaces.adapters import (
@@ -57,3 +59,27 @@ async def test_runtime_registers_interface_projections_as_read_only() -> None:
         assert graph[name]["metadata"]["read_only"] is True
         assert graph[name]["metadata"]["capital_path"] == "none"
         assert graph[name]["dependencies"] == ["trading_repository"]
+
+
+@pytest.mark.asyncio
+async def test_unified_main_facade_delegates_to_canonical_runtime() -> None:
+    from trading_bot.unified_main import UnifiedTradingSystem
+
+    with warnings.catch_warnings(record=True) as captured:
+        warnings.simplefilter("always")
+        system = UnifiedTradingSystem({"mode": "paper"})
+
+    calls = []
+
+    async def fake_run(observations, cycles=0, interval=1.0):
+        calls.append((list(observations), cycles, interval))
+
+    async def fake_start() -> None:
+        system.runtime.bot.running = True
+
+    system.runtime.bot.start = fake_start
+    system.runtime.bot.run = fake_run
+    await system.run(iter([{"symbol": "EURUSD", "price": 1.1}]), cycles=1, interval=0)
+
+    assert calls == [([{"symbol": "EURUSD", "price": 1.1}], 1, 0)]
+    assert any(item.category is DeprecationWarning for item in captured)

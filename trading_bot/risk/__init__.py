@@ -258,6 +258,6 @@ class PositionSizeCalculator:
 
 # Compat re-export
 try:
-    from .MASTER_risk_manager import TradeDirection  # noqa: F401
+    from .MASTER_risk_manager import TradeDirection, TradeQuality  # noqa: F401
 except ImportError:
     pass

@@ -6,6 +6,24 @@ import numpy as np
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
+# Hoisted from in-def imports (merge repair: names were bound in
+# fixture scope while sibling methods reference them module-wide)
+try:
+    from trading_bot.brokers import broker_adapter
+except ImportError:
+    pass
+
+try:
+    from trading_bot.brokers.broker_adapter import BrokerAdapter, MT5BrokerAdapter, MockBrokerAdapter
+except ImportError:
+    pass
+
+try:
+    from trading_bot import brokers
+except ImportError:
+    pass
+
+
 
 class TestBrokerAdapter:
     """Tests for broker_adapter module."""
@@ -60,8 +78,7 @@ class TestBrokersInit:
         """Test module can be imported."""
 
         from trading_bot import brokers
-import numpy
-assert brokers is not None
+        assert brokers is not None
 
 
 

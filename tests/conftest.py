@@ -112,17 +112,37 @@ try:
         if _flat_map_built[0]:
             return
         _flat_map_built[0] = True
-        for _dirpath, _dirnames, _filenames in os.walk(_tb_root):
-            _dirnames[:] = sorted(d for d in _dirnames if d not in {"__pycache__", "_archive", "tests"})
-            # Bound depth: relocated flat modules live <=2 packages deep
-            # (e.g. risk/MASTER_risk_manager.py); deeper trees are never
-            # referenced by flat names and cost minutes to walk under load.
-            if len(Path(_dirpath).relative_to(_tb_root).parts) >= 3:
-                _dirnames[:] = []
-                continue
-            for _fn in _filenames:
-                if _fn.endswith(".py") and _fn != "__init__.py":
-                    _flat_map.setdefault(_fn[:-3], []).append(_dirpath)
+        # Pass 1: live tree (priority). Pass 2: _archive (last resort — the
+        # quarantined modules remain test-loadable without being reachable
+        # from production imports).
+        for _archive_only in (False, True):
+            for _dirpath, _dirnames, _filenames in os.walk(_tb_root):
+                _rel_parts = Path(_dirpath).relative_to(_tb_root).parts
+                in_archive = _rel_parts and _rel_parts[0] == "_archive"
+                _dirnames[:] = sorted(
+                    d for d in _dirnames
+                    if d not in {"__pycache__", "tests"}
+                    and (d == "_archive") == (_archive_only and not _rel_parts)
+                )
+                if in_archive != _archive_only:
+                    continue
+                # Bound depth: relocated flat modules live <=4 packages deep
+                # (e.g. risk/MASTER_risk_manager.py at depth 1,
+                # alphaalgo_v2/execution/algorithms/smart.py at depth 3,
+                # _archive/trading_bot/indicators/learned/x.py at depth 4);
+                # deeper trees are never referenced by flat names.
+                if len(_rel_parts) >= 5:
+                    _dirnames[:] = []
+                    continue
+                for _fn in _filenames:
+                    if _fn.endswith(".py") and _fn != "__init__.py":
+                        _flat_map.setdefault(_fn[:-3], []).append(_dirpath)
+
+    # Explicit flat-name aliases for modules that were RENAMED (not just
+    # relocated) — the stem lookup above cannot match these. Test-scoped only.
+    _FLAT_ALIASES = {
+        "imaginationplanner": "trading_bot.world_model.imagination",
+    }
 
     class _CanonicalAliasLoader(_importlib_abc.Loader):
         def __init__(self, canonical: str):
@@ -139,6 +159,11 @@ try:
             if not fullname.startswith("trading_bot.") or fullname.count(".") != 1:
                 return None
             name = fullname.rsplit(".", 1)[1]
+            alias = _FLAT_ALIASES.get(name)
+            if alias and _importlib_util.find_spec(alias) is not None:
+                return _importlib_util.spec_from_loader(
+                    fullname, _CanonicalAliasLoader(alias)
+                )
             _build_flat_map()
             for dirpath in _flat_map.get(name, []):
                 rel = Path(dirpath).relative_to(_tb_root)
@@ -152,6 +177,12 @@ try:
     sys.meta_path.append(_FlatTradingBotFinder())
 except Exception:
     pass
+
+# Launcher scripts are importable modules in generated tests
+# (e.g. ``from thinking_bot import ThinkingBot``) — test-scoped path only.
+_launchers = Path(__file__).parent.parent / "scripts" / "launchers"
+if _launchers.is_dir() and str(_launchers) not in sys.path:
+    sys.path.append(str(_launchers))
 
 # Quarantine: merge-mangled test modules that fail to parse live under
 # tests/_quarantine/ and are excluded from collection until repaired.

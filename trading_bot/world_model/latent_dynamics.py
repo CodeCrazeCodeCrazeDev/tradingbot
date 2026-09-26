@@ -8,7 +8,7 @@ import path.
 """
 
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +93,81 @@ try:
             self.training_stage = "FC-RL"
             _, success = self.forward(states, actions)
             return nn.functional.binary_cross_entropy(success, actual_success_outcomes)
+
+    class MarketStateDecoder(nn.Module):
+        """Decodes latent representation back to market state."""
+
+        def __init__(self, latent_dim: int = 32, output_dim: int = 20):
+            super().__init__()
+            self.decoder = nn.Sequential(
+                nn.Linear(latent_dim, 64),
+                nn.ReLU(),
+                nn.Linear(64, 64),
+                nn.ReLU(),
+                nn.Linear(64, output_dim)
+            )
+
+        def forward(self, z: torch.Tensor) -> torch.Tensor:
+            """Decode latent state to market state."""
+            return self.decoder(z)
+
+
+    class LatentDynamicsModel(nn.Module):
+        """
+        Predicts evolution of latent state over time.
+        Includes stochastic and deterministic paths.
+        """
+
+        def __init__(self, latent_dim: int = 32, hidden_dim: int = 64):
+            super().__init__()
+
+            # Deterministic path (GRU)
+            self.rnn = nn.GRU(
+                input_size=latent_dim,
+                hidden_size=hidden_dim,
+                num_layers=2,
+                batch_first=True
+            )
+
+            # Prior network (predicts next latent state)
+            self.prior = nn.Sequential(
+                nn.Linear(hidden_dim, 64),
+                nn.ReLU(),
+                nn.Linear(64, latent_dim * 2)  # Mean and logvar
+            )
+
+            self.latent_dim = latent_dim
+            self.hidden_dim = hidden_dim
+
+        def forward(
+            self,
+            latent_state: torch.Tensor,
+            hidden_state: Optional[torch.Tensor] = None
+        ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+            """
+            Predict next latent state distribution.
+
+            Returns:
+                mean, logvar, new_hidden_state
+            """
+            # Update RNN state
+            _, hidden_state = self.rnn(latent_state.unsqueeze(1), hidden_state)
+
+            # Predict next latent state
+            prior_params = self.prior(hidden_state[-1])
+            mean, logvar = torch.chunk(prior_params, 2, dim=-1)
+
+            return mean, logvar, hidden_state
+
+        def sample_prediction(
+            self,
+            mean: torch.Tensor,
+            logvar: torch.Tensor
+        ) -> torch.Tensor:
+            """Sample from predicted distribution."""
+            std = torch.exp(0.5 * logvar)
+            eps = torch.randn_like(std)
+            return mean + eps * std
 
 except ImportError:
     pass
