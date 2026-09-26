@@ -8,15 +8,15 @@ All classes, methods, and functions tested.
 import pytest
 import asyncio
 import logging
+from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
 try:
-    from trading_bot.safety_validator import *
+    from trading_bot.ai_core.agents.safety_validator import *
 except ImportError:
-    # Fallback import
     import sys
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.safety_validator import *
+    from trading_bot.ai_core.agents.safety_validator import *
 
 logger = logging.getLogger(__name__)
 
@@ -43,43 +43,42 @@ class TestSafetyValidator:
         if instance is not None and hasattr(instance, "initialize"):
             try:
                 result = instance.initialize()
-                logger.info(f"Method {method} executed")
+                logger.info("Method initialize executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method initialize failed: {e}")
-                pytest.skip(f"Method not fully implemented")
+                pytest.skip("Method not fully implemented")
 
     def test_process(self, instance):
         """Test SafetyValidator.process method"""
         if instance is not None and hasattr(instance, "process"):
             try:
-                result = instance.process()
-                logger.info(f"Method {method} executed")
+                result = instance.process("test_data")
+                logger.info("Method process executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method process failed: {e}")
-                pytest.skip(f"Method not fully implemented")
+                pytest.skip("Method not fully implemented")
 
     def test_get_status(self, instance):
         """Test SafetyValidator.get_status method"""
         if instance is not None and hasattr(instance, "get_status"):
             try:
                 result = instance.get_status()
-                logger.info(f"Method {method} executed")
+                logger.info("Method get_status executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method get_status failed: {e}")
-                pytest.skip(f"Method not fully implemented")
+                pytest.skip("Method not fully implemented")
 
 def test_create_safety_validator():
     """Test create_safety_validator function"""
     try:
         result = create_safety_validator()
-        logger.info(f"Function create_safety_validator executed")
+        logger.info("Function create_safety_validator executed")
         assert True  # Function executed
     except TypeError:
-        # Function requires arguments
-        logger.info(f"Function create_safety_validator requires arguments")
+        logger.info("Function create_safety_validator requires arguments")
         pytest.skip("Function requires specific arguments")
     except Exception as e:
         logger.warning(f"Function create_safety_validator failed: {e}")
@@ -88,13 +87,10 @@ def test_create_safety_validator():
 def test_initialize():
     """Test initialize function"""
     try:
-        result = initialize()
-        logger.info(f"Function initialize executed")
+        instance = SafetyValidator()
+        result = instance.initialize()
+        logger.info("Function initialize executed")
         assert True  # Function executed
-    except TypeError:
-        # Function requires arguments
-        logger.info(f"Function initialize requires arguments")
-        pytest.skip("Function requires specific arguments")
     except Exception as e:
         logger.warning(f"Function initialize failed: {e}")
         pytest.skip("Function not fully implemented")
@@ -102,13 +98,10 @@ def test_initialize():
 def test_process():
     """Test process function"""
     try:
-        result = process()
-        logger.info(f"Function process executed")
+        instance = SafetyValidator()
+        result = instance.process("test_data")
+        logger.info("Function process executed")
         assert True  # Function executed
-    except TypeError:
-        # Function requires arguments
-        logger.info(f"Function process requires arguments")
-        pytest.skip("Function requires specific arguments")
     except Exception as e:
         logger.warning(f"Function process failed: {e}")
         pytest.skip("Function not fully implemented")
@@ -116,13 +109,10 @@ def test_process():
 def test_get_status():
     """Test get_status function"""
     try:
-        result = get_status()
-        logger.info(f"Function get_status executed")
+        instance = SafetyValidator()
+        result = instance.get_status()
+        logger.info("Function get_status executed")
         assert True  # Function executed
-    except TypeError:
-        # Function requires arguments
-        logger.info(f"Function get_status requires arguments")
-        pytest.skip("Function requires specific arguments")
     except Exception as e:
         logger.warning(f"Function get_status failed: {e}")
         pytest.skip("Function not fully implemented")

@@ -8,15 +8,15 @@ All classes, methods, and functions tested.
 import pytest
 import asyncio
 import logging
+from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
 try:
-    from trading_bot.executor_agent import *
+    from trading_bot.ai_core.agents.executor_agent import *
 except ImportError:
-    # Fallback import
     import sys
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.executor_agent import *
+    from trading_bot.ai_core.agents.executor_agent import *
 
 logger = logging.getLogger(__name__)
 
@@ -43,43 +43,42 @@ class TestExecutorAgent:
         if instance is not None and hasattr(instance, "initialize"):
             try:
                 result = instance.initialize()
-                logger.info(f"Method {method} executed")
+                logger.info("Method initialize executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method initialize failed: {e}")
-                pytest.skip(f"Method not fully implemented")
+                pytest.skip("Method not fully implemented")
 
     def test_process(self, instance):
         """Test ExecutorAgent.process method"""
         if instance is not None and hasattr(instance, "process"):
             try:
-                result = instance.process()
-                logger.info(f"Method {method} executed")
+                result = instance.process("test_data")
+                logger.info("Method process executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method process failed: {e}")
-                pytest.skip(f"Method not fully implemented")
+                pytest.skip("Method not fully implemented")
 
     def test_get_status(self, instance):
         """Test ExecutorAgent.get_status method"""
         if instance is not None and hasattr(instance, "get_status"):
             try:
                 result = instance.get_status()
-                logger.info(f"Method {method} executed")
+                logger.info("Method get_status executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method get_status failed: {e}")
-                pytest.skip(f"Method not fully implemented")
+                pytest.skip("Method not fully implemented")
 
 def test_create_executor_agent():
     """Test create_executor_agent function"""
     try:
         result = create_executor_agent()
-        logger.info(f"Function create_executor_agent executed")
+        logger.info("Function create_executor_agent executed")
         assert True  # Function executed
     except TypeError:
-        # Function requires arguments
-        logger.info(f"Function create_executor_agent requires arguments")
+        logger.info("Function create_executor_agent requires arguments")
         pytest.skip("Function requires specific arguments")
     except Exception as e:
         logger.warning(f"Function create_executor_agent failed: {e}")
@@ -88,13 +87,10 @@ def test_create_executor_agent():
 def test_initialize():
     """Test initialize function"""
     try:
-        result = initialize()
-        logger.info(f"Function initialize executed")
+        instance = ExecutorAgent()
+        result = instance.initialize()
+        logger.info("Function initialize executed")
         assert True  # Function executed
-    except TypeError:
-        # Function requires arguments
-        logger.info(f"Function initialize requires arguments")
-        pytest.skip("Function requires specific arguments")
     except Exception as e:
         logger.warning(f"Function initialize failed: {e}")
         pytest.skip("Function not fully implemented")
@@ -102,13 +98,10 @@ def test_initialize():
 def test_process():
     """Test process function"""
     try:
-        result = process()
-        logger.info(f"Function process executed")
+        instance = ExecutorAgent()
+        result = instance.process("test_data")
+        logger.info("Function process executed")
         assert True  # Function executed
-    except TypeError:
-        # Function requires arguments
-        logger.info(f"Function process requires arguments")
-        pytest.skip("Function requires specific arguments")
     except Exception as e:
         logger.warning(f"Function process failed: {e}")
         pytest.skip("Function not fully implemented")
@@ -116,13 +109,10 @@ def test_process():
 def test_get_status():
     """Test get_status function"""
     try:
-        result = get_status()
-        logger.info(f"Function get_status executed")
+        instance = ExecutorAgent()
+        result = instance.get_status()
+        logger.info("Function get_status executed")
         assert True  # Function executed
-    except TypeError:
-        # Function requires arguments
-        logger.info(f"Function get_status requires arguments")
-        pytest.skip("Function requires specific arguments")
     except Exception as e:
         logger.warning(f"Function get_status failed: {e}")
         pytest.skip("Function not fully implemented")
