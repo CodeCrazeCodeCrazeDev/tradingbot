@@ -191,7 +191,8 @@ class LegacyBrokerAdapter:
         filled_quantity = float(getattr(result, "filled_quantity", 0.0) or 0.0)
         filled_price = getattr(result, "filled_price", None) or order.price
         fills = []
-        if status is OrderStatus.FILLED and filled_quantity > 0 and filled_price is not None:
+        if (status in (OrderStatus.FILLED, OrderStatus.PARTIALLY_FILLED)
+                and filled_quantity > 0 and filled_price is not None):
             fills.append(Fill(
                 client_order_id=order.client_order_id,
                 venue_order_id=getattr(result, "client_order_id", None),

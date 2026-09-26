@@ -21,6 +21,17 @@ class GovernanceDecision(Enum):
     BLOCKED = "BLOCKED"
     REJECTED = "REJECTED"
 
+def _coerce_float(value: Any, default: Optional[float]) -> Optional[float]:
+    """Coerce loose numeric inputs (e.g. string numbers from dict bridges);
+    unparseable values fall back to ``default`` so caps still evaluate."""
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return float(value)
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
 @dataclass
 class ShieldReport:
     decision: GovernanceDecision
@@ -97,9 +108,15 @@ class ImmutableShield:
             if quantity > max_qty:
                 return ShieldReport(GovernanceDecision.BLOCKED, f"Quantity {quantity} exceeds cap {max_qty}", min(1.0, quantity / max_qty))
 
-        # 4. Symbol denylist; typed OrderRequest payloads nest instrument data.
+        # 4. Symbol denylist; typed OrderRequest payloads nest instrument data
+        # in dict OR attribute form — a non-dict instrument must not bypass it.
         instrument = params.get("instrument", {})
-        symbol = params.get("symbol") or (instrument.get("symbol") if isinstance(instrument, dict) else None)
+        symbol = params.get("symbol")
+        if not symbol:
+            if isinstance(instrument, dict):
+                symbol = instrument.get("symbol")
+            else:
+                symbol = getattr(instrument, "symbol", None)
         if symbol and symbol in self.config.get("blocked_symbols", []):
             return ShieldReport(GovernanceDecision.BLOCKED, f"Symbol {symbol} is denylisted", 0.95)
 
@@ -111,25 +128,30 @@ class ImmutableShield:
             if quality in {"invalid", "stale"} or market.get("data_is_fresh") is False:
                 return ShieldReport(GovernanceDecision.BLOCKED, "Market data is not fresh and valid", 0.95)
 
-        # 6. Confidence floor
-        confidence = params.get("confidence", 1.0)
+        # 6. Confidence floor — a proposal that omits confidence defaults to
+        # 0.0, not 1.0: with a configured floor an absent value must fail
+        # closed rather than implicitly satisfy it.
+        confidence = params.get("confidence", 0.0)
         min_conf = self.config.get("min_confidence", 0.0)
         if isinstance(confidence, (int, float)) and confidence < min_conf:
             return ShieldReport(GovernanceDecision.REJECTED, f"Confidence {confidence} below floor {min_conf}", 0.7)
 
-        # 7. Exposure cap (from market context)
+        # 7. Exposure cap (from market context) — coerce loose numerics; a
+        # string "0.20" must still be enforced, not skipped.
         market = context.get("market", context)
         exposure = market.get("exposure", market.get("portfolio_exposure", 0.0)) if isinstance(market, dict) else 0.0
+        exposure = _coerce_float(exposure, 0.0)
         max_exp = self.config.get("max_exposure", 0.05)
-        if isinstance(exposure, (int, float)) and exposure > max_exp:
+        if exposure > max_exp:
             return ShieldReport(GovernanceDecision.BLOCKED, f"Portfolio exposure {exposure:.2%} exceeds cap {max_exp:.2%}", 0.85)
 
         # 7b. Portfolio drawdown hard stop — beyond the configured cap the
         # shield blocks all new risk, not merely flags it.
         portfolio = context.get("portfolio", {})
         drawdown = portfolio.get("drawdown", 0.0) if isinstance(portfolio, dict) else 0.0
+        drawdown = _coerce_float(drawdown, 0.0)
         max_dd = self.config.get("max_drawdown", 0.15)
-        if isinstance(drawdown, (int, float)) and drawdown > max_dd:
+        if drawdown > max_dd:
             return ShieldReport(GovernanceDecision.BLOCKED, f"Portfolio drawdown {drawdown:.2%} exceeds cap {max_dd:.2%}", 1.0)
 
         # 8. Regime veto: under EXTREME_VOLATILITY only exit/close actions pass
@@ -143,8 +165,9 @@ class ImmutableShield:
         # trade across an abnormally wide spread is a hard veto. Exits pass.
         micro = market.get("microstructure", market) if isinstance(market, dict) else {}
         spread = micro.get("spread_bps") if isinstance(micro, dict) else None
+        spread = _coerce_float(spread, None)
         max_spread = self.config.get("max_spread_bps")
-        if (max_spread is not None and isinstance(spread, (int, float))
+        if (max_spread is not None and spread is not None
                 and spread > max_spread and intent not in exit_intents):
             return ShieldReport(
                 GovernanceDecision.BLOCKED,

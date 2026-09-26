@@ -11,3 +11,14 @@ Preregister the family of tests, assets/venues, cutoff dates and acceptance rule
 7. **Final holdout:** proposer cannot read results or raw rows; operator verifier answers at most a budgeted query, emits bound attestation, records every use. Reuse leaks information even without rows; exhausted/contaminated holdouts retire or rotate under separate governance. A local file naming itself `hidden` has no trust value.
 
 Report every dimension, including degradation in DD, CVaR, latency, complexity and costs. Apply hard constraints first and Pareto dominance next; incomparable trade-offs await explicit operator preference. Missing test coverage is not a pass.
+
+## v2 implementation (2026-09-26)
+
+`transfer.py::TransferEvaluator` executes the protocol end-to-end on `Scenario(label, regime, cost_multiplier, seed, frames)` panels built from the contract's `regime_panel` × `cost_multipliers` × `seeds`. Each scenario replays via the same `PairedFamilyReplay` as the main gate (identical mechanics and costs — the panel is *not* a weaker secondary simulation). `classify()` returns:
+
+- `LOCAL` — gain only at observed settings (dies under cost stress or is absent in selection regime) → candidate rejected;
+- `ROBUST` — gain only in selection regime at all declared perturbations → archived as `specialist(regime_cell)`, never champion;
+- `TRANSFERABLE` — positive lower-CI in >=2/3 of regimes at observed cost → eligible to remain `challenger`/`champion` pending Pareto gates;
+- `SYSTEMIC` — TRANSFERABLE plus zero regression-budget breach in every scenario.
+
+`synthetic_market.py` supplies deterministic regime fixtures for engineering tests; per the data constraint all transfer results are fixture evidence only.

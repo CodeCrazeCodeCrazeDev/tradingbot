@@ -37,7 +37,7 @@ if not hasattr(builtins, "Path"):
 
 # Compat shim: generated test modules reference common modules bare
 # (``time.time()``, ``torch.randn(...)``, ``brokers.X``) without importing them.
-for _mod in ("time", "os", "sys", "json", "math", "datetime"):
+for _mod in ("time", "os", "sys", "json", "math", "datetime", "traceback"):
     if not hasattr(builtins, _mod):
         setattr(builtins, _mod, __import__(_mod))
 # torch intentionally NOT imported eagerly here (~60s cold import on this
@@ -71,16 +71,33 @@ def _tb_lazy_getattr(name):
         _build_flat_map()
         snake = _re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", "_", name)
         snake = _re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", snake).lower()
-        for dirpath in _flat_map.get(snake, []):
-            rel = Path(dirpath).relative_to(_tb_root)
-            canonical = "trading_bot." + ".".join(rel.parts) + "." + snake
-            try:
-                module = _importlib.import_module(canonical)
-            except Exception:
-                continue
-            obj = getattr(module, name, None)
-            if obj is not None:
-                return obj
+        # Class names often carry a role suffix the module name drops:
+        # ``RealAlternativeDataProvider`` -> ``real_alternative_data``,
+        # ``AlmgrenChrissOptimizer`` -> ``almgren_chriss``. Try the full
+        # snake name first, then drop trailing words.
+        parts = snake.split("_")
+        stems = [snake] + ["_".join(parts[:i]) for i in range(len(parts) - 1, 0, -1)]
+        for stem in stems:
+            alias = globals().get("_FLAT_ALIASES", {}).get(stem)
+            if alias:
+                try:
+                    module = _importlib.import_module(alias)
+                except Exception:
+                    module = None
+                if module is not None:
+                    obj = getattr(module, name, None)
+                    if obj is not None:
+                        return obj
+            for dirpath in _flat_map.get(stem, []):
+                rel = Path(dirpath).relative_to(_tb_root)
+                canonical = "trading_bot." + ".".join(rel.parts) + "." + stem
+                try:
+                    module = _importlib.import_module(canonical)
+                except Exception:
+                    continue
+                obj = getattr(module, name, None)
+                if obj is not None:
+                    return obj
     raise AttributeError(f"module 'builtins' has no attribute {name!r}")
 
 import re as _re
@@ -157,23 +174,38 @@ try:
         def exec_module(self, module):
             return None
 
-    def _importer_is_package_code() -> bool:
-        """True when the module requesting this import lives inside trading_bot.
+    def _importer_in_live_package() -> bool:
+        """True when the module requesting this import lives inside the LIVE
+        trading_bot tree (archived modules importers return False so archive
+        code can still resolve its own siblings).
 
         Live-package importers must get honest ImportError for missing modules
         so optional-import guards behave correctly and quarantined code can
         never satisfy a production import — even under the test shim.
         """
         import inspect as _inspect
+        live_root = str(_tb_root).replace("\\", "/").lower() + "/"
+        archive_root = live_root + "_archive/"
         for fi in _inspect.stack(0):
-            mod = fi.frame.f_globals.get("__name__", "")
-            if (not mod
-                    or mod.startswith(("_frozen_importlib", "importlib", "builtins"))
-                    or mod in {"conftest", "tests.conftest"}
-                    or mod.endswith(".conftest")):
+            fn = fi.frame.f_code.co_filename
+            if not fn or fn.startswith("<"):
                 continue
-            return mod == "trading_bot" or mod.startswith("trading_bot.")
+            nfn = fn.replace("\\", "/").lower()
+            if ("importlib" in nfn or nfn.endswith("conftest.py")
+                    or "/site-packages/" in nfn):
+                continue
+            if nfn.startswith(archive_root):
+                return False
+            return nfn.startswith(live_root)
         return False
+
+    def _module_file_exists(canonical: str) -> bool:
+        """Filesystem check for a ``trading_bot.*`` dotted name without running
+        ``importlib.util.find_spec`` — which would execute heavy archive
+        package __init__ chains (e.g. transformers) during spec resolution."""
+        parts = canonical.split(".")
+        base = _tb_root.joinpath(*parts[1:])
+        return base.with_suffix(".py").is_file() or (base / "__init__.py").is_file()
 
     class _FlatTradingBotFinder(_importlib_abc.MetaPathFinder):
         def find_spec(self, fullname, path=None, target=None):
@@ -191,7 +223,7 @@ try:
                     if rel.parts[0] != "_archive":
                         continue
                     canonical = "trading_bot." + ".".join(rel.parts) + "." + stem
-                    if canonical != fullname and _importlib_util.find_spec(canonical) is not None:
+                    if canonical != fullname and _module_file_exists(canonical):
                         return _importlib_util.spec_from_loader(
                             fullname, _CanonicalAliasLoader(canonical)
                         )
@@ -199,11 +231,15 @@ try:
             # 2-level names (``trading_bot.<sub>.X``) that miss in the live
             # tree may exist in _archive at the same subpath — alias them so
             # archived modules stay test-loadable (quarantine preserved:
-            # production never installs this finder).
+            # production never installs this finder). Live-package importers
+            # are excluded: a live package's optional-import guard must see
+            # honest ImportError, not a quarantined stand-in — and spec
+            # resolution must not exec the archive parent __init__ chain.
             if (fullname.count(".") == 2
-                    and not fullname.startswith("trading_bot._archive")):
+                    and not fullname.startswith("trading_bot._archive")
+                    and not _importer_in_live_package()):
                 archived = "trading_bot._archive." + fullname[len("trading_bot."):]
-                if _importlib_util.find_spec(archived) is not None:
+                if _module_file_exists(archived):
                     return _importlib_util.spec_from_loader(
                         fullname, _CanonicalAliasLoader(archived)
                     )
@@ -217,10 +253,17 @@ try:
                     fullname, _CanonicalAliasLoader(alias)
                 )
             _build_flat_map()
+            importer_is_pkg = _importer_in_live_package()
             for dirpath in _flat_map.get(name, []):
                 rel = Path(dirpath).relative_to(_tb_root)
+                if importer_is_pkg and rel.parts and rel.parts[0] == "_archive":
+                    continue
                 canonical = "trading_bot." + ".".join(rel.parts) + "." + name
-                if _importlib_util.find_spec(canonical) is not None:
+                if rel.parts and rel.parts[0] == "_archive":
+                    exists = _module_file_exists(canonical)
+                else:
+                    exists = _importlib_util.find_spec(canonical) is not None
+                if exists:
                     return _importlib_util.spec_from_loader(
                         fullname, _CanonicalAliasLoader(canonical)
                     )

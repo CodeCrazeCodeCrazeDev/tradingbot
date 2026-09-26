@@ -77,6 +77,16 @@ class EvidenceEdge:
     # edge's relation holds (arXiv:2604.23972).
     context_validity_mask: Optional[Dict[str, Any]] = None
 
+    def is_valid_in_context(self, context: Dict[str, Any]) -> bool:
+        """QKG: the edge is valid iff every masked context key agrees with
+        the supplied context. No mask means unconditionally valid."""
+        if not self.context_validity_mask:
+            return True
+        context = context or {}
+        return all(
+            context.get(k) == v for k, v in self.context_validity_mask.items()
+        )
+
 @dataclass
 class EvidenceGraph:
     """A snapshot of the Causal Evidence Graph for a specific decision."""

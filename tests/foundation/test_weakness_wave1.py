@@ -145,3 +145,154 @@ async def test_clickhouse_database_identifier_is_validated(monkeypatch):
     writer._initialized = False
     with pytest.raises(ValueError, match="invalid ClickHouse identifier"):
         await writer.initialize()
+
+
+@pytest.mark.asyncio
+async def test_shield_missing_confidence_fails_when_floor_set():
+    """ImmutableShield defaults a missing confidence field to 1.0, so a
+    configured floor can never reject a proposal that omits confidence."""
+    from trading_bot.core.immutable_shield import (
+        GovernanceDecision, ImmutableShield)
+
+    shield = ImmutableShield()
+    old = dict(shield.config)
+    try:
+        shield.config = {"min_confidence": 0.5}
+        report = await shield.validate_action(
+            "trade", {"quantity": 1.0}, {})
+        assert report.decision is GovernanceDecision.REJECTED
+    finally:
+        shield.config = old
+
+
+@pytest.mark.asyncio
+async def test_shield_denylist_applies_to_typed_instrument():
+    """The symbol denylist only reads dict-form instruments; a typed payload
+    carrying the same symbol silently bypasses it."""
+    from types import SimpleNamespace
+    from trading_bot.core.immutable_shield import (
+        GovernanceDecision, ImmutableShield)
+
+    shield = ImmutableShield()
+    old = dict(shield.config)
+    try:
+        shield.config = {"blocked_symbols": ["EURUSD"]}
+        report = await shield.validate_action(
+            "trade",
+            {"quantity": 1.0, "instrument": SimpleNamespace(symbol="EURUSD")},
+            {})
+        assert report.decision is GovernanceDecision.BLOCKED
+    finally:
+        shield.config = old
+
+
+@pytest.mark.asyncio
+async def test_shield_string_numeric_exposure_still_gated():
+    """A non-float exposure value skips the cap check entirely — string numerics
+    from loose callers must be coerced, not ignored."""
+    from trading_bot.core.immutable_shield import (
+        GovernanceDecision, ImmutableShield)
+
+    shield = ImmutableShield()
+    old = dict(shield.config)
+    try:
+        shield.config = {"max_exposure": 0.05}
+        report = await shield.validate_action(
+            "trade", {"quantity": 1.0}, {"market": {"exposure": "0.20"}})
+        assert report.decision is GovernanceDecision.BLOCKED
+    finally:
+        shield.config = old
+
+
+@pytest.mark.asyncio
+async def test_legacy_partial_fill_records_fill_quantity():
+    """A broker reporting a PARTIALLY_FILLED result produced zero Fill
+    objects — executed quantity silently vanished from the report."""
+    from trading_bot.foundation.contracts import (
+        Instrument, InstrumentType, OrderRequest, OrderSide, OrderType)
+
+    class _Result:
+        status = "partial"
+        filled_quantity = 0.5
+        filled_price = 100.25
+        client_order_id = "venue-9"
+        commission = 0.4
+
+    class _FakeBroker:
+        __module__ = "definitely_missing_broker_mod"
+        def place_order(self, **kw):
+            return _Result()
+
+    from trading_bot.execution.service import LegacyBrokerAdapter
+    adapter = LegacyBrokerAdapter(_FakeBroker())
+    inst = Instrument("EURUSD", InstrumentType.FX, "t")
+    order = OrderRequest(
+        client_order_id="pf-1", instrument=inst,
+        side=OrderSide.BUY, order_type=OrderType.MARKET,
+        quantity=1.0, price=100.25, decision_id="d1")
+    report = await adapter.submit_order(order)
+    from trading_bot.foundation.contracts import OrderStatus
+    assert report.status is OrderStatus.PARTIALLY_FILLED
+    assert len(report.fills) == 1
+    assert report.fills[0].quantity == 0.5
+
+
+@pytest.mark.asyncio
+async def test_execution_submit_is_idempotent_for_duplicate_client_ids():
+    """Submitting the same client_order_id twice must not reach the adapter
+    twice — duplicate submissions are a known real-money hazard."""
+    from trading_bot.foundation.contracts import (
+        Instrument, InstrumentType, OrderRequest, OrderSide, OrderType)
+    from trading_bot.execution.service import (
+        CanonicalExecutionService, PaperBrokerAdapter)
+
+    adapter = PaperBrokerAdapter()
+    calls = {"n": 0}
+    orig = adapter.submit_order
+    async def counted(order):
+        calls["n"] += 1
+        return await orig(order)
+    adapter.submit_order = counted
+    service = CanonicalExecutionService(adapter=adapter)
+    inst = Instrument("EURUSD", InstrumentType.FX, "t")
+    order = OrderRequest(
+        client_order_id="dup-1", instrument=inst,
+        side=OrderSide.BUY, order_type=OrderType.MARKET,
+        quantity=0.1, price=1.1, decision_id="d1")
+    r1 = await service.submit(order)
+    r2 = await service.submit(order)
+    assert calls["n"] == 1
+    assert r1 is r2
+
+
+def test_execution_non_paper_mode_requires_adapter():
+    from trading_bot.execution.service import CanonicalExecutionService
+    import pytest as _pt
+    with _pt.raises(ValueError):
+        CanonicalExecutionService(adapter=None, mode="live")
+
+
+@pytest.mark.asyncio
+async def test_decision_bus_lifecycle_start_stop_reset():
+    """Bus lifecycle: start spawns the processor, stop clears it, reset
+    restores empty state without leaking tasks."""
+    import asyncio
+    from trading_bot.core import unified_event_bus as ueb
+
+    bus = ueb.decision_bus
+    voters = dict(bus._voters); log = list(bus._log)
+    try:
+        ueb.UnifiedDecisionBus.reset()
+        await bus.start()
+        assert bus._running is True
+        assert bus._processor_task is not None and not bus._processor_task.done()
+        await bus.stop()
+        assert bus._running is False
+        assert bus._processor_task is None
+        ueb.UnifiedDecisionBus.reset()
+        assert not bus._voters and not bus._log
+        # A fresh queue bound to no loop must accept a new action cleanly.
+        assert bus._action_queue is not None
+    finally:
+        bus._voters.update(voters)
+        bus._log.extend(log)

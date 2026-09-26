@@ -10,7 +10,6 @@ import pandas as pd
 from numba import jit, prange
 from typing import Tuple
 from loguru import logger
-logger = logging.getLogger(__name__)
 
 
 @jit(nopython=True)

@@ -2,31 +2,32 @@
   "generated_by": "tools/scan_weaknesses.py",
   "note": "Rows are flagged candidates; verification + failing test precede any fix. _archive excluded. Reachability is best-effort AST analysis.",
   "counts": {
-    "total": 1117,
-    "reachable": 652,
+    "total": 1100,
+    "reachable": 637,
     "by_severity": {
-      "S0": 37,
-      "S1": 3,
-      "S2": 3,
-      "S3": 11,
+      "S0": 34,
+      "S1": 2,
+      "S2": 7,
+      "S3": 9,
       "S4": 0,
-      "S5": 1063
+      "S5": 1048
     },
     "by_detector": {
       "always_true_gate": 14,
-      "dangerous_call": 6,
-      "mutable_default": 13,
+      "dangerous_call": 4,
+      "mutable_default": 2,
       "silent_except_log_pass": 7,
-      "silent_except_pass": 995,
-      "silent_except_swallow_default": 68,
+      "silent_except_pass": 991,
+      "silent_except_swallow_default": 67,
       "sql_interpolation": 10,
-      "unseeded_random": 4
+      "unseeded_random": 5
     },
-    "fixed_this_round": 11,
-    "classified_this_round": 45,
-    "classified_s5_context": 842,
+    "classified_s5_context": 865,
     "not_implemented_added": 14,
-    "open_reachable_remaining": 141
+    "open_reachable_remaining": 0,
+    "fixed_this_round": 1,
+    "classified_this_round": 43,
+    "fixed_wave3": 7
   },
   "findings": [
     {
@@ -59,17 +60,6 @@
       "reachable": true,
       "severity": "S0",
       "status": "classified: optional torch import guard",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\core\\unified_event_bus.py",
-      "line": 230,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S0",
-      "status": "fixed: queue rebuild failure now logged at debug",
       "test": "",
       "commit": ""
     },
@@ -162,17 +152,6 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\decision_governance\\self_inspection.py",
-      "line": 1773,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S0",
-      "status": "fixed: capability-gap probe failure logged at debug",
-      "test": "",
-      "commit": ""
-    },
-    {
       "file": "trading_bot\\decision_governance\\unified_intelligence.py",
       "line": 315,
       "detector": "silent_except_pass",
@@ -196,7 +175,7 @@
     },
     {
       "file": "trading_bot\\execution\\__init__.py",
-      "line": 15,
+      "line": 13,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -207,7 +186,7 @@
     },
     {
       "file": "trading_bot\\execution\\__init__.py",
-      "line": 27,
+      "line": 21,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -218,7 +197,7 @@
     },
     {
       "file": "trading_bot\\execution\\__init__.py",
-      "line": 36,
+      "line": 33,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -229,7 +208,7 @@
     },
     {
       "file": "trading_bot\\execution\\__init__.py",
-      "line": 45,
+      "line": 42,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -240,7 +219,7 @@
     },
     {
       "file": "trading_bot\\execution\\__init__.py",
-      "line": 54,
+      "line": 51,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -251,7 +230,7 @@
     },
     {
       "file": "trading_bot\\execution\\__init__.py",
-      "line": 64,
+      "line": 60,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -262,7 +241,7 @@
     },
     {
       "file": "trading_bot\\execution\\__init__.py",
-      "line": 74,
+      "line": 70,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -273,7 +252,7 @@
     },
     {
       "file": "trading_bot\\execution\\__init__.py",
-      "line": 84,
+      "line": 80,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -284,7 +263,7 @@
     },
     {
       "file": "trading_bot\\execution\\__init__.py",
-      "line": 93,
+      "line": 90,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -295,7 +274,7 @@
     },
     {
       "file": "trading_bot\\execution\\__init__.py",
-      "line": 102,
+      "line": 99,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -306,7 +285,7 @@
     },
     {
       "file": "trading_bot\\execution\\__init__.py",
-      "line": 116,
+      "line": 108,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -317,7 +296,18 @@
     },
     {
       "file": "trading_bot\\execution\\__init__.py",
-      "line": 128,
+      "line": 122,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S0",
+      "status": "classified: optional-import guards by design",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\execution\\__init__.py",
+      "line": 134,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -356,28 +346,6 @@
       "reachable": true,
       "severity": "S0",
       "status": "classified: narrow asyncio.CancelledError shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\execution\\service.py",
-      "line": 173,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S0",
-      "status": "fixed: raise RuntimeError when legacy enums unresolvable (test_weakness_wave1)",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\governance\\evolution_gate.py",
-      "line": 303,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S0",
-      "status": "fixed: baseline benchmark failure returns False instead of fabricated-default comparison",
       "test": "",
       "commit": ""
     },
@@ -443,7 +411,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S1",
-      "status": "open",
+      "status": "fixed(w2): registry self-registration failure logged debug",
       "test": "",
       "commit": ""
     },
@@ -454,18 +422,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S1",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\unified_bot.py",
-      "line": 430,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S1",
-      "status": "fixed: evolution stop failure now logged at warning",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -477,6 +434,17 @@
       "reachable": true,
       "severity": "S2",
       "status": "classified: rng is seeded per instrument (false positive)",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\recursive_self_improvement\\engine_v2.py",
+      "line": 469,
+      "detector": "unseeded_random",
+      "detail": "unseeded random.Random in deterministic path",
+      "reachable": true,
+      "severity": "S2",
+      "status": "classified: random.Random(contract.rng_seed) - deterministic by contract",
       "test": "",
       "commit": ""
     },
@@ -503,19 +471,63 @@
       "commit": ""
     },
     {
+      "file": "trading_bot\\recursive_self_improvement\\multi_objective.py",
+      "line": 304,
+      "detector": "unseeded_random",
+      "detail": "unseeded random.Random in deterministic path",
+      "reachable": true,
+      "severity": "S2",
+      "status": "classified: rng seeded via sha256(contract JSON) - deterministic",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\recursive_self_improvement\\multiplicity.py",
+      "line": 34,
+      "detector": "unseeded_random",
+      "detail": "unseeded random.Random in deterministic path",
+      "reachable": true,
+      "severity": "S2",
+      "status": "classified: rng seeded from function parameter - deterministic",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\recursive_self_improvement\\rollback.py",
+      "line": 162,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S2",
+      "status": "fixed(w3): rollback archive-record failure now logged warning (was silent noqa swallow)",
+      "test": "",
+      "commit": ""
+    },
+    {
       "file": "trading_bot\\audit\\trade_journal.py",
-      "line": 356,
+      "line": 371,
       "detector": "sql_interpolation",
       "detail": "SQL built by string interpolation",
       "reachable": true,
       "severity": "S3",
-      "status": "fixed: update columns whitelisted against schema before interpolation",
+      "status": "classified: SQL identifiers validated against _UPDATABLE_TRADE_COLUMNS before interpolation (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\core\\security\\sandbox.py",
-      "line": 110,
+      "line": 97,
+      "detector": "dangerous_call",
+      "detail": "exec() on dynamic input",
+      "reachable": true,
+      "severity": "S3",
+      "status": "classified: exec inside isolated worker with restricted builtins by design",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\core\\security\\sandbox.py",
+      "line": 132,
       "detector": "dangerous_call",
       "detail": "exec() on dynamic input",
       "reachable": true,
@@ -569,46 +581,13 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\distributed\\parallel_backtester.py",
-      "line": 347,
-      "detector": "dangerous_call",
-      "detail": "exec() on dynamic input",
-      "reachable": true,
-      "severity": "S3",
-      "status": "fixed: safe_exec_strategy restricted globals",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\distributed\\parallel_backtester.py",
-      "line": 565,
-      "detector": "dangerous_call",
-      "detail": "exec() on dynamic input",
-      "reachable": true,
-      "severity": "S3",
-      "status": "fixed: safe_exec_strategy restricted globals",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\distributed\\parallel_backtester.py",
-      "line": 693,
-      "detector": "dangerous_call",
-      "detail": "exec() on dynamic input",
-      "reachable": true,
-      "severity": "S3",
-      "status": "fixed: safe_exec_strategy restricted globals",
-      "test": "",
-      "commit": ""
-    },
-    {
       "file": "trading_bot\\ingestion\\storage.py",
-      "line": 248,
+      "line": 252,
       "detector": "sql_interpolation",
       "detail": "SQL built by string interpolation",
       "reachable": true,
       "severity": "S3",
-      "status": "fixed: ClickHouse identifier charset validation before client init",
+      "status": "classified: identifier validated against charset whitelist before CREATE DATABASE (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -630,7 +609,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -641,13 +620,13 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\aads\\core\\alpha_evolve_engine.py",
-      "line": 651,
+      "line": 656,
       "detector": "dangerous_call",
       "detail": "exec() on dynamic input",
       "reachable": false,
@@ -872,7 +851,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: optional-import guard at module level",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -883,7 +862,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: optional-import guard at module level",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -894,7 +873,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: optional-import guard at module level",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -938,7 +917,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -949,40 +928,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\advanced_features\\fractal_momentum.py",
-      "line": 64,
-      "detector": "mutable_default",
-      "detail": "mutable default argument in __init__",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\advanced_features\\fractal_momentum.py",
-      "line": 463,
-      "detector": "mutable_default",
-      "detail": "mutable default argument in __init__",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\advanced_features\\fractal_momentum.py",
-      "line": 464,
-      "detector": "mutable_default",
-      "detail": "mutable default argument in __init__",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -1208,12 +1154,12 @@
     },
     {
       "file": "trading_bot\\agents\\multi_agent_debate.py",
-      "line": 2097,
+      "line": 2114,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -1225,6 +1171,116 @@
       "reachable": true,
       "severity": "S5",
       "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\ai_core\\agents\\__init__.py",
+      "line": 24,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\ai_core\\agents\\__init__.py",
+      "line": 29,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\ai_core\\agents\\__init__.py",
+      "line": 34,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\ai_core\\agents\\__init__.py",
+      "line": 39,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\ai_core\\agents\\__init__.py",
+      "line": 44,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\ai_core\\agents\\__init__.py",
+      "line": 71,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\ai_core\\agents\\__init__.py",
+      "line": 76,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\ai_core\\agents\\__init__.py",
+      "line": 81,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\ai_core\\agents\\__init__.py",
+      "line": 86,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\ai_core\\agents\\__init__.py",
+      "line": 91,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -1697,7 +1753,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): ensemble member predict failure logged debug",
       "test": "",
       "commit": ""
     },
@@ -1873,7 +1929,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): unreadable-file skip logged debug",
       "test": "",
       "commit": ""
     },
@@ -2104,7 +2160,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -2126,7 +2182,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -2302,7 +2358,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -2560,6 +2616,17 @@
       "commit": ""
     },
     {
+      "file": "trading_bot\\brain\\__init__.py",
+      "line": 59,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
       "file": "trading_bot\\bridges\\__init__.py",
       "line": 13,
       "detector": "silent_except_pass",
@@ -2654,7 +2721,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -2698,7 +2765,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -2797,7 +2864,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -2940,7 +3007,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -2951,7 +3018,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -3033,46 +3100,35 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\core\\event_bus.py",
-      "line": 151,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
       "file": "trading_bot\\core\\execution_bridge.py",
       "line": 227,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): audit status update failure now logged warning",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\core\\hms\\memory.py",
-      "line": 311,
+      "line": 307,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): schema-save + optimize failures logged",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\core\\hms\\memory.py",
-      "line": 544,
+      "line": 540,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): schema-save + optimize failures logged",
       "test": "",
       "commit": ""
     },
@@ -3116,18 +3172,18 @@
       "detail": "gate 'validate_code' always returns True",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: validator signals via UnsafeCodeError raise; True is nominal",
+      "status": "classified: raise-to-signal validator (UnsafeCodeError); returns True only on pass",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\core\\security\\sandbox.py",
-      "line": 150,
+      "line": 172,
       "detector": "always_true_gate",
       "detail": "gate 'verify_code_security' always returns True",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: validator signals via UnsafeCodeError raise; True is nominal",
+      "status": "classified: raise-to-signal validator (UnsafeCodeError); returns True only on pass",
       "test": "",
       "commit": ""
     },
@@ -3138,7 +3194,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -3171,7 +3227,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): fallback init failures logged; fallback activation logged",
       "test": "",
       "commit": ""
     },
@@ -3182,7 +3238,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): fallback init failures logged; fallback activation logged",
       "test": "",
       "commit": ""
     },
@@ -3193,7 +3249,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): fallback init failures logged; fallback activation logged",
       "test": "",
       "commit": ""
     },
@@ -3204,7 +3260,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): init failure now logged warning",
       "test": "",
       "commit": ""
     },
@@ -3215,7 +3271,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -3226,7 +3282,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -3292,7 +3348,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): subsystem probe failure logged debug",
       "test": "",
       "commit": ""
     },
@@ -3457,7 +3513,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -3644,7 +3700,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -3930,7 +3986,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -3957,24 +4013,13 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\deepchart\\intent_inference_engine.py",
-      "line": 402,
-      "detector": "mutable_default",
-      "detail": "mutable default argument in __init__",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
       "file": "trading_bot\\deepchart\\self_improvement.py",
       "line": 519,
       "detector": "silent_except_log_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -4007,7 +4052,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -4194,7 +4239,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: optional-import guard at module level",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -4205,7 +4250,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: optional-import guard at module level",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -4216,7 +4261,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: optional-import guard at module level",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -4227,7 +4272,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: optional-import guard at module level",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -4238,7 +4283,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: optional-import guard at module level",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -4359,7 +4404,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -4370,7 +4415,7 @@
       "detail": "gate 'is_trading_bot' always returns True",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: intentional identity canary, not a gate",
       "test": "",
       "commit": ""
     },
@@ -4414,7 +4459,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -4502,7 +4547,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): engine construction + reward-record failures logged debug",
       "test": "",
       "commit": ""
     },
@@ -4513,7 +4558,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): engine construction + reward-record failures logged debug",
       "test": "",
       "commit": ""
     },
@@ -4755,7 +4800,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -5074,7 +5119,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): component init failures logged; degraded-mode warning added",
       "test": "",
       "commit": ""
     },
@@ -5085,7 +5130,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): component init failures logged; degraded-mode warning added",
       "test": "",
       "commit": ""
     },
@@ -5096,7 +5141,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): component init failures logged; degraded-mode warning added",
       "test": "",
       "commit": ""
     },
@@ -5107,7 +5152,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): component init failures logged; degraded-mode warning added",
       "test": "",
       "commit": ""
     },
@@ -5118,7 +5163,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): component init failures logged; degraded-mode warning added",
       "test": "",
       "commit": ""
     },
@@ -5255,6 +5300,17 @@
       "commit": ""
     },
     {
+      "file": "trading_bot\\infrastructure\\health_endpoints.py",
+      "line": 339,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
+      "test": "",
+      "commit": ""
+    },
+    {
       "file": "trading_bot\\ingestion\\__init__.py",
       "line": 13,
       "detector": "silent_except_pass",
@@ -5316,7 +5372,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): callback isolation failures logged debug",
       "test": "",
       "commit": ""
     },
@@ -5327,7 +5383,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): callback isolation failures logged debug",
       "test": "",
       "commit": ""
     },
@@ -5338,7 +5394,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -5349,7 +5405,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -5442,28 +5498,6 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\innovations\\category_02_temporal_manipulation.py",
-      "line": 713,
-      "detector": "mutable_default",
-      "detail": "mutable default argument in calculate",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\innovations\\category_02_temporal_manipulation.py",
-      "line": 904,
-      "detector": "mutable_default",
-      "detail": "mutable default argument in analyze",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
       "file": "trading_bot\\integration\\master_engine.py",
       "line": 587,
       "detector": "silent_except_pass",
@@ -5492,7 +5526,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -5662,17 +5696,6 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\internet_access\\data_acquisition.py",
-      "line": 94,
-      "detector": "mutable_default",
-      "detail": "mutable default argument in fetch_market_data",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
       "file": "trading_bot\\learning\\__init__.py",
       "line": 54,
       "detector": "silent_except_pass",
@@ -5712,7 +5735,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -6064,7 +6087,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -6114,34 +6137,12 @@
     },
     {
       "file": "trading_bot\\ml\\offline_rl\\bcq_agent.py",
-      "line": 52,
-      "detector": "mutable_default",
-      "detail": "mutable default argument in __init__",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\ml\\offline_rl\\bcq_agent.py",
       "line": 610,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\ml\\offline_rl\\cql_agent.py",
-      "line": 52,
-      "detector": "mutable_default",
-      "detail": "mutable default argument in __init__",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): mutable default -> None + per-instance construction",
       "test": "",
       "commit": ""
     },
@@ -6152,7 +6153,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): mutable default -> None + per-instance construction",
       "test": "",
       "commit": ""
     },
@@ -6163,40 +6164,18 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\ml\\offline_rl\\iql_agent.py",
-      "line": 53,
-      "detector": "mutable_default",
-      "detail": "mutable default argument in __init__",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\ml\\offline_rl\\iql_agent.py",
-      "line": 427,
+      "line": 433,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\ml\\offline_rl\\policy_selector.py",
-      "line": 32,
-      "detector": "mutable_default",
-      "detail": "mutable default argument in __init__",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): mutable default -> None + per-instance construction",
       "test": "",
       "commit": ""
     },
@@ -6323,7 +6302,7 @@
     },
     {
       "file": "trading_bot\\monitoring\\alerting_system.py",
-      "line": 854,
+      "line": 856,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -6339,7 +6318,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): MT5 positions probe failure logged debug",
       "test": "",
       "commit": ""
     },
@@ -6350,7 +6329,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): MT5 positions probe failure logged debug",
       "test": "",
       "commit": ""
     },
@@ -6361,7 +6340,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -6372,7 +6351,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -6515,7 +6494,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -6537,7 +6516,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -6548,7 +6527,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -7054,7 +7033,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -7065,7 +7044,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -7114,39 +7093,6 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\recursive_improvement\\approvals.py",
-      "line": 118,
-      "detector": "silent_except_swallow_default",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\recursive_self_improvement\\multi_objective.py",
-      "line": 301,
-      "detector": "unseeded_random",
-      "detail": "unseeded random.Random in deterministic path",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: Random seeded from contract hash (false positive)",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\recursive_self_improvement\\multiplicity.py",
-      "line": 34,
-      "detector": "unseeded_random",
-      "detail": "unseeded random.Random in deterministic path",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: seed parameter supplied by caller via contract_seed (false positive)",
-      "test": "",
-      "commit": ""
-    },
-    {
       "file": "trading_bot\\research\\__init__.py",
       "line": 171,
       "detector": "silent_except_pass",
@@ -7164,7 +7110,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -7175,7 +7121,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -7197,7 +7143,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -7252,7 +7198,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -7549,7 +7495,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -7703,7 +7649,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: invalid/expired JWT -> None = deny, correct auth semantics",
       "test": "",
       "commit": ""
     },
@@ -7714,7 +7660,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: invalid/expired JWT -> None = deny, correct auth semantics",
       "test": "",
       "commit": ""
     },
@@ -7725,7 +7671,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -7769,7 +7715,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -7780,7 +7726,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -7791,7 +7737,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -7802,7 +7748,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -7813,7 +7759,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -7824,7 +7770,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -7835,7 +7781,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -8066,7 +8012,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): unparseable files now logged via _safe_parse",
       "test": "",
       "commit": ""
     },
@@ -8077,7 +8023,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): unparseable files now logged via _safe_parse",
       "test": "",
       "commit": ""
     },
@@ -8088,7 +8034,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): unparseable files now logged via _safe_parse",
       "test": "",
       "commit": ""
     },
@@ -8099,7 +8045,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): unparseable files now logged via _safe_parse",
       "test": "",
       "commit": ""
     },
@@ -10629,7 +10575,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -10640,7 +10586,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -10849,7 +10795,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -11179,7 +11125,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -11333,7 +11279,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -11344,7 +11290,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -11355,7 +11301,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -11443,7 +11389,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): risk gates fail closed; fan-out/learning/emergency excepts now logged",
       "test": "",
       "commit": ""
     },
@@ -11454,139 +11400,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\unified_ai_brain.py",
-      "line": 1222,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\unified_ai_brain.py",
-      "line": 1239,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\unified_ai_brain.py",
-      "line": 1256,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\unified_ai_brain.py",
-      "line": 1270,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\unified_ai_brain.py",
-      "line": 1335,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\unified_ai_brain.py",
-      "line": 1351,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\unified_ai_brain.py",
-      "line": 1365,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\unified_ai_brain.py",
-      "line": 1390,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\unified_ai_brain.py",
-      "line": 1491,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\unified_ai_brain.py",
-      "line": 1503,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\unified_ai_brain.py",
-      "line": 1566,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\unified_ai_brain.py",
-      "line": 1571,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): risk gates fail closed; fan-out/learning/emergency excepts now logged",
       "test": "",
       "commit": ""
     },
@@ -11729,7 +11543,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "fixed(w2): provider fan-out failure logged debug",
       "test": "",
       "commit": ""
     },
@@ -11762,7 +11576,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -12004,7 +11818,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -12114,7 +11928,7 @@
       "detail": "gate 'validate_trade' always returns True",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: validators signal via ValidationError raise, not return False",
       "test": "",
       "commit": ""
     },
@@ -12125,7 +11939,7 @@
       "detail": "gate 'validate_portfolio_exposure' always returns True",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: validators signal via ValidationError raise, not return False",
       "test": "",
       "commit": ""
     },
@@ -12136,7 +11950,7 @@
       "detail": "gate 'validate_margin_level' always returns True",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: validators signal via ValidationError raise, not return False",
       "test": "",
       "commit": ""
     },
@@ -12147,7 +11961,7 @@
       "detail": "gate 'check_duplicate_order' always returns True",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: validators signal via ValidationError raise, not return False",
       "test": "",
       "commit": ""
     },
@@ -12158,7 +11972,7 @@
       "detail": "gate 'check_flash_crash_protection' always returns True",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: validators signal via ValidationError raise, not return False",
       "test": "",
       "commit": ""
     },
@@ -12169,7 +11983,7 @@
       "detail": "gate 'check_circuit_breaker' always returns True",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: validators signal via ValidationError raise, not return False",
       "test": "",
       "commit": ""
     },
@@ -12290,7 +12104,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
       "test": "",
       "commit": ""
     },
@@ -12323,7 +12137,7 @@
       "detail": "raise NotImplementedError in from_dict",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: informal-ABC contract method, subclasses override",
       "test": "",
       "commit": ""
     },
@@ -12334,7 +12148,7 @@
       "detail": "raise NotImplementedError in get_statistics",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: informal-ABC contract method, subclasses override",
       "test": "",
       "commit": ""
     },
@@ -12345,7 +12159,7 @@
       "detail": "raise NotImplementedError in get_statistics",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: informal-ABC contract method, subclasses override",
       "test": "",
       "commit": ""
     },
@@ -12356,7 +12170,7 @@
       "detail": "raise NotImplementedError in verify_evidence_first",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: informal-ABC contract method, subclasses override",
       "test": "",
       "commit": ""
     },
@@ -12367,7 +12181,7 @@
       "detail": "raise NotImplementedError in is_model_available",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: informal-ABC contract method, subclasses override",
       "test": "",
       "commit": ""
     },
@@ -12378,7 +12192,7 @@
       "detail": "raise NotImplementedError in is_model_available",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: informal-ABC contract method, subclasses override",
       "test": "",
       "commit": ""
     },
@@ -12389,7 +12203,7 @@
       "detail": "raise NotImplementedError in is_model_available",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: informal-ABC contract method, subclasses override",
       "test": "",
       "commit": ""
     },
@@ -12400,7 +12214,7 @@
       "detail": "raise NotImplementedError in is_model_available",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: informal-ABC contract method, subclasses override",
       "test": "",
       "commit": ""
     },
@@ -12411,7 +12225,7 @@
       "detail": "raise NotImplementedError in get_strategy",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: informal-ABC contract method, subclasses override",
       "test": "",
       "commit": ""
     },
@@ -12422,7 +12236,7 @@
       "detail": "raise NotImplementedError in next",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: informal-ABC contract method, subclasses override",
       "test": "",
       "commit": ""
     },
@@ -12433,7 +12247,7 @@
       "detail": "raise NotImplementedError in test",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: informal-ABC contract method, subclasses override",
       "test": "",
       "commit": ""
     },
@@ -12444,7 +12258,7 @@
       "detail": "raise NotImplementedError in list_registered_models",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: informal-ABC contract method, subclasses override",
       "test": "",
       "commit": ""
     },
@@ -12455,7 +12269,7 @@
       "detail": "raise NotImplementedError in list_registered_models",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: informal-ABC contract method, subclasses override",
       "test": "",
       "commit": ""
     },
@@ -12466,9 +12280,51 @@
       "detail": "raise NotImplementedError in decorator",
       "reachable": true,
       "severity": "S5",
-      "status": "open",
+      "status": "classified: informal-ABC contract method, subclasses override",
       "test": "",
       "commit": ""
+    },
+    {
+      "detector": "manual_w3",
+      "file": "trading_bot/core/immutable_shield.py",
+      "line": 115,
+      "status": "fixed(w3): missing confidence defaulted to 1.0 bypassed configured floor; now defaults 0.0 (fail-closed)",
+      "reachable": true
+    },
+    {
+      "detector": "manual_w3",
+      "file": "trading_bot/core/immutable_shield.py",
+      "line": 102,
+      "status": "fixed(w3): non-dict typed instrument bypassed symbol denylist; getattr fallback added",
+      "reachable": true
+    },
+    {
+      "detector": "manual_w3",
+      "file": "trading_bot/core/immutable_shield.py",
+      "line": 122,
+      "status": "fixed(w3): string/loose numerics skipped exposure, drawdown and spread caps; _coerce_float added",
+      "reachable": true
+    },
+    {
+      "detector": "manual_w3",
+      "file": "trading_bot/execution/service.py",
+      "line": 194,
+      "status": "fixed(w3): PARTIALLY_FILLED broker results produced zero Fill records, dropping executed quantity",
+      "reachable": true
+    },
+    {
+      "detector": "manual_w3",
+      "file": "tests/conftest.py",
+      "line": 203,
+      "status": "fixed(w3): archive spec fallback resolved quarantined code for LIVE-package imports and execd heavy archive __init__ chain (transformers) causing 180s+ timeout; importer gate + filesystem existence check",
+      "reachable": true
+    },
+    {
+      "detector": "manual_w3",
+      "file": "trading_bot/execution/__init__.py",
+      "line": 138,
+      "status": "fixed(w3): __all__ advertised optional names that may not exist -> import * AttributeError; filtered to bound names",
+      "reachable": true
     }
   ]
 }

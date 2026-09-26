@@ -46,9 +46,31 @@ except ImportError as e:
 try:
     from .institutional_strategy_emulator import (
         ICTPowerOf3Engine,
+        FairValueGapHunter,
     )
 except ImportError as e:
     # institutional_strategy_emulator not available
+    pass
+
+# ai_ml_cortex / risk_command_center / trader_consciousness / market_analysis
+try:
+    from .ai_ml_cortex import AIMLCortex
+except ImportError:
+    pass
+
+try:
+    from .risk_command_center import RiskCommandCenter, RiskLevel, Position, PositionSizeMethod
+except ImportError:
+    pass
+
+try:
+    from .trader_consciousness import TraderConsciousness, TradeEntry, EmotionalState, CognitiveBias
+except ImportError:
+    pass
+
+try:
+    from .market_analysis import TimeFrame
+except ImportError:
     pass
 
 # price_action_intelligence
@@ -57,8 +79,22 @@ try:
         NakedTradingCore,
         PriceActionIntelligenceEngine,
     )
+    # Canonical alias used by elite_system.py and generated tests
+    PriceActionIntelligence = PriceActionIntelligenceEngine
 except ImportError as e:
     # price_action_intelligence not available
+    pass
+
+try:
+    from .market_structure_oracle import (
+        MarketStructureOracle, MarketPhase, StructureBreak, SwingPoint,
+    )
+except ImportError:
+    pass
+
+try:
+    from .liquidity_warfare import LiquidityWarfare
+except ImportError:
     pass
 
 # risk_command_center

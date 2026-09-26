@@ -14,3 +14,12 @@ No RSI candidate has been independently verified or promoted by this work. This 
 
 ## First-slice engineering validation (not a trading experiment)
 A test-only Ed25519 keypair and deterministic fixture can produce `eligible_for_operator_review` from the offline `EvaluationEngine.evaluate_verified` interface; this establishes signature binding and rejection behavior **only**. No operator key, custody-backed sealed holdout, instrument-specific cost calibration or strategy-parameter replay has been supplied. The legacy engine and CSC heuristic deployment claims are disabled/triage-only. `BoundedMeanReversionReplay` exercises a real bounded lookback against the same bars but is deliberately unsealed and nonpromotable; the local database presently contains only 1,000 EURUSD bars. No actual candidate has cleared an operator evaluation contract or cross-instrument transfer, and none has been promoted. The old walk-forward result remains diagnostic, including its now-delayed training outcome feedback and frozen test calibration; it still lacks executable fills and realistic costs.
+
+## v2 records (2026-09-26)
+
+Two complementary stores now exist:
+
+- `archive.py::ParetoArchive` (`*.jsonl`, hash-chained): one `record` per evaluated candidate — `genome_id`, `parent_id` (lineage to incumbent or prior champion fingerprint), `contract_hash`, `dataset_hash`, `strategy_family`, full `metric_vector` and `delta`, `verdict`, `role`, `regime_cell`, `trial_index`. `role` and `rollback` records are appended, never rewritten; `verify_chain()` detects deletion/reorder/mutation.
+- `memory.py::evidence_ledger` (SQLite): `append_evidence()` writes `{trial_id, nonce, status, payload}`; UNIQUE constraints block identity replay and UPDATE/DELETE triggers block modification (added 2026-09-26).
+
+Both remain locally custodied — adequate for tamper *detection*, not resistance against the machine owner. First v2 ledger content: synthetic-fixture ablation trials (`ABLATION_RSI_SYNTHETIC.json` — 0 false-eligible on 12 noise candidates; planted-edge detection at 25% of hypotheses). No real-market experiment exists.

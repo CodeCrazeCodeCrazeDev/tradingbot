@@ -329,3 +329,22 @@ class HealthEndpoints:
             except Exception as e:
                 logger.error(f"❌ Metrics error: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
+
+
+# Compat: archived health-endpoint API (quarantined copy in
+# trading_bot._archive.infrastructure.health_endpoints) — re-exported so the
+# legacy ``trading_bot.infrastructure.health_endpoints`` import path keeps it.
+try:
+    from trading_bot._archive.infrastructure.health_endpoints import (
+        HealthCheckManager,
+        HealthStatus,
+        ComponentHealth,
+        setup_health_endpoints,
+        check_database_connection,
+        check_broker_connection,
+        check_data_freshness,
+        check_memory_usage,
+        check_disk_space,
+    )
+except ImportError:
+    pass

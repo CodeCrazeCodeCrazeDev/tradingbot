@@ -12,6 +12,7 @@ except ImportError:
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, TensorDataset
+import os
 import numpy as np
 import pandas as pd
 from typing import Dict, Optional, Tuple
@@ -204,6 +205,7 @@ class TransformerPredictor:
                 best_val_loss = val_loss
                 patience_counter = 0
                 # Save best model
+                os.makedirs('models', exist_ok=True)
                 torch.save(self.model.state_dict(), 'models/best_transformer.pth')
             else:
                 patience_counter += 1

@@ -135,7 +135,10 @@ except ImportError as e:
     # advanced_execution_algorithms not available
     pass
 
-__all__ = [
+# ``__all__`` advertises every optional surface, but each guarded block may
+# fail — filtering to names that actually bound prevents ``import *`` raising
+# AttributeError when optional pieces are absent.
+__all__ = [name for name in (
     'AdvancedOrderManager',
     'BracketOrderManager',
     'CompleteExecutionSystem',
@@ -166,4 +169,6 @@ __all__ = [
     'DynamicParameterAdjuster',
     'OrderType',
     'ExecutionSlice',
-]
+    'SmartOrderRouter',
+    'VenueType',
+) if name in globals()]

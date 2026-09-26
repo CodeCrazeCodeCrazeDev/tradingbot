@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, AsyncMock
 import sys
 from pathlib import Path
+from trading_bot.ultimate_production.core_engine import SystemState, UltimateProductionEngine
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))

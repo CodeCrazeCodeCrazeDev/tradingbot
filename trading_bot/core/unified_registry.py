@@ -319,8 +319,14 @@ class UnifiedComponentRegistry:
         logger.info(f"Unregistered component: {name}")
 
     # Legacy ServiceRegistry methods
-    def get_all_services(self) -> List[Any]:
-        return [self._services[name].instance for name in self._registration_order if name in self._services and self._services[name].instance]
+    def get_all_services(self) -> Dict[str, Any]:
+        """Legacy contract: {name: ServiceInfo} — callers use .items() and
+        read ``info.state.value``/``info.instance``."""
+        return {
+            name: self._services[name]
+            for name in self._registration_order
+            if name in self._services
+        }
 
     def get_health_report(self) -> Dict[str, Any]:
         return {
@@ -378,17 +384,47 @@ class UnifiedComponentRegistry:
             )
         return results
 
-    async def start_all(self) -> bool:
-        """Start all components"""
+    async def start_all(self) -> Dict[str, bool]:
+        """Start all components. Returns {name: success} per the legacy
+        ServiceRegistry contract."""
+        results = {}
         for name, meta in self._legacy_metadata.items():
-            meta.status = ComponentStatus.RUNNING
-        return True
+            try:
+                service = self._services.get(name)
+                instance = getattr(service, "instance", None) if service else None
+                if instance is not None:
+                    starter = getattr(instance, "start", None)
+                    if starter is not None:
+                        res = starter()
+                        if asyncio.iscoroutine(res):
+                            await res
+                meta.status = ComponentStatus.RUNNING
+                results[name] = True
+            except Exception as exc:
+                meta.status = ComponentStatus.ERROR
+                logger.error("Failed to start component %s: %s", name, exc)
+                results[name] = False
+        return results
 
-    async def stop_all(self) -> bool:
-        """Stop all components"""
+    async def stop_all(self) -> Dict[str, bool]:
+        """Stop all components. Returns {name: success}."""
+        results = {}
         for name, meta in self._legacy_metadata.items():
-            meta.status = ComponentStatus.STOPPED
-        return True
+            try:
+                service = self._services.get(name)
+                instance = getattr(service, "instance", None) if service else None
+                if instance is not None:
+                    stopper = getattr(instance, "stop", None)
+                    if stopper is not None:
+                        res = stopper()
+                        if asyncio.iscoroutine(res):
+                            await res
+                meta.status = ComponentStatus.STOPPED
+                results[name] = True
+            except Exception as exc:
+                logger.error("Failed to stop component %s: %s", name, exc)
+                results[name] = False
+        return results
 
     def get_status_summary(self) -> Dict[str, Any]:
         """Get summary of statuses (SystemRegistry compatible)"""

@@ -41,7 +41,7 @@ from .tier9_metalearning import Tier9MetaLearning
 
 # Optional components with fallback imports
 try:
-    from .brain_architecture import EliteBrain, BrainDecision, DecisionState, DecisionState
+    from .brain_architecture import EliteBrain, BrainDecision, DecisionState
 except ImportError:
     EliteBrain = None
     DecisionState = None
@@ -53,9 +53,11 @@ except ImportError:
     AdaptiveIntegrationSystem = None
 
 try:
-    from .alphaalgo_2_0 import SystemCapability
+    from .alphaalgo_2_0 import (
+        AlphaAlgo2, create_alphaalgo, SystemCapability, OptimizationStrategy,
+    )
 except ImportError:
-    SystemCapability = None
+    pass
 
 try:
     from .alphaalgo_2_0_system import Alphaalgo20System

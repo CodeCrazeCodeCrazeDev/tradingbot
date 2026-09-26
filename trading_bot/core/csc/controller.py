@@ -517,6 +517,7 @@ class CognitiveSystemController:
             "status": "active",
             "version": "UCA-2026-V5",
             "active_loops": self._max_loops,
+            "active_tasks": len(getattr(self.state, "active_tasks", []) or []),
             "vfe": self.variational_free_energy
         }
 

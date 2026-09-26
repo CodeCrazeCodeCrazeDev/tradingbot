@@ -15,3 +15,12 @@
 | Research recursion | Search revisits holdout, edits its own evaluator, consumes unbounded compute or forgets old regimes. | Hierarchical permissions, depth/trial/wall-time budgets, stop on drift, regression and failed-experiment memory. |
 
 Report suspicious edits as security-relevant events without exposing credentials or sealed data. Repository commits and SHA-256 hashes give traceability, not tamper protection against a writer with the same privileges as the verifier. Fail closed when separation cannot be proved.
+
+## v2 controls implemented (2026-09-26)
+
+- `anti_gaming.py::check_metric_gaming` — 7 independent detections: perfect-foresight direction agreement (>95%), cost below contracted floor, timestamp-gap sample exclusion, CVaR-improving/worst-bar-worsening risk hiding, gross gain < 1.5x added turnover cost, regime cherry-picking, contract-hash mutation. Any failure: `rejected: suspected_metric_gaming`.
+- `IndependentVerifier` holds its own Ed25519 key, re-runs the paired replay itself, and refuses when `fingerprint_all(frames) != contract.dataset_hash` — dataset substitution produces rejection, not a signed report.
+- `SandboxManager` runs each experiment under a wall-clock deadline inside a `ProtectedPathGuard` snapshot/restore check; interrupt → `insufficient_evidence`, protected-path write → security event + rejection. (Thread-level, not container isolation — TD-06.)
+- `memory.py::evidence_ledger` now enforces append-only with SQL triggers (was convention-only); `archive.py` is a hash-chained JSONL where role changes are appended records — nothing is rewritten.
+- `contracts.assert_frozen` binds proposal-time `contract_hash` to evaluation-time — evaluator tampering mid-experiment is a `ContractError`.
+- Remaining gap per this model: keys and ledger are still locally custodied; external audit/verifier service required before tamper-resistance claims (TD-07).

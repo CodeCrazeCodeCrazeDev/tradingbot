@@ -51,10 +51,76 @@ except ImportError as e:
     # fraud_detection not available
     pass
 
+# multi_agent_rl
+try:
+    from .multi_agent_rl import (
+        MacroStrategist,
+        MultiAgentTradingSystem,
+        TacticalExecutioner,
+        RiskSentinel,
+        HeadAI,
+    )
+except ImportError:
+    pass
+
+# digital_twin
+try:
+    from .digital_twin import (
+        DigitalTwinSimulator,
+        HighFidelityBacktester,
+    )
+except ImportError:
+    pass
+
+# advanced_risk
+try:
+    from .advanced_risk import (
+        FractalPositionSizer,
+        HurstExponentCalculator,
+        BlackSwanShield,
+        VolatilityCapacitor,
+    )
+except ImportError:
+    pass
+
+# institutional_dna
+try:
+    from .institutional_dna import (
+        InstitutionalFootprintDNA,
+        TradeSignatureAnalyzer,
+        IcebergDetector,
+        StealthAccumulationDetector,
+    )
+except ImportError:
+    pass
+
+# volatility_impulse
+try:
+    from .volatility_impulse import (
+        VolatilityImpulseVector,
+        VolatilityAccelerationDetector,
+        EnergyDirectionPredictor,
+    )
+except ImportError:
+    pass
+
+# fractal_momentum
+try:
+    from .fractal_momentum import (
+        FractalMomentumDivergence,
+        DivergenceType,
+        MultiTimeframeDivergenceFilter,
+    )
+except ImportError:
+    pass
+
 # liquidity_holography
 try:
     from .liquidity_holography import (
         LiquidityHolographyEngine,
+        LiquidityGravityWell,
+        LiquidityDensityMapper,
+        TemporalLiquidityAnalyzer,
     )
 except ImportError as e:
     # liquidity_holography not available
@@ -83,6 +149,8 @@ __all__ = [
     'DivergenceConfirmationEngine',
     'FraudDetectionSystem',
     'LiquidityHolographyEngine',
+    'LiquidityGravityWell',
+    'InstitutionalFootprintDNA',
     'MultiAgentTradingSystem',
     'ParallelValidationEngine',
     'QuantumTradingSystem',
