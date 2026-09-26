@@ -813,12 +813,14 @@ class RecursiveImprovementCycle:
                            "reason": "no transferable gain beyond selection regime"}
 
         role = self._role_for(verdict, classification)
-        metrics = verdict.get("metrics", {})
+        # Some verdicts carry metrics=None explicitly (e.g. exposure-breach
+        # rejection) — normalize to {} so the archive's dict() never sees None.
+        metrics = verdict.get("metrics") or {}
         self.archive.record_candidate(
             genome_id=genome.genome_id, parent_id=genome.parent_id,
             contract_hash=self.contract_hash, dataset_hash=self.contract["dataset_hash"],
             strategy_family=self.adapter.family, metric_vector=metrics,
-            delta=verdict.get("delta", {}), verdict=verdict["status"], role=role,
+            delta=verdict.get("delta") or {}, verdict=verdict["status"], role=role,
             regime_cell="all", trial_index=self._trial_counter,
             extra={"candidate_parameters": candidate_params,
                    "fingerprint": genome.fingerprint,

@@ -35,7 +35,7 @@ The following items are tracked as active technical debt across the codebase:
 | **TD-08** | `trading_bot/evaluation/walk_forward.py` | Brain-based single-split diagnostic, not paired and not cost-aware. Retained for compat; not promotion evidence. **Resolved** — machine-visible `EVIDENCE_CLASS = "diagnostic"` on module + `EvaluationReport`; promotion consumers must require `"promotion"`. | 0 | Low |
 | **TD-09** | `trading_bot/governance/evolution_gate.py` | ~~Advisory gate still invents optimistic defaults for missing metrics.~~ **Resolved** — gate compares only supplied evidence: missing perf rejects, one-sided metrics reject as insufficient evidence, both-missing dimensions are skipped. | 0 | Low |
 | **TD-10** | `trading_bot/recursive_improvement.py`, `auto_optimizer.py`, `self_learning.py`, `optimization.py` | ~~Dead files shadowed by same-named packages.~~ **Resolved** — deleted; verified each name resolves to the package `__init__.py` which already warns. | 0 | Low |
-| **TD-11** | `recursive_self_improvement/` (whole) | ~9,800 repo files audited only by import-reachability; line-level audit of the legacy tree incomplete. | Medium |
+| **TD-11** | `recursive_self_improvement/` (whole) | ~~line-level audit of the legacy tree incomplete.~~ **Resolved** — `rsi_reachability_inventory.py` refresh landed (canonical RSI authority confirmed; deleted shadowed files report DISCONNECTED not MISSING); weakness scanner + context classifier cover the whole tree at line level — 0 open findings. | 0 | Low |
 
 ---
 
