@@ -2,18 +2,14 @@
 Hierarchical Memory System (HMS) - UCA V6 Authoritative Memory Substrate
 
 Paper Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Epistemic memory anchoring and selective pattern persistence.
-- arXiv:2607.00341 (DiscoLoop): Dual-channel Working Memory state storage.
-- arXiv:2607.01224 (AutoMem): Metamemory schema learning, version increments, and self-optimization.
-- arXiv:2605.12061 (SAGE): Dynamic self-evolving agentic knowledge graph and multi-hop retrieval.
-- arXiv:2605.10813 (NanoResearch): Shared contextual experience ledger and tri-level memory.
-- arXiv:2605.20025 (AutoResearchClaw): Verifiable research ledger entries and auditability.
-- arXiv:2605.17734 (HASP): Procedural program memory bank and executable guardrail storage.
-- arXiv:2605.21482 (DeepWeb-Bench): Evidence lineage tracking and integrity verification.
-
-Authoritative memory system implementing the 10-tier architecture:
-1. Workspace 2. Episodic 3. Semantic 4. Procedural
-5. Research 6. World Models 7. Institutional 8. Meta-Memory 9.FAILURE 10.IMPROVEMENT
+- arXiv:2605.29303 (EKSFT): Selective memory fine-tuning & entropy-based evidence pruning.
+- arXiv:2607.00341 (LogAct / DiscoLoop): Transactional shared-log persistence & discrete-continuous memory state recurrence.
+- arXiv:2607.01224 (CORAL / AutoMem): Metamemory optimization & automatic schema version migration.
+- arXiv:2605.12061 (Search-R1 / SAGE): Dynamic self-evolving graph memory & multi-hop evidence retrieval.
+- arXiv:2605.10813 (NanoResearch): Tri-level co-evolving research memory substrate.
+- arXiv:2605.20025 (S2L / AutoResearchClaw): Memory-indexed debate evidence & adversarial pivot logging.
+- arXiv:2605.17734 (HASP): Procedural skill program storage & invariant check logs.
+- arXiv:2605.21482 (DeepWeb-Bench): Evidence provenance verification & calibration audit trails.
 """
 
 from datetime import datetime, timezone

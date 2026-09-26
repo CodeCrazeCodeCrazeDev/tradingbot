@@ -1,18 +1,16 @@
 """
-Cognitive System Controller (CSC) - UCA V6 "One Brain" Authoritative Core
+Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
+Cognitive System Controller (CSC) - UCA V6
 
 Paper Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Entropy-KL selective strategy internalization and epistemic anchoring.
-- arXiv:2607.00341 (DiscoLoop): Dual discrete symbolic token & continuous hidden-state recurrence cell.
-- arXiv:2607.01224 (AutoMem): Metamemory schema integration with active memory operations.
-- arXiv:2605.12061 (SAGE): Self-evolving evidence graph traversal and sub-graph retrieval.
-- arXiv:2605.10813 (NanoResearch): Tri-level co-evolving policy tuning and research automation.
-- arXiv:2605.20025 (AutoResearchClaw): Self-reinforcing Pivot/Refine execution loops and debate.
-- arXiv:2605.17734 (HASP): Prescriptive skill program guardrails and non-bypassable pre-emption.
-- arXiv:2605.21482 (DeepWeb-Bench): Cross-source derivation, evidence validation, and calibration.
-
-Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline (VFE minimization).
-Orchestrates LogAct pipeline, HIPIF information folding, and SRE falsification swarm checks.
+- arXiv:2605.29303 (EKSFT): Epistemic knowledge structure fine-tuning & entropy-KL state alignment.
+- arXiv:2607.00341 (LogAct / DiscoLoop): State-machine replication for multi-agent loops & recurrent continuous-discrete reasoning.
+- arXiv:2607.01224 (CORAL / AutoMem): Continuous world-model optimization & metamemory schema learning.
+- arXiv:2605.12061 (Search-R1 / SAGE): Strategic financial hypothesis discovery & self-evolving graph-memory.
+- arXiv:2605.10813 (NanoResearch): Micro-alpha discovery engine & tri-level co-evolving research automation.
+- arXiv:2605.20025 (S2L / AutoResearchClaw): Behavioral LoRA adapters & self-reinforcing adversarial debate.
+- arXiv:2605.17734 (HASP): Hierarchical agentic skill programs with prescriptive guardrails.
+- arXiv:2605.21482 (DeepWeb-Bench): Real-time evidence veracity evaluation & calibration benchmarking.
 """
 
 import numpy as np

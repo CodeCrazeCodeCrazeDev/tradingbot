@@ -2,14 +2,14 @@
 Multi-Agent Debate System - UCA V6 Core Intelligence & Consensus Engine.
 
 Paper Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Verification-backed evidence lineage and confidence calibration.
-- arXiv:2607.00341 (DiscoLoop): Falsification gates and Bayesian posterior updating.
-- arXiv:2607.01224 (AutoMem): Schema-directed evidence recording and memory integration.
-- arXiv:2605.12061 (SAGE): Structured multi-agent debate with graph-based evidence reasoning.
-- arXiv:2605.10813 (NanoResearch): Dynamic scorecards and tri-level research consensus.
-- arXiv:2605.20025 (AutoResearchClaw): Self-reinforcing debate, pivot-and-refine loops.
-- arXiv:2605.17734 (HASP): Non-negotiable financial risk sentinels and hard safety vetoes.
-- arXiv:2605.21482 (DeepWeb-Bench): Calibrated evidence evaluation and ECE minimization.
+- arXiv:2605.29303 (EKSFT): Verification-backed evidence lineage & epistemic confidence calibration.
+- arXiv:2607.00341 (LogAct / DiscoLoop): Total order debate logs & continuous-discrete debate loops.
+- arXiv:2607.01224 (CORAL / AutoMem): Contextual experience memory retrieval in debate rounds.
+- arXiv:2605.12061 (Search-R1 / SAGE): Dynamic evidence graph construction & multi-agent hypothesis search.
+- arXiv:2605.10813 (NanoResearch): Dynamic agent scorecards & multi-agent debate with evidence-first reasoning.
+- arXiv:2605.20025 (S2L / AutoResearchClaw): Self-reinforcing adversarial debate, pivot-refine loops & Lopez de Prado DSR checks.
+- arXiv:2605.17734 (HASP): Non-negotiable financial risk sentinels & hard safety vetoes.
+- arXiv:2605.21482 (DeepWeb-Bench): Brier score & expected calibration error (ECE) evaluation of debate outcomes.
 
 Evidence-first debate loop:
 Observation -> Evidence -> Hypothesis -> Predictions -> Counter-evidence -> Bayesian Consensus Aggregation.
