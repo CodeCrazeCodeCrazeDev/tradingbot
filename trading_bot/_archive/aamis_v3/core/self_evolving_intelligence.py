@@ -156,8 +156,7 @@ class SymbolicRegressor:
         })
         
         # Evaluate
-        from trading_bot.security.safe_eval import safe_eval
-        result = safe_eval(formula, namespace)
+        result = eval(formula, {"__builtins__": {}}, namespace)
         
         return np.array(result)
 

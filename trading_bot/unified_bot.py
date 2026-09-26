@@ -428,7 +428,7 @@ class UnifiedTradingBot:
             try:
                 await evolution["orchestrator"].stop()
             except Exception:
-                pass
+                logger.warning("UnifiedTradingBot: evolution orchestrator stop failed", exc_info=True)
         if self.bridge is not None:
             logger.info("Paper execution summary: %s", self.bridge.get_summary())
         if self.trading_repository is not None:

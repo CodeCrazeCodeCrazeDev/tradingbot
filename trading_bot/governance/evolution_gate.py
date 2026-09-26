@@ -296,12 +296,26 @@ class EvolutionGate:
                 try:
                     baseline_raw = self.validation_engine.run_benchmark(baseline_config, mode=baseline_mode)
                 except TypeError:
-                    baseline_raw = self.validation_engine.run_benchmark(baseline_config)
+                    try:
+                        baseline_raw = self.validation_engine.run_benchmark(baseline_config)
+                    except Exception as exc:
+                        logger.error(
+                            f"EvolutionGate: REJECTED - baseline benchmark failed "
+                            f"for {candidate_id}: {exc}")
+                        return False
+                except Exception as exc:
+                    logger.error(
+                        f"EvolutionGate: REJECTED - baseline benchmark failed "
+                        f"for {candidate_id}: {exc}")
+                    return False
             elif isinstance(baseline_config, dict):
                 try:
                     baseline_raw = self.validation_engine.run_benchmark(baseline_config)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.error(
+                        f"EvolutionGate: REJECTED - baseline benchmark failed "
+                        f"for {candidate_id}: {exc}")
+                    return False
 
         baseline = self._parse_metrics(baseline_raw)
 

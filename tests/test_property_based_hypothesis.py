@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import Dict, List, Any
+from trading_bot.risk.position_size_calculator import PositionSizeMethod
+from trading_bot.risk.circuit_breaker import CircuitBreakerConfig
 
 # Try to import hypothesis, provide fallback if not installed
 try:

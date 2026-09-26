@@ -41,9 +41,10 @@ from .tier9_metalearning import Tier9MetaLearning
 
 # Optional components with fallback imports
 try:
-    from .brain_architecture import EliteBrain, BrainDecision
+    from .brain_architecture import EliteBrain, BrainDecision, DecisionState, DecisionState
 except ImportError:
     EliteBrain = None
+    DecisionState = None
     class BrainDecision: pass
 
 try:

@@ -9,6 +9,7 @@ import os
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 import numpy as np
+import pandas as pd
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

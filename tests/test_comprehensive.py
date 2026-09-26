@@ -35,19 +35,17 @@ class TestExplainability:
     @pytest.mark.skip(reason="LIME not installed")
     def test_lime_explainer(self):
         from sklearn.ensemble import RandomForestRegressor
-import numpy
-import pandas
-        
-X_train = np.random.randn(100, 10)
-y_train = np.random.randn(100)
-model = RandomForestRegressor(n_estimators=5)
-model.fit(X_train, y_train)
-        
-explainer = LIMEExplainer(X_train, [f'f{i}' for i in range(10)])
-explanation = explainer.explain_prediction(model, X_train[0])
-        
-assert 'feature_importance' in explanation
-assert 'local_prediction' in explanation
+
+        X_train = np.random.randn(100, 10)
+        y_train = np.random.randn(100)
+        model = RandomForestRegressor(n_estimators=5)
+        model.fit(X_train, y_train)
+
+        explainer = LIMEExplainer(X_train, [f'f{i}' for i in range(10)])
+        explanation = explainer.explain_prediction(model, X_train[0])
+
+        assert 'feature_importance' in explanation
+        assert 'local_prediction' in explanation
 
 
 class TestMonitoring:

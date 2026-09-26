@@ -193,8 +193,6 @@ class EventBus:
         )
         await self.unified_bus.publish(unified_event)
 
-        # Legacy subscribers are delivered synchronously. The facade never
-        # creates a competing worker; UnifiedDecisionBus owns async lifecycle.
         await self._dispatch_event(event)
         async with self._lock:
             self._event_history.append(event)
@@ -213,32 +211,6 @@ class EventBus:
         except asyncio.TimeoutError:
             logger.warning(f"Event {event.event_id} timed out")
             return False
-
-    async def _process_events(self) -> None:
-        """Process events from queue"""
-        while self._running:
-            try:
-                # Get event with timeout to allow checking running flag
-                try:
-                    _, _, event = await asyncio.wait_for(
-                        self._event_queue.get(), timeout=1.0
-                    )
-                except asyncio.TimeoutError:
-                    continue
-
-                # Process event
-                await self._dispatch_event(event)
-
-                # Store in history
-                async with self._lock:
-                    self._event_history.append(event)
-                    if len(self._event_history) > self._max_history:
-                        self._event_history = self._event_history[-self._max_history:]
-
-            except asyncio.CancelledError:
-                break
-            except Exception as e:
-                logger.error(f"Error processing event: {e}")
 
     async def _dispatch_event(self, event: Event) -> None:
         """Dispatch event to subscribers"""
@@ -305,7 +277,7 @@ class EventBus:
     def get_stats(self) -> Dict[str, Any]:
         """Get event bus statistics"""
         return {
-            'queue_size': self._event_queue.qsize(),
+            'queue_size': 0,
             'history_size': len(self._event_history),
             'dead_letter_count': len(self._dead_letter_queue),
             'subscriber_count': sum(len(s) for s in self._subscribers.values()),

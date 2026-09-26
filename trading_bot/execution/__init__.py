@@ -7,6 +7,12 @@ Auto-generated integration file.
 
 from .service import CanonicalExecutionService, LegacyBrokerAdapter, PaperBrokerAdapter
 
+# smart-order routing surface (canonical pair lives in alpha_engine)
+try:
+    from trading_bot.alpha_engine.execution import SmartOrderRouter, VenueType
+except ImportError:
+    pass
+
 # advanced_algorithms
 try:
     from .advanced_algorithms import (

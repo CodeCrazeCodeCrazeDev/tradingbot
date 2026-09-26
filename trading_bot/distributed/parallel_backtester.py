@@ -340,11 +340,10 @@ def _run_single_backtest(args: Tuple) -> BacktestResult:
     if 'timestamp' in data.columns:
         data.set_index('timestamp', inplace=True)
         
-    # Create strategy function from code
-    from trading_bot.core.security.sandbox import SecureASTVisitor
-    SecureASTVisitor().validate_code(strategy_code)
-    local_vars = {}
-    exec(strategy_code, local_vars)  # nosec
+    # Create strategy function from code under restricted globals — plain
+    # exec(code, {}) would inject real builtins and bypass the AST blocklist.
+    from trading_bot.core.security.sandbox import safe_exec_strategy
+    local_vars = safe_exec_strategy(strategy_code)
     strategy = local_vars.get('strategy')
     
     if not strategy:
@@ -558,11 +557,9 @@ class ParallelBacktester:
                 logger.error(f"Strategy validation failed in walk-forward analysis: {e}")
                 continue
 
-            # Create strategy function
-            from trading_bot.core.security.sandbox import SecureASTVisitor
-            SecureASTVisitor().validate_code(strategy_code)
-            local_vars = {}
-            exec(strategy_code, local_vars)
+            # Create strategy function under restricted globals
+            from trading_bot.core.security.sandbox import safe_exec_strategy
+            local_vars = safe_exec_strategy(strategy_code)
             strategy = local_vars.get('strategy')
             
             if strategy:
@@ -688,9 +685,8 @@ if __name__ == "__main__":
         try:
             # Single backtest
             print("1. Single backtest:")
-            SecureASTVisitor().validate_code(EXAMPLE_STRATEGY)
-            local_vars = {}
-            exec(EXAMPLE_STRATEGY, local_vars)
+            from trading_bot.core.security.sandbox import safe_exec_strategy
+            local_vars = safe_exec_strategy(EXAMPLE_STRATEGY)
             strategy = local_vars['strategy']
             
             result = backtester.run_single(config, data, strategy)

@@ -121,7 +121,10 @@ try:
                 in_archive = _rel_parts and _rel_parts[0] == "_archive"
                 _dirnames[:] = sorted(
                     d for d in _dirnames
-                    if d not in {"__pycache__", "tests"}
+                    if d != "__pycache__"
+                    # ``trading_bot/tests`` is a dead stub package; deeper
+                    # ``tests`` dirs (e.g. _archive/tests) are legitimate.
+                    and (d != "tests" or _rel_parts)
                     and (d == "_archive") == (_archive_only and not _rel_parts)
                 )
                 if in_archive != _archive_only:
@@ -156,7 +159,38 @@ try:
 
     class _FlatTradingBotFinder(_importlib_abc.MetaPathFinder):
         def find_spec(self, fullname, path=None, target=None):
-            if not fullname.startswith("trading_bot.") or fullname.count(".") != 1:
+            if not fullname.startswith("trading_bot."):
+                return None
+            # ``trading_bot._archive.<sub>.X`` misses: archived orchestrators
+            # do ``from .dep import`` where dep still lives in the ORIGINAL
+            # archive package — resolve by filename stem through the archive
+            # pass of the flat map.
+            if fullname.startswith("trading_bot._archive.") and fullname.count(".") >= 3:
+                stem = fullname.rsplit(".", 1)[1]
+                _build_flat_map()
+                for dirpath in _flat_map.get(stem, []):
+                    rel = Path(dirpath).relative_to(_tb_root)
+                    if rel.parts[0] != "_archive":
+                        continue
+                    canonical = "trading_bot." + ".".join(rel.parts) + "." + stem
+                    if canonical != fullname and _importlib_util.find_spec(canonical) is not None:
+                        return _importlib_util.spec_from_loader(
+                            fullname, _CanonicalAliasLoader(canonical)
+                        )
+                return None
+            # 2-level names (``trading_bot.<sub>.X``) that miss in the live
+            # tree may exist in _archive at the same subpath — alias them so
+            # archived modules stay test-loadable (quarantine preserved:
+            # production never installs this finder).
+            if (fullname.count(".") == 2
+                    and not fullname.startswith("trading_bot._archive")):
+                archived = "trading_bot._archive." + fullname[len("trading_bot."):]
+                if _importlib_util.find_spec(archived) is not None:
+                    return _importlib_util.spec_from_loader(
+                        fullname, _CanonicalAliasLoader(archived)
+                    )
+                return None
+            if fullname.count(".") != 1:
                 return None
             name = fullname.rsplit(".", 1)[1]
             alias = _FLAT_ALIASES.get(name)

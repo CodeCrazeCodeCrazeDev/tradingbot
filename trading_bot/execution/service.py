@@ -170,8 +170,12 @@ class LegacyBrokerAdapter:
 
                 legacy_side = LegacyOrderSide.BUY if order.side is OrderSide.BUY else LegacyOrderSide.SELL
                 legacy_type = getattr(LegacyOrderType, order.order_type.name)
-            except (ImportError, AttributeError):
-                pass
+            except (ImportError, AttributeError) as exc:
+                raise RuntimeError(
+                    f"cannot resolve legacy order enums for broker "
+                    f"{type(self.broker).__module__}.{type(self.broker).__name__}; "
+                    "refusing to submit with an uninterpretable side/type"
+                ) from exc
 
         result = await self._invoke(
             "place_order",

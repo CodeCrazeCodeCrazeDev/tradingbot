@@ -20,13 +20,13 @@ class DecisionPriority(Enum):
 
 @dataclass
 class SystemContext:
-    timestamp: datetime
-    market_state: Dict[str, Any]
-    portfolio_state: Dict[str, Any]
-    agent_states: Dict[str, Any]
-    pending_decisions: List[Any]
-    recent_outcomes: List[Any]
-    risk_metrics: Dict[str, Any]
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+    market_state: Dict[str, Any] = field(default_factory=dict)
+    portfolio_state: Dict[str, Any] = field(default_factory=dict)
+    agent_states: Dict[str, Any] = field(default_factory=dict)
+    pending_decisions: List[Any] = field(default_factory=list)
+    recent_outcomes: List[Any] = field(default_factory=list)
+    risk_metrics: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class Decision:

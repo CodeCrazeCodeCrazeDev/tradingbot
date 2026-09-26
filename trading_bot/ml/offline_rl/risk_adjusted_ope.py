@@ -372,3 +372,8 @@ if __name__ == "__main__":
     print("\n" + "="*60)
     logger.info("RISK-ADJUSTED OPE COMPLETE!")
     print("="*60)
+
+
+# Backward-compatibility alias: pre-consolidation API name for the
+# CVaR-based off-policy evaluator.
+RiskAdjustedOPE = CVaRPolicyEvaluator

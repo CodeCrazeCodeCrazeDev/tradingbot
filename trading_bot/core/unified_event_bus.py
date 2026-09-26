@@ -228,7 +228,7 @@ class UnifiedDecisionBus:
                     decision_bus._action_queue = asyncio.PriorityQueue()
                     decision_bus._action_seq = itertools.count()
                 except Exception:
-                    pass
+                    logger.debug("UnifiedDecisionBus: action queue rebuild skipped", exc_info=True)
             else:
                 decision_bus = UnifiedDecisionBus()
                 cls._instance = decision_bus

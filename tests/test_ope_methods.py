@@ -5,6 +5,7 @@ Comprehensive tests for Offline Policy Evaluation methods
 import pytest
 import numpy as np
 import torch
+from trading_bot.ml.offline_rl.ope import ImportanceSampling, DoublyRobust
 
 
 class MockDataset:

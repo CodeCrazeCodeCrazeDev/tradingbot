@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pytest
+
 from trading_bot.foundation.legacy_convergence import (
     boundary_violations,
     build_manifest,
@@ -110,6 +112,40 @@ def test_wave7_interface_facades_have_no_loop_or_capital_paths() -> None:
     ):
         source = (root / relative).read_text(encoding="utf-8")
         assert boundary_violations(source, relative) == []
+
+
+@pytest.mark.asyncio
+async def test_legacy_event_bus_is_a_no_worker_facade() -> None:
+    from trading_bot.core.event_bus import Event, EventBus, EventPriority
+
+    delivered = []
+    forwarded = []
+
+    class CanonicalBus:
+        async def publish(self, event):
+            forwarded.append(event)
+
+    async def handler(event):
+        delivered.append(event)
+
+    bus = EventBus()
+    bus.unified_bus = CanonicalBus()
+    await bus.start()
+    bus.subscribe("legacy_subscriber", ["market.tick"], handler)
+    await bus.publish(Event(
+        event_type="market.tick",
+        payload={"symbol": "EURUSD"},
+        source="legacy_test",
+        priority=EventPriority.NORMAL,
+    ))
+
+    assert [event.payload["symbol"] for event in delivered] == ["EURUSD"]
+    assert [event.event_type for event in forwarded] == ["market.tick"]
+    assert bus.get_stats()["queue_size"] == 0
+    assert boundary_violations(
+        Path("trading_bot/core/event_bus.py").read_text(encoding="utf-8"),
+        "trading_bot/core/event_bus.py",
+    ) == []
 
 
 def test_legacy_risk_manager_warns_and_preserves_api() -> None:

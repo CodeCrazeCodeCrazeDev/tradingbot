@@ -232,8 +232,12 @@ class ClickHouseWriter(StorageBackend):
         """Initialize ClickHouse connection and tables"""
         if self._initialized:
             return
+        import re
+        for identifier in (self.config.clickhouse_database,):
+            if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", str(identifier)):
+                raise ValueError(f"invalid ClickHouse identifier: {identifier!r}")
         try:
-        
+
             from clickhouse_driver import Client
             
             self._client = Client(

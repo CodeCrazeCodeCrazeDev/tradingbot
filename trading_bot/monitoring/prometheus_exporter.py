@@ -279,6 +279,27 @@ class AlertManager:
         # In production, send to Slack, email, SMS, etc.
 
 
+class PrometheusExporter(TradingMetricsExporter):
+    """Legacy API surface (``record_trade(symbol, side, status, pnl)``,
+    ``update_portfolio(equity, drawdown)``, ``.enabled``) over the canonical
+    :class:`TradingMetricsExporter`. New code should use the base class."""
+
+    def __init__(self, port: int = 9090, **kwargs):
+        super().__init__(port=port, **kwargs)
+
+    @property
+    def enabled(self) -> bool:
+        return self.prometheus_available
+
+    def record_trade(self, symbol: str, side: str, status: str, pnl: float, **kwargs):
+        is_win = pnl > 0
+        super().record_trade(pnl=pnl, duration_seconds=0.0, is_win=is_win)
+
+    def update_portfolio(self, equity: float, drawdown: float):
+        self.update_equity(equity)
+        self.update_drawdown(current=drawdown, maximum=drawdown)
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     

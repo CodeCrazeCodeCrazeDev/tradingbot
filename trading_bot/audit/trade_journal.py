@@ -324,6 +324,14 @@ class TradeJournal:
             logger.error(f"Failed to log trade: {e}")
             raise
     
+    _UPDATABLE_TRADE_COLUMNS = frozenset({
+        "order_id", "symbol", "side", "quantity", "entry_price", "exit_price",
+        "entry_time", "exit_time", "pnl", "pnl_percent", "commission",
+        "slippage_bps", "strategy", "signal_source", "signal_confidence",
+        "risk_reward_ratio", "stop_loss", "take_profit", "notes", "tags",
+        "metadata",
+    })
+
     def update_trade(self, trade_id: str, **updates) -> bool:
         """
         Update an existing trade record.
@@ -335,11 +343,18 @@ class TradeJournal:
         Returns:
             True if successful
         """
+        # Keys become SQL identifiers; validate against the schema before any
+        # interpolation. Unknown keys are caller bugs and must raise, not be
+        # swallowed by the database-error handler below.
+        for key in updates:
+            if key not in self._UPDATABLE_TRADE_COLUMNS:
+                raise ValueError(f"'{key}' is not an updatable trade column")
+
         try:
             # Build update query
             set_clauses = []
             values = []
-            
+
             for key, value in updates.items():
                 if key in ['tags', 'metadata']:
                     value = json.dumps(value)

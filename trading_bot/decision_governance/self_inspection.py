@@ -1770,8 +1770,8 @@ class DeepGovernanceAuditor:
                         findings.append({"issue": "capability_gap", "gap": g,
                                          "severity": "medium",
                                          "recommendation": f"Develop capability: {g}"})
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"capability gap probe failed: {e}")
 
         # Check for patterns suggesting capability gaps
         regime = context.get("regime_hash", "")
