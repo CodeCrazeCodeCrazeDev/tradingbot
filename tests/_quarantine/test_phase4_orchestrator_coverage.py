@@ -117,10 +117,10 @@ class TestMLPredictor:
             }
             
             if hasattr(predictor, 'predict'):
-                prediction = predictor.predict(opportunity)
+                    prediction = predictor.predict(opportunity)
                     assert prediction is not None
             if hasattr(predictor, 'predict_batch'):
-                predictions = predictor.predict_batch([opportunity])
+                    predictions = predictor.predict_batch([opportunity])
                     assert predictions is not None
         except ImportError:
             pytest.skip("Module not available")
@@ -178,10 +178,10 @@ class TestOpportunityScanner:
             scanner = OpportunityScanner({})
             
             if hasattr(scanner, 'scan'):
-                opportunities = scanner.scan()
+                    opportunities = scanner.scan()
                     assert opportunities is not None
             if hasattr(scanner, 'scan_symbol'):
-                opportunities = scanner.scan_symbol('EURUSD')
+                    opportunities = scanner.scan_symbol('EURUSD')
                     assert opportunities is not None
         except ImportError:
             pytest.skip("Module not available")
@@ -201,7 +201,7 @@ class TestOpportunityScanner:
             ]
             
             if hasattr(scanner, 'filter'):
-                filtered = scanner.filter(opportunities)
+                    filtered = scanner.filter(opportunities)
                     assert len(filtered) <= len(opportunities)
         except ImportError:
             pytest.skip("Module not available")
@@ -257,10 +257,10 @@ class TestPerformanceTracker:
             tracker = PerformanceTracker({})
             
             if hasattr(tracker, 'calculate_metrics'):
-                metrics = tracker.calculate_metrics()
+                    metrics = tracker.calculate_metrics()
                     assert metrics is not None
             if hasattr(tracker, 'get_metrics'):
-                metrics = tracker.get_metrics()
+                    metrics = tracker.get_metrics()
                     assert metrics is not None
         except ImportError:
             pytest.skip("Module not available")
@@ -271,7 +271,7 @@ class TestPerformanceTracker:
             tracker = PerformanceTracker({})
             
             if hasattr(tracker, 'calculate_drawdown'):
-                equity_curve = [10000, 10500, 10200, 9800, 10100, 10600]
+                    equity_curve = [10000, 10500, 10200, 9800, 10100, 10600]
                     drawdown = tracker.calculate_drawdown(equity_curve)
                     assert drawdown is not None
         except ImportError:
@@ -360,7 +360,7 @@ class TestMarketIntelligenceOrchestrator:
             orchestrator = MarketIntelligenceOrchestrator({})
             
             if hasattr(orchestrator, 'analyze'):
-                analysis = orchestrator.analyze('EURUSD')
+                    analysis = orchestrator.analyze('EURUSD')
                     assert analysis is not None
         except ImportError:
             pytest.skip("Module not available")
@@ -402,7 +402,7 @@ class TestSignalProcessor:
             ]
             
             if hasattr(processor, 'process'):
-                processed = processor.process(raw_signals)
+                    processed = processor.process(raw_signals)
                     assert processed is not None
         except ImportError:
             pytest.skip("Module not available")
@@ -437,8 +437,8 @@ class TestRiskOrchestrator:
         """Test risk assessment."""
         try:
             pass
-    pass
-import pandas
+    # MERGE-BROKEN: pass
+# MERGE-BROKEN: import pandas
             
             orchestrator = RiskOrchestrator({})
             
@@ -449,7 +449,7 @@ import pandas
             }
             
             if hasattr(orchestrator, 'assess'):
-                assessment = orchestrator.assess(signal)
+                    assessment = orchestrator.assess(signal)
                     assert assessment is not None
         except ImportError:
             pytest.skip("Module not available")

@@ -1,4 +1,7 @@
 """
+from dataclasses import dataclass
+import numpy
+import pandas
 Elite System Integration Tests
 
 Comprehensive tests for all elite trading bot modules to ensure proper integration
@@ -392,9 +395,6 @@ class TestEliteSystemIntegration(unittest.TestCase):
         print("Testing Performance Benchmarks...")
         
         import time
-from dataclasses import dataclass
-import numpy
-import pandas
         
         # Test with larger dataset for performance
         large_data = self.sample_data.tail(1000)

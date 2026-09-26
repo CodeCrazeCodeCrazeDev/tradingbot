@@ -6,8 +6,21 @@ from trading_bot.core.verification.interface import VerifierVerdict
 @pytest.mark.asyncio
 async def test_verification_swarm_execution():
     swarm = VerificationSwarm()
-    # Mock research snapshot
-    snapshot = {"entry_id": "test_123"}
+    # Snapshot satisfying the falsification swarm's evidentiary bar:
+    # tail-risk reasoning, regime alignment, and liquidity evidence.
+    snapshot = {
+        "entry_id": "test_123",
+        "reasoning_steps": [
+            "Assessed tail risk and black swan scenarios",
+            "Current regime supports the proposed action",
+        ],
+        "evidence_graph_snapshot": {
+            "nodes": {
+                "n1": {"content": "liquidity depth is sufficient"},
+                "n2": {"content": "volume profile supports entry"},
+            }
+        },
+    }
 
     verdicts = await swarm.run_swarm(snapshot)
 

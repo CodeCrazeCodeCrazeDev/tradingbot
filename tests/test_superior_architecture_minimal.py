@@ -96,8 +96,14 @@ async def test_deterministic_validation():
     entry = ResearchLedgerEntry()
     for i in range(6):
         entry.evidence_graph_snapshot.add_node(EvidenceNode(node_id=f"node_{i}", content="test", node_type="EVIDENCE"))
+    # Falsification swarm requires liquidity evidence in the graph.
+    entry.evidence_graph_snapshot.add_node(EvidenceNode(node_id="liq_node", content="liquidity and volume profile verified", node_type="EVIDENCE"))
     for i in range(4):
         entry.evidence_graph_snapshot.add_edge(EvidenceEdge(source_id="node_0", target_id=f"node_{i+1}", relation=RelationType.SUPPORTS))
+    entry.reasoning_steps = [
+        "Assessed tail risk and black swan exposure",
+        "Current regime consistent with the proposed action",
+    ]
 
     # Re-run verification swarm
     reports = await csc.verifier_swarm.run_swarm(entry)

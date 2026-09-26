@@ -14,8 +14,8 @@ from unittest.mock import patch, MagicMock
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from trading_bot.ml.online_learning import (
-import numpy
-import pandas
+# MERGE-BROKEN: import numpy
+# MERGE-BROKEN: import pandas
     OnlineLearner, IncrementalLearner, EnsembleOnlineLearner,
     ConceptDriftDetector, AsyncOnlineLearner
 )
@@ -129,7 +129,7 @@ class TestOnlineLearner(unittest.TestCase):
             self.assertEqual(loaded_learner.window_size, self.learner.window_size)
             self.assertEqual(loaded_learner.update_frequency, self.learner.update_frequency)
         finally:
-    pass
+            pass
             # Clean up
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
@@ -465,7 +465,7 @@ class TestAsyncOnlineLearner(unittest.TestCase):
             self.assertEqual(loaded_learner.window_size, self.learner.window_size)
             self.assertEqual(loaded_learner.update_frequency, self.learner.update_frequency)
         finally:
-    pass
+            pass
             # Clean up
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)

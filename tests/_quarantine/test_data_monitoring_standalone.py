@@ -100,10 +100,7 @@ class SelfDebugger:
         """
         import traceback
 
-logger = logging.getLogger(__name__)
-
-        
-event = DebugEvent(
+        event = DebugEvent(
             timestamp=datetime.datetime.now(),
             level=level,
             component=component,
@@ -207,7 +204,7 @@ event = DebugEvent(
         return decorator
     
     def _get_current_performance_metrics(self) -> Dict[str, float]:
-    pass
+        pass
         """Get current system performance metrics.
         
         Returns:
@@ -238,7 +235,7 @@ event = DebugEvent(
             return {}
     
     def get_debug_summary(self, hours: int = 24) -> Dict[str, Any]:
-    pass
+        pass
         """Get debug summary for the specified time period.
         
         Args:
@@ -317,7 +314,7 @@ event = DebugEvent(
             }
     
     def get_recent_errors(self, count: int = 10) -> List[DebugEvent]:
-    pass
+        pass
         """Get recent error and critical events.
         
         Args:
@@ -346,7 +343,7 @@ event = DebugEvent(
             return []
     
     def diagnose_performance_issues(self) -> Dict[str, List[str]]:
-    pass
+        pass
         """Diagnose performance issues based on collected metrics.
         
         Returns:

@@ -397,7 +397,7 @@ import pandas
         
 provider = RealAlternativeDataProvider()
 assert provider is not None
-await provider.close()
+# MERGE-BROKEN: await provider.close()
 
 
 # ==================== STRATEGY TESTS ====================

@@ -156,6 +156,7 @@
       "owner": "HumanGuidedRecursiveImprovementLoop",
       "path": "trading_bot/recursive_self_improvement/rsi_loop.py",
       "genome": "trading_bot/recursive_self_improvement/improvement_genome.py",
+      "compatibility_surface": "trading_bot/recursive_improvement/orchestrator.py",
       "status": "implemented_dry_run_by_default",
       "rule": "No candidate reaches promotion without replay/OOS/safety/provenance evidence and explicit human approval."
     },

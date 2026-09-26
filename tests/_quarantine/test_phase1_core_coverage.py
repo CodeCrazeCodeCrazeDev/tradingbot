@@ -241,8 +241,8 @@ class TestEventBus:
             
             def handler(event):
             
-            if hasattr(bus, 'subscribe'):
-                bus.subscribe('test_event', handler)
+                if hasattr(bus, 'subscribe'):
+                    bus.subscribe('test_event', handler)
             
             if hasattr(bus, 'unsubscribe'):
                 bus.unsubscribe('test_event', handler)
@@ -326,7 +326,7 @@ class TestConfig:
             cfg = Config()
             
             if hasattr(cfg, 'validate'):
-                is_valid = cfg.validate()
+                    is_valid = cfg.validate()
                     assert isinstance(is_valid, bool)
         except ImportError:
             pytest.skip("Module not available")
@@ -365,7 +365,7 @@ class TestMonitoringSystem:
             if hasattr(monitor, 'record_metric'):
                 monitor.record_metric('test_metric', 100)
             if hasattr(monitor, 'get_metrics'):
-                metrics = monitor.get_metrics()
+                    metrics = monitor.get_metrics()
                     assert metrics is not None
         except ImportError:
             pytest.skip("Module not available")
@@ -378,7 +378,7 @@ class TestMonitoringSystem:
             if hasattr(monitor, 'create_alert'):
                 monitor.create_alert('test_alert', 'Test message', 'warning')
             if hasattr(monitor, 'get_alerts'):
-                alerts = monitor.get_alerts()
+                    alerts = monitor.get_alerts()
                     assert alerts is not None
         except ImportError:
             pytest.skip("Module not available")
@@ -387,16 +387,16 @@ class TestMonitoringSystem:
         """Test health monitoring."""
         try:
             pass
-    pass
-import pandas
+    # MERGE-BROKEN: pass
+# MERGE-BROKEN: import pandas
             
             monitor = MonitoringSystem({})
             
             if hasattr(monitor, 'check_system_health'):
-                health = monitor.check_system_health()
+                    health = monitor.check_system_health()
                     assert health is not None
             if hasattr(monitor, 'get_resource_usage'):
-                usage = monitor.get_resource_usage()
+                    usage = monitor.get_resource_usage()
                     assert usage is not None
         except ImportError:
             pytest.skip("Module not available")

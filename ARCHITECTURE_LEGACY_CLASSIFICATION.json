@@ -51653,6 +51653,7 @@
       "functions": [
         "add_edge",
         "add_node",
+        "is_valid_in_context",
         "query_counterfactual",
         "to_dict"
       ],
@@ -51791,6 +51792,7 @@
       "functions": [
         "__init__",
         "__new__",
+        "_coerce_float",
         "audit_log_action",
         "check_evolution_gate",
         "validate_action"
@@ -56238,6 +56240,7 @@
         "coordination_core_part2",
         "dynamic_agent_factory",
         "integrated_system",
+        "logging",
         "policy_value_network",
         "react_loop",
         "self_coordinating_core",
@@ -70568,42 +70571,176 @@
     },
     {
       "canonical_port": "ComponentLifecycle",
-      "classes": [
-        "_Member",
-        "_Stub",
-        "_StubMeta"
-      ],
+      "classes": [],
       "classification": "adapter",
       "cli_entrypoint": false,
       "direct_capital_path": false,
       "evidence": [],
-      "functions": [
-        "__call__",
-        "__getattr__",
-        "__getattr__",
-        "__init__",
-        "__init__",
-        "__repr__",
-        "_mk",
-        "_warn"
-      ],
+      "functions": [],
       "importers": [],
       "imports": [
-        "warnings"
+        "analyzer",
+        "guardrails",
+        "proposal",
+        "protected_registry"
       ],
       "migration_wave": 1,
       "module": "trading_bot.deepseek_engineer",
       "owner": "infrastructure",
       "parse_error": null,
       "parse_status": "pass",
-      "path": "trading_bot/deepseek_engineer.py",
+      "path": "trading_bot/deepseek_engineer/__init__.py",
       "quarantine_reason": null,
       "removal_ready": false,
       "runtime_reachable": false,
-      "secondary_tags": [
-        "top_level_module"
-      ],
+      "secondary_tags": [],
       "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "CodebaseAnalyzer",
+        "FileAnalysis"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__init__",
+        "analyze_file"
+      ],
+      "importers": [],
+      "imports": [
+        "dataclasses",
+        "pathlib"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.deepseek_engineer.analyzer",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/deepseek_engineer/analyzer.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "BoundaryEnforcer",
+        "EngineerGuardrails",
+        "SafetyCheck",
+        "SafetyLevel"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__init__",
+        "__init__",
+        "check_content",
+        "check_file_modification"
+      ],
+      "importers": [],
+      "imports": [
+        "dataclasses",
+        "enum",
+        "pathlib"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.deepseek_engineer.guardrails",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/deepseek_engineer/guardrails.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "Proposal",
+        "ProposalStatus",
+        "ProposalSystem",
+        "ProposalType"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__init__",
+        "approve_proposal",
+        "create_proposal",
+        "reject_proposal",
+        "submit_for_approval"
+      ],
+      "importers": [],
+      "imports": [
+        "dataclasses",
+        "enum",
+        "itertools",
+        "pathlib"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.deepseek_engineer.proposal",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/deepseek_engineer/proposal.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "AccessDecision",
+        "AccessType",
+        "ProtectedRegistry"
+      ],
+      "classification": "compatibility_facade",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__init__",
+        "check_access"
+      ],
+      "importers": [],
+      "imports": [
+        "dataclasses",
+        "enum",
+        "pathlib"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.deepseek_engineer.protected_registry",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/deepseek_engineer/protected_registry.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [],
+      "shim_status": "active_one_wave",
       "starts_loop": false,
       "tests": []
     },
@@ -86214,6 +86351,7 @@
         "change_manager",
         "deep_analyzer",
         "improvement_proposer",
+        "logging",
         "trading_bot.aads.core.simulation_engine",
         "weakness_detector"
       ],
@@ -116160,59 +116298,33 @@
       "classes": [
         "MasterOrchestrator",
         "OrchestratorConfig",
-        "SystemEventHandler",
-        "_LegacyMasterOrchestrator"
+        "SystemEventHandler"
       ],
       "classification": "compatibility_facade",
       "cli_entrypoint": false,
       "direct_capital_path": false,
       "evidence": [],
       "functions": [
-        "__del__",
-        "__init__",
         "__init__",
         "__init__",
         "_handle_critical_error",
         "_handle_service_unhealthy",
         "_handle_shutdown_request",
-        "_health_check",
-        "_initialize_service_managers",
-        "_initialize_trading",
-        "_monitoring_loop",
-        "_register_core_services",
-        "_setup_logging",
-        "_start_monitoring",
         "emergency_shutdown",
-        "emergency_shutdown",
-        "export_state",
-        "get_status",
         "get_status",
         "handle",
         "initialize",
-        "initialize",
-        "process_signal",
         "process_signal",
         "shutdown",
-        "shutdown",
         "start",
-        "start",
-        "stop",
         "stop"
       ],
       "importers": [],
       "imports": [
-        "asyncio",
         "dataclasses",
-        "datetime",
         "event_bus",
-        "json",
         "logging",
-        "pathlib",
-        "traceback",
         "trading_bot.foundation.runtime",
-        "trading_bot.orchestration.service_managers",
-        "trading_bot.registry",
-        "trading_bot.registry.service_locator",
         "typing",
         "warnings"
       ],
@@ -116225,11 +116337,9 @@
       "quarantine_reason": null,
       "removal_ready": false,
       "runtime_reachable": false,
-      "secondary_tags": [
-        "starts_loop"
-      ],
+      "secondary_tags": [],
       "shim_status": "active_one_wave",
-      "starts_loop": true,
+      "starts_loop": false,
       "tests": []
     },
     {
@@ -116285,9 +116395,7 @@
         "initialize",
         "shutdown"
       ],
-      "importers": [
-        "trading_bot/orchestration/master_orchestrator.py"
-      ],
+      "importers": [],
       "imports": [
         "abc",
         "asyncio",
@@ -124664,28 +124772,19 @@
       "evidence": [],
       "functions": [
         "__init__",
-        "_approval_monitor_loop",
-        "_continuous_improvement_loop",
         "get_comprehensive_summary",
         "integrate_with_trading_bot",
+        "run_cycle",
         "start",
         "stop"
       ],
       "importers": [],
       "imports": [
-        "approvals",
+        "__future__",
         "asyncio",
-        "datetime",
-        "infrastructure",
         "logging",
-        "loops.evaluation_loop",
-        "loops.feature_loop",
-        "loops.meta_loop",
-        "loops.risk_loop",
-        "loops.strategy_loop",
-        "pathlib",
-        "recursive_core",
-        "typing"
+        "typing",
+        "warnings"
       ],
       "migration_wave": 1,
       "module": "trading_bot.recursive_improvement.orchestrator",
@@ -124696,11 +124795,9 @@
       "quarantine_reason": null,
       "removal_ready": false,
       "runtime_reachable": false,
-      "secondary_tags": [
-        "starts_loop"
-      ],
+      "secondary_tags": [],
       "shim_status": "active_one_wave",
-      "starts_loop": true,
+      "starts_loop": false,
       "tests": []
     },
     {
@@ -126063,9 +126160,7 @@
         "modules",
         "resolve_dependencies"
       ],
-      "importers": [
-        "trading_bot/orchestration/master_orchestrator.py"
-      ],
+      "importers": [],
       "imports": [
         "ast",
         "enum",
@@ -126139,9 +126234,7 @@
         "register",
         "unregister"
       ],
-      "importers": [
-        "trading_bot/orchestration/master_orchestrator.py"
-      ],
+      "importers": [],
       "imports": [
         "logging",
         "threading",
@@ -170563,9 +170656,9 @@
     "physical_moves_performed": false
   },
   "summary": {
-    "compatibility_facades": 91,
+    "compatibility_facades": 92,
     "direct_capital_paths": 50,
-    "modules": 3159,
+    "modules": 3163,
     "parse_errors": 0,
     "quarantined": 32,
     "runtime_reachable": 35

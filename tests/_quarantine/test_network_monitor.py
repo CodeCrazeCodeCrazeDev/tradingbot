@@ -41,7 +41,7 @@ class NetworkSimulator:
             logger.warning(f"Unknown condition: {condition}")
     
     def get_condition(self) -> Dict[str, Any]:
-    pass
+        pass
         """Get current network condition."""
         return self.conditions[self.current_condition]
 
@@ -124,7 +124,7 @@ class NetworkMonitorTester:
         return passed == len(tests)
     
     async def test_normal_operation(self) -> bool:
-    pass
+        pass
         """Test normal network operation."""
         logger.info("Testing normal network operation...")
         
@@ -172,7 +172,7 @@ class NetworkMonitorTester:
             return False
     
     async def test_high_latency(self) -> bool:
-    pass
+        pass
         """Test high latency detection."""
         logger.info("Testing high latency detection...")
         
@@ -187,7 +187,7 @@ class NetworkMonitorTester:
             return False
     
     async def test_packet_loss(self) -> bool:
-    pass
+        pass
         """Test packet loss detection."""
         logger.info("Testing packet loss detection...")
         
@@ -201,7 +201,7 @@ class NetworkMonitorTester:
             return False
     
     async def test_safe_mode_activation(self) -> bool:
-    pass
+        pass
         """Test Safe Mode activation on network degradation."""
         logger.info("Testing Safe Mode activation...")
         
@@ -236,7 +236,7 @@ class NetworkMonitorTester:
             return False
     
     async def test_offline_mode(self) -> bool:
-    pass
+        pass
         """Test Offline Mode activation on connection loss."""
         logger.info("Testing Offline Mode activation...")
         
@@ -268,7 +268,7 @@ class NetworkMonitorTester:
             return False
     
     async def test_auto_recovery(self) -> bool:
-    pass
+        pass
         """Test auto-recovery when network stabilizes."""
         logger.info("Testing auto-recovery...")
         
@@ -282,7 +282,7 @@ class NetworkMonitorTester:
             return False
     
     async def test_fallback_endpoints(self) -> bool:
-    pass
+        pass
         """Test fallback endpoint usage."""
         logger.info("Testing fallback endpoints...")
         
@@ -309,7 +309,7 @@ class NetworkMonitorTester:
             return False
     
     async def test_retry_logic(self) -> bool:
-    pass
+        pass
         """Test exponential backoff retry logic."""
         logger.info("Testing retry logic...")
         
@@ -340,7 +340,7 @@ class NetworkMonitorTester:
             return False
     
     async def test_state_persistence(self) -> bool:
-    pass
+        pass
         """Test state persistence for recovery."""
         logger.info("Testing state persistence...")
         
@@ -368,7 +368,7 @@ class NetworkMonitorTester:
             return False
     
     async def test_alert_system(self) -> bool:
-    pass
+        pass
         """Test alert system integration."""
         logger.info("Testing alert system...")
         
@@ -400,7 +400,7 @@ class NetworkMonitorTester:
             return False
     
     async def test_emergency_shutdown(self) -> bool:
-    pass
+        pass
         """Test emergency shutdown after prolonged offline."""
         logger.info("Testing emergency shutdown...")
         
@@ -414,14 +414,14 @@ class NetworkMonitorTester:
             return False
     
     async def test_concurrent_operations(self) -> bool:
-    pass
+        pass
         """Test concurrent network checks."""
         logger.info("Testing concurrent operations...")
         
         try:
             pass
-    pass
-from enum import auto
+    # MERGE-BROKEN: pass
+# MERGE-BROKEN: from enum import auto
             
             config = {
                 'primary_endpoints': ['8.8.8.8', '1.1.1.1', '8.8.4.4'],
@@ -446,9 +446,9 @@ from enum import auto
             logger.info("Concurrent operations verified")
             return True
         
-    def _save_results(self):
-        """Save test results to file."""
-        try:
+    # MERGE-BROKEN: def _save_results(self):
+        # MERGE-BROKEN: """Save test results to file."""
+        # MERGE-BROKEN: try:
             with open(self.log_file, 'w') as f:
                 json.dump({
                     'timestamp': datetime.now().isoformat(),

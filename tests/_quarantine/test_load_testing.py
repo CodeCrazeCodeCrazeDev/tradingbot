@@ -29,7 +29,7 @@ class LoadTestSuite:
         self.results = []
     
     async def run_all_tests(self) -> Dict[str, Any]:
-    pass
+        pass
         """Run all load tests"""
         logger.info("=" * 60)
         logger.info("LOAD TESTING SUITE - STARTING")
@@ -75,7 +75,7 @@ class LoadTestSuite:
         }
     
     async def test_high_frequency_orders(self, count: int = 1000) -> Dict[str, Any]:
-    pass
+        pass
         """
         Test high-frequency order placement
         
@@ -98,7 +98,7 @@ class LoadTestSuite:
                     quantity=0.01,
                     metadata={'test': 'load_test', 'index': i}
                 )
-                orders.append(order)
+                # MERGE-BROKEN: orders.append(order)
         duration = time.time() - start_time
         orders_per_second = count / duration if duration > 0 else 0
         
@@ -117,7 +117,7 @@ class LoadTestSuite:
         return result
     
     async def test_concurrent_orders(self, concurrent_count: int = 50) -> Dict[str, Any]:
-    pass
+        pass
         """
         Test concurrent order execution
         
@@ -166,7 +166,7 @@ class LoadTestSuite:
         return result
     
     async def test_data_throughput(self, duration_seconds: int = 10) -> Dict[str, Any]:
-    pass
+        pass
         """
         Test market data throughput
         
@@ -185,7 +185,7 @@ class LoadTestSuite:
         latencies = []
         
         while time.time() < end_time:
-    pass
+            pass
             try:
                 tick = await self.data_stream.get_tick('EURUSD')
                 
@@ -219,7 +219,7 @@ class LoadTestSuite:
         return result
     
     async def test_multi_symbol_stress(self, symbols: List[str] = None, duration: int = 30) -> Dict[str, Any]:
-    pass
+        pass
         """
         Stress test with multiple symbols
         
@@ -248,7 +248,7 @@ class LoadTestSuite:
                         quantity=0.01,
                         metadata={'test': 'multi_symbol'}
                     )
-                    orders_placed[symbol] += 1
+                    # MERGE-BROKEN: orders_placed[symbol] += 1
                 await asyncio.sleep(0.1)  # Small delay between orders
         
         actual_duration = time.time() - start_time
@@ -271,7 +271,7 @@ class LoadTestSuite:
         return result
     
     async def test_memory_leak(self, iterations: int = 1000) -> Dict[str, Any]:
-    pass
+        pass
         """
         Test for memory leaks
         
@@ -328,7 +328,7 @@ class LoadTestSuite:
         return result
     
     async def test_rate_limits(self) -> Dict[str, Any]:
-    pass
+        pass
         """
         Test API rate limits
         
@@ -378,7 +378,7 @@ class LoadTestSuite:
         return result
     
     def _generate_summary(self, results: Dict[str, Any]) -> Dict[str, Any]:
-    pass
+        pass
         """Generate test summary"""
         summary = {
             'overall_status': 'PASS',

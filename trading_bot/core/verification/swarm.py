@@ -230,7 +230,7 @@ class EvidenceGraphGate:
         valid_count = sum(1 for v in verdicts if v.is_valid)
         if valid_count / len(verdicts) < 0.8:
             failing = [v for v in verdicts if not v.is_valid]
-            critiques = "; ".join(v.critique for v in failing if v.critique) or "no critiques"
+            critiques = "; ".join(str(v.critique) for v in failing if v.critique) or "no critiques"
             EvidenceGraphGate.last_rejection_reason = (
                 f"Consensus below 80% ({valid_count}/{len(verdicts)}): {critiques}"
             )

@@ -1062,10 +1062,10 @@ class TestAdvancedBacktester:
         """Test running backtest."""
         try:
             pass
-    pass
-import asyncio
-import numpy
-import pandas
+    # MERGE-BROKEN: pass
+# MERGE-BROKEN: import asyncio
+# MERGE-BROKEN: import numpy
+# MERGE-BROKEN: import pandas
             
             backtester = AdvancedBacktester({})
             

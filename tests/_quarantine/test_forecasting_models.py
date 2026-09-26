@@ -1,4 +1,5 @@
 """
+import pandas
 Comprehensive tests for forecasting models
 """
 
@@ -160,8 +161,7 @@ class TestForecastingEnsemble:
     """Test ensemble forecasting"""
     
     def test_ensemble_predictions(self):
-    pass
-import pandas
+        pass
         
         # Create multiple models
         model1 = NBeatsModel(input_size=24, forecast_size=6)

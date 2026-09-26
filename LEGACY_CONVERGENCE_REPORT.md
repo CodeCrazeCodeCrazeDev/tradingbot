@@ -68,6 +68,13 @@ real symbol/price observation into the canonical CSC path instead of calling a
 parallel execution system. The inventory scanner now skips files that disappear
 between enumeration and AST reads instead of aborting the manifest refresh.
 
+`trading_bot/recursive_improvement/orchestrator.py` is now a no-worker
+compatibility facade: `run_cycle()` delegates only to an explicitly injected
+`HumanGuidedRecursiveImprovementLoop`, and approval/deployment remains
+human-gated research behavior rather than a second runtime authority. A broken
+indentation block in `trading_bot/agents/multi_agent_debate.py` was also repaired
+so the advisory capability adapter and package imports compile again.
+
 ## Wave 2 status: initial policy adapters
 
 Added `LegacyRiskPolicyAdapter` and subordinate-policy registration to

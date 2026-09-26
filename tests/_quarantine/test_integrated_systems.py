@@ -78,8 +78,8 @@ class IntegrationTestSuite:
                 NewsImpactAnalyzer,
                 CorrelationBreakdownDetector,
                 MomentumBurstDetector
-        )
-            self.record_test(test_name, True, "All scanner components imported successfully")
+        # MERGE-BROKEN: )
+            # MERGE-BROKEN: self.record_test(test_name, True, "All scanner components imported successfully")
         except Exception as e:
             self.record_test(test_name, False, f"Import error: {str(e)}")
     
@@ -91,8 +91,8 @@ class IntegrationTestSuite:
                 AdaptiveExitStrategy,
                 ProfitMaximizer,
                 DynamicTradeManager
-            )
-            self.record_test(test_name, True, "All exit strategy components imported successfully")
+            # MERGE-BROKEN: )
+            # MERGE-BROKEN: self.record_test(test_name, True, "All exit strategy components imported successfully")
         except Exception as e:
             self.record_test(test_name, False, f"Import error: {str(e)}")
     
@@ -105,8 +105,8 @@ class IntegrationTestSuite:
                 AdaptiveRiskManager,
                 StrategySelector,
                 SelfImprovementEngine
-            )
-            self.record_test(test_name, True, "All adaptive components imported successfully")
+            # MERGE-BROKEN: )
+            # MERGE-BROKEN: self.record_test(test_name, True, "All adaptive components imported successfully")
         except Exception as e:
             self.record_test(test_name, False, f"Import error: {str(e)}")
     
@@ -118,8 +118,8 @@ class IntegrationTestSuite:
                 PatternRecognizer,
                 StrategyOptimizer,
                 OnlineLearner
-            )
-            self.record_test(test_name, True, "All ML components imported successfully")
+            # MERGE-BROKEN: )
+            # MERGE-BROKEN: self.record_test(test_name, True, "All ML components imported successfully")
         except Exception as e:
             self.record_test(test_name, False, f"Import error: {str(e)}")
     
@@ -133,8 +133,8 @@ class IntegrationTestSuite:
                 VaRCalculator,
                 DrawdownMonitor,
                 BlackSwanProtector
-            )
-            self.record_test(test_name, True, "All risk management components imported successfully")
+            # MERGE-BROKEN: )
+            # MERGE-BROKEN: self.record_test(test_name, True, "All risk management components imported successfully")
         except Exception as e:
             self.record_test(test_name, False, f"Import error: {str(e)}")
     
@@ -147,8 +147,8 @@ class IntegrationTestSuite:
                 PerformanceDashboard,
                 SurvivalDashboard,
                 UnifiedDashboard
-            )
-            self.record_test(test_name, True, "All dashboard components imported successfully")
+            # MERGE-BROKEN: )
+            # MERGE-BROKEN: self.record_test(test_name, True, "All dashboard components imported successfully")
         except Exception as e:
             self.record_test(test_name, False, f"Import error: {str(e)}")
     
@@ -161,8 +161,8 @@ class IntegrationTestSuite:
                 DataNormalizer,
                 MarketMicrostructure,
                 DataProcessor
-            )
-            self.record_test(test_name, True, "All database components imported successfully")
+            # MERGE-BROKEN: )
+            # MERGE-BROKEN: self.record_test(test_name, True, "All database components imported successfully")
         except Exception as e:
             self.record_test(test_name, False, f"Import error: {str(e)}")
     
@@ -174,8 +174,8 @@ class IntegrationTestSuite:
                 AdvancedBacktester,
                 BacktestResults,
                 StrategyBacktester
-            )
-            self.record_test(test_name, True, "All backtesting components imported successfully")
+            # MERGE-BROKEN: )
+            # MERGE-BROKEN: self.record_test(test_name, True, "All backtesting components imported successfully")
         except Exception as e:
             self.record_test(test_name, False, f"Import error: {str(e)}")
     
@@ -188,8 +188,8 @@ class IntegrationTestSuite:
                 EntryValidator,
                 EntrySignalGenerator,
                 InstitutionalFootprint
-            )
-            self.record_test(test_name, True, "All institutional entry components imported successfully")
+            # MERGE-BROKEN: )
+            # MERGE-BROKEN: self.record_test(test_name, True, "All institutional entry components imported successfully")
         except Exception as e:
             self.record_test(test_name, False, f"Import error: {str(e)}")
     

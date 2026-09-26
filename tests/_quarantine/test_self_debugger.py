@@ -285,7 +285,7 @@ def run_all_tests():
         import traceback
 import logging
 traceback.print_exc()
-return False
+# MERGE-BROKEN: return False
 
 
 if __name__ == "__main__":

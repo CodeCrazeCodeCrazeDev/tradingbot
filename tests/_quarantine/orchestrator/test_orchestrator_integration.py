@@ -1,3 +1,5 @@
+from enum import auto
+import numpy
 from pathlib import Path
 """
 Integration Tests for Complete Orchestrator System
@@ -356,8 +358,6 @@ class TestErrorHandling:
     async def test_empty_venues_routing(self, full_config):
         """Test routing with empty venues"""
         from trading_bot.orchestrator import SmartOrderRouter
-from enum import auto
-import numpy
         router = SmartOrderRouter()
         params = {'symbols': ['AAPL'], 'quantity': 1000}
         plan = await router.route(params, {})

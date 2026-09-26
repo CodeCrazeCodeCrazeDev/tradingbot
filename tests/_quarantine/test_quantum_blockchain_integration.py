@@ -1,4 +1,6 @@
 """
+import numpy
+import pandas
 Comprehensive integration test for quantum blockchain features in the Elite Trading Bot.
 
 This test validates the full integration of quantum computing and blockchain validation
@@ -228,12 +230,10 @@ class TestQuantumBlockchainIntegration(unittest.TestCase):
     def test_performance_benchmarks(self):
         """Test performance benchmarks for quantum blockchain features."""
         import time
-import numpy
-import pandas
         
-print("\n" + "="*60)
-print("PERFORMANCE BENCHMARKS")
-print("="*60)
+        print("\n" + "="*60)
+        print("PERFORMANCE BENCHMARKS")
+        print("="*60)
         
         # Benchmark quantum portfolio optimization
         returns = self.sample_data['close'].pct_change().dropna().values[:10]

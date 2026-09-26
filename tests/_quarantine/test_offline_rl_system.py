@@ -42,7 +42,7 @@ class OfflineRLSystemTester:
         logger.info("Offline RL System Tester initialized")
     
     def test_imports(self) -> bool:
-    pass
+        pass
         """Test that all modules can be imported."""
         logger.info("\n" + "="*80)
         logger.info("TEST 1: Import Validation")
@@ -78,7 +78,7 @@ class OfflineRLSystemTester:
             return False
     
     def test_module_scanner(self) -> bool:
-    pass
+        pass
         """Test module scanner functionality."""
         logger.info("\n" + "="*80)
         logger.info("TEST 2: Module Scanner")
@@ -109,7 +109,7 @@ class OfflineRLSystemTester:
             return False
     
     def test_enhanced_cql_agent(self) -> bool:
-    pass
+        pass
         """Test Enhanced CQL agent."""
         logger.info("\n" + "="*80)
         logger.info("TEST 3: Enhanced CQL Agent")
@@ -164,7 +164,7 @@ class OfflineRLSystemTester:
             return False
     
     async def test_upgrade_orchestrator(self) -> bool:
-    pass
+        pass
         """Test upgrade orchestrator."""
         logger.info("\n" + "="*80)
         logger.info("TEST 4: Upgrade Orchestrator")
@@ -201,7 +201,7 @@ class OfflineRLSystemTester:
             return False
     
     def test_main_py_integration(self) -> bool:
-    pass
+        pass
         """Test main.py integration."""
         logger.info("\n" + "="*80)
         logger.info("TEST 5: Main.py Integration")
@@ -232,7 +232,7 @@ class OfflineRLSystemTester:
             return False
     
     async def test_master_controller(self) -> bool:
-    pass
+        pass
         """Test master controller."""
         logger.info("\n" + "="*80)
         logger.info("TEST 6: Master Controller")
@@ -242,7 +242,7 @@ class OfflineRLSystemTester:
         
         try:
             pass
-    pass
+    # MERGE-BROKEN: pass
             
             # Create master controller
             master = AlphaAlgoOfflineRLMaster(config={
@@ -263,16 +263,16 @@ class OfflineRLSystemTester:
             logger.info("\n✅ TEST 6 PASSED: Master controller working")
             return True
             
-    def test_directory_structure(self) -> bool:
-    pass
-        """Test that required directories exist."""
-        logger.info("\n" + "="*80)
-        logger.info("TEST 7: Directory Structure")
-        logger.info("="*80)
+    # MERGE-BROKEN: def test_directory_structure(self) -> bool:
+    # MERGE-BROKEN: pass
+        # MERGE-BROKEN: """Test that required directories exist."""
+        # MERGE-BROKEN: logger.info("\n" + "="*80)
+        # MERGE-BROKEN: logger.info("TEST 7: Directory Structure")
+        # MERGE-BROKEN: logger.info("="*80)
         
-        self.test_results['total_tests'] += 1
+        # MERGE-BROKEN: self.test_results['total_tests'] += 1
         
-        try:
+        # MERGE-BROKEN: try:
             required_dirs = [
                 'trading_bot/ml/offline_rl',
                 'logs',
@@ -298,7 +298,7 @@ class OfflineRLSystemTester:
             return False
     
     def test_file_existence(self) -> bool:
-    pass
+        pass
         """Test that all required files exist."""
         logger.info("\n" + "="*80)
         logger.info("TEST 8: File Existence")
@@ -344,7 +344,7 @@ class OfflineRLSystemTester:
             return False
     
     async def run_all_tests(self) -> Dict[str, Any]:
-    pass
+        pass
         """Run all tests."""
         logger.info("\n" + "="*80)
         logger.info("STARTING COMPREHENSIVE TEST SUITE")

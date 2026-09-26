@@ -1,4 +1,7 @@
 """
+from dataclasses import field
+from typing import Optional
+import numpy
 End-to-End Tests for AlphaAlgo 2.0 System
 
 This test suite validates the complete AlphaAlgo 2.0 system including:
@@ -499,13 +502,10 @@ class TestPerformance:
     
     def test_optimization_speed(self, alphaalgo_system):
         """Test that optimization completes in reasonable time"""
-from typing import Optional
-from dataclasses import field
-import numpy
         
-start = time.time()
-result = alphaalgo_system.optimize()
-duration = time.time() - start
+        start = time.time()
+        result = alphaalgo_system.optimize()
+        duration = time.time() - start
         
         # Should complete in less than 2 seconds
         assert duration < 2.0

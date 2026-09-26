@@ -1,5 +1,6 @@
 """Additional tests to increase code coverage for trading bot modules."""
 
+from enum import auto
 import unittest
 import numpy as np
 import pandas as pd
@@ -498,9 +499,8 @@ class TestInfrastructure(unittest.TestCase):
     def test_health_check_manager_status(self):
         """Test health check manager status."""
         from trading_bot.infrastructure import HealthCheckManager
-from enum import auto
         
-manager = HealthCheckManager()
+        manager = HealthCheckManager()
         # Check for available methods
         if hasattr(manager, 'get_status'):
             status = manager.get_status()

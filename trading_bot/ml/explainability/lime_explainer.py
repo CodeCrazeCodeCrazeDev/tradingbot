@@ -99,10 +99,14 @@ class LIMEExplainer:
         else:
             local_pred = explanation.predicted_value
         
+        intercept = getattr(explanation, 'intercept', None)
+        if isinstance(intercept, dict):
+            intercept = intercept.get(0, next(iter(intercept.values()), None))
+
         result = {
             'feature_importance': feature_importance,
             'local_prediction': local_pred,
-            'intercept': explanation.intercept[0] if hasattr(explanation, 'intercept') else None,
+            'intercept': intercept,
             'score': explanation.score if hasattr(explanation, 'score') else None,
             'local_exp': explanation.local_exp
         }

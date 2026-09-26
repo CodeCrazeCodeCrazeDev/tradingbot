@@ -157,6 +157,24 @@ try:
         def exec_module(self, module):
             return None
 
+    def _importer_is_package_code() -> bool:
+        """True when the module requesting this import lives inside trading_bot.
+
+        Live-package importers must get honest ImportError for missing modules
+        so optional-import guards behave correctly and quarantined code can
+        never satisfy a production import — even under the test shim.
+        """
+        import inspect as _inspect
+        for fi in _inspect.stack(0):
+            mod = fi.frame.f_globals.get("__name__", "")
+            if (not mod
+                    or mod.startswith(("_frozen_importlib", "importlib", "builtins"))
+                    or mod in {"conftest", "tests.conftest"}
+                    or mod.endswith(".conftest")):
+                continue
+            return mod == "trading_bot" or mod.startswith("trading_bot.")
+        return False
+
     class _FlatTradingBotFinder(_importlib_abc.MetaPathFinder):
         def find_spec(self, fullname, path=None, target=None):
             if not fullname.startswith("trading_bot."):

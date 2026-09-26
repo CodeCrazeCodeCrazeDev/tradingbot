@@ -1,4 +1,6 @@
 """
+from dataclasses import dataclass
+import numpy
 Comprehensive functional tests for trade_validator module.
 These tests exercise all code paths to achieve high coverage.
 """
@@ -390,8 +392,6 @@ class TestOrderSafetyCheck:
     
     def test_check_duplicate_order_duplicate_detected(self):
         """Test duplicate order detected."""
-from dataclasses import dataclass
-import numpy
         current_time = time.time()
         new_order = {'symbol': 'EURUSD', 'lot': 0.1, 'timestamp': current_time}
         recent_orders = [
