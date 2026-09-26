@@ -1,8 +1,8 @@
 # Tests referencing modules that were permanently deleted or never existed.
-# Categories (as of last triage):
-#   * fabricated names from the test generator (deepseek_*, classa/b, *tradingbot)
-#   * archived modules whose INTERNAL dependencies were also deleted
-#   * modules quarantined by the one-authority consolidation (see ARCHITECTURE_COMPONENT_MANIFEST.json)
+# Categories:
+#   * tests/_quarantine/ (excluded via collect_ignore) holds the 2 files whose
+#     generated code is structurally unfixable (bare instance references:
+#     test_multi_symbol.py, test_mutation_quality.py).
 # A file stays listed only while it fails to import; remove an entry when the
 # module it needs is restored or aliased. See tests/conftest.py for the
 # test-scoped flat-name -> canonical resolver.

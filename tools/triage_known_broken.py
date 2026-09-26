@@ -35,8 +35,10 @@ def classify(exc: BaseException) -> str:
 
 
 def main():
-    sys.path.insert(0, str(REPO))
+    # REPO must precede the tests dir: the generated nested ``tests/tests``
+    # package would otherwise shadow the real ``tests`` package.
     sys.path.insert(0, str(REPO / "tests"))
+    sys.path.insert(0, str(REPO))
     import tests.conftest  # noqa: F401 — installs the compat shims
 
     entries = [
