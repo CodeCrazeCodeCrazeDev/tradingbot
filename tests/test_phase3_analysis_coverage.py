@@ -474,10 +474,10 @@ class TestDataMonitoring:
 
         from trading_bot.market_intelligence.data_monitoring import NewsAndSentimentMonitor
         monitor = NewsAndSentimentMonitor({})
-            
-if hasattr(monitor, 'get_latest_sentiment'):
-                sentiment = monitor.get_latest_sentiment('EURUSD')
-                assert sentiment is not None or sentiment is None  # May not have data
+
+        if hasattr(monitor, 'get_latest_sentiment'):
+            sentiment = monitor.get_latest_sentiment('EURUSD')
+            assert sentiment is not None or sentiment is None  # May not have data
 
 
 

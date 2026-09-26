@@ -502,11 +502,11 @@ class TestBrainModules:
 
         from trading_bot.brain.strategy_selector import StrategySelector
         selector = StrategySelector({})
-            
-if hasattr(selector, 'select'):
-                regime = 'trending'
-                strategy = selector.select(regime)
-                assert strategy is not None
+
+        if hasattr(selector, 'select'):
+            regime = 'trending'
+            strategy = selector.select(regime)
+            assert strategy is not None
 
 
 

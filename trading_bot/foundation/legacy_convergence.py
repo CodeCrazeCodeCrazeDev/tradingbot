@@ -262,7 +262,10 @@ def build_manifest(root: Path) -> Dict[str, object]:
     module_paths: Dict[str, str] = {}
     for path in paths:
         relative = _rel_path(path, root)
-        source = path.read_text(encoding="utf-8", errors="replace")
+        try:
+            source = path.read_text(encoding="utf-8", errors="replace")
+        except FileNotFoundError:
+            continue
         scans[relative] = scan_source(source, relative)
         module_paths[_module_name(relative)] = relative
 

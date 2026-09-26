@@ -20,9 +20,6 @@ from pathlib import Path
 import numpy
 import pandas
 
-import logging
-logger = logging.getLogger(__name__)
-
 
 
 class PositionalEncoding(nn.Module):

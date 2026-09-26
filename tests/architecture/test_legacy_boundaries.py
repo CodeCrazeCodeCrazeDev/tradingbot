@@ -148,6 +148,39 @@ async def test_legacy_event_bus_is_a_no_worker_facade() -> None:
     ) == []
 
 
+@pytest.mark.asyncio
+async def test_master_integration_delegates_trade_path_to_runtime() -> None:
+    import warnings
+
+    from trading_bot.master_integration import MasterTradingSystem
+
+    with warnings.catch_warnings(record=True) as captured:
+        warnings.simplefilter("always")
+        system = MasterTradingSystem({"mode": "paper"})
+
+    calls = []
+
+    async def fake_start() -> None:
+        system.runtime.bot.running = True
+
+    async def fake_cycle(observation):
+        calls.append(observation)
+        return {"outcome": "hold"}
+
+    system.runtime.start = fake_start
+    system.runtime.bot.run_cycle = fake_cycle
+    result = await system.execute_complete_trade({"symbol": "EURUSD", "price": 1.1})
+
+    assert result["status"] == "DELEGATED"
+    assert calls[0]["symbol"] == "EURUSD"
+    assert result["canonical_runtime"] == "ModularMonolithRuntime"
+    assert any(item.category is DeprecationWarning for item in captured)
+    assert boundary_violations(
+        Path("trading_bot/master_integration.py").read_text(encoding="utf-8"),
+        "trading_bot/master_integration.py",
+    ) == []
+
+
 def test_legacy_risk_manager_warns_and_preserves_api() -> None:
     import warnings
 

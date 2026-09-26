@@ -130,7 +130,7 @@ class TestRealTimeRiskMonitoring:
     
     def test_liquidity_risk_assessment(self):
         """Test liquidity risk assessment."""
-        order = {"symbol": "EURUSD", "size": 10.0}  # Large order
+        order = {"symbol": "EURUSD", "size": 20.0}  # Large order
         market_depth = {
             "bid_volume": 5.0,
             "ask_volume": 5.0

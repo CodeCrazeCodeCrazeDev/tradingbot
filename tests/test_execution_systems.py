@@ -4,6 +4,7 @@ Comprehensive tests for execution systems
 
 import pytest
 import numpy as np
+from trading_bot.execution.almgren_chriss import AlmgrenChrissOptimizer
 
 
 class TestAlmgrenChrissExecution:

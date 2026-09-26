@@ -1,0 +1,53 @@
+{
+  "edge": {
+    "eligible": 3,
+    "rejected": 0,
+    "insufficient": 9,
+    "runs": [
+      {
+        "seed": 0,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 1,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 2,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      }
+    ]
+  },
+  "no_edge": {
+    "eligible": 0,
+    "rejected": 5,
+    "insufficient": 7,
+    "runs": [
+      {
+        "seed": 0,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 1,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 2,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      }
+    ]
+  },
+  "interpretation": "eligible rate under 'edge' = planted-fixture sensitivity; under 'no_edge' should be ~0 (false-eligible rate on noise). These are machinery metrics, not market evidence."
+}

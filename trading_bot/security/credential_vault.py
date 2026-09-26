@@ -38,11 +38,10 @@ class SecureCredentialVault:
             
             # Save key with restricted permissions
             with open(self.key_path, 'wb') as f:
-                pass
-            try:
                 f.write(key)
-            
+
             # Set file permissions (owner read/write only)
+            try:
                 os.chmod(self.key_path, 0o600)
             except Exception as e:
                 logger.warning(f"Could not set file permissions: {e}")
@@ -73,11 +72,10 @@ class SecureCredentialVault:
             encrypted_data = self.cipher.encrypt(json_data)
             
             with open(self.vault_path, 'wb') as f:
-                pass
-            try:
                 f.write(encrypted_data)
-            
+
             # Set file permissions
+            try:
                 os.chmod(self.vault_path, 0o600)
             except Exception as e:
                 logger.warning(f"Could not set file permissions: {e}")

@@ -1,41 +1,11 @@
-ai_engineer/test_deepseek_integration.py
-ai_engineer/test_deepseek_r1_8b_integration.py
-autonomous_pipeline/test_pipeline_orchestrator.py
-core/test_classa.py
-core/test_classb.py
-core/test_freetradingbot.py
-core/test_mytradingbot.py
-core/test_testyourclass.py
-core/test_tradingbot.py
-core/test_unifiedtradingsystem.py
-deepseek_ai_engineer/test_deepseek_orchestrator.py
-deepseek_ai_engineer/test_human_collaboration.py
-deepseek_ai_engineer/test_immutable_purpose.py
-deepseek_ai_engineer/test_pre_commit_hook.py
-deepseek_ai_engineer/test_quant_research_engine.py
-deepseek_ai_engineer/test_security_hardening.py
-deepseek_ai_engineer/test_self_evolution_engine.py
-deepseek_architecture/test_chart_analyzer.py
-deepseek_architecture/test_deepseek_core.py
-deepseek_architecture/test_generator_verifier.py
-deepseek_architecture/test_hardware_manager.py
-deepseek_architecture/test_human_protocol.py
-deepseek_autonomous/test_change_applier.py
-deepseek_autonomous/test_verification_engine.py
-deepseek_autonomous/test_workflow_engine.py
-deepseek_engineer/examples/test_deepseek_engineer_demo.py
-deepseek_engineer/test_apply_and_fix.py
-deepseek_engineer/test_apply_approved.py
-deepseek_engineer/test_guardrails.py
-deepseek_engineer/test_live_engineer.py
-deepseek_engineer/test_proposal_system.py
-deepseek_engineer/test_protected_registry.py
-deepseek_engineer/test_self_improvement_loop.py
-deepseek_governance/test_autonomy_levels.py
-deepseek_governance/test_behavior_monitor.py
-deepseek_governance/test_governance_orchestrator.py
-deepseek_governance/test_positive_impact.py
-deepseek_governance/test_risk_mitigation.py
-self_improvement/test_self_improvement_orchestrator.py
-test_deepseek_engineer.py
-tests/test_run_tests.py
+# Tests referencing modules that were permanently deleted or never existed.
+# Categories (as of last triage):
+#   * fabricated names from the test generator (deepseek_*, classa/b, *tradingbot)
+#   * archived modules whose INTERNAL dependencies were also deleted
+#   * modules quarantined by the one-authority consolidation (see ARCHITECTURE_COMPONENT_MANIFEST.json)
+# A file stays listed only while it fails to import; remove an entry when the
+# module it needs is restored or aliased. See tests/conftest.py for the
+# test-scoped flat-name -> canonical resolver.
+# All entries cleared: remaining failures were resolved via
+# convergence stubs (trading_bot/<name>.py deleted-subsystem stubs),
+# deepseek_engineer package restoration, and merge-splice test repairs.

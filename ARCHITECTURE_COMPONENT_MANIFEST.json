@@ -184,11 +184,11 @@
       "status": "wave_0_inventory_complete",
       "scope": "live runtime modules and standalone CLI entry points",
       "summary": {
-        "modules": 3116,
+        "modules": 3159,
         "runtime_reachable": 35,
         "canonical": 12,
-        "compatibility_facades": 86,
-        "research_only": 207,
+        "compatibility_facades": 91,
+        "research_only": 208,
         "quarantine": 32,
         "direct_capital_paths": 50,
         "parse_errors": 0

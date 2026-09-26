@@ -115,7 +115,11 @@ class ApprovalWorkflow:
             with open(path, 'r') as f:
                 try:
                     return json.load(f)
-                except json.JSONDecodeError:
+                except json.JSONDecodeError as exc:
+                    import logging
+                    logging.getLogger(__name__).warning(
+                        "approvals store %s is corrupt (%s); treating as empty",
+                        path, exc)
                     return {}
         return {}
 

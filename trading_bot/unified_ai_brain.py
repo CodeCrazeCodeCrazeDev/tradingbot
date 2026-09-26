@@ -1219,8 +1219,8 @@ class UnifiedAIBrain:
             if hasattr(ss.instance, 'detect_regime'):
                 try:
                     analysis['regime'] = ss.instance.detect_regime(data.get('market', {}))
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"regime detection failed for {symbol}: {e}")
         
         # DeepChart intelligence
         if 'deepchart_intelligence' in self.loaded_subsystems:
@@ -1236,8 +1236,8 @@ class UnifiedAIBrain:
                         bid=price * 0.9999,
                         ask=price * 1.0001
                     )
-                except:
-                    pass
+                except Exception as e:
+                    logger.debug(f"deepchart update failed for {symbol}: {e}")
         
         return analysis
     
@@ -1253,8 +1253,8 @@ class UnifiedAIBrain:
                     sig = ss.instance.generate_signal(symbol, analysis)
                     if sig:
                         signals.append(sig)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"strategy_engine.generate_signal failed for {symbol}: {e}")
         
         # Get signal from complete signal system
         if 'complete_signal_system' in self.loaded_subsystems:
@@ -1267,8 +1267,8 @@ class UnifiedAIBrain:
                     })
                     if sig:
                         signals.append(sig)
-                except:
-                    pass
+                except Exception as e:
+                    logger.debug(f"complete_signal_system.process_signal failed for {symbol}: {e}")
         
         # Get signal from cognitive core
         if 'cognitive' in analysis:
@@ -1332,8 +1332,10 @@ class UnifiedAIBrain:
                     if not msos_result.get('approved', False):
                         result['reason'] = f"MSOS: {msos_result.get('reason', 'Rejected')}"
                         return result
-                except:
-                    pass
+                except Exception as e:
+                    logger.error(f"MSOS evaluate failed for {symbol}: {e}")
+                    result['reason'] = f"MSOS gate error: {e}"
+                    return result
         
         # Check risk manager
         if 'risk_manager' in self.loaded_subsystems:
@@ -1348,8 +1350,10 @@ class UnifiedAIBrain:
                     if not risk_result.get('approved', False):
                         result['reason'] = f"Risk: {risk_result.get('reason', 'Rejected')}"
                         return result
-                except:
-                    pass
+                except Exception as e:
+                    logger.error(f"risk_manager.validate_trade failed for {symbol}: {e}")
+                    result['reason'] = f"risk gate error: {e}"
+                    return result
         
         # Calculate position size
         position_size = self._calculate_position_size(symbol, signal)
@@ -1362,8 +1366,10 @@ class UnifiedAIBrain:
                     if ss.instance.is_triggered():
                         result['reason'] = "Circuit breaker triggered"
                         return result
-                except:
-                    pass
+                except Exception as e:
+                    logger.error(f"circuit_breaker.is_triggered failed for {symbol}: {e}")
+                    result['reason'] = f"circuit breaker gate error: {e}"
+                    return result
         
         # Approved
         result['approved'] = True
@@ -1387,8 +1393,8 @@ class UnifiedAIBrain:
                         risk_per_trade=self.config.max_risk_per_trade,
                         confidence=signal.get('confidence', 0.5)
                     )
-                except:
-                    pass
+                except Exception as e:
+                    logger.debug(f"position_sizer.calculate failed for {symbol}: {e}")
         
         # Default calculation
         risk_amount = self.capital * self.config.max_risk_per_trade
@@ -1488,8 +1494,8 @@ class UnifiedAIBrain:
                             await ss.instance.reflect()
                         else:
                             ss.instance.reflect()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug(f"self_mastery.reflect failed: {e}")
             
             # Use eternal evolution
             if 'eternal_evolution' in self.loaded_subsystems:
@@ -1500,8 +1506,8 @@ class UnifiedAIBrain:
                             await ss.instance.evolve()
                         else:
                             ss.instance.evolve()
-                    except:
-                        pass
+                    except Exception as e:
+                        logger.debug(f"eternal_evolution.evolve failed: {e}")
             
         finally:
             self.state = BrainState.CONSCIOUS
@@ -1563,13 +1569,13 @@ class UnifiedAIBrain:
                 if hasattr(ss.instance, 'emergency_stop'):
                     try:
                         ss.instance.emergency_stop(reason)
-                    except:
-                        pass
+                    except Exception as e:
+                        logger.warning(f"{name}.emergency_stop failed during emergency stop: {e}")
                 if hasattr(ss.instance, 'trigger'):
                     try:
                         ss.instance.trigger(reason)
-                    except:
-                        pass
+                    except Exception as e:
+                        logger.warning(f"{name}.trigger failed during emergency stop: {e}")
     
     async def shutdown(self):
         """Gracefully shutdown the brain"""

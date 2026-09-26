@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 import asyncio
 from unittest.mock import Mock, patch
+from trading_bot.ml.transformer_model import TransformerPredictor
+from trading_bot.risk.advanced_risk_metrics import AdvancedRiskMetrics
 
 
 class TestTransformerIntegration:

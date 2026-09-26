@@ -17773,7 +17773,9 @@
         "score",
         "update_liquidity"
       ],
-      "importers": [],
+      "importers": [
+        "trading_bot/execution/__init__.py"
+      ],
       "imports": [
         "abc",
         "asyncio",
@@ -33467,6 +33469,88 @@
       "tests": []
     },
     {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.apply_and_fix",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/apply_and_fix.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.apply_approved",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/apply_approved.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
       "canonical_port": "RiskService/GovernanceGate",
       "classes": [
         "ApprovalManager"
@@ -38747,6 +38831,47 @@
     {
       "canonical_port": "ComponentLifecycle",
       "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.autonomy_levels",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/autonomy_levels.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
         "AIAnalysisService",
         "AdaptiveLearningService",
         "BackgroundManager",
@@ -39349,6 +39474,47 @@
       "parse_error": null,
       "parse_status": "pass",
       "path": "trading_bot/bear_agent.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.behavior_monitor",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/behavior_monitor.py",
       "quarantine_reason": null,
       "removal_ready": false,
       "runtime_reachable": false,
@@ -42424,6 +42590,170 @@
       "parse_error": null,
       "parse_status": "pass",
       "path": "trading_bot/causal_analyzer.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.change_applier",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/change_applier.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.chart_analyzer",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/chart_analyzer.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.classa",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/classa.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.classb",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/classb.py",
       "quarantine_reason": null,
       "removal_ready": false,
       "runtime_reachable": false,
@@ -46203,7 +46533,6 @@
         "update_data_source"
       ],
       "importers": [
-        "trading_bot/master_integration.py",
         "trading_bot/unified_architecture/layer1_data_foundation.py"
       ],
       "imports": [
@@ -63012,9 +63341,7 @@
         "save_config",
         "set_trace_id"
       ],
-      "importers": [
-        "trading_bot/master_integration.py"
-      ],
+      "importers": [],
       "imports": [
         "datetime",
         "hashlib",
@@ -70201,6 +70528,252 @@
     {
       "canonical_port": "ComponentLifecycle",
       "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.deepseek_core",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/deepseek_core.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.deepseek_engineer",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/deepseek_engineer.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.deepseek_engineer_demo",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/deepseek_engineer_demo.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.deepseek_integration",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/deepseek_integration.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ModularMonolithRuntime",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "compatibility_facade",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.deepseek_orchestrator",
+      "owner": "orchestration",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/deepseek_orchestrator.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "active_one_wave",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.deepseek_r1_8b_integration",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/deepseek_r1_8b_integration.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
         "DeploymentOrchestrator"
       ],
       "classification": "adapter",
@@ -76301,7 +76874,8 @@
         "ordermanager",
         "position_manager",
         "service",
-        "smart_execution"
+        "smart_execution",
+        "trading_bot.alpha_engine.execution"
       ],
       "migration_wave": 1,
       "module": "trading_bot.execution",
@@ -77012,9 +77586,7 @@
         "validate_order_type",
         "wrapper"
       ],
-      "importers": [
-        "trading_bot/master_integration.py"
-      ],
+      "importers": [],
       "imports": [
         "asyncio",
         "dataclasses",
@@ -77514,9 +78086,7 @@
         "to_dict",
         "update_order_status"
       ],
-      "importers": [
-        "trading_bot/master_integration.py"
-      ],
+      "importers": [],
       "imports": [
         "collections",
         "dataclasses",
@@ -78588,9 +79158,7 @@
         "to_dict",
         "to_dict"
       ],
-      "importers": [
-        "trading_bot/master_integration.py"
-      ],
+      "importers": [],
       "imports": [
         "collections",
         "dataclasses",
@@ -78725,9 +79293,7 @@
         "to_dict",
         "wrapper"
       ],
-      "importers": [
-        "trading_bot/master_integration.py"
-      ],
+      "importers": [],
       "imports": [
         "dataclasses",
         "datetime",
@@ -80870,6 +81436,7 @@
         "trading_bot/api.py",
         "trading_bot/api/__init__.py",
         "trading_bot/interfaces/read_models.py",
+        "trading_bot/master_integration.py",
         "trading_bot/orchestration/master_orchestrator.py",
         "trading_bot/unified_main.py"
       ],
@@ -80891,6 +81458,88 @@
       "removal_ready": false,
       "runtime_reachable": true,
       "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.freetradingbot",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/freetradingbot.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.generator_verifier",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/generator_verifier.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
       "shim_status": "not_applicable",
       "starts_loop": false,
       "tests": []
@@ -82739,6 +83388,129 @@
       "runtime_reachable": false,
       "secondary_tags": [
         "cli_entrypoint"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "RiskService/GovernanceGate",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "compatibility_facade",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 2,
+      "module": "trading_bot.governance_orchestrator",
+      "owner": "risk",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/governance_orchestrator.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "active_one_wave",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.guardrails",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/guardrails.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.hardware_manager",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/hardware_manager.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
       ],
       "shim_status": "not_applicable",
       "starts_loop": false,
@@ -85024,6 +85796,47 @@
     {
       "canonical_port": "ComponentLifecycle",
       "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.human_collaboration",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/human_collaboration.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
         "HumanLayerOrchestrator"
       ],
       "classification": "adapter",
@@ -85288,6 +86101,88 @@
       "removal_ready": false,
       "runtime_reachable": false,
       "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.human_protocol",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/human_protocol.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.immutable_purpose",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/immutable_purpose.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
       "shim_status": "not_applicable",
       "starts_loop": false,
       "tests": []
@@ -88070,6 +88965,32 @@
       "parse_error": null,
       "parse_status": "pass",
       "path": "trading_bot/infrastructure/health_endpoints.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [],
+      "importers": [],
+      "imports": [
+        "trading_bot.ml.mlflow_tracker"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.infrastructure.mlflow_tracker",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/infrastructure/mlflow_tracker.py",
       "quarantine_reason": null,
       "removal_ready": false,
       "runtime_reachable": false,
@@ -94534,6 +95455,7 @@
         "trading_bot/api.py",
         "trading_bot/api/__init__.py",
         "trading_bot/foundation/runtime.py",
+        "trading_bot/master_integration.py",
         "trading_bot/unified_main.py"
       ],
       "imports": [
@@ -95290,6 +96212,47 @@
       "removal_ready": false,
       "runtime_reachable": false,
       "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.live_engineer",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/live_engineer.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
       "shim_status": "not_applicable",
       "starts_loop": false,
       "tests": []
@@ -99072,33 +100035,22 @@
       "functions": [
         "__init__",
         "create_master_system",
-        "decorator",
         "execute_complete_trade",
         "get_system_status",
-        "retry",
-        "wrapper"
+        "start",
+        "stop"
       ],
       "importers": [
         "trading_bot/core/legacy_main/main_v1.py",
         "trading_bot/elite_integration.py"
       ],
       "imports": [
-        "asyncio",
-        "enum",
+        "__future__",
         "logging",
-        "trading_bot.connectivity.staleness_detector",
-        "trading_bot.database.complete_data_infrastructure",
-        "trading_bot.execution.complete_execution_system",
-        "trading_bot.execution.idempotent_executor",
-        "trading_bot.execution.partial_fill_aggregator",
-        "trading_bot.execution.robust_retry",
-        "trading_bot.ml.complete_ai_system",
-        "trading_bot.performance.complete_performance_system",
-        "trading_bot.risk.complete_risk_system",
-        "trading_bot.security.complete_security_system",
-        "trading_bot.signals.complete_signal_system",
-        "trading_bot.signals.signal_lifecycle",
-        "typing"
+        "trading_bot.foundation.runtime",
+        "trading_bot.interfaces.read_models",
+        "typing",
+        "warnings"
       ],
       "migration_wave": 1,
       "module": "trading_bot.master_integration",
@@ -100101,9 +101053,7 @@
         "train_optimized_model",
         "tune"
       ],
-      "importers": [
-        "trading_bot/master_integration.py"
-      ],
+      "importers": [],
       "imports": [
         "itertools",
         "logging",
@@ -101092,7 +102042,8 @@
       "importers": [],
       "imports": [
         "lime_explainer",
-        "shap_explainer"
+        "shap_explainer",
+        "trading_bot.ml.shap_explainer"
       ],
       "migration_wave": 1,
       "module": "trading_bot.ml.explainability",
@@ -103298,7 +104249,8 @@
         "track_experiment"
       ],
       "importers": [
-        "trading_bot/experiment_tracker.py"
+        "trading_bot/experiment_tracker.py",
+        "trading_bot/infrastructure/mlflow_tracker.py"
       ],
       "imports": [
         "datetime",
@@ -106289,7 +107241,9 @@
         "get_feature_importance_summary",
         "plot_feature_importance"
       ],
-      "importers": [],
+      "importers": [
+        "trading_bot/ml/explainability/__init__.py"
+      ],
       "imports": [
         "logging",
         "loguru",
@@ -106503,7 +107457,6 @@
         "trading_bot/optimization/hyperparameter_tuner.py"
       ],
       "imports": [
-        "logging",
         "loguru",
         "numpy",
         "pandas",
@@ -109820,6 +110773,47 @@
       "removal_ready": false,
       "runtime_reachable": false,
       "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.mytradingbot",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/mytradingbot.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
       "shim_status": "not_applicable",
       "starts_loop": false,
       "tests": []
@@ -116084,9 +117078,7 @@
         "optimize_pipeline",
         "process_symbols"
       ],
-      "importers": [
-        "trading_bot/master_integration.py"
-      ],
+      "importers": [],
       "imports": [
         "concurrent.futures",
         "functools",
@@ -117745,6 +118737,47 @@
       "tests": []
     },
     {
+      "canonical_port": "ModularMonolithRuntime",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "compatibility_facade",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.pipeline_orchestrator",
+      "owner": "orchestration",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/pipeline_orchestrator.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "active_one_wave",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
       "canonical_port": "StrategyPort/SignalPort",
       "classes": [
         "PortfolioManager"
@@ -118434,6 +119467,88 @@
       "runtime_reachable": false,
       "secondary_tags": [
         "direct_broker_access",
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.positive_impact",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/positive_impact.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.pre_commit_hook",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/pre_commit_hook.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
         "top_level_module"
       ],
       "shim_status": "not_applicable",
@@ -119291,6 +120406,88 @@
     {
       "canonical_port": "ComponentLifecycle",
       "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.proposal_system",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/proposal_system.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "compatibility_facade",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.protected_registry",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/protected_registry.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "active_one_wave",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
         "PsychologyOrchestrator"
       ],
       "classification": "adapter",
@@ -119488,6 +120685,47 @@
       "removal_ready": false,
       "runtime_reachable": false,
       "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ResearchCapability",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "research_only",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 6,
+      "module": "trading_bot.quant_research_engine",
+      "owner": "research",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/quant_research_engine.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
       "shim_status": "not_applicable",
       "starts_loop": false,
       "tests": []
@@ -123693,9 +124931,17 @@
       "functions": [],
       "importers": [],
       "imports": [
+        "archive",
+        "contracts",
+        "engine_v2",
         "evidence_boundaries",
         "improvement_genome",
-        "rsi_loop"
+        "meta_proposals",
+        "multi_objective",
+        "protected_control_plane",
+        "rsi_loop",
+        "scorecard",
+        "transfer"
       ],
       "migration_wave": 1,
       "module": "trading_bot.recursive_self_improvement",
@@ -131049,9 +132295,7 @@
         "initialize",
         "process"
       ],
-      "importers": [
-        "trading_bot/master_integration.py"
-      ],
+      "importers": [],
       "imports": [
         "dataclasses",
         "datetime",
@@ -133439,6 +134683,47 @@
     {
       "canonical_port": "RiskService/GovernanceGate",
       "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 2,
+      "module": "trading_bot.risk_mitigation",
+      "owner": "risk",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/risk_mitigation.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "RiskService/GovernanceGate",
+      "classes": [
         "RiskUnifiedOrchestrator",
         "UnifiedRiskOrchestrator"
       ],
@@ -134923,9 +136208,7 @@
         "use_parameterized_query",
         "verify_token"
       ],
-      "importers": [
-        "trading_bot/master_integration.py"
-      ],
+      "importers": [],
       "imports": [
         "hashlib",
         "jwt",
@@ -135592,6 +136875,47 @@
       "runtime_reachable": false,
       "secondary_tags": [
         "cli_entrypoint"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.security_hardening",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/security_hardening.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
       ],
       "shim_status": "not_applicable",
       "starts_loop": false,
@@ -136635,6 +137959,47 @@
       ],
       "shim_status": "not_applicable",
       "starts_loop": true,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.self_evolution_engine",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/self_evolution_engine.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
       "tests": []
     },
     {
@@ -138540,6 +139905,88 @@
       "runtime_reachable": false,
       "secondary_tags": [],
       "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.self_improvement_loop",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/self_improvement_loop.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ModularMonolithRuntime",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "compatibility_facade",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.self_improvement_orchestrator",
+      "owner": "orchestration",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/self_improvement_orchestrator.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "active_one_wave",
       "starts_loop": false,
       "tests": []
     },
@@ -145453,9 +146900,7 @@
         "validate_signal",
         "vote"
       ],
-      "importers": [
-        "trading_bot/master_integration.py"
-      ],
+      "importers": [],
       "imports": [
         "dataclasses",
         "datetime",
@@ -145706,9 +147151,7 @@
         "stop_cleanup_thread",
         "to_dict"
       ],
-      "importers": [
-        "trading_bot/master_integration.py"
-      ],
+      "importers": [],
       "imports": [
         "collections",
         "dataclasses",
@@ -157036,6 +158479,97 @@
     },
     {
       "canonical_port": "ComponentLifecycle",
+      "classes": [],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [],
+      "importers": [],
+      "imports": [],
+      "migration_wave": 1,
+      "module": "trading_bot.tests",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/tests/__init__.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.tests.test_liquidity",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/tests/test_liquidity.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.testyourclass",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/testyourclass.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
       "classes": [
         "Tft"
       ],
@@ -157861,6 +159395,47 @@
       ],
       "shim_status": "not_applicable",
       "starts_loop": true,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.tradingbot",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/tradingbot.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
       "tests": []
     },
     {
@@ -161846,6 +163421,47 @@
       "removal_ready": false,
       "runtime_reachable": false,
       "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.unifiedtradingsystem",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/unifiedtradingsystem.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
       "shim_status": "not_applicable",
       "starts_loop": false,
       "tests": []
@@ -166734,6 +168350,47 @@
     {
       "canonical_port": "ComponentLifecycle",
       "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.verification_engine",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/verification_engine.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
         "VisualizationOrchestrator"
       ],
       "classification": "adapter",
@@ -167335,6 +168992,47 @@
       "removal_ready": false,
       "runtime_reachable": false,
       "secondary_tags": [],
+      "shim_status": "not_applicable",
+      "starts_loop": false,
+      "tests": []
+    },
+    {
+      "canonical_port": "ComponentLifecycle",
+      "classes": [
+        "_Member",
+        "_Stub",
+        "_StubMeta"
+      ],
+      "classification": "adapter",
+      "cli_entrypoint": false,
+      "direct_capital_path": false,
+      "evidence": [],
+      "functions": [
+        "__call__",
+        "__getattr__",
+        "__getattr__",
+        "__init__",
+        "__init__",
+        "__repr__",
+        "_mk",
+        "_warn"
+      ],
+      "importers": [],
+      "imports": [
+        "warnings"
+      ],
+      "migration_wave": 1,
+      "module": "trading_bot.workflow_engine",
+      "owner": "infrastructure",
+      "parse_error": null,
+      "parse_status": "pass",
+      "path": "trading_bot/workflow_engine.py",
+      "quarantine_reason": null,
+      "removal_ready": false,
+      "runtime_reachable": false,
+      "secondary_tags": [
+        "top_level_module"
+      ],
       "shim_status": "not_applicable",
       "starts_loop": false,
       "tests": []
@@ -168865,9 +170563,9 @@
     "physical_moves_performed": false
   },
   "summary": {
-    "compatibility_facades": 86,
+    "compatibility_facades": 91,
     "direct_capital_paths": 50,
-    "modules": 3116,
+    "modules": 3159,
     "parse_errors": 0,
     "quarantined": 32,
     "runtime_reachable": 35
