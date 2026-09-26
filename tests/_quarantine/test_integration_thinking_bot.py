@@ -16,6 +16,7 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from thinking_bot import ThinkingBot, SignalType, SignalStrength
+from thinking_bot_elite import EliteThinkingBot
 
 
 class TestIntegrationThinkingBot:
@@ -395,8 +396,8 @@ class TestEliteIntegration:
         """Test Elite bot initializes with all components"""
 
         from thinking_bot_elite import EliteThinkingBot
-            
-with patch('thinking_bot_elite.mt5') as mock_mt5:
+
+        with patch('thinking_bot_elite.mt5') as mock_mt5:
                 mock_mt5.initialize.return_value = True
                 
                 mock_account = Mock()
@@ -416,7 +417,7 @@ with patch('thinking_bot_elite.mt5') as mock_mt5:
                 
                 # Should initialize without errors
                 # (may have warnings if elite components not available)
-                # MERGE-BROKEN: result = await bot.initialize()
+                result = await bot.initialize()
                 assert result == True
 
 

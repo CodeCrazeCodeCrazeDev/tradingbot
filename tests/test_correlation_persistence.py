@@ -105,15 +105,14 @@ class TestCorrelationPersistence:
         
         # Modify metadata to make it old
         import json
-import numpy
-import pandas
-with open(persistence.metadata_file, 'r') as f:
+
+        with open(persistence.metadata_file, 'r') as f:
             metadata = json.load(f)
-        
-old_time = (datetime.now() - timedelta(hours=48)).isoformat()
-metadata['timestamp'] = old_time
-        
-with open(persistence.metadata_file, 'w') as f:
+
+        old_time = (datetime.now() - timedelta(hours=48)).isoformat()
+        metadata['timestamp'] = old_time
+
+        with open(persistence.metadata_file, 'w') as f:
             json.dump(metadata, f)
         
         # Try to load - should reject old state

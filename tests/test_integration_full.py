@@ -5,6 +5,7 @@ Full integration tests for complete trading system
 import pytest
 import numpy as np
 import pandas as pd
+from trading_bot.execution.almgren_chriss import AlmgrenChrissOptimizer
 import time
 
 

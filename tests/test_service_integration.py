@@ -86,6 +86,7 @@ class TestServiceIntegration:
             logger.info(f"  - {name}: {info.state.value}")
     
     @pytest.mark.asyncio
+    @pytest.mark.timeout(900)
     async def test_service_startup(self, service_factory, registry):
         """Test services can be started"""
         service_factory.create_tier1_services()

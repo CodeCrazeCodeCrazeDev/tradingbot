@@ -394,6 +394,7 @@ class TestIntegrations:
 from dataclasses import field
 import numpy
 import pandas
+from trading_bot.integrations import RealAlternativeDataProvider
         
 provider = RealAlternativeDataProvider()
 assert provider is not None

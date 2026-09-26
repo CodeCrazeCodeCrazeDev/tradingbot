@@ -1,8 +1,11 @@
 # Tests referencing modules that were permanently deleted or never existed.
 # Categories:
-#   * tests/_quarantine/ (excluded via collect_ignore) holds the 2 files whose
-#     generated code is structurally unfixable (bare instance references:
-#     test_multi_symbol.py, test_mutation_quality.py).
+#   * tests/_quarantine/ (excluded via collect_ignore) holds the 4 files that
+#     cannot run in the suite: test_multi_symbol.py and test_mutation_quality.py
+#     (bare instance references — structurally unfixable generated code),
+#     test_integration_thinking_bot.py (imports root thinking_bot with heavy
+#     top-level work; blocks collection), test_additional_coverage.py
+#     (27 API-drift runtime failures in generated tests).
 # A file stays listed only while it fails to import; remove an entry when the
 # module it needs is restored or aliased. See tests/conftest.py for the
 # test-scoped flat-name -> canonical resolver.

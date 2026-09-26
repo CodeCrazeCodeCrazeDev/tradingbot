@@ -11,8 +11,12 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 from trading_bot.risk.position_size_calculator import PositionSizeMethod
-from trading_bot.execution.trade_executor import Order, OrderType, OrderSide
+from trading_bot.execution.trade_executor import Order, OrderType, OrderSide, TradeExecutor
 from trading_bot.risk.var_engine import Position, VaRMethod
+from trading_bot.signals.signal_lifecycle import SignalLifecycleManager
+from trading_bot.risk.position_size_calculator import PositionSizeCalculator, PositionSizeMethod
+from trading_bot.validation.data_validator import DataQualityValidator
+from trading_bot.risk.circuit_breaker import CircuitBreaker
 from unittest.mock import Mock, patch, MagicMock, AsyncMock
 from typing import Dict, List, Any
 import sys
