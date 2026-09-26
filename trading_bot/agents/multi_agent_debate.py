@@ -1883,12 +1883,12 @@ class HeadAI:
         vol_cap = 1.0 - min(0.8, context.volatility * 20.0)
         adjusted_size *= vol_cap
 
-        risk_weight = self.weights.get(AgentRole.RISK_SENTINEL, 0.5)
-        if risk_weight <= 0:
-            exposure_buffer = 1.0
-        else:
+            # Risk Cap
+            risk_weight = self.weights.get(AgentRole.RISK_SENTINEL, 0.5)
+            if not risk_weight or risk_weight <= 0:
+                risk_weight = 0.5
             exposure_buffer = max(0.0, 1.0 - (context.portfolio_exposure / risk_weight))
-        adjusted_size *= exposure_buffer
+            adjusted_size *= exposure_buffer
 
         return max(0.001, min(0.10, adjusted_size))
 

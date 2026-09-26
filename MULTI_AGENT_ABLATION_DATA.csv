@@ -1,9 +1,9 @@
 Configuration,Accuracy,CalibrationError,FalseConsensusRate,FalsificationRate,RiskViolations,P50Latency,P95Latency,P99Latency,EstCostTokens
-1. Single Agent Baseline,0.4800,0.5697,0.1300,0.4400,0,0.1335,0.2449,0.3372,1500.00
-2. Single Agent + Verification,0.4800,0.5697,0.1300,0.4400,0,0.1278,0.1890,0.2278,1500.00
-3. Streamlined Multi-Agent,0.6100,0.6024,0.0300,0.7100,0,0.2101,0.2829,3.4346,2000.00
-4. Full Debate System,0.6200,0.3553,0.0100,0.0700,0,0.2911,0.3779,0.4273,4300.00
-5. Full Debate w/o Falsification,0.5700,0.3549,0.0100,0.0000,5,0.2819,0.3637,0.4008,4300.00
-6. Full Debate w/o Scorecards,0.6200,0.3432,0.0100,0.0700,0,0.2946,0.3761,0.6098,4300.00
-7. Full Debate w/o Quality Eval,0.6200,0.3553,0.0100,0.0700,0,0.2903,0.3763,0.4204,4300.00
-8. Full System + Adversarial,0.6200,0.3553,0.0100,0.0700,0,0.2940,0.3886,1.0736,4300.00
+1. Single Agent Baseline,0.4800,0.5697,0.1300,0.4400,0,0.1134,0.1706,0.3256,1500.00
+2. Single Agent + Verification,0.4800,0.5697,0.1300,0.4400,0,0.1144,0.1746,0.1946,1500.00
+3. Streamlined Multi-Agent,0.6100,0.6024,0.0300,0.7100,0,0.1685,0.2369,0.2946,2000.00
+4. Full Debate System,0.6200,0.3553,0.0100,0.0700,0,0.2521,0.3431,1.8995,4300.00
+5. Full Debate w/o Falsification,0.5700,0.3549,0.0100,0.0000,5,0.2377,0.3186,0.3595,4300.00
+6. Full Debate w/o Scorecards,0.6200,0.3432,0.0100,0.0700,0,0.2469,0.3172,0.3504,4300.00
+7. Full Debate w/o Quality Eval,0.6200,0.3553,0.0100,0.0700,0,0.2465,0.3325,0.3694,4300.00
+8. Full System + Adversarial,0.6200,0.3553,0.0100,0.0700,0,0.2466,0.3143,0.3395,4300.00
