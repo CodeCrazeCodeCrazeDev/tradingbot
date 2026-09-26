@@ -21,6 +21,14 @@ class MetaOrchestrator:
     """Schedules and supervises the subsystem's engines."""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        import warnings
+        warnings.warn(
+            "MetaOrchestrator is a deprecated duplicate; canonical "
+            "orchestrator is trading_bot.core.csc.controller."
+            "CognitiveSystemController.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.config = config or {}
         self._engines: Dict[str, Any] = {}
         self._task_queue: Deque[Dict[str, Any]] = deque()

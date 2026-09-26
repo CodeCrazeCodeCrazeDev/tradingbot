@@ -3,6 +3,14 @@ from typing import Any, Dict, Optional
 
 class MetaOrchestrator:
     def __init__(self, config: Optional[Dict] = None):
+        import warnings
+        warnings.warn(
+            "MetaOrchestrator is a deprecated duplicate; canonical "
+            "orchestrator is trading_bot.core.csc.controller."
+            "CognitiveSystemController.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.config = config or {}
 
     async def execute_task(self, task: str, context: Dict[str, Any], core_system: Any) -> Dict[str, Any]:

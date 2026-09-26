@@ -68,6 +68,14 @@ class MasterOrchestrator:
     """
 
     def __init__(self, config: Optional[Dict] = None):
+        import warnings
+        warnings.warn(
+            "MasterOrchestrator is a deprecated duplicate; canonical "
+            "orchestrator is trading_bot.core.csc.controller."
+            "CognitiveSystemController.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.config = config or {}
         self.trading_mode = TradingMode.BALANCED
 

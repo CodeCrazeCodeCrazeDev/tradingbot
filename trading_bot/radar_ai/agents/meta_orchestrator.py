@@ -30,6 +30,14 @@ class MetaOrchestrator(_CoreMetaOrchestrator):
     """RadarAI-facing orchestrator with an agent registry."""
 
     def __init__(self, config: Optional[Dict] = None):
+        import warnings
+        warnings.warn(
+            "MetaOrchestrator is a deprecated duplicate; canonical "
+            "orchestrator is trading_bot.core.csc.controller."
+            "CognitiveSystemController.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         super().__init__(config)
         self._registry: Dict[str, Any] = {}
 
