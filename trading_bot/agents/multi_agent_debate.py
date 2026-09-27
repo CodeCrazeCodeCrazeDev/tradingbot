@@ -145,6 +145,7 @@ class AgentArgument:
     predictions: List[str] = field(default_factory=list)
     counter_evidence: List[str] = field(default_factory=list)
     verification: Optional[str] = None
+    thought_tokens: List[str] = field(default_factory=list)
     
     def to_dict(self) -> Dict[str, Any]:
         role_val = self.agent_role.value if hasattr(self.agent_role, 'value') else str(self.agent_role)
