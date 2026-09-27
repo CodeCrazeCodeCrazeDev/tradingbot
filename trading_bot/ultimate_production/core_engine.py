@@ -364,32 +364,38 @@ class UltimateProductionEngine:
         """Initialize all trading components"""
         logger.info("Initializing trading components...")
         
+        # Initialize each component independently
         try:
-            # Initialize each component
             _ = self.strategy_ensemble
             logger.info("Strategy ensemble initialized")
         except Exception as e:
             logger.warning(f"Strategy ensemble initialization warning: {e}")
+
+        try:
             _ = self.ml_engine
             logger.info("ML prediction engine initialized")
         except Exception as e:
             logger.warning(f"ML engine initialization warning: {e}")
-        
+
+        try:
             _ = self.risk_fortress
             logger.info("Risk fortress initialized")
         except Exception as e:
             logger.warning(f"Risk fortress initialization warning: {e}")
-        
+
+        try:
             _ = self.smart_executor
             logger.info("Smart executor initialized")
         except Exception as e:
             logger.warning(f"Smart executor initialization warning: {e}")
-        
+
+        try:
             _ = self.live_monitor
             logger.info("Live monitor initialized")
         except Exception as e:
             logger.warning(f"Live monitor initialization warning: {e}")
-        
+
+        try:
             _ = self.self_learner
             logger.info("Self learner initialized")
         except Exception as e:
@@ -760,7 +766,9 @@ class UltimateProductionEngine:
             all_signals.extend(strategy_signals)
         except Exception as e:
             logger.warning(f"Strategy ensemble error: {e}")
+
         # 2. ML prediction signals
+        try:
             ml_signals = await self.ml_engine.generate_signals(
                 market_data, market_condition
             )
