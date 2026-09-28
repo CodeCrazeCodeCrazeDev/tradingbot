@@ -57,7 +57,10 @@ try:
         AlphaAlgo2, create_alphaalgo, SystemCapability, OptimizationStrategy,
     )
 except ImportError:
-    pass
+    AlphaAlgo2 = None
+    create_alphaalgo = None
+    SystemCapability = None
+    OptimizationStrategy = None
 
 try:
     from .alphaalgo_2_0_system import Alphaalgo20System
@@ -87,9 +90,11 @@ except ImportError:
 
 __all__ = [
     'AdaptiveIntegrationSystem',
+    'AlphaAlgo2',
     'AlphaBrain',
     'Alphaalgo20System',
     'BrainDecision',
+    'DecisionState',
     'BrainTrader',
     'CentralController',
     'EliteBrain',
@@ -98,7 +103,9 @@ __all__ = [
     'EliteBrainSignal',
     'MT5BrainTrader',
     'MetaLearningSystem',
+    'OptimizationStrategy',
     'SystemCapability',
+    'create_alphaalgo',
     # Analytical Tiers 1-9
     'Tier1TechnicalAnalysis',
     'Tier2OrderFlowIntelligence',

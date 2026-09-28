@@ -23,10 +23,11 @@ class TestForecasting:
         assert output.shape == (32, 24, 1)
     
     def test_deepar_model(self):
+        import torch
         config = DeepARConfig(context_length=168, prediction_length=24)
         model = DeepARModel(config)
         past_target = np.random.randn(32, 168).astype(np.float32)
-        
+
         params = model(torch.FloatTensor(past_target))
         assert len(params) == 2
 
@@ -50,7 +51,7 @@ class TestExplainability:
 
 class TestMonitoring:
     def test_prometheus_exporter(self):
-        exporter = PrometheusExporter(port=8001)
+        exporter = PrometheusExporter(port=8001, start_server=False)
         exporter.record_trade('EURUSD', 'BUY', 'closed', 10.5)
         exporter.update_portfolio(100000, 0.02)
         assert exporter.enabled or not exporter.enabled

@@ -13,12 +13,13 @@ from .adapter_bridge import FoundationBrokerAdapter
 # also defined an MT5BrokerAdapter. The canonical adapter lives in
 # broker_adapter.py and lazy-imports MetaTrader5 inside connect().
 try:
-    from .broker_adapter import OrderSide, MT5BrokerAdapter
+    from .broker_adapter import OrderSide
 except ImportError:
-    try:
-        from .broker_adapter import OrderSide
-    except ImportError:
-        pass
+    pass
+try:
+    from .broker_adapter import MT5BrokerAdapter
+except ImportError:
+    pass
 
 # connection_manager
 try:
@@ -46,6 +47,15 @@ __all__ = [
     'UnifiedBrokerManager',
     'OrderSide',
     'MT5BrokerAdapter',
+    'BrokerAdapter',
+    'MockBrokerAdapter',
+    'AlpacaBrokerAdapter',
+    'BinanceBrokerAdapter',
+    'OrderStatus',
+    'OrderType',
+    'Position',
+    'OrderResponse',
+    'get_broker_adapter',
 ]
 
 class BrokersOrchestrator:

@@ -24,7 +24,15 @@ class CodebaseAnalyzer:
         path = Path(file_path)
         if not path.is_absolute():
             path = self.root_path / path
-        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        path = path.resolve()
+        root = self.root_path.resolve()
+        try:
+            path.relative_to(root)
+        except ValueError as exc:
+            raise ValueError(f"Path {path} is outside repository root {root}") from exc
+        if not path.is_file():
+            raise FileNotFoundError(path)
+        lines = path.read_text(encoding="utf-8", errors="strict").splitlines()
         blank = sum(1 for l in lines if not l.strip())
         comments = sum(1 for l in lines if l.strip().startswith("#"))
         return FileAnalysis(

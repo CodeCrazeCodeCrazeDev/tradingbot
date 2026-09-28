@@ -720,14 +720,25 @@ def pytest_runtest_makereport(item, call):
 @pytest.fixture(autouse=True)
 def mock_wait_for_decision(monkeypatch, request):
     """Bypass wait_for_decision timeouts in unit tests by immediately approving."""
-    # Target only uca_v5 or event_bus_consolidation tests to avoid breaking
-    # integration tests. Match the uca_v5 *directory* (tests/uca_v5/...) — a
-    # bare substring also matches tests/integration/test_uca_v5_one_brain_pipeline.py,
-    # whose e2e contract requires the real wait_for_decision.
-    test_path = str(request.path) if hasattr(request, "path") else ""
-    if "integration" in test_path or "chaos" in test_path:
+    # Positive match on exact scope — the uca_v5 directory, the
+    # event_bus_consolidation directory, root-level uca_v5_* files, and
+    # test_csc_v5.py. Anything else (integration, chaos, or tests that merely
+    # *mention* uca_v5 in the filename like
+    # tests/integration/test_uca_v5_one_brain_pipeline.py) runs the real
+    # wait_for_decision so governance rejection paths stay tested.
+    path = Path(str(request.path)) if hasattr(request, "path") else None
+    if path is None:
         return
-    if "uca_v5" in test_path or "event_bus_consolidation" in test_path or "test_csc_v5" in test_path:
+    parts = path.parts
+    stem = path.stem
+    if "integration" in parts or "chaos" in parts or "chaos" in stem:
+        return
+    in_scope = (
+        path.parent.name in ("uca_v5", "event_bus_consolidation")
+        or stem == "test_csc_v5"
+        or stem.startswith("uca_v5")
+    )
+    if in_scope:
         from trading_bot.core.unified_event_bus import LogAction, ActionStatus
 
         async def mock_wait(self, timeout=10.0):

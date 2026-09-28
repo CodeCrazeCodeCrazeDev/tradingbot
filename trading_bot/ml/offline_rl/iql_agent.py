@@ -399,7 +399,16 @@ class IQLAgent:
         if self.use_d3rlpy:
             self.model.load_model(str(load_dir / "model.pt"))
         else:
-            checkpoint = torch.load(load_dir / "model.pt")
+            try:
+                checkpoint = torch.load(load_dir / "model.pt", weights_only=True)
+            except TypeError:
+                # Older torch without weights_only: checkpoint pickle can
+                # execute arbitrary code — only load files you produced.
+                logger.warning(
+                    "torch.load without weights_only support; loading "
+                    "untrusted checkpoint is a code-execution risk"
+                )
+                checkpoint = torch.load(load_dir / "model.pt")
             
             # Update config
             config = checkpoint['config']
