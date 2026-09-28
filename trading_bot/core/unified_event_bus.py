@@ -105,10 +105,6 @@ class UnifiedEvent:
         return self.event_type
 
     @property
-    def action_id(self) -> str:
-        return self.event_id
-
-    @property
     def agent_id(self) -> str:
         return self.source
 
@@ -135,13 +131,14 @@ class UnifiedEvent:
 
 class UnifiedDecisionBus:
     _instance: Optional['UnifiedDecisionBus'] = None
+    _lock = threading.Lock()
 
-    @classmethod
-    def reset(cls):
-        """Reset the global decision_bus instance or clear configuration state."""
-        global decision_bus
-        decision_bus = UnifiedDecisionBus()
-        cls._instance = decision_bus
+    def __new__(cls, *args, **kwargs):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super(UnifiedDecisionBus, cls).__new__(cls)
+                cls._instance._initialized = False
+        return cls._instance
 
     def __init__(self, config: Optional[Dict] = None):
         if getattr(self, "_initialized", False):
@@ -346,17 +343,18 @@ class UnifiedDecisionBus:
         Frees singleton instances and cancels outstanding background workers gracefully.
         """
         global decision_bus
-        if decision_bus is not None:
-            # We schedule safe asynchronous stopping of loop tasks
-            try:
-                loop = asyncio.get_running_loop()
-                if loop.is_running():
-                    loop.create_task(decision_bus.stop())
-            except RuntimeError:
-                pass
-            decision_bus._log.clear()
+        with cls._lock:
+            if cls._instance is not None:
+                bus = cls._instance
+                bus._running = False
+                if bus._processor_task:
+                    bus._processor_task.cancel()
+                    bus._processor_task = None
+                bus._log.clear()
+                bus._voters.clear()
+                bus._subscribers.clear()
+                cls._instance = None
 
-        # Instantiate clean backbone
         decision_bus = UnifiedDecisionBus()
         logger.info("UnifiedDecisionBus successfully reset with complete task cancellation.")
 
