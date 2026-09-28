@@ -181,8 +181,12 @@ class CognitiveSystemController:
 
     @property
     def variational_free_energy(self) -> float:
-        """Globally managed objective score."""
-        return 0.15
+        """Globally managed objective score based on continuous state surprise and epistemic uncertainty."""
+        if not self.vfe_history:
+            return 0.15
+        accuracy_term = float(np.mean(self.vfe_history[-5:]))
+        complexity_term = float(np.std(self.vfe_history[-5:])) if len(self.vfe_history) >= 2 else 0.05
+        return round(accuracy_term + complexity_term, 4)
 
     @property
     def discrete_embeddings(self) -> List[str]:
