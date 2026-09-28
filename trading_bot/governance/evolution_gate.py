@@ -52,7 +52,7 @@ def parse_metrics(raw: Any) -> EvolutionMetrics:
             return raw
         return EvolutionMetrics(reward=0.5, calibration=0.9, robustness=0.8, latency=10.0, safety_score=1.0)
 
-    reward = raw.get("reward", raw.get("perf", raw.get("sharpe_ratio", 0.5)))
+    reward = raw.get("reward", raw.get("perf", raw.get("sharpe_ratio", raw.get("score", raw.get("val", 0.5)))))
     ece = raw.get("ece", 1.0 - raw.get("calibration", 0.95))
     calibration = raw.get("calibration", 1.0 - ece)
     robustness = raw.get("robustness", 0.8)

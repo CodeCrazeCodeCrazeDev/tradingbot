@@ -56,7 +56,7 @@ class SAGEGraphMemory:
     SAGE Substrate: A dynamic, self-evolving graph memory (arXiv:2605.12061).
     Supports incremental construction, context-dependent triplet validity, and autonomous weight evolution.
     """
-    def __init__(self, storage_path: str):
+    def __init__(self, storage_path: str = "alphaalgo_data/hms/sage_graph.graphml"):
         self.storage_path = storage_path
         self.graph = self._load_graph()
         self.evolution_rounds = 0
@@ -85,7 +85,9 @@ class SAGEGraphMemory:
         return nx.MultiDiGraph()
 
     def save(self):
-        os.makedirs(os.path.dirname(self.storage_path), exist_ok=True)
+        dirname = os.path.dirname(self.storage_path)
+        if dirname:
+            os.makedirs(dirname, exist_ok=True)
         try:
             temp_graph = self.graph.copy()
             for u, v, k, d in list(temp_graph.edges(keys=True, data=True)):
@@ -152,6 +154,18 @@ class SAGEGraphMemory:
                 logger.info(f"SAGE: Pruning low-utility edge ({u}, {v}, {k})")
                 self.graph.remove_edge(u, v, k)
             self.save()
+
+    def evolve(self, feedback: List[Dict[str, Any]]):
+        """SAGE: Batch evolution wrapper for edge weight refinement (arXiv:2605.12061)."""
+        for item in feedback:
+            action = item.get("action")
+            source = item.get("source")
+            target = item.get("target")
+            delta = item.get("delta", 0.2 if action == "STRENGTHEN" else -0.2 if action == "WEAKEN" else 0.0)
+            if source and target:
+                matching_edges = [(u, v, k) for u, v, k in list(self.graph.edges(keys=True)) if u == source and v == target]
+                for edge_key in matching_edges:
+                    self.evolve_weights(edge_key, delta)
 
     def compact_graph(self, max_nodes: int = 5000, min_confidence: float = 0.3):
         """Prunes old or low-confidence nodes/edges to prevent memory bloat."""

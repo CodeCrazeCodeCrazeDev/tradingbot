@@ -1,16 +1,23 @@
 import asyncio
+import os
 import numpy as np
 import networkx as nx
 from trading_bot.core.csc.controller import CognitiveSystemController
 from trading_bot.core.hms.memory import HierarchicalMemorySystem, SAGEGraphMemory
 from trading_bot.governance.evolution_gate import EvolutionGate
 
+import pytest
+
+@pytest.mark.asyncio
 async def test_scientific_correctness():
     print("Starting Scientific Correctness Verification...")
 
     # 1. Verify SAGE Graph Consistency
     print("\n[1/3] Verifying SAGE Graph Consistency...")
-    sage = SAGEGraphMemory()
+    test_graph_file = "temp_sage_test_correctness.graphml"
+    if os.path.exists(test_graph_file):
+        os.remove(test_graph_file)
+    sage = SAGEGraphMemory(storage_path=test_graph_file)
     sage.add_evidence(("A", "CAUSES", "B"), {"regime": "bull"}, {"confidence": 0.9})
     sage.add_evidence(("B", "CORRELATES", "C"), {"regime": "bull"}, {"confidence": 0.8})
 
