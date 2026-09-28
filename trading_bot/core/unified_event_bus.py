@@ -71,6 +71,18 @@ from .governance.determinism import determinism
 
 logger = logging.getLogger(__name__)
 
+# Action types that authorize capital movement. These are fail-closed: a
+# shield voter must not merely fail to veto — it must return an explicit
+# affirmative decision inside the voter timeout.
+SHIELDED_ACTION_TYPES = {"TRADE_PROPOSAL", "TRADE_EXECUTION", "ORDER", "EXECUTE"}
+_AFFIRMATIVE_DECISIONS = {"APPROVE", "APPROVED", "ALLOW", "PASS"}
+_VETO_DECISIONS = {"REJECT", "VETO", "FAIL", "BLOCKED"}
+
+
+def _is_shield_voter(voter_id: str) -> bool:
+    return voter_id in ("ImmutableShield", "shield") or "shield" in voter_id.lower()
+
+
 class EventPriority(Enum):
     LOW = 0
     NORMAL = 1
@@ -396,9 +408,8 @@ class UnifiedDecisionBus:
                 # authorizes capital movement is vetoed rather than silently
                 # auto-approved. Internal/non-execution actions (telemetry,
                 # test, diagnostics) are not shield-gated.
-                shielded_types = {"TRADE_PROPOSAL", "TRADE_EXECUTION", "ORDER", "EXECUTE"}
-                requires_shield = getattr(action, "action_type", "") in shielded_types
-                has_shield = any(k in ["ImmutableShield", "shield"] or "shield" in k.lower() for k in voter_ids)
+                requires_shield = getattr(action, "action_type", "") in SHIELDED_ACTION_TYPES
+                has_shield = any(_is_shield_voter(k) for k in voter_ids)
                 if requires_shield and not has_shield:
                     logger.warning(f"LogAct: No shield voter registered. VETOING action {action.action_id} (fail-closed).")
                     action.voter_reports["__missing_shield__"] = {
@@ -486,24 +497,62 @@ class UnifiedDecisionBus:
         """
         UCA V6 Consensus Logic.
         Hardened: Case-insensitive and supports multiple result formats.
+
+        For shielded (capital-moving) action types the shield voter must return
+        an explicit affirmative decision. An ERROR/FAIL/timeout report, an
+        abstention, or a missing shield report vetoes the action — absence of a
+        veto is not approval when safety evidence is unavailable.
         """
+        requires_shield = getattr(action, "action_type", "") in SHIELDED_ACTION_TYPES
+        shield_affirmed = not requires_shield
         for vid, report in action.voter_reports.items():
+            decision = ""
             if isinstance(report, dict):
                 decision = str(report.get("decision", "FAIL")).upper()
-                if decision in ["REJECT", "VETO", "FAIL", "BLOCKED"]:
-                    logger.warning(f"LogAct: Action {action.action_id} VETOED by {vid}: {report.get('reason', 'No reason')}")
-                    return False
             elif isinstance(report, str):
-                if report.upper() in ["REJECT", "VETO", "FAIL", "BLOCKED"]:
+                decision = report.upper()
+            if decision in _VETO_DECISIONS:
+                logger.warning(f"LogAct: Action {action.action_id} VETOED by {vid}: "
+                               f"{report.get('reason', 'No reason') if isinstance(report, dict) else report}")
+                return False
+            if requires_shield and _is_shield_voter(str(vid)):
+                if decision in _AFFIRMATIVE_DECISIONS:
+                    shield_affirmed = True
+                else:
+                    logger.warning(
+                        f"LogAct: Action {action.action_id} VETOED — shield voter "
+                        f"'{vid}' returned non-affirmative '{decision or 'no decision'}' "
+                        f"(fail-closed)."
+                    )
                     return False
+        if requires_shield and not shield_affirmed:
+            logger.warning(f"LogAct: Action {action.action_id} VETOED — no affirmative shield report")
+            return False
         return True
 
     async def _dispatch(self, action: LogAction):
         key = getattr(action, "action_type", None) or getattr(action, "event_type", "")
         handlers = self._subscribers.get(key, []) + self._subscribers.get("*", [])
         tasks = [h["handler"](action) for h in handlers]
-        if tasks:
-            await asyncio.gather(*tasks, return_exceptions=True)
+        if not tasks:
+            return
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        failures = []
+        for h, res in zip(handlers, results):
+            if isinstance(res, Exception):
+                failures.append(f"{h['id']}: {res!r}")
+            elif isinstance(res, dict) and str(res.get("status", "")).lower() in ("rejected", "failed"):
+                failures.append(f"{h['id']}: {res.get('status')} ({res.get('reason', '')})")
+        if failures:
+            logger.error(f"LogAct: subscriber failures for {action.action_id}: {failures}")
+            # A shielded action whose handler failed was never carried out —
+            # mark FAILED so the audit trail and waiters see a terminal
+            # failure, not an APPROVED that only looks executed. An action
+            # already flipped to EXECUTED by the execution bridge stays EXECUTED:
+            # the fill happened; the secondary handler failure is logged.
+            if (getattr(action, "action_type", "") in SHIELDED_ACTION_TYPES
+                    and action.status is not ActionStatus.EXECUTED):
+                action.status = ActionStatus.FAILED
 
     def get_action_by_id(self, action_id: str) -> Optional[LogAction]:
         """Look up a processed action in the shared audit log by id."""

@@ -294,13 +294,22 @@ class UnifiedTradingBot:
         return obs
 
     def trading_allowed(self) -> bool:
+        """Human oversight gate for new decisions — fail closed.
+
+        If the human layer (manual pause / emergency stop) is not wired or its
+        check throws, deny the cycle rather than silently dropping the override
+        boundary. Protective exits/cancels are routed through the manual
+        override service and are exercised separately, not via this entry gate.
+        """
         human = self.layers.get("human")
         if human is None:
-            return True
+            logger.warning("Human override layer unavailable — denying new entries (fail-closed)")
+            return False
         try:
             return bool(human["is_trading_allowed"]())
         except Exception:
-            return True
+            logger.warning("Human override check failed — denying new entries (fail-closed)", exc_info=True)
+            return False
 
     def register_strategy_adapter(self, strategy: Any, *, metadata: Optional[Dict[str, Any]] = None) -> Any:
         """Register a signal-only strategy capability in the canonical graph."""
