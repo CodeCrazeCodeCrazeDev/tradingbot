@@ -1,5 +1,10 @@
 # 🚀 START HERE - Autonomous Superintelligence
 
+> **Status note (see `MEGAPLAN.md`):** the verified, maintained entry point is
+> `python main.py --mode paper --symbol EURUSD --cycles 5`. The launchers
+> below are legacy convenience scripts; Option 4 references a file that no
+> longer exists. Nothing in this document implies live-trading readiness.
+
 ## ✨ What You Have
 
 Your trading bot now has **autonomous superintelligence** - a self-managing, self-improving AI system that operates globally and discovers new methods.
@@ -27,12 +32,10 @@ RUN_AUTONOMOUS_SUPERINTELLIGENCE.bat
 **Runs**: Autonomous superintelligence only  
 **Best for**: Testing autonomous capabilities
 
-### Option 4: Launch Full System
-```bash
-RUN_FULL_AUTONOMOUS_SYSTEM.bat
-```
-**Runs**: Trading bot + Superintelligence  
-**Best for**: Production use
+### Option 4: Launch Full System — BROKEN
+`RUN_FULL_AUTONOMOUS_SYSTEM.bat` invokes `run_full_autonomous_system.py`,
+which does not exist in the repository. Do not use until a replacement
+launcher is provided (tracked in `MEGAPLAN.md`).
 
 ## 📊 What Happens
 

@@ -25,7 +25,6 @@ COPY trading_bot/ ./trading_bot/
 COPY config/ ./config/
 COPY deploy/ ./deploy/
 COPY main.py .
-COPY run_unified_bot.py .
 
 # Create required directories
 RUN mkdir -p logs data state models reports
@@ -43,5 +42,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 # Expose ports
 EXPOSE 8080 8081
 
-# Default command - run unified system in paper mode
-CMD ["python", "run_unified_bot.py", "--mode", "paper"]
+# Default command - canonical paper-mode entry point.
+# main.py replays market_data.db by default: provision it via a volume
+# (e.g. -v ./market_data.db:/app/market_data.db:ro) or pass --synthetic
+# for an offline smoke run. Live mode is intentionally not wired here.
+CMD ["python", "main.py", "--mode", "paper", "--symbol", "EURUSD"]

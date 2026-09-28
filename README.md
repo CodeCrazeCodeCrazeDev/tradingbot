@@ -1,23 +1,21 @@
 # Advanced Algorithmic Trading Bot for MetaTrader 5
 
-## 🤖 NEW: Thinking Bot - Complete Trading System
+## Canonical Entry Point
 
-**The Thinking Bot is now available!** A fully autonomous trading system that thinks, validates, executes, monitors, and learns.
+The verified launcher is `main.py` (paper/analysis only — live mode is not
+wired and all "production ready" reports are historical claims, not current
+status; see `MEGAPLAN.md`):
 
-### Quick Start
 ```bash
-# Validate system
-python validate_thinking_bot.py
+# Paper trading on the bundled EURUSD replay (market_data.db)
+python main.py --mode paper --symbol EURUSD --cycles 5
 
-# Run the bot
-python thinking_bot.py
-# or
-RUN_THINKING_BOT.bat
+# Offline smoke run on generated synthetic data
+python main.py --mode paper --symbol EURUSD --cycles 5 --synthetic
+
+# Decision cycle without execution (shield vetoes all orders)
+python main.py --mode analysis --symbol EURUSD --cycles 5
 ```
-
-📚 **Documentation:** See `THINKING_BOT_GUIDE.md` for complete details  
-📋 **Quick Reference:** See `QUICK_REFERENCE.md` for commands and tips  
-✅ **Implementation:** See `THINKING_BOT_COMPLETE.md` for full feature list
 
 ---
 
@@ -140,32 +138,25 @@ trading bot/             # Workspace root
    python -m venv .venv && source .venv/bin/activate  # Windows: .venv\Scripts\activate
    pip install -r requirements.txt
    ```
-2. **Configure MT5 credentials**
-   Edit `trading_bot/config/config.yaml` and fill in your account **login**, **password**, and **server**. Ensure the MT5 terminal is installed and logged in.
-3. **Run the bot**
-   *Smoke-test only (connectivity):*
+2. **Run the bot** (paper mode — no broker credentials are needed; the
+   canonical path simulates fills locally)
+   *Replay of bundled EURUSD data:*
    ```bash
-   python main.py --mode smoke --symbol EURUSD --timeframe M15 --bars 100
+   python main.py --mode paper --symbol EURUSD --cycles 20
    ```
-   *Paper-trading (simulated orders):*
+   *Offline synthetic smoke run:*
    ```bash
-   python main.py --mode paper --symbol EURUSD --timeframe M15 --bars 300
+   python main.py --mode paper --symbol EURUSD --cycles 20 --synthetic
    ```
-   *Paper-trading with ML strategy and Smart Order Router:*
+   *Analysis-only (decisions evaluated, shield vetoes execution):*
    ```bash
-   python main.py --mode paper --symbol EURUSD --timeframe M15 --bars 300 --use-ml --execution-algo smart
+   python main.py --mode analysis --symbol EURUSD --cycles 20
    ```
-   *Paper-trading with emotional tracking:*
+   See `python main.py --help` for `--cycles`, `--interval`, `--seed`,
+   `--base-price`, `--max-exposure`, `--max-quantity`, `--max-spread-bps`.
+3. **Run unit tests**
    ```bash
-   python main.py --mode paper --symbol EURUSD --timeframe M15 --bars 300 --track-emotions
-   ```
-   *Full-featured trading with all capabilities:*
-   ```bash
-   python main.py --mode paper --symbol EURUSD --timeframe M15 --bars 300 --use-ml --execution-algo smart --track-emotions --use-sentiment
-   ```
-4. **Run unit tests**
-   ```bash
-   pytest -q trading_bot/tests
+   python -m pytest tests/rsi -q --no-cov -p no:cacheprovider
    ```
 
 ### Survival System Deployment

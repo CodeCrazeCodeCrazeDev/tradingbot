@@ -7,10 +7,8 @@ services:
     container_name: elite-trading-bot
     restart: unless-stopped
     environment:
-      - MT5_LOGIN=${MT5_LOGIN}
-      - MT5_PASSWORD=${MT5_PASSWORD}
-      - MT5_INVESTOR=${MT5_INVESTOR}
-      - MT5_SERVER=${MT5_SERVER}
+      # Broker credentials are intentionally not injected into the paper
+      # worker — the canonical path simulates fills locally (MP-040).
       - EMAIL_ADDRESS=${EMAIL_ADDRESS}
       - SMTP_SERVER=smtp-mail.outlook.com
       - SMTP_PORT=587
@@ -21,8 +19,8 @@ services:
       - PAPER_TRADING=true
     volumes:
       - ./logs:/app/logs
-    ports:
-      - "8080:8080"
+      # EURUSD replay source for main.py (untracked file; provision locally)
+      - ./market_data.db:/app/market_data.db:ro
     healthcheck:
       test: ["CMD", "python", "-c", "import os; import psutil; exit(0 if 'python' in ' '.join([p.name() for p in psutil.process_iter()]) else 1)"]
       interval: 30s
@@ -35,16 +33,13 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # Test service for running comprehensive tests
+  # Smoke service: short end-to-end run of the canonical entry point on
+  # synthetic data (the image does not ship the test suite).
   test:
     build: .
     container_name: elite-trading-bot-test
     environment:
-      - MT5_LOGIN=${MT5_LOGIN}
-      - MT5_PASSWORD=${MT5_PASSWORD}
-      - MT5_INVESTOR=${MT5_INVESTOR}
-      - MT5_SERVER=${MT5_SERVER}
-      - EMAIL_ADDRESS=${EMAIL_ADDRESS}
+      - PAPER_TRADING=true
     volumes:
       - ./logs:/app/logs
-    command: python test_bot_comprehensive.py
+    command: python main.py --mode paper --synthetic --cycles 3 --interval 0.1
