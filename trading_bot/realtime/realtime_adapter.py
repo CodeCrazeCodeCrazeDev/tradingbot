@@ -16,6 +16,7 @@ Author: AlphaAlgo Trading System
 Version: 3.0.0
 """
 
+import warnings
 import json
 import asyncio
 import logging
@@ -35,6 +36,7 @@ class RealTimeAdapter(ABC):
     """
     
     def __init__(self, name: str, config: Dict[str, Any] = None):
+        warnings.warn("RealTimeAdapter is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.name = name
         self.config = config or {}
         self._running = False

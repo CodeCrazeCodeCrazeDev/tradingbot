@@ -3,6 +3,7 @@ Trade Executor Module - Compatibility Wrapper
 Provides unified interface for trade execution
 """
 
+import warnings
 import logging
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
@@ -55,6 +56,7 @@ class TradeExecutor:
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("TradeExecutor is a legacy/quarantined component: parallel order execution outside CanonicalExecutionService. It carries no production authority.", DeprecationWarning, stacklevel=2)
         """
         Initialize trade executor
         

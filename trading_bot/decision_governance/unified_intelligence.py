@@ -43,6 +43,7 @@ Architecture:
 └─────────────────────────────────────────────────────────────────────┘
 """
 
+import warnings
 from typing import Dict, List, Optional, Any, Tuple, Callable, Set
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
@@ -200,6 +201,7 @@ class UnifiedFinancialIntelligenceSystem:
         storage_path: Optional[str] = None,
         config: Optional[Dict[str, Any]] = None
     ):
+        warnings.warn("UnifiedFinancialIntelligenceSystem is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.trading_system = trading_system
         self.config = config or {}
         self.storage_path = storage_path or "financial_intelligence_system.json"
@@ -293,12 +295,14 @@ class UnifiedFinancialIntelligenceSystem:
         await self.capability_discovery.start_continuous_monitoring()
         await self.self_inspection.start_continuous_inspection()
         
-        # Start main orchestration loop
-        self._main_loop_task = asyncio.create_task(self._main_orchestration_loop())
-        
-        # Start intelligence compounding tracker
-        self._intelligence_compounding_task = asyncio.create_task(
-            self._intelligence_compounding_loop()
+        # Orchestration/compounding workers disabled: this is a parallel
+        # intelligence authority; the canonical CognitiveSystemController owns
+        # production coordination.
+        self._main_loop_task = None
+        self._intelligence_compounding_task = None
+        logger.warning(
+            "Unified intelligence workers disabled; canonical CSC owns "
+            "strategic coordination"
         )
         
         logger.info("✓ Unified Financial Intelligence System operational")

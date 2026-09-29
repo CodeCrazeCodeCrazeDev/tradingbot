@@ -11,6 +11,7 @@ A self-evolving system that:
 6. Adapts to changing market conditions
 """
 
+import warnings
 import asyncio
 import logging
 import json
@@ -119,6 +120,7 @@ class SelfEvolvingCore:
     """
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("SelfEvolvingCore is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Learning configuration

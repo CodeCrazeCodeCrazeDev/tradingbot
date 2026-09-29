@@ -20,6 +20,7 @@ all trading parameters in real-time.
 """
 
 from __future__ import annotations
+import warnings
 
 import asyncio
 import json
@@ -113,6 +114,7 @@ class KnowledgeActionBridge:
 
     def __init__(self, db_path: Optional[str] = None):
         # Knowledge sources (set externally)
+        warnings.warn("KnowledgeActionBridge is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self._knowledge_ledger = None
         self._learning_engine = None
         self._discipline_engine = None

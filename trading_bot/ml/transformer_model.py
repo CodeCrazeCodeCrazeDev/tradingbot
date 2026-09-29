@@ -243,16 +243,22 @@ class TransformerPredictor:
     
     def save_model(self, path: str):
         """Save model weights."""
+        parent = os.path.dirname(path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
         torch.save({
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
             'config': self.config
         }, path)
         logger.info(f"Model saved to {path}")
-    
+
     def load_model(self, path: str):
         """Load model weights."""
-        checkpoint = torch.load(path, map_location=self.device)
+        # weights_only=True: restrict unpickling to tensors/primitives —
+        # checkpoints are opaque files and arbitrary pickled payloads are a
+        # code-execution vector if the file is ever untrusted/corrupted.
+        checkpoint = torch.load(path, map_location=self.device, weights_only=True)
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.is_trained = True

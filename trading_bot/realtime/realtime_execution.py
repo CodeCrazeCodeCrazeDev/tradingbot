@@ -18,6 +18,7 @@ Author: AlphaAlgo Trading System
 Version: 3.0.0
 """
 
+import warnings
 import asyncio
 import logging
 import time
@@ -331,6 +332,7 @@ class RealTimeExecution:
     """
     
     def __init__(self, config: Dict[str, Any] = None):
+        warnings.warn("RealTimeExecution is a legacy/quarantined component: capital path outside the canonical execution boundary. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Components

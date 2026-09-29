@@ -6,6 +6,7 @@ Auto-generated service wrappers for all TIER 4 modules.
 Each service follows the BaseService pattern with event-driven architecture.
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime
@@ -87,6 +88,7 @@ class EternalEvolutionService(BaseService):
     DEPENDENCIES = ["ml"]
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("EternalEvolutionService is a legacy/quarantined component: dynamic module/class loading bypasses static convergence control. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         self._task = None
         self._orchestrator = None

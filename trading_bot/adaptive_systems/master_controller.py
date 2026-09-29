@@ -169,15 +169,16 @@ class AdaptiveTradingMaster:
         logger.info("Adaptive trading master system stopped")
     
     async def _start_learning_processes(self):
-        """Start background learning and optimization processes."""
-        # Start continuous learning in background
-        asyncio.create_task(self._continuous_learning_loop())
-        asyncio.create_task(self._meta_learning_loop())
-        asyncio.create_task(self._system_optimization_loop())
-        
-        # Start self-improvement scheduling if enabled
-        if self.enable_self_improvement and self.self_improvement_engine:
-            asyncio.create_task(self._self_improvement_scheduling_loop())
+        """Disabled: legacy background learning workers carry no authority.
+
+        Parallel production loops are owned by UnifiedTradingBot via
+        ModularMonolithRuntime. The coroutines below remain for read-only
+        introspection but are never scheduled here.
+        """
+        logger.warning(
+            "AdaptiveTradingMaster background learning workers are disabled; "
+            "canonical runtime owns production loops"
+        )
     
     async def _continuous_learning_loop(self):
         """Continuous learning background process."""
@@ -665,33 +666,17 @@ class AdaptiveTradingMaster:
         return win_rate < 0.5 or random.random() < 0.1  # 10% chance for random improvement
     
     async def _schedule_improvement_tasks(self):
-        """Schedule improvement tasks based on system performance."""
-        if not self.self_improvement_engine:
-            return
-        try:
-            
-            # Identify components that need improvement
-            components_to_improve = self._identify_components_for_improvement()
-            
-            for component in components_to_improve:
-                # Create improvement task
-                task_id = self.self_improvement_engine.create_task(
-                    target_file=component['file_path'],
-                    purpose=component['improvement_purpose'],
-                    knowledge_query=component['knowledge_query'],
-                    knowledge_tags=component['knowledge_tags'],
-                    priority=component['priority'],
-                    metadata={
-                        "modification_type": "update",
-                        "component": component['name'],
-                        "performance_metrics": component['metrics']
-                    }
-                )
-                
-                logger.info(f"Scheduled improvement task {task_id} for {component['name']}")
-                
-        except Exception as e:
-            logger.error(f"Error scheduling improvement tasks: {e}")
+        """Disabled: legacy self-improvement has no improvement authority.
+
+        Improvement promotion is owned exclusively by
+        trading_bot/recursive_self_improvement/ under human approval.
+        """
+        raise PermissionError(
+            "AdaptiveTradingMaster cannot schedule self-modification tasks; "
+            "use HumanGuidedRecursiveImprovementLoop"
+        )
+
+
     
     def _identify_components_for_improvement(self) -> List[Dict[str, Any]]:
         """Identify components that need improvement based on performance."""

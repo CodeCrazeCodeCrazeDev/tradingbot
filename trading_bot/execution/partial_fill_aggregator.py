@@ -6,6 +6,7 @@ Tracks incomplete fills and aggregates partial executions to maintain
 accurate position tracking. Critical for proper order management.
 """
 
+import warnings
 import time
 from typing import Any, Callable, Dict, List, Optional
 from dataclasses import dataclass, field
@@ -127,6 +128,7 @@ class PartialFillAggregator:
             auto_cancel_on_timeout: Cancel orders that timeout
             cleanup_interval_seconds: How often to clean up old orders
         """
+        warnings.warn("PartialFillAggregator is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.default_timeout = default_timeout_seconds
         self.auto_cancel_on_timeout = auto_cancel_on_timeout
         self.cleanup_interval = cleanup_interval_seconds

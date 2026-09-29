@@ -3,6 +3,7 @@ Automatic Strategy Optimizer
 Uses genetic algorithms, Bayesian optimization, and grid search
 """
 
+import warnings
 import logging
 import numpy as np
 from enum import Enum
@@ -290,6 +291,7 @@ class StrategyOptimizer:
                  trading_bot: Any,
                  config: Optional[Dict[str, Any]] = None):
         """Initialize strategy optimizer"""
+        warnings.warn("StrategyOptimizer is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.trading_bot = trading_bot
         self.config = config or {}
         

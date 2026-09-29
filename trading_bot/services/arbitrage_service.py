@@ -5,6 +5,7 @@ Arbitrage Service
 Wraps Arbitrage module capabilities as an event-driven service.
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime
@@ -33,6 +34,7 @@ class ArbitrageService(BaseService):
     DEPENDENCIES = ["market_data"]
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("ArbitrageService is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         self._interval: float = config.get('interval', 5.0) if config else 5.0
         self._task: Optional[asyncio.Task] = None

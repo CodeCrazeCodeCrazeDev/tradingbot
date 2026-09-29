@@ -5,6 +5,7 @@ Compliance Service
 Wraps Compliance module capabilities as an event-driven service.
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime
@@ -30,6 +31,7 @@ class ComplianceService(BaseService):
     DEPENDENCIES = ["database"]
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("ComplianceService is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         self._interval: float = config.get('interval', 30.0) if config else 30.0
         self._task: Optional[asyncio.Task] = None
@@ -38,7 +40,13 @@ class ComplianceService(BaseService):
     async def start(self) -> None:
         self._running = True
         await self._load_components()
-        self._task = asyncio.create_task(self._run_loop())
+        # Worker disabled: governance/compliance loops run inside the
+        # canonical runtime only.
+        self._task = None
+        logger.warning(
+            "ComplianceService run-loop worker disabled; canonical runtime "
+            "owns compliance scheduling"
+        )
         logger.info("ComplianceService started")
     
     async def stop(self) -> None:

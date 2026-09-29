@@ -1,4 +1,5 @@
 """
+import warnings
 from pathlib import Path
 Elite Trading Bot - Proxy Manager
 
@@ -164,6 +165,7 @@ class ProxyManager:
             min_rotation_interval: Minimum interval between rotations (seconds)
             auto_test: Whether to automatically test proxies on initialization
         """
+        warnings.warn("ProxyManager is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.proxies: List[Dict[str, Any]] = []
         self.proxy_status: Dict[str, ProxyStatus] = {}
         self.test_url = test_url

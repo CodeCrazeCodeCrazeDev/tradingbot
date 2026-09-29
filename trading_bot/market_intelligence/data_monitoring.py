@@ -1,3 +1,4 @@
+import warnings
 import logging
 from collections import defaultdict
 logger = logging.getLogger(__name__)
@@ -565,6 +566,7 @@ class MarketDataMonitor:
             max_history: Maximum number of data points to store per symbol/timeframe
             enable_debugging: Whether to enable self-debugging capabilities
         """
+        warnings.warn("MarketDataMonitor is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.mt5 = mt5_interface or MT5Interface()
         self.symbols = symbols or ["EURUSD", "GBPUSD", "USDJPY", "XAUUSD"]
         self.timeframes = timeframes or ["M1", "M5", "M15", "H1", "H4", "D1"]

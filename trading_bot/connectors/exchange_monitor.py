@@ -13,6 +13,7 @@ Author: Elite Trading Bot
 Version: 1.0.0
 """
 
+import warnings
 import asyncio
 import logging
 import time
@@ -478,6 +479,7 @@ class ExchangeHealthMonitor:
         error_threshold_1h: int = 10,
         error_threshold_24h: int = 50
     ):
+        warnings.warn("ExchangeHealthMonitor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.check_interval = check_interval_seconds
         self.error_threshold_1h = error_threshold_1h
         self.error_threshold_24h = error_threshold_24h
@@ -650,8 +652,10 @@ class ExchangeHealthMonitor:
     async def start_monitoring(self):
         """Start background health monitoring"""
         self._running = True
-        self._monitor_task = asyncio.create_task(self._monitor_loop())
-        logger.info("Exchange health monitoring started")
+        # Worker disabled: venue-health monitoring belongs to the canonical
+        # runtime's telemetry, not a detached legacy task.
+        self._monitor_task = None
+        logger.warning("Exchange health monitor worker disabled; canonical runtime owns monitoring")
     
     async def stop_monitoring(self):
         """Stop background health monitoring"""

@@ -16,6 +16,7 @@ Author: Trading Bot Team
 Date: 2025-10-22
 """
 
+import warnings
 import logging
 import asyncio
 import time
@@ -84,6 +85,7 @@ class SelfVerificationSystem:
     
     def __init__(self, config: Optional[Dict] = None):
         """Initialize self-verification system"""
+        warnings.warn("SelfVerificationSystem is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Verification components

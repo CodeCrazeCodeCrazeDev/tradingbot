@@ -10,6 +10,7 @@ Like Perplexity's retrieval-augmented generation, this:
 - Provides freshness guarantees
 """
 
+import warnings
 import logging
 import asyncio
 from abc import ABC, abstractmethod
@@ -383,6 +384,7 @@ class RetrievalPipeline:
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("RetrievalPipeline is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Initialize retrievers

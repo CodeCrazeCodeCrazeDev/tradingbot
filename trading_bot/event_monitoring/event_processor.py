@@ -1,4 +1,5 @@
 """
+import warnings
 from enum import Enum
 Elite Trading Bot - Event Processor
 
@@ -230,6 +231,7 @@ class EventProcessor:
             event_monitor: Event monitoring system
             config: Optional configuration dictionary
         """
+        warnings.warn("EventProcessor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.event_monitor = event_monitor
         self.config = config or {}
         self._init_default_config()

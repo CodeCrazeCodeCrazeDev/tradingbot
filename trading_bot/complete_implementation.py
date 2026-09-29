@@ -5,6 +5,7 @@ This module provides executable implementations for all features discussed in th
 Converts all markdown specifications into working Python code.
 """
 
+import warnings
 import asyncio
 import logging
 import json
@@ -26,6 +27,7 @@ class DrawdownLadder:
     """Graduated drawdown response system (D1/D2/D3)"""
     
     def __init__(self, survival_core, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("DrawdownLadder is a legacy/quarantined component: capital path outside the canonical execution boundary. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.survival_core = survival_core
         self.config = config or {}
         

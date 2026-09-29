@@ -15,6 +15,7 @@ This module provides:
 6. Position locking to prevent race conditions
 """
 
+import warnings
 import asyncio
 import logging
 import threading
@@ -182,6 +183,7 @@ class PositionStateManager:
             auto_correct: Whether to auto-correct discrepancies
             on_discrepancy: Callback when discrepancy detected
         """
+        warnings.warn("PositionStateManager is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.broker = broker_adapter
         self.db_path = Path(db_path)
         self.reconciliation_interval = reconciliation_interval

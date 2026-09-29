@@ -19,6 +19,7 @@ Integrates:
 - trading_bot/execution/atomic_execution.py
 """
 
+import warnings
 import asyncio
 import logging
 from abc import ABC, abstractmethod
@@ -494,6 +495,7 @@ class ExecutionLayer:
     """
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("ExecutionLayer is a legacy/quarantined component: capital path outside the canonical execution boundary. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Initialize components

@@ -9,6 +9,7 @@ Analyzes the bot's own code, performance, and behavior to:
 - Suggest optimizations
 """
 
+import warnings
 import ast
 import asyncio
 import inspect
@@ -148,6 +149,7 @@ class Introspector:
         analysis_interval: int = 3600,  # 1 hour
         report_path: str = "reports/introspection/",
     ):
+        warnings.warn("Introspector is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.project_root = Path(project_root)
         self.analysis_interval = analysis_interval
         self.report_path = Path(report_path)

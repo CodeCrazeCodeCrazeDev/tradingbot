@@ -33,6 +33,10 @@ CAPITAL_CALLS = {
     "execute_trade",
     "submit_order",
     "send_order",
+    "close_position",
+    # camelCase broker APIs (ibapi et al.)
+    "placeOrder",
+    "cancelOrder",
 }
 LOOP_CALLS = {
     "create_task",
@@ -42,12 +46,48 @@ LOOP_CALLS = {
     "multiprocessing.Process",
     "asyncio.create_task",
 }
+# Import edges the static `imports` list cannot see: runtime module loading.
+# Files using these get a `dynamic_import` tag so reviewers know reachability
+# is undercounted for them.
+# Credential/secret access markers. Tagged for review: secrets may only be
+# resolved inside declared security/broker-adapter boundaries; everywhere else
+# these calls are candidates to route through the canonical credential
+# provider.
+CREDENTIAL_IMPORTS = {
+    "getpass",
+    "keyring",
+    "trading_bot.security.credential_vault",
+    "trading_bot.security.credentials",
+}
+CREDENTIAL_CALLS = {
+    "getenv",
+    "environ.get",
+    "os.getenv",
+    "os.environ.get",
+    "get_password",
+    "decrypt",
+}
+DYNAMIC_LOADERS = {
+    "importlib.import_module",
+    "import_module",
+    "__import__",
+    "runpy.run_module",
+    "runpy.run_path",
+    "spec_from_file_location",
+    "module_from_spec",
+}
+# Directories outside trading_bot/ that still contain executable Python the
+# package scanner cannot reach. Root *.py and scripts/ are handled separately.
+EXTERNAL_SCAN_DIRS = ("scripts", "perfect_bot", "SCIENTIFIC_FOUNDATION_V5")
 # Reviewed exceptions: capital-named calls inside these paths target in-memory
 # simulators, not broker adapters (e.g. ``backtester.execute_trade(...)`` on a
 # Backtester instance in strategy_backtester.py). Verified non-live; do NOT add
 # entries without confirming the receiver is a simulator.
 SIMULATED_CAPITAL_PATHS = {
     "trading_bot/backtesting/strategy_backtester.py",
+    # In-memory paper broker: fills and close_position operate on
+    # self._positions only; no network or live broker calls.
+    "trading_bot/alphaalgo_v2/execution/brokers/paper.py",
 }
 
 # Declared execution adapters living outside the execution/|broker(s)/ trees.
@@ -58,6 +98,23 @@ EXECUTION_BOUNDARY_PATHS = {
     "trading_bot/core/execution_bridge.py",
 }
 
+# Reviewed connection-plumbing workers inside declared adapter boundaries:
+# heartbeat loops, websocket pump handlers, reconnect tasks, and ibapi
+# client.run threads are adapter internals, not independent trading
+# lifecycles. Exempt from the loop violation only — direct-capital and
+# archive rules still apply. Do NOT add entries without confirming the spawn
+# is connection plumbing, not a trading/decision loop.
+ADAPTER_WORKER_PATHS = {
+    "trading_bot/broker/binance_broker.py",
+    "trading_bot/brokers/connection_manager.py",
+    "trading_bot/brokers/live_order_router.py",
+    "trading_bot/brokers/multi_broker_adapter.py",
+    "trading_bot/brokers/real_broker_integration.py",
+    "trading_bot/connectors/binance_connector.py",
+    "trading_bot/connectors/interactive_brokers_connector.py",
+    "trading_bot/production/interactive_brokers_live.py",
+}
+
 # Modules that preserve imports while delegating to canonical services. They
 # are one-wave shims rather than authorities.
 COMPATIBILITY_FACADE_PATHS = {
@@ -65,6 +122,7 @@ COMPATIBILITY_FACADE_PATHS = {
     "trading_bot/api/__init__.py",
     "trading_bot/core/event_bus.py",
     "trading_bot/unified_main.py",
+    "trading_bot/unified_architecture/unified_trading_system.py",
 }
 
 CANONICAL_FILES = {
@@ -187,11 +245,16 @@ def scan_source(source: str, path: str) -> Dict[str, object]:
     terminal_calls = {call.rsplit(".", 1)[-1] for call in calls}
     direct_capital = bool(terminal_calls & CAPITAL_CALLS)
     starts_loop = bool(calls & LOOP_CALLS or terminal_calls & {"create_task", "run_forever", "Process", "Thread"})
+    dynamic = bool(calls & DYNAMIC_LOADERS)
     tags: List[str] = []
     if direct_capital:
         tags.append("direct_broker_access")
     if starts_loop:
         tags.append("starts_loop")
+    if dynamic:
+        tags.append("dynamic_import")
+    if imports & CREDENTIAL_IMPORTS or terminal_calls & CREDENTIAL_CALLS or calls & CREDENTIAL_CALLS:
+        tags.append("credential_access")
     if any("_archive" in item for item in imports):
         tags.append("archive_import")
     return {
@@ -286,6 +349,50 @@ def build_manifest(root: Path) -> Dict[str, object]:
                 if "." in candidate:
                     candidates.append(candidate.rsplit(".", 1)[0])
 
+    # Evidence mapping: which test files import each module. Covers both
+    # in-package test modules and the top-level tests/ tree, which the module
+    # scan cannot reach because it lives outside trading_bot/.
+    tests_map: Dict[str, Set[str]] = {path: set() for path in scans}
+
+    def _resolve_import(module_name: str) -> Optional[str]:
+        candidate = module_name
+        while candidate:
+            target = module_paths.get(candidate)
+            if target:
+                return target
+            if "." not in candidate:
+                return None
+            candidate = candidate.rsplit(".", 1)[0]
+        return None
+
+    def _record_test_imports(test_path: str, imports: Iterable[object]) -> None:
+        for imported in imports:
+            if not isinstance(imported, str):
+                continue
+            target = _resolve_import(imported)
+            if target and target != test_path and target in tests_map:
+                tests_map[target].add(test_path)
+
+    for path, scan in scans.items():
+        name = path.rsplit("/", 1)[-1]
+        if name.startswith("test_") or "/tests/" in path or "/test_" in path:
+            _record_test_imports(path, scan["imports"])
+
+    tests_root = root / "tests"
+    if tests_root.exists():
+        for directory, dirs, files in os.walk(tests_root):
+            dirs[:] = sorted(d for d in dirs if d not in EXCLUDED_DIRS)
+            for filename in sorted(files):
+                if not filename.endswith(".py"):
+                    continue
+                tpath = Path(directory) / filename
+                try:
+                    tsource = tpath.read_text(encoding="utf-8", errors="replace")
+                except (FileNotFoundError, OSError):
+                    continue
+                trel = _rel_path(tpath, root)
+                _record_test_imports(trel, scan_source(tsource, trel)["imports"])
+
     seeds = {
         "trading_bot/__init__.py",
         "trading_bot/unified_bot.py",
@@ -338,11 +445,89 @@ def build_manifest(root: Path) -> Dict[str, object]:
             functions=list(scan["functions"]),
             imports=list(scan["imports"]),
             importers=sorted(importers[path]),
+            tests=sorted(tests_map[path]),
             migration_wave=wave,
             shim_status="active_one_wave" if classification == "compatibility_facade" else "not_applicable",
             quarantine_reason=quarantine_reason,
         )
         records.append(record.to_dict())
+
+    # Authority-review status for every flagged (capital/loop) record.
+    # "canonical_authority" = sanctioned owner inside the boundary;
+    # "warned_non_authority" = source carries an explicit no-authority
+    # marker; "catalogued_non_reachable" = flagged backlog, no live path;
+    # "reachable_review_required" = flagged AND reachable non-canonical —
+    # must be zero after each wave.
+    for record in records:
+        if not (record["direct_capital_path"] or record["starts_loop"]):
+            continue
+        if record["classification"] == "canonical":
+            record["review_status"] = "canonical_authority"
+            continue
+        if record["path"] in EXECUTION_BOUNDARY_PATHS:
+            record["review_status"] = "sanctioned_boundary_adapter"
+            continue
+        if record["runtime_reachable"]:
+            record["review_status"] = "reachable_review_required"
+            continue
+        try:
+            text = (root / record["path"]).read_text(
+                encoding="utf-8", errors="replace"
+            )
+        except OSError:
+            text = ""
+        record["review_status"] = (
+            "warned_non_authority"
+            if "DeprecationWarning" in text or "QUARANTINED" in text
+            else "catalogued_non_reachable"
+        )
+
+    # Non-package executable surfaces the module scan cannot reach: root
+    # *.py launchers, scripts/, and bundled standalone packages. They are
+    # recorded separately (not as modules) and default to unreviewed/quarantine
+    # for production purposes until individually classified.
+    surfaces: List[Dict[str, object]] = []
+    surface_paths: List[Path] = [
+        p for p in sorted(root.glob("*.py"))
+        if p.name != "__init__.py"
+    ]
+    for dirname in EXTERNAL_SCAN_DIRS:
+        directory = root / dirname
+        if not directory.exists():
+            continue
+        for directory_walk, dirs, files in os.walk(directory):
+            dirs[:] = sorted(d for d in dirs if d not in EXCLUDED_DIRS)
+            for filename in sorted(files):
+                if filename.endswith(".py"):
+                    surface_paths.append(Path(directory_walk) / filename)
+    for path in sorted(set(surface_paths)):
+        relative = _rel_path(path, root)
+        try:
+            source = path.read_text(encoding="utf-8", errors="replace")
+        except (FileNotFoundError, OSError):
+            continue
+        scan = scan_source(source, relative)
+        tags = list(scan["secondary_tags"])
+        if scan["cli_entrypoint"]:
+            tags.append("cli_entrypoint")
+        surfaces.append({
+            "path": relative,
+            "classification": "quarantine" if (
+                scan["parse_status"] == "error" or scan["direct_capital_path"]
+            ) else "unreviewed_surface",
+            "quarantine_reason": (
+                "parse_error" if scan["parse_status"] == "error"
+                else "direct_capital_path_outside_execution_boundary"
+                if scan["direct_capital_path"] else None
+            ),
+            "cli_entrypoint": bool(scan["cli_entrypoint"]),
+            "direct_capital_path": bool(scan["direct_capital_path"]),
+            "starts_loop": bool(scan["starts_loop"]),
+            "parse_status": str(scan["parse_status"]),
+            "secondary_tags": sorted(set(tags)),
+            "imports": list(scan["imports"]),
+            "classes": list(scan["classes"]),
+        })
 
     return {
         "schema_version": "1.0",
@@ -363,8 +548,35 @@ def build_manifest(root: Path) -> Dict[str, object]:
             "compatibility_facades": sum(1 for row in records if row["classification"] == "compatibility_facade"),
             "direct_capital_paths": sum(1 for row in records if row["direct_capital_path"]),
             "parse_errors": sum(1 for row in records if row["parse_status"] == "error"),
+            "external_surfaces": len(surfaces),
+            "external_capital_paths": sum(1 for row in surfaces if row["direct_capital_path"]),
+            "external_loop_starters": sum(1 for row in surfaces if row["starts_loop"]),
+            "dynamic_import_modules": sum(
+                1 for row in records if "dynamic_import" in row["secondary_tags"]
+            ),
+            "flagged_review_status": {
+                status: sum(1 for row in records if row.get("review_status") == status)
+                for status in (
+                    "canonical_authority",
+                    "sanctioned_boundary_adapter",
+                    "warned_non_authority",
+                    "catalogued_non_reachable",
+                    "reachable_review_required",
+                )
+            },
+            "credential_access_modules": sum(
+                1 for row in records if "credential_access" in row["secondary_tags"]
+            ) + sum(
+                1 for row in surfaces if "credential_access" in row["secondary_tags"]
+            ),
+            "modules_with_test_evidence": sum(1 for row in records if row["tests"]),
+            "adapters_without_tests": sum(
+                1 for row in records
+                if row["classification"] == "adapter" and not row["tests"]
+            ),
         },
         "modules": records,
+        "external_surfaces": surfaces,
     }
 
 
@@ -383,7 +595,12 @@ def boundary_violations(source: str, path: str) -> List[str]:
         )
     ):
         violations.append("direct capital call outside execution/broker adapter")
-    if scan["starts_loop"] and path not in CANONICAL_FILES and "foundation/runtime.py" not in path:
+    if (
+        scan["starts_loop"]
+        and path not in CANONICAL_FILES
+        and path not in ADAPTER_WORKER_PATHS
+        and "foundation/runtime.py" not in path
+    ):
         violations.append("independent lifecycle/worker loop")
     return violations
 

@@ -4,6 +4,7 @@ Broker Adapter Interface and Implementations
 Provides unified interface for all broker connections (MT5, Binance, Interactive Brokers, etc.)
 """
 
+import warnings
 import asyncio
 import logging
 from abc import ABC, abstractmethod
@@ -318,6 +319,7 @@ class MockBrokerAdapter(BrokerAdapter):
     """Mock broker adapter for testing"""
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("MockBrokerAdapter is a legacy/quarantined component: capital path outside the canonical execution boundary. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         self.positions = {}
         self.orders = {}

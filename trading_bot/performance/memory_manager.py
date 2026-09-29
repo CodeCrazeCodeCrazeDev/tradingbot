@@ -1,4 +1,5 @@
 """
+import warnings
 from typing import Callable, Dict, List, Optional, Set
 Memory Management System
 =========================
@@ -463,6 +464,7 @@ class MemoryManager:
     """
     
     def __init__(self, config: Optional[MemoryConfig] = None):
+        warnings.warn("MemoryManager is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or MemoryConfig()
         self.monitor = MemoryMonitor(self.config)
         

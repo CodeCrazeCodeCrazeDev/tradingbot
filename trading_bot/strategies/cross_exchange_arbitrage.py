@@ -22,6 +22,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 from enum import Enum, auto
 from collections import defaultdict, deque
 import threading
+import warnings
 import numpy as np
 import numpy
 
@@ -522,6 +523,14 @@ class ArbitrageExecutor:
         max_position_size: float = 10000,
         max_slippage_pct: float = 0.1
     ):
+        warnings.warn(
+            "ArbitrageExecutor is a legacy quarantined component that places "
+            "orders directly on exchange adapters; it has no production "
+            "execution authority. CanonicalExecutionService owns all order "
+            "paths — use it for execution or keep this for offline analysis.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.exchanges = exchange_adapters
         self.max_position_size = max_position_size
         self.max_slippage_pct = max_slippage_pct

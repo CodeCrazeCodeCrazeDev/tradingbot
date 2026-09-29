@@ -3,6 +3,7 @@ Real-Time Analytics Processor
 Provides advanced analytics and predictive capabilities for trading
 """
 
+import warnings
 import numpy as np
 import pandas as pd
 from typing import Any, Dict, List, Optional, Tuple
@@ -41,6 +42,7 @@ class AnalyticsProcessor:
     """
     
     def __init__(self, config: Dict[str, Any]):
+        warnings.warn("AnalyticsProcessor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         
         # Initialize processors

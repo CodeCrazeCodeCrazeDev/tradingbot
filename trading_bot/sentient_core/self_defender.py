@@ -10,6 +10,7 @@ Protects the trading bot from:
 - Man-in-the-middle attacks
 """
 
+import warnings
 import asyncio
 import hashlib
 import hmac
@@ -125,6 +126,7 @@ class SelfDefender:
         secrets_path: str = "secrets/",
         log_path: str = "security_logs/",
     ):
+        warnings.warn("SelfDefender is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or SecurityConfig()
         self.secrets_path = Path(secrets_path)
         self.log_path = Path(log_path)

@@ -6,6 +6,7 @@ Provides the foundation for event sourcing and replay.
 """
 
 from __future__ import annotations
+import warnings
 
 import asyncio
 import logging
@@ -567,6 +568,7 @@ class EventStore:
     """
     
     def __init__(self, config: EventStoreConfig):
+        warnings.warn("EventStore is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         self.backend: EventStoreBackend = self._create_backend()
         

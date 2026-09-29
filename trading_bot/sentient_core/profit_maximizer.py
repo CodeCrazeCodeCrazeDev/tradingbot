@@ -9,6 +9,7 @@ Focuses on maximizing trading profits through:
 - Continuous performance improvement
 """
 
+import warnings
 import asyncio
 import json
 import math
@@ -192,6 +193,7 @@ class ProfitMaximizer:
         optimization_interval: int = 3600,
         data_path: str = "performance_data/",
     ):
+        warnings.warn("ProfitMaximizer is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.initial_capital = initial_capital
         self.current_capital = initial_capital
         self.risk_per_trade = risk_per_trade

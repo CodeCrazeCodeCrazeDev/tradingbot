@@ -13,6 +13,7 @@ Architectural Patterns:
 - Systems AI (Decision Attribution & Memory Hierarchy)
 """
 
+import warnings
 import asyncio
 import logging
 import uuid
@@ -46,6 +47,7 @@ class MTASH:
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("MTASH is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
 
         # Tactical AI (Real-time tuning)

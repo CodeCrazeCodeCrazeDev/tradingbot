@@ -3,6 +3,7 @@ Neural Integration Hub - Brain-like Central Coordinator
 Connects all 100+ trading bot modules through synaptic connections
 """
 
+import warnings
 import asyncio
 import numpy as np
 from typing import Dict, List, Any, Optional, Callable, Set
@@ -133,6 +134,7 @@ class NeuralIntegrationHub:
     """
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("NeuralIntegrationHub is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.modules: Dict[str, NeuralModule] = {}
         self.neural_mesh: Dict[str, List[str]] = defaultdict(list)

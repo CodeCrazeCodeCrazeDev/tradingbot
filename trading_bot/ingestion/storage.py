@@ -6,6 +6,7 @@ ClickHouse for hot data, S3 for cold archival.
 """
 
 from __future__ import annotations
+import warnings
 
 import lz4.frame
 import asyncio
@@ -468,6 +469,7 @@ class S3Archiver(StorageBackend):
     """
     
     def __init__(self, config: StorageConfig):
+        warnings.warn("S3Archiver is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         self._client = None
         self._initialized = False

@@ -29,6 +29,7 @@ that generates signals or executes orders already has a live risk veto.
 """
 
 from __future__ import annotations
+import warnings
 
 import importlib
 import asyncio
@@ -138,6 +139,7 @@ class MasterIntegrationEngine:
         config: Optional[EngineConfig] = None,
         registry: Optional[ModuleRegistry] = None,
     ):
+        warnings.warn("MasterIntegrationEngine is a legacy/quarantined component: dynamic module/class loading bypasses static convergence control. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or EngineConfig()
         self.module_registry = registry or get_module_registry()
 
@@ -564,8 +566,13 @@ class MasterIntegrationEngine:
                     )
                     break
 
-        # Start health monitoring
-        self._health_task = asyncio.create_task(self._health_monitor_loop())
+        # Health-monitor worker disabled: the canonical runtime owns
+        # production monitoring (ModularMonolithRuntime -> UnifiedTradingBot).
+        self._health_task = None
+        logger.warning(
+            "MasterIntegrationEngine health-monitor worker disabled; canonical "
+            "runtime owns monitoring"
+        )
 
         running = sum(1 for ok in results.values() if ok)
         async with self._state_lock:

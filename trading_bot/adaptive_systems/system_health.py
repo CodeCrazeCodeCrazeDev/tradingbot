@@ -1,3 +1,4 @@
+import warnings
 import logging
 logger = logging.getLogger(__name__)
 from pathlib import Path
@@ -73,6 +74,7 @@ class SystemHealthMonitor:
         Args:
             config_path: Path to configuration file
         """
+        warnings.warn("SystemHealthMonitor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = self._load_config(config_path)
         self.metrics = {}
         self.failsafe_rules = []

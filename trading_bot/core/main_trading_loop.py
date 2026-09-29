@@ -727,33 +727,9 @@ async def health_check_handler(trading_loop: MainTradingLoop) -> Dict:
 
 # Example usage
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    raise SystemExit(
+        "trading_bot/core/main_trading_loop.py is QUARANTINED: standalone execution of this module is a "
+        "parallel capital/loop path outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
     )
-    
-    async def main():
-        # Create trading loop
-        loop = MainTradingLoop(
-            mode=TradingMode.PAPER,
-            config={
-                'broker': {'initial_balance': 10000},
-                'risk': {'max_risk_per_trade': 0.02}
-            }
-        )
-        
-        # Initialize
-        if await loop.initialize():
-            try:
-                # Run for a short time
-                await asyncio.wait_for(loop.run(), timeout=10)
-            except asyncio.TimeoutError:
-                await loop.shutdown()
-        
-        # Print health
-        health = loop.get_health()
-        logger.info(f"\nSystem Health: {health.state.value}")
-        logger.info(f"Uptime: {health.uptime_seconds:.0f}s")
-        logger.info(f"Errors: {health.errors_last_hour}")
-    
-    asyncio.run(main())

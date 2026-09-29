@@ -3,6 +3,7 @@ Phase 2: Live Module Monitoring
 Continuous monitoring of all critical online modules
 """
 
+import warnings
 import asyncio
 import time
 import logging
@@ -64,6 +65,7 @@ class ModuleMonitor:
     ]
     
     def __init__(self, config: Dict):
+        warnings.warn("ModuleMonitor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         
         # Module health tracking

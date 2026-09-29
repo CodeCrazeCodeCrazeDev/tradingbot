@@ -1,4 +1,5 @@
 """
+import warnings
 from typing import Optional, Set
 Survival Core - Critical elements for long-term trading success
 
@@ -84,6 +85,7 @@ class SurvivalCore:
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """Initialize the survival core"""
+        warnings.warn("SurvivalCore is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         logger.info("Initializing Survival Core")
         

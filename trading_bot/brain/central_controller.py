@@ -85,42 +85,16 @@ class CentralController:
             return {}
     
     async def start(self):
-        """Start the central controller"""
-        if self.running:
-            logger.warning("Central Controller is already running")
-            return
-        
-        self.running = True
-        self.paused = False
-        self.emergency_stop = False
-        
-        # Start dashboard
-        self.dashboard.start()
-        
-        # Start execution thread
-        self.execution_thread = threading.Thread(target=self._execution_loop)
-        self.execution_thread.daemon = True
-        self.execution_thread.start()
-        
-        logger.info("Central Controller started")
-        
-        try:
-            # Main control loop
-            while self.running:
-                if not self.paused and not self.emergency_stop:
-                    # Process each symbol
-                    for symbol in self.active_symbols:
-                        await self._process_symbol(symbol)
-                
-                # Wait before next cycle
-                await asyncio.sleep(self.config.get('cycle_interval_seconds', 60))
-        
-        except KeyboardInterrupt:
-            logger.info("Central Controller stopped by user")
-        except Exception as e:
-            logger.error(f"Error in Central Controller: {e}")
-        finally:
-            await self.stop()
+        """Refuse to start: CentralController cannot own an independent
+        trading loop, execution thread, or dashboard worker.
+
+        The canonical production loop is UnifiedTradingBot via
+        ModularMonolithRuntime (see ARCHITECTURE_COMPONENT_MANIFEST.json).
+        """
+        raise PermissionError(
+            "CentralController is a legacy parallel authority; the canonical "
+            "trading loop is ModularMonolithRuntime -> UnifiedTradingBot"
+        )
     
     async def _process_symbol(self, symbol: str):
         """Process a symbol"""
@@ -431,11 +405,9 @@ class CentralController:
 
 # Example usage
 if __name__ == "__main__":
-    # Configure logging
-    logging.basicConfig(level=logging.INFO)
-    
-    # Create controller
-    controller = CentralController()
-    
-    # Run controller
-    asyncio.run(controller.start())
+    raise SystemExit(
+        "trading_bot/brain/central_controller.py is QUARANTINED: standalone execution is a parallel trading "
+        "loop outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

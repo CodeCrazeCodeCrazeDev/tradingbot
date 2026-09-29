@@ -850,4 +850,9 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    raise SystemExit(
+        "trading_bot/core_agent_system/integrated_system.py is QUARANTINED: standalone execution is a parallel trading "
+        "loop outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

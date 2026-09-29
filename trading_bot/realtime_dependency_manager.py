@@ -13,6 +13,7 @@ Author: AlphaAlgo Trading System
 Version: 2.0.0
 """
 
+import warnings
 import subprocess
 import sys
 import importlib
@@ -251,6 +252,7 @@ class RealTimeDependencyManager:
     """
     
     def __init__(self, base_path: str = None, verbose: bool = True):
+        warnings.warn("RealTimeDependencyManager is a legacy/quarantined component: dynamic module/class loading bypasses static convergence control. It carries no production authority.", DeprecationWarning, stacklevel=2)
         if base_path is None:
             base_path = str(Path(__file__).parent.parent)
         

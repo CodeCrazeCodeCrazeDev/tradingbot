@@ -6,6 +6,7 @@ Wraps Execution capabilities as an event-driven service.
 Handles order routing, execution, and fill tracking.
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime
@@ -41,6 +42,7 @@ class ExecutionService(BaseService):
     DEPENDENCIES = ["broker", "risk", "msos"]
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("ExecutionService is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         self._task: Optional[asyncio.Task] = None
         self._counterintelligence_mode = self._coerce_counterintelligence_mode(

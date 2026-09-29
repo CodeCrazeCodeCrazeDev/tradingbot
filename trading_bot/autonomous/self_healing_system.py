@@ -3,6 +3,7 @@ Self-Healing Architecture with Auto-Repair
 Automatic error detection, diagnosis, and recovery
 """
 
+import warnings
 import asyncio
 import logging
 import traceback
@@ -69,6 +70,7 @@ class SelfHealingSystem:
     """
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("SelfHealingSystem is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Error tracking

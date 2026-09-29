@@ -5,6 +5,7 @@ This module provides real-time data feed capabilities for the Elite Trading Bot,
 enabling integration with various market data sources and APIs.
 """
 
+import warnings
 import enum
 import asyncio
 import logging
@@ -369,6 +370,7 @@ class RealTimeDataFeed:
             event_monitor: Optional event monitoring system
             config: Data stream configuration
         """
+        warnings.warn("RealTimeDataFeed is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.event_monitor = event_monitor
         self.config = config or DataStreamConfig(
             source=DataSource.SIMULATED,

@@ -239,9 +239,10 @@ class EvidenceGraphGate:
 
         # 2. High-Confidence Veto check
         for v in verdicts:
-            if not v.is_valid and v.confidence > 0.85:
+            confidence = v.confidence if isinstance(v.confidence, (int, float)) else 0.0
+            if not v.is_valid and confidence > 0.85:
                 EvidenceGraphGate.last_rejection_reason = (
-                    f"High-confidence VETO by {v.agent_name}: {v.critique}"
+                    f"High-confidence VETO by {v.agent_name}: {str(v.critique)}"
                 )
                 logger.error(f"EvidenceGate: REJECTED - {EvidenceGraphGate.last_rejection_reason}")
                 return False

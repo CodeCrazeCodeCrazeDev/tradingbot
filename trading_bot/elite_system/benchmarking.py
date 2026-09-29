@@ -5,6 +5,7 @@ This module provides comprehensive performance benchmarking tools for the Elite 
 measuring execution speed, resource usage, prediction accuracy, and trading performance.
 """
 
+import warnings
 import numpy as np
 import pandas as pd
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -126,6 +127,7 @@ class EliteBenchmarking:
     
     def __init__(self, elite_system: EliteSystem, config: EliteConfig):
         """Initialize benchmarking system"""
+        warnings.warn("EliteBenchmarking is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.elite_system = elite_system
         self.config = config
         

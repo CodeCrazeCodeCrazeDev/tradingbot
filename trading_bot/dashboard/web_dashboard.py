@@ -1,4 +1,5 @@
 """
+import warnings
 from typing import Any, List, Optional, Set
 Web Dashboard for Trading Bot Monitoring and Control
 
@@ -41,6 +42,7 @@ class WebDashboard:
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("WebDashboard is a legacy/quarantined component: capital path outside the canonical execution boundary. It carries no production authority.", DeprecationWarning, stacklevel=2)
         if not FASTAPI_AVAILABLE:
             raise ImportError("FastAPI not installed. Install with: pip install fastapi uvicorn jinja2")
         

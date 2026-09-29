@@ -223,11 +223,20 @@ class ResidualDiffusionRefiner:
         self.residual_scale = residual_scale
         self.rng = np.random.default_rng(seed)
 
-    def refine(self, action: Dict[str, Any], *, risk_multiplier: float) -> Dict[str, Any]:
+    def refine(
+        self,
+        action: Dict[str, Any],
+        *,
+        risk_multiplier: float,
+        max_notional: Optional[float] = None,
+    ) -> Dict[str, Any]:
         refined = dict(action)
         if "notional" in refined and risk_multiplier > 0:
             residual = self.rng.normal(0.0, self.residual_scale) * risk_multiplier
-            refined["notional"] = max(0.0, float(refined["notional"]) * (1.0 + residual))
+            notional = float(refined["notional"]) * (1.0 + residual)
+            if max_notional is not None:
+                notional = min(notional, max_notional)
+            refined["notional"] = max(0.0, notional)
             refined["residual_refinement"] = residual
         return refined
 

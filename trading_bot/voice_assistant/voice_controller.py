@@ -1,4 +1,5 @@
 """
+import warnings
 from typing import Any, Optional, Set
 Voice Assistant Controller
 Control trading bot with voice commands
@@ -159,6 +160,7 @@ class VoiceAssistant:
     
     def __init__(self, trading_bot: Any, config: Optional[Dict[str, Any]] = None):
         """Initialize voice assistant"""
+        warnings.warn("VoiceAssistant is a legacy/quarantined component: capital path outside the canonical execution boundary. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.trading_bot = trading_bot
         self.config = config or {}
         

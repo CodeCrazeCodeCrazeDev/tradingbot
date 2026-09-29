@@ -3,6 +3,7 @@ Windows Performance Optimizer
 Optimizes Windows for low-latency trading
 """
 
+import warnings
 import os
 import sys
 import ctypes
@@ -15,6 +16,7 @@ class WindowsOptimizer:
     """Optimize Windows for trading performance"""
     
     def __init__(self):
+        warnings.warn("WindowsOptimizer is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.process = psutil.Process()
         self.optimizations_applied = []
     

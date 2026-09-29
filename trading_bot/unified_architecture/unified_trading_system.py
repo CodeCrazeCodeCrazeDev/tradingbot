@@ -4,7 +4,12 @@ Unified Trading System
 
 The master system that integrates all 6 layers into a cohesive trading platform.
 
-This is the single entry point for the entire trading bot, combining:
+NOTE: `UnifiedTradingSystem` is now a one-wave compatibility facade over
+`ModularMonolithRuntime` (the canonical public boundary). The original
+parallel implementation is preserved as `_LegacyUnifiedTradingSystem` for
+introspection only and carries no production authority.
+
+This module historically combined:
 - Layer 1: Data Foundation
 - Layer 2: Intelligence Core
 - Layer 3: Strategy Engine
@@ -128,15 +133,21 @@ class TradingDecision:
     execution_result: Optional[Dict] = None
 
 
-class UnifiedTradingSystem:
+class _LegacyUnifiedTradingSystem:
     """
     The Unified Trading System
-    
+
     Integrates all 6 layers into a complete autonomous trading platform
     with QwenCodeMender-inspired innovations.
-    
+
+    QUARANTINED legacy implementation: this class composes a parallel data /
+    intelligence / strategy / execution / risk / orchestration stack and is
+    NOT a production authority. The public `UnifiedTradingSystem` name below
+    is a facade over `ModularMonolithRuntime`; this class is retained for
+    introspection only and is not referenced by the canonical runtime.
+
     Usage:
-        system = UnifiedTradingSystem(config)
+        system = _LegacyUnifiedTradingSystem(config)
         await system.initialize()
         await system.start()
     """
@@ -543,6 +554,141 @@ class UnifiedTradingSystem:
             
             logger.info(f"State loaded from {filepath}")
             return state
+        except FileNotFoundError:
+            logger.warning(f"State file not found: {filepath}")
+            return None
+
+
+class UnifiedTradingSystem:
+    """One-wave compatibility facade over the canonical runtime graph.
+
+    The legacy 6-layer implementation is preserved as
+    `_LegacyUnifiedTradingSystem` for introspection only. All production
+    lifecycle delegates to `ModularMonolithRuntime`; analysis abstains and
+    execution requests fail closed through the canonical path only.
+    """
+
+    def __init__(self, config: Optional[SystemConfig] = None):
+        import warnings
+        from trading_bot.foundation.runtime import ModularMonolithRuntime
+
+        warnings.warn(
+            "UnifiedTradingSystem is a compatibility facade; use "
+            "ModularMonolithRuntime for production lifecycle.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.config = config or SystemConfig()
+        mode = getattr(self.config.mode, "value", self.config.mode)
+        self._runtime = ModularMonolithRuntime({
+            "mode": mode,
+            "symbols": list(self.config.symbols),
+            "initial_capital": self.config.initial_capital,
+        })
+        self.status = SystemStatus.INITIALIZING
+        self.start_time: Optional[datetime] = None
+        self.decisions: List[TradingDecision] = []
+        self._stop_requested = False
+
+    async def initialize(self) -> bool:
+        """Delegate startup to the canonical runtime."""
+        await self._runtime.start()
+        self.status = SystemStatus.READY
+        return True
+
+    async def start(self):
+        """Delegate lifecycle; no independent trading loop is created."""
+        if self.status != SystemStatus.READY:
+            await self.initialize()
+        self.status = SystemStatus.RUNNING
+        self.start_time = datetime.now()
+        logger.info(
+            "UnifiedTradingSystem facade started; canonical runtime owns the loop"
+        )
+
+    async def stop(self):
+        """Delegate shutdown to the canonical runtime."""
+        self._stop_requested = True
+        await self._runtime.stop()
+        self.status = SystemStatus.SHUTDOWN
+
+    async def analyze_symbol(self, symbol: str) -> TradingDecision:
+        """Abstaining analysis surface.
+
+        The facade does not run the legacy analysis/execution pipeline;
+        it returns a conservative HOLD decision so consensus callers receive
+        a neutral, non-authoritative input.
+        """
+        decision = TradingDecision(
+            decision_id=f"facade_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{symbol}",
+            timestamp=datetime.now(),
+            symbol=symbol,
+            action="HOLD",
+            entry_price=0,
+            stop_loss=0,
+            take_profit=0,
+            position_size=0,
+            signal_confidence=0,
+            verification_score=0,
+            risk_score=0,
+            reasoning=(
+                "UnifiedTradingSystem facade abstains; route observations "
+                "through ModularMonolithRuntime -> UnifiedTradingBot"
+            ),
+            expert_analysis={"facade": True},
+        )
+        self.decisions.append(decision)
+        return decision
+
+    async def execute_decision(self, decision: TradingDecision) -> Dict[str, Any]:
+        """Fail closed: facades never execute."""
+        return {
+            "executed": False,
+            "delegated": True,
+            "reason": "CanonicalExecutionService owns execution via ModularMonolithRuntime",
+        }
+
+    def get_status(self) -> Dict[str, Any]:
+        """Get status projected from the canonical runtime."""
+        return {
+            "system": {
+                "status": self.status.value,
+                "mode": getattr(self.config.mode, "value", self.config.mode),
+                "uptime": str(datetime.now() - self.start_time) if self.start_time else None,
+                "symbols": self.config.symbols,
+            },
+            "canonical_runtime": "ModularMonolithRuntime",
+            "component_count": len(self._runtime.component_graph()),
+            "authoritative": False,
+        }
+
+    def get_statistics(self) -> Dict[str, Any]:
+        """Statistics projection; no parallel ledgers exist here."""
+        return {
+            "canonical_runtime": "ModularMonolithRuntime",
+            "decisions": len(self.decisions),
+        }
+
+    def save_state(self, filepath: Optional[str] = None):
+        """Save facade state (status + decision count only)."""
+        filepath = filepath or f"{self.config.data_dir}/system_state.json"
+        state = {
+            "timestamp": datetime.now().isoformat(),
+            "status": self.status.value,
+            "canonical_runtime": "ModularMonolithRuntime",
+            "decisions_count": len(self.decisions),
+        }
+        Path(filepath).parent.mkdir(parents=True, exist_ok=True)
+        with open(filepath, "w") as f:
+            json.dump(state, f, indent=2)
+        logger.info(f"State saved to {filepath}")
+
+    def load_state(self, filepath: Optional[str] = None):
+        """Load facade state from file."""
+        filepath = filepath or f"{self.config.data_dir}/system_state.json"
+        try:
+            with open(filepath, "r") as f:
+                return json.load(f)
         except FileNotFoundError:
             logger.warning(f"State file not found: {filepath}")
             return None

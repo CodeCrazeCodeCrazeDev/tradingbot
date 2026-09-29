@@ -4,6 +4,7 @@ DGS Integration Examples
 Integration patterns for popular trading frameworks and platforms.
 """
 
+import warnings
 from typing import Dict, List, Optional, Any, Callable
 import asyncio
 import logging
@@ -468,6 +469,7 @@ class CustomIntegrationTemplate:
     """
     
     def __init__(self, dgs_instance):
+        warnings.warn("CustomIntegrationTemplate is a legacy/quarantined component: capital path outside the canonical execution boundary. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.dgs = dgs_instance
         self.setup()
     

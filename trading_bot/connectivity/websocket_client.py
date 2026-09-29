@@ -2,6 +2,7 @@
 Elite Trading Bot - WebSocket Client
 
 This module provides WebSocket connectivity for real-time market data streaming
+import warnings
 from various financial data providers and trading platforms.
 """
 
@@ -71,6 +72,7 @@ class WebsocketClient:
             max_reconnect_interval: Maximum reconnect interval in seconds
             ssl_verify: Whether to verify SSL certificates
         """
+        warnings.warn("WebsocketClient is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.url = url
         self.name = name
         self.auth_manager = auth_manager

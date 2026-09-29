@@ -8,6 +8,7 @@ Ensures local position state matches broker state:
 - Audit trail of all reconciliations
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime, timedelta
@@ -100,6 +101,7 @@ class PositionReconciler:
             on_discrepancy: Callback when discrepancy found
             on_correction: Callback when correction made
         """
+        warnings.warn("PositionReconciler is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.broker = broker_adapter
         self.local_manager = local_position_manager
         self.config = config or {}

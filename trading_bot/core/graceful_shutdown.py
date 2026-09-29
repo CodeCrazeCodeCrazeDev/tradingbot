@@ -3,6 +3,7 @@ Graceful Shutdown Handler
 Ensures clean shutdown of all trading bot components.
 """
 
+import warnings
 import asyncio
 import logging
 import signal
@@ -52,6 +53,7 @@ class GracefulShutdownHandler:
         shutdown_timeout: float = 60.0,
         close_positions_on_shutdown: bool = True
     ):
+        warnings.warn("GracefulShutdownHandler is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.shutdown_timeout = shutdown_timeout
         self.close_positions_on_shutdown = close_positions_on_shutdown
         

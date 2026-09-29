@@ -5,6 +5,7 @@ Connectors Service
 Wraps Connectors module capabilities as an event-driven service.
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime
@@ -30,6 +31,7 @@ class ConnectorsService(BaseService):
     DEPENDENCIES = ["connectivity"]
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("ConnectorsService is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         self._interval: float = config.get('interval', 30.0) if config else 30.0
         self._task: Optional[asyncio.Task] = None

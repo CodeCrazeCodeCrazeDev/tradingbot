@@ -3,6 +3,7 @@ AlphaAlgo Auto-Repair Engine
 PHASE 2: Automatic issue detection and repair.
 """
 
+import warnings
 import logging
 import gc
 import sys
@@ -26,6 +27,7 @@ class AutoRepairEngine:
     
     def __init__(self, config: Dict[str, Any]):
         """Initialize auto-repair engine."""
+        warnings.warn("AutoRepairEngine is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         self.repair_log = []
         self.max_repair_attempts = config.get('max_repair_attempts', 3)

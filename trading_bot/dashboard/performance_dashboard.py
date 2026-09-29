@@ -1,4 +1,5 @@
 """
+import warnings
 from pathlib import Path
 from typing import List, Optional, Set, Tuple
 Real-time Performance Dashboard with Anomaly Detection
@@ -177,6 +178,7 @@ class PerformanceDashboard:
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("PerformanceDashboard is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Initialize components

@@ -17,6 +17,7 @@ Author: AlphaAlgo Trading System
 Version: 2.0.0
 """
 
+import warnings
 import asyncio
 import time
 import logging
@@ -182,6 +183,7 @@ class RealTimeDataStream:
     """
     
     def __init__(self, config: RealTimeConfig, event_bus: RealTimeEventBus):
+        warnings.warn("RealTimeDataStream is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         self.event_bus = event_bus
         self._running = False

@@ -1,4 +1,5 @@
 """
+import warnings
 from typing import List, Optional, Set
 Comprehensive Alerting and Monitoring System
 =============================================
@@ -950,6 +951,7 @@ class AlertingSystem:
     
     def __init__(self):
         # Alert channels
+        warnings.warn("AlertingSystem is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.channels: Dict[AlertChannel, Any] = {}
         
         # Alert history

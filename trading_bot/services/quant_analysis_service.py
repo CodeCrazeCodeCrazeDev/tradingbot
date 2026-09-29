@@ -5,6 +5,7 @@ Quant Analysis Service
 Service wrapper for quantitative analysis tools.
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime
@@ -36,6 +37,7 @@ class QuantAnalysisService(BaseService):
     DEPENDENCIES = ["data"]
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("QuantAnalysisService is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         self.config = config or {}
         self._interval: float = self.config.get('interval', 300.0)

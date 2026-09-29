@@ -5,6 +5,7 @@ This module provides real-time market condition monitoring capabilities for the 
 enabling detection of volatility changes, liquidity shifts, correlation breakdowns, and regime changes.
 """
 
+import warnings
 import enum
 import asyncio
 import logging
@@ -500,6 +501,7 @@ class MarketConditionMonitor:
             event_monitor: Event monitoring system
             config: Optional configuration dictionary
         """
+        warnings.warn("MarketConditionMonitor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.event_monitor = event_monitor
         self.config = config or {}
         self._init_default_config()

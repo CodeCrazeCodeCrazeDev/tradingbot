@@ -9,6 +9,7 @@ Automatically browses the internet to gather:
 - Competitor analysis
 """
 
+import warnings
 import asyncio
 try:
     import aiohttp
@@ -166,6 +167,7 @@ class KnowledgeHarvester:
         harvest_interval: int = 300,  # 5 minutes
         max_items_per_source: int = 50,
     ):
+        warnings.warn("KnowledgeHarvester is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.harvest_interval = harvest_interval

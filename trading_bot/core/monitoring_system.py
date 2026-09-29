@@ -5,6 +5,7 @@ This module provides a unified monitoring system for tracking performance,
 system health, and providing feedback for continuous improvement.
 """
 
+import warnings
 import asyncio
 import logging
 import time
@@ -192,6 +193,7 @@ class SystemHealthMonitor:
     """Monitors system health and resource usage"""
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("SystemHealthMonitor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Component status

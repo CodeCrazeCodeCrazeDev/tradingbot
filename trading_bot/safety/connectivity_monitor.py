@@ -4,6 +4,7 @@ Connectivity Monitor
 Monitors MT5 connection and handles disconnections gracefully.
 """
 
+import warnings
 import time
 import logging
 from typing import Optional, Callable
@@ -44,6 +45,7 @@ class ConnectivityMonitor:
             on_disconnect: Callback function when disconnected
             on_reconnect: Callback function when reconnected
         """
+        warnings.warn("ConnectivityMonitor is a legacy/quarantined component: capital path outside the canonical execution boundary. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.max_retries = max_retries
         self.retry_delays = [5, 15, 45, 135, 405]  # Exponential backoff
         self.is_connected = False

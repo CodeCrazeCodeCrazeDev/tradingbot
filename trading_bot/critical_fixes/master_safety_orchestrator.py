@@ -271,9 +271,15 @@ class MasterSafetyOrchestrator:
         await self.kill_switch.start_monitoring()
         await self.failure_detector.start()
         
-        # Start main monitoring loop
+        # Main monitoring loop disabled: continuous safety monitoring is a
+        # canonical-runtime concern (ImmutableShield/UnifiedTradingBot), not
+        # this legacy orchestrator.
         self._running = True
-        self._monitor_task = asyncio.create_task(self._monitor_loop())
+        self._monitor_task = None
+        logger.warning(
+            "MasterSafetyOrchestrator monitor loop disabled; canonical "
+            "runtime owns production safety monitoring"
+        )
         
         logger.info("Safety orchestrator started")
     

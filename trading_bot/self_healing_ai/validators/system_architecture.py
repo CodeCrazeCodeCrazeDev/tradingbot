@@ -3,6 +3,7 @@ System Architecture & Module Interaction Validator (Q1-50)
 Addresses critical questions about system state, module coordination, and concurrency.
 """
 
+import warnings
 import asyncio
 import os
 import psutil
@@ -26,6 +27,7 @@ class SystemArchitectureValidator(BaseValidator):
     """Validates system architecture and module interactions (Q1-50)"""
     
     def __init__(self):
+        warnings.warn("SystemArchitectureValidator is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         try:
             super().__init__(ValidationCategory.SYSTEM_ARCHITECTURE)
             self._position_locks: Dict[str, threading.Lock] = {}

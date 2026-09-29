@@ -25,6 +25,7 @@ Promotion contract:
 """
 
 from __future__ import annotations
+import warnings
 
 import asyncio
 import logging
@@ -116,6 +117,7 @@ class IntegratedService(ABC):
     HEALTH_TIMEOUT: float = 5.0
 
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("IntegratedService is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config: Dict = config or {}
         self._lifecycle: ServiceLifecycle = ServiceLifecycle.REGISTERED
         self._health: HealthReport = HealthReport(status=HealthStatus.UNKNOWN)

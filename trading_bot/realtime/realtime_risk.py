@@ -17,6 +17,7 @@ Author: AlphaAlgo Trading System
 Version: 3.0.0
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime, timedelta
@@ -186,6 +187,7 @@ class RealTimeRiskMonitor:
     """
     
     def __init__(self, config: Dict[str, Any] = None):
+        warnings.warn("RealTimeRiskMonitor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Risk limits
@@ -235,11 +237,12 @@ class RealTimeRiskMonitor:
             position = self._positions[symbol]
             position.update_price(price)
             
-            # Check position-level risks
-            asyncio.create_task(self._check_position_risk(position))
-        
-        # Update portfolio snapshot
-        asyncio.create_task(self._update_portfolio_snapshot())
+            # Worker spawn disabled: CanonicalRiskService owns portfolio risk;
+            # this monitor is advisory/offline only.
+            logger.debug("Position risk check deferred to canonical risk service")
+
+        # Worker spawn disabled (see above).
+        logger.debug("Portfolio snapshot update deferred to canonical risk service")
     
     async def on_fill(self, symbol: str, side: str, quantity: float, 
                       price: float, is_close: bool = False):

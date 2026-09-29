@@ -6,6 +6,7 @@ Wraps the Research-Grade IntegratedAgentSystem as an event-driven service.
 This makes IAS the central brain for the entire AlphaAlgo ecosystem.
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime
@@ -34,6 +35,7 @@ class IntegratedBrainService(BaseService):
     DEPENDENCIES = ["analysis", "risk", "msos"]
 
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("IntegratedBrainService is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         self.brain: Optional[IntegratedAgentSystem] = None
         self._task: Optional[asyncio.Task] = None

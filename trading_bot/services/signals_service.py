@@ -6,6 +6,7 @@ Wraps Signal generation capabilities as an event-driven service.
 Coordinates signal generation from multiple sources.
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime
@@ -37,6 +38,7 @@ class SignalsService(BaseService):
     DEPENDENCIES = ["analysis"]
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("SignalsService is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         self._signal_interval: float = config.get('interval', 60.0) if config else 60.0
         self._task: Optional[asyncio.Task] = None

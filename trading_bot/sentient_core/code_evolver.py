@@ -9,6 +9,7 @@ Enables the bot to:
 - Self-modify safely with validation
 """
 
+import warnings
 import ast
 import asyncio
 import hashlib
@@ -261,6 +262,13 @@ class {class_name}DataSource:
         auto_validate: bool = True,
         require_tests: bool = True,
     ):
+        warnings.warn(
+            "CodeEvolver is a legacy/quarantined component: self-evolution "
+            "writes into trading_bot/ — research-only. It carries no "
+            "production authority.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.project_root = Path(project_root)
         self.backup_path = Path(backup_path)
         self.backup_path.mkdir(parents=True, exist_ok=True)

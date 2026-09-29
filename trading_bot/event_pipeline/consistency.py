@@ -6,6 +6,7 @@ Ensures exactly-once semantics and data integrity.
 """
 
 from __future__ import annotations
+import warnings
 
 import asyncio
 import logging
@@ -39,6 +40,7 @@ class IdempotencyGuard:
         max_keys: int = 100000,
         ttl_seconds: int = 3600
     ):
+        warnings.warn("IdempotencyGuard is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.max_keys = max_keys
         self.ttl_seconds = ttl_seconds
         

@@ -51,7 +51,8 @@ except ImportError as e:
     # fraud_detection not available
     pass
 
-# multi_agent_rl
+# multi_agent_rl — if the full agent set is unavailable, still expose the
+# core system class on its own rather than losing every name.
 try:
     from .multi_agent_rl import (
         MacroStrategist,
@@ -61,7 +62,10 @@ try:
         HeadAI,
     )
 except ImportError:
-    pass
+    try:
+        from .multi_agent_rl import MultiAgentTradingSystem
+    except ImportError:
+        pass
 
 # digital_twin
 try:
@@ -126,15 +130,6 @@ except ImportError as e:
     # liquidity_holography not available
     pass
 
-# multi_agent_rl
-try:
-    from .multi_agent_rl import (
-        MultiAgentTradingSystem,
-    )
-except ImportError as e:
-    # multi_agent_rl not available
-    pass
-
 # quantum_computing
 try:
     from .quantum_computing import (
@@ -145,17 +140,38 @@ except ImportError as e:
     pass
 
 __all__ = [
+    'BlackSwanShield',
     'CryptographicProofSystem',
+    'DigitalTwinSimulator',
     'DivergenceConfirmationEngine',
+    'DivergenceType',
+    'EnergyDirectionPredictor',
+    'FractalMomentumDivergence',
+    'FractalPositionSizer',
     'FraudDetectionSystem',
-    'LiquidityHolographyEngine',
-    'LiquidityGravityWell',
+    'HeadAI',
+    'HighFidelityBacktester',
+    'HurstExponentCalculator',
+    'IcebergDetector',
     'InstitutionalFootprintDNA',
+    'LiquidityDensityMapper',
+    'LiquidityGravityWell',
+    'LiquidityHolographyEngine',
+    'MacroStrategist',
     'MultiAgentTradingSystem',
+    'MultiTimeframeDivergenceFilter',
     'ParallelValidationEngine',
     'QuantumTradingSystem',
+    'RiskSentinel',
+    'StealthAccumulationDetector',
+    'TacticalExecutioner',
+    'TemporalLiquidityAnalyzer',
+    'TradeSignatureAnalyzer',
     'TradeVerificationSystem',
     'TradingPredictionSystem',
+    'VolatilityAccelerationDetector',
+    'VolatilityCapacitor',
+    'VolatilityImpulseVector',
 ]
 
 class AdvancedFeaturesOrchestrator:

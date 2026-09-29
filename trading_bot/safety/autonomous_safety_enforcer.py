@@ -64,6 +64,7 @@ It cannot be modified by the trading system.
 It has its own power source and network connection.
 """
 
+import warnings
 import asyncio
 import hashlib
 import inspect
@@ -343,6 +344,7 @@ class AutonomousSafetyEnforcer:
         config: Optional[Dict] = None,
         external_kill_switch: Optional[Callable] = None
     ):
+        warnings.warn("AutonomousSafetyEnforcer is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.external_kill_switch = external_kill_switch
         
@@ -355,6 +357,9 @@ class AutonomousSafetyEnforcer:
         self._monitoring: bool = False
         self._monitor_task: Optional[asyncio.Task] = None
         self._integrity_check_task: Optional[asyncio.Task] = None
+        # Detached task spawning is disabled; enforcement escalations are
+        # recorded here for an explicit caller instead of being scheduled.
+        self._pending_enforcement: list = []
         
         # Component tracking
         self.registered_components: Set[str] = set()
@@ -410,9 +415,15 @@ class AutonomousSafetyEnforcer:
         self._monitoring = True
         _safety_logger.info("🛡️ Autonomous Safety Enforcer STARTING")
         
-        # Start monitoring loops
-        self._monitor_task = asyncio.create_task(self._monitoring_loop())
-        self._integrity_check_task = asyncio.create_task(self._integrity_check_loop())
+        # Monitoring workers disabled: the canonical runtime owns safety
+        # monitoring (ImmutableShield/UnifiedTradingBot); this enforcer is
+        # advisory only and may not spawn detached tasks.
+        self._monitor_task = None
+        self._integrity_check_task = None
+        _safety_logger.warning(
+            "Safety enforcer monitor workers disabled; canonical runtime "
+            "owns safety monitoring"
+        )
         
         _safety_logger.info("✅ Safety enforcer ACTIVE and monitoring")
         _safety_logger.info(f"   Immutable risk limits: {IMMUTABLE_RISK_LIMITS}")
@@ -516,7 +527,10 @@ class AutonomousSafetyEnforcer:
                     
                     # Check if we need to escalate
                     if self.consecutive_violations[component_id] >= 3:
-                        asyncio.create_task(self._escalate_enforcement(component_id, violation))
+                        # Detached spawn disabled; record for explicit caller.
+                        self._pending_enforcement.append(
+                            ("escalate", component_id, violation)
+                        )
         
         return violations
     
@@ -574,9 +588,9 @@ class AutonomousSafetyEnforcer:
                     _safety_logger.emergency(f"   Target: {target}")
                     _safety_logger.emergency(f"   Action: {action}")
                     _safety_logger.emergency(f"   TRIGGERING KILL SWITCH")
-                    
-                    # Immediately trigger enforcement
-                    asyncio.create_task(self._enforce_violation(violation))
+
+                    # Detached spawn disabled; record for explicit caller.
+                    self._pending_enforcement.append(("enforce", None, violation))
                     
                     return violation
         
@@ -625,9 +639,9 @@ class AutonomousSafetyEnforcer:
                     _safety_logger.critical(f"   Type: {violation_type.value}")
                     _safety_logger.critical(f"   Author: {author}")
                     _safety_logger.critical(f"   QUARANTINING COMPONENT")
-                    
-                    # Trigger enforcement
-                    asyncio.create_task(self._enforce_violation(violation))
+
+                    # Detached spawn disabled; record for explicit caller.
+                    self._pending_enforcement.append(("enforce", None, violation))
                     
                     return violation
         
@@ -893,8 +907,9 @@ class AutonomousSafetyEnforcer:
             enforcement_action=action_map.get(switch_id, EnforcementAction.FULL_SHUTDOWN),
             action_successful=True
         )
-        
-        asyncio.create_task(self._enforce_violation(violation))
+
+        # Detached spawn disabled; record for explicit caller.
+        self._pending_enforcement.append(("enforce", None, violation))
         
         # Trigger callbacks
         for callback in self.on_kill_switch:

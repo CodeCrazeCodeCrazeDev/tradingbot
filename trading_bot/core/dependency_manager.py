@@ -5,6 +5,7 @@ Handles installation, updates, and management of both required and optional depe
 Ensures the bot runs perfectly by automatically resolving dependency issues.
 """
 
+import warnings
 import subprocess
 import sys
 import logging
@@ -64,6 +65,7 @@ class AutoDependencyManager:
             auto_install: Automatically install missing required dependencies
             auto_update: Automatically update outdated dependencies
         """
+        warnings.warn("AutoDependencyManager is a legacy/quarantined component: dynamic module/class loading bypasses static convergence control. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.auto_install = auto_install
         self.auto_update = auto_update
         self.project_root = Path(__file__).parent.parent.parent

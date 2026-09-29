@@ -5,6 +5,7 @@ WebSocket Data Feeds
 Real-time WebSocket connections to crypto exchanges.
 """
 
+import warnings
 import websockets
 import asyncio
 import json
@@ -59,6 +60,7 @@ class WebSocketFeed(ABC):
     """Base class for WebSocket feeds"""
     
     def __init__(self, symbols: List[str], on_tick: Optional[Callable] = None):
+        warnings.warn("WebSocketFeed is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.symbols = set(symbols)
         self.on_tick = on_tick
         self.state = ConnectionState.DISCONNECTED

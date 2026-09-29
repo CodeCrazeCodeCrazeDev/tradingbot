@@ -3,6 +3,7 @@ Live Trading Monitor - 24-48 Hour Monitoring System
 Real-time monitoring, alerting, and performance tracking for live trading
 """
 
+import warnings
 import time
 import json
 from datetime import datetime, timedelta
@@ -73,6 +74,7 @@ class LiveMonitor:
         Args:
             config: Configuration dictionary
         """
+        warnings.warn("LiveMonitor is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.is_running = False
         self.monitor_thread = None

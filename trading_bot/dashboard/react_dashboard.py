@@ -5,6 +5,7 @@ Production-grade dashboard backend with REST API and WebSocket support.
 Provides real-time data for React/Vue frontend.
 """
 
+import warnings
 import asyncio
 import json
 import logging
@@ -180,6 +181,7 @@ class DashboardAPI:
     """
     
     def __init__(self, config: DashboardConfig, data_provider: DashboardDataProvider):
+        warnings.warn("DashboardAPI is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         self.data_provider = data_provider
         self._routes: Dict[str, Callable] = {}

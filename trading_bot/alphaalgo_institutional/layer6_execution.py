@@ -20,6 +20,7 @@ Key principles:
 - Adverse selection is real
 """
 
+import warnings
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -585,6 +586,7 @@ class ExecutionIntelligenceUnit:
     """
     
     def __init__(self, config: Dict[str, Any] = None):
+        warnings.warn("ExecutionIntelligenceUnit is a legacy/quarantined component: capital path outside the canonical execution boundary. It carries no production authority.", DeprecationWarning, stacklevel=2)
         try:
             self.config = config or {}
             self.committee_type = CommitteeType.EXECUTION_INTELLIGENCE

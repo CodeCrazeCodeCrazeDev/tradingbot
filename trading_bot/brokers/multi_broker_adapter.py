@@ -3,6 +3,7 @@ Multi-Broker Adapter
 Unified interface with automatic failover across multiple brokers
 """
 
+import warnings
 import asyncio
 import logging
 from typing import Any, Awaitable, Callable, Dict, List, Optional
@@ -243,6 +244,7 @@ class MultiBrokerAdapter:
     """
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("MultiBrokerAdapter is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Registered brokers

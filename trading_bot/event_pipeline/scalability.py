@@ -6,6 +6,7 @@ Enables horizontal scaling of the event pipeline.
 """
 
 from __future__ import annotations
+import warnings
 
 import asyncio
 import logging
@@ -507,6 +508,7 @@ class ClusterCoordinator:
     """
     
     def __init__(self, node_id: str):
+        warnings.warn("ClusterCoordinator is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.node_id = node_id
         
         self._members: Dict[str, NodeInfo] = {}

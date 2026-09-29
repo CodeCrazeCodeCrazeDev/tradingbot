@@ -19,6 +19,7 @@ Author: AlphaAlgo Trading System
 Version: 3.0.0
 """
 
+import warnings
 import random
 import asyncio
 import json
@@ -404,6 +405,7 @@ class RealTimeDataHub:
     """
     
     def __init__(self, config: Dict[str, Any] = None):
+        warnings.warn("RealTimeDataHub is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Connections

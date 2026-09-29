@@ -33,6 +33,7 @@ import asyncio
 import logging
 import math
 import time
+import warnings
 from dataclasses import dataclass, field, fields
 from datetime import datetime, timedelta
 from enum import Enum, auto
@@ -277,6 +278,13 @@ class MasterRiskManager:
             config: Configuration dictionary (optional)
             **kwargs: Additional parameters
         """
+        warnings.warn(
+            "MasterRiskManager is a legacy analyzer with no production "
+            "sizing/risk authority; CanonicalRiskService owns portfolio-risk "
+            "decisions. Retained for compatibility and offline analysis only.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.mt5 = mt5_interface
         self.config = config or {}
         self.kwargs = kwargs
@@ -691,8 +699,16 @@ def create_risk_manager(mt5_interface=None, config=None, **kwargs) -> MasterRisk
     """
     Factory function to create MASTER risk manager.
     
-    This provides backward compatibility with old code.
+    This provides backward compatibility with old code. The returned object
+    has no production authority — CanonicalRiskService is the sole
+    portfolio-risk/sizing authority.
     """
+    warnings.warn(
+        "create_risk_manager() returns a legacy analyzer; use "
+        "CanonicalRiskService for production risk decisions.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return MasterRiskManager(mt5_interface=mt5_interface, config=config, **kwargs)
 
 # Aliases for backward compatibility

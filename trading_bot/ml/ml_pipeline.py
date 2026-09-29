@@ -10,6 +10,7 @@ Production-ready ML infrastructure:
 - Performance monitoring
 """
 
+import warnings
 import asyncio
 import logging
 import json
@@ -314,6 +315,7 @@ class ModelRegistry:
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("ModelRegistry is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Storage

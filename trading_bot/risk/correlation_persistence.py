@@ -124,12 +124,12 @@ class CorrelationPersistence:
                 except (ValueError, TypeError) as e:
                     logger.warning(f"Could not parse timestamp: {e}")
             
-            # Load correlation matrix (if exists)
+            # Load correlation matrix (if exists) — saved as JSON via
+            # DataFrame.to_dict(), so read it back as JSON rather than pickle.
             correlation_matrix = None
             if self.matrix_file.exists():
-                from trading_bot.security.artifact_manager import RestrictedUnpickler
-                with open(self.matrix_file, 'rb') as f:
-                    correlation_matrix = RestrictedUnpickler(f).load()
+                with open(self.matrix_file, 'r') as f:
+                    correlation_matrix = pd.DataFrame.from_dict(json.load(f))
                 logger.info(f"Loaded correlation matrix from {self.matrix_file}")
             
             # Load price history

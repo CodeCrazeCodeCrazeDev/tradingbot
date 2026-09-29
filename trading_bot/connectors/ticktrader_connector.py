@@ -3,6 +3,7 @@ TickTrader / FXOpen Connector
 Level 2 (Order Book) Data via TickTrader Web API
 """
 
+import warnings
 import asyncio
 try:
     import aiohttp
@@ -81,6 +82,7 @@ class TickTraderConnector:
     def __init__(self, config: Optional[TickTraderConfig] = None):
         """Initialize TickTrader connector"""
         # Load from environment if config not provided
+        warnings.warn("TickTraderConnector is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         if config is None:
             config = TickTraderConfig(
                 login=os.getenv('TICKTRADER_LOGIN', ''),

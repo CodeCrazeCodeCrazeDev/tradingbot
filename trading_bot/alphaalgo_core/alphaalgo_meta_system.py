@@ -59,6 +59,7 @@ Safety Mechanisms:
 4. Automated safety boundaries
 """
 
+import warnings
 import asyncio
 import logging
 from typing import Dict, List, Optional, Any, Callable, Set, Tuple
@@ -264,6 +265,7 @@ class AlphaAlgoMetaSystem:
         sandbox_tester: Optional[Any] = None,
         config: Optional[Dict] = None
     ):
+        warnings.warn("AlphaAlgoMetaSystem is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Core systems

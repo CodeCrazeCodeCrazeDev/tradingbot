@@ -5,6 +5,7 @@ becomes available, including incremental learning, concept drift detection,
 and adaptive model selection.
 """
 
+import warnings
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Tuple, Union, Optional, Any, Callable
@@ -637,6 +638,7 @@ class AsyncOnlineLearner:
             feature_cols: List of feature column names
             target_col: Target column name
         """
+        warnings.warn("AsyncOnlineLearner is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.model = model
         self.window_size = window_size
         self.update_frequency = update_frequency

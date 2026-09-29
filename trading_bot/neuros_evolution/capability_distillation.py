@@ -16,6 +16,7 @@ Loop:
 8. Keep only what improves global objective
 """
 
+import warnings
 import asyncio
 import json
 import hashlib
@@ -581,6 +582,7 @@ class SandboxValidator:
     """Validates capability packages in sandbox"""
     
     def __init__(self, sandbox_path: Optional[str] = None):
+        warnings.warn("SandboxValidator is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.sandbox_path = Path(sandbox_path) if sandbox_path else Path("./sandbox")
         self.validation_history: List[SandboxResult] = []
         self.test_scenarios: List[Dict[str, Any]] = []

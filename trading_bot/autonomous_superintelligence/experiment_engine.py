@@ -3,6 +3,7 @@ Continuous Experiment Engine
 Runs experiments continuously, evolves models, and improves the system.
 """
 
+import warnings
 import asyncio
 import json
 import logging
@@ -71,6 +72,7 @@ class ContinuousExperimentEngine:
     """
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("ContinuousExperimentEngine is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.experiments: List[Experiment] = []
         self.models: Dict[str, Model] = {}

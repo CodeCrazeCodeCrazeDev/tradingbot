@@ -4,6 +4,7 @@ Tracks, manages, and auto-closes positions based on multiple criteria.
 """
 
 import asyncio
+import warnings
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timedelta
 from dataclasses import dataclass
@@ -93,6 +94,14 @@ class PositionManager:
     """
     
     def __init__(self, config: dict = None, broker_adapter: BrokerAdapter = None):
+        warnings.warn(
+            "PositionManager is a legacy quarantined component with direct "
+            "broker access; it has no production execution authority. "
+            "CanonicalExecutionService owns order/cancel paths and "
+            "SqliteTradingRepository owns position state.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.config = config or {}
         self.broker = broker_adapter
         self.max_positions = self.config.get('max_positions', 10)

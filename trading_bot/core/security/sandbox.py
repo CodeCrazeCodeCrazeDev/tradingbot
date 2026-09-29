@@ -1,3 +1,4 @@
+import warnings
 import ast
 import asyncio
 import logging
@@ -25,6 +26,7 @@ class SecureASTVisitor(ast.NodeVisitor):
 
     def __init__(self):
         # Whitelist of allowed modules to import (only if safe)
+        warnings.warn("SecureASTVisitor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.allowed_modules = {"math", "numpy", "pandas"}
 
         # Blacklist of dangerous names/functions

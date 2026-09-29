@@ -2,6 +2,7 @@
 Neurotransmitter Messaging System - Brain-like chemical signaling
 """
 
+import warnings
 import asyncio
 from typing import Dict, List, Any, Optional, Callable
 from dataclasses import dataclass, field
@@ -188,6 +189,7 @@ class CollectiveConsciousness:
     """
     
     def __init__(self):
+        warnings.warn("CollectiveConsciousness is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.global_workspace: Dict[str, Any] = {}
         self.attention_focus: Optional[str] = None
         self.consciousness_level = 0.0

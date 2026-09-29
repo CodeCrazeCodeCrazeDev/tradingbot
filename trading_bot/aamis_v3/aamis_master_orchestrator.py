@@ -86,6 +86,15 @@ class AAMISMasterOrchestrator:
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        import warnings
+
+        warnings.warn(
+            "AAMISMasterOrchestrator is a one-wave compatibility shim; route "
+            "cognition through CognitiveSystemController via "
+            "ModularMonolithRuntime/UnifiedTradingBot.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.config = config or {}
         # Compatibility contract: shims expose the canonical CSC singleton so
         # legacy callers can route cognition through the One Brain.

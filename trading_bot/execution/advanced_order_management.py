@@ -16,6 +16,7 @@ Author: Elite Trading Bot
 Version: 1.0.0
 """
 
+import warnings
 import asyncio
 import logging
 import hashlib
@@ -302,6 +303,7 @@ class OrderQueueManager:
     """
     
     def __init__(self, max_concurrent: int = 10):
+        warnings.warn("OrderQueueManager is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.max_concurrent = max_concurrent
         
         # Priority queue: (priority, timestamp, order_id, order_data)

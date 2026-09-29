@@ -6,6 +6,7 @@ Supports multiple delivery semantics: at-most-once, at-least-once, exactly-once.
 """
 
 from __future__ import annotations
+import warnings
 
 import asyncio
 import logging
@@ -257,6 +258,7 @@ class EventBus:
     """
     
     def __init__(self, config: EventBusConfig = None):
+        warnings.warn("EventBus is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or EventBusConfig()
         
         # Subscriptions by topic

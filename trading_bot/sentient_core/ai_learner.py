@@ -5,6 +5,7 @@ Analyzes other AI trading systems, extracts their techniques,
 and integrates successful patterns into the bot's own strategies.
 """
 
+import warnings
 import asyncio
 try:
     import aiohttp
@@ -137,6 +138,7 @@ class AILearner:
         db_path: str = "knowledge/ai_learning.db",
         learning_interval: int = 3600,  # 1 hour
     ):
+        warnings.warn("AILearner is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.learning_interval = learning_interval

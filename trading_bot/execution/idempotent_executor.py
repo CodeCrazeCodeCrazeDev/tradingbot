@@ -370,52 +370,9 @@ class OrderBatchExecutor:
 
 # Example usage and testing
 if __name__ == "__main__":
-    # Setup logging
-    logging.basicConfig(level=logging.INFO)
-    
-    # Mock executor function
-    def mock_broker_submit(request: OrderRequest) -> OrderResult:
-        """Mock broker submission"""
-        time.sleep(0.1)  # Simulate network delay
-        return OrderResult(
-            client_order_id=request.client_order_id,
-            exchange_order_id=f"EX-{uuid.uuid4().hex[:8]}",
-            status=OrderStatus.SUBMITTED,
-            submitted_at=datetime.now()
-        )
-    
-    # Create idempotent executor
-    executor = IdempotentExecutor(cache_ttl_seconds=300)
-    
-    # Test 1: Submit order
-    order1 = OrderRequest(
-        symbol="EURUSD",
-        side="BUY",
-        quantity=1.0,
-        order_type="MARKET"
+    raise SystemExit(
+        "trading_bot/execution/idempotent_executor.py is QUARANTINED: standalone execution of this module is a "
+        "parallel capital/loop path outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
     )
-    
-    result1 = executor.place_order(order1, mock_broker_submit)
-    logger.info(f"Order 1 submitted: {result1.exchange_order_id}")
-    
-    # Test 2: Retry same order (should return cached)
-    result2 = executor.place_order(order1, mock_broker_submit)
-    logger.info(f"Order 1 retry: {result2.exchange_order_id} (cached: {result1.exchange_order_id == result2.exchange_order_id})")
-    
-    # Test 3: Different order with same client_order_id (should fail)
-    order3 = OrderRequest(
-        symbol="GBPUSD",  # Different symbol
-        side="BUY",
-        quantity=1.0,
-        order_type="MARKET",
-        client_order_id=order1.client_order_id  # Same ID!
-    )
-    
-    try:
-        result3 = executor.place_order(order3, mock_broker_submit)
-    except ValueError as e:
-        logger.info(f"Content mismatch detected: {e}")
-    
-    # Print statistics
-    stats = executor.get_statistics()
-    logger.info(f"\nStatistics: {stats}")

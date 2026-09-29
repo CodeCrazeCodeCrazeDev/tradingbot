@@ -4,6 +4,7 @@ Provides cross-process shared memory functionality using multiprocessing.shared_
 Replaces deprecated pyarrow.plasma with a more robust and Windows-compatible solution
 """
 
+import warnings
 import asyncio
 import logging
 import json
@@ -91,6 +92,7 @@ class SharedMemoryManager:
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("SharedMemoryManager is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.objects: Dict[str, SharedMemoryObject] = {}
         self.lock = threading.RLock()

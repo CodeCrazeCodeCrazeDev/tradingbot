@@ -16,6 +16,7 @@ Author: Trading Bot Team
 Date: 2025-10-22
 """
 
+import warnings
 import logging
 import asyncio
 import time
@@ -95,6 +96,7 @@ class SelfOptimizationSystem:
     
     def __init__(self, config: Optional[Dict] = None):
         """Initialize self-optimization system"""
+        warnings.warn("SelfOptimizationSystem is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Optimization history

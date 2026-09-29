@@ -6,6 +6,7 @@ Monitors data freshness and automatically pauses trading when data becomes stale
 Critical for preventing trading on outdated information.
 """
 
+import warnings
 import time
 from typing import Any, Callable, Dict, List, Optional
 from dataclasses import dataclass, field
@@ -121,6 +122,7 @@ class StalenessDetector:
             check_interval_seconds: How often to check freshness
             enable_monitoring: Enable background monitoring thread
         """
+        warnings.warn("StalenessDetector is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.auto_pause_trading = auto_pause_trading
         self.check_interval = check_interval_seconds
         self.enable_monitoring = enable_monitoring

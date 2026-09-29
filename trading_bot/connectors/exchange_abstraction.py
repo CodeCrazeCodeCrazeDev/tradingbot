@@ -16,6 +16,7 @@ Author: Elite Trading Bot
 Version: 1.0.0
 """
 
+import warnings
 import asyncio
 import logging
 from abc import ABC, abstractmethod
@@ -192,6 +193,7 @@ class ExchangeAdapter(ABC):
     """
     
     def __init__(self, config: Dict[str, Any]):
+        warnings.warn("ExchangeAdapter is a legacy/quarantined component: capital path outside the canonical execution boundary. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         self.exchange_name = config.get('name', 'unknown')
         self.exchange_type = ExchangeType(config.get('type', 'forex'))

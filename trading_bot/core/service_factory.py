@@ -21,6 +21,7 @@ IMMUTABLE PRINCIPLES:
 3. FAIL-SAFE: Default to NO TRADE when uncertain
 """
 
+import warnings
 import logging
 from typing import Dict, List, Optional, Any, Type
 from dataclasses import dataclass, field
@@ -1586,6 +1587,7 @@ class ServiceFactory:
         event_bus: EventBus,
         config: Optional[Dict[str, Any]] = None
     ):
+        warnings.warn("ServiceFactory is a legacy/quarantined component: dynamic module/class loading bypasses static convergence control. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.registry = registry
         self.event_bus = event_bus
         self.config = config or {}

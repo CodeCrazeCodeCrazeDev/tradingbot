@@ -31,6 +31,7 @@ Author: AlphaAlgo Trading System
 Version: 4.0.0 - THE ONE
 """
 
+import warnings
 import asyncio
 import logging
 import importlib
@@ -755,6 +756,7 @@ class UnifiedAIBrain:
             return cls._instance
     
     def __init__(self, config: Optional[BrainConfig] = None):
+        warnings.warn("UnifiedAIBrain is a legacy/quarantined component: parallel brain with dynamic subsystem loading — advisory only. It carries no production authority.", DeprecationWarning, stacklevel=2)
         """Initialize the unified AI brain"""
         # Prevent re-initialization
         if hasattr(self, '_initialized') and self._initialized:

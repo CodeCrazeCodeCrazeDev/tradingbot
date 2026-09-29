@@ -6,6 +6,7 @@ This module implements comprehensive security features including:
 - Regulatory compliance automation
 """
 
+import warnings
 import os
 import json
 import time
@@ -76,6 +77,7 @@ class SecuritySystem:
         Args:
             config: Configuration dictionary
         """
+        warnings.warn("SecuritySystem is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.security_level = SecurityLevel[self.config.get('security_level', 'MEDIUM')]
         self.encryption_key = self._initialize_encryption()

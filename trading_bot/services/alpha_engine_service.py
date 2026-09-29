@@ -5,6 +5,7 @@ Alpha Engine Service
 Wraps Alpha Engine module capabilities as an event-driven service.
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime
@@ -35,6 +36,7 @@ class AlphaEngineService(BaseService):
     DEPENDENCIES = ["analysis"]
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("AlphaEngineService is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         self.config = config or {}
         self._interval: float = self.config.get('interval', 30.0)

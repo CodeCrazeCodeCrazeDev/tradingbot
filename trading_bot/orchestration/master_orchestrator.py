@@ -290,9 +290,15 @@ class _LegacyMasterOrchestrator:
         self.service_locator.register("config", self.config)
     
     def _start_monitoring(self) -> None:
-        """Start background monitoring."""
-        if self.config.health_check_interval > 0:
-            self._monitoring_task = asyncio.create_task(self._monitoring_loop())
+        """Disabled: legacy monitoring worker carries no authority.
+
+        The canonical runtime owns production health monitoring.
+        """
+        self._monitoring_task = None
+        logger.warning(
+            "MasterOrchestrator monitoring worker disabled; canonical "
+            "runtime owns health monitoring"
+        )
     
     async def _monitoring_loop(self) -> None:
         """Background monitoring loop."""
@@ -569,15 +575,10 @@ class _LegacyMasterOrchestrator:
             return False
     
     def __del__(self):
-        """Cleanup on deletion."""
-        if getattr(self, "shutdown_requested", True):
-            return
-        try:
-            loop = asyncio.get_running_loop()
-            loop.create_task(self.shutdown())
-        except RuntimeError:
-            # No running event loop at GC time - nothing to schedule
-            pass
+        """Cleanup on deletion: no worker scheduling is permitted."""
+        # Deliberately schedules no work — legacy orchestrators may not spawn
+        # workers, even during garbage collection.
+        return
 
 
 class MasterOrchestrator:

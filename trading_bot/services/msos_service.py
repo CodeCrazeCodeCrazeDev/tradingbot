@@ -8,6 +8,7 @@ This is the MOST CRITICAL service - it has VETO power over all trades.
 PRIMARY DIRECTIVE: Preserve capital across regime shifts.
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime
@@ -44,6 +45,7 @@ class MSOSService(BaseService):
     DEPENDENCIES = ["database"]
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("MSOSService is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         self._check_interval: float = config.get('interval', 5.0) if config else 5.0
         self._task: Optional[asyncio.Task] = None

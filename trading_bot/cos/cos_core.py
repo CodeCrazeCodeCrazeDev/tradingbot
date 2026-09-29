@@ -43,6 +43,7 @@ Integration with the full trading bot system:
 """
 
 from __future__ import annotations
+import warnings
 
 import asyncio
 import logging
@@ -100,6 +101,7 @@ class CognitiveOperatingSystem:
     """
 
     def __init__(self, config: Optional[COSConfig] = None):
+        warnings.warn("CognitiveOperatingSystem is a legacy/quarantined component: dynamic module/class loading bypasses static convergence control. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or COSConfig()
 
         # Core components

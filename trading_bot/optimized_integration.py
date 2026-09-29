@@ -3,6 +3,7 @@ Optimized Data Pipeline Integration
 Connects the optimized data pipeline with the original trading bot architecture
 """
 
+import warnings
 import asyncio
 from typing import Any, Dict, List, Optional
 import logging
@@ -96,6 +97,7 @@ class OptimizedIntegration:
     """
     
     def __init__(self, config: Dict[str, Any]):
+        warnings.warn("OptimizedIntegration is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         
         # Initialize original components

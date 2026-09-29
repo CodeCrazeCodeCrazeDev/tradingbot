@@ -19,6 +19,7 @@ Design Principles:
 5. FULL TRANSPARENCY - Log everything, explain every decision
 """
 
+import warnings
 import asyncio
 import logging
 import json
@@ -229,6 +230,7 @@ class UltimateProductionEngine:
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """Initialize the Ultimate Production Engine"""
+        warnings.warn("UltimateProductionEngine is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.engine_id = str(uuid.uuid4())[:8]
         

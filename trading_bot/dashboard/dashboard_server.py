@@ -5,6 +5,7 @@ This module provides the core dashboard server functionality for the Elite Tradi
 enabling real-time monitoring and analytics visualization.
 """
 
+import warnings
 import os
 import logging
 import threading
@@ -68,6 +69,7 @@ class DashboardServer:
         Args:
             config: Dashboard configuration, or None for default
         """
+        warnings.warn("DashboardServer is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or DashboardConfig()
         
         # Configure logging

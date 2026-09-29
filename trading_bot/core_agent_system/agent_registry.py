@@ -15,6 +15,7 @@ Key Features:
 - Dynamic agent spawning/termination
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime
@@ -305,6 +306,7 @@ class AgentRegistry:
     """
     
     def __init__(self, config: Optional[Dict] = None, object_registry: Any = None):
+        warnings.warn("AgentRegistry is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         config = config or {}
         self.config = config
         self.object_registry = object_registry

@@ -6,6 +6,7 @@ Wraps Risk Management capabilities as an event-driven service.
 Works in conjunction with MSOS to enforce risk constraints.
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime
@@ -38,6 +39,7 @@ class RiskService(BaseService):
     DEPENDENCIES = ["database", "msos"]
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("RiskService is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         self._check_interval: float = config.get('interval', 10.0) if config else 10.0
         self._task: Optional[asyncio.Task] = None
@@ -58,7 +60,13 @@ class RiskService(BaseService):
         """Start Risk service"""
         self._running = True
         await self._load_components()
-        self._task = asyncio.create_task(self._monitoring_loop())
+        # Monitoring worker disabled: CanonicalRiskService owns portfolio
+        # risk decisions; this legacy service is advisory only.
+        self._task = None
+        logger.warning(
+            "RiskService monitoring worker disabled; canonical "
+            "CanonicalRiskService owns risk decisions"
+        )
         
         # Subscribe to events
         if self._event_bus:

@@ -18,6 +18,7 @@ Author: AlphaAlgo Trading System
 Version: 3.0.0
 """
 
+import warnings
 import asyncio
 import logging
 import time
@@ -651,6 +652,7 @@ class RealTimeSignalEngine:
     """
     
     def __init__(self, config: Dict[str, Any] = None):
+        warnings.warn("RealTimeSignalEngine is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Indicators per symbol

@@ -9,6 +9,7 @@ This is the single entry point for the entire self-diagnostic system.
 """
 
 from __future__ import annotations
+import warnings
 
 import asyncio
 import json
@@ -276,6 +277,7 @@ class SelfDiagnosticManager:
         max_repair_attempts: int = 3,
         escalation_callback: Optional[Callable[[str, str], None]] = None,
     ):
+        warnings.warn("SelfDiagnosticManager is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.engine = DiagnosticEngine(project_root)
         self.repairer = AutoRepairEngine(project_root)
         self.project_root = self.engine.project_root

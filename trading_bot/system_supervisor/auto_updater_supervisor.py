@@ -3,6 +3,7 @@ Phase 5: Auto-Updater Supervisor
 Manages 24-hour update cycles with performance monitoring
 """
 
+import warnings
 import asyncio
 import logging
 import hashlib
@@ -49,6 +50,7 @@ class AutoUpdaterSupervisor:
     """
     
     def __init__(self, config: Dict):
+        warnings.warn("AutoUpdaterSupervisor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         
         # Paths

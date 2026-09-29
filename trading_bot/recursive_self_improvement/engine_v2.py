@@ -9,6 +9,7 @@ stages past ``eligible_for_operator_review`` need a signed
 """
 
 from __future__ import annotations
+import warnings
 
 import hashlib
 import json
@@ -449,6 +450,7 @@ class IndependentVerifier:
     def __init__(self, private_key: Optional[Ed25519PrivateKey] = None,
                  verifier_id: str = "rsi-independent-verifier",
                  key_path: Optional[str] = None) -> None:
+        warnings.warn("IndependentVerifier is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.private_key = private_key or self._load_private_key(key_path) \
             or Ed25519PrivateKey.generate()
         self.verifier_id = verifier_id

@@ -3,6 +3,7 @@ Self-Modification Engine
 Allows the AI to modify its own code, structure, and behavior.
 """
 
+import warnings
 import ast
 import asyncio
 import json
@@ -61,6 +62,7 @@ class SelfModificationEngine:
     """
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("SelfModificationEngine is a legacy/quarantined component: self-modifying code via dynamic imports — research-only. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.modifications: List[CodeModification] = []
         self.structure_changes: List[StructureChange] = []

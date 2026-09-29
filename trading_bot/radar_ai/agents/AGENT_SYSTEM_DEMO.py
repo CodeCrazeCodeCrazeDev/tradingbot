@@ -461,4 +461,9 @@ async def run_complete_trading_workflow():
 
 
 if __name__ == "__main__":
-    asyncio.run(run_complete_trading_workflow())
+    raise SystemExit(
+        "trading_bot/radar_ai/agents/AGENT_SYSTEM_DEMO.py is QUARANTINED: standalone execution of this module is a "
+        "parallel capital/loop path outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

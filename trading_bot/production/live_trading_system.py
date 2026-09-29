@@ -1237,4 +1237,9 @@ async def run_demo():
 
 
 if __name__ == "__main__":
-    asyncio.run(run_demo())
+    raise SystemExit(
+        "trading_bot/production/live_trading_system.py is QUARANTINED: standalone execution of this module is a "
+        "parallel capital/loop path outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

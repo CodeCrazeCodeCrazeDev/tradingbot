@@ -12,6 +12,7 @@ Features:
 - Real-time fill notifications
 """
 
+import warnings
 import asyncio
 import logging
 import time
@@ -197,6 +198,7 @@ class MT5Connection(BrokerConnection):
     """MetaTrader 5 connection implementation"""
     
     def __init__(self, credentials: BrokerCredentials, config: Optional[Dict] = None):
+        warnings.warn("MT5Connection is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.credentials = credentials
         self.config = config or {}
         self.status = ConnectionStatus.DISCONNECTED

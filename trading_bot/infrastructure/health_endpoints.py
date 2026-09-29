@@ -2,6 +2,7 @@
 Health check REST endpoints for monitoring
 """
 
+import warnings
 import logging
 from typing import Dict
 from datetime import datetime
@@ -385,6 +386,7 @@ class HealthCheckManager:
     """Manage health checks for all components"""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("HealthCheckManager is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.components: Dict[str, ComponentHealth] = {}
         self.overall_status = HealthStatus.HEALTHY

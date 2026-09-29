@@ -27,6 +27,7 @@ Gap Categories:
 """
 
 from __future__ import annotations
+import warnings
 
 import asyncio
 import hashlib
@@ -132,6 +133,7 @@ class KnowledgeLedger:
     """
 
     def __init__(self, db_path: str):
+        warnings.warn("KnowledgeLedger is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self._db_path = db_path
         self._ensure_tables()
 

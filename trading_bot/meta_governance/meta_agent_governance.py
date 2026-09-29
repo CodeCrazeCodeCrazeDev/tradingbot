@@ -70,6 +70,7 @@ Architecture:
 └─────────────────────────────────────────────────────────────────────────┘
 """
 
+import warnings
 import asyncio
 import logging
 from typing import Dict, List, Optional, Any, Callable, Set, Tuple, Union
@@ -381,6 +382,7 @@ class MetaAgentGovernanceLayer:
         validation_criteria: Optional[ValidationCriteria] = None,
         config: Optional[Dict] = None
     ):
+        warnings.warn("MetaAgentGovernanceLayer is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.unified_system = unified_system
         self.alpha_meta = alpha_meta
@@ -425,9 +427,12 @@ class MetaAgentGovernanceLayer:
         self._monitoring = True
         logger.info("Starting Meta-Agent Governance Layer...")
         
-        self._monitor_task = asyncio.create_task(self._monitoring_loop())
-        
-        logger.info("✓ Meta-Agent Governance Layer active")
+        # Worker disabled: governance monitoring belongs to the canonical
+        # runtime, not this legacy layer.
+        self._monitor_task = None
+        logger.warning("Meta-agent governance worker disabled; canonical runtime owns governance")
+
+        logger.info("✓ Meta-Agent Governance Layer active (worker disabled)")
     
     async def stop(self):
         """Stop the governance layer"""

@@ -4,6 +4,7 @@ MT5 Broker Adapter - Production-Ready MetaTrader 5 Integration
 This module provides a complete, production-ready adapter for MetaTrader 5.
 """
 
+import warnings
 import asyncio
 import logging
 from typing import Any, Dict, List, Optional
@@ -35,6 +36,7 @@ class MT5BrokerAdapter:
     """Production-ready MT5 broker adapter"""
     
     def __init__(self, config: Dict[str, Any]):
+        warnings.warn("MT5BrokerAdapter is a legacy/quarantined component: capital path outside the canonical execution boundary. It carries no production authority.", DeprecationWarning, stacklevel=2)
         if not MT5_AVAILABLE:
             raise ImportError("MetaTrader5 package not installed")
         

@@ -1,5 +1,6 @@
 """Self-Modification Engine for Self-Improving Trading Bot.
 
+import warnings
 from pathlib import Path
 This module implements the self-modification engine that orchestrates the entire
 self-improvement process, from knowledge acquisition to code generation,
@@ -364,6 +365,7 @@ class SelfModificationEngine:
             api_keys: Dictionary of API keys for different services
             config_path: Path to configuration file
         """
+        warnings.warn("SelfModificationEngine is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.knowledge_base = knowledge_base
         self.api_keys = api_keys or {}
         

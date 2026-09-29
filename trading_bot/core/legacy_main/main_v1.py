@@ -3681,4 +3681,9 @@ def _initialize_connectivity(api_source, websocket_feed, news_scraping, cache_di
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    raise SystemExit(
+        "trading_bot/core/legacy_main/main_v1.py is QUARANTINED: standalone execution of this module is a "
+        "parallel capital/loop path outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

@@ -11,6 +11,7 @@ Complete implementation of institutional-grade execution algorithms:
 - Adaptive Execution
 """
 
+import warnings
 import asyncio
 import logging
 import time
@@ -29,6 +30,12 @@ try:
     NUMPY_AVAILABLE = True
 except ImportError:
     NUMPY_AVAILABLE = False
+
+
+warnings.warn(
+    "advanced_algorithms executors (TWAP/VWAP/Iceberg/POV/IS/Adaptive) are parallel execution paths; CanonicalExecutionService owns execution.",
+    DeprecationWarning, stacklevel=2,
+)
 
 
 class ExecutionAlgorithm(Enum):

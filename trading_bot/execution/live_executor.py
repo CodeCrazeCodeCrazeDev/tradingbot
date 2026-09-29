@@ -1,4 +1,5 @@
 from __future__ import annotations
+import warnings
 import logging
 logger = logging.getLogger(__name__)
 """LiveExecutor – sends real orders to MT5 via `MT5Interface`.
@@ -38,6 +39,7 @@ class LiveExecutor:  # noqa: B024 – simple orchestrator
     """Convert `Signal`s into market/limit orders on the real account."""
 
     def __init__(self, mt5i: MT5Interface, risk: RiskManager) -> None:
+        warnings.warn("LiveExecutor is a legacy/quarantined component: parallel live execution outside CanonicalExecutionService. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.mt5 = mt5i
         self.risk = risk
         self.validator = TradeValidator()  # Add trade validator

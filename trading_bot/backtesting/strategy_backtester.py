@@ -1,3 +1,4 @@
+import warnings
 import logging
 logger = logging.getLogger(__name__)
 """Strategy backtesting module for testing trading strategies."""
@@ -78,6 +79,7 @@ class StrategyBacktester:
     
     def __init__(self):
         """Initialize strategy backtester."""
+        warnings.warn("StrategyBacktester is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.market_analyzer = MarketContextAnalyzer()
         self.liquidity_analyzer = LiquidityAnalyzer()
         self.order_flow_analyzer = OrderFlowAnalyzer()

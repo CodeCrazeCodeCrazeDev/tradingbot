@@ -5,6 +5,7 @@ Monitors network connectivity and automatically activates/deactivates
 trading systems based on connection status. Supports live and paper trading modes.
 """
 
+import warnings
 import asyncio
 import socket
 import time
@@ -117,6 +118,7 @@ class NetworkSentinel:
         auto_switch_mode: bool = True,
         preferred_mode: TradingMode = TradingMode.PAPER,
     ):
+        warnings.warn("NetworkSentinel is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.check_interval = check_interval
         self.stability_threshold = stability_threshold
         self.auto_switch_mode = auto_switch_mode

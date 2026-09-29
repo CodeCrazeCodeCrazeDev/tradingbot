@@ -507,5 +507,10 @@ async def main():
     controller.display_risk_dashboard()
 
 
-if __name__ == '__main__':
-    asyncio.run(main())
+if __name__ == "__main__":
+    raise SystemExit(
+        "trading_bot/utils/risk_controller.py is QUARANTINED: standalone execution of this module is a "
+        "parallel capital/loop path outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

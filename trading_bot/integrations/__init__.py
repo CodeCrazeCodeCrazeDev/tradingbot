@@ -19,6 +19,7 @@ __all__ = [
     'IntegrationsOrchestrator',
     'MockCognitiveCore',
     'MockFeatureEngineer',
+    'RealAlternativeDataProvider',
 ]
 
 try:

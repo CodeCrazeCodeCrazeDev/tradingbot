@@ -1,4 +1,5 @@
 """
+import warnings
 from typing import List, Optional, Set
 Production Monitoring System - Complete Real-Time Monitoring
 
@@ -112,6 +113,7 @@ class PrometheusMetricsCollector:
         return cls._instance
     
     def __init__(self, port: int = 9090, prefix: str = "alphaalgo"):
+        warnings.warn("PrometheusMetricsCollector is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         if hasattr(self, '_initialized'):
             return
         

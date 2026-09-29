@@ -6,6 +6,11 @@ Auto-generated integration file.
 """
 
 from .service import CanonicalRiskService, LegacyRiskPolicyAdapter
+from .policy_adapters import (
+    SizingVetoPolicyAdapter,
+    TradeAllowancePolicyAdapter,
+    TradeAssessmentPolicyAdapter,
+)
 
 try:
     from .MASTER_risk_manager import (
@@ -222,6 +227,7 @@ __all__ = [
     'EnhancedCorrelationManager',
     'FreeRiskManager',
     'KellyCriterion',
+    'MarketRegime',
     'MasterRiskManager',
     'MlRiskManager',
     'MockRiskManager',
@@ -229,10 +235,20 @@ __all__ = [
     'MultiLayerRiskManagerConfig',
     'PortfolioRiskManager',
     'PositionManager',
+    'PositionSize',
+    'PositionSizeCalculator',
     'PreTradeChecksEngine',
+    'SizingVetoPolicyAdapter',
+    'TradeAllowancePolicyAdapter',
+    'TradeAssessmentPolicyAdapter',
+    'RiskLimits',
     'RiskManager',
+    'RiskMode',
     'TestRiskManager',
     'TestRiskManagerConfig',
+    'TradeDirection',
+    'TradeQuality',
+    'TradingStats',
     'UnifiedRiskManager',
     'VaREngine',
 ]

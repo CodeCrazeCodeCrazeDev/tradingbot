@@ -5,6 +5,7 @@ This module provides data providers for the Elite Trading Bot dashboard,
 enabling real-time data updates from various sources.
 """
 
+import warnings
 import logging
 import threading
 import time
@@ -45,6 +46,7 @@ class DashboardDataProvider:
     
     def __init__(self):
         """Initialize the data provider."""
+        warnings.warn("DashboardDataProvider is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.data_sources = {}
         self.data_cache = {}
         self.update_callbacks = {}

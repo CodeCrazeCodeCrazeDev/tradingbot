@@ -12,6 +12,7 @@ Architecture:
     Feature Pipeline → Model Inference → Output Cache → API
 """
 
+import warnings
 import numpy as np
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, Any, Callable
@@ -194,6 +195,7 @@ class InferenceEngine:
     """
     
     def __init__(self, config: Optional[InferenceConfig] = None):
+        warnings.warn("InferenceEngine is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or InferenceConfig()
         
         # Model

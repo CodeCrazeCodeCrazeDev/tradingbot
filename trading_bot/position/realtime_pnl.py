@@ -15,6 +15,7 @@ Author: Elite Trading Bot
 Version: 1.0.0
 """
 
+import warnings
 import asyncio
 import logging
 from dataclasses import dataclass, field
@@ -227,6 +228,7 @@ class RealTimePnLCalculator:
         account_currency: str = "USD",
         update_interval_ms: int = 100
     ):
+        warnings.warn("RealTimePnLCalculator is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.account_currency = account_currency
         self.update_interval = update_interval_ms / 1000
         

@@ -7,6 +7,7 @@ This module implements advanced order execution algorithms including:
 - Smart Order Routing (SOR)
 """
 
+import warnings
 from typing import Deque
 from collections import defaultdict
 from collections import deque
@@ -926,6 +927,7 @@ class TradeKillSwitchPredictor:
     """
     
     def __init__(self, warning_threshold: float = 0.6, kill_threshold: float = 0.8):
+        warnings.warn("TradeKillSwitchPredictor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.warning_threshold = warning_threshold
         self.kill_threshold = kill_threshold
         

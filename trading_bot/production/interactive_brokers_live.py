@@ -1047,47 +1047,9 @@ def quick_connect(mode: str = "paper") -> InteractiveBrokersClient:
 # =============================================================================
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    
-    if not IB_API_AVAILABLE:
-        print("IB API not installed. Install with: pip install ibapi")
-        print("Download from: https://interactivebrokers.github.io/")
-        exit(1)
-    
-    # Create client
-    client = create_ib_client("paper")
-    
-    # Set callbacks
-    def on_fill(fill: Fill):
-        print(f"FILL: {fill.symbol} {fill.side} {fill.quantity}@{fill.price}")
-    
-    def on_order_update(order: OrderRecord):
-        print(f"ORDER: {order.symbol} {order.state.value}")
-    
-    client.set_fill_callback(on_fill)
-    client.set_order_callback(on_order_update)
-    
-    # Connect
-    print("Connecting to IB...")
-    if client.connect():
-        print(f"Connected! Account: {client.credentials.account}")
-        
-        # Request positions
-        client.request_positions()
-        time.sleep(2)
-        
-        positions = client.get_all_positions()
-        print(f"Positions: {positions}")
-        
-        # Place test order (commented out for safety)
-        # order = client.place_market_order("AAPL", "BUY", 1)
-        # print(f"Order placed: {order.order_id}")
-        
-        # Get latency stats
-        stats = client.get_latency_stats()
-        print(f"Latency: {stats}")
-        
-        # Disconnect
-        client.disconnect()
-    else:
-        print("Failed to connect")
+    raise SystemExit(
+        "trading_bot/production/interactive_brokers_live.py is QUARANTINED: standalone execution of this module is a "
+        "parallel capital/loop path outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

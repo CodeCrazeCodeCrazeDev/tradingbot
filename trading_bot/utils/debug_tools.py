@@ -3,6 +3,7 @@ Debug and Profiling Tools for Trading Bot
 Provides utilities for debugging, tracing, and performance analysis
 """
 
+import warnings
 import functools
 import time
 import tracemalloc
@@ -110,6 +111,7 @@ class MemoryProfiler:
     """Memory usage profiler"""
     
     def __init__(self):
+        warnings.warn("MemoryProfiler is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.snapshots = {}
         self.tracking = False
         

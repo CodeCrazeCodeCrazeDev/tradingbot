@@ -3,6 +3,7 @@ Phase 5: Auto-Update and Self-Learning System
 Manages 24-hour update cycles, model retraining, and performance monitoring.
 """
 
+import warnings
 import asyncio
 import logging
 import json
@@ -87,6 +88,7 @@ class AutoUpdater:
     """
     
     def __init__(self, config: Dict):
+        warnings.warn("AutoUpdater is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         
         # Paths
