@@ -2,34 +2,30 @@
   "generated_by": "tools/scan_weaknesses.py",
   "note": "Rows are flagged candidates; verification + failing test precede any fix. _archive excluded. Reachability is best-effort AST analysis.",
   "counts": {
-    "total": 1100,
-    "reachable": 637,
+    "total": 1114,
+    "reachable": 679,
     "by_severity": {
-      "S0": 34,
+      "S0": 35,
       "S1": 2,
       "S2": 7,
       "S3": 9,
       "S4": 0,
-      "S5": 1048
+      "S5": 1061
     },
     "by_detector": {
-      "always_true_gate": 14,
+      "always_true_gate": 15,
       "dangerous_call": 4,
       "mutable_default": 2,
+      "not_implemented": 1,
       "silent_except_log_pass": 7,
-      "silent_except_pass": 991,
-      "silent_except_swallow_default": 67,
+      "silent_except_pass": 999,
+      "silent_except_swallow_default": 71,
       "sql_interpolation": 10,
       "unseeded_random": 5
     },
-    "classified_s5_context": 0,
-    "not_implemented_added": 1,
-    "open_reachable_remaining": 0,
-    "fixed_this_round": 1,
-    "classified_this_round": 43,
-    "fixed_wave3": 7,
-    "wontfix_unreachable": 92,
-    "open_total": 0
+    "classified_s5_context": 880,
+    "not_implemented_added": 14,
+    "open_reachable_remaining": 166
   },
   "findings": [
     {
@@ -39,7 +35,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: optional numpy/torch import guards",
+      "status": "classified: lazy optional-import fallback",
       "test": "",
       "commit": ""
     },
@@ -50,7 +46,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: optional numpy/torch import guards",
+      "status": "classified: lazy optional-import fallback",
       "test": "",
       "commit": ""
     },
@@ -61,57 +57,46 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: optional torch import guard",
+      "status": "classified: lazy optional-import fallback",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\core\\unified_event_bus.py",
-      "line": 255,
+      "line": 281,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: narrow asyncio.CancelledError shutdown pattern",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\decision_governance\\continuous_capability_discovery.py",
-      "line": 209,
+      "line": 213,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: optional-import probes / CancelledError shutdown",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\decision_governance\\continuous_capability_discovery.py",
-      "line": 496,
+      "line": 500,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: optional-import probes / CancelledError shutdown",
+      "status": "classified: lazy optional-import fallback",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\decision_governance\\continuous_capability_discovery.py",
-      "line": 539,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S0",
-      "status": "classified: optional-import probes / CancelledError shutdown",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\decision_governance\\continuous_capability_discovery.py",
-      "line": 552,
+      "line": 543,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -122,7 +107,7 @@
     },
     {
       "file": "trading_bot\\decision_governance\\continuous_capability_discovery.py",
-      "line": 565,
+      "line": 556,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -133,7 +118,18 @@
     },
     {
       "file": "trading_bot\\decision_governance\\continuous_capability_discovery.py",
-      "line": 578,
+      "line": 569,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S0",
+      "status": "classified: optional-import probes / CancelledError shutdown",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\decision_governance\\continuous_capability_discovery.py",
+      "line": 582,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -144,34 +140,34 @@
     },
     {
       "file": "trading_bot\\decision_governance\\self_inspection.py",
-      "line": 227,
+      "line": 232,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: narrow asyncio.CancelledError shutdown pattern (line 227)",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\decision_governance\\unified_intelligence.py",
-      "line": 315,
+      "line": 319,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: narrow asyncio.CancelledError shutdown pattern",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\decision_governance\\unified_intelligence.py",
-      "line": 322,
+      "line": 326,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: narrow asyncio.CancelledError shutdown pattern",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
       "test": "",
       "commit": ""
     },
@@ -182,7 +178,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: optional-import guards by design",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
@@ -193,7 +189,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: optional-import guards by design",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
@@ -204,7 +200,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: optional-import guards by design",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
@@ -215,7 +211,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: optional-import guards by design",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
@@ -226,7 +222,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: optional-import guards by design",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
@@ -237,7 +233,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: optional-import guards by design",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
@@ -248,7 +244,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: optional-import guards by design",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
@@ -259,7 +255,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: optional-import guards by design",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
@@ -270,7 +266,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: optional-import guards by design",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
@@ -281,7 +277,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: optional-import guards by design",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
@@ -292,7 +288,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: optional-import guards by design",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
@@ -303,7 +299,7 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: optional-import guards by design",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
@@ -314,40 +310,40 @@
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: optional-import guards by design",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\execution\\advanced_order_management.py",
-      "line": 250,
+      "line": 251,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: narrow asyncio.CancelledError shutdown pattern",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\execution\\advanced_order_management.py",
-      "line": 394,
+      "line": 396,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: narrow asyncio.CancelledError shutdown pattern",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\execution\\advanced_order_management.py",
-      "line": 670,
+      "line": 672,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S0",
-      "status": "classified: narrow asyncio.CancelledError shutdown pattern",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
       "test": "",
       "commit": ""
     },
@@ -370,6 +366,17 @@
       "reachable": true,
       "severity": "S0",
       "status": "classified: load-failure default by design",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\risk\\state_provider.py",
+      "line": 127,
+      "detector": "silent_except_swallow_default",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S0",
+      "status": "classified: narrow TypeError/ValueError parse guard - unpriced positions fall back to cost-basis marks (documented)",
       "test": "",
       "commit": ""
     },
@@ -441,12 +448,23 @@
     },
     {
       "file": "trading_bot\\recursive_self_improvement\\engine_v2.py",
-      "line": 469,
+      "line": 592,
+      "detector": "not_implemented",
+      "detail": "raise NotImplementedError in evaluate",
+      "reachable": true,
+      "severity": "S2",
+      "status": "classified: intentional fail-closed stub \u2014 external verifier wire contract (TD-07); raises until an operator transport is provisioned",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\recursive_self_improvement\\engine_v2.py",
+      "line": 716,
       "detector": "unseeded_random",
       "detail": "unseeded random.Random in deterministic path",
       "reachable": true,
       "severity": "S2",
-      "status": "classified: random.Random(contract.rng_seed) - deterministic by contract",
+      "status": "classified: random.Random(config.rng_seed) - deterministic by contract (false positive)",
       "test": "",
       "commit": ""
     },
@@ -495,17 +513,6 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\recursive_self_improvement\\rollback.py",
-      "line": 162,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S2",
-      "status": "fixed(w3): rollback archive-record failure now logged warning (was silent noqa swallow)",
-      "test": "",
-      "commit": ""
-    },
-    {
       "file": "trading_bot\\audit\\trade_journal.py",
       "line": 371,
       "detector": "sql_interpolation",
@@ -518,7 +525,7 @@
     },
     {
       "file": "trading_bot\\core\\security\\sandbox.py",
-      "line": 97,
+      "line": 99,
       "detector": "dangerous_call",
       "detail": "exec() on dynamic input",
       "reachable": true,
@@ -529,7 +536,7 @@
     },
     {
       "file": "trading_bot\\core\\security\\sandbox.py",
-      "line": 132,
+      "line": 134,
       "detector": "dangerous_call",
       "detail": "exec() on dynamic input",
       "reachable": true,
@@ -584,7 +591,7 @@
     },
     {
       "file": "trading_bot\\ingestion\\storage.py",
-      "line": 252,
+      "line": 253,
       "detector": "sql_interpolation",
       "detail": "SQL built by string interpolation",
       "reachable": true,
@@ -848,34 +855,89 @@
     },
     {
       "file": "trading_bot\\advanced_features\\__init__.py",
-      "line": 59,
+      "line": 67,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\advanced_features\\__init__.py",
-      "line": 68,
+      "line": 76,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\advanced_features\\__init__.py",
-      "line": 77,
+      "line": 87,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\advanced_features\\__init__.py",
+      "line": 98,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\advanced_features\\__init__.py",
+      "line": 108,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\advanced_features\\__init__.py",
+      "line": 118,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\advanced_features\\__init__.py",
+      "line": 129,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\advanced_features\\__init__.py",
+      "line": 138,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
@@ -884,7 +946,7 @@
       "line": 140,
       "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
@@ -895,7 +957,7 @@
       "line": 372,
       "detector": "mutable_default",
       "detail": "mutable default argument in __init__",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
@@ -903,7 +965,7 @@
     },
     {
       "file": "trading_bot\\advanced_features\\blockchain_trade_verification.py",
-      "line": 435,
+      "line": 437,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -914,7 +976,7 @@
     },
     {
       "file": "trading_bot\\advanced_features\\blockchain_validation.py",
-      "line": 135,
+      "line": 136,
       "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
       "reachable": true,
@@ -925,7 +987,7 @@
     },
     {
       "file": "trading_bot\\advanced_features\\blockchain_validation.py",
-      "line": 518,
+      "line": 520,
       "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
       "reachable": true,
@@ -1915,7 +1977,7 @@
     },
     {
       "file": "trading_bot\\alphaalgo_core\\alphaalgo_meta_system.py",
-      "line": 337,
+      "line": 339,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -2344,7 +2406,7 @@
     },
     {
       "file": "trading_bot\\auto_dependency_installer.py",
-      "line": 214,
+      "line": 216,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -2355,7 +2417,7 @@
     },
     {
       "file": "trading_bot\\auto_dependency_installer.py",
-      "line": 411,
+      "line": 413,
       "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
       "reachable": true,
@@ -2542,7 +2604,7 @@
     },
     {
       "file": "trading_bot\\autonomous_pipeline\\sandbox_environment.py",
-      "line": 237,
+      "line": 239,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -2553,7 +2615,7 @@
     },
     {
       "file": "trading_bot\\autonomous_pipeline\\sandbox_environment.py",
-      "line": 267,
+      "line": 269,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -2564,7 +2626,7 @@
     },
     {
       "file": "trading_bot\\background.py",
-      "line": 226,
+      "line": 227,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -2575,7 +2637,7 @@
     },
     {
       "file": "trading_bot\\background.py",
-      "line": 307,
+      "line": 309,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -2586,7 +2648,7 @@
     },
     {
       "file": "trading_bot\\background.py",
-      "line": 457,
+      "line": 459,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -2597,7 +2659,7 @@
     },
     {
       "file": "trading_bot\\background.py",
-      "line": 530,
+      "line": 532,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -2608,23 +2670,12 @@
     },
     {
       "file": "trading_bot\\background.py",
-      "line": 591,
+      "line": 593,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
       "severity": "S5",
       "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\brain\\__init__.py",
-      "line": 59,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S5",
-      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
@@ -2652,7 +2703,7 @@
     },
     {
       "file": "trading_bot\\brokers\\__init__.py",
-      "line": 20,
+      "line": 17,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -2663,7 +2714,7 @@
     },
     {
       "file": "trading_bot\\brokers\\__init__.py",
-      "line": 29,
+      "line": 21,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -2674,7 +2725,7 @@
     },
     {
       "file": "trading_bot\\brokers\\__init__.py",
-      "line": 38,
+      "line": 30,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -2685,7 +2736,18 @@
     },
     {
       "file": "trading_bot\\brokers\\__init__.py",
-      "line": 91,
+      "line": 39,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\brokers\\__init__.py",
+      "line": 101,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -2718,7 +2780,7 @@
     },
     {
       "file": "trading_bot\\brokers\\broker_adapter.py",
-      "line": 893,
+      "line": 895,
       "detector": "silent_except_log_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -2729,7 +2791,7 @@
     },
     {
       "file": "trading_bot\\brokers\\connection_manager.py",
-      "line": 205,
+      "line": 207,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -2740,7 +2802,7 @@
     },
     {
       "file": "trading_bot\\brokers\\connection_manager.py",
-      "line": 213,
+      "line": 215,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -2751,7 +2813,7 @@
     },
     {
       "file": "trading_bot\\brokers\\live_order_router.py",
-      "line": 28,
+      "line": 29,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -2762,7 +2824,7 @@
     },
     {
       "file": "trading_bot\\brokers\\live_order_router.py",
-      "line": 65,
+      "line": 66,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -2773,7 +2835,7 @@
     },
     {
       "file": "trading_bot\\brokers\\multi_broker_adapter.py",
-      "line": 517,
+      "line": 519,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -2784,7 +2846,7 @@
     },
     {
       "file": "trading_bot\\brokers\\multi_broker_adapter.py",
-      "line": 529,
+      "line": 531,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -2861,7 +2923,7 @@
     },
     {
       "file": "trading_bot\\complete_system_integrator.py",
-      "line": 852,
+      "line": 854,
       "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
       "reachable": true,
@@ -2982,7 +3044,7 @@
     },
     {
       "file": "trading_bot\\connectivity\\connection_monitor.py",
-      "line": 135,
+      "line": 137,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -2993,7 +3055,7 @@
     },
     {
       "file": "trading_bot\\connectivity\\network_monitor.py",
-      "line": 196,
+      "line": 198,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -3004,7 +3066,7 @@
     },
     {
       "file": "trading_bot\\connectivity\\network_monitor.py",
-      "line": 346,
+      "line": 348,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -3015,7 +3077,7 @@
     },
     {
       "file": "trading_bot\\connectivity\\websocket_client.py",
-      "line": 265,
+      "line": 267,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -3048,7 +3110,7 @@
     },
     {
       "file": "trading_bot\\connectors\\exchange_monitor.py",
-      "line": 663,
+      "line": 665,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -3095,7 +3157,7 @@
       "line": 619,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
@@ -3103,7 +3165,7 @@
     },
     {
       "file": "trading_bot\\core\\execution_bridge.py",
-      "line": 227,
+      "line": 214,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -3169,7 +3231,7 @@
     },
     {
       "file": "trading_bot\\core\\security\\sandbox.py",
-      "line": 20,
+      "line": 21,
       "detector": "always_true_gate",
       "detail": "gate 'validate_code' always returns True",
       "reachable": true,
@@ -3180,7 +3242,7 @@
     },
     {
       "file": "trading_bot\\core\\security\\sandbox.py",
-      "line": 172,
+      "line": 174,
       "detector": "always_true_gate",
       "detail": "gate 'verify_code_security' always returns True",
       "reachable": true,
@@ -3213,7 +3275,7 @@
     },
     {
       "file": "trading_bot\\core\\survival_core.py",
-      "line": 67,
+      "line": 68,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -3224,7 +3286,18 @@
     },
     {
       "file": "trading_bot\\core\\survival_core.py",
-      "line": 77,
+      "line": 78,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\core\\survival_core.py",
+      "line": 229,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -3235,18 +3308,7 @@
     },
     {
       "file": "trading_bot\\core\\survival_core.py",
-      "line": 227,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S5",
-      "status": "fixed(w2): fallback init failures logged; fallback activation logged",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\core\\survival_core.py",
-      "line": 250,
+      "line": 252,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -3345,7 +3407,7 @@
     },
     {
       "file": "trading_bot\\cos\\cos_core.py",
-      "line": 280,
+      "line": 282,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -3455,7 +3517,7 @@
     },
     {
       "file": "trading_bot\\critical_fixes\\master_safety_orchestrator.py",
-      "line": 290,
+      "line": 296,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -3466,7 +3528,7 @@
     },
     {
       "file": "trading_bot\\critical_fixes\\multi_layer_kill_switch.py",
-      "line": 581,
+      "line": 583,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -3477,7 +3539,7 @@
     },
     {
       "file": "trading_bot\\critical_fixes\\position_state_manager.py",
-      "line": 522,
+      "line": 524,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -3488,7 +3550,7 @@
     },
     {
       "file": "trading_bot\\critical_fixes\\silent_failure_detector.py",
-      "line": 326,
+      "line": 328,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -3499,7 +3561,7 @@
     },
     {
       "file": "trading_bot\\ctrader\\ctrader_integration.py",
-      "line": 239,
+      "line": 240,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -3510,7 +3572,7 @@
     },
     {
       "file": "trading_bot\\ctrader\\ctrader_integration.py",
-      "line": 308,
+      "line": 309,
       "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
       "reachable": true,
@@ -3565,7 +3627,7 @@
     },
     {
       "file": "trading_bot\\dashboard\\dashboard_server.py",
-      "line": 229,
+      "line": 231,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -3576,7 +3638,7 @@
     },
     {
       "file": "trading_bot\\dashboard\\data_provider.py",
-      "line": 191,
+      "line": 193,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -3587,7 +3649,7 @@
     },
     {
       "file": "trading_bot\\dashboard\\web_dashboard.py",
-      "line": 371,
+      "line": 373,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -3774,7 +3836,7 @@
     },
     {
       "file": "trading_bot\\decision_governance\\governance_governor.py",
-      "line": 237,
+      "line": 244,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -4225,7 +4287,7 @@
     },
     {
       "file": "trading_bot\\elite_system\\__init__.py",
-      "line": 50,
+      "line": 51,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -4236,56 +4298,122 @@
     },
     {
       "file": "trading_bot\\elite_system\\__init__.py",
-      "line": 60,
+      "line": 58,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\elite_system\\__init__.py",
-      "line": 69,
+      "line": 63,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\elite_system\\__init__.py",
-      "line": 78,
+      "line": 68,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\elite_system\\__init__.py",
-      "line": 87,
+      "line": 73,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\elite_system\\__init__.py",
-      "line": 135,
+      "line": 84,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\elite_system\\__init__.py",
+      "line": 92,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\elite_system\\__init__.py",
+      "line": 97,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\elite_system\\__init__.py",
+      "line": 105,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\elite_system\\__init__.py",
+      "line": 114,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\elite_system\\__init__.py",
+      "line": 123,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\elite_system\\__init__.py",
+      "line": 188,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
       "test": "",
       "commit": ""
     },
@@ -4434,7 +4562,7 @@
     },
     {
       "file": "trading_bot\\event_monitoring\\economic_calendar.py",
-      "line": 547,
+      "line": 549,
       "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
       "reachable": false,
@@ -4445,7 +4573,7 @@
     },
     {
       "file": "trading_bot\\event_pipeline\\consistency.py",
-      "line": 62,
+      "line": 64,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -4456,7 +4584,7 @@
     },
     {
       "file": "trading_bot\\event_pipeline\\event_bus.py",
-      "line": 246,
+      "line": 247,
       "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
       "reachable": true,
@@ -4467,7 +4595,7 @@
     },
     {
       "file": "trading_bot\\event_pipeline\\event_producer.py",
-      "line": 102,
+      "line": 104,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -4478,7 +4606,7 @@
     },
     {
       "file": "trading_bot\\event_pipeline\\event_store.py",
-      "line": 611,
+      "line": 613,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -4489,7 +4617,7 @@
     },
     {
       "file": "trading_bot\\event_pipeline\\fault_tolerance.py",
-      "line": 509,
+      "line": 511,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -4500,7 +4628,7 @@
     },
     {
       "file": "trading_bot\\event_pipeline\\scalability.py",
-      "line": 556,
+      "line": 558,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -5270,7 +5398,7 @@
     },
     {
       "file": "trading_bot\\improvements\\forecast_improvements\\real_broker_connection.py",
-      "line": 294,
+      "line": 296,
       "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
       "reachable": false,
@@ -5303,12 +5431,45 @@
     },
     {
       "file": "trading_bot\\infrastructure\\health_endpoints.py",
-      "line": 339,
-      "detector": "silent_except_pass",
+      "line": 465,
+      "detector": "always_true_gate",
+      "detail": "gate 'is_alive' always returns True",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: is_alive returns True by design - respondability IS the liveness probe",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\infrastructure\\health_endpoints.py",
+      "line": 583,
+      "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
+      "status": "classified: health probe failure -> False is fail-closed check semantics",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\infrastructure\\health_endpoints.py",
+      "line": 591,
+      "detector": "silent_except_swallow_default",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: health probe failure -> False is fail-closed check semantics",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\infrastructure\\health_endpoints.py",
+      "line": 603,
+      "detector": "silent_except_swallow_default",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: health probe failure -> False is fail-closed check semantics",
       "test": "",
       "commit": ""
     },
@@ -5369,7 +5530,7 @@
     },
     {
       "file": "trading_bot\\ingestion\\event_router.py",
-      "line": 474,
+      "line": 476,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -5380,7 +5541,7 @@
     },
     {
       "file": "trading_bot\\ingestion\\event_router.py",
-      "line": 487,
+      "line": 489,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -5408,17 +5569,6 @@
       "reachable": true,
       "severity": "S5",
       "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\ingestion\\orchestrator.py",
-      "line": 498,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
       "test": "",
       "commit": ""
     },
@@ -5501,7 +5651,7 @@
     },
     {
       "file": "trading_bot\\integration\\master_engine.py",
-      "line": 587,
+      "line": 594,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -5512,7 +5662,7 @@
     },
     {
       "file": "trading_bot\\integration\\master_engine.py",
-      "line": 748,
+      "line": 755,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -5534,7 +5684,7 @@
     },
     {
       "file": "trading_bot\\integration\\service_contract.py",
-      "line": 322,
+      "line": 324,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -5545,7 +5695,7 @@
     },
     {
       "file": "trading_bot\\integration\\service_contract.py",
-      "line": 426,
+      "line": 428,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -5556,7 +5706,7 @@
     },
     {
       "file": "trading_bot\\integration\\service_contract.py",
-      "line": 436,
+      "line": 438,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -5568,6 +5718,17 @@
     {
       "file": "trading_bot\\integrations\\__init__.py",
       "line": 14,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\integrations\\__init__.py",
+      "line": 27,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -5622,7 +5783,7 @@
     },
     {
       "file": "trading_bot\\intelligence\\knowledge_action_bridge.py",
-      "line": 195,
+      "line": 197,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -5677,7 +5838,7 @@
     },
     {
       "file": "trading_bot\\internet_access\\auto_updater.py",
-      "line": 426,
+      "line": 428,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -5688,7 +5849,7 @@
     },
     {
       "file": "trading_bot\\internet_access\\connection_validator.py",
-      "line": 356,
+      "line": 358,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -5732,7 +5893,7 @@
     },
     {
       "file": "trading_bot\\market_intelligence\\data_monitoring.py",
-      "line": 541,
+      "line": 542,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -5941,7 +6102,7 @@
     },
     {
       "file": "trading_bot\\meta_governance\\meta_agent_governance.py",
-      "line": 440,
+      "line": 445,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -6172,7 +6333,7 @@
     },
     {
       "file": "trading_bot\\ml\\offline_rl\\iql_agent.py",
-      "line": 433,
+      "line": 442,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -6304,7 +6465,7 @@
     },
     {
       "file": "trading_bot\\monitoring\\alerting_system.py",
-      "line": 856,
+      "line": 857,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -6315,7 +6476,7 @@
     },
     {
       "file": "trading_bot\\monitoring\\live_monitor.py",
-      "line": 219,
+      "line": 221,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -6326,7 +6487,7 @@
     },
     {
       "file": "trading_bot\\monitoring\\live_monitor.py",
-      "line": 242,
+      "line": 244,
       "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
       "reachable": true,
@@ -6337,7 +6498,7 @@
     },
     {
       "file": "trading_bot\\monitoring\\performance_monitor.py",
-      "line": 197,
+      "line": 198,
       "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
       "reachable": true,
@@ -6348,7 +6509,7 @@
     },
     {
       "file": "trading_bot\\monitoring\\performance_monitor.py",
-      "line": 204,
+      "line": 205,
       "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
       "reachable": true,
@@ -6359,7 +6520,7 @@
     },
     {
       "file": "trading_bot\\monitoring\\performance_monitor.py",
-      "line": 421,
+      "line": 423,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -6469,7 +6630,7 @@
     },
     {
       "file": "trading_bot\\orchestration\\master_orchestrator.py",
-      "line": 436,
+      "line": 442,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -6479,19 +6640,8 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\orchestration\\master_orchestrator.py",
-      "line": 578,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S5",
-      "status": "classified: best-effort cleanup/close path",
-      "test": "",
-      "commit": ""
-    },
-    {
       "file": "trading_bot\\orchestration\\service_managers.py",
-      "line": 271,
+      "line": 283,
       "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
       "reachable": true,
@@ -6502,7 +6652,7 @@
     },
     {
       "file": "trading_bot\\orchestration\\service_managers.py",
-      "line": 318,
+      "line": 330,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -6557,7 +6707,7 @@
     },
     {
       "file": "trading_bot\\performance\\performance_monitor.py",
-      "line": 264,
+      "line": 266,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -6568,7 +6718,7 @@
     },
     {
       "file": "trading_bot\\performance\\performance_monitor.py",
-      "line": 643,
+      "line": 645,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -6843,7 +6993,7 @@
     },
     {
       "file": "trading_bot\\position\\realtime_pnl.py",
-      "line": 580,
+      "line": 582,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -6997,7 +7147,7 @@
     },
     {
       "file": "trading_bot\\realtime\\realtime_adapter.py",
-      "line": 124,
+      "line": 126,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7008,7 +7158,7 @@
     },
     {
       "file": "trading_bot\\realtime\\realtime_adapter.py",
-      "line": 203,
+      "line": 205,
       "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7019,7 +7169,7 @@
     },
     {
       "file": "trading_bot\\realtime\\realtime_data_hub.py",
-      "line": 225,
+      "line": 226,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7030,7 +7180,7 @@
     },
     {
       "file": "trading_bot\\realtime_dependency_manager.py",
-      "line": 408,
+      "line": 410,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -7041,7 +7191,7 @@
     },
     {
       "file": "trading_bot\\realtime_system_validator.py",
-      "line": 215,
+      "line": 217,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -7055,7 +7205,7 @@
       "line": 20,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: optional-import guard at module level",
       "test": "",
@@ -7066,7 +7216,7 @@
       "line": 30,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: optional-import guard at module level",
       "test": "",
@@ -7077,7 +7227,7 @@
       "line": 39,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: optional-import guard at module level",
       "test": "",
@@ -7088,7 +7238,7 @@
       "line": 48,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: optional-import guard at module level",
       "test": "",
@@ -7102,6 +7252,17 @@
       "reachable": true,
       "severity": "S5",
       "status": "classified: optional-import guard at module level",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\research\\data\\research_ingestion_pipeline.py",
+      "line": 1051,
+      "detector": "always_true_gate",
+      "detail": "gate 'approve' always returns True",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: wontfix - unreachable research approval helper; re-audit if importers added",
       "test": "",
       "commit": ""
     },
@@ -7128,24 +7289,13 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\research\\research_ingestion_pipeline.py",
-      "line": 1051,
-      "detector": "always_true_gate",
-      "detail": "gate 'approve' always returns True",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\research\\research_os_v2.py",
-      "line": 195,
+      "file": "trading_bot\\research\\orchestration\\research_os_v2.py",
+      "line": 196,
       "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
       "reachable": true,
       "severity": "S5",
-      "status": "classified: verified benign in review - narrow exception / documented fallback / fan-out isolation / parse-skip / seeded rng / validated identifier (post-fix pattern match)",
+      "status": "classified: governance_log COUNT probe failure -> False deny semantics",
       "test": "",
       "commit": ""
     },
@@ -7217,7 +7367,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 15,
+      "line": 20,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7228,7 +7378,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 23,
+      "line": 28,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7239,7 +7389,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 33,
+      "line": 38,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7250,7 +7400,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 42,
+      "line": 47,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7261,7 +7411,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 51,
+      "line": 56,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7272,7 +7422,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 60,
+      "line": 65,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7283,7 +7433,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 69,
+      "line": 74,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7294,7 +7444,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 78,
+      "line": 83,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7305,7 +7455,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 87,
+      "line": 92,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7316,7 +7466,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 96,
+      "line": 101,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7327,7 +7477,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 105,
+      "line": 110,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7338,7 +7488,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 114,
+      "line": 119,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7349,7 +7499,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 124,
+      "line": 129,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7360,7 +7510,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 133,
+      "line": 138,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7371,7 +7521,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 142,
+      "line": 147,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7382,7 +7532,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 151,
+      "line": 156,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7393,7 +7543,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 161,
+      "line": 166,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7404,7 +7554,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 170,
+      "line": 175,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7415,7 +7565,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 180,
+      "line": 185,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7426,7 +7576,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 189,
+      "line": 194,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7437,7 +7587,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 198,
+      "line": 203,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7448,7 +7598,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 207,
+      "line": 212,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7459,7 +7609,7 @@
     },
     {
       "file": "trading_bot\\risk\\__init__.py",
-      "line": 262,
+      "line": 278,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7569,7 +7719,7 @@
     },
     {
       "file": "trading_bot\\safety\\connectivity_monitor.py",
-      "line": 225,
+      "line": 227,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7668,7 +7818,7 @@
     },
     {
       "file": "trading_bot\\security\\security_system.py",
-      "line": 163,
+      "line": 165,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -7800,7 +7950,7 @@
     },
     {
       "file": "trading_bot\\self_diagnostic\\knowledge_gap.py",
-      "line": 909,
+      "line": 911,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7811,7 +7961,7 @@
     },
     {
       "file": "trading_bot\\self_diagnostic\\knowledge_gap.py",
-      "line": 941,
+      "line": 943,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7822,7 +7972,7 @@
     },
     {
       "file": "trading_bot\\self_diagnostic\\knowledge_gap.py",
-      "line": 970,
+      "line": 972,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7833,7 +7983,7 @@
     },
     {
       "file": "trading_bot\\self_diagnostic\\knowledge_gap.py",
-      "line": 1142,
+      "line": 1144,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7844,7 +7994,7 @@
     },
     {
       "file": "trading_bot\\self_diagnostic\\knowledge_gap.py",
-      "line": 1221,
+      "line": 1223,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -7855,7 +8005,7 @@
     },
     {
       "file": "trading_bot\\self_diagnostic\\self_manager.py",
-      "line": 398,
+      "line": 400,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -8056,7 +8206,7 @@
       "line": 20,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: optional-import guard at module level",
       "test": "",
@@ -8067,7 +8217,7 @@
       "line": 29,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: optional-import guard at module level",
       "test": "",
@@ -8078,7 +8228,7 @@
       "line": 39,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: optional-import guard at module level",
       "test": "",
@@ -8089,7 +8239,7 @@
       "line": 49,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: optional-import guard at module level",
       "test": "",
@@ -8100,7 +8250,7 @@
       "line": 58,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: optional-import guard at module level",
       "test": "",
@@ -8108,10 +8258,10 @@
     },
     {
       "file": "trading_bot\\self_learning\\distributed_learning.py",
-      "line": 198,
+      "line": 199,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
@@ -8130,10 +8280,10 @@
     },
     {
       "file": "trading_bot\\sentient_core\\ai_learner.py",
-      "line": 222,
+      "line": 224,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
       "test": "",
@@ -8141,10 +8291,10 @@
     },
     {
       "file": "trading_bot\\sentient_core\\ai_learner.py",
-      "line": 398,
+      "line": 400,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
@@ -8152,10 +8302,10 @@
     },
     {
       "file": "trading_bot\\sentient_core\\ai_learner.py",
-      "line": 431,
+      "line": 433,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
@@ -8163,10 +8313,10 @@
     },
     {
       "file": "trading_bot\\sentient_core\\ai_learner.py",
-      "line": 687,
+      "line": 689,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
@@ -8174,10 +8324,10 @@
     },
     {
       "file": "trading_bot\\sentient_core\\ai_learner.py",
-      "line": 725,
+      "line": 727,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
@@ -8185,10 +8335,10 @@
     },
     {
       "file": "trading_bot\\sentient_core\\code_evolver.py",
-      "line": 422,
+      "line": 430,
       "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: lazy optional-import fallback",
       "test": "",
@@ -8196,10 +8346,10 @@
     },
     {
       "file": "trading_bot\\sentient_core\\code_evolver.py",
-      "line": 428,
+      "line": 436,
       "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: lazy optional-import fallback",
       "test": "",
@@ -8207,21 +8357,21 @@
     },
     {
       "file": "trading_bot\\sentient_core\\code_evolver.py",
-      "line": 432,
+      "line": 440,
       "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
-      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
+      "status": "classified: lazy optional-import fallback",
       "test": "",
       "commit": ""
     },
     {
       "file": "trading_bot\\sentient_core\\code_evolver.py",
-      "line": 722,
+      "line": 730,
       "detector": "silent_except_swallow_default",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
@@ -8229,10 +8379,10 @@
     },
     {
       "file": "trading_bot\\sentient_core\\introspector.py",
-      "line": 201,
+      "line": 203,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
       "test": "",
@@ -8240,10 +8390,10 @@
     },
     {
       "file": "trading_bot\\sentient_core\\knowledge_harvester.py",
-      "line": 269,
+      "line": 271,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
       "test": "",
@@ -8251,10 +8401,10 @@
     },
     {
       "file": "trading_bot\\sentient_core\\knowledge_harvester.py",
-      "line": 772,
+      "line": 774,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
@@ -8262,10 +8412,10 @@
     },
     {
       "file": "trading_bot\\sentient_core\\knowledge_harvester.py",
-      "line": 866,
+      "line": 868,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
@@ -8273,10 +8423,10 @@
     },
     {
       "file": "trading_bot\\sentient_core\\network_sentinel.py",
-      "line": 224,
+      "line": 226,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
       "test": "",
@@ -8284,10 +8434,10 @@
     },
     {
       "file": "trading_bot\\sentient_core\\profit_maximizer.py",
-      "line": 255,
+      "line": 257,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
       "test": "",
@@ -8295,10 +8445,10 @@
     },
     {
       "file": "trading_bot\\sentient_core\\sentient_orchestrator.py",
-      "line": 247,
+      "line": 249,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
-      "reachable": false,
+      "reachable": true,
       "severity": "S5",
       "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
       "test": "",
@@ -8328,7 +8478,7 @@
     },
     {
       "file": "trading_bot\\services\\adaptive_service.py",
-      "line": 73,
+      "line": 75,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8339,7 +8489,7 @@
     },
     {
       "file": "trading_bot\\services\\advanced_ai_service.py",
-      "line": 74,
+      "line": 76,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8350,17 +8500,6 @@
     },
     {
       "file": "trading_bot\\services\\advanced_analysis_service.py",
-      "line": 72,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\advanced_features_service.py",
       "line": 74,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
@@ -8371,8 +8510,19 @@
       "commit": ""
     },
     {
+      "file": "trading_bot\\services\\advanced_features_service.py",
+      "line": 76,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
       "file": "trading_bot\\services\\advanced_ml_service.py",
-      "line": 71,
+      "line": 73,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8383,7 +8533,7 @@
     },
     {
       "file": "trading_bot\\services\\adversarial_curriculum_service.py",
-      "line": 68,
+      "line": 70,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8394,7 +8544,7 @@
     },
     {
       "file": "trading_bot\\services\\adversarial_decision_service.py",
-      "line": 67,
+      "line": 69,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8405,7 +8555,7 @@
     },
     {
       "file": "trading_bot\\services\\adversarial_systems_service.py",
-      "line": 65,
+      "line": 67,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8416,7 +8566,7 @@
     },
     {
       "file": "trading_bot\\services\\agents2_service.py",
-      "line": 53,
+      "line": 55,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8427,7 +8577,7 @@
     },
     {
       "file": "trading_bot\\services\\agents_service.py",
-      "line": 60,
+      "line": 62,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8438,7 +8588,7 @@
     },
     {
       "file": "trading_bot\\services\\ai_core_service.py",
-      "line": 55,
+      "line": 57,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8449,7 +8599,7 @@
     },
     {
       "file": "trading_bot\\services\\ai_engineer_service.py",
-      "line": 53,
+      "line": 55,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8460,7 +8610,7 @@
     },
     {
       "file": "trading_bot\\services\\ai_service.py",
-      "line": 55,
+      "line": 57,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8471,7 +8621,7 @@
     },
     {
       "file": "trading_bot\\services\\alerts_service.py",
-      "line": 59,
+      "line": 61,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8482,7 +8632,7 @@
     },
     {
       "file": "trading_bot\\services\\alpha_engine_service.py",
-      "line": 65,
+      "line": 67,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8493,94 +8643,6 @@
     },
     {
       "file": "trading_bot\\services\\alpha_research_service.py",
-      "line": 56,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\alphaalgo_core_service.py",
-      "line": 57,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\alphaalgo_institutional_service.py",
-      "line": 57,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\alphaalgo_v2_service.py",
-      "line": 53,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\alternative_data_service.py",
-      "line": 51,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\analysis_service.py",
-      "line": 63,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\analytics_service.py",
-      "line": 54,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\api_service.py",
-      "line": 53,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\approval_service.py",
       "line": 58,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
@@ -8591,18 +8653,7 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\services\\arbitrage_service.py",
-      "line": 53,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\audit_service.py",
+      "file": "trading_bot\\services\\alphaalgo_core_service.py",
       "line": 59,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
@@ -8613,8 +8664,107 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\services\\auto_optimizer_service.py",
+      "file": "trading_bot\\services\\alphaalgo_institutional_service.py",
+      "line": 59,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\alphaalgo_v2_service.py",
+      "line": 55,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\alternative_data_service.py",
       "line": 53,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\analysis_service.py",
+      "line": 65,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\analytics_service.py",
+      "line": 56,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\api_service.py",
+      "line": 55,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\approval_service.py",
+      "line": 66,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\arbitrage_service.py",
+      "line": 55,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\audit_service.py",
+      "line": 61,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\auto_optimizer_service.py",
+      "line": 55,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8625,7 +8775,7 @@
     },
     {
       "file": "trading_bot\\services\\autonomous_learner_service.py",
-      "line": 50,
+      "line": 52,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8636,7 +8786,7 @@
     },
     {
       "file": "trading_bot\\services\\autonomous_pipeline_service.py",
-      "line": 54,
+      "line": 56,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8647,7 +8797,7 @@
     },
     {
       "file": "trading_bot\\services\\autonomous_service.py",
-      "line": 54,
+      "line": 56,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8658,7 +8808,7 @@
     },
     {
       "file": "trading_bot\\services\\backtesting_service.py",
-      "line": 55,
+      "line": 57,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8669,7 +8819,7 @@
     },
     {
       "file": "trading_bot\\services\\blockchain_service.py",
-      "line": 54,
+      "line": 56,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8680,7 +8830,7 @@
     },
     {
       "file": "trading_bot\\services\\brain_service.py",
-      "line": 55,
+      "line": 57,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8691,94 +8841,6 @@
     },
     {
       "file": "trading_bot\\services\\bridges_service.py",
-      "line": 52,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\broker_service.py",
-      "line": 52,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\brokers_service.py",
-      "line": 53,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\calendar_service.py",
-      "line": 51,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\cloud_deployer_service.py",
-      "line": 53,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\cognitive_architecture_service.py",
-      "line": 53,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\compliance_service.py",
-      "line": 50,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\config_service.py",
-      "line": 52,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\connectivity_service.py",
       "line": 54,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
@@ -8789,8 +8851,8 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\services\\connectors_service.py",
-      "line": 50,
+      "file": "trading_bot\\services\\broker_service.py",
+      "line": 54,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8800,106 +8862,7 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\services\\core_api_service.py",
-      "line": 51,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\core_systems_service.py",
-      "line": 53,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": true,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\critical_fixes_service.py",
-      "line": 51,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\crypto_service.py",
-      "line": 52,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\dashboard_service.py",
-      "line": 51,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\data_feeds_service.py",
-      "line": 49,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\data_service.py",
-      "line": 52,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\data_sources_service.py",
-      "line": 52,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\database_service.py",
-      "line": 53,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\decision_layer_service.py",
+      "file": "trading_bot\\services\\brokers_service.py",
       "line": 55,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
@@ -8910,7 +8873,7 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\services\\deepchart_service.py",
+      "file": "trading_bot\\services\\calendar_service.py",
       "line": 53,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
@@ -8921,8 +8884,8 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\services\\deployment_service.py",
-      "line": 49,
+      "file": "trading_bot\\services\\cloud_deployer_service.py",
+      "line": 55,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8932,7 +8895,117 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\services\\derivatives_service.py",
+      "file": "trading_bot\\services\\cognitive_architecture_service.py",
+      "line": 55,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\compliance_service.py",
+      "line": 58,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\config_service.py",
+      "line": 54,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\connectivity_service.py",
+      "line": 56,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\connectors_service.py",
+      "line": 52,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\core_api_service.py",
+      "line": 53,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\core_systems_service.py",
+      "line": 55,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": true,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\critical_fixes_service.py",
+      "line": 53,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\crypto_service.py",
+      "line": 54,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\dashboard_service.py",
+      "line": 53,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\data_feeds_service.py",
       "line": 51,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
@@ -8943,8 +9016,8 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\services\\devops_service.py",
-      "line": 50,
+      "file": "trading_bot\\services\\data_service.py",
+      "line": 54,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8954,8 +9027,8 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\services\\diagnostics_service.py",
-      "line": 50,
+      "file": "trading_bot\\services\\data_sources_service.py",
+      "line": 54,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8965,8 +9038,8 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\services\\distributed_service.py",
-      "line": 50,
+      "file": "trading_bot\\services\\database_service.py",
+      "line": 55,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -8976,7 +9049,40 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\services\\elite_ai_service.py",
+      "file": "trading_bot\\services\\decision_layer_service.py",
+      "line": 57,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\deepchart_service.py",
+      "line": 55,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\deployment_service.py",
+      "line": 51,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\derivatives_service.py",
       "line": 53,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
@@ -8987,8 +9093,52 @@
       "commit": ""
     },
     {
+      "file": "trading_bot\\services\\devops_service.py",
+      "line": 52,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\diagnostics_service.py",
+      "line": 52,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\distributed_service.py",
+      "line": 52,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\elite_ai_service.py",
+      "line": 55,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
       "file": "trading_bot\\services\\elite_system_service.py",
-      "line": 41,
+      "line": 43,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -9010,7 +9160,7 @@
     },
     {
       "file": "trading_bot\\services\\execution_service.py",
-      "line": 98,
+      "line": 100,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -9021,7 +9171,7 @@
     },
     {
       "file": "trading_bot\\services\\hivemind_service.py",
-      "line": 54,
+      "line": 56,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -9032,7 +9182,7 @@
     },
     {
       "file": "trading_bot\\services\\indicators_service.py",
-      "line": 51,
+      "line": 53,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -9043,7 +9193,7 @@
     },
     {
       "file": "trading_bot\\services\\intelligence_directorate_service.py",
-      "line": 51,
+      "line": 53,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -9054,7 +9204,7 @@
     },
     {
       "file": "trading_bot\\services\\market_intelligence_service.py",
-      "line": 53,
+      "line": 55,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -9065,7 +9215,7 @@
     },
     {
       "file": "trading_bot\\services\\monitoring_service.py",
-      "line": 52,
+      "line": 54,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -9076,138 +9226,6 @@
     },
     {
       "file": "trading_bot\\services\\msos_service.py",
-      "line": 85,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\notifications_service.py",
-      "line": 52,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\optimization_service.py",
-      "line": 52,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\performance_service.py",
-      "line": 52,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\portfolio_service.py",
-      "line": 53,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\position_service.py",
-      "line": 53,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\quant_analysis_service.py",
-      "line": 71,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\risk_service.py",
-      "line": 85,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\risk_service.py",
-      "line": 265,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\risk_service.py",
-      "line": 271,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\security_service.py",
-      "line": 52,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\sentiment_service.py",
-      "line": 51,
-      "detector": "silent_except_pass",
-      "detail": "silent exception handling",
-      "reachable": false,
-      "severity": "S5",
-      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "file": "trading_bot\\services\\signals_service.py",
       "line": 87,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
@@ -9218,8 +9236,85 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\services\\signals_service.py",
-      "line": 239,
+      "file": "trading_bot\\services\\notifications_service.py",
+      "line": 54,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\optimization_service.py",
+      "line": 54,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\performance_service.py",
+      "line": 54,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\portfolio_service.py",
+      "line": 55,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\position_service.py",
+      "line": 55,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\quant_analysis_service.py",
+      "line": 73,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\risk_service.py",
+      "line": 93,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\risk_service.py",
+      "line": 273,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -9229,7 +9324,29 @@
       "commit": ""
     },
     {
-      "file": "trading_bot\\services\\strategy_service.py",
+      "file": "trading_bot\\services\\risk_service.py",
+      "line": 279,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\security_service.py",
+      "line": 54,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\sentiment_service.py",
       "line": 53,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
@@ -9240,8 +9357,41 @@
       "commit": ""
     },
     {
+      "file": "trading_bot\\services\\signals_service.py",
+      "line": 89,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\signals_service.py",
+      "line": 241,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: wontfix \u2014 unreachable dead/legacy path (no importer chain in reachability inventory; re-audit if importers are added)",
+      "test": "",
+      "commit": ""
+    },
+    {
+      "file": "trading_bot\\services\\strategy_service.py",
+      "line": 55,
+      "detector": "silent_except_pass",
+      "detail": "silent exception handling",
+      "reachable": false,
+      "severity": "S5",
+      "status": "classified: CancelledError/KeyboardInterrupt shutdown pattern",
+      "test": "",
+      "commit": ""
+    },
+    {
       "file": "trading_bot\\services\\telemetry_service.py",
-      "line": 51,
+      "line": 53,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -9252,7 +9402,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 48,
+      "line": 49,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9263,7 +9413,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 99,
+      "line": 101,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9274,7 +9424,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 126,
+      "line": 128,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9285,7 +9435,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 153,
+      "line": 155,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9296,7 +9446,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 201,
+      "line": 203,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9307,7 +9457,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 227,
+      "line": 229,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9318,7 +9468,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 316,
+      "line": 318,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9329,7 +9479,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 342,
+      "line": 344,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9340,7 +9490,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 368,
+      "line": 370,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9351,7 +9501,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 394,
+      "line": 396,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9362,7 +9512,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 420,
+      "line": 422,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9373,7 +9523,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 467,
+      "line": 469,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9384,7 +9534,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 493,
+      "line": 495,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9395,7 +9545,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 645,
+      "line": 647,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9406,7 +9556,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 671,
+      "line": 673,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9417,7 +9567,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 697,
+      "line": 699,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9428,7 +9578,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 723,
+      "line": 725,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9439,7 +9589,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 770,
+      "line": 772,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9450,7 +9600,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 796,
+      "line": 798,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9461,7 +9611,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 822,
+      "line": 824,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9472,7 +9622,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 848,
+      "line": 850,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9483,7 +9633,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 874,
+      "line": 876,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9494,7 +9644,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 963,
+      "line": 965,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9505,7 +9655,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 989,
+      "line": 991,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9516,7 +9666,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 1015,
+      "line": 1017,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -9527,7 +9677,7 @@
     },
     {
       "file": "trading_bot\\services\\tier4_services.py",
-      "line": 1062,
+      "line": 1064,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -10495,7 +10645,7 @@
     },
     {
       "file": "trading_bot\\strategies\\cross_exchange_arbitrage.py",
-      "line": 744,
+      "line": 753,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -10825,7 +10975,7 @@
     },
     {
       "file": "trading_bot\\system_supervisor\\auto_updater_supervisor.py",
-      "line": 509,
+      "line": 511,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -10836,7 +10986,7 @@
     },
     {
       "file": "trading_bot\\system_supervisor\\module_monitor.py",
-      "line": 395,
+      "line": 397,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -10847,7 +10997,7 @@
     },
     {
       "file": "trading_bot\\system_supervisor\\security_supervisor.py",
-      "line": 407,
+      "line": 409,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -10858,7 +11008,7 @@
     },
     {
       "file": "trading_bot\\system_supervisor\\system_supervisor.py",
-      "line": 423,
+      "line": 425,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -11078,7 +11228,7 @@
     },
     {
       "file": "trading_bot\\telemetry\\health.py",
-      "line": 231,
+      "line": 233,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -11144,7 +11294,7 @@
     },
     {
       "file": "trading_bot\\trading\\position_reconciliation.py",
-      "line": 154,
+      "line": 156,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -11210,7 +11360,7 @@
     },
     {
       "file": "trading_bot\\ultimate_module_integrator.py",
-      "line": 693,
+      "line": 695,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -11265,7 +11415,7 @@
     },
     {
       "file": "trading_bot\\ultimate_production\\core_engine.py",
-      "line": 492,
+      "line": 494,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -11276,7 +11426,7 @@
     },
     {
       "file": "trading_bot\\ultimate_production\\core_engine.py",
-      "line": 588,
+      "line": 590,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -11287,7 +11437,7 @@
     },
     {
       "file": "trading_bot\\ultimate_production\\core_engine.py",
-      "line": 598,
+      "line": 600,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -11298,7 +11448,7 @@
     },
     {
       "file": "trading_bot\\ultimate_production\\core_engine.py",
-      "line": 1145,
+      "line": 1147,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -11375,7 +11525,7 @@
     },
     {
       "file": "trading_bot\\ultimate_system\\hardware_optimizer.py",
-      "line": 190,
+      "line": 192,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -11386,7 +11536,7 @@
     },
     {
       "file": "trading_bot\\unified_ai_brain.py",
-      "line": 1183,
+      "line": 1185,
       "detector": "silent_except_log_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -11397,7 +11547,7 @@
     },
     {
       "file": "trading_bot\\unified_ai_brain.py",
-      "line": 1193,
+      "line": 1195,
       "detector": "silent_except_log_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -11441,7 +11591,7 @@
     },
     {
       "file": "trading_bot\\unified_approval\\notification_system.py",
-      "line": 95,
+      "line": 99,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -11452,7 +11602,7 @@
     },
     {
       "file": "trading_bot\\unified_approval\\notification_system.py",
-      "line": 297,
+      "line": 301,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": false,
@@ -12057,7 +12207,7 @@
     },
     {
       "file": "trading_bot\\voice_assistant\\voice_controller.py",
-      "line": 150,
+      "line": 151,
       "detector": "silent_except_pass",
       "detail": "silent exception handling",
       "reachable": true,
@@ -12244,7 +12394,7 @@
     },
     {
       "file": "trading_bot\\neural_integration\\neural_hub.py",
-      "line": 88,
+      "line": 89,
       "detector": "not_implemented",
       "detail": "raise NotImplementedError in test",
       "reachable": true,
@@ -12277,65 +12427,12 @@
     },
     {
       "file": "trading_bot\\orchestration\\event_bus.py",
-      "line": 65,
+      "line": 71,
       "detector": "not_implemented",
       "detail": "raise NotImplementedError in decorator",
       "reachable": true,
       "severity": "S5",
       "status": "classified: informal-ABC contract method, subclasses override",
-      "test": "",
-      "commit": ""
-    },
-    {
-      "detector": "manual_w3",
-      "file": "trading_bot/core/immutable_shield.py",
-      "line": 115,
-      "status": "fixed(w3): missing confidence defaulted to 1.0 bypassed configured floor; now defaults 0.0 (fail-closed)",
-      "reachable": true
-    },
-    {
-      "detector": "manual_w3",
-      "file": "trading_bot/core/immutable_shield.py",
-      "line": 102,
-      "status": "fixed(w3): non-dict typed instrument bypassed symbol denylist; getattr fallback added",
-      "reachable": true
-    },
-    {
-      "detector": "manual_w3",
-      "file": "trading_bot/core/immutable_shield.py",
-      "line": 122,
-      "status": "fixed(w3): string/loose numerics skipped exposure, drawdown and spread caps; _coerce_float added",
-      "reachable": true
-    },
-    {
-      "detector": "manual_w3",
-      "file": "trading_bot/execution/service.py",
-      "line": 194,
-      "status": "fixed(w3): PARTIALLY_FILLED broker results produced zero Fill records, dropping executed quantity",
-      "reachable": true
-    },
-    {
-      "detector": "manual_w3",
-      "file": "tests/conftest.py",
-      "line": 203,
-      "status": "fixed(w3): archive spec fallback resolved quarantined code for LIVE-package imports and execd heavy archive __init__ chain (transformers) causing 180s+ timeout; importer gate + filesystem existence check",
-      "reachable": true
-    },
-    {
-      "detector": "manual_w3",
-      "file": "trading_bot/execution/__init__.py",
-      "line": 138,
-      "status": "fixed(w3): __all__ advertised optional names that may not exist -> import * AttributeError; filtered to bound names",
-      "reachable": true
-    },
-    {
-      "file": "trading_bot\\recursive_self_improvement\\engine_v2.py",
-      "line": 590,
-      "detector": "not_implemented",
-      "detail": "raise NotImplementedError in _kill",
-      "reachable": true,
-      "severity": "S5",
-      "status": "classified: intentional fail-closed stub \u2014 external verifier wire contract (TD-07); raises until an operator transport is provisioned",
       "test": "",
       "commit": ""
     }

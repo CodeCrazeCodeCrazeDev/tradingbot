@@ -5,15 +5,18 @@ Tests for Production Infrastructure (Phase 8)
 import unittest
 import numpy as np
 from datetime import datetime, timedelta
-from infrastructure.auto_scaling import (
+# Canonical package path: bare `infrastructure` resolves to the root copy,
+# but under full-suite collection tests/infrastructure/ can shadow it —
+# trading_bot.infrastructure is unshadowable and exports the same API.
+from trading_bot.infrastructure.auto_scaling import (
     AutoScaler,
     ResourceMetrics
 )
-from infrastructure.monitoring import (
+from trading_bot.infrastructure.monitoring import (
     PerformanceMonitor,
     PerformanceMetrics
 )
-from infrastructure.health_check import HealthCheck
+from trading_bot.infrastructure.health_check import HealthCheck
 from enum import auto
 import numpy
 

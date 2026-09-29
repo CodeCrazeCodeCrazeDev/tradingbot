@@ -139,17 +139,15 @@ class TestPerformanceBenchmarks:
     
     def test_execution_optimization_speed(self):
         """Test execution optimization speed"""
-import pandas
-        
-optimizer = AlmgrenChrissOptimizer()
-        
-start = time.perf_counter()
-for _ in range(100):
+        optimizer = AlmgrenChrissOptimizer()
+
+        start = time.perf_counter()
+        for _ in range(100):
             schedule = optimizer.compute_optimal_trajectory(1.0, 10)
-latency = time.perf_counter() - start
-        
+        latency = time.perf_counter() - start
+
         # Should compute 100 schedules in < 1 second
-assert latency < 1.0
+        assert latency < 1.0
 
 
 if __name__ == "__main__":

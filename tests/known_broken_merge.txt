@@ -10,13 +10,9 @@
 # everything under it (conftest set-membership hook).
 #   * auto_fix_backups — auto-fix tool backup snapshots; the dated snapshot
 #     trees share module basenames and cannot co-collect (not a maintained suite).
-#   * self_mastery/test_mastery_orchestrator.py — trading_bot.mastery_orchestrator
-#     shim resolves to missing trading_bot.self_mastery.mastery_orchestrator.
-#   * test_infrastructure.py — `import infrastructure` resolves to the
-#     tests/infrastructure/ package which has no auto_scaling submodule.
+# Recovered (module restored, now collects and passes):
+#   self_mastery/test_mastery_orchestrator.py, test_infrastructure.py
 # A file stays listed only while it fails to import; remove an entry when the
 # module it needs is restored or aliased. See tests/conftest.py for the
 # test-scoped flat-name -> canonical resolver.
 auto_fix_backups
-self_mastery/test_mastery_orchestrator.py
-test_infrastructure.py

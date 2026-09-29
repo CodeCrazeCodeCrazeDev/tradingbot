@@ -204,7 +204,6 @@ class SelfDebugger:
         return decorator
     
     def _get_current_performance_metrics(self) -> Dict[str, float]:
-        pass
         """Get current system performance metrics.
         
         Returns:
@@ -235,7 +234,6 @@ class SelfDebugger:
             return {}
     
     def get_debug_summary(self, hours: int = 24) -> Dict[str, Any]:
-        pass
         """Get debug summary for the specified time period.
         
         Args:
@@ -314,7 +312,6 @@ class SelfDebugger:
             }
     
     def get_recent_errors(self, count: int = 10) -> List[DebugEvent]:
-        pass
         """Get recent error and critical events.
         
         Args:
@@ -343,7 +340,6 @@ class SelfDebugger:
             return []
     
     def diagnose_performance_issues(self) -> Dict[str, List[str]]:
-        pass
         """Diagnose performance issues based on collected metrics.
         
         Returns:

@@ -391,14 +391,10 @@ class TestIntegrations:
     async def test_alternative_data_init(self):
         """Test alternative data provider initialization"""
         from trading_bot.integrations import RealAlternativeDataProvider
-from dataclasses import field
-import numpy
-import pandas
-from trading_bot.integrations import RealAlternativeDataProvider
-        
-provider = RealAlternativeDataProvider()
-assert provider is not None
-# MERGE-BROKEN: await provider.close()
+
+        provider = RealAlternativeDataProvider()
+        assert provider is not None
+        await provider.close()
 
 
 # ==================== STRATEGY TESTS ====================

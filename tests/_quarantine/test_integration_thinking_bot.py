@@ -391,34 +391,34 @@ class TestEliteIntegration:
     """Integration tests for Elite Thinking Bot"""
     
     @pytest.mark.asyncio
-    @pytest.mark.skip(reason="thinking_bot_elite does not have mt5 attribute")
     async def test_elite_bot_initialization(self):
         """Test Elite bot initializes with all components"""
+        # EliteThinkingBot inherits ThinkingBot methods, which resolve the
+        # mt5 handle on the thinking_bot module — patch both refs to the
+        # same mock so initialize() sees one consistent broker API.
+        with patch('thinking_bot.mt5') as mock_mt5, \
+                patch('thinking_bot_elite.mt5', mock_mt5):
+            mock_mt5.initialize.return_value = True
 
-        from thinking_bot_elite import EliteThinkingBot
+            mock_account = Mock()
+            mock_account.login = 12345678
+            mock_account.server = 'Test-Server'
+            mock_account.balance = 10000.0
+            mock_account.equity = 10000.0
+            mock_account.margin_free = 5000.0
+            mock_mt5.account_info.return_value = mock_account
 
-        with patch('thinking_bot_elite.mt5') as mock_mt5:
-                mock_mt5.initialize.return_value = True
-                
-                mock_account = Mock()
-                mock_account.login = 12345678
-                mock_account.server = 'Test-Server'
-                mock_account.balance = 10000.0
-                mock_account.equity = 10000.0
-                mock_account.margin_free = 5000.0
-                mock_mt5.account_info.return_value = mock_account
-                
-                bot = EliteThinkingBot()
-                bot.config = {
-                    'trading': {'mode': 'paper'},
-                    'risk': {},
-                    'mt5': {'symbols': ['EURUSD']}
-                }
-                
-                # Should initialize without errors
-                # (may have warnings if elite components not available)
-                result = await bot.initialize()
-                assert result == True
+            bot = EliteThinkingBot()
+            bot.config = {
+                'trading': {'mode': 'paper'},
+                'risk': {},
+                'mt5': {'symbols': ['EURUSD']}
+            }
+
+            # Should initialize without errors
+            # (may have warnings if elite components not available)
+            result = await bot.initialize()
+            assert result is True
 
 
 

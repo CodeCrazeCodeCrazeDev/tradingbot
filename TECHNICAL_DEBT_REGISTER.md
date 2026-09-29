@@ -13,7 +13,23 @@ The following items are tracked as active technical debt across the codebase:
 | **TD-01** | `trading_bot/research/` | ~~Massive package size with over 140 python modules; needs refactoring into consolidated sub-folders.~~ **Resolved** — subdomains already existed; the remaining 19 flat modules were consolidated into `governance/`, `discovery/`, `alpha/`, `experimentation/`, `orchestration/`, `core/`, `data/`. A `meta_path` compat finder keeps `trading_bot.research.<name>` resolving for all importers. | 0 | Low |
 | **TD-02** | `trading_bot/core/csc/controller.py` | ~~Highly complex 12-stage sequential loop (high cyclomatic complexity).~~ **Resolved** — each pipeline stage extracted into an independently testable `_stage_*` method (`_Terminal` marker distinguishes "stage produced a terminal result" from continue); `process_market_observation` is now a numbered sequence. Behavior-identical (15 CSC tests green). | 0 | Low |
 | **TD-03** | `trading_bot/risk/MASTER_risk_manager.py` | ~~Contains hardcoded volatility and leverage magic numbers.~~ **Resolved** — magic numbers hoisted to named module constants (`BASE_RISK_PERCENT`, fallback symbol spec, stub ML features); `RiskLimits` built via field-filtered config passthrough. | 0 | Low |
-| **TD-04** | `tests/known_broken_merge.txt` + `tests/_quarantine/` | Generated-test repair — **complete**. The 1,677-entry manifest is now empty and `tests/_quarantine/` holds only 2 files whose generated code is structurally unfixable (`test_multi_symbol.py` — needs a 1,600-line class coupled to `legacy_main/main_v1`; `test_mutation_quality.py` — bare instance refs). Resolutions applied: canonical module restoration (`alphaalgo_v2`, `agents2`, `perplexity_trading`, orchestrator/service modules), missing class/package re-exports (`brain`, `brokers`, `risk`, `execution`, `advanced_features`, `elite_system`, `integrations`, `infrastructure.health_endpoints`), archived-module test aliasing (`trading_bot._archive` resolution in `tests/conftest.py`), test-dir `__init__.py` packages fixing import-file mismatches, deleted-stub restoration into `_archive/`, and a merge-splice syntax repair of all 46 quarantined files. | Resolved (2 files permanently quarantined) | Low |
+| **TD-04** | `tests/known_broken_merge.txt` + `tests/_quarantine/` | Generated-test repair — **complete**. Manifest emptied; 2 files remain permanently quarantined (structurally unfixable). Detail in §1a. | Resolved | Low |
+
+### 1a. TD-04 resolution detail
+
+The 1,677-entry `known_broken_merge.txt` manifest is now empty. `tests/_quarantine/` holds only 2 files whose generated code is structurally unfixable:
+
+- `test_multi_symbol.py` — needs a 1,600-line class coupled to `legacy_main/main_v1`
+- `test_mutation_quality.py` — bare instance refs with no binding context
+
+Resolutions applied:
+
+- canonical module restoration (`alphaalgo_v2`, `agents2`, `perplexity_trading`, orchestrator/service modules)
+- missing class/package re-exports (`brain`, `brokers`, `risk`, `execution`, `advanced_features`, `elite_system`, `integrations`, `infrastructure.health_endpoints`)
+- archived-module test aliasing (`trading_bot._archive` resolution in `tests/conftest.py`)
+- test-dir `__init__.py` packages fixing import-file mismatches
+- deleted-stub restoration into `_archive/`
+- merge-splice syntax repair of all 46 quarantined files
 
 ---
 

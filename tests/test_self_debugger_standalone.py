@@ -11,6 +11,7 @@ import sys
 import datetime
 import time
 import threading
+import traceback
 from collections import deque, defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
@@ -145,8 +146,9 @@ class SelfDebugger:
         # Find most active component safely
         most_active = None
         if events_by_component:
+            try:
                 most_active = max(events_by_component.items(), key=lambda x: x[1])[0]
-            # MERGE-BROKEN: except (ValueError, KeyError):
+            except (ValueError, KeyError):
                 most_active = None
         
         return {
