@@ -7,6 +7,7 @@ These events are FROZEN and should NEVER change.
 Version: 1.0.0 (FROZEN)
 """
 
+import warnings
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
@@ -316,6 +317,7 @@ class EventBus:
         return cls._instance
     
     def __init__(self):
+        warnings.warn("EventBus is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         if self._initialized:
             return
         

@@ -241,9 +241,7 @@ class TestVolatilityImpulseVector:
         """Test module can be imported."""
 
         from trading_bot.advanced_features import volatility_impulse_vector
-import numpy
-import pandas
-assert volatility_impulse_vector is not None
+        assert volatility_impulse_vector is not None
 
 
 

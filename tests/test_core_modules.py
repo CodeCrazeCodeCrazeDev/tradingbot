@@ -394,9 +394,7 @@ class TestCompletePerformanceSystem:
         """Test module can be imported."""
 
         from trading_bot.performance import complete_performance_system
-import numpy
-import pandas
-assert complete_performance_system is not None
+        assert complete_performance_system is not None
 
 
 

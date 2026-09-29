@@ -11,6 +11,7 @@ import sys
 import datetime
 import time
 import threading
+import traceback
 from collections import deque, defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
@@ -91,12 +92,9 @@ class SelfDebugger:
         stack_trace = None
         if include_stack:
             import traceback
+            stack_trace = traceback.format_stack()
 
-logger = logging.getLogger(__name__)
-
-stack_trace = traceback.format_stack()
-        
-event = DebugEvent(
+        event = DebugEvent(
             timestamp=datetime.datetime.now(),
             level=level,
             component=component,
@@ -148,7 +146,8 @@ event = DebugEvent(
         # Find most active component safely
         most_active = None
         if events_by_component:
-            most_active = max(events_by_component.items(), key=lambda x: x[1])[0]
+            try:
+                most_active = max(events_by_component.items(), key=lambda x: x[1])[0]
             except (ValueError, KeyError):
                 most_active = None
         

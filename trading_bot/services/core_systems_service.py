@@ -5,6 +5,7 @@ Core Systems Service
 Wraps Core module capabilities as an event-driven service.
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime
@@ -32,6 +33,7 @@ class CoreSystemsService(BaseService):
     DEPENDENCIES = []
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("CoreSystemsService is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         self._interval: float = config.get('interval', 30.0) if config else 30.0
         self._task: Optional[asyncio.Task] = None
@@ -64,11 +66,14 @@ class CoreSystemsService(BaseService):
     
     async def _load_components(self) -> None:
         try:
-            from trading_bot.core import TradingOrchestrator
-            self._orchestrator = TradingOrchestrator
-            logger.info("TradingOrchestrator loaded")
+            from trading_bot.core_agent_system.legacy_adapter import LegacyOrchestratorAdapter
+            from trading_bot.core_agent_system import IntegratedAgentSystem
+            # ARCH-01: Map to canonical IAS brain via adapter
+            ias = IntegratedAgentSystem(self.config)
+            self._orchestrator = LegacyOrchestratorAdapter(ias, self.config)
+            logger.info("TradingOrchestrator (IAS Adapter) loaded")
         except ImportError as e:
-            logger.warning(f"TradingOrchestrator not available: {e}")
+            logger.warning(f"Canonical brain not available for legacy adapter: {e}")
         
         try:
             from trading_bot.core import CircuitBreakerManager

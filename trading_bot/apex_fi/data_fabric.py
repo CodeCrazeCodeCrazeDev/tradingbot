@@ -8,6 +8,7 @@ Every entity is a living node with typed, temporally-valid relationships.
 Mission: Achieve omniscience over market reality before modeling it.
 """
 
+import warnings
 import asyncio
 import logging
 import time
@@ -217,6 +218,7 @@ class KnowledgeGraph:
     """
     
     def __init__(self):
+        warnings.warn("KnowledgeGraph is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self._entities: Dict[str, Entity] = {}
         self._relationships: List[Relationship] = []
         self._entity_index: Dict[EntityType, Set[str]] = defaultdict(set)

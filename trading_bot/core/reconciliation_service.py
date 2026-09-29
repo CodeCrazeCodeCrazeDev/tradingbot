@@ -5,6 +5,7 @@ This module provides periodic reconciliation of broker positions vs local positi
 with automatic correction of mismatches.
 """
 
+import warnings
 import asyncio
 import logging
 from typing import Any, Dict, List, Optional
@@ -68,6 +69,7 @@ class ReconciliationService:
             broker_adapter: Broker adapter for fetching positions
             config: Configuration dictionary
         """
+        warnings.warn("ReconciliationService is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.execution = execution_manager
         self.broker = broker_adapter
         self.config = config or {}

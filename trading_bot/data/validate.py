@@ -5,6 +5,7 @@ Provides validation and sanitization checks for historical and streaming dataset
 
 from typing import Any, Optional, Dict, Tuple
 import logging
+import pandas as pd
 from datetime import datetime
 import pandas as pd
 
@@ -42,10 +43,14 @@ class DataValidator:
 
         report = {
             "row_count": len(df),
+            "total_records": len(df),
             "missing_values": 0,
             "corrupted_rows": 0,
             "logical_errors": 0,
-            "warnings": []
+            "bad_ticks_count": 0,
+            "look_ahead_violations": 0,
+            "warnings": [],
+            "errors": []
         }
 
         # Check required columns
@@ -53,6 +58,30 @@ class DataValidator:
         missing_cols = [col for col in required_cols if col not in df.columns]
         if missing_cols:
             return False, {"error": f"Missing required columns: {missing_cols}"}
+
+        # Look-ahead bias: a column that exactly equals a base column shifted
+        # backward in time (col[t] == base[t+k], k>=1) leaks future data.
+        look_ahead = 0
+        extra_cols = [c for c in df.columns if c not in required_cols and c != "volume"]
+        for col in extra_cols:
+            col_series = df[col]
+            name_leak = "future" in str(col).lower()
+            shift_leak = False
+            for base in required_cols:
+                for k in (1, 2, 3):
+                    shifted = df[base].shift(-k)
+                    matched = (col_series == shifted) | (col_series.isna() & shifted.isna())
+                    if matched.all():
+                        shift_leak = True
+                        break
+                if shift_leak:
+                    break
+            if name_leak or shift_leak:
+                look_ahead += 1
+                report["errors"].append(
+                    f"Possible look-ahead bias: column '{col}' mirrors a future value"
+                )
+        report["look_ahead_violations"] = look_ahead
 
         # Check for NaNs
         nan_counts = df[required_cols].isna().sum().sum()
@@ -68,8 +97,9 @@ class DataValidator:
         )
         violations_count = int(logical_violations.sum())
         report["logical_errors"] = violations_count
+        report["bad_ticks_count"] = violations_count
 
-        is_valid = (nan_counts == 0) and (violations_count == 0)
+        is_valid = (nan_counts == 0) and (violations_count == 0) and (look_ahead == 0)
         return is_valid, report
 
     def get_status(self) -> Dict:

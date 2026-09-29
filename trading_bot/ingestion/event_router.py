@@ -6,6 +6,7 @@ Handles partitioning, batching, compression, delivery guarantees.
 """
 
 from __future__ import annotations
+import warnings
 
 import asyncio
 import logging
@@ -267,6 +268,7 @@ class EventRouter:
     """
     
     def __init__(self, config: Optional[RouterConfig] = None):
+        warnings.warn("EventRouter is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or RouterConfig()
         self.topic_resolver = TopicResolver()
         

@@ -438,3 +438,6 @@ if __name__ == "__main__":
         print(f"  Reason: {metrics_b.disabled_reason}")
         
     print(f"\nStatus: {monitor.get_status()}")
+
+# Compat alias: legacy name for the health monitor
+AutoDisableSickSignals = SignalHealthMonitor

@@ -3,6 +3,7 @@ Elite 5-Star Monitoring & Alert System
 Real-time monitoring with multi-channel alerts
 """
 
+import warnings
 import logging
 import asyncio
 from datetime import datetime
@@ -129,6 +130,7 @@ class EliteMonitor:
     def __init__(self, telegram_token: Optional[str] = None, 
                  telegram_chat_id: Optional[str] = None,
                  discord_webhook: Optional[str] = None):
+        warnings.warn("EliteMonitor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.telegram_token = telegram_token
         self.telegram_chat_id = telegram_chat_id
         self.discord_webhook = discord_webhook

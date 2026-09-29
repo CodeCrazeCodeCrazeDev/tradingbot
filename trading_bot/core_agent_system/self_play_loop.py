@@ -149,7 +149,7 @@ class SelfPlayLoop:
         self._audit_system = audit_system
 
         # UCA-2026: Grounded Backtest Engine
-        self.backtester = AdvancedBacktester(self.config)
+        self.backtest_engine = AdvancedBacktester(self.config)
         self.market_replay: Optional[MarketReplay] = None
 
         # RL Framework
@@ -158,6 +158,32 @@ class SelfPlayLoop:
             value_network=value_network,
             audit_system=audit_system
         )
+
+        # Hypothesis and experiment tracking
+        self.hypotheses: List[Hypothesis] = []
+        self.experiments: List[Experiment] = []
+        self.games: List[SelfPlayGame] = []
+
+        # Version tracking
+        self.policy_version = 0
+        self.value_version = 0
+        self.best_policy_version = 0
+        self.best_value_version = 0
+
+        # Self-play parameters
+        self.games_per_iteration = self.config.get('games_per_iteration', 100)
+        self.training_batch_size = self.config.get('training_batch_size', 32)
+        self.evaluation_games = self.config.get('evaluation_games', 50)
+        self.improvement_threshold = self.config.get('improvement_threshold', 0.55)
+
+        # Experience buffer
+        self.experience_buffer: List[Dict] = []
+        self.max_buffer_size = self.config.get('max_buffer_size', 100000)
+
+        self.running = False
+        self.iteration = 0
+
+        logger.info("Self-Play Loop initialized with RL Framework")
 
     @property
     def audit_system(self):
@@ -168,32 +194,6 @@ class SelfPlayLoop:
         self._audit_system = value
         if hasattr(self, 'rl_framework'):
             self.rl_framework.audit_system = value
-        
-        # Hypothesis and experiment tracking
-        self.hypotheses: List[Hypothesis] = []
-        self.experiments: List[Experiment] = []
-        self.games: List[SelfPlayGame] = []
-        
-        # Version tracking
-        self.policy_version = 0
-        self.value_version = 0
-        self.best_policy_version = 0
-        self.best_value_version = 0
-        
-        # Self-play parameters
-        self.games_per_iteration = self.config.get('games_per_iteration', 100)
-        self.training_batch_size = self.config.get('training_batch_size', 32)
-        self.evaluation_games = self.config.get('evaluation_games', 50)
-        self.improvement_threshold = self.config.get('improvement_threshold', 0.55)
-        
-        # Experience buffer
-        self.experience_buffer: List[Dict] = []
-        self.max_buffer_size = self.config.get('max_buffer_size', 100000)
-        
-        self.running = False
-        self.iteration = 0
-        
-        logger.info("Self-Play Loop initialized with RL Framework")
     
     async def initialize(self):
         """Initialize the self-play loop"""
@@ -343,6 +343,11 @@ class SelfPlayLoop:
             # In production, this data comes from DataManager
             sample_data = self._load_production_data()
             self.market_replay = MarketReplay(sample_data)
+            # Mirror the grounded dataset onto the backtest engine so
+            # state construction and callers share the same source of truth.
+            self.backtest_engine.data = sample_data
+            if not getattr(self.backtest_engine, "initial_capital", None):
+                self.backtest_engine.initial_capital = self.config.get("initial_capital", 100000.0)
 
         # Start from a random point in the split
         symbol = list(self.market_replay.data.keys())[0]
@@ -414,15 +419,69 @@ class SelfPlayLoop:
 
         return estimated_pnl - cost_bps, {'slippage': slippage, 'spread': spread}
 
+    def validate_market_data(self, df: pd.DataFrame) -> None:
+        """
+        Gatekeeper for replay grounding: reject malformed market datasets
+        before they can contaminate self-play evaluation.
+        """
+        if df is None or df.empty:
+            raise ValueError("Dataset is empty")
+        if not df.index.is_monotonic_increasing:
+            raise ValueError("Timestamps not sorted monotonically")
+        nan_density = df.isna().mean()
+        heavy = nan_density[nan_density > 0.3]
+        if not heavy.empty:
+            raise ValueError(f"High NaN density in column '{heavy.index[0]}': {heavy.iloc[0]:.0%}")
+        price_cols = [c for c in ("open", "high", "low", "close") if c in df.columns]
+        if price_cols and (df[price_cols] <= 0).any().any():
+            raise ValueError("Impossible prices detected (non-positive values)")
+        if {"high", "low"}.issubset(df.columns) and (df["high"] < df["low"]).any():
+            raise ValueError("Unrealistic spreads detected (high < low)")
+
     def _load_production_data(self) -> Dict[str, pd.DataFrame]:
-        # Implementation to load real data
+        """
+        Load historical tick/bar data from the SQLite database, or fallback
+        to a high-fidelity Geometric Brownian Motion (GBM) simulation if empty.
+        """
+        import sqlite3
+        db_path = "market_data.db"
+        if os.path.exists(db_path):
+            try:
+                conn = sqlite3.connect(db_path)
+                df_db = pd.read_sql_query("SELECT * FROM market_data WHERE symbol='EURUSD';", conn)
+                conn.close()
+                if not df_db.empty:
+                    df_db['timestamp'] = pd.to_datetime(df_db['timestamp'])
+                    df_db.set_index('timestamp', inplace=True)
+                    logger.info("Loaded real grounded historical market data from SQLite db.")
+                    return {'EURUSD': df_db}
+            except Exception as e:
+                logger.warning(f"Failed to load from SQLite db: {e}")
+
+        # High-fidelity Geometric Brownian Motion fallback (standard quant standard)
+        logger.info("SQLite database empty or missing. Initiating high-fidelity GBM simulation fallback.")
         dates = pd.date_range(datetime.now() - timedelta(days=365), periods=1000, freq='15T')
+
+        # GBM parameters for EURUSD
+        s0 = 1.0850  # Start price
+        mu = 0.00002 # Tiny positive drift
+        sigma = 0.0008 # Volatility per 15M bar
+
+        prices = [s0]
+        for _ in range(1, 1000):
+            z = np.random.normal(0, 1)
+            # S_t = S_t-1 * exp((mu - 0.5 * sigma^2) + sigma * z)
+            nxt = prices[-1] * np.exp((mu - 0.5 * (sigma**2)) + sigma * z)
+            prices.append(nxt)
+
+        prices = np.array(prices)
+
         df = pd.DataFrame({
-            'open': np.random.randn(1000).cumsum() + 100,
-            'high': np.random.randn(1000).cumsum() + 101,
-            'low': np.random.randn(1000).cumsum() + 99,
-            'close': np.random.randn(1000).cumsum() + 100,
-            'volume': np.random.randint(1000, 10000, 1000)
+            'open': prices,
+            'high': prices * (1.0 + np.abs(np.random.normal(0, 0.0002, 1000))),
+            'low': prices * (1.0 - np.abs(np.random.normal(0, 0.0002, 1000))),
+            'close': prices * (1.0 + np.random.normal(0, 0.0001, 1000)),
+            'volume': np.random.randint(500, 5000, 1000)
         }, index=dates)
         return {'EURUSD': df}
 
@@ -469,8 +528,106 @@ class SelfPlayLoop:
         }
 
     async def _play_game_simulated(self) -> SelfPlayGame:
-        """DEPRECATED: Use _play_game with real data grounding."""
-        logger.warning("DEPRECATED: _play_game_simulated called. Redirecting to grounded _play_game.")
+        """
+        Play a game using data-grounded simulation.
+        INTELL-01: Replaces random noise with historical reality.
+        """
+        import sqlite3
+        import pandas as pd
+
+        game = SelfPlayGame(
+            game_id=str(uuid.uuid4()),
+            start_time=datetime.now(),
+            policy_version=self.policy_version,
+            value_version=self.value_version
+        )
+
+        try:
+            # Connect to grounded data store
+            conn = sqlite3.connect('market_data.db')
+            # Fetch a random window of 100 bars for self-play
+            query = "SELECT open, high, low, close, volume FROM market_data ORDER BY RANDOM() LIMIT 100"
+            df = pd.read_sql_query(query, conn)
+            conn.close()
+
+            if df.empty:
+                logger.warning("Grounded data store is empty, falling back to realistic simulation")
+                return await self._play_game_fallback()
+
+            state = self._get_initial_state()
+            # Override initial price with real data
+            state['market_state']['price'] = df.iloc[0]['close']
+
+            total_reward = 0.0
+
+            for i in range(len(df) - 1):
+                # Current market reality
+                row = df.iloc[i]
+                next_row = df.iloc[i+1]
+                price_change = (next_row['close'] - row['close']) / row['close']
+
+                if self.policy_network:
+                    policy_output = await self.policy_network.predict(state)
+                    action = policy_output.top_action
+                else:
+                    action = self._random_action()
+
+                # Simulate step grounded in real price change
+                next_state, reward, done = await self._simulate_step_grounded(state, action, price_change)
+
+                game.states.append(state)
+                game.actions.append(action)
+                game.rewards.append(reward)
+                total_reward += reward
+                state = next_state
+                if done: break
+
+            game.end_time = datetime.now()
+            game.outcome = total_reward
+            return game
+
+        except Exception as e:
+            logger.error(f"Grounded self-play failed: {e}")
+            return await self._play_game_fallback()
+
+    async def _simulate_step_grounded(self, state: Dict, action: Dict, real_price_change: float) -> Tuple[Dict, float, bool]:
+        """Simulation step grounded in historical price movements"""
+        action_type = action.get('type', 'hold')
+        size = action.get('size', 0)
+
+        # Grounded costs (can be tuned based on asset class)
+        spread = 0.0001
+        slippage = abs(real_price_change) * 0.05
+        cost_factor = (spread + slippage) * size * 10000
+
+        if action_type == 'buy':
+            reward = (real_price_change * size * 10000) - cost_factor
+        elif action_type == 'sell':
+            reward = (-real_price_change * size * 10000) - cost_factor
+        else:
+            reward = 0
+
+        # Update state using real price change
+        next_state = {
+            'market_state': {
+                'price': state['market_state']['price'] * (1 + real_price_change),
+                'volatility': state['market_state']['volatility'], # Ideally from ATR
+                'trend': 'bullish' if real_price_change > 0 else 'bearish',
+                'momentum': state['market_state']['momentum'] * 0.5 + real_price_change
+            },
+            'portfolio_state': {
+                'equity': state['portfolio_state']['equity'] + reward,
+                'exposure': state['portfolio_state']['exposure'] + (size if action_type == 'buy' else -size if action_type == 'sell' else 0),
+                'pnl': state['portfolio_state']['pnl'] + reward
+            },
+            'risk_metrics': state['risk_metrics']
+        }
+
+        done = next_state['portfolio_state']['equity'] < 5000
+        return next_state, reward, done
+
+    async def _play_game_fallback(self) -> SelfPlayGame:
+        """Fallback to the semi-realistic simulation if DB is unavailable"""
         return await self._play_game()
     
     def _get_initial_state(self) -> Dict[str, Any]:
@@ -524,58 +681,6 @@ class SelfPlayLoop:
             'type': np.random.choice(action_types),
             'size': np.random.rand() * 0.02
         }
-    
-    async def _simulate_step(
-        self,
-        state: Dict,
-        action: Dict
-    ) -> Tuple[Dict, float, bool]:
-        """
-        Simulate one step of the environment.
-        
-        Returns (next_state, reward, done)
-        """
-        # Simulate market movement
-        price_change = np.random.randn() * state['market_state']['volatility']
-        
-        # Calculate reward based on action and market movement
-        action_type = action.get('type', 'hold')
-        size = action.get('size', 0)
-        
-        if action_type == 'buy':
-            reward = price_change * size * 10000  # Scale reward
-        elif action_type == 'sell':
-            reward = -price_change * size * 10000
-        else:
-            reward = 0
-        
-        # Add small penalty for trading (transaction costs)
-        if action_type != 'hold':
-            reward -= abs(size) * 10
-        
-        # Update state
-        next_state = {
-            'market_state': {
-                'price': state['market_state']['price'] * (1 + price_change),
-                'volatility': state['market_state']['volatility'] * (0.95 + np.random.rand() * 0.1),
-                'trend': state['market_state']['trend'],
-                'momentum': state['market_state']['momentum'] * 0.9 + np.random.randn() * 0.1
-            },
-            'portfolio_state': {
-                'equity': state['portfolio_state']['equity'] + reward,
-                'exposure': state['portfolio_state']['exposure'] + (size if action_type == 'buy' else -size if action_type == 'sell' else 0),
-                'pnl': state['portfolio_state']['pnl'] + reward
-            },
-            'risk_metrics': state['risk_metrics']
-        }
-        
-        # Check if done (bankrupt or max profit)
-        done = (
-            next_state['portfolio_state']['equity'] < 5000 or  # Bankrupt
-            next_state['portfolio_state']['equity'] > 15000    # Target reached
-        )
-        
-        return next_state, reward, done
     
     def _collect_experiences(self, games: List[SelfPlayGame]) -> List[Dict]:
         """
@@ -658,14 +763,17 @@ class SelfPlayLoop:
         
         wins = 0
         total = self.evaluation_games
-        
+
+        # Grounded baseline: incumbent mean outcome from real replayed games.
+        # No Gaussian noise — the baseline is derived from actual execution
+        # outcomes on historical data (Reality-as-Signal requirement).
+        incumbent_outcomes = [g.outcome for g in self.games if g.outcome is not None]
+        baseline_outcome = float(np.mean(incumbent_outcomes)) if incumbent_outcomes else 0.0
+
         for _ in range(total):
             # Play game with new network
             new_game = await self._play_game()
-            
-            # Compare to baseline (random or previous best)
-            baseline_outcome = np.random.randn() * 100  # Simplified baseline
-            
+
             if new_game.outcome > baseline_outcome:
                 wins += 1
         

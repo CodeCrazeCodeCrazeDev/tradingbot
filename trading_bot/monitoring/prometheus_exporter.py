@@ -25,12 +25,15 @@ class TradingMetricsExporter:
     - Error rate
     """
     
-    def __init__(self, port: int = 9090):
+    def __init__(self, port: int = 9090, start_server: bool = True):
         """
         Args:
             port: Port for Prometheus metrics endpoint
+            start_server: Start the HTTP scrape endpoint. Set False in tests —
+                the server thread is never shut down and binds a real port.
         """
         self.port = port
+        self.start_server = start_server
         self.metrics = {}
         
         try:
@@ -60,8 +63,15 @@ class TradingMetricsExporter:
                                     buckets=[1, 5, 10, 25, 50, 100, 250, 500, 1000])
             
             # Start HTTP server for Prometheus
-            start_http_server(port)
-            logger.info(f"Prometheus metrics server started on port {port}")
+            if self.start_server:
+                try:
+                    start_http_server(port)
+                    logger.info(f"Prometheus metrics server started on port {port}")
+                except OSError as exc:
+                    logger.warning(
+                        f"Prometheus port {port} unavailable ({exc}); "
+                        "metrics still recorded, scrape endpoint not started"
+                    )
             
             self.prometheus_available = True
             
@@ -277,6 +287,27 @@ class AlertManager:
         logger.warning(f"ALERT [{level}]: {message}")
         
         # In production, send to Slack, email, SMS, etc.
+
+
+class PrometheusExporter(TradingMetricsExporter):
+    """Legacy API surface (``record_trade(symbol, side, status, pnl)``,
+    ``update_portfolio(equity, drawdown)``, ``.enabled``) over the canonical
+    :class:`TradingMetricsExporter`. New code should use the base class."""
+
+    def __init__(self, port: int = 9090, **kwargs):
+        super().__init__(port=port, **kwargs)
+
+    @property
+    def enabled(self) -> bool:
+        return self.prometheus_available
+
+    def record_trade(self, symbol: str, side: str, status: str, pnl: float, **kwargs):
+        is_win = pnl > 0
+        super().record_trade(pnl=pnl, duration_seconds=0.0, is_win=is_win)
+
+    def update_portfolio(self, equity: float, drawdown: float):
+        self.update_equity(equity)
+        self.update_drawdown(current=drawdown, maximum=drawdown)
 
 
 if __name__ == "__main__":

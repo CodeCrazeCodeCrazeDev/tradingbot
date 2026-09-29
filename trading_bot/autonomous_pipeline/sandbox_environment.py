@@ -11,6 +11,7 @@ Provides:
 Author: AlphaAlgo Trading System
 """
 
+import warnings
 import asyncio
 import logging
 import subprocess
@@ -111,6 +112,7 @@ class SandboxEnvironment:
     """Isolated sandbox environment for testing"""
     
     def __init__(self, config: Optional[SandboxConfig] = None):
+        warnings.warn("SandboxEnvironment is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or SandboxConfig()
         self.sandbox_path: Optional[Path] = None
         self.active_tests: Dict[str, IsolatedTest] = {}

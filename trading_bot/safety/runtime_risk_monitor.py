@@ -3,6 +3,7 @@ Runtime Risk Monitor - Comprehensive Real-Time Risk Monitoring
 Integrates all safety systems for continuous protection
 """
 
+import warnings
 import asyncio
 import logging
 import psutil
@@ -165,6 +166,7 @@ class RuntimeRiskMonitor:
         frequency_limiter: Optional[TradeFrequencyLimiter] = None
     ):
         # Initialize safety systems
+        warnings.warn("RuntimeRiskMonitor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.kill_switch = kill_switch or (EmergencyKillSwitch() if EmergencyKillSwitch else None)
         self.circuit_breaker = circuit_breaker or (CircuitBreaker() if CircuitBreaker else None)
         self.frequency_limiter = frequency_limiter or TradeFrequencyLimiter()
@@ -194,14 +196,13 @@ class RuntimeRiskMonitor:
         self.monitoring_active = True
         logger.info("🛡️ Runtime Risk Monitor STARTED")
         
-        # Start monitoring tasks
-        tasks = [
-            asyncio.create_task(self._monitor_loop()),
-            asyncio.create_task(self._metrics_update_loop()),
-            asyncio.create_task(self._system_health_loop())
-        ]
-        
-        await asyncio.gather(*tasks)
+        # Monitoring workers disabled: parallel risk monitors must not run
+        # detached loops; CanonicalRiskService owns portfolio risk.
+        logger.warning(
+            "Runtime risk monitor workers disabled; CanonicalRiskService "
+            "owns risk monitoring"
+        )
+        return
     
     def stop_monitoring(self):
         """Stop risk monitoring"""

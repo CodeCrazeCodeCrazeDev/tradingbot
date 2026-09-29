@@ -6,6 +6,7 @@ Supports consumer groups for horizontal scaling.
 """
 
 from __future__ import annotations
+import warnings
 
 import asyncio
 import logging
@@ -167,6 +168,7 @@ class EventConsumer:
         handler: Callable[[Event], Awaitable[None]],
         config: ConsumerConfig = None
     ):
+        warnings.warn("EventConsumer is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.event_bus = event_bus
         self.handler = handler
         self.config = config or ConsumerConfig()

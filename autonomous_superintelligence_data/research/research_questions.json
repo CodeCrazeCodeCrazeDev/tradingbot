@@ -53,5 +53,60 @@
     "status": "active",
     "experiments": [],
     "findings": []
+  },
+  {
+    "question_id": "rq_1783410789.801957",
+    "domain": "market_microstructure",
+    "question": "What hidden patterns exist in order flow that predict price movements?",
+    "hypothesis": "Large institutional orders leave detectable footprints in order flow",
+    "priority": 0.9,
+    "created_at": "2026-07-07T07:53:09.801966",
+    "status": "active",
+    "experiments": [],
+    "findings": []
+  },
+  {
+    "question_id": "rq_1783410789.802141",
+    "domain": "machine_learning",
+    "question": "Can transformer models predict market regimes better than traditional methods?",
+    "hypothesis": "Attention mechanisms capture regime transitions more effectively",
+    "priority": 0.85,
+    "created_at": "2026-07-07T07:53:09.802146",
+    "status": "active",
+    "experiments": [],
+    "findings": []
+  },
+  {
+    "question_id": "rq_1783410789.802189",
+    "domain": "risk_management",
+    "question": "What is the optimal dynamic position sizing algorithm for volatile markets?",
+    "hypothesis": "Volatility-adjusted Kelly criterion outperforms fixed sizing",
+    "priority": 0.8,
+    "created_at": "2026-07-07T07:53:09.802193",
+    "status": "active",
+    "experiments": [],
+    "findings": []
+  },
+  {
+    "question_id": "rq_1783410789.802224",
+    "domain": "algorithmic_trading",
+    "question": "Do market inefficiencies persist across different market regimes?",
+    "hypothesis": "Some inefficiencies are regime-dependent while others are universal",
+    "priority": 0.75,
+    "created_at": "2026-07-07T07:53:09.802227",
+    "status": "active",
+    "experiments": [],
+    "findings": []
+  },
+  {
+    "question_id": "rq_1783410789.802256",
+    "domain": "behavioral_finance",
+    "question": "How do social media sentiment waves predict market movements?",
+    "hypothesis": "Sentiment acceleration is more predictive than absolute sentiment",
+    "priority": 0.7,
+    "created_at": "2026-07-07T07:53:09.802259",
+    "status": "active",
+    "experiments": [],
+    "findings": []
   }
 ]

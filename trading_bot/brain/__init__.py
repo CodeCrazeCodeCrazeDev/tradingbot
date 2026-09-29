@@ -41,9 +41,10 @@ from .tier9_metalearning import Tier9MetaLearning
 
 # Optional components with fallback imports
 try:
-    from .brain_architecture import EliteBrain, BrainDecision
+    from .brain_architecture import EliteBrain, BrainDecision, DecisionState
 except ImportError:
     EliteBrain = None
+    DecisionState = None
     class BrainDecision: pass
 
 try:
@@ -52,9 +53,14 @@ except ImportError:
     AdaptiveIntegrationSystem = None
 
 try:
-    from .alphaalgo_2_0 import SystemCapability
+    from .alphaalgo_2_0 import (
+        AlphaAlgo2, create_alphaalgo, SystemCapability, OptimizationStrategy,
+    )
 except ImportError:
+    AlphaAlgo2 = None
+    create_alphaalgo = None
     SystemCapability = None
+    OptimizationStrategy = None
 
 try:
     from .alphaalgo_2_0_system import Alphaalgo20System
@@ -84,9 +90,11 @@ except ImportError:
 
 __all__ = [
     'AdaptiveIntegrationSystem',
+    'AlphaAlgo2',
     'AlphaBrain',
     'Alphaalgo20System',
     'BrainDecision',
+    'DecisionState',
     'BrainTrader',
     'CentralController',
     'EliteBrain',
@@ -95,7 +103,9 @@ __all__ = [
     'EliteBrainSignal',
     'MT5BrainTrader',
     'MetaLearningSystem',
+    'OptimizationStrategy',
     'SystemCapability',
+    'create_alphaalgo',
     # Analytical Tiers 1-9
     'Tier1TechnicalAnalysis',
     'Tier2OrderFlowIntelligence',

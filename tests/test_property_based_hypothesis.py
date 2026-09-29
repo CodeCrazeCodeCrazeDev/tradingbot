@@ -8,16 +8,20 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import Dict, List, Any
+from trading_bot.risk.position_size_calculator import PositionSizeMethod
+from trading_bot.risk.circuit_breaker import CircuitBreaker, CircuitBreakerConfig
 
 # Try to import hypothesis, provide fallback if not installed
 try:
     from hypothesis import given, strategies as st, settings, assume, HealthCheck
     from hypothesis.extra.numpy import arrays
+    from_hypothesis_extra_pandas = True
     from hypothesis.extra.pandas import column, data_frames, series
     HYPOTHESIS_AVAILABLE = True
     # Default settings to suppress fixture health check
     DEFAULT_SETTINGS = settings(
         max_examples=100,
+        deadline=None,
         suppress_health_check=[HealthCheck.function_scoped_fixture]
     )
 except ImportError:
@@ -426,6 +430,8 @@ class TestDrawdownProtectorProperties:
     @DEFAULT_SETTINGS
     def test_new_high_updates_peak(self, protector, balance):
         """Property: New high balance updates peak"""
+        # Re-baseline below the generated value so each example is a new high.
+        protector.initialize(min(balance - 0.5, 1))
         protector.update_balance(balance)
         
         assert protector.peak_balance == balance

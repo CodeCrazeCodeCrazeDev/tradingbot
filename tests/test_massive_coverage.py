@@ -582,9 +582,6 @@ class TestVoiceAssistantModuleComprehensive:
         """Test voice_controller module."""
 
         from trading_bot.voice_assistant import voice_controller
-from dataclasses import dataclass
-import numpy
-import pandas
-assert voice_controller is not None
+        assert voice_controller is not None
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

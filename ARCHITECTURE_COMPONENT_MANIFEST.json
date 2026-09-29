@@ -1,0 +1,229 @@
+{
+  "schema_version": "1.0",
+  "authority_policy": "One active authority per category; legacy implementations may remain only as adapters, research candidates, compatibility facades, or archived code.",
+  "runtime_mode": "hybrid_modular_monolith",
+  "authorities": {
+    "composition_root": {
+      "owner": "ModularMonolithRuntime -> UnifiedTradingBot",
+      "path": "trading_bot/foundation/runtime.py",
+      "implementation": "trading_bot/unified_bot.py",
+      "status": "active",
+      "rule": "The runtime facade delegates lifecycle; it never becomes a second decision-maker."
+    },
+    "strategic_coordinator": {
+      "owner": "CognitiveSystemController",
+      "path": "trading_bot/core/csc/controller.py",
+      "status": "active",
+      "rule": "No other orchestrator may start a production trading loop or authorize capital movement."
+    },
+    "tactical_cognition": {
+      "owner": "AlphaAlgoCognitiveBrain",
+      "path": "trading_bot/cognition/orchestrator.py",
+      "status": "active_service",
+      "rule": "Invoked by the strategic coordinator; not a competing application entry point."
+    },
+    "decision_audit_bus": {
+      "owner": "UnifiedDecisionBus",
+      "path": "trading_bot/core/unified_event_bus.py",
+      "compatibility_surface": "trading_bot/core/event_bus.py",
+      "status": "active"
+    },
+    "component_registry": {
+      "owner": "UnifiedComponentRegistry",
+      "path": "trading_bot/core/unified_registry.py",
+      "status": "active"
+    },
+    "portfolio_risk": {
+      "owner": "CanonicalRiskService",
+      "path": "trading_bot/risk/service.py",
+      "compatibility_surface": "trading_bot/risk/risk_manager.py",
+      "legacy_implementation": "trading_bot/risk/MASTER_risk_manager.py",
+      "status": "active_foundation_adapter",
+      "policy_adapter": "trading_bot/risk/service.py::LegacyRiskPolicyAdapter",
+      "rule": "Only the canonical portfolio risk service may authorize position sizing or portfolio exposure; subordinate policies may veto but never approve alone."
+    },
+    "final_safety_gate": {
+      "owner": "ImmutableShield",
+      "path": "trading_bot/core/immutable_shield.py",
+      "status": "active",
+      "rule": "Capital-moving actions fail closed when the shield is absent, unavailable, or vetoing."
+    },
+    "execution_service": {
+      "owner": "CanonicalExecutionService",
+      "path": "trading_bot/execution/service.py",
+      "compatibility_paths": [
+        "trading_bot/core/execution_bridge.py",
+        "trading_bot/execution/trade_executor.py"
+      ],
+      "legacy_set_summary": "58 additional execution-side adapter modules (live/paper executors, TWAP/VWAP/iceberg algorithms, broker-specific connectors) remain inside the execution boundary; only service.py is runtime-reachable",
+      "status": "paper_runtime_wired_live_opt_in",
+      "reference_adapter": "PaperBrokerAdapter",
+      "legacy_adapter": "LegacyBrokerAdapter",
+      "rule": "Non-paper execution requires an explicit broker adapter and never falls back silently."
+    },
+    "trading_persistence": {
+      "owner": "SqliteTradingRepository",
+      "path": "trading_bot/persistence/repositories.py",
+      "status": "active_runtime_wired",
+      "rule": "Orders, fills, positions, audit events, and reconciliation results use this typed repository as the authoritative source."
+    },
+    "human_governance_policy": {
+      "owner": "HumanApprovalPolicy",
+      "path": "trading_bot/governance/policy_adapter.py",
+      "status": "active_runtime_wired",
+      "rule": "Human approval can approve or reject; it cannot be bypassed by legacy policy modules."
+    },
+    "adapter_conformance": {
+      "owner": "Foundation conformance checks",
+      "path": "trading_bot/foundation/conformance.py",
+      "status": "wave_3_started",
+      "rule": "Conformance checks are non-networking and must pass before an adapter is eligible for runtime registration."
+    },
+    "market_data_adapter": {
+      "owner": "LegacyMarketDataAdapter",
+      "path": "trading_bot/data/adapters.py",
+      "status": "paper_replay_adapter_ready",
+      "rule": "Legacy feed callbacks are normalized to MarketEvent before entering cognition."
+    },
+    "concrete_broker_adapter": {
+      "owner": "FoundationBrokerAdapter",
+      "path": "trading_bot/brokers/adapter_bridge.py",
+      "legacy_source": "trading_bot/brokers/broker_adapter.py",
+      "status": "paper_mock_conformance_ready",
+      "rule": "No production broker connection is implicit; paper/testnet conformance precedes live activation."
+    },
+    "strategy_adapter": {
+      "owner": "LegacyStrategyAdapter",
+      "path": "trading_bot/strategies/adapter.py",
+      "registry": "trading_bot/strategies/registry.py::StrategyRegistry",
+      "status": "signal_only_adapter_ready",
+      "rule": "Legacy strategy engines may emit typed signals only; they cannot size, approve, or execute orders."
+    },
+    "agent_capability_adapter": {
+      "owner": "DebateCapabilityAdapter",
+      "path": "trading_bot/agents/capability_adapter.py",
+      "legacy_source": "trading_bot/agents/multi_agent_debate.py",
+      "registry": "trading_bot/foundation/capability_registry.py::CapabilityRegistry",
+      "status": "advisory_only_opt_in",
+      "rule": "Legacy debate may return evidence only; it cannot authorize risk or execution."
+    },
+    "backtesting_family": {
+      "owner": "RigorousBacktester",
+      "path": "trading_bot/backtesting/rigorous_backtest.py",
+      "research_runner": "trading_bot/evaluation/runner.py::WalkForwardSimulationRunner",
+      "legacy_set": [
+        "trading_bot/backtesting/backtester.py",
+        "trading_bot/backtesting/advanced_backtester.py",
+        "trading_bot/backtesting/backtesting_engine.py",
+        "trading_bot/backtesting/strategy_backtester.py",
+        "trading_bot/backtesting/complete_backtest_runner.py",
+        "trading_bot/backtesting/replay.py",
+        "trading_bot/backtesting/simulator_validator.py"
+      ],
+      "status": "research_only_not_runtime_reachable",
+      "rule": "Backtesters produce evidence only; no backtesting module may reach broker execution paths. Simulated order calls must target in-memory engine objects, and promotion evidence requires the deterministic research runner."
+    },
+    "orchestrator_fleet": {
+      "owner": "CognitiveSystemController via UnifiedTradingBot",
+      "paths": [
+        "trading_bot/core/csc/controller.py",
+        "trading_bot/unified_bot.py"
+      ],
+      "legacy_set_summary": "55 orchestrator/controller modules across 30+ subpackages classified compatibility_facade or adapter; none are runtime-reachable",
+      "loop_starters_flagged": [
+        "trading_bot/orchestration/master_orchestrator.py",
+        "trading_bot/orchestration/service_managers.py",
+        "trading_bot/sentient_core/sentient_orchestrator.py"
+      ],
+      "status": "single_authority_enforced_by_reachability",
+      "rule": "No legacy orchestrator may start a production trading loop, own lifecycle, or authorize capital movement; they remain compatibility facades until wave consolidation."
+    },
+    "research_evaluator": {
+      "owner": "ExperimentManager with injected simulation_runner",
+      "path": "trading_bot/recursive_self_improvement/experiment_manager.py",
+      "runner": "trading_bot/evaluation/runner.py::WalkForwardSimulationRunner",
+      "status": "deterministic_runner_required",
+      "rule": "Unmarked random/mock metrics cannot create promotion evidence; synthetic fallback is explicitly non-promotable."
+    },
+    "read_model_interfaces": {
+      "owner": "ModularMonolithReadModel",
+      "path": "trading_bot/interfaces/read_models.py",
+      "adapters": "trading_bot/interfaces/adapters.py",
+      "status": "read_only_runtime_facade_registered",
+      "rule": "Interfaces expose health, graph, portfolio, dashboard, reporting, and notification projections without domain authority or broker access. Runtime registration marks them read-only with no capital path."
+    },
+    "recursive_self_improvement": {
+      "owner": "HumanGuidedRecursiveImprovementLoop",
+      "path": "trading_bot/recursive_self_improvement/rsi_loop.py",
+      "genome": "trading_bot/recursive_self_improvement/improvement_genome.py",
+      "compatibility_surface": "trading_bot/recursive_improvement/orchestrator.py",
+      "status": "implemented_dry_run_by_default",
+      "rule": "No candidate reaches promotion without replay/OOS/safety/provenance evidence and explicit human approval."
+    },
+    "credential_provider": {
+      "owner": "SecureCredentialVault",
+      "path": "trading_bot/security/credential_vault.py",
+      "status": "consolidation_in_progress"
+    },
+    "tactical_memory": {
+      "owner": "HierarchicalMemorySystem",
+      "path": "trading_bot/core/hms/memory.py",
+      "status": "active"
+    },
+    "world_model_port": {
+      "owner": "World model adapter boundary",
+      "current_paths": [
+        "trading_bot/world_model/v2_core.py",
+        "trading_bot/world_model/causal/gwm.py"
+      ],
+      "status": "port_added"
+    },
+    "legacy_convergence": {
+      "owner": "Wave-0 AST/import classification and boundary scanner",
+      "path": "trading_bot/foundation/legacy_convergence.py",
+      "manifest": "ARCHITECTURE_LEGACY_CLASSIFICATION.json",
+      "inventory_report": "ARCHITECTURE_WAVE_INVENTORY.md",
+      "status": "wave_0_inventory_complete",
+      "scope": "live runtime modules and standalone CLI entry points",
+      "summary": {
+        "modules": 3164,
+        "runtime_reachable": 36,
+        "canonical": 12,
+        "compatibility_facades": 91,
+        "research_only": 208,
+        "quarantine": 44,
+        "direct_capital_paths": 62,
+        "external_surfaces": 281,
+        "external_capital_paths": 19,
+        "external_loop_starters": 26,
+        "dynamic_import_modules": 30,
+        "parse_errors": 0
+      },
+      "rule": "Classification does not move or delete files; unclassified or unsafe modules cannot be registered."
+    }
+  },
+  "bounded_contexts": {
+    "foundation": {"path": "trading_bot/foundation", "status": "implemented"},
+    "data": {"path": "trading_bot/data", "status": "migration_pending"},
+    "cognition": {"path": "trading_bot/cognition", "status": "active"},
+    "research": {"path": "trading_bot/research", "status": "migration_pending"},
+    "portfolio": {"path": "trading_bot/portfolio", "status": "migration_pending"},
+    "risk": {"path": "trading_bot/risk", "status": "consolidation_in_progress"},
+    "governance": {"path": "trading_bot/governance", "status": "consolidation_in_progress"},
+    "execution": {"path": "trading_bot/execution", "status": "consolidation_in_progress"},
+    "brokers": {"path": "trading_bot/brokers", "status": "adapter_migration_pending"},
+    "persistence": {"path": "trading_bot/persistence", "status": "typed_trading_repository_active"},
+    "recursive_self_improvement": {"path": "trading_bot/recursive_self_improvement", "status": "human_gated_foundation_active"},
+    "interfaces": {"path": "trading_bot/interfaces", "status": "read_only_adapters_registered"},
+    "operations": {"path": "config", "status": "migration_pending"},
+    "legacy_convergence": {"path": "trading_bot/foundation/legacy_convergence.py", "status": "wave_0_complete"}
+  },
+  "classification_values": [
+    "canonical",
+    "adapter",
+    "research_only",
+    "compatibility_facade",
+    "archive_candidate",
+    "quarantined"
+  ]
+}

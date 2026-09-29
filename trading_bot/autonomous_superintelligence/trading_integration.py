@@ -3,6 +3,7 @@ Trading Bot Integration Layer
 Connects the autonomous superintelligence to the trading bot systems.
 """
 
+import warnings
 import asyncio
 import json
 import logging
@@ -19,6 +20,7 @@ class TradingIntegration:
     """
     
     def __init__(self, superintelligence, trading_engine, config: Optional[Dict] = None):
+        warnings.warn("TradingIntegration is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.superintelligence = superintelligence
         self.trading_engine = trading_engine

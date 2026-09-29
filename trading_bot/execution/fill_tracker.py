@@ -4,6 +4,7 @@ Order Fill Confirmation and Tracking
 Tracks order fills, confirms execution, and maintains accurate position state.
 """
 
+import warnings
 import asyncio
 import logging
 from typing import Any, Dict, List, Optional
@@ -92,6 +93,7 @@ class FillTracker:
     """Track and confirm order fills"""
     
     def __init__(self, broker_adapter, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("FillTracker is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.broker = broker_adapter
         self.config = config or {}
         

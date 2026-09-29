@@ -32,20 +32,36 @@ logging.basicConfig(
 )
 
 # Import all agents
-from meta_orchestrator import MetaOrchestrator, WorkflowStage
-from data_fusion_agent import DataFusionAgent
-from ontology_agent import OntologyAgent
-from intelligence_agent import IntelligenceAgent
-from strategy_agent import StrategyAgent
-from simulation_agent import SimulationAgent
-from risk_evaluation_agent import RiskEvaluationAgent
-from execution_agent import ExecutionAgent
-from experiment_infrastructure import ExperimentInfrastructure
+try:
+    from meta_orchestrator import MetaOrchestrator, WorkflowStage
+except ImportError:
+    from .meta_orchestrator import MetaOrchestrator, WorkflowStage
+try:
+    from data_fusion_agent import DataFusionAgent
+    from ontology_agent import OntologyAgent
+    from intelligence_agent import IntelligenceAgent
+    from strategy_agent import StrategyAgent
+    from simulation_agent import SimulationAgent
+    from risk_evaluation_agent import RiskEvaluationAgent
+    from execution_agent import ExecutionAgent
+    from experiment_infrastructure import ExperimentInfrastructure
+except ImportError:
+    from .data_fusion_agent import DataFusionAgent
+    from .ontology_agent import OntologyAgent
+    from .intelligence_agent import IntelligenceAgent
+    from .strategy_agent import StrategyAgent
+    from .simulation_agent import SimulationAgent
+    from .risk_evaluation_agent import RiskEvaluationAgent
+    from .execution_agent import ExecutionAgent
+    from .experiment_infrastructure import ExperimentInfrastructure
 
 # Import RadarAI components
 import sys
 sys.path.append('..')
-from radar_ontology import FinancialOntology
+try:
+    from radar_ontology import FinancialOntology
+except ImportError:
+    from ..radar_ontology import FinancialOntology
 
 
 async def run_complete_trading_workflow():
@@ -445,4 +461,9 @@ async def run_complete_trading_workflow():
 
 
 if __name__ == "__main__":
-    asyncio.run(run_complete_trading_workflow())
+    raise SystemExit(
+        "trading_bot/radar_ai/agents/AGENT_SYSTEM_DEMO.py is QUARANTINED: standalone execution of this module is a "
+        "parallel capital/loop path outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

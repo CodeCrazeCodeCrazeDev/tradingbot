@@ -3,6 +3,7 @@ Time-Series Database Manager
 Optimized for high-performance market data storage and retrieval
 """
 
+import warnings
 import asyncio
 import aiosqlite
 import numpy as np
@@ -52,6 +53,7 @@ class TimeSeriesDB:
     """
     
     def __init__(self, config: Dict[str, Any]):
+        warnings.warn("TimeSeriesDB is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         self.db_path = config.get('db_path', 'market_data.db')
         self.parquet_dir = config.get('parquet_dir', 'market_data_archive')

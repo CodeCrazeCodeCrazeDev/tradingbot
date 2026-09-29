@@ -5,6 +5,7 @@ This module provides social media monitoring capabilities for the Elite Trading 
 enabling tracking of market sentiment, trending topics, and influential posts.
 """
 
+import warnings
 import enum
 import asyncio
 import logging
@@ -595,6 +596,7 @@ class SocialMediaMonitor:
             event_monitor: Event monitoring system
             config: Optional configuration dictionary
         """
+        warnings.warn("SocialMediaMonitor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.event_monitor = event_monitor
         self.config = config or {}
         self._init_default_config()

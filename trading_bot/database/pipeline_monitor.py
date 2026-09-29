@@ -3,6 +3,7 @@ Data Pipeline Monitoring System
 Tracks performance metrics and identifies bottlenecks in real-time
 """
 
+import warnings
 import asyncio
 import numpy as np
 from typing import Any, Dict, List, Optional
@@ -61,6 +62,7 @@ class PipelineMonitor:
     """
     
     def __init__(self, config: Dict[str, Any]):
+        warnings.warn("PipelineMonitor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         
         # Metrics storage

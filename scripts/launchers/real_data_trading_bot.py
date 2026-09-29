@@ -450,9 +450,9 @@ async def main():
 
 
 if __name__ == '__main__':
-    # Create logs directory
-    import os
-    os.makedirs('logs', exist_ok=True)
-    
-    # Run bot
-    asyncio.run(main())
+    raise SystemExit(
+        "real_data_trading_bot.py is QUARANTINED: it is a standalone trading "
+        "loop with direct order placement outside the canonical "
+        "risk/governance/shield/bus/execution path. Use "
+        "'python main.py --mode paper'."
+    )

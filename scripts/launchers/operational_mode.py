@@ -553,4 +553,9 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    raise SystemExit(
+        "scripts/launchers/operational_mode.py is QUARANTINED: standalone trading launchers are parallel "
+        "capital/loop paths outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

@@ -9,6 +9,7 @@ High-performance streaming pipeline for production inference:
 - Circuit breaker pattern for fault tolerance
 """
 
+import warnings
 import asyncio
 import logging
 import time
@@ -254,6 +255,7 @@ class RealtimeInferencePipeline:
         batch_size: int = 32,
         queue_size: int = 1000
     ):
+        warnings.warn("RealtimeInferencePipeline is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.gets = gets_instance
         self.max_latency_ms = max_latency_ms
         self.batch_size = batch_size

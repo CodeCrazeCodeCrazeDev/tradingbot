@@ -22,6 +22,9 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# Patchable MT5 handle (lazy: real import happens inside connect/shutdown)
+mt5 = None
+
 from thinking_bot import (
     ThinkingBot,
     MarketAnalysis,
@@ -454,4 +457,9 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    raise SystemExit(
+        "scripts/launchers/thinking_bot_elite.py is QUARANTINED: standalone trading launchers are parallel "
+        "capital/loop paths outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

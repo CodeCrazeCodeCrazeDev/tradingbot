@@ -2,8 +2,9 @@ import os
 import shutil
 import logging
 import json
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Mapping, Optional, Tuple
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -91,3 +92,75 @@ class RollbackManager:
             for f in files[keep:]:
                 os.remove(f)
                 logger.debug(f"Deleted old snapshot: {f.name}")
+
+
+@dataclass(frozen=True)
+class ChampionState:
+    """Everything needed to deterministically restore a research champion."""
+
+    snapshot_id: str
+    genome_id: str
+    parameters: Mapping[str, Any]
+    contract_hash: str
+    dataset_hash: str
+    strategy_family: str
+    seeds: Tuple[int, ...]
+    code_hash: str
+    dependencies_hash: str
+    created_at: str = ""
+
+
+class ChampionRollback:
+    """Deterministic champion snapshots + restore (mission section 13).
+
+    Restore returns the immutable ChampionState the operator would apply —
+    this class never writes live configuration itself. The superseded
+    champion's archive record is never deleted.
+    """
+
+    def __init__(self, snapshot_dir: str | Path, archive: Any = None) -> None:
+        self.snapshot_dir = Path(snapshot_dir)
+        self.snapshot_dir.mkdir(parents=True, exist_ok=True)
+        self.archive = archive
+
+    def snapshot(self, state: ChampionState) -> str:
+        path = self.snapshot_dir / f"{state.snapshot_id}.json"
+        payload = {
+            "snapshot_id": state.snapshot_id,
+            "genome_id": state.genome_id,
+            "parameters": dict(state.parameters),
+            "contract_hash": state.contract_hash,
+            "dataset_hash": state.dataset_hash,
+            "strategy_family": state.strategy_family,
+            "seeds": list(state.seeds),
+            "code_hash": state.code_hash,
+            "dependencies_hash": state.dependencies_hash,
+            "created_at": state.created_at,
+        }
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, sort_keys=True)
+        return state.snapshot_id
+
+    def restore(self, snapshot_id: str) -> Optional[ChampionState]:
+        path = self.snapshot_dir / f"{snapshot_id}.json"
+        if not path.exists():
+            return None
+        with open(path, "r", encoding="utf-8") as f:
+            p = json.load(f)
+        state = ChampionState(
+            snapshot_id=p["snapshot_id"], genome_id=p["genome_id"],
+            parameters=p["parameters"], contract_hash=p["contract_hash"],
+            dataset_hash=p["dataset_hash"],
+            strategy_family=p["strategy_family"], seeds=tuple(p["seeds"]),
+            code_hash=p["code_hash"], dependencies_hash=p["dependencies_hash"],
+            created_at=p["created_at"])
+        if self.archive is not None:
+            try:
+                self.archive.record_rollback(
+                    from_genome="", to_snapshot=snapshot_id,
+                    reason="operator-requested restore")
+            except Exception as e:  # noqa: BLE001 - restore must not fail on logging
+                import logging
+                logging.getLogger(__name__).warning(
+                    f"rollback to {snapshot_id} not recorded in evidence archive: {e}")
+        return state

@@ -5,6 +5,7 @@ Comprehensive tests for explainability modules
 import pytest
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from trading_bot.ml.explainability import LIMEExplainer, TradingLIMEExplainer
 
 
 class TestLIMEExplainer:

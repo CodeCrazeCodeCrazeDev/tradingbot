@@ -9,6 +9,7 @@ Unified order routing across multiple brokers:
 - Audit logging
 """
 
+import warnings
 import asyncio
 import logging
 import uuid
@@ -176,6 +177,7 @@ class LiveOrderRouter:
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("LiveOrderRouter is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Brokers

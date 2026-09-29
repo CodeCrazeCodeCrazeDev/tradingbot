@@ -5,6 +5,19 @@ import pandas as pd
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
+# Hoisted from in-def imports (merge repair: names were bound in
+# fixture scope while sibling methods reference them module-wide)
+try:
+    from trading_bot import market_intelligence
+except ImportError:
+    pass
+
+try:
+    from trading_bot.market_intelligence import data_monitoring, event_detection, liquidity_analysis, market_context, pattern_recognition, technical_analysis, time_price_analysis, wyckoff_analysis
+except ImportError:
+    pass
+
+
 
 class TestMarketIntelligenceInit:
     """Tests for market_intelligence __init__ module."""
@@ -109,9 +122,7 @@ class TestTimePriceAnalysis:
         """Test module can be imported."""
 
         from trading_bot.market_intelligence import time_price_analysis
-import numpy
-import pandas
-assert time_price_analysis is not None
+        assert time_price_analysis is not None
 
 
 

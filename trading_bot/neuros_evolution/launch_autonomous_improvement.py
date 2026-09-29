@@ -16,7 +16,10 @@ from datetime import datetime
 current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir))
 
-from continuous_orchestrator import ContinuousOrchestrator, OrchestrationConfig
+try:
+    from continuous_orchestrator import ContinuousOrchestrator, OrchestrationConfig
+except ImportError:
+    from .continuous_orchestrator import ContinuousOrchestrator, OrchestrationConfig
 from recursive_self_improvement import RecursiveSelfImprovementSystem
 from plotcode_integration import EnhancedRecursiveSelfImprovement
 from self_diagnosis_engine import EnhancedSelfDiagnosis

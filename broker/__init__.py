@@ -17,7 +17,9 @@ from .binance_broker import BinanceBroker
 try:
     from .ib_broker import IBBroker
     _ib_available = True
-except ImportError:
+except Exception:
+    # ImportError if ib_insync is absent; RuntimeError when it imports eventkit
+    # outside a running/default event loop (e.g. under pytest).
     IBBroker = None
     _ib_available = False
 

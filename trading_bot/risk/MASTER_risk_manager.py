@@ -33,7 +33,8 @@ import asyncio
 import logging
 import math
 import time
-from dataclasses import dataclass, field
+import warnings
+from dataclasses import dataclass, field, fields
 from datetime import datetime, timedelta
 from enum import Enum, auto
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -190,6 +191,60 @@ class RiskLimits:
     max_correlated_positions: int = 3
     emergency_shutdown_drawdown: float = 0.30  # 30%
 
+# Fallback symbol specification used when no MT5 interface is connected
+# (5-digit FX conventions; volumes in lots).
+FALLBACK_SYMBOL_POINT = 0.00001
+FALLBACK_TICK_VALUE = 1.0
+FALLBACK_TICK_SIZE = 0.00001
+FALLBACK_MIN_LOT = 0.01
+FALLBACK_MAX_LOT = 10.0
+FALLBACK_LOT_STEP = 0.01
+POINTS_PER_PIP = 10
+FALLBACK_RISK_PERCENT = 0.01
+
+# Base risk-per-trade fraction keyed by (risk mode, trade quality).
+BASE_RISK_PERCENT: Dict[RiskMode, Dict[TradeQuality, float]] = {
+    RiskMode.CONSERVATIVE: {
+        TradeQuality.OPTIMAL: 0.01,
+        TradeQuality.STRONG: 0.008,
+        TradeQuality.STANDARD: 0.005,
+        TradeQuality.SPECULATIVE: 0.003
+    },
+    RiskMode.STANDARD: {
+        TradeQuality.OPTIMAL: 0.02,
+        TradeQuality.STRONG: 0.015,
+        TradeQuality.STANDARD: 0.01,
+        TradeQuality.SPECULATIVE: 0.005
+    },
+    RiskMode.AGGRESSIVE: {
+        TradeQuality.OPTIMAL: 0.03,
+        TradeQuality.STRONG: 0.025,
+        TradeQuality.STANDARD: 0.015,
+        TradeQuality.SPECULATIVE: 0.008
+    },
+    RiskMode.RECOVERY: {
+        TradeQuality.OPTIMAL: 0.005,
+        TradeQuality.STRONG: 0.004,
+        TradeQuality.STANDARD: 0.003,
+        TradeQuality.SPECULATIVE: 0.001
+    },
+    RiskMode.EMERGENCY: {
+        TradeQuality.OPTIMAL: 0.001,
+        TradeQuality.STRONG: 0.001,
+        TradeQuality.STANDARD: 0.0005,
+        TradeQuality.SPECULATIVE: 0.0001
+    }
+}
+
+# Placeholder feature values for the ML-adjustment stub — these are NOT live
+# market inputs; the stub exists only until real feature wiring lands.
+STUB_VOLATILITY_1H = 0.02
+STUB_VOLATILITY_4H = 0.03
+STUB_VOLATILITY_1D = 0.05
+STUB_TREND_STRENGTH = 0.5
+STUB_VOLUME_RATIO = 1.0
+STUB_RSI = 50.0
+
 # ---------------------------------------------------------------------------
 # MASTER Risk Manager
 # ---------------------------------------------------------------------------
@@ -223,23 +278,22 @@ class MasterRiskManager:
             config: Configuration dictionary (optional)
             **kwargs: Additional parameters
         """
+        warnings.warn(
+            "MasterRiskManager is a legacy analyzer with no production "
+            "sizing/risk authority; CanonicalRiskService owns portfolio-risk "
+            "decisions. Retained for compatibility and offline analysis only.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.mt5 = mt5_interface
         self.config = config or {}
         self.kwargs = kwargs
         
-        # Risk limits
+        # Risk limits: config keys matching RiskLimits fields override the
+        # dataclass defaults; everything else keeps the declared default.
+        _limit_fields = {f.name for f in fields(RiskLimits)}
         self.limits = RiskLimits(
-            max_risk_per_trade=self.config.get('max_risk_per_trade', 0.02),
-            max_portfolio_risk=self.config.get('max_portfolio_risk', 0.05),
-            max_correlated_risk=self.config.get('max_correlated_risk', 0.08),
-            max_sector_risk=self.config.get('max_sector_risk', 0.15),
-            max_drawdown_limit=self.config.get('max_drawdown_limit', 0.25),
-            max_daily_loss=self.config.get('max_daily_loss', 0.05),
-            max_weekly_loss=self.config.get('max_weekly_loss', 0.10),
-            max_monthly_loss=self.config.get('max_monthly_loss', 0.20),
-            max_open_positions=self.config.get('max_open_positions', 10),
-            max_correlated_positions=self.config.get('max_correlated_positions', 3),
-            emergency_shutdown_drawdown=self.config.get('emergency_shutdown_drawdown', 0.30)
+            **{k: v for k, v in self.config.items() if k in _limit_fields}
         )
         
         # Risk mode
@@ -306,6 +360,7 @@ class MasterRiskManager:
         confidence: float = 1.0,
         **kwargs
     ) -> PositionSize:
+        self.update_drawdown(self.current_equity) # Ensure DD is up to date
         """
         Calculate optimal position size with all risk factors considered.
         
@@ -392,16 +447,16 @@ class MasterRiskManager:
                 max_lot = symbol_info.volume_max
                 lot_step = symbol_info.volume_step
             else:
-                # Default values for testing
-                point = 0.00001
-                tick_value = 1.0
-                tick_size = 0.00001
-                min_lot = 0.01
-                max_lot = 10.0
-                lot_step = 0.01
-            
+                # Fallback specification for testing (no MT5 connection)
+                point = FALLBACK_SYMBOL_POINT
+                tick_value = FALLBACK_TICK_VALUE
+                tick_size = FALLBACK_TICK_SIZE
+                min_lot = FALLBACK_MIN_LOT
+                max_lot = FALLBACK_MAX_LOT
+                lot_step = FALLBACK_LOT_STEP
+
             # Calculate lot size
-            pip_value = tick_value * (point / tick_size) * 10  # Value per pip for 1 lot
+            pip_value = tick_value * (point / tick_size) * POINTS_PER_PIP  # Value per pip for 1 lot
             if pip_value == 0 or stop_loss_pips == 0:
                 logger.error("Invalid pip value or stop loss")
                 return PositionSize(0, 0, 0, stop_loss_pips, reason="Invalid calculation parameters")
@@ -412,12 +467,15 @@ class MasterRiskManager:
             lot_size = round(lot_size / lot_step) * lot_step
             
             # Apply limits
-            lot_size = max(min_lot, min(lot_size, max_lot))
+            lot_size = max(0.0, min(lot_size, max_lot))
+            if lot_size < min_lot:
+                lot_size = 0.0
             
             # Final validation
-            if not self._validate_position_size(symbol, lot_size, adjusted_risk_pct):
-                logger.warning("Position size failed validation")
-                return PositionSize(0, 0, 0, stop_loss_pips, reason="Failed validation checks")
+            is_valid, validation_reason = self._validate_position_size(symbol, lot_size, adjusted_risk_pct)
+            if not is_valid:
+                logger.warning(f"Position size failed validation: {validation_reason}")
+                return PositionSize(0, 0, 0, stop_loss_pips, reason=validation_reason)
             
             # Calculate take profit (optional)
             take_profit_pips = kwargs.get('take_profit_pips')
@@ -442,40 +500,9 @@ class MasterRiskManager:
 
     def _get_base_risk_percent(self, quality: TradeQuality) -> float:
         """Get base risk percent based on trade quality and risk mode."""
-        base_risks = {
-            RiskMode.CONSERVATIVE: {
-                TradeQuality.OPTIMAL: 0.01,
-                TradeQuality.STRONG: 0.008,
-                TradeQuality.STANDARD: 0.005,
-                TradeQuality.SPECULATIVE: 0.003
-            },
-            RiskMode.STANDARD: {
-                TradeQuality.OPTIMAL: 0.02,
-                TradeQuality.STRONG: 0.015,
-                TradeQuality.STANDARD: 0.01,
-                TradeQuality.SPECULATIVE: 0.005
-            },
-            RiskMode.AGGRESSIVE: {
-                TradeQuality.OPTIMAL: 0.03,
-                TradeQuality.STRONG: 0.025,
-                TradeQuality.STANDARD: 0.015,
-                TradeQuality.SPECULATIVE: 0.008
-            },
-            RiskMode.RECOVERY: {
-                TradeQuality.OPTIMAL: 0.005,
-                TradeQuality.STRONG: 0.004,
-                TradeQuality.STANDARD: 0.003,
-                TradeQuality.SPECULATIVE: 0.001
-            },
-            RiskMode.EMERGENCY: {
-                TradeQuality.OPTIMAL: 0.001,
-                TradeQuality.STRONG: 0.001,
-                TradeQuality.STANDARD: 0.0005,
-                TradeQuality.SPECULATIVE: 0.0001
-            }
-        }
-        
-        return base_risks.get(self.risk_mode, base_risks[RiskMode.STANDARD]).get(quality, 0.01)
+        return BASE_RISK_PERCENT.get(
+            self.risk_mode, BASE_RISK_PERCENT[RiskMode.STANDARD]
+        ).get(quality, FALLBACK_RISK_PERCENT)
     
     def _get_kelly_adjustment(self) -> float:
         """Get Kelly criterion adjustment factor."""
@@ -531,59 +558,58 @@ class MasterRiskManager:
         """Prepare features for ML models (stub - needs actual implementation)."""
         # This is a simplified stub - real implementation would gather actual market data
         return [
-            0.02,  # volatility_1h
-            0.03,  # volatility_4h
-            0.05,  # volatility_1d
-            0.5,   # trend_strength
-            1.0,   # volume_ratio
-            50.0,  # rsi
+            STUB_VOLATILITY_1H,
+            STUB_VOLATILITY_4H,
+            STUB_VOLATILITY_1D,
+            STUB_TREND_STRENGTH,
+            STUB_VOLUME_RATIO,
+            STUB_RSI,
             stop_loss_pips / 100.0,  # normalized stop loss
             self.current_drawdown,
             self.stats.win_rate,
             self.stats.profit_factor
         ]
     
-    def _validate_position_size(self, symbol: str, lot_size: float, risk_pct: float) -> bool:
+    def _validate_position_size(self, symbol: str, lot_size: float, risk_pct: float) -> Tuple[bool, str]:
         """Validate position size against all risk limits."""
         # Check daily loss limit
         if self.daily_loss >= self.limits.max_daily_loss:
-            logger.warning(f"Daily loss limit reached: {self.daily_loss:.2%}")
-            return False
+            return False, f"Daily loss limit reached: {self.daily_loss:.2%}"
         
         # Check weekly loss limit
         if self.weekly_loss >= self.limits.max_weekly_loss:
-            logger.warning(f"Weekly loss limit reached: {self.weekly_loss:.2%}")
-            return False
+            return False, f"Weekly loss limit reached: {self.weekly_loss:.2%}"
         
         # Check monthly loss limit
         if self.monthly_loss >= self.limits.max_monthly_loss:
-            logger.warning(f"Monthly loss limit reached: {self.monthly_loss:.2%}")
-            return False
+            return False, f"Monthly loss limit reached: {self.monthly_loss:.2%}"
         
         # Check max open positions
         if len(self.open_positions) >= self.limits.max_open_positions:
-            logger.warning(f"Max open positions reached: {len(self.open_positions)}")
-            return False
+            return False, f"Max open positions reached: {len(self.open_positions)}"
         
         # Check portfolio risk
         total_risk = sum(pos.get('risk_pct', 0) for pos in self.open_positions.values())
         if total_risk + risk_pct > self.limits.max_portfolio_risk:
-            logger.warning(f"Portfolio risk limit exceeded: {total_risk + risk_pct:.2%}")
-            return False
+            return False, f"Portfolio risk limit exceeded: {total_risk + risk_pct:.2%}"
         
-        return True
+        return True, "All validation checks passed"
     
     def update_drawdown(self, current_equity: float) -> None:
         """Update drawdown calculation."""
         self.current_equity = current_equity
         
-        # Update peak
+        # Update peak (must be positive)
         if current_equity > self.peak_equity:
             self.peak_equity = current_equity
         
+        # If peak is somehow 0 or less, reset it to current equity
+        if self.peak_equity <= 0:
+            self.peak_equity = max(0.01, current_equity)
+
         # Calculate drawdown
         if self.peak_equity > 0:
-            self.current_drawdown = (self.peak_equity - current_equity) / self.peak_equity
+            self.current_drawdown = max(0.0, (self.peak_equity - current_equity) / self.peak_equity)
         
         logger.info(f"Drawdown: {self.current_drawdown:.2%}, Peak: {self.peak_equity:.2f}, Current: {current_equity:.2f}")
     
@@ -673,8 +699,16 @@ def create_risk_manager(mt5_interface=None, config=None, **kwargs) -> MasterRisk
     """
     Factory function to create MASTER risk manager.
     
-    This provides backward compatibility with old code.
+    This provides backward compatibility with old code. The returned object
+    has no production authority — CanonicalRiskService is the sole
+    portfolio-risk/sizing authority.
     """
+    warnings.warn(
+        "create_risk_manager() returns a legacy analyzer; use "
+        "CanonicalRiskService for production risk decisions.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return MasterRiskManager(mt5_interface=mt5_interface, config=config, **kwargs)
 
 # Aliases for backward compatibility

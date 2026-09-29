@@ -6,6 +6,7 @@ when network issues are detected, falling back to cached data and pausing
 network-heavy services.
 """
 
+import warnings
 import asyncio
 import logging
 import time
@@ -80,6 +81,7 @@ class ConnectionMonitor:
             max_consecutive_failures: Max failures before marking offline
             degraded_threshold: Failures before marking degraded
         """
+        warnings.warn("ConnectionMonitor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.check_interval = check_interval
         self.check_hosts = check_hosts or [
             '8.8.8.8',  # Google DNS

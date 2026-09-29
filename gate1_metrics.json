@@ -1,0 +1,7 @@
+{
+    "total_python_files": 8105,
+    "successfully_compiled": 7981,
+    "compilation_failures": 124,
+    "total_collected_tests": 4202,
+    "pytest_collection_errors": 63
+}

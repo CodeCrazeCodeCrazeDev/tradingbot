@@ -876,35 +876,9 @@ class EliteBrain:
 
 # Example usage
 if __name__ == "__main__":
-    # Configure logging
-    logging.basicConfig(level=logging.INFO)
-    
-    # Create brain
-    brain = EliteBrain()
-    
-    # Run async example
-    async def main():
-        # Make decision
-        decision = await brain.make_decision('AAPL', ['1m', '5m', '15m', '1h'])
-        
-        logger.info(f"Decision: {decision.action}")
-        logger.info(f"Confidence: {decision.confidence:.2f}")
-        logger.info(f"Size: {decision.size:.2f}")
-        logger.info("Reasoning:")
-        for reason in decision.reasoning:
-            logger.info(f"- {reason}")
-        
-        # Optimize portfolio
-        portfolio = brain.optimize_portfolio(
-            symbols=['AAPL', 'MSFT', 'GOOGL'],
-            constraints={'risk_level': 'moderate'}
-        )
-        
-        logger.info("\nPortfolio Allocation:")
-        for symbol, allocation in portfolio.items():
-            logger.info(f"{symbol}: {allocation:.2%}")
-        
-        # Stop brain
-        brain.stop()
-    
-    asyncio.run(main())
+    raise SystemExit(
+        "trading_bot/brain/brain_architecture.py is QUARANTINED: standalone execution is a parallel trading "
+        "loop outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

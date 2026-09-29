@@ -85,9 +85,7 @@ class TestConnectionManager:
         """Test module can be imported."""
 
         from trading_bot.connectivity.connection_manager import ConnectionManager
-import numpy
-import pandas
-assert ConnectionManager is not None
+        assert ConnectionManager is not None
 
 
 

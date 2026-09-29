@@ -14,6 +14,7 @@ Continuously evolves and improves system architecture:
 Learns from system behavior to find better architectural patterns.
 """
 
+import warnings
 import asyncio
 import logging
 import json
@@ -122,6 +123,7 @@ class ArchitectureEvolutionEngine:
     """
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("ArchitectureEvolutionEngine is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.start_time = datetime.now()
         

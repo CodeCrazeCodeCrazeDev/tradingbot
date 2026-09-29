@@ -21,3 +21,11 @@ class MarketRegimeDetector:
     def get_status(self):
         """Get status."""
         return {"running": self.running, "available": True}
+
+
+# Flat-path compat: merge the real adaptive_systems implementation
+try:
+    from trading_bot.adaptive_systems.market_regime import *  # noqa: F401,F403
+    from trading_bot.adaptive_systems.market_regime import MarketRegime  # noqa: F401
+except ImportError:
+    pass

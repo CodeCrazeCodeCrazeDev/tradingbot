@@ -9,6 +9,7 @@ This module re-exports and extends the safety module's kill switch
 to ensure it's available from trading_bot.core.
 """
 
+import warnings
 import logging
 import asyncio
 import threading
@@ -96,6 +97,7 @@ class EmergencyKillSwitch:
             on_activate: Callback when kill switch activates
             on_deactivate: Callback when kill switch deactivates
         """
+        warnings.warn("EmergencyKillSwitch is a legacy/quarantined component: capital path outside the canonical execution boundary. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self._lock = threading.RLock()
         self.broker = broker_adapter
         self.max_drawdown = max_drawdown

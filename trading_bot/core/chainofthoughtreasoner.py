@@ -7,6 +7,7 @@ Kernel (VLK) backed by the existing LogicalVerifier.
 """
 
 from __future__ import annotations
+import warnings
 
 import asyncio
 import hashlib
@@ -197,6 +198,7 @@ class ChainOfThoughtReasoner:
     """Mythos recurrent reasoner with VLK verification and safety-biased output."""
 
     def __init__(self, config: Optional[ChainOfThoughtReasonerConfig] = None, **kwargs: Any):
+        warnings.warn("ChainOfThoughtReasoner is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or ChainOfThoughtReasonerConfig()
         self.kwargs = kwargs
         self._initialized = False

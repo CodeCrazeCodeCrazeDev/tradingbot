@@ -8,6 +8,7 @@ Generate alpha hypotheses faster than any human research team.
 Mission: Evaluate 10M+ candidate alpha expressions per day.
 """
 
+import warnings
 import asyncio
 import logging
 import random
@@ -171,6 +172,7 @@ class GeneticAlphaSearch:
         mutation_rate: float = 0.1,
         crossover_rate: float = 0.7
     ):
+        warnings.warn("GeneticAlphaSearch is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.population_size = population_size
         self.mutation_rate = mutation_rate
         self.crossover_rate = crossover_rate

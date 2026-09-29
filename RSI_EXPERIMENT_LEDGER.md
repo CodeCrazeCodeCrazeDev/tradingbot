@@ -1,0 +1,25 @@
+# RSI experiment ledger
+
+No RSI candidate has been independently verified or promoted by this work. This file is a human-readable index/schema. `memory.py::evidence_ledger` now implements a local hash-chained append-only store with UNIQUE `trial_id`/`nonce` and `verify_evidence_chain()`; it detects post-hoc deletion, reordering and mutation of entries but remains **locally custodied** — an operator-held append-only audit service is still required before evidence can be considered tamper-resistant against the machine owner. Sample IDs and metrics must never masquerade as results.
+
+## Record schema
+`experiment_id`, `parent_experiment_id`, `hypothesis` and falsifier, `candidate_level/domain`, pre-registered `contract_id/hash/version`, `baseline_sha/config_hash`, `candidate_sha/config_hash`, code/config/model/prompt/memory/data/dependency diff hashes, `dataset_id/hash` (not secret dataset contents), trial family/index, timestamps and seed, partitions/label horizon/embargo, cost model ID, evaluator version/verifier attestation ID, paired per-bar artifact hash, full metric vector and delta, confidence intervals/corrected tests, hard-gate violations, transfer/stress outcomes, status (`proposed`, `rejected`, `insufficient_evidence`, `eligible_for_operator_review`, separately `shadow/paper/canary/promoted/rolled_back`), signer/approval, rollback link, uncertainty, regime, failure reason and lessons. A superseding record corrects earlier conclusions without deleting them. Store failed experiments and trials as well as successes; count all probes, including retries. Redact secrets and sealed holdout contents.
+
+## Initial evidence record
+- Status: **audit only / no proposal accepted** (2026-09-25).
+- Finding: `evaluation/runner.py` mislabels return as Sharpe and treats single-split EURUSD walk-forward as promotion eligible; `walk_forward.py` updates calibration on test, has no measured trading costs or transfer; legacy RSI mock deploy path exists (`engine.py`).
+- Outcome: no reproducible, sealed, operator-attested, economically meaningful candidate-vs-incumbent evidence; no positive verdict.
+- Blockers: operator-controlled sealed holdout and verifier identity, calibrated cost and risk limits, transferable multi-instrument data, versioned contract and strategy adapter.
+- Lesson: passing fixture tests or showing OOS profit on one repeatedly observed replay is not proof of RSI improvement. Never insert invented P&L, signatures or approvals.
+
+## First-slice engineering validation (not a trading experiment)
+A test-only Ed25519 keypair and deterministic fixture can produce `eligible_for_operator_review` from the offline `EvaluationEngine.evaluate_verified` interface; this establishes signature binding and rejection behavior **only**. No operator key, custody-backed sealed holdout, instrument-specific cost calibration or strategy-parameter replay has been supplied. The legacy engine and CSC heuristic deployment claims are disabled/triage-only. `BoundedMeanReversionReplay` exercises a real bounded lookback against the same bars but is deliberately unsealed and nonpromotable; the local database presently contains only 1,000 EURUSD bars. No actual candidate has cleared an operator evaluation contract or cross-instrument transfer, and none has been promoted. The old walk-forward result remains diagnostic, including its now-delayed training outcome feedback and frozen test calibration; it still lacks executable fills and realistic costs.
+
+## v2 records (2026-09-26)
+
+Two complementary stores now exist:
+
+- `archive.py::ParetoArchive` (`*.jsonl`, hash-chained): one `record` per evaluated candidate — `genome_id`, `parent_id` (lineage to incumbent or prior champion fingerprint), `contract_hash`, `dataset_hash`, `strategy_family`, full `metric_vector` and `delta`, `verdict`, `role`, `regime_cell`, `trial_index`. `role` and `rollback` records are appended, never rewritten; `verify_chain()` detects deletion/reorder/mutation.
+- `memory.py::evidence_ledger` (SQLite): `append_evidence()` writes `{trial_id, nonce, status, payload}`; UNIQUE constraints block identity replay and UPDATE/DELETE triggers block modification (added 2026-09-26).
+
+Both remain locally custodied — adequate for tamper *detection*, not resistance against the machine owner. First v2 ledger content: synthetic-fixture ablation trials (`ABLATION_RSI_SYNTHETIC.json` — 0 false-eligible on 12 noise candidates; planted-edge detection at 25% of hypotheses). No real-market experiment exists.

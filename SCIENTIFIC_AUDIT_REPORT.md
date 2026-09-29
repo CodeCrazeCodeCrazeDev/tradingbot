@@ -34,7 +34,7 @@ graph TD
 
 | ID | Bottleneck | Cause | Downstream Effect | Priority | Recommended Redesign |
 |:---|:---|:---|:---|:---|:---|
-| B1 | **Knowledge Fragmentation** | Isolated hypothesis logic in AM, CE, and SD. | Duplicate research; failure in one system not learned by others. | CRITICAL | Consolidate all under unified SRE Core. |
+| B1 | **Knowledge Fragmentation** | Isolated hypothesis logic in AM, CE, ]and SD. | Duplicate research; failure in one system not learned by others. | CRITICAL | Consolidate all under unified SRE Core. |
 | B2 | **Weak Adversarial Testing** | Genetic engines optimize for correlation only. | Discovery of spurious correlations (Alpha Decay). | HIGH | Integrate Verification Swarm & Causal Filters. |
 | B3 | **Poor Failure Reuse** | Rejected hypotheses are often discarded. | Repeating historical mistakes. | MEDIUM | Mandatory "Rejected" state with failure metadata in HMS. |
 | B4 | **Calibration Drift** | Inconsistent confidence metrics across modules. | Impossible to compare macro vs. technical hypotheses. | HIGH | Unified Bayesian Posterior & Credal Intervals. |

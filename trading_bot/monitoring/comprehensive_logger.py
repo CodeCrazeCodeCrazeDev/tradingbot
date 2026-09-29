@@ -5,6 +5,7 @@ Centralized logging with structured output, metrics collection,
 and real-time monitoring capabilities.
 """
 
+import warnings
 import logging
 import logging.handlers
 import json
@@ -309,6 +310,7 @@ class ComprehensiveLogger:
         backup_count: int = 10,
         enable_metrics: bool = True
     ):
+        warnings.warn("ComprehensiveLogger is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         if hasattr(self, '_initialized'):
             return
         

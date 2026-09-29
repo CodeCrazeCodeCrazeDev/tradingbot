@@ -133,6 +133,10 @@ async def test_chaos_consensus_voter_missing(base_system):
         evolution_gate={"val": True},
         shield=sys["shield"]
     )
+    # The CSC auto-wires its shield as a voter for defense-in-depth; simulate
+    # the fault by stripping every shield-class voter after construction.
+    for vid in [k for k in empty_bus._voters if "shield" in k.lower()]:
+        del empty_bus._voters[vid]
 
     observation = {"price": 100.0, "volatility": 0.1}
     decision = await csc.process_market_observation(observation)

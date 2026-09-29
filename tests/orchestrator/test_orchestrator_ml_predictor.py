@@ -1,3 +1,4 @@
+from pathlib import Path
 """
 Comprehensive Test Suite for ML Predictor Components
 """
@@ -6,6 +7,14 @@ import pytest
 import asyncio
 import numpy as np
 from datetime import datetime
+
+from trading_bot.orchestrator.ml_predictor import (
+    OpportunityPredictor,
+    SuccessPredictor,
+    MLFeatureExtractor,
+    ModelEnsemble,
+    ProbabilityCalibrator,
+)
 
 
 @pytest.fixture
@@ -255,8 +264,6 @@ class TestProbabilityCalibrator:
         assert 0 <= calibrated <= 1
 
     def test_get_type_adjustment(self):
-    pass
-import numpy
         calibrator = ProbabilityCalibrator()
         arb_adj = calibrator._get_type_adjustment('ARBITRAGE')
         mom_adj = calibrator._get_type_adjustment('MOMENTUM')

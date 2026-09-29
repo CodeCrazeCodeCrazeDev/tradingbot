@@ -4,6 +4,7 @@ Order Fill Confirmation System
 Ensures orders are properly confirmed before proceeding.
 """
 
+import warnings
 import asyncio
 import logging
 from typing import Any, Dict, Optional
@@ -48,6 +49,7 @@ class OrderConfirmationSystem:
     """
     
     def __init__(self, broker, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("OrderConfirmationSystem is a legacy/quarantined component: parallel order-confirmation path. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.broker = broker
         self.config = config or {}
         

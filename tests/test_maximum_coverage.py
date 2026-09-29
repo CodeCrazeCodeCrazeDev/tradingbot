@@ -15,6 +15,234 @@ import tempfile
 # Add trading_bot to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Hoisted from in-def imports (merge repair: names were bound in
+# fixture scope while sibling methods reference them module-wide)
+try:
+    from trading_bot.utils.logger import get_logger, setup_logging
+except ImportError:
+    pass
+
+try:
+    from trading_bot.utils.profiler import Profiler, profile
+except ImportError:
+    pass
+
+try:
+    from trading_bot.utils import validation
+except ImportError:
+    pass
+
+try:
+    from trading_bot.utils.validation import validate_price, validate_symbol
+except ImportError:
+    pass
+
+try:
+    from trading_bot.utils.rate_limiter import RateLimiter
+except ImportError:
+    pass
+
+try:
+    from trading_bot.utils.retry_policy import RetryPolicy, retry_with_backoff
+except ImportError:
+    pass
+
+try:
+    from trading_bot.utils.api_cache import APICache
+except ImportError:
+    pass
+
+try:
+    from trading_bot.utils.api_rate_limiter import APIRateLimiter
+except ImportError:
+    pass
+
+try:
+    from trading_bot.utils.safe_access import safe_get, safe_set
+except ImportError:
+    pass
+
+try:
+    from trading_bot.utils.safe_write import atomic_write, safe_write
+except ImportError:
+    pass
+
+try:
+    from trading_bot.tools.backup import BackupManager
+except ImportError:
+    pass
+
+try:
+    from trading_bot.tools.encrypt_api_keys import decrypt_key, encrypt_key
+except ImportError:
+    pass
+
+try:
+    from trading_bot.tools.system_check import SystemChecker
+except ImportError:
+    pass
+
+try:
+    from trading_bot.trading_engine import TradingEngine
+except ImportError:
+    pass
+
+try:
+    from trading_bot.trade_journal.journal_manager import JournalManager
+except ImportError:
+    pass
+
+try:
+    from trading_bot.validation.api_contracts import APIContract, validate_request
+except ImportError:
+    pass
+
+try:
+    from trading_bot.validation.async_validator import AsyncValidator
+except ImportError:
+    pass
+
+try:
+    from trading_bot.validation.autonomous_validation import AutonomousValidationSystem
+except ImportError:
+    pass
+
+try:
+    from trading_bot.visualization.chart_visualizer import ChartVisualizer
+except ImportError:
+    pass
+
+try:
+    from trading_bot.visualization.ml_visualizer import MLVisualizer
+except ImportError:
+    pass
+
+try:
+    from trading_bot.voice_assistant.voice_controller import VoiceController
+except ImportError:
+    pass
+
+try:
+    from trading_bot.wealth.wealth_management import WealthManager
+except ImportError:
+    pass
+
+try:
+    from trading_bot.wealth.free_wealth_manager import FreeWealthManager
+except ImportError:
+    pass
+
+try:
+    from trading_bot.data_sources.free_data_providers import FreeDataProvider
+except ImportError:
+    pass
+
+try:
+    from trading_bot.strategy import BaseStrategy
+except ImportError:
+    pass
+
+try:
+    from trading_bot.reporting import ReportGenerator
+except ImportError:
+    pass
+
+try:
+    from trading_bot.monitoring import SystemMonitor
+except ImportError:
+    pass
+
+try:
+    from trading_bot.brain.adaptive_integration import AdaptiveIntegration
+except ImportError:
+    pass
+
+try:
+    from trading_bot.cognitive_architecture.cognitive_core import AlphaAlgoCognitiveCore
+except ImportError:
+    pass
+
+try:
+    from trading_bot.cognitive_architecture.layer1_market_state_detection import MarketStateEngine
+except ImportError:
+    pass
+
+try:
+    from trading_bot.orchestrator.master_orchestrator import MasterOrchestrator
+except ImportError:
+    pass
+
+try:
+    from trading_bot.opportunity_scanner import OpportunityScanner
+except ImportError:
+    pass
+
+try:
+    from trading_bot.market_intelligence.data_monitoring import MarketDataMonitor
+except ImportError:
+    pass
+
+try:
+    from trading_bot.market_intelligence.technical_analysis import TechnicalAnalyzer
+except ImportError:
+    pass
+
+try:
+    from trading_bot.autonomous.self_optimizing_engine import SelfOptimizingEngine
+except ImportError:
+    pass
+
+try:
+    from trading_bot.quantum.quantum_advantage import QuantumAdvantage
+except ImportError:
+    pass
+
+try:
+    from trading_bot.institutional.bloomberg_bridge import BloombergBridge
+except ImportError:
+    pass
+
+try:
+    from trading_bot.advanced_ml.meta_learning import MetaLearner
+except ImportError:
+    pass
+
+try:
+    from trading_bot.blockchain.defi_integration import DeFiIntegration
+except ImportError:
+    pass
+
+try:
+    from trading_bot.alternative_data.satellite_imagery import SatelliteImageryAnalyzer
+except ImportError:
+    pass
+
+try:
+    from trading_bot.exit_strategies.exit_strategy import ExitStrategy
+except ImportError:
+    pass
+
+try:
+    from trading_bot.exit_strategies.adaptive_exits import AdaptiveExitStrategy
+except ImportError:
+    pass
+
+try:
+    from trading_bot.ml.offline_rl.cql_agent import CQLAgent
+except ImportError:
+    pass
+
+try:
+    from trading_bot.ml.offline_rl.bcq_agent import BCQAgent
+except ImportError:
+    pass
+
+try:
+    from trading_bot.ml.offline_rl.iql_agent import IQLAgent
+except ImportError:
+    pass
+
+
 
 # ============================================================================
 # UTILS MODULE TESTS (0% coverage)
@@ -837,11 +1065,9 @@ class TestOfflineRLModules(unittest.TestCase):
         """Test IQL agent import"""
 
         from trading_bot.ml.offline_rl.iql_agent import IQLAgent
-import logging
-import asyncio
-import numpy
-import pandas
-agent = IQLAgent()
-self.assertIsNotNone(agent)
+        agent = IQLAgent(state_dim=4, action_dim=2)
+        self.assertIsNotNone(agent)
+
+
 if __name__ == '__main__':
     unittest.main()

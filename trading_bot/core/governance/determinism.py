@@ -37,6 +37,17 @@ class DeterministicManager:
         self._enabled = False
         self._initialized = True
 
+    @classmethod
+    def set_seed(cls, seed: int):
+        """Set the deterministic seed (compat alias for ``enable``).
+
+        Callable both on the class (``DeterministicManager.set_seed(42)``)
+        and on an instance — the singleton is reseeded either way.
+        """
+        inst = cls()
+        inst.seed = seed
+        inst.enable(seed=seed)
+
     def enable(self, seed: Optional[int] = None):
         """Enable deterministic mode with the given seed."""
         if seed is not None:

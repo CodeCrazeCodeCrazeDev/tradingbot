@@ -109,9 +109,7 @@ class TestMomentumCapture:
         """Test module can be imported."""
 
         from trading_bot.opportunity_scanner import momentum_capture
-import numpy
-import pandas
-assert momentum_capture is not None
+        assert momentum_capture is not None
 
 
 

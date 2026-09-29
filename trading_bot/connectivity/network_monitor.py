@@ -3,6 +3,7 @@ AlphaAlgo Internet Stability & Safety Module
 Complete network monitoring, safe mode, offline mode, and auto-recovery system.
 """
 
+import warnings
 import asyncio
 import aiohttp
 import logging
@@ -99,6 +100,7 @@ class NetworkMonitor:
     
     def __init__(self, config: Dict[str, Any]):
         """Initialize network monitor."""
+        warnings.warn("NetworkMonitor is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         
         # Endpoints to monitor

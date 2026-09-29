@@ -91,12 +91,13 @@ class DataAcquisitionEngine:
     async def fetch_market_data(
         self,
         symbol: str,
-        timeframes: List[str] = ['1m', '5m', '1h', '4h', '1d', '1w']
+        timeframes: Optional[List[str]] = None
     ) -> Dict[str, pd.DataFrame]:
         """
         Fetch multi-timeframe market data for a symbol.
         Returns dict of {timeframe: DataFrame}
         """
+        timeframes = timeframes if timeframes is not None else ['1m', '5m', '1h', '4h', '1d', '1w']
         logger.info(f"📊 Fetching market data for {symbol} across {len(timeframes)} timeframes")
         
         market_data = {}

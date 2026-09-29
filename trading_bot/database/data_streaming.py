@@ -3,6 +3,7 @@ Data Streaming Module for Elite Trading Bot
 Handles real-time market data streaming and processing
 """
 
+import warnings
 import asyncio
 import numpy as np
 from typing import Any, Callable, Dict, List, Optional
@@ -32,6 +33,7 @@ class MarketDataStream:
     """
     
     def __init__(self, config: Dict[str, Any]):
+        warnings.warn("MarketDataStream is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         self.streams: Dict[str, asyncio.Queue] = {}
         self.processors: Dict[str, List[Callable]] = {}

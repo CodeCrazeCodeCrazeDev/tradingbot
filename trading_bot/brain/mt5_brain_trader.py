@@ -706,11 +706,9 @@ class MT5BrainTrader:
 
 # Example usage
 if __name__ == "__main__":
-    # Configure logging
-    logging.basicConfig(level=logging.INFO)
-    
-    # Create MT5 brain trader
-    trader = MT5BrainTrader()
-    
-    # Run trader
-    asyncio.run(trader.start())
+    raise SystemExit(
+        "trading_bot/brain/mt5_brain_trader.py is QUARANTINED: standalone execution of this module is a "
+        "parallel capital/loop path outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

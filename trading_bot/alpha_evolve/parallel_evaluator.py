@@ -3,6 +3,7 @@ Parallel Strategy Evaluator
 Distributes strategy evaluation across multiple processes for massive parallel search
 """
 
+import warnings
 import asyncio
 import multiprocessing as mp
 import pickle
@@ -68,6 +69,7 @@ class ParallelEvaluator:
     """
     
     def __init__(self, config: Dict[str, Any]):
+        warnings.warn("ParallelEvaluator is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         
         # Process pool configuration

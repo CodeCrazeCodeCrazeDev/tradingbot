@@ -357,10 +357,9 @@ async def main():
     await simulator.run()
 
 
-if __name__ == '__main__':
-    # Create logs directory
-    import os
-    os.makedirs('logs', exist_ok=True)
-    
-    # Run simulator
-    asyncio.run(main())
+if __name__ == "__main__":
+    raise SystemExit(
+        "scripts/utilities/demo_trading_simulator.py is QUARANTINED: standalone launchers, watchdogs, supervisors, "
+        "and simulators are parallel loop/capital paths outside the canonical "
+        "runtime. Use 'python main.py --mode paper'."
+    )

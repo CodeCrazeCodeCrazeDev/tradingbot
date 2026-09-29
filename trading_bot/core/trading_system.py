@@ -560,29 +560,9 @@ class TradingSystem:
 
 # Example usage
 if __name__ == "__main__":
-    # Configure logging
-    logging.basicConfig(level=logging.INFO)
-    
-    # Create trading system
-    trading_system = TradingSystem()
-    
-    # Run the system
-    async def run_system():
-        # Start the system
-        await trading_system.start()
-        
-        try:
-            # Run for a while
-            await asyncio.sleep(60)
-            
-            # Get dashboard data
-            dashboard_data = await trading_system.get_dashboard_data()
-            logger.info("Dashboard Data:")
-            print(json.dumps(dashboard_data, default=str, indent=2))
-            
-        finally:
-            # Stop the system
-            await trading_system.stop()
-    
-    # Run the example
-    asyncio.run(run_system())
+    raise SystemExit(
+        "trading_bot/core/trading_system.py is QUARANTINED: standalone execution of this module is a "
+        "parallel capital/loop path outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

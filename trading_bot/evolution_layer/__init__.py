@@ -9,14 +9,29 @@ Auto-generated integration file.
 try:
     from .orchestrator import (
         EvolutionOrchestrator,
+        get_evolution_orchestrator,
+        record_trade_experience,
     )
 except ImportError as e:
     # orchestrator not available
     pass
 
+# reward model helpers
+try:
+    from .reward_model import (
+        get_reward_model,
+        verify_reward_model_integrity,
+    )
+except ImportError:
+    pass
+
 __all__ = [
     'EvolutionLayerOrchestrator',
     'EvolutionOrchestrator',
+    'get_evolution_orchestrator',
+    'record_trade_experience',
+    'get_reward_model',
+    'verify_reward_model_integrity',
 ]
 
 

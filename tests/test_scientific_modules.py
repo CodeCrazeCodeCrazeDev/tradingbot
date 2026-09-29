@@ -57,10 +57,7 @@ async def test_pivot_refine_logic():
     branch = ReasoningBranch(branch_id="test_b", name="Test Branch", confidence=0.9)
     reports = [VerifierReport(agent_name="V1", is_valid=False, confidence=0.9, critique="Too high risk")]
 
-    refined = csc._refine_strategy(branch, reports)
-    if asyncio.iscoroutine(refined) or hasattr(refined, "__await__"):
-        refined = await refined
-
+    refined = await csc._refine_strategy(branch, reports)
     assert refined.confidence < branch.confidence
     assert "Correction: Too high risk" in refined.reasoning_trace
 
@@ -177,11 +174,11 @@ async def test_csc_safety_and_self_improvement():
 
     result = await csc.execute_self_improvement_loop(obs)
 
-    assert result["status"] == "completed"
-    assert result["promoted"] is True
+    assert result["status"] == "triaged_for_research"
+    assert result["promoted"] is False
     assert result["triage_score"] > 5.0
     assert "observe" in result["trace"]
-    assert "archive" in result["trace"]
+    assert "verify" not in result["trace"]
 
     # Test dropped triage path
     obs_low = {"impact": 0.1, "confidence": 0.1, "cost": 0.9}

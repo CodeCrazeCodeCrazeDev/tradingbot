@@ -16,6 +16,7 @@ This engine works with the IntrospectionDrivenEvolutionEngine and
 ContinuousCapabilityDiscoveryEngine to form a complete self-improving system.
 """
 
+import warnings
 from typing import Dict, List, Optional, Any, Tuple, Set, Callable
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
@@ -168,6 +169,7 @@ class SelfInspectionEngine:
         capability_discovery_engine=None,
         storage_path: Optional[str] = None
     ):
+        warnings.warn("SelfInspectionEngine is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.decision_memory = decision_memory
         self.outcome_memory = outcome_memory
         self.failure_memory = failure_memory
@@ -212,10 +214,13 @@ class SelfInspectionEngine:
             return
         
         self.monitoring_active = True
-        self.monitoring_task = asyncio.create_task(
-            self._inspection_loop(interval_minutes)
+        # Worker disabled: continuous self-inspection must not run as a
+        # detached production task.
+        self.monitoring_task = None
+        logger.warning(
+            "Continuous inspection worker disabled; canonical runtime owns "
+            "lifecycle"
         )
-        logger.info(f"Started continuous inspection (interval: {interval_minutes}m)")
     
     async def stop_continuous_inspection(self):
         """Stop continuous inspection"""
@@ -1770,8 +1775,8 @@ class DeepGovernanceAuditor:
                         findings.append({"issue": "capability_gap", "gap": g,
                                          "severity": "medium",
                                          "recommendation": f"Develop capability: {g}"})
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"capability gap probe failed: {e}")
 
         # Check for patterns suggesting capability gaps
         regime = context.get("regime_hash", "")

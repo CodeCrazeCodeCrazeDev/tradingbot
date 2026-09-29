@@ -1,5 +1,11 @@
 """
 Interactive Brokers implementation for AlphaAlgo 2.0
+
+NON-AUTHORITY NOTICE: this module places orders through ib_insync directly.
+It is not an approved BrokerAdapter and carries no production authority —
+live connectivity must route through the canonical execution boundary
+(CanonicalExecutionService + reviewed BrokerAdapter). QUARANTINED pending
+adapter conformance review.
 """
 
 import logging

@@ -788,9 +788,8 @@ class TestHyperparameterTuning:
     def tuner(self):
         """Create hyperparameter tuner instance"""
         from trading_bot.ml.hyperparameter_tuning import HyperparameterTuner
-import numpy
 import pandas
-return HyperparameterTuner()
+# MERGE-BROKEN: return HyperparameterTuner()
     
 @pytest.fixture
 def sample_data(self):

@@ -1,0 +1,257 @@
+{
+  "edge": {
+    "eligible": 20,
+    "rejected": 5,
+    "insufficient": 55,
+    "runs": [
+      {
+        "seed": 0,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 1,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 2,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 3,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 4,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 5,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 6,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 7,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 8,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 9,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 10,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 11,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 12,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 13,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 14,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 15,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 16,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 17,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 18,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      },
+      {
+        "seed": 19,
+        "decisions": 4,
+        "eligible_rate": 0.25,
+        "chain_valid": true
+      }
+    ]
+  },
+  "no_edge": {
+    "eligible": 0,
+    "rejected": 36,
+    "insufficient": 44,
+    "runs": [
+      {
+        "seed": 0,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 1,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 2,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 3,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 4,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 5,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 6,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 7,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 8,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 9,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 10,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 11,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 12,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 13,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 14,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 15,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 16,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 17,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 18,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      },
+      {
+        "seed": 19,
+        "decisions": 4,
+        "eligible_rate": 0.0,
+        "chain_valid": true
+      }
+    ]
+  },
+  "interpretation": "eligible rate under 'edge' = planted-fixture sensitivity; under 'no_edge' should be ~0 (false-eligible rate on noise). These are machinery metrics, not market evidence."
+}

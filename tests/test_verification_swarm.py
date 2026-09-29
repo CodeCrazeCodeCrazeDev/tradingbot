@@ -6,12 +6,25 @@ from trading_bot.core.verification.interface import VerifierVerdict
 @pytest.mark.asyncio
 async def test_verification_swarm_execution():
     swarm = VerificationSwarm()
-    # Mock research snapshot
-    snapshot = {"entry_id": "test_123"}
+    # Snapshot satisfying the falsification swarm's evidentiary bar:
+    # tail-risk reasoning, regime alignment, and liquidity evidence.
+    snapshot = {
+        "entry_id": "test_123",
+        "reasoning_steps": [
+            "Assessed tail risk and black swan scenarios",
+            "Current regime supports the proposed action",
+        ],
+        "evidence_graph_snapshot": {
+            "nodes": {
+                "n1": {"content": "liquidity depth is sufficient"},
+                "n2": {"content": "volume profile supports entry"},
+            }
+        },
+    }
 
     verdicts = await swarm.run_swarm(snapshot)
 
-    assert len(verdicts) == 3
+    assert len(verdicts) == len(swarm.verifiers)
     assert any(v.agent_name == "CausalVerifier" for v in verdicts)
     assert all(isinstance(v, VerifierVerdict) for v in verdicts)
     assert all(v.is_valid is True for v in verdicts)

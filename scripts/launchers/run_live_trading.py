@@ -464,17 +464,10 @@ async def main():
 
 
 if __name__ == "__main__":
-    print("")
-    print("=" * 60)
-    print("⚠️  ALPHAALGO LIVE TRADING SYSTEM ⚠️")
-    print("=" * 60)
-    print("")
-    print("This system trades with REAL MONEY!")
-    print("Make sure you have:")
-    print("  1. Completed paper trading validation")
-    print("  2. Configured broker credentials")
-    print("  3. Set appropriate risk limits")
-    print("  4. Understood all risks involved")
-    print("")
-    
-    asyncio.run(main())
+    raise SystemExit(
+        "run_live_trading.py is QUARANTINED: this standalone launcher is a "
+        "parallel capital path (direct MT5BrokerAdapter access, progressive "
+        "live-capital stages) outside every canonical gate. There is no "
+        "approved live/testnet profile. Use 'python main.py --mode paper' "
+        "for the canonical paper runtime."
+    )

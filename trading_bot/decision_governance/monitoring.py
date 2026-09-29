@@ -5,6 +5,7 @@ Real-time monitoring, metrics collection, and dashboard API.
 Provides health checks, performance metrics, and operational visibility.
 """
 
+import warnings
 from typing import Dict, List, Optional, Any, Callable
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
@@ -79,6 +80,7 @@ class MetricsCollector:
     """
     
     def __init__(self, retention_seconds: float = 3600):
+        warnings.warn("MetricsCollector is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.retention = retention_seconds
         self.metrics: deque = deque(maxlen=100000)
         self.counters: Dict[str, float] = defaultdict(float)
@@ -575,8 +577,10 @@ class MonitoringSystem:
     async def start(self) -> None:
         """Start monitoring system"""
         self._running = True
-        self._monitor_task = asyncio.create_task(self._monitoring_loop())
-        logger.info("Monitoring system started")
+        # Worker disabled: production monitoring is owned by the canonical
+        # runtime, not this legacy monitoring system.
+        self._monitor_task = None
+        logger.warning("Monitoring worker disabled; canonical runtime owns monitoring")
     
     async def stop(self) -> None:
         """Stop monitoring system"""

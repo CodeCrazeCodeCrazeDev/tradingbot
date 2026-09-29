@@ -59,3 +59,9 @@ __all__ = [
     'BaseEvent',
     'EventHandler'
 ]
+
+# Compat re-export: legacy callers expect `Event` at this path
+try:
+    from trading_bot.orchestration.event_bus import Event, EventPriority, EventHandler  # noqa: F401
+except ImportError:
+    pass

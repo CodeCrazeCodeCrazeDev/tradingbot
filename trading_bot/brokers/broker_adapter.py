@@ -4,6 +4,7 @@ Broker Adapter Interface and Implementations
 Provides unified interface for all broker connections (MT5, Binance, Interactive Brokers, etc.)
 """
 
+import warnings
 import asyncio
 import logging
 from abc import ABC, abstractmethod
@@ -318,6 +319,7 @@ class MockBrokerAdapter(BrokerAdapter):
     """Mock broker adapter for testing"""
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("MockBrokerAdapter is a legacy/quarantined component: capital path outside the canonical execution boundary. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         self.positions = {}
         self.orders = {}
@@ -435,7 +437,17 @@ class MockBrokerAdapter(BrokerAdapter):
         )
     
     async def cancel_order(self, order_id: str) -> bool:
-        return True  # Mock always succeeds
+        """Cancel a pending order by venue order id.
+
+        Honest semantics: only orders tracked in ``self.orders`` (pending
+        submissions) can be cancelled. Unknown, filled, or already-cancelled
+        ids fail closed instead of reporting a fake success.
+        """
+        pending = self.orders.get(order_id)
+        if pending is not None and pending.status == OrderStatus.PENDING:
+            pending.status = OrderStatus.CANCELLED
+            return True
+        return False
     
     async def get_order_status(self, order_id: str) -> Optional[OrderResponse]:
         """Get order status - simulate fills for market orders"""

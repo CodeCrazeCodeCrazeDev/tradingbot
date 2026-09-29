@@ -1,6 +1,14 @@
 # Render.com deployment configuration
 # Free tier: 750 hours/month, auto-sleep after 15 min inactivity
 # Deploy: Connect GitHub repo at render.com -> New -> Background Worker
+#
+# NOTE: this runs the canonical paper-trading entry point only
+# (main.py -> ModularMonolithRuntime -> UnifiedTradingBot -> paper bridge).
+# The dashboard web service is intentionally omitted: the module it pointed
+# at (trading_bot.api.api_server) does not exist, and neither legacy API
+# implementation is safe to expose without an authentication/authority
+# review (see MEGAPLAN MP-041). Re-add a web service only behind a vetted
+# read-only interface.
 
 services:
   - type: worker
@@ -9,7 +17,7 @@ services:
     region: oregon
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: python main.py --mode paper --symbol EURUSD --timeframe M15
+    startCommand: python main.py --mode paper --symbol EURUSD
     envVars:
       - key: TRADING_BOT_MODE
         value: paper
@@ -18,17 +26,3 @@ services:
       - key: TRADING_BOT_LOG_LEVEL
         value: INFO
     autoDeploy: true
-
-  # Optional: Dashboard web service
-  - type: web
-    name: alphaalgo-dashboard
-    runtime: python
-    region: oregon
-    plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: python -m trading_bot.api.api_server
-    envVars:
-      - key: PORT
-        value: "10000"
-    autoDeploy: true
-    healthCheckPath: /health

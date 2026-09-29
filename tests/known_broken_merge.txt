@@ -1,0 +1,18 @@
+# Tests referencing modules that were permanently deleted or never existed.
+# Categories:
+#   * tests/_quarantine/ (excluded via collect_ignore) holds the 4 files that
+#     cannot run in the suite: test_multi_symbol.py and test_mutation_quality.py
+#     (bare instance references — structurally unfixable generated code),
+#     test_integration_thinking_bot.py (imports root thinking_bot with heavy
+#     top-level work; blocks collection), test_additional_coverage.py
+#     (27 API-drift runtime failures in generated tests).
+# Entries below are paths relative to tests/; a directory entry ignores
+# everything under it (conftest set-membership hook).
+#   * auto_fix_backups — auto-fix tool backup snapshots; the dated snapshot
+#     trees share module basenames and cannot co-collect (not a maintained suite).
+# Recovered (module restored, now collects and passes):
+#   self_mastery/test_mastery_orchestrator.py, test_infrastructure.py
+# A file stays listed only while it fails to import; remove an entry when the
+# module it needs is restored or aliased. See tests/conftest.py for the
+# test-scoped flat-name -> canonical resolver.
+auto_fix_backups

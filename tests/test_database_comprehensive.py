@@ -57,9 +57,7 @@ class TestMarketDataStore:
         """Test module can be imported."""
 
         from trading_bot.database.market_data_store import MarketDataStore
-import numpy
-import pandas
-assert MarketDataStore is not None
+        assert MarketDataStore is not None
 
 
 

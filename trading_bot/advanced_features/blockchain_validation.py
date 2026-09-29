@@ -1,5 +1,6 @@
 """Blockchain-based Validation System - Immutable Trading Predictions and Edge Proof.
 
+import warnings
 from typing import Any, List, Optional, Set
 This module implements a blockchain-based system for storing trading predictions,
 validating performance, and providing cryptographic proof of trading edge.
@@ -187,6 +188,7 @@ class BlockchainLedger:
     
     def __init__(self, db_path: str = "trading_blockchain.db"):
         """Initialize blockchain ledger."""
+        warnings.warn("BlockchainLedger is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.db_path = db_path
         self.crypto_system = CryptographicProofSystem()
         self.current_block_predictions = []

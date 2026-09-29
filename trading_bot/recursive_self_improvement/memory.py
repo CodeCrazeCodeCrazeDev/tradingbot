@@ -65,7 +65,89 @@ class ImprovementMemory:
                 )
             ''')
 
+            # Append-only hash-chained evidence ledger. trial_id and nonce are
+            # UNIQUE so a signed verifier report cannot be replayed under a new
+            # trial identity, and dropped trials cannot be silently hidden.
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS evidence_ledger (
+                    seq INTEGER PRIMARY KEY AUTOINCREMENT,
+                    entry_hash TEXT NOT NULL,
+                    prev_hash TEXT NOT NULL,
+                    trial_id TEXT NOT NULL UNIQUE,
+                    nonce TEXT NOT NULL UNIQUE,
+                    status TEXT,
+                    payload TEXT,
+                    created_at TIMESTAMP
+                )
+            ''')
+
+            # Enforce append-only at the database layer, not by convention.
+            cursor.execute('''
+                CREATE TRIGGER IF NOT EXISTS evidence_ledger_no_update
+                BEFORE UPDATE ON evidence_ledger
+                BEGIN SELECT RAISE(ABORT, 'evidence_ledger is append-only'); END
+            ''')
+            cursor.execute('''
+                CREATE TRIGGER IF NOT EXISTS evidence_ledger_no_delete
+                BEFORE DELETE ON evidence_ledger
+                BEGIN SELECT RAISE(ABORT, 'evidence_ledger is append-only'); END
+            ''')
+
             conn.commit()
+
+    def _evidence_entry_hash(self, seq: int, prev_hash: str, trial_id: str,
+                             nonce: str, status: str, payload: str, created_at: str) -> str:
+        import hashlib
+        body = json.dumps({
+            "seq": seq, "prev_hash": prev_hash, "trial_id": trial_id, "nonce": nonce,
+            "status": status, "payload": payload, "created_at": created_at,
+        }, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(body.encode("utf-8")).hexdigest()
+
+    def append_evidence(self, *, trial_id: str, nonce: str, payload: Dict[str, Any],
+                        status: str = "") -> str:
+        """Append one signed-evidence outcome to the hash-chained ledger.
+
+        Duplicate ``trial_id`` or ``nonce`` raises (UNIQUE constraint) — callers
+        treat any failure as insufficient evidence rather than retrying with a
+        new identity.
+        """
+        created_at = datetime.utcnow().isoformat()
+        payload_json = json.dumps(payload, sort_keys=True)
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT seq, entry_hash FROM evidence_ledger ORDER BY seq DESC LIMIT 1')
+            row = cursor.fetchone()
+            seq, prev_hash = (row[0] + 1, row[1]) if row else (1, "GENESIS")
+            entry_hash = self._evidence_entry_hash(seq, prev_hash, trial_id, nonce,
+                                                   status, payload_json, created_at)
+            cursor.execute('''
+                INSERT INTO evidence_ledger (seq, entry_hash, prev_hash, trial_id, nonce, status, payload, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (seq, entry_hash, prev_hash, trial_id, nonce, status, payload_json, created_at))
+            conn.commit()
+            return entry_hash
+
+    def verify_evidence_chain(self) -> bool:
+        """Verify ledger integrity: contiguity, linkage and entry hashes."""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM evidence_ledger ORDER BY seq ASC')
+            rows = cursor.fetchall()
+        expected_seq = 1
+        prev_hash = "GENESIS"
+        for row in rows:
+            if row["seq"] != expected_seq or row["prev_hash"] != prev_hash:
+                return False
+            recomputed = self._evidence_entry_hash(
+                row["seq"], row["prev_hash"], row["trial_id"], row["nonce"],
+                row["status"] or "", row["payload"] or "", row["created_at"])
+            if recomputed != row["entry_hash"]:
+                return False
+            prev_hash = row["entry_hash"]
+            expected_seq += 1
+        return True
 
     def record_experiment(self, experiment_id: str, domain: str, hypothesis: str, parameters: Dict[str, Any], market_context: Optional[Dict[str, Any]] = None):
         """Record a new experiment proposal."""

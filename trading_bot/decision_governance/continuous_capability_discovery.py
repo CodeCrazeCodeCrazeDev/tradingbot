@@ -14,6 +14,7 @@ Key Features:
 - Performance attribution and continuous monitoring
 """
 
+import warnings
 from typing import Dict, List, Optional, Any, Tuple, Set, Callable
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
@@ -147,6 +148,7 @@ class ContinuousCapabilityDiscoveryEngine:
         constraint_profile: Optional[ConstraintProfile] = None,
         storage_path: Optional[str] = None
     ):
+        warnings.warn("ContinuousCapabilityDiscoveryEngine is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.decision_memory = decision_memory
         self.outcome_memory = outcome_memory
         self.failure_memory = failure_memory
@@ -196,8 +198,10 @@ class ContinuousCapabilityDiscoveryEngine:
             return
             
         self.is_monitoring = True
-        self.monitoring_task = asyncio.create_task(self._monitoring_loop())
-        logger.info("Started continuous capability monitoring")
+        # Worker disabled: detached monitoring tasks are not permitted outside
+        # the canonical runtime.
+        self.monitoring_task = None
+        logger.warning("Capability-monitoring worker disabled; canonical runtime owns lifecycle")
     
     async def stop_continuous_monitoring(self):
         """Stop continuous monitoring"""
@@ -536,7 +540,7 @@ class ContinuousCapabilityDiscoveryEngine:
             
             if hasattr(generator, 'recent_signals_count'):
                 metrics['signals_generated'] = generator.recent_signals_count
-        except:
+        except Exception as e:
             pass
         return metrics
     
@@ -549,7 +553,7 @@ class ContinuousCapabilityDiscoveryEngine:
             
             if hasattr(component, 'get_risk_metrics'):
                 metrics.update(component.get_risk_metrics())
-        except:
+        except Exception as e:
             pass
         return metrics
     
@@ -562,7 +566,7 @@ class ContinuousCapabilityDiscoveryEngine:
             
             if hasattr(component, 'get_detection_accuracy'):
                 metrics['accuracy'] = component.get_detection_accuracy()
-        except:
+        except Exception as e:
             pass
         return metrics
     
@@ -575,7 +579,7 @@ class ContinuousCapabilityDiscoveryEngine:
             
             if hasattr(component, 'dependencies'):
                 deps.extend(component.dependencies)
-        except:
+        except Exception as e:
             pass
         return deps
     
@@ -1017,8 +1021,9 @@ class ContinuousCapabilityDiscoveryEngine:
         innovation.experiment_id = experiment_id
         innovation.updated_at = datetime.utcnow()
         
-        # Start sandbox testing
-        asyncio.create_task(self._run_sandbox_testing(experiment_id))
+        # Sandbox testing runs inline (research-only, deterministic); no
+        # detached worker is permitted.
+        await self._run_sandbox_testing(experiment_id)
         
         logger.info(f"Started validation for innovation {innovation_id}")
         

@@ -17,6 +17,7 @@ Author: AlphaAlgo Trading System
 Version: 3.0.0 ULTIMATE
 """
 
+import warnings
 import asyncio
 import importlib
 import inspect
@@ -190,6 +191,7 @@ class UltimateModuleIntegrator:
             base_path: Path to trading_bot directory
             lazy_load: If True, only discover modules, load on demand
         """
+        warnings.warn("UltimateModuleIntegrator is a legacy/quarantined component: dynamic module/class loading bypasses static convergence control. It carries no production authority.", DeprecationWarning, stacklevel=2)
         if base_path is None:
             base_path = str(Path(__file__).parent)
         

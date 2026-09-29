@@ -6,6 +6,7 @@ Monitors venue health and automatically fails over to backup venues
 when outages are detected. Critical for high availability.
 """
 
+import warnings
 import time
 from typing import Callable, Dict, List, Optional
 from dataclasses import dataclass, field
@@ -60,6 +61,7 @@ class VenueOutageDetector:
                  failure_threshold: int = 3,
                  degraded_latency_ms: float = 1000.0,
                  unhealthy_latency_ms: float = 5000.0):
+        warnings.warn("VenueOutageDetector is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.health_check_interval = health_check_interval
         self.failure_threshold = failure_threshold
         self.degraded_latency_ms = degraded_latency_ms
@@ -70,9 +72,11 @@ class VenueOutageDetector:
         self.on_outage_callbacks: List[Callable] = []
         self.on_recovery_callbacks: List[Callable] = []
         
-        self.running = True
-        self.monitor_thread = threading.Thread(target=self._monitor_loop, daemon=True)
-        self.monitor_thread.start()
+        self.running = False
+        # Monitor thread disabled: detached venue-monitoring threads are not
+        # permitted outside the canonical runtime.
+        self.monitor_thread = None
+        logger.warning("Venue outage monitor thread disabled; canonical runtime owns monitoring")
         
         logger.info("Venue Outage Detector initialized")
     

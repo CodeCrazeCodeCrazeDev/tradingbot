@@ -482,9 +482,7 @@ class TestVenueOutageDetectorCoverage(unittest.TestCase):
     
     def setUp(self):
         from trading_bot.connectivity.venue_outage_detector import VenueOutageDetector
-import numpy
-import pandas
-self.detector = VenueOutageDetector()
+        self.detector = VenueOutageDetector()
     
 def test_check_venue_status(self):
         """Test venue status check"""

@@ -496,10 +496,8 @@ class TestCriticalValidatorsCoverage(unittest.TestCase):
     def setUp(self):
 
             from trading_bot.validation.critical_validators import CriticalValidators
-import numpy
-import pandas
-self.validator = CriticalValidators()
-self.available = True
+            self.validator = CriticalValidators()
+            self.available = True
 def test_validate_trade(self):
         """Test trade validation"""
         if not self.available:

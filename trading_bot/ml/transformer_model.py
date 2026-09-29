@@ -12,6 +12,7 @@ except ImportError:
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, TensorDataset
+import os
 import numpy as np
 import pandas as pd
 from typing import Dict, Optional, Tuple
@@ -19,9 +20,6 @@ from loguru import logger
 from pathlib import Path
 import numpy
 import pandas
-
-import logging
-logger = logging.getLogger(__name__)
 
 
 
@@ -207,6 +205,7 @@ class TransformerPredictor:
                 best_val_loss = val_loss
                 patience_counter = 0
                 # Save best model
+                os.makedirs('models', exist_ok=True)
                 torch.save(self.model.state_dict(), 'models/best_transformer.pth')
             else:
                 patience_counter += 1
@@ -244,16 +243,22 @@ class TransformerPredictor:
     
     def save_model(self, path: str):
         """Save model weights."""
+        parent = os.path.dirname(path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
         torch.save({
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
             'config': self.config
         }, path)
         logger.info(f"Model saved to {path}")
-    
+
     def load_model(self, path: str):
         """Load model weights."""
-        checkpoint = torch.load(path, map_location=self.device)
+        # weights_only=True: restrict unpickling to tensors/primitives —
+        # checkpoints are opaque files and arbitrary pickled payloads are a
+        # code-execution vector if the file is ever untrusted/corrupted.
+        checkpoint = torch.load(path, map_location=self.device, weights_only=True)
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.is_trained = True

@@ -3,6 +3,7 @@ Metrics Export System
 Prometheus-compatible metrics export for monitoring
 """
 
+import warnings
 import time
 import logging
 from typing import Dict, List, Optional, Any
@@ -49,6 +50,7 @@ class MetricsRegistry:
         Args:
             namespace: Metric namespace prefix
         """
+        warnings.warn("MetricsRegistry is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         try:
             self.namespace = namespace
             self._metrics: Dict[str, Metric] = {}

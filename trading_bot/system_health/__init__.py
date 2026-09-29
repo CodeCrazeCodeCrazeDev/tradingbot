@@ -14,6 +14,12 @@ class SystemHealthManager:
     async def stop(self):
         pass
 
+# alphaalgo_master
+try:
+    from .alphaalgo_master import TradingMode
+except ImportError as e:
+    pass
+
 # auto_repair
 try:
     from .auto_repair import (
@@ -37,3 +43,9 @@ __all__ = [
     'SystemHealthManager',
     'SystemHealthMonitor',
 ]
+
+# Compat re-export
+try:
+    from .alphaalgo_master import AlphaAlgoMaster  # noqa: F401
+except ImportError:
+    pass

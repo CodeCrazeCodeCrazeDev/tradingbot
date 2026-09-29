@@ -1,4 +1,5 @@
 """
+import warnings
 from typing import List, Optional, Set
 Comprehensive Alerting and Monitoring System
 =============================================
@@ -215,7 +216,7 @@ class SlackAlerter:
         }
         
         try:
-            response = requests.post(self.webhook_url, json=payload, timeout=10)
+            response = await asyncio.to_thread(requests.post, self.webhook_url, json=payload, timeout=10)
             return response.status_code == 200
         except Exception as e:
             logger.error(f"Slack alert failed: {e}")
@@ -265,7 +266,7 @@ class PagerDutyAlerter:
         }
         
         try:
-            response = requests.post(self.api_url, json=payload, timeout=10)
+            response = await asyncio.to_thread(requests.post, self.api_url, json=payload, timeout=10)
             return response.status_code == 202
         except Exception as e:
             logger.error(f"PagerDuty alert failed: {e}")
@@ -283,7 +284,7 @@ class PagerDutyAlerter:
         }
         
         try:
-            response = requests.post(self.api_url, json=payload, timeout=10)
+            response = await asyncio.to_thread(requests.post, self.api_url, json=payload, timeout=10)
             return response.status_code == 202
         except Exception as e:
             logger.error(f"PagerDuty resolve failed: {e}")
@@ -436,7 +437,8 @@ class TelegramAlerter:
         success = True
         for chat_id in self.chat_ids:
             try:
-                response = requests.post(
+                response = await asyncio.to_thread(
+                    requests.post,
                     self.api_url,
                     json={
                         'chat_id': chat_id,
@@ -492,7 +494,7 @@ class DiscordAlerter:
         }
         
         try:
-            response = requests.post(self.webhook_url, json=payload, timeout=10)
+            response = await asyncio.to_thread(requests.post, self.webhook_url, json=payload, timeout=10)
             return response.status_code in [200, 204]
         except Exception as e:
             logger.error(f"Discord alert failed: {e}")
@@ -750,16 +752,17 @@ class UptimeTracker:
         service = self.services.get(name)
         
         if not service or not REQUESTS_AVAILABLE:
+            record = UptimeRecord(
+                service=name,
+                timestamp=datetime.now(),
+                is_up=False,
+                error="Service not found or requests not available"
+            )
+        else:
             try:
-                return UptimeRecord(
-                    service=name,
-                    timestamp=datetime.now(),
-                    is_up=False,
-                    error="Service not found or requests not available"
-                )
-
                 start = datetime.now()
-                response = requests.get(
+                response = await asyncio.to_thread(
+                    requests.get,
                     service['url'],
                     timeout=service['timeout']
                 )
@@ -948,6 +951,7 @@ class AlertingSystem:
     
     def __init__(self):
         # Alert channels
+        warnings.warn("AlertingSystem is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.channels: Dict[AlertChannel, Any] = {}
         
         # Alert history

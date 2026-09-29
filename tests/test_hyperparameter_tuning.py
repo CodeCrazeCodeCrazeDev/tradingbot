@@ -12,8 +12,8 @@ from unittest.mock import patch, MagicMock
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from trading_bot.ml.hyperparameter_tuning import (
-import numpy
-import pandas
+# MERGE-BROKEN: import numpy
+# MERGE-BROKEN: import pandas
     HyperparameterTuner, GridSearchTuner, RandomSearchTuner, 
     BayesianOptimizationTuner, optimize_transformer_model
 )
@@ -110,7 +110,7 @@ class TestHyperparameterTuner(unittest.TestCase):
             self.assertEqual(new_tuner.best_score, self.tuner.best_score)
             self.assertEqual(len(new_tuner.results), len(self.tuner.results))
         finally:
-    pass
+            pass
             # Clean up
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)

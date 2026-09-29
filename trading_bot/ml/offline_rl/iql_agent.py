@@ -50,7 +50,7 @@ class IQLAgent:
         tau: float = 0.005,
         discount: float = 0.99,
         lr: float = 3e-4,
-        hidden_sizes: List[int] = [256, 256],
+        hidden_sizes: Optional[List[int]] = None,
         use_gpu: bool = True,
         log_dir: str = "logs/iql",
         use_d3rlpy: bool = True
@@ -78,7 +78,7 @@ class IQLAgent:
         self.tau = tau
         self.discount = discount
         self.lr = lr
-        self.hidden_sizes = hidden_sizes
+        self.hidden_sizes = hidden_sizes if hidden_sizes is not None else [256, 256]
         self.use_gpu = use_gpu and torch.cuda.is_available() if TORCH_AVAILABLE else False
         self.log_dir = log_dir
         self.use_d3rlpy = use_d3rlpy and D3RLPY_AVAILABLE
@@ -86,8 +86,14 @@ class IQLAgent:
         os.makedirs(log_dir, exist_ok=True)
         
         if self.use_d3rlpy:
-            self._init_d3rlpy()
-        else:
+            try:
+                self._init_d3rlpy()
+            except Exception as e:
+                # d3rlpy API drift (constructor kwargs changed across versions):
+                # fall back to the in-repo custom implementation.
+                logger.warning(f"d3rlpy IQL init failed ({e}); falling back to custom IQL")
+                self.use_d3rlpy = False
+        if not self.use_d3rlpy:
             if not TORCH_AVAILABLE:
                 raise ImportError("PyTorch is required for custom IQL implementation")
             self._init_custom()
@@ -393,7 +399,16 @@ class IQLAgent:
         if self.use_d3rlpy:
             self.model.load_model(str(load_dir / "model.pt"))
         else:
-            checkpoint = torch.load(load_dir / "model.pt")
+            try:
+                checkpoint = torch.load(load_dir / "model.pt", weights_only=True)
+            except TypeError:
+                # Older torch without weights_only: checkpoint pickle can
+                # execute arbitrary code — only load files you produced.
+                logger.warning(
+                    "torch.load without weights_only support; loading "
+                    "untrusted checkpoint is a code-execution risk"
+                )
+                checkpoint = torch.load(load_dir / "model.pt")
             
             # Update config
             config = checkpoint['config']
@@ -420,3 +435,9 @@ class IQLAgent:
             self.v_optimizer.load_state_dict(checkpoint['v_optimizer'])
         
         logger.info(f"IQL agent loaded from {path}")
+
+# Compat aliases
+try:
+    IqlAgent = IQLAgent
+except NameError:
+    pass

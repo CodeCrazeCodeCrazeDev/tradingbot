@@ -6,6 +6,7 @@ Transforms raw data into standardized events for the pipeline.
 """
 
 from __future__ import annotations
+import warnings
 
 import asyncio
 import logging
@@ -61,6 +62,7 @@ class EventProducer(ABC):
         config: ProducerConfig = None,
         topic: str = "events"
     ):
+        warnings.warn("EventProducer is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.event_bus = event_bus
         self.config = config or ProducerConfig()
         self.topic = topic

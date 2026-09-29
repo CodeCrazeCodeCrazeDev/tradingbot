@@ -1,3 +1,4 @@
+import warnings
 import ast
 import asyncio
 import logging
@@ -17,8 +18,15 @@ class SecureASTVisitor(ast.NodeVisitor):
     AST Visitor that checks python source code for dangerous statements,
     attributes, and function calls.
     """
+    def validate_code(self, code_str: str) -> bool:
+        """Convenience method to parse and validate code string."""
+        tree = ast.parse(code_str)
+        self.visit(tree)
+        return True
+
     def __init__(self):
         # Whitelist of allowed modules to import (only if safe)
+        warnings.warn("SecureASTVisitor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.allowed_modules = {"math", "numpy", "pandas"}
 
         # Blacklist of dangerous names/functions
@@ -59,6 +67,39 @@ class SecureASTVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
 
+def restricted_exec_globals() -> Dict[str, Any]:
+    """Globals dict for exec'd strategy/research code.
+
+    Full ``__builtins__`` is never injected — validated code can otherwise
+    reach ``open``/``eval`` via ``__builtins__[name]`` and bypass the AST
+    blocklist entirely.
+    """
+    import numpy as np
+    import pandas as pd
+
+    return {
+        "__builtins__": {
+            "abs": abs, "all": all, "any": any, "bool": bool, "dict": dict,
+            "enumerate": enumerate, "filter": filter, "float": float, "int": int,
+            "len": len, "list": list, "map": map, "max": max, "min": min,
+            "range": range, "round": round, "set": set, "str": str, "sum": sum,
+            "tuple": tuple, "zip": zip, "print": print
+        },
+        "np": np,
+        "np_random": np.random,
+        "pd": pd
+    }
+
+
+def safe_exec_strategy(code_str: str, local_scope: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Validate code with ``SecureASTVisitor`` then exec under restricted
+    globals. Returns the populated local scope (entry functions live there)."""
+    SecureASTVisitor().validate_code(code_str)
+    scope: Dict[str, Any] = local_scope if local_scope is not None else {}
+    exec(compile(code_str, "<restricted-strategy>", "exec"), restricted_exec_globals(), scope)
+    return scope
+
+
 def _worker_execute_code(code_str: str, entry_point: str, args_tuple: Tuple, seed: int) -> Tuple[bool, Any, str, str]:
     """
     Target worker function executed in an isolated process.
@@ -85,18 +126,7 @@ def _worker_execute_code(code_str: str, entry_point: str, args_tuple: Tuple, see
         np.random.seed(seed)
 
         # Restricted environment
-        allowed_globals = {
-            "__builtins__": {
-                "abs": abs, "all": all, "any": any, "bool": bool, "dict": dict,
-                "enumerate": enumerate, "filter": filter, "float": float, "int": int,
-                "len": len, "list": list, "map": map, "max": max, "min": min,
-                "range": range, "round": round, "set": set, "str": str, "sum": sum,
-                "tuple": tuple, "zip": zip, "print": print
-            },
-            "np": np,
-            "np_random": np.random,
-            "pd": pd
-        }
+        allowed_globals = restricted_exec_globals()
         local_scope = {}
 
         # Compile and run
@@ -190,7 +220,7 @@ class StrategySandbox:
                 try:
                     p.close()
                 except ValueError:
-                    pass
+                    logger.warning(f"Handled exception in sandbox.py")
                 raise asyncio.TimeoutError()
 
         try:

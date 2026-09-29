@@ -3,6 +3,7 @@ Enhanced Trading Bot Integration
 Deep integration between autonomous superintelligence and trading systems.
 """
 
+import warnings
 import asyncio
 import json
 import logging
@@ -19,6 +20,7 @@ class EnhancedTradingIntegration:
     """
     
     def __init__(self, superintelligence, config: Optional[Dict] = None):
+        warnings.warn("EnhancedTradingIntegration is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.superintelligence = superintelligence
         

@@ -1,4 +1,5 @@
 """
+import warnings
 import os
 Phase 6: Security Supervisor
 Ensures system safety and security during operation
@@ -42,6 +43,7 @@ class SecuritySupervisor:
     """
     
     def __init__(self, config: Dict):
+        warnings.warn("SecuritySupervisor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         
         # Security configuration

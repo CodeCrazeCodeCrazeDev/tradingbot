@@ -52,7 +52,7 @@ EIP, ECIE, and the new **CSE-CEDA** engine cooperate inside the Research Operati
 |                                                                                 |
 |        * InvariantGatedEvolutionEngine (Generates and audits mutations)         |
 |        * CEDADecisionGate (Regime-aware tournament & validation checks)         |
-+----------------------------------------+----------------------------------------+
++----------------------------------------+---------------------------------------+
                                          | [Approved Champion Skill]
                                          v
 +---------------------------------------------------------------------------------+

@@ -17,6 +17,7 @@ Author: AlphaAlgo Trading System
 Version: 2.0.0
 """
 
+import warnings
 import asyncio
 import time
 import logging
@@ -182,6 +183,7 @@ class RealTimeDataStream:
     """
     
     def __init__(self, config: RealTimeConfig, event_bus: RealTimeEventBus):
+        warnings.warn("RealTimeDataStream is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         self.event_bus = event_bus
         self._running = False
@@ -570,45 +572,15 @@ async def quick_start(
 
 if __name__ == "__main__":
     import argparse
-    
-    parser = argparse.ArgumentParser(description="Real-Time Trading Core")
-    parser.add_argument('--mode', choices=['simulation', 'paper', 'live'], default='paper')
-    parser.add_argument('--symbols', nargs='+', default=['BTCUSDT'])
-    parser.add_argument('--duration', type=int, help='Run duration in seconds')
-    
-    args = parser.parse_args()
-    
-    # Setup logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s [%(levelname)s] %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
-    
-    async def main():
-        """
-        main function.
+    import sys
+    from pathlib import Path
 
-    Auto-documented by QwenCodeMender.
-        """
-        system = create_realtime_system(args.mode, args.symbols)
-        
-        try:
-            if args.duration:
-                task = asyncio.create_task(system.start())
-                await asyncio.sleep(args.duration)
-                await system.stop()
-                
-                # Print final status
-                status = system.get_status()
-                print("\n" + "=" * 60)
-                print("FINAL STATUS")
-                print("=" * 60)
-                for key, value in status.items():
-                    print(f"  {key}: {value}")
-            else:
-                await system.start()
-        except KeyboardInterrupt:
-            await system.stop()
-    
-    asyncio.run(main())
+    print(
+        "DEPRECATED: realtime_trading_core.py standalone entry is superseded by "
+        "the unified bot.\nAll modules now run under one brain — use "
+        "`python main.py` (trading_bot.unified_bot.UnifiedTradingBot).\n"
+        "Redirecting to the unified entry point..."
+    )
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from main import main as _unified_main
+    asyncio.run(_unified_main())

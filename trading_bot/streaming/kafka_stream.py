@@ -3,6 +3,7 @@ Real-time data streaming using Kafka
 Implements high-throughput market data ingestion
 """
 
+import warnings
 import asyncio
 import logging
 import json
@@ -235,6 +236,7 @@ class MarketDataStream:
     """
     
     def __init__(self, config: StreamConfig):
+        warnings.warn("MarketDataStream is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.stream_manager = KafkaStreamManager(config)
         self.subscribers: Dict[str, List[Callable]] = {}
         

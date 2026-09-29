@@ -898,5 +898,9 @@ def main():
         traceback.print_exc()
         sys.exit(1)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    raise SystemExit(
+        "scripts/validation/comprehensive_qa_validation.py is QUARANTINED: standalone launcher/runner can spawn a parallel runtime outside ModularMonolithRuntime -> UnifiedTradingBot. Use 'python main.py --mode paper' for the canonical entry point."
+    )
+    # Legacy entry point preserved below for reference (unreachable):
     main()

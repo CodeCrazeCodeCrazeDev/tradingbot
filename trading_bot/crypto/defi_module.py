@@ -563,42 +563,9 @@ class CryptoDeFiModule:
 
 
 if __name__ == "__main__":
-    # Example usage
-    logging.basicConfig(level=logging.INFO)
-    
-    async def main():
-        module = CryptoDeFiModule()
-        
-        print("\n" + "=" * 80)
-        logger.info("CRYPTOCURRENCY & DeFi MODULE DEMO")
-        logger.info("=" * 80 + "\n")
-        
-        # Execute yield strategy
-        logger.info("1. Executing Yield Farming Strategy...")
-        result = await module.execute_crypto_strategy('yield')
-        if result['status'] == 'success':
-            opp = result['opportunity']
-            logger.info(f"   ✓ Entered position in {opp.protocol}")
-            logger.info(f"   APY: {opp.apy:.1%}")
-            logger.info(f"   Risk Score: {opp.risk_score:.2f}")
-            logger.info(f"   Expected 30d Return: {opp.estimated_return_30d:.1%}\n")
-        
-        # Execute arbitrage
-        logger.info("2. Scanning for Arbitrage Opportunities...")
-        result = await module.execute_crypto_strategy('arbitrage')
-        if result['status'] == 'success':
-            logger.info(f"   ✓ Arbitrage executed!")
-            logger.info(f"   Profit: ${result['profit']:.2f} ({result['profit_pct']:.2%})\n")
-        else:
-            logger.info(f"   No profitable arbitrage found\n")
-        
-        # Execute trading
-        logger.info("3. Executing Directional Trading Strategy...")
-        result = await module.execute_crypto_strategy('trading')
-        if result['status'] == 'success':
-            logger.info(f"   ✓ {result['action']} executed")
-            logger.info(f"   Momentum: {result['momentum']:.2f}\n")
-        
-        logger.info("=" * 80 + "\n")
-    
-    asyncio.run(main())
+    raise SystemExit(
+        "trading_bot/crypto/defi_module.py is QUARANTINED: standalone execution of this module is a "
+        "parallel capital/loop path outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

@@ -1,5 +1,6 @@
 """Performance Optimization Module for the Market Intelligence System."""
 
+import warnings
 import logging
 import numpy as np
 import pandas as pd
@@ -410,6 +411,7 @@ class RealTimeOptimizer:
     """Optimize real-time data processing and analysis."""
     
     def __init__(self):
+        warnings.warn("RealTimeOptimizer is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.processing_queue = asyncio.Queue()
         self.batch_processor = None
         self.batch_size = 100

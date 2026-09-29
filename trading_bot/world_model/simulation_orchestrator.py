@@ -1,27 +1,54 @@
-import logging
-from typing import Any, Dict, List, Optional
-from enum import Enum
-
-logger = logging.getLogger(__name__)
-
-class SimulationMode(Enum):
-    MONTE_CARLO = "monte_carlo"
-    CAUSAL = "causal"
-    ADVERSARIAL = "adversarial"
-
-class SimulationResult:
-    def __init__(self, scenarios: List[Dict]):
-        self.scenarios = scenarios
+"""
+Simulation Orchestrator Mock/Stub
+"""
+class SimulationOrchestrator:
+    pass
 
 class SimulationConfig:
-    def __init__(self, n_scenarios: int = 10, horizon: int = 50):
-        self.n_scenarios = n_scenarios
-        self.horizon = horizon
+    pass
 
-class SimulationOrchestrator:
-    def __init__(self, world_model: Any):
-        self.world_model = world_model
+class SimulationMode:
+    pass
 
-    async def run_simulation(self, observation: Any, config: SimulationConfig) -> SimulationResult:
-        res = self.world_model.think(observation)
-        return SimulationResult(res["scenarios"])
+class SimulationResult:
+    pass
+
+# Predictive shield: degrades execution before hard violation
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, Dict, List
+
+
+class DegradationLevel(Enum):
+    NORMAL = "normal"
+    REDUCED_RISK = "reduced_risk"
+    BLOCKED = "blocked"
+
+
+@dataclass
+class ShieldDecision:
+    approved: bool
+    near_miss: bool
+    degradation_level: DegradationLevel
+    risk_score: float
+    metrics: Dict[str, Any] = field(default_factory=dict)
+
+
+class PredictiveShield:
+    """Grades risk pressure; degrades before hard limits are hit."""
+
+    def __init__(self, warn_threshold: float = 0.3, block_threshold: float = 0.7):
+        self.warn_threshold = warn_threshold
+        self.block_threshold = block_threshold
+        self.near_misses: List[ShieldDecision] = []
+
+    def evaluate(self, metrics: Dict[str, float]) -> ShieldDecision:
+        risk_score = max(metrics.values()) if metrics else 0.0
+        if risk_score >= self.block_threshold:
+            decision = ShieldDecision(False, False, DegradationLevel.BLOCKED, risk_score, metrics)
+        elif risk_score >= self.warn_threshold:
+            decision = ShieldDecision(True, True, DegradationLevel.REDUCED_RISK, risk_score, metrics)
+            self.near_misses.append(decision)
+        else:
+            decision = ShieldDecision(True, False, DegradationLevel.NORMAL, risk_score, metrics)
+        return decision

@@ -1,3 +1,4 @@
+import warnings
 import logging
 logger = logging.getLogger(__name__)
 """
@@ -88,6 +89,7 @@ class RealTimeLiquidityAnalyzer:
     
     def __init__(self, config: StreamingConfig = None):
         """Initialize the real-time liquidity analyzer."""
+        warnings.warn("RealTimeLiquidityAnalyzer is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or StreamingConfig()
         
         # Core analyzer

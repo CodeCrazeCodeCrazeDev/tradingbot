@@ -148,7 +148,7 @@ from .marketplace.debate import ScientificDebateEngine
 
 # Preserve legacy fallback exports if other legacy parts of AlphaAlgo load them
 try:
-    from .free_research_lab import (
+    from .experimentation.free_research_lab import (
         FreeABTesting,
         FreeBacktester,
         FreePaperTrading,
@@ -156,7 +156,7 @@ try:
         FreeStrategy,
         FreeStrategyLibrary
     )
-    from .innovation_lab import (
+    from .experimentation.innovation_lab import (
         ABTestVariant,
         ABTestingFramework,
         AdvancedBacktester,
@@ -172,7 +172,7 @@ except ImportError:
     pass
 
 try:
-    from .quant_pipeline import (
+    from .orchestration.quant_pipeline import (
         Hypothesis,
         ResearchLab,
         IngestionPipeline,
@@ -200,7 +200,7 @@ except ImportError as e:
     logging.getLogger(__name__).debug(f'Optional import failed in research.quant_pipeline: {e}')
 
 try:
-    from .research_os import (
+    from .orchestration.research_os import (
         QuantitativeIdea,
         IdeaRegistry,
         QuantExperiment,
@@ -232,13 +232,13 @@ except ImportError as e:
     logging.getLogger(__name__).debug(f'Optional import failed in research.research_os: {e}')
 
 try:
-    from .research_os_v2 import ResearchWorkspaceV2
+    from .orchestration.research_os_v2 import ResearchWorkspaceV2
 except ImportError as e:
     import logging
     logging.getLogger(__name__).debug(f'Optional import failed in research.research_os_v2: {e}')
 
 try:
-    from .seal_adapter import (
+    from .alpha.seal_adapter import (
         SEALSelfEdit,
         SEALInnerLoop,
         SEALOuterLoop,
@@ -249,7 +249,7 @@ except ImportError as e:
     logging.getLogger(__name__).debug(f'Optional import failed in research.seal_adapter: {e}')
 
 try:
-    from .seal_discovery import (
+    from .alpha.seal_discovery import (
         SEALDiscoveryCandidate,
         SEALSelfEditProposal,
         SEALDiscoveryEngine
@@ -259,7 +259,7 @@ except ImportError as e:
     logging.getLogger(__name__).debug(f'Optional import failed in research.seal_discovery: {e}')
 
 try:
-    from .research_governance import (
+    from .governance.research_governance import (
         StrategicMandate,
         ResearchStrategy,
         ResourceAllocation,
@@ -278,7 +278,7 @@ except ImportError as e:
     logging.getLogger(__name__).debug(f'Optional import failed in research.research_governance: {e}')
 
 try:
-    from .discovery_platform import (
+    from .discovery.discovery_platform import (
         Observation,
         Question,
         HypothesisObject,
@@ -301,7 +301,7 @@ except ImportError as e:
     logging.getLogger(__name__).debug(f'Optional import failed in research.discovery_platform: {e}')
 
 try:
-    from .research_organization import (
+    from .orchestration.research_organization import (
         PhilosophySpecification,
         ScientificPhilosophy,
         ResearchProgram,
@@ -319,7 +319,7 @@ except ImportError as e:
     logging.getLogger(__name__).debug(f'Optional import failed in research.research_organization: {e}')
 
 try:
-    from .research_kernel import (
+    from .core.research_kernel import (
         LifecycleState,
         StateTransition,
         ImmutabilityViolation,
@@ -334,7 +334,7 @@ except ImportError as e:
     logging.getLogger(__name__).debug(f'Optional import failed in research.research_kernel: {e}')
 
 try:
-    from .research_computer import (
+    from .core.research_computer import (
         EpistemicInstruction,
         CPUCycleTrace,
         EpistemicMetrics,
@@ -351,7 +351,7 @@ except ImportError as e:
     logging.getLogger(__name__).debug(f'Optional import failed in research.research_computer: {e}')
 
 try:
-    from .institution import (
+    from .orchestration.institution import (
         ResearchOS,
         KnowledgeOS,
         ExperimentOS,
@@ -584,3 +584,70 @@ __all__ = [
 class ResearchOrchestrator:
     """Auto-generated stub orchestrator for research."""
     pass
+
+
+# ---------------------------------------------------------------------------
+# TD-01 compat: the flat modules were consolidated into subdomain packages.
+# The historical ``trading_bot.research.<name>`` import path keeps resolving
+# via a meta_path finder that forwards to the consolidated submodule, so
+# ``import trading_bot.research.research_os`` and
+# ``from trading_bot.research.research_os import X`` still work.
+# ---------------------------------------------------------------------------
+
+_MIGRATED_MODULES = {
+    "constitution": "governance.constitution",
+    "maturity": "governance.maturity",
+    "recommendations": "governance.recommendations",
+    "research_governance": "governance.research_governance",
+    "cse_ceda": "discovery.cse_ceda",
+    "discovery_platform": "discovery.discovery_platform",
+    "seal_adapter": "alpha.seal_adapter",
+    "seal_discovery": "alpha.seal_discovery",
+    "free_research_lab": "experimentation.free_research_lab",
+    "innovation_lab": "experimentation.innovation_lab",
+    "institution": "orchestration.institution",
+    "quant_pipeline": "orchestration.quant_pipeline",
+    "research_organization": "orchestration.research_organization",
+    "research_os": "orchestration.research_os",
+    "research_os_v2": "orchestration.research_os_v2",
+    "research_computer": "core.research_computer",
+    "research_kernel": "core.research_kernel",
+    "schemas": "core.schemas",
+    "research_ingestion_pipeline": "data.research_ingestion_pipeline",
+}
+
+
+class _MigratedModuleFinder:
+    """Redirect historical flat research module paths to their subpackage."""
+
+    _pkg = __name__
+
+    def find_spec(self, fullname, path=None, target=None):
+        if not fullname.startswith(self._pkg + "."):
+            return None
+        short = fullname[len(self._pkg) + 1:]
+        target_rel = _MIGRATED_MODULES.get(short)
+        if target_rel is None:
+            return None
+        import importlib.util
+        return importlib.util.spec_from_loader(fullname, self)
+
+    def create_module(self, spec):
+        import importlib
+        short = spec.name[len(self._pkg) + 1:]
+        real = importlib.import_module(self._pkg + "." + _MIGRATED_MODULES[short])
+        # Bind the real module object under the historical name so identity,
+        # pickle resolution, and attribute access stay consistent.
+        import sys
+        sys.modules[spec.name] = real
+        return real
+
+    def exec_module(self, module):
+        pass
+
+
+import sys as _sys
+
+_MigratedModuleFinder()
+if not any(isinstance(f, _MigratedModuleFinder) for f in _sys.meta_path):
+    _sys.meta_path.append(_MigratedModuleFinder())

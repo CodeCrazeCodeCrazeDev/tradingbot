@@ -29,7 +29,7 @@ class PolicySelector:
     
     def __init__(
         self,
-        methods: List[str] = ["is", "dr", "fqe"],
+        methods: Optional[List[str]] = None,
         discount: float = 0.99,
         log_dir: str = "logs/policy_selection"
     ):
@@ -41,7 +41,7 @@ class PolicySelector:
             discount: Reward discount factor
             log_dir: Directory for logs
         """
-        self.methods = methods
+        self.methods = methods if methods is not None else ["is", "dr", "fqe"]
         self.discount = discount
         self.log_dir = Path(log_dir)
         self.log_dir.mkdir(parents=True, exist_ok=True)

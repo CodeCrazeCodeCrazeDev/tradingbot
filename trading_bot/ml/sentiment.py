@@ -13,6 +13,7 @@ Features:
 - Fraud and manipulation detection in sentiment data
 """
 
+import warnings
 import logging
 logger = logging.getLogger(__name__)
 import random
@@ -206,6 +207,7 @@ class SentimentAnalyzer:
             config: Configuration dictionary with analyzer parameters.
                    If None, default parameters will be used.
         """
+        warnings.warn("SentimentAnalyzer is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.sentiment_cache = {}
         self.history = deque(maxlen=1000)  # Store sentiment history for learning

@@ -21,6 +21,7 @@ Prediction markets provide unique alpha:
 - Arbitrage opportunities vs other markets
 """
 
+import warnings
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timedelta
@@ -290,6 +291,7 @@ class PolymarketModule:
         min_liquidity: float = 10000,
         min_volume_24h: float = 1000
     ):
+        warnings.warn("PolymarketModule is a legacy/quarantined component: capital path outside the canonical execution boundary. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.edge_threshold = edge_threshold
         self.max_position_pct = max_position_pct
         self.min_liquidity = min_liquidity

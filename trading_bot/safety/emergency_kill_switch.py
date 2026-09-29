@@ -5,6 +5,7 @@ Monitors critical thresholds and stops all trading if breached.
 Prevents catastrophic losses from runaway trading.
 """
 
+import warnings
 import logging
 import json
 from dataclasses import dataclass, asdict
@@ -62,6 +63,7 @@ class EmergencyKillSwitch:
             max_daily_loss_pct: Maximum daily loss percentage (default 5%)
             kill_switch_file: File to check for manual emergency stop
         """
+        warnings.warn("EmergencyKillSwitch is a legacy/quarantined component: capital path outside the canonical execution boundary. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.max_drawdown = max_drawdown
         self.max_consecutive_losses = max_consecutive_losses
         self.max_daily_loss_pct = max_daily_loss_pct

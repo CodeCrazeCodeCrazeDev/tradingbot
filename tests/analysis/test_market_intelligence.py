@@ -11,12 +11,12 @@ import logging
 from unittest.mock import Mock, patch, MagicMock
 
 try:
-    from trading_bot.market_intelligence import *
+    from trading_bot.analysis.market_intelligence import *
 except ImportError:
     # Fallback import
     import sys
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.market_intelligence import *
+    from trading_bot.analysis.market_intelligence import *
 
 logger = logging.getLogger(__name__)
 

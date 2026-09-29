@@ -5,6 +5,7 @@ Sends notifications through various channels (email, desktop, SMS, webhooks)
 when approval requests are created or decisions are made.
 """
 
+import warnings
 import asyncio
 import json
 import logging
@@ -69,6 +70,7 @@ class NotificationSystem:
     """
     
     def __init__(self, config: NotificationConfig):
+        warnings.warn("NotificationSystem is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         self.notification_queue: asyncio.Queue = asyncio.Queue()
         self._running = False
@@ -82,8 +84,10 @@ class NotificationSystem:
             return
         
         self._running = True
-        self._worker_task = asyncio.create_task(self._notification_worker())
-        logger.info("Notification worker started")
+        # Worker disabled: notifications are read-only projections under the
+        # canonical runtime's interface layer.
+        self._worker_task = None
+        logger.warning("Notification worker disabled; canonical interfaces own projections")
     
     async def stop(self):
         """Stop notification worker"""

@@ -23,7 +23,6 @@ from enum import Enum
 from abc import ABC, abstractmethod
 import uuid
 import json
-from trading_bot.core.unified_registry import registry
 
 logger = logging.getLogger(__name__)
 
@@ -261,9 +260,6 @@ class ToolRegistry:
         self.config = config or {}
         self.object_registry = object_registry
         
-        # Use Unified Registry for storage
-        self.unified_registry = registry
-
         # Tool storage
         self.tools: Dict[str, BaseTool] = {}
         
@@ -275,7 +271,7 @@ class ToolRegistry:
         # Tool factories for dynamic creation
         self.tool_factories: Dict[str, Type[BaseTool]] = {}
         
-        logger.info("Tool Registry initialized (bridged to Unified Registry)")
+        logger.info("Tool Registry initialized")
     
     async def initialize(self):
         """Initialize the registry with default tools"""
@@ -303,23 +299,18 @@ class ToolRegistry:
     
     async def register_tool(self, tool: BaseTool) -> str:
         """Register a tool"""
-        # Store in Unified Registry
-        self.unified_registry.register(
-            name=tool.name,
-            component=tool,
-            component_type="tool",
-            metadata={
-                "category": tool.category.value,
-                "permission": tool.permission.value,
-                "description": tool.description
-            }
-        )
-
         self.tools[tool.name] = tool
         self.category_index[tool.category].append(tool.name)
-        
+
+        # Bridge to the canonical unified registry keyed by tool name
+        try:
+            from ..core.unified_registry import registry as _unified_registry
+            _unified_registry.register(tool.name, component=tool, component_type="tool")
+        except Exception as e:
+            logger.warning(f"ToolRegistry: unified-registry bridge failed for {tool.name}: {e}")
+
         logger.info(f"Registered tool: {tool.name} ({tool.category.value})")
-        
+
         return tool.tool_id
     
     async def unregister_tool(self, tool_name: str):

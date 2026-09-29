@@ -179,7 +179,7 @@ class GrangerCausality:
             coeffs = np.linalg.lstsq(X, y_target, rcond=None)[0]
             predictions = X @ coeffs
             residuals = y_target - predictions
-        except:
+        except Exception as e:
             residuals = y_target
         
         return residuals
@@ -199,7 +199,7 @@ class GrangerCausality:
             coeffs = np.linalg.lstsq(X, y_target, rcond=None)[0]
             predictions = X @ coeffs
             residuals = y_target - predictions
-        except:
+        except Exception as e:
             residuals = y_target
         
         return residuals

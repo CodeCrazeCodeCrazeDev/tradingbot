@@ -5,6 +5,7 @@ This module provides economic calendar integration for the Elite Trading Bot,
 enabling tracking of scheduled economic events, forecasts, and results.
 """
 
+import warnings
 import enum
 import asyncio
 import logging
@@ -255,6 +256,7 @@ class EconomicCalendar:
             event_monitor: Event monitoring system
             config: Optional configuration dictionary
         """
+        warnings.warn("EconomicCalendar is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.event_monitor = event_monitor
         self.config = config or {}
         self._init_default_config()

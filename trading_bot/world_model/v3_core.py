@@ -94,7 +94,7 @@ class WorldModelV3(nn.Module):
 
     def _generate_probabilistic_scenarios(self, core_output: Dict) -> List[Any]:
         return [
-            {"name": "Scenario_High_Vol", "probability": 0.3},
-            {"name": "Scenario_Mean_Rev", "probability": 0.5},
-            {"name": "Scenario_Tail_Event", "probability": 0.2}
+            {"name": "Scenario_High_Vol", "probability": 0.3, "confidence": 0.3},
+            {"name": "Scenario_Mean_Rev", "probability": 0.5, "confidence": 0.5},
+            {"name": "Scenario_Tail_Event", "probability": 0.2, "confidence": 0.2}
         ]

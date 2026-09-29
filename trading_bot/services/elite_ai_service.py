@@ -5,6 +5,7 @@ Elite AI Service - Elite AI Trading System
 Wraps Elite AI System capabilities as an event-driven service.
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime
@@ -33,6 +34,7 @@ class EliteAIService(BaseService):
     DEPENDENCIES = ["ai_core"]
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("EliteAIService is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         self._interval: float = config.get('interval', 60.0) if config else 60.0
         self._task: Optional[asyncio.Task] = None

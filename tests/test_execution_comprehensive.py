@@ -150,9 +150,7 @@ class TestPositionManager:
         """Test module can be imported."""
 
         from trading_bot.trading.position_manager import PositionManager
-import numpy
-import pandas
-assert PositionManager is not None
+        assert PositionManager is not None
 
 
 

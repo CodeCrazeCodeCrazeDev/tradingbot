@@ -13,6 +13,7 @@ Features:
 - System health
 """
 
+import warnings
 import os
 import json
 from datetime import datetime, timedelta
@@ -77,6 +78,7 @@ class RealtimeDashboard:
         update_interval: int = 5000,  # milliseconds
         data_dir: str = "data/dashboard"
     ):
+        warnings.warn("RealtimeDashboard is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.port = port
         self.update_interval = update_interval
         self.data_dir = data_dir

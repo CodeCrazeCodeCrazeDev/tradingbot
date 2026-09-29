@@ -14,8 +14,12 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='repla
 # Add paths
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'perfect_bot'))
 
-from data_fetcher import EnhancedDataFetcher
-from aggressive_strategy import AggressiveStrategy
+try:
+    from data_fetcher import EnhancedDataFetcher
+    from aggressive_strategy import AggressiveStrategy
+except ImportError:
+    from .data_fetcher import EnhancedDataFetcher
+    from .aggressive_strategy import AggressiveStrategy
 import pandas as pd
 import numpy as np
 from datetime import datetime
@@ -247,4 +251,9 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    raise SystemExit(
+        "trading_bot/ultimate_bot/run_ultimate.py is QUARANTINED: standalone execution of this module is a "
+        "parallel capital/loop path outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

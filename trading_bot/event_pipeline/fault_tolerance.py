@@ -6,6 +6,7 @@ Ensures system resilience under failure conditions.
 """
 
 from __future__ import annotations
+import warnings
 
 import asyncio
 import logging
@@ -462,6 +463,7 @@ class HealthMonitor:
     """
     
     def __init__(self, check_interval_seconds: float = 10.0):
+        warnings.warn("HealthMonitor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.check_interval = check_interval_seconds
         
         # Registered health checks

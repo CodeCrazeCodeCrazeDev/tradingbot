@@ -414,14 +414,23 @@ class AutonomousAlphaDiscoveryLoop:
             genome = create_random_genome()
             discovery.genome = genome
         
-        # Simulate backtest (in production, run actual backtest)
-        backtest_metrics = {
-            'sharpe_ratio': np.random.uniform(0.5, 2.5),
-            'max_drawdown': np.random.uniform(0.05, 0.25),
-            'win_rate': np.random.uniform(0.45, 0.65),
-            'sortino_ratio': np.random.uniform(0.5, 3.0),
-            'calmar_ratio': np.random.uniform(0.5, 2.0)
-        }
+        # Delusion Loop Prevention: Ensure backtest metrics come from real data.
+        # In a production environment, this must interface with a verified backtest engine.
+
+        # Check if the genome already has performance metrics from a real engine
+        if genome.fitness_score > 0 and hasattr(genome, 'metrics') and genome.metrics:
+            backtest_metrics = genome.metrics
+        else:
+            # Grounding enforcement: If no real backtest was run, return failing metrics
+            # to prevent the system from "inventing" profitable strategies.
+            logger.error(f"Genome {genome.genome_id} has no verified metrics. Rejecting to prevent delusion loop.")
+            backtest_metrics = {
+                'sharpe_ratio': 0.0,
+                'max_drawdown': 1.0,
+                'win_rate': 0.0,
+                'sortino_ratio': 0.0,
+                'calmar_ratio': 0.0
+            }
         
         # Check validation gates
         passed, failures = OperationalConstraints.check_validation_gates(backtest_metrics)
@@ -570,12 +579,20 @@ class AutonomousAlphaDiscoveryLoop:
         Monthly: full evolutionary generation cycle
         """
         for discovery_id, discovery in self.deployed_discoveries.items():
-            # Simulate live performance
+            # Track live performance
             discovery.days_live += 1
             
-            # Simulate daily PnL
-            daily_return = np.random.normal(0.0005, 0.02)
-            discovery.live_pnl += daily_return * discovery.capital_allocation
+            # DELUSION PREVENTION: Must use real PnL from the execution engine.
+            # Here we enforce that live PnL is only updated if real trade results exist.
+            if hasattr(discovery, 'execution_records') and discovery.execution_records:
+                # Calculate real PnL from records
+                real_pnl = sum(record.pnl for record in discovery.execution_records)
+                discovery.live_pnl = real_pnl
+            else:
+                # No real trades = no PnL reward.
+                # This prevents strategies from appearing successful just by existing.
+                logger.debug(f"Discovery {discovery_id} has no execution records. PnL remains flat.")
+                pass
             
             # Update live Sharpe (simplified)
             if discovery.days_live > 20:
@@ -656,14 +673,32 @@ class AutonomousAlphaDiscoveryLoop:
             logger.info(f"Self-improvement cycle completed: {cycle.status.value}")
     
     def _get_market_state(self) -> Dict[str, Any]:
-        """Get current market state for agents"""
-        return {
-            'prices': [100 + np.random.randn() for _ in range(100)],
-            'volumes': [1e6 + np.random.randn() * 1e5 for _ in range(100)],
-            'vix': np.random.uniform(15, 30),
-            'regime': 'normal',
-            'sentiment_score': np.random.uniform(-0.5, 0.5)
-        }
+        """
+        Get current market state for agents.
+        Enforces grounding in real data providers.
+        """
+        try:
+            # DELUSION PREVENTION: In production, this MUST fetch from a real data provider.
+            # If no provider is available, we return an empty state which should trigger
+            # safety mechanisms downstream rather than generating random noise.
+
+            # Placeholder for real data fetch:
+            # from trading_bot.data.mt5_interface import get_market_data
+            # return get_market_data()
+
+            # For audit purposes, we flag the lack of real grounding
+            logger.warning("Market state requested without real-time provider integration. Returning minimal grounded state.")
+
+            return {
+                'prices': [],
+                'volumes': [],
+                'vix': 20.0, # Grounded default
+                'regime': 'unknown',
+                'sentiment_score': 0.0
+            }
+        except Exception as e:
+            logger.error(f"Error fetching grounded market state: {e}")
+            return {}
     
     def _update_portfolio_metrics(self) -> None:
         """Update portfolio risk metrics"""

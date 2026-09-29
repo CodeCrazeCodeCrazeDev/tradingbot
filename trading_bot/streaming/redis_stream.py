@@ -3,6 +3,7 @@ Redis-based real-time data streaming
 High-performance in-memory data distribution
 """
 
+import warnings
 import asyncio
 import logging
 import json
@@ -32,6 +33,7 @@ class RedisStreamManager:
     """
     
     def __init__(self, config: RedisConfig):
+        warnings.warn("RedisStreamManager is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         self.redis_client = None
         self.pubsub = None

@@ -3,6 +3,7 @@ Real-Time Alert System for Critical Trading Opportunities
 Notifications via multiple channels (email, SMS, webhook, desktop)
 """
 
+import warnings
 import asyncio
 try:
     import aiohttp
@@ -59,6 +60,7 @@ class AlertSystem:
     """
     
     def __init__(self, config: Dict):
+        warnings.warn("AlertSystem is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         
         # Alert queue

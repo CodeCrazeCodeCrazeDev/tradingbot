@@ -5,6 +5,21 @@ Risk Module
 Auto-generated integration file.
 """
 
+from .service import CanonicalRiskService, LegacyRiskPolicyAdapter
+from .policy_adapters import (
+    SizingVetoPolicyAdapter,
+    TradeAllowancePolicyAdapter,
+    TradeAssessmentPolicyAdapter,
+)
+
+try:
+    from .MASTER_risk_manager import (
+        TradeDirection, TradeQuality, RiskMode, MarketRegime,
+        TradingStats, PositionSize, RiskLimits,
+    )
+except ImportError:
+    pass
+
 # MASTER_risk_manager
 try:
     from .MASTER_risk_manager import (
@@ -14,10 +29,11 @@ except ImportError as e:
     # MASTER_risk_manager not available
     pass
 
-# advanced_risk_manager
+# advanced_risk_manager — compatibility stub; the quantum_risk_manager
+# implementation below is the real class bound to ``AdvancedRiskManager``.
 try:
     from .advanced_risk_manager import (
-        AdvancedRiskManager,
+        AdvancedRiskManager as CompatAdvancedRiskManager,
     )
 except ImportError as e:
     # advanced_risk_manager not available
@@ -201,13 +217,17 @@ __all__ = [
     'AdvancedRiskManager',
     'AdvancedRiskSystem',
     'AnomalyDetectionSystem',
+    'CanonicalRiskService',
+    'LegacyRiskPolicyAdapter',
     'CircuitBreakerManager',
+    'CompatAdvancedRiskManager',
     'CompleteRiskSystem',
     'CorrelationManager',
     'DrawdownManager',
     'EnhancedCorrelationManager',
     'FreeRiskManager',
     'KellyCriterion',
+    'MarketRegime',
     'MasterRiskManager',
     'MlRiskManager',
     'MockRiskManager',
@@ -215,10 +235,20 @@ __all__ = [
     'MultiLayerRiskManagerConfig',
     'PortfolioRiskManager',
     'PositionManager',
+    'PositionSize',
+    'PositionSizeCalculator',
     'PreTradeChecksEngine',
+    'SizingVetoPolicyAdapter',
+    'TradeAllowancePolicyAdapter',
+    'TradeAssessmentPolicyAdapter',
+    'RiskLimits',
     'RiskManager',
+    'RiskMode',
     'TestRiskManager',
     'TestRiskManagerConfig',
+    'TradeDirection',
+    'TradeQuality',
+    'TradingStats',
     'UnifiedRiskManager',
     'VaREngine',
 ]
@@ -241,3 +271,9 @@ class PositionSizeCalculator:
         """Get maximum position size for account."""
         return account_balance * self.max_risk_per_trade * 10
 
+
+# Compat re-export
+try:
+    from .MASTER_risk_manager import TradeDirection, TradeQuality  # noqa: F401
+except ImportError:
+    pass

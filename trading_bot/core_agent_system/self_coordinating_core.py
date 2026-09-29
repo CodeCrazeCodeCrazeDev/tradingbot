@@ -30,9 +30,8 @@ from .coordination_core import (
 )
 from .coordination_core_part2 import (
     CoordinationLayer, SharedMemory, SharedMemoryScope,
-    CoordinationLearningLoop
+    GovernanceSystem, CoordinationLearningLoop
 )
-from .governance_system import GovernanceSystem
 from .dynamic_agent_factory import (
     DynamicAgentFactory, AgentArchetype, SubAgent
 )
@@ -166,11 +165,15 @@ class SelfCoordinatingCore:
         self.resource_allocator = ResourceAllocator(self.config.get('resources', {}))
         self.failure_recovery = FailureRecoverySystem()
         self.coordination_layer = CoordinationLayer()
-        self.shared_memory = SharedMemory()
-        self.governance = GovernanceSystem(
-            constitutional_layer=constitutional_layer,
-            boundary_config=self.config.get('trust_boundary')
+
+        # Shared memory with persistence support
+        storage_path = self.config.get('coordination_storage_path')
+        self.shared_memory = SharedMemory(
+            storage_path=storage_path,
+            coordination_layer=self.coordination_layer
         )
+
+        self.governance = GovernanceSystem(constitutional_layer)
         self.learning_loop = CoordinationLearningLoop(memory_system)
         
         # Dynamic agent factory
@@ -207,14 +210,23 @@ class SelfCoordinatingCore:
         """Initialize the coordination core"""
         logger.info("Initializing Self-Coordinating AI Core...")
         
-        # Create default teams in shared memory
-        self.shared_memory.create_team('trading_team', set())
-        self.shared_memory.create_team('research_team', set())
-        self.shared_memory.create_team('safety_team', set())
+        # Load persisted team memory if available
+        await self.shared_memory.load()
+
+        # Create default teams in shared memory if they don't exist
+        if not self.shared_memory.teams.get('trading_team'):
+            self.shared_memory.create_team('trading_team', set())
+        if not self.shared_memory.teams.get('research_team'):
+            self.shared_memory.create_team('research_team', set())
+        if not self.shared_memory.teams.get('safety_team'):
+            self.shared_memory.create_team('safety_team', set())
         
         # Create initial sub-agents
         await self._create_initial_agents()
         
+        # Initial save of system state
+        await self.shared_memory.save()
+
         self.running = True
         
         logger.info("Self-Coordinating AI Core initialized")
@@ -298,7 +310,7 @@ class SelfCoordinatingCore:
                 results.extend(batch_results)
             
             # Aggregate results
-            success = all(r.get('success', False) if isinstance(r, dict) else False for r in results)
+            success = all(r.get('success', False) for r in results)
             
             # Update metrics
             duration = (datetime.now() - self.task_start_times[task.task_id]).total_seconds()
@@ -403,12 +415,11 @@ class SelfCoordinatingCore:
             
             result = await agent.execute_task(task)
             
-            # Step 6: Mark task complete
+            # Step 6: Mark task complete/failed
             if result.get('success'):
                 self.task_decomposer.mark_completed(task.task_id, result)
-                task.status = TaskStatus.COMPLETED
             else:
-                task.status = TaskStatus.FAILED
+                self.task_decomposer.mark_failed(task.task_id, result.get('error', 'Unknown error'))
             
             # Step 7: Broadcast completion
             await self.coordination_layer.broadcast(
@@ -597,6 +608,9 @@ class SelfCoordinatingCore:
         
         self.running = False
         
+        # Persist final state
+        await self.shared_memory.save()
+
         # Terminate all sub-agents
         for agent_id in list(self.agent_factory.agents.keys()):
             await self.agent_factory.terminate_agent(agent_id)

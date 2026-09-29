@@ -14,7 +14,13 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
-from .strategy_engine import StrategyEngine, Signal
+try:
+    from .strategy_engine import StrategyEngine, Signal
+except ImportError as e:
+    import traceback
+    traceback.print_exc()
+    StrategyEngine = None
+    Signal = None
 
 try:
     from trading_bot.data import MT5Interface

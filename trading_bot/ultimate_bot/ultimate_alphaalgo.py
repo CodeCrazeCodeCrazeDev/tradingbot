@@ -30,8 +30,12 @@ except ImportError:
     from data_fetcher import EnhancedDataFetcher
     from advanced_ml_models import AdvancedMLEnsemble
 
-from aggressive_strategy import AggressiveStrategy
-from deep_learning_models import SimpleDeepLearning, PYTORCH_AVAILABLE
+try:
+    from aggressive_strategy import AggressiveStrategy
+    from deep_learning_models import SimpleDeepLearning, PYTORCH_AVAILABLE
+except ImportError:
+    from .aggressive_strategy import AggressiveStrategy
+    from .deep_learning_models import SimpleDeepLearning, PYTORCH_AVAILABLE
 
 logging.basicConfig(
     level=logging.INFO,
@@ -491,4 +495,9 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    raise SystemExit(
+        "trading_bot/ultimate_bot/ultimate_alphaalgo.py is QUARANTINED: standalone execution of this module is a "
+        "parallel capital/loop path outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

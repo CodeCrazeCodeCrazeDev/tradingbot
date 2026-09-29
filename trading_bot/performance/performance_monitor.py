@@ -5,6 +5,7 @@ This module provides performance monitoring and profiling capabilities
 for tracking execution times, resource usage, and identifying bottlenecks.
 """
 
+import warnings
 import time
 import logging
 import functools
@@ -77,6 +78,7 @@ class PerformanceMonitor:
             save_interval: Interval in seconds for auto-saving metrics
             save_path: Path to save metrics to, or None for default
         """
+        warnings.warn("PerformanceMonitor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.history_size = history_size
         self.auto_save = auto_save
         self.save_interval = save_interval

@@ -14,6 +14,8 @@ import tempfile
 import os
 import json
 import sys
+from trading_bot.market_intelligence.event_detection import MarketEventDetector
+from trading_bot.market_intelligence.data_monitoring import MarketDataMonitor
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -473,14 +475,11 @@ class TestDataMonitoring:
         """Test news sentiment monitor."""
 
         from trading_bot.market_intelligence.data_monitoring import NewsAndSentimentMonitor
-import numpy
-import pandas
-            
-monitor = NewsAndSentimentMonitor({})
-            
-if hasattr(monitor, 'get_latest_sentiment'):
-                sentiment = monitor.get_latest_sentiment('EURUSD')
-                assert sentiment is not None or sentiment is None  # May not have data
+        monitor = NewsAndSentimentMonitor({})
+
+        if hasattr(monitor, 'get_latest_sentiment'):
+            sentiment = monitor.get_latest_sentiment('EURUSD')
+            assert sentiment is not None or sentiment is None  # May not have data
 
 
 

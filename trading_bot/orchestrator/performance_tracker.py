@@ -12,8 +12,6 @@ import logging
 from datetime import datetime, timedelta
 from collections import deque
 import json
-import numpy
-import pandas
 
 logger = logging.getLogger(__name__)
 
@@ -322,7 +320,10 @@ class MetricsCalculator:
             downside_std = np.std(downside_returns)
         
             if downside_std == 0:
-                return 0
+                downside_std = float(np.sqrt(np.mean(np.array(downside_returns)**2)))
+
+            if downside_std == 0:
+                return float('inf') if mean_return > 0 else 0
         
             # Annualized Sortino
             sortino = (mean_return * 252) / (downside_std * np.sqrt(252))

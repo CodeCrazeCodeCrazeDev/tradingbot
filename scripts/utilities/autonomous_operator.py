@@ -756,7 +756,11 @@ async def main():
         logger.info("=" * 80)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    raise SystemExit(
+        "scripts/utilities/autonomous_operator.py is QUARANTINED: standalone launcher/runner can spawn a parallel runtime outside ModularMonolithRuntime -> UnifiedTradingBot. Use 'python main.py --mode paper' for the canonical entry point."
+    )
+    # Legacy entry point preserved below for reference (unreachable):
     # Create required directories
     Path('logs').mkdir(exist_ok=True)
     Path('backup').mkdir(exist_ok=True)

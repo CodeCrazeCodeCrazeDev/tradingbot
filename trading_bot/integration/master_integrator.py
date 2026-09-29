@@ -23,6 +23,7 @@ Usage:
 """
 
 from __future__ import annotations
+import warnings
 
 import asyncio
 import importlib
@@ -409,6 +410,7 @@ class MasterIntegrator:
     MAX_LEVERAGE = 5.0             # 5x
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("MasterIntegrator is a legacy/quarantined component: dynamic module/class loading bypasses static convergence control. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.registry = get_module_registry()
         self.event_bus = EventBus()
@@ -552,8 +554,12 @@ class MasterIntegrator:
         self._start_time = time.time()
         self._running = True
         
-        # Start event bus
-        asyncio.create_task(self.event_bus.start())
+        # Event-bus worker disabled: the canonical decision/audit backbone is
+        # UnifiedDecisionBus; this parallel bus must not run in production.
+        logger.warning(
+            "MasterIntegrator event-bus worker disabled; canonical "
+            "UnifiedDecisionBus owns decision/audit routing"
+        )
         
         # Start modules in layer order
         layer_order = [

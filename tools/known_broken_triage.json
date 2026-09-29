@@ -1,0 +1,169 @@
+{
+  "summary": {
+    "collects": 54
+  },
+  "results": {
+    "adversarial_curriculum/test_curriculum_orchestrator.py": {
+      "status": "collects"
+    },
+    "ai_engineer/test_deepseek_integration.py": {
+      "status": "collects"
+    },
+    "ai_engineer/test_deepseek_r1_8b_integration.py": {
+      "status": "collects"
+    },
+    "alpha_research/test_alpha_research_orchestrator.py": {
+      "status": "collects"
+    },
+    "alpha_research/test_rdaos_orchestrator.py": {
+      "status": "collects"
+    },
+    "autonomous_learner/test_learning_orchestrator.py": {
+      "status": "collects"
+    },
+    "autonomous_pipeline/test_pipeline_orchestrator.py": {
+      "status": "collects"
+    },
+    "core/test_classa.py": {
+      "status": "collects"
+    },
+    "core/test_classb.py": {
+      "status": "collects"
+    },
+    "core/test_freetradingbot.py": {
+      "status": "collects"
+    },
+    "core/test_mytradingbot.py": {
+      "status": "collects"
+    },
+    "core/test_testyourclass.py": {
+      "status": "collects"
+    },
+    "core/test_tradingbot.py": {
+      "status": "collects"
+    },
+    "core/test_unifiedtradingsystem.py": {
+      "status": "collects"
+    },
+    "deepchart/test_intent_orchestrator.py": {
+      "status": "collects"
+    },
+    "deepchart/test_market_intelligence_orchestrator.py": {
+      "status": "collects"
+    },
+    "deepseek_ai_engineer/test_deepseek_orchestrator.py": {
+      "status": "collects"
+    },
+    "deepseek_ai_engineer/test_human_collaboration.py": {
+      "status": "collects"
+    },
+    "deepseek_ai_engineer/test_immutable_purpose.py": {
+      "status": "collects"
+    },
+    "deepseek_ai_engineer/test_pre_commit_hook.py": {
+      "status": "collects"
+    },
+    "deepseek_ai_engineer/test_quant_research_engine.py": {
+      "status": "collects"
+    },
+    "deepseek_ai_engineer/test_security_hardening.py": {
+      "status": "collects"
+    },
+    "deepseek_ai_engineer/test_self_evolution_engine.py": {
+      "status": "collects"
+    },
+    "deepseek_architecture/test_chart_analyzer.py": {
+      "status": "collects"
+    },
+    "deepseek_architecture/test_deepseek_core.py": {
+      "status": "collects"
+    },
+    "deepseek_architecture/test_generator_verifier.py": {
+      "status": "collects"
+    },
+    "deepseek_architecture/test_hardware_manager.py": {
+      "status": "collects"
+    },
+    "deepseek_architecture/test_human_protocol.py": {
+      "status": "collects"
+    },
+    "deepseek_autonomous/test_change_applier.py": {
+      "status": "collects"
+    },
+    "deepseek_autonomous/test_verification_engine.py": {
+      "status": "collects"
+    },
+    "deepseek_autonomous/test_workflow_engine.py": {
+      "status": "collects"
+    },
+    "deepseek_engineer/examples/test_deepseek_engineer_demo.py": {
+      "status": "collects"
+    },
+    "deepseek_engineer/test_apply_and_fix.py": {
+      "status": "collects"
+    },
+    "deepseek_engineer/test_apply_approved.py": {
+      "status": "collects"
+    },
+    "deepseek_engineer/test_guardrails.py": {
+      "status": "collects"
+    },
+    "deepseek_engineer/test_live_engineer.py": {
+      "status": "collects"
+    },
+    "deepseek_engineer/test_proposal_system.py": {
+      "status": "collects"
+    },
+    "deepseek_engineer/test_protected_registry.py": {
+      "status": "collects"
+    },
+    "deepseek_engineer/test_self_improvement_loop.py": {
+      "status": "collects"
+    },
+    "deepseek_governance/test_autonomy_levels.py": {
+      "status": "collects"
+    },
+    "deepseek_governance/test_behavior_monitor.py": {
+      "status": "collects"
+    },
+    "deepseek_governance/test_governance_orchestrator.py": {
+      "status": "collects"
+    },
+    "deepseek_governance/test_positive_impact.py": {
+      "status": "collects"
+    },
+    "deepseek_governance/test_risk_mitigation.py": {
+      "status": "collects"
+    },
+    "elite_ai_system/test_elite_trading_orchestrator.py": {
+      "status": "collects"
+    },
+    "eternal_evolution/test_eternal_orchestrator.py": {
+      "status": "collects"
+    },
+    "hedge_fund/test_hedge_fund_orchestrator.py": {
+      "status": "collects"
+    },
+    "hedge_fund_safety/test_mitigation_orchestrator.py": {
+      "status": "collects"
+    },
+    "improvements/test_improvement_orchestrator.py": {
+      "status": "collects"
+    },
+    "market_student/test_market_student_orchestrator.py": {
+      "status": "collects"
+    },
+    "self_improvement/test_self_improvement_orchestrator.py": {
+      "status": "collects"
+    },
+    "test_comprehensive.py": {
+      "status": "collects"
+    },
+    "test_deepseek_engineer.py": {
+      "status": "collects"
+    },
+    "tests/test_run_tests.py": {
+      "status": "collects"
+    }
+  }
+}

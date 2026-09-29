@@ -454,4 +454,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(
+        "scripts/utilities/alphaalgo_offline_rl_integration.py is QUARANTINED: standalone launchers, watchdogs, supervisors, "
+        "and simulators are parallel loop/capital paths outside the canonical "
+        "runtime. Use 'python main.py --mode paper'."
+    )

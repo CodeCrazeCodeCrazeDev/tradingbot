@@ -13,6 +13,7 @@ Author: AlphaAlgo Trading System
 Version: 2.0.0
 """
 
+import warnings
 import subprocess
 import sys
 import importlib
@@ -251,6 +252,7 @@ class RealTimeDependencyManager:
     """
     
     def __init__(self, base_path: str = None, verbose: bool = True):
+        warnings.warn("RealTimeDependencyManager is a legacy/quarantined component: dynamic module/class loading bypasses static convergence control. It carries no production authority.", DeprecationWarning, stacklevel=2)
         if base_path is None:
             base_path = str(Path(__file__).parent.parent)
         
@@ -502,7 +504,7 @@ class RealTimeDependencyManager:
         # Fix broken packages first (uninstall + reinstall)
         for pkg in packages_to_fix:
             self.log(f"\nFixing broken: {pkg.pip_name}")
-            if self.fix_package(pkg.import_name, pkg.pip_name):
+            if await asyncio.to_thread(self.fix_package, pkg.import_name, pkg.pip_name):
                 self.report.fixed += 1
             else:
                 self.report.failed += 1

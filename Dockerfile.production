@@ -55,13 +55,13 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY --chown=alphaalgo:alphaalgo trading_bot/ ./trading_bot/
 COPY --chown=alphaalgo:alphaalgo config/ ./config/
 COPY --chown=alphaalgo:alphaalgo main.py .
-COPY --chown=alphaalgo:alphaalgo main_production.py .
 
 # Create necessary directories with proper permissions
 RUN mkdir -p logs data backups state metrics && \
     chown -R alphaalgo:alphaalgo /app
 
-# Expose ports
+# Reserved ports (not currently served — the canonical worker has no HTTP
+# listener yet; see MEGAPLAN Wave 1 API reconciliation):
 # 8080 - Health check / API
 # 9090 - Prometheus metrics
 # 8765 - WebSocket
@@ -76,15 +76,19 @@ ENV LOG_LEVEL=INFO
 ENV METRICS_PORT=9090
 ENV API_PORT=8080
 
-# Health check
+# Health check: worker liveness (the bot has no HTTP listener yet, so the
+# old /health/live curl could never succeed). Checks that a python main.py
+# process is running.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8080/health/live || exit 1
+    CMD python -c "import psutil,sys; sys.exit(0 if any('main.py' in ' '.join(p.cmdline() or []) for p in psutil.process_iter()) else 1)"
 
 # Switch to non-root user
 USER alphaalgo
 
-# Default command
-CMD ["python", "main_production.py"]
+# Default command: canonical paper-mode entry point. Provision replay data
+# (market_data.db) via a mounted volume, or override the command with
+# --synthetic for a smoke run.
+CMD ["python", "main.py", "--mode", "paper", "--symbol", "EURUSD"]
 
 # ============================================
 # Stage 3: Development (optional)
@@ -102,6 +106,11 @@ RUN pip install --no-cache-dir \
     flake8 \
     mypy \
     ipython
+
+# Tests are required for the dev-stage CMD below (the production stage
+# intentionally does not ship them).
+COPY --chown=alphaalgo:alphaalgo pytest.ini ./
+COPY --chown=alphaalgo:alphaalgo tests/ ./tests/
 
 # Switch back to non-root user
 USER alphaalgo

@@ -6,6 +6,7 @@ Supports backtesting, ML training, and visualization.
 """
 
 from __future__ import annotations
+import warnings
 
 import asyncio
 import logging
@@ -446,6 +447,7 @@ class ReplayEngine:
         data_source: DataSource,
         config: Optional[ReplayConfig] = None
     ):
+        warnings.warn("ReplayEngine is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.data_source = data_source
         self.config = config or ReplayConfig()
         

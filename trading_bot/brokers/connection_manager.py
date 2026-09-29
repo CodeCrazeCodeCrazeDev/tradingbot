@@ -9,6 +9,7 @@ Manages broker connections with:
 - Multi-broker support
 """
 
+import warnings
 import asyncio
 import logging
 import time
@@ -88,6 +89,7 @@ class BrokerConnectionManager:
             on_disconnect: Callback when disconnected
             on_error: Callback on error
         """
+        warnings.warn("BrokerConnectionManager is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.broker = broker_adapter
         self.config = config or {}
         

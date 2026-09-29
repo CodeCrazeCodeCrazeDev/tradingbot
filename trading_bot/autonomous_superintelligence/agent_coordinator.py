@@ -3,6 +3,7 @@ Multi-Agent Coordination System
 Manages multiple agents, distributes work automatically, and ensures coordination.
 """
 
+import warnings
 import asyncio
 import json
 import logging
@@ -86,6 +87,7 @@ class AgentCoordinator:
     """
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("AgentCoordinator is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.agents: Dict[str, Agent] = {}
         self.task_queue: List[Task] = []

@@ -24,6 +24,7 @@ Usage:
     report = monitor.get_report()
 """
 
+import warnings
 import asyncio
 import time
 import psutil
@@ -382,6 +383,7 @@ class PerformanceMonitor:
         check_interval: float = 5.0,
         persist_path: Optional[str] = None
     ):
+        warnings.warn("PerformanceMonitor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.thresholds = thresholds or PerformanceThresholds()
         self.check_interval = check_interval
         self.persist_path = Path(persist_path) if persist_path else None

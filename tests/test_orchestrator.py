@@ -73,9 +73,7 @@ class TestPerformanceTracker:
         """Test module can be imported."""
 
         from trading_bot.orchestrator import performance_tracker
-import numpy
-import pandas
-assert performance_tracker is not None
+        assert performance_tracker is not None
 
 
 

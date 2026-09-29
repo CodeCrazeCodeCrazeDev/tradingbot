@@ -4,6 +4,7 @@ Dependency Health Monitor
 Continuously monitors dependency health and auto-repairs issues.
 """
 
+import warnings
 import logging
 import time
 import threading
@@ -33,6 +34,7 @@ class DependencyHealthMonitor:
             check_interval: Seconds between health checks (default: 1 hour)
             auto_repair: Automatically repair issues when detected
         """
+        warnings.warn("DependencyHealthMonitor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.check_interval = check_interval
         self.auto_repair = auto_repair
         self.running = False

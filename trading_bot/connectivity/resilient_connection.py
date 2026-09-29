@@ -3,6 +3,7 @@ Elite Connection Resilience System
 Implements exponential backoff, circuit breakers, and automatic recovery
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime, timedelta
@@ -68,6 +69,7 @@ class ResilientConnection:
     """
     
     def __init__(self, name: str, config: Optional[ConnectionConfig] = None):
+        warnings.warn("ResilientConnection is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.name = name
         self.config = config or ConnectionConfig()
         

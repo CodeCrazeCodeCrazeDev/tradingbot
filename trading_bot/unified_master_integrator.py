@@ -29,6 +29,7 @@ IMMUTABLE PRINCIPLES:
 6. CONSTRAINTS > CONTROL > EXPOSURE > STRATEGY > PREDICTION
 """
 
+import warnings
 import asyncio
 import logging
 import importlib
@@ -112,6 +113,7 @@ class UnifiedMasterIntegrator:
     }
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("UnifiedMasterIntegrator is a legacy/quarantined component: dynamic module/class loading bypasses static convergence control. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.modules: Dict[str, ModuleInfo] = {}
         self.layer_status: Dict[int, LayerStatus] = {k: LayerStatus(k, v.name, v.priority) for k, v in self.LAYERS.items()}

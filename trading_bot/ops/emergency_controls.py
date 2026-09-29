@@ -4,6 +4,7 @@ Emergency Controls - One-click emergency operations
 Provides emergency controls for critical situations with tested runbooks.
 """
 
+import warnings
 import asyncio
 import logging
 from typing import Any, Dict, List, Optional
@@ -43,6 +44,7 @@ class EmergencyControls:
     """Emergency control system with one-click operations"""
     
     def __init__(self, survival_core, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("EmergencyControls is a legacy/quarantined component: capital path outside the canonical execution boundary. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.survival_core = survival_core
         self.config = config or {}
         

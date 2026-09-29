@@ -1,3 +1,4 @@
+import warnings
 import logging
 logger = logging.getLogger(__name__)
 """Real-time Market Sentiment Integration System.
@@ -60,6 +61,7 @@ class RealTimeSentimentEngine:
     
     def __init__(self, config: Optional[Dict] = None):
         """Initialize the real-time sentiment engine."""
+        warnings.warn("RealTimeSentimentEngine is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # API configurations

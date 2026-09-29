@@ -1,12 +1,12 @@
 # 🏗️ Phase 2: First-Principles Architectural Synthesis (2026)
 
-This document presents the first-principles architectural redesign of the AlphaAlgo system. It integrates our 100-paper structural, cognitive, and safety insights into a single, cohesive, production-grade model.
+This document presents the first-principles architectural redesign of the AlphaAlgo system across all 9 research domains. It integrates our 100-paper structural, cognitive, and safety insights into a single, cohesive, production-grade model.
 
 ---
 
 ## 1. High-Level System Architecture Layout
 
-The consolidated scientific architecture of AlphaAlgo is structured into five distinct, non-overlapping, and decoupled layers, operating through clean interfaces and shared infrastructure:
+The consolidated scientific architecture of AlphaAlgo is structured into five distinct, non-overlapping, and decoupled layers, operating through clean interfaces and shared infrastructure. It synthesizes the eight mandatory 2026 research specifications (arXiv:2605.29303 [EKSFT], arXiv:2607.00341 [DiscoLoop], arXiv:2607.01224 [AutoMem], arXiv:2605.12061 [SAGE], arXiv:2605.10813 [NanoResearch/RSEA], arXiv:2605.20025 [S2L], arXiv:2605.17734 [AutoResearchClaw/HASP], and arXiv:2605.21482 [DeepWeb-Bench]):
 
 ```
 +-------------------------------------------------------------------+

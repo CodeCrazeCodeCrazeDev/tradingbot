@@ -77,9 +77,7 @@ class TestHealthCheck:
         """Test module can be imported."""
 
         from trading_bot.infrastructure.health_check import HealthCheck
-import numpy
-import pandas
-assert HealthCheck is not None
+        assert HealthCheck is not None
 
 
 

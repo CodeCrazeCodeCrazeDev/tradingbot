@@ -5,16 +5,20 @@ import sys
 import os
 
 # Minimal mock for dependencies that are causing issues during import
-class MockObj:
+class MockModule:
+    __file__ = __file__
+    __path__ = []
     def __getattr__(self, name):
+        if name.startswith('__') and name.endswith('__'):
+            raise AttributeError(name)
         return MockObj()
     def __call__(self, *args, **kwargs):
-        return MockObj()
+        return MockModule()
 
 # Mocking modules that are failing due to missing dependencies or complex circular imports
-sys.modules['trading_bot.advanced_features.quantum_computing'] = MockObj()
-sys.modules['trading_bot.advanced_features'] = MockObj()
-sys.modules['trading_bot.elite_system.regime_detection'] = MockObj()
+sys.modules['trading_bot.advanced_features.quantum_computing'] = MockModule()
+sys.modules['trading_bot.advanced_features'] = MockModule()
+sys.modules['trading_bot.elite_system.regime_detection'] = MockModule()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -44,6 +48,15 @@ async def test_csc_pipeline_success():
         branch = ReasoningBranch(branch_id="test", name="Test Branch")
         for i in range(6):
             branch.evidence_graph.add_node(EvidenceNode(node_id=f"node_{i}", content="test", node_type="EVIDENCE"))
+        # Falsification swarm requires tail-risk/regime reasoning plus
+        # liquidity evidence in the graph — mirror the real branch shape.
+        branch.evidence_graph.add_node(EvidenceNode(
+            node_id="liq_node", content="liquidity and volume profile verified",
+            node_type="EVIDENCE"))
+        branch.reasoning_trace = [
+            "Assessed tail risk and black swan exposure",
+            "Current regime consistent with the proposed action",
+        ]
         for i in range(4):
             branch.evidence_graph.add_edge(EvidenceEdge(source_id="node_0", target_id=f"node_{i+1}", relation=RelationType.SUPPORTS))
         return [branch]
@@ -92,13 +105,19 @@ async def test_deterministic_validation():
     entry = ResearchLedgerEntry()
     for i in range(6):
         entry.evidence_graph_snapshot.add_node(EvidenceNode(node_id=f"node_{i}", content="test", node_type="EVIDENCE"))
+    # Falsification swarm requires liquidity evidence in the graph.
+    entry.evidence_graph_snapshot.add_node(EvidenceNode(node_id="liq_node", content="liquidity and volume profile verified", node_type="EVIDENCE"))
     for i in range(4):
         entry.evidence_graph_snapshot.add_edge(EvidenceEdge(source_id="node_0", target_id=f"node_{i+1}", relation=RelationType.SUPPORTS))
+    entry.reasoning_steps = [
+        "Assessed tail risk and black swan exposure",
+        "Current regime consistent with the proposed action",
+    ]
 
     # Re-run verification swarm
     reports = await csc.verifier_swarm.run_swarm(entry)
 
-    assert len(reports) == 3
+    assert len(reports) == len(csc.verifier_swarm.verifiers)
     assert all(r.is_valid for r in reports)
     print("test_deterministic_validation PASSED")
 

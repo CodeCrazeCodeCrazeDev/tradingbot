@@ -5,6 +5,13 @@ Self Learning Module
 Auto-generated integration file.
 """
 
+import warnings as _warnings
+_warnings.warn(
+    "trading_bot.self_learning is deprecated: not on the canonical runtime path and carries no improvement authority; use trading_bot.recursive_self_improvement instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 # core_learning_engine
 try:
     from .core_learning_engine import (

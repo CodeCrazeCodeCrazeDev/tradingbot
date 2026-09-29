@@ -188,5 +188,9 @@ async def main():
 
 
 if __name__ == "__main__":
+    raise SystemExit(
+        "scripts/launchers/run_paper_trading_validation.py is QUARANTINED: standalone launcher/runner can spawn a parallel runtime outside ModularMonolithRuntime -> UnifiedTradingBot. Use 'python main.py --mode paper' for the canonical entry point."
+    )
+    # Legacy entry point preserved below for reference (unreachable):
     exit_code = asyncio.run(main())
     sys.exit(exit_code)

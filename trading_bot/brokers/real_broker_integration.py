@@ -4,6 +4,7 @@ Real Broker Integration - Production-Ready MT5 and Alpaca Live Trading
 Provides actual live trading capabilities with real brokers.
 """
 
+import warnings
 import asyncio
 import logging
 import time
@@ -173,6 +174,7 @@ class BaseBroker(ABC):
     """Abstract base class for all broker implementations."""
     
     def __init__(self, credentials: BrokerCredentials):
+        warnings.warn("BaseBroker is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.credentials = credentials
         self.is_connected = False
         self.orders: Dict[str, Order] = {}

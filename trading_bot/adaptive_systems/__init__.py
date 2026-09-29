@@ -5,6 +5,13 @@ Adaptive Systems Module
 Auto-generated integration file.
 """
 
+import warnings as _warnings
+_warnings.warn(
+    "trading_bot.adaptive_systems is deprecated: not on the canonical runtime path and carries no improvement authority; use trading_bot.recursive_self_improvement instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 # adaptive_learning
 try:
     from .adaptive_learning import (

@@ -22,7 +22,10 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, asdict
 import requests
+from dotenv import load_dotenv
 from loguru import logger
+
+module_logger = logging.getLogger(__name__)
 
 # Configure logging
 LOG_DIR = Path("logs")
@@ -73,7 +76,7 @@ class AlphaAlgoOperator:
     """Autonomous operator for AlphaAlgo trading bot"""
     
     def __init__(self):
-        self.root_dir = Path(__file__).parent
+        self.root_dir = Path(__file__).parent.parent.parent
         self.state_file = self.root_dir / "operator_state.json"
         self.learning_log = LOG_DIR / "learning_history.log"
         self.bot_process = None
@@ -86,7 +89,7 @@ class AlphaAlgoOperator:
         """Load operator state from disk"""
         if self.state_file.exists():
             with open(self.state_file, 'r') as f:
-                    return json.load(f)
+                return json.load(f)
         return {
             "start_time": datetime.now().isoformat(),
             "total_runtime_hours": 0,
@@ -113,7 +116,7 @@ class AlphaAlgoOperator:
             response = requests.get("https://www.google.com", timeout=5)
             latency = (time.time() - start) * 1000
             return response.status_code == 200, latency
-        except:
+        except Exception:
             return False, None
     
     def check_system_resources(self) -> Dict:
@@ -153,21 +156,16 @@ class AlphaAlgoOperator:
             issues.append(".env file missing")
             return False, issues
         
-        # Check critical env vars
-        from dotenv import load_dotenv
-
-logger = logging.getLogger(__name__)
-
-load_dotenv(env_file)
+        load_dotenv(env_file)
         
-critical_vars = ["MT5_LOGIN", "MT5_PASSWORD", "MT5_SERVER"]
-for var in critical_vars:
+        critical_vars = ["MT5_LOGIN", "MT5_PASSWORD", "MT5_SERVER"]
+        for var in critical_vars:
             if not os.getenv(var):
                 issues.append(f"Missing environment variable: {var}")
         
-return len(issues) == 0, issues
+        return len(issues) == 0, issues
     
-def run_system_diagnostic(self) -> SystemHealth:
+    def run_system_diagnostic(self) -> SystemHealth:
         """Run complete system diagnostic"""
         logger.info("🔍 Running system diagnostic...")
         
@@ -231,25 +229,23 @@ def run_system_diagnostic(self) -> SystemHealth:
         logger.info(f"✅ Diagnostic complete: {status.upper()}")
         return health
     
-def is_bot_running(self) -> bool:
+    def is_bot_running(self) -> bool:
         """Check if trading bot is running"""
         if self.bot_process and self.bot_process.poll() is None:
             return True
         return False
     
-def start_bot(self) -> bool:
+    def start_bot(self) -> bool:
         """Start the trading bot"""
         logger.info("🚀 Starting AlphaAlgo trading bot...")
         
         try:
-            # Use the main.py file
             bot_script = self.root_dir / "main.py"
             
             if not bot_script.exists():
                 logger.error("❌ main.py not found")
                 return False
             
-            # Start bot process
             self.bot_process = subprocess.Popen(
                 [sys.executable, str(bot_script)],
                 cwd=str(self.root_dir),
@@ -259,7 +255,6 @@ def start_bot(self) -> bool:
                 bufsize=1
             )
             
-            # Wait a bit to see if it starts successfully
             time.sleep(5)
             
             if self.bot_process.poll() is None:
@@ -267,7 +262,6 @@ def start_bot(self) -> bool:
                 self.restart_count = 0
                 return True
             else:
-                # Process died immediately
                 stdout, stderr = self.bot_process.communicate()
                 logger.error(f"❌ Bot failed to start:\n{stderr}")
                 return False
@@ -277,7 +271,7 @@ def start_bot(self) -> bool:
             logger.error(traceback.format_exc())
             return False
     
-def stop_bot(self):
+    def stop_bot(self):
         """Stop the trading bot gracefully"""
         if self.bot_process:
             logger.info("🛑 Stopping AlphaAlgo...")
@@ -291,7 +285,7 @@ def stop_bot(self):
             except Exception as e:
                 logger.error(f"❌ Error stopping bot: {e}")
     
-def restart_bot(self):
+    def restart_bot(self):
         """Restart the trading bot"""
         logger.info("🔄 Restarting AlphaAlgo...")
         self.stop_bot()
@@ -306,7 +300,7 @@ def restart_bot(self):
         self.state["restarts"] += 1
         return self.start_bot()
     
-def monitor_bot_logs(self) -> Tuple[int, int]:
+    def monitor_bot_logs(self) -> Tuple[int, int]:
         """Monitor bot logs for errors and warnings"""
         errors = 0
         warnings = 0
@@ -316,10 +310,8 @@ def monitor_bot_logs(self) -> Tuple[int, int]:
             if not log_files:
                 return 0, 0
             
-            # Check most recent log
             latest_log = max(log_files, key=lambda p: p.stat().st_mtime)
             
-            # Read last 100 lines with proper encoding handling
             with open(latest_log, 'r', encoding='utf-8', errors='ignore') as f:
                 lines = f.readlines()[-100:]
             
@@ -329,35 +321,30 @@ def monitor_bot_logs(self) -> Tuple[int, int]:
                 elif "WARNING" in line:
                     warnings += 1
             
-        except Exception as e:
-            # Silently handle log reading errors
+        except Exception:
             pass
         
         return errors, warnings
     
-def auto_fix_issues(self, health: SystemHealth) -> int:
+    def auto_fix_issues(self, health: SystemHealth) -> int:
         """Automatically fix detected issues"""
         fixes_applied = 0
         
-        # High CPU - restart bot
         if health.cpu_percent > 95:
             logger.warning("🔧 High CPU detected - restarting bot")
             if self.restart_bot():
                 fixes_applied += 1
         
-        # High memory - restart bot
         if health.memory_percent > 90:
             logger.warning("🔧 High memory usage - restarting bot")
             if self.restart_bot():
                 fixes_applied += 1
         
-        # Bot not running - start it
         if not health.bot_running and not self.safe_mode:
             logger.warning("🔧 Bot not running - starting it")
             if self.start_bot():
                 fixes_applied += 1
         
-        # Internet issues - wait and retry
         if health.internet_latency_ms is None:
             logger.warning("🔧 Internet down - entering safe mode")
             self.safe_mode = True
@@ -366,7 +353,7 @@ def auto_fix_issues(self, health: SystemHealth) -> int:
         self.state["errors_fixed"] += fixes_applied
         return fixes_applied
     
-def generate_hourly_report(self) -> str:
+    def generate_hourly_report(self) -> str:
         """Generate hourly performance report"""
         health = self.run_system_diagnostic()
         
@@ -403,12 +390,11 @@ OPERATOR STATS
 """
         return report
     
-async def run_continuous_operation(self):
+    async def run_continuous_operation(self):
         """Main continuous operation loop"""
         logger.info("🤖 AlphaAlgo Autonomous Operator Starting...")
         logger.info("=" * 60)
         
-        # Initial diagnostic
         health = self.run_system_diagnostic()
         
         if health.status == "critical":
@@ -418,7 +404,6 @@ async def run_continuous_operation(self):
                 logger.error(f"  - {health.errors_count} critical errors")
             return
         
-        # Start the bot
         if not self.start_bot():
             logger.error("❌ Failed to start bot. Exiting.")
             return
@@ -431,11 +416,9 @@ async def run_continuous_operation(self):
         
         try:
             while True:
-                # Health check every 5 minutes
                 if datetime.now() - last_health_check > timedelta(minutes=5):
                     health = self.run_system_diagnostic()
                     
-                    # Auto-fix issues
                     if health.status != "healthy":
                         fixes = self.auto_fix_issues(health)
                         if fixes > 0:
@@ -445,27 +428,22 @@ async def run_continuous_operation(self):
                     self.state["last_health_check"] = last_health_check.isoformat()
                     self._save_state()
                 
-                # Hourly report
                 if datetime.now() - last_hourly_report > timedelta(hours=1):
                     report = self.generate_hourly_report()
                     logger.info(report)
                     last_hourly_report = datetime.now()
                     
-                    # Update runtime
                     self.state["total_runtime_hours"] += 1
                     self._save_state()
                 
-                # Check if bot is still running
                 if not self.is_bot_running() and not self.safe_mode:
                     logger.warning("⚠️ Bot stopped unexpectedly - restarting")
                     self.restart_bot()
                 
-                # Monitor logs
                 errors, warnings = self.monitor_bot_logs()
                 if errors > 10:
                     logger.warning(f"⚠️ High error count ({errors}) - may need intervention")
                 
-                # Sleep for 30 seconds
                 await asyncio.sleep(30)
                 
         except KeyboardInterrupt:

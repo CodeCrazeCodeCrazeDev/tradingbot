@@ -3,6 +3,7 @@ High-Performance Trading Engine
 Integrates optimized data pipeline with opportunity scanners
 """
 
+import warnings
 import asyncio
 import numpy as np
 import pandas as pd
@@ -59,6 +60,7 @@ class TradingEngine:
     
     def __init__(self, config_path: str):
         # Load configuration
+        warnings.warn("TradingEngine is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         with open(config_path, 'r') as f:
             self.config = yaml.safe_load(f)
         

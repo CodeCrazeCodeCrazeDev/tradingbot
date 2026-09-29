@@ -142,6 +142,7 @@ class TestDataManager:
         except ImportError:
             pytest.skip("Module not available")
         except Exception:
+            pass
     
     def test_data_manager_fetch_data(self):
         """Test data fetching functionality."""
@@ -240,8 +241,8 @@ class TestEventBus:
             
             def handler(event):
             
-            if hasattr(bus, 'subscribe'):
-                bus.subscribe('test_event', handler)
+                if hasattr(bus, 'subscribe'):
+                    bus.subscribe('test_event', handler)
             
             if hasattr(bus, 'unsubscribe'):
                 bus.unsubscribe('test_event', handler)
@@ -325,7 +326,7 @@ class TestConfig:
             cfg = Config()
             
             if hasattr(cfg, 'validate'):
-                is_valid = cfg.validate()
+                    is_valid = cfg.validate()
                     assert isinstance(is_valid, bool)
         except ImportError:
             pytest.skip("Module not available")
@@ -354,6 +355,7 @@ class TestMonitoringSystem:
         except ImportError:
             pytest.skip("Module not available")
         except Exception:
+            pass
     
     def test_monitoring_system_metrics(self):
         """Test metrics collection."""
@@ -363,7 +365,7 @@ class TestMonitoringSystem:
             if hasattr(monitor, 'record_metric'):
                 monitor.record_metric('test_metric', 100)
             if hasattr(monitor, 'get_metrics'):
-                metrics = monitor.get_metrics()
+                    metrics = monitor.get_metrics()
                     assert metrics is not None
         except ImportError:
             pytest.skip("Module not available")
@@ -376,7 +378,7 @@ class TestMonitoringSystem:
             if hasattr(monitor, 'create_alert'):
                 monitor.create_alert('test_alert', 'Test message', 'warning')
             if hasattr(monitor, 'get_alerts'):
-                alerts = monitor.get_alerts()
+                    alerts = monitor.get_alerts()
                     assert alerts is not None
         except ImportError:
             pytest.skip("Module not available")
@@ -384,17 +386,17 @@ class TestMonitoringSystem:
     def test_monitoring_system_health(self):
         """Test health monitoring."""
         try:
-    pass
-import numpy
-import pandas
+            pass
+    # MERGE-BROKEN: pass
+# MERGE-BROKEN: import pandas
             
             monitor = MonitoringSystem({})
             
             if hasattr(monitor, 'check_system_health'):
-                health = monitor.check_system_health()
+                    health = monitor.check_system_health()
                     assert health is not None
             if hasattr(monitor, 'get_resource_usage'):
-                usage = monitor.get_resource_usage()
+                    usage = monitor.get_resource_usage()
                     assert usage is not None
         except ImportError:
             pytest.skip("Module not available")

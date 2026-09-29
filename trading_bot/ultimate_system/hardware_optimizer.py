@@ -10,6 +10,7 @@ Optimizes system performance based on available hardware:
 5. Power-efficient operation modes
 """
 
+import warnings
 import asyncio
 import logging
 import os
@@ -119,6 +120,7 @@ class HardwareOptimizer:
     """
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("HardwareOptimizer is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Performance mode

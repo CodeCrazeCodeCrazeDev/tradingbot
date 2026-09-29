@@ -14,6 +14,7 @@ Author: Elite Trading Bot
 Version: 1.0.0
 """
 
+import warnings
 import asyncio
 import logging
 from dataclasses import dataclass, field
@@ -120,6 +121,7 @@ class IBWrapper(EWrapper if IB_AVAILABLE else object):
     """IB API Wrapper for handling callbacks"""
     
     def __init__(self):
+        warnings.warn("IBWrapper is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         if IB_AVAILABLE:
             super().__init__()
         

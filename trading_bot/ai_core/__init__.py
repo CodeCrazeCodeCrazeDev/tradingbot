@@ -1,23 +1,6 @@
-"""
-Ai Core Module
-============================================================
+"""AI Core package - minimal orchestration surface."""
 
-Auto-generated integration file.
-"""
-
-# orchestrator
 try:
-    from .orchestrator import (
-        AIOrchestrator,
-    )
-except ImportError as e:
-    # orchestrator not available
+    from .orchestrator import AIOrchestrator  # noqa: F401
+except ImportError:
     pass
-
-__all__ = [
-    'AIOrchestrator',
-    'AICoreOrchestrator',
-]
-
-# Alias for backward compatibility
-AICoreOrchestrator = AIOrchestrator

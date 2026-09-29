@@ -182,7 +182,7 @@ class PlotCodeVisualTester:
                 # Find and click element like a human would
                 clickable = self.driver.find_element(By.CSS_SELECTOR, element)
                 self.driver.execute_script("arguments[0].scrollIntoView();", clickable)
-                time.sleep(0.5)  # Human-like pause
+                await asyncio.sleep(0.5)  # Human-like pause
                 clickable.click()
                 
             elif action == 'type':
@@ -192,7 +192,7 @@ class PlotCodeVisualTester:
                 text = interaction.get('text', '')
                 for char in text:
                     input_field.send_keys(char)
-                    time.sleep(0.05)  # Human typing speed
+                    await asyncio.sleep(0.05)  # Human typing speed
                     
             elif action == 'hover':
                 # Hover over element

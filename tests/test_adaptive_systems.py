@@ -5,6 +5,14 @@ import pandas as pd
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
+# Hoisted from in-def imports (merge repair: names were bound in
+# fixture scope while sibling methods reference them module-wide)
+try:
+    from trading_bot.adaptive_systems import adaptive_learning, adaptive_risk, advanced_pattern_recognition, correlation_analyzer, ensemble_learning, feedback_loops, liquidity_provider, market_maker, market_microstructure, market_regime, master_controller, meta_learning, order_flow_analyzer, parameter_optimizer, real_time_sentiment, regime_detector, self_improvement, sentiment_analyzer, strategy_selector, system_health, volatility_analyzer
+except ImportError:
+    pass
+
+
 
 class TestAdaptiveLearning:
     """Tests for adaptive_learning module."""
@@ -253,9 +261,7 @@ class TestVolatilityAnalyzer:
         """Test module can be imported."""
 
         from trading_bot.adaptive_systems import volatility_analyzer
-import numpy
-import pandas
-assert volatility_analyzer is not None
+        assert volatility_analyzer is not None
 
 
 

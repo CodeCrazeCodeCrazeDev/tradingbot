@@ -26,8 +26,7 @@ class TestInstitutionalInit:
         """Test module can be imported."""
 
         from trading_bot import institutional
-import numpy
-assert institutional is not None
+        assert institutional is not None
 
 
 

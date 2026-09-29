@@ -1,0 +1,991 @@
+{
+  "checksum": "7ba4c9125870080a69ec725050a4a12bd75c9db5ccc54de16f7e49c95eb0b075",
+  "memory": {
+    "task_result_0732a754-6a6b-4020-a9d6-c5740b590015": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.974170",
+      "key": "task_result_0732a754-6a6b-4020-a9d6-c5740b590015",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.974171",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_0c79082a-6dd8-439f-bc81-9a321e8df560": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.977307",
+      "key": "task_result_0c79082a-6dd8-439f-bc81-9a321e8df560",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.977307",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_10e050c9-60c2-4d84-ac45-ac9fb5f0a24d": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.968733",
+      "key": "task_result_10e050c9-60c2-4d84-ac45-ac9fb5f0a24d",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.968734",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_10ec652b-1ca3-46d8-9644-0235ae0311b2": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.998840",
+      "key": "task_result_10ec652b-1ca3-46d8-9644-0235ae0311b2",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.998841",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_12bb7fb4-62ee-4e4a-a946-e4bfa8cdb403": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.972221",
+      "key": "task_result_12bb7fb4-62ee-4e4a-a946-e4bfa8cdb403",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.972221",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_14380155-28e4-46fb-97ab-b7a279ba4d44": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.981598",
+      "key": "task_result_14380155-28e4-46fb-97ab-b7a279ba4d44",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.981598",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_162f5cfa-eed0-4199-960e-845f2bc525aa": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.979709",
+      "key": "task_result_162f5cfa-eed0-4199-960e-845f2bc525aa",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.979710",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_2225828a-3a27-4e8b-8407-1e1801e9e361": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.987042",
+      "key": "task_result_2225828a-3a27-4e8b-8407-1e1801e9e361",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.987043",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_222b5b8a-4cc4-4d88-93b4-a9a213e2716f": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.996913",
+      "key": "task_result_222b5b8a-4cc4-4d88-93b4-a9a213e2716f",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.996914",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_2282857f-4cf0-4539-8bb8-e1bff028bd24": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.989455",
+      "key": "task_result_2282857f-4cf0-4539-8bb8-e1bff028bd24",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.989455",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_24c3f2f9-631f-4e41-a226-55956f1eba08": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.973144",
+      "key": "task_result_24c3f2f9-631f-4e41-a226-55956f1eba08",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.973145",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_2ef642b6-1889-436c-8b53-839ceacfae23": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.997839",
+      "key": "task_result_2ef642b6-1889-436c-8b53-839ceacfae23",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.997840",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_310bc254-6a8f-4853-95f6-f246294fab06": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.976068",
+      "key": "task_result_310bc254-6a8f-4853-95f6-f246294fab06",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.976068",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_35ade154-9b12-468e-83a5-70ecaaa6bcc2": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.993334",
+      "key": "task_result_35ade154-9b12-468e-83a5-70ecaaa6bcc2",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.993335",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_3652fb54-8c5f-4ca1-941b-4a33f36348c0": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.984577",
+      "key": "task_result_3652fb54-8c5f-4ca1-941b-4a33f36348c0",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.984578",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_376886fa-0afe-4bc6-9f50-c57cf0086d73": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.995838",
+      "key": "task_result_376886fa-0afe-4bc6-9f50-c57cf0086d73",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.995838",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_38f764dc-e2a8-492e-9ae5-601807079873": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.998329",
+      "key": "task_result_38f764dc-e2a8-492e-9ae5-601807079873",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.998329",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_3b423e5b-25d8-4049-ac35-f6b8dcc43cee": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.982687",
+      "key": "task_result_3b423e5b-25d8-4049-ac35-f6b8dcc43cee",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.982687",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_4a8508fb-7511-4c9d-88fe-48047834f2bb": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.970149",
+      "key": "task_result_4a8508fb-7511-4c9d-88fe-48047834f2bb",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.970150",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_50e73606-500b-4086-961c-ffe305c1bb9c": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.990932",
+      "key": "task_result_50e73606-500b-4086-961c-ffe305c1bb9c",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.990933",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_5210d9f3-dc16-4470-93ce-b9af336b656f": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.994775",
+      "key": "task_result_5210d9f3-dc16-4470-93ce-b9af336b656f",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.994776",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_5b898e50-554e-4fdf-9bc4-16de97982adb": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.985915",
+      "key": "task_result_5b898e50-554e-4fdf-9bc4-16de97982adb",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.985915",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_5ec8cf93-ec1c-42bc-8372-22624fa8e87d": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.984073",
+      "key": "task_result_5ec8cf93-ec1c-42bc-8372-22624fa8e87d",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.984074",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_61402cea-34fb-4b67-abce-21055ae78afc": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.980209",
+      "key": "task_result_61402cea-34fb-4b67-abce-21055ae78afc",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.980210",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_719b4c64-a019-4213-bba1-aafbb196ec1f": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.972677",
+      "key": "task_result_719b4c64-a019-4213-bba1-aafbb196ec1f",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.972677",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_7765b3e7-fd8a-476f-a464-6a686663672b": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.983660",
+      "key": "task_result_7765b3e7-fd8a-476f-a464-6a686663672b",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.983661",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_7902a8d0-1ff5-4cd6-9a91-92ef2b25c9e7": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.982137",
+      "key": "task_result_7902a8d0-1ff5-4cd6-9a91-92ef2b25c9e7",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.982138",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_7c26198a-b944-4174-a268-b8c81dbcaf53": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.987563",
+      "key": "task_result_7c26198a-b944-4174-a268-b8c81dbcaf53",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.987564",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_7cbab4cb-99bf-4887-992b-769e1e0fa6d8": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.993771",
+      "key": "task_result_7cbab4cb-99bf-4887-992b-769e1e0fa6d8",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.993771",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_7e23df00-2197-4f56-ae91-0673a1f56a64": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.969230",
+      "key": "task_result_7e23df00-2197-4f56-ae91-0673a1f56a64",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.969230",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_841c96b0-b973-4692-8d36-eebe7f456e38": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.992439",
+      "key": "task_result_841c96b0-b973-4692-8d36-eebe7f456e38",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.992440",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_88402461-52de-4ef4-bc97-ce35167dd4d8": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.970697",
+      "key": "task_result_88402461-52de-4ef4-bc97-ce35167dd4d8",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.970697",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_891f43f7-5b8f-4380-b6a3-6a4e274a19ae": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.971176",
+      "key": "task_result_891f43f7-5b8f-4380-b6a3-6a4e274a19ae",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.971176",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_89de04dd-7ca4-4dcf-a80c-9bbfaf0340d4": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.983199",
+      "key": "task_result_89de04dd-7ca4-4dcf-a80c-9bbfaf0340d4",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.983199",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_8fa5fd05-c65f-4178-9e30-daad7ba939a3": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.997418",
+      "key": "task_result_8fa5fd05-c65f-4178-9e30-daad7ba939a3",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.997419",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_94ab1aeb-ce33-494c-a778-4e186cf417f4": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.973698",
+      "key": "task_result_94ab1aeb-ce33-494c-a778-4e186cf417f4",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.973699",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_99823829-4776-475b-b1c6-5fef0110a759": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.991844",
+      "key": "task_result_99823829-4776-475b-b1c6-5fef0110a759",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.991844",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_9bbc61fd-b480-4392-8967-d523659b289d": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.984994",
+      "key": "task_result_9bbc61fd-b480-4392-8967-d523659b289d",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.984995",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_9e598ea2-5ed6-47ec-b900-af7b9c55ca8d": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.989915",
+      "key": "task_result_9e598ea2-5ed6-47ec-b900-af7b9c55ca8d",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.989915",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_a13c6278-1af9-490b-ae12-c9ed4754b734": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.996395",
+      "key": "task_result_a13c6278-1af9-490b-ae12-c9ed4754b734",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.996395",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_a1994c0b-9313-44ac-841c-5c76c8ddc2bf": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.969692",
+      "key": "task_result_a1994c0b-9313-44ac-841c-5c76c8ddc2bf",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.969692",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_b1347743-b09a-4a9d-b228-d16e0227a35d": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.981086",
+      "key": "task_result_b1347743-b09a-4a9d-b228-d16e0227a35d",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.981086",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_b1a0c8f4-2f00-4ef3-9099-bb99940318ba": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.985498",
+      "key": "task_result_b1a0c8f4-2f00-4ef3-9099-bb99940318ba",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.985499",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_b7158b9d-f260-4278-8ac9-28447c2c2eff": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.977741",
+      "key": "task_result_b7158b9d-f260-4278-8ac9-28447c2c2eff",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.977742",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_b8b32324-27ce-4fff-949b-d91f303c1303": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.991433",
+      "key": "task_result_b8b32324-27ce-4fff-949b-d91f303c1303",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.991433",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_ba35e22c-eb02-45ef-817c-7d1c1886bb1b": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.978231",
+      "key": "task_result_ba35e22c-eb02-45ef-817c-7d1c1886bb1b",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.978231",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_ba7df7fd-c53d-467d-8b51-fc5fe3af748b": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.975198",
+      "key": "task_result_ba7df7fd-c53d-467d-8b51-fc5fe3af748b",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.975198",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_bd8b4710-858c-4526-9ebb-71422e60c13a": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.986495",
+      "key": "task_result_bd8b4710-858c-4526-9ebb-71422e60c13a",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.986496",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_be8a64c6-af5a-4fc0-b80d-6c92e3da856e": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.992853",
+      "key": "task_result_be8a64c6-af5a-4fc0-b80d-6c92e3da856e",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.992853",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_c1d7dc65-11e6-4cd2-b5ac-1338960eb85d": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.971632",
+      "key": "task_result_c1d7dc65-11e6-4cd2-b5ac-1338960eb85d",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.971632",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_ca560f73-11d3-4208-a2e5-3e9baf404348": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.987979",
+      "key": "task_result_ca560f73-11d3-4208-a2e5-3e9baf404348",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.987979",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_ce5c50e6-2e25-4525-bf64-460bfbb1aa0b": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.980662",
+      "key": "task_result_ce5c50e6-2e25-4525-bf64-460bfbb1aa0b",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.980663",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_d9e91618-da76-4f72-9580-3360be34d9fb": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.974710",
+      "key": "task_result_d9e91618-da76-4f72-9580-3360be34d9fb",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.974710",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_ddbe1fda-a181-40c1-8ebd-521ddece0add": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.988480",
+      "key": "task_result_ddbe1fda-a181-40c1-8ebd-521ddece0add",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.988480",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_de833825-d445-4351-af62-fdcd9a9f7cbe": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.990496",
+      "key": "task_result_de833825-d445-4351-af62-fdcd9a9f7cbe",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.990497",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_dffbd7b1-8306-43f3-9f2b-f4a5fd47ad0d": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.968240",
+      "key": "task_result_dffbd7b1-8306-43f3-9f2b-f4a5fd47ad0d",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.968241",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_e2ae76cb-2a97-4423-b079-d167664b2ba8": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.994245",
+      "key": "task_result_e2ae76cb-2a97-4423-b079-d167664b2ba8",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.994245",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_ea2280c7-2e50-46f5-88d9-814d4ee6c041": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.979226",
+      "key": "task_result_ea2280c7-2e50-46f5-88d9-814d4ee6c041",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.979227",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_edefb9e8-4e4f-45a7-aedb-8eb17fbfb3b5": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.975647",
+      "key": "task_result_edefb9e8-4e4f-45a7-aedb-8eb17fbfb3b5",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.975647",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    },
+    "task_result_f8d65918-206d-4c4e-913c-01f93042d76d": {
+      "allowed_agents": [],
+      "created_at": "2026-07-05T21:26:24.995405",
+      "key": "task_result_f8d65918-206d-4c4e-913c-01f93042d76d",
+      "metadata": {},
+      "owner_id": "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "scope": "global",
+      "updated_at": "2026-07-05T21:26:24.995406",
+      "value": {
+        "recommendation": "hold",
+        "success": true,
+        "trend": "neutral",
+        "volatility": 0
+      },
+      "version": 1
+    }
+  },
+  "teams": {
+    "research_team": [
+      "3f56cec3-5b5a-440e-b8fd-5bab7102ba13"
+    ],
+    "safety_team": [
+      "constitutional_guardian_1_64141d10",
+      "25043c14-d7cb-49ff-92c9-205b4921e72a",
+      "36bf4bba-880b-4753-8717-5e6f799a4a83"
+    ],
+    "trading_team": [
+      "d11519e1-b637-4ea1-a0a2-3c4b2a12e2b7",
+      "1c06da94-1ad2-476f-bb47-0c0a7f5e0d2e",
+      "a5f748c3-52d9-4d4f-a541-a32500a30f11",
+      "volatility_agent",
+      "risk_manager",
+      "9e128dfe-e49a-4f54-845d-812ff5ebc115",
+      "market_maker",
+      "analyst_1_cea6d295",
+      "mean_reversion_agent",
+      "react_reasoner_1_862fee3b",
+      "ebfc2d6b-9f85-476c-ab25-4cfd1c27db39",
+      "trend_agent"
+    ]
+  },
+  "timestamp": "2026-07-05T21:26:25.972785",
+  "version": "2.0"
+}

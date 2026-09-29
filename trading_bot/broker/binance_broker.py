@@ -2,6 +2,7 @@
 Binance broker implementation for AlphaAlgo 2.0
 """
 
+import warnings
 import logging
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
@@ -34,6 +35,7 @@ class BinanceBroker(BrokerInterface):
         testnet: bool = True
     ):
         # Set appropriate base URL
+        warnings.warn("BinanceBroker is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         base_url = (
             "https://testnet.binance.vision/api"
             if testnet else

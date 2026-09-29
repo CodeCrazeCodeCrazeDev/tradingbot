@@ -1,4 +1,5 @@
 """
+import warnings
 from typing import List, Optional, Set
 AlphaAlgo V2 Paper Trading Broker
 
@@ -38,6 +39,7 @@ class PaperBroker(BaseBroker):
     """
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("PaperBroker is a legacy/quarantined component: capital path outside the canonical execution boundary. It carries no production authority.", DeprecationWarning, stacklevel=2)
         try:
             super().__init__(config)
             self._name = "paper"

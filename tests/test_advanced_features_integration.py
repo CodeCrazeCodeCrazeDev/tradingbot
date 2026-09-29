@@ -1,5 +1,7 @@
 """Comprehensive Integration Tests for Advanced Features.
 
+import numpy
+import pandas
 This module contains integration tests that verify all advanced features work
 seamlessly together and integrate properly with the existing trading bot system.
 """
@@ -63,59 +65,59 @@ class TestDataGenerator:
     def generate_market_data(periods: int = 1000, 
                            start_price: float = 100.0,
                            volatility: float = 0.02) -> pd.DataFrame:
-    pass
-        """Generate realistic OHLCV market data."""
-        np.random.seed(42)  # For reproducible tests
+                               pass
+        # MERGE-BROKEN: """Generate realistic OHLCV market data."""
+        # MERGE-BROKEN: np.random.seed(42)  # For reproducible tests
         
-        dates = pd.date_range(start='2024-01-01', periods=periods, freq='5min')
+        # MERGE-BROKEN: dates = pd.date_range(start='2024-01-01', periods=periods, freq='5min')
         
         # Generate price series with realistic patterns
-        returns = np.random.normal(0, volatility, periods)
+        # MERGE-BROKEN: returns = np.random.normal(0, volatility, periods)
         
         # Add some trend and mean reversion
-        trend = np.sin(np.arange(periods) * 0.01) * 0.001
-        returns += trend
+        # MERGE-BROKEN: trend = np.sin(np.arange(periods) * 0.01) * 0.001
+        # MERGE-BROKEN: returns += trend
         
         # Calculate prices
-        prices = [start_price]
-        for ret in returns[1:]:
-    pass
-            prices.append(prices[-1] * (1 + ret))
+        # MERGE-BROKEN: prices = [start_price]
+        # MERGE-BROKEN: for ret in returns[1:]:
+            # MERGE-BROKEN: pass
+            # MERGE-BROKEN: prices.append(prices[-1] * (1 + ret))
         
         # Generate OHLC from close prices
-        data = []
-        for i, close in enumerate(prices):
-            if i == 0:
-                open_price = close
-            else:
-                open_price = prices[i-1]
+        # MERGE-BROKEN: data = []
+        # MERGE-BROKEN: for i, close in enumerate(prices):
+            # MERGE-BROKEN: if i == 0:
+                # MERGE-BROKEN: open_price = close
+            # MERGE-BROKEN: else:
+                # MERGE-BROKEN: open_price = prices[i-1]
             
             # Generate realistic high/low
-            daily_range = abs(np.random.normal(0, volatility * close * 0.5))
-            high = max(open_price, close) + daily_range * 0.7
-            low = min(open_price, close) - daily_range * 0.7
+            # MERGE-BROKEN: daily_range = abs(np.random.normal(0, volatility * close * 0.5))
+            # MERGE-BROKEN: high = max(open_price, close) + daily_range * 0.7
+            # MERGE-BROKEN: low = min(open_price, close) - daily_range * 0.7
             
             # Generate volume with some correlation to price movement
-            volume_base = 1000000
-            volume_multiplier = 1 + abs(returns[i]) * 10
-            volume = int(volume_base * volume_multiplier * (1 + np.random.normal(0, 0.3)))
+            # MERGE-BROKEN: volume_base = 1000000
+            # MERGE-BROKEN: volume_multiplier = 1 + abs(returns[i]) * 10
+            # MERGE-BROKEN: volume = int(volume_base * volume_multiplier * (1 + np.random.normal(0, 0.3)))
             
-            data.append({
-                'timestamp': dates[i],
-                'open': open_price,
-                'high': high,
-                'low': low,
-                'close': close,
-                'volume': max(volume, 100000)  # Minimum volume
-            })
+            # MERGE-BROKEN: data.append({
+                # MERGE-BROKEN: 'timestamp': dates[i],
+                # MERGE-BROKEN: 'open': open_price,
+                # MERGE-BROKEN: 'high': high,
+                # MERGE-BROKEN: 'low': low,
+                # MERGE-BROKEN: 'close': close,
+                # MERGE-BROKEN: 'volume': max(volume, 100000)  # Minimum volume
+            # MERGE-BROKEN: })
         
-        df = pd.DataFrame(data)
-        df.set_index('timestamp', inplace=True)
-        return df
+        # MERGE-BROKEN: df = pd.DataFrame(data)
+        # MERGE-BROKEN: df.set_index('timestamp', inplace=True)
+        # MERGE-BROKEN: return df
     
     @staticmethod
     def generate_order_book_data(levels: int = 20) -> dict:
-    pass
+        pass
         """Generate realistic order book data."""
         base_price = 100.0
         spread = 0.01
@@ -141,7 +143,7 @@ class TestDataGenerator:
     
     @staticmethod
     def generate_trade_data(num_trades: int = 100) -> pd.DataFrame:
-    pass
+        pass
         """Generate realistic trade data."""
         np.random.seed(42)
         
@@ -523,9 +525,6 @@ class TestErrorHandlingAndRobustness:
         """Test systems don't have memory leaks with repeated operations."""
         import psutil
         import os
-from typing import Set
-import numpy
-import pandas
         
         process = psutil.Process(os.getpid())
         initial_memory = process.memory_info().rss

@@ -3,6 +3,7 @@ Binance Exchange Connector
 Real-time data and trading for Binance
 """
 
+import warnings
 import asyncio
 try:
     import aiohttp
@@ -33,6 +34,7 @@ class BinanceConnector(BaseConnector):
     """
     
     def __init__(self, config: Dict):
+        warnings.warn("BinanceConnector is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         
         # Binance-specific endpoints

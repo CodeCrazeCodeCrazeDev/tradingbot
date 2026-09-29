@@ -16,6 +16,7 @@ This module provides:
 6. Audit trail of all activations
 """
 
+import warnings
 import asyncio
 import logging
 import threading
@@ -147,6 +148,7 @@ class MultiLayerKillSwitch:
             on_activation: Callback when kill switch activates
             on_position_closed: Callback when position is closed
         """
+        warnings.warn("MultiLayerKillSwitch is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.broker = broker_adapter
         self.db_path = Path(db_path)
         self.check_interval = check_interval

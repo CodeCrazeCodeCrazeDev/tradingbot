@@ -7,27 +7,40 @@ All agents in this module are controlled by the Hivemind.
 
 # Import all agent components
 try:
-    from .orchestrator import AgentOrchestrator as AICoreOrchestrator
+    from .orchestrator import (
+        AgentOrchestrator as AICoreOrchestrator,
+        AgentRole,
+        DecisionStatus,
+        TradingContext,
+        TradingProposal,
+        ValidationResult,
+        TradingDecision,
+        BaseAgent,
+        PlannerAgent as AICorePlannerAgent,
+        VerifierAgent as AICoreVerifierAgent,
+        SafetyValidatorAgent,
+        ExecutorAgent as AICoreExecutorAgent,
+    )
 except ImportError:
     pass
 
 try:
-    from .executor_agent import ExecutorAgent
+    from .executor_agent import ExecutorAgent, create_executor_agent
 except ImportError:
     pass
 
 try:
-    from .planner_agent import PlannerAgent
+    from .planner_agent import PlannerAgent, create_planner_agent
 except ImportError:
     pass
 
 try:
-    from .verifier_agent import VerifierAgent
+    from .verifier_agent import VerifierAgent, create_verifier_agent
 except ImportError:
     pass
 
 try:
-    from .safety_validator import SafetyValidator
+    from .safety_validator import SafetyValidator, create_safety_validator
 except ImportError:
     pass
 
@@ -109,8 +122,23 @@ __all__ = [
     'HivemindAICoreAdapter',
     'AgentOrchestrator',
     'AICoreOrchestrator',
+    'AgentRole',
+    'DecisionStatus',
+    'TradingContext',
+    'TradingProposal',
+    'ValidationResult',
+    'TradingDecision',
+    'BaseAgent',
+    'AICorePlannerAgent',
+    'AICoreVerifierAgent',
+    'SafetyValidatorAgent',
+    'AICoreExecutorAgent',
     'ExecutorAgent',
+    'create_executor_agent',
     'PlannerAgent',
+    'create_planner_agent',
     'VerifierAgent',
+    'create_verifier_agent',
     'SafetyValidator',
+    'create_safety_validator',
 ]

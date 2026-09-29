@@ -6,6 +6,7 @@ This module provides health checking for all components.
 Version: 1.0.0
 """
 
+import warnings
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, List, Optional
@@ -73,6 +74,7 @@ class HealthChecker:
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("HealthChecker is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Health check functions

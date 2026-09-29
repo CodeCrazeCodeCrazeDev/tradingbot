@@ -11,6 +11,11 @@ from dataclasses import dataclass, field
 from enum import Enum
 import uuid
 import json
+import hashlib
+from ..core.serialization.canonical import AlphaAlgoEncoder, serialize
+import os
+import shutil
+from pathlib import Path
 from collections import defaultdict
 
 logger = logging.getLogger(__name__)
@@ -137,6 +142,11 @@ class CoordinationLayer:
     def register_handler(self, agent_id: str, handler: Callable):
         """Register message handler for an agent"""
         self.message_handlers[agent_id] = handler
+
+    def assign_team_lead(self, team_name: str, agent_id: str):
+        """Assign an agent as the lead for a team"""
+        logger.info(f"Agent {agent_id} assigned as lead for team {team_name}")
+        # In a real implementation, this would update routing logic or permissions
     
     async def _deliver_message(self, message: Message):
         """Deliver message to recipient"""
@@ -211,12 +221,176 @@ class SharedMemory:
     └─────────────────────────────────────────────────────┘
     """
     
-    def __init__(self):
+    STORAGE_VERSION = "2.0"
+
+    def __init__(self, storage_path: Optional[str] = None, coordination_layer=None):
         self.memory: Dict[str, SharedMemoryEntry] = {}
         self.teams: Dict[str, Set[str]] = defaultdict(set)  # team_name -> agent_ids
         self.locks: Dict[str, asyncio.Lock] = {}
+        self.storage_path = Path(storage_path) if storage_path else None
+        self.coordination_layer = coordination_layer
+        self.persistence_lock = asyncio.Lock()
+
+        if self.storage_path:
+            self.storage_path.mkdir(parents=True, exist_ok=True)
+            (self.storage_path / 'backups').mkdir(exist_ok=True)
+
+        logger.info(f"Shared Memory initialized (storage: {self.storage_path})")
+
+    async def save(self):
+        """
+        Robust Atomic Persistence Protocol:
+        1. Memory Snapshot -> 2. SHA-256 Checksum -> 3. Atomic Write (temp + rename) -> 4. Backup
+        """
+        if not self.storage_path:
+            return
+
+        async with self.persistence_lock:
+            try:
+                # 1. Memory Snapshot
+                memory_data = {}
+                for key, entry in self.memory.items():
+                    memory_data[key] = {
+                        'key': entry.key,
+                        'value': entry.value,
+                        'scope': entry.scope.value,
+                        'owner_id': entry.owner_id,
+                        'allowed_agents': list(entry.allowed_agents),
+                        'created_at': entry.created_at.isoformat(),
+                        'updated_at': entry.updated_at.isoformat(),
+                        'version': entry.version,
+                        'metadata': entry.metadata
+                    }
+
+                teams_data = {name: list(agents) for name, agents in self.teams.items()}
+
+                payload = {
+                    'version': self.STORAGE_VERSION,
+                    'timestamp': datetime.now().isoformat(),
+                    'memory': memory_data,
+                    'teams': teams_data
+                }
+
+                # Use canonical serialization
+                content = serialize(payload).encode('utf-8')
+
+                # 2. SHA-256 Checksum
+                checksum = hashlib.sha256(content).hexdigest()
+                payload['checksum'] = checksum
+
+                # Re-serialize with checksum
+                final_content = serialize(payload).encode('utf-8')
+
+                # 3. Atomic Write (temp file + fsync + rename)
+                data_file = self.storage_path / 'shared_memory.json'
+                temp_file = self.storage_path / 'shared_memory.json.tmp'
+
+                with open(temp_file, 'wb') as f:
+                    f.write(final_content)
+                    f.flush()
+                    os.fsync(f.fileno())
+
+                # 4. Backup of last known good state
+                if data_file.exists():
+                    backup_path = self.storage_path / 'backups' / f"shared_memory_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                    shutil.copy2(data_file, backup_path)
+
+                    # Keep only last 5 backups
+                    backups = sorted((self.storage_path / 'backups').glob('shared_memory_*.json'))
+                    if len(backups) > 5:
+                        for old_backup in backups[:-5]:
+                            old_backup.unlink()
+
+                # Atomic rename
+                temp_file.replace(data_file)
+
+                logger.info(f"Shared memory persisted atomically (checksum: {checksum[:8]})")
+
+            except Exception as e:
+                logger.error(f"Critical persistence failure: {e}")
+                raise
+
+    async def load(self):
+        """
+        Load shared memory with validation and recovery:
+        1. Load File -> 2. Verify Checksum -> 3. Schema Validation -> 4. Recovery if Corrupt
+        """
+        if not self.storage_path:
+            return
+
+        data_file = self.storage_path / 'shared_memory.json'
+        if not data_file.exists():
+            return
+
+        try:
+            with open(data_file, 'rb') as f:
+                raw_content = f.read()
+
+            payload = json.loads(raw_content)
+
+            # 1. Verify Checksum
+            provided_checksum = payload.pop('checksum', None)
+            if provided_checksum:
+                # Re-serialize without checksum field to verify
+                content_to_verify = serialize(payload).encode('utf-8')
+                actual_checksum = hashlib.sha256(content_to_verify).hexdigest()
+
+                if actual_checksum != provided_checksum:
+                    logger.error(f"Persistence corruption detected! Checksum mismatch.")
+                    await self._recover_from_backup()
+                    return
+
+            # 2. Schema Validation / Version Check
+            version = payload.get('version')
+            if version != self.STORAGE_VERSION:
+                logger.warning(f"Storage version mismatch: {version} vs {self.STORAGE_VERSION}. Attempting migration.")
+
+            # 3. Populate Memory
+            memory_data = payload.get('memory', {})
+            for key, data in memory_data.items():
+                entry = SharedMemoryEntry(
+                    key=data['key'],
+                    value=data['value'],
+                    scope=SharedMemoryScope(data['scope']),
+                    owner_id=data['owner_id'],
+                    allowed_agents=set(data['allowed_agents']),
+                    created_at=datetime.fromisoformat(data['created_at']),
+                    updated_at=datetime.fromisoformat(data['updated_at']),
+                    version=data['version'],
+                    metadata=data['metadata']
+                )
+                self.memory[key] = entry
+
+            # 4. Populate Teams
+            teams_data = payload.get('teams', {})
+            for name, agents in teams_data.items():
+                self.teams[name] = set(agents)
+
+            logger.info(f"Loaded {len(self.memory)} shared memory entries and {len(self.teams)} teams")
+
+        except Exception as e:
+            logger.error(f"Error loading shared memory: {e}")
+            await self._recover_from_backup()
+
+    async def _recover_from_backup(self):
+        """Attempt to recover from the latest valid backup"""
+        logger.info("Attempting crash recovery from backup...")
+        backups = sorted((self.storage_path / 'backups').glob('shared_memory_*.json'), reverse=True)
         
-        logger.info("Shared Memory initialized")
+        for backup_path in backups:
+            try:
+                # Copy backup to main data file and retry load
+                shutil.copy2(backup_path, self.storage_path / 'shared_memory.json')
+                # Clear current state and retry load
+                self.memory.clear()
+                self.teams.clear()
+                await self.load()
+                logger.info(f"Successfully recovered from backup: {backup_path.name}")
+                return
+            except Exception as e:
+                logger.warning(f"Backup {backup_path.name} was also invalid: {e}")
+
+        logger.critical("Failed to recover shared memory from any backup!")
     
     async def write(
         self,
@@ -261,17 +435,22 @@ class SharedMemory:
         agent_id: str
     ) -> Optional[Any]:
         """Read from shared memory"""
-        if key not in self.memory:
-            return None
-        
-        entry = self.memory[key]
-        
-        # Check access permissions
-        if not self._check_access(entry, agent_id):
-            logger.warning(f"Access denied: {agent_id} cannot read {key}")
-            return None
-        
-        return entry.value
+        # Audit fix: ensure stale reads are prevented by using the same lock
+        if key not in self.locks:
+            self.locks[key] = asyncio.Lock()
+
+        async with self.locks[key]:
+            if key not in self.memory:
+                return None
+
+            entry = self.memory[key]
+
+            # Check access permissions
+            if not self._check_access(entry, agent_id):
+                logger.warning(f"Access denied: {agent_id} cannot read {key}")
+                return None
+
+            return entry.value
     
     def _check_access(self, entry: SharedMemoryEntry, agent_id: str) -> bool:
         """Check if agent has access to entry"""
@@ -294,6 +473,11 @@ class SharedMemory:
         """Create a team for shared memory access"""
         self.teams[team_name] = agent_ids
         logger.info(f"Team '{team_name}' created with {len(agent_ids)} agents")
+
+        # Update coordination layer lead if possible
+        if self.coordination_layer and agent_ids:
+            # Simple heuristic: first agent is lead
+            self.coordination_layer.assign_team_lead(team_name, list(agent_ids)[0])
     
     def add_to_team(self, team_name: str, agent_id: str):
         """Add agent to team"""

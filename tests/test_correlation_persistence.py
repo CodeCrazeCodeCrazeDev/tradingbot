@@ -105,41 +105,39 @@ class TestCorrelationPersistence:
         
         # Modify metadata to make it old
         import json
-from enum import auto
-import numpy
-import pandas
-with open(persistence.metadata_file, 'r') as f:
+
+        with open(persistence.metadata_file, 'r') as f:
             metadata = json.load(f)
-        
-old_time = (datetime.now() - timedelta(hours=48)).isoformat()
-metadata['timestamp'] = old_time
-        
-with open(persistence.metadata_file, 'w') as f:
+
+        old_time = (datetime.now() - timedelta(hours=48)).isoformat()
+        metadata['timestamp'] = old_time
+
+        with open(persistence.metadata_file, 'w') as f:
             json.dump(metadata, f)
         
         # Try to load - should reject old state
-loaded_matrix, loaded_history, metadata = persistence.load_correlation_state()
-        
+        loaded_matrix, loaded_history, metadata = persistence.load_correlation_state()
+
         # Should return None or empty for old state
         assert loaded_matrix is None or loaded_matrix.empty
-    
+
     def test_load_nonexistent_state(self, persistence):
         """Test loading when no state exists"""
         loaded_matrix, loaded_history, metadata = persistence.load_correlation_state()
-        
+
         assert loaded_matrix is None or loaded_matrix.empty
         assert loaded_history is None or len(loaded_history) == 0
         assert metadata is None or len(metadata) == 0
-    
+
     def test_save_empty_matrix(self, persistence):
         """Test saving empty correlation matrix"""
         matrix = pd.DataFrame()
         price_history = {}
-        
+
         result = persistence.save_correlation_state(matrix, price_history)
-        
+
         # Should handle gracefully
-        assert result is True or result is False
+        assert isinstance(result, bool)
 
 
 class TestEnhancedCorrelationManager:

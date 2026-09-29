@@ -59,6 +59,7 @@ Safety Mechanisms:
 4. Automated safety boundaries
 """
 
+import warnings
 import asyncio
 import logging
 from typing import Dict, List, Optional, Any, Callable, Set, Tuple
@@ -264,6 +265,7 @@ class AlphaAlgoMetaSystem:
         sandbox_tester: Optional[Any] = None,
         config: Optional[Dict] = None
     ):
+        warnings.warn("AlphaAlgoMetaSystem is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Core systems
@@ -513,6 +515,15 @@ class AlphaAlgoMetaSystem:
             BottleneckType.ALPHA_DECAY: "Crowding or market structure changes",
         }
         return causes.get(bottleneck_type, "Unknown - requires investigation")
+
+
+    # Continued in Part 2...
+    """
+    Continuation of AlphaAlgo Meta-System
+    Part 2: Improvement Generation, Sandbox Validation, and Safety Controls
+    """
+
+    # Continuation of AlphaAlgoMetaSystem class from Part 1
 
     # ==================== Improvement Proposal Generation ====================
     

@@ -519,55 +519,9 @@ def create_alphaalgo_system(
 
 
 if __name__ == "__main__":
-    # Demo
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    raise SystemExit(
+        "trading_bot/ml/offline_rl/alphaalgo_autonomous_system.py is QUARANTINED: standalone execution of this module is a "
+        "parallel capital/loop path outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
     )
-    
-    print("\n" + "="*80)
-    logger.info("ALPHAALGO AUTONOMOUS SYSTEM DEMO")
-    print("="*80)
-    
-    # Create system
-    system = create_alphaalgo_system(state_dim=20, action_dim=3)
-    
-    # Start system
-    system.start()
-    
-    # Simulate trading
-    logger.info("\nSimulating live trading...")
-    for i in range(2000):
-        state = np.random.randn(20)
-        action = system.get_action(state)
-        reward = np.random.randn() * 0.1
-        next_state = np.random.randn(20)
-        done = np.random.rand() < 0.05
-        
-        system.collect_trade_experience(state, action, reward, next_state, done)
-        
-        if (i + 1) % 500 == 0:
-            logger.info(f"  Collected {i+1} experiences...")
-    
-    # Force training
-    logger.info("\nForcing training cycle...")
-    system.force_training()
-    
-    # Get status
-    logger.info("\nSystem Status:")
-    status = system.get_status()
-    for key, value in status.items():
-        logger.info(f"  {key}: {value}")
-    
-    # Export metrics
-    logger.info("\nExporting metrics...")
-    metrics_df = system.export_metrics()
-    print(metrics_df.to_string())
-    
-    # Stop system
-    logger.info("\nStopping system...")
-    system.stop()
-    
-    print("\n" + "="*80)
-    logger.info("DEMO COMPLETE!")
-    print("="*80)

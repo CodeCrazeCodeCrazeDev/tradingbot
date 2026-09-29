@@ -299,7 +299,8 @@ class DiskCache:
             File path
         """
         # Create a safe filename from the key
-        safe_key = hashlib.md5(key.encode()).hexdigest()
+        # SEC-04: Upgrade from MD5 to SHA-256
+        safe_key = hashlib.sha256(key.encode()).hexdigest()
         return os.path.join(self.cache_dir, f"{safe_key}.cache")
     
     def get(self, key: str) -> Optional[Any]:
@@ -329,6 +330,7 @@ class DiskCache:
         
         # Check if file exists
         if not os.path.exists(file_path):
+            # Remove from index if file missing
             if key in self.index:
                 del self.index[key]
                 self._save_index()
@@ -336,6 +338,7 @@ class DiskCache:
 
         try:
             # Load from file
+            # SEC-01: Use JSON instead of unsafe Pickle
             with open(file_path, 'r') as f:
                 value = json.load(f)
 
@@ -347,8 +350,8 @@ class DiskCache:
             return value
 
         except Exception as e:
-                logger.error(f"Error loading cache item {key}: {str(e)}")
-                return None
+            logger.error(f"Error loading cache item {key}: {str(e)}")
+            return None
 
     def set(self, 
             key: str, 
@@ -382,6 +385,7 @@ class DiskCache:
         
         try:
             # Save to file
+            # SEC-01: Use JSON instead of unsafe Pickle
             with open(file_path, 'w') as f:
                 json.dump(value, f)
             
@@ -802,6 +806,7 @@ class CacheManager:
         
         # Use hash for shorter keys
         if len(key) > 250:
-            key = hashlib.md5(key.encode()).hexdigest()
+            # SEC-04: Upgrade from MD5 to SHA-256
+            key = hashlib.sha256(key.encode()).hexdigest()
         
         return key

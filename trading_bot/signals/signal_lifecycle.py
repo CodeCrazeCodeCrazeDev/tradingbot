@@ -6,6 +6,7 @@ Ensures signals expire and confidence degrades over time to prevent
 trading on stale information. Critical for production safety.
 """
 
+import warnings
 import time
 from typing import Any, Callable, Dict, List, Optional
 from dataclasses import dataclass, field
@@ -216,6 +217,7 @@ class SignalLifecycleManager:
             cleanup_interval_seconds: How often to clean up expired signals
             auto_cleanup: Enable automatic cleanup thread
         """
+        warnings.warn("SignalLifecycleManager is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         try:
             self.default_ttl = default_ttl_seconds
             self.cleanup_interval = cleanup_interval_seconds
@@ -586,3 +588,6 @@ if __name__ == "__main__":
     
     # Stop cleanup thread
     manager.stop_cleanup_thread()
+
+# Backward-compatible alias: legacy tests expect the short name.
+SignalLifecycle = SignalLifecycleManager

@@ -469,12 +469,9 @@ async def main():
     await bot.run()
 
 
-if __name__ == '__main__':
-    import os
-    import torch
-    from learning_bot import TradeStatus
-    
-    os.makedirs('logs', exist_ok=True)
-    os.makedirs('knowledge', exist_ok=True)
-    
-    asyncio.run(main())
+if __name__ == "__main__":
+    raise SystemExit(
+        "scripts/utilities/alphaalgo_2_0.py is QUARANTINED: standalone launchers, watchdogs, supervisors, "
+        "and simulators are parallel loop/capital paths outside the canonical "
+        "runtime. Use 'python main.py --mode paper'."
+    )

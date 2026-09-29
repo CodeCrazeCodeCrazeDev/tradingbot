@@ -509,6 +509,10 @@ async def main():
     return 0 if success else 1
 
 
-if __name__ == '__main__':
-    exit_code = asyncio.run(main())
-    sys.exit(exit_code)
+if __name__ == "__main__":
+    raise SystemExit(
+        "scripts/utilities/COMPREHENSIVE_TEST_SUITE.py is QUARANTINED: this standalone script touches "
+        "capital-capable modules (brokers/execution) outside the canonical "
+        "runtime boundary. Use 'python main.py --mode paper'."
+    )
+

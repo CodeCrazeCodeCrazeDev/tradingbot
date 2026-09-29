@@ -14,6 +14,10 @@ import tempfile
 import os
 import json
 import sys
+from trading_bot.advanced_features.quantum_computing import QuantumPortfolioOptimizer
+from trading_bot.blockchain.defi_integration import DeFiYieldOptimizer
+from trading_bot.institutional.bloomberg_bridge import BloombergBridge
+from trading_bot.autonomous.self_optimizing_engine import SelfOptimizingEngine
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -501,15 +505,12 @@ class TestBrainModules:
         """Test strategy selector."""
 
         from trading_bot.brain.strategy_selector import StrategySelector
-import numpy
-import pandas
-            
-selector = StrategySelector({})
-            
-if hasattr(selector, 'select'):
-                regime = 'trending'
-                strategy = selector.select(regime)
-                assert strategy is not None
+        selector = StrategySelector({})
+
+        if hasattr(selector, 'select'):
+            regime = 'trending'
+            strategy = selector.select(regime)
+            assert strategy is not None
 
 
 

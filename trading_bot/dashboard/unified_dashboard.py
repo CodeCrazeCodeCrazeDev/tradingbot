@@ -12,6 +12,7 @@ try:
     from dash import dcc, html, callback, Input, Output, State
 except ImportError:
     dash = None
+import warnings
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 import plotly.express as px
@@ -49,6 +50,7 @@ class UnifiedDashboard:
     
     def __init__(self, config: Dict = None):
         """Initialize the unified dashboard"""
+        warnings.warn("UnifiedDashboard is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Dashboard settings

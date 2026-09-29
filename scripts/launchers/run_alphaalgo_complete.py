@@ -790,10 +790,8 @@ async def main():
 
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        logger.info("Shutdown complete")
-    except Exception as e:
-        logger.error(f"Fatal error: {e}")
-        sys.exit(1)
+    raise SystemExit(
+        "run_alphaalgo_complete.py is QUARANTINED: standalone complete-system "
+        "runners with direct broker access are not supported entry points. "
+        "Use 'python main.py --mode paper'."
+    )

@@ -9,6 +9,7 @@ Author: AlphaAlgo Trading System
 Version: 1.0.0
 """
 
+import warnings
 import asyncio
 import subprocess
 import sys
@@ -170,6 +171,7 @@ class AutoDependencyInstaller:
     """
     
     def __init__(self, base_path: str = None, verbose: bool = True):
+        warnings.warn("AutoDependencyInstaller is a legacy/quarantined component: runtime dependency installation is a supply-chain path. It carries no production authority.", DeprecationWarning, stacklevel=2)
         if base_path is None:
             base_path = str(Path(__file__).parent)
         

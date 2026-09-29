@@ -14,6 +14,7 @@ Features:
 - Audit trail logging
 """
 
+import warnings
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum, auto
@@ -361,6 +362,7 @@ class UnifiedObservabilityHub:
     """
     
     def __init__(self, config: Optional[ObservabilityConfig] = None):
+        warnings.warn("UnifiedObservabilityHub is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or ObservabilityConfig()
         
         # Core components

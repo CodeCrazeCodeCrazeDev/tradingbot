@@ -1061,10 +1061,11 @@ class TestAdvancedBacktester:
     def test_run_backtest(self):
         """Test running backtest."""
         try:
-    pass
-import asyncio
-import numpy
-import pandas
+            pass
+    # MERGE-BROKEN: pass
+# MERGE-BROKEN: import asyncio
+# MERGE-BROKEN: import numpy
+# MERGE-BROKEN: import pandas
             
             backtester = AdvancedBacktester({})
             

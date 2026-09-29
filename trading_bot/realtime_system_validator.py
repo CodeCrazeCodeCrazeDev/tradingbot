@@ -17,6 +17,7 @@ Author: AlphaAlgo Trading System
 Version: 1.0.0
 """
 
+import warnings
 import psutil
 import asyncio
 import importlib
@@ -89,6 +90,7 @@ class RealTimeSystemValidator:
     """
     
     def __init__(self, base_path: str = None, verbose: bool = True):
+        warnings.warn("RealTimeSystemValidator is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         if base_path is None:
             base_path = str(Path(__file__).parent.parent)
         

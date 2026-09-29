@@ -3,6 +3,7 @@ Blockchain Trade Verification System
 Provides immutable verification and audit trail for trading decisions and executions
 """
 
+import warnings
 import hashlib
 import json
 import time
@@ -82,6 +83,7 @@ class TradeBlockchain:
     
     def __init__(self, difficulty=4):
         """Initialize the blockchain"""
+        warnings.warn("TradeBlockchain is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.chain = []
         self.difficulty = difficulty
         self.pending_transactions = []

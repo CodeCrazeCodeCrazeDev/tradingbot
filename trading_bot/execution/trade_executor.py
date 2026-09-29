@@ -3,6 +3,7 @@ Trade Executor Module - Compatibility Wrapper
 Provides unified interface for trade execution
 """
 
+import warnings
 import logging
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
@@ -55,6 +56,7 @@ class TradeExecutor:
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("TradeExecutor is a legacy/quarantined component: parallel order execution outside CanonicalExecutionService. It carries no production authority.", DeprecationWarning, stacklevel=2)
         """
         Initialize trade executor
         
@@ -172,7 +174,16 @@ class TradeExecutor:
             return {'success': False, 'error': str(e)}
 
     def _execute_real_trade(self, order: Order) -> Dict[str, Any]:
-        """Execute real trade via MT5"""
+        """Execute real trade via MT5 (Grounded/Platform-Aware)"""
+        import os
+        if os.name != 'nt':
+            # Platform portability: Fail gracefully on Linux if in real mode
+            return {
+                'success': False,
+                'error': 'OS_NOT_SUPPORTED',
+                'message': 'MetaTrader5 execution requires Windows. Use IB/Binance or Paper mode on Linux.'
+            }
+
         try:
             import MetaTrader5 as mt5
             

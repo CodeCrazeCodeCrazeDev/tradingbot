@@ -1,0 +1,1 @@
+"""Quarantined legacy module dir."""

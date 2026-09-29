@@ -376,7 +376,7 @@ class SystemSnapshot:
                             'path': str(zip_file),
                             **manifest
                         })
-            except:
+            except Exception as e:
                 snapshots.append({
                     'path': str(zip_file),
                     'name': zip_file.stem,

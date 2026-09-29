@@ -31,6 +31,7 @@ IMMUTABLE PRINCIPLES:
 4. SURVIVAL: "AlphaAlgo does not try to win. AlphaAlgo tries to not die."
 """
 
+import warnings
 import asyncio
 import importlib
 import logging
@@ -413,6 +414,7 @@ class CompleteSystemIntegrator:
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("CompleteSystemIntegrator is a legacy/quarantined component: dynamic module/class loading bypasses static convergence control. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.base_path = Path(__file__).parent
         

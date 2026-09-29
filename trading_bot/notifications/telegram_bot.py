@@ -5,6 +5,7 @@ Production-grade Telegram bot for trading notifications,
 commands, and remote control.
 """
 
+import warnings
 import asyncio
 import logging
 import threading
@@ -71,6 +72,7 @@ class TelegramBot:
     """
     
     def __init__(self, config: TelegramConfig):
+        warnings.warn("TelegramBot is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         self._base_url = f"https://api.telegram.org/bot{config.bot_token}"
         self._session: Optional[aiohttp.ClientSession] = None

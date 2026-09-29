@@ -3,6 +3,7 @@ Mobile App REST API
 Provides mobile app integration with real-time updates
 """
 
+import warnings
 import asyncio
 import logging
 from enum import Enum
@@ -206,6 +207,7 @@ class MobileAPI:
     
     def __init__(self, trading_bot: Any, config: Optional[Dict[str, Any]] = None):
         """Initialize mobile API"""
+        warnings.warn("MobileAPI is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.trading_bot = trading_bot
         self.config = config or {}
         

@@ -72,6 +72,13 @@ class AnalyticsOrchestrator:
     """Auto-generated stub orchestrator for module integration."""
     def __init__(self, config=None):
         self.config = config or {}
+        import warnings
+        warnings.warn(
+            "AnalyticsOrchestrator is a merge-generated stub and is deprecated. "
+            "Route orchestration through CognitiveSystemController "
+            "(trading_bot.core.csc.controller).",
+            DeprecationWarning, stacklevel=2,
+        )
         self.running = False
         self._initialized = True
     
@@ -87,3 +94,15 @@ class AnalyticsOrchestrator:
         """Get orchestrator status."""
         return {"running": self.running, "initialized": self._initialized}
 
+
+
+# Legacy re-export: emotional state tracker
+try:
+    from .emotional_tracker import EmotionalStateTracker
+except ImportError:
+    EmotionalStateTracker = None
+
+try:
+    from .enhanced_performance import EnhancedPerformanceAnalytics
+except ImportError:
+    EnhancedPerformanceAnalytics = None

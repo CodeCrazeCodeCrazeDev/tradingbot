@@ -1,4 +1,6 @@
 """
+import numpy
+import pandas
 Comprehensive tests for monitoring and infrastructure
 """
 
@@ -164,9 +166,9 @@ class TestAutoScaler:
     def test_scaler_lifecycle(self):
         class DummyWorker:
             def start(self):
-            def stop(self):
+                def stop(self):
         
-        policy = ScalingPolicy(min_instances=2, max_instances=4)
+                    policy = ScalingPolicy(min_instances=2, max_instances=4)
         scaler = AutoScaler(policy)
         scaler.start(DummyWorker)
         
@@ -241,10 +243,7 @@ class TestChaosEngineering:
         monkey.stop()
     
     def test_network_latency_injection(self):
-    pass
-from enum import auto
-import numpy
-import pandas
+        pass
         
         monkey = ChaosMonkey()
         exp = ChaosExperiment(

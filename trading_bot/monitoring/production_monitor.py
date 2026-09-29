@@ -12,6 +12,7 @@ Author: Trading Bot Team
 Date: 2025-10-18
 """
 
+import warnings
 import asyncio
 import logging
 import psutil
@@ -170,6 +171,7 @@ class ProductionMonitor:
     """Main production monitoring system"""
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("ProductionMonitor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.metrics = MetricsCollector()
         self.alerts = deque(maxlen=1000)

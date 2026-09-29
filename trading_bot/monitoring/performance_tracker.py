@@ -3,6 +3,7 @@ Performance Tracking System
 Monitors and records performance metrics for the trading system
 """
 
+import warnings
 import asyncio
 import time
 import logging
@@ -232,6 +233,7 @@ class PerformanceTracker:
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("PerformanceTracker is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Component trackers

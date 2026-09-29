@@ -402,4 +402,8 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    raise SystemExit(
+        "perfect_bot/perfect_bot.py is QUARANTINED: standalone launchers, watchdogs, supervisors, "
+        "and simulators are parallel loop/capital paths outside the canonical "
+        "runtime. Use 'python main.py --mode paper'."
+    )

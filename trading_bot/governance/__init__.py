@@ -5,6 +5,8 @@ Governance Module
 Auto-generated integration file.
 """
 
+from .policy_adapter import HumanApprovalPolicy
+
 # orchestrator
 try:
     from .orchestrator import (
@@ -15,6 +17,7 @@ except ImportError as e:
     pass
 
 __all__ = [
+    'HumanApprovalPolicy',
     'GovernanceManager',
     'GovernanceOrchestrator',
 ]
@@ -34,3 +37,12 @@ class GovernanceManager:
     
     def get_status(self):
         return {"running": self.running}
+
+
+class GovernanceOrchestrator:
+    """Orchestrates governance subsystems (minimal reconstruction)."""
+    def __init__(self, *a, **k):
+        self.config = k.get('config', dict(k))
+        self.running = False
+    def get_status(self):
+        return {'status': 'operational', 'running': self.running}

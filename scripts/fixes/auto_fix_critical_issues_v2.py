@@ -1,14 +1,18 @@
-import logging
 #!/usr/bin/env python3
 """
 Automated Critical Issue Fixer
 Fixes the top priority issues found in the diagnostic audit
 """
 
+import logging
 import os
+import sys
 import shutil
+import sys
 from pathlib import Path
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 class CriticalIssueFixer:
     """Automatically fix critical issues found in audit"""
@@ -142,32 +146,6 @@ class CriticalIssueFixer:
         # Check if main execution block exists
         if 'if __name__ == "__main__":' in content:
             # Wrap existing main execution in try/except
-            exception_handler = '''
-if __name__ == "__main__":
-            # Parse arguments
-        args = parse_args()
-        
-        # Initialize logger
-        init_logger(args.log_level or get("logging.level", "INFO"))
-        
-        logger.info("=" * 80)
-        logger.info("Advanced Algorithmic Trading Bot Starting...")
-        logger.info("=" * 80)
-        
-        # Run main execution
-        asyncio.run(main(args))
-        
-    except KeyboardInterrupt:
-        logger.info("\\n" + "=" * 80)
-        logger.info("Shutdown requested by user (Ctrl+C)")
-        logger.info("=" * 80)
-        sys.exit(0)
-        
-    finally:
-        logger.info("Trading bot stopped")
-'''
-            
-            # Note: This is a template - actual implementation depends on existing code structure
             self.fixes_applied.append("Added exception handling template (manual review needed)")
             print("✅ Template created: Exception handling (requires manual integration)")
             return True
@@ -236,7 +214,6 @@ if __name__ == "__main__":
             content = content.replace(old_method, new_method)
             
             # Add except block before next method
-            # This is simplified - actual implementation needs careful placement
             self.fixes_applied.append("Added error handling to risk_manager (partial)")
             print("✅ Fixed: Added error handling to risk_manager")
             
@@ -270,8 +247,8 @@ if __name__ == "__main__":
         report_file = self.root / "AUTO_FIX_REPORT.md"
         with open(report_file, 'w', encoding='utf-8') as f:
             f.write(f"# Automated Fix Report\n\n")
-            f.write(f"**Date**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\\n\n")
-            f.write(f"**Backup Location**: `{self.backup_dir}`\\n\n")
+            f.write(f"**Date**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+            f.write(f"**Backup Location**: `{self.backup_dir}`\n\n")
             
             f.write(f"## Fixes Applied ({len(self.fixes_applied)})\n\n")
             for fix in self.fixes_applied:
@@ -316,15 +293,13 @@ if __name__ == "__main__":
 def main():
     """Main execution"""
     import sys
-
-logger = logging.getLogger(__name__)
-
     
     # Get root directory from command line or use current
     root_dir = sys.argv[1] if len(sys.argv) > 1 else "."
     
     fixer = CriticalIssueFixer(root_dir)
     fixer.run_all_fixes()
+
 
 if __name__ == "__main__":
     main()

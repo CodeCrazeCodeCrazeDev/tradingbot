@@ -6,6 +6,7 @@ Event-service wrapper for AlphaAlgo's source-provenance and signal
 counterintelligence controls.
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime
@@ -29,6 +30,7 @@ class IntelligenceDirectorateService(BaseService):
     DEPENDENCIES = ["audit", "approval", "compliance"]
 
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("IntelligenceDirectorateService is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         self._task: Optional[asyncio.Task] = None
         self._directorate: Optional[AlphaAlgoIntelligenceDirectorate] = None

@@ -45,7 +45,12 @@ class MLflowTracker:
         except ImportError:
             logger.warning("MLflow not installed, using mock tracker")
             self.mlflow = None
-    
+
+    @property
+    def enabled(self) -> bool:
+        """Whether a real MLflow backend is active (mock mode otherwise)."""
+        return self.mlflow_available
+
     def start_run(self, run_name: Optional[str] = None, tags: Optional[Dict[str, str]] = None):
         """Start a new MLflow run"""
         if not self.mlflow_available:

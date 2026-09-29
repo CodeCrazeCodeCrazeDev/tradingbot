@@ -1,8 +1,10 @@
+from pathlib import Path
 """
 Standalone Orchestrator Tests - Direct imports without main package
 """
 
 import sys
+from pathlib import Path
 import os
 
 # Add the trading_bot directory to path for direct imports
@@ -13,6 +15,12 @@ import asyncio
 import numpy as np
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, AsyncMock
+
+from trading_bot.orchestrator.master_orchestrator import MasterOrchestrator, TradingMode, TradingDecision
+from trading_bot.orchestrator.execution_engine import ExecutionEngine, OrderType, ExecutionAlgorithm, SmartOrderRouter
+from trading_bot.orchestrator.ml_predictor import OpportunityPredictor, MLFeatureExtractor
+from trading_bot.orchestrator.risk_manager import PortfolioRiskManager, PositionSizer, DrawdownController
+from trading_bot.orchestrator.performance_tracker import PerformanceTracker, MetricsCalculator, AutoOptimizer
 
 
 # ============================================================================
@@ -343,7 +351,6 @@ class TestPerformanceTracker:
     def test_track_trade(self, sample_config, sample_trades):
         tracker = PerformanceTracker(sample_config)
         for trade in sample_trades[:10]:
-    pass
             tracker.track_trade(trade)
         assert len(tracker.trade_history) == 10
         assert len(tracker.equity_curve) == 10
@@ -429,8 +436,6 @@ class TestSmartOrderRouter:
 
     @pytest.mark.asyncio
     async def test_score_venues(self):
-    pass
-import numpy
         router = SmartOrderRouter()
         venues = {
             'exchange1': {'fee_rate': 0.001, 'latency': 5, 'liquidity': 10000, 'fill_rate': 0.98},

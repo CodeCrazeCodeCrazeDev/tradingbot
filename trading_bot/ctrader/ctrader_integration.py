@@ -10,6 +10,7 @@ Connects to cTrader for:
 Uses cTrader Open API (protobuf-based) for low-latency connectivity.
 """
 
+import warnings
 import asyncio
 import hashlib
 import json
@@ -375,6 +376,7 @@ class CTraderMarketData:
     """
 
     def __init__(self, connection: CTraderConnection):
+        warnings.warn("CTraderMarketData is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.connection = connection
         self.tick_cache: Dict[str, deque] = defaultdict(lambda: deque(maxlen=10000))
         self.bar_cache: Dict[str, Dict[str, deque]] = defaultdict(

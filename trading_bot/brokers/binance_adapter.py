@@ -1,4 +1,5 @@
 """
+import warnings
 from typing import Callable, List, Optional, Set
 Binance Broker Adapter - Production-Ready Binance Integration
 
@@ -151,6 +152,7 @@ class BinanceBrokerAdapter(BrokerAdapter):
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("BinanceBrokerAdapter is a legacy/quarantined component: capital path outside the canonical execution boundary. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.connected = False
         

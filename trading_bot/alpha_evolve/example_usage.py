@@ -14,14 +14,26 @@ import pandas as pd
 from datetime import datetime, timedelta
 import logging
 
-from strategy_genome import StrategyGenome, SearchSpace
-from genetic_operators import GeneticOperators
-from backtesting_engine import LeakageFreeBacktester
-from fitness_evaluator import MultiObjectiveFitness
-from walk_forward import WalkForwardValidator
-from evolution_engine import EvolutionEngine, EvolutionConfig
-from edge_monitor import EdgeDecayMonitor
-from distributed_compute import DistributedComputeOrchestrator
+try:
+    from strategy_genome import StrategyGenome, SearchSpace
+except ImportError:
+    from .strategy_genome import StrategyGenome, SearchSpace
+try:
+    from genetic_operators import GeneticOperators
+    from backtesting_engine import LeakageFreeBacktester
+    from fitness_evaluator import MultiObjectiveFitness
+    from walk_forward import WalkForwardValidator
+    from evolution_engine import EvolutionEngine, EvolutionConfig
+    from edge_monitor import EdgeDecayMonitor
+    from distributed_compute import DistributedComputeOrchestrator
+except ImportError:
+    from .genetic_operators import GeneticOperators
+    from .backtesting_engine import LeakageFreeBacktester
+    from .fitness_evaluator import MultiObjectiveFitness
+    from .walk_forward import WalkForwardValidator
+    from .evolution_engine import EvolutionEngine, EvolutionConfig
+    from .edge_monitor import EdgeDecayMonitor
+    from .distributed_compute import DistributedComputeOrchestrator
 
 
 logging.basicConfig(

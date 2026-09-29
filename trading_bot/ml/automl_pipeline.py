@@ -507,6 +507,7 @@ class ModelRegistry:
         if not mv or not mv.model_path:
             return None
         try:
+            from trading_bot.security.artifact_manager import RestrictedUnpickler
             with open(mv.model_path, 'rb') as f:
                 model_obj = safe_load(f)
 

@@ -3,6 +3,11 @@ AlphaAlgo World-Class Integration Layer
 ========================================
 Single authoritative integration package for the trading bot.
 
+Names resolve lazily (PEP 562): the heavy leaves (``internet_integration``
+pulls aiohttp+aiodns, ``market_analysis_dashboard`` pulls pandas) only load
+when actually accessed. Submodule imports (``trading_bot.integration.X``)
+are unaffected.
+
 Public surface:
   - MasterIntegrationEngine   : single authority for service lifecycle
   - EngineConfig              : engine runtime configuration
@@ -20,100 +25,64 @@ Public surface:
   - ModuleTier                : A/B/C/D quality tier enum
 """
 
+import importlib as _importlib
 import logging
 
 logger = logging.getLogger(__name__)
 
-# Core integration engine
-from .master_engine import (
-    MasterIntegrationEngine,
-    EngineConfig,
-    EngineState,
-    get_engine,
-    reset_engine,
-)
-
-# Module registry
-from .module_registry import (
-    ModuleRegistry,
-    ModuleRecord,
-    ModuleLayer,
-    ModuleTier,
-    PromotionState,
-    CapitalImpact,
-    RollbackClass,
-    get_module_registry,
-)
-
-# Service contract
-from .service_contract import (
-    IntegratedService,
-    LegacyModuleAdapter,
-    StubService,
-    ServiceLifecycle,
-    HealthStatus,
-    HealthReport,
-    ServiceEvent,
-)
-
-# Dependency graph
-from .dependency_graph import (
-    DependencyGraph,
-    ServiceNode,
-    build_default_graph,
-    DependencyCycle,
-    MissingDependency,
-)
-
-# Verification
-from .verification import (
-    VerificationPipeline,
-    VerificationReport,
-    VerificationResult,
-    StaticVerifier,
-    ContractVerifier,
-    RuntimeVerifier,
-)
-
-# Master Integrator - new unified integration system
-try:
-    from .master_integrator import (
-        MasterIntegrator,
-        EventBus,
-        Event,
-        EventType,
-        ServiceWrapper,
-        IntegrationPhase,
-        get_master_integrator,
-        quick_start,
-    )
-except ImportError:
-    MasterIntegrator = None  # type: ignore
-    EventBus = None  # type: ignore
-    Event = None  # type: ignore
-    EventType = None  # type: ignore
-    ServiceWrapper = None  # type: ignore
-    IntegrationPhase = None  # type: ignore
-    get_master_integrator = None  # type: ignore
-    quick_start = None  # type: ignore
-
-# Legacy shims — preserve existing imports from rest of codebase
-try:
-    from .internet_integration import InternetIntegration, create_internet_integration
-except ImportError:
-    InternetIntegration = None           # type: ignore
-    create_internet_integration = None   # type: ignore
-
-try:
-    from .market_analysis_dashboard import (
-        DashboardConfig,
-        MarketAnalysisDashboard,
-        create_market_analysis_dashboard,
-    )
-except ImportError:
-    DashboardConfig = None                  # type: ignore
-    MarketAnalysisDashboard = None          # type: ignore
-    create_market_analysis_dashboard = None # type: ignore
+_LAZY = {
+    # Engine
+    "MasterIntegrationEngine": ".master_engine",
+    "EngineConfig": ".master_engine",
+    "EngineState": ".master_engine",
+    "get_engine": ".master_engine",
+    "reset_engine": ".master_engine",
+    # Registry
+    "ModuleRegistry": ".module_registry",
+    "ModuleRecord": ".module_registry",
+    "ModuleLayer": ".module_registry",
+    "ModuleTier": ".module_registry",
+    "PromotionState": ".module_registry",
+    "CapitalImpact": ".module_registry",
+    "RollbackClass": ".module_registry",
+    "get_module_registry": ".module_registry",
+    # Contract
+    "IntegratedService": ".service_contract",
+    "LegacyModuleAdapter": ".service_contract",
+    "StubService": ".service_contract",
+    "ServiceLifecycle": ".service_contract",
+    "HealthStatus": ".service_contract",
+    "HealthReport": ".service_contract",
+    "ServiceEvent": ".service_contract",
+    # Graph
+    "DependencyGraph": ".dependency_graph",
+    "ServiceNode": ".dependency_graph",
+    "build_default_graph": ".dependency_graph",
+    "DependencyCycle": ".dependency_graph",
+    "MissingDependency": ".dependency_graph",
+    # Verification
+    "VerificationPipeline": ".verification",
+    "VerificationReport": ".verification",
+    "VerificationResult": ".verification",
+    "StaticVerifier": ".verification",
+    "ContractVerifier": ".verification",
+    "RuntimeVerifier": ".verification",
+    # Master Integrator
+    "MasterIntegrator": ".master_integrator",
+    "EventBus": ".master_integrator",
+    "Event": ".master_integrator",
+    "EventType": ".master_integrator",
+    "ServiceWrapper": ".master_integrator",
+    "IntegrationPhase": ".master_integrator",
+    "get_master_integrator": ".master_integrator",
+    "quick_start": ".master_integrator",
+    # Legacy shims
+    "InternetIntegration": ".internet_integration",
+    "create_internet_integration": ".internet_integration",
+    "DashboardConfig": ".market_analysis_dashboard",
+    "MarketAnalysisDashboard": ".market_analysis_dashboard",
+    "create_market_analysis_dashboard": ".market_analysis_dashboard",
+}
 
 
 class IntegrationOrchestrator:
@@ -123,7 +92,14 @@ class IntegrationOrchestrator:
     """
     def __init__(self, *args, **kwargs):
         self.config = kwargs.get("config", {})
-        self._engine: MasterIntegrationEngine = get_engine()
+        import warnings
+        warnings.warn(
+            "IntegrationOrchestrator is a merge-generated stub and is deprecated. "
+            "Route orchestration through CognitiveSystemController "
+            "(trading_bot.core.csc.controller).",
+            DeprecationWarning, stacklevel=2,
+        )
+        self._engine = __getattr__("get_engine")()
         self.running = False
 
     async def start(self):
@@ -138,57 +114,23 @@ class IntegrationOrchestrator:
         return self._engine.engine_health_report()
 
 
-__all__ = [
-    # Engine
-    "MasterIntegrationEngine",
-    "EngineConfig",
-    "EngineState",
-    "get_engine",
-    "reset_engine",
-    # Registry
-    "ModuleRegistry",
-    "ModuleRecord",
-    "ModuleLayer",
-    "ModuleTier",
-    "PromotionState",
-    "CapitalImpact",
-    "RollbackClass",
-    "get_module_registry",
-    # Contract
-    "IntegratedService",
-    "LegacyModuleAdapter",
-    "StubService",
-    "ServiceLifecycle",
-    "HealthStatus",
-    "HealthReport",
-    "ServiceEvent",
-    # Graph
-    "DependencyGraph",
-    "ServiceNode",
-    "build_default_graph",
-    "DependencyCycle",
-    "MissingDependency",
-    # Verification
-    "VerificationPipeline",
-    "VerificationReport",
-    "VerificationResult",
-    "StaticVerifier",
-    "ContractVerifier",
-    "RuntimeVerifier",
-    # Master Integrator
-    "MasterIntegrator",
-    "EventBus",
-    "Event",
-    "EventType",
-    "ServiceWrapper",
-    "IntegrationPhase",
-    "get_master_integrator",
-    "quick_start",
-    # Legacy shims
-    "IntegrationOrchestrator",
-    "InternetIntegration",
-    "create_internet_integration",
-    "DashboardConfig",
-    "MarketAnalysisDashboard",
-    "create_market_analysis_dashboard",
-]
+__all__ = list(_LAZY) + ["IntegrationOrchestrator"]
+
+
+_OPTIONAL = {".master_integrator", ".internet_integration", ".market_analysis_dashboard"}
+
+
+def __getattr__(name):
+    mod = _LAZY.get(name)
+    if mod is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    try:
+        return getattr(_importlib.import_module(mod, __name__), name)
+    except ImportError:
+        if mod in _OPTIONAL:
+            return None  # optional dependency absent — mirrors old try/except None-shim
+        raise
+
+
+def __dir__():
+    return sorted(__all__)

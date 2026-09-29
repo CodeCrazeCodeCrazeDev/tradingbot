@@ -51,22 +51,83 @@ except ImportError as e:
     # fraud_detection not available
     pass
 
+# multi_agent_rl — if the full agent set is unavailable, still expose the
+# core system class on its own rather than losing every name.
+try:
+    from .multi_agent_rl import (
+        MacroStrategist,
+        MultiAgentTradingSystem,
+        TacticalExecutioner,
+        RiskSentinel,
+        HeadAI,
+    )
+except ImportError:
+    try:
+        from .multi_agent_rl import MultiAgentTradingSystem
+    except ImportError:
+        pass
+
+# digital_twin
+try:
+    from .digital_twin import (
+        DigitalTwinSimulator,
+        HighFidelityBacktester,
+    )
+except ImportError:
+    pass
+
+# advanced_risk
+try:
+    from .advanced_risk import (
+        FractalPositionSizer,
+        HurstExponentCalculator,
+        BlackSwanShield,
+        VolatilityCapacitor,
+    )
+except ImportError:
+    pass
+
+# institutional_dna
+try:
+    from .institutional_dna import (
+        InstitutionalFootprintDNA,
+        TradeSignatureAnalyzer,
+        IcebergDetector,
+        StealthAccumulationDetector,
+    )
+except ImportError:
+    pass
+
+# volatility_impulse
+try:
+    from .volatility_impulse import (
+        VolatilityImpulseVector,
+        VolatilityAccelerationDetector,
+        EnergyDirectionPredictor,
+    )
+except ImportError:
+    pass
+
+# fractal_momentum
+try:
+    from .fractal_momentum import (
+        FractalMomentumDivergence,
+        DivergenceType,
+        MultiTimeframeDivergenceFilter,
+    )
+except ImportError:
+    pass
+
 # liquidity_holography
 try:
     from .liquidity_holography import (
         LiquidityHolographyEngine,
+        LiquidityGravityWell,
+        LiquidityDensityMapper,
+        TemporalLiquidityAnalyzer,
     )
 except ImportError as e:
     # liquidity_holography not available
-    pass
-
-# multi_agent_rl
-try:
-    from .multi_agent_rl import (
-        MultiAgentTradingSystem,
-    )
-except ImportError as e:
-    # multi_agent_rl not available
     pass
 
 # quantum_computing
@@ -79,21 +140,51 @@ except ImportError as e:
     pass
 
 __all__ = [
+    'BlackSwanShield',
     'CryptographicProofSystem',
+    'DigitalTwinSimulator',
     'DivergenceConfirmationEngine',
+    'DivergenceType',
+    'EnergyDirectionPredictor',
+    'FractalMomentumDivergence',
+    'FractalPositionSizer',
     'FraudDetectionSystem',
+    'HeadAI',
+    'HighFidelityBacktester',
+    'HurstExponentCalculator',
+    'IcebergDetector',
+    'InstitutionalFootprintDNA',
+    'LiquidityDensityMapper',
+    'LiquidityGravityWell',
     'LiquidityHolographyEngine',
+    'MacroStrategist',
     'MultiAgentTradingSystem',
+    'MultiTimeframeDivergenceFilter',
     'ParallelValidationEngine',
     'QuantumTradingSystem',
+    'RiskSentinel',
+    'StealthAccumulationDetector',
+    'TacticalExecutioner',
+    'TemporalLiquidityAnalyzer',
+    'TradeSignatureAnalyzer',
     'TradeVerificationSystem',
     'TradingPredictionSystem',
+    'VolatilityAccelerationDetector',
+    'VolatilityCapacitor',
+    'VolatilityImpulseVector',
 ]
 
 class AdvancedFeaturesOrchestrator:
     """Auto-generated stub orchestrator for module integration."""
     def __init__(self, config=None):
         self.config = config or {}
+        import warnings
+        warnings.warn(
+            "AdvancedFeaturesOrchestrator is a merge-generated stub and is deprecated. "
+            "Route orchestration through CognitiveSystemController "
+            "(trading_bot.core.csc.controller).",
+            DeprecationWarning, stacklevel=2,
+        )
         self.running = False
         self._initialized = True
     

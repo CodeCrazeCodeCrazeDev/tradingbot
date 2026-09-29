@@ -5,6 +5,7 @@ Advanced ML Service
 Wraps Advanced ML capabilities as an event-driven service.
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime
@@ -34,6 +35,7 @@ class AdvancedMLService(BaseService):
     DEPENDENCIES = ["data"]
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("AdvancedMLService is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         self._learning_interval: float = config.get('interval', 300.0) if config else 300.0
         self._task: Optional[asyncio.Task] = None

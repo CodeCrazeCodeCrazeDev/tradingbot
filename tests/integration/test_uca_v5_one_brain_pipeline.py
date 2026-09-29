@@ -18,6 +18,7 @@ from trading_bot.core.verification.swarm import VerificationSwarm
 from trading_bot.core.immutable_shield import ImmutableShield
 from trading_bot.core.unified_event_bus import UnifiedDecisionBus, ActionStatus, LogAction
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome
+from trading_bot.core.execution_bridge import PaperExecutionBridge
 
 # Mock dependencies for E2E testing
 class MockWorldModel:
@@ -34,7 +35,7 @@ class MockEvolutionGate:
     def validate_evolution(self, *args, **kwargs): return True
 
 @pytest.fixture(scope="function")
-def full_system(event_loop):
+async def full_system():
     # 1. Initialize core infrastructure
     hms = HierarchicalMemorySystem(base_path="tests/temp_hms_e2e")
     bus = UnifiedDecisionBus()
@@ -47,9 +48,14 @@ def full_system(event_loop):
         report = await shield.validate_action(action.action_type, action.payload, action.payload.get("context", {}))
         return {"decision": report.decision.value, "reason": report.reason}
 
-    # 2. Register mandatory voters
+    # 2. Register mandatory voters and attach the paper-execution bridge —
+    # the bus approves and fans out; the execution layer owns EXECUTED.
+    # Async fixture: bus.start() runs on the SAME function-scoped loop as the
+    # test (pytest-asyncio 1.x runs each async test on its own loop — starting
+    # the bus on the session event_loop deadlocks wait_for_decision).
     bus.register_voter("ImmutableShield", shield_voter)
-    event_loop.run_until_complete(bus.start())
+    PaperExecutionBridge(persist_path="tests/temp_hms_e2e/paper_fills.jsonl").attach(bus)
+    await bus.start()
 
     # 3. Initialize One Brain (CSC)
     csc = CognitiveSystemController(
@@ -65,7 +71,7 @@ def full_system(event_loop):
     )
 
     yield csc
-    event_loop.run_until_complete(bus.stop())
+    await bus.stop()
 
 @pytest.mark.asyncio
 async def test_e2e_successful_trade_pipeline(full_system):

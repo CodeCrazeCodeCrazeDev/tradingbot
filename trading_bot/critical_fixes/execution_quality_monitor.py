@@ -694,7 +694,7 @@ class ExecutionQualityMonitor:
                 'slippage_std_bps': model['std'],
                 'sample_size': len(model['samples']),
                 'last_updated': model['last_updated'].isoformat() if model['last_updated'] else None,
-                'confidence': 'high' if len(model['samples']) >= 100 else 'medium' if len(model['samples']) >= 30 else 'low'
+                'confidence': 'high' if len(model['samples']) >= 100 else 'medium' if len(model['samples']) >= 20 else 'low'
             }
         else:
             # Return default

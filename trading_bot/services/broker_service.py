@@ -5,6 +5,7 @@ Broker Service
 Wraps Broker module capabilities as an event-driven service.
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime
@@ -32,6 +33,7 @@ class BrokerService(BaseService):
     DEPENDENCIES = []
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("BrokerService is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         self._interval: float = config.get('interval', 10.0) if config else 10.0
         self._task: Optional[asyncio.Task] = None
@@ -40,8 +42,11 @@ class BrokerService(BaseService):
     async def start(self) -> None:
         self._running = True
         await self._load_components()
-        self._task = asyncio.create_task(self._run_loop())
-        logger.info("BrokerService started")
+        # Worker disabled: broker connectivity is owned by approved
+        # BrokerAdapter implementations inside the canonical execution
+        # boundary; this service may not run a parallel broker loop.
+        self._task = None
+        logger.warning("BrokerService run-loop worker disabled; canonical execution boundary owns broker access")
     
     async def stop(self) -> None:
         self._running = False

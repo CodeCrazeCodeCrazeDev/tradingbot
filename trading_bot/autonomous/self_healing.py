@@ -15,6 +15,7 @@ Author: Trading Bot Team
 Date: 2025-10-23
 """
 
+import warnings
 import logging
 import asyncio
 import time
@@ -260,6 +261,7 @@ class RecoveryOrchestrator:
     """Orchestrates recovery actions"""
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("RecoveryOrchestrator is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.recovery_strategies = {}
         self.max_recovery_attempts = self.config.get('max_recovery_attempts', 3)

@@ -4,6 +4,7 @@ DGS Benchmarking and Load Testing Suite
 Performance benchmarking, load testing, and optimization tools for DGS.
 """
 
+import warnings
 import time
 import asyncio
 import statistics
@@ -55,6 +56,7 @@ class DGSBenchmark:
     """
     
     def __init__(self, dgs_instance):
+        warnings.warn("DGSBenchmark is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.dgs = dgs_instance
         self.results: List[BenchmarkResult] = []
         

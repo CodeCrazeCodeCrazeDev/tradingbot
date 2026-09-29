@@ -596,10 +596,8 @@ class LiquidityMLPredictor:
                 'encoders': self.feature_engineer.encoders
             }
             
-            with open(filepath, 'wb') as f:
-                pickle.dump(model_data, f)
-            
-            logger.info(f"Models saved to {filepath}")
+            joblib.dump(model_data, filepath)
+            logger.info(f"Models saved to {filepath} using joblib")
             
         except Exception as e:
             logger.error(f"Error saving models: {e}")
@@ -607,19 +605,16 @@ class LiquidityMLPredictor:
     def load_models(self, filepath: str):
         """Load trained models from file."""
         try:
-            # SECURITY: Validate path
-            if not filepath.startswith(('.', '/')):
-                raise ValueError(f"Invalid path: {filepath}")
-
+            from trading_bot.security.artifact_manager import RestrictedUnpickler
             with open(filepath, 'rb') as f:
-                model_data = safe_load(f)
+                model_data = RestrictedUnpickler(f).load()
             
             self.models = model_data.get('models', {})
             self.model_performance = model_data.get('performance', {})
             self.feature_engineer.scalers = model_data.get('scalers', {})
             self.feature_engineer.encoders = model_data.get('encoders', {})
             
-            logger.info(f"Models loaded from {filepath}")
+            logger.info(f"Models loaded from {filepath} using joblib")
             
         except Exception as e:
             logger.error(f"Error loading models: {e}")

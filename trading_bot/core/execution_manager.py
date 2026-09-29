@@ -855,49 +855,9 @@ class ExecutionManager:
 
 # Example usage
 if __name__ == "__main__":
-    # Configure logging
-    logging.basicConfig(level=logging.INFO)
-    
-    # Create execution manager
-    manager = ExecutionManager()
-    
-    # Example order placement
-    async def test_execution():
-        # Place a market order
-        order = await manager.place_order(
-            symbol="EURUSD",
-            order_type=OrderType.MARKET,
-            side="buy",
-            quantity=1.0,
-            urgency=0.7,
-            market_volatility=0.3
-        )
-        
-        logger.info(f"Placed order: {order.id}, Status: {order.status}")
-        
-        # Process a fill
-        if order.status == OrderStatus.SUBMITTED:
-            trade = await manager.process_fill(
-                order_id=order.id,
-                fill_quantity=1.0,
-                fill_price=1.1050,
-                commission=0.1
-            )
-            
-            logger.info(f"Processed fill: {trade.id}, Price: {trade.price}")
-            
-            # Get position
-            position = manager.get_position("EURUSD")
-            logger.info(f"Position: {position.quantity} @ {position.entry_price}")
-            
-            # Update market price
-            await manager.update_market_price("EURUSD", 1.1075)
-            position = manager.get_position("EURUSD")
-            logger.info(f"Updated position: {position.quantity} @ {position.entry_price}, Unrealized P&L: {position.unrealized_pnl}")
-            
-            # Close position
-            close_order = await manager.close_position("EURUSD")
-            logger.info(f"Close order: {close_order.id}, Status: {close_order.status}")
-    
-    # Run the test
-    asyncio.run(test_execution())
+    raise SystemExit(
+        "trading_bot/core/execution_manager.py is QUARANTINED: standalone execution of this module is a "
+        "parallel capital/loop path outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

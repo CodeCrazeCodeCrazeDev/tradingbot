@@ -4,7 +4,9 @@ from trading_bot.core.security.sandbox import StrategySandbox, UnsafeCodeError
 
 @pytest.mark.asyncio
 async def test_sandbox_successful_execution():
-    sandbox = StrategySandbox()
+    # Windows spawn re-imports the package in the child process — the default
+    # 2.0s wall-clock SLA can't cover interpreter + package startup.
+    sandbox = StrategySandbox(wall_clock_timeout=60.0)
 
     code = """
 def compute_signal(data):

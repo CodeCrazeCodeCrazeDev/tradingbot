@@ -1,6 +1,7 @@
 """
 Elite Risk Management Module - Institutional-grade risk management capabilities
 """
+import warnings
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional, Tuple, Union
@@ -45,6 +46,7 @@ class EliteRiskManager:
             max_daily_drawdown: Maximum daily drawdown allowed
             max_positions: Maximum number of concurrent positions
         """
+        warnings.warn("EliteRiskManager is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         try:
             self.account_balance = account_balance
             self.max_risk_per_trade = max_risk_per_trade

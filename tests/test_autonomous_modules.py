@@ -50,8 +50,7 @@ class TestAutonomousInit:
         """Test module can be imported."""
 
         from trading_bot import autonomous
-import numpy
-assert autonomous is not None
+        assert autonomous is not None
 
 
 

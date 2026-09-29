@@ -16,9 +16,11 @@ except ImportError as e:
 try:
     from .superpowerful_orchestrator import (
         SuperPowerfulAI,
+        AIMode,
     )
 except ImportError as e:
     SuperPowerfulAI = None
+    AIMode = None
 
 __all__ = [
     'SelfDiscoveryEngine',
@@ -30,6 +32,13 @@ class SuperpowerfulOrchestrator:
     """Compatibility shim for legacy SuperpowerfulOrchestrator. Delegates to CSC."""
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
+        import warnings
+        warnings.warn(
+            "SuperpowerfulOrchestrator is a merge-generated stub and is deprecated. "
+            "Route orchestration through CognitiveSystemController "
+            "(trading_bot.core.csc.controller).",
+            DeprecationWarning, stacklevel=2,
+        )
         self.csc = CognitiveSystemController()
         logger.info("SuperpowerfulOrchestrator (Shim) initialized. Routing to CSC.")
 

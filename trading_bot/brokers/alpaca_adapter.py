@@ -507,33 +507,9 @@ class AlpacaBrokerAdapter(BrokerAdapter):
 
 # Example usage
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    
-    async def main():
-        # Create adapter (paper trading)
-        adapter = AlpacaBrokerAdapter({
-            'api_key': 'YOUR_API_KEY',
-            'api_secret': 'YOUR_API_SECRET',
-            'paper': True
-        })
-        
-        # Connect
-        if await adapter.connect():
-            # Get account info
-            account = await adapter.get_account_info()
-            logger.info(f"\nAccount: {account}")
-            
-            # Get positions
-            positions = await adapter.get_positions()
-            logger.info(f"\nPositions: {positions}")
-            
-            # Get quote
-            quote = await adapter.get_quote('AAPL')
-            logger.info(f"\nAAPL Quote: {quote}")
-            
-            # Disconnect
-            await adapter.disconnect()
-        else:
-            logger.info("Connection failed - check API credentials")
-    
-    asyncio.run(main())
+    raise SystemExit(
+        "trading_bot/brokers/alpaca_adapter.py is QUARANTINED: standalone execution of this module is a "
+        "parallel capital/loop path outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

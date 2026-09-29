@@ -59,6 +59,7 @@ class TestMasterOrchestrator:
                     result = await orchestrator.run_autonomous_cycle()
                     assert result is not None
             except Exception:
+                pass
         except ImportError:
             pytest.skip("Module not available")
     
@@ -74,6 +75,7 @@ class TestMasterOrchestrator:
                     if hasattr(orchestrator, attr):
                         assert getattr(orchestrator, attr) is not None or True
             except Exception:
+                pass
         except ImportError:
             pytest.skip("Module not available")
 
@@ -101,6 +103,7 @@ class TestMLPredictor:
         except ImportError:
             pytest.skip("Module not available")
         except Exception:
+            pass
     
     def test_ml_predictor_predict(self):
         """Test prediction."""
@@ -114,10 +117,10 @@ class TestMLPredictor:
             }
             
             if hasattr(predictor, 'predict'):
-                prediction = predictor.predict(opportunity)
+                    prediction = predictor.predict(opportunity)
                     assert prediction is not None
             if hasattr(predictor, 'predict_batch'):
-                predictions = predictor.predict_batch([opportunity])
+                    predictions = predictor.predict_batch([opportunity])
                     assert predictions is not None
         except ImportError:
             pytest.skip("Module not available")
@@ -167,6 +170,7 @@ class TestOpportunityScanner:
         except ImportError:
             pytest.skip("Module not available")
         except Exception:
+            pass
     
     def test_opportunity_scanner_scan(self):
         """Test scanning for opportunities."""
@@ -174,10 +178,10 @@ class TestOpportunityScanner:
             scanner = OpportunityScanner({})
             
             if hasattr(scanner, 'scan'):
-                opportunities = scanner.scan()
+                    opportunities = scanner.scan()
                     assert opportunities is not None
             if hasattr(scanner, 'scan_symbol'):
-                opportunities = scanner.scan_symbol('EURUSD')
+                    opportunities = scanner.scan_symbol('EURUSD')
                     assert opportunities is not None
         except ImportError:
             pytest.skip("Module not available")
@@ -197,7 +201,7 @@ class TestOpportunityScanner:
             ]
             
             if hasattr(scanner, 'filter'):
-                filtered = scanner.filter(opportunities)
+                    filtered = scanner.filter(opportunities)
                     assert len(filtered) <= len(opportunities)
         except ImportError:
             pytest.skip("Module not available")
@@ -226,6 +230,7 @@ class TestPerformanceTracker:
         except ImportError:
             pytest.skip("Module not available")
         except Exception:
+            pass
     
     def test_performance_tracker_record_trade(self):
         """Test recording trades."""
@@ -252,10 +257,10 @@ class TestPerformanceTracker:
             tracker = PerformanceTracker({})
             
             if hasattr(tracker, 'calculate_metrics'):
-                metrics = tracker.calculate_metrics()
+                    metrics = tracker.calculate_metrics()
                     assert metrics is not None
             if hasattr(tracker, 'get_metrics'):
-                metrics = tracker.get_metrics()
+                    metrics = tracker.get_metrics()
                     assert metrics is not None
         except ImportError:
             pytest.skip("Module not available")
@@ -266,7 +271,7 @@ class TestPerformanceTracker:
             tracker = PerformanceTracker({})
             
             if hasattr(tracker, 'calculate_drawdown'):
-                equity_curve = [10000, 10500, 10200, 9800, 10100, 10600]
+                    equity_curve = [10000, 10500, 10200, 9800, 10100, 10600]
                     drawdown = tracker.calculate_drawdown(equity_curve)
                     assert drawdown is not None
         except ImportError:
@@ -319,6 +324,7 @@ class TestExecutionEngine:
                     result = await engine.execute(signal)
                     assert result is not None
             except Exception:
+                pass
         except ImportError:
             pytest.skip("Module not available")
 
@@ -346,6 +352,7 @@ class TestMarketIntelligenceOrchestrator:
         except ImportError:
             pytest.skip("Module not available")
         except Exception:
+            pass
     
     def test_market_intelligence_analyze(self):
         """Test market analysis."""
@@ -353,7 +360,7 @@ class TestMarketIntelligenceOrchestrator:
             orchestrator = MarketIntelligenceOrchestrator({})
             
             if hasattr(orchestrator, 'analyze'):
-                analysis = orchestrator.analyze('EURUSD')
+                    analysis = orchestrator.analyze('EURUSD')
                     assert analysis is not None
         except ImportError:
             pytest.skip("Module not available")
@@ -382,6 +389,7 @@ class TestSignalProcessor:
         except ImportError:
             pytest.skip("Module not available")
         except Exception:
+            pass
     
     def test_signal_processor_process(self):
         """Test signal processing."""
@@ -394,7 +402,7 @@ class TestSignalProcessor:
             ]
             
             if hasattr(processor, 'process'):
-                processed = processor.process(raw_signals)
+                    processed = processor.process(raw_signals)
                     assert processed is not None
         except ImportError:
             pytest.skip("Module not available")
@@ -423,13 +431,14 @@ class TestRiskOrchestrator:
         except ImportError:
             pytest.skip("Module not available")
         except Exception:
+            pass
     
     def test_risk_orchestrator_assess(self):
         """Test risk assessment."""
         try:
-    pass
-import numpy
-import pandas
+            pass
+    # MERGE-BROKEN: pass
+# MERGE-BROKEN: import pandas
             
             orchestrator = RiskOrchestrator({})
             
@@ -440,7 +449,7 @@ import pandas
             }
             
             if hasattr(orchestrator, 'assess'):
-                assessment = orchestrator.assess(signal)
+                    assessment = orchestrator.assess(signal)
                     assert assessment is not None
         except ImportError:
             pytest.skip("Module not available")

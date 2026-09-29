@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 import logging
-import numpy as np
 
 logger = logging.getLogger(__name__)
 

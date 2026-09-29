@@ -1,13 +1,16 @@
-import logging
 """
 AlphaAlgo 5-Star Production Launcher
 Fully upgraded trading system with all enhancements integrated.
 """
 
 import asyncio
+import logging
 import pandas as pd
+import numpy as np
 from loguru import logger
 from trading_bot.alphaalgo_5star import create_5star_system
+
+logger_std = logging.getLogger(__name__)
 
 
 async def main():
@@ -32,10 +35,8 @@ async def main():
         # Create sample data
         import numpy as np
 
-logger = logging.getLogger(__name__)
-
-dates = pd.date_range('2024-01-01', periods=1000, freq='15min')
-df = pd.DataFrame({
+        dates = pd.date_range('2024-01-01', periods=1000, freq='15min')
+        df = pd.DataFrame({
             'timestamp': dates,
             'open': 1.1000 + np.random.randn(1000) * 0.001,
             'high': 1.1010 + np.random.randn(1000) * 0.001,

@@ -56,8 +56,9 @@ async def test_event_bus_e2e_approved_consensus():
     await bus.propose_action(action)
     status = await action.wait_for_decision(timeout=2.0)
 
-    # Verify transition to EXECUTED
-    assert status == ActionStatus.EXECUTED
+    # The bus approves and fans out to subscribers; EXECUTED belongs to the
+    # execution layer, which is not subscribed in this test.
+    assert status == ActionStatus.APPROVED
     assert len(received_actions) == 1
     assert received_actions[0].action_id == action.action_id
     assert action.voter_reports["voter_alpha"]["decision"] == "APPROVE"

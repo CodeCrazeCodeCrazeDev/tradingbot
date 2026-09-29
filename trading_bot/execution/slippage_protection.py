@@ -4,6 +4,7 @@ Slippage Protection System
 Monitors and protects against excessive slippage.
 """
 
+import warnings
 import logging
 from typing import Any, Dict, List, Optional
 from datetime import datetime
@@ -53,6 +54,7 @@ class SlippageProtection:
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("SlippageProtection is a legacy/quarantined component: parallel execution helper outside CanonicalExecutionService. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Slippage limits

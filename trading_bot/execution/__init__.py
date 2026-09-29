@@ -5,6 +5,14 @@ Execution Module
 Auto-generated integration file.
 """
 
+from .service import CanonicalExecutionService, LegacyBrokerAdapter, PaperBrokerAdapter
+
+# smart-order routing surface (canonical pair lives in alpha_engine)
+try:
+    from trading_bot.alpha_engine.execution import SmartOrderRouter, VenueType
+except ImportError:
+    pass
+
 # advanced_algorithms
 try:
     from .advanced_algorithms import (
@@ -127,7 +135,10 @@ except ImportError as e:
     # advanced_execution_algorithms not available
     pass
 
-__all__ = [
+# ``__all__`` advertises every optional surface, but each guarded block may
+# fail — filtering to names that actually bound prevents ``import *`` raising
+# AttributeError when optional pieces are absent.
+__all__ = [name for name in (
     'AdvancedOrderManager',
     'BracketOrderManager',
     'CompleteExecutionSystem',
@@ -152,7 +163,12 @@ __all__ = [
     'LiquidityConstraints',
     'SlippageMinimizer',
     'AdaptiveExecutionEngine',
+    'CanonicalExecutionService',
+    'LegacyBrokerAdapter',
+    'PaperBrokerAdapter',
     'DynamicParameterAdjuster',
     'OrderType',
     'ExecutionSlice',
-]
+    'SmartOrderRouter',
+    'VenueType',
+) if name in globals()]

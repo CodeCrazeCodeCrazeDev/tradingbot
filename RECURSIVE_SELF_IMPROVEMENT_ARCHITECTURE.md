@@ -1,117 +1,96 @@
-# Recursive Self-Improvement Architecture Specification (RSI-2026)
+# AlphaAlgo Recursive Self-Improvement Architecture
 
-## 1. System Philosophy and Objectives
+## Purpose
 
-AlphaAlgo operates under a rigorous, science-first cognitive paradigm governed by **Active Inference** (Friston, 2010), the **Free Energy Principle**, and a totally ordered shared transaction log (**LogAct**). The objective of the **Governed Recursive Self-Improvement (RSI)** architecture is to enable AlphaAlgo to systematically self-reflect, identify capability gaps, hypothesize improvements, safely experiment in sandboxes, independently evaluate candidates, and seek explicit human authorization before promoting changes.
+AlphaAlgo's recursive self-improvement (RSI) system improves research hypotheses,
+strategies, policies, models, tools, and architecture proposals through a
+closed evidence loop. It does **not** permit an agent to rewrite live trading
+code, risk limits, approval policy, credentials, or execution paths directly.
+Every candidate is versioned, replay-tested, evaluated out of sample, red
+teamed, archived, and promoted only through explicit human approval.
 
-This architecture enforces **uncompromising empirical justification**. Self-improvement is never trusted because AlphaAlgo generated it; it is trusted only because it has survived rigorous statistical and adversarial falsification.
+## Research comparison
 
-### The Objective Function
-The global optimization objective is defined as:
-$$\text{Maximize } \Phi = \frac{\Delta \mathcal{C}}{\mathcal{R} \cdot \Omega \cdot \Lambda \cdot \Gamma \cdot \mathcal{E}}$$
+The design was compared against the following public approaches:
 
-Where:
-*   $\Delta \mathcal{C}$: Measurable, independently validated capability improvement.
-*   $\mathcal{R}$: Operational and financial risk.
-*   $\Omega$: Architectural and structural complexity.
-*   $\Lambda$: Inference and processing latency.
-*   $\Gamma$: Computational overhead.
-*   $\mathcal{E}$: Engineering and maintenance costs.
+- [AlphaEvolve — Google DeepMind](https://deepmind.google/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/): candidate generation is separated from automated evaluators; promising programs are retained in a programs database and evolved against objective metrics. AlphaAlgo adopts the frozen-evaluator boundary, candidate archive, evaluator insights, bounded mutations, and resource budgets. Unlike AlphaEvolve, the first AlphaAlgo implementation evolves configuration/strategy artifacts rather than arbitrary executable code because trading safety and reproducibility are stricter requirements.
+- [Darwin Gödel Machine](https://arxiv.org/html/2505.22954v2): maintains an archive/tree of self-improving agents, samples parents, creates mutations, empirically validates candidates, and uses sandboxing/human oversight. AlphaAlgo adopts lineage, diversity-preserving archives, parent IDs, rollback snapshots, and human oversight. It deliberately excludes unrestricted self-modifying production code.
+- [Dream-RSI](https://arxiv.org/abs/2609.14858): uses online discovery traces to construct a replay simulator, improves the exploration policy through cheap offline dreaming, then redeploys the improved policy online. AlphaAlgo adds this as the dream/replay stage: historical market data, experiment traces, fills, slippage, failures, and research outcomes form the simulator pool; no synthetic reward is accepted as production evidence.
+- [MONA — Google DeepMind](https://deepmind.google/research/publications/148850/): separates myopic optimization from non-myopic approval to reduce multi-step reward hacking. AlphaAlgo applies this by allowing bounded local candidate optimization while requiring non-myopic human approval and long-horizon OOS, drawdown, robustness, and safety checks before promotion.
 
-AlphaAlgo rejects complex candidates that provide marginal performance gains at the expense of high complexity, latency, or risk.
+## Existing AlphaAlgo strengths
 
----
+- `EvolutionGate` already provides monotone-gain, calibration, robustness,
+  replay, EKSFT, and adversarial checks.
+- `WalkForwardEvaluator` provides chronological OOS evaluation.
+- `ImmutableShield` provides deterministic runtime vetoes.
+- `HumanApprovalGate` provides request/history infrastructure.
+- `RollbackManager` provides configuration snapshots.
+- HMS and RSI memory provide experiment/lesson persistence.
 
-## 2. Authorized Sequence of Operations (The Pipeline)
+## Gaps closed by the new foundation
 
-No bypasses, shortcuts, or direct-to-production self-modifications are permitted. Every proposed improvement, regardless of the domain, must follow the exact canonical sequence:
+1. Existing `ExperimentManager` falls back to random metrics when simulation
+   integrations are unavailable; the new RSI contract requires evaluator-owned,
+   provenance-bearing evidence and rejects missing replay evidence.
+2. Existing RSI deployment can apply configuration after a score check; the new
+   loop is dry-run by default and requires an explicit human approver for every
+   promotion.
+3. Existing domain loops are open-ended but have no common genome, lineage,
+   diversity archive, or immutable promotion record; `ImprovementGenome`,
+   `EvaluationEvidence`, and `PromotionDecision` add those boundaries.
+4. Existing human approval labels some strategy actions as auto-approved; RSI
+   promotion uses its own hard policy and cannot downgrade its approval level.
+5. Existing rollback is available but not coupled to candidate approval; the
+   new loop records a rollback snapshot before a staged promotion.
+6. Existing improvement state is separate from trading accounting; typed
+   trading repositories now provide authoritative orders, fills, positions,
+   audit events, and reconciliation records.
 
+## RSI lifecycle
+
+```text
+Observe current system and market state
+  -> generate bounded ImprovementGenome candidates
+  -> select parents from the lineage archive
+  -> dream in replay/simulation using immutable historical inputs
+  -> run chronological train/OOS, stress, regime, cost, and slippage evaluation
+  -> run safety/adversarial/reward-hacking checks
+  -> compare candidate vs baseline with calibration and drawdown constraints
+  -> EvolutionGate validation
+  -> HumanApprovalGate approval (required for all promotions)
+  -> create rollback snapshot and signed/staged artifact
+  -> paper deployment and monitoring
+  -> only then separately approve production promotion
+  -> record outcome and lessons into memory/archive
 ```
-[Observation]
-      ↓
-[Problem Detection] (Variational Free Energy or performance spikes)
-      ↓
-[Root-Cause Analysis] (Counterfactual debugging)
-      ↓
-[Hypothesis Formulation] (Falsifiable claims)
-      ↓
-[Research Phase] (Literature & historical outcome mining)
-      ↓
-[Candidate Design] (Configuration, code, or model mutations)
-      ↓
-[Sandbox Isolation] (StrategySandbox containerized execution)
-      ↓
-[Experimentation] (MC simulations, Walk-Forward, historical replays)
-      ↓
-[Independent Evaluation] (Verification Swarm audit)
-      ↓
-[Adversarial Falsification] (Stress testing under extreme regimes)
-      ↓
-[Out-of-Sample (OOS) Validation] (Purged/embargoed historical testing)
-      ↓
-[Risk & Safety Validation] (Safety Kernel policy audits)
-      ↓
-[Human Approval Gate] (Dashboard review & verification sign-off)
-      ↓
-[Versioned Candidate Locking] (Immutable git-tag/HMAC generation)
-      ↓
-[Shadow / Canary Rollout] (Non-risk production shadow running)
-      ↓
-[Production Transition] (Canary scaling)
-      ↓
-[Continuous Monitoring] (Drift detection & SLA tracking)
-      ↓
-[Outcome Attribution] (Attributing performance to the Genome)
-      ↓
-[Improvement Genome Update] (Persisting the historical learnings)
-```
 
----
+## Domain coverage
 
-## 3. Autonomy Tiers (Levels of Autonomy)
+The improvement genome supports the requested domains:
 
-To establish safety boundaries and protect the system against rogue self-modification, we partition all operations into six distinct **Autonomy Tiers**:
+- World model; alpha/strategy discovery; trading policy; risk intelligence;
+  market analysis; sentiment intelligence; research intelligence;
+  hypothesis generation; experiment design; evaluation intelligence;
+  agent intelligence; planning; memory; feature engineering; model architecture;
+  model selection/routing; uncertainty estimation; execution intelligence;
+  portfolio intelligence; data intelligence; simulation environment;
+  backtesting/validation; strategy lifecycle; failure diagnosis;
+  root-cause analysis; governance; self-debugging; resource optimization;
+  tool selection; knowledge graph/institutional knowledge;
+  research-to-engineering transfer; research prioritization; meta-learning;
+  architecture; and reasoning.
 
-### Tier 0: Observation (Fully Autonomous)
-*   **Permissions:** AlphaAlgo can autonomously monitor system state, track metrics, compile execution traces, audit logs, compute surprise values, and detect performance drift.
-*   **Behavioral Impact:** Zero behavior modification. The system remains purely reflective.
+## Safety invariants
 
-### Tier 1: Bounded Adaptation (Fully Autonomous within Safe Bounds)
-*   **Permissions:** AlphaAlgo can modify predefined operational parameters within hard limits.
-*   **Allowed Scenarios:** Updating model routing thresholds, cache expiration periods, memory retrieval rankings, prompt parameters, research prioritization weights, or non-critical resource allocation.
-*   **Controls:** All updates must be logged in LogAct, easily reversible, versioned, and monitored for regression.
-
-### Tier 2: Experimental Evolution (Autonomous inside Sandbox)
-*   **Permissions:** AlphaAlgo can autonomously generate, mutate, and compile experimental strategies, features, models, planning heuristics, and agents.
-*   **Controls:** Executable code must be isolated inside the `StrategySandbox` subprocesses. Absolute wall-clock limits and resource caps are enforced by the OS. Nothing in Tier 2 can touch live network connections or the production database.
-
-### Tier 3: Production Candidate (Pre-Approval State)
-*   **Permissions:** The candidate has completed sandbox trials and passed unit, integration, and security checks.
-*   **Controls:** The system compiles the candidate's validation report, hashes all files, creates an immutable pull request, and prepares the Human Control Dashboard with complete supporting evidence.
-
-### Tier 4: Human-Governed Production Evolution (Human Authorization Required)
-*   **Permissions:** The human operator signs off on the candidate.
-*   **Controls:** The system applies the change, tags the repository version, activates canary/shadow deployment, and monitors telemetry with instant rollback triggers.
-
-### Tier 5: Architectural Evolution (Highest Risk - Human Authorization Required)
-*   **Permissions:** Modifications affecting the Recursive Improvement Engine itself, the Safety Kernel, Risk Authority, or Human Approval Gates.
-*   **Controls:** Any attempt to autonomously bypass or weaken safety guards triggers an immediate, hard-wired shutdown of the improvement engine and sounds an emergency alert.
-
----
-
-## 4. Subsystem Mapping and Integration
-
-The Governed Recursive Self-Improvement Architecture is designed to recursively improve all 30+ domains of AlphaAlgo by routing proposals through specialized adapters to the single, authoritative **RecursiveSelfImprovementEngine** (`trading_bot/recursive_self_improvement/engine.py`):
-
-1.  **World Model Improvement:** Updates transition models and counterfactual predictions, validating that newer models decrease prediction errors relative to simple statistical baselines.
-2.  **Alpha / Strategy Discovery:** Mutates alpha logic and parameters, logging parental lineage inside the `IMPROVEMENT_GENOME.md` to prevent backtest overfitting.
-3.  **Trading Policy:** Enhances entry/exit logic while remaining strictly subordinate to the deterministic `RiskAuthority` and `ImmutableShield`.
-4.  **Risk Intelligence:** Refines Value-at-Risk (VaR), CVaR, and liquidity models independently of strategy generation.
-5.  **Market & Sentiment Intelligence:** Calibrates source reliability and text embedding models, validating incremental predictive gains.
-6.  **Research & Planning:** Adapts literature searching, priority scores, and task decomposition strategies.
-7.  **Feature & Model Selection:** Discovers predictive representations and optimizes model routing paths.
-8.  **Uncertainty & Calibration:** Tunes confidence estimation to enforce trade abstention during periods of high epistemic uncertainty.
-9.  **Execution & Portfolio:** Improves execution algorithms to minimize market impact and slippage.
-10. **Data & Simulation:** Calibrates spread, slippage, and fill dynamics to match historical market depth.
-11. **Failure Diagnosis & Self-Debugging:** Generates post-mortems and counterfactual hypotheses to fix broken contracts or performance regressions.
-12. **Resource & Tool Selection:** Optimizes compute allocation per subtask to maximize reliable intelligence per unit of resource cost.
+- No candidate without a parent, objective, bounded change set, evaluation plan,
+  and safety constraints.
+- No candidate is accepted without immutable data provenance.
+- No candidate is promoted without deterministic replay and OOS evidence.
+- No candidate may increase permitted drawdown by default.
+- No missing evaluator, missing safety result, failed replay, or missing human
+  approver is interpreted as approval.
+- No RSI candidate directly changes live code, risk limits, credentials,
+  governance, broker selection, or execution semantics.
+- Every staged change has a rollback snapshot and a human-readable audit record.
+- Paper/staging promotion is distinct from live production promotion.

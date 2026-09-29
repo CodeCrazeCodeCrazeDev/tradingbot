@@ -805,77 +805,9 @@ def create_digital_twin(config: Optional[Dict] = None) -> DigitalTwin:
 
 # Example usage
 if __name__ == "__main__":
-    import random
-    
-    twin = create_digital_twin({
-        'initial_capital': 100000,
-        'min_trades': 5
-    })
-    
-    print("=" * 60)
-    print("DIGITAL TWIN SIMULATION")
-    print("=" * 60)
-    
-    # Simulate market data and trades
-    symbol = "EURUSD"
-    base_price = 1.1000
-    
-    print("\nRunning simulation...")
-    
-    for i in range(100):
-        # Generate tick
-        price = base_price + random.uniform(-0.005, 0.005)
-        spread = 0.0002
-        
-        tick = MarketTick(
-            timestamp=datetime.now(),
-            symbol=symbol,
-            bid=price - spread/2,
-            ask=price + spread/2,
-            last=price,
-            volume=random.randint(1000, 10000)
-        )
-        
-        twin.process_tick(tick)
-        
-        # Random trading
-        if random.random() < 0.1:  # 10% chance to trade
-            side = 'BUY' if random.random() > 0.5 else 'SELL'
-            quantity = random.randint(1000, 5000)
-            
-            order_id = twin.submit_order(symbol, side, quantity)
-    
-    # Show results
-    print("\n" + "=" * 60)
-    print("SIMULATION RESULTS")
-    print("=" * 60)
-    
-    status = twin.get_status()
-    print(f"\nEquity: ${status['equity']:,.2f}")
-    print(f"P&L: ${status['pnl']:,.2f}")
-    print(f"Max Drawdown: {status['max_drawdown']:.2%}")
-    print(f"Total Trades: {status['total_trades']}")
-    
-    # Validate strategy
-    print("\n" + "=" * 60)
-    print("STRATEGY VALIDATION")
-    print("=" * 60)
-    
-    validation = twin.validate_strategy("TEST_STRATEGY")
-    
-    print(f"\nStrategy: {validation.strategy_id}")
-    print(f"Passed: {'✅ YES' if validation.passed else '❌ NO'}")
-    print(f"P&L: ${validation.twin_pnl:,.2f}")
-    print(f"Trades: {validation.twin_trades}")
-    print(f"Win Rate: {validation.twin_win_rate:.1%}")
-    print(f"Sharpe: {validation.twin_sharpe:.2f}")
-    print(f"Max Drawdown: {validation.twin_max_drawdown:.1%}")
-    print(f"\nRecommendation: {validation.recommendation}")
-    
-    if validation.details:
-        print(f"\nDetails:")
-        for key, value in validation.details.items():
-            if isinstance(value, float):
-                print(f"  {key}: {value:.2f}")
-            else:
-                print(f"  {key}: {value}")
+    raise SystemExit(
+        "trading_bot/simulation/digital_twin.py is QUARANTINED: standalone execution of this module is a "
+        "parallel capital/loop path outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

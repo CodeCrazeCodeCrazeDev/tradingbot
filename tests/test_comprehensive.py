@@ -23,10 +23,11 @@ class TestForecasting:
         assert output.shape == (32, 24, 1)
     
     def test_deepar_model(self):
+        import torch
         config = DeepARConfig(context_length=168, prediction_length=24)
         model = DeepARModel(config)
         past_target = np.random.randn(32, 168).astype(np.float32)
-        
+
         params = model(torch.FloatTensor(past_target))
         assert len(params) == 2
 
@@ -35,24 +36,22 @@ class TestExplainability:
     @pytest.mark.skip(reason="LIME not installed")
     def test_lime_explainer(self):
         from sklearn.ensemble import RandomForestRegressor
-import numpy
-import pandas
-        
-X_train = np.random.randn(100, 10)
-y_train = np.random.randn(100)
-model = RandomForestRegressor(n_estimators=5)
-model.fit(X_train, y_train)
-        
-explainer = LIMEExplainer(X_train, [f'f{i}' for i in range(10)])
-explanation = explainer.explain_prediction(model, X_train[0])
-        
-assert 'feature_importance' in explanation
-assert 'local_prediction' in explanation
+
+        X_train = np.random.randn(100, 10)
+        y_train = np.random.randn(100)
+        model = RandomForestRegressor(n_estimators=5)
+        model.fit(X_train, y_train)
+
+        explainer = LIMEExplainer(X_train, [f'f{i}' for i in range(10)])
+        explanation = explainer.explain_prediction(model, X_train[0])
+
+        assert 'feature_importance' in explanation
+        assert 'local_prediction' in explanation
 
 
 class TestMonitoring:
     def test_prometheus_exporter(self):
-        exporter = PrometheusExporter(port=8001)
+        exporter = PrometheusExporter(port=8001, start_server=False)
         exporter.record_trade('EURUSD', 'BUY', 'closed', 10.5)
         exporter.update_portfolio(100000, 0.02)
         assert exporter.enabled or not exporter.enabled

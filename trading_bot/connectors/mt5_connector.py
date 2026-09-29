@@ -1,4 +1,5 @@
 """
+import warnings
 from pathlib import Path
 from dataclasses import field
 MetaTrader 5 Connector
@@ -26,6 +27,7 @@ class MT5Connector(BaseConnector):
     """
     
     def __init__(self, config: Dict):
+        warnings.warn("MT5Connector is a legacy/quarantined component: parallel capital/venue/loop path outside risk->governance->shield->bus->execution. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         
         # SECURITY FIX: Validate MT5 configuration inputs

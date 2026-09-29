@@ -123,34 +123,25 @@ class EventBus:
         self.config = config or {}
         self.unified_bus = decision_bus
         self._subscribers: Dict[str, List[Subscription]] = defaultdict(list)
-        self._event_queue: asyncio.PriorityQueue = asyncio.PriorityQueue()
         self._dead_letter_queue: List[Event] = []
         self._event_history: List[Event] = []
         self._max_history = self.config.get('max_history', 1000)
         self._running = False
-        self._processor_task: Optional[asyncio.Task] = None
         self._lock = asyncio.Lock()
 
         logger.info("EventBus initialized (bridged to UnifiedDecisionBus)")
 
     async def start(self) -> None:
-        """Start event processing"""
+        """Start the legacy facade without creating a second event-loop owner."""
         if self._running:
             return
         self._running = True
-        self._processor_task = asyncio.create_task(self._process_events())
-        logger.info("EventBus started")
+        logger.info("EventBus facade started")
 
     async def stop(self) -> None:
-        """Stop event processing"""
+        """Stop facade delivery; the canonical bus remains the lifecycle owner."""
         self._running = False
-        if self._processor_task:
-            self._processor_task.cancel()
-            try:
-                await self._processor_task
-            except asyncio.CancelledError:
-                pass
-        logger.info("EventBus stopped")
+        logger.info("EventBus facade stopped")
 
     def subscribe(
         self,
@@ -202,8 +193,11 @@ class EventBus:
         )
         await self.unified_bus.publish(unified_event)
 
-        # Local processing for legacy compatibility
-        await self._event_queue.put((-event.priority.value, event.timestamp, event))
+        await self._dispatch_event(event)
+        async with self._lock:
+            self._event_history.append(event)
+            if len(self._event_history) > self._max_history:
+                self._event_history = self._event_history[-self._max_history:]
         logger.debug(f"Event published: {event.event_type} from {event.source}")
 
     async def publish_and_wait(self, event: Event, timeout: float = 30.0) -> bool:
@@ -217,32 +211,6 @@ class EventBus:
         except asyncio.TimeoutError:
             logger.warning(f"Event {event.event_id} timed out")
             return False
-
-    async def _process_events(self) -> None:
-        """Process events from queue"""
-        while self._running:
-            try:
-                # Get event with timeout to allow checking running flag
-                try:
-                    _, _, event = await asyncio.wait_for(
-                        self._event_queue.get(), timeout=1.0
-                    )
-                except asyncio.TimeoutError:
-                    continue
-
-                # Process event
-                await self._dispatch_event(event)
-
-                # Store in history
-                async with self._lock:
-                    self._event_history.append(event)
-                    if len(self._event_history) > self._max_history:
-                        self._event_history = self._event_history[-self._max_history:]
-
-            except asyncio.CancelledError:
-                break
-            except Exception as e:
-                logger.error(f"Error processing event: {e}")
 
     async def _dispatch_event(self, event: Event) -> None:
         """Dispatch event to subscribers"""
@@ -309,7 +277,7 @@ class EventBus:
     def get_stats(self) -> Dict[str, Any]:
         """Get event bus statistics"""
         return {
-            'queue_size': self._event_queue.qsize(),
+            'queue_size': 0,
             'history_size': len(self._event_history),
             'dead_letter_count': len(self._dead_letter_queue),
             'subscriber_count': sum(len(s) for s in self._subscribers.values()),

@@ -5,6 +5,7 @@ Dashboard Service
 Wraps Dashboard module capabilities as an event-driven service.
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime
@@ -31,6 +32,7 @@ class DashboardService(BaseService):
     DEPENDENCIES = []
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("DashboardService is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         super().__init__(config)
         self._interval: float = config.get('interval', 60.0) if config else 60.0
         self._task: Optional[asyncio.Task] = None

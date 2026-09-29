@@ -10,6 +10,7 @@ Manages the complete lifecycle of orders:
 5. Position tracking
 """
 
+import warnings
 import logging
 import threading
 import asyncio
@@ -219,6 +220,13 @@ class OrderManager:
         persist_orders: bool = True,
         orders_file: Optional[str] = None
     ):
+        warnings.warn(
+            "OrderManager is a legacy/quarantined component: parallel order "
+            "management outside CanonicalExecutionService. It carries no "
+            "production authority.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         """
         Initialize order manager.
         

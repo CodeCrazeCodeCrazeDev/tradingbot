@@ -4,6 +4,7 @@ Provides cross-process shared memory functionality using multiprocessing.shared_
 Replaces deprecated pyarrow.plasma with a more robust and Windows-compatible solution
 """
 
+import warnings
 import asyncio
 import logging
 import json
@@ -91,6 +92,7 @@ class SharedMemoryManager:
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("SharedMemoryManager is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.objects: Dict[str, SharedMemoryObject] = {}
         self.lock = threading.RLock()
@@ -114,6 +116,15 @@ class SharedMemoryManager:
                 self._cleanup_old_objects()
             except Exception as e:
                 logger.error(f"Error in cleanup loop: {e}")
+
+    async def _async_cleanup_loop(self):
+        """Async background task for periodic cleanup"""
+        while True:
+            await asyncio.sleep(self.cleanup_interval)
+            try:
+                await asyncio.to_thread(self._cleanup_old_objects)
+            except Exception as e:
+                logger.error(f"Error in async cleanup loop: {e}")
     
     def _cleanup_old_objects(self):
         """Clean up old or unused objects"""
@@ -205,18 +216,11 @@ class SharedMemoryManager:
     
     def _put_dataframe(self, df: pd.DataFrame, obj_id: str) -> str:
         """Store a pandas DataFrame in shared memory"""
-        # Convert to dict of arrays
-        arrays = {
-            'index': df.index.values,
-            'columns': np.array(df.columns),
-            'dtypes': np.array([str(dt) for dt in df.dtypes])
-        }
-        
-        for col in df.columns:
-            arrays[f'data_{col}'] = df[col].values
-        
-        # Store dict in shared memory
-        return self._put_json(arrays, obj_id)
+        # Serialize through the canonical registry schema so get_dataframe()
+        # can round-trip it; the ad-hoc data_<col> layout was unreadable and
+        # json's default=str mangled the arrays into repr strings.
+        from trading_bot.core.governance.serialization import SerializerRegistry
+        return self._put_json(SerializerRegistry.serialize_dataframe(df), obj_id)
     
     def _put_json(self, data: Any, obj_id: str) -> str:
         """Store a JSON-serialized object in shared memory"""

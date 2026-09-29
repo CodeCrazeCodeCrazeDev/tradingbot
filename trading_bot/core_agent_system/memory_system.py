@@ -15,6 +15,7 @@ Key Features:
 - Memory consolidation and retrieval
 """
 
+import warnings
 import asyncio
 import logging
 from datetime import datetime, timedelta
@@ -548,6 +549,7 @@ class MemorySystem:
     """
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("MemorySystem is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         storage_path = Path(self.config.get('storage_path', 'memory_data'))

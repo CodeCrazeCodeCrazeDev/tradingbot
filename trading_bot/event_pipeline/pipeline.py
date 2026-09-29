@@ -6,6 +6,7 @@ Integrates all components into a consistent, replayable, fault-tolerant, scalabl
 """
 
 from __future__ import annotations
+import warnings
 
 import asyncio
 import logging
@@ -152,6 +153,7 @@ class EventPipeline:
     """
     
     def __init__(self, config: PipelineConfig = None):
+        warnings.warn("EventPipeline is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or PipelineConfig()
         
         if not self.config.pipeline_id:

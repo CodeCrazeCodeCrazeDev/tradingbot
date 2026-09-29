@@ -6,6 +6,7 @@ enabling real-time detection and processing of market events, economic announcem
 news, and social media trends.
 """
 
+import warnings
 import enum
 import asyncio
 import logging
@@ -154,6 +155,7 @@ from enum import Enum
         Args:
             config: Optional configuration dictionary
         """
+        warnings.warn("EventMonitor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.events: Dict[str, Event] = {}
         self.active_sources: Set[EventSource] = set()

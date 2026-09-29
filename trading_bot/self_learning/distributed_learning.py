@@ -5,6 +5,7 @@ This module implements distributed learning across all bot components,
 enabling knowledge sharing, collective intelligence, and coordinated improvement.
 """
 
+import warnings
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional, Tuple, Any, Set
@@ -372,6 +373,7 @@ class DistributedLearningSystem:
     """Main distributed learning system coordinator"""
     
     def __init__(self, config: Optional[Dict] = None):
+        warnings.warn("DistributedLearningSystem is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.knowledge_base = KnowledgeBase(max_size=self.config.get('knowledge_base_size', 10000))
         self.message_bus = MessageBus()

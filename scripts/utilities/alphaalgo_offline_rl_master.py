@@ -407,7 +407,11 @@ async def main():
     logger.info("\n✅ AlphaAlgo Offline RL Master completed successfully")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    raise SystemExit(
+        "scripts/utilities/alphaalgo_offline_rl_master.py is QUARANTINED: standalone launcher/runner can spawn a parallel runtime outside ModularMonolithRuntime -> UnifiedTradingBot. Use 'python main.py --mode paper' for the canonical entry point."
+    )
+    # Legacy entry point preserved below for reference (unreachable):
     # Ensure logs directory exists
     os.makedirs('logs', exist_ok=True)
     

@@ -25,6 +25,7 @@ Attack fixes applied:
   Brier score / log-loss, never binary PnL classification
 """
 
+import warnings
 from typing import Dict, List, Optional, Any, Tuple, Set
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
@@ -187,6 +188,7 @@ class GovernanceGovernor:
         audit_interval_hours: int = 24,
         behavior_threshold_window: int = 50,
     ):
+        warnings.warn("GovernanceGovernor is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.dgs_live = dgs_live
         self.dgs_deep = dgs_deep
         self.layer3_adversarial = layer3_adversarial
@@ -225,8 +227,13 @@ class GovernanceGovernor:
         if self.monitoring_active:
             return
         self.monitoring_active = True
-        self.audit_task = asyncio.create_task(self._audit_loop())
-        logger.info(f"Started DGS-Governor monitoring (interval: {self.audit_interval_hours}h)")
+        # Audit worker disabled: the canonical UnifiedDecisionBus owns the
+        # production audit trail; this governor is advisory only.
+        self.audit_task = None
+        logger.warning(
+            "DGS-Governor audit worker disabled; canonical UnifiedDecisionBus "
+            "owns audit"
+        )
 
     async def stop_monitoring(self):
         self.monitoring_active = False

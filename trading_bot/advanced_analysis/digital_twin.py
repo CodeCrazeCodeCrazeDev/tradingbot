@@ -13,6 +13,7 @@ Features:
 - Performance comparison
 """
 
+import warnings
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -249,6 +250,7 @@ class DigitalTwinSimulator:
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        warnings.warn("DigitalTwinSimulator is a legacy/quarantined component: capital path outside the canonical execution boundary. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         
         # Initial capital

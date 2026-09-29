@@ -1,0 +1,4384 @@
+# AlphaAlgo Wave Inventory
+
+Generated from `ARCHITECTURE_LEGACY_CLASSIFICATION.json` by `scripts/generate_wave_inventory.py`. This report lists every active scanned Python module and its assigned migration wave.
+
+## Summary
+
+| Wave | Modules | Boundary meaning | Runtime reachable | CLI | Loops | Direct capital |
+|---:|---:|---|---:|---:|---:|---:|
+| 0 | 12 | Canonical authorities | 10 | 0 | 1 | 1 |
+| 1 | 1769 | Orchestrators, registries, lifecycle, and infrastructure fallback | 15 | 230 | 202 | 31 |
+| 2 | 328 | Risk, governance, approvals, safety, and compliance | 8 | 37 | 1 | 7 |
+| 3 | 50 | Broker, venue, exchange, execution, and market-data boundaries | 1 | 5 | 11 | 17 |
+| 4 | 298 | Strategy, signal, alpha, portfolio, and position intelligence | 0 | 32 | 18 | 5 |
+| 5 | 498 | AI, agents, models, cognition, memory, reasoning, and world models | 4 | 55 | 17 | 3 |
+| 6 | 208 | Research, backtesting, evaluation, experiment, and RSI evidence | 0 | 7 | 3 | 1 |
+| 7 | 2 | Standalone main/CLI facade surfaces | 0 | 2 | 0 | 0 |
+
+## Important interpretation note
+
+The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad orchestrator/lifecycle/infrastructure fallback, and Wave 7 currently detects only standalone main surfaces. Review `owner`, `canonical_port`, tags, and architectural targets together before migrating a module.
+
+## Directory rollups
+
+### Wave 0: Canonical authorities
+- `trading_bot`: 1 module(s)
+- `trading_bot/cognition`: 1 module(s)
+- `trading_bot/core`: 4 module(s)
+- `trading_bot/data`: 1 module(s)
+- `trading_bot/execution`: 1 module(s)
+- `trading_bot/foundation`: 1 module(s)
+- `trading_bot/persistence`: 1 module(s)
+- `trading_bot/recursive_self_improvement`: 1 module(s)
+- `trading_bot/risk`: 1 module(s)
+
+### Wave 1: Orchestrators, registries, lifecycle, and infrastructure fallback
+- `trading_bot`: 141 module(s)
+- `trading_bot/aads`: 13 module(s)
+- `trading_bot/aamis_v3`: 2 module(s)
+- `trading_bot/adaptive_systems`: 33 module(s)
+- `trading_bot/advanced_analysis`: 13 module(s)
+- `trading_bot/advanced_features`: 18 module(s)
+- `trading_bot/advanced_ml`: 3 module(s)
+- `trading_bot/advanced_systems2`: 2 module(s)
+- `trading_bot/adversarial_curriculum`: 6 module(s)
+- `trading_bot/adversarial_decision`: 8 module(s)
+- `trading_bot/adversarial_verification`: 2 module(s)
+- `trading_bot/ai`: 4 module(s)
+- `trading_bot/ai_core`: 2 module(s)
+- `trading_bot/ai_engineer`: 2 module(s)
+- `trading_bot/alerts`: 3 module(s)
+- `trading_bot/aletheia_autonomous`: 2 module(s)
+- `trading_bot/alternative_data`: 3 module(s)
+- `trading_bot/analysis`: 77 module(s)
+- `trading_bot/analysis_unified`: 2 module(s)
+- `trading_bot/analytics`: 11 module(s)
+- `trading_bot/apex_fi`: 5 module(s)
+- `trading_bot/api`: 3 module(s)
+- `trading_bot/arbitrage`: 2 module(s)
+- `trading_bot/audit`: 3 module(s)
+- `trading_bot/auto_optimizer`: 1 module(s)
+- `trading_bot/automation`: 2 module(s)
+- `trading_bot/autonomous`: 7 module(s)
+- `trading_bot/autonomous_learner`: 6 module(s)
+- `trading_bot/autonomous_pipeline`: 5 module(s)
+- `trading_bot/blockchain`: 3 module(s)
+- `trading_bot/bridges`: 3 module(s)
+- `trading_bot/cloud_deployer`: 3 module(s)
+- `trading_bot/cognitive_architecture`: 12 module(s)
+- `trading_bot/config`: 7 module(s)
+- `trading_bot/connectivity`: 21 module(s)
+- `trading_bot/connectivity_unified`: 2 module(s)
+- `trading_bot/connectors`: 3 module(s)
+- `trading_bot/core`: 121 module(s)
+- `trading_bot/core_api`: 5 module(s)
+- `trading_bot/cos`: 9 module(s)
+- `trading_bot/critical_fixes`: 6 module(s)
+- `trading_bot/crypto`: 2 module(s)
+- `trading_bot/ctrader`: 2 module(s)
+- `trading_bot/dashboard`: 23 module(s)
+- `trading_bot/data`: 5 module(s)
+- `trading_bot/data_feeds`: 6 module(s)
+- `trading_bot/data_sources`: 2 module(s)
+- `trading_bot/database`: 23 module(s)
+- `trading_bot/decision_layer`: 15 module(s)
+- `trading_bot/deepchart`: 16 module(s)
+- `trading_bot/deepseek_engineer`: 5 module(s)
+- `trading_bot/deployment`: 2 module(s)
+- `trading_bot/derivatives`: 2 module(s)
+- `trading_bot/devops`: 2 module(s)
+- `trading_bot/diagnostics`: 2 module(s)
+- `trading_bot/distributed`: 2 module(s)
+- `trading_bot/documentation`: 2 module(s)
+- `trading_bot/elite_ai_system`: 10 module(s)
+- `trading_bot/elite_system`: 16 module(s)
+- `trading_bot/error_handling`: 7 module(s)
+- `trading_bot/eternal_evolution`: 6 module(s)
+- `trading_bot/event_monitoring`: 8 module(s)
+- `trading_bot/event_pipeline`: 11 module(s)
+- `trading_bot/events`: 2 module(s)
+- `trading_bot/evolution_layer`: 5 module(s)
+- `trading_bot/execution`: 51 module(s)
+- `trading_bot/exit_strategies`: 5 module(s)
+- `trading_bot/exits`: 2 module(s)
+- `trading_bot/explainability`: 2 module(s)
+- `trading_bot/features`: 3 module(s)
+- `trading_bot/feedback`: 2 module(s)
+- `trading_bot/filters`: 2 module(s)
+- `trading_bot/foundation`: 6 module(s)
+- `trading_bot/gets`: 17 module(s)
+- `trading_bot/global_expansion`: 3 module(s)
+- `trading_bot/golden_path`: 6 module(s)
+- `trading_bot/hedge_fund`: 3 module(s)
+- `trading_bot/hedging`: 2 module(s)
+- `trading_bot/hft`: 2 module(s)
+- `trading_bot/hivemind`: 13 module(s)
+- `trading_bot/human_layer`: 4 module(s)
+- `trading_bot/improvements`: 14 module(s)
+- `trading_bot/indicators`: 9 module(s)
+- `trading_bot/infrastructure`: 9 module(s)
+- `trading_bot/ingestion`: 11 module(s)
+- `trading_bot/innovations`: 18 module(s)
+- `trading_bot/institutional`: 2 module(s)
+- `trading_bot/institutional_entry`: 4 module(s)
+- `trading_bot/integration`: 10 module(s)
+- `trading_bot/integrations`: 5 module(s)
+- `trading_bot/intel`: 3 module(s)
+- `trading_bot/interfaces`: 2 module(s)
+- `trading_bot/internet_access`: 5 module(s)
+- `trading_bot/learning`: 7 module(s)
+- `trading_bot/log_system`: 9 module(s)
+- `trading_bot/macro`: 2 module(s)
+- `trading_bot/market_feeds`: 2 module(s)
+- `trading_bot/market_making`: 2 module(s)
+- `trading_bot/market_student`: 8 module(s)
+- `trading_bot/market_teacher`: 8 module(s)
+- `trading_bot/master_system`: 1 module(s)
+- `trading_bot/meta_learning`: 2 module(s)
+- `trading_bot/metrics`: 3 module(s)
+- `trading_bot/ml`: 109 module(s)
+- `trading_bot/mobile`: 2 module(s)
+- `trading_bot/mobile_app`: 2 module(s)
+- `trading_bot/monitoring`: 22 module(s)
+- `trading_bot/msos`: 14 module(s)
+- `trading_bot/multimodal`: 5 module(s)
+- `trading_bot/neural_integration`: 4 module(s)
+- `trading_bot/neuros_evolution`: 31 module(s)
+- `trading_bot/notifications`: 6 module(s)
+- `trading_bot/observability`: 8 module(s)
+- `trading_bot/opportunity_scanner`: 13 module(s)
+- `trading_bot/ops`: 3 module(s)
+- `trading_bot/optimization`: 3 module(s)
+- `trading_bot/orchestration`: 4 module(s)
+- `trading_bot/orchestrator`: 7 module(s)
+- `trading_bot/performance`: 10 module(s)
+- `trading_bot/perplexity_trading`: 8 module(s)
+- `trading_bot/persistence`: 3 module(s)
+- `trading_bot/production`: 4 module(s)
+- `trading_bot/profiling`: 2 module(s)
+- `trading_bot/profit_maximizer`: 3 module(s)
+- `trading_bot/psychology`: 2 module(s)
+- `trading_bot/quality`: 2 module(s)
+- `trading_bot/quantum`: 3 module(s)
+- `trading_bot/qwen_codemender`: 6 module(s)
+- `trading_bot/radar_ai`: 9 module(s)
+- `trading_bot/reality_gates`: 8 module(s)
+- `trading_bot/realtime`: 5 module(s)
+- `trading_bot/realtime_trading_core`: 1 module(s)
+- `trading_bot/recursive_improvement`: 14 module(s)
+- `trading_bot/recursive_self_improvement`: 21 module(s)
+- `trading_bot/registry`: 3 module(s)
+- `trading_bot/reporting`: 3 module(s)
+- `trading_bot/schemas`: 4 module(s)
+- `trading_bot/security`: 17 module(s)
+- `trading_bot/self_concepts`: 12 module(s)
+- `trading_bot/self_diagnostic`: 6 module(s)
+- `trading_bot/self_healing_ai`: 15 module(s)
+- `trading_bot/self_improvement`: 14 module(s)
+- `trading_bot/self_learning`: 7 module(s)
+- `trading_bot/self_mastery`: 6 module(s)
+- `trading_bot/sentient_core`: 10 module(s)
+- `trading_bot/sentiment`: 3 module(s)
+- `trading_bot/services`: 66 module(s)
+- `trading_bot/simulation`: 4 module(s)
+- `trading_bot/skills`: 74 module(s)
+- `trading_bot/social`: 3 module(s)
+- `trading_bot/strategies`: 6 module(s)
+- `trading_bot/streaming`: 7 module(s)
+- `trading_bot/superpowerful_ai`: 6 module(s)
+- `trading_bot/surveillance`: 3 module(s)
+- `trading_bot/system`: 2 module(s)
+- `trading_bot/system_health`: 5 module(s)
+- `trading_bot/system_supervisor`: 8 module(s)
+- `trading_bot/systems_ai`: 9 module(s)
+- `trading_bot/tamic`: 9 module(s)
+- `trading_bot/telemetry`: 7 module(s)
+- `trading_bot/testing`: 6 module(s)
+- `trading_bot/tests`: 2 module(s)
+- `trading_bot/tools`: 4 module(s)
+- `trading_bot/trade_journal`: 2 module(s)
+- `trading_bot/trading`: 3 module(s)
+- `trading_bot/trading_calendar`: 3 module(s)
+- `trading_bot/ultimate_architecture`: 2 module(s)
+- `trading_bot/ultimate_bot`: 3 module(s)
+- `trading_bot/ultimate_production`: 6 module(s)
+- `trading_bot/ultimate_system`: 4 module(s)
+- `trading_bot/unified_architecture`: 5 module(s)
+- `trading_bot/unified_system`: 14 module(s)
+- `trading_bot/upgrades`: 11 module(s)
+- `trading_bot/utils`: 15 module(s)
+- `trading_bot/validation`: 20 module(s)
+- `trading_bot/verification`: 5 module(s)
+- `trading_bot/visualization`: 4 module(s)
+- `trading_bot/voice_assistant`: 2 module(s)
+- `trading_bot/wealth`: 4 module(s)
+
+### Wave 2: Risk, governance, approvals, safety, and compliance
+- `trading_bot`: 7 module(s)
+- `trading_bot/adaptive_systems`: 2 module(s)
+- `trading_bot/advanced_features`: 1 module(s)
+- `trading_bot/advanced_intelligence`: 36 module(s)
+- `trading_bot/ai_core`: 1 module(s)
+- `trading_bot/alpha_engine`: 3 module(s)
+- `trading_bot/alphaalgo_core`: 2 module(s)
+- `trading_bot/alphaalgo_institutional`: 1 module(s)
+- `trading_bot/alphaalgo_v2`: 7 module(s)
+- `trading_bot/apex_fi`: 1 module(s)
+- `trading_bot/approval`: 2 module(s)
+- `trading_bot/autonomous_financial_intelligence`: 6 module(s)
+- `trading_bot/autonomous_pipeline`: 1 module(s)
+- `trading_bot/brain`: 1 module(s)
+- `trading_bot/bridges`: 1 module(s)
+- `trading_bot/compliance`: 3 module(s)
+- `trading_bot/core`: 17 module(s)
+- `trading_bot/core_agent_system`: 2 module(s)
+- `trading_bot/critical_fixes`: 3 module(s)
+- `trading_bot/dashboard`: 2 module(s)
+- `trading_bot/decision_governance`: 60 module(s)
+- `trading_bot/decision_layer`: 1 module(s)
+- `trading_bot/elite_system`: 2 module(s)
+- `trading_bot/eternal_evolution`: 1 module(s)
+- `trading_bot/gets`: 1 module(s)
+- `trading_bot/governance`: 7 module(s)
+- `trading_bot/hedge_fund`: 2 module(s)
+- `trading_bot/hedge_fund_safety`: 7 module(s)
+- `trading_bot/hivemind`: 1 module(s)
+- `trading_bot/human_layer`: 1 module(s)
+- `trading_bot/integrations`: 1 module(s)
+- `trading_bot/intelligence`: 1 module(s)
+- `trading_bot/intelligence_core`: 1 module(s)
+- `trading_bot/market_intelligence`: 1 module(s)
+- `trading_bot/market_teacher`: 1 module(s)
+- `trading_bot/meta_governance`: 3 module(s)
+- `trading_bot/ml`: 1 module(s)
+- `trading_bot/monitoring`: 1 module(s)
+- `trading_bot/msos`: 1 module(s)
+- `trading_bot/orchestrator`: 1 module(s)
+- `trading_bot/perplexity_trading`: 1 module(s)
+- `trading_bot/qwen_codemender`: 1 module(s)
+- `trading_bot/realtime`: 1 module(s)
+- `trading_bot/recursive_improvement`: 3 module(s)
+- `trading_bot/recursive_self_improvement`: 1 module(s)
+- `trading_bot/risk`: 54 module(s)
+- `trading_bot/risk_management`: 9 module(s)
+- `trading_bot/risk_unified`: 2 module(s)
+- `trading_bot/safety`: 14 module(s)
+- `trading_bot/self_healing_ai`: 1 module(s)
+- `trading_bot/self_improvement`: 1 module(s)
+- `trading_bot/services`: 3 module(s)
+- `trading_bot/skills`: 16 module(s)
+- `trading_bot/stealth_safety`: 7 module(s)
+- `trading_bot/systems_ai`: 1 module(s)
+- `trading_bot/tamic`: 1 module(s)
+- `trading_bot/ultimate_approval`: 2 module(s)
+- `trading_bot/ultimate_production`: 1 module(s)
+- `trading_bot/unified_approval`: 6 module(s)
+- `trading_bot/unified_architecture`: 1 module(s)
+- `trading_bot/unified_system`: 2 module(s)
+- `trading_bot/upgrades`: 2 module(s)
+- `trading_bot/utils`: 2 module(s)
+- `trading_bot/validation`: 1 module(s)
+- `trading_bot/world_model`: 1 module(s)
+
+### Wave 3: Broker, venue, exchange, execution, and market-data boundaries
+- `trading_bot`: 1 module(s)
+- `trading_bot/advanced_intelligence`: 2 module(s)
+- `trading_bot/alphaalgo_core`: 1 module(s)
+- `trading_bot/alphaalgo_v2`: 3 module(s)
+- `trading_bot/brain`: 1 module(s)
+- `trading_bot/broker`: 4 module(s)
+- `trading_bot/brokers`: 18 module(s)
+- `trading_bot/connectivity`: 1 module(s)
+- `trading_bot/connectors`: 5 module(s)
+- `trading_bot/core`: 1 module(s)
+- `trading_bot/data`: 1 module(s)
+- `trading_bot/execution`: 5 module(s)
+- `trading_bot/hedge_fund`: 1 module(s)
+- `trading_bot/improvements`: 1 module(s)
+- `trading_bot/production`: 1 module(s)
+- `trading_bot/services`: 2 module(s)
+- `trading_bot/skills`: 1 module(s)
+- `trading_bot/strategies`: 1 module(s)
+
+### Wave 4: Strategy, signal, alpha, portfolio, and position intelligence
+- `trading_bot`: 7 module(s)
+- `trading_bot/aads`: 3 module(s)
+- `trading_bot/adaptive_systems`: 1 module(s)
+- `trading_bot/advanced_features`: 1 module(s)
+- `trading_bot/advanced_intelligence`: 29 module(s)
+- `trading_bot/adversarial_decision`: 1 module(s)
+- `trading_bot/alpha_engine`: 23 module(s)
+- `trading_bot/alpha_evolve`: 16 module(s)
+- `trading_bot/alphaalgo_core`: 18 module(s)
+- `trading_bot/alphaalgo_institutional`: 8 module(s)
+- `trading_bot/alphaalgo_v2`: 33 module(s)
+- `trading_bot/analysis`: 1 module(s)
+- `trading_bot/analytics`: 2 module(s)
+- `trading_bot/apex_fi`: 4 module(s)
+- `trading_bot/auto_optimizer`: 1 module(s)
+- `trading_bot/autonomous`: 2 module(s)
+- `trading_bot/brain`: 2 module(s)
+- `trading_bot/bridges`: 3 module(s)
+- `trading_bot/cognition`: 1 module(s)
+- `trading_bot/core`: 11 module(s)
+- `trading_bot/critical_fixes`: 1 module(s)
+- `trading_bot/dashboard`: 2 module(s)
+- `trading_bot/database`: 1 module(s)
+- `trading_bot/deepchart`: 1 module(s)
+- `trading_bot/elite_ai_system`: 1 module(s)
+- `trading_bot/elite_system`: 1 module(s)
+- `trading_bot/execution`: 2 module(s)
+- `trading_bot/exit_strategies`: 2 module(s)
+- `trading_bot/hedge_fund`: 2 module(s)
+- `trading_bot/improvements`: 6 module(s)
+- `trading_bot/institutional_entry`: 1 module(s)
+- `trading_bot/learning`: 1 module(s)
+- `trading_bot/market_student`: 1 module(s)
+- `trading_bot/market_teacher`: 2 module(s)
+- `trading_bot/ml`: 4 module(s)
+- `trading_bot/msos`: 1 module(s)
+- `trading_bot/observability`: 1 module(s)
+- `trading_bot/optimization`: 3 module(s)
+- `trading_bot/orchestrator`: 1 module(s)
+- `trading_bot/portfolio`: 4 module(s)
+- `trading_bot/position`: 6 module(s)
+- `trading_bot/radar_ai`: 1 module(s)
+- `trading_bot/realtime`: 1 module(s)
+- `trading_bot/recursive_improvement`: 2 module(s)
+- `trading_bot/self_healing_ai`: 1 module(s)
+- `trading_bot/self_improvement`: 1 module(s)
+- `trading_bot/self_learning`: 1 module(s)
+- `trading_bot/services`: 8 module(s)
+- `trading_bot/signal_discovery`: 14 module(s)
+- `trading_bot/signals`: 12 module(s)
+- `trading_bot/skills`: 17 module(s)
+- `trading_bot/strategies`: 4 module(s)
+- `trading_bot/strategy`: 13 module(s)
+- `trading_bot/superintelligence`: 1 module(s)
+- `trading_bot/system_health`: 1 module(s)
+- `trading_bot/tamic`: 1 module(s)
+- `trading_bot/trading`: 2 module(s)
+- `trading_bot/ultimate_bot`: 2 module(s)
+- `trading_bot/ultimate_production`: 1 module(s)
+- `trading_bot/ultimate_system`: 1 module(s)
+- `trading_bot/unified_architecture`: 1 module(s)
+- `trading_bot/unified_system`: 1 module(s)
+- `trading_bot/upgrades`: 1 module(s)
+
+### Wave 5: AI, agents, models, cognition, memory, reasoning, and world models
+- `trading_bot`: 12 module(s)
+- `trading_bot/aads`: 2 module(s)
+- `trading_bot/aamis_v3`: 2 module(s)
+- `trading_bot/adaptive_systems`: 1 module(s)
+- `trading_bot/advanced_analysis`: 1 module(s)
+- `trading_bot/advanced_features`: 1 module(s)
+- `trading_bot/advanced_intelligence`: 123 module(s)
+- `trading_bot/agents`: 8 module(s)
+- `trading_bot/agents2`: 4 module(s)
+- `trading_bot/ai_core`: 5 module(s)
+- `trading_bot/analysis`: 4 module(s)
+- `trading_bot/analytics`: 1 module(s)
+- `trading_bot/apex_fi`: 4 module(s)
+- `trading_bot/autonomous`: 1 module(s)
+- `trading_bot/autonomous_financial_intelligence`: 27 module(s)
+- `trading_bot/autonomous_superintelligence`: 19 module(s)
+- `trading_bot/brain`: 16 module(s)
+- `trading_bot/cognition`: 31 module(s)
+- `trading_bot/core`: 5 module(s)
+- `trading_bot/core_agent_system`: 53 module(s)
+- `trading_bot/cos`: 1 module(s)
+- `trading_bot/decision_layer`: 1 module(s)
+- `trading_bot/deepchart`: 2 module(s)
+- `trading_bot/elite_system`: 2 module(s)
+- `trading_bot/eternal_evolution`: 1 module(s)
+- `trading_bot/evolution_layer`: 1 module(s)
+- `trading_bot/golden_path`: 1 module(s)
+- `trading_bot/improvement_agent`: 9 module(s)
+- `trading_bot/integrations`: 1 module(s)
+- `trading_bot/intelligence`: 6 module(s)
+- `trading_bot/intelligence_core`: 11 module(s)
+- `trading_bot/interfaces`: 1 module(s)
+- `trading_bot/internet_access`: 1 module(s)
+- `trading_bot/market_intelligence`: 26 module(s)
+- `trading_bot/market_teacher`: 2 module(s)
+- `trading_bot/ml`: 32 module(s)
+- `trading_bot/models`: 3 module(s)
+- `trading_bot/neural_integration`: 1 module(s)
+- `trading_bot/neuros_evolution`: 4 module(s)
+- `trading_bot/orchestrator`: 1 module(s)
+- `trading_bot/perplexity_trading`: 4 module(s)
+- `trading_bot/profit_maximizer`: 1 module(s)
+- `trading_bot/radar_ai`: 9 module(s)
+- `trading_bot/reasoning`: 4 module(s)
+- `trading_bot/self_healing_ai`: 1 module(s)
+- `trading_bot/self_improvement`: 1 module(s)
+- `trading_bot/services`: 6 module(s)
+- `trading_bot/simulation`: 1 module(s)
+- `trading_bot/skills`: 1 module(s)
+- `trading_bot/superintelligence`: 6 module(s)
+- `trading_bot/superpowerful_ai`: 3 module(s)
+- `trading_bot/ultimate_bot`: 1 module(s)
+- `trading_bot/ultimate_system`: 2 module(s)
+- `trading_bot/unified_architecture`: 1 module(s)
+- `trading_bot/unified_system`: 1 module(s)
+- `trading_bot/world_model`: 29 module(s)
+
+### Wave 6: Research, backtesting, evaluation, experiment, and RSI evidence
+- `trading_bot`: 4 module(s)
+- `trading_bot/advanced_intelligence`: 2 module(s)
+- `trading_bot/alpha_engine`: 1 module(s)
+- `trading_bot/alpha_evolve`: 4 module(s)
+- `trading_bot/alpha_research`: 30 module(s)
+- `trading_bot/alphaalgo_institutional`: 2 module(s)
+- `trading_bot/analytics`: 1 module(s)
+- `trading_bot/autonomous_financial_intelligence`: 1 module(s)
+- `trading_bot/autonomous_learner`: 1 module(s)
+- `trading_bot/autonomous_superintelligence`: 2 module(s)
+- `trading_bot/backtesting`: 9 module(s)
+- `trading_bot/core`: 3 module(s)
+- `trading_bot/decision_governance`: 1 module(s)
+- `trading_bot/decision_layer`: 1 module(s)
+- `trading_bot/distributed`: 1 module(s)
+- `trading_bot/evaluation`: 4 module(s)
+- `trading_bot/gets`: 1 module(s)
+- `trading_bot/intel`: 1 module(s)
+- `trading_bot/ml`: 1 module(s)
+- `trading_bot/neuros_evolution`: 3 module(s)
+- `trading_bot/perplexity_trading`: 2 module(s)
+- `trading_bot/production`: 1 module(s)
+- `trading_bot/radar_ai`: 3 module(s)
+- `trading_bot/recursive_improvement`: 1 module(s)
+- `trading_bot/recursive_self_improvement`: 2 module(s)
+- `trading_bot/research`: 112 module(s)
+- `trading_bot/research_ingestion`: 7 module(s)
+- `trading_bot/self_healing_ai`: 2 module(s)
+- `trading_bot/services`: 2 module(s)
+- `trading_bot/signal_discovery`: 1 module(s)
+- `trading_bot/systems_ai`: 1 module(s)
+- `trading_bot/ultimate_system`: 1 module(s)
+
+### Wave 7: Standalone main/CLI facade surfaces
+- `trading_bot`: 2 module(s)
+
+## High-risk indexes
+
+### Runtime-reachable modules
+- Wave 0: `trading_bot/core/csc/controller.py` — canonical | owner=orchestration | port=CognitiveSystemController
+- Wave 0: `trading_bot/core/immutable_shield.py` — canonical | owner=governance | port=ImmutableShield
+- Wave 0: `trading_bot/core/unified_event_bus.py` — canonical | owner=infrastructure | port=UnifiedDecisionBus
+- Wave 0: `trading_bot/core/unified_registry.py` — canonical | owner=infrastructure | port=UnifiedComponentRegistry
+- Wave 0: `trading_bot/data/normalizer.py` — canonical | owner=data | port=MarketDataNormalizer
+- Wave 0: `trading_bot/execution/service.py` — canonical | owner=execution | port=CanonicalExecutionService
+- Wave 0: `trading_bot/foundation/runtime.py` — canonical | owner=composition | port=ModularMonolithRuntime
+- Wave 0: `trading_bot/persistence/repositories.py` — canonical | owner=persistence | port=SqliteTradingRepository
+- Wave 0: `trading_bot/risk/service.py` — canonical | owner=risk | port=CanonicalRiskService
+- Wave 0: `trading_bot/unified_bot.py` — canonical | owner=composition | port=UnifiedTradingBot
+- Wave 1: `trading_bot/__init__.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/csc/router.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/execution_bridge.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/hms/memory.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/verification/swarm.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/evolution_layer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/foundation/capability_registry.py` — compatibility_facade | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/foundation/contracts.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/foundation/ports.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/human_layer/__init__.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/interfaces/adapters.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/strategies/registry.py` — compatibility_facade | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/system_interfaces.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/telemetry/__init__.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/verification/confidence_calibrator.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 2: `trading_bot/core/governance/determinism.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/governance/evolution_gate.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/governance/policy_adapter.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/circuit_breaker.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/policy_adapters.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/pre_trade_checks.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/state_provider.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk_management/risk_engine.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 3: `trading_bot/broker/broker_interface.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 5: `trading_bot/agents/capability_adapter.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/agents/multi_agent_debate.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/interfaces/read_models.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/world_model/v2_core.py` — adapter | owner=cognition | port=CapabilityPort
+
+### CLI entry points
+- Wave 1: `trading_bot/adaptive_systems/quantum_integration.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/advanced_systems2/red_team_blue_team.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/adversarial_verification/red_team_blue_team.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ai/autonomous_tuner.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ai/self_optimizer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/alternative_data/sentiment_engine.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/causal_estimator.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/causal_graph.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/causal_inference.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/counterfactuals.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/cross_asset_flow.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/dark_pool_monitor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/institutional_flow.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/institutional_footprint_dna.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/liquidity.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/liquidity_benchmark.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/liquidity_gravity_well.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/liquidity_heatmap.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/liquidity_ml_predictor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/liquidity_performance.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/liquidity_simplified.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/lob_state_transition.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/market_breadth.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/market_context.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/market_structure.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/news_collector.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/options_flow.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/order_block_tracker.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/order_flow.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/realtime_liquidity.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/sentiment_analyzer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/sentiment_core.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/social_media_collector.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/social_sentiment.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/technical_indicators.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/trade_autopsy.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analytics/performance_attribution.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analytics/real_time_analytics.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/arbitrage/arbitrage_network.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/auto_dependency_installer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/automation/trade_journal.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/blockchain/real_defi_integration.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/cloud_deployer/auto_deployer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/cognitive_architecture/cognitive_core.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/cognitive_architecture/layer1_market_state_detection.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/complete_integrator.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/complete_system_integrator.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/connectivity/forex_data_provider.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/connectivity/sequence_guard.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/connectivity/staleness_detector.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/config.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/data_manager.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/dependency_manager.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/duplication_report.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/execution_manager.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/legacy_main/main_v1.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/main_trading_loop.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/monitoring_system.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/self_awareness.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/shared.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/startup_checks.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/trading_system.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/crypto/defi_module.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/dashboard/anomaly_detection.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/dashboard/app.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/dashboard/performance_dashboard.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/dashboard/realtime_dashboard.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/dashboard/run_dashboard.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/dashboard/unified_dashboard.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/data_feeds/historical_feeds.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/data_feeds/multi_source_feed.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/data_feeds/websocket_feeds.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/data_sources/free_data_providers.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/database/data_quarantine.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/database/influxdb_connector.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/database/postgres_db.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/database/sqlite_db.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/deepchart/feature_pipeline.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/deepchart/inference_engine.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/deepchart/self_improvement.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/deepchart/visualization_layer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/devops/changelog_generator.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/diagnostics/system_validator.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/distributed/task_distributor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/elite_system/ai_ml_cortex.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/elite_system/benchmarking.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/elite_system/config.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/elite_system/elite_system.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/elite_system/quantum_blockchain_integration.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/elite_system/trader_consciousness.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/elite_system/visualization.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/error_handling/advanced_error_handler.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/almgren_chriss.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/dark_pool_executor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/execution_scheduler.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/frequency_limiter.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/iceberg_optimizer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/idempotent_executor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/impact_calibration.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/liquidity_analyzer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/lob_smart_router.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/market_impact.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/order_execution.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/order_reconciliation.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/partial_fill_aggregator.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/robust_retry.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/smart_order_router.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/smart_router.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/twap_executor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/vwap_executor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/explainability/xai_module.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/features/causal_validator.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/features/lob_features.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/foundation/legacy_convergence.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/gets/cli.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/gets/demo.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/gets/example_usage.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/global_expansion/free_global_trading.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/indicators/advanced_liquidity.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/indicators/advanced_ml.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/indicators/advanced_statistical.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/indicators/advanced_technical.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/indicators/fractal_momentum_divergence.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/indicators/volatility_impulse_vector.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ingestion/orchestrator.py` — compatibility_facade | owner=orchestration | port=ModularMonolithRuntime
+- Wave 1: `trading_bot/integration/internet_integration.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/integration/master_integrator.py` — compatibility_facade | owner=orchestration | port=ModularMonolithRuntime
+- Wave 1: `trading_bot/integration/run_verification.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/macro/macro_regime_detector.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/market_making/rl_market_maker.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/meta_learning/maml.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/adversarial/adversarial_trainer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/adversarial/robustness_tester.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/attention/feature_attention.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/attention/temporal_attention.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/continual/ewc_learning.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/continual/ewc_trainer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/continual/replay_buffer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/continuous_learning.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/data_leakage_guard.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/deployment/batch_inference.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/deployment/onnx_converter.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/deployment/quantizer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/ensemble.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/ensemble_predictor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/explainability/lime_explainer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/explainability/shap_explainer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/feature_engineering.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/federated/local_trainer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/federated/secure_aggregator.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/forecasting/data_loader.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/forecasting/ensemble_forecaster.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/forecasting/train_tft.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/graph/asset_graph.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/hypernetwork_adaptation.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/llm_guided_rl/market_analyzer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/llm_guided_rl/policy_converter.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/meta_learning.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/meta_learning/fast_adapt.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/meta_learning/maml.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/meta_learning/regime_detector.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/meta_learning/task_sampler.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/mlflow_integration.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/multi_timeframe_rl.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/neuro_symbolic/hybrid_policy.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/neuro_symbolic/rule_engine.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/offline_rl/dataset_builder.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/offline_rl/main_integration.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/offline_rl/main_py_integration.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/offline_rl/module_scanner.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/offline_rl/prepare_dataset.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/offline_rl/state_builder.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/representation/augmentations.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/representation/contrastive_pretrain.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/representation/finetune.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/rl_environment.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/transformer_forecaster.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/monitoring/dependency_health.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/monitoring/drift_detector.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/monitoring/production_monitor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/monitoring/prometheus_exporter.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/monitoring/start_prometheus.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/neural_integration/neural_hub.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/neural_integration/neurotransmitters.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/neural_integration/synaptic_matrix.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/neuros_evolution/code_evolution_engine.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/neuros_evolution/launch_autonomous_improvement.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/neuros_evolution/plotcode_integration.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/neuros_evolution/recursive_self_improvement.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/neuros_evolution/self_diagnosis_engine.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/performance/windows_optimizer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/production/data_validation_system.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/production/live_trading_system.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/production/profitable_strategies.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/quantum/real_qaoa_implementation.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/realtime_dependency_manager.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/realtime_system_validator.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/realtime_trading_core.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/security/jwt_auth.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/security/secrets_manager.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/security/vault.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/sentiment/realtime_sentiment_engine.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/simulation/digital_twin.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/simulation/market_simulator.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/simulation/self_play_trainer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/strategies/advanced_strategies.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/strategies/mean_reversion.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/streaming/kafka_streamer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/superpowerful_ai/example_usage.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/surveillance/trade_surveillance.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/surveillance/trade_surveillance_impl.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/testing/chaos_engineering.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/testing/e2e_framework.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/tools/backup.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/tools/encrypt_api_keys.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/tools/system_check.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/trading_calendar/economic_calendar.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ultimate_bot/run_ultimate.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ultimate_module_integrator.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/unicode_fix.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/unified_architecture/unified_trading_system.py` — compatibility_facade | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/unified_master_integrator.py` — compatibility_facade | owner=orchestration | port=ModularMonolithRuntime
+- Wave 1: `trading_bot/utils/candle_tracker.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/utils/data_manager.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/utils/data_validator.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/utils/debug_tools.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/validation/critical_validators.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/validation/data_validation_pipeline.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/validation/unified_validator.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/wealth/free_wealth_manager.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 2: `trading_bot/alphaalgo_v2/tests/test_risk.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/brain/tier7_risk.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/decision_governance/example_continuous_capability_discovery.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/decision_governance/example_introspection_evolution.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/decision_governance/example_self_inspection.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/decision_governance/example_trading_simulator.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/decision_governance/example_unified_intelligence.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/decision_governance/example_usage.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/decision_governance/tests/test_suite.py` — quarantine | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/elite_system/risk_command_center.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/governance/production_gate.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/meta_governance/example_meta_governance.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/ml/offline_rl/risk_adjusted_ope.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/advanced_circuit_breaker.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/advanced_position_sizing.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/advanced_risk.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/advanced_risk_system.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/anomaly_detector.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/complete_risk_system.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/cvar_calculator.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/cvar_optimizer.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/dynamic_kelly.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/forecast_based_sizing.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/free_risk_manager.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/kelly_calculator.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/ml_risk_manager.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/realtime_correlation_monitor.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/risk_adjusted_optimizer.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/spillover_predictor.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/stress_testing.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk/tail_risk_hedge.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/risk_management/drawdown_ladder.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/safety/example_safety_enforcer.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/safety/implement_fallback.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/unified_approval/integrator.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/unified_approval/pipeline_approval.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/utils/risk_controller.py` — quarantine | owner=risk | port=RiskService/GovernanceGate
+- Wave 3: `trading_bot/brain/mt5_brain_trader.py` — quarantine | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/brokers/alpaca_adapter.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/brokers/broker_interface.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/brokers/free_brokers.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/production/interactive_brokers_live.py` — quarantine | owner=execution | port=BrokerAdapter
+- Wave 4: `trading_bot/alpha_evolve/example_usage.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/alphaalgo_core/example_alphaalgo_meta_system.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/alphaalgo_v2/tests/test_core.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/alphaalgo_v2/tests/test_data.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/alphaalgo_v2/tests/test_execution.py` — quarantine | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/alphaalgo_v2/tests/test_integration.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/apex_fi/alpha_mining_engine.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/autonomous/strategy_tuner.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/brain/alphaalgo_2_0.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/brain/alphaalgo_2_0_system.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/dashboard/strategy_dashboard.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/execution/position_manager.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/market_student/alphaalgo_identity.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/ml/llm_guided/llm_strategy_advisor.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/ml/llm_guided_rl/strategy_proposer.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/ml/offline_rl/alphaalgo_autonomous_system.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/optimization/quantum_portfolio.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/optimization/quantum_portfolio_optimizer.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/optimization/strategy_optimizer_v2.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/portfolio/portfolio_optimizer.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/signals/adaptive_thresholds.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/signals/auto_disable_sick_signals.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/signals/multi_timeframe_consensus.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/signals/signal_lifecycle.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/signals/signal_ttl_manager.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/signals/simple_signals.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/strategy/antifragile_mode.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/strategy/ml_strategy_engine.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/strategy/schrodingers_trade.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/superintelligence/regime_strategy_engine.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/ultimate_bot/aggressive_strategy.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/ultimate_bot/ultimate_alphaalgo.py` — quarantine | owner=strategy | port=StrategyPort/SignalPort
+- Wave 5: `trading_bot/aamis_v3/superintelligence/memory_systems.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/agents/executor_agent.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/agents/multi_agent_debate.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/agents/planner_agent.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/agents/verifier_agent.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ai_core/agents/orchestrator.py` — compatibility_facade | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/analytics/order_flow_intelligence.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/apex_fi/model_parliament.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/autonomous_superintelligence/consciousness_modeling.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/brain/adaptive_integration.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/brain/brain_architecture.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/brain/brain_trader.py` — quarantine | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/brain/central_controller.py` — compatibility_facade | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/brain/elite_brain.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/brain/integration_example.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/brain/tier1_technical.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/brain/tier2_orderflow.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/brain/tier3_structure.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/brain/tier4_regime.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/brain/tier5_sentiment.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/brain/tier6_macro.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/brain/tier8_execution.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/brain/tier9_metalearning.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/brain/tier_structure.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/core_agent_system/integrated_system.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/deepchart/lightweight_models.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/improvement_agent/run_agent.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/intelligence_core/elite_trader_learning.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/intelligence_core/improvement_integration.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ml/ensemble/model_ensemble.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ml/ensemble/model_stacking.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ml/ensemble/stacking_meta_model.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ml/federated/global_model.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ml/forecasting/autoformer_model.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ml/forecasting/deepar_model.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ml/forecasting/informer_model.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ml/forecasting/nbeats_model.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ml/forecasting/tft_model.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ml/graph/gnn_model.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ml/model_ensemble.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ml/model_monitor.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ml/model_monitoring.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ml/multi_task/mtl_model.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ml/offline_rl/enhanced_cql_agent.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ml/offline_rl/model_selector.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ml/rl_agent.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/orchestrator/agent_orchestrator.py` — compatibility_facade | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/radar_ai/agents/AGENT_SYSTEM_DEMO.py` — quarantine | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/simulation/adversarial_agent.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/superintelligence/memory_systems.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/superintelligence/multi_brain_ensemble.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/superintelligence/self_optimizing_core.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/superintelligence/self_regulation_engine.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/superintelligence/superintelligence_orchestrator.py` — compatibility_facade | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ultimate_bot/deep_learning_models.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 6: `trading_bot/backtesting/rigorous_backtest.py` — research_only | owner=research | port=ResearchCapability
+- Wave 6: `trading_bot/distributed/parallel_backtester.py` — research_only | owner=research | port=ResearchCapability
+- Wave 6: `trading_bot/evaluation/walk_forward.py` — research_only | owner=research | port=ResearchCapability
+- Wave 6: `trading_bot/ml/experiment_tracking.py` — research_only | owner=research | port=ResearchCapability
+- Wave 6: `trading_bot/production/tick_level_backtester.py` — research_only | owner=research | port=ResearchCapability
+- Wave 6: `trading_bot/research/experimentation/free_research_lab.py` — research_only | owner=research | port=ResearchCapability
+- Wave 6: `trading_bot/research/orchestration/cli.py` — research_only | owner=research | port=ResearchCapability
+- Wave 7: `trading_bot/main.py` — adapter | owner=interfaces | port=ModularMonolithRuntime
+- Wave 7: `trading_bot/unified_main.py` — compatibility_facade | owner=interfaces | port=ModularMonolithRuntime
+
+### Loop/worker starters
+- Wave 0: `trading_bot/core/unified_event_bus.py` — canonical | owner=infrastructure | port=UnifiedDecisionBus
+- Wave 1: `trading_bot/adaptive_systems/adaptive_learning.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/adaptive_systems/code_generation/self_modification_engine.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/adaptive_systems/real_time_sentiment.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/adaptive_systems/system_health.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/advanced_features/blockchain_trade_verification.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/advanced_features/blockchain_validation.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ai/hub.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/alerts/alert_system.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/liquidity_heatmap.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/analysis/realtime_liquidity.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/apex_fi/data_fabric.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/autonomous/self_healing.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/autonomous/self_healing_system.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/autonomous_pipeline/sandbox_environment.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/background.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/config/feature_flags.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/connectivity/connection_monitor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/connectivity/network_monitor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/connectivity/proxy_manager.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/connectivity/resilient_connection.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/connectivity/staleness_detector.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/connectivity/websocket_client.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/connectors/ticktrader_connector.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/chainofthoughtreasoner.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/graceful_shutdown.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/main_trading_loop.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/metrics_exporter.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/monitoring_system.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/reconciliation_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/security/sandbox.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/survival_core.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/trading_system.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core_api/events.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/critical_fixes/multi_layer_kill_switch.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/critical_fixes/silent_failure_detector.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ctrader/ctrader_integration.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/dashboard/dashboard_server.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/dashboard/data_provider.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/dashboard/performance_dashboard.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/dashboard/react_dashboard.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/dashboard/realtime_dashboard.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/dashboard/unified_dashboard.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/data_feeds/websocket_feeds.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/database/analytics_processor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/database/data_streaming.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/database/pipeline_monitor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/database/shared_memory_manager.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/database/timeseries_db.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/deepchart/inference_engine.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/elite_system/benchmarking.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/eternal_evolution/architecture_evolution.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/event_monitoring/economic_calendar.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/event_monitoring/event_monitor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/event_monitoring/event_processor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/event_monitoring/market_condition_monitor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/event_monitoring/real_time_data.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/event_monitoring/social_media_monitor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/event_pipeline/consistency.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/event_pipeline/event_bus.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/event_pipeline/event_consumer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/event_pipeline/event_producer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/event_pipeline/event_store.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/event_pipeline/fault_tolerance.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/event_pipeline/pipeline.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/event_pipeline/scalability.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/advanced_algorithms.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/advanced_order_management.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/fill_tracker.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/partial_fill_aggregator.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/smart_execution.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/gets/realtime_pipeline.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/improvements/forecast_improvements/data_feed_quality.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/infrastructure/health_endpoints.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ingestion/collector.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ingestion/event_router.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ingestion/orderbook_builder.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ingestion/replay_engine.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ingestion/storage.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/integration/service_contract.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/internet_access/auto_updater.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/internet_access/connection_validator.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/log_system/audit_system.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/ml_pipeline.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/online_learning.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ml/sentiment.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/mobile_app/mobile_api.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/monitoring/alerting_system.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/monitoring/comprehensive_logger.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/monitoring/dependency_health.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/monitoring/elite_monitor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/monitoring/live_monitor.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/monitoring/performance_monitor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/monitoring/performance_tracker.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/monitoring/production_monitor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/monitoring/production_monitoring.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/neural_integration/neural_hub.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/neural_integration/neurotransmitters.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/neuros_evolution/capability_distillation.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/notifications/notification_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/notifications/telegram_bot.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/observability/unified_observability_hub.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/optimized_integration.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/performance/memory_manager.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/performance/performance_monitor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/performance/windows_optimizer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/perplexity_trading/retrieval_pipeline.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/production/live_trading_system.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/realtime/realtime_adapter.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/realtime/realtime_data_hub.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/realtime_system_validator.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/realtime_trading_core.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/recursive_self_improvement/engine_v2.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/security/security_system.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/self_diagnostic/knowledge_gap.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/self_diagnostic/self_manager.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/self_healing_ai/validators/system_architecture.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/self_learning/distributed_learning.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/sentient_core/ai_learner.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/sentient_core/introspector.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/sentient_core/knowledge_harvester.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/sentient_core/network_sentinel.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/sentient_core/profit_maximizer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/sentient_core/self_defender.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/adaptive_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/advanced_ai_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/advanced_analysis_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/advanced_features_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/advanced_ml_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/adversarial_curriculum_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/adversarial_decision_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/adversarial_systems_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/ai_core_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/ai_engineer_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/ai_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/alerts_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/alternative_data_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/analysis_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/analytics_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/api_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/arbitrage_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/audit_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/auto_optimizer_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/autonomous_learner_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/autonomous_pipeline_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/autonomous_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/blockchain_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/bridges_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/calendar_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/cloud_deployer_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/cognitive_architecture_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/config_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/connectivity_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/connectors_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/core_api_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/core_systems_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/critical_fixes_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/crypto_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/dashboard_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/data_feeds_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/data_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/data_sources_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/database_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/decision_layer_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/deepchart_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/deployment_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/derivatives_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/devops_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/diagnostics_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/distributed_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/elite_ai_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/elite_system_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/execution_service.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/hivemind_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/indicators_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/monitoring_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/msos_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/notifications_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/optimization_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/performance_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/quant_analysis_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/security_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/sentiment_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/telemetry_service.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/tier4_services.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/streaming/kafka_stream.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/streaming/redis_stream.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/system_health/auto_repair.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/system_supervisor/auto_updater_supervisor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/system_supervisor/module_monitor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/system_supervisor/security_supervisor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/system_supervisor/system_supervisor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/telemetry/health.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/trading_engine.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ultimate_module_integrator.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ultimate_production/core_engine.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ultimate_system/hardware_optimizer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ultimate_system/self_evolving_core.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/utils/debug_tools.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/validation/autonomous_validation.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/validation/self_optimization.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/validation/self_testing.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/validation/self_verification.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 2: `trading_bot/decision_governance/benchmarking.py` — adapter | owner=risk | port=RiskService/GovernanceGate
+- Wave 3: `trading_bot/broker/binance_broker.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/brokers/connection_manager.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/brokers/live_order_router.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/brokers/multi_broker_adapter.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/brokers/real_broker_integration.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/connectors/binance_connector.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/connectors/interactive_brokers_connector.py` — quarantine | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/connectors/mt5_connector.py` — quarantine | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/improvements/forecast_improvements/real_broker_connection.py` — quarantine | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/production/interactive_brokers_live.py` — quarantine | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/strategies/cross_exchange_arbitrage.py` — quarantine | owner=execution | port=BrokerAdapter
+- Wave 4: `trading_bot/alpha_evolve/parallel_evaluator.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/alphaalgo_core/alphaalgo_meta_system.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/apex_fi/alpha_mining.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/auto_optimizer/strategy_optimizer.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/critical_fixes/position_state_manager.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/ml/offline_rl/alphaalgo_autonomous_system.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/position/realtime_pnl.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/realtime/realtime_signal_engine.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/services/alpha_engine_service.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/services/alphaalgo_core_service.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/services/alphaalgo_institutional_service.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/services/alphaalgo_v2_service.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/services/portfolio_service.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/services/position_service.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/services/signals_service.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/services/strategy_service.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/signals/signal_lifecycle.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/trading/position_reconciliation.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
+- Wave 5: `trading_bot/autonomous_superintelligence/agent_coordinator.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/autonomous_superintelligence/autonomous_trading_bridge.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/autonomous_superintelligence/enhanced_integration.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/autonomous_superintelligence/trading_integration.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/brain/brain_architecture.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/core_agent_system/agent_registry.py` — quarantine | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/core_agent_system/integrated_system.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/core_agent_system/memory_system.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/intelligence/knowledge_action_bridge.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/market_intelligence/data_monitoring.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/market_intelligence/performance_optimization.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/services/agents2_service.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/services/agents_service.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/services/brain_service.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/services/integrated_brain_service.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/services/intelligence_directorate_service.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/services/market_intelligence_service.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 6: `trading_bot/autonomous_superintelligence/experiment_engine.py` — research_only | owner=research | port=ResearchCapability
+- Wave 6: `trading_bot/services/alpha_research_service.py` — research_only | owner=research | port=ResearchCapability
+- Wave 6: `trading_bot/services/backtesting_service.py` — research_only | owner=research | port=ResearchCapability
+
+### Direct capital-path findings
+- Wave 0: `trading_bot/execution/service.py` — canonical | owner=execution | port=CanonicalExecutionService
+- Wave 1: `trading_bot/aads/core/polymarket.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/advanced_analysis/digital_twin.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/api/rest_api.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/complete_implementation.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/emergency_kill_switch.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/execution_bridge.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/execution_manager.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/graceful_shutdown.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/legacy_main/main_v1.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/main_trading_loop.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/survival_core.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/core/trading_system.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/critical_fixes/multi_layer_kill_switch.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/crypto/defi_module.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/dashboard/web_dashboard.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/advanced_algorithms.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/idempotent_executor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/live_executor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/order_confirmation.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/order_manager.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/slippage_protection.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/trade_executor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/mobile_app/mobile_api.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/monitoring/live_monitor.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ops/emergency_controls.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/production/live_trading_system.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/realtime/realtime_execution.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/services/execution_service.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/ultimate_bot/run_ultimate.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/unified_architecture/layer4_execution.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/voice_assistant/voice_controller.py` — quarantine | owner=orchestration | port=ModularMonolithRuntime
+- Wave 2: `trading_bot/decision_governance/integrations.py` — quarantine | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/decision_governance/tests/test_suite.py` — quarantine | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/elite_system/risk_management.py` — quarantine | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/safety/connectivity_monitor.py` — quarantine | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/safety/emergency_kill_switch.py` — quarantine | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/unified_architecture/layer5_risk_safety.py` — quarantine | owner=risk | port=RiskService/GovernanceGate
+- Wave 2: `trading_bot/utils/risk_controller.py` — quarantine | owner=risk | port=RiskService/GovernanceGate
+- Wave 3: `trading_bot/alphaalgo_v2/execution/brokers/paper.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/brain/mt5_brain_trader.py` — quarantine | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/broker/binance_broker.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/broker/ib_broker.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/brokers/alpaca_adapter.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/brokers/binance_adapter.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/brokers/broker_adapter.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/brokers/live_order_router.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/brokers/mt5_adapter.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/brokers/multi_broker_adapter.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/brokers/real_broker_integration.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/connectors/exchange_abstraction.py` — quarantine | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/connectors/interactive_brokers_connector.py` — quarantine | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/connectors/mt5_connector.py` — quarantine | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/improvements/forecast_improvements/real_broker_connection.py` — quarantine | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/production/interactive_brokers_live.py` — quarantine | owner=execution | port=BrokerAdapter
+- Wave 3: `trading_bot/strategies/cross_exchange_arbitrage.py` — quarantine | owner=execution | port=BrokerAdapter
+- Wave 4: `trading_bot/alphaalgo_institutional/layer6_execution.py` — quarantine | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/alphaalgo_v2/execution/engine.py` — quarantine | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/alphaalgo_v2/tests/test_execution.py` — quarantine | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/position_manager.py` — quarantine | owner=strategy | port=StrategyPort/SignalPort
+- Wave 4: `trading_bot/ultimate_bot/ultimate_alphaalgo.py` — quarantine | owner=strategy | port=StrategyPort/SignalPort
+- Wave 5: `trading_bot/brain/brain_trader.py` — quarantine | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/core_agent_system/agent_registry.py` — quarantine | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/radar_ai/agents/AGENT_SYSTEM_DEMO.py` — quarantine | owner=cognition | port=CapabilityPort
+- Wave 6: `trading_bot/backtesting/strategy_backtester.py` — research_only | owner=research | port=ResearchCapability
+
+## Wave 0 file list — Canonical authorities
+
+- `trading_bot/cognition/orchestrator.py` — class=canonical | owner=cognition | port=AlphaAlgoCognitiveBrain | flags=none | importers=`trading_bot/cognition/__init__.py`, `trading_bot/cognition/advisory_adapter.py`, `trading_bot/evaluation/walk_forward.py`, `trading_bot/unified_ai_brain.py`
+- `trading_bot/core/csc/controller.py` — class=canonical | owner=orchestration | port=CognitiveSystemController | flags=runtime_reachable | importers=`trading_bot/aamis_v3/aamis_master_orchestrator.py`, `trading_bot/core_agent_system/integrated_system.py`, `trading_bot/hivemind/hivemind_orchestrator_v2.py`, `trading_bot/neuros_evolution/neuros_orchestrator.py`, `trading_bot/superpowerful_ai/__init__.py`, `trading_bot/unified_bot.py`
+- `trading_bot/core/immutable_shield.py` — class=canonical | owner=governance | port=ImmutableShield | flags=runtime_reachable | importers=`trading_bot/governance/immutable_shield.py`, `trading_bot/unified_bot.py`
+- `trading_bot/core/unified_event_bus.py` — class=canonical | owner=infrastructure | port=UnifiedDecisionBus | flags=runtime_reachable, starts_loop | importers=`trading_bot/core/event_bus.py`, `trading_bot/core/execution_bridge.py`, `trading_bot/core/security/defense.py`, `trading_bot/unified_bot.py`
+- `trading_bot/core/unified_registry.py` — class=canonical | owner=infrastructure | port=UnifiedComponentRegistry | flags=runtime_reachable | importers=`trading_bot/cognition/orchestrator.py`, `trading_bot/foundation/runtime.py`, `trading_bot/registry/__init__.py`, `trading_bot/research/alpha/seal_discovery.py`, `trading_bot/research/london_session/api.py`, `trading_bot/research/orchestration/research_os_v2.py`, `trading_bot/unified_bot.py`
+- `trading_bot/data/normalizer.py` — class=canonical | owner=data | port=MarketDataNormalizer | flags=runtime_reachable | importers=`trading_bot/unified_bot.py`
+- `trading_bot/execution/service.py` — class=canonical | owner=execution | port=CanonicalExecutionService | flags=runtime_reachable, direct_capital, direct_broker_access, dynamic_import | importers=`trading_bot/brokers/adapter_bridge.py`, `trading_bot/unified_bot.py`
+- `trading_bot/foundation/runtime.py` — class=canonical | owner=composition | port=ModularMonolithRuntime | flags=runtime_reachable | importers=`trading_bot/alphaalgo_orchestrator.py`, `trading_bot/api.py`, `trading_bot/api/__init__.py`, `trading_bot/interfaces/read_models.py`, `trading_bot/master_integration.py`, `trading_bot/orchestration/master_orchestrator.py`, `trading_bot/sentient_core/sentient_orchestrator.py`, `trading_bot/unified_architecture/unified_trading_system.py`, `trading_bot/unified_main.py`
+- `trading_bot/persistence/repositories.py` — class=canonical | owner=persistence | port=SqliteTradingRepository | flags=runtime_reachable | importers=`trading_bot/risk/state_provider.py`, `trading_bot/unified_bot.py`
+- `trading_bot/recursive_self_improvement/rsi_loop.py` — class=canonical | owner=research | port=HumanGuidedRecursiveImprovementLoop | flags=none | importers=none
+- `trading_bot/risk/service.py` — class=canonical | owner=risk | port=CanonicalRiskService | flags=runtime_reachable | importers=`trading_bot/risk/risk_manager.py`, `trading_bot/unified_bot.py`
+- `trading_bot/unified_bot.py` — class=canonical | owner=composition | port=UnifiedTradingBot | flags=runtime_reachable, top_level_module | importers=`trading_bot/foundation/runtime.py`
+
+## Wave 1 file list — Orchestrators, registries, lifecycle, and infrastructure fallback
+
+- `trading_bot/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=runtime_reachable, dynamic_import, top_level_module | importers=`trading_bot/background.py`, `trading_bot/complete_integrator.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/elite_master_system.py`, `trading_bot/services/advanced_ai_service.py`, `trading_bot/services/quant_analysis_service.py`, `trading_bot/services/tier4_services.py`, `trading_bot/services/tier5_services.py`, `trading_bot/ultimate_bot/data_fetcher.py`
+- `trading_bot/a2a.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/aads/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/aads/core/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/aads/core/foundry.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/aads/core/gotham.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/aads/core/maven_decision.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/aads/core/microfish_swarm.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/aads/core/openclaw_registry.py` — class=compatibility_facade | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/aads/core/openclip_vision.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/aads/core/polymarket.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=direct_capital, direct_broker_access | importers=none
+- `trading_bot/aads/core/sakana_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/aads/core/self_improvement.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/aads/core/simulation_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/improvement_agent/__init__.py`
+- `trading_bot/aads/orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/aamis_v3/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/complete_integrator.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/elite_master_system.py`
+- `trading_bot/aamis_v3/aamis_master_orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=`trading_bot/superintelligence/superintelligence_orchestrator.py`
+- `trading_bot/adaptive.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/adaptive_retrainer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/adaptive_systems.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/background.py`, `trading_bot/complete_integrator.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/adaptive_service.py`
+- `trading_bot/adaptive_systems/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/adaptive_learning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/ml/sentiment.py`
+- `trading_bot/adaptive_systems/adaptive_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/code_generation/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/code_generation/code_generator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/code_generation/code_modifier.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/code_generation/code_repository.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/code_generation/code_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/code_generation/self_modification_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/adaptive_systems/correlation_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/ensemble_learning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/feedback_loops.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/knowledge_acquisition/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/knowledge_acquisition/ai_knowledge.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/knowledge_acquisition/algorithm_knowledge.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/knowledge_acquisition/book_knowledge.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/knowledge_acquisition/human_knowledge.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/knowledge_acquisition/knowledge_base.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/liquidity_provider.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/market_maker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/market_microstructure.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/market_microstructure.py`
+- `trading_bot/adaptive_systems/market_regime.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/market_regime.py`, `trading_bot/ml/regime_switching_ensemble.py`, `trading_bot/ml/sentiment.py`
+- `trading_bot/adaptive_systems/master_controller.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=`trading_bot/complete_integrator.py`
+- `trading_bot/adaptive_systems/meta_learning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/order_flow_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/parameter_optimizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/quantum_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/adaptive_systems/real_time_sentiment.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/adaptive_systems/regime_detector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/self_improvement.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/sentiment_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adaptive_systems/system_health.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/adaptive_systems/volatility_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_analysis/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/background.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/advanced_analysis_service.py`
+- `trading_bot/advanced_analysis/central_bank_tracker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_analysis/digital_twin.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=direct_capital, direct_broker_access | importers=none
+- `trading_bot/advanced_analysis/feature_flags.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_analysis/hawkes_process.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_analysis/hypernetwork_adaptation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_analysis/liquidity_holography.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_analysis/lob_cnn.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_analysis/market_microbiome.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_analysis/options_hedging.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_analysis/proprietary_indicators.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_analysis/quantum_rng.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_analysis/topological_data_analysis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_exits.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/advanced_features/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/advanced_features_service.py`
+- `trading_bot/advanced_features/ai_macro_scanner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_features/black_swan_protection.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_features/blockchain_trade_verification.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/advanced_features/blockchain_validation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, credential_access | importers=`trading_bot/brain/brain_architecture.py`, `trading_bot/brain/mt5_brain_trader.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/elite_system/quantum_blockchain_integration.py`
+- `trading_bot/advanced_features/digital_twin.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/brain/brain_architecture.py`
+- `trading_bot/advanced_features/fractal_momentum.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_features/fractal_momentum_divergence.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/brain/brain_architecture.py`
+- `trading_bot/advanced_features/fraud_detection.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_features/gamified_dashboard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_features/institutional_dna.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_features/institutional_flow_detector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_features/institutional_footprint.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_features/institutional_footprint_dna.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/brain/brain_architecture.py`
+- `trading_bot/advanced_features/liquidity_holography.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/brain/brain_architecture.py`, `trading_bot/brain/tier3_structure.py`
+- `trading_bot/advanced_features/quantum_computing.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/brain/brain_architecture.py`, `trading_bot/brain/mt5_brain_trader.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/elite_system/quantum_blockchain_integration.py`
+- `trading_bot/advanced_features/volatility_impulse.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_features/volatility_impulse_vector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/brain/brain_architecture.py`
+- `trading_bot/advanced_ml/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/advanced_ml_service.py`
+- `trading_bot/advanced_ml/meta_learning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/unified_architecture/layer2_intelligence_core.py`
+- `trading_bot/advanced_ml/neural_architecture_search.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/advanced_systems2/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/adversarial_systems_service.py`
+- `trading_bot/advanced_systems2/red_team_blue_team.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/adversarial_curriculum/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/adversarial_curriculum_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/adversarial_curriculum/anti_cheat.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adversarial_curriculum/core_types.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adversarial_curriculum/failure_handler.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adversarial_curriculum/market_environment.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adversarial_curriculum/promotion_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adversarial_decision/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/adversarial_decision_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/adversarial_decision/adversarial_core.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adversarial_decision/adversarial_roles.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adversarial_decision/claim_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adversarial_decision/confidence_vector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adversarial_decision/decision_gate.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adversarial_decision/failure_matcher.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adversarial_decision/verification_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adversarial_verification/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/adversarial_verification/red_team_blue_team.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/adwin.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/adwin_detector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/ai/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/ai_service.py`
+- `trading_bot/ai/autonomous_tuner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ai/hub.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/services/mtash_service.py`
+- `trading_bot/ai/self_optimizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/performance_optimizer.py`
+- `trading_bot/ai_core/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/ai_core_service.py`
+- `trading_bot/ai_core/orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/ai_engineer/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/ai_engineer_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/ai_engineer/safeguards.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ai_learner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/alerts/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/alerts_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/alerts/alert_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/alerts/alert_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/monitoring/live_monitor.py`
+- `trading_bot/aletheia_autonomous/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/aletheia_autonomous/financial_decision_auditor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/alternative_data/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/alternative_data_service.py`
+- `trading_bot/alternative_data/satellite_imagery.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/unified_architecture/layer1_data_foundation.py`
+- `trading_bot/alternative_data/sentiment_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/analysis/market_intelligence.py`, `trading_bot/analysis_unified/unified_analyzer.py`, `trading_bot/backtesting/strategy_backtester.py`, `trading_bot/core/analysis_orchestrator.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/analysis_service.py`
+- `trading_bot/analysis/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/absorptionzoneanalyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/advanced_order_flow.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/alternative_data.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/analysis/market_intelligence.py`, `trading_bot/brain/brain_architecture.py`, `trading_bot/strategies/advanced_strategies.py`
+- `trading_bot/analysis/anomaly_detection.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/analysis/market_intelligence.py`, `trading_bot/dashboard/strategy_dashboard.py`
+- `trading_bot/analysis/candlestick_validation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/causal_estimator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/causal_graph.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/causal_inference.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/cot_analysis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/counterfactuals.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/cross_asset_flow.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/dark_pool_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/dark_pool_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/enhancedeliteanalyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/fear_greed_index.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/fundamental_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/fvg.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/strategy/strategy_engine.py`
+- `trading_bot/analysis/hft_defense.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/ict_concepts.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/institutional_flow.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/institutional_footprint_dna.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/institutional_order_flow.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/lead_lag_analysis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/liquidity.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/backtesting/strategy_backtester.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/strategy/strategy_engine.py`
+- `trading_bot/analysis/liquidity_benchmark.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/liquidity_gravity_well.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/liquidity_heatmap.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/analysis/liquidity_ml_predictor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/liquidity_performance.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/liquidity_radar.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/liquidity_simplified.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/lob_state_transition.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/market_breadth.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/market_context.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/market_microstructure.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/analysis/hft_defense.py`
+- `trading_bot/analysis/market_regime.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/analysis/market_intelligence.py`, `trading_bot/core/phase3_strategy_redesign.py`
+- `trading_bot/analysis/market_regime_detector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/analysis/regime_adaptive_strategy.py`, `trading_bot/analysis/regime_detector.py`, `trading_bot/brain/brain_architecture.py`, `trading_bot/strategies/advanced_strategies.py`, `trading_bot/unified_architecture/layer3_strategy_engine.py`
+- `trading_bot/analysis/market_structure.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/analysis/order_block.py`, `trading_bot/analysis/order_flow.py`, `trading_bot/analysis/wyckoff.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/strategy/strategy_engine.py`
+- `trading_bot/analysis/microstructure.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/multi_timeframe_confirmation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/news_collector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/analysis/sentiment_analyzer.py`, `trading_bot/unified_architecture/layer1_data_foundation.py`
+- `trading_bot/analysis/news_event_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/news_filter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/phase2_quick_wins.py`
+- `trading_bot/analysis/obv_money_flow.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/onchain_analytics.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/optimizedmarketanalysisprovider.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/options_flow.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/options_market_analysis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/order_block.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/strategy/strategy_engine.py`
+- `trading_bot/analysis/order_block_tracker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/order_flow.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/analysis/market_intelligence.py`, `trading_bot/backtesting/strategy_backtester.py`, `trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/analysis/parallelmarketanalyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/pattern_failure_detection.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/price_action.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/analysis/realtime_liquidity.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/analysis/regime_detector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/sec_13f_analysis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/sec_filing_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/sector_analysis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/sentiment_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/brain/brain_architecture.py`, `trading_bot/diagnostics/system_validator.py`, `trading_bot/strategies/advanced_strategies.py`, `trading_bot/unified_architecture/layer1_data_foundation.py`
+- `trading_bot/analysis/sentiment_core.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/analysis/sentiment_analyzer.py`
+- `trading_bot/analysis/social_media_collector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/analysis/sentiment_analyzer.py`
+- `trading_bot/analysis/social_sentiment.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/spread_filter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/p0_critical_fixes.py`
+- `trading_bot/analysis/syntheticmarketgenerator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/technical_indicators.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/ml/multi_timeframe_rl.py`, `trading_bot/strategy/strategy_engine.py`
+- `trading_bot/analysis/trade_autopsy.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/trade_heatmap.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/trend_analysis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/volatility_filter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/p0_critical_fixes.py`
+- `trading_bot/analysis/volume_analysis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/volume_profile.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/vpin_analysis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/wyckoff.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/strategy/strategy_engine.py`
+- `trading_bot/analysis/wyckoff_analysis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis/wyckoff_complete.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analysis_unified/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/analysis_unified/unified_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analytics/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/execution/live_executor.py`, `trading_bot/execution/paper_executor.py`, `trading_bot/optimized_integration.py`, `trading_bot/services/analytics_service.py`
+- `trading_bot/analytics/data_warehouse.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analytics/emotional_tracker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/analytics/enhanced_performance.py`
+- `trading_bot/analytics/enhanced_performance.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analytics/growth_optimization.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analytics/mae_mfe_analysis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analytics/performance.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/analytics/enhanced_performance.py`
+- `trading_bot/analytics/performance_analytics.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analytics/performance_attribution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analytics/psychological_metrics.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/analytics/real_time_analytics.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/apex_fi/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/apex_fi/aletheia_bridge.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/apex_fi/constitutional_layer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/apex_fi/data_fabric.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/apex_fi/layer1_data_fabric.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/api.py` — class=compatibility_facade | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/api_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/api/__init__.py` — class=compatibility_facade | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/api/rate_limiter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/api/rest_api.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=direct_capital, credential_access, direct_broker_access | importers=none
+- `trading_bot/apply_and_fix.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/apply_approved.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/arbitrage.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/arbitrage_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/arbitrage/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/arbitrage/arbitrage_network.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/attention_viz.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/audit.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/audit_service.py`
+- `trading_bot/audit/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/audit/audit_logger.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/audit/trade_journal.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/auto_dependency_installer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint, dynamic_import, top_level_module | importers=none
+- `trading_bot/auto_optimizer/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/auto_optimizer_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/auto_rollback.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/automation/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/automation/trade_journal.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/autonomous.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/self_improvement/__init__.py`, `trading_bot/services/autonomous_service.py`
+- `trading_bot/autonomous/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/autonomous/self_checklist_advanced.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/autonomous/self_checklist_core.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/autonomous/self_checklist_extended.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/autonomous/self_healing.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/autonomous/self_healing_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/autonomous/self_optimizing_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/autonomous_engineer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/autonomous_learner/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/autonomous_learner_service.py`
+- `trading_bot/autonomous_learner/knowledge_builder.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/autonomous_learner/knowledge_transfer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/autonomous_learner/learner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/autonomous_learner/learning_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/autonomous_learner/self_tester.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/autonomous_pipeline/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/autonomous_pipeline_service.py`
+- `trading_bot/autonomous_pipeline/deployment_pipeline.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/autonomous_pipeline/discovery_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/autonomous_pipeline/sandbox_environment.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/autonomous_pipeline/testing_framework.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/autonomy_levels.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/background.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, top_level_module | importers=none
+- `trading_bot/behavior_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/blockchain.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/blockchain_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/blockchain/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/blockchain/defi_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/blockchain/real_defi_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/bridges/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/bridges_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/bridges/core_to_execution_bridge.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/bridges/data_to_analysis_bridge.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/calendar.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/calendar_service.py`
+- `trading_bot/causal_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/change_applier.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/chart_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/classa.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/classb.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/cloud_deployer/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/cloud_deployer_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/cloud_deployer/auto_deployer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/cloud_deployer/__init__.py`
+- `trading_bot/cloud_deployer/server_discovery.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/cloud_deployer/__init__.py`, `trading_bot/cloud_deployer/auto_deployer.py`
+- `trading_bot/code_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/code_evolver.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/cognitive_architecture/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/complete_integrator.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/elite_master_system.py`, `trading_bot/services/cognitive_architecture_service.py`, `trading_bot/unified_architecture/layer2_intelligence_core.py`
+- `trading_bot/cognitive_architecture/cognitive_core.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/cognitive_architecture/layer10_evolution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/cognitive_architecture/layer1_market_state_detection.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/cognitive_architecture/layer2_adaptive_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/cognitive_architecture/layer3_cognitive_economy.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/cognitive_architecture/layer4_neuro_symbolic.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/cognitive_architecture/layer5_advanced_rl.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/cognitive_architecture/layer6_multimodal_fusion.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/cognitive_architecture/layer7_self_healing.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/cognitive_architecture/layer8_quantum_simulation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/cognitive_architecture/layer9_explainability.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/complete_implementation.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=direct_capital, direct_broker_access, top_level_module | importers=none
+- `trading_bot/complete_integrator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint, top_level_module | importers=none
+- `trading_bot/complete_system_integrator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint, dynamic_import, top_level_module | importers=none
+- `trading_bot/config/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/mobile_app/mobile_api.py`, `trading_bot/reporting/logger.py`, `trading_bot/reporting/reporter.py`, `trading_bot/risk/MASTER_risk_manager.py`, `trading_bot/services/config_service.py`
+- `trading_bot/config/centralized_config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/config/config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/config/config_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/config/constants.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/config/feature_flags.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/config/unified_config_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/connectivity.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/services/connectivity_service.py`
+- `trading_bot/connectivity/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/connectivity/api_client.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/connectivity/async_fetcher.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/alphaalgo_5star.py`
+- `trading_bot/connectivity/auth_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/connectivity/cache_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/connectivity/connection_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/connectivity/forex_data_provider.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/connectivity/market_data_stream.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/data/adapters.py`, `trading_bot/data/market_data_stream.py`
+- `trading_bot/connectivity/network_alerts.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/connectivity/network_integration.py`
+- `trading_bot/connectivity/network_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/connectivity/network_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/connectivity/network_integration.py`
+- `trading_bot/connectivity/proxy_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/connectivity/rate_limiter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/connectivity/rate_limiter_advanced.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/connectivity/resilient_connection.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/elite_integration.py`
+- `trading_bot/connectivity/sequence_guard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/connectivity/staleness_detector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=`trading_bot/unified_architecture/layer1_data_foundation.py`
+- `trading_bot/connectivity/web_client.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/connectivity/web_scraper.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/connectivity/websocket_client.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/connectivity/websocket_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/connectivity_unified/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/connectivity_unified/unified_connector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/connectors/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/connectivity_unified/unified_connector.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/connectors_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/connectors/base_connector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/connectors/ticktrader_connector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, credential_access | importers=none
+- `trading_bot/constants.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/backtesting_integration.py`, `trading_bot/core/input_validation.py`
+- `trading_bot/continual_learner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/core/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/core_systems_service.py`
+- `trading_bot/core/adaptiveinfrastructure.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/adversarial_failure_analysis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/alphaalgo_master_integration.py`
+- `trading_bot/core/alerting_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/analysis_orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=`trading_bot/core/main_trading_loop.py`, `trading_bot/core/survival_core.py`, `trading_bot/core/trading_system.py`
+- `trading_bot/core/autonomy/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/autonomy_control_plane.py`
+- `trading_bot/core/autonomy/factory.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/autonomy/services.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/autonomy_control_plane.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/backup_recovery.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/base_types.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/chainofthoughtreasoner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/core/circuit_breaker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/core/config_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/correlation_checker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/csc/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/csc/acpe.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/csc/folding.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core_agent_system/react_loop.py`
+- `trading_bot/core/csc/hypothesis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/csc/protocols.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/csc/reliability.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/csc/router.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=runtime_reachable | importers=`trading_bot/unified_bot.py`
+- `trading_bot/core/custombotawareness.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/customfixgenerator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/customknowledgesource.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/customoptimizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/customtasktype.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/data_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/core/database_pool.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/dependency_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint, dynamic_import | importers=`trading_bot/core/startup_checks.py`, `trading_bot/monitoring/dependency_health.py`
+- `trading_bot/core/duplication_report.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint, dynamic_import | importers=none
+- `trading_bot/core/eliteadvancedtradingsystem.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/emergency_kill_switch.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=direct_capital, direct_broker_access | importers=none
+- `trading_bot/core/enhancedautonomoussystem.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/enhancedopportunityscanner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/error_recovery.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/event_bus.py` — class=compatibility_facade | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/background.py`, `trading_bot/core/service_factory.py`, `trading_bot/services/adaptive_service.py`, `trading_bot/services/advanced_ai_service.py`, `trading_bot/services/advanced_analysis_service.py`, `trading_bot/services/advanced_features_service.py`, `trading_bot/services/advanced_ml_service.py`, `trading_bot/services/adversarial_curriculum_service.py`, `trading_bot/services/adversarial_decision_service.py`, `trading_bot/services/adversarial_systems_service.py`, `trading_bot/services/agents2_service.py`, `trading_bot/services/agents_service.py`, `trading_bot/services/ai_core_service.py`, `trading_bot/services/ai_engineer_service.py`, `trading_bot/services/ai_service.py`, `trading_bot/services/alerts_service.py`, `trading_bot/services/alpha_engine_service.py`, `trading_bot/services/alpha_research_service.py`, `trading_bot/services/alphaalgo_core_service.py`, `trading_bot/services/alphaalgo_institutional_service.py`, `trading_bot/services/alphaalgo_v2_service.py`, `trading_bot/services/alternative_data_service.py`, `trading_bot/services/analysis_service.py`, `trading_bot/services/analytics_service.py`, `trading_bot/services/api_service.py`, `trading_bot/services/approval_service.py`, `trading_bot/services/arbitrage_service.py`, `trading_bot/services/audit_service.py`, `trading_bot/services/auto_optimizer_service.py`, `trading_bot/services/autonomous_learner_service.py`, `trading_bot/services/autonomous_pipeline_service.py`, `trading_bot/services/autonomous_service.py`, `trading_bot/services/backtesting_service.py`, `trading_bot/services/blockchain_service.py`, `trading_bot/services/brain_service.py`, `trading_bot/services/bridges_service.py`, `trading_bot/services/broker_service.py`, `trading_bot/services/brokers_service.py`, `trading_bot/services/calendar_service.py`, `trading_bot/services/cloud_deployer_service.py`, `trading_bot/services/elite_ai_service.py`, `trading_bot/services/execution_service.py`, `trading_bot/services/hivemind_service.py`, `trading_bot/services/integrated_brain_service.py`, `trading_bot/services/market_intelligence_service.py`, `trading_bot/services/msos_service.py`, `trading_bot/services/portfolio_service.py`, `trading_bot/services/position_service.py`, `trading_bot/services/quant_analysis_service.py`, `trading_bot/services/risk_service.py`, `trading_bot/services/signals_service.py`, `trading_bot/services/strategy_service.py`
+- `trading_bot/core/evolutionarypolicyoptimization.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/exception_handler.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/p0_critical_fixes.py`
+- `trading_bot/core/execution_bridge.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=runtime_reachable, direct_capital, direct_broker_access | importers=`trading_bot/unified_bot.py`
+- `trading_bot/core/execution_manager.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=cli, direct_capital, cli_entrypoint, direct_broker_access | importers=`trading_bot/core/survival_core.py`, `trading_bot/core/trading_system.py`
+- `trading_bot/core/fail_safe.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/fill_confirmation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/financialknowledgegraph.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/frontier_capability_distillation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/gatingnetwork.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/graceful_shutdown.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, direct_capital, direct_broker_access | importers=none
+- `trading_bot/core/gravitywelldetector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/health_check.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/hierarchicaltradingsystem.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/hms/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/hms/cmos.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/hms/contracts.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/hms/memory.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=runtime_reachable | importers=`trading_bot/core/security/defense.py`, `trading_bot/unified_bot.py`
+- `trading_bot/core/hms/memory_os.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/hms/ontology.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/hms/operators.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/influxdbhandler.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/infrastructure/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/infrastructure/feature_store.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/infrastructure/replay_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/infrastructure/session_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/input_validation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/institutionalfootprintpanel.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/legacy_main/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/legacy_main/main_v1.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=cli, direct_capital, cli_entrypoint, credential_access, direct_broker_access | importers=none
+- `trading_bot/core/liquidityawareexecutor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/loadtestmetrics.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/main_trading_loop.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, direct_capital, cli_entrypoint, direct_broker_access | importers=none
+- `trading_bot/core/meanreversionexpert.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/metrics_exporter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/core/mixtureofexpertsforecaster.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/monitoring_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=`trading_bot/core/survival_core.py`, `trading_bot/core/trading_system.py`
+- `trading_bot/core/multi_dimensional_confidence_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/alphaalgo_master_integration.py`
+- `trading_bot/core/multichannelnotifier.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/multihorizonforecaster.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/multitimeframepanel.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/mycustompanel.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/nested_learning_hope.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/observability/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/observability/calibration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/observability/provenance.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/core/p0_critical_fixes.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/phase2_quick_wins.py`
+- `trading_bot/core/paper_trading_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/performancecomparator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/phase2_quick_wins.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/phase3_strategy_redesign.py`
+- `trading_bot/core/phase4_ml_enhancements.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/phce_d_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/post_trade_self_fixing.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/alphaalgo_master_integration.py`
+- `trading_bot/core/quantilenetwork.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/rate_limiter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/reconciliation_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/core/redundantsystem.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/secureconfig.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/security/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/security/defense.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/security/sandbox.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/aads/core/alpha_evolve_engine.py`, `trading_bot/distributed/parallel_backtester.py`
+- `trading_bot/core/self_awareness.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/core/selfplaytraining.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/serialization/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/serialization/canonical.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/service_factory.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=dynamic_import | importers=`trading_bot/background.py`
+- `trading_bot/core/service_registry.py` — class=compatibility_facade | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/background.py`, `trading_bot/core/service_factory.py`, `trading_bot/services/aamis_service.py`, `trading_bot/services/adaptive_service.py`, `trading_bot/services/advanced_ai_service.py`, `trading_bot/services/advanced_analysis_service.py`, `trading_bot/services/advanced_features_service.py`, `trading_bot/services/advanced_ml_service.py`, `trading_bot/services/adversarial_curriculum_service.py`, `trading_bot/services/adversarial_decision_service.py`, `trading_bot/services/adversarial_systems_service.py`, `trading_bot/services/agents2_service.py`, `trading_bot/services/agents_service.py`, `trading_bot/services/ai_core_service.py`, `trading_bot/services/ai_engineer_service.py`, `trading_bot/services/ai_service.py`, `trading_bot/services/alerts_service.py`, `trading_bot/services/alpha_engine_service.py`, `trading_bot/services/alpha_research_service.py`, `trading_bot/services/alphaalgo_core_service.py`, `trading_bot/services/alphaalgo_institutional_service.py`, `trading_bot/services/alphaalgo_v2_service.py`, `trading_bot/services/alternative_data_service.py`, `trading_bot/services/analysis_service.py`, `trading_bot/services/analytics_service.py`, `trading_bot/services/api_service.py`, `trading_bot/services/approval_service.py`, `trading_bot/services/arbitrage_service.py`, `trading_bot/services/audit_service.py`, `trading_bot/services/auto_optimizer_service.py`, `trading_bot/services/autonomous_learner_service.py`, `trading_bot/services/autonomous_pipeline_service.py`, `trading_bot/services/autonomous_service.py`, `trading_bot/services/backtesting_service.py`, `trading_bot/services/blockchain_service.py`, `trading_bot/services/brain_service.py`, `trading_bot/services/bridges_service.py`, `trading_bot/services/broker_service.py`, `trading_bot/services/brokers_service.py`, `trading_bot/services/calendar_service.py`, `trading_bot/services/cloud_deployer_service.py`, `trading_bot/services/cognitive_architecture_service.py`, `trading_bot/services/compliance_service.py`, `trading_bot/services/config_service.py`, `trading_bot/services/connectivity_service.py`, `trading_bot/services/connectors_service.py`, `trading_bot/services/core_api_service.py`, `trading_bot/services/core_systems_service.py`, `trading_bot/services/critical_fixes_service.py`, `trading_bot/services/crypto_service.py`, `trading_bot/services/dashboard_service.py`, `trading_bot/services/data_feeds_service.py`, `trading_bot/services/data_service.py`, `trading_bot/services/data_sources_service.py`, `trading_bot/services/database_service.py`, `trading_bot/services/decision_layer_service.py`, `trading_bot/services/deepchart_service.py`, `trading_bot/services/deployment_service.py`, `trading_bot/services/derivatives_service.py`, `trading_bot/services/devops_service.py`, `trading_bot/services/diagnostics_service.py`, `trading_bot/services/distributed_service.py`, `trading_bot/services/elite_ai_service.py`, `trading_bot/services/elite_system_service.py`, `trading_bot/services/error_handling_service.py`, `trading_bot/services/execution_service.py`, `trading_bot/services/hivemind_service.py`, `trading_bot/services/indicators_service.py`, `trading_bot/services/integrated_brain_service.py`, `trading_bot/services/intelligence_directorate_service.py`, `trading_bot/services/market_intelligence_service.py`, `trading_bot/services/monitoring_service.py`, `trading_bot/services/msos_service.py`, `trading_bot/services/mtash_service.py`, `trading_bot/services/notifications_service.py`, `trading_bot/services/optimization_service.py`, `trading_bot/services/performance_service.py`, `trading_bot/services/portfolio_service.py`, `trading_bot/services/position_service.py`, `trading_bot/services/quant_analysis_service.py`, `trading_bot/services/risk_service.py`, `trading_bot/services/security_service.py`, `trading_bot/services/sentiment_service.py`, `trading_bot/services/signals_service.py`, `trading_bot/services/strategy_service.py`, `trading_bot/services/telemetry_service.py`, `trading_bot/services/tier4_services.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/core/shared.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/core/startup_checks.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/core/survival_core.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, direct_capital, credential_access, direct_broker_access | importers=none
+- `trading_bot/core/talos_cerberus_v23.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/thinkingbotv2.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/trade_journal.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/trading_system.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, direct_capital, cli_entrypoint, direct_broker_access | importers=none
+- `trading_bot/core/trendexpert.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/unified_decision_gate.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/alphaalgo_master_integration.py`
+- `trading_bot/core/unified_market_hostility_gate.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/alphaalgo_master_integration.py`
+- `trading_bot/core/validation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/verification/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/verification/interface.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/verification/specialists.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core/verification/swarm.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=runtime_reachable | importers=`trading_bot/unified_bot.py`
+- `trading_bot/core/volatilityexpert.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core_api/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/core_api_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/core_api/events.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/core_api/exceptions.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core_api/interfaces.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core_api/types.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/core_types.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/cos/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/cos/cos_core.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=dynamic_import | importers=none
+- `trading_bot/cos/decision_support.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/cos/feedback_loop.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/cos/os_core.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/cos/system_cognitive_os.py`
+- `trading_bot/cos/os_services.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/cos/system_cognitive_os.py`
+- `trading_bot/cos/simulation_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/cos/system_cognitive_os.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/cos/types.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/critical_fixes.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/critical_fixes_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/critical_fixes/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/critical_fixes/config_integrity_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/critical_fixes/data_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/critical_fixes/execution_quality_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/critical_fixes/multi_layer_kill_switch.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, direct_capital, direct_broker_access | importers=none
+- `trading_bot/critical_fixes/silent_failure_detector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/crypto/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/crypto_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/crypto/defi_module.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=cli, direct_capital, cli_entrypoint, direct_broker_access | importers=none
+- `trading_bot/ctrader/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/ctrader/ctrader_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, credential_access | importers=none
+- `trading_bot/dashboard/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/dashboard_service.py`
+- `trading_bot/dashboard/analytics_panel.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/dashboard/anomaly_detection.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/dashboard/app.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/dashboard/base_components.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/dashboard/components.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/dashboard/components_analytics.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/dashboard/components_market_analysis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/dashboard/components_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/dashboard/dashboard_server.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/dashboard/data_provider.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/dashboard/gamified_dashboard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/dashboard/live_dashboard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/dashboard/performance_attribution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/dashboard/performance_dashboard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=`trading_bot/brain/brain_architecture.py`, `trading_bot/dashboard/strategy_dashboard.py`, `trading_bot/strategies/advanced_strategies.py`
+- `trading_bot/dashboard/react_dashboard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/dashboard/realtime_dashboard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/dashboard/run_dashboard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint, dynamic_import | importers=none
+- `trading_bot/dashboard/survival_dashboard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/dashboard/system_panel.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/dashboard/unified_dashboard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/dashboard/visualization.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/dashboard/web_dashboard.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=direct_capital, direct_broker_access | importers=none
+- `trading_bot/data.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/connectors/ticktrader_connector.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/diagnostics/system_validator.py`, `trading_bot/execution/live_executor.py`, `trading_bot/execution/paper_executor.py`, `trading_bot/market_intelligence/data_monitoring.py`, `trading_bot/ml/retraining.py`, `trading_bot/optimized_integration.py`, `trading_bot/risk/MASTER_risk_manager.py`, `trading_bot/services/data_service.py`, `trading_bot/strategy/ml_strategy.py`, `trading_bot/strategy/strategy_engine.py`, `trading_bot/ultimate_production/core_engine.py`
+- `trading_bot/data/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/data/adapters.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/data/market_data_stream.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/main_trading_loop.py`, `trading_bot/core/survival_core.py`, `trading_bot/core/trading_system.py`, `trading_bot/unified_architecture/layer1_data_foundation.py`
+- `trading_bot/data/time_series_db.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/trading_system.py`, `trading_bot/persistence/database_initializer.py`
+- `trading_bot/data/validate.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/research/orchestration/quant_pipeline.py`
+- `trading_bot/data_feeds/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/connectivity_unified/unified_connector.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/data_feeds_service.py`
+- `trading_bot/data_feeds/crypto_feed.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/data_feeds/historical_feeds.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/data_feeds/multi_source_feed.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/data_feeds/websocket_feeds.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/data_feeds/yahoo_feed.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/data_sources/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/data_sources_service.py`
+- `trading_bot/data_sources/free_data_providers.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/database/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/intel/fundamental_analyzer.py`, `trading_bot/intel/strategy_researcher.py`, `trading_bot/ml/retraining.py`, `trading_bot/services/database_service.py`
+- `trading_bot/database/analytics_processor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/optimized_integration.py`, `trading_bot/trading_engine.py`
+- `trading_bot/database/cache_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/database/complete_data_infrastructure.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/database/data_normalizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/analytics/backtest_parity.py`, `trading_bot/trading_engine.py`
+- `trading_bot/database/data_quarantine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/unified_architecture/layer1_data_foundation.py`
+- `trading_bot/database/data_streaming.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/opportunity_scanner/scanner_interface.py`, `trading_bot/optimized_integration.py`, `trading_bot/testing/e2e_framework.py`, `trading_bot/trading_engine.py`
+- `trading_bot/database/database_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/database/influxdb_connector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/database/market_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/database/market_microstructure.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/market_microstructure.py`, `trading_bot/opportunity_scanner/scanner_interface.py`, `trading_bot/optimized_integration.py`, `trading_bot/trading_engine.py`
+- `trading_bot/database/order_flow_processor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/opportunity_scanner/scanner_interface.py`, `trading_bot/optimized_integration.py`, `trading_bot/trading_engine.py`
+- `trading_bot/database/persistence_layer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/database/pipeline_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/optimized_integration.py`, `trading_bot/trading_engine.py`
+- `trading_bot/database/point_in_time_data.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/database/postgres_db.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/database/production_database.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/database/real_time_processor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/opportunity_scanner/scanner_interface.py`, `trading_bot/optimized_integration.py`, `trading_bot/testing/e2e_framework.py`, `trading_bot/trading_engine.py`
+- `trading_bot/database/robust_db.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/database/shared_memory_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/database/sqlite_db.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/database/time_series_db.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/database/timeseries_db.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/optimized_integration.py`, `trading_bot/testing/e2e_framework.py`, `trading_bot/trading_engine.py`
+- `trading_bot/decision_layer/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/decision_layer_service.py`
+- `trading_bot/decision_layer/concepts_10_meta.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/decision_layer/concepts_11_quantitative_edge.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/decision_layer/concepts_1_cognitive.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/decision_layer/concepts_2_probabilistic.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/decision_layer/concepts_3_behavioral.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/decision_layer/concepts_4_game_theory.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/decision_layer/concepts_5_temporal.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/decision_layer/concepts_7_microstructure.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/decision_layer/concepts_8_adaptive.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/decision_layer/core_types.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/decision_layer/decision_analytics.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/decision_layer/decision_integration_bridge.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/decision_layer/decision_persistence.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/decision_layer/innovative_decision_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/deepar.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/deepchart/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/deepchart_service.py`
+- `trading_bot/deepchart/confidence_overlay_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/deepchart/execution_forecast_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/deepchart/feature_pipeline.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/deepchart/friction_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/deepchart/inference_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/deepchart/intent_feature_extractor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/deepchart/intent_inference_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/deepchart/intent_momentum_tracker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/deepchart/intent_transition_logic.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/deepchart/latent_state_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/deepchart/liquidity_entropy_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/deepchart/memory_sr_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/deepchart/self_improvement.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/deepchart/time_to_move_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/deepchart/visualization_layer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/deepseek_core.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/deepseek_engineer/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/deepseek_engineer/analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/deepseek_engineer/guardrails.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/deepseek_engineer/proposal.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/deepseek_engineer/protected_registry.py` — class=compatibility_facade | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/deepseek_engineer_demo.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/deepseek_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/deepseek_orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=top_level_module | importers=none
+- `trading_bot/deepseek_r1_8b_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/deployment/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/deployment_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/deployment/multi_symbol_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/derivatives/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/derivatives_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/derivatives/options_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/devops/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/devops_service.py`
+- `trading_bot/devops/changelog_generator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/diagnostic_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/diagnostics/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/diagnostics_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/diagnostics/system_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint, credential_access, dynamic_import | importers=none
+- `trading_bot/distributed/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/distributed_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/distributed/task_distributor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/documentation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/documentation/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/documentation/trade_documentation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/elite_ai_system/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/autonomous_superintelligence/autonomous_trading_bridge.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/elite_ai_service.py`
+- `trading_bot/elite_ai_system/elite_execution_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/elite_ai_system/emergency_response_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/elite_ai_system/growth_optimization_framework.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/elite_ai_system/mae_mfe_analytics.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/elite_ai_system/market_psychology_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/elite_ai_system/multi_factor_matrix.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/elite_ai_system/neural_evolution_framework.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/elite_ai_system/slow_inference_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/elite_ai_system/trade_scoring_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/elite_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/elite_master_system.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=top_level_module | importers=none
+- `trading_bot/elite_system/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/elite_system_service.py`
+- `trading_bot/elite_system/ai_ml_cortex.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/elite_system/benchmarking.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/elite_system/config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/elite_system/dashboard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/elite_system/elite_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/elite_system/elite_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/elite_system/liquidity_warfare.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/elite_system/market_analysis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/elite_system/elite_analyzer.py`
+- `trading_bot/elite_system/market_psychology.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/elite_system/elite_analyzer.py`
+- `trading_bot/elite_system/market_structure_oracle.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/elite_system/order_flow_decryptor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/elite_system/elite_analyzer.py`
+- `trading_bot/elite_system/quantum_blockchain_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/elite_system/regime_detection.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/analysis/market_context.py`, `trading_bot/elite_system/elite_analyzer.py`
+- `trading_bot/elite_system/trader_consciousness.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/elite_system/visualization.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/error_handling/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/error_handling_service.py`
+- `trading_bot/error_handling/advanced_error_handler.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/error_handling/circuit_breaker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/error_handling/comprehensive_recovery.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/error_handling/health_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/error_handling/recovery_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/error_handling/robust_error_handler.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/eternal_evolution/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/complete_integrator.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/eternal_evolution/architecture_evolution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/eternal_evolution/autonomous_evolution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/eternal_evolution/data_evolution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/eternal_evolution/immutable_core.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/eternal_evolution/security_evolution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/event_monitoring/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/event_monitoring/economic_calendar.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/event_monitoring/event_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/event_monitoring/event_processor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/event_monitoring/market_condition_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/event_monitoring/news_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/event_monitoring/real_time_data.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/event_monitoring/social_media_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/event_pipeline/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/event_pipeline/consistency.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/event_pipeline/event_bus.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/event_pipeline/event_consumer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/event_pipeline/event_producer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/event_pipeline/event_replay.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/event_pipeline/event_store.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/event_pipeline/events.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/event_pipeline/fault_tolerance.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/event_pipeline/pipeline.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/event_pipeline/scalability.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/events/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/events/events.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/evolution_layer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=runtime_reachable, top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/unified_bot.py`
+- `trading_bot/evolution_layer/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/evolution_layer/evolver.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/evolution_layer/learner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/evolution_layer/optimizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/performance_optimizer.py`
+- `trading_bot/evolution_layer/orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=dynamic_import | importers=none
+- `trading_bot/execution/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/connectivity/network_monitor.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/error_handling/recovery_manager.py`, `trading_bot/optimized_integration.py`, `trading_bot/services/execution_service.py`, `trading_bot/system_health/health_monitor.py`
+- `trading_bot/execution/adaptive_exits.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/execution/advanced_algorithms.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, direct_capital, direct_broker_access | importers=none
+- `trading_bot/execution/advanced_execution_algorithms.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/execution/advanced_order_management.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/execution/algorithms.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/execution_manager.py`, `trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/execution/algorithms_updated.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/execution/almgren_chriss.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/execution/atomic_execution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/execution/chainofthoughttrader.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/execution/complete_execution_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/execution/dark_pool_executor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/execution/dynamic_management.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/execution/execution_scheduler.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/execution/exit_optimizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/phase2_quick_wins.py`
+- `trading_bot/execution/explainabletrader.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/execution/fill_tracker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/core/survival_core.py`, `trading_bot/unified_architecture/layer4_execution.py`
+- `trading_bot/execution/frequency_limiter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/execution/iceberg_executor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/execution/iceberg_optimizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/execution/idempotent_executor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, direct_capital, cli_entrypoint, direct_broker_access | importers=none
+- `trading_bot/execution/impact_calibration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/execution/internetawareexecution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/execution/liquidity_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/decision_governance/capability_discovery.py`
+- `trading_bot/execution/liquidity_aware_sizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/execution/live_executor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=direct_capital, direct_broker_access | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/optimized_integration.py`
+- `trading_bot/execution/lob_smart_router.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/execution/market_impact.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/brain/brain_architecture.py`, `trading_bot/brain/brain_trader.py`, `trading_bot/brain/central_controller.py`, `trading_bot/brain/mt5_brain_trader.py`, `trading_bot/strategies/advanced_strategies.py`
+- `trading_bot/execution/order_confirmation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=direct_capital, direct_broker_access | importers=none
+- `trading_bot/execution/order_execution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/execution/order_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=direct_capital, direct_broker_access | importers=none
+- `trading_bot/execution/order_reconciliation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/execution/order_state_machine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/elite_master_system.py`, `trading_bot/unified_architecture/layer4_execution.py`
+- `trading_bot/execution/orderblockpanel.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/execution/orderbookanalyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/execution/orderbookencoder.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/execution/orderexecutionmanager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/execution/ordermanager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/execution/paper_executor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/execution/partial_fill_aggregator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/execution/profit_maximizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/execution/robust_retry.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/execution/slippage_protection.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=direct_capital, direct_broker_access | importers=`trading_bot/unified_architecture/layer4_execution.py`
+- `trading_bot/execution/slippage_tracker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/execution/smart_execution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/core/execution_manager.py`, `trading_bot/decision_governance/capability_discovery.py`
+- `trading_bot/execution/smart_order_router.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/unified_architecture/layer4_execution.py`
+- `trading_bot/execution/smart_router.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/core/execution_manager.py`
+- `trading_bot/execution/trade_executor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=direct_capital, direct_broker_access | importers=`trading_bot/core_agent_system/agent_registry.py`
+- `trading_bot/execution/trailing_stop.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/p0_critical_fixes.py`
+- `trading_bot/execution/twap_executor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/execution/vwap_executor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/exit_strategies.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/exit_strategies/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/exit_strategies/adaptive_exits.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/exit_strategies/dynamic_management.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/exit_strategies/exit_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/exit_strategies/profit_maximizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/exits.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/exits/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/exits/advanced_exit_strategies.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/experience_memory.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/explainability.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/explainability/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/explainability/xai_module.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/features.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/features/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/features/causal_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/features/lob_features.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/feedback/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/feedback/analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/filters.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/filters/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/filters/market_condition_filters.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/forecast_ensemble.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/foundation/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/foundation/capability_registry.py` — class=compatibility_facade | owner=infrastructure | port=ComponentLifecycle | flags=runtime_reachable | importers=`trading_bot/unified_bot.py`
+- `trading_bot/foundation/conformance.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/foundation/contracts.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=runtime_reachable | importers=`trading_bot/core/execution_bridge.py`, `trading_bot/data/adapters.py`, `trading_bot/data/normalizer.py`, `trading_bot/execution/service.py`, `trading_bot/governance/policy_adapter.py`, `trading_bot/persistence/repositories.py`, `trading_bot/risk/policy_adapters.py`, `trading_bot/risk/service.py`, `trading_bot/strategies/adapter.py`
+- `trading_bot/foundation/legacy_convergence.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/foundation/ports.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=runtime_reachable | importers=`trading_bot/agents/capability_adapter.py`, `trading_bot/data/adapters.py`, `trading_bot/execution/service.py`, `trading_bot/strategies/adapter.py`, `trading_bot/strategies/registry.py`
+- `trading_bot/freetradingbot.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/generator_verifier.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/gets/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/gets/demo.py`, `trading_bot/gets/example_usage.py`
+- `trading_bot/gets/api.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/gets/cli.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/gets/core/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/gets/core/controlled_evolution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/gets/core/forecast_representation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/gets/core/self_diagnosis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/gets/core/temporal_perception.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/gets/demo.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/gets/example_usage.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/gets/gets_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/gets/integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/gets/demo.py`, `trading_bot/gets/example_usage.py`
+- `trading_bot/gets/monitoring.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/gets/multimodal_awareness.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/gets/persistence.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/gets/realtime_pipeline.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/gets/types.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/gets/demo.py`, `trading_bot/gets/example_usage.py`
+- `trading_bot/global_expansion/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/global_expansion/free_global_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/global_expansion/multi_jurisdiction.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/golden_path/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/golden_path/monitoring.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/golden_path/__init__.py`
+- `trading_bot/golden_path/runner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/golden_path/__init__.py`
+- `trading_bot/golden_path/security_audit.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=dynamic_import | importers=`trading_bot/golden_path/__init__.py`
+- `trading_bot/golden_path/types.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/golden_path/__init__.py`, `trading_bot/golden_path/runner.py`, `trading_bot/golden_path/validator.py`
+- `trading_bot/golden_path/validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/golden_path/__init__.py`, `trading_bot/golden_path/runner.py`
+- `trading_bot/guardrails.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/hardware_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/health_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/hedge_fund/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/hedge_fund/fund_management.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/hedge_fund/performance_attribution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/hedging/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/hedging/correlation_hedge.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/hft/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/hft/tick_data_handler.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/hierarchical_rl.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/hivemind/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/services/hivemind_service.py`
+- `trading_bot/hivemind/collective_consciousness.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/hivemind/collective_memory.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/hivemind/consensus.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/hivemind/coordinator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/hivemind/core.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/hivemind/governed_hivemind.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/hivemind/hivemind_orchestrator_v2.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/hivemind/military_protocols.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/hivemind/neural_mesh.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/hivemind/nodes.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/hivemind/quantum_entanglement.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/hivemind/swarm.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/human_collaboration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/human_layer/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=runtime_reachable | importers=`trading_bot/core/csc/controller.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`, `trading_bot/unified_bot.py`
+- `trading_bot/human_layer/alerts.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/human_layer/dashboard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/human_layer/override.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/human_protocol.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/immutable_purpose.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/improvements/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/improvements/drawdown_recovery.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/improvements/entry_optimizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/improvements/exit_strategies.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/improvements/forecast_improvements/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/improvements/forecast_improvements/data_feed_quality.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/improvements/forecast_improvements/entry_timing.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/improvements/forecast_improvements/market_regime.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/improvements/forecast_improvements/news_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/improvements/forecast_improvements/session_awareness.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/improvements/forecast_improvements/spread_slippage.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/improvements/market_regime.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/improvements/news_filter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/improvements/session_spread_filter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/indicators.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/indicators_service.py`
+- `trading_bot/indicators/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/indicators/advanced_liquidity.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/brain/tier2_orderflow.py`
+- `trading_bot/indicators/advanced_ml.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/brain/tier4_regime.py`
+- `trading_bot/indicators/advanced_statistical.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/brain/tier3_structure.py`
+- `trading_bot/indicators/advanced_technical.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/brain/tier1_technical.py`
+- `trading_bot/indicators/fractal_momentum_divergence.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/indicators/sentiment.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/indicators/vectorized_indicators.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/alphaalgo_5star.py`
+- `trading_bot/indicators/volatility_impulse_vector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/informer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/infrastructure/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/elite_master_system.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/infrastructure/auto_scaling.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/infrastructure/config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/infrastructure/health_check.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/infrastructure/health_endpoints.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/infrastructure/mlflow_tracker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/infrastructure/monitoring.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/infrastructure/orchestration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/infrastructure/prometheus_exporter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ingestion/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/ingestion/collector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/ingestion/event_router.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/ingestion/ingestion_backbone.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ingestion/normalizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ingestion/orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ingestion/orderbook_builder.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/ingestion/replay_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/ingestion/schema.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ingestion/storage.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/ingestion/validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/innovations/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/innovations/category_01_quantum_consciousness.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/innovations/category_02_temporal_manipulation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/innovations/category_03_biological_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/innovations/category_04_dimensional_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/innovations/category_05_psychological_warfare.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/innovations/category_06_cosmic_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/innovations/category_07_mythological_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/innovations/category_08_elemental_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/innovations/category_09_musical_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/innovations/category_10_linguistic_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/innovations/category_11_weather_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/innovations/category_12_sports_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/innovations/category_13_culinary_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/innovations/category_14_architectural_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/innovations/category_15_military_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/innovations/category_16_oceanographic_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/innovations/category_17_to_25_combined.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/institutional/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/institutional/bloomberg_bridge.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/institutional_entry/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/institutional_entry/entry_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/institutional_entry/institutional_footprint.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/institutional_entry/wyckoff_ict_fusion.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/institutional_github_scout.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/integration/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/integration/dependency_graph.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/integration/run_verification.py`
+- `trading_bot/integration/internet_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/integration/market_analysis_dashboard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/integration/master_engine.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=dynamic_import | importers=none
+- `trading_bot/integration/master_integrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=cli, cli_entrypoint, dynamic_import | importers=none
+- `trading_bot/integration/module_registry.py` — class=compatibility_facade | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/integration/run_verification.py`, `trading_bot/registry/__init__.py`
+- `trading_bot/integration/run_verification.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/integration/service_contract.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/integration/verification.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/integration/run_verification.py`
+- `trading_bot/integrations.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/integrations/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/integrations/data_layer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/integrations/real_alternative_data.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/integrations/real_defi_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/integrations/real_market_data.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/intel/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/intel/fundamental_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/intel/news_pipeline.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/interfaces/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/interfaces/adapters.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=runtime_reachable | importers=`trading_bot/foundation/runtime.py`
+- `trading_bot/internet_access/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/internet_access/auto_updater.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/internet_access/connection_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/internet_access/data_acquisition.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/internet_access/security_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/knowledge_consolidator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/knowledge_harvester.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/learning/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/learning/distributional_rl.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/learning/eksft.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/learning/internalization.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/learning/internet_learning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/learning/multi_objective_rl.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/learning/performance_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/live_engineer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/log_system/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/log_system/audit_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/log_system/config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/log_system/log_config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/log_system/log_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/log_system/logging_config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/log_system/structured_logger.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/log_system/structured_trade_logger.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/log_system/trade_autopsy.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/macro/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/macro/macro_regime_detector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/maml_trainer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/market_feeds/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/market_feeds/lob.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/market_making/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/market_making/rl_market_maker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/market_microstructure.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/market_regime.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/market_student/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/market_student/evolution_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/market_student/learning_cycle.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/market_student/lesson_database.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/market_student/market_teacher.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/market_student/reward_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/market_student/student.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/market_student/student_ai.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/market_teacher/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/market_teacher/absolute_laws.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/market_teacher/curiosity_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/market_teacher/human_gateway.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/market_teacher/learning_framework.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/market_teacher/market_feedback.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/market_teacher/stealth_protection.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/market_teacher/teacher.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/master_integration.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/elite_integration.py`
+- `trading_bot/master_system/__init__.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/mastery_orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=top_level_module | importers=none
+- `trading_bot/mega_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/meta_learning/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/meta_learning/maml.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/metrics/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/metrics/calibration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/metrics/scorecard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/backtesting/strategy_backtester.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/signals_service.py`, `trading_bot/strategy/ml_strategy.py`, `trading_bot/system_health/health_monitor.py`
+- `trading_bot/ml/advanced_features.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/advancedlearningbot.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/adversarial/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/adversarial/adversarial_trainer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/adversarial/robustness_tester.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/attention/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/attention/feature_attention.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/attention/temporal_attention.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/automl_pipeline.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/complete_ai_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/confidence_calibration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/continual/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/continual/ewc_learning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/continual/ewc_trainer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/continual/replay_buffer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/continuous_learning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/data_leakage_guard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/deepflow2.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/deployment/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/deployment/batch_inference.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/deployment/onnx_converter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/deployment/quantizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/distributionalqlearning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/ensemble.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/ensemble/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/ensemble_predictor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/core/phase4_ml_enhancements.py`
+- `trading_bot/ml/eval_states.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/ml/reinforcement.py`
+- `trading_bot/ml/explainability/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/explainability/lime_explainer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/explainability/shap_explainer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/explainable_ai.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/feature_engineering.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/ml/strategy_optimizer.py`
+- `trading_bot/ml/feature_versioning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/federated/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/federated/local_trainer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/federated/secure_aggregator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/forecasting/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/forecasting/data_loader.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/forecasting/ensemble_forecaster.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/forecasting/train_tft.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/gan_market_generator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/graph/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/graph/asset_graph.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/hypernetwork_adaptation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/hyperparameter_tuning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/ml/strategy_optimizer.py`
+- `trading_bot/ml/information/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/information/bottleneck.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/learningtradingbot.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/llm_guided/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/llm_guided_rl/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/llm_guided_rl/market_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/llm_guided_rl/policy_converter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/mamlmetalearner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/market_regime_classifier.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/meta_learning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/meta_learning/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/meta_learning/fast_adapt.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/meta_learning/maml.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/maml_trainer.py`
+- `trading_bot/ml/meta_learning/regime_detector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/meta_learning/task_sampler.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/microfish.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/ml_pipeline.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/ml/mlensemble.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/mlflow_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/mlflow_tracker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/experiment_tracker.py`, `trading_bot/infrastructure/mlflow_tracker.py`
+- `trading_bot/ml/multi_task/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/multi_timeframe_rl.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/brain/brain_architecture.py`, `trading_bot/strategies/advanced_strategies.py`
+- `trading_bot/ml/multiobjectiverl.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/neural_plasticity.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/neuro_symbolic/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/neuro_symbolic/hybrid_policy.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/neuro_symbolic/rule_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/offline_rl/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/cognitive_architecture/cognitive_core.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/unified_architecture/layer2_intelligence_core.py`
+- `trading_bot/ml/offline_rl/continuous_learning_orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/ml/offline_rl/dataset_builder.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/offline_rl/main_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/offline_rl/main_py_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/offline_rl/module_scanner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/offline_rl/offline_rl_trainer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/offline_rl/ope.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/advanced_rl_agents.py`, `trading_bot/ml/offline_rl/offline_rl_trainer.py`, `trading_bot/offline_policy_evaluation.py`
+- `trading_bot/ml/offline_rl/policy_selector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/offline_rl/prepare_dataset.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/offline_rl/replay_buffer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/offline_rl/state_builder.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/online_learning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/ml/strategy_optimizer.py`
+- `trading_bot/ml/online_learning_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/onlinelearning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/openclaw.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/openclip_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/personalized_learning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/pipeline.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/recurrent_transformer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/alpha_engine/deep_learning.py`, `trading_bot/ml/transformer_forecaster.py`, `trading_bot/ml/transformer_model.py`
+- `trading_bot/ml/regime_switching_ensemble.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/reinforcement.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/advanced_rl_agents.py`, `trading_bot/ml/ensemble_models.py`
+- `trading_bot/ml/reinforcement_learning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/ml/hyperparameter_tuning.py`
+- `trading_bot/ml/representation/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/representation/augmentations.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/representation/contrastive_pretrain.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/representation/finetune.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/retraining.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/rl_environment.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/ml/multi_timeframe_rl.py`, `trading_bot/ml/rl_agent.py`
+- `trading_bot/ml/rltradingbot.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/sentiment.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/brain/tier5_sentiment.py`
+- `trading_bot/ml/shap_explainer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/ml/explainability/__init__.py`
+- `trading_bot/ml/tradingtransformer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/transformer_forecaster.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/visualization.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ml/xgboost_predictor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/phase4_ml_enhancements.py`
+- `trading_bot/mobile/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/mobile/pwa_alerts.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/mobile_app.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/mobile_app/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/mobile_app/mobile_api.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, direct_capital, credential_access, direct_broker_access | importers=none
+- `trading_bot/monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/monitoring/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/monitoring_service.py`
+- `trading_bot/monitoring/advancedanalyticsdashboard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/monitoring/alerting_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/monitoring/comprehensive_logger.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/monitoring/dependency_health.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/monitoring/drift_detector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/monitoring/elite_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/elite_integration.py`
+- `trading_bot/monitoring/health_check.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/monitoring/latency_budget.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/opportunity_scanner/parallel_scanner.py`
+- `trading_bot/monitoring/live_monitor.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, direct_capital, direct_broker_access | importers=none
+- `trading_bot/monitoring/liveperformancetracker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/monitoring/logging_config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/monitoring/metrics.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/monitoring/monitoring_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/monitoring/performance_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/monitoring/performance_tracker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/monitoring/latency_budget.py`, `trading_bot/opportunity_scanner/parallel_scanner.py`
+- `trading_bot/monitoring/production_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/monitoring/production_monitoring.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/api/rest_api.py`, `trading_bot/dashboard/web_dashboard.py`
+- `trading_bot/monitoring/prometheus_exporter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/infrastructure/prometheus_exporter.py`
+- `trading_bot/monitoring/prometheus_metrics.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/monitoring/start_prometheus.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/monitoring/system_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/msos/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/msos_service.py`
+- `trading_bot/msos/anti_overreaction.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/msos/assumption_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/msos/capital_governor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/msos/core.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/msos/data_adversarial.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/msos/entropy_budget.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/msos/execution_reality.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/msos/learning_firewall.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/msos/loss_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/msos/market_tradability.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/msos/post_mortem.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/msos/quant_factory.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/msos/regime_instability.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/multimodal.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/multimodal/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/multimodal/alt_data.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/multimodal/fusion_network.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/multimodal/price_encoder.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/multimodal/text_encoder.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/mytradingbot.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/nbeats.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/network_sentinel.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/neural_integration/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neural_integration/neural_hub.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=`trading_bot/neural_integration/__init__.py`
+- `trading_bot/neural_integration/neurotransmitters.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=`trading_bot/neural_integration/__init__.py`
+- `trading_bot/neural_integration/synaptic_matrix.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/neural_integration/__init__.py`
+- `trading_bot/neural_network.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/neuros_evolution/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/adaptive_network.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/autonomous_org.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/behavior_synthesis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/capability_distillation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/neuros_evolution/capability_ontology.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/capability_registry.py` — class=compatibility_facade | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/code_evolution_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/neuros_evolution/continuous_orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/neuros_evolution/controlled_objects.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core_agent_system/integrated_system.py`
+- `trading_bot/neuros_evolution/economic_objectives.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/engineer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/evolution_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/execution_stages.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/fallback_hierarchy.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/fast_router.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/generic_categories.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/global_objective_function.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/launch_autonomous_improvement.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/neuros_evolution/memory_systems.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/meta_learning_loop.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/neuros_orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/neuros_evolution/output_modes.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/plotcode_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/neuros_evolution/recursive_self_improvement.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/neuros_evolution/routing_policy.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/self_diagnosis_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/neuros_evolution/self_improvement.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/synthetic_experience_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/neuros_evolution/task_router.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/notifications/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/notifications_service.py`
+- `trading_bot/notifications/notification_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/notifications/notification_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/notifications/owner_channels.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/notifications/push_notifications.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/notifications/telegram_bot.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/observability/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/complete_integrator.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/observability/correlation_breakdown_detector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/observability/metrics.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/observability/pre_trade_gate.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/observability/scientific_metrics.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/observability/tracing.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/observability/trade_quality_grader.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/observability/unified_observability_hub.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/offline_policy_eval.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/opportunity_scanner/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/opportunity_scanner/arbitrage_detection.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/opportunity_scanner/correlation_analysis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/opportunity_scanner/flow_analysis.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/opportunity_scanner/scanner_interface.py`
+- `trading_bot/opportunity_scanner/market_inefficiency.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/opportunity_scanner/market_making.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/opportunity_scanner/momentum_capture.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/opportunity_scanner/scanner_interface.py`
+- `trading_bot/opportunity_scanner/news_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/opportunity_scanner/parallel_scanner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/opportunity_scanner/scanner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/opportunity_scanner/scanner_interface.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/opportunity_scanner/parallel_scanner.py`, `trading_bot/optimized_integration.py`, `trading_bot/testing/e2e_framework.py`, `trading_bot/trading_engine.py`
+- `trading_bot/opportunity_scanner/scanner_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/opportunity_scanner/volatility_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/opportunity_scanner/scanner_interface.py`
+- `trading_bot/ops/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/ops/emergency_controls.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=direct_capital, direct_broker_access | importers=`trading_bot/complete_implementation.py`, `trading_bot/ops/telegram_commands.py`
+- `trading_bot/ops/telegram_commands.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/optimization/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/optimization_service.py`
+- `trading_bot/optimization/bayesian_optimizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/optimization/hyperparameter_tuner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/optimized_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, top_level_module | importers=none
+- `trading_bot/orchestration/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/orchestration/event_bus.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/events/__init__.py`
+- `trading_bot/orchestration/master_orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/orchestration/service_managers.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/orchestration/master_orchestrator.py`
+- `trading_bot/orchestrator/__init__.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/orchestrator/execution_engine.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=`trading_bot/trading_engine.py`
+- `trading_bot/orchestrator/master_orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=`trading_bot/trading_engine.py`
+- `trading_bot/orchestrator/ml_predictor.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/orchestrator/performance_tracker.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/orchestrator/task_scheduler.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/orchestrator/workflow_manager.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/page_hinkley.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/performance/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/performance_service.py`
+- `trading_bot/performance/algorithm_optimizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/performance/complete_performance_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/performance/memory_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/performance/memory_optimization.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/performance/parallel_processor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/performance/performance_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/performance/performance_profiler.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/elite_integration.py`, `trading_bot/performance_optimizer.py`
+- `trading_bot/performance/profiler.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/performance/windows_optimizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/performance_optimizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/perplexity_trading/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/services/tier5_services.py`
+- `trading_bot/perplexity_trading/assembly_qa.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/perplexity_trading/core_types.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/perplexity_trading/knowledge_graph.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/perplexity_trading/military_protocols.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/perplexity_trading/perplexity_orchestrator_v2.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/perplexity_trading/retrieval_pipeline.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/perplexity_trading/task_decomposer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/persistence/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/persistence/checkpoint_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/persistence/database_initializer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/survival_core.py`
+- `trading_bot/pipeline_orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=top_level_module | importers=none
+- `trading_bot/positive_impact.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/pre_commit_hook.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/production/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/production/data_validation_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/production/live_trading_system.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, direct_capital, cli_entrypoint, direct_broker_access | importers=none
+- `trading_bot/production/profitable_strategies.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/profiling/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/profiling/async_profiler.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/profit_maximizer/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/profit_maximizer/market_regime_adapter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/profit_maximizer/profit_maximizer_core.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/profit_maximizer/brain_integration.py`
+- `trading_bot/proposal_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/protected_registry.py` — class=compatibility_facade | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/psychology/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/psychology/behavioral_features.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/quality/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/quality/data_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/quantum.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/quantum/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/quantum/quantum_advantage.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/quantum/real_qaoa_implementation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/qwen_codemender.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`, `trading_bot/unified_architecture/layer3_strategy_engine.py`, `trading_bot/unified_architecture/layer6_orchestration.py`
+- `trading_bot/qwen_codemender/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/qwen_codemender/autonomous_mender.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/qwen_codemender/code_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/qwen_codemender/codemender_core.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/qwen_codemender/inference_client.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/qwen_codemender/self_evolution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/radar_ai/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/radar_ai/hivemind_controller.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/radar_ai/orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/radar_ai/radar_aip.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/radar_ai/radar_apollo.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/radar_ai/radar_foundry.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/radar_ai/radar_ontology.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/radar_ai/simulation_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/radar_ai/understanding_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/reality_gates/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/risk_unified/unified_risk.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/reality_gates/data_integrity_gate.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/reality_gates/drift_detection_gate.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/adwin_detector.py`
+- `trading_bot/reality_gates/execution_realism_gate.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/reality_gates/kill_switch_gate.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/reality_gates/master_reality_gate.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/reality_gates/multiple_testing_gate.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/reality_gates/walk_forward_gate.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/realtime/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/realtime/realtime_adapter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, dynamic_import | importers=none
+- `trading_bot/realtime/realtime_data_hub.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/realtime/realtime_execution.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=direct_capital, direct_broker_access | importers=none
+- `trading_bot/realtime/realtime_ml.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/realtime_dependency_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint, dynamic_import, top_level_module | importers=none
+- `trading_bot/realtime_system_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint, top_level_module | importers=none
+- `trading_bot/realtime_trading_core.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint, top_level_module | importers=none
+- `trading_bot/realtime_trading_core/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_improvement/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/recursive_improvement/architecture_recursion.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_improvement/execution_recursion.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_improvement/harmful_behavior_guard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/recursive_improvement/infrastructure.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_improvement/learning_recursion.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_improvement/loops/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_improvement/loops/base_loop.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_improvement/loops/feature_loop.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_improvement/loops/meta_loop.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_improvement/meta_recursion.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_improvement/orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/recursive_improvement/recursive_core.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_improvement/validation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/anti_gaming.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/archive.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/candidate_adapters.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/evaluation/runner.py`
+- `trading_bot/recursive_self_improvement/contracts.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/engine_v2.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, credential_access | importers=none
+- `trading_bot/recursive_self_improvement/evidence_boundaries.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/improvement_genome.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/loops/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/loops/specialized_loops.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/memory.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/meta_optimizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/meta_proposals.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/metric_registry.py` — class=compatibility_facade | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/multi_objective.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/multiplicity.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/protected_control_plane.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/rollback.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/scorecard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/transfer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/registry/__init__.py` — class=compatibility_facade | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/orchestration/master_orchestrator.py`
+- `trading_bot/registry/module_registry.py` — class=compatibility_facade | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/registry/service_locator.py` — class=compatibility_facade | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/orchestration/master_orchestrator.py`
+- `trading_bot/reporting/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/reporting/logger.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/reporting/reporter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/rl_executor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/safe_imports.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=dynamic_import, top_level_module | importers=none
+- `trading_bot/scanners.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/schemas.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/schemas/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/schemas/market_data.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/schemas/trading.py`, `trading_bot/testing/e2e_framework.py`, `trading_bot/testing/synthetic_data.py`
+- `trading_bot/schemas/trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/schemas/validation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/testing/e2e_framework.py`, `trading_bot/testing/report_generator.py`, `trading_bot/validation/api_contracts.py`
+- `trading_bot/security/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/security_service.py`
+- `trading_bot/security/advanced_security.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/security/artifact_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=`trading_bot/aamis_v3/superintelligence/memory_systems.py`, `trading_bot/analysis/liquidity_ml_predictor.py`, `trading_bot/ml/automl_pipeline.py`, `trading_bot/superintelligence/memory_systems.py`
+- `trading_bot/security/audit_logging.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/security/complete_security_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/security/credential_vault.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=`trading_bot/alphaalgo_5star.py`
+- `trading_bot/security/credentials.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/security/credentialvault.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/security/enhanced_security.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/security/jwt_auth.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/security/jwtauthenticator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/security/safe_eval.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/ml/ml_pipeline.py`
+- `trading_bot/security/safe_pickle.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=`trading_bot/analysis/liquidity_ml_predictor.py`, `trading_bot/analysis/sentiment_core.py`, `trading_bot/ml/automl_pipeline.py`, `trading_bot/ml/online_learning.py`, `trading_bot/risk/correlation_persistence.py`
+- `trading_bot/security/secrets_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint, credential_access | importers=none
+- `trading_bot/security/secure_credentials.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=`trading_bot/production/live_trading_system.py`
+- `trading_bot/security/security_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, credential_access | importers=none
+- `trading_bot/security/vault.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint, credential_access | importers=none
+- `trading_bot/security_hardening.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/self_concepts/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/self_concepts/self_adaptation_concepts.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_concepts/self_awareness_concepts.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_concepts/self_concept_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_concepts/self_coordination_concepts.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_concepts/self_correction_concepts.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_concepts/self_diagnosis_concepts.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_concepts/self_evolution_concepts.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_concepts/self_learning_concepts.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_concepts/self_optimization_concepts.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_concepts/self_protection_concepts.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_concepts/self_transcendence_concepts.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_defender.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/self_diagnostic/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/complete_integrator.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/self_diagnostic/auto_repair.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_diagnostic/comprehensive_diagnostics.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_diagnostic/diagnostic_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access, dynamic_import | importers=`trading_bot/diagnostic_engine.py`
+- `trading_bot/self_diagnostic/knowledge_gap.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/self_diagnostic/self_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/self_evolution_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/self_healing_ai/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/self_healing_ai/core.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_healing_ai/orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/self_healing_ai/validators/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_healing_ai/validators/capital.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_healing_ai/validators/configuration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_healing_ai/validators/data_integrity.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_healing_ai/validators/execution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_healing_ai/validators/infrastructure.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_healing_ai/validators/kill_switch.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_healing_ai/validators/monitoring.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_healing_ai/validators/regulatory.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_healing_ai/validators/security.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_healing_ai/validators/self_modification.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_healing_ai/validators/system_architecture.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/self_improvement/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/brain/brain_architecture.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/self_improvement/analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_improvement/audit_logger.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_improvement/autonomous_fixer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_improvement/canary_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_improvement/code_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/code_analyzer.py`
+- `trading_bot/self_improvement/code_rewriter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_improvement/engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_improvement/fix_generator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_improvement/improver.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_improvement/mirror_market_tester.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_improvement/proposal_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_improvement/root_cause_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_improvement/triage.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_improvement_loop.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/self_improvement_orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=top_level_module | importers=none
+- `trading_bot/self_learning/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/self_learning/core_learning_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_learning/distributed_learning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/self_learning/execution_optimizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_learning/knowledge_base.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_learning/learner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_learning/self_healing_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/self_mastery/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/self_mastery/code_evolver.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/code_evolver.py`
+- `trading_bot/self_mastery/experience_memory.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/experience_memory.py`
+- `trading_bot/self_mastery/knowledge_consolidator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/knowledge_consolidator.py`
+- `trading_bot/self_mastery/mastery_orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=`trading_bot/mastery_orchestrator.py`
+- `trading_bot/self_mastery/self_reflection.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/self_reflection.py`
+- `trading_bot/self_reflection.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/sentient_core/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/sentient_core/ai_learner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/ai_learner.py`
+- `trading_bot/sentient_core/code_evolver.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=dynamic_import | importers=none
+- `trading_bot/sentient_core/institutional_github_scout.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/institutional_github_scout.py`, `trading_bot/research/ecie/scouts.py`
+- `trading_bot/sentient_core/introspector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/sentient_core/knowledge_harvester.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/knowledge_harvester.py`
+- `trading_bot/sentient_core/network_sentinel.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/network_sentinel.py`
+- `trading_bot/sentient_core/profit_maximizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/sentient_core/self_defender.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, credential_access | importers=`trading_bot/self_defender.py`
+- `trading_bot/sentient_core/sentient_orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=`trading_bot/sentient_orchestrator.py`
+- `trading_bot/sentient_orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=top_level_module | importers=none
+- `trading_bot/sentiment.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/analysis_unified/unified_analyzer.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/sentiment_service.py`
+- `trading_bot/sentiment/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/sentiment/realtime_sentiment_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/sentiment/sentiment_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/services/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/background.py`
+- `trading_bot/services/aamis_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/services/adaptive_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/advanced_ai_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/advanced_analysis_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/advanced_features_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/advanced_ml_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/adversarial_curriculum_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/adversarial_decision_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/adversarial_systems_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/ai_core_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/ai_engineer_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/ai_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/alerts_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/alternative_data_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/analysis_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/analytics_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/api_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/arbitrage_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/audit_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/auto_optimizer_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/autonomous_learner_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/autonomous_pipeline_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/autonomous_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/blockchain_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/bridges_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/calendar_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/cloud_deployer_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/cognitive_architecture_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/config_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/connectivity_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/connectors_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/core_api_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/core_systems_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/critical_fixes_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/crypto_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/dashboard_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/data_feeds_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/data_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/data_sources_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/database_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/decision_layer_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/deepchart_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/deployment_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/derivatives_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/devops_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/diagnostics_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/distributed_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/elite_ai_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/elite_system_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/error_handling_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/services/execution_service.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, direct_capital, direct_broker_access | importers=none
+- `trading_bot/services/hivemind_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/indicators_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/monitoring_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/msos_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/mtash_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/services/notifications_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/optimization_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/performance_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/quant_analysis_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/security_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/sentiment_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/telemetry_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/services/tier4_services.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, dynamic_import | importers=`trading_bot/agent_orchestrator.py`
+- `trading_bot/services/tier5_services.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/simulation/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/simulation/digital_twin.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/simulation/market_simulator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/simulation/self_play_trainer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/skills/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/skills/ai_ml_enhancements/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/ai_ml_enhancements/active_learning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/ai_ml_enhancements/causal_discovery.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/ai_ml_enhancements/concept_drift.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/ai_ml_enhancements/contrastive_learning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/ai_ml_enhancements/counterfactual_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/ai_ml_enhancements/ensemble_stacker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/ai_ml_enhancements/federated_learning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/ai_ml_enhancements/graph_neural_network.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/ai_ml_enhancements/inverse_rl.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/ai_ml_enhancements/neural_architecture_search.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/ai_ml_enhancements/rl_gym.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/ai_ml_enhancements/temporal_fusion.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/temporal_fusion_transformer.py`, `trading_bot/tft.py`
+- `trading_bot/skills/ai_ml_enhancements/transformer_predictor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/ai_ml_enhancements/uncertainty_quantification.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/alternative_data/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/alternative_data/crypto_onchain.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/alternative_data/dark_pool.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/alternative_data/earnings_nlp.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/alternative_data/esg_integrator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/alternative_data/insider_tracker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/alternative_data/options_flow.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/alternative_data/patent_tracker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/alternative_data/sec_parser.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/alternative_data/social_sentiment.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/alternative_data/supply_chain.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/execution_optimization/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/execution_optimization/adaptive_twap_vwap.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/execution_optimization/execution_quality.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/execution_optimization/fill_probability.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/execution_optimization/implementation_shortfall.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/execution_optimization/latency_defense.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/execution_optimization/maker_taker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/execution_optimization/optimal_execution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/execution_optimization/order_anticipation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/execution_optimization/order_fragmenter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/execution_optimization/participation_rate.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/execution_optimization/slippage_predictor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/execution_optimization/spread_capture.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/execution_optimization/urgency_classifier.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/infrastructure/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/infrastructure/ab_testing.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/infrastructure/canary_deployment.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/infrastructure/chaos_engineering.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/infrastructure/distributed_state.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/infrastructure/feature_flags.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/infrastructure/hot_cold_swapper.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/infrastructure/time_travel.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/market_analysis/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/market_analysis/auction_market.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/market_analysis/cumulative_delta.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/market_analysis/delta_divergence.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/market_analysis/elliott_wave.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/market_analysis/footprint_chart.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/market_analysis/fractal_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/market_analysis/harmonic_patterns.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/market_analysis/hurst_exponent.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/market_analysis/iceberg_detector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/market_analysis/large_trader.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/market_analysis/market_profile.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/market_analysis/speed_of_tape.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/market_analysis/spoofing_detector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/market_analysis/stop_hunt.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/market_analysis/sweep_detection.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/user_experience/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/user_experience/alert_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/user_experience/dashboard_builder.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/user_experience/explainability.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/user_experience/natural_language.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/user_experience/notification_router.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/user_experience/report_generator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/user_experience/trade_journal.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/skills/user_experience/voice_assistant.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/social/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/social/copy_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/social/intelligent_learning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/strategies/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/recursive_self_improvement/engine_v2.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/strategies/adapter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/strategies/advanced_strategies.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/brain/central_controller.py`
+- `trading_bot/strategies/institutional_strategies.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/evaluation/runner.py`, `trading_bot/recursive_self_improvement/candidate_adapters.py`
+- `trading_bot/strategies/mean_reversion.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/strategies/registry.py` — class=compatibility_facade | owner=infrastructure | port=ComponentLifecycle | flags=runtime_reachable | importers=`trading_bot/unified_bot.py`
+- `trading_bot/streaming/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/streaming/buffer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/streaming/kafka_stream.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/streaming/kafka_streamer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/streaming/processor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/streaming/redis_stream.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/streaming/redis_streamer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/superpowerful_ai/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/services/tier5_services.py`, `trading_bot/superpowerful_ai/example_usage.py`
+- `trading_bot/superpowerful_ai/autonomous_innovation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/superpowerful_ai/example_usage.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/superpowerful_ai/self_discovery_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/superpowerful_ai/strategic_self_evolution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/superpowerful_ai/superpowerful_orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/surveillance/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/surveillance/trade_surveillance.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/surveillance/trade_surveillance_impl.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/system/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/system/backup_recovery.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/system_config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access, top_level_module | importers=none
+- `trading_bot/system_health/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/system_health/auto_repair.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/system_health/health_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/connectivity/network_integration.py`, `trading_bot/health_monitor.py`
+- `trading_bot/system_health/intelligent_learner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/system_health/stability_tester.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/system_interfaces.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=runtime_reachable, top_level_module | importers=`trading_bot/cognition/orchestrator.py`, `trading_bot/core/unified_registry.py`, `trading_bot/integrations/data_layer.py`, `trading_bot/integrations/intelligence_layer.py`, `trading_bot/integrations/risk_layer.py`
+- `trading_bot/system_supervisor/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/system_supervisor/auto_repair_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/system_supervisor/auto_updater_supervisor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/system_supervisor/data_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/system_supervisor/internet_health_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/system_supervisor/module_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/system_supervisor/security_supervisor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/system_supervisor/system_supervisor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/systems_ai/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/systems_ai/advanced_features.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/systems_ai/architecture.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/systems_ai/attribution_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/systems_ai/memory_hierarchy.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/systems_ai/orchestrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/systems_ai/self_improvement.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/systems_ai/text_to_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/systems_ai/training_first.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/auto_rollback.py`
+- `trading_bot/tamic.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/complete_integrator.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/tamic/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/tamic/confidence_control.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/tamic/core.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/tamic/forbidden_behaviors.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/tamic/horizon_segmentation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/tamic/institutional_time.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/tamic/integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/tamic/market_time.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/tamic/optionality.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/telemetry/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=runtime_reachable | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/telemetry_service.py`, `trading_bot/unified_bot.py`
+- `trading_bot/telemetry/collector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/telemetry/exporter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/telemetry/health.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/telemetry/logging_config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/telemetry/metrics.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/telemetry/tracing.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/temporal_fusion_transformer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/testing/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/testing/chaos_engineering.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/testing/e2e_framework.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/testing/replay_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/testing/report_generator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/testing/synthetic_data.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/testing/e2e_framework.py`
+- `trading_bot/tests/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/tests/test_liquidity.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/testyourclass.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/tft.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/tools/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/tools/backup.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/tools/encrypt_api_keys.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint, credential_access | importers=none
+- `trading_bot/tools/system_check.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint, dynamic_import | importers=none
+- `trading_bot/trade_attributor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/trade_journal.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/reporting/reporter.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/trade_journal/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/trade_journal/journal_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/trading/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/trading/order_execution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/trading/order_fill_tracker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/trading_calendar/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/trading_calendar/economic_calendar.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/trading_calendar/session_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/trading_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, top_level_module | importers=`trading_bot/autonomous_superintelligence/autonomous_trading_bridge.py`, `trading_bot/optimized_integration.py`
+- `trading_bot/tradingbot.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/transformer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/ultimate_architecture/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/ultimate_architecture/architecture_core.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ultimate_bot/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/ultimate_bot/data_fetcher.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ultimate_bot/run_ultimate.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=cli, direct_capital, cli_entrypoint, direct_broker_access | importers=none
+- `trading_bot/ultimate_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/ultimate_module_integrator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint, dynamic_import, top_level_module | importers=none
+- `trading_bot/ultimate_production/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/ultimate_production/core_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/ultimate_production/live_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ultimate_production/ml_prediction_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ultimate_production/self_learner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ultimate_production/smart_executor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ultimate_system/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/ultimate_system/global_micro_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/ultimate_system/hardware_optimizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/ultimate_system/self_evolving_core.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/uncertainty.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/unicode_fix.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint, top_level_module | importers=none
+- `trading_bot/unified_architecture/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/unified_architecture/layer1_data_foundation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/unified_architecture/layer4_execution.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=direct_capital, direct_broker_access | importers=none
+- `trading_bot/unified_architecture/layer6_orchestration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/unified_architecture/unified_trading_system.py` — class=compatibility_facade | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/unified_master_integrator.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=cli, cli_entrypoint, dynamic_import, top_level_module | importers=none
+- `trading_bot/unified_system/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/unified_system/layer_interfaces.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/unified_system/layer_registry.py` — class=compatibility_facade | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/unified_system/layers/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/unified_system/layers/layer0_infrastructure.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/unified_system/layers/layer1_observability.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/unified_system/layers/layer2_connectivity.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/unified_system/layers/layer3_data_foundation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/unified_system/layers/layer7_decision.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/unified_system/layers/layer8_execution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/unified_system/layers/layer9_orchestration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/unified_system/master_system.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
+- `trading_bot/unified_system/unified_config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/unified_system/unified_types.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/unifiedtradingsystem.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/universal_action_layer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/upgrades.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/upgrades/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/upgrades/core_upgrades_001_025.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/upgrades/core_upgrades_026_050.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/upgrades/core_upgrades_051_075.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/upgrades/core_upgrades_076_100.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/upgrades/data_upgrades_301_350.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/upgrades/data_upgrades_351_400.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/upgrades/execution_upgrades_401_450.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/upgrades/execution_upgrades_451_500.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/upgrades/ml_upgrades_201_250.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/upgrades/ml_upgrades_251_300.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/utils.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/utils/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/utils/api_cache.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/utils/api_rate_limiter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/utils/bounded_collections.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/trading_engine.py`
+- `trading_bot/utils/candle_tracker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/utils/data_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/utils/data_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/utils/debug_tools.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/utils/logger.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/utils/profiler.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/utils/rate_limiter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/utils/retry_policy.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/utils/safe_access.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/utils/safe_write.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/utils/validation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/intel/fundamental_analyzer.py`, `trading_bot/intel/strategy_researcher.py`
+- `trading_bot/validation/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`, `trading_bot/system_health/health_monitor.py`
+- `trading_bot/validation/api_contracts.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=dynamic_import | importers=none
+- `trading_bot/validation/async_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/validation/autonomous_validation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/validation/continuous_eval.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/validation/critical_validators.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/validation/self_testing.py`, `trading_bot/validation/self_verification.py`
+- `trading_bot/validation/data_quality.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/elite_integration.py`
+- `trading_bot/validation/data_quality_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/validation/data_validation_pipeline.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/validation/data_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/validation/input_validation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/validation/live_data_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/validation/paper_trading_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/validation/performance_benchmarks.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/validation/self_optimization.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/validation/autonomous_validation.py`
+- `trading_bot/validation/self_testing.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/validation/autonomous_validation.py`
+- `trading_bot/validation/self_verification.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/validation/autonomous_validation.py`, `trading_bot/validation/self_testing.py`
+- `trading_bot/validation/trade_validation_scoring.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/validation/trade_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/alphaalgo_5star.py`, `trading_bot/execution/live_executor.py`
+- `trading_bot/validation/unified_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/verification/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/verification/adversarial_checker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/verification/confidence_calibrator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=runtime_reachable | importers=`trading_bot/agents/multi_agent_debate.py`
+- `trading_bot/verification/cross_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/verification/decision_verification_chain.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/verification_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/visualization/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/visualization/anomaly_viz.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/visualization/chart_visualizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/visualization/ml_visualizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/voice_assistant.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/voice_assistant/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/voice_assistant/voice_controller.py` — class=quarantine | owner=orchestration | port=ModularMonolithRuntime | flags=direct_capital, direct_broker_access | importers=none
+- `trading_bot/wealth.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/wealth/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/wealth/comprehensive_wealth_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/wealth/free_wealth_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/wealth/wealth_management.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/workflow_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+- `trading_bot/yourtradingbot.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
+
+## Wave 2 file list — Risk, governance, approvals, safety, and compliance
+
+- `trading_bot/adaptive_systems/adaptive_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/adaptive_systems/code_generation/safety_checker.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/autonomous_engineer.py`
+- `trading_bot/advanced_features/advanced_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/political_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/risk_factor_tracker.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/hierarchical_risk_parity.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/risk_budgeting.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/tail_risk_parity.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/climate_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/collateral_manager.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/concentration_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/contagion_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/copula_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/correlation_breakdown.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/counterparty_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/cyber_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/drawdown_control.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/extreme_value.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/factor_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/geopolitical_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/hedging_optimizer.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/jump_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/leverage_monitor.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/liquidity_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/margin_optimizer.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/model_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/operational_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/portfolio_insurance.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/regime_var.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/risk_attribution.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/risk_budgeting.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/risk_limits.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/risk_overlay.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/risk_parity.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/scenario_generator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/stress_testing.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/tail_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/advanced_intelligence/risk_innovations/volatility_targeting.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/ai_core/agents/safety_validator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/alpha_engine/advanced_risk_management.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/alpha_engine/compliance_xai.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/alpha_engine/risk_management.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/alphaalgo_core/capital_governance.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/tamic/integration.py`
+- `trading_bot/alphaalgo_core/governance_system.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/alphaalgo_institutional/layer5_risk_governance.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/risk_engine/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/risk_engine/engine.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/risk_engine/portfolio/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/risk_engine/portfolio/manager.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/risk_engine/position/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/risk_engine/position/sizer.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/tests/test_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/apex_fi/layer6_risk_governance.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/approval.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/approval_service.py`
+- `trading_bot/approval/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/approval/human_in_loop.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/unified_approval/integrator.py`
+- `trading_bot/autonomous_financial_intelligence/governance_consensus/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/governance_consensus/consensus_engine.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/governance_consensus/dispute_resolution.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/governance_consensus/governance_token.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/governance_consensus/voting_contracts.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/self_improvement/risk_governance.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/autonomous_pipeline/approval_system.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/unified_approval/integrator.py`
+- `trading_bot/brain/tier7_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=`trading_bot/brain/adaptive_integration.py`, `trading_bot/brain/tier_structure.py`
+- `trading_bot/bridges/core_to_risk_bridge.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/compliance/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/compliance_service.py`
+- `trading_bot/compliance/compliance_monitor.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/compliance/trade_surveillance.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/core/governance/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/core/governance/determinism.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=runtime_reachable | importers=`trading_bot/core/csc/controller.py`
+- `trading_bot/core/governance/replay.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/core/governance/serialization.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/database/shared_memory_manager.py`
+- `trading_bot/core/risk/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/core/risk/evaluators/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/core/risk/evaluators/correlation.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/core/risk/evaluators/cvar.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/core/risk/evaluators/drawdown.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/core/risk/evaluators/execution.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/core/risk/evaluators/kelly.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/core/risk/evaluators/liquidity.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/core/risk/evaluators/model_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/core/risk/evaluators/ood.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/core/risk/evaluators/var.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/core/risk/interfaces.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/core/risk/unified_risk_engine.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/core_agent_system/cds/governance_gate.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/core_agent_system/governance_system.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/recursive_improvement/infrastructure.py`
+- `trading_bot/critical_fixes/master_safety_orchestrator.py` — class=compatibility_facade | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/critical_fixes/realtime_risk_calculator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/critical_fixes/regulatory_compliance.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/dashboard/components_risk_signal.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/dashboard/risk_panel.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/alphaalgo_core/example_alphaalgo_meta_system.py`, `trading_bot/decision_governance/example_continuous_capability_discovery.py`, `trading_bot/decision_governance/example_introspection_evolution.py`, `trading_bot/decision_governance/example_self_inspection.py`, `trading_bot/decision_governance/example_trading_simulator.py`, `trading_bot/decision_governance/example_unified_intelligence.py`, `trading_bot/decision_governance/example_usage.py`, `trading_bot/gets/integration.py`
+- `trading_bot/decision_governance/abstention_budget.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/api.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/audit_logger.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/benchmarking.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=starts_loop | importers=none
+- `trading_bot/decision_governance/capability_discovery.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/causal_attribution.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/decision_governance/capability_discovery.py`
+- `trading_bot/decision_governance/cognition_store.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/config.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/continuous_capability_discovery.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=dynamic_import | importers=none
+- `trading_bot/decision_governance/core_types.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/decision_governance/capability_discovery.py`
+- `trading_bot/decision_governance/cost_expectancy.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/cross_domain_transfer.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/diagnostic_engine.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/decision_governance/capability_discovery.py`, `trading_bot/decision_governance/continuous_capability_discovery.py`
+- `trading_bot/decision_governance/epistemic_governance.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/example_continuous_capability_discovery.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/decision_governance/example_introspection_evolution.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/decision_governance/example_self_inspection.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/decision_governance/example_trading_simulator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/decision_governance/example_unified_intelligence.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/decision_governance/example_usage.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/decision_governance/execution_engine.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/execution_engine_enhanced.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/governance_governor.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/integration.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/integrations.py` — class=quarantine | owner=risk | port=RiskService/GovernanceGate | flags=direct_capital, direct_broker_access | importers=none
+- `trading_bot/decision_governance/introspection_evolution.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/latency_tier_system.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/layer1_claim_graph.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/layer2_evidence_auditor.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/layer3_adversarial_analyst.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/decision_governance/capability_discovery.py`
+- `trading_bot/decision_governance/layer4_regime_engine.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/decision_governance/capability_discovery.py`, `trading_bot/decision_governance/continuous_capability_discovery.py`
+- `trading_bot/decision_governance/layer5_counterfactual.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/decision_governance/capability_discovery.py`
+- `trading_bot/decision_governance/layer6_uncertainty.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/decision_governance/capability_discovery.py`
+- `trading_bot/decision_governance/layer7_arbiter.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/memory_system.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/meta_learning_judge.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/monitoring.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/decision_governance/continuous_capability_discovery.py`
+- `trading_bot/decision_governance/multi_agent_debate.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/multi_agent_validation.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/multi_hypothesis.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/multi_method_attribution.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/novelty_search.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/plane_evolution.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/plane_offline.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/plane_realtime.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/portfolio_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/risk_control_evolution.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/risk_gatekeeper.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/safety_enforcer.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/self_inspection.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/signal_validator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/signal_validator_enhanced.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/statistical_validator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/stochastic_gate_audits.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/tests/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/tests/test_suite.py` — class=quarantine | owner=risk | port=RiskService/GovernanceGate | flags=cli, direct_capital, cli_entrypoint, direct_broker_access | importers=none
+- `trading_bot/decision_governance/trading_simulator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/unified_intelligence.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_governance/visualization.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/decision_layer/concepts_6_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/elite_system/risk_command_center.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/elite_system/risk_management.py` — class=quarantine | owner=risk | port=RiskService/GovernanceGate | flags=direct_capital, direct_broker_access | importers=none
+- `trading_bot/eternal_evolution/risk_evolution.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/gets/core/governance_promotion.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/governance.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/governance/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/governance/approval_workflow.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/governance/evolution_gate.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=runtime_reachable | importers=`trading_bot/unified_bot.py`
+- `trading_bot/governance/human_approval.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/governance/immutable_shield.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/governance/policy_adapter.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=runtime_reachable | importers=`trading_bot/core/csc/controller.py`, `trading_bot/unified_bot.py`
+- `trading_bot/governance/production_gate.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/governance_orchestrator.py` — class=compatibility_facade | owner=risk | port=RiskService/GovernanceGate | flags=top_level_module | importers=none
+- `trading_bot/hedge_fund/compliance_regulatory.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/hedge_fund/institutional_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/hedge_fund_safety/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/hedge_fund_safety/ai_behavior_guardrails.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/hedge_fund_safety/catastrophic_prevention.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/hedge_fund_safety/financial_safeguards.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/hedge_fund_safety/hidden_risk_detection.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/hedge_fund_safety/operational_safety.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/hedge_fund_safety/systemic_protection.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/hivemind/safety_guards.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/human_layer/approval.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/unified_approval/integrator.py`
+- `trading_bot/integrations/risk_layer.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/intelligence/human_approval.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/intelligence_core/governance.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/market_intelligence/adaptive_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/market_teacher/safety_framework.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/meta_governance/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/meta_governance/example_meta_governance.py`
+- `trading_bot/meta_governance/example_meta_governance.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/meta_governance/meta_agent_governance.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/ml/offline_rl/risk_adjusted_ope.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/monitoring/compliancemonitor.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/msos/time_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/orchestrator/risk_manager.py` — class=compatibility_facade | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/trading_engine.py`
+- `trading_bot/perplexity_trading/human_approval.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/qwen_codemender/safety_guardrails.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/realtime/realtime_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/recursive_improvement/approvals.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/recursive_improvement/loops/risk_loop.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/recursive_improvement/risk_recursion.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/governance_bridge.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=top_level_module | importers=`trading_bot/autonomous_superintelligence/autonomous_trading_bridge.py`, `trading_bot/backtesting/strategy_backtester.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/diagnostics/system_validator.py`, `trading_bot/error_handling/recovery_manager.py`, `trading_bot/execution/live_executor.py`, `trading_bot/execution/paper_executor.py`, `trading_bot/risk_unified/unified_risk.py`, `trading_bot/services/risk_service.py`, `trading_bot/strategy/strategy_engine.py`, `trading_bot/system_health/health_monitor.py`, `trading_bot/utils/risk_management.py`
+- `trading_bot/risk/MASTER_risk_manager.py` — class=compatibility_facade | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/core/main_trading_loop.py`, `trading_bot/elite_master_system.py`, `trading_bot/risk/risk_manager.py`, `trading_bot/unified_architecture/layer5_risk_safety.py`
+- `trading_bot/risk/RiskManager.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/advanced_circuit_breaker.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/risk/advanced_position_sizing.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/risk/advanced_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/risk/advanced_risk_manager.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/brain/brain_architecture.py`, `trading_bot/brain/brain_trader.py`, `trading_bot/brain/mt5_brain_trader.py`, `trading_bot/connectivity/network_integration.py`, `trading_bot/strategies/advanced_strategies.py`
+- `trading_bot/risk/advanced_risk_metrics.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/alphaalgo_5star.py`, `trading_bot/optimization/hyperparameter_tuner.py`
+- `trading_bot/risk/advanced_risk_system.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/risk/anomaly_detector.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/risk/black_litterman.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/black_swan_protection.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/circuit_breaker.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=runtime_reachable | importers=`trading_bot/elite_integration.py`, `trading_bot/safety/runtime_risk_monitor.py`, `trading_bot/unified_architecture/layer5_risk_safety.py`, `trading_bot/unified_bot.py`
+- `trading_bot/risk/circuit_breaker_manager.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/complete_risk_system.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/risk/correlation_manager.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/core/p0_critical_fixes.py`, `trading_bot/utils/risk_management.py`
+- `trading_bot/risk/correlation_persistence.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/core/survival_core.py`
+- `trading_bot/risk/cvar_calculator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/risk/cvar_optimizer.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/risk/drawdown_manager.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/drawdown_protector.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/core/p0_critical_fixes.py`, `trading_bot/decision_governance/capability_discovery.py`, `trading_bot/decision_governance/continuous_capability_discovery.py`
+- `trading_bot/risk/dynamic_kelly.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/risk/forecast_based_sizing.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/risk/fractal_position_sizing.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/free_risk_manager.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/risk/kelly_calculator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/risk/kelly_criterion.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/ml_risk_manager.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=`trading_bot/utils/risk_management.py`
+- `trading_bot/risk/monte_carlo.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/utils/risk_management.py`
+- `trading_bot/risk/multilayerriskmanager.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/overnight_risk_sim.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/policy_adapters.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=runtime_reachable | importers=`trading_bot/unified_bot.py`
+- `trading_bot/risk/portfolio_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/portfolio_risk_manager.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/position_size_calculator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/position_sizer.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/core/survival_core.py`
+- `trading_bot/risk/position_validator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/pre_trade_checks.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=runtime_reachable | importers=`trading_bot/unified_bot.py`
+- `trading_bot/risk/quantum_risk_manager.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/realtime_correlation_monitor.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/risk/realtimeriskmonitor.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/risk_adjusted_optimizer.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/risk/risk_budget_allocator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/risk_manager.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/core/execution_manager.py`
+- `trading_bot/risk/riskmonitoringdashboard.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/spillover_predictor.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/risk/state_provider.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=runtime_reachable | importers=`trading_bot/unified_bot.py`
+- `trading_bot/risk/stress_testing.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/risk/tail_risk_hedge.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/risk/testriskmanager.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/trade_validation.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/core/p0_critical_fixes.py`
+- `trading_bot/risk/trailing_stop.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/unified_risk_manager.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk/var_engine.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/elite_master_system.py`, `trading_bot/unified_architecture/layer5_risk_safety.py`
+- `trading_bot/risk_management/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/risk_management/black_swan_protection.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk_management/budget_allocator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk_management/drawdown_ladder.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/risk_management/portfolio_manager.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk_management/position_sizing.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk_management/risk_engine.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=runtime_reachable | importers=`trading_bot/unified_bot.py`
+- `trading_bot/risk_management/risk_monitor.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk_management/var_calculator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/risk_mitigation.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=top_level_module | importers=none
+- `trading_bot/risk_unified/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/risk_unified/unified_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/safety/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/risk_unified/unified_risk.py`, `trading_bot/safety/example_safety_enforcer.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/safety/auto_pause.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/safety/autonomous_safety_enforcer.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/safety/circuit_breaker.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/safety/connectivity_monitor.py` — class=quarantine | owner=risk | port=RiskService/GovernanceGate | flags=direct_capital, credential_access, direct_broker_access | importers=none
+- `trading_bot/safety/emergency_kill_switch.py` — class=quarantine | owner=risk | port=RiskService/GovernanceGate | flags=direct_capital, credential_access, direct_broker_access | importers=`trading_bot/elite_master_system.py`, `trading_bot/safety/runtime_risk_monitor.py`, `trading_bot/unified_architecture/layer5_risk_safety.py`
+- `trading_bot/safety/emergency_shutdown.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/safety/example_safety_enforcer.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/safety/fail_safe.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/safety/implement_fallback.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/safety/latency_circuit_breaker.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/safety/pre_trade_validator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/elite_master_system.py`
+- `trading_bot/safety/resource_watchdog.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/safety/runtime_risk_monitor.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/self_healing_ai/validators/risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/self_improvement/approval_manager.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/services/approval_service.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/services/compliance_service.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/services/risk_service.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/skills/risk_management/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/skills/risk_management/component_var.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/skills/risk_management/contagion_monitor.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/skills/risk_management/copula_dependency.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/skills/risk_management/correlation_regime.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/skills/risk_management/drawdown_tracker.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/skills/risk_management/dynamic_hedging.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/skills/risk_management/expected_shortfall.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/skills/risk_management/extreme_value_theory.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/skills/risk_management/greeks_calculator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/skills/risk_management/incremental_var.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/skills/risk_management/liquidity_var.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/skills/risk_management/margin_predictor.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/skills/risk_management/recovery_estimator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/skills/risk_management/scenario_generator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/skills/risk_management/stress_tester.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/stealth_safety/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/stealth_safety/ai_containment.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/stealth_safety/complexity_control.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/stealth_safety/psychological_protection.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/stealth_safety/regulator_stealth.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/stealth_safety/stealth_orchestrator.py` — class=compatibility_facade | owner=risk | port=RiskService/GovernanceGate | flags=dynamic_import | importers=none
+- `trading_bot/stealth_safety/systemic_safety.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/systems_ai/governance.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/tamic/time_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/ultimate_approval.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/ultimate_approval/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/ultimate_approval/approval_system.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/ultimate_production/risk_fortress.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/unified_approval.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/unified_approval/__init__.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/unified_approval/approval_hub.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/unified_approval/approval_types.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/unified_approval/integrator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/unified_approval/notification_system.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/unified_approval/pipeline_approval.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint, credential_access | importers=none
+- `trading_bot/unified_architecture/layer5_risk_safety.py` — class=quarantine | owner=risk | port=RiskService/GovernanceGate | flags=direct_capital, direct_broker_access | importers=none
+- `trading_bot/unified_system/layers/layer10_governance.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/unified_system/layers/layer6_risk_safety.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/upgrades/risk_upgrades_101_150.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/upgrades/risk_upgrades_151_200.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/utils/risk_controller.py` — class=quarantine | owner=risk | port=RiskService/GovernanceGate | flags=cli, direct_capital, cli_entrypoint, direct_broker_access | importers=none
+- `trading_bot/utils/risk_management.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/validation/risk_validation_gate.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+- `trading_bot/world_model/fwm_risk.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
+
+## Wave 3 file list — Broker, venue, exchange, execution, and market-data boundaries
+
+- `trading_bot/advanced_intelligence/execution_microstructure/cross_venue.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/venue_selection.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/alphaalgo_core/broker_hub.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=credential_access | importers=none
+- `trading_bot/alphaalgo_v2/execution/brokers/__init__.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/execution/brokers/base.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/execution/brokers/paper.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=direct_capital, direct_broker_access | importers=none
+- `trading_bot/brain/mt5_brain_trader.py` — class=quarantine | owner=execution | port=BrokerAdapter | flags=cli, direct_capital, cli_entrypoint, direct_broker_access | importers=none
+- `trading_bot/broker.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/broker_service.py`
+- `trading_bot/broker/__init__.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/broker/binance_broker.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=starts_loop, direct_capital, direct_broker_access | importers=none
+- `trading_bot/broker/broker_interface.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=runtime_reachable | importers=`trading_bot/core/execution_bridge.py`, `trading_bot/execution/service.py`
+- `trading_bot/broker/ib_broker.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=direct_capital, direct_broker_access | importers=none
+- `trading_bot/brokers/__init__.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=`trading_bot/connectivity/network_monitor.py`, `trading_bot/connectivity_unified/unified_connector.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/core/survival_core.py`, `trading_bot/services/brokers_service.py`
+- `trading_bot/brokers/adapter_bridge.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/brokers/alpaca_adapter.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=cli, direct_capital, cli_entrypoint, direct_broker_access | importers=none
+- `trading_bot/brokers/alpaca_broker.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/brokers/binance_adapter.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=direct_capital, direct_broker_access | importers=none
+- `trading_bot/brokers/binance_broker.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/brokers/broker_adapter.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=direct_capital, direct_broker_access | importers=`trading_bot/api/rest_api.py`, `trading_bot/brokers/alpaca_adapter.py`, `trading_bot/brokers/binance_adapter.py`, `trading_bot/brokers/live_order_router.py`, `trading_bot/core/main_trading_loop.py`, `trading_bot/position_manager.py`, `trading_bot/unified_architecture/layer4_execution.py`
+- `trading_bot/brokers/broker_interface.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/brokers/connection_manager.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=starts_loop | importers=none
+- `trading_bot/brokers/free_brokers.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/brokers/kraken_adapter.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/brokers/live_order_router.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=starts_loop, direct_capital, direct_broker_access | importers=none
+- `trading_bot/brokers/mt5_adapter.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=direct_capital, direct_broker_access | importers=none
+- `trading_bot/brokers/mt5_adapter/MT5.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/brokers/mt5_adapter/__init__.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/brokers/mt5_broker.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/brokers/multi_broker_adapter.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=starts_loop, direct_capital, direct_broker_access | importers=none
+- `trading_bot/brokers/real_broker_integration.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=starts_loop, direct_capital, direct_broker_access | importers=none
+- `trading_bot/connectivity/venue_outage_detector.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/connectors/binance_connector.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=starts_loop | importers=`trading_bot/brain/brain_trader.py`, `trading_bot/dashboard/unified_dashboard.py`
+- `trading_bot/connectors/exchange_abstraction.py` — class=quarantine | owner=execution | port=BrokerAdapter | flags=direct_capital, direct_broker_access | importers=none
+- `trading_bot/connectors/exchange_monitor.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/connectors/interactive_brokers_connector.py` — class=quarantine | owner=execution | port=BrokerAdapter | flags=starts_loop, direct_capital, direct_broker_access | importers=none
+- `trading_bot/connectors/mt5_connector.py` — class=quarantine | owner=execution | port=BrokerAdapter | flags=starts_loop, direct_capital, direct_broker_access | importers=`trading_bot/brain/mt5_brain_trader.py`, `trading_bot/dashboard/unified_dashboard.py`
+- `trading_bot/core/infrastructure/broker_adapter.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/data/mt5.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/execution/binancebroker.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/execution/brokerconnectionmonitor.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/execution/brokerfactory.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/execution/interactivebrokersbroker.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/execution/mt5broker.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/hedge_fund/prime_broker.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/improvements/forecast_improvements/real_broker_connection.py` — class=quarantine | owner=execution | port=BrokerAdapter | flags=starts_loop, direct_capital, direct_broker_access | importers=none
+- `trading_bot/production/interactive_brokers_live.py` — class=quarantine | owner=execution | port=BrokerAdapter | flags=cli, starts_loop, direct_capital, cli_entrypoint, direct_broker_access | importers=none
+- `trading_bot/services/broker_service.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/services/brokers_service.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/skills/execution_optimization/venue_selection.py` — class=adapter | owner=execution | port=BrokerAdapter | flags=none | importers=none
+- `trading_bot/strategies/cross_exchange_arbitrage.py` — class=quarantine | owner=execution | port=BrokerAdapter | flags=starts_loop, direct_capital, direct_broker_access | importers=none
+
+## Wave 4 file list — Strategy, signal, alpha, portfolio, and position intelligence
+
+- `trading_bot/aads/core/alpha_discovery_loop.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/aads/core/alpha_evolve_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=dynamic_import | importers=none
+- `trading_bot/aads/core/strategy_genome.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/adaptive_systems/strategy_selector.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/hierarchical_rl.py`
+- `trading_bot/advanced_features/quantum_portfolio_optimizer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/queue_position.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/alpha_decay.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/benchmark_optimizer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/black_litterman.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/capacity_aware.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/carbon_optimizer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/drawdown_optimizer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/dynamic_hedging.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/esg_integration.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/factor_crowding.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/factor_timing.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/goal_based.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/impact_investing.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/ldi_manager.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/manager_selection.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/max_diversification.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/min_correlation.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/multi_period_optimizer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/overlay_manager.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/regime_allocation.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/robust_optimization.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/scenario_allocation.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/smart_beta_factory.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/style_drift.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/tax_loss_harvester.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/tc_aware_optimizer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/thematic_construction.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/portfolio_construction/turnover_rebalancer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/adversarial_decision/position_sizer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/alpha_engine_service.py`
+- `trading_bot/alpha_engine/advanced_alternative_data.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/advanced_deep_learning.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/advanced_ensemble.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/advanced_execution.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/advanced_monitoring.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/advanced_rl_execution.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/advanced_sentiment.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/alternative_data.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/behavioral_finance.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/cross_asset_arbitrage.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/dc_core.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/deep_learning.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/enhanced_dc_core.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/ensemble.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/execution.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/execution/__init__.py`
+- `trading_bot/alpha_engine/market_microstructure.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/monitoring.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/multi_brain.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/rl_execution.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/self_analysis.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/sentiment_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_engine/trading_playbook.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_evolve/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_evolve/composite_strategy.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_evolve/distributed_compute.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_evolve/diversity_selection.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_evolve/edge_monitor.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_evolve/enhanced_fitness.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_evolve/evolution_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_evolve/example_usage.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/alpha_evolve/fitness_evaluator.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_evolve/genetic_operators.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_evolve/integrated_evolution.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_evolve/parallel_evaluator.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/alpha_evolve/speciated_evolution_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_evolve/strategy_genome.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/strategy_genome.py`
+- `trading_bot/alpha_evolve/walk_forward.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alpha_evolve/workflow_genome.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_5star.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=credential_access, top_level_module | importers=`trading_bot/deployment/multi_symbol_manager.py`
+- `trading_bot/alphaalgo_core/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/alphaalgo_core_service.py`
+- `trading_bot/alphaalgo_core/alphaalgo_core.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_core/alphaalgo_meta_system.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=`trading_bot/alphaalgo_core/example_alphaalgo_meta_system.py`
+- `trading_bot/alphaalgo_core/anti_learning_firewall.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_core/assumption_decompiler.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_core/central_controller.py` — class=compatibility_facade | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/unified_approval/integrator.py`
+- `trading_bot/alphaalgo_core/continuous_validity_monitor.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_core/data_pipeline.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_core/example_alphaalgo_meta_system.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/alphaalgo_core/exposure_controller.py` — class=compatibility_facade | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_core/fail_safe.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/alphaalgo_orchestrator.py`
+- `trading_bot/alphaalgo_core/integration.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_core/market_physics_filter.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_core/mini_ai_factory.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_core/regime_hostility_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_core/security_core.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=credential_access | importers=none
+- `trading_bot/alphaalgo_core/self_repair.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_core/strategy_zoo.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_institutional/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/alphaalgo_institutional_service.py`
+- `trading_bot/alphaalgo_institutional/core_types.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/core_types.py`
+- `trading_bot/alphaalgo_institutional/idea_vectors.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_institutional/layer1_market_selection.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_institutional/layer2_regime_detection.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_institutional/layer4_portfolio_allocation.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_institutional/layer6_execution.py` — class=quarantine | owner=strategy | port=StrategyPort/SignalPort | flags=direct_capital, direct_broker_access | importers=none
+- `trading_bot/alphaalgo_institutional/layer7_monitoring_evolution.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_orchestrator.py` — class=compatibility_facade | owner=strategy | port=StrategyPort/SignalPort | flags=top_level_module | importers=`trading_bot/alphaalgo_core/__init__.py`
+- `trading_bot/alphaalgo_v2/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/alphaalgo_v2_service.py`
+- `trading_bot/alphaalgo_v2/core/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/core/constants.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/core/exceptions.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/core/interfaces.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/core/types.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/evolution/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/evolution/analyzer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/evolution/deployer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/evolution/proposer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/evolution/validator.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/execution/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/execution/algorithms/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/execution/algorithms/smart.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/execution/engine.py` — class=quarantine | owner=strategy | port=StrategyPort/SignalPort | flags=direct_capital, direct_broker_access | importers=none
+- `trading_bot/alphaalgo_v2/models/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/models/brain.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/models/forecasting/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/models/forecasting/simple.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/models/regime/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/models/regime/detector.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/models/signals/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/models/signals/ensemble.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/models/signals/generator.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/reward_engine/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/reward_engine/constraints.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/reward_engine/immutable_rewards.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/reward_engine/metrics.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/tests/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/alphaalgo_v2/tests/test_core.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/alphaalgo_v2/tests/test_data.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/alphaalgo_v2/tests/test_execution.py` — class=quarantine | owner=strategy | port=StrategyPort/SignalPort | flags=cli, direct_capital, cli_entrypoint, direct_broker_access | importers=none
+- `trading_bot/alphaalgo_v2/tests/test_integration.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/analysis/regime_adaptive_strategy.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/analytics/alpha_attribution.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/analytics/signal_performance_tracker.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/apex_fi/alpha_mining.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/apex_fi/alpha_mining_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/apex_fi/layer2_alpha_mining.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/apex_fi/layer4_portfolio_architect.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/auto_optimizer/strategy_optimizer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/autonomous/alpha_factor_discovery.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/autonomous/strategy_tuner.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/brain/alphaalgo_2_0.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/brain/alphaalgo_2_0_system.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/bridges/analysis_to_signals_bridge.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/bridges/ml_to_signals_bridge.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/bridges/signals_to_execution_bridge.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/cognition/alpha_algo_cognitive_brain.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/core/alphaalgo2_0.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/core/alphaalgo_core_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/core/alphaalgo_core_integration.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/core/alphaalgo_lifecycle_pipeline.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/core/alphaalgo_master_integration.py` — class=compatibility_facade | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/core/confidence_weighted_position_sizer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/core/alphaalgo_master_integration.py`
+- `trading_bot/core/create_alphaalgo.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/core/explicit_claim_decomposition.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/core/alphaalgo_master_integration.py`
+- `trading_bot/core/phase3_strategy_redesign.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/core/phase4_ml_enhancements.py`
+- `trading_bot/core/position_reconciliation.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/core/signal_counterintelligence.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/core/aletheia_browser_research.py`, `trading_bot/core/alphaalgo_master_integration.py`, `trading_bot/core/execution_manager.py`, `trading_bot/core/nested_learning_hope.py`, `trading_bot/core/talos_cerberus_v23.py`, `trading_bot/services/execution_service.py`, `trading_bot/services/intelligence_directorate_service.py`
+- `trading_bot/critical_fixes/position_state_manager.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/dashboard/signal_panel.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/dashboard/strategy_dashboard.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=`trading_bot/brain/brain_trader.py`, `trading_bot/brain/central_controller.py`, `trading_bot/brain/mt5_brain_trader.py`
+- `trading_bot/database/signal_processor.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/optimized_integration.py`, `trading_bot/trading_engine.py`
+- `trading_bot/deepchart/intent_decomposition_core.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/elite_ai_system/signal_validation_system.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/elite_system/institutional_strategy_emulator.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/execution/exit_strategy.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/execution/position_manager.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/exit_strategies/exit_signal_generator.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/exit_strategies/exit_strategy.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/exit_strategy.py`
+- `trading_bot/exit_strategy.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=top_level_module | importers=none
+- `trading_bot/hedge_fund/multi_strategy.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/hedge_fund/portfolio_construction.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/improvements/forecast_improvements/exit_strategy.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/improvements/forecast_improvements/ml_signal_enhancement.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/improvements/forecast_improvements/position_sizing.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/improvements/forecast_improvements/signal_accuracy.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/improvements/position_sizing.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/improvements/signal_enhancement.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/institutional_entry/entry_signal_generator.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/learning/strategy_optimizer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/market_student/alphaalgo_identity.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/market_teacher/alpha_meta.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/market_teacher/strategy_evolution.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/ml/llm_guided/llm_strategy_advisor.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/llm_guided_rl/strategy_proposer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/offline_rl/alphaalgo_autonomous_system.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/ml/strategy_optimizer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/msos/signal_semantics.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/observability/strategy_kill_switch.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/optimization/quantum_portfolio.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/optimization/quantum_portfolio_optimizer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/optimization/strategy_optimizer_v2.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/orchestrator/position_rotator.py` — class=compatibility_facade | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/portfolio.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/portfolio_service.py`
+- `trading_bot/portfolio/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/portfolio/correlation_manager.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/portfolio/portfolio_optimization.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/portfolio/portfolio_optimizer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=`trading_bot/decision_governance/capability_discovery.py`
+- `trading_bot/position/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/position_service.py`
+- `trading_bot/position/advanced_position_manager.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/position/position_management.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/position/position_manager.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/position/position_tracker.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/position/realtime_pnl.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=`trading_bot/elite_master_system.py`
+- `trading_bot/position_manager.py` — class=quarantine | owner=strategy | port=StrategyPort/SignalPort | flags=direct_capital, direct_broker_access, top_level_module | importers=`trading_bot/brain/brain_architecture.py`, `trading_bot/connectivity/network_monitor.py`, `trading_bot/core/position_reconciliation.py`, `trading_bot/reporting/reporter.py`
+- `trading_bot/radar_ai/agents/strategy_agent.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/realtime/realtime_signal_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/recursive_improvement/loops/strategy_loop.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/recursive_improvement/strategy_recursion.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/self_healing_ai/validators/strategy.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/self_improvement/internet_strategy_improver.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/self_learning/strategy_evolution.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/services/alpha_engine_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/services/alphaalgo_core_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/services/alphaalgo_institutional_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/services/alphaalgo_v2_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/services/portfolio_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/services/position_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/services/signals_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/services/strategy_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/signal_discovery/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/signal_discovery/agents/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/signal_discovery/agents/base_agent.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/signal_discovery/agents/dark_pool_agents.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/signal_discovery/agents/developer_activity_agents.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/signal_discovery/agents/economic_release_agents.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/signal_discovery/agents/financial_api_agents.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/signal_discovery/agents/protocol_launch_agents.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/signal_discovery/agents/social_media_agents.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/signal_discovery/anomaly_detection/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/signal_discovery/anomaly_detection/cross_asset_divergence.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/signal_discovery/anomaly_detection/regime_change.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/signal_discovery/anomaly_detection/statistical_outliers.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/signal_discovery/orchestrator.py` — class=compatibility_facade | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/decision_governance/capability_discovery.py`, `trading_bot/decision_governance/continuous_capability_discovery.py`
+- `trading_bot/signals.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/signals_service.py`
+- `trading_bot/signals/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/signals/adaptive_thresholds.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/signals/auto_disable_sick_signals.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/signals/complete_signal_system.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/signals/entry_confirmation.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/core/phase2_quick_wins.py`
+- `trading_bot/signals/multi_timeframe_consensus.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/signals/news_gating.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/signals/signal_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/signals/signal_lifecycle.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/signals/signal_provenance.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/signals/signal_ttl_manager.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/signals/simple_signals.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/skills/execution_optimization/queue_position.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/skills/strategy_generation/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/skills/strategy_generation/alpha_decay.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/skills/strategy_generation/capacity_estimator.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/skills/strategy_generation/correlation_matrix.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/skills/strategy_generation/cross_asset_adapter.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/skills/strategy_generation/crowding_detector.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/skills/strategy_generation/decay_detector.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/skills/strategy_generation/dynamic_weighting.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/skills/strategy_generation/fingerprinting.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/skills/strategy_generation/genetic_evolver.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/skills/strategy_generation/paper_validator.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/skills/strategy_generation/purged_cv.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/skills/strategy_generation/regime_selector.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/skills/strategy_generation/strategy_cloner.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/skills/strategy_generation/tournament_system.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/skills/strategy_generation/walk_forward.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/strategies/mytradingstrategy.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/strategies/newssentimentstrategy.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/strategies/simplesignalgenerator.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/strategies/strategyfamily.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/strategy/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/error_handling/recovery_manager.py`, `trading_bot/optimized_integration.py`, `trading_bot/services/strategy_service.py`
+- `trading_bot/strategy/ab_testing.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/strategy/antifragile_mode.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/strategy/base_strategy.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/strategy/elite_strategy_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/elite_integration.py`
+- `trading_bot/strategy/ml_strategy.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/strategy/ml_strategy_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/strategy/multi_timeframe_strategy.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/core/phase3_strategy_redesign.py`
+- `trading_bot/strategy/schrodingers_trade.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/strategy/strategy_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/backtesting/advanced_backtester.py`, `trading_bot/backtesting/backtester.py`, `trading_bot/error_handling/recovery_manager.py`, `trading_bot/execution/live_executor.py`, `trading_bot/execution/paper_executor.py`, `trading_bot/optimized_integration.py`, `trading_bot/research/orchestration/quant_pipeline.py`
+- `trading_bot/strategy/strategy_manager.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/strategy/strategy_marketplace.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/strategy/strategy_optimizer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/strategy_genome.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=top_level_module | importers=none
+- `trading_bot/superintelligence/regime_strategy_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=`trading_bot/superintelligence/superintelligence_orchestrator.py`
+- `trading_bot/system_health/alphaalgo_master.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/tamic/signal_decay.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/trading/position_manager.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/core/main_trading_loop.py`
+- `trading_bot/trading/position_reconciliation.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/ultimate_bot/aggressive_strategy.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ultimate_bot/ultimate_alphaalgo.py` — class=quarantine | owner=strategy | port=StrategyPort/SignalPort | flags=cli, direct_capital, cli_entrypoint, direct_broker_access | importers=none
+- `trading_bot/ultimate_production/strategy_ensemble.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/ultimate_system/alpha_discovery_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/unified_architecture/layer3_strategy_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/unified_system/layers/layer5_signal.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/upgrades/signal_upgrades_501_550.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+
+## Wave 5 file list — AI, agents, models, cognition, memory, reasoning, and world models
+
+- `trading_bot/aads/core/aip_agents.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/aads/core/causal_world_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/aamis_v3/superintelligence/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/aamis_v3/superintelligence/memory_systems.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/adaptive_systems/advanced_pattern_recognition.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_analysis/multi_agent_rl.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_features/multi_agent_rl.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/brain/brain_architecture.py`
+- `trading_bot/advanced_intelligence/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/attention_memory.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/capsule_networks.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/causal_inference.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/continual_learning.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/contrastive_learning.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/diffusion_models.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/energy_based.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/federated_learning.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/flow_models.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/graph_neural_networks.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/hypernetworks.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/implicit_representations.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/knowledge_distillation.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/lottery_ticket.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/memory_augmented.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/mixture_of_experts.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/nas_trading.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/neural_architecture_evolution.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/neural_ode.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/neural_process.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/neural_radiance.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/neural_symbolic.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/neural_tangent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/neuromorphic_computing.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/perceiver.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/probabilistic_nn.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/quantum_ml.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/self_supervised.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/slot_attention.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/advanced_ai_ml/sparse_moe.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/analyst_revisions.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/app_usage.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/carbon_markets.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/central_bank.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/consumer_sentiment.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/credit_card.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/cross_asset.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/dark_pool.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/earnings_whispers.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/esg_data.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/etf_flows.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/futures_basis.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/geolocation.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/government_data.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/insider_trading.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/iot_sensors.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/job_postings.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/macro_indicators.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/options_flow.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/patent_analysis.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/real_estate.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/satellite_imagery.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/shipping_data.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/short_interest.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/social_graph.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/supply_chain.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/weather_data.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/alternative_data/web_scraping.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/blockchain_defi/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/blockchain_defi/defi_integration.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/blockchain_defi/on_chain_analytics.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/blockchain_defi/whale_tracker.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/blockchain_defi/yield_farming.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/auction_analyzer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/basket_execution.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/block_trading.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/circuit_breaker.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/dark_pool_router.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/execution_algo.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/execution_quality.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/fill_probability.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/flash_crash.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/iceberg_detector.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/internalization.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/inventory_manager.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/latency_optimizer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/market_impact.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/market_making.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/momentum_ignition.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/order_book_analysis.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/pairs_execution.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/pre_market.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/price_improvement.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/rebalance_optimizer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/slippage_predictor.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/smart_order_router.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/spoofing_detector.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/spread_capture.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/tick_data.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/execution_microstructure/transaction_cost.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/bankruptcy_nlp.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/central_bank_nlp.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/chat_monitor.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/competitor_mentions.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/congressional_testimony.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/credit_agreement.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/earnings_call.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/employee_reviews.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/executive_quotes.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/guidance_analyzer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/insider_filing_nlp.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/ipo_prospectus.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/legal_document.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/ma_rumor.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/mdna_analyzer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/news_sentiment.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/news_translator.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/newsletter_analyzer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/patent_analyzer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/podcast_analyzer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/product_reviews.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/proxy_analyzer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/reddit_monitor.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/regulatory_comments.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/social_trends.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/spac_analyzer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/supply_chain_nlp.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/video_analyzer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/advanced_rl_agents.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=top_level_module | importers=none
+- `trading_bot/aean_meta_intelligence_layer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=top_level_module | importers=none
+- `trading_bot/agent_orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=top_level_module | importers=none
+- `trading_bot/agents.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/agents_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/agents/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/agents/capability_adapter.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=runtime_reachable | importers=`trading_bot/unified_bot.py`
+- `trading_bot/agents/executor_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/agents/multi_agent_debate.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=runtime_reachable, cli, cli_entrypoint | importers=`trading_bot/unified_bot.py`
+- `trading_bot/agents/pca/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/agents/pca/base.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/agents/planner_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/agents/verifier_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/agents2.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/agents2_service.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/agents2/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/agents2/base_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/agents2/coordinator.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/agents2/specialized_agents.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/ai_core/agents/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/ai_core/agents/executor_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/ai_core/agents/orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ai_core/agents/planner_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/ai_core/agents/verifier_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/analysis/enhancedmarketintelligence.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/analysis/market_intelligence.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/analysis/multi_timeframe_intelligence.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/analysis/pattern_recognition.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/analytics/order_flow_intelligence.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/apex_fi/layer3_model_parliament.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/apex_fi/layer5_execution_intelligence.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/apex_fi/layer7_meta_intelligence.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/apex_fi/model_parliament.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/autonomous/meta_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/adversarial_verification/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/adversarial_verification/claim_challenger.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/adversarial_verification/formal_prover.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/adversarial_verification/validator_agents.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/adversarial_verification/verification_market.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/anti_hallucination/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/anti_hallucination/anomaly_detector.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/anti_hallucination/confidence_calibrator.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/anti_hallucination/fact_checker.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/anti_hallucination/hallucination_detector.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/evidence_verification/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/evidence_verification/data_canonicalizer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/evidence_verification/evidence_provenance.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/evidence_verification/evidence_stake.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/evidence_verification/merkle_verifier.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/infrastructure_orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/self_improvement/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/self_improvement/compute_budget_controller.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/self_improvement/evolution_orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/self_improvement/promotion_gates.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/self_improvement/self_improvement_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/verified_reasoning/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/verified_reasoning/citation_validator.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/verified_reasoning/evidence_reasoner.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/verified_reasoning/logical_verifier.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/core/chainofthoughtreasoner.py`
+- `trading_bot/autonomous_financial_intelligence/verified_reasoning/uncertainty_quantifier.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_superintelligence/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_superintelligence/agent_coordinator.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/autonomous_superintelligence/agent_spawner.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_superintelligence/autonomous_trading_bridge.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/autonomous_superintelligence/consciousness_modeling.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/autonomous_superintelligence/core_intelligence.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_superintelligence/discovery_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_superintelligence/enhanced_integration.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/autonomous_superintelligence/global_coordinator.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_superintelligence/infrastructure_expander.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_superintelligence/knowledge_synthesizer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_superintelligence/meta_orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_superintelligence/opportunity_detector.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_superintelligence/performance_improver.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_superintelligence/resource_manager.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_superintelligence/self_modifier.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=dynamic_import | importers=none
+- `trading_bot/autonomous_superintelligence/superintelligence_orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/autonomous_superintelligence/trading_integration.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/autonomous_superintelligence/verified_intelligence_integration.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/bear_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=top_level_module | importers=none
+- `trading_bot/brain/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/brain/integration_example.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/diagnostics/system_validator.py`, `trading_bot/services/brain_service.py`, `trading_bot/system_health/health_monitor.py`
+- `trading_bot/brain/adaptive_integration.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=`trading_bot/brain/alphaalgo_2_0.py`, `trading_bot/cognitive_architecture/cognitive_core.py`
+- `trading_bot/brain/brain_architecture.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, starts_loop, cli_entrypoint | importers=`trading_bot/brain/adaptive_integration.py`, `trading_bot/brain/brain_trader.py`, `trading_bot/brain/central_controller.py`, `trading_bot/brain/mt5_brain_trader.py`
+- `trading_bot/brain/brain_trader.py` — class=quarantine | owner=cognition | port=CapabilityPort | flags=cli, direct_capital, cli_entrypoint, direct_broker_access | importers=none
+- `trading_bot/brain/central_controller.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/brain/elite_brain.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=`trading_bot/brain/brain_architecture.py`
+- `trading_bot/brain/integration_example.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/brain/tier1_technical.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=`trading_bot/brain/adaptive_integration.py`, `trading_bot/brain/tier_structure.py`
+- `trading_bot/brain/tier2_orderflow.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=`trading_bot/brain/adaptive_integration.py`, `trading_bot/brain/tier_structure.py`
+- `trading_bot/brain/tier3_structure.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=`trading_bot/brain/adaptive_integration.py`, `trading_bot/brain/tier_structure.py`
+- `trading_bot/brain/tier4_regime.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=`trading_bot/brain/adaptive_integration.py`, `trading_bot/brain/tier_structure.py`
+- `trading_bot/brain/tier5_sentiment.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=`trading_bot/brain/adaptive_integration.py`, `trading_bot/brain/tier_structure.py`
+- `trading_bot/brain/tier6_macro.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=`trading_bot/brain/adaptive_integration.py`, `trading_bot/brain/tier_structure.py`
+- `trading_bot/brain/tier8_execution.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=`trading_bot/brain/adaptive_integration.py`, `trading_bot/brain/tier_structure.py`
+- `trading_bot/brain/tier9_metalearning.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=`trading_bot/brain/adaptive_integration.py`, `trading_bot/brain/tier_structure.py`
+- `trading_bot/brain/tier_structure.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=`trading_bot/brain/adaptive_integration.py`, `trading_bot/brain/elite_brain.py`, `trading_bot/brain/integration_example.py`, `trading_bot/brain/tier1_technical.py`, `trading_bot/brain/tier2_orderflow.py`, `trading_bot/brain/tier3_structure.py`, `trading_bot/brain/tier4_regime.py`, `trading_bot/brain/tier5_sentiment.py`, `trading_bot/brain/tier6_macro.py`, `trading_bot/brain/tier7_risk.py`, `trading_bot/brain/tier8_execution.py`, `trading_bot/brain/tier9_metalearning.py`
+- `trading_bot/cognition/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/mega_integration.py`, `trading_bot/ultimate_integration.py`
+- `trading_bot/cognition/advisory_adapter.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/cognition/decision/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/cognition/orchestrator.py`
+- `trading_bot/cognition/decision/contracts.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/cognition/decision/engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/cognition/hypotheses/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/cognition/orchestrator.py`
+- `trading_bot/cognition/hypotheses/contracts.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/cognition/hypotheses/engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/cognition/learning/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/cognition/learning/calibration.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/cognition/orchestrator.py`
+- `trading_bot/cognition/memory/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/cognition/orchestrator.py`
+- `trading_bot/cognition/memory/contracts.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/cognition/memory/engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/cognition/perception/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/cognition/orchestrator.py`
+- `trading_bot/cognition/perception/contracts.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/cognition/state/estimator.py`
+- `trading_bot/cognition/perception/drift.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/cognition/orchestrator.py`
+- `trading_bot/cognition/perception/engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/cognition/planning/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/cognition/reasoning/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/cognition/orchestrator.py`
+- `trading_bot/cognition/reasoning/contracts.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/cognition/reasoning/router.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/cognition/simulation/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/cognition/orchestrator.py`
+- `trading_bot/cognition/simulation/contracts.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/cognition/simulation/engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/cognition/state/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/cognition/orchestrator.py`
+- `trading_bot/cognition/state/contracts.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/cognition/decision/engine.py`, `trading_bot/cognition/simulation/engine.py`, `trading_bot/cognition/verification/engine.py`
+- `trading_bot/cognition/state/estimator.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/cognition/verification/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/cognition/orchestrator.py`
+- `trading_bot/cognition/verification/contracts.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/cognition/decision/engine.py`
+- `trading_bot/cognition/verification/engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/cognition/world_model/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core/autonomy/models.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core/csc/models.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core/hms/intelligence.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core/hms/models.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core/transaction_cost_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/background.py`, `trading_bot/core_agent_system/legacy_adapter.py`, `trading_bot/services/aamis_service.py`, `trading_bot/services/core_systems_service.py`, `trading_bot/services/integrated_brain_service.py`
+- `trading_bot/core_agent_system/adapters.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/agent_registry.py` — class=quarantine | owner=cognition | port=CapabilityPort | flags=starts_loop, direct_capital, direct_broker_access | importers=none
+- `trading_bot/core_agent_system/anti_reward_hacking.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/cds/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/cds/epistemology_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/cds/evidence_graph.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/cds/orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/cds/reviewers/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/cds/reviewers/specialists.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/cds/self_improvement.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/cds/verdict_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/constitutional_layer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/coordination_core.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/coordination_core_part2.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/dynamic_agent_factory.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/integrated_system.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/core_agent_system/legacy_adapter.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/background.py`, `trading_bot/services/aamis_service.py`, `trading_bot/services/core_systems_service.py`
+- `trading_bot/core_agent_system/master_orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/memory_system.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/core_agent_system/meta_orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/radar_ai/agents/meta_orchestrator.py`
+- `trading_bot/core_agent_system/migrated_agents/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/migrated_agents/legacy_agents.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/migrated_agents/planner.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/multidimensional_intelligence/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/multidimensional_intelligence/agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/multidimensional_intelligence/base.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/multidimensional_intelligence/hypothesis_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/multidimensional_intelligence/memory.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/multidimensional_intelligence/modules/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/multidimensional_intelligence/modules/biology.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/multidimensional_intelligence/modules/chemistry.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/multidimensional_intelligence/modules/mathematics.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/multidimensional_intelligence/modules/nature.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/multidimensional_intelligence/modules/physics.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/multidimensional_intelligence/orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/policy_value_network.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/react_loop.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/rewards.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/rl_training.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/scientific_reasoning/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/scientific_reasoning/core.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/self_coordinating_core.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/self_play_loop.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/specialized_planners.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/swarm/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/swarm/controller.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/swarm/experts.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/swarm/layers.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/swarm/memory.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/swarm/models.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/swarm/usis.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/core_agent_system/tool_registry.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/cos/cognition_store.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/decision_layer/concepts_9_multiagent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/deepchart/lightweight_models.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/deepchart/market_intelligence_core.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/elite_system/pattern_recognition.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/elite_system/elite_analyzer.py`
+- `trading_bot/elite_system/price_action_intelligence.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/eternal_evolution/reward_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/evolution_layer/reward_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/reward_model.py`
+- `trading_bot/golden_path/agent_trap_defense.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/aean_meta_intelligence_layer.py`, `trading_bot/golden_path/__init__.py`, `trading_bot/golden_path/validator.py`, `trading_bot/universal_action_layer.py`
+- `trading_bot/improvement_agent/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/improvement_agent/run_agent.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/improvement_agent/agent_interface.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/improvement_agent/agent_orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/improvement_agent/change_manager.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/improvement_agent/deep_analyzer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/improvement_agent/improvement_proposer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/improvement_agent/run_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/improvement_agent/test_generator.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/improvement_agent/weakness_detector.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/integrations/intelligence_layer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/intelligence/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
+- `trading_bot/intelligence/discipline_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/intelligence/knowledge_action_bridge.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/intelligence/profitability_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/intelligence/reverse_engineering_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/intelligence/self_learning_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/intelligence_core/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/complete_integrator.py`
+- `trading_bot/intelligence_core/adversarial_hardening.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/intelligence_core/agent_army.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/intelligence_core/bloomberg_plus.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/intelligence_core/elite_trader_learning.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/intelligence_core/elite_trading_mastery.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/intelligence_core/failure_detector.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/intelligence_core/hypothesis_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/intelligence_core/improvement_integration.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/intelligence_core/self_audit.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/intelligence_core/self_improvement.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/interfaces/read_models.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=runtime_reachable | importers=`trading_bot/api.py`, `trading_bot/api/__init__.py`, `trading_bot/foundation/runtime.py`, `trading_bot/master_integration.py`, `trading_bot/unified_main.py`
+- `trading_bot/internet_access/intelligence_fusion.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/magic_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=top_level_module | importers=none
+- `trading_bot/market_intelligence/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/autonomous_superintelligence/autonomous_trading_bridge.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/market_intelligence_service.py`
+- `trading_bot/market_intelligence/bias_analysis.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/categories/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/categories/institutional_accumulation.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/categories/liquidity_movement.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/categories/macro_regime_shifts.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/categories/regulatory_change.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/categories/technological_breakthroughs.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/classifier.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/data_monitoring.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/market_intelligence/event_detection.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/fusion_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/latent_space.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/liquidity_absorption.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/liquidity_analysis.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/manipulation_analysis.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/market_analyzer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/market_context.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/microstructure_analysis.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/pattern_recognition.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/performance_optimization.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/market_intelligence/regime_classification.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/technical_analysis.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/analysis/market_intelligence.py`
+- `trading_bot/market_intelligence/time_price_analysis.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/trading_execution.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_intelligence/wyckoff_analysis.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_teacher/agent_collective.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/market_teacher/agent_population.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/mbop_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=top_level_module | importers=none
+- `trading_bot/ml/agentcommunication.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/ml/ensemble/model_ensemble.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/ensemble/model_stacking.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/ensemble/stacking_meta_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/ensemble_models.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/ml/federated/global_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/forecasting/autoformer_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/forecasting/deepar_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/forecasting/informer_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/forecasting/nbeats_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/forecasting/tft_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/graph/gnn_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/limitorderbookagent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/ml/metalearningagent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/ml/mlmodelmonitor.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/ml/model_ensemble.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/model_monitor.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/model_monitoring.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/multi_task/mtl_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/multimodaltradingagent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/ml/neurosymbolicagent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/ml/offline_rl/bcq_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/advanced_rl_agents.py`, `trading_bot/ml/offline_rl/offline_rl_trainer.py`
+- `trading_bot/ml/offline_rl/cql_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/advanced_rl_agents.py`, `trading_bot/ml/offline_rl/offline_rl_trainer.py`
+- `trading_bot/ml/offline_rl/enhanced_cql_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/offline_rl/iql_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/ml/offline_rl/offline_rl_trainer.py`
+- `trading_bot/ml/offline_rl/model_selector.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/pattern_recognition.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/ml/ppo_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/alphaalgo_5star.py`, `trading_bot/optimization/hyperparameter_tuner.py`
+- `trading_bot/ml/predictive_models.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/backtesting/strategy_backtester.py`, `trading_bot/ml/ensemble_models.py`, `trading_bot/ml/hyperparameter_tuning.py`, `trading_bot/strategy/ml_strategy.py`
+- `trading_bot/ml/rl_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=`trading_bot/ml/multi_timeframe_rl.py`
+- `trading_bot/ml/selfrewritingagent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/ml/transformer_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/alphaalgo_5star.py`, `trading_bot/ml/predictive_models.py`, `trading_bot/optimization/hyperparameter_tuner.py`
+- `trading_bot/models.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/models/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/models/data_models.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/analytics/backtest_parity.py`, `trading_bot/models/schema_integration.py`
+- `trading_bot/models/schema_integration.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/analytics/backtest_parity.py`
+- `trading_bot/neural_integration/brain_orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/neural_integration/__init__.py`
+- `trading_bot/neuros_evolution/cognition_store.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/neuros_evolution/meta_intelligence_orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/neuros_evolution/unified_meta_intelligence.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/neuros_evolution/meta_intelligence_orchestrator.py`
+- `trading_bot/neuros_evolution/universal_model_connector.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/orchestrator/agent_orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/perplexity_trading/model_router.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/perplexity_trading/quant_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/perplexity_trading/reasoning_chains.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/perplexity_trading/trading_agents.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/profit_maximizer/brain_integration.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/radar_ai/agents/AGENT_SYSTEM_DEMO.py` — class=quarantine | owner=cognition | port=CapabilityPort | flags=cli, direct_capital, cli_entrypoint, direct_broker_access | importers=none
+- `trading_bot/radar_ai/agents/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/radar_ai/agents/data_fusion_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/radar_ai/agents/execution_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/radar_ai/agents/intelligence_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/radar_ai/agents/meta_orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/radar_ai/agents/ontology_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/radar_ai/agents/simulation_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/radar_ai/superintelligence_core.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/reasoning/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/reasoning/chain_of_thought.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/reasoning/knowledge_graph.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/reasoning/neuro_symbolic.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/reward_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=top_level_module | importers=none
+- `trading_bot/self_healing_ai/validators/ml_models.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/self_improvement/model_learner.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/services/agents2_service.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/services/agents_service.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/services/brain_service.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/services/integrated_brain_service.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/services/intelligence_directorate_service.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/services/market_intelligence_service.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/simulation/adversarial_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/skills/ai_ml_enhancements/diffusion_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/superintelligence/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/superintelligence/memory_systems.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=`trading_bot/superintelligence/superintelligence_orchestrator.py`
+- `trading_bot/superintelligence/multi_brain_ensemble.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=`trading_bot/superintelligence/superintelligence_orchestrator.py`
+- `trading_bot/superintelligence/self_optimizing_core.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=`trading_bot/superintelligence/superintelligence_orchestrator.py`
+- `trading_bot/superintelligence/self_regulation_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=`trading_bot/superintelligence/superintelligence_orchestrator.py`
+- `trading_bot/superintelligence/superintelligence_orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/superpowerful_ai/adaptive_intelligence.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/superpowerful_ai/predictive_intelligence.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/superpowerful_ai/strategic_intelligence.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/ultimate_bot/deep_learning_models.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ultimate_system/deep_agent_system.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/ultimate_system/elite_trader_brain.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/unified_ai_brain.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=dynamic_import, top_level_module | importers=none
+- `trading_bot/unified_architecture/layer2_intelligence_core.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/unified_system/layers/layer4_intelligence.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world2agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=top_level_module | importers=none
+- `trading_bot/world_model/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/world_model/causal/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/causal/gwm.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/causal_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/counterfactual_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/distributed_optimization.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/experience_replay.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/fwm_agents.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/hierarchical_time.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/ignorance_score.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/imagination.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/immune_system.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/latent_dynamics.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/core_agent_system/integrated_system.py`
+- `trading_bot/world_model/latent_dynamics_utils.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/memory.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/meta_dynamics.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/meta_intelligence_integration.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/microstructure.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/perception.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/self_play_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/simulation_orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/cos/simulation_engine.py`
+- `trading_bot/world_model/synthetic_data.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/uncertainty_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/unified_world_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/v2_adapter.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/v2_core.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=runtime_reachable | importers=`trading_bot/unified_bot.py`, `trading_bot/world_model/causal/gwm.py`
+- `trading_bot/world_model/v2_training.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/v3_core.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/world_state.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+
+## Wave 6 file list — Research, backtesting, evaluation, experiment, and RSI evidence
+
+- `trading_bot/advanced_intelligence/alternative_data/academic_research.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/advanced_intelligence/nlp_capabilities/research_summarizer.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_engine/backtesting.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_evolve/backtest_cache.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_evolve/backtesting_engine.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_evolve/distributed_evaluation.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_evolve/regime_aware_backtester.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/alpha_research_service.py`
+- `trading_bot/alpha_research/advanced_intelligence.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/alpha_death_clock.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/alpha_fusion_graph.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/dynamic_risk_matrix.py` — class=research_only | owner=research | port=ResearchCapability | flags=credential_access | importers=none
+- `trading_bot/alpha_research/ensemble_meta_learner.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/feature_mining_system.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/feature_ranking.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/feature_synthesis.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/hypothesis_extraction.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/l2_liquidity_forecaster.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/live_deployment.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/market_impact_minimizer.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/market_impact_predator.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/market_state_classifier.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/memory_layers.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/orderbook_forecaster.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/predator_defense.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/rdaos_core.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/regime_meta_model.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/research_ingestion.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/sandbox_testing.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/self_evolving_researcher.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/smart_order_router.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/strategy_diagnostics.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/time_scale_fusion.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/trust_safety_layer.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/uncertainty_quantification.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/unified_alpha_brain.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alpha_research/weakness_detection.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alphaalgo_institutional/layer3_quantitative_research.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/alphaalgo_institutional/research_loop.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/analytics/backtest_parity.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/autonomous_financial_intelligence/self_improvement/experiment_registry.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/autonomous_learner/internet_researcher.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/autonomous_superintelligence/experiment_engine.py` — class=research_only | owner=research | port=ResearchCapability | flags=starts_loop | importers=`trading_bot/recursive_improvement/infrastructure.py`
+- `trading_bot/autonomous_superintelligence/research_engine.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/backtesting.py` — class=research_only | owner=research | port=ResearchCapability | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/backtesting_service.py`
+- `trading_bot/backtesting/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/backtesting/advanced_backtester.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/core_agent_system/self_play_loop.py`, `trading_bot/research/orchestration/quant_pipeline.py`
+- `trading_bot/backtesting/backtester.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/backtesting/backtesting_engine.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/backtesting/complete_backtest_runner.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/backtesting/replay.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/core_agent_system/self_play_loop.py`
+- `trading_bot/backtesting/rigorous_backtest.py` — class=research_only | owner=research | port=ResearchCapability | flags=cli, cli_entrypoint | importers=`trading_bot/autonomous_superintelligence/discovery_engine.py`
+- `trading_bot/backtesting/simulator_validator.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/backtesting/strategy_backtester.py` — class=research_only | owner=research | port=ResearchCapability | flags=direct_capital, direct_broker_access | importers=`trading_bot/intel/strategy_researcher.py`
+- `trading_bot/core/aletheia_browser_research.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/core/backtesting_integration.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/core/research_mvp_pipeline.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/decision_governance/experiment_management.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/decision_layer/concepts_12_research_informed.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/distributed/parallel_backtester.py` — class=research_only | owner=research | port=ResearchCapability | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/evaluation/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/recursive_self_improvement/engine_v2.py`
+- `trading_bot/evaluation/runner.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/recursive_self_improvement/engine_v2.py`, `trading_bot/recursive_self_improvement/transfer.py`
+- `trading_bot/evaluation/synthetic_market.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/recursive_self_improvement/engine_v2.py`, `trading_bot/recursive_self_improvement/transfer.py`
+- `trading_bot/evaluation/walk_forward.py` — class=research_only | owner=research | port=ResearchCapability | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/experiment_tracker.py` — class=research_only | owner=research | port=ResearchCapability | flags=top_level_module | importers=none
+- `trading_bot/gets/backtesting.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/intel/strategy_researcher.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/ml/experiment_tracking.py` — class=research_only | owner=research | port=ResearchCapability | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/neuros_evolution/experiment_database.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/neuros_evolution/research_agents.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/neuros_evolution/researcher.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/offline_policy_evaluation.py` — class=research_only | owner=research | port=ResearchCapability | flags=top_level_module | importers=none
+- `trading_bot/perplexity_trading/deep_research_engine.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/perplexity_trading/research_guardrails.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/production/tick_level_backtester.py` — class=research_only | owner=research | port=ResearchCapability | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/quant_research_engine.py` — class=research_only | owner=research | port=ResearchCapability | flags=top_level_module | importers=none
+- `trading_bot/radar_ai/agents/experiment_infrastructure.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/radar_ai/agents/risk_evaluation_agent.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/radar_ai/evaluation_engine.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/recursive_improvement/infrastructure.py`
+- `trading_bot/recursive_improvement/loops/evaluation_loop.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/evaluation.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/recursive_self_improvement/experiment_manager.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=dynamic_import | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/research/ecie/governance.py`, `trading_bot/research/eip/registry.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/research/alpha/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/alpha/generators.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/alpha/seal_adapter.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/research_os_v2.py`
+- `trading_bot/research/alpha/seal_discovery.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/core/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/core/interfaces.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/alpha/generators.py`, `trading_bot/research/data/active_learning.py`, `trading_bot/research/data/providers.py`, `trading_bot/research/data/registry.py`, `trading_bot/research/data/validator.py`, `trading_bot/research/decision_intelligence/auditor.py`, `trading_bot/research/discovery/providers.py`, `trading_bot/research/experimentation/model_registry.py`, `trading_bot/research/experimentation/prioritization.py`, `trading_bot/research/experimentation/registry.py`, `trading_bot/research/experimentation/scheduler.py`, `trading_bot/research/features/engine.py`, `trading_bot/research/features/registry.py`, `trading_bot/research/graph/store.py`, `trading_bot/research/hypothesis/generator.py`, `trading_bot/research/knowledge/registry.py`, `trading_bot/research/literature/duplicate_detection.py`, `trading_bot/research/literature/embedding.py`, `trading_bot/research/marketplace/agents.py`, `trading_bot/research/marketplace/debate.py`, `trading_bot/research/meta_research/engine.py`, `trading_bot/research/orchestration/kernel.py`, `trading_bot/research/statistics/causality.py`, `trading_bot/research/statistics/tests.py`, `trading_bot/research/strategy/registry.py`, `trading_bot/research/strategy/synthesizer.py`, `trading_bot/research/twin/simulator.py`, `trading_bot/research/validation/backtest.py`, `trading_bot/research/validation/robustness.py`, `trading_bot/research/world_model/model.py`
+- `trading_bot/research/core/research_computer.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/institution.py`
+- `trading_bot/research/core/research_kernel.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/institution.py`
+- `trading_bot/research/core/schemas.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/data/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/data/active_learning.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/data/providers.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/data/registry.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/data/research_ingestion_pipeline.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/data/validator.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/decision_intelligence/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/decision_intelligence/auditor.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/discovery/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/discovery/cse_ceda.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/research_os.py`
+- `trading_bot/research/discovery/discovery_platform.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/institution.py`
+- `trading_bot/research/discovery/providers.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/ecie/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/ecie/governance.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/research_os.py`
+- `trading_bot/research/ecie/models.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/eip/pipeline.py`
+- `trading_bot/research/ecie/pipeline.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/research_os.py`
+- `trading_bot/research/ecie/sandbox.py` — class=research_only | owner=research | port=ResearchCapability | flags=credential_access | importers=`trading_bot/research/eip/pipeline.py`
+- `trading_bot/research/ecie/scouts.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/eip/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/eip/adapters.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/eip/eqe.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/research_os.py`
+- `trading_bot/research/eip/models.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/eip/pipeline.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/research_os.py`
+- `trading_bot/research/eip/registry.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/research_os.py`
+- `trading_bot/research/experimentation/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/experimentation/free_research_lab.py` — class=research_only | owner=research | port=ResearchCapability | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/research/experimentation/innovation_lab.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/experimentation/model_registry.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/experimentation/prioritization.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/experimentation/registry.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/experimentation/scheduler.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/features/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/features/engine.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/features/registry.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/governance/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/governance/constitution.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/governance/gates.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/governance/maturity.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/governance/recommendations.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/governance/research_governance.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/institution.py`
+- `trading_bot/research/graph/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/graph/store.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/hypothesis/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/hypothesis/generator.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/introspection/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/introspection/core.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/research_os.py`
+- `trading_bot/research/introspection/models.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/knowledge/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/knowledge/registry.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/literature/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/literature/duplicate_detection.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/literature/embedding.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/london_session/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/london_session/api.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/london_session/collector/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/london_session/edge_repository/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/london_session/edge_repository/london_edge.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/london_session/execution_adapter/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/london_session/execution_adapter/london_execution.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/london_session/feature_engine/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/london_session/feature_engine/london_features.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/london_session/hypothesis_engine/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/london_session/hypothesis_engine/london_hypothesis.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/london_session/validation/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/london_session/validation/london_validation.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/marketplace/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/marketplace/agents.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/marketplace/debate.py`
+- `trading_bot/research/marketplace/debate.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/meta_research/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/meta_research/engine.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/monitoring/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/monitoring/drift.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/orchestration/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/orchestration/cli.py` — class=research_only | owner=research | port=ResearchCapability | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/research/orchestration/institution.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/orchestration/kernel.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/cli.py`
+- `trading_bot/research/orchestration/quant_pipeline.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/governance/research_governance.py`
+- `trading_bot/research/orchestration/research_organization.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/orchestration/research_os.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/discovery/cse_ceda.py`, `trading_bot/research/governance/research_governance.py`
+- `trading_bot/research/orchestration/research_os_v2.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/portfolio/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/portfolio/optimizer.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/self_evolution/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/self_evolution/gate.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/research_os.py`
+- `trading_bot/research/self_evolution/models.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/self_evolution/mutator.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/research_os.py`
+- `trading_bot/research/self_evolution/tournament.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/research_os.py`
+- `trading_bot/research/statistics/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/statistics/causality.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/statistics/tests.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/strategy/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/strategy/registry.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/strategy/synthesizer.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/symbolic/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/symbolic/engine.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/twin/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/twin/simulator.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/validation/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/validation/backtest.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`, `trading_bot/research/validation/robustness.py`
+- `trading_bot/research/validation/robustness.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research/world_model/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research/world_model/model.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/research/orchestration/kernel.py`
+- `trading_bot/research_ingestion/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/research_ingestion/claim_extractor.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research_ingestion/feasibility_scorer.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research_ingestion/github_ingestion.py` — class=research_only | owner=research | port=ResearchCapability | flags=credential_access | importers=none
+- `trading_bot/research_ingestion/paper_ingestion.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research_ingestion/relevance_filter.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/research_ingestion/sandbox_implementer.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/self_healing_ai/validators/backtest.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/self_healing_ai/validators/research_production.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/services/alpha_research_service.py` — class=research_only | owner=research | port=ResearchCapability | flags=starts_loop | importers=none
+- `trading_bot/services/backtesting_service.py` — class=research_only | owner=research | port=ResearchCapability | flags=starts_loop | importers=none
+- `trading_bot/signal_discovery/agents/research_paper_agents.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/systems_ai/research_agent.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/ultimate_system/internet_research_engine.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+
+## Wave 7 file list — Standalone main/CLI facade surfaces
+
+- `trading_bot/main.py` — class=adapter | owner=interfaces | port=ModularMonolithRuntime | flags=cli, cli_entrypoint, top_level_module | importers=none
+- `trading_bot/unified_main.py` — class=compatibility_facade | owner=interfaces | port=ModularMonolithRuntime | flags=cli, cli_entrypoint, top_level_module | importers=none

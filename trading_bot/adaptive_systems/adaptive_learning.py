@@ -1,3 +1,4 @@
+import warnings
 import logging
 logger = logging.getLogger(__name__)
 """Adaptive Learning and Model Retraining System.
@@ -51,6 +52,7 @@ class AdaptiveLearningEngine:
     
     def __init__(self, config: Optional[Dict] = None):
         """Initialize the adaptive learning engine."""
+        warnings.warn("AdaptiveLearningEngine is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or {}
         self.models = {}
         self.model_performance = {}

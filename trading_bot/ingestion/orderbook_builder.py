@@ -6,6 +6,7 @@ Provides synthetic order book when only L1 data is available.
 """
 
 from __future__ import annotations
+import warnings
 
 import logging
 import time
@@ -242,6 +243,7 @@ class SyntheticOrderBook:
     """
     
     def __init__(self, config: OrderBookConfig):
+        warnings.warn("SyntheticOrderBook is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         
         # State per symbol

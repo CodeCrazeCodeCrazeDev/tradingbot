@@ -303,3 +303,18 @@ class GETSConfig:
     
     # Integration
     decision_governance_integration: bool = True
+
+
+@dataclass
+class FailurePattern:
+    """Classification of a recurring failure pattern for learning."""
+    pattern_id: str = ""
+    failure_class: str = ""
+    description: str = ""
+    affected_models: List["ModelType"] = field(default_factory=list)
+    typical_regimes: List["RegimeType"] = field(default_factory=list)
+    typical_horizons: List["ForecastHorizon"] = field(default_factory=list)
+    frequency: int = 0
+    last_occurrence: Optional[datetime] = None
+    resolved_by: Optional[str] = None
+    resolution_confidence: float = 0.0

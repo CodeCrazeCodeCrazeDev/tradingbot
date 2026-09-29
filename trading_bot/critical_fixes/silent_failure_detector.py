@@ -15,6 +15,7 @@ This module provides:
 6. Automatic alerting on silent failures
 """
 
+import warnings
 import logging
 import threading
 import asyncio
@@ -152,6 +153,7 @@ class SilentFailureDetector:
             on_component_dead: Callback when component is dead
             auto_remediate: Whether to attempt automatic remediation
         """
+        warnings.warn("SilentFailureDetector is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.check_interval = check_interval
         self.heartbeat_timeout = heartbeat_timeout
         self.output_timeout = output_timeout

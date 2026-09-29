@@ -31,6 +31,7 @@ Author: AlphaAlgo Trading System
 Version: 4.0.0 - THE ONE
 """
 
+import warnings
 import asyncio
 import logging
 import importlib
@@ -755,6 +756,7 @@ class UnifiedAIBrain:
             return cls._instance
     
     def __init__(self, config: Optional[BrainConfig] = None):
+        warnings.warn("UnifiedAIBrain is a legacy/quarantined component: parallel brain with dynamic subsystem loading — advisory only. It carries no production authority.", DeprecationWarning, stacklevel=2)
         """Initialize the unified AI brain"""
         # Prevent re-initialization
         if hasattr(self, '_initialized') and self._initialized:
@@ -1219,8 +1221,8 @@ class UnifiedAIBrain:
             if hasattr(ss.instance, 'detect_regime'):
                 try:
                     analysis['regime'] = ss.instance.detect_regime(data.get('market', {}))
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"regime detection failed for {symbol}: {e}")
         
         # DeepChart intelligence
         if 'deepchart_intelligence' in self.loaded_subsystems:
@@ -1237,7 +1239,7 @@ class UnifiedAIBrain:
                         ask=price * 1.0001
                     )
                 except Exception as e:
-                    logger.error(f"DeepChart intelligence error: {e}")
+                    logger.debug(f"deepchart update failed for {symbol}: {e}")
         
         return analysis
     
@@ -1253,8 +1255,8 @@ class UnifiedAIBrain:
                     sig = ss.instance.generate_signal(symbol, analysis)
                     if sig:
                         signals.append(sig)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"strategy_engine.generate_signal failed for {symbol}: {e}")
         
         # Get signal from complete signal system
         if 'complete_signal_system' in self.loaded_subsystems:
@@ -1268,7 +1270,7 @@ class UnifiedAIBrain:
                     if sig:
                         signals.append(sig)
                 except Exception as e:
-                    logger.error(f"Complete signal system error: {e}")
+                    logger.debug(f"complete_signal_system.process_signal failed for {symbol}: {e}")
         
         # Get signal from cognitive core
         if 'cognitive' in analysis:
@@ -1333,7 +1335,9 @@ class UnifiedAIBrain:
                         result['reason'] = f"MSOS: {msos_result.get('reason', 'Rejected')}"
                         return result
                 except Exception as e:
-                    logger.error(f"MSOS evaluation error: {e}")
+                    logger.error(f"MSOS evaluate failed for {symbol}: {e}")
+                    result['reason'] = f"MSOS gate error: {e}"
+                    return result
         
         # Check risk manager
         if 'risk_manager' in self.loaded_subsystems:
@@ -1348,8 +1352,10 @@ class UnifiedAIBrain:
                     if not risk_result.get('approved', False):
                         result['reason'] = f"Risk: {risk_result.get('reason', 'Rejected')}"
                         return result
-                except:
-                    pass
+                except Exception as e:
+                    logger.error(f"risk_manager.validate_trade failed for {symbol}: {e}")
+                    result['reason'] = f"risk gate error: {e}"
+                    return result
         
         # Calculate position size
         position_size = self._calculate_position_size(symbol, signal)
@@ -1363,7 +1369,9 @@ class UnifiedAIBrain:
                         result['reason'] = "Circuit breaker triggered"
                         return result
                 except Exception as e:
-                    logger.error(f"Circuit breaker check error: {e}")
+                    logger.error(f"circuit_breaker.is_triggered failed for {symbol}: {e}")
+                    result['reason'] = f"circuit breaker gate error: {e}"
+                    return result
         
         # Approved
         result['approved'] = True
@@ -1388,7 +1396,7 @@ class UnifiedAIBrain:
                         confidence=signal.get('confidence', 0.5)
                     )
                 except Exception as e:
-                    logger.error(f"Position sizing error: {e}")
+                    logger.debug(f"position_sizer.calculate failed for {symbol}: {e}")
         
         # Default calculation
         risk_amount = self.capital * self.config.max_risk_per_trade
@@ -1488,8 +1496,8 @@ class UnifiedAIBrain:
                             await ss.instance.reflect()
                         else:
                             ss.instance.reflect()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug(f"self_mastery.reflect failed: {e}")
             
             # Use eternal evolution
             if 'eternal_evolution' in self.loaded_subsystems:
@@ -1501,7 +1509,7 @@ class UnifiedAIBrain:
                         else:
                             ss.instance.evolve()
                     except Exception as e:
-                        logger.error(f"Eternal evolution error: {e}")
+                        logger.debug(f"eternal_evolution.evolve failed: {e}")
             
         finally:
             self.state = BrainState.CONSCIOUS
@@ -1564,12 +1572,12 @@ class UnifiedAIBrain:
                     try:
                         ss.instance.emergency_stop(reason)
                     except Exception as e:
-                        logger.error(f"Error triggering emergency_stop on {name}: {e}")
+                        logger.warning(f"{name}.emergency_stop failed during emergency stop: {e}")
                 if hasattr(ss.instance, 'trigger'):
                     try:
                         ss.instance.trigger(reason)
                     except Exception as e:
-                        logger.error(f"Error triggering trigger on {name}: {e}")
+                        logger.warning(f"{name}.trigger failed during emergency stop: {e}")
     
     async def shutdown(self):
         """Gracefully shutdown the brain"""
@@ -1676,6 +1684,18 @@ def create_brain(config: Optional[BrainConfig] = None) -> UnifiedAIBrain:
     return UnifiedAIBrain(config)
 
 
+def get_unified_brain(config: Optional[BrainConfig] = None):
+    """Backward-compatibility factory returning the canonical cognitive brain.
+
+    The unified-brain façade was consolidated into
+    ``trading_bot.cognition.orchestrator.AlphaAlgoCognitiveBrain`` (the
+    authoritative 9-stage loop). Legacy callers get that brain so
+    ``process_cycle(...)`` is available without a parallel implementation.
+    """
+    from trading_bot.cognition.orchestrator import AlphaAlgoCognitiveBrain
+    return AlphaAlgoCognitiveBrain()
+
+
 async def quick_start(
     mode: str = "paper",
     symbols: Optional[List[str]] = None,
@@ -1709,6 +1729,7 @@ __all__ = [
     'ConfidenceLevel',
     'SubsystemCategory',
     'create_brain',
+    'get_unified_brain',
     'quick_start',
     'SUBSYSTEM_REGISTRY'
 ]

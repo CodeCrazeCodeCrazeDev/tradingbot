@@ -319,9 +319,7 @@ class TestUtilsFunctional:
         """Test validators module."""
 
         from trading_bot.utils import validators
-import numpy
-import pandas
-assert validators is not None
+        assert validators is not None
 
 
 

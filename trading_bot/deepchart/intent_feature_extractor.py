@@ -420,7 +420,7 @@ class IntentFeatureExtractor:
                 return 0.0
             autocorr = np.corrcoef(friction[:-1], friction[1:])[0, 1]
             return float(np.clip(autocorr, -1, 1))
-        except:
+        except Exception as e:
             return 0.0
     
     def _compute_execution_efficiency(self) -> float:
@@ -456,7 +456,7 @@ class IntentFeatureExtractor:
         
             corr = np.corrcoef(efficiencies, volatilities)[0, 1]
             return float(np.clip(corr, -1, 1))
-        except:
+        except Exception as e:
             return 0.0
     
     def _compute_arrival_irregularity(self) -> float:
@@ -515,7 +515,7 @@ class IntentFeatureExtractor:
             max_count = np.max(counts)
             
             return float(max_count / len(volumes))
-        except:
+        except Exception as e:
             return 0.5
     
     def _compute_imbalance_persistence(self) -> float:
@@ -595,7 +595,7 @@ class IntentFeatureExtractor:
             # Average decay rate
             avg_decay = -np.mean(np.log(np.clip(decay_ratios, 0.01, 10)))
             return float(np.clip(avg_decay, 0, 2))
-        except:
+        except Exception as e:
             return 0.5
     
     def get_feature_sequence(self, length: int = 64) -> np.ndarray:

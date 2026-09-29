@@ -6,6 +6,7 @@ Handles reconnection, heartbeats, sequence validation, batching.
 """
 
 from __future__ import annotations
+import warnings
 
 import asyncio
 import logging
@@ -190,6 +191,7 @@ class WebSocketCollector:
         config: CollectorConfig,
         message_handler: Callable[[bytes, int], Any],
     ):
+        warnings.warn("WebSocketCollector is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         self.message_handler = message_handler
         

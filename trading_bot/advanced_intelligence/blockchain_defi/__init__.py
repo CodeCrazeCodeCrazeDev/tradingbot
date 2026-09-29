@@ -2,68 +2,57 @@
 Blockchain & DeFi Integration Module (Ideas 181-210)
 ======================================================
 On-chain analytics and DeFi protocol integration.
+
+Most submodules were removed in the repo merge; imports are
+guarded so the package stays importable with partial contents.
 """
 
-from .on_chain_analytics import OnChainAnalytics
-from .whale_tracker import WhaleTracker
-from .defi_integration import DeFiIntegration
-from .yield_farming import YieldFarmingOptimizer
-from .liquidity_pool import LiquidityPoolManager
-from .mev_protection import MEVProtection
-from .cross_chain_arbitrage import CrossChainArbitrage
-from .nft_analyzer import NFTAnalyzer
-from .token_launch_detector import TokenLaunchDetector
-from .smart_contract_risk import SmartContractRiskAnalyzer
-from .governance_token import GovernanceTokenVoter
-from .staking_optimizer import StakingOptimizer
-from .bridge_monitor import BridgeMonitor
-from .dex_aggregator import DEXAggregator
-from .perpetual_arbitrage import PerpetualArbitrage
-from .funding_rate_trader import FundingRateTrader
-from .liquidation_detector import LiquidationDetector
-from .token_unlock_tracker import TokenUnlockTracker
-from .airdrop_farming import AirdropFarming
-from .dao_treasury import DAOTreasuryAnalyzer
-from .stablecoin_monitor import StablecoinMonitor
-from .layer2_analytics import Layer2Analytics
-from .oracle_monitor import OracleMonitor
-from .flash_loan_detector import FlashLoanDetector
-from .token_burn_tracker import TokenBurnTracker
-from .protocol_revenue import ProtocolRevenueAnalyzer
-from .tvl_monitor import TVLMonitor
-from .validator_tracker import ValidatorTracker
-from .gas_optimizer import GasOptimizer
-from .cross_chain_identity import CrossChainIdentity
+import importlib as _il
+import logging as _logging
 
-__all__ = [
-    "OnChainAnalytics",
-    "WhaleTracker",
-    "DeFiIntegration",
-    "YieldFarmingOptimizer",
-    "LiquidityPoolManager",
-    "MEVProtection",
-    "CrossChainArbitrage",
-    "NFTAnalyzer",
-    "TokenLaunchDetector",
-    "SmartContractRiskAnalyzer",
-    "GovernanceTokenVoter",
-    "StakingOptimizer",
-    "BridgeMonitor",
-    "DEXAggregator",
-    "PerpetualArbitrage",
-    "FundingRateTrader",
-    "LiquidationDetector",
-    "TokenUnlockTracker",
-    "AirdropFarming",
-    "DAOTreasuryAnalyzer",
-    "StablecoinMonitor",
-    "Layer2Analytics",
-    "OracleMonitor",
-    "FlashLoanDetector",
-    "TokenBurnTracker",
-    "ProtocolRevenueAnalyzer",
-    "TVLMonitor",
-    "ValidatorTracker",
-    "GasOptimizer",
-    "CrossChainIdentity",
-]
+_logger = _logging.getLogger(__name__)
+
+_EXPORTS = {
+    "on_chain_analytics": ["OnChainAnalytics"],
+    "whale_tracker": ["WhaleTracker"],
+    "defi_integration": ["DeFiIntegration"],
+    "yield_farming": ["YieldFarmingOptimizer"],
+    "liquidity_pool": ["LiquidityPoolManager"],
+    "mev_protection": ["MEVProtection"],
+    "cross_chain_arbitrage": ["CrossChainArbitrage"],
+    "nft_analyzer": ["NFTAnalyzer"],
+    "token_launch_detector": ["TokenLaunchDetector"],
+    "smart_contract_risk": ["SmartContractRiskAnalyzer"],
+    "governance_token": ["GovernanceTokenVoter"],
+    "staking_optimizer": ["StakingOptimizer"],
+    "bridge_monitor": ["BridgeMonitor"],
+    "dex_aggregator": ["DEXAggregator"],
+    "perpetual_arbitrage": ["PerpetualArbitrage"],
+    "funding_rate_trader": ["FundingRateTrader"],
+    "liquidation_detector": ["LiquidationDetector"],
+    "token_unlock_tracker": ["TokenUnlockTracker"],
+    "airdrop_farming": ["AirdropFarming"],
+    "dao_treasury": ["DAOTreasuryAnalyzer"],
+    "stablecoin_monitor": ["StablecoinMonitor"],
+    "layer2_analytics": ["Layer2Analytics"],
+    "oracle_monitor": ["OracleMonitor"],
+    "flash_loan_detector": ["FlashLoanDetector"],
+    "token_burn_tracker": ["TokenBurnTracker"],
+    "protocol_revenue": ["ProtocolRevenueAnalyzer"],
+    "tvl_monitor": ["TVLMonitor"],
+    "validator_tracker": ["ValidatorTracker"],
+    "gas_optimizer": ["GasOptimizer"],
+    "cross_chain_identity": ["CrossChainIdentity"],
+}
+
+for _mod, _names in _EXPORTS.items():
+    try:
+        _m = _il.import_module(f".{_mod}", __name__)
+        for _n in _names:
+            globals()[_n] = getattr(_m, _n)
+    except Exception as _e:
+        _logger.debug(f"blockchain_defi.{_mod} unavailable: {_e}")
+        for _n in _names:
+            globals()[_n] = None
+
+__all__ = [n for names in _EXPORTS.values() for n in names]

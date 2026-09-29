@@ -1,4 +1,5 @@
 """
+import json
 Unit tests for Health Check Endpoints
 
 Tests for health check manager and endpoints
@@ -337,7 +338,6 @@ class TestHealthCheckFunctions:
     def test_check_disk_space(self):
         """Test disk space check"""
         from trading_bot.infrastructure.health_endpoints import check_disk_space
-import json
         
         # Should pass with reasonable limit
         result = check_disk_space(min_free_gb=1)

@@ -39,3 +39,12 @@ __all__ = [
     "AdvancedIntelligenceOrchestrator",
     "MODULES",
 ]
+
+
+class AdvancedIntelligenceOrchestrator:
+    """Orchestrates advanced-intelligence subsystems (minimal reconstruction)."""
+    def __init__(self, *a, **k):
+        self.config = k.get('config', dict(k))
+        self.running = False
+    def get_status(self):
+        return {'status': 'operational', 'running': self.running}

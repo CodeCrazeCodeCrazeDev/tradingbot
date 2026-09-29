@@ -82,6 +82,13 @@ class UtilsOrchestrator:
     """Stub for UtilsOrchestrator."""
     def __init__(self, *args, **kwargs):
         self.config = kwargs.get('config', {})
+        import warnings
+        warnings.warn(
+            "UtilsOrchestrator is a merge-generated stub and is deprecated. "
+            "Route orchestration through CognitiveSystemController "
+            "(trading_bot.core.csc.controller).",
+            DeprecationWarning, stacklevel=2,
+        )
         self.running = False
     
     async def start(self):
@@ -92,3 +99,10 @@ class UtilsOrchestrator:
     
     def get_status(self):
         return {"running": self.running}
+
+
+# Legacy re-export: profiling decorator
+try:
+    from .profiler import profile_function
+except ImportError:
+    profile_function = None

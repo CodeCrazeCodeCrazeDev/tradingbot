@@ -491,6 +491,10 @@ def run_tests():
     return result.wasSuccessful()
 
 
-if __name__ == '__main__':
-    success = run_tests()
-    exit(0 if success else 1)
+if __name__ == "__main__":
+    raise SystemExit(
+        "trading_bot/decision_governance/tests/test_suite.py is QUARANTINED: standalone execution of this module is a "
+        "parallel capital/loop path outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

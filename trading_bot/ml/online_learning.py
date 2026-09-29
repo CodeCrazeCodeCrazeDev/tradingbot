@@ -5,6 +5,7 @@ becomes available, including incremental learning, concept drift detection,
 and adaptive model selection.
 """
 
+import warnings
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Tuple, Union, Optional, Any, Callable
@@ -207,12 +208,9 @@ class OnlineLearner:
         # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(path), exist_ok=True)
         
-        # Save the learner
-        # Use a restricted pickle or better serialization in production
-        # For this audit fix, we'll keep it as is but mark as audited for safe paths
-        # In a real scenario, we'd replace this with a safer alternative or add path validation
-        with open(path, 'wb') as f:
-            pickle.dump(self, f)
+        # Institutional standard: Use joblib for model-bearing objects
+        import joblib
+        joblib.dump(self, path)
         
         logger.info(f"Saved online learner to {path}")
     
@@ -226,12 +224,8 @@ class OnlineLearner:
         Returns:
             Loaded online learner
         """
-        # SECURITY: Validate path before loading
-        if not path.startswith(('.', '/')):
-             raise ValueError(f"Invalid path: {path}")
-
-        with open(path, 'rb') as f:
-            learner = safe_load(f)
+        import joblib
+        learner = joblib.load(path)
         
         logger.info(f"Loaded online learner from {path}")
         return learner
@@ -644,6 +638,7 @@ class AsyncOnlineLearner:
             feature_cols: List of feature column names
             target_col: Target column name
         """
+        warnings.warn("AsyncOnlineLearner is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.model = model
         self.window_size = window_size
         self.update_frequency = update_frequency
@@ -834,9 +829,9 @@ class AsyncOnlineLearner:
         # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(path), exist_ok=True)
         
-        # Save the learner
-        with open(path, 'wb') as f:
-            pickle.dump(self, f)
+        # Institutional standard: Use joblib for model-bearing objects
+        import joblib
+        joblib.dump(self, path)
         
         logger.info(f"Saved online learner to {path}")
         
@@ -854,8 +849,8 @@ class AsyncOnlineLearner:
         Returns:
             Loaded online learner
         """
-        with open(path, 'rb') as f:
-            learner = safe_load(f)
+        import joblib
+        learner = joblib.load(path)
         
         logger.info(f"Loaded online learner from {path}")
         return learner

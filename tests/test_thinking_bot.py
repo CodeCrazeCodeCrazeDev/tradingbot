@@ -9,6 +9,7 @@ import os
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 import numpy as np
+import pandas as pd
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -164,8 +165,6 @@ class TestThinkingBot:
     
     def test_detect_patterns(self, bot):
         """Test pattern detection"""
-import numpy
-import pandas
         
         # Create bullish engulfing pattern
         data = {

@@ -3,6 +3,7 @@ Phase 1: Secure Connection Validation System
 Tests latency, reliability, and failover for all internet connections.
 """
 
+import warnings
 import asyncio
 import time
 import logging
@@ -89,6 +90,7 @@ class ConnectionValidator:
     """
     
     def __init__(self, config: Dict):
+        warnings.warn("ConnectionValidator is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config
         self.endpoints: Dict[str, EndpointConfig] = {}
         self.metrics: Dict[str, ConnectionMetrics] = {}

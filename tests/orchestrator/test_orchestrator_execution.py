@@ -1,3 +1,5 @@
+import numpy
+from pathlib import Path
 """
 Comprehensive Test Suite for ExecutionEngine and SmartOrderRouter
 """
@@ -7,6 +9,14 @@ import asyncio
 import numpy as np
 from datetime import datetime
 from unittest.mock import MagicMock, AsyncMock
+
+from trading_bot.orchestrator.execution_engine import (
+    ExecutionEngine,
+    OrderType,
+    ExecutionAlgorithm,
+    ExecutionResult,
+    SmartOrderRouter,
+)
 
 
 @pytest.fixture
@@ -282,6 +292,7 @@ class TestSmartOrderRouter:
         assert isinstance(plan, dict)
 
     def test_routing_plan_priority(self):
+        pass
         router = SmartOrderRouter()
         venue_scores = {'exchange1': 0.9, 'exchange2': 0.7}
         plan = router._create_routing_plan(venue_scores, 1000)
