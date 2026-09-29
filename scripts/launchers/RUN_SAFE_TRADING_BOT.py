@@ -411,11 +411,9 @@ async def main():
 
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("\n\n⚠️ Program interrupted")
-    except Exception as e:
-        print(f"\n❌ Error: {e}")
-        import traceback
-        traceback.print_exc()
+    raise SystemExit(
+        "scripts/launchers/RUN_SAFE_TRADING_BOT.py is QUARANTINED: standalone trading launchers are parallel "
+        "capital/loop paths outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

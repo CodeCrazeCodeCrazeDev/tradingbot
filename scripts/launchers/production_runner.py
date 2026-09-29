@@ -360,4 +360,8 @@ async def main():
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    raise SystemExit(
+        "production_runner.py is QUARANTINED: standalone production trading "
+        "runners are not supported entry points — the canonical runtime is "
+        "'python main.py --mode paper' (no live/testnet profile exists)."
+    )

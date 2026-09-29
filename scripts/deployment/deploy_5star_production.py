@@ -297,4 +297,9 @@ async def main():
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    raise SystemExit(
+        "deploy_5star_production.py is QUARANTINED: deployment scripts that "
+        "start trading loops are not supported entry points — the canonical "
+        "runtime is 'python main.py --mode paper' (no live/testnet profile "
+        "exists)."
+    )

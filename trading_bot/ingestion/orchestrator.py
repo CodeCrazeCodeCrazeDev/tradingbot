@@ -218,14 +218,11 @@ class IngestionOrchestrator:
         # Start collectors
         await self.collector_manager.start_all()
         
-        # Start metrics reporter
-        self._tasks.append(
-            asyncio.create_task(self._metrics_reporter())
-        )
-        
-        # Start health checker
-        self._tasks.append(
-            asyncio.create_task(self._health_checker())
+        # Metrics/health background workers are disabled: the canonical
+        # runtime owns monitoring (ModularMonolithRuntime -> UnifiedTradingBot).
+        logger.warning(
+            "Ingestion metrics/health background workers disabled; canonical "
+            "runtime owns monitoring"
         )
         
         logger.info("Ingestion pipeline started")
@@ -379,9 +376,7 @@ class IngestionOrchestrator:
             metrics['orderbook'] = self.orderbook_manager.get_stats()
         
         if self.storage_manager:
-            metrics['storage'] = asyncio.create_task(
-                self.storage_manager.get_stats()
-            )
+            metrics['storage'] = 'disabled'
         
         return metrics
     
@@ -459,7 +454,7 @@ def setup_signal_handlers(orchestrator: IngestionOrchestrator):
     
     def handle_signal(signum, frame):
         logger.info(f"Received signal {signum}, initiating shutdown...")
-        asyncio.create_task(orchestrator.stop())
+        orchestrator._shutdown_event.set()
     
     signal.signal(signal.SIGINT, handle_signal)
     signal.signal(signal.SIGTERM, handle_signal)
@@ -467,38 +462,21 @@ def setup_signal_handlers(orchestrator: IngestionOrchestrator):
 
 # Main entry point
 async def main():
-    """Example main entry point"""
-    
-    # Configure logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    """Standalone pipeline launcher — DISABLED.
+
+    This module is a data-plane adapter candidate (Wave 3). Standalone
+    ingestion pipelines are not supported production entry points; market
+    data reaches production only via ``MarketDataAdapter`` ->
+    ``MarketDataNormalizer`` inside ``UnifiedTradingBot``. To run this
+    pipeline for research, instantiate ``create_pipeline`` explicitly in an
+    offline harness — never as a detached service.
+    """
+    raise SystemExit(
+        "Standalone ingestion orchestrator is disabled. Production market "
+        "data flows through MarketDataAdapter->MarketDataNormalizer inside "
+        "UnifiedTradingBot; run pipelines only inside an offline research "
+        "harness."
     )
-    
-    # Create pipeline
-    pipeline = await create_pipeline(
-        exchanges={
-            'binance': ['BTCUSDT', 'ETHUSDT', 'BNBUSDT'],
-            'coinbase': ['BTC-USD', 'ETH-USD'],
-        },
-        kafka_servers=['localhost:9092'],
-        clickhouse_host='localhost',
-    )
-    
-    # Setup signal handlers
-    setup_signal_handlers(pipeline)
-    
-    # Start pipeline
-    await pipeline.start()
-    
-    try:
-        # Run until shutdown
-        while True:
-            await asyncio.sleep(1)
-    except asyncio.CancelledError:
-        pass
-    finally:
-        await pipeline.stop()
 
 
 if __name__ == '__main__':

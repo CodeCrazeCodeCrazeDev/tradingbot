@@ -4,6 +4,7 @@ Service Managers - Manage groups of related services within each category.
 
 import asyncio
 import logging
+import warnings
 from typing import Dict, List, Any, Optional, Type
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -216,9 +217,20 @@ class ServiceManager(ABC):
         status.last_check = datetime.now()
     
     def _start_health_monitoring(self) -> None:
-        """Start background health monitoring."""
+        """Disabled: background health loops belong to the canonical runtime.
+
+        Only UnifiedTradingBot (via ModularMonolithRuntime) may spawn
+        production worker loops. These managers remain reachable through the
+        quarantined ``_LegacyMasterOrchestrator``, so their background task is
+        suppressed to keep them inert.
+        """
         if self.health_check_interval > 0:
-            self._health_check_task = asyncio.create_task(self._health_monitor_loop())
+            warnings.warn(
+                "ServiceManager background health monitoring is disabled; "
+                "lifecycle is owned by ModularMonolithRuntime/UnifiedTradingBot.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
     
     async def _health_monitor_loop(self) -> None:
         """Background health monitoring loop."""

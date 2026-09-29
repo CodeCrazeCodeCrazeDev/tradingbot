@@ -332,10 +332,9 @@ async def main():
 
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        logger.info("Shutdown complete")
-    except Exception as e:
-        logger.error(f"System error: {e}")
-        sys.exit(1)
+    raise SystemExit(
+        "scripts/launchers/run_complete_system.py is QUARANTINED: standalone trading launchers are parallel "
+        "capital/loop paths outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

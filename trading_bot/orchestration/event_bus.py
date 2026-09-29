@@ -1,9 +1,15 @@
 """
 Event Bus - Asynchronous event-driven communication system.
+
+COMPATIBILITY ONLY: this is a legacy in-process pub/sub for service-status
+notifications. It is NOT a decision bus. The sole decision/audit backbone is
+``trading_bot.core.unified_event_bus.UnifiedDecisionBus``; any event type that
+could influence trading is rejected by ``publish``/``publish_and_wait``.
 """
 
 import asyncio
 import logging
+import warnings
 from typing import Dict, List, Callable, Any, Optional, Type
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -180,6 +186,18 @@ class EventBus:
             return True
         return False
     
+    _BLOCKED_EVENT_PREFIXES = ("TRADE_", "ORDER_", "EXECUTION_", "BROKER_", "RISK_")
+
+    @classmethod
+    def _assert_non_trading_event(cls, event: "Event") -> None:
+        if isinstance(event.type, str) and event.type.upper().startswith(
+            cls._BLOCKED_EVENT_PREFIXES
+        ):
+            raise PermissionError(
+                f"Event type '{event.type}' is a trading/decision event and "
+                "cannot be routed on this legacy bus; use UnifiedDecisionBus."
+            )
+
     async def publish(self, event: Event) -> None:
         """
         Publish an event to all subscribers.
@@ -189,6 +207,7 @@ class EventBus:
         """
         if not isinstance(event, Event):
             raise ValueError("event must be an instance of Event")
+        self._assert_non_trading_event(event)
         
         # Apply filters
         for filter_func in self.filters:
@@ -230,7 +249,8 @@ class EventBus:
         """
         if not isinstance(event, Event):
             raise ValueError("event must be an instance of Event")
-        
+        self._assert_non_trading_event(event)
+
         # Apply filters
         for filter_func in self.filters:
             try:
@@ -425,8 +445,14 @@ class EventBus:
 _event_bus = None
 
 def get_event_bus() -> EventBus:
-    """Get the global event bus instance."""
+    """Get the legacy global event bus instance (service-status pub/sub only)."""
     global _event_bus
+    warnings.warn(
+        "get_event_bus() is a legacy service pub/sub, not a decision bus; "
+        "decisions/audit belong to UnifiedDecisionBus.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     if _event_bus is None:
         _event_bus = EventBus()
     return _event_bus

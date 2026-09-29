@@ -63,7 +63,7 @@ class SystemStatus:
     active_systems: List[str]
 
 
-class SentientOrchestrator:
+class _LegacySentientOrchestrator:
     """
     Master orchestrator for the autonomous self-evolving trading bot.
 
@@ -163,15 +163,15 @@ class SentientOrchestrator:
         logger.info("Network connected - activating systems")
         self.stats['connection_events'] += 1
 
-        # Start all subsystems
-        asyncio.create_task(self._activate_all_systems())
+        # Worker scheduling disabled: legacy orchestrators may not spawn tasks.
+        logger.warning("Subsystem activation worker disabled (canonical runtime owns lifecycle)")
 
     def _on_network_disconnect(self, event) -> None:
         """Handle network disconnection"""
         logger.warning("Network disconnected - entering safe mode")
 
-        # Stop non-essential systems
-        asyncio.create_task(self._enter_safe_mode())
+        # Worker scheduling disabled.
+        logger.warning("Safe-mode worker disabled (canonical runtime owns lifecycle)")
 
     def _on_mode_change(self, old_mode: TradingMode, new_mode: TradingMode) -> None:
         """Handle trading mode change"""
@@ -187,8 +187,8 @@ class SentientOrchestrator:
         self.stats['threats_handled'] += 1
 
         if event.threat_level.value >= ThreatLevel.HIGH.value:
-            # Enter defensive mode
-            asyncio.create_task(self._enter_defensive_mode())
+            # Worker scheduling disabled: defensive-mode task must not spawn.
+            logger.warning("Defensive-mode worker disabled (canonical runtime owns lifecycle)")
 
     async def start(self) -> None:
         """Start the sentient orchestrator"""
@@ -226,8 +226,10 @@ class SentientOrchestrator:
             logger.warning("No network connection - running in offline mode")
             self.state = SystemState.OFFLINE
 
-        # Start main loop
-        self._main_task = asyncio.create_task(self._main_loop())
+        # Main loop worker disabled: the canonical runtime owns the
+        # production loop (ModularMonolithRuntime -> UnifiedTradingBot).
+        self._main_task = None
+        logger.warning("SentientOrchestrator main-loop worker disabled")
 
         logger.info("SentientOrchestrator started")
 
@@ -583,9 +585,149 @@ class SentientOrchestrator:
         )
 
 
+class SentientOrchestrator:
+    """One-wave compatibility facade over the canonical runtime graph.
+
+    The historical implementation auto-activated subsystems on network
+    connect, switched itself into live trading, harvested the internet,
+    evolved its own code, and applied trades through ``ProfitMaximizer``.
+    None of that is permitted in production: all of that machinery remains
+    quarantined inside ``_LegacySentientOrchestrator`` and is never
+    constructed here. Lifecycle delegates to ``ModularMonolithRuntime``;
+    sizing/trading queries fail closed.
+    """
+
+    def __init__(
+        self,
+        config: Dict[str, Any] = None,
+        data_path: str = "sentient_data/",
+    ):
+        warnings.warn(
+            "SentientOrchestrator is a compatibility facade; use "
+            "ModularMonolithRuntime. Legacy sentient subsystems are "
+            "quarantined and never instantiated.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.config = config or {}
+        self.data_path = Path(data_path)
+        self.state = SystemState.OFFLINE
+        self.is_running = False
+        self.start_time: Optional[datetime] = None
+        self.stats = {
+            'total_uptime_seconds': 0,
+            'connection_events': 0,
+            'evolution_cycles': 0,
+            'threats_handled': 0,
+            'knowledge_applied': 0,
+        }
+        self._runtime = None
+
+    async def start(self) -> None:
+        if self.is_running:
+            return
+        from trading_bot.foundation.runtime import ModularMonolithRuntime
+
+        if self._runtime is None:
+            self._runtime = ModularMonolithRuntime(self.config)
+        await self._runtime.start()
+        self.is_running = True
+        self.start_time = datetime.now()
+        self.state = SystemState.TRADING
+
+    async def stop(self) -> None:
+        self.is_running = False
+        self.state = SystemState.SHUTTING_DOWN
+        if self._runtime is not None:
+            await self._runtime.stop()
+        if self.start_time:
+            self.stats['total_uptime_seconds'] += (
+                datetime.now() - self.start_time
+            ).total_seconds()
+        self.state = SystemState.OFFLINE
+
+    def get_status(self) -> SystemStatus:
+        uptime = 0
+        if self.start_time:
+            uptime = (datetime.now() - self.start_time).total_seconds()
+        return SystemStatus(
+            state=self.state,
+            is_connected=False,
+            trading_mode=TradingMode.PAPER,
+            threat_level=ThreatLevel.NONE,
+            knowledge_items=0,
+            techniques_learned=0,
+            flaws_detected=0,
+            changes_applied=0,
+            total_pnl=0.0,
+            uptime_seconds=uptime,
+            last_evolution=None,
+            active_systems=(
+                ["ModularMonolithRuntime"] if self.is_running else []
+            ),
+        )
+
+    def record_trade(self, trade: TradeResult) -> None:
+        logger.warning(
+            "record_trade on the facade is a no-op; trade recording is owned "
+            "by SqliteTradingRepository via CanonicalExecutionService."
+        )
+
+    def calculate_position_size(
+        self,
+        symbol: str,
+        entry_price: float,
+        stop_loss: float,
+        signal_confidence: float = 0.5,
+    ) -> float:
+        logger.warning(
+            "calculate_position_size on the facade fails closed; sizing is "
+            "owned by CanonicalRiskService."
+        )
+        return 0.0
+
+    def should_trade(self, signal_confidence: float) -> tuple:
+        return (False, "facade: trading decisions require the canonical "
+                       "CSC -> risk -> approval -> shield -> bus -> execution path")
+
+    def is_ready(self) -> bool:
+        return False
+
+    def get_sentiment(self, symbol: str = None) -> Dict[str, Any]:
+        return {}
+
+    def get_latest_knowledge(self, limit: int = 10) -> List[Dict[str, Any]]:
+        return []
+
+    def get_recommended_techniques(self, limit: int = 5) -> List[Dict[str, Any]]:
+        return []
+
+    def get_improvement_suggestions(self) -> List[str]:
+        return ["Use trading_bot.recursive_self_improvement (canonical RSI)."]
+
+    def get_performance_metrics(self) -> Dict[str, Any]:
+        return {
+            'total_trades': 0,
+            'win_rate': 0.0,
+            'profit_factor': 0.0,
+            'sharpe_ratio': 0.0,
+            'sortino_ratio': 0.0,
+            'max_drawdown': 0.0,
+            'total_pnl': 0.0,
+            'expectancy': 0.0,
+        }
+
+    def get_all_stats(self) -> Dict[str, Any]:
+        return {
+            'orchestrator': dict(self.stats),
+            'canonical_runtime': 'ModularMonolithRuntime',
+            'running': self.is_running,
+        }
+
+
 # Factory function
 def create_sentient_system(config: Dict[str, Any] = None) -> SentientOrchestrator:
-    """Create a new sentient trading system"""
+    """Create a new sentient trading system (compatibility facade)."""
     return SentientOrchestrator(config=config)
 
 

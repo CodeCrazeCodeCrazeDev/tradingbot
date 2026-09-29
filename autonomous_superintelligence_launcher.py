@@ -82,7 +82,8 @@ async def main():
 
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        logger.info("Shutdown complete")
+    raise SystemExit(
+        "autonomous_superintelligence_launcher.py is QUARANTINED: standalone launchers, watchdogs, supervisors, "
+        "and simulators are parallel loop/capital paths outside the canonical "
+        "runtime. Use 'python main.py --mode paper'."
+    )

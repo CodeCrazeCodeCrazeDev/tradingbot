@@ -7,6 +7,7 @@ integrates them into the trading bot using the Unified RSIE Architecture.
 
 import asyncio
 import logging
+import warnings
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 from pathlib import Path
@@ -24,7 +25,7 @@ from .loops.meta_loop import MetaImprovementLoop
 
 logger = logging.getLogger(__name__)
 
-class RecursiveImprovementOrchestrator:
+class _LegacyRecursiveImprovementOrchestrator:
     """
     Master orchestrator for the Unified Recursive Self-Improvement Engine (RSIE).
     
@@ -58,20 +59,21 @@ class RecursiveImprovementOrchestrator:
         logger.info("RSIE Orchestrator initialized with Unified Architecture")
 
     async def start(self):
-        """Start the unified recursive improvement system"""
-        self.is_running = True
-        
-        # 1. Start continuous improvement loop
-        self.background_tasks.append(
-            asyncio.create_task(self._continuous_improvement_loop())
-        )
-        
-        # 2. Start approval monitor
-        self.background_tasks.append(
-            asyncio.create_task(self._approval_monitor_loop())
-        )
+        """Start the unified recursive improvement system.
 
-        logger.info("Recursive improvement system (RSIE) started")
+        Workers are disabled: improvement authority belongs exclusively to
+        trading_bot/recursive_self_improvement/ under human approval.
+        """
+        warnings.warn(
+            "Legacy RSIE improvement/approval workers are disabled; canonical "
+            "HumanGuidedRecursiveImprovementLoop owns research cycles.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.is_running = True
+        self.background_tasks = []
+
+        logger.info("Recursive improvement system (RSIE) started (workers disabled)")
 
     async def stop(self):
         """Stop the recursive improvement system"""
@@ -149,3 +151,83 @@ class RecursiveImprovementOrchestrator:
         """Integrate RSIE with core trading bot components"""
         # Mapping implementation...
         logger.info("RSIE integrated with trading bot components")
+
+
+class _QuarantinedLoopStub:
+    """Introspection stub for a quarantined improvement loop."""
+
+    def __init__(self, name: str, dimension):
+        self.name = name
+        self.dimension = dimension
+
+    async def run_cycle(self):
+        raise PermissionError(
+            f"Legacy RSIE loop '{self.name}' is quarantined; use "
+            "trading_bot.recursive_self_improvement."
+        )
+
+    async def deploy_improvement(self, proposal):
+        raise PermissionError(
+            "Legacy RSIE cannot deploy improvements; promotion requires the "
+            "canonical RSI evidence chain and human staging."
+        )
+
+
+class RecursiveImprovementOrchestrator:
+    """Compatibility facade preserving the historical import surface.
+
+    The canonical recursive-self-improvement authority is
+    ``trading_bot.recursive_self_improvement`` (HumanGuidedRecursiveImprovementLoop).
+    The legacy implementation below ran continuous background improvement loops
+    and a pending_approvals.json watcher that deployed 'APPROVED' proposals
+    without reproducible-evidence checks — a self-promotion path that is no
+    longer permitted. It remains quarantined inside
+    ``_LegacyRecursiveImprovementOrchestrator`` and is never started here.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        import warnings
+        warnings.warn(
+            "RecursiveImprovementOrchestrator is a compatibility facade; use "
+            "trading_bot.recursive_self_improvement (canonical RSI package).",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.config = config or {}
+        self.is_running = False
+        self.background_tasks: List[asyncio.Task] = []
+        # Introspection-only loop stubs: callers may inspect names/dimensions,
+        # but run_cycle/deploy_improvement raise — quarantined loops cannot
+        # execute improvement or promotion work.
+        self.loops: Dict[str, Any] = {
+            'evaluation': _QuarantinedLoopStub('evaluation', ImprovementDimension.EVALUATION),
+            'strategy': _QuarantinedLoopStub('strategy', ImprovementDimension.STRATEGY),
+            'risk': _QuarantinedLoopStub('risk', ImprovementDimension.RISK_MANAGEMENT),
+            'feature': _QuarantinedLoopStub('feature', ImprovementDimension.FEATURE),
+            'meta': _QuarantinedLoopStub('meta', ImprovementDimension.META_IMPROVEMENT),
+        }
+
+    async def start(self):
+        logger.warning(
+            "RecursiveImprovementOrchestrator.start() is a no-op facade: "
+            "canonical RSI runs offline via HumanGuidedRecursiveImprovementLoop "
+            "and cannot self-deploy."
+        )
+        self.is_running = False
+
+    async def stop(self):
+        self.is_running = False
+
+    def get_comprehensive_summary(self) -> Dict[str, Any]:
+        return {
+            'loops_active': [],
+            'is_running': False,
+            'canonical_rsi': 'trading_bot.recursive_self_improvement',
+            'note': 'legacy RSIE loops are quarantined; see AGENTS.md',
+        }
+
+    async def integrate_with_trading_bot(self, trading_bot: Any):
+        logger.warning(
+            "integrate_with_trading_bot is a no-op: research must not be wired "
+            "into the production trading graph."
+        )

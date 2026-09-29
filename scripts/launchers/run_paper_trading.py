@@ -371,13 +371,8 @@ async def main():
 
 
 if __name__ == "__main__":
-    print("")
-    print("=" * 60)
-    print("ALPHAALGO PAPER TRADING SYSTEM")
-    print("=" * 60)
-    print("")
-    print("This system validates your trading strategy before going live.")
-    print("All trades are simulated with realistic conditions.")
-    print("")
-    
-    asyncio.run(main())
+    raise SystemExit(
+        "run_paper_trading.py is QUARANTINED: it is a parallel paper-trading "
+        "loop outside the canonical risk/governance/shield/bus/execution "
+        "path. Use 'python main.py --mode paper'."
+    )

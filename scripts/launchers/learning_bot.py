@@ -356,7 +356,10 @@ async def main():
     await bot.run()
 
 
-if __name__ == '__main__':
-    os.makedirs('logs', exist_ok=True)
-    os.makedirs('knowledge', exist_ok=True)
-    asyncio.run(main())
+if __name__ == "__main__":
+    raise SystemExit(
+        "scripts/launchers/learning_bot.py is QUARANTINED: standalone trading launchers are parallel "
+        "capital/loop paths outside the canonical "
+        "risk/governance/shield/bus/execution graph. Use "
+        "'python main.py --mode paper'."
+    )

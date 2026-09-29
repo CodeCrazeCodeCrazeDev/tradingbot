@@ -180,4 +180,8 @@ def main():
     watchdog.monitor()
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(
+        "scripts/utilities/watchdog.py is QUARANTINED: standalone launchers, watchdogs, supervisors, "
+        "and simulators are parallel loop/capital paths outside the canonical "
+        "runtime. Use 'python main.py --mode paper'."
+    )

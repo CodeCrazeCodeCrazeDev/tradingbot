@@ -331,6 +331,9 @@ STATUS: {'✅ BOT READY' if bot_healthy and stats['ram_available_mb'] > MIN_FREE
                 self.log(f"[ERROR] Supervisor error: {e}", "ERROR")
                 time.sleep(60)
 
-if __name__ == '__main__':
-    supervisor = SystemSupervisor()
-    supervisor.run()
+if __name__ == "__main__":
+    raise SystemExit(
+        "scripts/utilities/system_supervisor.py is QUARANTINED: standalone launchers, watchdogs, supervisors, "
+        "and simulators are parallel loop/capital paths outside the canonical "
+        "runtime. Use 'python main.py --mode paper'."
+    )
