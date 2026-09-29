@@ -78,7 +78,7 @@ class IntegrationTestSuite:
                 NewsImpactAnalyzer,
                 CorrelationBreakdownDetector,
                 MomentumBurstDetector
-        )
+            )
             self.record_test(test_name, True, "All scanner components imported successfully")
         except Exception as e:
             self.record_test(test_name, False, f"Import error: {str(e)}")

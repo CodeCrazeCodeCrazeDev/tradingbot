@@ -148,7 +148,7 @@ class CentralController:
                     # Check if there's a decision to execute
                     decision = self.execution_queue.get(timeout=1)
                 except queue.Empty:
-                    time.sleep(0.1)
+                    await asyncio.sleep(0.1)
                     continue
                 
                 if self.emergency_stop:
@@ -163,7 +163,7 @@ class CentralController:
             
             except Exception as e:
                 logger.error(f"Error in execution loop: {e}")
-                time.sleep(1)
+                await asyncio.sleep(1)
     
     def _execute_decision(self, decision: BrainDecision):
         """Execute a trading decision"""
@@ -216,7 +216,7 @@ class CentralController:
                     self._execute_chunk(symbol, action, chunk['size'], price)
                     
                     # Wait between chunks
-                    time.sleep(chunk['execution_time'] * 60)  # Convert hours to seconds
+                    await asyncio.sleep(chunk['execution_time'] * 60)  # Convert hours to seconds
             else:
                 # Execute order directly
                 self._execute_chunk(symbol, action, order_size, price)

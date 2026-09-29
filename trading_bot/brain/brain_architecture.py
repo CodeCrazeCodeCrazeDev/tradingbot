@@ -606,7 +606,7 @@ class EliteBrain:
                     # Check if there's a decision to process
                     decision = self.decision_queue.get(timeout=1)
                 except queue.Empty:
-                    time.sleep(0.1)
+                    await asyncio.sleep(0.1)
                     continue
                 
                 # Process decision
@@ -625,7 +625,7 @@ class EliteBrain:
             
             except Exception as e:
                 logger.error("Error in monitor loop: %s", e)
-                time.sleep(1)
+                await asyncio.sleep(1)
     
     def _update_dashboard(self, decision: BrainDecision):
         """Update dashboard with decision"""

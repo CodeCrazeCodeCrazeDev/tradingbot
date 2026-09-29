@@ -1,3 +1,4 @@
+from trading_bot.core.security.sandbox import SecureASTVisitor
 """
 Validation Script for Critical Fixes
 
@@ -48,6 +49,7 @@ async def main():
     for name, import_stmt in tests:
         total_tests += 1
         try:
+            SecureASTVisitor().validate_code(import_stmt)
             exec(import_stmt)
             print_test(name, True)
             passed_tests += 1

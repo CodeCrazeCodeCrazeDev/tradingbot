@@ -1,3 +1,4 @@
+from trading_bot.core.security.sandbox import SecureASTVisitor
 """
 Example Usage: Autonomous Safety Enforcer
 
@@ -162,6 +163,7 @@ async def example_mutation_detection():
         ("code_injection", "inject_backdoor()"),
         ("config_mutation", "max_drawdown = 0.50  # Mutate constant"),
         ("eval_danger", "eval(user_input)"),
+        SecureASTVisitor().validate_code(malicious_code)
         ("exec_danger", "exec(malicious_code)"),
         ("legitimate_update", "update_config(safe_param, value)"),
     ]

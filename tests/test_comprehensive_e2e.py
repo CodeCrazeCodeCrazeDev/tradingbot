@@ -853,8 +853,7 @@ class TestAsync(unittest.IsolatedAsyncioTestCase):
     
     async def test_async_rate_limit(self):
         """Test async rate limiting."""
-            RateLimitManager, RateLimitResult
-        )
+        from trading_bot.rate_limiter import RateLimitManager, RateLimitResult
         
         manager = RateLimitManager()
         
