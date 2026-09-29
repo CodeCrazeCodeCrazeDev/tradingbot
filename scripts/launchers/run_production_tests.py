@@ -294,8 +294,11 @@ async def run_production_tests():
 
 
 if __name__ == "__main__":
-    # Create logs directory
-    Path('logs').mkdir(exist_ok=True)
+    raise SystemExit(
+        "scripts/launchers/run_production_tests.py is QUARANTINED: this standalone script touches "
+        "capital-capable modules (brokers/execution) outside the canonical "
+        "runtime boundary. Use 'python main.py --mode paper'."
+    )
     
     try:
         results = asyncio.run(run_production_tests())

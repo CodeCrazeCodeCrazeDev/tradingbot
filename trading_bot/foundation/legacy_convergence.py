@@ -510,16 +510,43 @@ def build_manifest(root: Path) -> Dict[str, object]:
         tags = list(scan["secondary_tags"])
         if scan["cli_entrypoint"]:
             tags.append("cli_entrypoint")
-        surfaces.append({
-            "path": relative,
-            "classification": "quarantine" if (
-                scan["parse_status"] == "error" or scan["direct_capital_path"]
-            ) else "unreviewed_surface",
-            "quarantine_reason": (
+        tb_imports = [
+            imp for imp in scan["imports"]
+            if imp == "trading_bot" or imp.startswith("trading_bot.")
+        ]
+        # Entry-point triage: a capital-capable surface is only "contained" if
+        # it refuses at __main__ (QUARANTINED/SystemExit marker) or delegates
+        # to a canonical entry point (main/foundation runtime/unified_bot).
+        delegates_to_runtime = bool(
+            {"main", "trading_bot.foundation.runtime",
+             "trading_bot.unified_bot"} & set(scan["imports"])
+        )
+        guarded_at_entry = (
+            ("QUARANTINED" in source and "SystemExit" in source)
+            or delegates_to_runtime
+            or "ModularMonolithRuntime" in source
+        )
+        if scan["parse_status"] == "error" or scan["direct_capital_path"]:
+            surface_class = "quarantine"
+            reason = (
                 "parse_error" if scan["parse_status"] == "error"
                 else "direct_capital_path_outside_execution_boundary"
-                if scan["direct_capital_path"] else None
-            ),
+            )
+        elif delegates_to_runtime:
+            surface_class = "runtime_facade"
+            reason = None
+        elif not tb_imports:
+            surface_class = "standalone_tool"
+            reason = None
+        else:
+            surface_class = "unreviewed_surface"
+            reason = None
+        surfaces.append({
+            "path": relative,
+            "classification": surface_class,
+            "quarantine_reason": reason,
+            "guarded_at_entry": guarded_at_entry,
+            "delegates_to_runtime": delegates_to_runtime,
             "cli_entrypoint": bool(scan["cli_entrypoint"]),
             "direct_capital_path": bool(scan["direct_capital_path"]),
             "starts_loop": bool(scan["starts_loop"]),
@@ -551,6 +578,22 @@ def build_manifest(root: Path) -> Dict[str, object]:
             "external_surfaces": len(surfaces),
             "external_capital_paths": sum(1 for row in surfaces if row["direct_capital_path"]),
             "external_loop_starters": sum(1 for row in surfaces if row["starts_loop"]),
+            "unguarded_capital_surfaces": sum(
+                1 for row in surfaces
+                if row["direct_capital_path"] and not row["guarded_at_entry"]
+            ),
+            "unguarded_loop_surfaces": sum(
+                1 for row in surfaces
+                if row["starts_loop"] and row["cli_entrypoint"]
+                and not row["guarded_at_entry"]
+            ),
+            "external_surface_classes": {
+                cls: sum(1 for row in surfaces if row["classification"] == cls)
+                for cls in (
+                    "quarantine", "runtime_facade", "standalone_tool",
+                    "unreviewed_surface",
+                )
+            },
             "dynamic_import_modules": sum(
                 1 for row in records if "dynamic_import" in row["secondary_tags"]
             ),

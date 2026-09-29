@@ -1,6 +1,9 @@
 """Wave-0 legacy inventory and boundary-rule tests."""
 
+import json
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
 
 import pytest
 
@@ -524,6 +527,30 @@ def test_manifest_records_external_surfaces_and_dynamic_imports() -> None:
     assert manifest["summary"]["external_capital_paths"] > 0
     assert manifest["summary"]["dynamic_import_modules"] >= 0
     assert manifest["summary"]["credential_access_modules"] >= 0
+
+
+def test_external_capital_surfaces_are_quarantined_and_guarded() -> None:
+    """Every standalone surface that can move capital must be quarantined
+    AND refuse/delegate at entry — an unguarded capital launcher is a live
+    bypass of the canonical runtime."""
+    manifest = json.loads(
+        (ROOT / "ARCHITECTURE_LEGACY_CLASSIFICATION.json").read_text(encoding="utf-8")
+    )
+    unguarded = [
+        r["path"]
+        for r in manifest["external_surfaces"]
+        if r["direct_capital_path"]
+        and (r["classification"] != "quarantine" or not r.get("guarded_at_entry"))
+    ]
+    assert unguarded == [], f"unguarded capital-capable surfaces: {unguarded}"
+    assert manifest["summary"].get("unguarded_capital_surfaces", 0) == 0
+    unguarded_loops = [
+        r["path"]
+        for r in manifest["external_surfaces"]
+        if r["starts_loop"] and r["cli_entrypoint"] and not r.get("guarded_at_entry")
+    ]
+    assert unguarded_loops == [], f"unguarded loop-spawning CLIs: {unguarded_loops}"
+    assert manifest["summary"].get("unguarded_loop_surfaces", 0) == 0
 
 
 def test_adapter_worker_exemptions_do_not_hide_capital_violations() -> None:

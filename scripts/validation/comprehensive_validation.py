@@ -1195,8 +1195,12 @@ async def main():
         return 1
 
 
-if __name__ == '__main__':
-    import sys
+if __name__ == "__main__":
+    raise SystemExit(
+        "scripts/validation/comprehensive_validation.py is QUARANTINED: this standalone script touches "
+        "capital-capable modules (brokers/execution) outside the canonical "
+        "runtime boundary. Use 'python main.py --mode paper'."
+    )
     
     # Check for monitor flag
     if '--monitor' in sys.argv:
