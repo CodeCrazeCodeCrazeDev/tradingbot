@@ -18,7 +18,6 @@ def test_elite_imports():
         # Import elite system modules directly from the root package
         from trading_bot import (
 
-logger = logging.getLogger(__name__)
 
             # Market Psychology
             EliteMarketPsychology, SentimentSource, MarketSentiment,
