@@ -174,16 +174,14 @@ class SecureCredentialVault:
         self._save_vault(old_vault)
         
         # Save new key
-        with open(self.key_path, 'wb') as f:
-            pass
         try:
-            f.write(new_key)
-        
+            with open(self.key_path, 'wb') as f:
+                f.write(new_key)
             os.chmod(self.key_path, 0o600)
         except Exception as e:
-            logger.warning(f"Could not set file permissions: {e}")
+            logger.warning(f"Could not save rotated key / set permissions: {e}")
         
-        logger.success("Key rotation completed successfully")
+        logger.info("Key rotation completed successfully")
     
     def export_vault(self, export_path: str, include_values: bool = False):
         """
@@ -287,7 +285,7 @@ def store_mt5_credentials(login: str, password: str, server: str):
     vault.store_credential('mt5_login', login, {'service': 'MT5'})
     vault.store_credential('mt5_password', password, {'service': 'MT5'})
     vault.store_credential('mt5_server', server, {'service': 'MT5'})
-    logger.success("MT5 credentials stored securely")
+    logger.info("MT5 credentials stored securely")
 
 
 def get_mt5_credentials() -> Dict:

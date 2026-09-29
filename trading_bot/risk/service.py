@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import logging
 from typing import Any, Dict, Mapping, Optional
 
 from trading_bot.foundation.contracts import (
@@ -76,6 +77,9 @@ class LegacyRiskPolicyAdapter:
         return {"approved": bool(result), "reason": f"Legacy policy '{self.name}'"}
 
 
+logger = logging.getLogger(__name__)
+
+
 class CanonicalRiskService:
     """Deterministic risk authority used before the immutable final gate.
 
@@ -87,6 +91,7 @@ class CanonicalRiskService:
         self,
         limits: Mapping[str, float] = None,
         policies: Optional[Mapping[str, Any]] = None,
+        state_provider: Any = None,
     ) -> None:
         self.limits: Dict[str, float] = {
             "max_quantity": 10.0,
@@ -97,6 +102,25 @@ class CanonicalRiskService:
             **dict(limits or {}),
         }
         self.policies: Dict[str, Any] = dict(policies or {})
+        # Optional authoritative portfolio-state source (e.g.
+        # PortfolioStateProvider over SqliteTradingRepository). When set,
+        # evaluate_action uses real persisted state and fails closed if the
+        # provider cannot supply it; without it the legacy dict path applies.
+        self.state_provider = state_provider
+
+    async def _provider_state(self, observation: Mapping[str, Any]) -> Optional[Mapping[str, Any]]:
+        provider = self.state_provider
+        getter = (
+            getattr(provider, "portfolio_state", None)
+            or getattr(provider, "risk_state", None)
+            or (provider if callable(provider) else None)
+        )
+        if getter is None:
+            return None
+        result = getter(observation)
+        if inspect.isawaitable(result):
+            result = await result
+        return result if isinstance(result, Mapping) else None
 
     def register_policy(self, name: str, policy: Any) -> None:
         """Register a subordinate veto policy; policies cannot approve alone."""
@@ -152,17 +176,44 @@ class CanonicalRiskService:
         observation: Mapping[str, Any],
     ) -> RiskDecision:
         """Compatibility bridge for the CSC's current dictionary proposal."""
+        provider_state: Optional[Mapping[str, Any]] = None
+        if self.state_provider is not None:
+            try:
+                provider_state = await self._provider_state(observation)
+            except Exception as exc:
+                logger.warning(f"portfolio state provider failed closed: {exc}")
+                provider_state = None
+            if provider_state is None:
+                return RiskDecision(
+                    approved=False,
+                    decision_id=str(action.get("trade_id", "runtime-decision")),
+                    reason="Portfolio state unavailable from provider",
+                    approved_quantity=0.0,
+                    risk_score=1.0,
+                    checks={"portfolio_state_available": False},
+                )
+        live = dict(provider_state or {})
+
+        def _field(*keys: str, default: float = 0.0) -> float:
+            for key in keys:
+                if key in live and live[key] is not None:
+                    return float(live[key])
+            for key in keys:
+                if key in observation and observation[key] is not None:
+                    return float(observation[key])
+            return default
+
         symbol = str(action.get("symbol") or observation.get("symbol") or "UNKNOWN")
         instrument = Instrument(symbol, InstrumentType.SYNTHETIC, str(observation.get("venue") or "runtime"))
-        equity = float(observation.get("equity", 1.0) or 1.0)
+        equity = _field("equity", default=1.0)
         quality = str(observation.get("data_quality", "valid")).lower()
         state = RiskState(
-            account_id=str(observation.get("account_id", "runtime")),
+            account_id=str(live.get("account_id", observation.get("account_id", "runtime"))),
             equity=equity,
-            portfolio_exposure=float(observation.get("exposure", observation.get("portfolio_exposure", 0.0)) or 0.0),
-            daily_pnl=float(observation.get("daily_pnl", 0.0) or 0.0),
-            drawdown_fraction=float(observation.get("drawdown", observation.get("drawdown_fraction", 0.0)) or 0.0),
-            open_positions=int(observation.get("open_positions", 0) or 0),
+            portfolio_exposure=_field("portfolio_exposure", "exposure"),
+            daily_pnl=_field("daily_pnl"),
+            drawdown_fraction=_field("drawdown_fraction", "drawdown"),
+            open_positions=int(_field("open_positions")),
             data_is_fresh=quality not in {"invalid", "stale"},
             trading_enabled=bool(observation.get("trading_enabled", True)),
             emergency=bool(observation.get("emergency", False)),
@@ -177,7 +228,7 @@ class CanonicalRiskService:
         proposal = DecisionProposal(
             decision_id=str(action.get("trade_id", "runtime-decision")),
             signal=signal,
-            portfolio=PortfolioSnapshot(state.account_id, equity, equity),
+            portfolio=PortfolioSnapshot(state.account_id, equity, float(live.get("cash", equity))),
             risk_state=state,
         )
         return await self.evaluate(proposal, state)

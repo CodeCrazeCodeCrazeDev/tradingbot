@@ -60,6 +60,7 @@ import itertools
 import time
 import logging
 import json
+import os
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -249,6 +250,19 @@ class UnifiedDecisionBus:
     async def start(self):
         if getattr(self, '_processor_task', None) and not self._processor_task.done():
             return
+        # Audit-path health probe: shielded (capital-moving) actions require a
+        # writable durable audit log; if the configured path cannot be
+        # appended to, shielded consensus vetoes rather than approving
+        # unaudited capital movement.
+        self._audit_healthy = True
+        if self._log_path:
+            try:
+                os.makedirs(os.path.dirname(self._log_path) or ".", exist_ok=True)
+                with open(self._log_path, "a", encoding="utf-8") as f:
+                    f.write("")
+            except Exception as exc:
+                self._audit_healthy = False
+                logger.error(f"LogAct: audit log path not writable: {exc}")
         self._running = True
         task = asyncio.create_task(self._process_log())
         self._tasks.add(task)
@@ -492,6 +506,9 @@ class UnifiedDecisionBus:
                                 f.write(json.dumps(action.to_dict(), default=str) + "\n")
                         except Exception as e:
                             logger.error(f"LogAct: persistence write failed: {e}")
+                            # Subsequent shielded actions veto until the audit
+                            # trail is writable again.
+                            self._audit_healthy = False
 
     def _check_consensus(self, action: LogAction) -> bool:
         """
@@ -504,6 +521,12 @@ class UnifiedDecisionBus:
         veto is not approval when safety evidence is unavailable.
         """
         requires_shield = getattr(action, "action_type", "") in SHIELDED_ACTION_TYPES
+        if requires_shield and getattr(self, "_audit_healthy", True) is False:
+            logger.warning(
+                f"LogAct: Action {action.action_id} VETOED — audit log is not "
+                "writable; capital movement requires durable audit."
+            )
+            return False
         shield_affirmed = not requires_shield
         for vid, report in action.voter_reports.items():
             decision = ""

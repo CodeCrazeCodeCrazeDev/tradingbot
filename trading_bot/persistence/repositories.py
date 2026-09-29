@@ -12,7 +12,7 @@ import os
 import sqlite3
 import threading
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from trading_bot.foundation.contracts import (
@@ -32,8 +32,12 @@ from trading_bot.foundation.contracts import (
 class SqliteTradingRepository:
     """Single-source repository for orders, fills, positions, and audit events."""
 
-    def __init__(self, path: str = "alphaalgo_data/trading_state.db") -> None:
+    def __init__(self, path: str = "alphaalgo_data/trading_state.db",
+                 initial_equity: float = 10000.0) -> None:
         self.path = path
+        # Base capital for snapshot accounting: cash/equity are derived from
+        # the persisted fill ledger, never fabricated.
+        self.initial_equity = float(initial_equity)
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
         self._lock = threading.RLock()
         self._connection = sqlite3.connect(path, check_same_thread=False)
@@ -165,6 +169,16 @@ class SqliteTradingRepository:
              datetime.now(timezone.utc).isoformat()),
         )
 
+    async def list_fills(self) -> List[Dict[str, Any]]:
+        """Return all recorded fills in execution order (read-only)."""
+        with self._lock:
+            rows = self._connection.execute(
+                """SELECT client_order_id, venue_order_id, symbol, side,
+                          quantity, price, commission, occurred_at
+                   FROM fills ORDER BY occurred_at ASC, rowid ASC"""
+            ).fetchall()
+        return [dict(row) for row in rows]
+
     async def record_audit_event(self, event: AuditEvent) -> str:
         audit_id = str(uuid4())
         with self._lock:
@@ -199,7 +213,30 @@ class SqliteTradingRepository:
                 metadata=data.get("metadata", {}),
             )
             positions.append(Position(instrument, row["quantity"], row["average_price"]))
-        return PortfolioSnapshot(account_id=account_id, equity=0.0, cash=0.0, positions=positions)
+
+        # Derive cash and equity from the fill ledger instead of returning
+        # zeroed placeholders. Unrealized value is at cost basis — mark
+        # pricing belongs to the risk state provider which has market prices.
+        fills = await self.list_fills()
+        cash = self.initial_equity
+        for fill in fills:
+            quantity = float(fill["quantity"])
+            price = float(fill["price"])
+            commission = float(fill["commission"] or 0.0)
+            if fill["side"] == "buy":
+                cash -= quantity * price + commission
+            else:
+                cash += quantity * price - commission
+        position_value = sum(
+            float(position.quantity) * float(position.average_price)
+            for position in positions
+        )
+        return PortfolioSnapshot(
+            account_id=account_id,
+            equity=cash + position_value,
+            cash=cash,
+            positions=positions,
+        )
 
     async def reconcile(self, expected: PortfolioSnapshot, venue: str = "repository") -> ReconciliationResult:
         actual = await self.snapshot(expected.account_id)

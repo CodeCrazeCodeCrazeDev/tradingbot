@@ -95,14 +95,17 @@ class PaperExecutionBridge:
     Minimal paper executor for the CSC decision pipeline.
 
     Attach to the shared ``UnifiedDecisionBus`` and it consumes every approved
-    TRADE_EXECUTION action, producing a simulated fill and maintaining a
-    simple net-position ledger. No real money is touched.
+    TRADE_EXECUTION action and delegates to ``CanonicalExecutionService``.
+    The typed service + ``SqliteTradingRepository`` are the authoritative
+    record; ``self.fills``/``self.positions`` are in-memory projections for
+    diagnostics only — the bridge never writes a parallel durable ledger and
+    fails closed when no service is attached. No real money is touched.
     """
 
     def __init__(self, persist_path: str = "alphaalgo_data/paper_fills.jsonl",
                  slippage: Optional[SlippageRecorder] = None,
                  execution_service: Any = None):
-        self.persist_path = persist_path
+        self.persist_path = persist_path  # legacy arg; no longer written
         self.fills: List[PaperFill] = []
         self.positions: Dict[str, float] = {}
         self.attached = False
@@ -179,7 +182,6 @@ class PaperExecutionBridge:
             self.fills.append(fill)
             signed_qty = fill.quantity if side in ("BUY", "STRONG_BUY") else -fill.quantity
             self.positions[symbol] = round(self.positions.get(symbol, 0.0) + signed_qty, 8)
-            self._persist(fill)
             self.slippage.record(SlippageRecord(
                 symbol=symbol, side=side,
                 expected_price=float(price), fill_price=fill.price,
@@ -190,31 +192,16 @@ class PaperExecutionBridge:
             self._processed_trade_ids[trade_id] = result
             return result
 
-        fill = PaperFill(
-            fill_id=str(uuid.uuid4()),
-            trade_id=payload.get("trade_id", getattr(action, "action_id", "n/a")),
-            symbol=symbol,
-            action=side,
-            quantity=float(quantity),
-            price=float(price),
+        # No canonical execution service: fail closed. The bridge is a facade,
+        # not an executor — it must not write fills outside the typed service
+        # + repository path.
+        logger.error(
+            "PaperExecutionBridge: no execution service configured; refusing "
+            f"to fill trade_id={trade_id}"
         )
-        self.fills.append(fill)
-
-        signed_qty = fill.quantity if side in ("BUY", "STRONG_BUY") else -fill.quantity
-        self.positions[symbol] = round(self.positions.get(symbol, 0.0) + signed_qty, 8)
-
-        self._persist(fill)
-        self.slippage.record(SlippageRecord(
-            symbol=symbol, side=side,
-            expected_price=float(price), fill_price=fill.price,
-            quantity=fill.quantity, venue="paper",
-        ))
-        logger.info(
-            f"PaperExecutionBridge: FILLED {side} {fill.quantity} {symbol} "
-            f"@ {fill.price or 'market'} (net position {self.positions[symbol]})"
-        )
-        self._mark_executed(action)
-        return {"status": "filled", "fill_id": fill.fill_id}
+        result = {"status": "rejected", "reason": "no_execution_service"}
+        self._processed_trade_ids[trade_id] = result
+        return result
 
     @staticmethod
     def _mark_executed(action: Any) -> None:
@@ -226,14 +213,6 @@ class PaperExecutionBridge:
             action.status = ActionStatus.EXECUTED
         except Exception:
             pass
-
-    def _persist(self, fill: PaperFill) -> None:
-        try:
-            os.makedirs(os.path.dirname(self.persist_path), exist_ok=True)
-            with open(self.persist_path, "a", encoding="utf-8") as fh:
-                fh.write(json.dumps(fill.__dict__) + "\n")
-        except Exception as e:
-            logger.error(f"PaperExecutionBridge: persist failed: {e}")
 
     def get_summary(self) -> Dict[str, Any]:
         return {

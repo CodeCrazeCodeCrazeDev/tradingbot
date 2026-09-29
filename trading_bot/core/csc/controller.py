@@ -24,7 +24,6 @@ from .folding import InformationFolder
 from .hypothesis import HypothesisGenerator, ReasoningBranch
 from .reliability import ReliabilityTracker
 from .router import SkillRouter
-from .folding import InformationFolder
 from ..verification.swarm import VerificationSwarm
 from ..hms.models import (
     ResearchLedgerEntry,
@@ -82,6 +81,7 @@ class CSCRuntimeState:
     def __init__(self):
         self.epistemic_uncertainty: float = 1.0
         self.folded_history: List[Any] = []
+        self.active_tasks: List[str] = []
 
 
 class CognitiveSystemController:
@@ -154,6 +154,11 @@ class CognitiveSystemController:
         self.consensus_engine = kwargs.get("consensus_engine")
         self.execution_planner = kwargs.get("execution_planner")
         self.evolution_gate = kwargs.get("evolution_gate")
+        # Typed governance gate (human approval policy). "None" means not yet
+        # resolved; resolved lazily at the governance stage and cached so a
+        # missing gate fails closed every cycle rather than skipping it once.
+        self.governance_gate = kwargs.get("governance_gate", None)
+        self._governance_gate_resolved = self.governance_gate is not None
 
         # Map positional arguments
         # If we got CognitiveSystemController(world_model, hms, shield)
@@ -432,7 +437,8 @@ class CognitiveSystemController:
         return {"status": "ok"}
 
     def _select_optimal_action(
-        self, branch: ReasoningBranch, simulations: Dict[str, Any]
+        self, branch: ReasoningBranch, simulations: Dict[str, Any],
+        trade_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Synthesizes the final trade proposal from the best reasoning branch and its simulation results.
@@ -454,7 +460,7 @@ class CognitiveSystemController:
         causal_impact = sim_data.get("structural_impact", {}) if isinstance(sim_data, dict) else {}
 
         return {
-            "trade_id": _determinism.get_uuid(),
+            "trade_id": trade_id or _determinism.get_uuid(),
             "symbol": branch.execution_plan.get("symbol", "BTC/USDT") if isinstance(branch.execution_plan, dict) else "BTC/USDT",
             "action": branch.execution_plan.get("action", "WAIT") if isinstance(branch.execution_plan, dict) else "WAIT",
             "quantity": final_qty,
@@ -535,11 +541,20 @@ class CognitiveSystemController:
 
     def _normalize_observation(self, observation: Any) -> Tuple[Dict[str, Any], str]:
         """Stage 0: accept dict or object-like observation; resolve trade_id."""
-        trade_id = _determinism.get_uuid()
+        # Copy so stamping trade_id never mutates the caller's dict/object.
+        if isinstance(observation, dict):
+            obs_dict = dict(observation)
+        else:
+            obs_dict = dict(getattr(observation, "__dict__", {}) or {})
 
-        # Check for dict-like interface, handle object-like as well
-        obs_dict = observation if isinstance(observation, dict) else getattr(observation, "__dict__", {})
-        trade_id = obs_dict.get("trade_id", _determinism.get_uuid())
+        # Resolve exactly once: a caller-supplied id wins, else one draw from
+        # the deterministic source. NB: dict.get(key, get_uuid()) would evaluate
+        # the default eagerly — a wasted draw even when the key exists — and
+        # divergent draw counts between keyed/unkeyed inputs break replay parity.
+        trade_id = obs_dict.get("trade_id")
+        if not trade_id:
+            trade_id = _determinism.get_uuid()
+        obs_dict["trade_id"] = trade_id
         return obs_dict, trade_id
 
     async def _stage_perception(self, obs_dict: Dict[str, Any]) -> float:
@@ -570,7 +585,7 @@ class CognitiveSystemController:
             if pf_result.get("action") == "override_to_hold" or intervention.get("action") == "override_to_hold":
                 return self._Terminal(CoreDecision(
                     outcome=DecisionOutcome.TRADE_REJECTED,
-                    trade_id=obs_dict.get("trade_id", _determinism.get_uuid()),
+                    trade_id=obs_dict.get("trade_id") or "NO_BRANCH",
                     dominant_rejection_reason=f"HASP PF Intervention: {reason}"
                 ))
         return None
@@ -613,17 +628,31 @@ class CognitiveSystemController:
         trade_id: str, obs_dict: Dict[str, Any],
     ) -> Dict[str, Any]:
         """Stage 8: final trade proposal from the winning branch."""
-        decision_proposal = self._select_optimal_action(best_branch, sim_results)
+        decision_proposal = self._select_optimal_action(
+            best_branch, sim_results, trade_id=trade_id)
         if decision_proposal and isinstance(decision_proposal, dict):
             decision_proposal["trade_id"] = trade_id
             decision_proposal["price"] = obs_dict.get("price", obs_dict.get("close"))
         return decision_proposal
 
+    class _UnavailableGovernanceGate:
+        """Fail-closed stub used when no governance gate can be constructed."""
+
+        async def authorize(self, action, payload, context):
+            return None
+
     async def _stage_risk_check(
         self, decision_proposal: Optional[Dict[str, Any]],
         obs_dict: Dict[str, Any], trade_id: str,
-    ) -> Optional["_Terminal"]:
-        """Stage 8.5: canonical portfolio-risk boundary (fail closed)."""
+    ) -> Tuple[Optional["_Terminal"], Any]:
+        """Stage 8.5: canonical portfolio-risk boundary (fail closed).
+
+        Returns (terminal, risk_decision). When the canonical service approves
+        a smaller quantity than proposed, the sizing authority wins — the
+        proposal quantity is clamped to ``approved_quantity`` before the
+        proposal can proceed to governance/shield/execution.
+        """
+        risk_decision = None
         if self.risk_engine is not None and hasattr(self.risk_engine, "evaluate_action"):
             risk_decision = await self._safe_await(
                 self.risk_engine.evaluate_action(decision_proposal or {}, obs_dict)
@@ -633,7 +662,69 @@ class CognitiveSystemController:
                     outcome=DecisionOutcome.TRADE_REJECTED,
                     trade_id=decision_proposal.get("trade_id", trade_id) if decision_proposal else trade_id,
                     dominant_rejection_reason=f"Risk: {getattr(risk_decision, 'reason', 'Risk checks failed')}",
-                ))
+                )), risk_decision
+            approved_qty = getattr(risk_decision, "approved_quantity", None)
+            if (
+                approved_qty is not None
+                and isinstance(decision_proposal, dict)
+                and isinstance(approved_qty, (int, float))
+                and approved_qty >= 0
+            ):
+                requested = decision_proposal.get("quantity")
+                if isinstance(requested, (int, float)) and requested > approved_qty:
+                    decision_proposal["quantity"] = approved_qty
+                    decision_proposal["quantity_clamped_by_risk"] = True
+        return None, risk_decision
+
+    def _get_governance_gate(self) -> Any:
+        """Resolve the typed governance gate, lazily defaulting to the
+        human-layer approval gate wrapped in ``HumanApprovalPolicy``. A gate
+        that cannot be constructed resolves to a fail-closed stub."""
+        if not self._governance_gate_resolved:
+            self._governance_gate_resolved = True
+            try:
+                from trading_bot.governance.policy_adapter import HumanApprovalPolicy
+                from trading_bot.human_layer import get_approval_gate
+                self.governance_gate = HumanApprovalPolicy(get_approval_gate())
+            except Exception as exc:
+                logger.warning(f"CSC-V6: governance gate unavailable: {exc}")
+                self.governance_gate = self._UnavailableGovernanceGate()
+        return self.governance_gate
+
+    async def _stage_governance(
+        self, decision_proposal: Optional[Dict[str, Any]],
+        obs_dict: Dict[str, Any], risk_decision: Any, trade_id: str,
+    ) -> Optional["_Terminal"]:
+        """Stage 8.6: human-governance gate (fail closed).
+
+        Runs after canonical risk and before the LogAct proposal/shield so the
+        pipeline order is risk -> governance -> shield -> bus -> execution.
+        A missing, erroring, or denying gate always rejects."""
+        gate = self._get_governance_gate()
+        if gate is None or not hasattr(gate, "authorize"):
+            return self._Terminal(CoreDecision(
+                outcome=DecisionOutcome.TRADE_REJECTED,
+                trade_id=decision_proposal.get("trade_id", trade_id) if decision_proposal else trade_id,
+                dominant_rejection_reason="Governance: no approval gate available",
+            ))
+        context = {
+            "market": obs_dict,
+            "risk_assessment": getattr(risk_decision, "reason", "UNKNOWN"),
+            "risk_checks": getattr(risk_decision, "checks", {}),
+        }
+        decision = await self._safe_await(
+            gate.authorize("execute_trade", decision_proposal or {}, context)
+        )
+        if decision is None or not getattr(decision, "approved", False):
+            return self._Terminal(CoreDecision(
+                outcome=DecisionOutcome.TRADE_REJECTED,
+                trade_id=decision_proposal.get("trade_id", trade_id) if decision_proposal else trade_id,
+                dominant_rejection_reason=(
+                    f"Governance: {getattr(decision, 'reason', None) or 'approval denied or unavailable'}"
+                ),
+            ))
+        if isinstance(decision_proposal, dict):
+            decision_proposal["governance_receipt"] = getattr(decision, "audit_id", None)
         return None
 
     async def _stage_logact_proposal(self, decision_proposal: Optional[Dict[str, Any]]) -> None:
@@ -782,7 +873,14 @@ class CognitiveSystemController:
             best_branch, sim_results, trade_id, obs_dict)
 
         # 8.5. Canonical portfolio-risk boundary
-        terminal = await self._stage_risk_check(decision_proposal, obs_dict, trade_id)
+        terminal, risk_decision = await self._stage_risk_check(
+            decision_proposal, obs_dict, trade_id)
+        if terminal is not None:
+            return terminal.decision
+
+        # 8.6. Human-governance gate (required actions only; fail closed)
+        terminal = await self._stage_governance(
+            decision_proposal, obs_dict, risk_decision, trade_id)
         if terminal is not None:
             return terminal.decision
 
@@ -805,13 +903,16 @@ class CognitiveSystemController:
         return await self._stage_execute_and_persist(
             ledger_entry, decision_proposal, trade_id)
 
-    async def execute_task(self, task: str, context: Any = None) -> Optional[CoreDecision]:
+    async def execute_task(self, task: str, context: Any = None) -> Dict[str, Any]:
         """
         Execute a strategic task against the current market context.
 
         The CSC's public task entry point (used by main.py). A high-level task
         string plus a market-data context is folded into an observation and run
         through the 12-step active-inference pipeline.
+
+        Returns a task-completion envelope {"status", "success", "decision"}
+        where "decision" is the pipeline's CoreDecision (or None).
         """
         if isinstance(context, dict):
             observation = dict(context)
@@ -821,7 +922,11 @@ class CognitiveSystemController:
             observation = dict(getattr(context, "__dict__", {}) or {})
         observation.setdefault("task", task)
         observation.setdefault("timestamp", datetime.utcnow().isoformat())
-        result = await self.process_market_observation(observation)
+        self.state.active_tasks.append(task)
+        try:
+            result = await self.process_market_observation(observation)
+        finally:
+            self.state.active_tasks.remove(task)
         # Each executed task folds into runtime state and reduces epistemic uncertainty
         self.state.folded_history.append({"task": task, "result": result})
         self.state.epistemic_uncertainty = max(0.05, self.state.epistemic_uncertainty * 0.9)

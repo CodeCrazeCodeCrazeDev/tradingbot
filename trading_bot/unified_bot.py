@@ -182,13 +182,34 @@ class UnifiedTradingBot:
                 circuit_policy = LegacyRiskPolicyAdapter("circuit_breaker", breaker)
                 self.risk_service.register_policy("circuit_breaker", circuit_policy)
                 registry.register("risk_policy_circuit_breaker", circuit_policy, "Risk", overwrite=True)
+
+            engine_config = self.config.get("legacy_risk_engine")
+            if engine_config is not None:
+                from trading_bot.risk.policy_adapters import TradeAssessmentPolicyAdapter
+                from trading_bot.risk_management.risk_engine import RiskEngine
+
+                engine_policy = TradeAssessmentPolicyAdapter(
+                    "risk_engine", RiskEngine(engine_config)
+                )
+                self.risk_service.register_policy("risk_engine", engine_policy)
+                registry.register("risk_policy_risk_engine", engine_policy, "Risk", overwrite=True)
         registry.register("portfolio_risk_service", self.risk_service, "Risk", overwrite=True)
 
         # 8. Authoritative typed repository, execution service, and compatibility bridge
         self.trading_repository = SqliteTradingRepository(
-            self.config.get("trading_state_path", "alphaalgo_data/trading_state.db")
+            self.config.get("trading_state_path", "alphaalgo_data/trading_state.db"),
+            initial_equity=self.config.get("initial_equity", 10000.0),
         )
         registry.register("trading_repository", self.trading_repository, "Persistence", overwrite=True)
+        # Authoritative portfolio state for risk evaluation: derived from
+        # persisted fills/positions, never fabricated defaults.
+        from trading_bot.risk.state_provider import PortfolioStateProvider
+        self.risk_service.state_provider = PortfolioStateProvider(
+            repository=self.trading_repository,
+            initial_equity=self.config.get("initial_equity", 10000.0),
+            account_id=self.config.get("account_id", "runtime"),
+        )
+        registry.register("portfolio_state_provider", self.risk_service.state_provider, "Risk", overwrite=True)
         self.execution_service = CanonicalExecutionService(
             mode="paper", repository=self.trading_repository
         )
