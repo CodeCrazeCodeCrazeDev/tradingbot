@@ -288,6 +288,13 @@ class UnifiedTradingBot:
                 "alerts": get_alert_manager(self.config),
                 "is_trading_allowed": is_trading_allowed,
             }
+            # Keep the gate's trading-mode in sync with the runtime mode so
+            # STANDARD actions (execute_trade/open_position/place_order/
+            # modify_position) require human approval whenever the runtime is
+            # not in paper mode.
+            self.layers["human"]["approval_gate"].set_trading_mode(
+                self.execution_mode
+            )
             registry.register("human_approval_gate", self.layers["human"]["approval_gate"], "Governance", overwrite=True)
             registry.register(
                 "human_approval_policy",
