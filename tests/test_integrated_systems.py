@@ -73,12 +73,13 @@ class IntegrationTestSuite:
         """Test opportunity scanner imports."""
         test_name = "Opportunity Scanner Import Test"
         try:
+            from trading_bot.opportunity_scanner import (
                 MarketInefficiencyScanner,
                 CrossExchangeArbitrage,
                 NewsImpactAnalyzer,
                 CorrelationBreakdownDetector,
                 MomentumBurstDetector
-        )
+            )
             self.record_test(test_name, True, "All scanner components imported successfully")
         except Exception as e:
             self.record_test(test_name, False, f"Import error: {str(e)}")
@@ -87,6 +88,7 @@ class IntegrationTestSuite:
         """Test exit strategies imports."""
         test_name = "Exit Strategies Import Test"
         try:
+            from trading_bot.exit_strategies import (
                 ExitSignalGenerator,
                 AdaptiveExitStrategy,
                 ProfitMaximizer,
@@ -100,6 +102,7 @@ class IntegrationTestSuite:
         """Test adaptive systems imports."""
         test_name = "Adaptive Systems Import Test"
         try:
+            from trading_bot.adaptive_systems import (
                 AdaptiveTradingMaster,
                 MarketRegimeDetector,
                 AdaptiveRiskManager,
