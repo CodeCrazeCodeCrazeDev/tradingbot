@@ -437,7 +437,17 @@ class MockBrokerAdapter(BrokerAdapter):
         )
     
     async def cancel_order(self, order_id: str) -> bool:
-        return True  # Mock always succeeds
+        """Cancel a pending order by venue order id.
+
+        Honest semantics: only orders tracked in ``self.orders`` (pending
+        submissions) can be cancelled. Unknown, filled, or already-cancelled
+        ids fail closed instead of reporting a fake success.
+        """
+        pending = self.orders.get(order_id)
+        if pending is not None and pending.status == OrderStatus.PENDING:
+            pending.status = OrderStatus.CANCELLED
+            return True
+        return False
     
     async def get_order_status(self, order_id: str) -> Optional[OrderResponse]:
         """Get order status - simulate fills for market orders"""
