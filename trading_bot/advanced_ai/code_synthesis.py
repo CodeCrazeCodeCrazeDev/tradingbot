@@ -1,3 +1,4 @@
+from trading_bot.core.security.sandbox import SecureASTVisitor
 """
 Code Synthesis from Natural Language
 =====================================
@@ -769,6 +770,7 @@ class CodeSynthesizer:
                         'List': List, 'Tuple': Tuple, 'datetime': datetime}
             
             # Execute code to define class
+            SecureASTVisitor().validate_code(generated.code)
             exec(generated.code, namespace)
             
             # Find the strategy class

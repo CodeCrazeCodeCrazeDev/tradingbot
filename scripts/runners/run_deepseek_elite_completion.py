@@ -767,7 +767,7 @@ async def main():
     print("=" * 80)
     print("")
     print("Starting in 3 seconds...")
-    time.sleep(3)
+    await asyncio.sleep(3)
     
     workspace = Path(__file__).parent
     engine = DeepSeekEliteCompletionEngine(workspace)

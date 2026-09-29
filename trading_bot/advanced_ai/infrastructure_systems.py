@@ -1,3 +1,4 @@
+from trading_bot.core.security.sandbox import SecureASTVisitor
 """
 Infrastructure Systems
 ======================
@@ -668,6 +669,7 @@ class PerformanceProfiler:
         
         for _ in range(num_runs):
             start = time.perf_counter()
+            SecureASTVisitor().validate_code(code)
             exec(code, globals_dict, locals_dict)
             end = time.perf_counter()
             times.append(end - start)

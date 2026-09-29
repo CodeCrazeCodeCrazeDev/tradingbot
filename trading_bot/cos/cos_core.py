@@ -436,7 +436,7 @@ class CognitiveOperatingSystem:
                 self.run_cycle(context)
 
                 # Sleep for the configured interval
-                time.sleep(self.config.cycle_interval_seconds)
+                await asyncio.sleep(self.config.cycle_interval_seconds)
         except KeyboardInterrupt:
             logger.info("COS loop stopped by user")
         finally:
