@@ -244,6 +244,11 @@ class HumanApprovalGate:
             await self._send_notification(action, description, details)
             return True
         
+        # Paper-mode reduction mirrors is_approval_required(): STANDARD
+        # actions auto-pass without a human when not trading real capital.
+        if self._trading_mode == 'paper' and level == ApprovalLevel.STANDARD:
+            return True
+        
         # Create approval request
         request_id = str(uuid.uuid4())
         
@@ -276,21 +281,48 @@ class HumanApprovalGate:
         
         logger.info(f"Approval requested: {request_id} for {action}")
         
-        # Wait for approval
-        try:
-            if timeout_at:
-                timeout_remaining = (timeout_at - datetime.now()).total_seconds()
+        # Wait for approval — in-process event OR an out-of-process decision
+        # file (decision_<request_id>.json written into _storage_path, e.g. by
+        # scripts/approve.py). Poll at 1s; timeout still fails closed.
+        deadline = timeout_at.timestamp() if timeout_at else None
+        decision_path = self._storage_path / f"decision_{request_id}.json"
+        while True:
+            if request._approval_event.is_set():
+                break
+            if decision_path.exists():
+                try:
+                    decision = json.loads(decision_path.read_text(encoding="utf-8"))
+                    if decision.get("status") == "approved":
+                        request.status = ApprovalStatus.APPROVED
+                        request.approved_by = decision.get("approver", "external")
+                    else:
+                        request.status = ApprovalStatus.REJECTED
+                        request.rejection_reason = decision.get("reason", "rejected externally")
+                    request.responded_at = datetime.now()
+                    decision_path.unlink(missing_ok=True)
+                    logger.info(
+                        f"Approval request {request_id} decided externally: {request.status.value}"
+                    )
+                except (OSError, json.JSONDecodeError):
+                    logger.error(f"Unreadable decision file {decision_path}")
+                break
+            remaining = (deadline - datetime.now().timestamp()) if deadline else None
+            if remaining is not None and remaining <= 0:
+                request.status = ApprovalStatus.TIMEOUT
+                logger.warning(f"Approval request {request_id} timed out")
+                break
+            try:
                 await asyncio.wait_for(
                     request._approval_event.wait(),
-                    timeout=max(0, timeout_remaining)
+                    timeout=min(remaining, 1.0) if remaining is not None else 1.0,
                 )
-            else:
-                # No timeout - wait indefinitely
-                await request._approval_event.wait()
-        except asyncio.TimeoutError:
-            request.status = ApprovalStatus.TIMEOUT
-            logger.warning(f"Approval request {request_id} timed out")
-        
+            except asyncio.TimeoutError:
+                pass
+
+        # Persist the final outcome so request_*.json does not stay "pending"
+        # on disk after an external decision or timeout.
+        self._save_request(request)
+
         # Move to history
         self._history.append(request)
         if len(self._history) > self._max_history:
