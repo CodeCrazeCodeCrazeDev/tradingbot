@@ -132,17 +132,19 @@ class HumanApprovalGate:
         'detect_regime': ApprovalLevel.NOTIFY,
         'send_alert': ApprovalLevel.NOTIFY,
         
-        # STANDARD - Auto-approved (no wait)
-        'execute_trade': ApprovalLevel.AUTO,
-        'open_position': ApprovalLevel.AUTO,
+        # STANDARD - Wait for approval (waits only outside paper mode)
+        'execute_trade': ApprovalLevel.STANDARD,
+        'open_position': ApprovalLevel.STANDARD,
+        'modify_position': ApprovalLevel.STANDARD,
+        'place_order': ApprovalLevel.STANDARD,
+        # De-risking actions stay AUTO: blocking a close/cancel can trap
+        # capital; risk reduction must never require human latency.
         'close_position': ApprovalLevel.AUTO,
-        'modify_position': ApprovalLevel.AUTO,
-        'place_order': ApprovalLevel.AUTO,
         'cancel_order': ApprovalLevel.AUTO,
         
         # CRITICAL - Wait for approval (no timeout)
         'change_risk_limits': ApprovalLevel.CRITICAL,
-        'change_strategy': ApprovalLevel.AUTO,
+        'change_strategy': ApprovalLevel.CRITICAL,
         'deploy_to_production': ApprovalLevel.CRITICAL,
         'enable_live_trading': ApprovalLevel.CRITICAL,
         'modify_code': ApprovalLevel.CRITICAL,
