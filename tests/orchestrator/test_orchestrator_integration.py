@@ -108,6 +108,7 @@ class TestMLToExecutionFlow:
         assert predictions[0].success_probability > 0
 
         # Create decision based on prediction
+        from trading_bot.orchestrator.master_orchestrator import TradingDecision
         decision = TradingDecision(
             decision_id="DEC_001", timestamp=datetime.now(),
             opportunity_ids=["OPP_001"], action="BUY", symbols=["AAPL"],
