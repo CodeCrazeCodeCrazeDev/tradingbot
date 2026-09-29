@@ -259,7 +259,7 @@ class TestRiskManager:
     def test_validate_trade(self, sample_config, sample_positions):
         manager = PortfolioRiskManager(sample_config)
         manager.positions = sample_positions
-        valid, msg = manager.validate_trade({'symbol': 'AAPL', 'risk': 0.01, 'size': 1000})
+        valid, msg = manager.validate_trade({'symbol': 'NVDA', 'risk': 0.01, 'size': 1000})
         assert valid == True
 
 
