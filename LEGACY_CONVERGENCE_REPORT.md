@@ -267,6 +267,22 @@ surfaces were found and entry-guarded with `SystemExit` refusals:
 `scripts/validation/validate_critical_fixes.py`. A boundary test now enforces
 `unguarded_capital_surfaces == 0`.
 
+Second pass (same day): 28 more system-bootstrapping launchers/deployers
+were entry-guarded — `bot_cli.py`, `run_agentic_platform.py`,
+`RUN_ALPHA_EVOLVE.py`, `DEPLOY_FREE_CLOUD.py`, `deploy_production.py`,
+`run_ultimate_production.py`, the `run_alphaalgo_*`/`run_integrated_system`/
+`run_system_supervisor`/`run_ultimate_system`/`run_network_monitor` launchers,
+the `scripts/runners/run_*` set (trading_bot/unified_bot/unified_brain/
+unified_system/autonomous_*/elite_ai/eternal_evolution/market_student/
+complete_integration/ultimate_integration/approval_dashboard), and the
+`ACTIVATE_*`/`activate_all_systems` utilities — each now raises `SystemExit`
+with a canonical pointer; original bodies preserved below the refusal.
+Sanctioned diagnostics, validators, `test_*`/`verify_*` files, and
+`scripts/rsi_synthetic_benchmark.py` (AGENTS.md command) were deliberately
+left unguarded. `unguarded_loop_surfaces` was added to the summary and is 0
+(trading_bot-touching loop CLIs all refuse; pure-standalone monitors are
+external ops tools, not runtime paths).
+
 ## Wave 3 status: adapter conformance started
 
 Added non-networking conformance checks for `BrokerAdapter`, `MarketDataAdapter`,
@@ -363,6 +379,143 @@ supervisor, autonomous launchers, `production/interactive_brokers_live.py`,
 `brain/mt5_brain_trader.py`, `ultimate_bot/*`, all `scripts/launchers/`
 trading runners). Read-only monitors/dashboards/analysis validators remain
 runnable as documented exceptions in `tests/architecture/test_waves6_7.py`.
+
+
+## P1 credential consolidation (2026-09-30)
+
+P1 queue 34 → 18. Every env read in non-security catalogued modules now
+resolves through `CanonicalCredentialProvider` via per-file lazy helpers
+(`_env_secret`/`_env_required`): literal `os.environ.get`/`os.getenv`/
+`environ.get`/`os.environ[...]` sites (12 files) plus variable-arg reads
+(`centralized_config`, `engine_v2`, `diagnostic_engine`,
+`system_validator`, `auth_manager` — incl. `IndependentVerifier`'s signing
+key path env read in canonical `engine_v2.py`, which is not a
+hash-protected file).
+
+Ad-hoc credential stores now emit `DeprecationWarning` on construction:
+`broker_hub.CredentialVault`, `security_core.SecretVault`,
+`sentient_core.SelfDefender`, `connectivity.AuthManager`,
+`credential_vault.EnvironmentCredentialLoader`.
+
+The 18 still-flagged are honest residuals: `security/*` (10 = the
+canonical impl `secure_credentials` + deprecated shims + crypto-internal
+`decrypt`/`get_password` utils), the four ad-hoc stores (flagged on
+`decrypt` internals — they are credential stores, now warned),
+`alphaalgo_5star` (imports deprecated `credential_vault` — warned at
+runtime), `quantum_advantage` (PQC `decrypt` primitive — scanner false
+positive), `tools/encrypt_api_keys` (interactive `getpass` tool).
+
+Verified: foundation 197/197, architecture 108/108, RSI 72/72.
+
+## P0 reachable-adapter conformance (2026-09-30)
+
+All 29 P0 rows now carry test evidence; `P0 without tests = 0`. The seven
+previously-unproven reachable modules were dispositioned:
+
+- `risk_management/risk_engine.py` → proven behind
+  `TradeAssessmentPolicyAdapter` (veto on limit breach; pass is evidence
+  only — never a quantity or an execution)
+- `world_model/v2_core.py` → new `world_model/port_adapter.py` wraps
+  `FutureScenarioSimulator` as `WorldModelPort` (mapping in, serializable
+  scenario stats out; `intervene` raises `PermissionError`)
+- `ml/offline_rl/alphaalgo_autonomous_system.py` → `start()` verified
+  thread-free (training/monitoring threads disabled earlier); its
+  `get_action` delegation is broken and fails closed — pinned, not fixed
+- `evolution_layer` (package + shadowed module), `telemetry`, `human_layer`
+  → stub orchestrators now emit `DeprecationWarning` on construction
+- `broker/broker_interface.py` → the live-capable base now warns on
+  construction; test proves no session exists without `connect()`
+
+Found during this pass: `trading_bot/evolution_layer.py` is shadowed by the
+`evolution_layer/` package — the warning was duplicated into the package
+stub that actually imports. Architecture 108/108, foundation 197/197.
+
+## Adapter review queue (2026-09-30)
+
+The generic `adapter` backlog is now an ordered queue instead of a blob:
+every adapter row carries `review_priority` — **P0** runtime-reachable
+(live graph, prove first: **29 modules**), **P1** credential-access (34),
+**P2** no test evidence (2,200 — the bulk), **P3** test-covered (548).
+The wave inventory lists P0/P1 paths explicitly; the manifest summary
+carries `adapter_review_queue` counts, pinned by a partitioning test.
+The key finding: the live-graph proof backlog is the 29 P0 rows, not
+the full 2,232 — everything else is non-reachable catalogued backlog.
+
+## Credential consolidation + durable execution recovery (2026-09-30)
+
+Two slices landed:
+
+**Credential port** — `CredentialProviderPort` added to
+`foundation/ports.py`; `trading_bot/security/canonical_provider.py` is the
+single sanctioned secret-resolution boundary (env-first via
+`SecureCredentialsManager`, audit-logged, fail-closed, `overrides` for
+tests). The five duplicate providers — `credential_vault`, `credentials`,
+`credentialvault`, `secrets_manager`, `vault` — now emit
+`DeprecationWarning` on construction pointing at the canonical provider.
+9 new port/deprecation tests.
+
+**Durable execution recovery** (merged with companion implementation) —
+`trading_bot/execution/recovery.py::ExecutionReconciler` reconciles
+non-terminal durable orders at startup via broker lookup (never
+resubmits), persists venue verdicts, audits every recovery, and compares
+the venue book to the ledger at shutdown; it reopens the repository
+handle after `bot.run()` closes it. `PaperExecutionBridge` now provides
+durable idempotency (repository is the persistent order identity —
+redelivered trade_ids dedup from the durable row), resolves non-terminal
+durable orders via `adapter.get_order`, wraps submits in
+`submit_timeout` (a hung venue leaves a durable UNKNOWN, reconciled
+later), and writes `order_authorized`/`order_submit_attempt`/
+`order_broker_response`/`order_dedup`/`order_recovery` audit rows.
+`ModularMonolithRuntime` configures the bus's durable `decision_log.jsonl`
+path beside the state DB, runs recovery at `start()` and reconciliation
+at `stop()`/`run()` end. Bus terminal-state guards (re-proposal refusal,
+dequeue skip, post-vote check) verified. 20 recovery tests green;
+foundation 188/188, architecture 107/107.
+
+## Waves 4-5 worker sweep (2026-09-30)
+
+34 more modules de-looped or de-threaded. Wave-4 (18): seven
+`services/*` run-loop workers, `alpha_evolve` distributed-evaluator
+heartbeat, `alphaalgo_meta_system` monitor tasks, `apex_fi` alpha-mining
+workers, `auto_optimizer` continuous-optimization loop now refuses with
+`PermissionError` (it auto-called `trading_bot.update_parameters` —
+autonomous self-modification), `position_state_manager` +
+`trading/position_reconciliation` reconciliation workers,
+`alphaalgo_autonomous_system` training/monitoring threads,
+`realtime_pnl`/`realtime_signal_engine`/`signal_lifecycle` update threads.
+Wave-5 (16): the `autonomous_superintelligence` trading bridges —
+`route_agent_signals_to_execution`, `apply_research_to_strategies`, and
+`route_opportunities_to_execution` loops all refuse (agent-to-execution
+edges), `agent_coordinator` spawns run inline, `brain_architecture` monitor
+thread, `core_agent_system` main/self-improvement/monitoring loops +
+`multiprocessing.Process` subprocess services (incl. eternal_evolution) +
+signal-handler task, `memory_system` consolidation, `knowledge_action_bridge`
+sync task, `data_monitoring` monitor threads ×2, `performance_optimization`
+batch processor, and six more `services/*` loops including
+`integrated_brain_service` (which routed ALPHA_SIGNAL events to
+`brain.execute_task` — agent-to-execution edge, now refused). Scanner fix:
+`psutil.Process()` no longer counts as a loop spawn (resource introspection,
+not a worker). Wave-4/5 flagged set now: quarantined capital paths + 3
+legit reachable advisory adapters. All 34 pinned by the parametrized
+no-worker test. Verified: architecture 107/107, foundation 128/128.
+
+## Wave 6 gate audit (2026-09-30)
+
+Verified the canonical RSI gates already hold: `evaluate_verified` requires
+signed evaluator reports, holdout attestation and measured cost models are
+enforced by `evidence_boundaries`, the `ParetoArchive` ledger is
+hash-chained append-only, and `HumanGuidedRecursiveImprovementLoop`
+produces review-only decisions (approver/promoter are injected, never
+auto-invoked — no self-promotion path exists). Remaining leaks closed:
+`autonomous_superintelligence/experiment_engine.py` had a live
+`deploy_model()` self-promotion call — now raises `PermissionError`
+(pinned by `test_legacy_experiment_engine_cannot_self_deploy`), its
+experiment loop refuses, and the inner `create_task` spawn is removed;
+`services/alpha_research_service.py` and `services/backtesting_service.py`
+run-loop workers disabled (research cycles belong to the canonical
+human-gated path). All three added to the no-worker boundary test.
+Wave-6 flagged set is now just `strategy_backtester.py` (declared simulated
+capital). Verified: architecture 73/73, rsi 70/70.
 
 
 ## Post-roadmap hardening (Waves 8-9 backlog, 2026-09-29)

@@ -1,0 +1,14 @@
+{
+  "scan_timestamp": "C:\\Users\\peterson\\trading bot-merge-six",
+  "total_modules": 0,
+  "rl_modules_count": 0,
+  "offline_rl_modules_count": 0,
+  "policy_modules_count": 0,
+  "evaluation_modules_count": 0,
+  "integration_candidates_count": 0,
+  "missing_components": [],
+  "recommendations": [],
+  "rl_modules": [],
+  "offline_rl_modules": [],
+  "integration_candidates": []
+}

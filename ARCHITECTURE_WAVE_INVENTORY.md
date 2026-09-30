@@ -7,12 +7,12 @@ Generated from `ARCHITECTURE_LEGACY_CLASSIFICATION.json` by `scripts/generate_wa
 | Wave | Modules | Boundary meaning | Runtime reachable | CLI | Loops | Direct capital |
 |---:|---:|---|---:|---:|---:|---:|
 | 0 | 12 | Canonical authorities | 10 | 0 | 1 | 1 |
-| 1 | 1769 | Orchestrators, registries, lifecycle, and infrastructure fallback | 15 | 230 | 202 | 31 |
+| 1 | 1772 | Orchestrators, registries, lifecycle, and infrastructure fallback | 17 | 230 | 194 | 31 |
 | 2 | 328 | Risk, governance, approvals, safety, and compliance | 8 | 37 | 1 | 7 |
 | 3 | 50 | Broker, venue, exchange, execution, and market-data boundaries | 1 | 5 | 11 | 17 |
-| 4 | 298 | Strategy, signal, alpha, portfolio, and position intelligence | 0 | 32 | 18 | 5 |
-| 5 | 498 | AI, agents, models, cognition, memory, reasoning, and world models | 4 | 55 | 17 | 3 |
-| 6 | 208 | Research, backtesting, evaluation, experiment, and RSI evidence | 0 | 7 | 3 | 1 |
+| 4 | 298 | Strategy, signal, alpha, portfolio, and position intelligence | 1 | 32 | 0 | 5 |
+| 5 | 499 | AI, agents, models, cognition, memory, reasoning, and world models | 5 | 55 | 1 | 3 |
+| 6 | 208 | Research, backtesting, evaluation, experiment, and RSI evidence | 0 | 7 | 0 | 1 |
 | 7 | 2 | Standalone main/CLI facade surfaces | 0 | 2 | 0 | 0 |
 
 ## Important interpretation note
@@ -98,7 +98,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/event_pipeline`: 11 module(s)
 - `trading_bot/events`: 2 module(s)
 - `trading_bot/evolution_layer`: 5 module(s)
-- `trading_bot/execution`: 51 module(s)
+- `trading_bot/execution`: 52 module(s)
 - `trading_bot/exit_strategies`: 5 module(s)
 - `trading_bot/exits`: 2 module(s)
 - `trading_bot/explainability`: 2 module(s)
@@ -116,7 +116,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/human_layer`: 4 module(s)
 - `trading_bot/improvements`: 14 module(s)
 - `trading_bot/indicators`: 9 module(s)
-- `trading_bot/infrastructure`: 9 module(s)
+- `trading_bot/infrastructure`: 10 module(s)
 - `trading_bot/ingestion`: 11 module(s)
 - `trading_bot/innovations`: 18 module(s)
 - `trading_bot/institutional`: 2 module(s)
@@ -170,7 +170,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/registry`: 3 module(s)
 - `trading_bot/reporting`: 3 module(s)
 - `trading_bot/schemas`: 4 module(s)
-- `trading_bot/security`: 17 module(s)
+- `trading_bot/security`: 18 module(s)
 - `trading_bot/self_concepts`: 12 module(s)
 - `trading_bot/self_diagnostic`: 6 module(s)
 - `trading_bot/self_healing_ai`: 15 module(s)
@@ -421,7 +421,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/ultimate_system`: 2 module(s)
 - `trading_bot/unified_architecture`: 1 module(s)
 - `trading_bot/unified_system`: 1 module(s)
-- `trading_bot/world_model`: 29 module(s)
+- `trading_bot/world_model`: 30 module(s)
 
 ### Wave 6: Research, backtesting, evaluation, experiment, and RSI evidence
 - `trading_bot`: 4 module(s)
@@ -479,11 +479,13 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - Wave 1: `trading_bot/core/hms/memory.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/core/verification/swarm.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/evolution_layer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/execution/recovery.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/foundation/capability_registry.py` — compatibility_facade | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/foundation/contracts.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/foundation/ports.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/human_layer/__init__.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/interfaces/adapters.py` — adapter | owner=infrastructure | port=ComponentLifecycle
+- Wave 1: `trading_bot/strategies/__init__.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/strategies/registry.py` — compatibility_facade | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/system_interfaces.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/telemetry/__init__.py` — adapter | owner=infrastructure | port=ComponentLifecycle
@@ -497,9 +499,11 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - Wave 2: `trading_bot/risk/state_provider.py` — adapter | owner=risk | port=RiskService/GovernanceGate
 - Wave 2: `trading_bot/risk_management/risk_engine.py` — adapter | owner=risk | port=RiskService/GovernanceGate
 - Wave 3: `trading_bot/broker/broker_interface.py` — adapter | owner=execution | port=BrokerAdapter
+- Wave 4: `trading_bot/ml/offline_rl/alphaalgo_autonomous_system.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
 - Wave 5: `trading_bot/agents/capability_adapter.py` — adapter | owner=cognition | port=CapabilityPort
 - Wave 5: `trading_bot/agents/multi_agent_debate.py` — adapter | owner=cognition | port=CapabilityPort
 - Wave 5: `trading_bot/interfaces/read_models.py` — adapter | owner=cognition | port=CapabilityPort
+- Wave 5: `trading_bot/ml/offline_rl/enhanced_cql_agent.py` — adapter | owner=cognition | port=CapabilityPort
 - Wave 5: `trading_bot/world_model/v2_core.py` — adapter | owner=cognition | port=CapabilityPort
 
 ### CLI entry points
@@ -917,13 +921,11 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - Wave 1: `trading_bot/dashboard/realtime_dashboard.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/dashboard/unified_dashboard.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/data_feeds/websocket_feeds.py` — adapter | owner=infrastructure | port=ComponentLifecycle
-- Wave 1: `trading_bot/database/analytics_processor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/database/data_streaming.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/database/pipeline_monitor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/database/shared_memory_manager.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/database/timeseries_db.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/deepchart/inference_engine.py` — adapter | owner=infrastructure | port=ComponentLifecycle
-- Wave 1: `trading_bot/elite_system/benchmarking.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/eternal_evolution/architecture_evolution.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/event_monitoring/economic_calendar.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/event_monitoring/event_monitor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
@@ -946,7 +948,6 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - Wave 1: `trading_bot/execution/smart_execution.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/gets/realtime_pipeline.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/improvements/forecast_improvements/data_feed_quality.py` — adapter | owner=infrastructure | port=ComponentLifecycle
-- Wave 1: `trading_bot/infrastructure/health_endpoints.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/ingestion/collector.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/ingestion/event_router.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/ingestion/orderbook_builder.py` — adapter | owner=infrastructure | port=ComponentLifecycle
@@ -978,18 +979,15 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - Wave 1: `trading_bot/optimized_integration.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/performance/memory_manager.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/performance/performance_monitor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
-- Wave 1: `trading_bot/performance/windows_optimizer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/perplexity_trading/retrieval_pipeline.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/production/live_trading_system.py` — quarantine | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/realtime/realtime_adapter.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/realtime/realtime_data_hub.py` — adapter | owner=infrastructure | port=ComponentLifecycle
-- Wave 1: `trading_bot/realtime_system_validator.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/realtime_trading_core.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/recursive_self_improvement/engine_v2.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/security/security_system.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/self_diagnostic/knowledge_gap.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/self_diagnostic/self_manager.py` — adapter | owner=infrastructure | port=ComponentLifecycle
-- Wave 1: `trading_bot/self_healing_ai/validators/system_architecture.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/self_learning/distributed_learning.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/sentient_core/ai_learner.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/sentient_core/introspector.py` — adapter | owner=infrastructure | port=ComponentLifecycle
@@ -1060,7 +1058,6 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - Wave 1: `trading_bot/services/tier4_services.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/streaming/kafka_stream.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/streaming/redis_stream.py` — adapter | owner=infrastructure | port=ComponentLifecycle
-- Wave 1: `trading_bot/system_health/auto_repair.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/system_supervisor/auto_updater_supervisor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/system_supervisor/module_monitor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/system_supervisor/security_supervisor.py` — adapter | owner=infrastructure | port=ComponentLifecycle
@@ -1071,7 +1068,6 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - Wave 1: `trading_bot/ultimate_production/core_engine.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/ultimate_system/hardware_optimizer.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/ultimate_system/self_evolving_core.py` — adapter | owner=infrastructure | port=ComponentLifecycle
-- Wave 1: `trading_bot/utils/debug_tools.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/validation/autonomous_validation.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/validation/self_optimization.py` — adapter | owner=infrastructure | port=ComponentLifecycle
 - Wave 1: `trading_bot/validation/self_testing.py` — adapter | owner=infrastructure | port=ComponentLifecycle
@@ -1088,44 +1084,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - Wave 3: `trading_bot/improvements/forecast_improvements/real_broker_connection.py` — quarantine | owner=execution | port=BrokerAdapter
 - Wave 3: `trading_bot/production/interactive_brokers_live.py` — quarantine | owner=execution | port=BrokerAdapter
 - Wave 3: `trading_bot/strategies/cross_exchange_arbitrage.py` — quarantine | owner=execution | port=BrokerAdapter
-- Wave 4: `trading_bot/alpha_evolve/parallel_evaluator.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
-- Wave 4: `trading_bot/alphaalgo_core/alphaalgo_meta_system.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
-- Wave 4: `trading_bot/apex_fi/alpha_mining.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
-- Wave 4: `trading_bot/auto_optimizer/strategy_optimizer.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
-- Wave 4: `trading_bot/critical_fixes/position_state_manager.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
-- Wave 4: `trading_bot/ml/offline_rl/alphaalgo_autonomous_system.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
-- Wave 4: `trading_bot/position/realtime_pnl.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
-- Wave 4: `trading_bot/realtime/realtime_signal_engine.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
-- Wave 4: `trading_bot/services/alpha_engine_service.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
-- Wave 4: `trading_bot/services/alphaalgo_core_service.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
-- Wave 4: `trading_bot/services/alphaalgo_institutional_service.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
-- Wave 4: `trading_bot/services/alphaalgo_v2_service.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
-- Wave 4: `trading_bot/services/portfolio_service.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
-- Wave 4: `trading_bot/services/position_service.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
-- Wave 4: `trading_bot/services/signals_service.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
-- Wave 4: `trading_bot/services/strategy_service.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
-- Wave 4: `trading_bot/signals/signal_lifecycle.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
-- Wave 4: `trading_bot/trading/position_reconciliation.py` — adapter | owner=strategy | port=StrategyPort/SignalPort
-- Wave 5: `trading_bot/autonomous_superintelligence/agent_coordinator.py` — adapter | owner=cognition | port=CapabilityPort
-- Wave 5: `trading_bot/autonomous_superintelligence/autonomous_trading_bridge.py` — adapter | owner=cognition | port=CapabilityPort
-- Wave 5: `trading_bot/autonomous_superintelligence/enhanced_integration.py` — adapter | owner=cognition | port=CapabilityPort
-- Wave 5: `trading_bot/autonomous_superintelligence/trading_integration.py` — adapter | owner=cognition | port=CapabilityPort
-- Wave 5: `trading_bot/brain/brain_architecture.py` — adapter | owner=cognition | port=CapabilityPort
 - Wave 5: `trading_bot/core_agent_system/agent_registry.py` — quarantine | owner=cognition | port=CapabilityPort
-- Wave 5: `trading_bot/core_agent_system/integrated_system.py` — adapter | owner=cognition | port=CapabilityPort
-- Wave 5: `trading_bot/core_agent_system/memory_system.py` — adapter | owner=cognition | port=CapabilityPort
-- Wave 5: `trading_bot/intelligence/knowledge_action_bridge.py` — adapter | owner=cognition | port=CapabilityPort
-- Wave 5: `trading_bot/market_intelligence/data_monitoring.py` — adapter | owner=cognition | port=CapabilityPort
-- Wave 5: `trading_bot/market_intelligence/performance_optimization.py` — adapter | owner=cognition | port=CapabilityPort
-- Wave 5: `trading_bot/services/agents2_service.py` — adapter | owner=cognition | port=CapabilityPort
-- Wave 5: `trading_bot/services/agents_service.py` — adapter | owner=cognition | port=CapabilityPort
-- Wave 5: `trading_bot/services/brain_service.py` — adapter | owner=cognition | port=CapabilityPort
-- Wave 5: `trading_bot/services/integrated_brain_service.py` — adapter | owner=cognition | port=CapabilityPort
-- Wave 5: `trading_bot/services/intelligence_directorate_service.py` — adapter | owner=cognition | port=CapabilityPort
-- Wave 5: `trading_bot/services/market_intelligence_service.py` — adapter | owner=cognition | port=CapabilityPort
-- Wave 6: `trading_bot/autonomous_superintelligence/experiment_engine.py` — research_only | owner=research | port=ResearchCapability
-- Wave 6: `trading_bot/services/alpha_research_service.py` — research_only | owner=research | port=ResearchCapability
-- Wave 6: `trading_bot/services/backtesting_service.py` — research_only | owner=research | port=ResearchCapability
 
 ### Direct capital-path findings
 - Wave 0: `trading_bot/execution/service.py` — canonical | owner=execution | port=CanonicalExecutionService
@@ -1194,12 +1153,68 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - Wave 5: `trading_bot/radar_ai/agents/AGENT_SYSTEM_DEMO.py` — quarantine | owner=cognition | port=CapabilityPort
 - Wave 6: `trading_bot/backtesting/strategy_backtester.py` — research_only | owner=research | port=ResearchCapability
 
+## Adapter review queue
+
+Per-adapter `review_priority`: P0 = runtime-reachable (prove first), P1 = credential access, P2 = no test evidence, P3 = test-covered. P0/P1 paths are listed below; P2/P3 counts live in the manifest summary (`adapter_review_queue`).
+
+### P0 — reachable adapters
+- `trading_bot/__init__.py` — owner=infrastructure | port=ComponentLifecycle | tests=2601
+- `trading_bot/core/csc/router.py` — owner=infrastructure | port=ComponentLifecycle | tests=12
+- `trading_bot/core/execution_bridge.py` — owner=infrastructure | port=ComponentLifecycle | tests=6
+- `trading_bot/core/hms/memory.py` — owner=infrastructure | port=ComponentLifecycle | tests=29
+- `trading_bot/core/verification/swarm.py` — owner=infrastructure | port=ComponentLifecycle | tests=8
+- `trading_bot/evolution_layer.py` — owner=infrastructure | port=ComponentLifecycle | tests=1
+- `trading_bot/execution/recovery.py` — owner=infrastructure | port=ComponentLifecycle | tests=1
+- `trading_bot/foundation/contracts.py` — owner=infrastructure | port=ComponentLifecycle | tests=10
+- `trading_bot/foundation/ports.py` — owner=infrastructure | port=ComponentLifecycle | tests=2
+- `trading_bot/human_layer/__init__.py` — owner=infrastructure | port=ComponentLifecycle | tests=1
+- `trading_bot/interfaces/adapters.py` — owner=infrastructure | port=ComponentLifecycle | tests=1
+- `trading_bot/strategies/__init__.py` — owner=infrastructure | port=ComponentLifecycle | tests=2
+- `trading_bot/system_interfaces.py` — owner=infrastructure | port=ComponentLifecycle | tests=1
+- `trading_bot/telemetry/__init__.py` — owner=infrastructure | port=ComponentLifecycle | tests=1
+- `trading_bot/verification/confidence_calibrator.py` — owner=infrastructure | port=ComponentLifecycle | tests=1
+- `trading_bot/core/governance/determinism.py` — owner=risk | port=RiskService/GovernanceGate | tests=3
+- `trading_bot/governance/evolution_gate.py` — owner=risk | port=RiskService/GovernanceGate | tests=14
+- `trading_bot/governance/policy_adapter.py` — owner=risk | port=RiskService/GovernanceGate | tests=1
+- `trading_bot/risk/circuit_breaker.py` — owner=risk | port=RiskService/GovernanceGate | tests=4
+- `trading_bot/risk/policy_adapters.py` — owner=risk | port=RiskService/GovernanceGate | tests=2
+- `trading_bot/risk/pre_trade_checks.py` — owner=risk | port=RiskService/GovernanceGate | tests=1
+- `trading_bot/risk/state_provider.py` — owner=risk | port=RiskService/GovernanceGate | tests=1
+- `trading_bot/risk_management/risk_engine.py` — owner=risk | port=RiskService/GovernanceGate | tests=1
+- `trading_bot/broker/broker_interface.py` — owner=execution | port=BrokerAdapter | tests=1
+- `trading_bot/ml/offline_rl/alphaalgo_autonomous_system.py` — owner=strategy | port=StrategyPort/SignalPort | tests=1
+- `trading_bot/agents/capability_adapter.py` — owner=cognition | port=CapabilityPort | tests=1
+- `trading_bot/agents/multi_agent_debate.py` — owner=cognition | port=CapabilityPort | tests=8
+- `trading_bot/interfaces/read_models.py` — owner=cognition | port=CapabilityPort | tests=2
+- `trading_bot/ml/offline_rl/enhanced_cql_agent.py` — owner=cognition | port=CapabilityPort | tests=1
+- `trading_bot/world_model/v2_core.py` — owner=cognition | port=CapabilityPort | tests=1
+
+### P1 — credential-access adapters
+- `trading_bot/connectivity/auth_manager.py` — owner=infrastructure | tests=0
+- `trading_bot/quantum/quantum_advantage.py` — owner=infrastructure | tests=2
+- `trading_bot/security/advanced_security.py` — owner=infrastructure | tests=0
+- `trading_bot/security/artifact_manager.py` — owner=infrastructure | tests=0
+- `trading_bot/security/audit_logging.py` — owner=infrastructure | tests=0
+- `trading_bot/security/credential_vault.py` — owner=infrastructure | tests=2
+- `trading_bot/security/credentials.py` — owner=infrastructure | tests=1
+- `trading_bot/security/enhanced_security.py` — owner=infrastructure | tests=0
+- `trading_bot/security/safe_pickle.py` — owner=infrastructure | tests=0
+- `trading_bot/security/secrets_manager.py` — owner=infrastructure | tests=0
+- `trading_bot/security/secure_credentials.py` — owner=infrastructure | tests=0
+- `trading_bot/security/security_system.py` — owner=infrastructure | tests=0
+- `trading_bot/security/vault.py` — owner=infrastructure | tests=0
+- `trading_bot/sentient_core/self_defender.py` — owner=infrastructure | tests=0
+- `trading_bot/tools/encrypt_api_keys.py` — owner=infrastructure | tests=1
+- `trading_bot/alphaalgo_core/broker_hub.py` — owner=execution | tests=0
+- `trading_bot/alphaalgo_5star.py` — owner=strategy | tests=1
+- `trading_bot/alphaalgo_core/security_core.py` — owner=strategy | tests=0
+
 ## Wave 0 file list — Canonical authorities
 
 - `trading_bot/cognition/orchestrator.py` — class=canonical | owner=cognition | port=AlphaAlgoCognitiveBrain | flags=none | importers=`trading_bot/cognition/__init__.py`, `trading_bot/cognition/advisory_adapter.py`, `trading_bot/evaluation/walk_forward.py`, `trading_bot/unified_ai_brain.py`
 - `trading_bot/core/csc/controller.py` — class=canonical | owner=orchestration | port=CognitiveSystemController | flags=runtime_reachable | importers=`trading_bot/aamis_v3/aamis_master_orchestrator.py`, `trading_bot/core_agent_system/integrated_system.py`, `trading_bot/hivemind/hivemind_orchestrator_v2.py`, `trading_bot/neuros_evolution/neuros_orchestrator.py`, `trading_bot/superpowerful_ai/__init__.py`, `trading_bot/unified_bot.py`
 - `trading_bot/core/immutable_shield.py` — class=canonical | owner=governance | port=ImmutableShield | flags=runtime_reachable | importers=`trading_bot/governance/immutable_shield.py`, `trading_bot/unified_bot.py`
-- `trading_bot/core/unified_event_bus.py` — class=canonical | owner=infrastructure | port=UnifiedDecisionBus | flags=runtime_reachable, starts_loop | importers=`trading_bot/core/event_bus.py`, `trading_bot/core/execution_bridge.py`, `trading_bot/core/security/defense.py`, `trading_bot/unified_bot.py`
+- `trading_bot/core/unified_event_bus.py` — class=canonical | owner=infrastructure | port=UnifiedDecisionBus | flags=runtime_reachable, starts_loop | importers=`trading_bot/core/event_bus.py`, `trading_bot/core/execution_bridge.py`, `trading_bot/core/security/defense.py`, `trading_bot/foundation/runtime.py`, `trading_bot/unified_bot.py`
 - `trading_bot/core/unified_registry.py` — class=canonical | owner=infrastructure | port=UnifiedComponentRegistry | flags=runtime_reachable | importers=`trading_bot/cognition/orchestrator.py`, `trading_bot/foundation/runtime.py`, `trading_bot/registry/__init__.py`, `trading_bot/research/alpha/seal_discovery.py`, `trading_bot/research/london_session/api.py`, `trading_bot/research/orchestration/research_os_v2.py`, `trading_bot/unified_bot.py`
 - `trading_bot/data/normalizer.py` — class=canonical | owner=data | port=MarketDataNormalizer | flags=runtime_reachable | importers=`trading_bot/unified_bot.py`
 - `trading_bot/execution/service.py` — class=canonical | owner=execution | port=CanonicalExecutionService | flags=runtime_reachable, direct_capital, direct_broker_access, dynamic_import | importers=`trading_bot/brokers/adapter_bridge.py`, `trading_bot/unified_bot.py`
@@ -1282,7 +1297,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/advanced_features/ai_macro_scanner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/advanced_features/black_swan_protection.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/advanced_features/blockchain_trade_verification.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
-- `trading_bot/advanced_features/blockchain_validation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, credential_access | importers=`trading_bot/brain/brain_architecture.py`, `trading_bot/brain/mt5_brain_trader.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/elite_system/quantum_blockchain_integration.py`
+- `trading_bot/advanced_features/blockchain_validation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/brain/brain_architecture.py`, `trading_bot/brain/mt5_brain_trader.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/elite_system/quantum_blockchain_integration.py`
 - `trading_bot/advanced_features/digital_twin.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/brain/brain_architecture.py`
 - `trading_bot/advanced_features/fractal_momentum.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/advanced_features/fractal_momentum_divergence.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/brain/brain_architecture.py`
@@ -1508,7 +1523,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/complete_integrator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint, top_level_module | importers=none
 - `trading_bot/complete_system_integrator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint, dynamic_import, top_level_module | importers=none
 - `trading_bot/config/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/mobile_app/mobile_api.py`, `trading_bot/reporting/logger.py`, `trading_bot/reporting/reporter.py`, `trading_bot/risk/MASTER_risk_manager.py`, `trading_bot/services/config_service.py`
-- `trading_bot/config/centralized_config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/config/centralized_config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/config/config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/config/config_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/config/constants.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
@@ -1540,7 +1555,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/connectivity_unified/unified_connector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/connectors/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/connectivity_unified/unified_connector.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/connectors_service.py`, `trading_bot/services/tier5_services.py`
 - `trading_bot/connectors/base_connector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
-- `trading_bot/connectors/ticktrader_connector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, credential_access | importers=none
+- `trading_bot/connectors/ticktrader_connector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
 - `trading_bot/constants.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/backtesting_integration.py`, `trading_bot/core/input_validation.py`
 - `trading_bot/continual_learner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
 - `trading_bot/core/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/core_systems_service.py`
@@ -1689,7 +1704,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/crypto/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/crypto_service.py`, `trading_bot/services/tier5_services.py`
 - `trading_bot/crypto/defi_module.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=cli, direct_capital, cli_entrypoint, direct_broker_access | importers=none
 - `trading_bot/ctrader/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
-- `trading_bot/ctrader/ctrader_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, credential_access | importers=none
+- `trading_bot/ctrader/ctrader_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
 - `trading_bot/dashboard/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/dashboard_service.py`
 - `trading_bot/dashboard/analytics_panel.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/dashboard/anomaly_detection.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
@@ -1728,7 +1743,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/data_sources/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/data_sources_service.py`
 - `trading_bot/data_sources/free_data_providers.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/database/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/intel/fundamental_analyzer.py`, `trading_bot/intel/strategy_researcher.py`, `trading_bot/ml/retraining.py`, `trading_bot/services/database_service.py`
-- `trading_bot/database/analytics_processor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/optimized_integration.py`, `trading_bot/trading_engine.py`
+- `trading_bot/database/analytics_processor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/optimized_integration.py`, `trading_bot/trading_engine.py`
 - `trading_bot/database/cache_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/database/complete_data_infrastructure.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/database/data_normalizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/analytics/backtest_parity.py`, `trading_bot/trading_engine.py`
@@ -1743,7 +1758,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/database/pipeline_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/optimized_integration.py`, `trading_bot/trading_engine.py`
 - `trading_bot/database/point_in_time_data.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/database/postgres_db.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
-- `trading_bot/database/production_database.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/database/production_database.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/database/real_time_processor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/opportunity_scanner/scanner_interface.py`, `trading_bot/optimized_integration.py`, `trading_bot/testing/e2e_framework.py`, `trading_bot/trading_engine.py`
 - `trading_bot/database/robust_db.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/database/shared_memory_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
@@ -1800,7 +1815,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/devops/changelog_generator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/diagnostic_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
 - `trading_bot/diagnostics/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/diagnostics_service.py`, `trading_bot/services/tier5_services.py`
-- `trading_bot/diagnostics/system_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint, credential_access, dynamic_import | importers=none
+- `trading_bot/diagnostics/system_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint, dynamic_import | importers=none
 - `trading_bot/distributed/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/distributed_service.py`, `trading_bot/services/tier5_services.py`
 - `trading_bot/distributed/task_distributor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/documentation.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
@@ -1820,7 +1835,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/elite_master_system.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=top_level_module | importers=none
 - `trading_bot/elite_system/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/elite_system_service.py`
 - `trading_bot/elite_system/ai_ml_cortex.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
-- `trading_bot/elite_system/benchmarking.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/elite_system/benchmarking.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/elite_system/config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/elite_system/dashboard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/elite_system/elite_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
@@ -1915,6 +1930,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/execution/paper_executor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
 - `trading_bot/execution/partial_fill_aggregator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=none
 - `trading_bot/execution/profit_maximizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/execution/recovery.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=runtime_reachable | importers=`trading_bot/foundation/runtime.py`
 - `trading_bot/execution/robust_retry.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/execution/slippage_protection.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=direct_capital, direct_broker_access | importers=`trading_bot/unified_architecture/layer4_execution.py`
 - `trading_bot/execution/slippage_tracker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
@@ -2042,10 +2058,11 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/infrastructure/auto_scaling.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/infrastructure/config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/infrastructure/health_check.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
-- `trading_bot/infrastructure/health_endpoints.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/infrastructure/health_endpoints.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/infrastructure/mlflow_tracker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/infrastructure/monitoring.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/infrastructure/orchestration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
+- `trading_bot/infrastructure/performance_metrics.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/infrastructure/prometheus_exporter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/ingestion/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
 - `trading_bot/ingestion/collector.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
@@ -2097,12 +2114,12 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/integrations.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`
 - `trading_bot/integrations/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/integrations/data_layer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
-- `trading_bot/integrations/real_alternative_data.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/integrations/real_alternative_data.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/integrations/real_defi_integration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
-- `trading_bot/integrations/real_market_data.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/integrations/real_market_data.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/intel/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/intel/fundamental_analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
-- `trading_bot/intel/news_pipeline.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=`trading_bot/core/legacy_main/main_v1.py`
+- `trading_bot/intel/news_pipeline.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
 - `trading_bot/interfaces/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/interfaces/adapters.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=runtime_reachable | importers=`trading_bot/foundation/runtime.py`
 - `trading_bot/internet_access/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
@@ -2296,7 +2313,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/monitoring/performance_tracker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/monitoring/latency_budget.py`, `trading_bot/opportunity_scanner/parallel_scanner.py`
 - `trading_bot/monitoring/production_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=none
 - `trading_bot/monitoring/production_monitoring.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=`trading_bot/api/rest_api.py`, `trading_bot/dashboard/web_dashboard.py`
-- `trading_bot/monitoring/prometheus_exporter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/infrastructure/prometheus_exporter.py`
+- `trading_bot/monitoring/prometheus_exporter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/infrastructure/__init__.py`, `trading_bot/infrastructure/prometheus_exporter.py`
 - `trading_bot/monitoring/prometheus_metrics.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/monitoring/start_prometheus.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/monitoring/system_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
@@ -2362,7 +2379,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/notifications/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/notifications_service.py`
 - `trading_bot/notifications/notification_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/notifications/notification_service.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
-- `trading_bot/notifications/owner_channels.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/notifications/owner_channels.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/notifications/push_notifications.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/notifications/telegram_bot.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
 - `trading_bot/observability/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/complete_integrator.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
@@ -2415,7 +2432,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/performance/performance_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
 - `trading_bot/performance/performance_profiler.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/elite_integration.py`, `trading_bot/performance_optimizer.py`
 - `trading_bot/performance/profiler.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
-- `trading_bot/performance/windows_optimizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/performance/windows_optimizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/performance_optimizer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
 - `trading_bot/perplexity_trading/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/services/tier5_services.py`
 - `trading_bot/perplexity_trading/assembly_qa.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
@@ -2480,13 +2497,13 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/realtime/realtime_execution.py` — class=quarantine | owner=infrastructure | port=ComponentLifecycle | flags=direct_capital, direct_broker_access | importers=none
 - `trading_bot/realtime/realtime_ml.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/realtime_dependency_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint, dynamic_import, top_level_module | importers=none
-- `trading_bot/realtime_system_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint, top_level_module | importers=none
+- `trading_bot/realtime_system_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint, top_level_module | importers=none
 - `trading_bot/realtime_trading_core.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint, top_level_module | importers=none
 - `trading_bot/realtime_trading_core/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/recursive_improvement/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
 - `trading_bot/recursive_improvement/architecture_recursion.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/recursive_improvement/execution_recursion.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
-- `trading_bot/recursive_improvement/harmful_behavior_guard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/recursive_improvement/harmful_behavior_guard.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/recursive_improvement/infrastructure.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/recursive_improvement/learning_recursion.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/recursive_improvement/loops/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
@@ -2503,7 +2520,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/recursive_self_improvement/candidate_adapters.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/evaluation/runner.py`
 - `trading_bot/recursive_self_improvement/contracts.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/recursive_self_improvement/engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
-- `trading_bot/recursive_self_improvement/engine_v2.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop, credential_access | importers=none
+- `trading_bot/recursive_self_improvement/engine_v2.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
 - `trading_bot/recursive_self_improvement/evidence_boundaries.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/recursive_self_improvement/improvement_genome.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/recursive_self_improvement/loops/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
@@ -2536,6 +2553,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/security/advanced_security.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
 - `trading_bot/security/artifact_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=`trading_bot/aamis_v3/superintelligence/memory_systems.py`, `trading_bot/analysis/liquidity_ml_predictor.py`, `trading_bot/ml/automl_pipeline.py`, `trading_bot/superintelligence/memory_systems.py`
 - `trading_bot/security/audit_logging.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/security/canonical_provider.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/advanced_features/blockchain_validation.py`, `trading_bot/config/centralized_config.py`, `trading_bot/connectivity/auth_manager.py`, `trading_bot/connectors/ticktrader_connector.py`, `trading_bot/ctrader/ctrader_integration.py`, `trading_bot/database/production_database.py`, `trading_bot/diagnostics/system_validator.py`, `trading_bot/integrations/real_alternative_data.py`, `trading_bot/integrations/real_market_data.py`, `trading_bot/intel/news_pipeline.py`, `trading_bot/notifications/owner_channels.py`, `trading_bot/recursive_improvement/harmful_behavior_guard.py`, `trading_bot/recursive_self_improvement/engine_v2.py`, `trading_bot/self_diagnostic/diagnostic_engine.py`, `trading_bot/system_config.py`, `trading_bot/unified_approval/pipeline_approval.py`, `trading_bot/unified_system/unified_config.py`
 - `trading_bot/security/complete_security_system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/security/credential_vault.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=`trading_bot/alphaalgo_5star.py`
 - `trading_bot/security/credentials.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
@@ -2566,7 +2584,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/self_diagnostic/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/complete_integrator.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
 - `trading_bot/self_diagnostic/auto_repair.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/self_diagnostic/comprehensive_diagnostics.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
-- `trading_bot/self_diagnostic/diagnostic_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access, dynamic_import | importers=`trading_bot/diagnostic_engine.py`
+- `trading_bot/self_diagnostic/diagnostic_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=dynamic_import | importers=`trading_bot/diagnostic_engine.py`
 - `trading_bot/self_diagnostic/knowledge_gap.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
 - `trading_bot/self_diagnostic/self_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
 - `trading_bot/self_evolution_engine.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
@@ -2584,7 +2602,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/self_healing_ai/validators/regulatory.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/self_healing_ai/validators/security.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/self_healing_ai/validators/self_modification.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
-- `trading_bot/self_healing_ai/validators/system_architecture.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/self_healing_ai/validators/system_architecture.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/self_improvement/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/brain/brain_architecture.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
 - `trading_bot/self_improvement/analyzer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/self_improvement/audit_logger.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
@@ -2777,7 +2795,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/social/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
 - `trading_bot/social/copy_trading.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/social/intelligent_learning.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
-- `trading_bot/strategies/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/recursive_self_improvement/engine_v2.py`, `trading_bot/services/tier5_services.py`
+- `trading_bot/strategies/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=runtime_reachable | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/recursive_self_improvement/engine_v2.py`, `trading_bot/services/tier5_services.py`, `trading_bot/unified_bot.py`
 - `trading_bot/strategies/adapter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/strategies/advanced_strategies.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=`trading_bot/brain/central_controller.py`
 - `trading_bot/strategies/institutional_strategies.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/evaluation/runner.py`, `trading_bot/recursive_self_improvement/candidate_adapters.py`
@@ -2802,9 +2820,9 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/system.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
 - `trading_bot/system/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/system/backup_recovery.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
-- `trading_bot/system_config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access, top_level_module | importers=none
+- `trading_bot/system_config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
 - `trading_bot/system_health/__init__.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
-- `trading_bot/system_health/auto_repair.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=starts_loop | importers=none
+- `trading_bot/system_health/auto_repair.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/system_health/health_monitor.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=`trading_bot/connectivity/network_integration.py`, `trading_bot/health_monitor.py`
 - `trading_bot/system_health/intelligent_learner.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/system_health/stability_tester.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
@@ -2908,7 +2926,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/unified_system/layers/layer8_execution.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/unified_system/layers/layer9_orchestration.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/unified_system/master_system.py` — class=compatibility_facade | owner=orchestration | port=ModularMonolithRuntime | flags=none | importers=none
-- `trading_bot/unified_system/unified_config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=credential_access | importers=none
+- `trading_bot/unified_system/unified_config.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/unified_system/unified_types.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/unifiedtradingsystem.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
 - `trading_bot/universal_action_layer.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=top_level_module | importers=none
@@ -2932,7 +2950,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/utils/candle_tracker.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/utils/data_manager.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/utils/data_validator.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
-- `trading_bot/utils/debug_tools.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/utils/debug_tools.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/utils/logger.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/utils/profiler.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
 - `trading_bot/utils/rate_limiter.py` — class=adapter | owner=infrastructure | port=ComponentLifecycle | flags=none | importers=none
@@ -3301,7 +3319,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/unified_approval/approval_types.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
 - `trading_bot/unified_approval/integrator.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/unified_approval/notification_system.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
-- `trading_bot/unified_approval/pipeline_approval.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint, credential_access | importers=none
+- `trading_bot/unified_approval/pipeline_approval.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/unified_architecture/layer5_risk_safety.py` — class=quarantine | owner=risk | port=RiskService/GovernanceGate | flags=direct_capital, direct_broker_access | importers=none
 - `trading_bot/unified_system/layers/layer10_governance.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
 - `trading_bot/unified_system/layers/layer6_risk_safety.py` — class=adapter | owner=risk | port=RiskService/GovernanceGate | flags=none | importers=none
@@ -3436,7 +3454,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/alpha_evolve/fitness_evaluator.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/alpha_evolve/genetic_operators.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/alpha_evolve/integrated_evolution.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
-- `trading_bot/alpha_evolve/parallel_evaluator.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/alpha_evolve/parallel_evaluator.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/alpha_evolve/speciated_evolution_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/alpha_evolve/strategy_genome.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/strategy_genome.py`
 - `trading_bot/alpha_evolve/walk_forward.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
@@ -3444,7 +3462,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/alphaalgo_5star.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=credential_access, top_level_module | importers=`trading_bot/deployment/multi_symbol_manager.py`
 - `trading_bot/alphaalgo_core/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/alphaalgo_core_service.py`
 - `trading_bot/alphaalgo_core/alphaalgo_core.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
-- `trading_bot/alphaalgo_core/alphaalgo_meta_system.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=`trading_bot/alphaalgo_core/example_alphaalgo_meta_system.py`
+- `trading_bot/alphaalgo_core/alphaalgo_meta_system.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/alphaalgo_core/example_alphaalgo_meta_system.py`
 - `trading_bot/alphaalgo_core/anti_learning_firewall.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/alphaalgo_core/assumption_decompiler.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/alphaalgo_core/central_controller.py` — class=compatibility_facade | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/unified_approval/integrator.py`
@@ -3505,11 +3523,11 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/analysis/regime_adaptive_strategy.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/analytics/alpha_attribution.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/analytics/signal_performance_tracker.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
-- `trading_bot/apex_fi/alpha_mining.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/apex_fi/alpha_mining.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/apex_fi/alpha_mining_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/apex_fi/layer2_alpha_mining.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/apex_fi/layer4_portfolio_architect.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
-- `trading_bot/auto_optimizer/strategy_optimizer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/auto_optimizer/strategy_optimizer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/autonomous/alpha_factor_discovery.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/autonomous/strategy_tuner.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/brain/alphaalgo_2_0.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
@@ -3529,7 +3547,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/core/phase3_strategy_redesign.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/core/phase4_ml_enhancements.py`
 - `trading_bot/core/position_reconciliation.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/core/signal_counterintelligence.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/core/aletheia_browser_research.py`, `trading_bot/core/alphaalgo_master_integration.py`, `trading_bot/core/execution_manager.py`, `trading_bot/core/nested_learning_hope.py`, `trading_bot/core/talos_cerberus_v23.py`, `trading_bot/services/execution_service.py`, `trading_bot/services/intelligence_directorate_service.py`
-- `trading_bot/critical_fixes/position_state_manager.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/critical_fixes/position_state_manager.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/dashboard/signal_panel.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/dashboard/strategy_dashboard.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=`trading_bot/brain/brain_trader.py`, `trading_bot/brain/central_controller.py`, `trading_bot/brain/mt5_brain_trader.py`
 - `trading_bot/database/signal_processor.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/optimized_integration.py`, `trading_bot/trading_engine.py`
@@ -3556,7 +3574,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/market_teacher/strategy_evolution.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/ml/llm_guided/llm_strategy_advisor.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/ml/llm_guided_rl/strategy_proposer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
-- `trading_bot/ml/offline_rl/alphaalgo_autonomous_system.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/ml/offline_rl/alphaalgo_autonomous_system.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=runtime_reachable, cli, cli_entrypoint | importers=none
 - `trading_bot/ml/strategy_optimizer.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/msos/signal_semantics.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/observability/strategy_kill_switch.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
@@ -3574,23 +3592,23 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/position/position_management.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/position/position_manager.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/position/position_tracker.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
-- `trading_bot/position/realtime_pnl.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=`trading_bot/elite_master_system.py`
+- `trading_bot/position/realtime_pnl.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/elite_master_system.py`
 - `trading_bot/position_manager.py` — class=quarantine | owner=strategy | port=StrategyPort/SignalPort | flags=direct_capital, direct_broker_access, top_level_module | importers=`trading_bot/brain/brain_architecture.py`, `trading_bot/connectivity/network_monitor.py`, `trading_bot/core/position_reconciliation.py`, `trading_bot/reporting/reporter.py`
 - `trading_bot/radar_ai/agents/strategy_agent.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
-- `trading_bot/realtime/realtime_signal_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/realtime/realtime_signal_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/recursive_improvement/loops/strategy_loop.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/recursive_improvement/strategy_recursion.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/self_healing_ai/validators/strategy.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/self_improvement/internet_strategy_improver.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/self_learning/strategy_evolution.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
-- `trading_bot/services/alpha_engine_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
-- `trading_bot/services/alphaalgo_core_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
-- `trading_bot/services/alphaalgo_institutional_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
-- `trading_bot/services/alphaalgo_v2_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
-- `trading_bot/services/portfolio_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
-- `trading_bot/services/position_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
-- `trading_bot/services/signals_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
-- `trading_bot/services/strategy_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/services/alpha_engine_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/services/alphaalgo_core_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/services/alphaalgo_institutional_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/services/alphaalgo_v2_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/services/portfolio_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/services/position_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/services/signals_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
+- `trading_bot/services/strategy_service.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/signal_discovery/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/signal_discovery/agents/__init__.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/signal_discovery/agents/base_agent.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
@@ -3614,7 +3632,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/signals/multi_timeframe_consensus.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/signals/news_gating.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/signals/signal_engine.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
-- `trading_bot/signals/signal_lifecycle.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/signals/signal_lifecycle.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/signals/signal_provenance.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/signals/signal_ttl_manager.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/signals/simple_signals.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
@@ -3657,7 +3675,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/system_health/alphaalgo_master.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/tamic/signal_decay.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/trading/position_manager.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=`trading_bot/core/main_trading_loop.py`
-- `trading_bot/trading/position_reconciliation.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=starts_loop | importers=none
+- `trading_bot/trading/position_reconciliation.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
 - `trading_bot/ultimate_bot/aggressive_strategy.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/ultimate_bot/ultimate_alphaalgo.py` — class=quarantine | owner=strategy | port=StrategyPort/SignalPort | flags=cli, direct_capital, cli_entrypoint, direct_broker_access | importers=none
 - `trading_bot/ultimate_production/strategy_ensemble.py` — class=adapter | owner=strategy | port=StrategyPort/SignalPort | flags=none | importers=none
@@ -3858,13 +3876,13 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/autonomous_financial_intelligence/verified_reasoning/logical_verifier.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/core/chainofthoughtreasoner.py`
 - `trading_bot/autonomous_financial_intelligence/verified_reasoning/uncertainty_quantifier.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/autonomous_superintelligence/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
-- `trading_bot/autonomous_superintelligence/agent_coordinator.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/autonomous_superintelligence/agent_coordinator.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/autonomous_superintelligence/agent_spawner.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
-- `trading_bot/autonomous_superintelligence/autonomous_trading_bridge.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/autonomous_superintelligence/autonomous_trading_bridge.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/autonomous_superintelligence/consciousness_modeling.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/autonomous_superintelligence/core_intelligence.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/autonomous_superintelligence/discovery_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
-- `trading_bot/autonomous_superintelligence/enhanced_integration.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/autonomous_superintelligence/enhanced_integration.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/autonomous_superintelligence/global_coordinator.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/autonomous_superintelligence/infrastructure_expander.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/autonomous_superintelligence/knowledge_synthesizer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
@@ -3874,12 +3892,12 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/autonomous_superintelligence/resource_manager.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/autonomous_superintelligence/self_modifier.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=dynamic_import | importers=none
 - `trading_bot/autonomous_superintelligence/superintelligence_orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=none
-- `trading_bot/autonomous_superintelligence/trading_integration.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/autonomous_superintelligence/trading_integration.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/autonomous_superintelligence/verified_intelligence_integration.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/bear_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=top_level_module | importers=none
 - `trading_bot/brain/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/brain/integration_example.py`, `trading_bot/core/legacy_main/main_v1.py`, `trading_bot/diagnostics/system_validator.py`, `trading_bot/services/brain_service.py`, `trading_bot/system_health/health_monitor.py`
 - `trading_bot/brain/adaptive_integration.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=`trading_bot/brain/alphaalgo_2_0.py`, `trading_bot/cognitive_architecture/cognitive_core.py`
-- `trading_bot/brain/brain_architecture.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, starts_loop, cli_entrypoint | importers=`trading_bot/brain/adaptive_integration.py`, `trading_bot/brain/brain_trader.py`, `trading_bot/brain/central_controller.py`, `trading_bot/brain/mt5_brain_trader.py`
+- `trading_bot/brain/brain_architecture.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=`trading_bot/brain/adaptive_integration.py`, `trading_bot/brain/brain_trader.py`, `trading_bot/brain/central_controller.py`, `trading_bot/brain/mt5_brain_trader.py`
 - `trading_bot/brain/brain_trader.py` — class=quarantine | owner=cognition | port=CapabilityPort | flags=cli, direct_capital, cli_entrypoint, direct_broker_access | importers=none
 - `trading_bot/brain/central_controller.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/brain/elite_brain.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=`trading_bot/brain/brain_architecture.py`
@@ -3945,10 +3963,10 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/core_agent_system/coordination_core.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/core_agent_system/coordination_core_part2.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/core_agent_system/dynamic_agent_factory.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
-- `trading_bot/core_agent_system/integrated_system.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, starts_loop, cli_entrypoint | importers=none
+- `trading_bot/core_agent_system/integrated_system.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/core_agent_system/legacy_adapter.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/background.py`, `trading_bot/services/aamis_service.py`, `trading_bot/services/core_systems_service.py`
 - `trading_bot/core_agent_system/master_orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=none
-- `trading_bot/core_agent_system/memory_system.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/core_agent_system/memory_system.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/core_agent_system/meta_orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/radar_ai/agents/meta_orchestrator.py`
 - `trading_bot/core_agent_system/migrated_agents/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/core_agent_system/migrated_agents/legacy_agents.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
@@ -4003,7 +4021,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/integrations/intelligence_layer.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/intelligence/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier4_services.py`
 - `trading_bot/intelligence/discipline_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
-- `trading_bot/intelligence/knowledge_action_bridge.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/intelligence/knowledge_action_bridge.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/intelligence/profitability_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/intelligence/reverse_engineering_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/intelligence/self_learning_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`
@@ -4030,7 +4048,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/market_intelligence/categories/regulatory_change.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/market_intelligence/categories/technological_breakthroughs.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/market_intelligence/classifier.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
-- `trading_bot/market_intelligence/data_monitoring.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/market_intelligence/data_monitoring.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/market_intelligence/event_detection.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/market_intelligence/fusion_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/market_intelligence/latent_space.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
@@ -4041,7 +4059,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/market_intelligence/market_context.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/market_intelligence/microstructure_analysis.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/market_intelligence/pattern_recognition.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
-- `trading_bot/market_intelligence/performance_optimization.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/market_intelligence/performance_optimization.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/market_intelligence/regime_classification.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/market_intelligence/technical_analysis.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/analysis/market_intelligence.py`
 - `trading_bot/market_intelligence/time_price_analysis.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
@@ -4073,7 +4091,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/ml/neurosymbolicagent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/ml/offline_rl/bcq_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/advanced_rl_agents.py`, `trading_bot/ml/offline_rl/offline_rl_trainer.py`
 - `trading_bot/ml/offline_rl/cql_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/advanced_rl_agents.py`, `trading_bot/ml/offline_rl/offline_rl_trainer.py`
-- `trading_bot/ml/offline_rl/enhanced_cql_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
+- `trading_bot/ml/offline_rl/enhanced_cql_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=runtime_reachable, cli, cli_entrypoint | importers=none
 - `trading_bot/ml/offline_rl/iql_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/ml/offline_rl/offline_rl_trainer.py`
 - `trading_bot/ml/offline_rl/model_selector.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/ml/pattern_recognition.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
@@ -4113,12 +4131,12 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/reward_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=top_level_module | importers=none
 - `trading_bot/self_healing_ai/validators/ml_models.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/self_improvement/model_learner.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
-- `trading_bot/services/agents2_service.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
-- `trading_bot/services/agents_service.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
-- `trading_bot/services/brain_service.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
-- `trading_bot/services/integrated_brain_service.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
-- `trading_bot/services/intelligence_directorate_service.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
-- `trading_bot/services/market_intelligence_service.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=starts_loop | importers=none
+- `trading_bot/services/agents2_service.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/services/agents_service.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/services/brain_service.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/services/integrated_brain_service.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/services/intelligence_directorate_service.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/services/market_intelligence_service.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/simulation/adversarial_agent.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=cli, cli_entrypoint | importers=none
 - `trading_bot/skills/ai_ml_enhancements/diffusion_model.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/superintelligence/__init__.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/tier5_services.py`
@@ -4156,6 +4174,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/world_model/meta_intelligence_integration.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/world_model/microstructure.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/world_model/perception.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
+- `trading_bot/world_model/port_adapter.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/world_model/self_play_engine.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
 - `trading_bot/world_model/simulation_orchestrator.py` — class=compatibility_facade | owner=cognition | port=CapabilityPort | flags=none | importers=`trading_bot/cos/simulation_engine.py`
 - `trading_bot/world_model/synthetic_data.py` — class=adapter | owner=cognition | port=CapabilityPort | flags=none | importers=none
@@ -4211,7 +4230,7 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/analytics/backtest_parity.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
 - `trading_bot/autonomous_financial_intelligence/self_improvement/experiment_registry.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
 - `trading_bot/autonomous_learner/internet_researcher.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
-- `trading_bot/autonomous_superintelligence/experiment_engine.py` — class=research_only | owner=research | port=ResearchCapability | flags=starts_loop | importers=`trading_bot/recursive_improvement/infrastructure.py`
+- `trading_bot/autonomous_superintelligence/experiment_engine.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=`trading_bot/recursive_improvement/infrastructure.py`
 - `trading_bot/autonomous_superintelligence/research_engine.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
 - `trading_bot/backtesting.py` — class=research_only | owner=research | port=ResearchCapability | flags=top_level_module | importers=`trading_bot/core/legacy_main/main_v1.py`, `trading_bot/services/backtesting_service.py`
 - `trading_bot/backtesting/__init__.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
@@ -4372,8 +4391,8 @@ The `migration_wave` field is assigned by path heuristics. Wave 1 is the broad o
 - `trading_bot/research_ingestion/sandbox_implementer.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
 - `trading_bot/self_healing_ai/validators/backtest.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
 - `trading_bot/self_healing_ai/validators/research_production.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
-- `trading_bot/services/alpha_research_service.py` — class=research_only | owner=research | port=ResearchCapability | flags=starts_loop | importers=none
-- `trading_bot/services/backtesting_service.py` — class=research_only | owner=research | port=ResearchCapability | flags=starts_loop | importers=none
+- `trading_bot/services/alpha_research_service.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
+- `trading_bot/services/backtesting_service.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
 - `trading_bot/signal_discovery/agents/research_paper_agents.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
 - `trading_bot/systems_ai/research_agent.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none
 - `trading_bot/ultimate_system/internet_research_engine.py` — class=research_only | owner=research | port=ResearchCapability | flags=none | importers=none

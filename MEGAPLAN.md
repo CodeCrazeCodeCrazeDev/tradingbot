@@ -12,6 +12,20 @@ partially resolved — see table). New P0 rows added: tracked credentials
 (MP-040, **operator action required: rotate first**), divergent legacy API
 stacks (MP-043), production-compose missing mounts (MP-044).
 
+**Update 2026-09-30:** a parallel agent session landed 16 commits
+(`7bce2bfd`..`9641a153`): canonical-path governance gate, live-mode human
+approval, real `PortfolioStateProvider` in `risk/service.py`, audit-log
+writability gating on the bus, legacy-surface quarantine, CI gates. Audited:
+all preserved, consistent with MP-041/042 direction. Two mid-flight defects
+in its *uncommitted* batch were fixed here: a broken `alphaalgo_offline_rl_master`
+import on `main.py` (reverted — broke canonical entry) and an `_archive`
+import in `infrastructure/__init__.py` (repointed to the real
+`monitoring/prometheus_exporter`; the two perf helpers existed only in
+archive and were dropped). Post-audit: arch+bus+boundary tests green,
+`main.py --synthetic` end-to-end OK — note decisions now `TRADE_REJECTED
+(exposure_limit)` because risk evaluates real persisted state, not synthetic
+observations. 75 batch files remain uncommitted pending that session's return.
+
 **Authority:** this document supersedes the status claims of all prior audit
 docs where they conflict. Prior docs are treated as *claims to re-verify*,
 not evidence. A finding is `CONFIRMED` only when it was reproduced or the
