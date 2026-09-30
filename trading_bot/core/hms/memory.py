@@ -1,15 +1,15 @@
 """
 Hierarchical Memory System (HMS) - UCA V6 Authoritative Memory Substrate
 
-Paper Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Selective memory fine-tuning & entropy-based evidence pruning.
-- arXiv:2607.00341 (LogAct / DiscoLoop): Transactional shared-log persistence & discrete-continuous memory state recurrence.
-- arXiv:2607.01224 (CORAL / AutoMem): Metamemory optimization & automatic schema version migration.
-- arXiv:2605.12061 (Search-R1 / SAGE): Dynamic self-evolving graph memory & multi-hop evidence retrieval.
-- arXiv:2605.10813 (NanoResearch): Tri-level co-evolving research memory substrate.
-- arXiv:2605.20025 (S2L / AutoResearchClaw): Memory-indexed debate evidence & adversarial pivot logging.
-- arXiv:2605.17734 (HASP): Procedural skill program storage & invariant check logs.
-- arXiv:2605.21482 (DeepWeb-Bench): Evidence provenance verification & calibration audit trails.
+Paper Traceability Matrix (UCA 2026 Mandatory Research Papers):
+- 2605.29303 (EKSFT): Explicit knowledge key-value mapping & memory fine-tuning
+- 2607.00341 (DiscoLoop): Transactional persistence & discrete-continuous recurrence
+- 2607.01224 (AutoMem): Metamemory optimization & automatic schema version migration
+- 2605.12061 (SAGE): Subgraph adaptive graph evolution & multi-hop evidence retrieval
+- 2605.10813 (NanoResearch): Ultra-lean memory substrate & fast-path state retrieval
+- 2605.20025 (AutoResearchClaw): Memory-indexed debate evidence & adversarial pivot logging
+- 2605.17734 (HASP): Procedural skill program storage & invariant check logs
+- 2605.21482 (DeepWeb-Bench): Multi-modal evidence provenance & calibration audit trails
 """
 
 from datetime import datetime, timezone
