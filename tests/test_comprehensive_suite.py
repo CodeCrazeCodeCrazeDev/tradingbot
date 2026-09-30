@@ -87,7 +87,8 @@ class TestRiskManagement:
         
     def test_position_sizing_fixed_risk(self):
         """Test fixed risk position sizing"""
-        
+        from trading_bot.risk.position_sizer import PositionSizer
+
         # Use config to set min size to 0 for testing
         sizer = PositionSizer(config={'min_position_size': 0})
         

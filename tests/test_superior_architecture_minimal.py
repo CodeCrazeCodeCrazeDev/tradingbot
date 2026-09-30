@@ -1,5 +1,5 @@
 import asyncio
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, AsyncMock
 import logging
 import sys
 import os
@@ -41,6 +41,11 @@ async def test_csc_pipeline_success():
     mock_report.decision = GovernanceDecision.APPROVED
     mock_shield.validate_action.return_value = mock_report
     mock_shield.GovernanceDecision = GovernanceDecision
+    # The CSC registers shield.audit_log_action as the LogAct "shield" voter;
+    # for shielded action types the bus requires an explicit affirmative report.
+    mock_shield.audit_log_action = AsyncMock(return_value={
+        "decision": "APPROVED", "reason": "", "risk_score": 0.1, "audit_id": "mock",
+    })
 
     csc = CognitiveSystemController(mock_world_model, mock_hms, shield=mock_shield)
 

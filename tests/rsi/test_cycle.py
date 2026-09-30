@@ -35,7 +35,12 @@ def frames():
 def stack(tmp_path, frames):
     contract = make_contract(frames)
     operator = Ed25519PrivateKey.generate()
-    verifier = IndependentVerifier()
+    # Provisioned custody: the verifier key lives in an operator-controlled
+    # file, so signed reports may carry holdout_attested=True.
+    key_file = tmp_path / "verifier.pem"
+    IndependentVerifier(
+        private_key=Ed25519PrivateKey.generate()).export_private_key(str(key_file))
+    verifier = IndependentVerifier(key_path=str(key_file))
     archive = ParetoArchive(tmp_path / "archive.jsonl")
     memory = ImprovementMemory(str(tmp_path / "mem.db"))
     guard = ProtectedPathGuard()
@@ -74,6 +79,23 @@ def test_planted_edge_candidate_reaches_eligible(stack):
     assert winners, "planted oscillation edge should clear all gates"
     rec = stack["archive"].by_id(winners[0].genome_id)
     assert rec["role"] in ("challenger", "champion")
+
+
+def test_ephemeral_verifier_custody_never_reaches_eligible(stack):
+    """An in-process generated key has no auditable custody: reports it
+    signs must be stamped unattested, so the verdict cannot reach
+    eligible_for_operator_review even on a planted edge."""
+    ephemeral = IndependentVerifier()  # no key material provisioned
+    cycle = RecursiveImprovementCycle(
+        contract=stack["contract"], verifier=ephemeral,
+        archive=stack["archive"], memory=stack["memory"],
+        guard=stack["guard"], frames=stack["cycle"].frames,
+        incumbent_params={"lookback": 100, "entry_threshold": 1.0},
+        adapter=ADAPTERS["mean_reversion"],
+        config=CycleConfig(run_transfer=False, max_candidates_per_cycle=4))
+    decisions = cycle.run_cycle()
+    assert decisions
+    assert all(d.status != "eligible_for_operator_review" for d in decisions)
 
 
 def test_out_of_bounds_candidate_rejected(stack):

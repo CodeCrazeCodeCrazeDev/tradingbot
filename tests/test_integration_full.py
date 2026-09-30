@@ -102,6 +102,7 @@ class TestFullSystemIntegration:
         })
         
         # 2. Forecast
+        from trading_bot.ml.forecasting import NBeatsModel
         model = NBeatsModel(input_size=24, forecast_size=1)
         
         # 3. Generate signal
@@ -112,6 +113,7 @@ class TestFullSystemIntegration:
         schedule = optimizer.compute_optimal_trajectory(0.1, 5)
         
         # 5. Monitor
+        from trading_bot.infrastructure import PrometheusExporter
         exporter = PrometheusExporter(port=9002)
         exporter.record_trade('EURUSD', signal, 'closed', 5.0)
         
@@ -125,7 +127,8 @@ class TestPerformanceBenchmarks:
     
     def test_forecasting_latency(self):
         """Test forecasting model latency"""
-        
+        from trading_bot.ml.forecasting import NBeatsModel
+
         model = NBeatsModel(input_size=24, forecast_size=6)
         x = np.random.randn(100, 24).astype(np.float32)
         

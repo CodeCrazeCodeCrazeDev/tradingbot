@@ -436,6 +436,46 @@ def test_strategy_portfolio_families_have_no_reachable_capital_or_loops() -> Non
         "trading_bot/services/brokers_service.py",
         "trading_bot/connectors/exchange_monitor.py",
         "trading_bot/connectivity/venue_outage_detector.py",
+        # Wave-6 research surfaces — research_only, no detached workers
+        "trading_bot/autonomous_superintelligence/experiment_engine.py",
+        "trading_bot/services/alpha_research_service.py",
+        "trading_bot/services/backtesting_service.py",
+        # Wave-4 strategy/signal/position loops — advisory/research only
+        "trading_bot/alpha_evolve/parallel_evaluator.py",
+        "trading_bot/alphaalgo_core/alphaalgo_meta_system.py",
+        "trading_bot/apex_fi/alpha_mining.py",
+        "trading_bot/auto_optimizer/strategy_optimizer.py",
+        "trading_bot/critical_fixes/position_state_manager.py",
+        "trading_bot/ml/offline_rl/alphaalgo_autonomous_system.py",
+        "trading_bot/position/realtime_pnl.py",
+        "trading_bot/realtime/realtime_signal_engine.py",
+        "trading_bot/services/alpha_engine_service.py",
+        "trading_bot/services/alphaalgo_core_service.py",
+        "trading_bot/services/alphaalgo_institutional_service.py",
+        "trading_bot/services/alphaalgo_v2_service.py",
+        "trading_bot/services/portfolio_service.py",
+        "trading_bot/services/position_service.py",
+        "trading_bot/services/signals_service.py",
+        "trading_bot/services/strategy_service.py",
+        "trading_bot/signals/signal_lifecycle.py",
+        "trading_bot/trading/position_reconciliation.py",
+        # Wave-5 AI/agent loops — advisory capabilities, never authorities
+        "trading_bot/autonomous_superintelligence/agent_coordinator.py",
+        "trading_bot/autonomous_superintelligence/autonomous_trading_bridge.py",
+        "trading_bot/autonomous_superintelligence/enhanced_integration.py",
+        "trading_bot/autonomous_superintelligence/trading_integration.py",
+        "trading_bot/brain/brain_architecture.py",
+        "trading_bot/core_agent_system/integrated_system.py",
+        "trading_bot/core_agent_system/memory_system.py",
+        "trading_bot/intelligence/knowledge_action_bridge.py",
+        "trading_bot/market_intelligence/data_monitoring.py",
+        "trading_bot/market_intelligence/performance_optimization.py",
+        "trading_bot/services/agents2_service.py",
+        "trading_bot/services/agents_service.py",
+        "trading_bot/services/brain_service.py",
+        "trading_bot/services/integrated_brain_service.py",
+        "trading_bot/services/intelligence_directorate_service.py",
+        "trading_bot/services/market_intelligence_service.py",
     ],
 )
 def test_legacy_orchestrators_have_no_worker_spawn(relative: str) -> None:
@@ -529,6 +569,21 @@ def test_manifest_records_external_surfaces_and_dynamic_imports() -> None:
     assert manifest["summary"]["credential_access_modules"] >= 0
 
 
+@pytest.mark.asyncio
+async def test_legacy_experiment_engine_cannot_self_deploy() -> None:
+    """Autonomous model deployment is the parallel-promotion path RSI must
+    never have: deploy_model refuses unconditionally."""
+    from trading_bot.autonomous_superintelligence.experiment_engine import (
+        ContinuousExperimentEngine,
+    )
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        engine = ContinuousExperimentEngine({"storage_path": tmp})
+        with pytest.raises(PermissionError):
+            await engine.deploy_model("any-model")
+
+
 def test_external_capital_surfaces_are_quarantined_and_guarded() -> None:
     """Every standalone surface that can move capital must be quarantined
     AND refuse/delegate at entry — an unguarded capital launcher is a live
@@ -544,13 +599,39 @@ def test_external_capital_surfaces_are_quarantined_and_guarded() -> None:
     ]
     assert unguarded == [], f"unguarded capital-capable surfaces: {unguarded}"
     assert manifest["summary"].get("unguarded_capital_surfaces", 0) == 0
+    # Loop-spawning CLIs that touch trading_bot must also be guarded;
+    # pure standalone monitors (no trading_bot imports) are external ops
+    # tools and cannot reach runtime authority.
     unguarded_loops = [
         r["path"]
         for r in manifest["external_surfaces"]
         if r["starts_loop"] and r["cli_entrypoint"] and not r.get("guarded_at_entry")
+        and any(
+            imp == "trading_bot" or imp.startswith("trading_bot.")
+            for imp in r["imports"]
+        )
     ]
     assert unguarded_loops == [], f"unguarded loop-spawning CLIs: {unguarded_loops}"
     assert manifest["summary"].get("unguarded_loop_surfaces", 0) == 0
+
+
+def test_adapter_review_queue_covers_all_adapters() -> None:
+    """Every adapter-classified module must carry a review_priority in 0..3
+    and the queue counts must partition the adapter set."""
+    manifest = json.loads(
+        (ROOT / "ARCHITECTURE_LEGACY_CLASSIFICATION.json").read_text(encoding="utf-8")
+    )
+    adapters = [r for r in manifest["modules"] if r["classification"] == "adapter"]
+    assert adapters, "manifest has no adapter rows to prioritize"
+    queue = manifest["summary"]["adapter_review_queue"]
+    assert set(queue) == {"0", "1", "2", "3"}
+    assert sum(queue.values()) == len(adapters)
+    for row in adapters:
+        assert row.get("review_priority") in (0, 1, 2, 3)
+        if row["runtime_reachable"]:
+            assert row["review_priority"] == 0, f"reachable adapter not P0: {row['path']}"
+        elif "credential_access" in row["secondary_tags"]:
+            assert row["review_priority"] == 1
 
 
 def test_adapter_worker_exemptions_do_not_hide_capital_violations() -> None:
