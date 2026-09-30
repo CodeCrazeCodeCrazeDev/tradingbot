@@ -107,6 +107,20 @@ async def test_runtime_denies_entries_when_override_check_raises() -> None:
 
 
 @pytest.mark.asyncio
+async def test_enrich_observation_populates_rsi_features() -> None:
+    """Regression: once the 15-bar price window fills, enrichment must resolve
+    its indicator (wilder_rsi) — a missing name here NameError-crashed runs."""
+    bot = UnifiedTradingBot({"mode": "paper"})
+    obs = {}
+    for i in range(16):
+        obs = bot.enrich_observation({"symbol": "EURUSD", "price": 1.0 + i * 0.001})
+
+    assert isinstance(obs["rsi"], float) and 0.0 <= obs["rsi"] <= 100.0
+    assert obs["rsi_signal"]["action"] in {"sell_bias", "buy_bias", "neutral"}
+    assert obs["trend"] == "UP"
+
+
+@pytest.mark.asyncio
 async def test_runtime_denies_entries_when_trading_paused() -> None:
     bot = UnifiedTradingBot({"mode": "paper"})
     bot.layers["human"] = {"is_trading_allowed": lambda: False}

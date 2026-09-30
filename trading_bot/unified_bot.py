@@ -29,6 +29,7 @@ from trading_bot.core.unified_registry import registry
 from trading_bot.data.normalizer import MarketDataNormalizer
 from trading_bot.foundation.capability_registry import CapabilityRegistry
 from trading_bot.strategies.registry import StrategyRegistry
+from trading_bot.strategies.technical import wilder_rsi
 
 logger = logging.getLogger(__name__)
 
@@ -314,7 +315,7 @@ class UnifiedTradingBot:
 
         if len(self._price_window) >= 15:
             prices = np.asarray(self._price_window, dtype=np.float64)
-            obs["rsi"] = float(rsi_fast(prices, period=14)[-1])
+            obs["rsi"] = float(wilder_rsi(prices, period=14)[-1])
             obs["rsi_signal"] = _rsi_signal(obs)
             returns = np.diff(prices) / np.clip(prices[:-1], 1e-12, None)
             obs.setdefault("volatility", float(np.std(returns)))
