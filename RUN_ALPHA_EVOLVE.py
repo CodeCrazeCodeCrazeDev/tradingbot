@@ -186,4 +186,8 @@ def main():
 
 
 if __name__ == "__main__":
+    raise SystemExit(
+        "RUN_ALPHA_EVOLVE.py is QUARANTINED: standalone launcher/runner can spawn a parallel runtime outside ModularMonolithRuntime -> UnifiedTradingBot. Use 'python main.py --mode paper' for the canonical entry point."
+    )
+    # Legacy entry point preserved below for reference (unreachable):
     sys.exit(main())

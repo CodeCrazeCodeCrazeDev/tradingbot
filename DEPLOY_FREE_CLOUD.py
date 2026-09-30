@@ -130,4 +130,8 @@ async def run():
 
 
 if __name__ == "__main__":
+    raise SystemExit(
+        "DEPLOY_FREE_CLOUD.py is QUARANTINED: standalone launcher/runner can spawn a parallel runtime outside ModularMonolithRuntime -> UnifiedTradingBot. Use 'python main.py --mode paper' for the canonical entry point."
+    )
+    # Legacy entry point preserved below for reference (unreachable):
     asyncio.run(run())

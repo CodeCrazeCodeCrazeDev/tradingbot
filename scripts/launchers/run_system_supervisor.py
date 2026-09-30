@@ -129,7 +129,11 @@ async def main():
         print(f"📊 Final report: system_supervisor_final_report.json\n")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    raise SystemExit(
+        "scripts/launchers/run_system_supervisor.py is QUARANTINED: standalone launcher/runner can spawn a parallel runtime outside ModularMonolithRuntime -> UnifiedTradingBot. Use 'python main.py --mode paper' for the canonical entry point."
+    )
+    # Legacy entry point preserved below for reference (unreachable):
     from datetime import datetime
     
     try:

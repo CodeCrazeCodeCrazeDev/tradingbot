@@ -371,4 +371,8 @@ Examples:
 
 
 if __name__ == "__main__":
+    raise SystemExit(
+        "scripts/runners/run_trading_bot.py is QUARANTINED: standalone launcher/runner can spawn a parallel runtime outside ModularMonolithRuntime -> UnifiedTradingBot. Use 'python main.py --mode paper' for the canonical entry point."
+    )
+    # Legacy entry point preserved below for reference (unreachable):
     main()

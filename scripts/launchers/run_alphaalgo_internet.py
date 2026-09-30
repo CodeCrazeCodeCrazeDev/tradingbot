@@ -64,7 +64,11 @@ async def main():
         print(f"📝 Logs saved to: alphaalgo_internet.log\n")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    raise SystemExit(
+        "scripts/launchers/run_alphaalgo_internet.py is QUARANTINED: standalone launcher/runner can spawn a parallel runtime outside ModularMonolithRuntime -> UnifiedTradingBot. Use 'python main.py --mode paper' for the canonical entry point."
+    )
+    # Legacy entry point preserved below for reference (unreachable):
     try:
         asyncio.run(main())
     except KeyboardInterrupt:

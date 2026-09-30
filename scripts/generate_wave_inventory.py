@@ -122,6 +122,25 @@ def render_inventory(manifest: Mapping[str, Any]) -> str:
         "",
         "### Direct capital-path findings",
         _high_risk_rows(rows, "direct_capital_path"),
+        "",
+        "## Adapter review queue",
+        "",
+        "Per-adapter `review_priority`: P0 = runtime-reachable (prove first), "
+        "P1 = credential access, P2 = no test evidence, P3 = test-covered. "
+        "P0/P1 paths are listed below; P2/P3 counts live in the manifest "
+        "summary (`adapter_review_queue`).",
+        "",
+        "### P0 — reachable adapters",
+        "\n".join(
+            f"- `{row['path']}` — owner={row['owner']} | port={row['canonical_port']} | tests={len(row.get('tests', []))}"
+            for row in rows if row.get("review_priority") == 0
+        ) or "- none",
+        "",
+        "### P1 — credential-access adapters",
+        "\n".join(
+            f"- `{row['path']}` — owner={row['owner']} | tests={len(row.get('tests', []))}"
+            for row in rows if row.get("review_priority") == 1
+        ) or "- none",
     ])
 
     for wave in sorted(by_wave):

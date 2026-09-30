@@ -222,4 +222,8 @@ def run_platform_demonstration():
     logger.info("==========================================================================")
 
 if __name__ == "__main__":
+    raise SystemExit(
+        "run_agentic_platform.py is QUARANTINED: standalone launcher/runner can spawn a parallel runtime outside ModularMonolithRuntime -> UnifiedTradingBot. Use 'python main.py --mode paper' for the canonical entry point."
+    )
+    # Legacy entry point preserved below for reference (unreachable):
     run_platform_demonstration()

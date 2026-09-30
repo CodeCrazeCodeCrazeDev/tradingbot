@@ -100,7 +100,11 @@ async def main():
         return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    raise SystemExit(
+        "scripts/launchers/run_network_monitor.py is QUARANTINED: standalone launcher/runner can spawn a parallel runtime outside ModularMonolithRuntime -> UnifiedTradingBot. Use 'python main.py --mode paper' for the canonical entry point."
+    )
+    # Legacy entry point preserved below for reference (unreachable):
     # Create required directories
     Path('logs').mkdir(exist_ok=True)
     Path('state').mkdir(exist_ok=True)
