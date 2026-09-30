@@ -169,7 +169,7 @@ class PairedFamilyReplay:
             return groups
         return {s: frames[s] for s in sorted(frames)}
 
-    def _signal_dir(self, strategy: Any, hist: Any) -> Tuple[int, float]:
+    def _signal_dir(self, strategy: Any, hist: Any) -> Tuple[Optional[int], float]:
         if self.adapter.pairs:
             sig = strategy.generate_signal(hist[0], hist[1])
             hedge = getattr(strategy, "hedge_ratio", None)
@@ -212,20 +212,26 @@ class PairedFamilyReplay:
                     "cost_bps": self.cost_bps,
                 }
                 for name, strat in strats.items():
-                    direction, hedge = 0, 1.0
+                    hedge = 1.0
+                    position = prev[name]
+                    # Position semantics: entry/exit actions set a target
+                    # position; "hold"/no-directive preserves the position
+                    # rather than behaving like a close.
                     if i >= min_hist:
-                        direction, hedge = self._signal_dir(strat, hist)
-                    exposure = self.fraction if direction else 0.0
-                    turnover = abs(direction - prev[name]) * self.fraction
+                        directive, hedge = self._signal_dir(strat, hist)
+                        if directive is not None:
+                            position = directive
+                    turnover = abs(position - prev[name]) * self.fraction
+                    prev[name] = position
+                    exposure = self.fraction * abs(position)
                     leg = (ra - hedge * rb) if self.adapter.pairs else ra
-                    gross = direction * leg * exposure
+                    gross = position * leg * exposure
                     net = gross - turnover * self.cost_bps / 10000.0
                     row[f"{name}_gross"] = gross
                     row[f"{name}_turnover"] = turnover
                     row[f"{name}_exposure"] = exposure
                     row[f"{name}_net"] = net
-                    row[f"{name}_direction"] = direction
-                    prev[name] = direction
+                    row[f"{name}_direction"] = position
                 rows.append(row)
         return {
             "promotion_eligible": False,
@@ -245,12 +251,17 @@ class BoundedMeanReversionReplay:
     def run(self, df: Any, *, symbol: str, baseline_lookback: int,
             candidate_lookback: int) -> Dict[str, Any]:
         from trading_bot.strategies.institutional_strategies import MeanReversionStrategy
+        # Lazy: the rsi package __init__ imports engine_v2, which imports this
+        # module — a top-level import would create a cycle.
+        from trading_bot.recursive_self_improvement.candidate_adapters import get_adapter
 
         if (not symbol or not 2 <= baseline_lookback <= 50 or not 2 <= candidate_lookback <= 50 or
                 baseline_lookback == candidate_lookback or len(df) < 3):
             raise ValueError("invalid or unchanged bounded strategy parameter")
+        direction_of = get_adapter("mean_reversion").direction_of
         baseline = MeanReversionStrategy(lookback=baseline_lookback, entry_threshold=1.0)
         candidate = MeanReversionStrategy(lookback=candidate_lookback, entry_threshold=1.0)
+        prev = {"baseline": 0, "candidate": 0}
         rows = []
         for i in range(1, len(df)):
             current = df.iloc[i]
@@ -261,13 +272,17 @@ class BoundedMeanReversionReplay:
             row: Dict[str, Any] = {"symbol": symbol, "timestamp": current["timestamp"],
                                    "cost_bps": self.cost_bps}
             for name, strategy in (("baseline", baseline), ("candidate", candidate)):
-                direction = 0
+                position = prev[name]
                 if i >= strategy.lookback:
-                    action = strategy.generate_signal(history)["action"]
-                    direction = {"buy": 1, "sell": -1}.get(action, 0)
-                row[f"{name}_exposure"] = self.fraction if direction else 0.0
-                row[f"{name}_turnover"] = row[f"{name}_exposure"] * 2
-                row[f"{name}_gross"] = direction * (price_close / price_open - 1) * row[f"{name}_exposure"]
+                    # Same position semantics as PairedFamilyReplay: "hold"
+                    # preserves the position; "close" exits to flat.
+                    directive = direction_of(strategy.generate_signal(history))
+                    if directive is not None:
+                        position = directive
+                row[f"{name}_turnover"] = abs(position - prev[name]) * self.fraction
+                prev[name] = position
+                row[f"{name}_exposure"] = self.fraction * abs(position)
+                row[f"{name}_gross"] = position * (price_close / price_open - 1) * row[f"{name}_exposure"]
             rows.append(_paired_bar(
                 symbol, row["timestamp"], self.cost_bps,
                 baseline_gross=row["baseline_gross"], candidate_gross=row["candidate_gross"],

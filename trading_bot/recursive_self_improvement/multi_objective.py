@@ -17,8 +17,11 @@ import math
 import random
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
 from .anti_gaming import check_metric_gaming
-from .contracts import ContractError, contract_hash, validate_contract
+from .contracts import ContractError, canonical, contract_hash, validate_contract
 from .metric_registry import direction
 from .multiplicity import bonferroni_alpha
 
@@ -162,7 +165,9 @@ class MultiObjectiveEvaluator:
     def evaluate(self, genome: Any, report: Mapping[str, Any],
                  *, regime_deltas: Optional[Mapping[str, float]] = None,
                  expected_contract_hash: str = "",
-                 holdout_queries_used: int = 1) -> Dict[str, Any]:
+                 holdout_queries_used: int = 1,
+                 signature: str = "",
+                 verifier_public_key: Optional[Any] = None) -> Dict[str, Any]:
         v = self._verdict
         c = self.contract
         try:
@@ -176,6 +181,29 @@ class MultiObjectiveEvaluator:
                 return v("rejected", "contract, baseline or dataset mismatch")
             if not report.get("holdout_attested") or not report.get("verifier_id") or not report.get("trial_id"):
                 return v("insufficient_evidence", "independent holdout attestation absent")
+            # Attestation is a claim; a signature is the proof. When the
+            # contract pins the accepted verifier key (verifier_pubkey_hex)
+            # the report must verify under exactly that key — this is what
+            # makes custody enforceable instead of self-declared. Without a
+            # pin, an engine-supplied key is still used to check the report
+            # was signed untampered.
+            check_key = verifier_public_key
+            pinned_hex = c.get("verifier_pubkey_hex")
+            if pinned_hex:
+                try:
+                    check_key = Ed25519PublicKey.from_public_bytes(
+                        bytes.fromhex(str(pinned_hex)))
+                except (ValueError, TypeError):
+                    return v("insufficient_evidence",
+                             "operator-pinned verifier key malformed")
+            if check_key is not None:
+                if not signature:
+                    return v("insufficient_evidence",
+                             "verifier signature required but absent")
+                try:
+                    check_key.verify(bytes.fromhex(signature), canonical(report))
+                except (ValueError, TypeError, InvalidSignature):
+                    return v("insufficient_evidence", "verifier signature invalid")
             if not report.get("risk_invariants_passed"):
                 return v("rejected", "protected runtime risk invariant failed")
             if (report.get("code_hash") != c["code_hash"]

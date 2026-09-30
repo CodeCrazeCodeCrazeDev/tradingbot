@@ -22,6 +22,19 @@ import json
 import importlib
 import traceback
 
+def _env_secret(name, default=None):
+    """Resolve env-sourced secrets through the canonical credential provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    value = get_credential_provider().get_secret(name)
+    return value if value is not None else default
+
+
+def _env_required(name):
+    """Required env-sourced secret; fails closed via the canonical provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    return get_credential_provider().require_secret(name)
+
+
 # Import core dependencies
 try:
     import MetaTrader5 as mt5
@@ -484,7 +497,7 @@ class SystemValidator:
         env_missing = []
         
         for key in env_keys:
-            if os.getenv(key):
+            if _env_secret(key):
                 env_found.append(key)
             else:
                 env_missing.append(key)

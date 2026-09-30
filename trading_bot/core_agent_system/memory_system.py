@@ -584,7 +584,9 @@ class MemorySystem:
         self.running = True
         
         # Start consolidation loop
-        asyncio.create_task(self._consolidation_loop())
+        # Consolidation worker disabled: detached memory-consolidation loops
+        # are not permitted outside the canonical runtime.
+        logger.warning("Memory consolidation worker disabled; canonical runtime owns lifecycle")
         
         logger.info("Memory System ready")
     

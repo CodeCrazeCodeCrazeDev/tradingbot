@@ -20,6 +20,19 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 
+def _env_secret(name, default=None):
+    """Resolve env-sourced secrets through the canonical credential provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    value = get_credential_provider().get_secret(name)
+    return value if value is not None else default
+
+
+def _env_required(name):
+    """Required env-sourced secret; fails closed via the canonical provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    return get_credential_provider().require_secret(name)
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -85,9 +98,9 @@ class TickTraderConnector:
         warnings.warn("TickTraderConnector is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         if config is None:
             config = TickTraderConfig(
-                login=os.getenv('TICKTRADER_LOGIN', ''),
-                password=os.getenv('TICKTRADER_PASSWORD', ''),
-                server=os.getenv('TICKTRADER_SERVER', '')
+                login=_env_secret("TICKTRADER_LOGIN", ''),
+                password=_env_secret("TICKTRADER_PASSWORD", ''),
+                server=_env_secret("TICKTRADER_SERVER", '')
             )
         
         self.config = config

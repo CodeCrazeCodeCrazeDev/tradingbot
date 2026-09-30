@@ -485,8 +485,9 @@ class DistributedEvaluator(ParallelEvaluator):
             # Register this node
             await self._register_node()
             
-            # Start heartbeat
-            asyncio.create_task(self._heartbeat_loop())
+            # Heartbeat worker disabled: this legacy RSI-duplicate evaluator
+            # must not run a detached node lifecycle.
+            logger.warning("Distributed evaluator heartbeat disabled; canonical RSI path owns evaluation")
             
             logger.info("Distributed evaluator started")
             

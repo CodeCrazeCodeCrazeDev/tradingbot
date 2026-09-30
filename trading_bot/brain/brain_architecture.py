@@ -125,11 +125,11 @@ class EliteBrain:
         # Decision queue
         self.decision_queue = queue.Queue()
         
-        # Start monitoring thread
+        # Monitor thread disabled: detached monitor threads are not
+        # permitted outside the canonical runtime.
         self.running = True
-        self.monitor_thread = threading.Thread(target=self._monitor_loop)
-        self.monitor_thread.daemon = True
-        self.monitor_thread.start()
+        self.monitor_thread = None
+        logger.warning("Brain monitor thread disabled; canonical runtime owns monitoring")
         
         logger.info("Brain Architecture initialized")
     

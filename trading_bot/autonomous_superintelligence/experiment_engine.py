@@ -412,6 +412,11 @@ class ContinuousExperimentEngine:
     
     async def deploy_model(self, model_id: str) -> bool:
         """Deploy a model to production."""
+        raise PermissionError(
+            "Autonomous model deployment is not permitted: promotion requires "
+            "HumanGuidedRecursiveImprovementLoop review and explicit human "
+            "approval (trading_bot.recursive_self_improvement)."
+        )
         model = self.models.get(model_id)
         
         if not model:
@@ -430,14 +435,19 @@ class ContinuousExperimentEngine:
     
     async def experiment_loop(self):
         """Main experiment loop - continuously run experiments."""
-        logger.info("Starting continuous experiment loop")
+        logger.warning(
+            "experiment_loop disabled: autonomous experiment/deployment "
+            "cycles are research-only and must run through the canonical "
+            "human-gated RSI path"
+        )
+        return
         
         while self.running:
             try:
                 if len(self.running_experiments) < self.max_concurrent_experiments:
                     if self.experiment_queue:
                         experiment = self.experiment_queue.pop(0)
-                        asyncio.create_task(self.run_experiment(experiment))
+                        await self.run_experiment(experiment)
                     else:
                         await self._generate_new_experiments()
                 

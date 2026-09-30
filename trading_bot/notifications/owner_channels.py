@@ -14,6 +14,19 @@ import os
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
+def _env_secret(name, default=None):
+    """Resolve env-sourced secrets through the canonical credential provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    value = get_credential_provider().get_secret(name)
+    return value if value is not None else default
+
+
+def _env_required(name):
+    """Required env-sourced secret; fails closed via the canonical provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    return get_credential_provider().require_secret(name)
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -28,7 +41,7 @@ class OwnerContact:
 
 # Singleton owner contact
 OWNER = OwnerContact(
-    telegram_chat_id=os.environ.get('OWNER_TELEGRAM_CHAT_ID', ''),
+    telegram_chat_id=_env_secret("OWNER_TELEGRAM_CHAT_ID", ''),
 )
 
 
@@ -43,17 +56,17 @@ def get_notification_config() -> Dict[str, Any]:
             'smtp_server': 'smtp.gmail.com',
             'smtp_port': 587,
             'username': OWNER.email,
-            'password': os.environ.get('ALPHAALGO_EMAIL_PASSWORD', ''),
+            'password': _env_secret("ALPHAALGO_EMAIL_PASSWORD", ''),
             'from_addr': OWNER.email,
             'use_tls': True,
         },
         'sms': {
-            'account_sid': os.environ.get('TWILIO_ACCOUNT_SID', ''),
-            'auth_token': os.environ.get('TWILIO_AUTH_TOKEN', ''),
-            'from_number': os.environ.get('TWILIO_FROM_NUMBER', ''),
+            'account_sid': _env_secret("TWILIO_ACCOUNT_SID", ''),
+            'auth_token': _env_secret("TWILIO_AUTH_TOKEN", ''),
+            'from_number': _env_secret("TWILIO_FROM_NUMBER", ''),
         },
         'telegram': {
-            'bot_token': os.environ.get('TELEGRAM_BOT_TOKEN', ''),
+            'bot_token': _env_secret("TELEGRAM_BOT_TOKEN", ''),
             'chat_id': OWNER.telegram_chat_id,
         },
         'owner': {

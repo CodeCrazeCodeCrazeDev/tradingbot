@@ -45,7 +45,7 @@ class BrainService(BaseService):
     async def start(self) -> None:
         self._running = True
         await self._load_components()
-        self._task = asyncio.create_task(self._run_loop())
+        self._task = None  # worker disabled: canonical runtime owns the loop
         logger.info("BrainService started")
     
     async def stop(self) -> None:

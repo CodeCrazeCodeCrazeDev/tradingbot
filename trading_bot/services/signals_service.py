@@ -63,7 +63,7 @@ class SignalsService(BaseService):
         """Start Signals service"""
         self._running = True
         await self._load_components()
-        self._task = asyncio.create_task(self._signal_loop())
+        self._task = None  # worker disabled: canonical runtime owns the loop
         
         # Subscribe to events
         if self._event_bus:

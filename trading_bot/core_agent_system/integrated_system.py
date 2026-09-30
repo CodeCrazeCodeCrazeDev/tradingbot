@@ -400,14 +400,13 @@ class IntegratedAgentSystem:
 
         self.running = True
 
-        # Start all async loops
-        tasks = [
-            asyncio.create_task(self._main_loop(), name="main_loop"),
-            asyncio.create_task(self._self_improvement_loop(), name="self_improvement"),
-            asyncio.create_task(self._monitoring_loop(), name="monitoring"),
-        ]
-
-        logger.info(f"Started {len(tasks)} system loops")
+        # System loops disabled: main/self-improvement/monitoring loops are
+        # a parallel production authority — the canonical runtime owns them.
+        tasks = []
+        logger.warning(
+            "Integrated agent system loops disabled; canonical "
+            "ModularMonolithRuntime owns the lifecycle"
+        )
 
         try:
             await asyncio.gather(*tasks)
@@ -419,31 +418,14 @@ class IntegratedAgentSystem:
         """Start Layer 2 background intelligence services."""
         logger.info("Starting background services...")
 
-        services = [
-            ('market_student', run_market_student_service),
-            ('eternal_evolution', run_eternal_evolution_service),
-            ('sentiment_analysis', run_sentiment_analysis_service),
-            ('market_monitor', run_market_monitor_service),
-        ]
-
-        import multiprocessing
-        if not hasattr(self, 'background_processes'):
-            self.background_processes = {}
-
-        for name, func in services:
-            try:
-                # Use standalone functions to avoid pickling 'self'
-                process = multiprocessing.Process(
-                    target=func,
-                    args=(self.config,),
-                    name=name
-                )
-                process.daemon = True
-                process.start()
-                self.background_processes[name] = process
-                logger.info(f"✓ Started: {name} (PID: {process.pid})")
-            except Exception as e:
-                logger.error(f"✗ Failed to start {name}: {e}")
+        # Subprocess spawning disabled: these legacy intelligence services
+        # (including eternal_evolution) are parallel authorities — the
+        # canonical ModularMonolithRuntime owns all production processes.
+        logger.warning(
+            "Background service subprocesses disabled; canonical runtime "
+            "owns production processes"
+        )
+        self.background_processes = {}
 
     def stop_background_services(self):
         """Stop all background services."""
@@ -834,7 +816,7 @@ async def main():
     # Handle shutdown signals
     def signal_handler(sig, frame):
         logger.info("Shutdown signal received")
-        asyncio.create_task(system.shutdown())
+        system.running = False
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)

@@ -3,6 +3,7 @@ Broker integration interface for AlphaAlgo 2.0
 """
 
 import logging
+import warnings
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from datetime import datetime
@@ -93,6 +94,12 @@ class BrokerInterface:
         base_url: str,
         testnet: bool = True
     ):
+        warnings.warn(
+            "BrokerInterface is a legacy capital-capable base: "
+            "CanonicalExecutionService/FoundationBrokerAdapter own execution; "
+            "direct construction carries no production authority.",
+            DeprecationWarning, stacklevel=2,
+        )
         self.api_key = api_key
         self.api_secret = api_secret
         self.base_url = base_url

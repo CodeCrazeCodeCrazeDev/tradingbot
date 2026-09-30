@@ -20,6 +20,19 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+def _env_secret(name, default=None):
+    """Resolve env-sourced secrets through the canonical credential provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    value = get_credential_provider().get_secret(name)
+    return value if value is not None else default
+
+
+def _env_required(name):
+    """Required env-sourced secret; fails closed via the canonical provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    return get_credential_provider().require_secret(name)
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -221,7 +234,7 @@ class OwnerNotifier:
                 server.starttls()
                 # Note: User must set ALPHAALGO_EMAIL_PASSWORD env var
                 import os
-                password = os.environ.get('ALPHAALGO_EMAIL_PASSWORD', '')
+                password = _env_secret("ALPHAALGO_EMAIL_PASSWORD", '')
                 if password:
                     server.login(self.email, password)
                     server.send_message(msg)

@@ -23,6 +23,19 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+def _env_secret(name, default=None):
+    """Resolve env-sourced secrets through the canonical credential provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    value = get_credential_provider().get_secret(name)
+    return value if value is not None else default
+
+
+def _env_required(name):
+    """Required env-sourced secret; fails closed via the canonical provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    return get_credential_provider().require_secret(name)
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -181,9 +194,9 @@ class CTraderConnection:
         # Load credentials from environment
         import os
         if not self.config['client_id']:
-            self.config['client_id'] = os.environ.get('CTRADER_CLIENT_ID', '')
+            self.config['client_id'] = _env_secret("CTRADER_CLIENT_ID", '')
         if not self.config['client_secret']:
-            self.config['client_secret'] = os.environ.get('CTRADER_CLIENT_SECRET', '')
+            self.config['client_secret'] = _env_secret("CTRADER_CLIENT_SECRET", '')
 
         logger.info("CTraderConnection initialized")
 

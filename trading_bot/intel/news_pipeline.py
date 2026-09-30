@@ -42,6 +42,19 @@ from nltk.corpus import stopwords
 import numpy
 import pandas
 
+def _env_secret(name, default=None):
+    """Resolve env-sourced secrets through the canonical credential provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    value = get_credential_provider().get_secret(name)
+    return value if value is not None else default
+
+
+def _env_required(name):
+    """Required env-sourced secret; fails closed via the canonical provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    return get_credential_provider().require_secret(name)
+
+
 # Ensure NLTK resources are available
 try:
     nltk.data.find('vader_lexicon')
@@ -153,7 +166,7 @@ class NewsPipeline:
             max_articles: Maximum number of articles to keep in memory
             refresh_interval: Time between news refreshes in seconds
         """
-        self.newsapi_key = newsapi_key or os.environ.get("NEWSAPI_KEY")
+        self.newsapi_key = newsapi_key or _env_secret("NEWSAPI_KEY")
         self.model_name = model_name
         self.data_dir = data_dir
         self.max_articles = max_articles

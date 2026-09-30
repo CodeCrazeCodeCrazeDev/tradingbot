@@ -49,6 +49,19 @@ from .multi_objective import MultiObjectiveEvaluator
 from .protected_control_plane import ProtectedPathGuard, ProtectedPathViolation
 from .transfer import Scenario, TransferEvaluator
 
+def _env_secret(name, default=None):
+    """Resolve env-sourced secrets through the canonical credential provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    value = get_credential_provider().get_secret(name)
+    return value if value is not None else default
+
+
+def _env_required(name):
+    """Required env-sourced secret; fails closed via the canonical provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    return get_credential_provider().require_secret(name)
+
+
 logger = logging.getLogger(__name__)
 
 RESEARCH_CHAMPION_NOTE = (
@@ -451,13 +464,29 @@ class IndependentVerifier:
                  verifier_id: str = "rsi-independent-verifier",
                  key_path: Optional[str] = None) -> None:
         warnings.warn("IndependentVerifier is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
-        self.private_key = private_key or self._load_private_key(key_path) \
-            or Ed25519PrivateKey.generate()
+        resolved = private_key or self._load_private_key(key_path)
+        # Custody boundary: operator-provisioned key material (injected, file
+        # or env path) vs. a silently generated ephemeral key. Ephemeral keys
+        # leave no auditable custody trail, so reports they sign must not be
+        # labeled holdout-attested.
+        self._custody = "provisioned" if resolved is not None else "ephemeral"
+        self.private_key = resolved or Ed25519PrivateKey.generate()
         self.verifier_id = verifier_id
+
+    @property
+    def custody(self) -> str:
+        """'provisioned' (operator-supplied key) or 'ephemeral' (generated)."""
+        return self._custody
+
+    @property
+    def attests_holdout(self) -> bool:
+        """Whether this verifier's signatures may mark reports as
+        independently attested. Ephemeral custody never attests."""
+        return self._custody == "provisioned"
 
     @staticmethod
     def _load_private_key(key_path: Optional[str]) -> Optional[Ed25519PrivateKey]:
-        path = key_path or os.environ.get(IndependentVerifier.KEY_ENV_VAR)
+        path = key_path or _env_secret(IndependentVerifier.KEY_ENV_VAR)
         if not path:
             return None
         data = Path(path).read_bytes()
@@ -533,7 +562,10 @@ class IndependentVerifier:
             "trial_count": trial_count,
             "latency_ms": float(latency_ms),
             "candidate_parameters": dict(genome.change_set),
-            "holdout_attested": True,
+            # This is the unsigned local replay: attestation is stamped by the
+            # signing path, which knows the verifier's key custody.
+            "holdout_attested": False,
+            "verifier_custody": "unstamped_replay",
             "verifier_id": verifier_id,
             "cost_model_id": contract["cost_model_id"],
             "code_hash": candidate_code_hash(),
@@ -567,6 +599,10 @@ class IndependentVerifier:
             trial_id=trial_id, trial_count=trial_count,
             latency_ms=latency_ms, verifier_id=self.verifier_id,
             fraction=fraction)
+        # Stamp the custody-truthful attestation claim before signing so the
+        # signature covers the claim itself.
+        report["holdout_attested"] = self.attests_holdout
+        report["verifier_custody"] = self.custody
         return report, self.sign(report)
 
 
@@ -794,13 +830,19 @@ class RecursiveImprovementCycle:
         if outcome.status != "ok":
             return self._finish(genome, trial_id, "insufficient_evidence",
                                 f"sandbox {outcome.status}: {outcome.error}", {}, {})
+        verifier_pubkey: Any = None
         if isinstance(self.verifier, IndependentVerifier):
-            report, signature = outcome.result, self.verifier.sign(outcome.result)
+            report = dict(outcome.result)
+            report["holdout_attested"] = self.verifier.attests_holdout
+            report["verifier_custody"] = self.verifier.custody
+            signature = self.verifier.sign(report)
+            verifier_pubkey = self.verifier.public_key
         else:
             report, signature = outcome.result
         verdict = self.evaluator.evaluate(
             genome, report, expected_contract_hash=self.contract_hash,
-            holdout_queries_used=self._trial_counter)
+            holdout_queries_used=self._trial_counter,
+            signature=signature, verifier_public_key=verifier_pubkey)
 
         regime_deltas: Dict[str, float] = {}
         classification = "LOCAL"

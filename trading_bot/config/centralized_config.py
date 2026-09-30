@@ -20,6 +20,19 @@ except ImportError:
     yaml = None
 from typing import Set
 
+def _env_secret(name, default=None):
+    """Resolve env-sourced secrets through the canonical credential provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    value = get_credential_provider().get_secret(name)
+    return value if value is not None else default
+
+
+def _env_required(name):
+    """Required env-sourced secret; fails closed via the canonical provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    return get_credential_provider().require_secret(name)
+
+
 logger = logging.getLogger(__name__)
 
 T = TypeVar('T')
@@ -366,7 +379,7 @@ class ConfigManager:
         }
         
         for env_var, (section, key) in env_mappings.items():
-            value = os.environ.get(env_var)
+            value = _env_secret(env_var)
             if value is not None:
                 self._set_config_value(section, key, value)
     

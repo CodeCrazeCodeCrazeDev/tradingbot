@@ -5,6 +5,7 @@ This module provides secure management of API keys and authentication credential
 for various financial data providers and trading platforms.
 """
 
+import warnings
 import asyncio
 import base64
 import hashlib
@@ -20,6 +21,19 @@ from pathlib import Path
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+def _env_secret(name, default=None):
+    """Resolve env-sourced secrets through the canonical credential provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    value = get_credential_provider().get_secret(name)
+    return value if value is not None else default
+
+
+def _env_required(name):
+    """Required env-sourced secret; fails closed via the canonical provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    return get_credential_provider().require_secret(name)
+
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +54,7 @@ class AuthManager:
                  config_path: Optional[str] = None,
                  master_password: Optional[str] = None,
                  env_prefix: str = "ETB_"):
+        warnings.warn("AuthManager maintains its own credential store — deprecated: resolve secrets via trading_bot.security.canonical_provider.get_credential_provider()", DeprecationWarning, stacklevel=2)
         """
         Initialize the authentication manager.
         
@@ -53,7 +68,7 @@ class AuthManager:
         
         # Get master password from environment if not provided
         if master_password is None:
-            master_password = os.environ.get(f"{env_prefix}MASTER_PASSWORD")
+            master_password = _env_secret(f"{env_prefix}MASTER_PASSWORD")
         
         # Initialize encryption key
         self.encryption_key = self._derive_key(master_password or "default_password")
@@ -219,7 +234,7 @@ class AuthManager:
         """
         # First check environment variables
         env_var_name = f"{self.env_prefix}{service_name.upper()}_API_KEY"
-        api_key = os.environ.get(env_var_name)
+        api_key = _env_secret(env_var_name)
         
         if api_key:
             return api_key
@@ -242,7 +257,7 @@ class AuthManager:
         """
         # First check environment variables
         env_var_name = f"{self.env_prefix}{service_name.upper()}_API_SECRET"
-        api_secret = os.environ.get(env_var_name)
+        api_secret = _env_secret(env_var_name)
         
         if api_secret:
             return api_secret

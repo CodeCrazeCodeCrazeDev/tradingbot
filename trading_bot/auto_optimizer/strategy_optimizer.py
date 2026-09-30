@@ -435,8 +435,13 @@ class StrategyOptimizer:
                     logger.error(f"Auto-optimization error: {e}")
                     await asyncio.sleep(3600)
         
-        # Start loop
-        asyncio.create_task(optimization_loop())
+        # Optimization loop disabled: this path calls
+        # trading_bot.update_parameters() autonomously — self-modification
+        # requires the canonical human-gated RSI path.
+        raise PermissionError(
+            "Continuous auto-optimization is disabled; parameter changes "
+            "require HumanGuidedRecursiveImprovementLoop + human approval"
+        )
     
     def get_best_result(self) -> Optional[OptimizationResult]:
         """Get best optimization result"""

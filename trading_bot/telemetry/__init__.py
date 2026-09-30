@@ -8,6 +8,12 @@ Auto-generated integration file.
 # Stub class for graceful degradation
 class TelemetryManager:
     def __init__(self, config=None):
+        import warnings
+        warnings.warn(
+            "TelemetryManager stub has no authority; telemetry belongs to the "
+            "canonical runtime's telemetry wiring.",
+            DeprecationWarning, stacklevel=2,
+        )
         self.config = config or {}
     async def start(self):
         pass

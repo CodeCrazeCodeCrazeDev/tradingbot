@@ -42,7 +42,7 @@ class AdapterSpec:
     pairs: bool                     # True → operates on instrument pairs
     min_history: Callable[[Mapping[str, float]], int]
     build: Callable[[Mapping[str, Any]], Any]
-    direction_of: Callable[[Dict[str, Any]], int]
+    direction_of: Callable[[Dict[str, Any]], Optional[int]]  # None = preserve position
     validate: Optional[Callable[[Mapping[str, float]], bool]] = None
 
     def check_params(self, params: Mapping[str, Any]) -> Tuple[bool, str]:
@@ -63,13 +63,37 @@ class AdapterSpec:
         return True, ""
 
 
-def _dir_buy_sell(signal: Dict[str, Any]) -> int:
-    return {"buy": 1, "sell": -1}.get(str(signal.get("action", "")).lower(), 0)
+# Position directives: entry/exit actions map to a target position; "hold"
+# (and only recognized no-directive vocabulary) returns None so the replay
+# preserves the current position rather than treating hold as a close.
+_EXIT_ACTIONS = frozenset({"close", "exit", "flat"})
+_PRESERVE_ACTIONS = frozenset({"hold", "neutral", "no_action", "wait"})
 
 
-def _dir_spread(signal: Dict[str, Any]) -> int:
-    return {"long_spread": 1, "short_spread": -1}.get(
-        str(signal.get("action", "")).lower(), 0)
+def _dir_buy_sell(signal: Dict[str, Any]) -> Optional[int]:
+    action = str(signal.get("action", "")).lower()
+    if action == "buy":
+        return 1
+    if action == "sell":
+        return -1
+    if action in _EXIT_ACTIONS:
+        return 0
+    if action in _PRESERVE_ACTIONS:
+        return None
+    raise ValueError(f"unrecognized strategy action {action!r} in replay evidence")
+
+
+def _dir_spread(signal: Dict[str, Any]) -> Optional[int]:
+    action = str(signal.get("action", "")).lower()
+    if action == "long_spread":
+        return 1
+    if action == "short_spread":
+        return -1
+    if action in _EXIT_ACTIONS:
+        return 0
+    if action in _PRESERVE_ACTIONS:
+        return None
+    raise ValueError(f"unrecognized strategy action {action!r} in replay evidence")
 
 
 def _build_mean_reversion(params: Mapping[str, Any]) -> Any:

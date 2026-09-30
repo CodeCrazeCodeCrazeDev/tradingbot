@@ -166,14 +166,14 @@ class AutonomousTradingBridge:
         """Main bridge operation loop."""
         logger.info("Starting autonomous trading bridge loop")
         
-        tasks = [
-            asyncio.create_task(self.stream_market_data_to_agents()),
-            asyncio.create_task(self.route_agent_signals_to_execution()),
-            asyncio.create_task(self.feed_execution_results_to_learning()),
-            asyncio.create_task(self.apply_research_to_strategies()),
-        ]
-        
-        await asyncio.gather(*tasks)
+        # Bridge workers disabled: this loop routes agent signals to
+        # execution and applies research to strategies — a parallel
+        # production path. The canonical runtime owns all of these edges.
+        logger.warning(
+            "Autonomous trading bridge disabled; canonical runtime owns "
+            "data/signal/execution routing"
+        )
+        return
     
     async def shutdown(self):
         """Shutdown the bridge."""

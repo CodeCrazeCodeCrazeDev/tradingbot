@@ -47,8 +47,10 @@ class IntegratedBrainService(BaseService):
         self.brain = IntegratedAgentSystem(self.config)
         await self.brain.initialize()
 
-        # Start IAS loops in a background task
-        self._task = asyncio.create_task(self.brain.start())
+        # IAS background task disabled: the integrated agent system is a
+        # parallel production authority; the canonical runtime owns it.
+        self._task = None
+        logger.warning("Integrated brain service worker disabled; canonical runtime owns the loop")
 
         # Subscribe to relevant events
         if self._event_bus:
@@ -87,10 +89,14 @@ class IntegratedBrainService(BaseService):
         if not self.brain or not self._running:
             return
 
-        # Example: route signals to brain for validation/execution
+        # Signal->execution routing disabled: agent-to-execution edges are
+        # forbidden — only the canonical CSC->risk->shield->execution path
+        # may act on alpha signals.
         if event.event_type == EventTypes.ALPHA_SIGNAL:
-            task_desc = f"Validate and execute alpha signal: {event.payload.get('strategy')}"
-            asyncio.create_task(self.brain.execute_task(task_desc, event.payload))
+            logger.warning(
+                "Alpha signal routing to legacy brain disabled; canonical "
+                "decision path owns signal handling"
+            )
 
     async def execute_task(self, task: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         """Direct interface to the brain"""

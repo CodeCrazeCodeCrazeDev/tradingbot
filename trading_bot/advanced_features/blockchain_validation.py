@@ -23,6 +23,19 @@ import sqlite3
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
+def _env_secret(name, default=None):
+    """Resolve env-sourced secrets through the canonical credential provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    value = get_credential_provider().get_secret(name)
+    return value if value is not None else default
+
+
+def _env_required(name):
+    """Required env-sourced secret; fails closed via the canonical provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    return get_credential_provider().require_secret(name)
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -217,7 +230,7 @@ class BlockchainLedger:
                 # Windows: Use icacls to restrict permissions
                 import subprocess
                 subprocess.run(['icacls', self.db_path, '/inheritance:r'], check=False, capture_output=True)
-                subprocess.run(['icacls', self.db_path, '/grant:r', f'{os.getenv("USERNAME")}:(F)'], check=False, capture_output=True)
+                subprocess.run(['icacls', self.db_path, '/grant:r', f'{_env_secret("USERNAME")}:(F)'], check=False, capture_output=True)
             except Exception as e:
                 logger.warning(f"Could not set restrictive permissions on Windows: {e}")
         

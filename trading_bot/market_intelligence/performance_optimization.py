@@ -420,7 +420,10 @@ class RealTimeOptimizer:
     
     async def start_batch_processor(self):
         """Start the batch processor for real-time data."""
-        self.batch_processor = asyncio.create_task(self._process_batches())
+        # Batch worker disabled: detached processing loops are not permitted
+        # outside the canonical runtime.
+        self.batch_processor = None
+        logger.warning("Batch processor worker disabled; canonical runtime owns processing")
     
     async def add_data_point(self, data_point: Dict):
         """Add a data point to the processing queue."""

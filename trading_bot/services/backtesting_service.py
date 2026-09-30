@@ -45,8 +45,10 @@ class BacktestingService(BaseService):
     async def start(self) -> None:
         self._running = True
         await self._load_components()
-        self._task = asyncio.create_task(self._run_loop())
-        logger.info("BacktestingService started")
+        # Worker disabled: backtests run through the canonical research path
+        # (walk-forward / paired replay), not a detached service loop.
+        self._task = None
+        logger.warning("BacktestingService run-loop worker disabled; canonical research path owns backtests")
     
     async def stop(self) -> None:
         self._running = False

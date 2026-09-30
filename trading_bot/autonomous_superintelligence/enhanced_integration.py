@@ -121,14 +121,14 @@ class EnhancedTradingIntegration:
         """Main integration loop."""
         logger.info("Starting enhanced integration loop")
         
-        tasks = [
-            asyncio.create_task(self.feed_trading_results_to_research()),
-            asyncio.create_task(self.apply_discoveries_to_strategies()),
-            asyncio.create_task(self.route_opportunities_to_execution()),
-            asyncio.create_task(self.sync_agent_tasks_with_trading()),
-        ]
-        
-        await asyncio.gather(*tasks)
+        # Integration workers disabled: applying discoveries to strategies
+        # and routing opportunities to execution is self-modification plus a
+        # parallel production path — canonical runtime + human-gated RSI only.
+        logger.warning(
+            "Enhanced integration loop disabled; canonical runtime owns "
+            "integration edges"
+        )
+        return
     
     async def shutdown(self):
         """Shutdown integration."""

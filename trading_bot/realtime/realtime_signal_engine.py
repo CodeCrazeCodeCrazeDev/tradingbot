@@ -852,8 +852,9 @@ class RealTimeSignalEngine:
     async def start(self):
         """Start the signal engine"""
         self._running = True
-        asyncio.create_task(self._cleanup_loop())
-        logger.info("RealTimeSignalEngine started")
+        # Cleanup worker disabled: detached loops are not permitted outside
+        # the canonical runtime.
+        logger.warning("Signal cleanup worker disabled; canonical runtime owns lifecycle")
     
     async def stop(self):
         """Stop the signal engine"""

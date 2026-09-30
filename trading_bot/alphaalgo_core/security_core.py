@@ -12,6 +12,7 @@ Security System Features:
 Protects the system at all times.
 """
 
+import warnings
 import asyncio
 import hashlib
 import json
@@ -86,6 +87,7 @@ class SecretVault:
     """
     
     def __init__(self, vault_path: str = "alphaalgo_data/secrets"):
+        warnings.warn("SecretVault maintains its own credential store — deprecated: resolve secrets via trading_bot.security.canonical_provider.get_credential_provider()", DeprecationWarning, stacklevel=2)
         self.vault_path = Path(vault_path)
         self.vault_path.mkdir(parents=True, exist_ok=True)
         self._fernet: Optional[Fernet] = None

@@ -14,6 +14,19 @@ import logging
 
 from .unified_types import TradingMode, OperationMode, MarketRegime
 
+def _env_secret(name, default=None):
+    """Resolve env-sourced secrets through the canonical credential provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    value = get_credential_provider().get_secret(name)
+    return value if value is not None else default
+
+
+def _env_required(name):
+    """Required env-sourced secret; fails closed via the canonical provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    return get_credential_provider().require_secret(name)
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -269,26 +282,26 @@ class UnifiedConfig:
             config = cls()
         
             # Trading mode
-            mode = os.getenv('TRADING_MODE', 'paper')
+            mode = _env_secret("TRADING_MODE", 'paper')
             config.trading_mode = TradingMode(mode)
         
             # Symbols
-            symbols = os.getenv('TRADING_SYMBOLS', 'BTCUSDT')
+            symbols = _env_secret("TRADING_SYMBOLS", 'BTCUSDT')
             config.symbols = [s.strip() for s in symbols.split(',')]
         
             # Capital
-            config.initial_capital = float(os.getenv('INITIAL_CAPITAL', '10000'))
+            config.initial_capital = float(_env_secret("INITIAL_CAPITAL", '10000'))
         
             # Broker
-            config.broker = os.getenv('BROKER', 'simulation')
+            config.broker = _env_secret("BROKER", 'simulation')
         
             # Risk
-            config.risk.max_risk_per_trade = float(os.getenv('MAX_RISK_PER_TRADE', '0.02'))
-            config.risk.max_daily_loss = float(os.getenv('MAX_DAILY_LOSS', '0.05'))
-            config.risk.max_drawdown = float(os.getenv('MAX_DRAWDOWN', '0.20'))
+            config.risk.max_risk_per_trade = float(_env_secret("MAX_RISK_PER_TRADE", '0.02'))
+            config.risk.max_daily_loss = float(_env_secret("MAX_DAILY_LOSS", '0.05'))
+            config.risk.max_drawdown = float(_env_secret("MAX_DRAWDOWN", '0.20'))
         
             # Log level
-            config.log_level = os.getenv('LOG_LEVEL', 'INFO')
+            config.log_level = _env_secret("LOG_LEVEL", 'INFO')
         
             return config
         except Exception as e:

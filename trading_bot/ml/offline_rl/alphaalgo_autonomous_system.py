@@ -141,12 +141,11 @@ class AlphaAlgoAutonomousSystem:
         logger.info("STARTING ALPHAALGO AUTONOMOUS SYSTEM")
         logger.info("="*80)
         
-        # Start background threads
-        self.training_thread = threading.Thread(target=self._training_loop, daemon=True)
-        self.monitoring_thread = threading.Thread(target=self._monitoring_loop, daemon=True)
-        
-        self.training_thread.start()
-        self.monitoring_thread.start()
+        # Background threads disabled: autonomous RL training/monitoring is
+        # research-only and must run through the canonical RSI path.
+        self.training_thread = None
+        self.monitoring_thread = None
+        logger.warning("Autonomous RL training/monitoring threads disabled; canonical RSI path owns learning")
         
         logger.info("✅ Autonomous system started")
         logger.info("   - Training loop: ACTIVE")

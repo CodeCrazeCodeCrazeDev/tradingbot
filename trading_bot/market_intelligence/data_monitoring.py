@@ -244,15 +244,12 @@ class SelfDebugger:
             return
         
         self.stop_event.clear()
-        self.monitor_thread = threading.Thread(
-            target=self._health_monitoring_loop,
-            args=(check_interval,),
-            daemon=True
-        )
-        self.monitor_thread.start()
+        # Monitor thread disabled: detached monitoring threads are not
+        # permitted outside the canonical runtime.
+        self.monitor_thread = None
         self.is_monitoring = True
-        
-        logger.info(f"Started health monitoring with {check_interval}s interval")
+
+        logger.warning(f"Health monitoring thread disabled (interval {check_interval}s); canonical runtime owns monitoring")
     
     def stop_health_monitoring(self):
         """Stop health monitoring."""
@@ -640,13 +637,9 @@ class MarketDataMonitor:
         # Reset stop event
         self.stop_event.clear()
         
-        # Start monitoring thread
-        self.monitor_thread = threading.Thread(
-            target=self._monitoring_loop,
-            args=(update_interval,),
-            daemon=True
-        )
-        self.monitor_thread.start()
+        # Monitor thread disabled: detached monitoring threads are not
+        # permitted outside the canonical runtime.
+        self.monitor_thread = None
         self.is_monitoring = True
         
         if self.debugger:

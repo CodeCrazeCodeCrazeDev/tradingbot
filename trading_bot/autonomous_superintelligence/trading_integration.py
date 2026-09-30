@@ -120,13 +120,14 @@ class TradingIntegration:
         """Main integration loop."""
         logger.info("Starting integration loop")
         
-        tasks = [
-            asyncio.create_task(self.feed_market_data_to_research()),
-            asyncio.create_task(self.apply_discoveries_to_trading()),
-            asyncio.create_task(self.route_opportunities_to_execution()),
-        ]
-        
-        await asyncio.gather(*tasks)
+        # Integration workers disabled: routing opportunities to execution
+        # and applying discoveries to trading is a parallel production path —
+        # canonical runtime only.
+        logger.warning(
+            "Trading integration loop disabled; canonical runtime owns "
+            "integration edges"
+        )
+        return
     
     async def shutdown(self):
         """Shutdown integration."""

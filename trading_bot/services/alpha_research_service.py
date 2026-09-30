@@ -46,8 +46,10 @@ class AlphaResearchService(BaseService):
     async def start(self) -> None:
         self._running = True
         await self._load_components()
-        self._task = asyncio.create_task(self._run_loop())
-        logger.info("AlphaResearchService started")
+        # Worker disabled: research cycles are owned by the canonical
+        # human-gated RSI path, not a detached service loop.
+        self._task = None
+        logger.warning("AlphaResearchService run-loop worker disabled; canonical RSI path owns research cycles")
     
     async def stop(self) -> None:
         self._running = False

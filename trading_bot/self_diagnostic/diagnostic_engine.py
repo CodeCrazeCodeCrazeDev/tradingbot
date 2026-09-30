@@ -26,6 +26,19 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+def _env_secret(name, default=None):
+    """Resolve env-sourced secrets through the canonical credential provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    value = get_credential_provider().get_secret(name)
+    return value if value is not None else default
+
+
+def _env_required(name):
+    """Required env-sourced secret; fails closed via the canonical provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    return get_credential_provider().require_secret(name)
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -534,7 +547,7 @@ class DiagnosticEngine:
 
         for env_var, config_key, severity, desc in API_KEY_REGISTRY:
             check_id = f"api.{env_var.lower()}"
-            env_val = os.environ.get(env_var, "")
+            env_val = _env_secret(env_var, "")
             cfg_val = ""
             if config_key:
                 cfg_val = str(self._get_nested(cfg, config_key) or "")

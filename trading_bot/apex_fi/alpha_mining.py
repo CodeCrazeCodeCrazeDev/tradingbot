@@ -492,10 +492,9 @@ class AlphaMiningEngine:
         # Initialize genetic search
         self.genetic_search.initialize_population()
         
-        # Start background tasks
-        asyncio.create_task(self._continuous_discovery())
-        asyncio.create_task(self._monitor_factor_decay())
-        asyncio.create_task(self._daily_reset())
+        # Background discovery workers disabled: autonomous alpha evolution
+        # is a research path owned by the canonical human-gated RSI loop.
+        logger.warning("Alpha mining background workers disabled; canonical RSI path owns discovery")
     
     async def stop(self) -> None:
         """Stop alpha mining engine."""

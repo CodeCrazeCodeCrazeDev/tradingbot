@@ -1,4 +1,5 @@
 """
+import warnings
 from typing import Callable, Dict, Optional, Set, Tuple
 AlphaAlgo Broker Hub
 
@@ -126,6 +127,7 @@ class CredentialVault:
     """
     
     def __init__(self, vault_path: str = "alphaalgo_data/vault"):
+        warnings.warn("CredentialVault maintains its own credential store — deprecated: resolve secrets via trading_bot.security.canonical_provider.get_credential_provider()", DeprecationWarning, stacklevel=2)
         self.vault_path = Path(vault_path)
         self.vault_path.mkdir(parents=True, exist_ok=True)
         self._fernet: Optional[Fernet] = None

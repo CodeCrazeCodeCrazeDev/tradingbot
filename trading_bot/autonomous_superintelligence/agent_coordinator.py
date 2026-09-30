@@ -318,7 +318,8 @@ class AgentCoordinator:
             channel="autonomous_superintelligence",
         )
         
-        asyncio.create_task(self._execute_task(task, agent))
+        # Detached spawn disabled; run inline so no unmanaged task exists.
+        await self._execute_task(task, agent)
     
     async def _execute_task(self, task: Task, agent: Agent):
         """Execute a task with an agent."""

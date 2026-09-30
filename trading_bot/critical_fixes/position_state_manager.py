@@ -510,8 +510,10 @@ class PositionStateManager:
             return
         
         self._running = True
-        self._reconciliation_task = asyncio.create_task(self._reconciliation_loop())
-        logger.info(f"Position reconciliation started (interval: {self.reconciliation_interval}s)")
+        # Worker disabled: position reconciliation is owned by
+        # CanonicalExecutionService/SqliteTradingRepository.
+        self._reconciliation_task = None
+        logger.warning("Position reconciliation worker disabled; canonical execution boundary owns reconciliation")
     
     async def stop_reconciliation(self):
         """Stop automatic reconciliation"""
@@ -786,6 +788,10 @@ class PositionStateManager:
             ]
         }
     
-    def force_reconcile_now(self) -> asyncio.Task:
-        """Force immediate reconciliation"""
-        return asyncio.create_task(self.reconcile())
+    async def force_reconcile_now(self):
+        """Force immediate reconciliation (runs inline, no detached task)."""
+        logger.warning(
+            "force_reconcile_now runs inline; CanonicalExecutionService owns "
+            "authoritative reconciliation"
+        )
+        return await self.reconcile()

@@ -41,7 +41,7 @@ class IntelligenceDirectorateService(BaseService):
     async def start(self) -> None:
         self._running = True
         self._directorate = AlphaAlgoIntelligenceDirectorate(mode=self._mode)
-        self._task = asyncio.create_task(self._run_loop())
+        self._task = None  # worker disabled: canonical runtime owns the loop
         logger.info("IntelligenceDirectorateService started")
 
     async def stop(self) -> None:

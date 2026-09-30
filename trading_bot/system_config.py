@@ -11,6 +11,19 @@ from pathlib import Path
 
 import logging
 
+def _env_secret(name, default=None):
+    """Resolve env-sourced secrets through the canonical credential provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    value = get_credential_provider().get_secret(name)
+    return value if value is not None else default
+
+
+def _env_required(name):
+    """Required env-sourced secret; fails closed via the canonical provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    return get_credential_provider().require_secret(name)
+
+
 logger = logging.getLogger(__name__)
 
 class TradingMode(Enum):
@@ -224,16 +237,16 @@ class SystemConfig:
             config = cls()
         
             # Override from environment
-            if env_mode := os.getenv('TRADING_MODE'):
+            if env_mode := _env_secret("TRADING_MODE"):
                 config.trading_mode = TradingMode(env_mode.lower())
         
-            if env_env := os.getenv('ENVIRONMENT'):
+            if env_env := _env_secret("ENVIRONMENT"):
                 config.environment = Environment(env_env.lower())
         
-            if symbols := os.getenv('SYMBOLS'):
+            if symbols := _env_secret("SYMBOLS"):
                 config.symbols = symbols.split(',')
         
-            if capital := os.getenv('INITIAL_CAPITAL'):
+            if capital := _env_secret("INITIAL_CAPITAL"):
                 config.initial_capital = float(capital)
         
             return config

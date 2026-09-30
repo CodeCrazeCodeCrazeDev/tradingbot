@@ -142,8 +142,10 @@ class PositionReconciler:
             return
         
         self._running = True
-        self._reconciliation_task = asyncio.create_task(self._reconciliation_loop())
-        logger.info(f"Position reconciliation started (interval: {self.reconciliation_interval}s)")
+        # Worker disabled: reconciliation is owned by
+        # CanonicalExecutionService/SqliteTradingRepository.
+        self._reconciliation_task = None
+        logger.warning("Position reconciliation worker disabled; canonical execution boundary owns reconciliation")
     
     async def stop(self):
         """Stop periodic reconciliation"""

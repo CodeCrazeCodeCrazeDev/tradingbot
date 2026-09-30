@@ -5,7 +5,7 @@ Exports real-time trading metrics for Prometheus/Grafana monitoring.
 """
 
 import time
-from typing import Dict, Optional
+from typing import Any, ClassVar, Dict, Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,6 +25,16 @@ class TradingMetricsExporter:
     - Error rate
     """
     
+    # prometheus_client metric objects are process-global once registered on
+    # the default registry; cache them so multiple exporter instances (e.g.
+    # in tests) share collectors instead of raising "Duplicated timeseries".
+    _shared_metrics: ClassVar[Dict[str, Any]] = {}
+
+    def _metric(self, key: str, factory, *args, **kwargs):
+        if key not in self._shared_metrics:
+            self._shared_metrics[key] = factory(*args, **kwargs)
+        return self._shared_metrics[key]
+
     def __init__(self, port: int = 9090, start_server: bool = True):
         """
         Args:
@@ -38,29 +48,29 @@ class TradingMetricsExporter:
         
         try:
             from prometheus_client import Counter, Gauge, Histogram, start_http_server
-            
+
             # Counters (monotonically increasing)
-            self.total_trades = Counter('trading_total_trades', 'Total number of trades')
-            self.winning_trades = Counter('trading_winning_trades', 'Number of winning trades')
-            self.losing_trades = Counter('trading_losing_trades', 'Number of losing trades')
-            self.errors = Counter('trading_errors_total', 'Total errors', ['error_type'])
-            
+            self.total_trades = self._metric('total_trades', Counter, 'trading_total_trades', 'Total number of trades')
+            self.winning_trades = self._metric('winning_trades', Counter, 'trading_winning_trades', 'Number of winning trades')
+            self.losing_trades = self._metric('losing_trades', Counter, 'trading_losing_trades', 'Number of losing trades')
+            self.errors = self._metric('errors', Counter, 'trading_errors_total', 'Total errors', ['error_type'])
+
             # Gauges (can go up or down)
-            self.current_pnl = Gauge('trading_current_pnl', 'Current PnL in USD')
-            self.current_equity = Gauge('trading_current_equity', 'Current account equity')
-            self.open_positions = Gauge('trading_open_positions', 'Number of open positions')
-            self.win_rate = Gauge('trading_win_rate', 'Win rate percentage')
-            self.sharpe_ratio = Gauge('trading_sharpe_ratio', 'Sharpe ratio')
-            self.max_drawdown = Gauge('trading_max_drawdown', 'Maximum drawdown percentage')
-            self.current_drawdown = Gauge('trading_current_drawdown', 'Current drawdown percentage')
-            
+            self.current_pnl = self._metric('current_pnl', Gauge, 'trading_current_pnl', 'Current PnL in USD')
+            self.current_equity = self._metric('current_equity', Gauge, 'trading_current_equity', 'Current account equity')
+            self.open_positions = self._metric('open_positions', Gauge, 'trading_open_positions', 'Number of open positions')
+            self.win_rate = self._metric('win_rate', Gauge, 'trading_win_rate', 'Win rate percentage')
+            self.sharpe_ratio = self._metric('sharpe_ratio', Gauge, 'trading_sharpe_ratio', 'Sharpe ratio')
+            self.max_drawdown = self._metric('max_drawdown', Gauge, 'trading_max_drawdown', 'Maximum drawdown percentage')
+            self.current_drawdown = self._metric('current_drawdown', Gauge, 'trading_current_drawdown', 'Current drawdown percentage')
+
             # Histograms (distributions)
-            self.trade_pnl = Histogram('trading_trade_pnl', 'Trade PnL distribution', 
-                                       buckets=[-100, -50, -25, -10, 0, 10, 25, 50, 100, 200])
-            self.trade_duration = Histogram('trading_trade_duration_seconds', 'Trade duration',
-                                           buckets=[60, 300, 600, 1800, 3600, 7200, 14400, 28800])
-            self.latency = Histogram('trading_latency_ms', 'Order execution latency',
-                                    buckets=[1, 5, 10, 25, 50, 100, 250, 500, 1000])
+            self.trade_pnl = self._metric('trade_pnl', Histogram, 'trading_trade_pnl', 'Trade PnL distribution',
+                                          buckets=[-100, -50, -25, -10, 0, 10, 25, 50, 100, 200])
+            self.trade_duration = self._metric('trade_duration', Histogram, 'trading_trade_duration_seconds', 'Trade duration',
+                                               buckets=[60, 300, 600, 1800, 3600, 7200, 14400, 28800])
+            self.latency = self._metric('latency', Histogram, 'trading_latency_ms', 'Order execution latency',
+                                        buckets=[1, 5, 10, 25, 50, 100, 250, 500, 1000])
             
             # Start HTTP server for Prometheus
             if self.start_server:
@@ -296,6 +306,13 @@ class PrometheusExporter(TradingMetricsExporter):
 
     def __init__(self, port: int = 9090, **kwargs):
         super().__init__(port=port, **kwargs)
+        self.system_health = None
+        if self.prometheus_available:
+            from prometheus_client import Gauge
+            self.system_health = self._metric(
+                'system_health', Gauge, 'system_health_score',
+                'Overall system health score (0-100)'
+            )
 
     @property
     def enabled(self) -> bool:
@@ -308,6 +325,11 @@ class PrometheusExporter(TradingMetricsExporter):
     def update_portfolio(self, equity: float, drawdown: float):
         self.update_equity(equity)
         self.update_drawdown(current=drawdown, maximum=drawdown)
+
+    def update_system_health(self, score: float):
+        """Update system health score (0-100)."""
+        if self.system_health is not None:
+            self.system_health.set(score)
 
 
 if __name__ == "__main__":

@@ -126,6 +126,7 @@ class SelfDefender:
         secrets_path: str = "secrets/",
         log_path: str = "security_logs/",
     ):
+        warnings.warn("SelfDefender maintains its own credential store — deprecated: resolve secrets via trading_bot.security.canonical_provider.get_credential_provider()", DeprecationWarning, stacklevel=2)
         warnings.warn("SelfDefender is a legacy/quarantined component: loop/capital surface outside the canonical runtime. It carries no production authority.", DeprecationWarning, stacklevel=2)
         self.config = config or SecurityConfig()
         self.secrets_path = Path(secrets_path)

@@ -569,8 +569,10 @@ class RealTimePnLCalculator:
     async def start_realtime_updates(self):
         """Start real-time P&L updates"""
         self._running = True
-        self._update_task = asyncio.create_task(self._update_loop())
-        logger.info("Real-time P&L updates started")
+        # Worker disabled: P&L state is owned by SqliteTradingRepository /
+        # canonical read models, not a detached updater.
+        self._update_task = None
+        logger.warning("Real-time P&L update worker disabled; canonical repository owns position state")
     
     async def stop_realtime_updates(self):
         """Stop real-time P&L updates"""

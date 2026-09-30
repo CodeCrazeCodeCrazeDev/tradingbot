@@ -28,6 +28,19 @@ from queue import Queue
 from .approval_hub import UnifiedApprovalHub, ApprovalRequest, ApprovalDecision, get_approval_hub
 from .approval_types import ApprovalCategory, ApprovalPriority, ApprovalStatus, RiskLevel
 
+def _env_secret(name, default=None):
+    """Resolve env-sourced secrets through the canonical credential provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    value = get_credential_provider().get_secret(name)
+    return value if value is not None else default
+
+
+def _env_required(name):
+    """Required env-sourced secret; fails closed via the canonical provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    return get_credential_provider().require_secret(name)
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -178,7 +191,7 @@ class CLIApprovalInterface:
         """Clear terminal screen"""
         # PROD-01: Avoid os.system for platform-independent production
         # In headless environments, clearing screen is unnecessary.
-        if os.environ.get('TERM'):
+        if _env_secret("TERM"):
             print("\033[H\033[J", end="")
     
     def _print_header(self):

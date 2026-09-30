@@ -320,11 +320,10 @@ class AlphaAlgoMetaSystem:
         self._monitoring = True
         logger.info("Starting AlphaAlgoMetaSystem monitoring...")
         
-        # Start monitoring loop
-        self._monitor_task = asyncio.create_task(self._monitoring_loop())
-        
-        # Start risk-capability balance monitoring
-        asyncio.create_task(self._balance_monitoring_loop())
+        # Monitoring workers disabled: the canonical runtime owns meta-system
+        # monitoring; this legacy path may not spawn detached loops.
+        self._monitor_task = None
+        logger.warning("AlphaAlgoMetaSystem monitor workers disabled; canonical runtime owns monitoring")
         
         logger.info("✓ AlphaAlgoMetaSystem monitoring active")
     

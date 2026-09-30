@@ -7,6 +7,12 @@ class EvolutionLayerOrchestrator:
     
     def __init__(self, *args, **kwargs):
         """Initialize EvolutionLayerOrchestrator."""
+        import warnings
+        warnings.warn(
+            "EvolutionLayerOrchestrator is a merge-generated stub with no "
+            "authority; orchestration belongs to CognitiveSystemController.",
+            DeprecationWarning, stacklevel=2,
+        )
         self.config = kwargs.get('config', {})
         self.running = False
     

@@ -185,7 +185,10 @@ class KnowledgeActionBridge:
         if self._running:
             return
         self._running = True
-        self._sync_task = asyncio.create_task(self._sync_loop())
+        # Sync worker disabled: knowledge->action bridging is a parallel
+        # production edge; the canonical runtime owns it.
+        self._sync_task = None
+        logger.warning("Knowledge-action sync worker disabled; canonical runtime owns this edge")
         logger.info("[BRIDGE] Background knowledge sync started")
 
     async def stop(self) -> None:

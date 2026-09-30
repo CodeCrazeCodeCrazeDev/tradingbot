@@ -466,9 +466,10 @@ class SignalLifecycleManager:
                 logger.error(f"Error in cleanup_loop: {e}")
                 raise
         
-        self.cleanup_thread = threading.Thread(target=cleanup_loop, daemon=True)
-        self.cleanup_thread.start()
-        logger.info("Signal cleanup thread started")
+        # Cleanup thread disabled: detached worker threads are not permitted
+        # outside the canonical runtime; expiry can run on demand.
+        self.cleanup_thread = None
+        logger.warning("Signal cleanup thread disabled; canonical runtime owns lifecycle")
     
     def stop_cleanup_thread(self):
         """Stop cleanup thread"""
