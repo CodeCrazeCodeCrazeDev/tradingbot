@@ -12,7 +12,7 @@ import os
 import sqlite3
 import threading
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional
 from uuid import uuid4
 
 from trading_bot.foundation.contracts import (
@@ -22,11 +22,83 @@ from trading_bot.foundation.contracts import (
     Instrument,
     InstrumentType,
     OrderRequest,
+    OrderSide,
     OrderStatus,
+    OrderType,
+    OrderUpdate,
     PortfolioSnapshot,
     Position,
     ReconciliationResult,
 )
+
+
+def decode_instrument(data: Mapping[str, Any]) -> Instrument:
+    """Reconstruct an ``Instrument`` from its persisted mapping."""
+    return Instrument(
+        symbol=data["symbol"],
+        instrument_type=InstrumentType(data["instrument_type"]),
+        venue=data["venue"],
+        currency=data.get("currency", "USD"),
+        contract_size=data.get("contract_size", 1.0),
+        price_increment=data.get("price_increment"),
+        quantity_increment=data.get("quantity_increment"),
+        metadata=data.get("metadata", {}),
+    )
+
+
+def decode_order(payload: Any) -> OrderRequest:
+    """Reconstruct an ``OrderRequest`` from its persisted JSON payload."""
+    data = json.loads(payload) if isinstance(payload, str) else dict(payload)
+    return OrderRequest(
+        instrument=decode_instrument(data["instrument"]),
+        side=OrderSide(data["side"]),
+        order_type=OrderType(data["order_type"]),
+        quantity=float(data["quantity"]),
+        client_order_id=data["client_order_id"],
+        decision_id=data["decision_id"],
+        price=data.get("price"),
+        stop_price=data.get("stop_price"),
+        correlation_id=data.get("correlation_id") or "",
+        metadata=data.get("metadata", {}),
+    )
+
+
+def decode_report(payload: Any) -> ExecutionReport:
+    """Reconstruct an ``ExecutionReport`` from its persisted JSON payload."""
+    data = json.loads(payload) if isinstance(payload, str) else dict(payload)
+    fills = [
+        Fill(
+            client_order_id=fill["client_order_id"],
+            venue_order_id=fill.get("venue_order_id"),
+            instrument=decode_instrument(fill["instrument"]),
+            side=OrderSide(fill["side"]),
+            quantity=float(fill["quantity"]),
+            price=float(fill["price"]),
+            commission=float(fill.get("commission", 0.0)),
+            liquidity=fill.get("liquidity"),
+        )
+        for fill in data.get("fills", [])
+    ]
+    updates = [
+        OrderUpdate(
+            client_order_id=update["client_order_id"],
+            status=OrderStatus(update["status"]),
+            venue_order_id=update.get("venue_order_id"),
+            filled_quantity=float(update.get("filled_quantity", 0.0)),
+            average_price=update.get("average_price"),
+            reason=update.get("reason"),
+        )
+        for update in data.get("updates", [])
+    ]
+    return ExecutionReport(
+        client_order_id=data["client_order_id"],
+        status=OrderStatus(data["status"]),
+        updates=updates,
+        fills=fills,
+        expected_price=data.get("expected_price"),
+        slippage_bps=data.get("slippage_bps"),
+        error=data.get("error"),
+    )
 
 
 class SqliteTradingRepository:
@@ -40,15 +112,22 @@ class SqliteTradingRepository:
         self.initial_equity = float(initial_equity)
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
         self._lock = threading.RLock()
+        self._closed = False
         self._connection = sqlite3.connect(path, check_same_thread=False)
         self._connection.row_factory = sqlite3.Row
         self._initialize_schema()
+
+    @property
+    def closed(self) -> bool:
+        return self._closed
 
     def _initialize_schema(self) -> None:
         with self._lock:
             self._connection.executescript(
                 """
                 PRAGMA journal_mode=WAL;
+                PRAGMA synchronous=FULL;
+                PRAGMA busy_timeout=5000;
                 CREATE TABLE IF NOT EXISTS orders (
                     client_order_id TEXT PRIMARY KEY,
                     decision_id TEXT NOT NULL,
@@ -169,6 +248,62 @@ class SqliteTradingRepository:
              datetime.now(timezone.utc).isoformat()),
         )
 
+    async def get_order(self, client_order_id: str) -> Optional[Dict[str, Any]]:
+        """Return the durable order row (raw JSON payloads) or None."""
+        with self._lock:
+            row = self._connection.execute(
+                """SELECT client_order_id, decision_id, symbol, status,
+                          order_json, report_json, updated_at
+                   FROM orders WHERE client_order_id=?""",
+                (client_order_id,),
+            ).fetchone()
+        return dict(row) if row is not None else None
+
+    async def list_orders(
+        self, statuses: Optional[List[str]] = None
+    ) -> List[Dict[str, Any]]:
+        """Return order rows, optionally restricted to the given statuses."""
+        with self._lock:
+            if statuses:
+                placeholders = ",".join("?" for _ in statuses)
+                rows = self._connection.execute(
+                    f"""SELECT client_order_id, decision_id, symbol, status,
+                               order_json, report_json, updated_at
+                        FROM orders WHERE status IN ({placeholders})
+                        ORDER BY updated_at ASC, rowid ASC""",
+                    list(statuses),
+                ).fetchall()
+            else:
+                rows = self._connection.execute(
+                    """SELECT client_order_id, decision_id, symbol, status,
+                              order_json, report_json, updated_at
+                       FROM orders ORDER BY updated_at ASC, rowid ASC"""
+                ).fetchall()
+        return [dict(row) for row in rows]
+
+    @staticmethod
+    def decode_order(payload: Any) -> OrderRequest:
+        return decode_order(payload)
+
+    @staticmethod
+    def decode_report(payload: Any) -> ExecutionReport:
+        return decode_report(payload)
+
+    async def record_reconciliation(self, result: ReconciliationResult) -> str:
+        """Persist a reconciliation outcome; returns the reconciliation id."""
+        reconciliation_id = str(uuid4())
+        with self._lock:
+            self._connection.execute(
+                """INSERT INTO reconciliation_runs
+                   (reconciliation_id, venue, matched, result_json, checked_at)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (reconciliation_id, result.venue, int(result.matched),
+                 json.dumps(result.to_dict(), sort_keys=True),
+                 result.checked_at.isoformat()),
+            )
+            self._connection.commit()
+        return reconciliation_id
+
     async def list_fills(self) -> List[Dict[str, Any]]:
         """Return all recorded fills in execution order (read-only)."""
         with self._lock:
@@ -252,17 +387,12 @@ class SqliteTradingRepository:
             matched=not differences,
             position_differences=differences,
         )
-        with self._lock:
-            self._connection.execute(
-                """INSERT INTO reconciliation_runs
-                   (reconciliation_id, venue, matched, result_json, checked_at)
-                   VALUES (?, ?, ?, ?, ?)""",
-                (str(uuid4()), venue, int(result.matched),
-                 json.dumps(result.to_dict(), sort_keys=True), result.checked_at.isoformat()),
-            )
-            self._connection.commit()
+        await self.record_reconciliation(result)
         return result
 
     def close(self) -> None:
         with self._lock:
+            if self._closed:
+                return
+            self._closed = True
             self._connection.close()

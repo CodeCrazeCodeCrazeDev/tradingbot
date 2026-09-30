@@ -15,8 +15,27 @@ from trading_bot.foundation.contracts import (
 )
 
 
+# Worse-than ordering: a declared quality only overrides the computed one when
+# it is strictly worse. "unknown" sits above "valid" — a source that admits it
+# cannot vouch for its own data is not trusted as fresh.
+_QUALITY_SEVERITY = {
+    DataQuality.VALID: 0,
+    DataQuality.UNKNOWN: 1,
+    DataQuality.DEGRADED: 2,
+    DataQuality.STALE: 3,
+    DataQuality.INVALID: 4,
+}
+
+
 class MarketDataNormalizer:
     """Convert replay, paper, and venue payloads into canonical market events."""
+
+    def __init__(self, max_staleness_seconds: Optional[float] = None) -> None:
+        # Optional freshness horizon. Wall-clock staleness is opt-in because
+        # historical replay legitimately feeds old timestamps; live adapters
+        # that can compute staleness should declare it (data_quality/stale)
+        # or construct the normalizer with an explicit bound.
+        self.max_staleness_seconds = max_staleness_seconds
 
     def normalize(
         self,
@@ -50,11 +69,28 @@ class MarketDataNormalizer:
         payload.pop("time", None)
         payload.pop("venue", None)
 
+        source_timestamp = self._timestamp(
+            observation.get("timestamp", observation.get("time"))
+        )
         quality = self._quality(payload)
+        declared = self._declared_quality(observation)
+        # Untrusted upstream labels can only ever worsen quality — a feed
+        # declaring "valid" never launders malformed data, while declared
+        # stale/invalid markers must fail closed downstream.
+        if declared is not None and _QUALITY_SEVERITY[declared] > _QUALITY_SEVERITY[quality]:
+            quality = declared
+        if (
+            self.max_staleness_seconds is not None
+            and quality
+            in (DataQuality.VALID, DataQuality.DEGRADED, DataQuality.UNKNOWN)
+            and (datetime.now(timezone.utc) - source_timestamp).total_seconds()
+            > self.max_staleness_seconds
+        ):
+            quality = DataQuality.STALE
         return MarketEvent(
             instrument=instrument,
             event_type=self._event_type(payload),
-            source_timestamp=self._timestamp(observation.get("timestamp", observation.get("time"))),
+            source_timestamp=source_timestamp,
             payload=payload,
             quality=quality,
             provenance={
@@ -64,6 +100,25 @@ class MarketDataNormalizer:
             },
             correlation_id=correlation_id,
         )
+
+    @staticmethod
+    def _declared_quality(observation: Mapping[str, Any]) -> Optional[DataQuality]:
+        """Extract a quality the untrusted source declared about itself."""
+        if observation.get("stale") is True or observation.get("is_stale") is True:
+            return DataQuality.STALE
+        if observation.get("data_is_fresh") is False:
+            return DataQuality.STALE
+        raw = observation.get("data_quality", observation.get("quality"))
+        if raw is None:
+            return None
+        text = str(raw).strip().lower()
+        return {
+            "invalid": DataQuality.INVALID,
+            "stale": DataQuality.STALE,
+            "degraded": DataQuality.DEGRADED,
+            "valid": DataQuality.VALID,
+            "unknown": DataQuality.UNKNOWN,
+        }.get(text)
 
     @staticmethod
     def _instrument_type(observation: Mapping[str, Any]) -> InstrumentType:

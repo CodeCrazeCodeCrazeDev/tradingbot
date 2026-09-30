@@ -9,6 +9,8 @@ zero handlers and silently marked EXECUTED.
 Replace this bridge with a real broker adapter for live trading.
 """
 
+import asyncio
+import asyncio
 import json
 import logging
 import os
@@ -18,6 +20,11 @@ from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
+# Order statuses that are final — a durable record in one of these states is
+# authoritative and never re-submitted. Anything else is non-terminal: the
+# venue may have received the order, so the only safe move is a broker lookup.
+_TERMINAL_STATUS_VALUES = frozenset({"filled", "cancelled", "rejected", "expired"})
 
 
 @dataclass
@@ -104,13 +111,17 @@ class PaperExecutionBridge:
 
     def __init__(self, persist_path: str = "alphaalgo_data/paper_fills.jsonl",
                  slippage: Optional[SlippageRecorder] = None,
-                 execution_service: Any = None):
+                 execution_service: Any = None,
+                 submit_timeout: Optional[float] = 30.0):
         self.persist_path = persist_path  # legacy arg; no longer written
         self.fills: List[PaperFill] = []
         self.positions: Dict[str, float] = {}
         self.attached = False
         self.slippage = slippage or SlippageRecorder()
         self.execution_service = execution_service
+        # Broker-call deadline: a hung submit resolves to a durable UNKNOWN
+        # report reconciled later via broker lookup — never a silent retry.
+        self.submit_timeout = submit_timeout
         self._processed_trade_ids: Dict[str, Dict[str, Any]] = {}
 
     def attach(self, decision_bus: Any) -> None:
@@ -147,61 +158,247 @@ class PaperExecutionBridge:
         if trade_id in self._processed_trade_ids:
             return dict(self._processed_trade_ids[trade_id])
 
-        if self.execution_service is not None:
-            from trading_bot.foundation.contracts import (
-                Instrument,
-                InstrumentType,
-                OrderRequest,
-                OrderSide,
-                OrderType,
+        if self.execution_service is None:
+            # No canonical execution service: fail closed. The bridge is a
+            # facade, not an executor — it must not write fills outside the
+            # typed service + repository path.
+            logger.error(
+                "PaperExecutionBridge: no execution service configured; refusing "
+                f"to fill trade_id={trade_id}"
             )
-
-            typed_order = OrderRequest(
-                instrument=Instrument(symbol, InstrumentType.SYNTHETIC, "paper"),
-                side=OrderSide.BUY if side in ("BUY", "STRONG_BUY") else OrderSide.SELL,
-                order_type=OrderType.MARKET,
-                quantity=float(quantity),
-                price=float(price) if float(price) > 0 else None,
-                client_order_id=trade_id,
-                decision_id=trade_id,
-            )
-            report = await self.execution_service.submit(typed_order)
-            if report.status.value != "filled":
-                result = {"status": report.status.value, "reason": report.error}
-                self._processed_trade_ids[trade_id] = result
-                return result
-            fill_price = report.fills[0].price if report.fills else float(price)
-            fill = PaperFill(
-                fill_id=report.fills[0].venue_order_id if report.fills else str(uuid.uuid4()),
-                trade_id=trade_id,
-                symbol=symbol,
-                action=side,
-                quantity=float(quantity),
-                price=float(fill_price),
-            )
-            self.fills.append(fill)
-            signed_qty = fill.quantity if side in ("BUY", "STRONG_BUY") else -fill.quantity
-            self.positions[symbol] = round(self.positions.get(symbol, 0.0) + signed_qty, 8)
-            self.slippage.record(SlippageRecord(
-                symbol=symbol, side=side,
-                expected_price=float(price), fill_price=fill.price,
-                quantity=fill.quantity, venue="paper",
-            ))
-            self._mark_executed(action)
-            result = {"status": "filled", "fill_id": fill.fill_id}
+            result = {"status": "rejected", "reason": "no_execution_service"}
             self._processed_trade_ids[trade_id] = result
             return result
 
-        # No canonical execution service: fail closed. The bridge is a facade,
-        # not an executor — it must not write fills outside the typed service
-        # + repository path.
-        logger.error(
-            "PaperExecutionBridge: no execution service configured; refusing "
-            f"to fill trade_id={trade_id}"
+        repository = getattr(self.execution_service, "repository", None)
+
+        # Durable idempotency: the repository is the persistent order
+        # identity. A row for this client_order_id means the order already
+        # reached the boundary once — reconcile it by venue lookup, never by
+        # resubmitting (a resend could duplicate a fill the venue booked).
+        if repository is not None:
+            try:
+                existing = await repository.get_order(trade_id)
+            except Exception as exc:
+                logger.error(
+                    f"PaperExecutionBridge: durable lookup failed for {trade_id}: "
+                    f"{exc}; refusing to submit without durable state"
+                )
+                result = {"status": "error", "reason": "durable_lookup_failed"}
+                self._processed_trade_ids[trade_id] = result
+                return result
+            if existing is not None:
+                result = await self._resolve_persisted_order(trade_id, existing, action, repository)
+                self._processed_trade_ids[trade_id] = result
+                return result
+
+        # Audit the authorization before submission: reaching this bridge
+        # means the action passed shield + governance + LogAct consensus.
+        if not await self._record_audit(
+            repository, action="order_authorized", outcome="approved",
+            correlation_id=trade_id,
+            details={
+                "action_id": getattr(action, "action_id", None),
+                "governance_receipt": payload.get("governance_receipt"),
+                "voters": self._voter_summary(action),
+            },
+        ):
+            result = {"status": "error", "reason": "audit_unavailable"}
+            self._processed_trade_ids[trade_id] = result
+            return result
+        if not await self._record_audit(
+            repository, action="order_submit_attempt", outcome="attempted",
+            correlation_id=trade_id,
+            details={"symbol": symbol, "side": side,
+                     "quantity": float(quantity), "price": float(price)},
+        ):
+            result = {"status": "error", "reason": "audit_unavailable"}
+            self._processed_trade_ids[trade_id] = result
+            return result
+
+        from trading_bot.foundation.contracts import (
+            ExecutionReport,
+            Instrument,
+            InstrumentType,
+            OrderRequest,
+            OrderSide,
+            OrderStatus,
+            OrderType,
         )
-        result = {"status": "rejected", "reason": "no_execution_service"}
+
+        typed_order = OrderRequest(
+            instrument=Instrument(symbol, InstrumentType.SYNTHETIC, "paper"),
+            side=OrderSide.BUY if side in ("BUY", "STRONG_BUY") else OrderSide.SELL,
+            order_type=OrderType.MARKET,
+            quantity=float(quantity),
+            price=float(price) if float(price) > 0 else None,
+            client_order_id=trade_id,
+            decision_id=trade_id,
+        )
+        try:
+            report = await self._submit_with_timeout(typed_order)
+        except asyncio.TimeoutError:
+            # The venue may have received the order — its fate is UNKNOWN.
+            # Record that durably; the next recovery pass reconciles it via
+            # broker lookup. Never resubmit in place.
+            report = ExecutionReport(
+                client_order_id=trade_id,
+                status=OrderStatus.UNKNOWN,
+                error=f"submit timed out after {self.submit_timeout}s",
+            )
+            if repository is not None:
+                try:
+                    await repository.record_execution(typed_order, report)
+                except Exception as exc:
+                    logger.error(
+                        f"PaperExecutionBridge: failed to persist UNKNOWN "
+                        f"report for {trade_id}: {exc}"
+                    )
+            await self._record_audit(
+                repository, action="order_broker_response",
+                outcome="timeout_unknown", correlation_id=trade_id,
+                details={"error": report.error},
+            )
+            result = {"status": "unknown", "reason": "submit_timeout"}
+            self._processed_trade_ids[trade_id] = result
+            return result
+
+        await self._record_audit(
+            repository, action="order_broker_response",
+            outcome=report.status.value, correlation_id=trade_id,
+            details={
+                "venue_order_id": report.fills[0].venue_order_id
+                if report.fills else None,
+                "fill_count": len(report.fills),
+                "error": report.error,
+            },
+        )
+        if report.status.value != "filled":
+            result = {"status": report.status.value, "reason": report.error}
+            self._processed_trade_ids[trade_id] = result
+            return result
+
+        fill_price = report.fills[0].price if report.fills else float(price)
+        fill = PaperFill(
+            fill_id=report.fills[0].venue_order_id if report.fills else str(uuid.uuid4()),
+            trade_id=trade_id,
+            symbol=symbol,
+            action=side,
+            quantity=float(quantity),
+            price=float(fill_price),
+        )
+        self.fills.append(fill)
+        signed_qty = fill.quantity if side in ("BUY", "STRONG_BUY") else -fill.quantity
+        self.positions[symbol] = round(self.positions.get(symbol, 0.0) + signed_qty, 8)
+        self.slippage.record(SlippageRecord(
+            symbol=symbol, side=side,
+            expected_price=float(price), fill_price=fill.price,
+            quantity=fill.quantity, venue="paper",
+        ))
+        self._mark_executed(action)
+        result = {"status": "filled", "fill_id": fill.fill_id}
         self._processed_trade_ids[trade_id] = result
         return result
+
+    async def _submit_with_timeout(self, order: Any) -> Any:
+        """Submit through the single execution boundary under a deadline."""
+        if self.submit_timeout is None:
+            return await self.execution_service.submit(order)
+        return await asyncio.wait_for(
+            self.execution_service.submit(order), timeout=self.submit_timeout
+        )
+
+    async def _resolve_persisted_order(
+        self,
+        trade_id: str,
+        row: Dict[str, Any],
+        action: Any,
+        repository: Any,
+    ) -> Dict[str, Any]:
+        """Resolve a durable order record without resubmitting.
+
+        Terminal records are authoritative — return the stored verdict.
+        Non-terminal records go through ``adapter.get_order`` (broker lookup)
+        and the outcome is re-persisted; UNKNOWN stays UNKNOWN until the
+        venue can prove otherwise.
+        """
+        stored = str(row.get("status") or "unknown")
+        if stored in _TERMINAL_STATUS_VALUES:
+            await self._record_audit(
+                repository, action="order_dedup", outcome=stored,
+                correlation_id=trade_id,
+                details={"reason": "durable_terminal_record"},
+            )
+            if stored == "filled":
+                self._mark_executed(action)
+            return {"status": stored, "reason": "durable_terminal_record",
+                    "recovered": True}
+
+        adapter = getattr(self.execution_service, "adapter", None)
+        try:
+            report = await adapter.get_order(trade_id)
+        except Exception as exc:
+            await self._record_audit(
+                repository, action="order_recovery", outcome="lookup_failed",
+                correlation_id=trade_id, details={"error": str(exc)},
+            )
+            return {"status": "unknown", "reason": "broker_lookup_failed",
+                    "recovered": False}
+        order = repository.decode_order(row["order_json"])
+        await repository.record_execution(order, report)
+        await self._record_audit(
+            repository, action="order_recovery", outcome=report.status.value,
+            correlation_id=trade_id,
+            details={"previous_status": stored},
+        )
+        if report.status.value == "filled":
+            self._mark_executed(action)
+        return {"status": report.status.value,
+                "reason": "reconciled_via_broker_lookup", "recovered": True}
+
+    async def _record_audit(
+        self,
+        repository: Any,
+        *,
+        action: str,
+        outcome: str,
+        correlation_id: str,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """Append an audit row; False when there is no repository or the write
+        failed (callers decide whether to fail closed)."""
+        if repository is None:
+            return True  # in-memory mode: nothing durable to write
+        try:
+            from trading_bot.foundation.contracts import AuditEvent
+
+            await repository.record_audit_event(AuditEvent(
+                event_type="execution",
+                actor="paper_execution_bridge",
+                action=action,
+                outcome=outcome,
+                correlation_id=correlation_id,
+                details=details or {},
+            ))
+            return True
+        except Exception as exc:
+            logger.error(f"PaperExecutionBridge: audit write failed: {exc}")
+            return False
+
+    @staticmethod
+    def _voter_summary(action: Any) -> Dict[str, Any]:
+        """JSON-safe subset of voter reports for the audit record."""
+        summary: Dict[str, Any] = {}
+        for voter_id, report in (getattr(action, "voter_reports", None) or {}).items():
+            if isinstance(report, dict):
+                summary[str(voter_id)] = {
+                    key: report.get(key)
+                    for key in ("decision", "reason", "audit_id")
+                    if key in report
+                }
+            else:
+                summary[str(voter_id)] = str(report)
+        return summary
 
     @staticmethod
     def _mark_executed(action: Any) -> None:

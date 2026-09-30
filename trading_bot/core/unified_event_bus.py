@@ -326,6 +326,18 @@ class UnifiedDecisionBus:
             logger.warning(f"LogAct: Attempted to propose action {action.action_id} while bus is not running. Starting bus...")
             await self.start()
 
+        if action.status in (ActionStatus.TIMED_OUT, ActionStatus.VETOED,
+                             ActionStatus.FAILED, ActionStatus.EXECUTED):
+            # A caller that already timed out on (or terminally resolved) this
+            # action must not resurrect it: re-queueing would let a decision
+            # that was reported as rejected reach voters and dispatch anyway.
+            logger.warning(
+                f"LogAct: refusing to re-propose action {action.action_id} "
+                f"in terminal state {action.status.value}."
+            )
+            action._completed_event.set()
+            return
+
         action.status = ActionStatus.PROPOSED
         if self._action_queue is None:
             self._action_queue = asyncio.PriorityQueue()
@@ -413,6 +425,20 @@ class UnifiedDecisionBus:
 
                 logger.debug(f"LogAct [{action.sequence_number}]: Processing action {action.action_id} ({action.action_type})")
 
+                # Terminal-state guard: an action whose waiter already timed
+                # out (or that was otherwise resolved) while still queued must
+                # never be re-opened for voting/dispatch — a capital-moving
+                # action approved after its caller saw TIMED_OUT would execute
+                # a decision that was reported as rejected.
+                if action.status in (ActionStatus.TIMED_OUT, ActionStatus.VETOED,
+                                     ActionStatus.FAILED, ActionStatus.EXECUTED):
+                    logger.warning(
+                        f"LogAct [{action.sequence_number}]: action {action.action_id} "
+                        f"dequeued in terminal state {action.status.value}; "
+                        "skipping audit/dispatch."
+                    )
+                    continue
+
                 # 2. Audit Phase (Voter Execution)
                 action.status = ActionStatus.AUDITING
                 voter_ids = list(self._voters.keys())
@@ -470,8 +496,18 @@ class UnifiedDecisionBus:
 
                     logger.debug(f"LogAct [{action.sequence_number}]: Voter phase complete in {(v_end - v_start).total_seconds():.3f}s")
 
-                # 3. Consensus Phase
+                # 3. Consensus Phase — but a waiter may have timed out while
+                # voters were still running. Once TIMED_OUT, the action is
+                # terminal: never approve or dispatch it afterwards.
                 c_start = datetime.utcnow()
+                if action.status in (ActionStatus.TIMED_OUT, ActionStatus.VETOED,
+                                     ActionStatus.FAILED, ActionStatus.EXECUTED):
+                    logger.warning(
+                        f"LogAct [{action.sequence_number}]: action {action.action_id} "
+                        f"reached terminal state {action.status.value} during voting; "
+                        "skipping consensus/dispatch."
+                    )
+                    continue
                 if self._check_consensus(action):
                     action.status = ActionStatus.APPROVED
                     logger.info(f"LogAct [{action.sequence_number}]: Action {action.action_id} APPROVED")
