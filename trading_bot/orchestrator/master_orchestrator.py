@@ -89,6 +89,7 @@ class MasterOrchestrator:
         self.active_positions = {}
         self.pending_orders = {}
         self.position_limits = {}
+        self._last_opportunities = []
 
         # Performance tracking
         self.performance_history = deque(maxlen=1000)
