@@ -40,6 +40,7 @@ async def test_csc_pipeline_success():
     from trading_bot.core.immutable_shield import GovernanceDecision
     mock_report.decision = GovernanceDecision.APPROVED
     mock_shield.validate_action.return_value = mock_report
+    mock_shield.audit_log_action.return_value = {"decision": "APPROVED", "reason": "Passed governance"}
     mock_shield.GovernanceDecision = GovernanceDecision
 
     csc = CognitiveSystemController(mock_world_model, mock_hms, shield=mock_shield)
