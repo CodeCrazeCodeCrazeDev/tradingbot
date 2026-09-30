@@ -91,8 +91,7 @@ class TestMLToExecutionFlow:
     @pytest.mark.asyncio
     async def test_predict_and_execute_flow(self, full_config):
         """Test flow from ML prediction to execution"""
-        from trading_bot.orchestrator.ml_predictor import OpportunityPredictor
-        from trading_bot.orchestrator.execution_engine import ExecutionEngine
+        from trading_bot.orchestrator import OpportunityPredictor, ExecutionEngine, TradingDecision
         predictor = OpportunityPredictor(full_config)
         engine = ExecutionEngine(full_config)
 
