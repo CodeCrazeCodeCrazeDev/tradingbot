@@ -2,7 +2,7 @@
 # These dependencies enable advanced features but are not required for basic operation
 
 # Deep Learning Frameworks
-torch>=1.10.0
+torch>=2.13.0
 torchvision>=0.11.0
 tensorflow>=2.8.0
 pytorch-lightning>=2.0.0

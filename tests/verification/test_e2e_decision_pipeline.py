@@ -17,10 +17,15 @@ async def test_e2e_pipeline_full_path():
     hms = MagicMock()
     shield = MagicMock(spec=ImmutableShield)
 
-    # Mock Shield to APPROVE
+    # Mock Shield to APPROVE — validate_action covers the direct gate call;
+    # audit_log_action is registered as the LogAct 'shield' voter and must
+    # return an explicit affirmative report under the fail-closed consensus.
     shield_report = MagicMock()
     shield_report.decision = GovernanceDecision.APPROVED
     shield.validate_action.return_value = shield_report
+    shield.audit_log_action = AsyncMock(
+        return_value={"decision": "APPROVED", "reason": "test-approved"}
+    )
 
     # Mock Hypothesis Generation
     mock_branch = MagicMock()

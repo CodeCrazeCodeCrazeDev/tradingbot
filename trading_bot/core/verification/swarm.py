@@ -239,7 +239,12 @@ class EvidenceGraphGate:
 
         # 2. High-Confidence Veto check
         for v in verdicts:
-            confidence = v.confidence if isinstance(v.confidence, (int, float)) else 0.0
+            try:
+                confidence = float(v.confidence)
+            except (TypeError, ValueError):
+                # Unparseable confidence on a REJECTING verdict: fail closed —
+                # treat the veto as decisive rather than silently zeroing it.
+                confidence = 1.0
             if not v.is_valid and confidence > 0.85:
                 EvidenceGraphGate.last_rejection_reason = (
                     f"High-confidence VETO by {v.agent_name}: {str(v.critique)}"

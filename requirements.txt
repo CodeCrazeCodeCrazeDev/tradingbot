@@ -20,7 +20,7 @@ MetaTrader5>=5.0.45
 # -----------------------------------------------------------------------------
 websockets>=11.0
 websocket-client>=1.6.0
-aiohttp>=3.10.11
+aiohttp>=3.14.3  # pip-audit: 26 PYSEC fixes (reqs floor was 3.10.11)
 httpx>=0.24.0
 requests>=2.32.4
 asyncio-throttle>=1.0.2
@@ -49,10 +49,10 @@ lz4>=4.3.0
 # -----------------------------------------------------------------------------
 # WEB FRAMEWORK & API
 # -----------------------------------------------------------------------------
-fastapi>=0.115.0
+fastapi>=0.142.0  # starlette 1.x requires recent fastapi
 uvicorn[standard]>=0.22.0
-starlette>=0.40.0
-python-multipart>=0.0.18
+starlette>=1.3.1  # pip-audit: PYSEC-2026-248/249/2280/2281
+python-multipart>=0.0.31  # pip-audit: PYSEC-2026-3036/3037/3040
 jinja2>=3.1.5
 
 # -----------------------------------------------------------------------------
@@ -66,7 +66,7 @@ catboost>=1.2
 # -----------------------------------------------------------------------------
 # DEEP LEARNING
 # -----------------------------------------------------------------------------
-torch>=2.6.0
+torch>=2.13.0  # pip-audit: PYSEC-2025-194
 transformers>=4.48.0
 onnxruntime>=1.15.0
 
@@ -74,7 +74,8 @@ onnxruntime>=1.15.0
 # TECHNICAL ANALYSIS
 # -----------------------------------------------------------------------------
 ta>=0.10.2
-pandas-ta>=0.3.14b
+# pandas-ta removed: only PyPI release requires Python>=3.12 (unresolvable on
+# 3.11) and nothing imports it — `ta` covers the indicator surface.
 mplfinance>=0.12.9
 
 # -----------------------------------------------------------------------------
@@ -99,7 +100,7 @@ PyWavelets>=1.4.0
 # -----------------------------------------------------------------------------
 # NLP & SENTIMENT
 # -----------------------------------------------------------------------------
-nltk>=3.8.0
+nltk>=3.10.3  # pip-audit: ~60 PYSEC fixes (reqs floor was 3.8.0)
 textblob>=0.17.1
 vaderSentiment>=3.3.2
 beautifulsoup4>=4.12.0
@@ -110,8 +111,8 @@ python-telegram-bot>=20.0
 # -----------------------------------------------------------------------------
 # SECURITY & CRYPTOGRAPHY
 # -----------------------------------------------------------------------------
-cryptography>=44.0.1
-PyJWT>=2.10.1
+cryptography>=50.0.0  # pip-audit: PYSEC-2026-3552/3553/3554
+PyJWT>=2.14.0  # pip-audit: 9 CVE fixes (reqs floor was 2.10.1)
 bcrypt>=4.0.0
 python-jose[cryptography]>=3.4.0
 passlib[bcrypt]>=1.7.4
@@ -130,7 +131,7 @@ GPUtil>=1.4.0
 PyYAML>=6.0.2
 python-dotenv>=1.0.0
 pydantic>=2.0.0
-pydantic-settings>=2.0.0
+pydantic-settings>=2.14.2  # pip-audit: CVE-2026-58203
 loguru>=0.7.0
 rich>=13.4.0
 colorama>=0.4.6

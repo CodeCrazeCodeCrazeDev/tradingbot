@@ -59,6 +59,11 @@ def test_legacy_rsi_files_warn_on_import(module) -> None:
     """Legacy self-improvement modules must emit DeprecationWarning and carry
     no improvement authority."""
     import importlib
+    import sys
+
+    # Evict any earlier import: import_module() on a cached module returns
+    # silently without re-executing the module-level warn().
+    sys.modules.pop(module, None)
 
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
