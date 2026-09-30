@@ -244,7 +244,13 @@ def scan_source(source: str, path: str) -> Dict[str, object]:
 
     terminal_calls = {call.rsplit(".", 1)[-1] for call in calls}
     direct_capital = bool(terminal_calls & CAPITAL_CALLS)
-    starts_loop = bool(calls & LOOP_CALLS or terminal_calls & {"create_task", "run_forever", "Process", "Thread"})
+    # psutil.Process() is resource introspection, not a worker spawn.
+    worker_calls = calls - {"psutil.Process"}
+    worker_terminal = {call.rsplit(".", 1)[-1] for call in worker_calls}
+    starts_loop = bool(
+        worker_calls & LOOP_CALLS
+        or worker_terminal & {"create_task", "run_forever", "Process", "Thread"}
+    )
     dynamic = bool(calls & DYNAMIC_LOADERS)
     tags: List[str] = []
     if direct_capital:
@@ -482,6 +488,23 @@ def build_manifest(root: Path) -> Dict[str, object]:
             else "catalogued_non_reachable"
         )
 
+    # Per-adapter review priority: turns the generic "adapter" backlog into
+    # an ordered queue. P0 = reachable (live graph must be proven first),
+    # P1 = credential-access (secret handling needs consolidation),
+    # P2 = no test evidence (the bulk rows), P3 = already test-covered.
+    for record in records:
+        if record["classification"] != "adapter":
+            continue
+        if record["runtime_reachable"]:
+            priority = 0
+        elif "credential_access" in record["secondary_tags"]:
+            priority = 1
+        elif not record["tests"]:
+            priority = 2
+        else:
+            priority = 3
+        record["review_priority"] = priority
+
     # Non-package executable surfaces the module scan cannot reach: root
     # *.py launchers, scripts/, and bundled standalone packages. They are
     # recorded separately (not as modules) and default to unreviewed/quarantine
@@ -586,6 +609,10 @@ def build_manifest(root: Path) -> Dict[str, object]:
                 1 for row in surfaces
                 if row["starts_loop"] and row["cli_entrypoint"]
                 and not row["guarded_at_entry"]
+                and any(
+                    imp == "trading_bot" or imp.startswith("trading_bot.")
+                    for imp in row["imports"]
+                )
             ),
             "external_surface_classes": {
                 cls: sum(1 for row in surfaces if row["classification"] == cls)
@@ -617,6 +644,12 @@ def build_manifest(root: Path) -> Dict[str, object]:
                 1 for row in records
                 if row["classification"] == "adapter" and not row["tests"]
             ),
+            "adapter_review_queue": {
+                str(priority): sum(
+                    1 for row in records if row.get("review_priority") == priority
+                )
+                for priority in range(4)
+            },
         },
         "modules": records,
         "external_surfaces": surfaces,

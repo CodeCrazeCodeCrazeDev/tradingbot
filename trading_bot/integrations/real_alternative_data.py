@@ -13,6 +13,19 @@ from enum import Enum
 import json
 import os
 
+def _env_secret(name, default=None):
+    """Resolve env-sourced secrets through the canonical credential provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    value = get_credential_provider().get_secret(name)
+    return value if value is not None else default
+
+
+def _env_required(name):
+    """Required env-sourced secret; fails closed via the canonical provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    return get_credential_provider().require_secret(name)
+
+
 try:
     import aiohttp
 except ImportError:
@@ -71,10 +84,10 @@ class RealAlternativeDataProvider:
         self.config = config or {}
         
         # API Keys from environment
-        self.newsapi_key = os.getenv('NEWSAPI_KEY', '')
-        self.fred_key = os.getenv('FRED_API_KEY', '')
-        self.reddit_client_id = os.getenv('REDDIT_CLIENT_ID', '')
-        self.reddit_client_secret = os.getenv('REDDIT_CLIENT_SECRET', '')
+        self.newsapi_key = _env_secret("NEWSAPI_KEY", '')
+        self.fred_key = _env_secret("FRED_API_KEY", '')
+        self.reddit_client_id = _env_secret("REDDIT_CLIENT_ID", '')
+        self.reddit_client_secret = _env_secret("REDDIT_CLIENT_SECRET", '')
         
         # HTTP session
         self._session: Optional[aiohttp.ClientSession] = None

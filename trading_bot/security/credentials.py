@@ -1,12 +1,13 @@
-from __future__ import annotations
 """
 Secure Credential Management
 
 This module provides secure storage and retrieval of API keys and secrets.
 """
+from __future__ import annotations
 
 import os
 import logging
+import warnings
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -41,6 +42,7 @@ class SecureCredentialManager:
     """
     
     def __init__(self, env_file: str = '.env'):
+        warnings.warn("SecureCredentialManager is a deprecated credential shim: resolve secrets via trading_bot.security.canonical_provider.get_credential_provider()", DeprecationWarning, stacklevel=2)
         self.env_file = Path(env_file)
         self.encrypted_cache: Dict[str, bytes] = {}
         

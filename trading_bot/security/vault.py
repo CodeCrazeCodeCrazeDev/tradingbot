@@ -15,6 +15,7 @@ import logging
 import os
 import json
 import base64
+import warnings
 import hashlib
 from typing import Any, Dict, Optional
 from datetime import datetime
@@ -56,6 +57,7 @@ class SecureVault:
             vault_path: Path to encrypted vault file
             salt_path: Path to salt file
         """
+        warnings.warn("SecureVault is a deprecated credential shim: resolve secrets via trading_bot.security.canonical_provider.get_credential_provider()", DeprecationWarning, stacklevel=2)
         self.vault_path = Path(vault_path)
         self.salt_path = Path(salt_path)
         self._fernet: Optional[Any] = None

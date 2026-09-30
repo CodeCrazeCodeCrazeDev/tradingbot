@@ -1,3 +1,4 @@
+import warnings
 import logging
 """
 Encrypted credential storage using Fernet encryption.
@@ -19,6 +20,7 @@ class SecureCredentialVault:
     """Encrypted credential storage with Fernet symmetric encryption."""
     
     def __init__(self, vault_path: str = '.credentials.enc'):
+        warnings.warn("SecureCredentialVault is a deprecated credential shim: resolve secrets via trading_bot.security.canonical_provider.get_credential_provider()", DeprecationWarning, stacklevel=2)
         self.vault_path = Path(vault_path)
         self.key_path = Path.home() / '.trading_bot_key'
         self.key = self._load_or_generate_key()
@@ -233,6 +235,12 @@ class EnvironmentCredentialLoader:
     """Load credentials from environment variables with fallback to vault."""
     
     def __init__(self, vault: Optional[SecureCredentialVault] = None):
+        warnings.warn(
+            "EnvironmentCredentialLoader is a deprecated credential shim: "
+            "resolve secrets via trading_bot.security.canonical_provider."
+            "get_credential_provider()",
+            DeprecationWarning, stacklevel=2,
+        )
         self.vault = vault or SecureCredentialVault()
     
     def get_credential(self, name: str, env_var: Optional[str] = None) -> str:

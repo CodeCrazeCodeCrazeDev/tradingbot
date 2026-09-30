@@ -20,10 +20,22 @@ __all__ = [
     'MockCognitiveCore',
     'MockFeatureEngineer',
     'RealAlternativeDataProvider',
+    'RealDeFiIntegration',
+    'RealMarketDataProvider',
 ]
 
 try:
     from .real_alternative_data import RealAlternativeDataProvider
+except ImportError:
+    pass
+
+try:
+    from .real_market_data import RealMarketDataProvider
+except ImportError:
+    pass
+
+try:
+    from .real_defi_integration import RealDeFiIntegration
 except ImportError:
     pass
 

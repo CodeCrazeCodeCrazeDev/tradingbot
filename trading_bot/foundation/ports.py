@@ -178,3 +178,20 @@ class GovernanceGate(Protocol):
         context: Mapping[str, Any],
     ) -> ApprovalDecision:
         ...
+
+
+@runtime_checkable
+class CredentialProviderPort(Protocol):
+    """Canonical secret/credential resolution boundary.
+
+    Modules needing secrets must resolve through this port; no component may
+    read environment variables or secret stores directly outside a declared
+    credential-provider boundary. Resolution failure must fail closed
+    (return ``None`` or raise), never fabricate a secret.
+    """
+
+    def get_secret(self, name: str) -> Optional[str]:
+        ...
+
+    def require_secret(self, name: str) -> str:
+        ...

@@ -3,6 +3,7 @@ Secrets Management System
 Secure handling of API keys, passwords, and sensitive configuration
 """
 
+import warnings
 import os
 import json
 import logging
@@ -21,6 +22,7 @@ class SecretsManager:
     """Manages secure storage and retrieval of secrets."""
     
     def __init__(self, secrets_dir: str = "secrets"):
+        warnings.warn("SecretsManager is a deprecated credential shim: resolve secrets via trading_bot.security.canonical_provider.get_credential_provider()", DeprecationWarning, stacklevel=2)
         self.secrets_dir = Path(secrets_dir)
         self.secrets_dir.mkdir(exist_ok=True)
         self.key_file = self.secrets_dir / ".master_key"

@@ -22,6 +22,19 @@ from enum import auto
 import numpy
 import pandas
 
+def _env_secret(name, default=None):
+    """Resolve env-sourced secrets through the canonical credential provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    value = get_credential_provider().get_secret(name)
+    return value if value is not None else default
+
+
+def _env_required(name):
+    """Required env-sourced secret; fails closed via the canonical provider."""
+    from trading_bot.security.canonical_provider import get_credential_provider
+    return get_credential_provider().require_secret(name)
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -57,10 +70,10 @@ class RealMarketDataProvider:
         self.config = config or MarketDataConfig()
         
         # Load API keys from environment
-        self.config.alpha_vantage_key = os.getenv('ALPHA_VANTAGE_API_KEY', self.config.alpha_vantage_key)
-        self.config.fred_key = os.getenv('FRED_API_KEY', self.config.fred_key)
-        self.config.finnhub_key = os.getenv('FINNHUB_API_KEY', self.config.finnhub_key)
-        self.config.polygon_key = os.getenv('POLYGON_API_KEY', self.config.polygon_key)
+        self.config.alpha_vantage_key = _env_secret("ALPHA_VANTAGE_API_KEY", self.config.alpha_vantage_key)
+        self.config.fred_key = _env_secret("FRED_API_KEY", self.config.fred_key)
+        self.config.finnhub_key = _env_secret("FINNHUB_API_KEY", self.config.finnhub_key)
+        self.config.polygon_key = _env_secret("POLYGON_API_KEY", self.config.polygon_key)
         
         # Cache for rate limiting
         self._cache: Dict[str, Any] = {}

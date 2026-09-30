@@ -4,6 +4,7 @@ credentialvault - Auto-generated stub module.
 This module provides placeholder implementations for components
 referenced elsewhere in the trading bot.
 """
+import warnings
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
@@ -23,6 +24,7 @@ class CredentialVault:
     """
 
     def __init__(self, config: Optional[CredentialVaultConfig] = None, **kwargs):
+        warnings.warn("CredentialVault is a deprecated credential shim: resolve secrets via trading_bot.security.canonical_provider.get_credential_provider()", DeprecationWarning, stacklevel=2)
         self.config = config or CredentialVaultConfig()
         self.kwargs = kwargs
         self._initialized = False
