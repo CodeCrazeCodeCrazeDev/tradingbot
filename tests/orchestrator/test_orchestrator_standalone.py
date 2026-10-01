@@ -34,6 +34,7 @@ def sample_config():
         'max_risk_per_trade': 0.02,
         'max_portfolio_risk': 0.06,
         'max_correlation': 0.7,
+        'max_concentration': 0.4,
         'max_slippage': 0.002,
         'urgency_threshold': 0.7,
         'chunk_size': 1000,
