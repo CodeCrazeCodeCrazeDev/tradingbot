@@ -12,7 +12,10 @@ try:
     import redis
 except ImportError:
     redis = None
-import psutil
+try:
+    import psutil
+except ImportError:
+    psutil = None
 import numpy as np
 from enum import Enum
 import numpy
@@ -66,8 +69,8 @@ class HealthMonitor:
     async def check_system_health(self):
         """Check health of all system components."""
         # System metrics
-        cpu_usage = psutil.cpu_percent()
-        memory_usage = psutil.virtual_memory().percent
+        cpu_usage = psutil.cpu_percent() if psutil is not None else 0.0
+        memory_usage = psutil.virtual_memory().percent if psutil is not None else 0.0
         
         # Update metrics history
         self._update_metric_history('cpu_usage', cpu_usage)

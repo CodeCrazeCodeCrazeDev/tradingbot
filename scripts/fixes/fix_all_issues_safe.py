@@ -13,7 +13,7 @@ from pathlib import Path
 if sys.platform == 'win32':
     try:
         sys.stdout.reconfigure(encoding='utf-8')
-    except:
+    except Exception as e:
         pass
 
 def fix_mt5_autotrading():

@@ -80,7 +80,7 @@ for py_file in trading_bot_dir.rglob("*.py"):
         for pattern, desc in patterns:
             if re.search(pattern, content, re.I):
                 hardcoded_creds.append((str(py_file.relative_to(PROJECT_ROOT)), desc))
-    except:
+    except Exception as e:
         pass
 
 if hardcoded_creds:
@@ -110,7 +110,7 @@ for log_file in log_files:
             if re.search(pattern, content, re.I):
                 secrets_in_logs.append(str(log_file.relative_to(PROJECT_ROOT)))
                 break
-    except:
+    except Exception as e:
         pass
 
 if secrets_in_logs:
@@ -138,7 +138,7 @@ if config_dir.exists():
             matches = re.finditer(r"(\w+):\s*\n\s*enabled:\s*false", content, re.I)
             for match in matches:
                 disabled_features.append((config_file.name, match.group(1)))
-        except:
+        except Exception as e:
             pass
 
 if disabled_features:
@@ -159,7 +159,7 @@ for py_file in trading_bot_dir.rglob("*.py"):
         matches = re.finditer(r"(ENABLE_\w+)\s*=\s*False", content)
         for match in matches:
             feature_flags.append((str(py_file.relative_to(PROJECT_ROOT)), match.group(1)))
-    except:
+    except Exception as e:
         pass
 
 if feature_flags:

@@ -794,7 +794,7 @@ class ComprehensiveSystemTester:
             try:
                 @monitor.profile("decorated_function", MetricType.EXECUTION_TIME)
                 def sample_function():
-                    time.sleep(0.01)
+                    await asyncio.sleep(0.01)
                     return "done"
                 
                 result = sample_function()
