@@ -11,5 +11,5 @@ print("Top 10 Memory-Consuming Processes:")
 for proc in sorted(psutil.process_iter(['name', 'memory_info']), key=lambda p: p.info['memory_info'].rss, reverse=True)[:10]:
     try:
         print(f"  {proc.info['name']}: {proc.info['memory_info'].rss / (1024**2):.2f} MB")
-    except:
+    except Exception as e:
         pass

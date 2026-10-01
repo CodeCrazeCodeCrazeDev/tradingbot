@@ -33,7 +33,7 @@ def count_todos():
                             "line": i,
                             "content": line.strip()[:100]
                         })
-        except:
+        except Exception as e:
             pass
     return todos
 
@@ -64,7 +64,7 @@ def find_hardcoded_values():
                         "type": desc,
                         "match": match.group()[:50]
                     })
-        except:
+        except Exception as e:
             pass
     return hardcoded
 

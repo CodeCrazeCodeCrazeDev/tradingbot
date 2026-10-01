@@ -70,7 +70,7 @@ def get_init_exports(init_path: Path) -> Tuple[Set[str], List[str]]:
                             for elt in node.value.elts:
                                 if isinstance(elt, ast.Constant):
                                     exports.add(elt.value)
-    except:
+    except Exception as e:
         pass
     return exports, lines
 

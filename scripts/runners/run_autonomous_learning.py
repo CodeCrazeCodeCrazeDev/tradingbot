@@ -30,7 +30,7 @@ if sys.platform == 'win32':
     try:
         sys.stdout.reconfigure(encoding='utf-8', errors='replace')
         sys.stderr.reconfigure(encoding='utf-8', errors='replace')
-    except:
+    except Exception as e:
         pass
 
 # Add project root to path

@@ -267,7 +267,7 @@ kill $HEALTH_PID 2>/dev/null
         # Make executable
         try:
             os.chmod(linux_file, 0o755)
-        except:
+        except Exception as e:
             pass
         
         print(f"  [CREATED] start_production.sh")

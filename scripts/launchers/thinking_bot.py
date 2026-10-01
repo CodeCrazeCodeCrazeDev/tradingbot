@@ -1282,7 +1282,7 @@ class ThinkingBot:
                 # Bearish engulfing
                 elif close[-1] < close[-2] and close[-2] > close[-3]:
                     patterns.append("BEARISH_ENGULFING")
-        except:
+        except Exception as e:
             pass
         return patterns
     

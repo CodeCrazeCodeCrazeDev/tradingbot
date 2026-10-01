@@ -13,7 +13,10 @@ try:
     from scipy import stats
 except ImportError:
     scipy = None
-import seaborn as sns
+try:
+    import seaborn as sns
+except ImportError:
+    sns = None
 from datetime import datetime, timedelta
 import pathlib
 import numpy
