@@ -2,10 +2,15 @@
 Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
 Cognitive System Controller (CSC) - UCA V6
 
-Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
-Implements 'DiscoLoop' (arXiv:2607.00341) for multi-hop reasoning, 'HIPIF' (arXiv:2606.10507) for information folding,
-and 'AutoResearchClaw' (arXiv:2605.20025) for Pivot/Refine self-healing control.
-Incorporates transferable principles from REG-401 to REG-500 (Batch 5 Research Paper Registry).
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Byzantine consensus & entropy-KL bounded updates over decision_bus.
+- arXiv:2607.00341 (DiscoLoop): Multi-hop discrete-continuous loop reasoning recurrence.
+- arXiv:2607.01224 (AutoMem): Automated metamemory schema consolidation and evidence retrieval.
+- arXiv:2605.12061 (SAGE): Multi-hop evidence graph sub-graph retrieval.
+- arXiv:2605.10813 (NanoResearch): Tri-level co-evolving skill routing and adapter selection.
+- arXiv:2605.20025 (AutoResearchClaw): Closed-loop strategy pivot/refine hypothesis simulation.
+- arXiv:2605.17734 (HASP): Prescriptive guardrail pre-emption & executable program functions.
+- arXiv:2605.21482 (DeepWeb-Bench): Multidimensional calibrated decision confidence vector.
 """
 
 import numpy as np
@@ -91,10 +96,14 @@ class CognitiveSystemController:
     Supports backward compatibility for legacy positional signatures.
 
     Scientific Traceability:
-    - LogAct (arXiv:2605.29303): Byzantine consensus over decision_bus
-    - DiscoLoop (arXiv:2605.20025): Discrete-continuous reasoning iteration
-    - HASP (arXiv:2605.12061): Prescriptive guardrail skill verification
-    - AutoResearchClaw (arXiv:2605.17734): Pivot/Refine hypothesis loops
+    - arXiv:2605.29303 (EKSFT): Byzantine consensus & entropy-KL divergence bounds.
+    - arXiv:2607.00341 (DiscoLoop): Discrete-continuous reasoning iteration.
+    - arXiv:2607.01224 (AutoMem): Automated metamemory consolidation.
+    - arXiv:2605.12061 (SAGE): Evidence graph sub-graph retrieval.
+    - arXiv:2605.10813 (NanoResearch): Tri-level co-evolving skill routing.
+    - arXiv:2605.20025 (AutoResearchClaw): Pivot/Refine hypothesis loops.
+    - arXiv:2605.17734 (HASP): Prescriptive guardrail skill verification.
+    - arXiv:2605.21482 (DeepWeb-Bench): Multidimensional confidence vector.
     """
 
     _instance = None
