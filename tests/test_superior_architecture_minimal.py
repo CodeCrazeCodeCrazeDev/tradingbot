@@ -38,9 +38,16 @@ async def test_csc_pipeline_success():
     mock_shield = MagicMock()
     mock_report = MagicMock()
     from trading_bot.core.immutable_shield import GovernanceDecision
+    from trading_bot.core.unified_event_bus import decision_bus
     mock_report.decision = GovernanceDecision.APPROVED
     mock_shield.validate_action.return_value = mock_report
     mock_shield.GovernanceDecision = GovernanceDecision
+
+    # Register affirmative voter callback on decision bus for mock shield
+    async def mock_audit_log_action(action):
+        return {"decision": "APPROVE", "reason": "Approved by mock shield"}
+    mock_shield.audit_log_action = mock_audit_log_action
+    decision_bus.register_voter("shield", mock_audit_log_action)
 
     csc = CognitiveSystemController(mock_world_model, mock_hms, shield=mock_shield)
 
