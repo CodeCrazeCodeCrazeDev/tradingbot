@@ -407,8 +407,12 @@ class PortfolioRiskManager:
         """
         # Check position risk
         position_risk = trade.get('risk', 0.5) * trade.get('size', 0)
-        if position_risk > self.max_position_risk:
-            return False, f"Position risk {position_risk} exceeds limit {self.max_position_risk}"
+        limit = self.max_position_risk
+        if limit <= 1.0 and trade.get('size', 0) > 1.0:
+            total_cap = self.config.get('capital', sum(pos.get('value', 0) for pos in self.positions.values()) or 100000)
+            limit = limit * total_cap
+        if position_risk > limit:
+            return False, f"Position risk {position_risk} exceeds limit {limit}"
 
         # Check portfolio VaR
         if self.risk_metrics:
