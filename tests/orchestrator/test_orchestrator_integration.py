@@ -12,6 +12,8 @@ import numpy as np
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, AsyncMock
 
+from trading_bot.orchestrator.master_orchestrator import TradingDecision
+
 
 @pytest.fixture
 def full_config():
