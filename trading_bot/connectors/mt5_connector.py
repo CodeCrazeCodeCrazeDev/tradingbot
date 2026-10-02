@@ -6,7 +6,12 @@ MetaTrader 5 Connector
 Real-time data and trading for MT5 platform
 """
 
-import MetaTrader5 as mt5
+try:
+    import MetaTrader5 as mt5
+    HAS_MT5 = True
+except ImportError:
+    mt5 = None
+    HAS_MT5 = False
 import asyncio
 from typing import Dict, List, Optional
 from datetime import datetime

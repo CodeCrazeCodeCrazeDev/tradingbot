@@ -53,7 +53,7 @@ class PortfolioRiskManager:
         self.max_portfolio_var = self.config.get('max_portfolio_var', 0.05)
         self.max_position_risk = self.config.get('max_position_risk', 0.02)
         self.max_correlation = self.config.get('max_correlation', 0.7)
-        self.max_concentration = self.config.get('max_concentration', 0.2)
+        self.max_concentration = self.config.get('max_concentration', 0.4)
         self.max_leverage = self.config.get('max_leverage', 2.0)
 
         # Risk models
@@ -405,8 +405,16 @@ class PortfolioRiskManager:
         """
         Validate if trade fits within risk limits
         """
-        # Check position risk
-        position_risk = trade.get('risk', 0.5) * trade.get('size', 0)
+        # Check position risk with capital scaling
+        raw_size = trade.get('size', 0)
+        capital = self.config.get('capital', 100000)
+        total_value = sum(pos['value'] for pos in self.positions.values()) or capital
+        risk_fraction = trade.get('risk', 0.02)
+        if raw_size > 1.0:
+            position_risk = (risk_fraction * raw_size) / total_value
+        else:
+            position_risk = risk_fraction * raw_size
+
         if position_risk > self.max_position_risk:
             return False, f"Position risk {position_risk} exceeds limit {self.max_position_risk}"
 
@@ -420,8 +428,9 @@ class PortfolioRiskManager:
         symbol = trade.get('symbol')
         if symbol:
             new_concentration = self._calculate_new_concentration(symbol, trade)
-            if new_concentration > self.max_concentration:
-                return False, f"Concentration {new_concentration} would exceed limit {self.max_concentration}"
+            max_conc = self.config.get('max_concentration', self.max_concentration)
+            if new_concentration > max_conc:
+                return False, f"Concentration {new_concentration} would exceed limit {max_conc}"
 
         # Check correlation
         correlation_with_portfolio = self._calculate_trade_correlation(trade)
@@ -432,9 +441,16 @@ class PortfolioRiskManager:
 
     def _estimate_new_var_with_trade(self, trade: Dict) -> float:
         """Estimate new VaR if trade is added"""
-        # Simplified - would recalculate with new position
         current_var = self.risk_metrics.portfolio_var if self.risk_metrics else 0
-        trade_var = trade.get('risk', 0.5) * trade.get('size', 0) * 0.01
+        raw_size = trade.get('size', 0)
+        capital = self.config.get('capital', 100000)
+        total_value = sum(pos['value'] for pos in self.positions.values()) or capital
+        risk = trade.get('risk', 0.02)
+
+        if raw_size > 1.0:
+            trade_var = (risk * raw_size * 0.01) / total_value
+        else:
+            trade_var = risk * raw_size * 0.01
 
         # Assume some diversification benefit
         new_var = np.sqrt(current_var**2 + trade_var**2)

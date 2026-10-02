@@ -17,9 +17,17 @@ from scipy import stats
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
-import dash
-from dash import dcc, html
-from dash.dependencies import Input, Output
+try:
+    import dash
+    from dash import dcc, html
+    from dash.dependencies import Input, Output
+    HAS_DASH = True
+except ImportError:
+    HAS_DASH = False
+    dash = None
+    dcc = None
+    html = None
+    Input = Output = None
 import threading
 import queue
 import json
@@ -199,9 +207,13 @@ class PerformanceDashboard:
         self.data_queue = queue.Queue()
         
         # Dashboard app
-        self.app = dash.Dash(__name__, suppress_callback_exceptions=True)
-        self._setup_layout()
-        self._setup_callbacks()
+        if HAS_DASH:
+            self.app = dash.Dash(__name__, suppress_callback_exceptions=True)
+            self._setup_layout()
+            self._setup_callbacks()
+        else:
+            self.app = None
+            logger.warning("Dash not installed. PerformanceDashboard app disabled.")
         
         # Dashboard server thread
         self.server_thread = None
