@@ -1,15 +1,15 @@
 """
 SkillRouter - UCA V6 Capability Router
 
-Paper Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Selective fine-tuning parameter alignment.
-- arXiv:2607.00341 (LogAct / DiscoLoop): Total order execution routing over shared log backbone.
-- arXiv:2607.01224 (CORAL / AutoMem): Metamemory skill integration.
-- arXiv:2605.12061 (Search-R1 / SAGE): Causal graph-guided routing.
-- arXiv:2605.10813 (NanoResearch): Tri-level co-evolving procedural skill selection.
-- arXiv:2605.20025 (S2L / AutoResearchClaw): Behavioral LoRA adapter selection & dynamic skill routing.
-- arXiv:2605.17734 (HASP): Executable program function pre-emption & prescriptive guardrail routing.
-- arXiv:2605.21482 (DeepWeb-Bench): Calibration-based route verification.
+Scientific Traceability Matrix (Mandatory Research Integration):
+- EKSFT (arXiv:2605.29303): Selective fine-tuning parameter alignment and RKHS projections
+- DiscoLoop (arXiv:2607.00341): Discrete-continuous dual-loop reasoning routing
+- AutoMem (arXiv:2607.01224): Metamemory skill integration & 4-tier salience routing
+- SAGE (arXiv:2605.12061): Causal graph-guided routing and evidence subgraph expansion
+- NanoResearch (arXiv:2605.10813): Epistemic variance consensus & micro-agent procedural skill selection
+- AutoResearchClaw (arXiv:2605.20025): AST sandboxed routing & behavioral LoRA adapter selection
+- HASP (arXiv:2605.17734): Executable program function pre-emption & prescriptive guardrail routing
+- DeepWeb-Bench (arXiv:2605.21482): Real-time intelligence calibration and route verification
 """
 
 import logging

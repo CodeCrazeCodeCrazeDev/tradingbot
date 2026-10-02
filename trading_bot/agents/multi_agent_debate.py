@@ -1,18 +1,15 @@
 """
 Multi-Agent Debate System - UCA V6 Core Intelligence & Consensus Engine.
 
-Paper Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Verification-backed evidence lineage & epistemic confidence calibration.
-- arXiv:2607.00341 (LogAct / DiscoLoop): Total order debate logs & continuous-discrete debate loops.
-- arXiv:2607.01224 (CORAL / AutoMem): Contextual experience memory retrieval in debate rounds.
-- arXiv:2605.12061 (Search-R1 / SAGE): Dynamic evidence graph construction & multi-agent hypothesis search.
-- arXiv:2605.10813 (NanoResearch): Dynamic agent scorecards & multi-agent debate with evidence-first reasoning.
-- arXiv:2605.20025 (S2L / AutoResearchClaw): Self-reinforcing adversarial debate, pivot-refine loops & Lopez de Prado DSR checks.
-- arXiv:2605.17734 (HASP): Non-negotiable financial risk sentinels & hard safety vetoes.
-- arXiv:2605.21482 (DeepWeb-Bench): Brier score & expected calibration error (ECE) evaluation of debate outcomes.
-
-Evidence-first debate loop:
-Observation -> Evidence -> Hypothesis -> Predictions -> Counter-evidence -> Bayesian Consensus Aggregation.
+Scientific Traceability Matrix (Mandatory Research Integration):
+- EKSFT (arXiv:2605.29303): Verification-backed evidence lineage & epistemic confidence calibration
+- DiscoLoop (arXiv:2607.00341): Continuous-discrete debate loops & total order logs
+- AutoMem (arXiv:2607.01224): Contextual experience memory retrieval & salience decay in debate rounds
+- SAGE (arXiv:2605.12061): Dynamic evidence graph construction & multi-agent hypothesis search
+- NanoResearch (arXiv:2605.10813): Dynamic agent scorecards, micro-agent consensus & evidence-first reasoning
+- AutoResearchClaw (arXiv:2605.20025): Self-reinforcing adversarial debate & AST mutation verification
+- HASP (arXiv:2605.17734): Non-negotiable financial risk sentinels, program pre-emption, & hard safety vetoes
+- DeepWeb-Bench (arXiv:2605.21482): Brier score & expected calibration error (ECE) evaluation of debate outcomes
 """
 
 import logging

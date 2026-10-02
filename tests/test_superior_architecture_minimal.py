@@ -41,6 +41,7 @@ async def test_csc_pipeline_success():
     mock_report.decision = GovernanceDecision.APPROVED
     mock_shield.validate_action.return_value = mock_report
     mock_shield.GovernanceDecision = GovernanceDecision
+    mock_shield.audit_log_action = lambda action: {"decision": "APPROVED", "reason": "mock_approved"}
 
     csc = CognitiveSystemController(mock_world_model, mock_hms, shield=mock_shield)
 
