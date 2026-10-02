@@ -18,9 +18,17 @@ from typing import Dict, List, Optional, Any, Tuple, Callable
 from dataclasses import dataclass, field
 from enum import Enum
 
-import openai
+try:
+    import openai
+except ImportError:
+    openai = None
+
 import aiohttp
-from gpt4all import GPT4All
+
+try:
+    from gpt4all import GPT4All
+except ImportError:
+    GPT4All = None
 
 from ..knowledge_acquisition.knowledge_base import KnowledgeBase, KnowledgeItem, KnowledgeType
 from enum import auto

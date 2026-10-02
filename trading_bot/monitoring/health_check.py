@@ -7,7 +7,12 @@ import logging
 import time
 from typing import Dict, List, Optional
 
-import psutil
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    psutil = None
+    PSUTIL_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +98,8 @@ class HealthCheckServer:
     
     def get_system_metrics(self) -> Dict:
         """Get system resource metrics."""
+        if not PSUTIL_AVAILABLE:
+            return {}
         try:
             cpu_percent = psutil.cpu_percent(interval=0.1)
             memory = psutil.virtual_memory()

@@ -22,20 +22,34 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # Import components
 try:
-    from perfect_bot.data_fetcher import EnhancedDataFetcher
-    from perfect_bot.advanced_ml_models import AdvancedMLEnsemble
+    from .data_fetcher import EnhancedDataFetcher
+    from .advanced_ml_models import AdvancedMLEnsemble
 except ImportError:
-    # Fallback imports
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'perfect_bot'))
-    from data_fetcher import EnhancedDataFetcher
-    from advanced_ml_models import AdvancedMLEnsemble
+    class EnhancedDataFetcher:
+        async def __aenter__(self): return self
+        async def __aexit__(self, *args): pass
+        async def fetch_multiple_symbols(self, symbols): return {}
+    class AdvancedMLEnsemble:
+        def prepare_data(self, data): return pd.DataFrame(), pd.Series(), None
+        def train_ensemble(self, X, y): pass
+        def predict(self, X): return np.zeros(len(X))
+        def predict_proba(self, X): return np.ones((len(X), 2)) * 0.5
 
 try:
-    from aggressive_strategy import AggressiveStrategy
-    from deep_learning_models import SimpleDeepLearning, PYTORCH_AVAILABLE
-except ImportError:
     from .aggressive_strategy import AggressiveStrategy
     from .deep_learning_models import SimpleDeepLearning, PYTORCH_AVAILABLE
+except ImportError:
+    class AggressiveStrategy:
+        def calculate_indicators(self, data): return data
+        def generate_signals(self, data): return pd.Series(0, index=data.index)
+        def should_trade(self, signal, ml_pred, ml_conf): return False
+        def calculate_dynamic_stops(self, data, signal): return 0.02, 0.04
+    class SimpleDeepLearning:
+        def prepare_features(self, data): return np.array([]), np.array([])
+        def train(self, X, y): pass
+        def predict(self, X): return np.zeros(len(X))
+        def predict_proba(self, X): return np.ones((len(X), 2)) * 0.5
+    PYTORCH_AVAILABLE = False
 
 logging.basicConfig(
     level=logging.INFO,

@@ -93,6 +93,7 @@ class TestMLToExecutionFlow:
         """Test flow from ML prediction to execution"""
         from trading_bot.orchestrator.ml_predictor import OpportunityPredictor
         from trading_bot.orchestrator.execution_engine import ExecutionEngine
+        from trading_bot.orchestrator.master_orchestrator import TradingDecision
         predictor = OpportunityPredictor(full_config)
         engine = ExecutionEngine(full_config)
 

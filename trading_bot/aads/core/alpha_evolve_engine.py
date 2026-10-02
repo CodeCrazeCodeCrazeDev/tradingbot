@@ -635,24 +635,9 @@ def signal_rsi(data: pd.DataFrame) -> pd.Series:
             return None
         
         try:
-            from trading_bot.core.security.sandbox import SecureASTVisitor, UnsafeCodeError
-            visitor = SecureASTVisitor()
-            tree = ast.parse(signal.code)
-            visitor.visit(tree)
-        except Exception as se:
-            logger.error(f"AST Security validation failed for signal: {se}")
-            return None
-
-        try:
-            # Create isolated namespace
-            namespace = {
-                'np': __import__('numpy'),
-                'pd': __import__('pandas'),
-                'math': __import__('math'),
-            }
-            
-            from trading_bot.core.security.sandbox import SecureASTVisitor
+            from trading_bot.core.security.sandbox import SecureASTVisitor, restricted_exec_globals
             SecureASTVisitor().validate_code(signal.code)
+            namespace = restricted_exec_globals()
             exec(signal.code, namespace)
             
             # Find the function
