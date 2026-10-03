@@ -445,7 +445,7 @@ class ComprehensiveValidator:
                 if api_key:
                     try:
                         url = f'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=IBM&interval=5min&apikey={api_key}'
-                        response = requests.get(url, timeout=10)
+                        response = await asyncio.to_thread(requests.get, url, timeout=10)
                         if response.status_code == 200:
                             api_tests.append(('Alpha Vantage', 'PASS'))
                         else:
@@ -459,7 +459,7 @@ class ComprehensiveValidator:
                 if api_key:
                     try:
                         url = f'https://api.stlouisfed.org/fred/series?series_id=GNPCA&api_key={api_key}&file_type=json'
-                        response = requests.get(url, timeout=10)
+                        response = await asyncio.to_thread(requests.get, url, timeout=10)
                         if response.status_code == 200:
                             api_tests.append(('FRED', 'PASS'))
                         else:
@@ -473,7 +473,7 @@ class ComprehensiveValidator:
                 if api_key:
                     try:
                         url = f'https://newsapi.org/v2/top-headlines?country=us&apiKey={api_key}'
-                        response = requests.get(url, timeout=10)
+                        response = await asyncio.to_thread(requests.get, url, timeout=10)
                         if response.status_code == 200:
                             api_tests.append(('NewsAPI', 'PASS'))
                         else:
