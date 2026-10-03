@@ -785,7 +785,7 @@ async def main():
     
     # Auto-start (no confirmation needed for 24/7 mode)
     print("Starting in 3 seconds... Press Ctrl+C to cancel.")
-    time.sleep(3)
+    await asyncio.sleep(3)
     
     workspace = Path(__file__).parent
     engineer = AutonomousDeepSeek(str(workspace), end_time)
