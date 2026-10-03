@@ -1,8 +1,8 @@
 """
-AI Core Agents Module - Under Hivemind Control
+AI Core Agents Module - Multi-Agent Architecture
 ============================================================
 
-All agents in this module are controlled by the Hivemind.
+All agents in this module are coordinated through the central AI Core.
 """
 
 # Import all agent components
@@ -72,22 +72,22 @@ class HivemindAICoreAdapter:
             pass
         
         try:
-            self.executor = ExecutorAgent(config=self.config)
+            self.executor = create_executor_agent(config=self.config)
         except Exception:
             pass
         
         try:
-            self.planner = PlannerAgent(config=self.config)
+            self.planner = create_planner_agent(config=self.config)
         except Exception:
             pass
         
         try:
-            self.verifier = VerifierAgent(config=self.config)
+            self.verifier = create_verifier_agent(config=self.config)
         except Exception:
             pass
         
         try:
-            self.safety_validator = SafetyValidator(config=self.config)
+            self.safety_validator = create_safety_validator(config=self.config)
         except Exception:
             pass
         
