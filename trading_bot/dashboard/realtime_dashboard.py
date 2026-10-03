@@ -255,7 +255,7 @@ class RealtimeDashboard:
             
         ], style={"backgroundColor": "#1a1a2e", "minHeight": "100vh"})
     
-    def _create_metric_card(self, title: str, value_id: str, default: str, color: str) -> dbc.Card:
+    def _create_metric_card(self, title: str, value_id: str, default: str, color: str) -> Any:
         """Create a metric card"""
         return dbc.Card([
             dbc.CardBody([
