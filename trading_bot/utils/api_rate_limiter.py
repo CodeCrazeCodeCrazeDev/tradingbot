@@ -93,7 +93,7 @@ class TokenBucketRateLimiter:
         start = time.time()
         
         while not self.acquire(tokens):
-            time.sleep(0.01)  # Small sleep to avoid busy waiting
+            await asyncio.sleep(0.01)  # Non-blocking async sleep
         
         waited = time.time() - start
         if waited > 0.1:
