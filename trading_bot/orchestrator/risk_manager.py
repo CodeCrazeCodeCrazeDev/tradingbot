@@ -406,7 +406,10 @@ class PortfolioRiskManager:
         Validate if trade fits within risk limits
         """
         # Check position risk
-        position_risk = trade.get('risk', 0.5) * trade.get('size', 0)
+        total_value = sum(pos['value'] for pos in self.positions.values()) if self.positions else self.config.get('capital', 100000)
+        size = trade.get('size', 0)
+        size_fraction = (size / total_value) if (size > 1.0 and total_value > 0) else size
+        position_risk = trade.get('risk', 0.5) * size_fraction
         if position_risk > self.max_position_risk:
             return False, f"Position risk {position_risk} exceeds limit {self.max_position_risk}"
 
