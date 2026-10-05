@@ -1,35 +1,24 @@
-# Architectural Improvements Report — 2026 Audit
+# ARCHITECTURE IMPROVEMENTS — AlphaAlgo Production Engineering Audit
 
 ## Overview
-This document outlines the high-level architectural improvements and structural enhancements implemented across AlphaAlgo during the 2026 Production Engineering Audit.
+This report details the core architectural enhancements implemented during the Production Engineering Audit to bolster AlphaAlgo's system robustness, concurrency performance, security posture, and modularity.
+
+---
 
 ## Key Architectural Enhancements
 
-### 1. Hardened Dynamic Execution Sandboxing
-- **Problem**: Self-evolution modules (`AlphaEvolveEngine`) and parallel backtesters compiled and executed arbitrary strategy strings using `exec()` without static security validation.
-- **Improvement**: Integrated `SecureASTVisitor().validate_code(code_str)` directly into pre-compilation steps. Any unauthorized file, network, system, or dunder attribute accesses are intercepted before execution.
+### 1. Concurrency Model & Non-Blocking Async Pipeline
+- **Problem**: Ingestion pipelines (`NewsPipeline`, `PlotCodeVisualTester`) previously issued blocking HTTP requests (`requests.get`/`post`) directly inside async coroutines, stalling the single-threaded Python event loop for up to 30 seconds per request.
+- **Architectural Solution**: Offloaded synchronous network requests to dedicated background worker threads via `asyncio.to_thread`. This preserves event loop responsiveness, enabling simultaneous order execution, WebSocket streaming, and signal generation during heavy news or visual testing operations.
 
-Prior to the UCA-2026 migration, the AlphaAlgo codebase contained legacy modules and redundant orchestration loops competing for state and execution ownership.
+### 2. AST Security Sandboxing for Self-Evolving Code Engine
+- **Problem**: `AlphaEvolveEngine` dynamically compiles and evaluates LLM-generated Python signal code. Executing untrusted code via `exec()` posed severe security risks (e.g. system command injection, arbitrary file I/O).
+- **Architectural Solution**: Enforced mandatory pre-execution validation using `SecureASTVisitor`. Generated abstract syntax trees are inspected for forbidden imports (`os`, `sys`, `subprocess`, `socket`) and unsafe calls before compilation, isolating dynamic execution.
 
-### **Structural Purge & Remediation**:
-- Remediated list comprehension unpacking syntax in `risk/risk_manager.py` and block indentation in operational launcher/deployment scripts (`run_alphaalgo_5star.py`, `deploy_5star_production.py`, `auto_fix_critical_issues_v2.py`).
-- Enforced a single repository-wide event bus (`UnifiedDecisionBus`) and a single active controller singleton (`CognitiveSystemController`).
-- Programmatically locked the repository against duplicate imports using a custom architecture invariant test suite (`tests/architecture/test_architecture_invariants.py`).
+### 3. Institutional Capital Risk Scaling
+- **Problem**: `RiskManager.check_position_risk()` checked position size against a hardcoded float limit (1.0). When position sizes represented total dollar amounts (e.g., $50,000 exposure) rather than lot fractions, the risk check miscalculated risk or rejected valid trades.
+- **Architectural Solution**: Enhanced risk verification to incorporate account net asset value (NAV). For dollar-denominated order sizes (> 1.0), risk fraction is evaluated dynamically against total portfolio capital, enforcing accurate risk limits regardless of order unit representation.
 
----
-
-## 2. Decoupling of Capabilities & Single Responsibility
-
-We have enforced strict single-responsibility boundaries over core modules:
-1.  **Sensory Processing & Surprise**: Managed solely by `CognitiveSystemController` inside `controller.py`.
-2.  **Strategic Reasoning & Routing**: Consolidated into `SkillRouter` inside `router.py`.
-3.  **Knowledge & Episodic Ledger**: Owned entirely by `HierarchicalMemorySystem` (HMS) inside `memory.py`.
-4.  **Causal World Model rollouts**: Handled by the `UnifiedWorldModel`.
-5.  **Multi-Agent Decision Synthesis**: Owned by `HeadAI` and `BayesianDecisionEngine` inside `trading_bot/agents/multi_agent_debate.py`, enforcing multi-verifier falsification prior to trade commitment.
-
----
-
-## 3. Security Hardening & Concurrency Standardisation
-
-- **AST Sandboxing**: Integrated `SecureASTVisitor` to validate dynamic strategy code before execution in parallel backtesting and signal evolution engines (`AlphaEvolveEngine`).
-- **Async Concurrency**: Replaced blocking `time.sleep` and synchronous network requests inside async daemons (`AlertingSystem`, `SystemValidator`, `UptimeTracker`) with non-blocking `await asyncio.sleep` and `asyncio.to_thread`.
+### 4. Cross-Platform & Headless Environment Resilience
+- **Problem**: Unconditional imports of platform-specific or heavy UI dependencies (`MetaTrader5`, `dash`, `psutil`, `seaborn`) caused runtime crashes on Linux servers or headless Docker environments.
+- **Architectural Solution**: Wrapped external UI and broker dependencies in graceful try/except import fallbacks. Active components seamlessly adjust operational modes based on platform capability without crashing the core runtime engine.
