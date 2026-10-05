@@ -285,7 +285,8 @@ class RiskManager:
         self,
         symbol: str,
         size: float,
-        price: float
+        price: float,
+        account_balance: Optional[float] = None
     ) -> Tuple[bool, str]:
         """
         Check if position meets risk requirements.
@@ -293,8 +294,13 @@ class RiskManager:
         Returns:
             Tuple of (allowed, reason)
         """
-        # Check position size
-        if size > self.max_position_size:
+        # If size represents total dollar exposure (> 1.0) and account balance is provided
+        position_value = size * price if size <= 1.0 else size
+        if account_balance and account_balance > 0:
+            position_fraction = position_value / account_balance
+            if position_fraction > self.max_position_size:
+                return False, f"Position size fraction ({position_fraction:.2%}) exceeds limit ({self.max_position_size:.2%})"
+        elif size > self.max_position_size and size <= 1.0:
             return False, "Position size exceeds limit"
         
         # Check symbol restrictions
