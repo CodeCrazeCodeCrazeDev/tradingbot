@@ -53,7 +53,7 @@ class PortfolioRiskManager:
         self.max_portfolio_var = self.config.get('max_portfolio_var', 0.05)
         self.max_position_risk = self.config.get('max_position_risk', 0.02)
         self.max_correlation = self.config.get('max_correlation', 0.7)
-        self.max_concentration = self.config.get('max_concentration', 0.2)
+        self.max_concentration = self.config.get('max_concentration', 0.4)
         self.max_leverage = self.config.get('max_leverage', 2.0)
 
         # Risk models
@@ -406,7 +406,15 @@ class PortfolioRiskManager:
         Validate if trade fits within risk limits
         """
         # Check position risk
-        position_risk = trade.get('risk', 0.5) * trade.get('size', 0)
+        size = trade.get('size', 0)
+        risk_rate = trade.get('risk', 0.02)
+        capital = self.portfolio_value or self.config.get('capital', 100000)
+
+        if size > 1.0 and capital > 0:
+            position_risk = (risk_rate * size) / capital
+        else:
+            position_risk = risk_rate * size
+
         if position_risk > self.max_position_risk:
             return False, f"Position risk {position_risk} exceeds limit {self.max_position_risk}"
 
@@ -419,9 +427,10 @@ class PortfolioRiskManager:
         # Check concentration
         symbol = trade.get('symbol')
         if symbol:
+            max_conc = self.config.get('max_concentration', getattr(self, 'max_concentration', 0.4))
             new_concentration = self._calculate_new_concentration(symbol, trade)
-            if new_concentration > self.max_concentration:
-                return False, f"Concentration {new_concentration} would exceed limit {self.max_concentration}"
+            if new_concentration > max_conc:
+                return False, f"Concentration {new_concentration} would exceed limit {max_conc}"
 
         # Check correlation
         correlation_with_portfolio = self._calculate_trade_correlation(trade)
