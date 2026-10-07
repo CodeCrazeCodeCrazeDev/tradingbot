@@ -56,6 +56,15 @@ def build_cognitive_system(
         logger.info("cognitive assembly: advisory brain attached "
                     "(authority-stripped)")
 
+        # Every other wireable AI module joins the same advisory channel
+        # — the manifest in advisory.py is the total audit map: attached
+        # services emit advisory_only evidence; UNWIRED_ORPHAN_MODULES
+        # records why everything else is inert.
+        from .advisory import attach_advisory_modules
+        attached, skipped = attach_advisory_modules(csc)
+        logger.info("cognitive assembly: advisory modules attached=%s "
+                    "skipped=%s", attached, skipped)
+
     eng = csc.configure_research()
     if research_interval is not None:
         csc._research_interval = max(0, int(research_interval))
