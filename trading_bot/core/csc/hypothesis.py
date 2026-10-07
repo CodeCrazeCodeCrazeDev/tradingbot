@@ -338,12 +338,21 @@ class HypothesisGenerator:
                  "RANGING": "NEUTRAL"}.get(trend, trend)
         if trend not in ("BULLISH", "BEARISH", "NEUTRAL"):
             trend = "NEUTRAL"
+        # Trend strength must be a real signal, not a constant: derive it
+        # from the observation's momentum when nothing supplies one —
+        # momentum is the enriched 20-bar relative price change, so
+        # |momentum|/0.005 saturates at a ~0.5% move. A near-flat market
+        # yields strength ~0 -> the simulator's EV correctly collapses.
+        ts = _finite_float(obs.get("trend_strength"))
+        if ts is None:
+            momentum = _finite_float(obs.get("momentum"))
+            ts = min(1.0, abs(momentum) / 0.005) if momentum is not None else 0.0
         return MarketState(
             timestamp=ts if ts is not None else time.time(),
             instrument=str(obs.get("symbol") or "unknown"),
             primary_timeframe=str(obs.get("timeframe") or "M15"),
             trend_direction=trend,
-            trend_strength=float(obs.get("trend_strength", 0.5) or 0.5),
+            trend_strength=float(ts),
             volatility_percentile=float(
                 obs.get("volatility_percentile", 0.5) or 0.5),
             uncertainty=float(obs.get("uncertainty", 0.2) or 0.2),

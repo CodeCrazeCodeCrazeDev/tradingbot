@@ -34,7 +34,8 @@ class CounterfactualSimulator:
         n = max(32, request.monte_carlo_paths)
         horizon = max(1, request.time_horizon_bars)
         sigma = self._per_bar_sigma(state, vol_mult)
-        drift = 0.0002 * (1.2 if aligned else -0.8)
+        strength = float(np.clip(getattr(state, "trend_strength", 0.0) or 0.0, 0.0, 1.0))
+        drift = 0.0002 * (1.2 * strength if aligned else -(0.4 + 0.8 * strength))
         sign = 1.0 if request.proposed_action == "BUY" else (-1.0 if request.proposed_action == "SELL" else 0.0)
 
         # Standardized Student-t (unit variance) shocks
@@ -74,11 +75,23 @@ class CounterfactualSimulator:
         aligned = (action == "BUY" and trend_dir == "BULLISH") or (action == "SELL" and trend_dir == "BEARISH")
         opposed = (action == "BUY" and trend_dir == "BEARISH") or (action == "SELL" and trend_dir == "BULLISH")
 
+        # Directional EV must discriminate: the drift is a function of
+        # measured trend strength, not a constant. Aligned-but-weak is
+        # near-zero (no information, no edge); opposing a strong trend is
+        # worse than opposing a weak one; no-trend trades carry a small
+        # negative prior (they only ever pay costs).
+        if aligned:
+            drift_coef = 1.2 * float(np.clip(trend_str, 0.0, 1.0))
+        elif opposed:
+            drift_coef = -(0.4 + 0.8 * float(np.clip(trend_str, 0.0, 1.0)))
+        else:
+            drift_coef = -0.3
+
         base_win_prob = 0.55 if aligned else (0.35 if opposed else 0.45)
         base_win_prob /= max(1.0, (vol_mult * 0.2 + spread_mult * 0.1))
 
         for step in range(1, request.time_horizon_bars + 1):
-            step_return = (0.0002 * step * (1.2 if aligned else -0.8)) / math.sqrt(step)
+            step_return = (0.0002 * step * drift_coef) / math.sqrt(step)
             step_vol = 0.001 * vol_mult * math.sqrt(step)
             step_dd = max(0.0, step_vol * 1.5 - step_return)
 

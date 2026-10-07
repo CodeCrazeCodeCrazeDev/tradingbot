@@ -121,16 +121,16 @@ async def evaluate_window(rows, context_end: int, test_rows, args) -> dict:
         compare_candidate_vs_baseline)
     from trading_bot.core.unified_event_bus import decision_bus
 
-    if args.stride > 1:
-        # Lower-frequency variant: decide every Nth bar, hold across the
-        # skipped ones. Bar returns become N-bar returns — turnover falls,
-        # gross edge per decision stays honest.
-        test_rows = test_rows[::args.stride]
+    # Lower-frequency variant: the CSC's own decision_stride decides every
+    # Nth bar while every bar still enriches features/history — identical
+    # semantics to the live runner (observation slicing would starve the
+    # history and measure a different strategy).
     closes_hist = [float(r[4]) for r in rows[:context_end]]
 
     CognitiveSystemController._instance = None
     csc = CognitiveSystemController(
-        position_horizon=args.position_horizon)
+        position_horizon=args.position_horizon,
+        decision_stride=args.stride)
 
     await decision_bus.start()
 
