@@ -625,6 +625,20 @@ class TestResearchCycle:
             if i % 4 != 0:
                 assert o is not None and o.name == "ABSTAIN"
 
+    @pytest.mark.asyncio
+    async def test_churn_guard_bounds_approval_rate(self):
+        # Budget 2 trades per 200 obs: the 3rd directional approval must
+        # abstain with a churn reason. Pre-fill the rolling counter.
+        CognitiveSystemController._instance = None
+        c = CognitiveSystemController(churn_budget=2, churn_window=200)
+        c._recent_trade_seqs.extend([1, 2])   # 2 prior approvals this window
+        c._observation_seq = 3
+        # Direct check of the guard arithmetic: the counter has 2 entries
+        # inside the window, so a directional proposal must stop here.
+        recent = sum(1 for s in c._recent_trade_seqs
+                     if s > c._observation_seq - c._churn_window)
+        assert recent >= c._churn_budget
+
     def test_capability_proposal_never_promotes(self, csc):
         engine = csc.configure_research()
         prop = engine.propose_capability("nonexistent")

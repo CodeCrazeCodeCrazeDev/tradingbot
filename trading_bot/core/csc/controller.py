@@ -250,6 +250,13 @@ class CognitiveSystemController:
         # stride>1 decides every Nth bar (settlement/features/research
         # still run every bar — only the decision is cadenced).
         self._decision_stride = max(1, int(kwargs.get("decision_stride", 1)))
+        # Turnover budget: instantaneous exposure is capped downstream, but
+        # nothing else bounds churn — a soak bled -4.4% through 443 small
+        # fills each inside the exposure cap. Directional approvals per
+        # rolling window are bounded here; 0 disables.
+        self._churn_budget = int(kwargs.get("churn_budget", 50))
+        self._churn_window = int(kwargs.get("churn_window", 200))
+        self._recent_trade_seqs: deque = deque(maxlen=self._churn_window)
         # Round-trip cost estimate for the net-of-cost edge gate — a
         # directional proposal whose simulated expected value cannot beat it
         # downgrades to an honest abstention.
@@ -979,6 +986,15 @@ class CognitiveSystemController:
                 details=details,
             )))
         except Exception as exc:
+            # Shutdown drain race: writes can land after the repository
+            # closed — expected noise, log once at debug, not per-write.
+            if "closed database" in str(exc).lower():
+                if not getattr(self, "_sink_closed_logged", False):
+                    self._sink_closed_logged = True
+                    logger.debug(
+                        "CSC-V6: decision sink closed — post-shutdown "
+                        "writes suppressed")
+                return
             logger.warning("CSC-V6: decision sink write failed: %s", exc)
 
     def get_decision_journal(self) -> Dict[str, Any]:
@@ -1768,6 +1784,32 @@ class CognitiveSystemController:
         else:
             self.last_prediction = None
 
+        if (action_name in ("BUY", "SELL", "STRONG_BUY", "STRONG_SELL")
+                and self._churn_budget > 0
+                and sum(1 for s in self._recent_trade_seqs
+                        if s > self._observation_seq - self._churn_window)
+                >= self._churn_budget):
+            await self._persist_audit_event(
+                event_type="DECISION",
+                action=action_name,
+                outcome="ABSTAIN",
+                correlation_id=trade_id,
+                details={
+                    "symbol": proposal.get("symbol"),
+                    "reason": "turnover budget exhausted",
+                    "churn_budget": self._churn_budget,
+                    "churn_window": self._churn_window,
+                })
+            return CoreDecision(
+                outcome=DecisionOutcome.ABSTAIN,
+                trade_id=trade_id,
+                dominant_rejection_reason=(
+                    f"Churn guard: {self._churn_budget} trades per "
+                    f"{self._churn_window} observations exhausted — "
+                    f"turnover, not exposure, is the bleed"),
+                confidence_vector=self._calculate_composite_confidence(ledger_entry),
+            )
+
         if action_name in ("HOLD", "WAIT", "NO_TRADE") or quantity <= 0.0:
             await self._persist_audit_event(
                 event_type="DECISION",
@@ -1837,6 +1879,7 @@ class CognitiveSystemController:
         # Approved directional decision — open/extend a position so its
         # outcome is measured entry->exit over the position's lifetime, and
         # persist the decision durably for the decision journal / read models.
+        self._recent_trade_seqs.append(self._observation_seq)
         if isinstance(price, (int, float)) and price > 0:
             await self._register_directional(
                 trade_id, action_name, proposal.get("symbol"), float(price),
