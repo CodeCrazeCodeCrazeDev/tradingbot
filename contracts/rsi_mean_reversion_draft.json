@@ -1,0 +1,100 @@
+{
+  "contract": {
+    "schema_version": 2,
+    "contract_id": "rsi-mean-reversion-eurusd-m15-20261007",
+    "baseline_hash": "9da6f0c8e89294f7590d03b7f8fd833ce819bc29",
+    "dataset_hash": "47685bdebdda3c658d12371d89a8bce7e1f7746f97ce337e2cbaeac6b0dec84d",
+    "strategy_family": "mean_reversion",
+    "allowed_parameters": {
+      "lookback": [
+        10,
+        200
+      ],
+      "entry_threshold": [
+        0.5,
+        4.0
+      ],
+      "holding_bars": [
+        4,
+        32
+      ],
+      "decision_stride": [
+        1,
+        8
+      ]
+    },
+    "min_bars": 5000,
+    "min_instruments": 1,
+    "block_size": 32,
+    "max_trials": 40,
+    "minimum_net_gain": 5e-05,
+    "economic_materiality_min": 5e-05,
+    "max_drawdown": 0.1,
+    "max_drawdown_regression": 0.03,
+    "confidence": 0.95,
+    "min_cost_bps": 5.0,
+    "max_cost_bps": 15.0,
+    "max_latency_ms": 60000.0,
+    "max_exposure": 0.05,
+    "max_cvar_95": 0.02,
+    "max_turnover": 2.0,
+    "cost_model_id": "mt5-demo-observed-0.5bps",
+    "code_hash": "227d4b0588255aba7ada91d945599ac6e91d9a0dba02e71af79ca0eaafec5239",
+    "dependencies_hash": "08fee3d5b55d68983b794738bb9f583376a83580f75201f25f143180a3561640",
+    "metric_directions": {
+      "net_return": "max",
+      "max_drawdown": "min",
+      "cvar_95": "min",
+      "turnover": "min"
+    },
+    "pareto_objectives": [
+      "net_return",
+      "max_drawdown",
+      "cvar_95",
+      "turnover"
+    ],
+    "regression_budgets": {
+      "sharpe": 2.0,
+      "turnover": 5.0
+    },
+    "regime_panel": [
+      "trend",
+      "mean_revert",
+      "high_vol",
+      "flat"
+    ],
+    "holdout_query_budget": 5,
+    "max_recursion_depth": 1,
+    "protected_paths": [
+      "trading_bot/risk/service.py",
+      "trading_bot/core/immutable_shield.py",
+      "trading_bot/execution/service.py",
+      "trading_bot/unified_bot.py",
+      "main.py",
+      "trading_bot/recursive_self_improvement/contracts.py",
+      "trading_bot/recursive_self_improvement/multi_objective.py",
+      "trading_bot/recursive_self_improvement/anti_gaming.py",
+      "trading_bot/recursive_self_improvement/archive.py",
+      "trading_bot/recursive_self_improvement/evaluation.py",
+      "trading_bot/recursive_self_improvement/protected_control_plane.py",
+      "pytest.ini"
+    ],
+    "seeds": [
+      7,
+      11,
+      23
+    ],
+    "cost_multipliers": [
+      1.0,
+      1.5,
+      2.0
+    ],
+    "train_end": 1768435200.0,
+    "validation_start": 1769904000.0,
+    "validation_end": 1778803200.0,
+    "holdout_start": 1780272000.0,
+    "holdout_end": 1791375300.0,
+    "expiry": 1791504000.0
+  },
+  "_status": "DRAFT \u2014 unsigned; requires operator Ed25519 signature via load_signed_contract"
+}
