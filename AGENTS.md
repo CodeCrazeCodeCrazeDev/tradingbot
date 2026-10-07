@@ -37,5 +37,58 @@ python scripts/rsi_synthetic_benchmark.py --seeds 20            # ablation
 python scripts/rsi_reachability_inventory.py                   # audit refresh
 ```
 
+## Environments
+
+Two interpreters, different roles:
+
+- `.venv/` — lightweight dedicated env (no torch). Runs every pytest suite
+  listed above plus foundation/execution/interfaces/brokers/strategies
+  tests. Cannot `start()` the full bot — `UnifiedTradingBot.start()`
+  imports `world_model` which requires torch.
+- Hermes env (`%LOCALAPPDATA%\hermes\hermes-agent\venv`) — carries
+  torch/transformers; required for the live runner scripts and any test
+  importing `trading_bot/__init__.py`.
+
+## Operational commands
+
+```bash
+# Offline paper runner (canonical runtime, paper fills only, localhost)
+python scripts/paper_runner.py --source synthetic --cycles 40 \
+  --state-dir var/paper_run --interval 0
+
+# Operator controls against a running bot (audited, no order entry)
+python scripts/operator_cli.py --state-dir var/paper_run pause
+python scripts/operator_cli.py --state-dir var/paper_run resume
+python scripts/operator_cli.py --state-dir var/paper_run flatten
+python scripts/operator_cli.py --state-dir var/paper_run cancel-all
+python scripts/operator_cli.py --state-dir var/paper_run estop
+python scripts/operator_cli.py --state-dir var/paper_run reset-emergency
+python scripts/operator_cli.py --state-dir var/paper_run status
+
+# Read-only dashboard snapshot published to <state-dir>/snapshot.json;
+# optional GET-only server via --dashboard-port (binds localhost only)
+
+# Execution idempotency fault gate (restart + duplicate + UNKNOWN faults)
+python scripts/fault_gate.py --events 10000 --state-dir <tmp>  # suite gate
+python -m pytest tests/execution/test_fault_gate.py            # small scale
+
+# MT5 demo preflight — READ-ONLY, requires rotated demo-only credentials.
+# Runs under the hermes env (MetaTrader5 SDK); never sends an order.
+python scripts/mt5_preflight.py --authorize-connect
+```
+
+## Credential status
+
+The previously committed MT5 demo credential (the MetaQuotes-Demo account
+login/password + investor password) was hardcoded in `scripts/` and is in
+git history — **it is burned and must not be reused**. Literal secrets have
+been scrubbed from executable files; `DOCS/` retains the exposure records.
+`scripts/mt5_preflight.py --authorize-connect` asserts rotated demo-only
+credentials are provisioned before any terminal connection is attempted.
+
+Pause/emergency flags persist under `control:*` keys in the repository's
+`account_state` table and are re-applied on runner start — a restart does
+not silently resume trading.
+
 Disk space is tight (~2 GB free). Run pytest with `-p no:cacheprovider`;
 avoid large artifacts; keep `.merge_backup/` (pre-merge untracked files).

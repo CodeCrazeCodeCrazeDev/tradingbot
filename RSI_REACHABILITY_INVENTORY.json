@@ -6,7 +6,7 @@
     "trading_bot/unified_bot.py",
     "trading_bot/foundation/runtime.py"
   ],
-  "runtime_reachable_module_count": 55,
+  "runtime_reachable_module_count": 90,
   "targets": {
     "trading_bot.adaptive_systems": {
       "path": "trading_bot/adaptive_systems",
@@ -195,6 +195,7 @@
         "tests/foundation/test_rsi_replay_causality.py",
         "tests/foundation/test_walk_forward_runner.py",
         "tests/rsi/helpers.py",
+        "tests/rsi/test_position_semantics.py",
         "tests/rsi/test_synthetic_market.py",
         "tests/rsi/test_transfer.py"
       ],
@@ -204,12 +205,13 @@
         "tests/foundation/test_rsi_replay_causality.py",
         "tests/foundation/test_walk_forward_runner.py",
         "tests/rsi/helpers.py",
+        "tests/rsi/test_position_semantics.py",
         "tests/rsi/test_synthetic_market.py",
         "tests/rsi/test_transfer.py",
         "trading_bot/recursive_self_improvement/engine_v2.py",
         "trading_bot/recursive_self_improvement/transfer.py"
       ],
-      "importer_count": 9
+      "importer_count": 10
     },
     "trading_bot.evolution_layer": {
       "path": "trading_bot/evolution_layer",
@@ -219,12 +221,14 @@
       "test_reachable": true,
       "test_files": [
         "tests/evolution_layer/test_orchestrator.py",
+        "tests/foundation/test_p0_reachable_adapters.py",
         "tests/long_horizon_stability_test.py"
       ],
       "importers": [
         "main_original.py",
         "scripts/runners/run_unified_bot.py",
         "tests/evolution_layer/test_orchestrator.py",
+        "tests/foundation/test_p0_reachable_adapters.py",
         "tests/long_horizon_stability_test.py",
         "trading_bot/core/legacy_main/main_v1.py",
         "trading_bot/evolution_layer/orchestrator.py",
@@ -232,7 +236,7 @@
         "trading_bot/reward_model.py",
         "trading_bot/unified_bot.py"
       ],
-      "importer_count": 9
+      "importer_count": 10
     },
     "trading_bot.experiment_tracker": {
       "path": "trading_bot/experiment_tracker.py",
@@ -327,12 +331,14 @@
       "runtime_reachable": false,
       "test_reachable": true,
       "test_files": [
+        "tests/architecture/test_legacy_boundaries.py",
         "tests/long_horizon_stability_test.py",
         "tests/recursive_improvement/test_rsie_unification.py"
       ],
       "importers": [
         "examples/recursive_improvement_demo.py",
         "main_original.py",
+        "tests/architecture/test_legacy_boundaries.py",
         "tests/long_horizon_stability_test.py",
         "tests/recursive_improvement/test_rsie_unification.py",
         "trading_bot/_archive/autonomous_research_organism/integration.py",
@@ -340,7 +346,7 @@
         "trading_bot/recursive_improvement/__init__.py",
         "trading_bot/services/tier5_services.py"
       ],
-      "importer_count": 8
+      "importer_count": 9
     },
     "trading_bot.recursive_self_improvement": {
       "path": "trading_bot/recursive_self_improvement",
@@ -359,6 +365,7 @@
         "tests/rsi/test_archive_memory.py",
         "tests/rsi/test_cycle.py",
         "tests/rsi/test_multi_objective_gates.py",
+        "tests/rsi/test_position_semantics.py",
         "tests/rsi/test_scorecard.py",
         "tests/rsi/test_transfer.py"
       ],
@@ -374,11 +381,12 @@
         "tests/rsi/test_archive_memory.py",
         "tests/rsi/test_cycle.py",
         "tests/rsi/test_multi_objective_gates.py",
+        "tests/rsi/test_position_semantics.py",
         "tests/rsi/test_scorecard.py",
         "tests/rsi/test_transfer.py",
         "trading_bot/evaluation/runner.py"
       ],
-      "importer_count": 14
+      "importer_count": 15
     },
     "trading_bot.self_learning": {
       "path": "trading_bot/self_learning",
