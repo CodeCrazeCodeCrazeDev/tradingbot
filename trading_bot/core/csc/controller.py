@@ -1925,6 +1925,7 @@ class CognitiveSystemController:
             direction = {"BUY": 1.0, "SELL": -1.0}.get(claimed, 0.0)
             return compare_candidate_vs_baseline(
                 [direction] * len(rets), [1.0] * len(rets), rets,
+                cost_bps=float(obs_dict.get("cost_bps") or 5.0),
                 min_decisions=5)
         return _eval
 

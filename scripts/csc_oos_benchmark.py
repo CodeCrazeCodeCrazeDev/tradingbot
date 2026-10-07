@@ -35,13 +35,14 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 
-def load_bars(db_path: Path, symbol: str):
+def load_bars(db_path: Path, symbol: str, timeframe: str = "M15"):
     con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
     try:
         rows = con.execute(
             "SELECT timestamp, open, high, low, close, volume "
-            "FROM market_data WHERE symbol=? ORDER BY timestamp ASC",
-            (symbol,)).fetchall()
+            "FROM market_data WHERE symbol=? AND timeframe=? "
+            "ORDER BY timestamp ASC",
+            (symbol, timeframe)).fetchall()
     finally:
         con.close()
     return rows
@@ -117,7 +118,8 @@ async def main_async(args) -> int:
     from trading_bot.evaluation.frozen_baseline import (
         compare_candidate_vs_baseline)
 
-    rows = load_bars(PROJECT_ROOT / "market_data.db", args.symbol)
+    rows = load_bars(PROJECT_ROOT / "market_data.db", args.symbol,
+                     args.timeframe)
     n_total = len(rows)
     cut = int(n_total * args.train_frac)
     test_rows = rows[cut:]
@@ -128,6 +130,20 @@ async def main_async(args) -> int:
 
     CognitiveSystemController._instance = None
     csc = CognitiveSystemController()
+
+    # The benchmark is evaluation, not execution — but TRADE_EXECUTION
+    # fails closed without exactly one executor, so approved decisions
+    # would be falsely recorded as rejections. A stub subscriber lets the
+    # evaluator see what the CSC actually decided.
+    from trading_bot.core.unified_event_bus import (
+        ActionStatus, decision_bus)
+    await decision_bus.start()
+
+    async def _bench_executor(action):
+        action.status = ActionStatus.EXECUTED
+        return {"status": "filled"}
+    decision_bus.subscribe("TRADE_EXECUTION", _bench_executor,
+                           subscriber_id="oos_bench_executor")
 
     def obs_iter():
         hist = list(closes_hist)
@@ -142,6 +158,10 @@ async def main_async(args) -> int:
     # End-of-stream accounting: flush any open position at the final mark so
     # every approved decision has a realized outcome.
     await csc.close_all_positions({args.symbol: float(test_rows[-1][4])})
+    try:
+        await decision_bus.stop()
+    except Exception:
+        pass
     elapsed = time.time() - t0
     journal = csc.get_decision_journal()
 
@@ -196,6 +216,7 @@ async def main_async(args) -> int:
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--symbol", default="EURUSD")
+    p.add_argument("--timeframe", default="M15")
     p.add_argument("--train-frac", type=float, default=0.7)
     p.add_argument("--cost-bps", type=float, default=5.0)
     p.add_argument("--controller-cost-bps", type=float, default=5.0,
