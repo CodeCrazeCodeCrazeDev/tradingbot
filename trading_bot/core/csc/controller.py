@@ -234,6 +234,9 @@ class CognitiveSystemController:
         # Unified research: subordinate engine + bounded report journal +
         # advisory artifacts queued into the next observation's evidence.
         self.research_engine = None
+        self._research_hydrated = False
+        self._research_interval = int(kwargs.get("research_interval", 100) or 0)
+        self._research_cycle_task = None
         self._research_reports: "deque" = deque(maxlen=64)
         self._research_artifacts: "deque" = deque(maxlen=64)
         # Per-symbol rolling close history for causal feature derivation —
@@ -454,7 +457,110 @@ class CognitiveSystemController:
             raise TypeError(
                 "research engine must expose investigate(question, market_data)")
         self.research_engine = engine
+        self._research_hydrated = False
         return engine
+
+    async def _maybe_rehydrate_research(self) -> None:
+        """Replay the durable RESEARCH_KG audit stream into the engine's
+        knowledge graph on first use — knowledge survives restarts."""
+        if self._research_hydrated or self.research_engine is None:
+            return
+        self._research_hydrated = True
+        sink = getattr(self, "_decision_sink", None)
+        if sink is None or not hasattr(sink, "list_audit_events"):
+            return
+        try:
+            rows = await self._safe_await(sink.list_audit_events(
+                event_type="RESEARCH_KG", limit=10000))
+            restored = self.research_engine.rehydrate(rows or [])
+            # Verdict history rebuilds the research policy (method yields)
+            # — both halves of research state now survive restarts.
+            verdict_rows = await self._safe_await(sink.list_audit_events(
+                event_type="RESEARCH", limit=10000))
+            policy_n = self.research_engine.rebuild_policy(verdict_rows or [])
+            # Session report history is derivable too — rebuild the journal
+            # from verdict rows so research() output isn't session-only.
+            if not self._research_reports:
+                self._rebuild_research_reports(verdict_rows or [])
+            # Reliability tracker rebuilds from settled-outcome history —
+            # calibration survives restarts alongside knowledge.
+            outcome_rows = await self._safe_await(sink.list_audit_events(
+                event_type="DECISION_OUTCOME", limit=10000))
+            self._rebuild_reliability(outcome_rows or [])
+            if restored.get("nodes") or restored.get("edges") or policy_n:
+                logger.info(
+                    "CSC-V6: rehydrated research state — %d nodes, %d edges, "
+                    "%d policy verdicts (%d skipped)", restored["nodes"],
+                    restored["edges"], policy_n, restored["skipped"])
+        except Exception as exc:
+            logger.warning("CSC-V6: research KG rehydration failed: %s", exc)
+
+    def _rebuild_reliability(self, rows: List[Any]) -> None:
+        """Replay DECISION_OUTCOME rows into the ReliabilityTracker —
+        per-regime precision/Brier history survives restarts."""
+        import json as _json
+        replayed = 0
+        for row in reversed(rows or []):  # repository returns newest-first
+            try:
+                inner = row.get("event_json")
+                inner = _json.loads(inner) if isinstance(inner, str) \
+                    else (inner or row)
+                details = inner.get("details") or {}
+                regime = str(details.get("regime") or "unknown")
+                confidence = float(details.get("confidence") or 0.5)
+                was_correct = str(row.get("outcome") or "") == "correct"
+                self.reliability_tracker.update_metrics(
+                    "csc", regime, was_correct, confidence)
+                replayed += 1
+            except Exception:
+                continue
+        if replayed:
+            logger.info(
+                "CSC-V6: reliability tracker rebuilt — %d outcomes replayed",
+                replayed)
+
+    def _rebuild_research_reports(self, rows: List[Any]) -> None:
+        """Reconstruct report stubs from durable RESEARCH verdict rows —
+        the journal's memory extends past process restarts."""
+        import json as _json
+        from .research import ResearchReport
+        for row in reversed(rows or []):  # repository returns newest-first
+            try:
+                inner = row.get("event_json")
+                inner = _json.loads(inner) if isinstance(inner, str) \
+                    else (inner or row)
+                details = inner.get("details") or {}
+                action = row.get("action") or inner.get("action")
+                if action not in ("investigate", "evaluate_strategy",
+                                  "assess_expansion"):
+                    continue
+                occurred = row.get("occurred_at")
+                try:
+                    created = (datetime.fromisoformat(str(occurred))
+                               .timestamp() if occurred else time.time())
+                except (ValueError, TypeError):
+                    created = time.time()
+                self._research_reports.append(ResearchReport(
+                    research_id=str(row.get("correlation_id") or
+                                    _determinism.get_uuid()),
+                    question=str(details.get("question") or "(restored)"),
+                    verdict=str(row.get("outcome") or "INCONCLUSIVE"),
+                    created_at=created,
+                    symbol=str(details.get("symbol") or "unknown"),
+                    branches_considered=int(
+                        details.get("branches_considered") or 0),
+                    evidence_node_count=int(
+                        details.get("evidence_node_count") or 0),
+                    verifier_verdicts=list(
+                        details.get("verifier_verdicts") or []),
+                    sim_summary=dict(details.get("sim_summary") or {}),
+                    composite_confidence=float(
+                        details.get("composite_confidence") or 0.0),
+                    comparison=details.get("comparison"),
+                    boundary_conditions=dict(
+                        details.get("boundary_conditions") or {})))
+            except Exception:
+                continue
 
     async def research(
         self, question: str, market_data: Optional[Dict[str, Any]] = None,
@@ -469,6 +575,7 @@ class CognitiveSystemController:
         """
         if self.research_engine is None:
             self.configure_research()
+        await self._maybe_rehydrate_research()
         obs = dict(market_data or {})
         self._enrich_derived_features(obs)
         report = await self.research_engine.investigate(
@@ -477,6 +584,13 @@ class CognitiveSystemController:
             advisory_artifacts=None)
         self._research_reports.append(report)
         self._research_artifacts.append(report.to_advisory_artifact())
+        # Buffered KG events (nodes/edges) land in the durable audit log so
+        # the knowledge graph can be reconstructed after restart.
+        for kind, payload in self.research_engine.drain_persisted_events():
+            await self._persist_audit_event(
+                event_type="RESEARCH_KG", action=kind,
+                outcome="recorded", correlation_id=report.research_id,
+                details=payload)
         await self._persist_audit_event(
             event_type="RESEARCH",
             action="investigate",
@@ -488,9 +602,117 @@ class CognitiveSystemController:
                 "branches_considered": report.branches_considered,
                 "evidence_node_count": report.evidence_node_count,
                 "composite_confidence": report.composite_confidence,
+                # Full finding detail — restored reports after rehydration
+                # carry the same substance as session reports.
+                "sim_summary": report.sim_summary,
+                "verifier_verdicts": list(report.verifier_verdicts)[:16],
+                "boundary_conditions": dict(report.boundary_conditions),
+                "comparison": report.comparison,
                 "advisory_only": True,
             })
         return report
+
+    async def evaluate_strategy(
+        self, question: str, candidate_positions: List[float],
+        baseline_positions: List[float], bar_returns: List[float],
+        **kwargs: Any,
+    ) -> "ResearchReport":
+        """CSC-routed strategy evaluation — same persist/advisory
+        treatment as research()."""
+        if self.research_engine is None:
+            self.configure_research()
+        await self._maybe_rehydrate_research()
+        report = self.research_engine.evaluate_strategy(
+            question, candidate_positions, baseline_positions,
+            bar_returns, **kwargs)
+        return await self._record_research_report(
+            report, action="evaluate_strategy")
+
+    async def assess_expansion(self, target: str, **kwargs: Any
+                               ) -> "ResearchReport":
+        """CSC-routed expansion-readiness check — advisory only."""
+        if self.research_engine is None:
+            self.configure_research()
+        await self._maybe_rehydrate_research()
+        report = self.research_engine.assess_expansion(target, **kwargs)
+        return await self._record_research_report(
+            report, action="assess_expansion")
+
+    async def _record_research_report(
+        self, report: "ResearchReport", action: str,
+    ) -> "ResearchReport":
+        """Journal + advisory-channel + durable persistence for engine
+        reports produced outside investigate()."""
+        self._research_reports.append(report)
+        self._research_artifacts.append(report.to_advisory_artifact())
+        for kind, payload in self.research_engine.drain_persisted_events():
+            await self._persist_audit_event(
+                event_type="RESEARCH_KG", action=kind,
+                outcome="recorded",
+                correlation_id=report.research_id, details=payload)
+        await self._persist_audit_event(
+            event_type="RESEARCH", action=action,
+            outcome=report.verdict, correlation_id=report.research_id,
+            details={"question": report.question,
+                     "composite_confidence": report.composite_confidence,
+                     "sim_summary": report.sim_summary,
+                     "verifier_verdicts": list(report.verifier_verdicts)[:16],
+                     "boundary_conditions": dict(report.boundary_conditions),
+                     "comparison": report.comparison,
+                     "advisory_only": True})
+        return report
+
+    async def run_research_cycle(
+        self, market_data: Optional[Dict[str, Any]] = None,
+        max_questions: int = 1,
+    ) -> Dict[str, Any]:
+        """One full research-loop iteration under CSC control.
+
+        Harvests measured reliability (per-regime precision/prediction
+        counts) and observed anomalies into the uncertainty map, then runs
+        question-formation → VoI selection → locked contract → investigate
+        → KG/policy/uncertainty update. The result is durably persisted."""
+        if self.research_engine is None:
+            self.configure_research()
+        await self._maybe_rehydrate_research()
+        reliability = getattr(self.reliability_tracker, "metrics", {})
+        anomalies = []
+        # A surprise spike is unexplained evidence — register it as a
+        # research object, don't silently absorb it.
+        recent_vfe = list(self.vfe_history or [])[-10:]
+        if len(recent_vfe) >= 5 and max(recent_vfe) > 5.0:
+            anomalies.append(("vfe_surprise_spike", 0.7))
+        cycle = await self.research_engine.research_cycle(
+            dict(market_data or {}), max_questions=max_questions,
+            reliability=reliability, anomalies=anomalies)
+        for kind, payload in self.research_engine.drain_persisted_events():
+            await self._persist_audit_event(
+                event_type="RESEARCH_KG", action=kind,
+                outcome="recorded", correlation_id=None, details=payload)
+        # Each report gets its own RESEARCH verdict row — these rows are
+        # what rebuild_policy() replays to restore method yield stats
+        # after a restart.
+        for report in cycle.get("reports", []):
+            await self._persist_audit_event(
+                event_type="RESEARCH", action="investigate",
+                outcome=str(report.get("verdict", "INCONCLUSIVE")),
+                correlation_id=report.get("research_id"),
+                details={"question": report.get("question"),
+                         "composite_confidence":
+                             report.get("composite_confidence"),
+                         "sim_summary": report.get("sim_summary"),
+                         "verifier_verdicts": list(
+                             report.get("verifier_verdicts") or [])[:16],
+                         "boundary_conditions":
+                             report.get("boundary_conditions"),
+                         "comparison": report.get("comparison")})
+        await self._persist_audit_event(
+            event_type="RESEARCH", action="cycle",
+            outcome=cycle.get("status", "ok"),
+            correlation_id=None,
+            details={"questions": len(cycle.get("questions", [])),
+                     "reports": len(cycle.get("reports", []))})
+        return cycle
 
     def get_research_journal(self) -> List[Dict[str, Any]]:
         """Read-only journal of verified research reports."""
@@ -699,6 +921,17 @@ class CognitiveSystemController:
                 logger.warning(
                     "CSC-V6: position outcome write failed for %s: %s",
                     tid, exc)
+        # A settled position is forward (paper-real-world) evidence — feed
+        # it into the research engine so claims about this symbol earn or
+        # lose real-world tier support.
+        if self.research_engine is not None:
+            try:
+                self.research_engine.observe_forward_result(
+                    symbol, realized, str(pos.get("regime") or "unknown"),
+                    trade_ids=list(pos["trade_ids"]))
+            except Exception as exc:
+                logger.warning(
+                    "CSC-V6: research forward-outcome feed failed: %s", exc)
         logger.info(
             "CSC-V6: closed %s position on %s (%s): entry %.6f exit %.6f "
             "ret %+.5f", pos["direction"], symbol, reason, entry,
@@ -752,6 +985,17 @@ class CognitiveSystemController:
                 s: {k: v for k, v in p.items() if k != "trade_ids"}
                 for s, p in self._open_positions.items()},
             "research_reports": self.get_research_journal(),
+            "uncertainty_map": (self.research_engine.uncertainty_map.snapshot()
+                                if self.research_engine else {}),
+            "research_policy": (self.research_engine.policy.snapshot()
+                                if self.research_engine else {}),
+            "capability_proposals": ([
+                {"proposal_id": p.proposal_id, "claim_id": p.claim_id,
+                 "summary": p.summary,
+                 "confidence_level": p.confidence_profile.level,
+                 "advisory_only": True, "promotion_eligible": False}
+                for p in self.research_engine.capability_proposals()]
+                if self.research_engine else []),
             "folded_summaries": list(self.folder.folded_summaries),
             "reliability": {
                 agent: {reg: {
@@ -1613,6 +1857,84 @@ class CognitiveSystemController:
         )
 
     async def process_market_observation(self, observation: Any) -> Optional[CoreDecision]:
+        """Public pipeline entry — wraps the implementation so the
+        research-scheduling seam fires on EVERY observation, including
+        early terminal-return paths (guardrail vetoes, abstentions)."""
+        try:
+            return await self._process_observation_pipeline(observation)
+        finally:
+            self._maybe_schedule_research_cycle(observation)
+
+    def _maybe_schedule_research_cycle(self, observation: Any) -> None:
+        """Budgeted background research: every ``research_interval``
+        observations, one bounded cycle runs as a background task. One at
+        a time — a slow cycle never queues behind itself."""
+        interval = int(getattr(self, "_research_interval", 0) or 0)
+        if interval <= 0 or self._observation_seq % interval != 0:
+            return
+        task = getattr(self, "_research_cycle_task", None)
+        if task is not None and not task.done():
+            return
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        self._research_cycle_task = loop.create_task(
+            self._run_research_cycle_guarded(observation))
+
+    async def _run_research_cycle_guarded(self, observation: Any) -> None:
+        """Research failures never reach the trading path — a research
+        cycle is advisory by construction."""
+        try:
+            obs_dict, _ = self._normalize_observation(observation)
+            self._enrich_derived_features(obs_dict)
+            # Self-supplied replication: the CSC's own bar history is sliced
+            # so a claimed directional edge can be retested out-of-sample —
+            # the cycle can self-replicate, not just investigate.
+            repl_fn = self._build_replication_fn(obs_dict)
+            if repl_fn is not None:
+                obs_dict["replication_fn"] = repl_fn
+            await self.run_research_cycle(obs_dict, max_questions=1)
+        except Exception as exc:
+            logger.warning("CSC-V6: background research cycle failed: %s",
+                           exc)
+
+    def _build_replication_fn(self, obs_dict: Dict[str, Any]):
+        """Supply a replication_fn that re-tests the engine's target claim
+        on the second half of the observed bar history — a genuinely
+        different data slice, not a re-run on the same window."""
+        engine = self.research_engine
+        if engine is None or not getattr(engine, "_claims", None):
+            return None
+        symbol = str(obs_dict.get("symbol") or "")
+        hist = list(self._obs_history.get(symbol, ()))
+        if len(hist) < 40:
+            return None
+
+        def _eval() -> Dict[str, Any]:
+            from trading_bot.evaluation.frozen_baseline import (
+                compare_candidate_vs_baseline)
+            closes = hist[len(hist) // 2:]
+            rets = [(closes[i] - closes[i - 1]) / closes[i - 1]
+                    for i in range(1, len(closes))]
+            target = engine._replication_target(None, {"symbol": symbol})
+            claimed = (target.metadata.get("direction")
+                       if target is not None else None)
+            # No recorded direction -> flat candidate -> honest no_activity
+            # verdict rather than guessing a side.
+            direction = {"BUY": 1.0, "SELL": -1.0}.get(claimed, 0.0)
+            return compare_candidate_vs_baseline(
+                [direction] * len(rets), [1.0] * len(rets), rets,
+                min_decisions=5)
+        return _eval
+
+    async def drain_research_cycles(self) -> None:
+        """Test/operator seam: await any in-flight background cycle."""
+        task = getattr(self, "_research_cycle_task", None)
+        if task is not None:
+            await task
+
+    async def _process_observation_pipeline(self, observation: Any) -> Optional[CoreDecision]:
         """
         Recursive Active Inference Pipeline (UCA V6).
 
