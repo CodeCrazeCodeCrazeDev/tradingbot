@@ -142,6 +142,15 @@ async def run(args: argparse.Namespace) -> int:
         csc._decision_stride = args.decision_stride
         logger.info("decision_stride=%d applied to CSC (cadenced decisions)",
                     args.decision_stride)
+    # Attach the research OS to live operation: forward outcomes then feed
+    # REAL_WORLD(venue=paper) evidence into the KG on every position close,
+    # auto-cycles run every research_interval observations, and the durable
+    # audit stream rehydrates KG/policy/reliability on first use.
+    if csc is not None:
+        csc.configure_research()
+        csc._research_interval = max(0, args.research_interval)
+        logger.info("research engine attached (interval=%d observations)",
+                    args.research_interval)
     if history:
         if csc is not None:
             csc.seed_observation_history(args.symbol, history)
@@ -221,6 +230,10 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--state-dir", default=str(DEFAULT_STATE_DIR))
     parser.add_argument("--dashboard-port", type=int, default=0,
                         help="serve the read-only snapshot on 127.0.0.1:PORT")
+    parser.add_argument("--research-interval", type=int, default=100,
+                        help="observations between automatic research "
+                             "cycles (0 disables cycles; the engine "
+                             "still ingests forward outcomes)")
     parser.add_argument("--decision-stride", type=int, default=1,
                         help="CSC decides every Nth observation "
                              "(replicated-OOS evidence supports 4+)")
