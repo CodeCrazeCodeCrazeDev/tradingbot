@@ -697,10 +697,15 @@ class CognitiveSystemController:
         cycle = await self.research_engine.research_cycle(
             dict(market_data or {}), max_questions=max_questions,
             reliability=reliability, anomalies=anomalies)
+        # KG events + the cycle container share a cycle correlation id —
+        # audit_events.correlation_id is NOT NULL, and linking graph rows
+        # to their producing cycle is better provenance anyway.
+        cycle_id = f"cycle:{_determinism.get_uuid()}"
         for kind, payload in self.research_engine.drain_persisted_events():
             await self._persist_audit_event(
                 event_type="RESEARCH_KG", action=kind,
-                outcome="recorded", correlation_id=None, details=payload)
+                outcome="recorded", correlation_id=cycle_id,
+                details=payload)
         # Each report gets its own RESEARCH verdict row — these rows are
         # what rebuild_policy() replays to restore method yield stats
         # after a restart.
@@ -721,7 +726,7 @@ class CognitiveSystemController:
         await self._persist_audit_event(
             event_type="RESEARCH", action="cycle",
             outcome=cycle.get("status", "ok"),
-            correlation_id=None,
+            correlation_id=cycle_id,
             details={"questions": len(cycle.get("questions", [])),
                      "reports": len(cycle.get("reports", []))})
         return cycle
@@ -1896,6 +1901,9 @@ class CognitiveSystemController:
                 "quantity": quantity,
                 "confidence": proposal.get("confidence"),
                 "price": price,
+                # Predicted vs realized: recording the simulated EV lets
+                # forward outcomes measure EV calibration directly.
+                "expected_return": proposal.get("expected_return"),
             })
 
         return CoreDecision(

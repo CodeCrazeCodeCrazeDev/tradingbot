@@ -191,6 +191,12 @@ async def evaluate_window(rows, context_end: int, test_rows, args) -> dict:
     report["comparisons"]["vs_frozen_momentum"] = compare_candidate_vs_baseline(
         csc_pos, momentum_pos, rets,
         cost_bps=args.cost_bps, min_decisions=args.min_decisions)
+    # The sharpest falsification available: does FADING the CSC beat the
+    # CSC itself? If the signal is anti-predictive (momentum-following on
+    # mean-reverting data), the contrarian series should win.
+    report["comparisons"]["contrarian_flip"] = compare_candidate_vs_baseline(
+        [-p for p in csc_pos], csc_pos, rets,
+        cost_bps=args.cost_bps, min_decisions=args.min_decisions)
     return report
 
 
