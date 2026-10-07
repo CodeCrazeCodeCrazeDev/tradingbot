@@ -136,3 +136,7 @@ test_rsi_pytest/
 /test_evolution_*/
 /test_hms_*/
 self_mastery_data/
+
+# Runtime artifacts (kill-switch flags, autonomous-run data)
+EMERGENCY_STOP.txt
+alphaalgo_autonomous/

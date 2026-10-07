@@ -5,7 +5,8 @@ Complete automation: Testing → Paper Trading → Live Deployment → Feature A
 No manual intervention required. System runs continuously, adding features
 automatically when previous features are validated.
 
-Account: 97224465 (MetaQuotes Demo)
+Account: configured via MT5_LOGIN/MT5_PASSWORD/MT5_SERVER env vars
+(previously hardcoded credentials were removed — they must be rotated).
 """
 
 import asyncio
@@ -403,9 +404,7 @@ class AutomatedAlphaAlgo:
                 raise ValueError("MT5_LOGIN and MT5_PASSWORD must be set in environment")
 
             # Start new container
-            mt5_login = os.getenv("MT5_LOGIN", "97224465")
-            mt5_password = os.getenv("MT5_PASSWORD", "WdHb@1Zk")
-            mt5_server = os.getenv("MT5_SERVER", "MetaQuotes-Demo")
+            # mt5_login/mt5_password/mt5_server resolved above; no defaults
             cmd = f"docker run -d --name alphaalgo-paper --restart unless-stopped -e PAPER_TRADING=true -e MT5_LOGIN={mt5_login} -e MT5_PASSWORD={mt5_password} -e MT5_SERVER={mt5_server} -v {Path.cwd()}/logs:/app/logs alphaalgo:week{self.state['current_week']}"
             
             result = safe_run_command(cmd, capture_output=True, text=True)
@@ -435,9 +434,7 @@ class AutomatedAlphaAlgo:
                 raise ValueError("MT5_LOGIN and MT5_PASSWORD must be set in environment")
 
             # Start new container with minimal position size
-            mt5_login = os.getenv("MT5_LOGIN", "97224465")
-            mt5_password = os.getenv("MT5_PASSWORD", "WdHb@1Zk")
-            mt5_server = os.getenv("MT5_SERVER", "MetaQuotes-Demo")
+            # mt5_login/mt5_password/mt5_server resolved above; no defaults
             cmd = f"docker run -d --name alphaalgo-live --restart unless-stopped -e PAPER_TRADING=false -e POSITION_SIZE=0.01 -e MT5_LOGIN={mt5_login} -e MT5_PASSWORD={mt5_password} -e MT5_SERVER={mt5_server} -v {Path.cwd()}/logs:/app/logs alphaalgo:week{self.state['current_week']}"
             
             result = safe_run_command(cmd, capture_output=True, text=True)

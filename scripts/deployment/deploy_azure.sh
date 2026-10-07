@@ -36,8 +36,12 @@ az keyvault create --name $VAULT_NAME \
   --location $LOCATION
 
 echo -e "${YELLOW}Step 5: Storing secrets...${NC}"
+if [ -z "$MT5_PASSWORD" ] || [ -z "$MT5_LOGIN" ] || [ -z "$MT5_SERVER" ]; then
+  echo "Set MT5_LOGIN / MT5_PASSWORD / MT5_SERVER in the environment first."
+  exit 1
+fi
 az keyvault secret set --vault-name $VAULT_NAME \
-  --name mt5-password --value "WdHb@1Zk"
+  --name mt5-password --value "$MT5_PASSWORD"
 
 echo "Enter your Outlook app password:"
 read -s SMTP_PASSWORD
@@ -54,11 +58,11 @@ az container create \
   --registry-username $(az acr credential show --name $ACR_NAME --query username -o tsv) \
   --registry-password $(az acr credential show --name $ACR_NAME --query passwords[0].value -o tsv) \
   --environment-variables \
-    MT5_LOGIN=97224465 \
-    MT5_SERVER=MetaQuotes-Demo \
+    MT5_LOGIN=$MT5_LOGIN \
+    MT5_SERVER=$MT5_SERVER \
     EMAIL_ADDRESS=peterkiragu68@outlook.com \
   --secure-environment-variables \
-    MT5_PASSWORD=WdHb@1Zk \
+    MT5_PASSWORD=$MT5_PASSWORD \
   --restart-policy Always \
   --ports 8080
 

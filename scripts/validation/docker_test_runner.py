@@ -68,10 +68,9 @@ try:
     cmd = [
         'docker', 'run', '--rm',
         '-v', f"{log_path}:/app/logs",
-        '-e', 'MT5_LOGIN=97224465',
-        '-e', 'MT5_PASSWORD=WdHb@1Zk',
-        '-e', 'MT5_INVESTOR=B-CtN4Ev',
-        '-e', 'MT5_SERVER=MetaQuotes-Demo',
+        '-e', f'MT5_LOGIN={os.environ["MT5_LOGIN"]}',
+        '-e', f'MT5_PASSWORD={os.environ["MT5_PASSWORD"]}',
+        '-e', f'MT5_SERVER={os.environ["MT5_SERVER"]}',
         '-e', 'EMAIL_ADDRESS=peterkiragu68@outlook.com',
         'elite-trading-bot:test',
         'python', 'test_bot_comprehensive.py'
@@ -116,10 +115,9 @@ try:
         'docker', 'run', '--rm', '-d',
         '--name', 'elite-trading-bot-running',
         '-v', f"{log_path}:/app/logs",
-        '-e', 'MT5_LOGIN=97224465',
-        '-e', 'MT5_PASSWORD=WdHb@1Zk',
-        '-e', 'MT5_INVESTOR=B-CtN4Ev',
-        '-e', 'MT5_SERVER=MetaQuotes-Demo',
+        '-e', f'MT5_LOGIN={os.environ["MT5_LOGIN"]}',
+        '-e', f'MT5_PASSWORD={os.environ["MT5_PASSWORD"]}',
+        '-e', f'MT5_SERVER={os.environ["MT5_SERVER"]}',
         '-e', 'EMAIL_ADDRESS=peterkiragu68@outlook.com',
         'elite-trading-bot:test'
     ]

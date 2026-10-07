@@ -147,7 +147,14 @@ def main():
     
     # Deploy new container
     logger.log("Starting new production container...")
-    deploy_cmd = """docker run -d --name elite-trading-bot-prod --restart unless-stopped -e MT5_LOGIN=97224465 -e MT5_PASSWORD=WdHb@1Zk -e MT5_SERVER=MetaQuotes-Demo -e EMAIL_ADDRESS=peterkiragu68@outlook.com -v %cd%/logs:/app/logs -p 8080:8080 elite-trading-bot:prod"""
+    deploy_cmd = (
+        'docker run -d --name elite-trading-bot-prod --restart unless-stopped '
+        f'-e MT5_LOGIN={os.environ["MT5_LOGIN"]} '
+        f'-e MT5_PASSWORD={os.environ["MT5_PASSWORD"]} '
+        f'-e MT5_SERVER={os.environ["MT5_SERVER"]} '
+        '-e EMAIL_ADDRESS=peterkiragu68@outlook.com '
+        '-v %cd%/logs:/app/logs -p 8080:8080 elite-trading-bot:prod'
+    )
     
     success, stdout, stderr = run_cmd(deploy_cmd, timeout=60)
     
