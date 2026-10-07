@@ -116,8 +116,10 @@ def compare_candidate_vs_baseline(
     verdict:
       * ``insufficient_evidence`` — too few paired decisions to say anything.
       * ``candidate_superior``   — candidate net total exceeds baseline by
-        more than ``min_net_edge`` AND its max drawdown did not regress by
-        more than ``max_dd_regression``.
+        more than ``min_net_edge``, drawdown within budget, AND the
+        candidate itself is net positive.
+      * ``unprofitable``         — relative edge exists but candidate net
+        is non-positive; it lost less, it did not earn.
       * ``not_superior``         — otherwise.
     """
     candidate = score_side(
@@ -170,10 +172,19 @@ def compare_candidate_vs_baseline(
     report["net_edge"] = edge
     report["drawdown_regression"] = dd_regression
     if edge > min_net_edge and dd_regression <= max_dd_regression:
-        report["verdict"] = "candidate_superior"
-        report["reason"] = (
-            f"candidate net edge {edge:+.6f} with drawdown regression "
-            f"{dd_regression:+.4f} within budget {max_dd_regression}")
+        if candidate.total_net <= 0.0:
+            # Beating a losing baseline while losing money is not an edge —
+            # it means the candidate failed less, not that it works.
+            report["verdict"] = "unprofitable"
+            report["reason"] = (
+                f"candidate net {candidate.total_net:+.6f} <= 0 despite "
+                f"relative edge {edge:+.6f}; outperformance without "
+                f"absolute viability is not evidence of a trading edge")
+        else:
+            report["verdict"] = "candidate_superior"
+            report["reason"] = (
+                f"candidate net edge {edge:+.6f} with drawdown regression "
+                f"{dd_regression:+.4f} within budget {max_dd_regression}")
     else:
         report["verdict"] = "not_superior"
         report["reason"] = (

@@ -72,6 +72,17 @@ class TestCompareCandidateVsBaseline:
         assert rep["verdict"] == "no_activity"
         assert "abstention" in rep["reason"]
 
+    def test_beating_a_losing_baseline_while_losing_is_unprofitable(self):
+        # Candidate loses less than the baseline — relative edge, but
+        # absolute net <= 0. That is not a trading edge.
+        rets = [-0.001] * 60
+        rep = compare_candidate_vs_baseline(
+            [0.5] * 60, [1.0] * 60, rets, cost_bps=1.0, min_decisions=20)
+        assert rep["verdict"] == "unprofitable"
+        assert rep["net_edge"] > 0
+        assert rep["candidate"]["total_net"] <= 0
+        assert rep["promotion_eligible"] is False
+
     def test_not_superior_when_candidate_loses(self):
         rets = _trending_returns()
         baseline = [1.0 if r > 0 else -1.0 for r in rets]

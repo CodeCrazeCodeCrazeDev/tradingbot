@@ -474,6 +474,7 @@ class ResearchEngine:
         verdict_map = {
             "candidate_superior": "CONFIRMED",
             "not_superior": "FALSIFIED",
+            "unprofitable": "FALSIFIED",
             "insufficient_evidence": "INSUFFICIENT_EVIDENCE",
             "no_activity": "INSUFFICIENT_EVIDENCE",
         }
