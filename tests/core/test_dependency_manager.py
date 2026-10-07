@@ -20,6 +20,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+
 class TestDependencyStatus:
     """Comprehensive tests for DependencyStatus"""
 

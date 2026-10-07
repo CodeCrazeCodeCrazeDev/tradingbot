@@ -51,3 +51,55 @@ def test_normalizer_marks_invalid_market_values() -> None:
 def test_normalizer_requires_symbol() -> None:
     with pytest.raises(ValueError, match="symbol"):
         MarketDataNormalizer().normalize({"price": 10})
+
+
+def test_normalizer_preserves_instrument_specifications() -> None:
+    event = MarketDataNormalizer().normalize(
+        {
+            "symbol": "EURUSD", "timestamp": "2026-01-01T00:00:00Z",
+            "close": 1.10, "contract_size": 100000,
+            "tick_size": 0.00001, "lot_step": 0.01,
+            "asset_class": "forex",
+        },
+        source="test",
+    )
+
+    assert event.instrument.contract_size == 100000
+    assert event.instrument.price_increment == 0.00001
+    assert event.instrument.quantity_increment == 0.01
+
+
+def test_normalizer_missing_timestamp_is_degraded_not_fabricated() -> None:
+    event = MarketDataNormalizer().normalize(
+        {"symbol": "EURUSD", "close": 1.10}, source="test"
+    )
+
+    assert event.quality is DataQuality.DEGRADED
+
+
+def test_normalizer_flags_out_of_order_events() -> None:
+    normalizer = MarketDataNormalizer()
+    normalizer.normalize(
+        {"symbol": "EURUSD", "timestamp": "2026-01-02T00:00:00Z",
+         "close": 1.10}
+    )
+    late = normalizer.normalize(
+        {"symbol": "EURUSD", "timestamp": "2026-01-01T00:00:00Z",
+         "close": 1.09}
+    )
+
+    assert late.quality is DataQuality.STALE
+
+
+def test_normalizer_rejects_crossed_quotes_and_contentless_ticks() -> None:
+    normalizer = MarketDataNormalizer()
+    crossed = normalizer.normalize(
+        {"symbol": "EURUSD", "timestamp": "2026-01-01T00:00:00Z",
+         "bid": 1.11, "ask": 1.10}
+    )
+    assert crossed.quality is DataQuality.INVALID
+
+    empty = MarketDataNormalizer().normalize(
+        {"symbol": "EURUSD", "timestamp": "2026-01-01T00:00:00Z"}
+    )
+    assert empty.quality is DataQuality.UNKNOWN

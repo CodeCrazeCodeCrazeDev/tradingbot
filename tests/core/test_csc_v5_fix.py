@@ -52,10 +52,10 @@ async def test_csc_process_market_observation_rejection():
     shield = MagicMock()
 
     # Mock hypothesis generation to return no branches
-    async def mock_gen(obs):
+    async def mock_gen(obs, evidence_chain=None, advisory_artifacts=None):
         return []
 
-    async def mock_sim(branches):
+    async def mock_sim(branches, market_data=None):
         return {}
 
     hypothesis_gen = MagicMock()
@@ -70,4 +70,6 @@ async def test_csc_process_market_observation_rejection():
     observation = {"price": 1.1000}
     decision = await csc.process_market_observation(observation)
 
-    assert decision is None
+    # No viable branches -> explicit abstention record, not a silent None.
+    assert decision is not None
+    assert decision.outcome == DecisionOutcome.ABSTAIN

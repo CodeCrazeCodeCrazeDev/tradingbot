@@ -1,6 +1,8 @@
 import pytest
 import asyncio
-import torch
+import pytest
+
+torch = pytest.importorskip("torch", reason="torch not installed in this env")
 from trading_bot.core.governance.determinism import DeterministicManager
 from trading_bot.world_model.v3_core import WorldModelV3
 

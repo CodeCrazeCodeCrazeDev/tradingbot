@@ -125,3 +125,6 @@ async def test_shielded_action_vetoed_when_audit_unwritable(tmp_path) -> None:
     assert action.status == ActionStatus.VETOED
     assert bus._audit_healthy is False
     await bus.stop()
+    # The poisoned path is process-global singleton state; restore it so
+    # later tests are not contaminated by this fixture's bad config.
+    UnifiedDecisionBus.reset()

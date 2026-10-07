@@ -160,10 +160,13 @@ async def test_submit_failure_propagates_and_caches_nothing(tmp_path) -> None:
     with pytest.raises(ConnectionError):
         await service.submit(order("fail-1"))
     assert service._reports.get("fail-1") is None
-    # A retry must reach the venue again — no fake success was recorded.
-    with pytest.raises(ConnectionError):
-        await service.submit(order("fail-1"))
-    assert broker.calls == 2
+    # Durable idempotency: the order row was recorded before the venue call,
+    # so a retry must NOT blindly resubmit — it returns the UNKNOWN report
+    # awaiting reconciliation, and the venue sees exactly one submission.
+    report = await service.submit(order("fail-1"))
+    assert broker.calls == 1
+    assert report.status is OrderStatus.UNKNOWN
+    assert "reconcil" in (report.error or "").lower()
     repository.close()
 
 

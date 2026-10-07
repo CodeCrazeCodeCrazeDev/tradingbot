@@ -96,13 +96,18 @@ async def test_csc_pivot_loop():
     mock_bus = MockDecisionBus()
     csc = CognitiveSystemController(world_model, hms, shield, decision_bus=mock_bus)
 
-    obs = {"volatility": 0.1, "features": [0.1] * 16}
+    # Normal FX-scale volatility — values >= 0.04 are legitimately extreme
+    # and the HASP crisis guardrail correctly pre-empts the pipeline.
+    obs = {"volatility": 0.001, "features": [0.1] * 16}
 
-    # Mock simulation to trigger pivot
+    # Mock simulation to trigger pivot: bull fails on measured harm
+    # (negative expected value); bear survives with EV above the round-trip
+    # cost gate so the pipeline reaches approval.
     csc.hypothesis_gen.simulate_branches = AsyncMock(return_value={
-        "branch_bull": {"failure_rate": 0.8},
-        "branch_bear": {"failure_rate": 0.1},
-        "branch_range": {"failure_rate": 0.2}
+        "branch_bull": {"expected_value": -0.001, "invalidation_triggers": [
+            "Maximum acceptable drawdown threshold exceeded"]},
+        "branch_bear": {"expected_value": 0.002},
+        "branch_range": {}
     })
 
     csc.verifier_swarm.run_swarm = AsyncMock(return_value=[MagicMock(is_valid=True, confidence=0.9)])

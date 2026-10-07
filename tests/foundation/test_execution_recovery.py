@@ -17,6 +17,7 @@ Covers the invariants that make the canonical paper path crash-consistent:
 
 import asyncio
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 import pytest
 
@@ -594,7 +595,12 @@ def test_normalizer_computed_invalid_beats_declared_valid() -> None:
 def test_normalizer_optional_staleness_horizon() -> None:
     normalizer = MarketDataNormalizer(max_staleness_seconds=60.0)
     fresh = normalizer.normalize(
-        {"symbol": "EURUSD", "price": 1.1}, source="feed"
+        {
+            "symbol": "EURUSD",
+            "price": 1.1,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        },
+        source="feed",
     )
     assert fresh.quality is DataQuality.VALID
 

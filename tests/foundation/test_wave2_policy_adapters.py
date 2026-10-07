@@ -30,7 +30,7 @@ def proposal() -> DecisionProposal:
         instrument,
         "buy",
         0.9,
-        metadata={"quantity": 1.0, "entry_price": 1.1, "stop_loss": 1.05},
+        metadata={"quantity": 1.0, "price": 1.1, "entry_price": 1.1, "stop_loss": 1.05},
     )
     state = RiskState("account-1", 10000, 0.01, 0.0, 0.01, 0)
     return DecisionProposal("decision-1", signal, PortfolioSnapshot("account-1", 10000, 10000), state)

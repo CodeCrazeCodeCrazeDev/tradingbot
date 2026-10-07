@@ -1,5 +1,6 @@
 import pytest
-import torch
+
+torch = pytest.importorskip("torch", reason="torch not installed in this env")
 import numpy as np
 from trading_bot.world_model.v3_core import WorldModelV3
 

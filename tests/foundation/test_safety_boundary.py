@@ -27,6 +27,33 @@ async def test_shield_blocks_invalid_normalized_market_data() -> None:
 
 
 @pytest.mark.asyncio
+async def test_shield_blocks_unverified_market_data_quality() -> None:
+    """Anything explicitly labeled non-valid fails closed at the shield:
+    unknown/degraded data cannot authorize capital."""
+    for quality in ("unknown", "degraded", "stale"):
+        report = await shield.validate_action(
+            "TRADE_EXECUTION",
+            _valid_params(),
+            {"market": {"data_quality": quality}},
+        )
+        assert report.decision is GovernanceDecision.BLOCKED, quality
+
+    report = await shield.validate_action(
+        "TRADE_EXECUTION",
+        _valid_params(),
+        {"market": {"data_quality": "valid"}},
+    )
+    assert report.decision is GovernanceDecision.APPROVED
+
+    report = await shield.validate_action(
+        "TRADE_EXECUTION",
+        _valid_params(),
+        {"market": {"data_quality": "valid", "data_is_fresh": False}},
+    )
+    assert report.decision is GovernanceDecision.BLOCKED
+
+
+@pytest.mark.asyncio
 async def test_shield_applies_symbol_denylist_to_typed_order_payload() -> None:
     old_config = dict(shield.config)
     shield.config["blocked_symbols"] = ["EURUSD"]

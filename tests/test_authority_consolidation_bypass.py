@@ -15,11 +15,13 @@ def test_single_memory_authority_enforces_provenance():
     tampered_rec = ProvenanceAwareMemoryRecord(source="agent_1", content="Clean content", integrity_hash="FAKE_HASH")
     assert tampered_rec.is_valid() is False
 
-def test_single_message_authority_enforces_signatures():
+def test_single_message_authority_enforces_signatures(monkeypatch):
     bus = UnifiedDecisionBus.get_instance() if hasattr(UnifiedDecisionBus, 'get_instance') else UnifiedDecisionBus()
 
+    test_key = "test-inter-agent-key"
+    monkeypatch.setenv("INTER_AGENT_SIGNING_KEY", test_key)
     msg = SignedInterAgentMessage(sender_id="ag1", sender_version="1.0", task_id="t1", payload={"data": "test"})
-    assert msg.verify_signature("SYSTEM_SECRET_KEY") is True
+    assert msg.verify_signature(test_key) is True
 
     msg.payload["data"] = "TAMPERED"
-    assert msg.verify_signature("SYSTEM_SECRET_KEY") is False
+    assert msg.verify_signature(test_key) is False

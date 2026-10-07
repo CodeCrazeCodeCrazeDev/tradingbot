@@ -1,6 +1,5 @@
 import pytest
 import asyncio
-import torch
 from unittest.mock import MagicMock, AsyncMock, patch
 from trading_bot.core.csc.controller import CognitiveSystemController
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome
@@ -27,10 +26,15 @@ async def test_e2e_pipeline_full_path():
         return_value={"decision": "APPROVED", "reason": "test-approved"}
     )
 
-    # Mock Hypothesis Generation
+    # Mock Hypothesis Generation — a directional plan is required for the
+    # proposal to reach the shield/execution gates (plans without measured
+    # quantity abstain earlier by design).
     mock_branch = MagicMock()
     mock_branch.branch_id = "test_branch"
     mock_branch.hypotheses = [MagicMock(description="Test Hypothesis")]
+    mock_branch.confidence = 0.85
+    mock_branch.execution_plan = {
+        "action": "BUY", "symbol": "EURUSD", "quantity": 0.5}
 
     hypothesis_gen = MagicMock()
     hypothesis_gen.generate_competing_branches = AsyncMock(return_value=[mock_branch])
@@ -43,6 +47,21 @@ async def test_e2e_pipeline_full_path():
     mock_report.confidence = 0.9
     verifier_swarm.run_swarm = AsyncMock(return_value=[mock_report])
 
+    # Register the mock shield as the bus voter — fail-closed consensus
+    # vetoes TRADE_EXECUTION without an affirmative shield report.
+    from trading_bot.core.unified_event_bus import (
+        decision_bus, ActionStatus)
+    await decision_bus.start()
+    decision_bus.register_voter("shield", shield.audit_log_action)
+
+    # TRADE_EXECUTION requires exactly one capital executor — a test that
+    # approves a trade must register one or consensus fails closed.
+    async def _fake_executor(action):
+        action.status = ActionStatus.EXECUTED
+        return {"status": "filled"}
+    decision_bus.subscribe("TRADE_EXECUTION", _fake_executor,
+                           subscriber_id="test_executor")
+
     # 2. Initialize CSC with mocks
     CognitiveSystemController._instance = None
     csc = CognitiveSystemController(world_model=world_model, hms=hms, shield=shield)
@@ -50,7 +69,7 @@ async def test_e2e_pipeline_full_path():
     csc.verifier_swarm = verifier_swarm
 
     # 3. Trigger observation
-    observation = {"symbol": "EURUSD", "price": 1.1000, "volatility": 0.1}
+    observation = {"symbol": "EURUSD", "price": 1.1000, "volatility": 0.01}
     decision = await csc.process_market_observation(observation)
 
     # 4. Assertions
@@ -112,8 +131,11 @@ async def test_pipeline_rejection_by_shield():
     CognitiveSystemController._instance = None
     csc = CognitiveSystemController(shield=shield)
 
-    # Patch internals
-    csc.hypothesis_gen.generate_competing_branches = AsyncMock(return_value=[MagicMock(branch_id="b1")])
+    # Patch internals — directional plan so the proposal reaches the shield.
+    directional = MagicMock(branch_id="b1")
+    directional.execution_plan = {
+        "action": "BUY", "symbol": "EURUSD", "quantity": 0.5}
+    csc.hypothesis_gen.generate_competing_branches = AsyncMock(return_value=[directional])
     csc.hypothesis_gen.simulate_branches = AsyncMock(return_value={"b1": []})
     csc.verifier_swarm = verifier_swarm
 

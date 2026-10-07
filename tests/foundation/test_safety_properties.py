@@ -126,7 +126,7 @@ def _proposal(quantity=1.0, direction="buy"):
     inst = Instrument("EURUSD", InstrumentType.FX, "paper")
     signal = Signal(
         signal_id="sig-1", instrument=inst, direction=direction,
-        confidence=0.8, metadata={"quantity": quantity},
+        confidence=0.8, metadata={"quantity": quantity, "price": 1.10},
     )
     portfolio = PortfolioSnapshot(account_id="acct", equity=100_000.0, cash=99_000.0)
     return DecisionProposal(

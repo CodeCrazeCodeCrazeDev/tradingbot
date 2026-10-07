@@ -46,6 +46,44 @@ async def test_provider_derives_cash_equity_and_exposure(tmp_path) -> None:
 
 
 @pytest.mark.asyncio
+async def test_provider_accounts_short_positions_symmetrically(tmp_path) -> None:
+    repo = SqliteTradingRepository(str(tmp_path / "state.db"))
+    await fill(repo, "s1", OrderSide.SELL, 1.0, 100.0)   # open short
+    await fill(repo, "s2", OrderSide.SELL, 1.0, 90.0)    # add short -> avg 95
+    await fill(repo, "s3", OrderSide.BUY, 1.0, 80.0)     # cover half: +15 realized
+
+    provider = PortfolioStateProvider(repo, initial_equity=1000.0)
+    state = await provider.portfolio_state({"symbol": "EURUSD", "price": 70.0})
+
+    # cash = 1000 + 100 + 90 - 80 = 1110
+    assert state["cash"] == 1110.0
+    # open short 1 @ 95, mark 70 -> equity 1110 - 70 = 1040
+    assert state["equity"] == pytest.approx(1040.0)
+    assert state["open_positions"] == 1
+    # realized 15 + unrealized (95-70)*1=25 -> 40
+    assert state["daily_pnl"] == pytest.approx(40.0)
+
+
+@pytest.mark.asyncio
+async def test_peak_equity_survives_provider_restart(tmp_path) -> None:
+    db = str(tmp_path / "state.db")
+    repo = SqliteTradingRepository(db)
+    await fill(repo, "o1", OrderSide.BUY, 1.0, 100.0)
+
+    provider = PortfolioStateProvider(repo, initial_equity=1000.0)
+    await provider.portfolio_state({"symbol": "EURUSD", "price": 200.0})
+    assert provider._peak_equity == pytest.approx(1100.0)
+
+    # A new provider over the same DB must recover the peak — a fresh
+    # in-memory 1000 peak would under-measure drawdown after restart.
+    repo2 = SqliteTradingRepository(db)
+    provider2 = PortfolioStateProvider(repo2, initial_equity=1000.0)
+    state = await provider2.portfolio_state({"symbol": "EURUSD", "price": 150.0})
+    # equity 1050, peak 1100 -> drawdown 50/1100
+    assert state["drawdown_fraction"] == pytest.approx(50.0 / 1100.0)
+
+
+@pytest.mark.asyncio
 async def test_evaluate_action_uses_provider_state(tmp_path) -> None:
     repo = SqliteTradingRepository(str(tmp_path / "state.db"))
     provider = PortfolioStateProvider(repo, initial_equity=1000.0)
@@ -100,6 +138,7 @@ async def test_evaluate_action_without_provider_keeps_dict_compat() -> None:
     service = CanonicalRiskService()
     result = await service.evaluate_action(
         {"trade_id": "t4", "symbol": "EURUSD", "action": "BUY", "quantity": 1.0, "confidence": 0.8},
-        {"symbol": "EURUSD", "data_quality": "valid", "exposure": 0.01},
+        {"symbol": "EURUSD", "data_quality": "valid", "exposure": 0.01,
+         "close": 1.10, "equity": 10000.0},
     )
     assert result.approved is True

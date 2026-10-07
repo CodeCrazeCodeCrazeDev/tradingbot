@@ -101,7 +101,9 @@ async def test_csc_decision_determinism(monkeypatch):
 
     monkeypatch.setattr(decision_bus, "propose_action", mock_propose_action)
 
-    obs = {"market": {"volatility": 0.12}, "price_action": "BULLISH"}
+    # Normal FX-scale volatility — a 12% sigma is a genuine crisis value and
+    # the recalibrated HASP guardrail now correctly intervenes on it.
+    obs = {"market": {"volatility": 0.001}, "price_action": "BULLISH"}
 
     # Run decision process multiple times
     decisions = []
@@ -158,7 +160,12 @@ async def test_csc_negative_paths_and_failures(monkeypatch):
     csc = CognitiveSystemController(world_model, hms, shield)
 
     from trading_bot.core.csc.hypothesis import ReasoningBranch
-    branch = ReasoningBranch(branch_id="test_neg", name="Negative Case", confidence=0.88)
+    # A directional plan with real size is required for the proposal to reach
+    # the shield stage — plans without measured quantity abstain earlier.
+    branch = ReasoningBranch(
+        branch_id="test_neg", name="Negative Case", confidence=0.88,
+        execution_plan={"action": "BUY", "symbol": "EURUSD", "quantity": 0.5},
+    )
     csc.hypothesis_gen.generate_competing_branches = AsyncMock(return_value=[branch])
     csc.hypothesis_gen.simulate_branches = AsyncMock(return_value={"test_neg": []})
 

@@ -16,7 +16,8 @@ from trading_bot.risk.service import CanonicalRiskService, LegacyRiskPolicyAdapt
 
 def proposal() -> DecisionProposal:
     instrument = Instrument("EURUSD", InstrumentType.FX, "paper")
-    signal = Signal("signal-1", instrument, "buy", 0.9, metadata={"quantity": 1.0})
+    signal = Signal("signal-1", instrument, "buy", 0.9,
+                    metadata={"quantity": 1.0, "price": 1.10})
     state = RiskState("account-1", 10000, 0.01, 0.0, 0.01, 0)
     return DecisionProposal("decision-1", signal, PortfolioSnapshot("account-1", 10000, 10000), state)
 

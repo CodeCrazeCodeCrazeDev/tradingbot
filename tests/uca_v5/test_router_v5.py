@@ -25,8 +25,9 @@ async def test_router_hasp_routing():
 async def test_router_s2l_routing():
     router = SkillRouter()
 
-    # Context needing hedging
-    context = {"market": {"volatility": 0.1}, "needs_hedging": True}
+    # Context needing hedging — normal FX volatility so the HASP crisis
+    # guardrail (which legitimately fires above 0.04) does not pre-empt.
+    context = {"market": {"volatility": 0.001}, "needs_hedging": True}
 
     # The router checks if "hedge" in task.lower()
     result = await router.route_task("hedge_task", context)
