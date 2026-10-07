@@ -96,11 +96,11 @@
     "holdout_end": 1791375300.0,
     "expiry": 1791504000.0
   },
-  "_status": "DRAFT \u2014 unsigned; requires operator Ed25519 signature",
+  "_status": "SHELVED \u2014 both formulations falsified on real data; do not sign",
   "_pre_evidence": {
-    "naive_zscore_mr_measured": "FALSIFIED on 20k real bars: net -0.012 to -0.017 across lookback 20/50/100, gross negative, win_rate ~0.49",
-    "interpretation": "the family as implemented does not carry the edge; a signed evaluation would explore the param space but pre-evidence suggests low yield \u2014 consider whether a different formulation (e.g., longer-horizon reversion, regime-conditional) belongs in the family before signing",
-    "measured_at": "2026-10-07",
-    "cost_bps": 5.0
+    "naive_zscore": "FALSIFIED: net -0.012 to -0.017, 20k bars, gross-negative, ~49% win",
+    "er_gated_regime_conditional": "FALSIFIED: net -0.011 to -0.012, ER<0.3/0.2 gating, win 13-43% \u2014 chop-only entries still lose",
+    "conclusion": "EURUSD M15 offers no z-score reversion edge at 5bps costs; shelving is the honest verdict",
+    "measured_at": "2026-10-07"
   }
 }
