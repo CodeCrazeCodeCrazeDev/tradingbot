@@ -257,6 +257,13 @@ class CognitiveSystemController:
         self._churn_budget = int(kwargs.get("churn_budget", 50))
         self._churn_window = int(kwargs.get("churn_window", 200))
         self._recent_trade_seqs: deque = deque(maxlen=self._churn_window)
+        # EV calibration: predicted-vs-realized pairs from settled
+        # outcomes. Measured on forward data: simulated EV ~+0.0054,
+        # realized ~+0.00004 — raw EV is ~150x optimistic, so the
+        # net-of-cost gate must compare cost to *calibrated* EV.
+        self._ev_pairs: deque = deque(maxlen=int(
+            kwargs.get("ev_calibration_window", 200)))
+        self._ev_min_samples = int(kwargs.get("ev_min_samples", 20))
         # Round-trip cost estimate for the net-of-cost edge gate — a
         # directional proposal whose simulated expected value cannot beat it
         # downgrades to an honest abstention.
@@ -776,6 +783,12 @@ class CognitiveSystemController:
         self.reliability_tracker.update_metrics(
             "csc", regime, bool(was_correct), confidence)
 
+        # EV calibration pair: what the sim predicted vs what settled.
+        _pred_ev = pending.get("expected_return")
+        if (isinstance(_pred_ev, (int, float)) and _pred_ev > 0
+                and isinstance(realized_return, (int, float))):
+            self._ev_pairs.append((float(_pred_ev), float(realized_return)))
+
         # Evidence-based uncertainty update: surprise moves it up, confirmed
         # predictions move it down — bounded and proportional to measured
         # error, not a fixed per-task multiplier.
@@ -885,6 +898,7 @@ class CognitiveSystemController:
     async def _register_directional(
         self, trade_id: str, action: str, symbol: Optional[str],
         price: float, confidence: Any, regime: Any,
+        expected_return: Any = None,
     ) -> None:
         """Attach an approved directional decision to a position.
 
@@ -916,6 +930,7 @@ class CognitiveSystemController:
             "entry_price": existing["entry_price"],
             "confidence": confidence,
             "regime": regime,
+            "expected_return": expected_return,
         }
 
     async def _close_position(
@@ -1539,6 +1554,21 @@ class CognitiveSystemController:
                 decision_proposal, best_branch, sim_results, obs_dict)
         return decision_proposal
 
+    def _ev_calibration_factor(self) -> float:
+        """Shrinkage between simulated and realized EV: mean(realized) /
+        mean(predicted) over recent settled trades, clamped to [0, 1].
+        Insufficient samples -> 1.0 (raw gate; learning needs data).
+        A non-positive realized mean -> 0.0 (no proposal earns approval).
+        """
+        if len(self._ev_pairs) < self._ev_min_samples:
+            return 1.0
+        preds = [p for p, _ in self._ev_pairs]
+        mean_p = float(np.mean(preds))
+        mean_r = float(np.mean([r for _, r in self._ev_pairs]))
+        if mean_p <= 0 or mean_r <= 0:
+            return 0.0
+        return float(np.clip(mean_r / mean_p, 0.0, 1.0))
+
     def _apply_net_of_cost_gate(
         self, proposal: Dict[str, Any], branch: ReasoningBranch,
         sim_results: Dict[str, Any], obs_dict: Dict[str, Any],
@@ -1561,11 +1591,18 @@ class CognitiveSystemController:
             round_trip_cost = 2.0 * float(cost_bps) / 1e4
         except (TypeError, ValueError):
             round_trip_cost = 2.0 * self._default_cost_bps / 1e4
-        if not isinstance(ev, (int, float)) or ev < round_trip_cost:
+        # Calibrate before comparing: raw simulated EV systematically
+        # overestimates (~150x measured); the gate compares cost to what
+        # trades of this kind actually earned, not what the sim hoped.
+        cal = self._ev_calibration_factor()
+        ev_cal = ev * cal if isinstance(ev, (int, float)) else ev
+        if not isinstance(ev_cal, (int, float)) or ev_cal < round_trip_cost:
             proposal["action"] = "HOLD"
             proposal["downgraded_reason"] = (
-                f"insufficient net edge: simulated EV {ev} < "
-                f"round-trip cost {round_trip_cost:.6f}")
+                f"insufficient net edge: calibrated EV "
+                f"{ev_cal if isinstance(ev_cal, (int, float)) else ev} "
+                f"< round-trip cost {round_trip_cost:.6f} "
+                f"(calibration {cal:.4f})")
             proposal["downgraded_from"] = action
 
     class _UnavailableGovernanceGate:
@@ -1890,7 +1927,8 @@ class CognitiveSystemController:
                 trade_id, action_name, proposal.get("symbol"), float(price),
                 confidence=proposal.get("confidence", 0.5),
                 regime=(obs_dict or {}).get("trend")
-                    or (obs_dict or {}).get("regime") or "unknown")
+                    or (obs_dict or {}).get("regime") or "unknown",
+                expected_return=proposal.get("expected_return"))
         await self._persist_audit_event(
             event_type="DECISION",
             action=action_name,

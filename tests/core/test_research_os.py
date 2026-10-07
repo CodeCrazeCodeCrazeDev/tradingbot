@@ -639,6 +639,22 @@ class TestResearchCycle:
                      if s > c._observation_seq - c._churn_window)
         assert recent >= c._churn_budget
 
+    def test_ev_calibration_shrinks_to_measured_reality(self):
+        CognitiveSystemController._instance = None
+        c = CognitiveSystemController()
+        # Below min samples -> factor 1.0 (raw gate).
+        assert c._ev_calibration_factor() == 1.0
+        # Measured pattern: predicted +0.0054, realized +0.00004.
+        for _ in range(30):
+            c._ev_pairs.append((0.0054, 0.00004))
+        factor = c._ev_calibration_factor()
+        assert 0.0 < factor < 0.01  # ~0.0074
+        # Negative realized mean -> factor 0 (nothing earns approval).
+        c._ev_pairs.clear()
+        for _ in range(30):
+            c._ev_pairs.append((0.0054, -0.0001))
+        assert c._ev_calibration_factor() == 0.0
+
     def test_capability_proposal_never_promotes(self, csc):
         engine = csc.configure_research()
         prop = engine.propose_capability("nonexistent")
