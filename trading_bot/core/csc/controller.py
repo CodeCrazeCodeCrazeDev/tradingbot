@@ -245,6 +245,11 @@ class CognitiveSystemController:
         self._obs_history: Dict[str, "deque"] = {}
         # Max holding period in observations before a position auto-closes.
         self._position_max_hold = int(kwargs.get("position_horizon", 8))
+        # Evidence-backed cadence: OOS replication on two independent
+        # windows shows per-bar decisions lose the gross edge to costs;
+        # stride>1 decides every Nth bar (settlement/features/research
+        # still run every bar — only the decision is cadenced).
+        self._decision_stride = max(1, int(kwargs.get("decision_stride", 1)))
         # Round-trip cost estimate for the net-of-cost edge gate — a
         # directional proposal whose simulated expected value cannot beat it
         # downgrades to an honest abstention.
@@ -1959,6 +1964,26 @@ class CognitiveSystemController:
         # the live outcome path. A decision approved at observation t is
         # scored against the realized move by observation t+horizon.
         await self._settle_pending_predictions(obs_dict)
+
+        # 0.6. Cadence gate: decide every Nth bar. Everything above still
+        # ran — history, enrichment, settlement, research scheduling — so
+        # a skipped bar costs nothing but the decision itself.
+        if (self._decision_stride > 1
+                and self._observation_seq % self._decision_stride != 0):
+            await self._persist_audit_event(
+                event_type="DECISION",
+                action="HOLD",
+                outcome="ABSTAIN",
+                correlation_id=trade_id,
+                details={"symbol": obs_dict.get("symbol"),
+                         "reason": "cadence_skip",
+                         "stride": self._decision_stride})
+            return CoreDecision(
+                outcome=DecisionOutcome.ABSTAIN,
+                trade_id=trade_id,
+                dominant_rejection_reason=(
+                    f"cadence gate: deciding every "
+                    f"{self._decision_stride} bars"))
 
         # 1. Perception
         await self._stage_perception(obs_dict)

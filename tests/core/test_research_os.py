@@ -607,6 +607,24 @@ class TestResearchCycle:
         assert getattr(m, "total_predictions", 0) == 5
         assert abs(getattr(m, "precision", 0) - 0.6) < 1e-9
 
+    @pytest.mark.asyncio
+    async def test_decision_stride_cadences_approvals(self):
+        # stride=4: bars 1-3 must abstain (cadence), bar 4 may decide.
+        CognitiveSystemController._instance = None
+        c = CognitiveSystemController(decision_stride=4)
+        outcomes = []
+        for i in range(1, 9):
+            d = await c.process_market_observation(
+                {**_market(), "price": 1.08 + i * 0.0001})
+            outcomes.append(getattr(d, "outcome", None))
+        # 6 of 8 bars are skipped by the gate; 2 (seq 4, 8) run the pipeline.
+        cadence_skips = sum(
+            1 for i, o in enumerate(outcomes, start=1) if i % 4 != 0)
+        assert cadence_skips == 6
+        for i, o in enumerate(outcomes, start=1):
+            if i % 4 != 0:
+                assert o is not None and o.name == "ABSTAIN"
+
     def test_capability_proposal_never_promotes(self, csc):
         engine = csc.configure_research()
         prop = engine.propose_capability("nonexistent")

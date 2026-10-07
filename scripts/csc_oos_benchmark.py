@@ -125,11 +125,17 @@ async def main_async(args) -> int:
     test_rows = rows[cut:]
     if args.max_bars:
         test_rows = test_rows[:args.max_bars]
+    if args.stride > 1:
+        # Lower-frequency variant: decide every Nth bar, hold across the
+        # skipped ones. Bar returns become N-bar returns — turnover falls,
+        # gross edge per decision stays honest.
+        test_rows = test_rows[::args.stride]
     closes_hist = [float(r[4]) for r in rows[:cut]]
     print(f"{n_total} bars | train {cut} (context only) | OOS {len(test_rows)}")
 
     CognitiveSystemController._instance = None
-    csc = CognitiveSystemController()
+    csc = CognitiveSystemController(
+        position_horizon=args.position_horizon)
 
     # The benchmark is evaluation, not execution — but TRADE_EXECUTION
     # fails closed without exactly one executor, so approved decisions
@@ -224,6 +230,10 @@ def main(argv=None) -> int:
                         "(independent of the comparator's scoring cost)")
     p.add_argument("--min-decisions", type=int, default=20)
     p.add_argument("--momentum-lookback", type=int, default=10)
+    p.add_argument("--stride", type=int, default=1,
+                   help="evaluate every Nth OOS bar (lower-frequency variant)")
+    p.add_argument("--position-horizon", type=int, default=8,
+                   help="max bars a position is held before settlement")
     p.add_argument("--max-bars", type=int, default=0,
                    help="cap OOS bars for a quick smoke run (0 = all)")
     args = p.parse_args(argv)
