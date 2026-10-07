@@ -65,7 +65,9 @@ _CONST_DEFAULTS: Dict[str, int] = {
     "TRADE_ACTION_REMOVE": 2,
     "TRADE_ACTION_PENDING": 5,
     "ORDER_TIME_GTC": 0,
+    "ORDER_FILLING_FOK": 0,
     "ORDER_FILLING_IOC": 1,
+    "ORDER_FILLING_RETURN": 2,
     "TRADE_RETCODE_DONE": 10009,
     "TRADE_RETCODE_DONE_PARTIAL": 10010,
     "TRADE_RETCODE_REQUOTE": 10004,
@@ -108,7 +110,9 @@ _CONST_DEFAULTS: Dict[str, int] = {
 
 ALLOWED_TIMEFRAMES = frozenset({"M15"})
 COMMENT_PREFIX = "aalg-"        # client_order_id embedded in order comments
-MAX_COMMENT_LEN = 31
+# MetaQuotes-Demo (and some builds of the Python SDK) reject comments >= 30
+# bytes despite the documented 31-char limit; observed on live demo 2026-10-07.
+MAX_COMMENT_LEN = 29
 
 
 class MT5AdapterError(RuntimeError):
@@ -183,17 +187,30 @@ class MT5DemoAdapter:
             raise MT5AdapterError(
                 f"timeframe {self.timeframe!r} outside the demo profile "
                 f"{sorted(ALLOWED_TIMEFRAMES)}")
-        if not client.initialize():
-            raise MT5AdapterError(f"MT5 initialize failed: {client.last_error()}")
-
         login = self._resolve_secret("login_env", "MT5_LOGIN")
         password = self._resolve_secret("password_env", "MT5_PASSWORD")
         server = self._resolve_secret("server_env", "MT5_SERVER")
         if not login or not password or not server:
-            client.shutdown()
             raise MT5AdapterError(
                 "MT5 demo credentials not provisioned (expected env secrets "
                 "MT5_LOGIN / MT5_PASSWORD / MT5_SERVER or configured *_env names)")
+
+        # initialize() needs the credentials inline when the terminal is not
+        # already running + logged in; a bare initialize() only attaches to an
+        # existing authorized session.
+        init_kwargs: Dict[str, Any] = {
+            "login": int(login), "password": password, "server": server,
+        }
+        terminal_path = self.config.get("terminal_path")
+        try:
+            initialized = (client.initialize(terminal_path, **init_kwargs)
+                           if terminal_path else client.initialize(**init_kwargs))
+        except TypeError:
+            # Fake clients and older SDKs take no kwargs.
+            initialized = client.initialize()
+        if not initialized:
+            raise MT5AdapterError(
+                f"MT5 initialize failed: {client.last_error()}")
         if not client.login(int(login), password, server):
             client.shutdown()
             raise MT5AdapterError(f"MT5 login failed: {client.last_error()}")
@@ -310,6 +327,19 @@ class MT5DemoAdapter:
             self._reports[order.client_order_id] = report
             return report
 
+        # The upstream risk decision is only valid if the proposal's
+        # instrument spec matches the venue contract — a synthetic instrument
+        # with contract_size=1.0 would silently understate notional 100,000x.
+        req_cs = float(getattr(order.instrument, "contract_size", 0.0) or 0.0)
+        if abs(req_cs - self._contract_size) > 1e-8:
+            report = ExecutionReport(
+                client_order_id=order.client_order_id,
+                status=OrderStatus.REJECTED,
+                error=f"instrument contract_size {req_cs} != venue "
+                      f"{self._contract_size} — risk evaluated wrong notional")
+            self._reports[order.client_order_id] = report
+            return report
+
         volume, volume_error = self._check_volume(order.quantity)
         if volume_error:
             report = ExecutionReport(
@@ -358,6 +388,20 @@ class MT5DemoAdapter:
                 status=OrderStatus.REJECTED,
                 error="stale market tick (>60s) — refusing to price")
 
+        # MetaQuotes-Demo (and many brokers) support FOK only; pick the
+        # filling mode the symbol's bitmask actually advertises instead of
+        # hardcoding IOC.
+        fill_modes = [
+            _const(client, "ORDER_FILLING_FOK"),
+            _const(client, "ORDER_FILLING_IOC"),
+            _const(client, "ORDER_FILLING_RETURN"),
+        ]
+        # SYMBOL_FILLING_* is a bitmask where bit (1 << ORDER_FILLING_*) is set
+        # for each supported policy (FOK=1, IOC=2, BOC=4 on MetaQuotes-Demo).
+        supported = getattr(client.symbol_info(self.symbol), "filling_mode", 0)
+        chosen = next(
+            (m for m in fill_modes if supported & (1 << m)), fill_modes[0])
+
         base = {
             "symbol": self.symbol,
             "volume": volume,
@@ -365,7 +409,7 @@ class MT5DemoAdapter:
             "magic": self.magic,
             "comment": _comment(order.client_order_id),
             "type_time": _const(client, "ORDER_TIME_GTC"),
-            "type_filling": _const(client, "ORDER_FILLING_IOC"),
+            "type_filling": chosen,
         }
         position_ticket = order.metadata.get("position_ticket")
         if position_ticket is not None:
@@ -607,11 +651,15 @@ class MT5DemoAdapter:
 
     async def reconcile(self, portfolio: Optional[PortfolioSnapshot] = None) -> ReconciliationResult:
         venue_positions = await self.get_positions()
-        actual = {p.instrument.symbol: p.quantity for p in venue_positions}
-        expected = {
-            p.instrument.symbol: p.quantity
-            for p in (portfolio.positions if portfolio else [])
-        }
+        # Aggregate per symbol — hedging mode returns one row per ticket.
+        actual: Dict[str, float] = {}
+        for p in venue_positions:
+            sym = p.instrument.symbol
+            actual[sym] = actual.get(sym, 0.0) + float(p.quantity)
+        expected: Dict[str, float] = {}
+        for p in (portfolio.positions if portfolio else []):
+            sym = p.instrument.symbol
+            expected[sym] = expected.get(sym, 0.0) + float(p.quantity)
         differences = [
             sym for sym in sorted(set(expected) | set(actual))
             if abs(expected.get(sym, 0.0) - actual.get(sym, 0.0)) > 1e-8

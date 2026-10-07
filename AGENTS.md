@@ -75,7 +75,33 @@ python -m pytest tests/execution/test_fault_gate.py            # small scale
 # MT5 demo preflight — READ-ONLY, requires rotated demo-only credentials.
 # Runs under the hermes env (MetaTrader5 SDK); never sends an order.
 python scripts/mt5_preflight.py --authorize-connect
+
+# MT5 demo runner — live M15 bars, demo-only execution through the
+# canonical CSC→risk→shield→governance→bus→execution pipeline.
+# --replay N validates on the last N closed bars; --follow polls for each
+# new closed M15 bar (soak). --auto-approve opts in to autonomous demo
+# trading (audited); omit it to require per-trade operator decision files.
+python scripts/mt5_demo_runner.py --replay 30 --auto-approve \
+  --state-dir var/mt5_demo
+python scripts/mt5_demo_runner.py --follow --cycles 8 --dashboard-port 8080
 ```
+
+### MT5 venue quirks (observed on MetaQuotes-Demo, 2026-10-07)
+
+- `common.ini` `[Experts] Enabled=1` is the AutoTrading toggle — edit it and
+  restart `terminal64.exe` to enable algo trading headlessly. `Api=0` is
+  correct; setting it to 1 *disables* API trading (inverted semantics).
+- The Python SDK rejects order `comment` strings ≥30 bytes despite the
+  documented 31-char limit — the adapter caps comments at 29.
+- `SYMBOL_FILLING_*` is a bitmask where bit `1 << ORDER_FILLING_*` marks
+  support; MetaQuotes-Demo EURUSD is FOK-only (`filling_mode=1`). The
+  adapter probes the mask rather than hardcoding IOC.
+- Hedging accounts return one row per ticket from `positions_get`;
+  reconciliation aggregates signed quantity per symbol before comparing
+  to the ledger.
+- `quantity` on a proposal is unit intent — the risk service is the
+  sizing authority and clamps to the venue volume grid (`volume_step`/
+  `volume_min` fields on the observation).
 
 ## Credential status
 

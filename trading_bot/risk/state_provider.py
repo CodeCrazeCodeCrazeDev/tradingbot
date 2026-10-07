@@ -154,3 +154,95 @@ class PortfolioStateProvider:
         except (TypeError, ValueError):
             return {}
         return {}
+
+
+class VenueBackedStateProvider(PortfolioStateProvider):
+    """Portfolio state sourced from the connected venue's account.
+
+    The ledger cash model (``cash -= qty * price``) is a spot-equity model;
+    margin venues like MT5 move cash only on realized PnL and carry positions
+    at full notional * contract_size. For ``mt5_demo`` this provider takes
+    equity/balance/margin/positions from the venue account and applies the
+    contract spec when computing exposure, while still deriving daily
+    realized PnL and the peak-equity watermark from the durable ledger.
+    """
+
+    def __init__(self, repository: SqliteTradingRepository,
+                 adapter: Any, **kwargs: Any) -> None:
+        super().__init__(repository, **kwargs)
+        self._adapter = adapter
+
+    async def portfolio_state(
+        self, observation: Optional[Mapping[str, Any]] = None
+    ) -> Dict[str, Any]:
+        client = getattr(self._adapter, "_client", None)
+        info = client.account_info() if client is not None else None
+        if info is None:
+            raise RuntimeError("venue account_info unavailable — fail closed")
+        equity = float(getattr(info, "equity", 0.0))
+        balance = float(getattr(info, "balance", equity))
+
+        marks = self._marks(observation)
+        positions = await self._adapter.get_positions()
+        exposure_notional = 0.0
+        unrealized_pnl = 0.0
+        open_positions = 0
+        for position in positions:
+            qty = float(position.quantity)
+            if qty == 0:
+                continue
+            open_positions += 1
+            cs = float(position.instrument.contract_size or 1.0)
+            mark = marks.get(position.instrument.symbol,
+                             float(position.average_price))
+            exposure_notional += abs(qty) * mark * cs
+            unrealized_pnl += float(position.unrealized_pnl or 0.0)
+
+        # Daily realized PnL still folds from the durable ledger — the venue
+        # does not expose a daily cutoff without a history query.
+        fills = await self.repository.list_fills()
+        today = datetime.now(timezone.utc).date().isoformat()
+        book: Dict[str, list] = {}
+        daily_realized = 0.0
+        for fill in fills:
+            symbol = str(fill["symbol"])
+            quantity = float(fill["quantity"])
+            price = float(fill["price"])
+            qty, cost = book.get(symbol, [0.0, 0.0])
+            signed = quantity if fill["side"] == "buy" else -quantity
+            realized = 0.0
+            if qty == 0:
+                book[symbol] = [signed, price]
+            elif qty * signed > 0:
+                net = qty + signed
+                book[symbol] = [net, (qty * cost + signed * price) / net]
+            else:
+                closed = min(abs(signed), abs(qty))
+                realized = closed * (price - cost) * (1.0 if qty > 0 else -1.0)
+                net = qty + signed
+                book[symbol] = [
+                    net,
+                    cost if (qty * net > 0) else (price if net != 0 else 0.0),
+                ]
+            if realized and str(fill.get("occurred_at") or "").startswith(today):
+                daily_realized += realized
+
+        peak = await self._peak(equity)
+        return {
+            "account_id": self.account_id,
+            "equity": equity,
+            "cash": balance,
+            "portfolio_exposure": (
+                exposure_notional / equity if equity > 0 else 1.0),
+            "daily_pnl": daily_realized + unrealized_pnl,
+            "drawdown_fraction": (
+                (peak - equity) / peak if peak > 0 else 0.0),
+            "open_positions": open_positions,
+        }
+        price = observation.get("price", observation.get("close"))
+        try:
+            if symbol and price and float(price) > 0:
+                return {str(symbol): float(price)}
+        except (TypeError, ValueError):
+            return {}
+        return {}

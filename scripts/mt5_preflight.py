@@ -63,6 +63,7 @@ async def run_preflight(args) -> int:
         "login_env": args.login_env,
         "password_env": args.password_env,
         "server_env": args.server_env,
+        "terminal_path": args.terminal_path or None,
     })
 
     # -- 1-8: connect() runs credential resolution, login, and all
@@ -182,6 +183,8 @@ def main(argv=None) -> int:
     parser.add_argument("--login-env", default="MT5_LOGIN")
     parser.add_argument("--password-env", default="MT5_PASSWORD")
     parser.add_argument("--server-env", default="MT5_SERVER")
+    parser.add_argument("--terminal-path", default=None,
+                        help="path to terminal64.exe; auto-detected when omitted")
     parser.add_argument("--state-db", default="var/paper/trading_state.db")
     parser.add_argument("--out", default=None)
     args = parser.parse_args(argv)
@@ -192,6 +195,15 @@ def main(argv=None) -> int:
               "(2) the provisioned credentials are for a DEMO account only.",
               file=sys.stderr)
         return 2
+
+    if not args.terminal_path:
+        for candidate in (
+            r"C:\Program Files\MetaTrader 5\terminal64.exe",
+            r"C:\Program Files (x86)\MetaTrader 5\terminal64.exe",
+        ):
+            if Path(candidate).exists():
+                args.terminal_path = candidate
+                break
 
     return asyncio.run(run_preflight(args))
 

@@ -46,7 +46,9 @@ class FakeMT5:
         self.symbol = _ns(name=symbol_name, visible=visible,
                           trade_mode=symbol_trade_mode,
                           volume_min=volume_min, volume_max=volume_max,
-                          volume_step=volume_step, trade_contract_size=100000.0)
+                          volume_step=volume_step, trade_contract_size=100000.0,
+                          # SYMBOL_FILLING_IOC (bit 1) — IOC supported
+                          filling_mode=2)
         self.tick = _ns(bid=1.1000, ask=1.1002,
                         time=datetime.now(timezone.utc).timestamp() - tick_age_s)
         self.send_result = send_result
@@ -132,7 +134,8 @@ def make_adapter(client: FakeMT5, **cfg) -> MT5DemoAdapter:
 def _eurusd_order(**kw) -> OrderRequest:
     kw.setdefault("client_order_id", "cid-1")
     return OrderRequest(
-        instrument=Instrument("EURUSD", InstrumentType.FX, "mt5_demo"),
+        instrument=Instrument("EURUSD", InstrumentType.FX, "mt5_demo",
+                              contract_size=100000.0),
         side=kw.pop("side", OrderSide.BUY),
         order_type=OrderType.MARKET,
         quantity=kw.pop("quantity", 0.10),

@@ -88,7 +88,7 @@ class UnifiedTradingBot:
         """Boot all infrastructure and register components exactly once."""
         if self.running:
             return
-        if self.execution_mode not in {"paper", "analysis"}:
+        if self.execution_mode not in {"paper", "analysis", "mt5_demo"}:
             raise RuntimeError(
                 f"Execution mode '{self.execution_mode}' is not wired to the canonical execution service; "
                 "refusing to silently fall back to paper trading."
@@ -204,18 +204,50 @@ class UnifiedTradingBot:
         registry.register("trading_repository", self.trading_repository, "Persistence", overwrite=True)
         # Authoritative portfolio state for risk evaluation: derived from
         # persisted fills/positions, never fabricated defaults.
-        from trading_bot.risk.state_provider import PortfolioStateProvider
-        self.risk_service.state_provider = PortfolioStateProvider(
-            repository=self.trading_repository,
-            initial_equity=self.config.get("initial_equity", 10000.0),
-            account_id=self.config.get("account_id", "runtime"),
-        )
+        from trading_bot.risk.state_provider import (
+            PortfolioStateProvider, VenueBackedStateProvider)
+        if self.execution_mode == "mt5_demo":
+            # Demo-only MT5 adapter — connect() itself hard-fails on any
+            # non-DEMO account; credentials resolve through the canonical
+            # credential provider (env names configurable).
+            from trading_bot.brokers.mt5_demo import MT5DemoAdapter
+            adapter = MT5DemoAdapter(config=self.config.get("mt5", {}))
+            await adapter.connect()  # demo-only validation happens here
+            self.execution_service = CanonicalExecutionService(
+                adapter=adapter, mode="mt5_demo",
+                repository=self.trading_repository)
+            # Venue-backed risk state: margin-FX accounting needs the real
+            # account equity/positions, not the spot-model ledger cash.
+            self.risk_service.state_provider = VenueBackedStateProvider(
+                repository=self.trading_repository,
+                adapter=adapter,
+                initial_equity=self.config.get("initial_equity", 10000.0),
+                account_id=self.config.get("account_id", "runtime"))
+        else:
+            self.execution_service = CanonicalExecutionService(
+                mode="paper", repository=self.trading_repository
+            )
+            self.risk_service.state_provider = PortfolioStateProvider(
+                repository=self.trading_repository,
+                initial_equity=self.config.get("initial_equity", 10000.0),
+                account_id=self.config.get("account_id", "runtime"),
+            )
         registry.register("portfolio_state_provider", self.risk_service.state_provider, "Risk", overwrite=True)
-        self.execution_service = CanonicalExecutionService(
-            mode="paper", repository=self.trading_repository
-        )
         registry.register("execution_service", self.execution_service, "Execution", overwrite=True)
-        self.bridge = PaperExecutionBridge(execution_service=self.execution_service)
+        # Bridge carries the venue's real instrument spec so the risk gate
+        # sees the true contract size (e.g. 100k units per FX lot on MT5).
+        bridge_spec: Dict[str, Any] = {}
+        if self.execution_mode == "mt5_demo":
+            bridge_spec = {
+                "instrument_type": "fx",
+                "venue": "mt5_demo",
+                "contract_size": getattr(
+                    getattr(self.execution_service, "adapter", None),
+                    "_contract_size", 100000.0),
+            }
+        self.bridge = PaperExecutionBridge(
+            execution_service=self.execution_service,
+            instrument_spec=bridge_spec)
         self.bridge.attach(decision_bus)
         registry.register("execution_bridge", self.bridge, "Execution", overwrite=True)
         # Paper venue state derives from the durable ledger; restore it so
@@ -299,6 +331,9 @@ class UnifiedTradingBot:
             self.layers["human"]["approval_gate"].set_trading_mode(
                 self.execution_mode
             )
+            if self.execution_mode == "mt5_demo":
+                self.layers["human"]["approval_gate"].set_demo_auto_approve(
+                    bool(self.config.get("mt5", {}).get("auto_approve")))
             registry.register("human_approval_gate", self.layers["human"]["approval_gate"], "Governance", overwrite=True)
             registry.register(
                 "human_approval_policy",
@@ -472,6 +507,13 @@ class UnifiedTradingBot:
                 logger.warning("UnifiedTradingBot: evolution orchestrator stop failed", exc_info=True)
         if self.bridge is not None:
             logger.info("Paper execution summary: %s", self.bridge.get_summary())
+        adapter = getattr(self.execution_service, "adapter", None)
+        if adapter is not None and hasattr(adapter, "disconnect"):
+            try:
+                await adapter.disconnect()
+            except Exception:
+                logger.warning("UnifiedTradingBot: adapter disconnect failed",
+                               exc_info=True)
         if self.trading_repository is not None:
             self.trading_repository.close()
         await decision_bus.stop()

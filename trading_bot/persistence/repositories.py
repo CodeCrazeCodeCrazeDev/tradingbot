@@ -473,8 +473,16 @@ class SqliteTradingRepository:
 
     async def reconcile(self, expected: PortfolioSnapshot, venue: str = "repository") -> ReconciliationResult:
         actual = await self.snapshot(expected.account_id)
-        expected_quantities = {position.instrument.symbol: position.quantity for position in expected.positions}
-        actual_quantities = {position.instrument.symbol: position.quantity for position in actual.positions}
+        # Sum per symbol — a hedging venue can return multiple tickets for the
+        # same symbol; a dict comprehension would keep only the last ticket.
+        expected_quantities: Dict[str, float] = {}
+        for position in expected.positions:
+            sym = position.instrument.symbol
+            expected_quantities[sym] = expected_quantities.get(sym, 0.0) + float(position.quantity)
+        actual_quantities: Dict[str, float] = {}
+        for position in actual.positions:
+            sym = position.instrument.symbol
+            actual_quantities[sym] = actual_quantities.get(sym, 0.0) + float(position.quantity)
         differences = [
             symbol for symbol in sorted(set(expected_quantities) | set(actual_quantities))
             if expected_quantities.get(symbol, 0.0) != actual_quantities.get(symbol, 0.0)

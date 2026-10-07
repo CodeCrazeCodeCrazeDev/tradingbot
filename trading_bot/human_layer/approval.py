@@ -185,6 +185,11 @@ class HumanApprovalGate:
         
         # Trading mode (affects approval requirements)
         self._trading_mode = self.config.get('trading_mode', 'paper')
+        # Explicit opt-in: an mt5_demo account moves no real capital, so an
+        # authorized demo soak may map STANDARD approvals to the paper path.
+        # Default off — a demo run without this flag still requires a human.
+        self._demo_auto_approve = bool(
+            self.config.get('demo_auto_approve', False))
         
         logger.info("HumanApprovalGate initialized")
     
@@ -196,8 +201,10 @@ class HumanApprovalGate:
         """Check if approval is required for an action"""
         level = self.get_approval_level(action)
         
-        # In paper mode, reduce approval requirements
-        if self._trading_mode == 'paper':
+        # In paper mode, reduce approval requirements; mt5_demo matches
+        # paper only when the operator explicitly opted in.
+        if self._trading_mode == 'paper' or (
+                self._trading_mode == 'mt5_demo' and self._demo_auto_approve):
             if level in [ApprovalLevel.STANDARD, ApprovalLevel.NOTIFY]:
                 return False
         
@@ -246,7 +253,10 @@ class HumanApprovalGate:
         
         # Paper-mode reduction mirrors is_approval_required(): STANDARD
         # actions auto-pass without a human when not trading real capital.
-        if self._trading_mode == 'paper' and level == ApprovalLevel.STANDARD:
+        # mt5_demo gets the same reduction only under explicit opt-in.
+        if level == ApprovalLevel.STANDARD and (
+                self._trading_mode == 'paper'
+                or (self._trading_mode == 'mt5_demo' and self._demo_auto_approve)):
             return True
         
         # Create approval request
@@ -459,6 +469,12 @@ class HumanApprovalGate:
         """Set trading mode (affects approval requirements)"""
         self._trading_mode = mode
         logger.info(f"Trading mode set to: {mode}")
+
+    def set_demo_auto_approve(self, enabled: bool) -> None:
+        """Opt-in: STANDARD approvals auto-pass in mt5_demo mode."""
+        self._demo_auto_approve = bool(enabled)
+        logger.info("Demo auto-approve %s",
+                    "ENABLED" if self._demo_auto_approve else "disabled")
 
 
 # =============================================================================

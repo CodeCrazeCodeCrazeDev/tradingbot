@@ -112,13 +112,18 @@ class PaperExecutionBridge:
     def __init__(self, persist_path: str = "alphaalgo_data/paper_fills.jsonl",
                  slippage: Optional[SlippageRecorder] = None,
                  execution_service: Any = None,
-                 submit_timeout: Optional[float] = 30.0):
+                 submit_timeout: Optional[float] = 30.0,
+                 instrument_spec: Optional[Dict[str, Any]] = None):
         self.persist_path = persist_path  # legacy arg; no longer written
         self.fills: List[PaperFill] = []
         self.positions: Dict[str, float] = {}
         self.attached = False
         self.slippage = slippage or SlippageRecorder()
         self.execution_service = execution_service
+        # Instrument spec for the venue the orders will actually reach —
+        # contract_size/venue must reflect the venue, or the risk gate
+        # evaluates notional in the wrong units (default = paper synthetic).
+        self.instrument_spec = instrument_spec or {}
         # Broker-call deadline: a hung submit resolves to a durable UNKNOWN
         # report reconciled later via broker lookup — never a silent retry.
         self.submit_timeout = submit_timeout
@@ -226,8 +231,13 @@ class PaperExecutionBridge:
             OrderType,
         )
 
+        spec = self.instrument_spec
         typed_order = OrderRequest(
-            instrument=Instrument(symbol, InstrumentType.SYNTHETIC, "paper"),
+            instrument=Instrument(
+                symbol,
+                InstrumentType(spec.get("instrument_type", "synthetic")),
+                spec.get("venue", "paper"),
+                contract_size=float(spec.get("contract_size", 1.0))),
             side=OrderSide.BUY if side in ("BUY", "STRONG_BUY") else OrderSide.SELL,
             order_type=OrderType.MARKET,
             quantity=float(quantity),

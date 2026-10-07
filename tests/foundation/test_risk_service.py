@@ -58,11 +58,16 @@ async def test_risk_service_rejects_projected_exposure_breach() -> None:
 
     # Within quantity limit but projected notional blows past the cap:
     # 9 lots at mark 1.10 * contract 100000 = $990k -> +9900% exposure.
+    # With a venue quantity increment the risk stage is the sizing
+    # authority: the proposal is clamped to the largest permitted size —
+    # and when that size floors below the venue grid, it rejects.
     instrument = Instrument(
-        "EURUSD", InstrumentType.FX, "paper", contract_size=100000)
+        "EURUSD", InstrumentType.FX, "paper", contract_size=100000,
+        quantity_increment=0.01)
     signal = Signal(
         signal_id="s", instrument=instrument, direction="buy",
-        confidence=0.9, metadata={"quantity": 9.0, "price": 1.10})
+        confidence=0.9,
+        metadata={"quantity": 9.0, "price": 1.10, "quantity_min": 0.01})
     proposal = DecisionProposal(
         decision_id="d", signal=signal,
         portfolio=PortfolioSnapshot("account-1", 10000, 10000),
@@ -70,6 +75,17 @@ async def test_risk_service_rejects_projected_exposure_breach() -> None:
     result = await service.evaluate(proposal, proposal.risk_state)
     assert result.approved is False
     assert "projected_exposure_limit" in result.reason
+
+    # Same breach on an account large enough for a valid clamp: sized to
+    # the headroom, floored to the venue step.
+    big = DecisionProposal(
+        decision_id="d2", signal=signal,
+        portfolio=PortfolioSnapshot("account-1", 1e9, 1e9),
+        risk_state=RiskState("account-1", 1e9, 0.0, 0, 0.01, 0))
+    clamped = await service.evaluate(big, big.risk_state)
+    # headroom 5% * $1e9 / (1.10 * 100k) ~= 454 lots -> min(9, ~454) = 9
+    assert clamped.approved is True
+    assert clamped.approved_quantity == 9.0
 
 
 @pytest.mark.asyncio
