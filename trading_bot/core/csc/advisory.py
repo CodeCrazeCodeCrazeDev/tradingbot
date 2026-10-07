@@ -136,20 +136,28 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("market_anomaly_detection", _anomaly_service),
 )
 
+# Modules imported by the live path but with no advisory decision role —
+# wired as dependencies, not as cognition (kept separate from orphans so
+# the audit map stays honest).
+LIVE_IMPORTED_NON_ADVISORY: Tuple[Tuple[str, str], ...] = (
+    ("world_model", "imported by unified_bot.py — live dependency, "
+     "not an advisory service"),
+    ("alpha_engine", "imported by execution/__init__.py — live "
+     "dependency, sentiment stack not in the decision path"),
+    ("autonomous_financial_intelligence", "imported by "
+     "core/chainofthoughtreasoner.py — legacy compat, no decision role"),
+)
+
 # Orphan modules that are NOT observation-callable advisory services —
 # recorded so the audit map is total rather than silently partial.
 UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
     ("advanced_intelligence", "monolithic research framework; not an "
      "observation service"),
-    ("autonomous_financial_intelligence", "framework; heavyweight "
-     "agent fleet, no per-observation API"),
     ("autonomous_superintelligence", "parallel brain concept; superseded "
      "by CSC assembly"),
     ("core_agent_system", "agent framework; subsumed by PCA channel"),
     ("adaptive_systems", "deprecated duplicate improvement systems"),
     ("alpha_research", "research tooling; not a per-observation analyzer"),
-    ("alpha_engine", "sentiment/alpha pipeline; heavyweight, external "
-     "data dependencies"),
     ("alphaalgo_core", "institutional pipeline; superseded by cognition "
      "advisory"),
     ("alphaalgo_institutional", "institutional pipeline; superseded"),
@@ -185,6 +193,8 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
     ("aamis_v3", "alternate market intelligence; superseded"),
     ("learning", "RL learners; offline training, not advisory"),
     ("agents", "debate attached; remaining framework pieces superseded"),
+    ("agents2", "duplicate agent framework; superseded"),
+    ("autonomous_learner", "deprecated RSI duplicate per AGENTS.md"),
     ("explainability", "post-hoc explainer; not an advisory service"),
     ("aletheia_autonomous", "framework; superseded"),
 )
