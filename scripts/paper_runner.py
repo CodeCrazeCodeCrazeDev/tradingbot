@@ -142,14 +142,14 @@ async def run(args: argparse.Namespace) -> int:
         csc._decision_stride = args.decision_stride
         logger.info("decision_stride=%d applied to CSC (cadenced decisions)",
                     args.decision_stride)
-    # Attach the research OS to live operation: forward outcomes then feed
-    # REAL_WORLD(venue=paper) evidence into the KG on every position close,
-    # auto-cycles run every research_interval observations, and the durable
-    # audit stream rehydrates KG/policy/reliability on first use.
+    # Assemble the ONE AI: CSC sole authority, the cognition package as
+    # an advisory-only service, the research engine attached so forward
+    # outcomes feed REAL_WORLD(venue=paper) evidence and auto-cycles run
+    # every research_interval observations.
     if csc is not None:
-        csc.configure_research()
-        csc._research_interval = max(0, args.research_interval)
-        logger.info("research engine attached (interval=%d observations)",
+        from trading_bot.core.csc.assembly import build_cognitive_system
+        build_cognitive_system(csc, research_interval=args.research_interval)
+        logger.info("cognitive system assembled (research_interval=%d)",
                     args.research_interval)
     if history:
         if csc is not None:
