@@ -357,7 +357,20 @@ class UnifiedTradingBot:
             obs["rsi_signal"] = _rsi_signal(obs)
             returns = np.diff(prices) / np.clip(prices[:-1], 1e-12, None)
             obs.setdefault("volatility", float(np.std(returns)))
-            obs.setdefault("trend", "UP" if prices[-1] > prices[0] else ("DOWN" if prices[-1] < prices[0] else "FLAT"))
+            # Regime = directional persistence, not raw slope: Kaufman
+            # efficiency ratio |net move| / path length. A trailing slope
+            # labels "was up" as UP even when the path was pure chop — on
+            # mean-reverting M15 that label is contrarian-informative
+            # (measured: BUY-in-UP won 42%, -4.1%). ER gates the label to
+            # persistent moves only; trend_strength carries the continuous
+            # ER for the simulator's discriminating EV.
+            net_move = abs(prices[-1] - prices[0])
+            path_len = float(np.abs(np.diff(prices)).sum())
+            er = float(net_move / path_len) if path_len > 0 else 0.0
+            obs["trend_strength"] = er
+            obs.setdefault("trend", (
+                "UP" if prices[-1] > prices[0] else "DOWN"
+            ) if er >= 0.3 else "FLAT")
         return obs
 
     def trading_allowed(self) -> bool:
