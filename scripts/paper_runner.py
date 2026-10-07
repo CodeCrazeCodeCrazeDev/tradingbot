@@ -127,8 +127,12 @@ async def run(args: argparse.Namespace) -> int:
         history = json.loads(history_path.read_text(encoding="utf-8"))[-64:]
     except (OSError, json.JSONDecodeError):
         history = []
+    csc = getattr(runtime.bot, "csc", None)
+    if args.decision_stride > 1 and csc is not None:
+        csc._decision_stride = args.decision_stride
+        logger.info("decision_stride=%d applied to CSC (cadenced decisions)",
+                    args.decision_stride)
     if history:
-        csc = getattr(runtime.bot, "csc", None)
         if csc is not None:
             csc.seed_observation_history(args.symbol, history)
         runtime.bot._price_window.extend(
@@ -207,6 +211,9 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--state-dir", default=str(DEFAULT_STATE_DIR))
     parser.add_argument("--dashboard-port", type=int, default=0,
                         help="serve the read-only snapshot on 127.0.0.1:PORT")
+    parser.add_argument("--decision-stride", type=int, default=1,
+                        help="CSC decides every Nth observation "
+                             "(replicated-OOS evidence supports 4+)")
     parser.add_argument("--strategy-id", default=None,
                         help="optional registered strategy capability id")
     parser.add_argument("--log-level", default="INFO")

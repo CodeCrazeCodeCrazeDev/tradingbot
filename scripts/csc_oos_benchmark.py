@@ -113,43 +113,26 @@ async def replay(csc, obs_iter, symbol: str):
     return positions, decisions
 
 
-async def main_async(args) -> int:
+async def evaluate_window(rows, context_end: int, test_rows, args) -> dict:
+    """Replay one OOS window with a fresh CSC — no state leaks between
+    windows, no lookahead (features derive only from rows[:context_end])."""
     from trading_bot.core.csc.controller import CognitiveSystemController
     from trading_bot.evaluation.frozen_baseline import (
         compare_candidate_vs_baseline)
+    from trading_bot.core.unified_event_bus import decision_bus
 
-    rows = load_bars(PROJECT_ROOT / "market_data.db", args.symbol,
-                     args.timeframe)
-    n_total = len(rows)
-    cut = int(n_total * args.train_frac)
-    test_rows = rows[cut:]
-    if args.max_bars:
-        test_rows = test_rows[:args.max_bars]
     if args.stride > 1:
         # Lower-frequency variant: decide every Nth bar, hold across the
         # skipped ones. Bar returns become N-bar returns — turnover falls,
         # gross edge per decision stays honest.
         test_rows = test_rows[::args.stride]
-    closes_hist = [float(r[4]) for r in rows[:cut]]
-    print(f"{n_total} bars | train {cut} (context only) | OOS {len(test_rows)}")
+    closes_hist = [float(r[4]) for r in rows[:context_end]]
 
     CognitiveSystemController._instance = None
     csc = CognitiveSystemController(
         position_horizon=args.position_horizon)
 
-    # The benchmark is evaluation, not execution — but TRADE_EXECUTION
-    # fails closed without exactly one executor, so approved decisions
-    # would be falsely recorded as rejections. A stub subscriber lets the
-    # evaluator see what the CSC actually decided.
-    from trading_bot.core.unified_event_bus import (
-        ActionStatus, decision_bus)
     await decision_bus.start()
-
-    async def _bench_executor(action):
-        action.status = ActionStatus.EXECUTED
-        return {"status": "filled"}
-    decision_bus.subscribe("TRADE_EXECUTION", _bench_executor,
-                           subscriber_id="oos_bench_executor")
 
     def obs_iter():
         hist = list(closes_hist)
@@ -178,7 +161,7 @@ async def main_async(args) -> int:
     csc_pos = positions[1:]            # position taken at bar i earns ret[i]
     ma_k = args.momentum_lookback
     momentum_pos = []
-    hist_full = [float(r[4]) for r in rows[:cut]]
+    hist_full = [float(r[4]) for r in rows[:context_end]]
     for r in test_rows:
         hist_full.append(float(r[4]))
         window = hist_full[-(ma_k + 1):]
@@ -187,7 +170,8 @@ async def main_async(args) -> int:
     momentum_pos = momentum_pos[1:]
 
     settled = sum(
-        m.get("total_predictions", 0)
+        getattr(m, "total_predictions", 0) if not isinstance(m, dict)
+        else m.get("total_predictions", 0)
         for regimes in journal.get("reliability", {}).values()
         for m in regimes.values())
     report = {
@@ -207,7 +191,67 @@ async def main_async(args) -> int:
     report["comparisons"]["vs_frozen_momentum"] = compare_candidate_vs_baseline(
         csc_pos, momentum_pos, rets,
         cost_bps=args.cost_bps, min_decisions=args.min_decisions)
+    return report
 
+
+async def main_async(args) -> int:
+    rows = load_bars(PROJECT_ROOT / "market_data.db", args.symbol,
+                     args.timeframe)
+    n_total = len(rows)
+
+    # The benchmark is evaluation, not execution — but TRADE_EXECUTION
+    # fails closed without exactly one executor, so approved decisions
+    # would be falsely recorded as rejections. A single stub subscriber
+    # (registered once — bus.stop() preserves subscribers) lets the
+    # evaluator see what the CSC actually decided.
+    from trading_bot.core.unified_event_bus import (
+        ActionStatus, decision_bus)
+
+    async def _bench_executor(action):
+        action.status = ActionStatus.EXECUTED
+        return {"status": "filled"}
+    decision_bus.subscribe("TRADE_EXECUTION", _bench_executor,
+                           subscriber_id="oos_bench_executor")
+
+    if args.windows > 1:
+        # Walk-forward: N disjoint OOS windows at the tail, each evaluated
+        # with a fresh CSC and strictly-prior context.
+        span = min(n_total // 5, args.windows * args.window_bars)
+        pool_start = n_total - span
+        window = []
+        for w in range(args.windows):
+            start = pool_start + w * (span // args.windows)
+            end = min(start + args.window_bars,
+                      pool_start + (w + 1) * (span // args.windows))
+            report = await evaluate_window(
+                rows, start, rows[start:end], args)
+            verdicts = {k: v["verdict"]
+                        for k, v in report["comparisons"].items()}
+            nets = {k: v["candidate"]["total_net"]
+                    for k, v in report["comparisons"].items()}
+            window.append({"window": w, "verdicts": verdicts, "nets": nets})
+            print(f"window {w} [{rows[start][0][:10]}.."
+                  f"{rows[end - 1][0][:10]}] "
+                  f"net={nets['vs_always_long']:+.6f} "
+                  f"verdict={verdicts['vs_always_long']}")
+        out_dir = PROJECT_ROOT / "var" / "reports"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out_path = out_dir / "csc_walkforward_report.json"
+        out_path.write_text(json.dumps(window, indent=2, default=str))
+        wins = sum(1 for w in window
+                   if w["verdicts"]["vs_always_long"] ==
+                   "candidate_superior")
+        print(f"\nwalk-forward: {wins}/{len(window)} windows "
+              f"candidate_superior vs always_long -> {out_path}")
+        return 0
+
+    cut = int(n_total * args.train_frac)
+    test_rows = rows[cut:]
+    if args.max_bars:
+        test_rows = test_rows[:args.max_bars]
+    print(f"{n_total} bars | train {cut} (context only) | OOS {len(test_rows)}")
+
+    report = await evaluate_window(rows, cut, test_rows, args)
     out_dir = PROJECT_ROOT / "var" / "reports"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "csc_oos_report.json"
@@ -234,6 +278,10 @@ def main(argv=None) -> int:
                    help="evaluate every Nth OOS bar (lower-frequency variant)")
     p.add_argument("--position-horizon", type=int, default=8,
                    help="max bars a position is held before settlement")
+    p.add_argument("--windows", type=int, default=1,
+                   help="walk-forward: N disjoint OOS windows at the tail")
+    p.add_argument("--window-bars", type=int, default=800,
+                   help="bars per walk-forward window")
     p.add_argument("--max-bars", type=int, default=0,
                    help="cap OOS bars for a quick smoke run (0 = all)")
     args = p.parse_args(argv)

@@ -140,3 +140,6 @@ self_mastery_data/
 # Runtime artifacts (kill-switch flags, autonomous-run data)
 EMERGENCY_STOP.txt
 alphaalgo_autonomous/
+
+# Approval-request runtime artifacts
+/human_layer/
