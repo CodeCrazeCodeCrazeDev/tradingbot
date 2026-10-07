@@ -31,6 +31,7 @@ class ModularMonolithRuntime:
     async def start(self) -> None:
         self._configure_decision_audit()
         await self.bot.start()
+        self._wire_csc_persistence()
         self._reconciler = self._build_reconciler()
         await self._recover_execution_state()
         await self._register_interface_projections()
@@ -62,6 +63,33 @@ class ModularMonolithRuntime:
         from trading_bot.core.unified_event_bus import UnifiedDecisionBus
 
         UnifiedDecisionBus({"log_path": log_path})
+
+    def _wire_csc_persistence(self) -> None:
+        """Wire the CSC decision journal to the durable repository and attach
+        the optional advisory cognition service.
+
+        The advisory brain is disabled by default — it only attaches when
+        ``enable_cognitive_advisory`` is explicitly configured, and even then
+        it can only emit provenance-tagged evidence (its authority fields are
+        stripped by the advisory adapter; the CSC remains sole authority).
+        """
+        csc = getattr(self.bot, "csc", None)
+        if csc is None:
+            return
+        repository = getattr(self.bot, "trading_repository", None)
+        if repository is not None and hasattr(csc, "configure_decision_sink"):
+            csc.configure_decision_sink(repository)
+        config = getattr(self.bot, "config", {}) or {}
+        if config.get("enable_cognitive_advisory") and hasattr(
+                csc, "configure_cognition"):
+            try:
+                from trading_bot.cognition.advisory_adapter import (
+                    AdvisoryCognitiveBrain)
+
+                csc.configure_cognition(AdvisoryCognitiveBrain())
+            except Exception as exc:
+                logger.warning(
+                    "Cognitive advisory unavailable: %s", exc)
 
     def _build_reconciler(self) -> Any:
         """Reconciler over the canonical execution boundary, when wired."""
@@ -95,7 +123,36 @@ class ModularMonolithRuntime:
         try:
             self.last_reconciliation = await self._reconciler.reconcile_positions()
         except Exception as exc:
-            logger.error("Startup position reconciliation failed: %s", exc)
+            await self._block_on_reconciliation_failure(f"startup: {exc}")
+        else:
+            await self._check_reconciliation_result("startup")
+
+    async def _block_on_reconciliation_failure(self, detail: str) -> None:
+        """A failed or mismatched reconciliation means venue and ledger
+        disagree or the venue state is unknown — either way new entries must
+        stop until an operator inspects and resets the emergency stop."""
+        logger.error("Reconciliation failure — blocking new entries: %s", detail)
+        try:
+            from trading_bot.human_layer.override import get_manual_override
+
+            override = get_manual_override()
+            await override.emergency_stop.trigger(
+                f"reconciliation failure ({detail})", user="system:reconciler"
+            )
+        except Exception:
+            logger.error(
+                "Could not raise emergency stop after reconciliation failure",
+                exc_info=True,
+            )
+
+    async def _check_reconciliation_result(self, context: str) -> None:
+        """Trigger the entry block when the last reconciliation did not match."""
+        result = self.last_reconciliation
+        if result is not None and not getattr(result, "matched", False):
+            await self._block_on_reconciliation_failure(
+                f"{context}: mismatched venue/ledger state "
+                f"{getattr(result, 'position_differences', None)}"
+            )
 
     async def _register_interface_projections(self) -> None:
         """Register read-only projections in the canonical component graph."""
@@ -139,7 +196,9 @@ class ModularMonolithRuntime:
         try:
             self.last_reconciliation = await self._reconciler.reconcile_positions()
         except Exception as exc:
-            logger.error("Post-run reconciliation failed: %s", exc)
+            await self._block_on_reconciliation_failure(f"post-run: {exc}")
+        else:
+            await self._check_reconciliation_result("post-run")
 
     async def run(
         self,
@@ -158,7 +217,9 @@ class ModularMonolithRuntime:
             try:
                 self.last_reconciliation = await self._reconciler.reconcile_positions()
             except Exception as exc:
-                logger.error("Pre-stop reconciliation failed: %s", exc)
+                await self._block_on_reconciliation_failure(f"pre-stop: {exc}")
+            else:
+                await self._check_reconciliation_result("pre-stop")
         await self.bot.stop()
         if self._reconciler is not None:
             await self._reconciler.aclose()

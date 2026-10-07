@@ -218,6 +218,9 @@ class UnifiedTradingBot:
         self.bridge = PaperExecutionBridge(execution_service=self.execution_service)
         self.bridge.attach(decision_bus)
         registry.register("execution_bridge", self.bridge, "Execution", overwrite=True)
+        # Paper venue state derives from the durable ledger; restore it so
+        # restart reconciliation compares like-for-like.
+        await self.execution_service.restore_state()
 
         # 9. The One Brain
         self.csc = CognitiveSystemController(

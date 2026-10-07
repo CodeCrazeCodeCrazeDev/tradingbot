@@ -13,6 +13,25 @@ class CapabilityDomain(Enum):
     EXECUTION = "EXECUTION"
     DEPLOYMENT = "DEPLOYMENT"
 
+def _inter_agent_signing_key() -> Optional[str]:
+    """Resolve the inter-agent signing secret through the canonical
+    credential provider. Absent -> None: messages stay unsigned and
+    ``verify_signature`` fails closed instead of forging authenticity.
+    Secret name: ``inter_agent_signing_key`` (env ``INTER_AGENT_SIGNING_KEY``).
+    """
+    global _credential_provider
+    try:
+        if _credential_provider is None:
+            from ..security.canonical_provider import get_credential_provider
+            _credential_provider = get_credential_provider()
+        return _credential_provider.get_secret("inter_agent_signing_key")
+    except Exception:
+        return None
+
+
+_credential_provider = None
+
+
 @dataclass
 class SignedInterAgentMessage:
     sender_id: str
@@ -32,19 +51,27 @@ class SignedInterAgentMessage:
         if not self.payload_hash:
             self.payload_hash = hashlib.sha256(str(sorted(self.payload.items())).encode("utf-8")).hexdigest()
         if not self.signature:
-            self.signature = self.compute_signature("SYSTEM_SECRET_KEY")
+            key = _inter_agent_signing_key()
+            self.signature = self.compute_signature(key) if key else ""
 
-    def compute_signature(self, secret: str) -> str:
+    def compute_signature(self, secret: Optional[str]) -> str:
+        if not secret:
+            return ""
         data = f"{self.sender_id}:{self.sender_version}:{self.task_id}:{self.message_id}:{self.timestamp}:{self.payload_hash}"
         return hmac.new(secret.encode("utf-8"), data.encode("utf-8"), hashlib.sha256).hexdigest()
 
-    def verify_signature(self, secret: str = "SYSTEM_SECRET_KEY") -> bool:
+    def verify_signature(self, secret: Optional[str] = None) -> bool:
         if datetime.now(timezone.utc).timestamp() > self.expiration:
             return False
+        if not self.signature:
+            return False  # unsigned messages cannot be authenticated
+        key = secret if secret is not None else _inter_agent_signing_key()
+        if not key:
+            return False  # no provisioned verifier key: fail closed
         current_hash = hashlib.sha256(str(sorted(self.payload.items())).encode("utf-8")).hexdigest()
         if current_hash != self.payload_hash:
             return False # Payload was tampered with!
-        expected = self.compute_signature(secret)
+        expected = self.compute_signature(key)
         return hmac.compare_digest(self.signature, expected)
 
 """
@@ -76,6 +103,11 @@ logger = logging.getLogger(__name__)
 # shield voter must not merely fail to veto — it must return an explicit
 # affirmative decision inside the voter timeout.
 SHIELDED_ACTION_TYPES = {"TRADE_PROPOSAL", "TRADE_EXECUTION", "ORDER", "EXECUTE"}
+# Subset that must dispatch to exactly one capital executor. TRADE_PROPOSAL
+# is a voted decision record — the CSC reads voter reports directly and
+# execution fans out through a separate TRADE_EXECUTION action, so it may
+# legitimately have zero executor subscribers.
+EXECUTION_ACTION_TYPES = {"TRADE_EXECUTION", "ORDER", "EXECUTE"}
 _AFFIRMATIVE_DECISIONS = {"APPROVE", "APPROVED", "ALLOW", "PASS"}
 _VETO_DECISIONS = {"REJECT", "VETO", "FAIL", "BLOCKED"}
 
@@ -237,6 +269,11 @@ class UnifiedDecisionBus:
                 decision_bus._log.clear()
                 decision_bus._voters.clear()
                 decision_bus._subscribers.clear()
+                # Audit health is re-probed by start(); do not carry a stale
+                # flag or a foreign log path across runtime boundaries.
+                decision_bus._audit_healthy = True
+                decision_bus._log_path = None
+                decision_bus.config = {}
                 try:
                     decision_bus._action_queue = asyncio.PriorityQueue()
                     decision_bus._action_seq = itertools.count()
@@ -350,6 +387,18 @@ class UnifiedDecisionBus:
 
     async def publish(self, event: Any):
         if isinstance(event, UnifiedEvent):
+            if str(event.event_type) in SHIELDED_ACTION_TYPES:
+                # A UnifiedEvent carrying a capital-moving type must not
+                # bypass voter consensus — reroute it as a LogAction so the
+                # shield voter, audit-health check, and durable log apply.
+                action = LogAction(
+                    action_type=event.event_type,
+                    payload=event.payload,
+                    agent_id=event.source,
+                    priority=event.priority,
+                )
+                await self.propose_action(action)
+                return
             # Events dispatch directly to subscribers; only LogActions go
             # through voter consensus (an event has no audit fields).
             await self._dispatch(event)
@@ -591,7 +640,22 @@ class UnifiedDecisionBus:
 
     async def _dispatch(self, action: LogAction):
         key = getattr(action, "action_type", None) or getattr(action, "event_type", "")
-        handlers = self._subscribers.get(key, []) + self._subscribers.get("*", [])
+        direct = self._subscribers.get(key, [])
+        handlers = direct + self._subscribers.get("*", [])
+        if key in EXECUTION_ACTION_TYPES and len(direct) != 1:
+            # Capital actions require exactly one canonical executor. Zero
+            # handlers means an approved order dies silently; multiple mean
+            # duplicate order placement. Either case fails closed.
+            action.status = ActionStatus.FAILED
+            action.voter_reports["__dispatch__"] = {
+                "decision": "FAIL",
+                "reason": f"Shielded action '{key}' requires exactly 1 "
+                          f"executor, found {len(direct)}",
+            }
+            logger.error(
+                f"LogAct: shielded action {action.action_id} FAILED — "
+                f"{len(direct)} executor(s) registered for '{key}'")
+            return
         tasks = [h["handler"](action) for h in handlers]
         if not tasks:
             return

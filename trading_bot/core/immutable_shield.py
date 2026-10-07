@@ -125,7 +125,10 @@ class ImmutableShield:
         market = context.get("market", context)
         if isinstance(market, dict):
             quality = str(market.get("data_quality", market.get("quality", ""))).lower()
-            if quality in {"invalid", "stale"} or market.get("data_is_fresh") is False:
+            # Anything explicitly labeled that is not "valid" fails closed:
+            # unknown/degraded/invalid/stale/garbage cannot authorize capital.
+            # An absent marker stays permissive for non-normalized sources.
+            if quality not in {"", "valid"} or market.get("data_is_fresh") is False:
                 return ShieldReport(GovernanceDecision.BLOCKED, "Market data is not fresh and valid", 0.95)
 
         # 6. Confidence floor — a proposal that omits confidence defaults to

@@ -27,13 +27,32 @@ class InformationFolder:
 
     def fold_history(self, ledger_entry: Any) -> str:
         """
-        Folds a research snapshot into a semantic summary.
-        Extracts patterns, success/failure status, and calibration info.
+        Folds a research snapshot into a semantic summary built from the
+        entry's actual fields — confidence, verdict counts, hypothesis —
+        never a placeholder string.
         """
         entry_id = getattr(ledger_entry, "entry_id", "N/A")
         logger.info(f"HIPIF: Folding research snapshot {entry_id}")
-        summary = f"Folded summary for {entry_id}"
-        self.folded_summaries.append({"entry_id": entry_id, "summary": summary})
+        confidence = getattr(ledger_entry, "composite_confidence", 0.0)
+        if not isinstance(confidence, (int, float)):
+            confidence = 0.0
+        reports = getattr(ledger_entry, "verifier_reports", []) or []
+        if not isinstance(reports, (list, tuple)):
+            reports = []
+        approvals = sum(1 for r in reports if getattr(r, "is_valid", False))
+        hypothesis = getattr(ledger_entry, "hypothesis", None)
+        hyp_desc = getattr(hypothesis, "description", "")[:120] if hypothesis else ""
+        summary = (
+            f"decision={entry_id} conf={confidence:.3f} "
+            f"verifiers={approvals}/{len(reports)} hyp={hyp_desc!r}"
+        )
+        self.folded_summaries.append({
+            "entry_id": entry_id,
+            "summary": summary,
+            "composite_confidence": confidence,
+            "verifier_approvals": approvals,
+            "verifier_total": len(reports),
+        })
         return summary
 
     async def perform_folding(self, episodic_trace: List[Dict[str, Any]]) -> Dict[str, Any]:

@@ -3,6 +3,8 @@ Enhanced Conservative Q-Learning (CQL) Agent
 Advanced implementation with risk-awareness and market adaptation
 """
 
+from __future__ import annotations
+
 import os
 import logging
 import numpy as np

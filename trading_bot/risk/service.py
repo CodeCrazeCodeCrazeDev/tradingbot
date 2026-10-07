@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import inspect
 import logging
+import math
 from typing import Any, Dict, Mapping, Optional
 
 from trading_bot.foundation.contracts import (
@@ -131,8 +132,48 @@ class CanonicalRiskService:
     def unregister_policy(self, name: str) -> None:
         self.policies.pop(name, None)
 
+    _NON_TRADEABLE = frozenset({"hold", "neutral", "wait", "none", "no_trade"})
+
+    def _marginal_exposure(self, proposal: DecisionProposal) -> Optional[float]:
+        """Equity-fraction change in same-symbol exposure after the proposed
+        order, or None when it cannot be measured. Reducing an existing
+        position yields a non-positive marginal exposure.
+        """
+        direction = proposal.signal.direction.lower()
+        if direction in self._NON_TRADEABLE:
+            return 0.0
+        if direction not in {"buy", "sell"}:
+            return None
+        metadata = proposal.signal.metadata or {}
+        mark = metadata.get("mark_price") or metadata.get("price")
+        symbol = proposal.signal.instrument.symbol
+        if mark is None:
+            for pos in proposal.portfolio.positions:
+                if pos.instrument.symbol == symbol:
+                    mark = pos.average_price
+                    break
+        if mark is None or float(mark) <= 0:
+            return None
+        requested = float(metadata.get("quantity", 1.0))
+        signed = requested if direction == "buy" else -requested
+        current = sum(
+            float(p.quantity) for p in proposal.portfolio.positions
+            if p.instrument.symbol == symbol
+        )
+        contract_size = float(proposal.signal.instrument.contract_size or 1.0)
+        equity = float(proposal.portfolio.equity)
+        if equity <= 0:
+            return None
+        delta_units = abs(current + signed) - abs(current)
+        return delta_units * float(mark) * contract_size / equity
+
     async def evaluate(self, proposal: DecisionProposal, state: RiskState) -> RiskDecision:
         requested_quantity = float(proposal.signal.metadata.get("quantity", 1.0))
+        marginal = self._marginal_exposure(proposal)
+        projected_exposure = (
+            state.portfolio_exposure + marginal if marginal is not None
+            else float("inf")
+        )
         checks = {
             "trading_enabled": state.trading_enabled,
             "data_fresh": state.data_is_fresh,
@@ -140,10 +181,14 @@ class CanonicalRiskService:
             "drawdown_limit": state.drawdown_fraction <= self.limits["max_drawdown"],
             "daily_loss_limit": state.daily_pnl >= -abs(self.limits["max_daily_loss"] * max(state.equity, 0.0)),
             "exposure_limit": state.portfolio_exposure <= self.limits["max_exposure"],
+            "projected_exposure_limit": (
+                math.isfinite(projected_exposure)
+                and projected_exposure <= self.limits["max_exposure"]
+            ),
             "open_position_limit": state.open_positions < int(self.limits["max_open_positions"]),
             "quantity_limit": 0.0 < requested_quantity <= self.limits["max_quantity"],
         }
-        approved = all(checks.values()) and proposal.signal.direction.lower() not in {"hold", "neutral"}
+        approved = all(checks.values()) and proposal.signal.direction.lower() not in self._NON_TRADEABLE
         reason = "All canonical risk checks passed" if approved else self._rejection_reason(checks)
         if approved:
             for name, policy in self.policies.items():
@@ -204,7 +249,10 @@ class CanonicalRiskService:
             return default
 
         symbol = str(action.get("symbol") or observation.get("symbol") or "UNKNOWN")
-        instrument = Instrument(symbol, InstrumentType.SYNTHETIC, str(observation.get("venue") or "runtime"))
+        contract_size = _field("contract_size", "trade_contract_size", default=1.0)
+        instrument = Instrument(
+            symbol, InstrumentType.SYNTHETIC, str(observation.get("venue") or "runtime"),
+            contract_size=max(contract_size, 1e-12))
         equity = _field("equity", default=1.0)
         quality = str(observation.get("data_quality", "valid")).lower()
         state = RiskState(
@@ -214,7 +262,11 @@ class CanonicalRiskService:
             daily_pnl=_field("daily_pnl"),
             drawdown_fraction=_field("drawdown_fraction", "drawdown"),
             open_positions=int(_field("open_positions")),
-            data_is_fresh=quality not in {"invalid", "stale"},
+            # Only an explicit "valid" marker is fresh. "unknown" and
+            # "degraded" feeds cannot authorize risk — unverified data
+            # fails closed, same as invalid/stale.
+            data_is_fresh=(quality == "valid"
+                           and observation.get("data_is_fresh") is not False),
             trading_enabled=bool(observation.get("trading_enabled", True)),
             emergency=bool(observation.get("emergency", False)),
         )
@@ -223,7 +275,13 @@ class CanonicalRiskService:
             instrument=instrument,
             direction=str(action.get("action", "WAIT")),
             confidence=float(action.get("confidence", 0.0) or 0.0),
-            metadata={"quantity": action.get("quantity", 0.0)},
+            metadata={
+                "quantity": action.get("quantity", 0.0),
+                # Mark price for projected-exposure accounting: the action
+                # payload wins, then the validated observation.
+                "price": action.get("price") or observation.get("price")
+                         or observation.get("close"),
+            },
         )
         proposal = DecisionProposal(
             decision_id=str(action.get("trade_id", "runtime-decision")),

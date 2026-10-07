@@ -4,6 +4,8 @@ Conservative Q-Learning (CQL) Agent
 Implementation of CQL for offline RL training.
 """
 
+from __future__ import annotations
+
 import os
 import logging
 import numpy as np
@@ -76,7 +78,8 @@ class CQLAgent:
         self.discount = discount
         self.lr = lr
         self.hidden_sizes = hidden_sizes if hidden_sizes is not None else [256, 256]
-        self.use_gpu = use_gpu and torch.cuda.is_available()
+        self.use_gpu = (
+            use_gpu and TORCH_AVAILABLE and torch.cuda.is_available())
         self.log_dir = log_dir
         self.use_d3rlpy = use_d3rlpy and D3RLPY_AVAILABLE
         

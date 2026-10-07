@@ -4,6 +4,8 @@ Batch-Constrained Q-Learning (BCQ) Agent
 Implementation of BCQ for offline RL training.
 """
 
+from __future__ import annotations
+
 import os
 import logging
 import numpy as np

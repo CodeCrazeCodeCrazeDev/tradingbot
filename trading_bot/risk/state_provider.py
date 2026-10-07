@@ -28,9 +28,10 @@ class PortfolioStateProvider:
       unmarked positions fall back to their average cost (neutral mark).
     - ``portfolio_exposure`` = sum(|qty| * mark) / equity. Returns 1.0 when
       equity <= 0 so the exposure check vetoes a bankrupt book.
-    - ``daily_pnl`` = realized PnL from today's sell fills + unrealized PnL
-      on open positions.
-    - ``drawdown_fraction`` = (session peak - equity) / session peak.
+    - ``daily_pnl`` = realized PnL from today's position-reducing fills
+      (either direction) + unrealized PnL on open positions.
+    - ``drawdown_fraction`` = (peak equity - equity) / peak equity. Peak is
+      persisted in the repository so drawdown survives restarts.
     """
 
     def __init__(
@@ -44,6 +45,24 @@ class PortfolioStateProvider:
         self.account_id = account_id
         self._peak_equity: Optional[float] = None
 
+    async def _peak(self, equity: float) -> float:
+        """Durable peak-equity high-water mark (survives process restarts)."""
+        if self._peak_equity is None:
+            stored = await self.repository.get_account_state(
+                f"peak_equity:{self.account_id}")
+            try:
+                self._peak_equity = (
+                    max(float(stored), self.initial_equity)
+                    if stored is not None else self.initial_equity
+                )
+            except (TypeError, ValueError):
+                self._peak_equity = self.initial_equity
+        if equity > self._peak_equity:
+            self._peak_equity = equity
+            await self.repository.set_account_state(
+                f"peak_equity:{self.account_id}", repr(equity))
+        return self._peak_equity
+
     async def portfolio_state(
         self, observation: Optional[Mapping[str, Any]] = None
     ) -> Dict[str, Any]:
@@ -55,26 +74,36 @@ class PortfolioStateProvider:
 
         cash = self.initial_equity
         daily_realized = 0.0
-        book: Dict[str, list] = {}  # symbol -> [net_qty, avg_cost]
+        book: Dict[str, list] = {}  # symbol -> [signed_qty, avg_cost]
         for fill in fills:
             symbol = str(fill["symbol"])
             quantity = float(fill["quantity"])
             price = float(fill["price"])
             commission = float(fill.get("commission") or 0.0)
             qty, cost = book.get(symbol, [0.0, 0.0])
-            if fill["side"] == "buy":
-                cash -= quantity * price + commission
-                net = qty + quantity
+            signed = quantity if fill["side"] == "buy" else -quantity
+            realized = 0.0
+            if qty == 0:
+                book[symbol] = [signed, price]
+            elif qty * signed > 0:
+                net = qty + signed
+                book[symbol] = [net, (qty * cost + signed * price) / net]
+            else:
+                # Reducing or flipping: realized PnL on the closed portion,
+                # computed symmetrically for long and short books.
+                closed = min(abs(signed), abs(qty))
+                realized = closed * (price - cost) * (1.0 if qty > 0 else -1.0)
+                net = qty + signed
                 book[symbol] = [
                     net,
-                    (qty * cost + quantity * price) / net if net else price,
+                    cost if (qty * net > 0) else (price if net != 0 else 0.0),
                 ]
+            if signed > 0:
+                cash -= quantity * price + commission
             else:
                 cash += quantity * price - commission
-                realized = quantity * (price - cost)
-                if str(fill.get("occurred_at") or "").startswith(today):
-                    daily_realized += realized
-                book[symbol] = [qty - quantity, cost]
+            if realized and str(fill.get("occurred_at") or "").startswith(today):
+                daily_realized += realized
 
         position_value = 0.0
         exposure_notional = 0.0
@@ -86,20 +115,18 @@ class PortfolioStateProvider:
             if quantity == 0:
                 continue
             open_positions += 1
-            # Prefer the provider's running average-cost basis (the
-            # repository's stored average_price is first-fill semantics and
-            # only resets at flat).
-            cost = book.get(symbol, [None, float(position.average_price)])[1]
-            mark = marks.get(symbol, float(cost))
+            # The repository's positions row already carries the corrected
+            # average-cost basis (weighted add / keep-on-reduce / reset on
+            # flip), so the provider folds only the cash and realized-PnL
+            # streams above rather than duplicating the basis rule.
+            cost = float(position.average_price)
+            mark = marks.get(symbol, cost)
             position_value += quantity * mark
             exposure_notional += abs(quantity) * mark
-            unrealized_pnl += quantity * (mark - float(cost))
+            unrealized_pnl += quantity * (mark - cost)
 
         equity = cash + position_value
-        peak = self._peak_equity or self.initial_equity
-        if equity > peak:
-            peak = equity
-        self._peak_equity = peak
+        peak = await self._peak(equity)
 
         return {
             "account_id": self.account_id,

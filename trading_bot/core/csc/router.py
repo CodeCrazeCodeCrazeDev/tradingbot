@@ -319,14 +319,17 @@ class SkillRouter:
         """Async V6 routing: HASP volatility pre-emption + capability routing."""
         market_state = context.get("market", context)
         vol = market_state.get("volatility", market_state.get("market_volatility", 0))
-        if vol > 0.3:
+        # FX-scale absolute extreme: 4% single-observation sigma is
+        # flash-crash territory (EURUSD daily vol is ~0.5-1%). The previous
+        # 0.3 threshold could never trigger and was dead code.
+        if isinstance(vol, (int, float)) and vol > 0.04:
             skill = self.get_skill("volatility_guardrail")
             if skill and skill.executable:
                 res = skill.executable(context)
                 return SkillRouteOutcome(
                     status="pf_intervention",
                     action=res.get("action", "override_to_hold"),
-                    reason=res.get("reason", "Volatility exceeded HASP safety threshold (0.3)"),
+                    reason=res.get("reason", "Volatility exceeded HASP safety threshold (0.04)"),
                     version=skill.version
                 )
 

@@ -9,12 +9,17 @@ Incorporates transferable principles from REG-401 to REG-500 (Batch 5 Research P
 """
 
 import numpy as np
-import torch
+try:
+    import torch  # noqa: F401 — optional; the CSC pipeline is numpy-only.
+except ImportError:  # pragma: no cover - environment without torch
+    torch = None
 import time
 import logging
 import asyncio
 import copy
 import threading
+from collections import deque
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 from trading_bot.core.governance.determinism import determinism as _determinism
@@ -201,6 +206,56 @@ class CognitiveSystemController:
         self.hypothesis_gen = HypothesisGenerator(world_model)
         self.folder = self.folding_operator
 
+        # Reliability tracking: Brier/precision per agent+regime, updated by
+        # the outcome pipeline (record_outcome). Empty until real outcomes
+        # are fed back — never prefilled with fabricated accuracy.
+        self.reliability_tracker = ReliabilityTracker()
+
+        # Subordinate advisory cognition services (e.g. AdvisoryCognitiveBrain).
+        # Configured via configure_cognition(); their analyze() output becomes
+        # provenance-tagged advisory evidence — never authority. Disabled by
+        # default; wired by the runtime when explicitly enabled.
+        self._advisory_services: List[Any] = []
+
+        # Durable decision sink — an object with async record_audit_event()
+        # (the canonical SqliteTradingRepository). Wired by the runtime after
+        # construction via configure_decision_sink(); absent means in-memory
+        # only (paper/test contexts).
+        self._decision_sink: Any = None
+
+        # Pending directional predictions keyed by trade_id, pointing into
+        # _open_positions. Position-lifetime accounting: a BUY/SELL opens (or
+        # extends) a position; an opposing decision or the holding horizon
+        # closes it; the realized entry->exit return is the outcome, not a
+        # single bar's move.
+        self._pending_predictions: Dict[str, Dict[str, Any]] = {}
+        self._open_positions: Dict[str, Dict[str, Any]] = {}
+        self._observation_seq = 0
+        # Unified research: subordinate engine + bounded report journal +
+        # advisory artifacts queued into the next observation's evidence.
+        self.research_engine = None
+        self._research_reports: "deque" = deque(maxlen=64)
+        self._research_artifacts: "deque" = deque(maxlen=64)
+        # Per-symbol rolling close history for causal feature derivation —
+        # a raw OHLCV feed carries no volatility/trend/rsi so the CSC
+        # computes them itself from strictly-prior bars.
+        self._obs_history: Dict[str, "deque"] = {}
+        # Max holding period in observations before a position auto-closes.
+        self._position_max_hold = int(kwargs.get("position_horizon", 8))
+        # Round-trip cost estimate for the net-of-cost edge gate — a
+        # directional proposal whose simulated expected value cannot beat it
+        # downgrades to an honest abstention.
+        self._default_cost_bps = float(kwargs.get("cost_bps", 5.0))
+
+        # HASP guardrail baseline: recent observed volatility per instrument
+        # class. The guardrail fires on a large multiple of the running
+        # baseline (or an absolute 1% per-bar extreme when no baseline yet).
+        self._vol_baseline: "deque" = deque(maxlen=256)
+
+        # Real provenance: resolve once at construction; "unknown" when the
+        # source tree has no git metadata — never a fabricated signed value.
+        self._git_sha = self._resolve_git_sha()
+
         # DiscoLoop recurrence cell (required by _run_discoloop_reasoning)
         self.discoloop = DiscoLoopCell()
 
@@ -261,7 +316,15 @@ class CognitiveSystemController:
 
     @property
     def variational_free_energy(self) -> float:
-        return 0.15
+        """Measured free-energy proxy: mean of the recent surprise history.
+
+        Returns 0.0 before any observation has been processed rather than a
+        fabricated constant — the value is only meaningful once real
+        prediction errors have been recorded.
+        """
+        if not self.vfe_history:
+            return 0.0
+        return float(np.mean(self.vfe_history[-20:]))
 
     def _calculate_vfe_surprise(self, observation: Dict[str, Any]) -> float:
         """
@@ -344,6 +407,362 @@ class CognitiveSystemController:
 
         return 0.2
 
+    def configure_cognition(self, advisory: Any) -> None:
+        """Register a subordinate advisory cognition service.
+
+        The service must expose ``analyze(context) -> Mapping`` (sync or
+        async). Its output is attached as provenance-tagged advisory evidence
+        (``agent:<capability_id>``) — it carries no decision authority.
+        """
+        if advisory is None or not hasattr(advisory, "analyze"):
+            raise TypeError(
+                "advisory cognition service must expose analyze(context)")
+        self._advisory_services.append(advisory)
+        logger.info(
+            "CSC-V6: advisory cognition service registered: %s",
+            getattr(advisory, "capability_id", type(advisory).__name__))
+
+    def configure_decision_sink(self, sink: Any) -> None:
+        """Wire the durable decision sink (the canonical repository).
+
+        Every terminal decision — APPROVED, REJECTED, ABSTAIN — is recorded
+        as an AuditEvent so decisions can be joined to realized outcomes
+        after restart."""
+        if sink is not None and not hasattr(sink, "record_audit_event"):
+            raise TypeError(
+                "decision sink must expose record_audit_event(AuditEvent)")
+        self._decision_sink = sink
+
+    def configure_research(self, engine: Any = None) -> Any:
+        """Wire the unified research engine as a subordinate service.
+
+        With no argument the engine is composed from this controller's own
+        canonical components — the trading pipeline's hypothesis generator,
+        verification swarm, memory, and folder are the same machinery the
+        research pipeline runs. The engine produces advisory-only reports;
+        it has no order, risk, or execution surface.
+        """
+        if engine is None:
+            from .research import ResearchEngine
+            engine = ResearchEngine(
+                hypothesis_gen=self.hypothesis_gen,
+                verifier_swarm=self.verifier_swarm,
+                hms=self.hms,
+                folder=self.folder,
+                git_sha=getattr(self, "_git_sha", "unknown"))
+        elif not hasattr(engine, "investigate"):
+            raise TypeError(
+                "research engine must expose investigate(question, market_data)")
+        self.research_engine = engine
+        return engine
+
+    async def research(
+        self, question: str, market_data: Optional[Dict[str, Any]] = None,
+    ) -> "ResearchReport":
+        """The one research entry point — CSC-controlled by construction.
+
+        The question runs the full canonical pipeline (grounded hypotheses →
+        counterfactual simulation → adversarial verification → durable
+        report). The report is persisted as a RESEARCH audit event, journaled
+        for the operator surface, and queued into the advisory channel so
+        the next market cycle cites it as provenance-tagged evidence.
+        """
+        if self.research_engine is None:
+            self.configure_research()
+        obs = dict(market_data or {})
+        self._enrich_derived_features(obs)
+        report = await self.research_engine.investigate(
+            question, obs,
+            evidence_chain=None,
+            advisory_artifacts=None)
+        self._research_reports.append(report)
+        self._research_artifacts.append(report.to_advisory_artifact())
+        await self._persist_audit_event(
+            event_type="RESEARCH",
+            action="investigate",
+            outcome=report.verdict,
+            correlation_id=report.research_id,
+            details={
+                "question": report.question,
+                "symbol": report.symbol,
+                "branches_considered": report.branches_considered,
+                "evidence_node_count": report.evidence_node_count,
+                "composite_confidence": report.composite_confidence,
+                "advisory_only": True,
+            })
+        return report
+
+    def get_research_journal(self) -> List[Dict[str, Any]]:
+        """Read-only journal of verified research reports."""
+        return [r.to_dict() for r in self._research_reports]
+
+    async def record_outcome(
+        self,
+        trade_id: str,
+        exit_price: Optional[float] = None,
+        was_correct: Optional[bool] = None,
+        realized_return: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Feed a realized outcome back into calibration and uncertainty.
+
+        Matches the pending directional prediction for ``trade_id`` against
+        the realized price move, updates the ReliabilityTracker, adjusts
+        epistemic uncertainty by the measured error (bounded, never
+        mechanical decay), and persists an OUTCOME audit event.
+        """
+        pending = self._pending_predictions.pop(trade_id, None)
+        if pending is None:
+            return {"status": "unmatched", "trade_id": trade_id}
+
+        if was_correct is None:
+            if exit_price is None or not isinstance(exit_price, (int, float)):
+                return {"status": "insufficient_evidence",
+                        "trade_id": trade_id}
+            entry = pending.get("entry_price")
+            if not isinstance(entry, (int, float)) or entry <= 0:
+                return {"status": "insufficient_evidence",
+                        "trade_id": trade_id}
+            move = (float(exit_price) - entry) / entry
+            direction = pending.get("action", "HOLD")
+            if direction == "BUY":
+                was_correct = move > 0
+            elif direction == "SELL":
+                was_correct = move < 0
+            else:
+                was_correct = abs(move) < 0.001
+            realized_return = move if direction == "BUY" else -move
+
+        confidence = float(pending.get("confidence", 0.5))
+        regime = pending.get("regime", "unknown")
+        self.reliability_tracker.update_metrics(
+            "csc", regime, bool(was_correct), confidence)
+
+        # Evidence-based uncertainty update: surprise moves it up, confirmed
+        # predictions move it down — bounded and proportional to measured
+        # error, not a fixed per-task multiplier.
+        error = abs(confidence - (1.0 if was_correct else 0.0))
+        cur = float(getattr(self.state, "epistemic_uncertainty", 0.5) or 0.5)
+        self.state.epistemic_uncertainty = float(
+            np.clip(cur + (error - 0.25) * 0.1, 0.05, 0.95))
+
+        # Advisory calibrators learn from the same realized outcome.
+        for service in self._advisory_services:
+            brain = getattr(service, "brain", service)
+            if hasattr(brain, "record_outcome"):
+                try:
+                    brain.record_outcome(confidence, bool(was_correct))
+                except Exception as exc:
+                    logger.warning("CSC-V6: advisory outcome update failed: %s", exc)
+
+        await self._persist_audit_event(
+            event_type="DECISION_OUTCOME",
+            action=pending.get("action", "UNKNOWN"),
+            outcome="correct" if was_correct else "incorrect",
+            correlation_id=trade_id,
+            details={
+                "symbol": pending.get("symbol"),
+                "confidence": confidence,
+                "realized_return": realized_return,
+                "regime": regime,
+            })
+        return {
+            "status": "recorded",
+            "trade_id": trade_id,
+            "was_correct": bool(was_correct),
+            "realized_return": realized_return,
+            "epistemic_uncertainty": self.state.epistemic_uncertainty,
+        }
+
+    def seed_observation_history(self, symbol: str, closes: List[float]) -> None:
+        """Seed the derived-feature window from durable market history.
+
+        Called at startup so a restart does not discard the prior bar
+        window and re-lock directional decisions for a warmup period."""
+        hist = self._obs_history.setdefault(str(symbol), deque(maxlen=64))
+        for close in list(closes)[-64:]:
+            if isinstance(close, (int, float)) and close > 0:
+                hist.append(float(close))
+
+    def observation_history(self, symbol: str) -> List[float]:
+        """Return the tracked close history for a symbol (read-only copy)."""
+        return list(self._obs_history.get(str(symbol), ()))
+
+    def _enrich_derived_features(self, obs_dict: Dict[str, Any]) -> None:
+        """Derive missing causal features from the symbol's own bar history.
+
+        A raw OHLCV feed (paper_runner, live adapter) supplies price and
+        volume but no volatility/trend/rsi — those are computed here from
+        strictly-prior closes. Supplied values are never overwritten;
+        derived ones are marked in ``_derived_features`` for provenance."""
+        if not isinstance(obs_dict, dict):
+            return
+        price = obs_dict.get("price") or obs_dict.get("close")
+        symbol = str(obs_dict.get("symbol") or "unknown")
+        derived = set()
+        hist = self._obs_history.setdefault(symbol, deque(maxlen=64))
+        closes = list(hist)
+        if isinstance(price, (int, float)) and price > 0:
+            closes.append(float(price))
+
+        if "volatility" not in obs_dict and len(closes) >= 21:
+            rets = np.diff(np.asarray(closes[-21:])) / np.asarray(closes[-21:-1])
+            obs_dict["volatility"] = float(np.std(rets))
+            derived.add("volatility")
+        if "trend" not in obs_dict and "trend_direction" not in obs_dict \
+                and len(closes) >= 21 and isinstance(price, (int, float)):
+            ma = float(np.mean(closes[-21:-1]))
+            obs_dict["trend"] = ("BULLISH" if price > ma * 1.0005 else
+                                 "BEARISH" if price < ma * 0.9995 else "NEUTRAL")
+            derived.add("trend")
+        if "rsi" not in obs_dict and len(closes) >= 15:
+            diffs = np.diff(np.asarray(closes[-15:]))
+            gains = diffs[diffs > 0].mean() if (diffs > 0).any() else 0.0
+            losses = (-diffs[diffs < 0]).mean() if (diffs < 0).any() else 0.0
+            obs_dict["rsi"] = (100.0 if losses == 0 else
+                               100.0 - 100.0 / (1.0 + gains / losses))
+            derived.add("rsi")
+        if derived:
+            obs_dict["_derived_features"] = sorted(derived)
+        if isinstance(price, (int, float)) and price > 0:
+            hist.append(float(price))
+
+    async def _settle_pending_predictions(self, obs_dict: Dict[str, Any]) -> None:
+        """Close positions that have reached the holding horizon.
+
+        Position-lifetime accounting: a position opened at observation t
+        settles against the bar at t+max_hold (or earlier when an opposing
+        decision reverses it). Only the observed symbol's position settles."""
+        price = obs_dict.get("price") or obs_dict.get("close")
+        if not isinstance(price, (int, float)) or price <= 0:
+            return
+        symbol = obs_dict.get("symbol")
+        pos = self._open_positions.get(symbol)
+        if pos is None:
+            return
+        if self._observation_seq - pos["entry_seq"] >= self._position_max_hold:
+            await self._close_position(symbol, float(price),
+                                       reason="holding_horizon")
+
+    async def _register_directional(
+        self, trade_id: str, action: str, symbol: Optional[str],
+        price: float, confidence: Any, regime: Any,
+    ) -> None:
+        """Attach an approved directional decision to a position.
+
+        Same-direction decisions extend the position (additional entries in
+        the same direction share its outcome); an opposing decision closes
+        the existing position at this bar's price first."""
+        symbol = str(symbol or "unknown")
+        existing = self._open_positions.get(symbol)
+        if existing is not None and existing["direction"] != action:
+            await self._close_position(symbol, float(price),
+                                       reason="reversed_by_decision")
+            existing = None
+        if existing is None:
+            existing = {
+                "direction": action,
+                "entry_price": float(price),
+                "entry_seq": self._observation_seq,
+                "symbol": symbol,
+                "confidence": confidence,
+                "regime": regime,
+                "trade_ids": [],
+            }
+            self._open_positions[symbol] = existing
+        existing["trade_ids"].append(trade_id)
+        self._pending_predictions[trade_id] = {
+            "position_symbol": symbol,
+            "action": action,
+            "symbol": symbol,
+            "entry_price": existing["entry_price"],
+            "confidence": confidence,
+            "regime": regime,
+        }
+
+    async def _close_position(
+        self, symbol: str, exit_price: float, reason: str = "exit",
+    ) -> Optional[float]:
+        """Close the open position, compute entry->exit PnL, and settle every
+        contributing prediction through record_outcome."""
+        pos = self._open_positions.pop(symbol, None)
+        if pos is None or not isinstance(exit_price, (int, float)) \
+                or exit_price <= 0:
+            return None
+        entry = pos["entry_price"]
+        direction = 1.0 if pos["direction"] == "BUY" else -1.0
+        realized = direction * (float(exit_price) - entry) / entry
+        for tid in list(pos["trade_ids"]):
+            try:
+                await self.record_outcome(
+                    tid, was_correct=realized > 0, realized_return=realized)
+            except Exception as exc:
+                logger.warning(
+                    "CSC-V6: position outcome write failed for %s: %s",
+                    tid, exc)
+        logger.info(
+            "CSC-V6: closed %s position on %s (%s): entry %.6f exit %.6f "
+            "ret %+.5f", pos["direction"], symbol, reason, entry,
+            exit_price, realized)
+        return realized
+
+    async def close_all_positions(
+        self, prices: Dict[str, float],
+    ) -> Dict[str, float]:
+        """Flush every open position at the supplied marks — end-of-stream
+        accounting for evaluators; live positions only close on signal or
+        horizon."""
+        realized: Dict[str, float] = {}
+        for symbol in list(self._open_positions):
+            price = prices.get(symbol)
+            if isinstance(price, (int, float)) and price > 0:
+                result = await self._close_position(
+                    symbol, float(price), reason="stream_end")
+                if result is not None:
+                    realized[symbol] = result
+        return realized
+
+    async def _persist_audit_event(
+        self, event_type: str, action: str, outcome: str,
+        correlation_id: str, details: Dict[str, Any],
+    ) -> None:
+        """Append a durable AuditEvent to the configured sink, fail-open in
+        memory-only contexts (the bus jsonl still carries the proposal)."""
+        sink = getattr(self, "_decision_sink", None)
+        if sink is None:
+            return
+        try:
+            from trading_bot.foundation.contracts import AuditEvent
+            await self._safe_await(sink.record_audit_event(AuditEvent(
+                event_type=event_type,
+                actor="CSC_V6",
+                action=action,
+                outcome=outcome,
+                correlation_id=correlation_id,
+                details=details,
+            )))
+        except Exception as exc:
+            logger.warning("CSC-V6: decision sink write failed: %s", exc)
+
+    def get_decision_journal(self) -> Dict[str, Any]:
+        """Read-only decision journal: pending predictions + folded summary
+        history. The durable side lives in the repository audit_events."""
+        return {
+            "pending_predictions": dict(self._pending_predictions),
+            "open_positions": {
+                s: {k: v for k, v in p.items() if k != "trade_ids"}
+                for s, p in self._open_positions.items()},
+            "research_reports": self.get_research_journal(),
+            "folded_summaries": list(self.folder.folded_summaries),
+            "reliability": {
+                agent: {reg: {
+                    "precision": m.precision,
+                    "brier_score": m.brier_score,
+                    "total_predictions": m.total_predictions,
+                } for reg, m in regimes.items()}
+                for agent, regimes in self.reliability_tracker.metrics.items()
+            },
+        }
+
     async def _consult_agent_population(self, observation: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
         Transactive memory consultation: each Persistent Cognitive Agent updates
@@ -357,6 +776,24 @@ class CognitiveSystemController:
                 artifacts.append(agent.share_artifact("market_insight", insight))
             except Exception as exc:
                 logger.warning(f"CSC-V6: PCA {getattr(agent, 'name', 'unknown')} consult failed: {exc}")
+
+        # Subordinate advisory cognition services (configure_cognition) —
+        # their analysis joins the same evidence channel as PCA artifacts.
+        for service in getattr(self, "_advisory_services", []):
+            try:
+                result = await self._safe_await(service.analyze(observation))
+                artifacts.append({
+                    "agent": getattr(
+                        service, "capability_id",
+                        type(service).__name__),
+                    "evidence": result,
+                    "advisory_only": True,
+                })
+            except Exception as exc:
+                logger.warning(
+                    "CSC-V6: advisory %s failed: %s",
+                    getattr(service, "capability_id", type(service).__name__),
+                    exc)
         return artifacts
 
     async def _run_discoloop_reasoning(self, observation: Dict[str, Any], k: Optional[int] = None):
@@ -398,20 +835,49 @@ class CognitiveSystemController:
             return None
         # Score on the full probabilistic signal — confidence alone is a
         # constant default (0.9) which degenerates to first-branch-wins.
-        best = max(
+        ranked = sorted(
             branches,
             key=lambda b: b.confidence * b.probability * (1.0 - b.uncertainty),
+            reverse=True,
         )
+        best = ranked[0]
 
-        sim_data = simulations.get(best.branch_id, {})
-        if isinstance(sim_data, MagicMock) or hasattr(sim_data, "_mock_self"):
-            sim_data = {}
+        def _fails_simulation(branch) -> bool:
+            sim_data = simulations.get(branch.branch_id, {})
+            if isinstance(sim_data, MagicMock) or hasattr(sim_data, "_mock_self"):
+                return False
+            # Only directional branches can "fail" a simulation — a HOLD/WAIT
+            # branch has zero directional return by construction, not by risk.
+            # "Fails" means *measured harm*: explicit invalidation triggers
+            # or a negative simulated expected value. A merely weak win
+            # probability is not harm — downstream confidence sizing
+            # discounts it, so a 0.5-coin-flip branch isn't vetoed here but
+            # will not reach governance as a high-confidence proposal.
+            action = str(
+                (branch.execution_plan or {}).get("action", "")).upper()
+            if action not in ("BUY", "SELL") or not isinstance(sim_data, dict):
+                return False
+            triggers = sim_data.get("invalidation_triggers") or []
+            ev = sim_data.get("expected_value")
+            return bool(triggers) or (
+                isinstance(ev, (int, float)) and ev < 0)
 
-        if isinstance(sim_data, dict) and sim_data.get("failure_rate", 0) > 0.4:
-            logger.warning("CSC-V6: High simulation failure detected. Pivoting strategy...")
-            pivoted_branch = await self._safe_await(self.hypothesis_gen.pivot_branch(best, "high_risk_detected"))
-            if pivoted_branch:
-                return pivoted_branch
+        if not _fails_simulation(best):
+            return best
+
+        # The best branch failed — fall back to the next-ranked viable
+        # branch before collapsing to a no-exposure pivot.
+        for candidate in ranked[1:]:
+            if not _fails_simulation(candidate):
+                logger.warning(
+                    "CSC-V6: Best branch %s failed simulation; falling back "
+                    "to %s", best.branch_id, candidate.branch_id)
+                return candidate
+
+        logger.warning("CSC-V6: High simulation failure detected. Pivoting strategy...")
+        pivoted_branch = await self._safe_await(self.hypothesis_gen.pivot_branch(best, "high_risk_detected"))
+        if pivoted_branch:
+            return pivoted_branch
 
         return best
 
@@ -425,47 +891,125 @@ class CognitiveSystemController:
             new_branch.reasoning_trace.append(f"Refinement: {critique}")
         return new_branch
 
+    # Coarse circuit-breaker floor: a >4% single-observation sigma is
+    # flash-crash territory for the FX instruments this system trades
+    # (EURUSD daily vol is ~0.5-1%). The running baseline term makes the
+    # guardrail instrument-aware once history exists.
+    _HASP_ABS_VOL_LIMIT = 0.04
+    _HASP_BASELINE_MULT = 4.0
+    _HASP_BASELINE_MIN_SAMPLES = 8
+
+    @staticmethod
+    def _resolve_git_sha() -> str:
+        """Best-effort real git revision for provenance; 'unknown' when the
+        tree has no VCS metadata. Never a fabricated or signed-looking value."""
+        try:
+            import subprocess
+
+            repo_root = Path(__file__).resolve().parents[3]
+            out = subprocess.run(
+                ["git", "rev-parse", "HEAD"], cwd=str(repo_root),
+                capture_output=True, text=True, timeout=5)
+            sha = out.stdout.strip()
+            if out.returncode == 0 and len(sha) == 40:
+                return sha
+        except Exception:
+            pass
+        return "unknown"
+
     def _apply_hasp_guardrails(self, observation: Dict[str, Any]) -> Dict[str, Any]:
-        """Synchronous HASP volatility guardrail check on a raw observation."""
+        """Synchronous HASP volatility guardrail check on a raw observation.
+
+        Instrument-aware: intervenes when observed volatility exceeds the
+        running baseline by a large multiple, or crosses the absolute extreme
+        floor when too little history exists to form a baseline. A fixed
+        vol>0.3 threshold can never trigger at FX scale — that guardrail was
+        dead code and is now replaced."""
         volatility = observation.get("volatility", 0.0)
-        if isinstance(volatility, (int, float)) and volatility > 0.3:
-            return {
-                "status": "pf_intervention",
-                "result": {"action": "override_to_hold"},
-                "pf_result": {"action": "override_to_hold", "reason": "High volatility guardrail"},
-            }
+        if not isinstance(volatility, (int, float)) or volatility == 0.0:
+            market = observation.get("market")
+            if isinstance(market, dict):
+                volatility = market.get("volatility", 0.0)
+        if isinstance(volatility, (int, float)):
+            vol = float(volatility)
+            history = getattr(self, "_vol_baseline", None)
+            if history is None:
+                history = self._vol_baseline = deque(maxlen=256)
+            baseline = (
+                float(np.median(np.asarray(history)))
+                if len(history) >= self._HASP_BASELINE_MIN_SAMPLES else None
+            )
+            history.append(vol)
+            limit = self._HASP_ABS_VOL_LIMIT
+            if baseline is not None:
+                limit = max(limit, self._HASP_BASELINE_MULT * baseline)
+            if vol > limit:
+                return {
+                    "status": "pf_intervention",
+                    "result": {"action": "override_to_hold"},
+                    "pf_result": {
+                        "action": "override_to_hold",
+                        "reason": (
+                            f"Extreme volatility {vol:.4f} exceeds limit "
+                            f"{limit:.4f}"),
+                    },
+                }
         return {"status": "ok"}
 
     def _select_optimal_action(
         self, branch: ReasoningBranch, simulations: Dict[str, Any],
         trade_id: Optional[str] = None,
+        market_data: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Synthesizes the final trade proposal from the best reasoning branch and its simulation results.
+
+        Symbol always comes from the branch plan or the actual observation —
+        never a foreign-instrument default. A BUY/SELL branch without a
+        measured position size degrades honestly to HOLD rather than
+        inventing a quantity.
         """
         sim_data = simulations.get(branch.branch_id, {})
         if isinstance(sim_data, MagicMock) or hasattr(sim_data, "_mock_self"):
             sim_data = {}
 
-        base_qty = branch.execution_plan.get("quantity", 0.1) if isinstance(branch.execution_plan, dict) else 0.1
-        if not isinstance(base_qty, (int, float)):
-            base_qty = 0.1
+        plan = branch.execution_plan if isinstance(branch.execution_plan, dict) else {}
+        market = market_data if isinstance(market_data, dict) else {}
 
-        slippage = sim_data.get("expected_slippage", 0.0) if isinstance(sim_data, dict) else 0.0
-        if isinstance(slippage, MagicMock):
-            slippage = 0.0
-        slippage_penalty = max(0.0, 1.0 - (slippage * 5.0))
+        symbol = plan.get("symbol") or market.get("symbol") or "unknown"
+        action = str(plan.get("action") or "HOLD")
 
-        final_qty = max(0.01, base_qty * slippage_penalty)
-        causal_impact = sim_data.get("structural_impact", {}) if isinstance(sim_data, dict) else {}
+        qty = plan.get("quantity", plan.get("position_size", 0.0))
+        if not isinstance(qty, (int, float)) or isinstance(qty, bool):
+            qty = 0.0
+        qty = float(qty)
+
+        slippage = sim_data.get("expected_slippage") if isinstance(sim_data, dict) else None
+        if isinstance(slippage, MagicMock) or not isinstance(slippage, (int, float)):
+            slippage = None
+        if slippage is not None:
+            qty *= max(0.0, 1.0 - (float(slippage) * 5.0))
+
+        # Unmeasurable size on a directional action -> explicit no-position.
+        if action in ("BUY", "SELL") and qty <= 0.0:
+            action = "HOLD"
+            qty = 0.0
+
+        expected_return = None
+        if isinstance(sim_data, dict):
+            exp_val = sim_data.get("expected_value")
+            if isinstance(exp_val, (int, float)) and qty > 0:
+                expected_return = float(exp_val) / qty
 
         return {
             "trade_id": trade_id or _determinism.get_uuid(),
-            "symbol": branch.execution_plan.get("symbol", "BTC/USDT") if isinstance(branch.execution_plan, dict) else "BTC/USDT",
-            "action": branch.execution_plan.get("action", "WAIT") if isinstance(branch.execution_plan, dict) else "WAIT",
-            "quantity": final_qty,
+            "symbol": symbol,
+            "action": action,
+            "quantity": max(0.0, qty),
             "confidence": branch.confidence,
-            "causal_impact": causal_impact,
+            "causal_impact": sim_data.get("structural_impact", {}) if isinstance(sim_data, dict) else {},
+            "expected_return": expected_return,
+            "slippage_measured": slippage is not None,
             "reasoning_token": self.discrete_channel[-1] if self.discrete_channel else "none"
         }
 
@@ -497,24 +1041,88 @@ class CognitiveSystemController:
 
     def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
         """Constructs an immutable research ledger entry for decision provenance."""
-        provenance = InstitutionalProvenance(pipeline_version="UCA-V6", git_sha="uca-2026-signed")
+        provenance = InstitutionalProvenance(
+            pipeline_version="UCA-V6",
+            git_sha=getattr(self, "_git_sha", "unknown") or "unknown",
+        )
+        branch_conf = getattr(branch, "confidence", 0.5)
+        if not isinstance(branch_conf, (int, float)) or not np.isfinite(branch_conf):
+            branch_conf = 0.5
+        evidence_graph = getattr(branch, "evidence_graph", None)
+        if not hasattr(evidence_graph, "nodes"):
+            evidence_graph = EvidenceGraph()
+        hypotheses = getattr(branch, "hypotheses", None) or []
         return ResearchLedgerEntry(
             entry_id=_determinism.get_uuid(),
-            hypothesis=branch.hypotheses[0] if getattr(branch, "hypotheses", None) else None,
+            hypothesis=hypotheses[0] if hypotheses else None,
             reasoning_steps=getattr(branch, "reasoning_trace", []),
-            evidence_graph_snapshot=getattr(branch, "evidence_graph", EvidenceGraph()),
-            composite_confidence=getattr(branch, "confidence", 0.8),
+            evidence_graph_snapshot=evidence_graph,
+            composite_confidence=float(branch_conf),
             provenance=provenance
         )
 
     def _calculate_composite_confidence(self, entry: ResearchLedgerEntry) -> ConfidenceVector:
-        """Computes calibrated confidence vector under DeepWeb-Bench standards."""
+        """Computes the confidence vector from measured inputs only.
+
+        Each component is derived from a real artifact in the evidence graph
+        or the reliability ledger. Anything never measured is 0.0 — an honest
+        "unknown" that drags min_confidence down instead of a fabricated
+        constant."""
+        graph = getattr(entry, "evidence_graph_snapshot", None)
+        nodes_map = getattr(graph, "nodes", {}) or {}
+        nodes = list(nodes_map.values()) if isinstance(nodes_map, dict) \
+            else list(nodes_map)
+
+        def _meta(node, key):
+            m = getattr(node, "metadata", {}) or {}
+            v = m.get(key)
+            return float(v) if isinstance(v, (int, float)) else None
+
+        statistical = float(np.clip(
+            getattr(entry, "composite_confidence", 0.0) or 0.0, 0.0, 1.0))
+
+        regime = 0.0
+        for node in nodes:
+            if _meta(node, "regime") is not None or _meta(node, "trend") is not None \
+                    or _meta(node, "volatility") is not None:
+                regime = float(np.clip(getattr(node, "confidence", 0.0), 0.0, 1.0))
+                break
+
+        execution = 0.0
+        tail_risk = 0.0
+        for node in nodes:
+            ref = str((_meta(node, "source_ref") or ""))
+            if ref.startswith(("sim:", "simulation:")):
+                wp = _meta(node, "win_probability")
+                if wp is not None:
+                    execution = float(np.clip(wp, 0.0, 1.0))
+                dd = _meta(node, "p95_drawdown")
+                if dd is not None:
+                    # p95 path drawdown scaled: 5%+ sim tail drawdown -> ~0
+                    tail_risk = float(np.clip(1.0 - dd * 20.0, 0.0, 1.0))
+                break
+
+        model_stability = 0.0
+        sample_size = 0
+        metrics = getattr(getattr(self, "reliability_tracker", None),
+                          "metrics", {}) or {}
+        csc_metrics = metrics.get("CSC_V6", {})
+        for regime_metrics in csc_metrics.values():
+            sample_size += int(getattr(regime_metrics, "total_predictions", 0))
+        if sample_size:
+            # 1 - Brier is a bounded honest stability proxy.
+            brier_vals = [
+                getattr(m, "brier_score", 1.0) for m in csc_metrics.values()]
+            model_stability = float(
+                np.clip(1.0 - float(np.mean(brier_vals)), 0.0, 1.0))
+
         return ConfidenceVector(
-            statistical=getattr(entry, "composite_confidence", 0.8),
-            regime=0.8,
-            execution=0.9,
-            tail_risk=0.85,
-            model_stability=0.7,
+            statistical=statistical,
+            regime=regime,
+            execution=execution,
+            tail_risk=tail_risk,
+            model_stability=model_stability,
+            sample_size=sample_size,
         )
 
     def get_status(self) -> Dict[str, Any]:
@@ -590,50 +1198,105 @@ class CognitiveSystemController:
                 ))
         return None
 
-    async def _stage_internalization(self, obs_dict: Dict[str, Any]) -> None:
-        """Stages 4 + 4.5: DiscoLoop recurrence and PCA consultation."""
+    async def _stage_internalization(self, obs_dict: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Stages 4 + 4.5: DiscoLoop recurrence and PCA consultation.
+
+        Returns the advisory artifacts shared by the agent population so the
+        hypothesis stage can attach them as provenance-tagged evidence."""
         await self._run_discoloop_reasoning(obs_dict)
 
         # PCA Consultation — persistent agents share compressed artifacts
-        await self._consult_agent_population(obs_dict)
+        artifacts = await self._consult_agent_population(obs_dict)
+        # Queued research reports enter the same advisory channel once —
+        # provenance-tagged evidence, never authority.
+        if self._research_artifacts:
+            artifacts = list(artifacts or []) + list(self._research_artifacts)
+            self._research_artifacts.clear()
+        return artifacts
 
     async def _stage_hypothesis_and_simulation(
-        self, observation: Any
+        self, observation: Any, evidence_chain: Optional[List[Any]] = None,
+        advisory_artifacts: Optional[List[Dict[str, Any]]] = None,
     ) -> Tuple[List[ReasoningBranch], Dict[str, Any]]:
         """Stages 5 + 6: competing branches, then causal simulation."""
-        branches = await self._safe_await(self.hypothesis_gen.generate_competing_branches(observation))
+        branches = await self._safe_await(
+            self.hypothesis_gen.generate_competing_branches(
+                observation,
+                evidence_chain=evidence_chain,
+                advisory_artifacts=advisory_artifacts,
+            ))
 
         sim_results = {}
         if hasattr(self.hypothesis_gen, "simulate_branches"):
             try:
-                sim_results = await self._safe_await(self.hypothesis_gen.simulate_branches(branches)) or {}
+                sim_results = await self._safe_await(
+                    self.hypothesis_gen.simulate_branches(
+                        branches, market_data=observation)) or {}
             except Exception as e:
                 logger.warning(f"CSC-V6: Causal simulation error: {e}")
                 sim_results = {}
         return branches, sim_results
 
     async def _stage_pivot_refine(
-        self, branches: List[ReasoningBranch], sim_results: Dict[str, Any]
+        self, branches: List[ReasoningBranch], sim_results: Dict[str, Any],
+        trade_id: str = "",
     ) -> Any:
-        """Stage 7: Pivot/Refine selection; _Terminal(None) if nothing viable."""
+        """Stage 7: Pivot/Refine selection; _Terminal(ABSTAIN) if nothing viable."""
         best_branch = await self._safe_await(self._pivot_refine_loop(branches, sim_results))
         if not best_branch:
-            # No viable reasoning branches — nothing to decide.
-            logger.info("CSC-V6: No viable reasoning branches after Pivot/Refine; returning no decision")
-            return self._Terminal(None)
+            # No viable reasoning branches — record an explicit abstention
+            # rather than returning a silent None.
+            logger.info("CSC-V6: No viable reasoning branches after Pivot/Refine; abstaining")
+            return self._Terminal(CoreDecision(
+                outcome=DecisionOutcome.ABSTAIN,
+                trade_id=trade_id or "unknown",
+                dominant_rejection_reason="No viable reasoning branches produced",
+            ))
         return best_branch
 
     def _stage_synthesis(
         self, best_branch: ReasoningBranch, sim_results: Dict[str, Any],
         trade_id: str, obs_dict: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """Stage 8: final trade proposal from the winning branch."""
+        """Post-verification synthesis: final trade proposal from the
+        verified branch, grounded in the observation's symbol/price."""
         decision_proposal = self._select_optimal_action(
-            best_branch, sim_results, trade_id=trade_id)
+            best_branch, sim_results, trade_id=trade_id, market_data=obs_dict)
         if decision_proposal and isinstance(decision_proposal, dict):
             decision_proposal["trade_id"] = trade_id
             decision_proposal["price"] = obs_dict.get("price", obs_dict.get("close"))
+            self._apply_net_of_cost_gate(
+                decision_proposal, best_branch, sim_results, obs_dict)
         return decision_proposal
+
+    def _apply_net_of_cost_gate(
+        self, proposal: Dict[str, Any], branch: ReasoningBranch,
+        sim_results: Dict[str, Any], obs_dict: Dict[str, Any],
+    ) -> None:
+        """Abstention discipline: a directional proposal whose simulated
+        expected value cannot beat the estimated round-trip cost downgrades
+        to HOLD with the reason recorded — trading costs money; a proposal
+        that cannot cover it is not an edge."""
+        action = str(proposal.get("action") or "").upper()
+        if action not in ("BUY", "SELL", "STRONG_BUY", "STRONG_SELL"):
+            return
+        sim = sim_results.get(branch.branch_id)
+        if sim is not None and not isinstance(sim, dict):
+            return  # legacy/mock sim payloads (lists, mocks) — not gated here
+        sim = sim if isinstance(sim, dict) else {}
+        ev = sim.get("expected_value")
+        cost_bps = obs_dict.get("cost_bps") or obs_dict.get("spread_bps") \
+            or self._default_cost_bps
+        try:
+            round_trip_cost = 2.0 * float(cost_bps) / 1e4
+        except (TypeError, ValueError):
+            round_trip_cost = 2.0 * self._default_cost_bps / 1e4
+        if not isinstance(ev, (int, float)) or ev < round_trip_cost:
+            proposal["action"] = "HOLD"
+            proposal["downgraded_reason"] = (
+                f"insufficient net edge: simulated EV {ev} < "
+                f"round-trip cost {round_trip_cost:.6f}")
+            proposal["downgraded_from"] = action
 
     class _UnavailableGovernanceGate:
         """Fail-closed stub used when no governance gate can be constructed."""
@@ -657,6 +1320,20 @@ class CognitiveSystemController:
             risk_decision = await self._safe_await(
                 self.risk_engine.evaluate_action(decision_proposal or {}, obs_dict)
             )
+            if risk_decision is None and isinstance(decision_proposal, dict) and str(
+                    decision_proposal.get("action") or "").upper() in (
+                    "BUY", "SELL", "STRONG_BUY", "STRONG_SELL"):
+                # Directional risk can never proceed without an affirmative
+                # risk verdict: a missing engine or an errored evaluation
+                # yields no decision, which must fail closed rather than
+                # silently skip to governance.
+                return self._Terminal(CoreDecision(
+                    outcome=DecisionOutcome.TRADE_REJECTED,
+                    trade_id=decision_proposal.get("trade_id", trade_id),
+                    dominant_rejection_reason=(
+                        "Risk: no decision produced — engine missing or "
+                        "evaluation failed"),
+                )), risk_decision
             if risk_decision is not None and not getattr(risk_decision, "approved", False):
                 return self._Terminal(CoreDecision(
                     outcome=DecisionOutcome.TRADE_REJECTED,
@@ -674,6 +1351,16 @@ class CognitiveSystemController:
                 if isinstance(requested, (int, float)) and requested > approved_qty:
                     decision_proposal["quantity"] = approved_qty
                     decision_proposal["quantity_clamped_by_risk"] = True
+                if approved_qty <= 0 and isinstance(decision_proposal, dict) and str(
+                        decision_proposal.get("action") or "").upper() in (
+                        "BUY", "SELL"):
+                    return self._Terminal(CoreDecision(
+                        outcome=DecisionOutcome.TRADE_REJECTED,
+                        trade_id=decision_proposal.get("trade_id", trade_id),
+                        dominant_rejection_reason=(
+                            "Risk: approved_quantity is 0 — no permitted "
+                            "exposure for a directional proposal"),
+                    )), risk_decision
         return None, risk_decision
 
     def _get_governance_gate(self) -> Any:
@@ -740,11 +1427,14 @@ class CognitiveSystemController:
 
     async def _stage_verification(
         self, best_branch: ReasoningBranch, sim_results: Dict[str, Any],
-        decision_proposal: Optional[Dict[str, Any]], trade_id: str,
+        trade_id: str,
     ) -> Any:
-        """Stage 10: swarm verification + one bounded refinement pass.
+        """Verification stage: swarm audit + one bounded refinement pass.
 
-        Returns (best_branch, ledger_entry) on gate pass, else _Terminal.
+        Runs BEFORE synthesis and governance — a human or the shield must
+        never see an unverified proposal, and nothing unverified reaches the
+        decision bus. Returns (best_branch, ledger_entry) on gate pass, else
+        _Terminal.
         """
         ledger_entry = self._create_ledger_entry(best_branch, sim_results.get(best_branch.branch_id, []))
         reports = await self._safe_await(self.verifier_swarm.run_swarm(ledger_entry))
@@ -778,7 +1468,7 @@ class CognitiveSystemController:
             )
             return self._Terminal(CoreDecision(
                 outcome=DecisionOutcome.TRADE_REJECTED,
-                trade_id=decision_proposal.get("trade_id", trade_id) if decision_proposal else trade_id,
+                trade_id=trade_id,
                 dominant_rejection_reason=reason
             ))
         return best_branch, ledger_entry
@@ -801,11 +1491,63 @@ class CognitiveSystemController:
     async def _stage_execute_and_persist(
         self, ledger_entry: ResearchLedgerEntry,
         decision_proposal: Optional[Dict[str, Any]], trade_id: str,
+        obs_dict: Optional[Dict[str, Any]] = None,
     ) -> "CoreDecision":
-        """Stage 12: fold + persist, TRADE_EXECUTION consensus, verdict."""
+        """Final stage: fold + persist, consensus, verdict.
+
+        Abstentions (HOLD/WAIT or zero-quantity proposals) are recorded
+        durably but never dispatched as executions — there is nothing to
+        execute. Only verified directional proposals reach the bus."""
         self.folder.fold_history(ledger_entry)
         if self.hms is not None and hasattr(self.hms, "store_ledger_entry"):
             self.hms.store_ledger_entry(ledger_entry)
+
+        proposal = decision_proposal or {}
+        action_name = str(proposal.get("action") or "HOLD").upper()
+        quantity = proposal.get("quantity", 0.0)
+        if not isinstance(quantity, (int, float)) or isinstance(quantity, bool):
+            quantity = 0.0
+
+        # Record the honest next-price prediction for the surprise stage so
+        # sensory surprise is a real prediction error, not a constant 1.0.
+        price = None
+        if isinstance(obs_dict, dict):
+            price = obs_dict.get("price", obs_dict.get("close"))
+        exp_ret = proposal.get("expected_return")
+        if isinstance(price, (int, float)) and price > 0 and isinstance(exp_ret, (int, float)):
+            self.last_prediction = {"price": float(price) * (1.0 + float(exp_ret))}
+        else:
+            self.last_prediction = None
+
+        if action_name in ("HOLD", "WAIT", "NO_TRADE") or quantity <= 0.0:
+            await self._persist_audit_event(
+                event_type="DECISION",
+                action=action_name,
+                outcome="ABSTAIN",
+                correlation_id=trade_id,
+                details={
+                    "symbol": proposal.get("symbol"),
+                    "quantity": quantity,
+                    "confidence": proposal.get("confidence"),
+                    "reason": "verified non-directional decision",
+                })
+            return CoreDecision(
+                outcome=DecisionOutcome.ABSTAIN,
+                trade_id=trade_id,
+                dominant_rejection_reason=(
+                    f"Abstain: verified {action_name} decision, "
+                    f"quantity={quantity}"),
+                confidence_vector=self._calculate_composite_confidence(ledger_entry),
+            )
+
+        # Verified proposal audit entry: proposal first, then execution.
+        if self.decision_bus is not None and hasattr(self.decision_bus, "propose_action"):
+            await self._safe_await(self.decision_bus.propose_action(LogAction(
+                action_type="TRADE_PROPOSAL",
+                payload=decision_proposal,
+                agent_id="CSC_V6",
+                priority=EventPriority.HIGH,
+            )))
 
         action = LogAction(
             action_type="TRADE_EXECUTION",
@@ -827,11 +1569,42 @@ class CognitiveSystemController:
                 if isinstance(report, dict) and report.get("reason")
             ]
             detail = f" ({'; '.join(voter_reasons)})" if voter_reasons else ""
+            await self._persist_audit_event(
+                event_type="DECISION",
+                action=action_name,
+                outcome="TRADE_REJECTED",
+                correlation_id=trade_id,
+                details={
+                    "symbol": proposal.get("symbol"),
+                    "quantity": quantity,
+                    "consensus_status": str(status),
+                })
             return CoreDecision(
                 outcome=DecisionOutcome.TRADE_REJECTED,
                 trade_id=decision_proposal.get("trade_id", trade_id),
                 dominant_rejection_reason=f"LogAct consensus failure: {status}{detail}",
             )
+
+        # Approved directional decision — open/extend a position so its
+        # outcome is measured entry->exit over the position's lifetime, and
+        # persist the decision durably for the decision journal / read models.
+        if isinstance(price, (int, float)) and price > 0:
+            await self._register_directional(
+                trade_id, action_name, proposal.get("symbol"), float(price),
+                confidence=proposal.get("confidence", 0.5),
+                regime=(obs_dict or {}).get("trend")
+                    or (obs_dict or {}).get("regime") or "unknown")
+        await self._persist_audit_event(
+            event_type="DECISION",
+            action=action_name,
+            outcome="TRADE_APPROVED",
+            correlation_id=trade_id,
+            details={
+                "symbol": proposal.get("symbol"),
+                "quantity": quantity,
+                "confidence": proposal.get("confidence"),
+                "price": price,
+            })
 
         return CoreDecision(
             outcome=DecisionOutcome.TRADE_APPROVED,
@@ -841,10 +1614,28 @@ class CognitiveSystemController:
 
     async def process_market_observation(self, observation: Any) -> Optional[CoreDecision]:
         """
-        12-step Recursive Active Inference Pipeline (UCA V6).
+        Recursive Active Inference Pipeline (UCA V6).
+
+        Ordering contract: perception → evidence → guardrails →
+        internalization → hypothesis+simulation → pivot/refine →
+        **verification** → synthesis → risk → shield → governance →
+        execute/persist. Nothing reaches governance, the shield, or the
+        decision bus before the evidence swarm has passed — a human never
+        approves an unverified proposal.
         """
         # 0. Normalize + trade id
         obs_dict, trade_id = self._normalize_observation(observation)
+        self._observation_seq += 1
+
+        # 0.4. Causal feature enrichment: a raw OHLCV feed does not carry
+        # volatility/trend/rsi — derive them from strictly-prior bars so the
+        # verifier's structure gate is met with real measured evidence.
+        self._enrich_derived_features(obs_dict)
+
+        # 0.5. Settle matured pending predictions at this bar's price —
+        # the live outcome path. A decision approved at observation t is
+        # scored against the realized move by observation t+horizon.
+        await self._settle_pending_predictions(obs_dict)
 
         # 1. Perception
         await self._stage_perception(obs_dict)
@@ -857,51 +1648,68 @@ class CognitiveSystemController:
         if terminal is not None:
             return terminal.decision
 
-        # 4/4.5. DiscoLoop + PCA internalization
-        await self._stage_internalization(obs_dict)
+        # 4/4.5. DiscoLoop + PCA internalization (advisory artifacts)
+        advisory_artifacts = await self._stage_internalization(obs_dict)
 
-        # 5/6. Hypothesis generation + causal simulation
-        branches, sim_results = await self._stage_hypothesis_and_simulation(observation)
+        # 5/6. Hypothesis generation + causal simulation — on the ENRICHED
+        # observation so derived volatility/trend/rsi become evidence nodes.
+        branches, sim_results = await self._stage_hypothesis_and_simulation(
+            obs_dict, evidence_chain=evidence_chain,
+            advisory_artifacts=advisory_artifacts)
 
         # 7. Pivot/Refine
-        best_branch = await self._stage_pivot_refine(branches, sim_results)
+        best_branch = await self._stage_pivot_refine(
+            branches, sim_results, trade_id=trade_id)
         if isinstance(best_branch, self._Terminal):
             return best_branch.decision
 
-        # 8. Decision synthesis
-        decision_proposal = self._stage_synthesis(
-            best_branch, sim_results, trade_id, obs_dict)
-
-        # 8.5. Canonical portfolio-risk boundary
-        terminal, risk_decision = await self._stage_risk_check(
-            decision_proposal, obs_dict, trade_id)
-        if terminal is not None:
-            return terminal.decision
-
-        # 8.6. Human-governance gate (required actions only; fail closed)
-        terminal = await self._stage_governance(
-            decision_proposal, obs_dict, risk_decision, trade_id)
-        if terminal is not None:
-            return terminal.decision
-
-        # 9. LogAct proposal
-        await self._stage_logact_proposal(decision_proposal)
-
-        # 10. Verification swarm + bounded refinement
+        # 8. Verification swarm + bounded refinement — BEFORE synthesis so
+        # governance and shield only ever see a verified proposal.
         verified = await self._stage_verification(
-            best_branch, sim_results, decision_proposal, trade_id)
+            best_branch, sim_results, trade_id)
         if isinstance(verified, self._Terminal):
             return verified.decision
         best_branch, ledger_entry = verified
 
-        # 11. Immutable shield
-        terminal = await self._stage_shield(decision_proposal, obs_dict)
-        if terminal is not None:
-            return terminal.decision
+        # 9. Decision synthesis on the verified branch
+        decision_proposal = self._stage_synthesis(
+            best_branch, sim_results, trade_id, obs_dict)
 
-        # 12. Fold, persist, execute consensus
+        # 10-12. Execution gates apply to capital-moving proposals only —
+        # a verified HOLD/WAIT/zero-size abstention skips straight to
+        # durable recording. Risk/shield/governance exist to gate exposure;
+        # an abstention has none, and routing it through them would let a
+        # sizing rule mask a deliberate no-trade record.
+        action_name = str(
+            (decision_proposal or {}).get("action") or "HOLD").upper()
+        qty = (decision_proposal or {}).get("quantity", 0.0)
+        if not isinstance(qty, (int, float)) or isinstance(qty, bool):
+            qty = 0.0
+        is_directional = action_name not in ("HOLD", "WAIT", "NO_TRADE") \
+            and qty > 0.0
+
+        if is_directional:
+            # 10. Canonical portfolio-risk boundary
+            terminal, risk_decision = await self._stage_risk_check(
+                decision_proposal, obs_dict, trade_id)
+            if terminal is not None:
+                return terminal.decision
+
+            # 11. Immutable shield
+            terminal = await self._stage_shield(decision_proposal, obs_dict)
+            if terminal is not None:
+                return terminal.decision
+
+            # 12. Human-governance gate on the verified, shield-passed
+            # proposal
+            terminal = await self._stage_governance(
+                decision_proposal, obs_dict, risk_decision, trade_id)
+            if terminal is not None:
+                return terminal.decision
+
+        # 13. Fold, persist, execution consensus (or durable abstain record)
         return await self._stage_execute_and_persist(
-            ledger_entry, decision_proposal, trade_id)
+            ledger_entry, decision_proposal, trade_id, obs_dict)
 
     async def execute_task(self, task: str, context: Any = None) -> Dict[str, Any]:
         """
@@ -927,8 +1735,9 @@ class CognitiveSystemController:
             result = await self.process_market_observation(observation)
         finally:
             self.state.active_tasks.remove(task)
-        # Each executed task folds into runtime state and reduces epistemic uncertainty
+        # Each executed task is recorded; epistemic_uncertainty only moves
+        # when the outcome pipeline feeds measured results back through the
+        # ReliabilityTracker — task count alone is not learning.
         self.state.folded_history.append({"task": task, "result": result})
-        self.state.epistemic_uncertainty = max(0.05, self.state.epistemic_uncertainty * 0.9)
         # "status" refers to task completion — a vetoed trade is still a completed cycle.
         return {"status": "completed", "success": True, "decision": result}

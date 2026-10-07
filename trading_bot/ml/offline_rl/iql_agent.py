@@ -5,6 +5,8 @@ IQL avoids explicit policy extraction and learns implicitly through value functi
 More stable than CQL for certain offline RL tasks.
 """
 
+from __future__ import annotations
+
 import os
 import logging
 import numpy as np

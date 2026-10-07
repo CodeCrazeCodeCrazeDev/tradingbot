@@ -4,6 +4,8 @@ Offline Policy Evaluation (OPE)
 Methods for evaluating policies without live deployment.
 """
 
+from __future__ import annotations
+
 import logging
 import numpy as np
 from typing import Any, Callable, Dict, List, Optional, Tuple

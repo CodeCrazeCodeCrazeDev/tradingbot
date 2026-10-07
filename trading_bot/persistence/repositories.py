@@ -66,6 +66,9 @@ def decode_order(payload: Any) -> OrderRequest:
 def decode_report(payload: Any) -> ExecutionReport:
     """Reconstruct an ``ExecutionReport`` from its persisted JSON payload."""
     data = json.loads(payload) if isinstance(payload, str) else dict(payload)
+    def _ts(value: Any) -> Any:
+        return datetime.fromisoformat(value) if isinstance(value, str) else value
+
     fills = [
         Fill(
             client_order_id=fill["client_order_id"],
@@ -76,6 +79,8 @@ def decode_report(payload: Any) -> ExecutionReport:
             price=float(fill["price"]),
             commission=float(fill.get("commission", 0.0)),
             liquidity=fill.get("liquidity"),
+            **({"occurred_at": _ts(fill["occurred_at"])}
+               if fill.get("occurred_at") else {}),
         )
         for fill in data.get("fills", [])
     ]
@@ -87,6 +92,8 @@ def decode_report(payload: Any) -> ExecutionReport:
             filled_quantity=float(update.get("filled_quantity", 0.0)),
             average_price=update.get("average_price"),
             reason=update.get("reason"),
+            **({"occurred_at": _ts(update["occurred_at"])}
+               if update.get("occurred_at") else {}),
         )
         for update in data.get("updates", [])
     ]
@@ -173,6 +180,11 @@ class SqliteTradingRepository:
                     result_json TEXT NOT NULL,
                     checked_at TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS account_state (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
                 """
             )
             self._connection.commit()
@@ -187,21 +199,35 @@ class SqliteTradingRepository:
                    VALUES (?, ?, ?, ?, ?, ?)
                    ON CONFLICT(client_order_id) DO UPDATE SET
                      status=excluded.status, order_json=excluded.order_json,
-                     updated_at=excluded.updated_at""",
+                     updated_at=excluded.updated_at
+                   WHERE orders.status NOT IN
+                         ('filled','cancelled','rejected','expired')""",
                 (order.client_order_id, order.decision_id, order.instrument.symbol,
                  status.value, payload, now),
             )
             self._connection.commit()
 
+    _TERMINAL_STATUSES = ("filled", "cancelled", "rejected", "expired")
+
     async def record_execution(self, order: OrderRequest, report: ExecutionReport) -> None:
+        # Read the prior state *before* record_order mutates it: a row that
+        # already holds a terminal outcome is immutable — a replayed or
+        # superseding report must not overwrite it, though genuinely new
+        # fills (e.g. late-arriving partial fills) still append.
+        prior = await self.get_order(order.client_order_id)
+        prior_terminal = bool(
+            prior and prior["status"] in self._TERMINAL_STATUSES
+            and prior.get("report_json"))
         await self.record_order(order, report.status)
         now = datetime.now(timezone.utc).isoformat()
         report_json = json.dumps(report.to_dict(), sort_keys=True)
         with self._lock:
-            self._connection.execute(
-                "UPDATE orders SET report_json=?, status=?, updated_at=? WHERE client_order_id=?",
-                (report_json, report.status.value, now, order.client_order_id),
-            )
+            if not prior_terminal:
+                self._connection.execute(
+                    """UPDATE orders SET report_json=?, status=?, updated_at=?
+                       WHERE client_order_id=?""",
+                    (report_json, report.status.value, now, order.client_order_id),
+                )
             for fill in report.fills:
                 self._record_fill_locked(fill)
             self._connection.commit()
@@ -212,12 +238,24 @@ class SqliteTradingRepository:
             self._connection.commit()
 
     def _record_fill_locked(self, fill: Fill) -> None:
-        fill_key = f"{fill.client_order_id}:{fill.venue_order_id or fill.occurred_at.isoformat()}"
-        existing = self._connection.execute(
-            "SELECT 1 FROM fills WHERE fill_key=?", (fill_key,)
+        # Idempotent on fill *content* (replays of the same report must not
+        # double-count), while distinct partial fills of one order — even
+        # sharing a venue_order_id — each persist via the sequence suffix.
+        occurred = fill.occurred_at.isoformat()
+        duplicate = self._connection.execute(
+            """SELECT 1 FROM fills
+               WHERE client_order_id=? AND venue_order_id IS ? AND side=?
+                 AND quantity=? AND price=? AND occurred_at=?""",
+            (fill.client_order_id, fill.venue_order_id, fill.side.value,
+             fill.quantity, fill.price, occurred),
         ).fetchone()
-        if existing:
+        if duplicate:
             return
+        seq = self._connection.execute(
+            "SELECT COUNT(*) AS c FROM fills WHERE client_order_id=?",
+            (fill.client_order_id,),
+        ).fetchone()["c"]
+        fill_key = f"{fill.client_order_id}:{fill.venue_order_id or 'local'}:{seq}"
         current = self._connection.execute(
             "SELECT quantity, average_price, instrument_json FROM positions WHERE symbol=?",
             (fill.instrument.symbol,),
@@ -226,8 +264,22 @@ class SqliteTradingRepository:
         if current is None:
             quantity, average_price = signed_quantity, fill.price
         else:
-            quantity = float(current["quantity"]) + signed_quantity
-            average_price = fill.price if quantity == 0 else float(current["average_price"])
+            old_qty = float(current["quantity"])
+            old_price = float(current["average_price"])
+            quantity = old_qty + signed_quantity
+            if old_qty == 0 or quantity == 0 or (old_qty * signed_quantity < 0
+                                                 and abs(signed_quantity) > abs(old_qty)):
+                # Flattened, or flipped through zero: the residual position's
+                # basis is this fill's price.
+                average_price = fill.price
+            elif old_qty * signed_quantity > 0:
+                # Same direction: weighted average cost.
+                average_price = (
+                    old_qty * old_price + signed_quantity * fill.price
+                ) / quantity
+            else:
+                # Reducing the position keeps the entry basis.
+                average_price = old_price
         instrument_json = json.dumps(fill.instrument.to_dict(), sort_keys=True)
         self._connection.execute(
             """INSERT INTO fills
@@ -236,7 +288,7 @@ class SqliteTradingRepository:
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (fill_key, fill.client_order_id, fill.venue_order_id, fill.instrument.symbol,
              fill.side.value, fill.quantity, fill.price, fill.commission,
-             json.dumps(fill.to_dict(), sort_keys=True), fill.occurred_at.isoformat()),
+             json.dumps(fill.to_dict(), sort_keys=True), occurred),
         )
         self._connection.execute(
             """INSERT INTO positions(symbol, quantity, average_price, instrument_json, updated_at)
@@ -247,6 +299,25 @@ class SqliteTradingRepository:
             (fill.instrument.symbol, quantity, average_price, instrument_json,
              datetime.now(timezone.utc).isoformat()),
         )
+
+    async def get_account_state(self, key: str) -> Optional[str]:
+        """Durable scalar account state (e.g. peak equity, session marks)."""
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT value FROM account_state WHERE key=?", (key,)
+            ).fetchone()
+        return row["value"] if row else None
+
+    async def set_account_state(self, key: str, value: str) -> None:
+        with self._lock:
+            self._connection.execute(
+                """INSERT INTO account_state(key, value, updated_at)
+                   VALUES (?, ?, ?)
+                   ON CONFLICT(key) DO UPDATE SET
+                     value=excluded.value, updated_at=excluded.updated_at""",
+                (key, value, datetime.now(timezone.utc).isoformat()),
+            )
+            self._connection.commit()
 
     async def get_order(self, client_order_id: str) -> Optional[Dict[str, Any]]:
         """Return the durable order row (raw JSON payloads) or None."""
@@ -328,6 +399,33 @@ class SqliteTradingRepository:
             )
             self._connection.commit()
         return audit_id
+
+    async def list_audit_events(
+        self,
+        event_type: Optional[str] = None,
+        correlation_id: Optional[str] = None,
+        limit: int = 500,
+    ) -> List[Dict[str, Any]]:
+        """Read-only audit event projection for decision journals / reports.
+
+        Newest first. ``correlation_id`` joins a decision to its outcome."""
+        query = (
+            "SELECT audit_id, event_type, actor, action, outcome, "
+            "correlation_id, event_json, occurred_at FROM audit_events")
+        clauses, params = [], []
+        if event_type is not None:
+            clauses.append("event_type = ?")
+            params.append(event_type)
+        if correlation_id is not None:
+            clauses.append("correlation_id = ?")
+            params.append(correlation_id)
+        if clauses:
+            query += " WHERE " + " AND ".join(clauses)
+        query += " ORDER BY occurred_at DESC LIMIT ?"
+        params.append(int(limit))
+        with self._lock:
+            rows = self._connection.execute(query, params).fetchall()
+        return [dict(row) for row in rows]
 
     async def snapshot(self, account_id: str) -> PortfolioSnapshot:
         with self._lock:

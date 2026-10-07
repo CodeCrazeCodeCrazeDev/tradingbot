@@ -10,6 +10,8 @@ Paper: "Autoformer: Decomposition Transformers with Auto-Correlation for Long-Te
 Authors: Haixu Wu, Jiehui Xu, Jianmin Wang, Mingsheng Long
 """
 
+from __future__ import annotations
+
 import logging
 import numpy as np
 from typing import Any, Dict, List, Optional, Tuple

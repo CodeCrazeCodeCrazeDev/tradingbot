@@ -29,13 +29,28 @@ class DeterministicManager:
                 cls._instance._initialized = False
         return cls._instance
 
+    _boot_id: Optional[str] = None  # class-level: survives instance reset()
+
     def __init__(self, seed: int = 42):
         if self._initialized:
             return
         self.seed = seed
         self._id_counter = 0
+        self._run_id: Optional[str] = None
         self._enabled = False
         self._initialized = True
+
+    @classmethod
+    def _process_namespace(cls) -> str:
+        """Per-process identity namespace for deterministic IDs.
+
+        Fresh on every interpreter boot so two different sessions can never
+        mint colliding durable IDs, while same-process re-seeding still
+        reproduces ID sequences (legacy replay contract).
+        """
+        if cls._boot_id is None:
+            cls._boot_id = uuid.uuid4().hex
+        return f"proc-{cls._boot_id}"
 
     @classmethod
     def set_seed(cls, seed: int):
@@ -48,15 +63,26 @@ class DeterministicManager:
         inst.seed = seed
         inst.enable(seed=seed)
 
-    def enable(self, seed: Optional[int] = None):
-        """Enable deterministic mode with the given seed."""
+    def enable(self, seed: Optional[int] = None, run_id: Optional[str] = None):
+        """Enable deterministic mode with the given seed.
+
+        ``run_id`` namespaces the ID sequence: an explicit value reproduces a
+        named run across processes (replay tooling); omitted, the per-process
+        namespace applies so unrelated sessions never share identity space.
+        """
         if seed is not None:
             self.seed = seed
 
         self._id_counter = 0
+        if run_id is not None:
+            self._run_id = str(run_id)
+        elif self._run_id is None:
+            self._run_id = self._process_namespace()
         self._enabled = True
 
-        # Standard Python seeds
+        # Standard Python seeds. NOTE: PYTHONHASHSEED must be set before the
+        # interpreter starts — assigning it here has no effect on hash(), so
+        # decision-affecting code must not rely on str hash ordering.
         random.seed(self.seed)
         os.environ['PYTHONHASHSEED'] = str(self.seed)
 
@@ -83,12 +109,24 @@ class DeterministicManager:
         self._enabled = False
         logger.info("Deterministic mode DISABLED")
 
+    def begin_run(self, run_id: str):
+        """Switch the identity namespace to a named run (replay boundary)."""
+        self._run_id = str(run_id)
+        self._id_counter = 0
+
     def get_uuid(self) -> str:
-        """Get a deterministic or random UUID."""
+        """Get a deterministic or random UUID.
+
+        Deterministic IDs are scoped by (seed, run_id, counter): same seed in
+        a different run namespace produces disjoint identities, so replays
+        cannot collide with durable records from an earlier run.
+        """
         if self._enabled:
-            # Generate a deterministic UUID based on seed and counter
             import hashlib
-            h = hashlib.md5(f"{self.seed}-{self._id_counter}".encode()).hexdigest()
+            namespace = self._run_id or self._process_namespace()
+            h = hashlib.md5(
+                f"{self.seed}|{namespace}|{self._id_counter}".encode()
+            ).hexdigest()
             self._id_counter += 1
             return str(uuid.UUID(h))
         return str(uuid.uuid4())

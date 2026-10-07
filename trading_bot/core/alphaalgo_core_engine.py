@@ -50,6 +50,9 @@ class DecisionOutcome(Enum):
     TRADE_APPROVED = "TRADE_APPROVED"
     TRADE_REJECTED = "TRADE_REJECTED"
     NO_TRADE_MARKET_HOSTILE = "NO_TRADE_MARKET_HOSTILE"
+    # Verified but deliberately non-trading outcome (HOLD/WAIT/zero size) —
+    # recorded durably, never dispatched to the execution boundary.
+    ABSTAIN = "ABSTAIN"
 
 
 class ClaimType(Enum):

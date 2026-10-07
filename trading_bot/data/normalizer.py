@@ -36,6 +36,10 @@ class MarketDataNormalizer:
         # that can compute staleness should declare it (data_quality/stale)
         # or construct the normalizer with an explicit bound.
         self.max_staleness_seconds = max_staleness_seconds
+        # Newest source timestamp seen per symbol. A strictly earlier event
+        # indicates replay/ordering corruption — it is flagged STALE, never
+        # silently re-sorted into place.
+        self._seen_latest: Dict[str, datetime] = {}
 
     def normalize(
         self,
@@ -58,6 +62,15 @@ class MarketDataNormalizer:
             instrument_type=self._instrument_type(observation),
             venue=str(venue or observation.get("venue") or "unknown"),
             currency=str(observation.get("currency") or "USD"),
+            contract_size=self._positive_float(
+                observation.get("contract_size",
+                               observation.get("trade_contract_size")), 1.0),
+            price_increment=self._positive_float(
+                observation.get("price_increment",
+                                observation.get("tick_size")), None),
+            quantity_increment=self._positive_float(
+                observation.get("quantity_increment",
+                                observation.get("lot_step")), None),
             metadata={
                 "asset_class": observation.get("asset_class"),
                 "feed_id": observation.get("feed_id"),
@@ -69,10 +82,20 @@ class MarketDataNormalizer:
         payload.pop("time", None)
         payload.pop("venue", None)
 
-        source_timestamp = self._timestamp(
-            observation.get("timestamp", observation.get("time"))
-        )
+        raw_timestamp = observation.get("timestamp", observation.get("time"))
+        source_timestamp = self._timestamp(raw_timestamp)
         quality = self._quality(payload)
+        if raw_timestamp is None and _QUALITY_SEVERITY[quality] < _QUALITY_SEVERITY[DataQuality.DEGRADED]:
+            # No event time was supplied: fabricating "now" would fake
+            # freshness and corrupt ordering, so the event is degraded even
+            # though source_timestamp must still carry a concrete value.
+            quality = DataQuality.DEGRADED
+        latest = self._seen_latest.get(resolved_symbol)
+        if latest is not None and source_timestamp < latest:
+            quality = DataQuality.STALE
+        if raw_timestamp is not None and (
+                latest is None or source_timestamp > latest):
+            self._seen_latest[resolved_symbol] = source_timestamp
         declared = self._declared_quality(observation)
         # Untrusted upstream labels can only ever worsen quality — a feed
         # declaring "valid" never launders malformed data, while declared
@@ -150,6 +173,16 @@ class MarketDataNormalizer:
         return MarketEventType.TICK
 
     @staticmethod
+    def _positive_float(value: Any, default: Optional[float]) -> Optional[float]:
+        try:
+            parsed = float(value) if value is not None else None
+        except (TypeError, ValueError):
+            return default
+        if parsed is None or not math.isfinite(parsed) or parsed <= 0:
+            return default
+        return parsed
+
+    @staticmethod
     def _timestamp(value: Any) -> datetime:
         if value is None:
             return datetime.now(timezone.utc)
@@ -165,11 +198,21 @@ class MarketDataNormalizer:
     def _quality(payload: Mapping[str, Any]) -> DataQuality:
         numeric_keys = {"price", "open", "high", "low", "close", "volume", "bid", "ask", "last"}
         values = [payload[key] for key in numeric_keys if key in payload]
+        if not values:
+            # No price content at all — nothing here can be classified valid.
+            return DataQuality.UNKNOWN
         try:
             if any(not math.isfinite(float(value)) for value in values):
                 return DataQuality.INVALID
         except (TypeError, ValueError):
             return DataQuality.INVALID
+
+        if "bid" in payload and "ask" in payload:
+            try:
+                if float(payload["bid"]) <= 0 or float(payload["bid"]) > float(payload["ask"]):
+                    return DataQuality.INVALID
+            except (TypeError, ValueError):
+                return DataQuality.INVALID
 
         if all(key in payload for key in ("open", "high", "low", "close")):
             try:
