@@ -67,7 +67,17 @@ def publish_snapshot(state_dir: Path, snapshot: Dict[str, Any]) -> None:
     state_dir.mkdir(parents=True, exist_ok=True)
     tmp = state_dir / ".snapshot.tmp"
     tmp.write_text(json.dumps(snapshot, default=str), encoding="utf-8")
-    tmp.replace(state_dir / "snapshot.json")
+    target = state_dir / "snapshot.json"
+    for _ in range(3):
+        try:
+            tmp.replace(target)
+            return
+        except OSError:
+            # Windows AV/indexer/readers can hold the target briefly.
+            time.sleep(0.2)
+    # Last resort: overwrite in place (loses atomicity, keeps the run).
+    target.write_text(tmp.read_text(encoding="utf-8"), encoding="utf-8")
+    tmp.unlink(missing_ok=True)
 
 
 def serve_dashboard(state_dir: Path, port: int) -> None:
