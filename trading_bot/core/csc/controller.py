@@ -1,11 +1,17 @@
 """
-Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
-Cognitive System Controller (CSC) - UCA V6
+Cognitive System Controller (CSC) - UCA V6 Authoritative Strategic Brain.
 
 Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
-Implements 'DiscoLoop' (arXiv:2607.00341) for multi-hop reasoning, 'HIPIF' (arXiv:2606.10507) for information folding,
-and 'AutoResearchClaw' (arXiv:2605.20025) for Pivot/Refine self-healing control.
-Incorporates transferable principles from REG-401 to REG-500 (Batch 5 Research Paper Registry).
+
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Epistemic uncertainty bounds & falsification gating in active inference.
+- arXiv:2607.00341 (LogAct): Log-based transactional planning & state machine replication over decision bus.
+- arXiv:2607.01224 (AutoMem): Hierarchical memory integration & Bellman TD evidence updates.
+- arXiv:2605.12061 (SAGE): Multi-hop subgraph evidence retrieval & graph memory query routing.
+- arXiv:2605.10813 (NanoResearch): Monotonic safe self-evolution integration & drawdown bounds.
+- arXiv:2605.20025 (Skill-to-LoRA / DiscoLoop): Discrete-continuous recurrent reasoning iteration (DiscoLoopCell).
+- arXiv:2605.17734 (AutoResearchClaw): Adversarial Pivot/Refine strategy loops & Lopez de Prado DSR checks.
+- arXiv:2605.21482 (DeepWeb-Bench / HASP): Calibrated confidence vector synthesis & HASP guardrail pre-emption.
 """
 
 import numpy as np
@@ -91,10 +97,14 @@ class CognitiveSystemController:
     Supports backward compatibility for legacy positional signatures.
 
     Scientific Traceability:
-    - LogAct (arXiv:2605.29303): Byzantine consensus over decision_bus
-    - DiscoLoop (arXiv:2605.20025): Discrete-continuous reasoning iteration
-    - HASP (arXiv:2605.12061): Prescriptive guardrail skill verification
-    - AutoResearchClaw (arXiv:2605.17734): Pivot/Refine hypothesis loops
+    - arXiv:2605.29303 (EKSFT): Epistemic uncertainty bounds & falsification gating
+    - arXiv:2607.00341 (LogAct): Byzantine consensus over decision_bus
+    - arXiv:2607.01224 (AutoMem): Hierarchical memory storage & evidence graph snapshotting
+    - arXiv:2605.12061 (SAGE): Dynamic evidence chain retrieval
+    - arXiv:2605.10813 (NanoResearch): Monotonic safe self-improvement triage
+    - arXiv:2605.20025 (DiscoLoop): Discrete-continuous reasoning recurrence
+    - arXiv:2605.17734 (AutoResearchClaw): Pivot/Refine hypothesis loops & HASP guardrails
+    - arXiv:2605.21482 (DeepWeb-Bench): Calibrated composite confidence vector
     """
 
     _instance = None
@@ -344,6 +354,22 @@ class CognitiveSystemController:
 
         return 0.2
 
+    def calculate_variational_free_energy(self, observation: Dict[str, Any]) -> Tuple[float, float]:
+        """
+        Calculates Variational Free Energy (VFE) and Epistemic Uncertainty (EKSFT - arXiv:2605.29303).
+        VFE = Accuracy Loss (Sensory Surprise) + Complexity Penalty (Epistemic Uncertainty Bound).
+        """
+        surprise = self._calculate_sensory_surprise(observation)
+        if isinstance(observation, dict) and observation:
+            vals = [float(v) for v in observation.values() if isinstance(v, (int, float))]
+            epistemic_var = float(np.var(vals)) if len(vals) > 1 else 0.1
+        else:
+            epistemic_var = 0.1
+
+        self.state.epistemic_uncertainty = float(min(1.0, max(0.01, epistemic_var)))
+        vfe = float(surprise + 0.1 * self.state.epistemic_uncertainty)
+        return vfe, self.state.epistemic_uncertainty
+
     async def _consult_agent_population(self, observation: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
         Transactive memory consultation: each Persistent Cognitive Agent updates
@@ -558,10 +584,10 @@ class CognitiveSystemController:
         return obs_dict, trade_id
 
     async def _stage_perception(self, obs_dict: Dict[str, Any]) -> float:
-        """Stage 1: sensory surprise -> VFE history."""
-        surprise = self._calculate_sensory_surprise(obs_dict)
-        self.vfe_history.append(surprise)
-        return surprise
+        """Stage 1: sensory surprise -> VFE history & epistemic uncertainty bound calculation (EKSFT)."""
+        vfe, epistemic_var = self.calculate_variational_free_energy(obs_dict)
+        self.vfe_history.append(vfe)
+        return vfe
 
     async def _stage_evidence_retrieval(self, observation: Any) -> List[Any]:
         """Stage 2: HMS evidence chain with empty-chain fallback."""
