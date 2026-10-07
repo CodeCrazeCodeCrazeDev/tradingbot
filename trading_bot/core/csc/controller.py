@@ -20,7 +20,7 @@ import copy
 import threading
 from collections import deque
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 from datetime import datetime
 from trading_bot.core.governance.determinism import determinism as _determinism
 from unittest.mock import MagicMock, AsyncMock
@@ -1497,6 +1497,15 @@ class CognitiveSystemController:
         if self._research_artifacts:
             artifacts = list(artifacts or []) + list(self._research_artifacts)
             self._research_artifacts.clear()
+        # Record which advisory capabilities contributed this cycle so the
+        # terminal DECISION row carries evidence provenance — the audit
+        # trail must show what informed an approval, not just its result.
+        self._last_advisory_ids = sorted({
+            str(a.get("agent") or a.get("capability_id"))
+            for a in (artifacts or [])
+            if isinstance(a, Mapping)
+            and (a.get("agent") or a.get("capability_id"))
+        })
         return artifacts
 
     async def _stage_hypothesis_and_simulation(
@@ -1942,6 +1951,10 @@ class CognitiveSystemController:
                 # Predicted vs realized: recording the simulated EV lets
                 # forward outcomes measure EV calibration directly.
                 "expected_return": proposal.get("expected_return"),
+                # Evidence provenance: which advisory capabilities
+                # contributed analysis to this cycle's decision.
+                "advisory_evidence": list(
+                    getattr(self, "_last_advisory_ids", ())),
             })
 
         return CoreDecision(
