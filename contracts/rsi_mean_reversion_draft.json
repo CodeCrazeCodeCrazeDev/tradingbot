@@ -96,5 +96,11 @@
     "holdout_end": 1791375300.0,
     "expiry": 1791504000.0
   },
-  "_status": "DRAFT \u2014 unsigned; requires operator Ed25519 signature via load_signed_contract"
+  "_status": "DRAFT \u2014 unsigned; requires operator Ed25519 signature",
+  "_pre_evidence": {
+    "naive_zscore_mr_measured": "FALSIFIED on 20k real bars: net -0.012 to -0.017 across lookback 20/50/100, gross negative, win_rate ~0.49",
+    "interpretation": "the family as implemented does not carry the edge; a signed evaluation would explore the param space but pre-evidence suggests low yield \u2014 consider whether a different formulation (e.g., longer-horizon reversion, regime-conditional) belongs in the family before signing",
+    "measured_at": "2026-10-07",
+    "cost_bps": 5.0
+  }
 }
