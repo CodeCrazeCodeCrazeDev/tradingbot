@@ -69,13 +69,14 @@ def _frames(seed, n=160, edge=True):
     return SyntheticMarketGenerator(spec).generate()
 
 
-def run_cycle(seed, edge, workdir):
+def run_cycle(seed, edge, workdir, verifier_key):
     frames = _frames(seed, edge=edge)
     contract = _contract(frames, 160)
     archive = ParetoArchive(Path(workdir) / f"a{seed}-{edge}.jsonl")
     memory = ImprovementMemory(str(Path(workdir) / f"m{seed}-{edge}.db"))
     cycle = RecursiveImprovementCycle(
-        contract=contract, verifier=IndependentVerifier(), archive=archive,
+        contract=contract,
+        verifier=IndependentVerifier(key_path=verifier_key), archive=archive,
         memory=memory, guard=ProtectedPathGuard(), frames=frames,
         incumbent_params={"lookback": 100, "entry_threshold": 1.0},
         adapter=ADAPTERS["mean_reversion"],
@@ -94,9 +95,17 @@ def main() -> int:
     results = {"edge": {"eligible": 0, "rejected": 0, "insufficient": 0, "runs": []},
                "no_edge": {"eligible": 0, "rejected": 0, "insufficient": 0, "runs": []}}
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
+        # Provisioned key custody: an ephemeral in-process key cannot attest
+        # holdout evidence, so the benchmark signs with a file-backed key.
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+            Ed25519PrivateKey)
+        key_path = Path(tmp) / "benchmark_verifier.pem"
+        IndependentVerifier(
+            private_key=Ed25519PrivateKey.generate()
+        ).export_private_key(str(key_path))
         for seed in range(args.seeds):
             for edge in (True, False):
-                decisions, card = run_cycle(seed, edge, tmp)
+                decisions, card = run_cycle(seed, edge, tmp, str(key_path))
                 key = "edge" if edge else "no_edge"
                 for d in decisions:
                     bucket = ("eligible" if d.status == "eligible_for_operator_review"
