@@ -2503,6 +2503,40 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
     # --- test-only fixtures ---
     ("autonomous_engineer.py", "test-only fixture — no production reach"),
     ("yourtradingbot.py", "test-only fixture — no production reach"),
+    # --- non-AI-named orphan dirs never imported by the canonical path
+    #     (the 140 other non-manifest dirs ARE live imports — telemetry,
+    #     brokers, monitoring etc. — and stay outside this manifest) ---
+    ("adversarial_verification", "orphan parallel verification stack; "
+     "canonical path uses core/verification swarm"),
+    ("alpha_evolve", "deprecated RSI duplicate; RSI is canonical per "
+     "AGENTS.md"),
+    ("apex_fi", "orphan parallel APEX system; not on the canonical spine"),
+    ("cos", "orphan parallel orchestration system"),
+    ("decision_governance", "orphan parallel governance; canonical path "
+     "uses governance/policy_adapter + human_layer"),
+    ("deepseek_engineer", "offline engineering assistant; not a runtime "
+     "advisor"),
+    ("deepseek_engineer_pkg_tmp", "temporary packaging dir"),
+    ("events", "orphan event plumbing; canonical path uses "
+     "core/unified_event_bus"),
+    ("feedback", "orphan feedback plumbing; canonical path uses "
+     "record_outcome/decision sink"),
+    ("gets", "orphan governance-promotion experiment"),
+    ("golden_path", "orphan scripted demo path"),
+    ("hivemind", "orphan collective-intelligence loop"),
+    ("master_system", "orphan parallel master orchestrator"),
+    ("meta_governance", "orphan parallel governance layer"),
+    ("metrics", "orphan metrics shim; canonical path uses telemetry/"),
+    ("neuros_evolution", "deprecated evolution duplicate; RSI is "
+     "canonical per AGENTS.md"),
+    ("orchestration", "orphan parallel orchestrator"),
+    ("perplexity_trading", "orphan external-API research path"),
+    ("realtime_trading_core", "orphan parallel realtime engine; "
+     "canonical path is unified_bot -> CSC"),
+    ("registry", "orphan registry shim; canonical path uses "
+     "core/unified_registry"),
+    ("services", "orphan service plumbing"),
+    ("tests", "in-repo test package, not a runtime module"),
 )
 
 
