@@ -2799,6 +2799,655 @@ def _intelligence_brain_v2_service() -> AdvisoryModuleAdapter:
 # never advisory by design.
 
 
+# ---------------------------------------------------------------------------
+# Bucket G — second audit pass: Wyckoff / swing-structure / session-pattern
+# detectors still obs-feedable and unwired
+# ---------------------------------------------------------------------------
+
+def _swing_levels(bars: List[Dict[str, float]], k: int = 3
+                  ) -> Tuple[List[float], List[float]]:
+    """Local swing highs/lows over the accumulated bar window."""
+    highs: List[float] = []
+    lows: List[float] = []
+    for i in range(k, len(bars) - k):
+        if all(bars[i]["high"] >= bars[j]["high"]
+               for j in range(i - k, i + k + 1)):
+            highs.append(bars[i]["high"])
+        if all(bars[i]["low"] <= bars[j]["low"]
+               for j in range(i - k, i + k + 1)):
+            lows.append(bars[i]["low"])
+    return highs[-20:], lows[-20:]
+
+
+def _analysis_wyckoff_service() -> AdvisoryModuleAdapter:
+    """analysis/wyckoff — Wyckoff phase + phase changes on real bars."""
+    from trading_bot.analysis.wyckoff import WyckoffAnalyzer
+
+    w = WyckoffAnalyzer()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        out = {"bars": len(df)}
+        for name in ("detect_phase", "detect_phase_changes"):
+            fn = getattr(w, name, None)
+            if callable(fn):
+                try:
+                    out[name.replace("detect_", "")] = _primitive(fn(df))
+                except Exception:  # noqa: BLE001
+                    out[name.replace("detect_", "")] = None
+        return out
+
+    return AdvisoryModuleAdapter("analysis_wyckoff", analyze)
+
+
+def _analysis_wyckoff_full_service() -> AdvisoryModuleAdapter:
+    """analysis/wyckoff_complete — accumulation/distribution events on
+    real bars."""
+    from trading_bot.analysis.wyckoff_complete import (
+        WyckoffCompleteAnalyzer)
+
+    w = WyckoffCompleteAnalyzer()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        out = {"bars": len(df)}
+        for name in ("detect_phase", "detect_accumulation_events",
+                     "detect_distribution_events"):
+            fn = getattr(w, name, None)
+            if callable(fn):
+                try:
+                    out[name.replace("detect_", "")] = _primitive(fn(df))
+                except Exception:  # noqa: BLE001
+                    out[name.replace("detect_", "")] = None
+        return out
+
+    return AdvisoryModuleAdapter("analysis_wyckoff_events", analyze)
+
+
+def _analysis_structure_service() -> AdvisoryModuleAdapter:
+    """analysis/market_structure — swing structure on real bars."""
+    from trading_bot.analysis.market_structure import (
+        MarketStructureAnalyzer)
+
+    analyzer = MarketStructureAnalyzer()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        out = analyzer.detect_structure(
+            df, str(ctx.get("timeframe") or "M15"))
+        if inspect.isawaitable(out):
+            out = _run_coro_sync(out)
+        return _payload(out)
+
+    return AdvisoryModuleAdapter("analysis_market_structure", analyze)
+
+
+def _analysis_mtf_intel_service() -> AdvisoryModuleAdapter:
+    """analysis/multi_timeframe_intelligence — MTF confluence on real
+    bars."""
+    from trading_bot.analysis.multi_timeframe_intelligence import (
+        MultiTimeframeIntelligence)
+
+    mtf = MultiTimeframeIntelligence()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        out = mtf.analyze_timeframe(
+            df, str(ctx.get("timeframe") or "M15"))
+        if inspect.isawaitable(out):
+            out = _run_coro_sync(out)
+        return _payload(out)
+
+    return AdvisoryModuleAdapter("analysis_mtf_intelligence", analyze)
+
+
+def _analysis_liq_simplified_service() -> AdvisoryModuleAdapter:
+    """analysis/liquidity_simplified — dict-feedable liquidity read."""
+    from trading_bot.analysis.liquidity_simplified import LiquidityAnalysis
+
+    analyzer = LiquidityAnalysis()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 10:
+            return {"status": "warming", "bars": len(hist)}
+        out = analyzer.analyze(
+            _md_dict(ctx, hist), {},
+            str(ctx.get("timeframe") or "M15"))
+        if inspect.isawaitable(out):
+            out = _run_coro_sync(out)
+        return _payload(out)
+
+    return AdvisoryModuleAdapter("analysis_liquidity_simple", analyze)
+
+
+def _vpin_service() -> AdvisoryModuleAdapter:
+    """analysis/vpin_analysis — feed each bar, then informed-trading
+    read."""
+    from trading_bot.analysis.vpin_analysis import VPINCalculator
+
+    calc = VPINCalculator()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        bars = hist.bars(60)
+        if len(bars) < 10:
+            return {"status": "warming", "bars": len(bars)}
+        for b in bars:
+            try:
+                calc.process_bar(b)
+            except Exception:  # noqa: BLE001 - per-bar skip
+                pass
+        out = {"bars": len(bars)}
+        for name, call in (
+                ("informed_trading", lambda: calc.detect_informed_trading()),
+                ("vpin", lambda: calc.get_current_vpin()),
+                ("flash_crash_risk", lambda: calc.assess_flash_crash_risk(
+                    _num(ctx.get("volatility")) or 0.0,
+                    _num(ctx.get("volume_ratio")) or 1.0))):
+            try:
+                out[name] = _primitive(call())
+            except Exception:  # noqa: BLE001
+                out[name] = None
+        return out
+
+    return AdvisoryModuleAdapter("vpin_informed_trading", analyze)
+
+
+def _gravity_well_service() -> AdvisoryModuleAdapter:
+    """analysis/liquidity_gravity_well — swing highs/lows registered as
+    real liquidity pools, then path prediction."""
+    from trading_bot.analysis.liquidity_gravity_well import (
+        LiquidityGravityWell)
+
+    well = LiquidityGravityWell()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        bars = hist.bars(60)
+        if len(bars) < 20:
+            return {"status": "warming", "bars": len(bars)}
+        highs, lows = _swing_levels(bars)
+        for lv in highs:
+            try:
+                well.add_liquidity_level(lv, "resistance", strength=1.0)
+            except Exception:  # noqa: BLE001
+                pass
+        for lv in lows:
+            try:
+                well.add_liquidity_level(lv, "support", strength=1.0)
+            except Exception:  # noqa: BLE001
+                pass
+        out = well.predict_path(
+            _num(ctx.get("close") or ctx.get("price")) or 0.0,
+            _num(ctx.get("volatility")) or 0.01)
+        return _payload(out)
+
+    return AdvisoryModuleAdapter("liquidity_gravity_path", analyze)
+
+
+def _elite_equal_levels_service() -> AdvisoryModuleAdapter:
+    """elite_system EqualHighsLowsDetector — sweep levels on real
+    bars."""
+    from trading_bot.elite_system.liquidity_warfare import (
+        EqualHighsLowsDetector)
+
+    det = EqualHighsLowsDetector()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        return _payload(det.detect_equal_levels(df))
+
+    return AdvisoryModuleAdapter("elite_equal_levels", analyze)
+
+
+def _elite_swing_points_service() -> AdvisoryModuleAdapter:
+    """elite_system SwingPointDetector — swing highs/lows on real
+    bars."""
+    from trading_bot.elite_system.market_structure_oracle import (
+        SwingPointDetector)
+
+    det = SwingPointDetector()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        return _payload(det.detect_swing_points(df))
+
+    return AdvisoryModuleAdapter("elite_swing_points", analyze)
+
+
+def _elite_price_action_service() -> AdvisoryModuleAdapter:
+    """elite_system EliteMarketAnalyzer — load_data(df) then
+    analyze_price_action on real bars."""
+    from trading_bot.elite_system.market_analysis import (
+        EliteMarketAnalyzer)
+
+    analyzer = EliteMarketAnalyzer("EURUSD")
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        try:
+            analyzer.load_data(df, str(ctx.get("timeframe") or "M15"))
+        except Exception:  # noqa: BLE001
+            return {"status": "load_failed"}
+        out = {"bars": len(df)}
+        for name in ("analyze_price_action",
+                     "identify_smart_money_concepts",
+                     "get_trading_opportunities"):
+            fn = getattr(analyzer, name, None)
+            if callable(fn):
+                try:
+                    out[name] = _primitive(
+                        fn(str(ctx.get("timeframe") or "M15")))
+                except Exception:  # noqa: BLE001
+                    try:
+                        out[name] = _primitive(fn())
+                    except Exception:  # noqa: BLE001
+                        out[name] = None
+        return out
+
+    return AdvisoryModuleAdapter("elite_price_action", analyze)
+
+
+def _elite_patterns_service() -> AdvisoryModuleAdapter:
+    """elite_system ElitePatternRecognizer — candlestick + chart
+    patterns on real bars."""
+    from trading_bot.elite_system.pattern_recognition import (
+        ElitePatternRecognizer)
+
+    rec = ElitePatternRecognizer()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        out = {"bars": len(df)}
+        for name in ("detect_candlestick_patterns",
+                     "detect_chart_patterns"):
+            fn = getattr(rec, name, None)
+            if callable(fn):
+                try:
+                    out[name.replace("detect_", "")] = _primitive(fn(df))
+                except Exception:  # noqa: BLE001
+                    out[name.replace("detect_", "")] = None
+        return out
+
+    return AdvisoryModuleAdapter("elite_patterns", analyze)
+
+
+def _brain_structure_service() -> AdvisoryModuleAdapter:
+    """brain tier3 — S/R + liquidity + statistical reads on real
+    bars."""
+    from trading_bot.brain.tier3_structure import (
+        LiquidityAnalysis, MarketStructureAnalysis, StatisticalAnalysis)
+
+    ms, la, sa = (MarketStructureAnalysis(), LiquidityAnalysis(),
+                  StatisticalAnalysis())
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        out = {"bars": len(df)}
+        for label, fn in (("structure", lambda: ms.analyze(df)),
+                          ("liquidity", lambda: la.analyze(df)),
+                          ("statistical", lambda: sa.analyze(df))):
+            try:
+                out[label] = _primitive(fn())
+            except Exception:  # noqa: BLE001
+                out[label] = None
+        return out
+
+    return AdvisoryModuleAdapter("brain_tier3_structure", analyze)
+
+
+def _brain_orderflow_service() -> AdvisoryModuleAdapter:
+    """brain tier2 — volume climax + pressure + institutional detection
+    on real bars."""
+    from trading_bot.brain.tier2_orderflow import (
+        AdvancedVolumeAnalysis, BasicVolumeAnalysis,
+        InstitutionalDetection, PressureAnalysis)
+
+    basic, adv_vol, press, inst = (BasicVolumeAnalysis(),
+                                   AdvancedVolumeAnalysis(),
+                                   PressureAnalysis(),
+                                   InstitutionalDetection())
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        out = {"bars": len(df)}
+        for label, fn in (("volume", lambda: basic.analyze(df)),
+                          ("advanced_volume", lambda: adv_vol.analyze(df)),
+                          ("pressure", lambda: press.analyze(df, None)),
+                          ("institutional", lambda: inst.analyze(df))):
+            try:
+                out[label] = _primitive(fn())
+            except Exception:  # noqa: BLE001
+                out[label] = None
+        return out
+
+    return AdvisoryModuleAdapter("brain_tier2_orderflow", analyze)
+
+
+def _brain_condition_service() -> AdvisoryModuleAdapter:
+    """brain adaptive_integration — market-condition read on the obs
+    dict."""
+    from trading_bot.brain.adaptive_integration import (
+        AdaptiveIntegrationSystem)
+
+    system = AdaptiveIntegrationSystem()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        out = system.detect_market_condition(_md_dict(ctx, hist))
+        if inspect.isawaitable(out):
+            out = _run_coro_sync(out)
+        return _payload(out)
+
+    return AdvisoryModuleAdapter("brain_market_condition", analyze)
+
+
+def _fractal_divergence_service() -> AdvisoryModuleAdapter:
+    """advanced_features FractalMomentumDivergence — divergence on real
+    bars."""
+    from trading_bot.advanced_features.fractal_momentum_divergence \
+        import FractalMomentumDivergence
+
+    div = FractalMomentumDivergence()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        out = div.analyze_divergence(
+            df, str(ctx.get("timeframe") or "M15"))
+        if inspect.isawaitable(out):
+            out = _run_coro_sync(out)
+        return _payload(out)
+
+    return AdvisoryModuleAdapter("fractal_divergence", analyze)
+
+
+def _volatility_impulse_service() -> AdvisoryModuleAdapter:
+    """advanced_features VolatilityImpulseVector — volume surge on real
+    volume series."""
+    from trading_bot.advanced_features.volatility_impulse import (
+        VolatilityImpulseVector)
+
+    vec = VolatilityImpulseVector()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        vols = [b["volume"] for b in hist.bars(60)]
+        if len(vols) < 10:
+            return {"status": "warming", "bars": len(vols)}
+        return _payload(vec.detect_volume_surge(vols))
+
+    return AdvisoryModuleAdapter("volatility_impulse", analyze)
+
+
+def _liquidity_holography_service() -> AdvisoryModuleAdapter:
+    """advanced_features TemporalLiquidityAnalyzer — liquidity
+    evolution on real bars."""
+    from trading_bot.advanced_features.liquidity_holography import (
+        TemporalLiquidityAnalyzer)
+
+    analyzer = TemporalLiquidityAnalyzer()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        out = analyzer.analyze_liquidity_evolution(df)
+        if inspect.isawaitable(out):
+            out = _run_coro_sync(out)
+        return _payload(out)
+
+    return AdvisoryModuleAdapter("liquidity_holography", analyze)
+
+
+def _mi_absorption_service() -> AdvisoryModuleAdapter:
+    """market_intelligence AbsorptionPatterns — absorption + iceberg
+    signatures on real bars."""
+    from trading_bot.market_intelligence.liquidity_absorption import (
+        AbsorptionPatterns)
+
+    det = AbsorptionPatterns()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        out = {"bars": len(df)}
+        for name in ("detect_absorption_patterns",
+                     "detect_iceberg_orders"):
+            fn = getattr(det, name, None)
+            if callable(fn):
+                try:
+                    out[name.replace("detect_", "")] = _primitive(fn(df))
+                except Exception:  # noqa: BLE001
+                    out[name.replace("detect_", "")] = None
+        return out
+
+    return AdvisoryModuleAdapter("mi_absorption", analyze)
+
+
+def _mi_manipulation_service() -> AdvisoryModuleAdapter:
+    """market_intelligence ManipulationPatterns — stop hunts +
+    liquidity grabs on real bars."""
+    from trading_bot.market_intelligence.manipulation_analysis import (
+        ManipulationPatterns)
+
+    det = ManipulationPatterns()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        out = {"bars": len(df)}
+        for name in ("detect_stop_hunts", "detect_liquidity_grabs"):
+            fn = getattr(det, name, None)
+            if callable(fn):
+                try:
+                    out[name.replace("detect_", "")] = _primitive(fn(df))
+                except Exception:  # noqa: BLE001
+                    out[name.replace("detect_", "")] = None
+        return out
+
+    return AdvisoryModuleAdapter("mi_manipulation", analyze)
+
+
+def _mi_structure_service() -> AdvisoryModuleAdapter:
+    """market_intelligence MarketStructureAnalysis — market structure
+    on real bars."""
+    from trading_bot.market_intelligence.pattern_recognition import (
+        MarketStructureAnalysis)
+
+    det = MarketStructureAnalysis()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        return _payload(det.detect_market_structure(df))
+
+    return AdvisoryModuleAdapter("mi_market_structure", analyze)
+
+
+def _mi_time_price_service() -> AdvisoryModuleAdapter:
+    """market_intelligence TimeAnalysisComponents — session +
+    day-of-week patterns on timestamped real bars."""
+    from trading_bot.market_intelligence.time_price_analysis import (
+        TimeAnalysisComponents)
+
+    analyzer = TimeAnalysisComponents()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        df = df.copy()
+        df["timestamp"] = ctx.get("timestamp") or datetime.utcnow()
+        out = {"bars": len(df)}
+        for name in ("analyze_session_patterns", "detect_time_cycles",
+                     "analyze_day_of_week_patterns"):
+            fn = getattr(analyzer, name, None)
+            if callable(fn):
+                try:
+                    out[name] = _primitive(fn(df))
+                except Exception:  # noqa: BLE001
+                    out[name] = None
+        return out
+
+    return AdvisoryModuleAdapter("mi_time_price", analyze)
+
+
+def _mi_wyckoff_service() -> AdvisoryModuleAdapter:
+    """market_intelligence WyckoffAccumulationDetector — accumulation
+    phase on real bars."""
+    from trading_bot.market_intelligence.wyckoff_analysis import (
+        WyckoffAccumulationDetector)
+
+    det = WyckoffAccumulationDetector()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        return _payload(det.detect_accumulation_phase(df))
+
+    return AdvisoryModuleAdapter("mi_wyckoff_accumulation", analyze)
+
+
+def _session_awareness_service() -> AdvisoryModuleAdapter:
+    """improvements SessionAwareness — session tagging from the obs
+    timestamp."""
+    from trading_bot.improvements.forecast_improvements.\
+session_awareness import SessionAwareness
+
+    sa = SessionAwareness()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        ts = ctx.get("timestamp")
+        if isinstance(ts, str):
+            try:
+                ts = datetime.fromisoformat(ts)
+            except ValueError:
+                ts = None
+        out = sa.analyze_session(
+            str(ctx.get("symbol") or "EURUSD"),
+            ts if isinstance(ts, datetime) else datetime.utcnow())
+        if inspect.isawaitable(out):
+            out = _run_coro_sync(out)
+        return _payload(out)
+
+    return AdvisoryModuleAdapter("session_awareness", analyze)
+
+
+def _signal_enhancement_mtf_service() -> AdvisoryModuleAdapter:
+    """improvements MultiTimeframeAnalyzer — MTF read on the real
+    close series."""
+    from trading_bot.improvements.signal_enhancement import (
+        MultiTimeframeAnalyzer)
+
+    analyzer = MultiTimeframeAnalyzer()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        prices = [b["close"] for b in hist.bars(60)]
+        if len(prices) < 10:
+            return {"status": "warming", "bars": len(prices)}
+        out = analyzer.analyze_timeframe(
+            prices, str(ctx.get("timeframe") or "M15"))
+        if inspect.isawaitable(out):
+            out = _run_coro_sync(out)
+        return _payload(out)
+
+    return AdvisoryModuleAdapter("signal_enhancement_mtf", analyze)
+
+
+def _fourier_service() -> AdvisoryModuleAdapter:
+    """innovations FourierPriceAnalyzer — real FFT on the close
+    series. Only innovations category with real math on real data."""
+    from trading_bot.innovations.category_09_musical_trading import (
+        FourierPriceAnalyzer)
+
+    fa = FourierPriceAnalyzer()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        prices = [b["close"] for b in hist.bars(60)]
+        if len(prices) < 16:
+            return {"status": "warming", "bars": len(prices)}
+        return _payload(fa.analyze_frequencies(prices))
+
+    return AdvisoryModuleAdapter("fourier_price", analyze)
+
+
+# improvements/forecast_improvements/spread_slippage note:
+# CostAdjustedFilter needs live spread_monitor + slippage_tracker
+# collaborators — not constructible from obs.
+# EliteMarketAnalyzer analyze_volume_profile/order_flow need tick/
+# footprint data the bars don't carry.
+
+
 # Factories for services that are genuinely observation-callable. Each
 # entry is attached at assembly time inside a probe; failures skip the
 # service rather than break the runtime.
@@ -2965,6 +3614,32 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("iceberg_detector", _iceberg_detector_service),
     ("momentum_specialist", _momentum_specialist_service),
     ("intelligence_brain_v2", _intelligence_brain_v2_service),
+    # Bucket G - second audit pass: Wyckoff / structure / session
+    ("analysis_wyckoff", _analysis_wyckoff_service),
+    ("analysis_wyckoff_events", _analysis_wyckoff_full_service),
+    ("analysis_market_structure", _analysis_structure_service),
+    ("analysis_mtf_intelligence", _analysis_mtf_intel_service),
+    ("analysis_liquidity_simple", _analysis_liq_simplified_service),
+    ("vpin_informed_trading", _vpin_service),
+    ("liquidity_gravity_path", _gravity_well_service),
+    ("elite_equal_levels", _elite_equal_levels_service),
+    ("elite_swing_points", _elite_swing_points_service),
+    ("elite_price_action", _elite_price_action_service),
+    ("elite_patterns", _elite_patterns_service),
+    ("brain_tier3_structure", _brain_structure_service),
+    ("brain_tier2_orderflow", _brain_orderflow_service),
+    ("brain_market_condition", _brain_condition_service),
+    ("fractal_divergence", _fractal_divergence_service),
+    ("volatility_impulse", _volatility_impulse_service),
+    ("liquidity_holography", _liquidity_holography_service),
+    ("mi_absorption", _mi_absorption_service),
+    ("mi_manipulation", _mi_manipulation_service),
+    ("mi_market_structure", _mi_structure_service),
+    ("mi_time_price", _mi_time_price_service),
+    ("mi_wyckoff_accumulation", _mi_wyckoff_service),
+    ("session_awareness", _session_awareness_service),
+    ("signal_enhancement_mtf", _signal_enhancement_mtf_service),
+    ("fourier_price", _fourier_service),
 )
 
 # Modules imported by the live path but with no advisory decision role —
@@ -3288,16 +3963,21 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
     ("tests", "in-repo test package, not a runtime module"),
     # --- dirs proven orphan by the Tier-1 audit (imported only by
     #     legacy_main/main_v1 or nothing at all) ---
-    ("analysis", "analysis_* technical analyzers attached (12 "
-     "capabilities); external-data remainder (sec_13f, cot, dark_pool, "
-     "options, news, sentiment, cross_asset, sector) needs feeds the "
-     "bot doesn't ingest"),
-    ("innovations", "chrono_arbitrage attached; biological/cosmic/"
-     "mythological categories are speculative experiments"),
-    ("advanced_features", "black_swan_conditions attached; "
-     "institutional/footprint remainder needs order-flow feeds"),
-    ("improvements", "pullback_detector attached; forecast_improvements "
-     "remainder is offline enhancement tooling"),
+    ("analysis", "analysis_* technical analyzers attached (18 "
+     "capabilities incl. wyckoff, market_structure, mtf_intelligence, "
+     "vpin, liquidity_gravity); external-data remainder (sec_13f, cot, "
+     "dark_pool, options, news, sentiment, cross_asset, sector) needs "
+     "feeds the bot doesn't ingest"),
+    ("innovations", "chrono_arbitrage + fourier_price attached; "
+     "biological/cosmic/mythological categories are speculative "
+     "experiments"),
+    ("advanced_features", "black_swan, fractal_divergence, "
+     "volatility_impulse, liquidity_holography attached (last three "
+     "need scipy/sklearn, env-gated); institutional/footprint "
+     "remainder needs order-flow feeds"),
+    ("improvements", "pullback_detector, session_awareness, "
+     "signal_enhancement_mtf attached; spread_slippage needs live "
+     "collaborators; rest is offline enhancement tooling"),
     ("analytics", "alpha_decay attached; emotional/psychological "
      "trackers need trade-action history, not observations"),
     ("indicators", "iceberg_detector attached; advanced_ml remainder "
@@ -3308,7 +3988,16 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
      "remainder overlaps the brain service"),
     ("ml", "predictors ship unfitted — would emit noise, not evidence; "
      "wire after a training/loading path exists"),
-    ("elite_system", "LSTMPredictor and siblings need trained weights"),
+    ("elite_system", "elite_price_action attached; equal_levels, "
+     "swing_points, patterns env-gated on scipy/sklearn; LSTMPredictor "
+     "and siblings need trained weights"),
+    ("brain", "tier3_structure, tier2_orderflow, adaptive_integration "
+     "attached (env-gated on scipy); deep-model remainder needs "
+     "trained tensors"),
+    ("market_intelligence", "mi_absorption, mi_manipulation, "
+     "mi_wyckoff_accumulation attached; mi_market_structure, "
+     "mi_time_price env-gated on sklearn/pytz; regulatory/technological "
+     "remainder needs external feeds"),
     ("msos", "vendor-bias detection needs vendor/reference data feeds"),
     ("opportunity_scanner", "spread analyzer needs two symbols; "
      "observation is single-symbol"),

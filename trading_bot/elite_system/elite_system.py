@@ -213,10 +213,12 @@ class EliteSystemConfig:
     # Risk parameters
     max_risk_per_trade: float = 0.02  # 2% max risk per trade
     max_portfolio_risk: float = 0.06  # 6% max portfolio risk
-    default_position_sizing: PositionSizeMethod = PositionSizeMethod.KELLY
+    default_position_sizing: Optional["PositionSizeMethod"] = (
+        PositionSizeMethod.KELLY if PositionSizeMethod is not None else None)
     
     # AI/ML parameters
-    prediction_horizon: PredictionHorizon = PredictionHorizon.SHORT
+    prediction_horizon: Optional["PredictionHorizon"] = (
+        PredictionHorizon.SHORT if PredictionHorizon is not None else None)
     
     # Consciousness parameters
     consciousness_adaptation_rate: float = 0.1
