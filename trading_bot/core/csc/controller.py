@@ -889,6 +889,62 @@ class CognitiveSystemController:
         """Return the tracked close history for a symbol (read-only copy)."""
         return list(self._obs_history.get(str(symbol), ()))
 
+    def export_open_positions(self) -> Dict[str, Any]:
+        """Serialize open positions for restart continuity — without this,
+        a restart orphans fills that persist in the ledger: the CSC thinks
+        flat while positions remain open and never settle."""
+        return {
+            "observation_seq": self._observation_seq,
+            "positions": {
+                sym: {
+                    "direction": p.get("direction"),
+                    "entry_price": p.get("entry_price"),
+                    "entry_seq": p.get("entry_seq"),
+                    "symbol": p.get("symbol"),
+                    "confidence": p.get("confidence"),
+                    "regime": p.get("regime"),
+                    "trade_ids": list(p.get("trade_ids") or []),
+                }
+                for sym, p in self._open_positions.items()
+            },
+        }
+
+    def import_open_positions(self, state: Optional[Dict[str, Any]]) -> int:
+        """Restore open positions serialized by export_open_positions.
+
+        Pending predictions are intentionally not restored — their
+        trade_ids would collide with a fresh sequence — but the position
+        itself resumes so it settles on horizon/reversal."""
+        if not isinstance(state, dict):
+            return 0
+        positions = state.get("positions") or {}
+        self._observation_seq = int(
+            state.get("observation_seq") or self._observation_seq)
+        restored = 0
+        for sym, p in positions.items():
+            if not isinstance(p, dict):
+                continue
+            direction = p.get("direction")
+            entry = p.get("entry_price")
+            if direction not in ("BUY", "SELL") or not isinstance(
+                    entry, (int, float)) or entry <= 0:
+                continue
+            self._open_positions[str(sym)] = {
+                "direction": direction,
+                "entry_price": float(entry),
+                "entry_seq": int(p.get("entry_seq") or 0),
+                "symbol": str(p.get("symbol") or sym),
+                "confidence": p.get("confidence"),
+                "regime": p.get("regime"),
+                "trade_ids": [],
+            }
+            restored += 1
+        if restored:
+            logger.info(
+                "CSC-V6: restored %d open positions from prior session",
+                restored)
+        return restored
+
     def _enrich_derived_features(self, obs_dict: Dict[str, Any]) -> None:
         """Derive missing causal features from the symbol's own bar history.
 
@@ -1118,30 +1174,29 @@ class CognitiveSystemController:
 
         # Subordinate advisory cognition services (configure_cognition) —
         # their analysis joins the same evidence channel as PCA artifacts.
+        # Run in PARALLEL with a per-service timeout — a slow or hanging
+        # advisor must not serialize-stall the decision pipeline.
         # Circuit breaker: 5 consecutive failures disable the advisor for
         # this session — broken modules warn once, then go quiet.
         failures = getattr(self, "_advisory_failures", None)
         if failures is None:
             self._advisory_failures = failures = {}
-        for service in getattr(self, "_advisory_services", []):
-            cap = str(getattr(
-                service, "capability_id", type(service).__name__))
-            if failures.get(cap, 0) >= 5:
-                continue
-            try:
-                result = await self._safe_await(service.analyze(observation))
-                artifact = {
-                    "agent": cap,
-                    "advisory_only": True,
-                }
-                if isinstance(result, Mapping):
-                    artifact.update(result)
-                    artifact["agent"] = cap
-                else:
-                    artifact["evidence"] = {"result": result}
-                artifacts.append(artifact)
-                failures.pop(cap, None)
-            except Exception as exc:
+        services = [
+            s for s in getattr(self, "_advisory_services", [])
+            if failures.get(str(getattr(s, "capability_id",
+                                        type(s).__name__)), 0) < 5]
+        caps = [str(getattr(s, "capability_id", type(s).__name__))
+                for s in services]
+
+        async def _one(svc):
+            return await asyncio.wait_for(
+                self._safe_await(svc.analyze(observation)),
+                timeout=5.0)
+
+        results = await asyncio.gather(
+            *(_one(s) for s in services), return_exceptions=True)
+        for cap, result in zip(caps, results):
+            if isinstance(result, Exception):
                 failures[cap] = failures.get(cap, 0) + 1
                 if failures[cap] == 5:
                     logger.warning(
@@ -1149,7 +1204,16 @@ class CognitiveSystemController:
                         cap)
                 else:
                     logger.warning("CSC-V6: advisory %s failed: %s",
-                                   cap, exc)
+                                   cap, result)
+                continue
+            failures.pop(cap, None)
+            artifact = {"agent": cap, "advisory_only": True}
+            if isinstance(result, Mapping):
+                artifact.update(result)
+                artifact["agent"] = cap
+            else:
+                artifact["evidence"] = {"result": result}
+            artifacts.append(artifact)
         return artifacts
 
     async def _run_discoloop_reasoning(self, observation: Dict[str, Any], k: Optional[int] = None):
@@ -1590,6 +1654,10 @@ class CognitiveSystemController:
         Returns the advisory artifacts shared by the agent population so the
         hypothesis stage can attach them as provenance-tagged evidence."""
         await self._run_discoloop_reasoning(obs_dict)
+
+        # Reset per-cycle advisory state — a short-circuited cycle must
+        # not leak last cycle's calls into this decision.
+        self._last_advisory_calls = []
 
         # PCA Consultation — persistent agents share compressed artifacts
         artifacts = await self._consult_agent_population(obs_dict)

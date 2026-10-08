@@ -160,6 +160,18 @@ async def run(args: argparse.Namespace) -> int:
             float(c) for c in history if isinstance(c, (int, float)))
         logger.info("seeded %d historical closes into feature windows",
                     len(history))
+        # Restore open positions from the prior session — without this a
+        # restart orphans persisted fills: ledger holds exposure the CSC
+        # forgot, so it never settles and never scores those predictions.
+        pos_state_path = state_dir / "open_positions.json"
+        if pos_state_path.exists():
+            try:
+                n = csc.import_open_positions(json.loads(
+                    pos_state_path.read_text(encoding="utf-8")))
+                if n:
+                    logger.info("restored %d open positions", n)
+            except Exception as exc:
+                logger.warning("open-position restore failed: %s", exc)
 
     if args.dashboard_port:
         serve_dashboard(state_dir, args.dashboard_port)
@@ -215,6 +227,24 @@ async def run(args: argparse.Namespace) -> int:
             if args.interval > 0:
                 await asyncio.sleep(args.interval)
     finally:
+        # Settle every open position at last marks and persist the
+        # remainder — kills are instant, so anything still open here
+        # would otherwise vanish from CSC bookkeeping while its fills
+        # stay in the ledger (orphan exposure).
+        if csc is not None:
+            try:
+                marks = {s: p for s, p in console.last_price.items()
+                         if isinstance(p, (int, float)) and p > 0}
+                realized = await csc.close_all_positions(marks)
+                if realized:
+                    logger.info("end-of-run flush settled: %s",
+                                list(realized))
+                tmp = (state_dir / "open_positions.json")
+                tmp.write_text(json.dumps(
+                    csc.export_open_positions(), default=str),
+                    encoding="utf-8")
+            except Exception as exc:
+                logger.warning("position flush/persist failed: %s", exc)
         await runtime.stop()
     logger.info("runner finished: %d cycles processed", processed)
     return 0
