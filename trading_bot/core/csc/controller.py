@@ -1118,21 +1118,38 @@ class CognitiveSystemController:
 
         # Subordinate advisory cognition services (configure_cognition) —
         # their analysis joins the same evidence channel as PCA artifacts.
+        # Circuit breaker: 5 consecutive failures disable the advisor for
+        # this session — broken modules warn once, then go quiet.
+        failures = getattr(self, "_advisory_failures", None)
+        if failures is None:
+            self._advisory_failures = failures = {}
         for service in getattr(self, "_advisory_services", []):
+            cap = str(getattr(
+                service, "capability_id", type(service).__name__))
+            if failures.get(cap, 0) >= 5:
+                continue
             try:
                 result = await self._safe_await(service.analyze(observation))
-                artifacts.append({
-                    "agent": getattr(
-                        service, "capability_id",
-                        type(service).__name__),
-                    "evidence": result,
+                artifact = {
+                    "agent": cap,
                     "advisory_only": True,
-                })
+                }
+                if isinstance(result, Mapping):
+                    artifact.update(result)
+                    artifact["agent"] = cap
+                else:
+                    artifact["evidence"] = {"result": result}
+                artifacts.append(artifact)
+                failures.pop(cap, None)
             except Exception as exc:
-                logger.warning(
-                    "CSC-V6: advisory %s failed: %s",
-                    getattr(service, "capability_id", type(service).__name__),
-                    exc)
+                failures[cap] = failures.get(cap, 0) + 1
+                if failures[cap] == 5:
+                    logger.warning(
+                        "CSC-V6: advisory %s disabled after 5 failures",
+                        cap)
+                else:
+                    logger.warning("CSC-V6: advisory %s failed: %s",
+                                   cap, exc)
         return artifacts
 
     async def _run_discoloop_reasoning(self, observation: Dict[str, Any], k: Optional[int] = None):

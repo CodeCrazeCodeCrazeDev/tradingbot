@@ -26,6 +26,35 @@ from trading_bot.cognition.advisory_adapter import AUTHORITY_FIELDS
 logger = logging.getLogger("alphaalgo.csc.advisory")
 
 
+def _run_coro_sync(coro: Any, timeout_s: float = 5.0) -> Any:
+    """Run a probe coroutine whether or not an event loop is already
+    running. Assembly is called from async runtime entry points —
+    run_until_complete() would fail inside a live loop, so the probe
+    goes to a short-lived thread with its own loop when needed."""
+    import asyncio
+    import threading
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    box: Dict[str, Any] = {}
+
+    def _worker() -> None:
+        try:
+            box["r"] = asyncio.run(coro)
+        except Exception as exc:  # noqa: BLE001 - re-raised below
+            box["e"] = exc
+
+    t = threading.Thread(target=_worker, daemon=True)
+    t.start()
+    t.join(timeout_s)
+    if t.is_alive():
+        raise TimeoutError("advisory probe timed out")
+    if "e" in box:
+        raise box["e"]
+    return box.get("r")
+
+
 _DIRECTION_MAP = {
     "BUY": "BUY", "LONG": "BUY", "UP": "BUY", "BULLISH": "BUY",
     "SELL": "SELL", "SHORT": "SELL", "DOWN": "SELL", "BEARISH": "SELL",
@@ -199,6 +228,13 @@ def _regime_classifier_service() -> AdvisoryModuleAdapter:
         data["trend"] = sign * float(strength) if isinstance(
             strength, (int, float)) else float(
                 ctx.get("momentum") or 0.0)
+        # The engine reads numerics raw — observations can carry
+        # strings/sequences under those keys. Coerce or drop.
+        for key in ("volatility", "volatility_percentile", "momentum",
+                    "momentum_change", "data_quality", "price", "volume"):
+            v = data.get(key)
+            if not isinstance(v, (int, float)) or isinstance(v, bool):
+                data.pop(key, None)
         c = engine.classify_regime(data)
         label = getattr(getattr(c, "label", None), "value",
                         str(getattr(c, "label", "")))
@@ -406,10 +442,15 @@ def discover_advisory_callables(
 
     found: List[AdvisoryModuleAdapter] = []
     skipped: List[str] = []
+    # Realistic context: real observations carry string/sequence fields
+    # alongside numerics — advisors that assume all-numeric inputs must
+    # fail here, not mid-pipeline.
     probe_ctx = {
         "symbol": "EURUSD", "price": 1.09, "close": 1.09,
         "volatility": 0.01, "trend": "FLAT", "trend_strength": 0.1,
-        "sentiment": 0.0, "momentum": 0.0,
+        "sentiment": 0.0, "momentum": 0.0, "timeframe": "M15",
+        "timestamp": "2026-01-01T00:00:00", "volume_ratio": 1.0,
+        "raw_market_data": {"note": "nested"}, "key_levels": [],
     }
 
     async def _probe(svc):
@@ -419,10 +460,7 @@ def discover_advisory_callables(
         return res
 
     def _probe_sync(svc) -> None:
-        try:
-            asyncio.get_event_loop().run_until_complete(_probe(svc))
-        except RuntimeError:
-            asyncio.new_event_loop().run_until_complete(_probe(svc))
+        _run_coro_sync(_probe(svc))
 
     for pkg_name in packages:
         if len(found) >= max_services:
@@ -511,7 +549,7 @@ def attach_advisory_modules(
                 }
                 result = service.analyze(probe_ctx)
                 if inspect.isawaitable(result):
-                    asyncio.get_event_loop().run_until_complete(result)
+                    _run_coro_sync(result)
             csc.configure_cognition(service)
             attached.append(capability_id)
             logger.info("advisory module attached: %s", capability_id)
