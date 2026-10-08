@@ -432,7 +432,9 @@ class MarketPhysicsFilter(GovernanceLayer):
             issues.append(f"Liquidity depth below threshold ({liquidity_score:.2f} < {self.thresholds['liquidity_depth_min']:.2f})")
         
         if volatility_score < 1.0 / self.thresholds["volatility_max"]:
-            issues.append(f"Volatility above threshold ({1.0/volatility_score:.2f}x normal)")
+            vol_ratio = (1.0 / volatility_score if volatility_score > 0
+                         else float("inf"))
+            issues.append(f"Volatility above threshold ({vol_ratio:.2f}x normal)")
         
         if entropy_score < self.thresholds["entropy_min"]:
             issues.append(f"Order flow entropy below threshold ({entropy_score:.2f} < {self.thresholds['entropy_min']:.2f})")
@@ -441,7 +443,9 @@ class MarketPhysicsFilter(GovernanceLayer):
             issues.append(f"Time-of-day reliability below threshold ({time_reliability:.2f} < {self.thresholds['time_reliability_min']:.2f})")
         
         if spread_score < 1.0 / self.thresholds["spread_max"]:
-            issues.append(f"Spread above threshold ({1.0/spread_score:.2f}x normal)")
+            spread_ratio = (1.0 / spread_score if spread_score > 0
+                            else float("inf"))
+            issues.append(f"Spread above threshold ({spread_ratio:.2f}x normal)")
         
         # Calculate overall score (weighted average)
         weights = {
