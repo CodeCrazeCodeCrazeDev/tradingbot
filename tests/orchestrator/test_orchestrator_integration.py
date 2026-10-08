@@ -11,6 +11,7 @@ import asyncio
 import numpy as np
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, AsyncMock
+from trading_bot.orchestrator import TradingDecision
 
 
 @pytest.fixture
