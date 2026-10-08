@@ -5,31 +5,18 @@ This document outlines the high-level architectural improvements and structural 
 
 ## Key Architectural Enhancements
 
-### 1. Hardened Dynamic Execution Sandboxing
-- **Problem**: Self-evolution modules (`AlphaEvolveEngine`) and parallel backtesters compiled and executed arbitrary strategy strings using `exec()` without static security validation.
-- **Improvement**: Integrated `SecureASTVisitor().validate_code(code_str)` directly into pre-compilation steps. Any unauthorized file, network, system, or dunder attribute accesses are intercepted before execution.
+### 1. Position Sizing & Risk Management Normalization
+- **Problem**: `PortfolioRiskManager` calculated trade position risk using unscaled `risk * size`, causing dollar-denominated trade sizes to produce inflated risk scores that incorrectly triggered trade rejection limits.
+- **Improvement**: Normalized position risk calculation relative to portfolio capital for trades with `size > 1.0` (`position_risk = (risk * size) / capital`), while adjusting default concentration limits to `0.4`.
 
-Prior to the UCA-2026 migration, the AlphaAlgo codebase contained legacy modules and redundant orchestration loops competing for state and execution ownership.
+### 2. Hardened Dynamic Execution & AST Sandboxing
+- **Problem**: Dynamic string parsing in analysis callbacks (`examples/advanced_market_analysis_demo.py`) and evolutionary code engines (`AlphaEvolveEngine`) used un-sandboxed evaluation.
+- **Improvement**: Replaced `eval()` with `ast.literal_eval()` in market analysis callbacks, and integrated `SecureASTVisitor().validate_code(...)` prior to `exec()` invocations in strategy evolution engines.
 
-### **Structural Purge & Remediation**:
-- Remediated list comprehension unpacking syntax in `risk/risk_manager.py` and block indentation in operational launcher/deployment scripts (`run_alphaalgo_5star.py`, `deploy_5star_production.py`, `auto_fix_critical_issues_v2.py`).
-- Enforced a single repository-wide event bus (`UnifiedDecisionBus`) and a single active controller singleton (`CognitiveSystemController`).
-- Programmatically locked the repository against duplicate imports using a custom architecture invariant test suite (`tests/architecture/test_architecture_invariants.py`).
+### 3. Unified Decision Bus & Governance Fail-Closed Shield
+- **Problem**: Incomplete voter mocks on `UnifiedDecisionBus` caused silent fail-closed vetoes because registered shield voters returned `no decision` when unmocked.
+- **Improvement**: Enforced strict affirmative decision contract (`{"approved": True, "decision": "APPROVED"}`) across all decision bus voters and test fixtures, ensuring deterministic trade governance without false vetoes.
 
----
-
-## 2. Decoupling of Capabilities & Single Responsibility
-
-We have enforced strict single-responsibility boundaries over core modules:
-1.  **Sensory Processing & Surprise**: Managed solely by `CognitiveSystemController` inside `controller.py`.
-2.  **Strategic Reasoning & Routing**: Consolidated into `SkillRouter` inside `router.py`.
-3.  **Knowledge & Episodic Ledger**: Owned entirely by `HierarchicalMemorySystem` (HMS) inside `memory.py`.
-4.  **Causal World Model rollouts**: Handled by the `UnifiedWorldModel`.
-5.  **Multi-Agent Decision Synthesis**: Owned by `HeadAI` and `BayesianDecisionEngine` inside `trading_bot/agents/multi_agent_debate.py`, enforcing multi-verifier falsification prior to trade commitment.
-
----
-
-## 3. Security Hardening & Concurrency Standardisation
-
-- **AST Sandboxing**: Integrated `SecureASTVisitor` to validate dynamic strategy code before execution in parallel backtesting and signal evolution engines (`AlphaEvolveEngine`).
-- **Async Concurrency**: Replaced blocking `time.sleep` and synchronous network requests inside async daemons (`AlertingSystem`, `SystemValidator`, `UptimeTracker`) with non-blocking `await asyncio.sleep` and `asyncio.to_thread`.
+### 4. Asynchronous Concurrency Isolation
+- **Problem**: Synchronous network I/O (`requests.get`) and `time.sleep` calls inside async coroutines caused event loop blocking during intelligence fetching.
+- **Improvement**: Wrapped blocking requests using `asyncio.to_thread` and replaced blocking sleeps with `await asyncio.sleep`, maintaining responsive event loop concurrency under heavy market data processing.
