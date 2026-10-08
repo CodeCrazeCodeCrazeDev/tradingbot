@@ -89,9 +89,11 @@ async def run_preflight(args) -> int:
 
     results.append(_result(
         "connect_and_validate", True,
-        f"login={adapter.account_login} mode={adapter.account_mode}",
+        f"login={adapter.account_login} mode={adapter.account_mode} "
+        f"session={getattr(adapter, 'session_mode', 'credentials')}",
         account_login=adapter.account_login,
         account_mode=adapter.account_mode,
+        session_mode=getattr(adapter, "session_mode", "credentials"),
     ))
 
     client = adapter._client  # read-only introspection only

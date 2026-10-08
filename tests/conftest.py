@@ -351,12 +351,36 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def event_loop():
-    """Create an event loop for the test session."""
+    """Create an event loop per test.
+
+    Function scope is required: a session-scoped loop lets one test that
+    calls ``loop.close()`` (or ``asyncio.run()`` clearing the current loop)
+    poison every later async test, since the same dead loop object keeps
+    being yielded. A fresh loop per test isolates the damage; it is also
+    set as current so legacy ``asyncio.get_event_loop()`` callers work.
+    """
     loop = asyncio.get_event_loop_policy().new_event_loop()
+    asyncio.set_event_loop(loop)
     yield loop
-    loop.close()
+    if not loop.is_closed():
+        loop.close()
+
+
+@pytest.fixture(autouse=True)
+def _main_thread_event_loop_present():
+    """Several tests call ``asyncio.run()`` which on exit clears the
+    main thread's current event loop (``set_event_loop(None)``). Under
+    pytest-asyncio's compat ``event_loop`` path every later async test
+    then fails with 'no current event loop'. Re-seat one when missing
+    or closed so a single offending test cannot cascade."""
+    try:
+        if asyncio.get_event_loop().is_closed():
+            raise RuntimeError
+    except RuntimeError:
+        asyncio.set_event_loop(asyncio.new_event_loop())
+    yield
 
 
 @pytest.fixture

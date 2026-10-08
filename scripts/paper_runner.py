@@ -221,6 +221,14 @@ async def run(args: argparse.Namespace) -> int:
                 "control": console.control_state(),
                 "mode": "paper",
                 "symbol": args.symbol,
+                # Read-only advisory standing — which advisors contribute
+                # and their measured weight/precision per regime.
+                "advisors": csc.advisory_report() if csc is not None
+                and hasattr(csc, "advisory_report") else None,
+                # Read-only AI-stack planes (state/evidence/selection)
+                # — one-line summaries per DOCS/CANONICAL_RUNTIME_DATAFLOW §4.
+                "ai_stack": runtime.ai_stack.explain()
+                if getattr(runtime, "ai_stack", None) is not None else None,
             })
             if args.cycles and processed >= args.cycles:
                 break

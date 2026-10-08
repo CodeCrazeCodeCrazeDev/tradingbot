@@ -1,0 +1,54 @@
+flowchart TB
+    OBS[enriched observation<br/>{price, ohlcv, rsi, volatility,<br/>trend, trend_strength, sentiment,<br/>microstructure, strategy_signals}]
+
+    subgraph STATE["STATE PLANE — what the system believes"]
+        VFE[_calculate_sensory_surprise<br/>prediction error vs last_prediction → vfe_history]
+        DL[DiscoLoopCell.transition ×3<br/>512-dim projection of obs → hidden_state + discrete tokens<br/>bounded channel = last 100]
+        WM[world_model/v2_core.py WorldModelV2<br/>latent state · asset_dims {FX:64, Equities:128}]
+        OH[_obs_history deques<br/>strictly-prior closes → derived features]
+        HMS[core/hms/memory.py<br/>HierarchicalMemorySystem<br/>retrieve_evidence_chain + store_ledger_entry]
+    end
+
+    subgraph EVIDENCE["EVIDENCE PLANE — advisory, never authority"]
+        PCA[agents/pca.py<br/>MacroAgent · RiskAgent · AlphaAgent<br/>update_beliefs → think → share_artifact]
+        SVC[91 factory services + --discover-advisors scan<br/>advisory.py — asyncio.gather, 5s each,<br/>breaker after 5 consecutive failures]
+        ACB[cognition/advisory_adapter.py<br/>AdvisoryCognitiveBrain — opt-in<br/>enable_cognitive_advisory]
+        RES[research artifacts<br/>csc/research/engine.py reports queued<br/>into next cycle's evidence]
+        ADA[AdvisoryModuleAdapter<br/>strips authorized*/risk_*/veto/order/qty<br/>→ {capability_id, direction, confidence,<br/>evidence, advisory_only: True}]
+    end
+
+    subgraph SELECT["SELECTION PLANE — one proposal survives"]
+        HG[csc/hypothesis.py HypothesisGenerator<br/>bull/bear/range/hold branches<br/>priors = sentiment·0.2 + signal_vote·0.45 + vol]
+        SIM[simulate_branches on WorldModel<br/>→ invalidation_triggers + expected_value]
+        PR[_pivot_refine_loop<br/>score = conf·prob·(1−uncertainty)·(1 + 0.25·tilt)<br/>tilt = Σwᵢcᵢsignᵢ/Σwᵢcᵢ, wᵢ = get_agent_weight]
+        VS[core/verification/swarm.py<br/>VerificationSwarm + EvidenceGraphGate<br/>+ one bounded refine pass]
+        SYN[_select_optimal_action + net-of-cost gate<br/>EV must beat calibrated cost_bps]
+        FL[InformationFolder.fold_history<br/>ledger → HMS]
+    end
+
+    OBS --> VFE
+    OBS --> OH
+    OBS --> DL
+    OBS --> HMS
+    OBS --> PCA
+    OBS --> SVC
+    PCA --> ADA
+    SVC --> ADA
+    ACB --> ADA
+    RES --> ADA
+    ADA -->|advisory_artifacts| HG
+    HMS -->|evidence_chain| HG
+    WM --> HG
+    HG --> SIM --> PR --> VS --> SYN --> FL
+    FL --> HMS
+    PR -.tilt source.-> SVC
+
+---
+
+flowchart LR
+    M[orphan/legacy module<br/>any shape of output] --> A[AdvisoryModuleAdapter<br/>analyze ctx → _payload JSON-safe<br/>_strip_authority recursive]
+    A --> N{normalized call}
+    N -->|direction BUY/SELL + confidence| T[advisory tilt<br/>≤ ±0.25 on branch score]
+    N -->|evidence only| E[evidence in artifacts<br/>provenance: advisory_ids]
+    N -->|stored on pending prediction| SC[scored at settlement<br/>→ ReliabilityTracker weight]
+    F[failure / timeout / broken dep] -.->|log + skip; breaker@5| X[never blocks the cycle]

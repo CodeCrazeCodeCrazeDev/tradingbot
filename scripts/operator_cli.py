@@ -10,6 +10,7 @@ Commands write to the control channel the runner drains between cycles:
     python scripts/operator_cli.py estop --reason "fat finger check"
     python scripts/operator_cli.py status          # read snapshot
     python scripts/operator_cli.py positions       # read snapshot positions
+    python scripts/operator_cli.py ai              # AI-stack planes summary
     python scripts/operator_cli.py explain TRADE_ID  # durable decision trail
 
 Mutating commands can only restrict or unwind exposure — this surface has
@@ -48,7 +49,7 @@ def main(argv=None) -> int:
     parser.add_argument("--reason", default="")
     parser.add_argument("command",
                         choices=list(COMMAND_MAP) + ["status", "positions",
-                                                     "explain"])
+                                                     "explain", "ai"])
     parser.add_argument("trade_id", nargs="?", default=None,
                         help="required by 'explain'")
     args = parser.parse_args(argv)
@@ -86,7 +87,7 @@ def main(argv=None) -> int:
             except (json.JSONDecodeError, AttributeError):
                 pass
         return 0
-    if args.command in ("status", "positions"):
+    if args.command in ("status", "positions", "ai"):
         snapshot_path = state_dir / "snapshot.json"
         try:
             snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
@@ -96,6 +97,13 @@ def main(argv=None) -> int:
         if args.command == "positions":
             print(json.dumps(snapshot.get("positions", []), indent=2,
                              default=str))
+        elif args.command == "ai":
+            planes = snapshot.get("ai_stack")
+            if not planes:
+                print("no ai_stack in snapshot — is the runner up?")
+                return 2
+            for plane, line in planes.items():
+                print(f"{plane:10} {line}")
         else:
             print(json.dumps(snapshot, indent=2, default=str))
         return 0

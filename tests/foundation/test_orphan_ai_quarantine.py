@@ -39,8 +39,20 @@ ADVISORY_SEAM = {
     "trading_bot/core/csc/assembly.py",
 }
 
-# Attached orphans are legitimately reachable through the seam.
-ATTACHED_ORPHAN_ROOTS = {"agents", "market_intelligence"}
+# Attached orphans are legitimately reachable through the seam — every
+# directory with at least one DEFAULT_ADVISORY_FACTORIES adapter.
+ATTACHED_ORPHAN_ROOTS = {
+    "agents", "market_intelligence", "agents2", "core_agent_system",
+    "intelligence_core", "adversarial_decision", "alphaalgo_core",
+    "alpha_research", "alphaalgo_institutional", "brain",
+    "cognitive_architecture", "elite_ai_system", "adaptive_systems",
+    "intelligence", "self_learning", "signal_discovery", "tamic",
+    "self_diagnostic", "aletheia_autonomous", "superintelligence",
+    "systems_ai", "advanced_intelligence", "improvement_agent",
+    "neural_integration", "radar_ai", "self_concepts", "self_healing_ai",
+    "self_mastery", "sentient_core", "superpowerful_ai", "ai", "ai_core",
+    "aads", "aamis_v3", "autonomous_learner", "explainability",
+}
 
 from trading_bot.core.csc.advisory import (  # noqa: E402
     LIVE_IMPORTED_NON_ADVISORY, UNWIRED_ORPHAN_MODULES)
@@ -128,3 +140,21 @@ def test_manifest_covers_every_ai_named_dir():
             uncovered.append(name)
     assert uncovered == [], (
         f"AI-named dirs missing from the quarantine manifest: {uncovered}")
+
+
+def test_manifest_covers_every_root_file():
+    """Every loose ``trading_bot/*.py`` module is classified — wired
+    through the advisory seam (declared with an 'attached' reason),
+    explicitly unwired with a concrete reason, or canonical. No silent
+    gaps at file granularity."""
+    canonical_files = {"__init__.py", "unified_bot.py", "main.py",
+                       # canonical read-model facade over the CSC
+                       "ai_stack.py"}
+    uncovered = []
+    for p in sorted((ROOT / "trading_bot").glob("*.py")):
+        if p.name in canonical_files:
+            continue
+        if p.name not in QUARANTINED_ORPHAN_ROOTS:
+            uncovered.append(p.name)
+    assert uncovered == [], (
+        f"root modules missing from the quarantine manifest: {uncovered}")

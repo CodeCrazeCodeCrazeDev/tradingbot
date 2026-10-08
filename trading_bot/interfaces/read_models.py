@@ -33,6 +33,16 @@ class ModularMonolithReadModel:
             "mode": self.runtime.bot.execution_mode,
         }
 
+    def ai_stack(self) -> Dict[str, Any]:
+        """Three-plane AI snapshot (state/evidence/selection) — the §4
+        read surface. Empty projection when the brain is not wired."""
+        stack = getattr(self.runtime, "ai_stack", None)
+        if stack is None:
+            return {"available": False}
+        snap = dict(stack.snapshot())
+        snap["available"] = True
+        return snap
+
     def decision_journal(self) -> Dict[str, Any]:
         """Read-only view of the CSC decision journal: pending predictions,
         folded summaries, and measured reliability. Empty projection when the
@@ -69,6 +79,7 @@ class ModularMonolithReadModel:
             "health": await self.health(),
             "portfolio": await self.portfolio(account_id),
             "decision_journal": self.decision_journal(),
+            "ai_stack": self.ai_stack(),
         }
 
     async def report_snapshot(self, account_id: str = "runtime") -> Dict[str, Any]:

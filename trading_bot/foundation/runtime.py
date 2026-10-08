@@ -16,6 +16,7 @@ class ModularMonolithRuntime:
 
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         self.bot = UnifiedTradingBot(config or {})
+        self.ai_stack = None
         self.read_model = None
         self.dashboard_adapter = None
         self.reporting_adapter = None
@@ -90,6 +91,15 @@ class ModularMonolithRuntime:
             except Exception as exc:
                 logger.warning(
                     "Cognitive advisory unavailable: %s", exc)
+        # Read-only AI-stack projection (DOCS/CANONICAL_RUNTIME_DATAFLOW §4):
+        # dashboards/tests get state/evidence/selection planes without
+        # touching authority paths.
+        try:
+            from trading_bot.ai_stack import AIStack
+
+            self.ai_stack = AIStack(csc)
+        except Exception as exc:
+            logger.warning("AI-stack projection unavailable: %s", exc)
 
     def _build_reconciler(self) -> Any:
         """Reconciler over the canonical execution boundary, when wired."""
@@ -175,13 +185,16 @@ class ModularMonolithRuntime:
             "reporting_adapter": self.reporting_adapter,
             "notification_adapter": self.notification_adapter,
         }
+        if self.ai_stack is not None:
+            components["ai_stack"] = self.ai_stack
         metadata = {"read_only": True, "capital_path": "none"}
         for name, component in components.items():
             registry.register(
                 f"interface_{name}",
                 component,
                 "Interface",
-                dependencies=["trading_repository"],
+                dependencies=([] if name == "ai_stack"
+                              else ["trading_repository"]),
                 metadata=metadata,
                 overwrite=True,
             )

@@ -300,7 +300,9 @@ class CognitiveSystemController:
         self.continuous_state = {}
         self.discrete_channel = []
         self.last_prediction = None
-        self.vfe_history = []
+        # Bounded like discrete_channel/_obs_history — appended every
+        # observation, so an unbounded list leaks memory in long runs.
+        self.vfe_history = deque(maxlen=2048)
 
         # Runtime state surface expected by legacy UCA tests
         self.running = False
@@ -349,7 +351,7 @@ class CognitiveSystemController:
         """
         if not self.vfe_history:
             return 0.0
-        return float(np.mean(self.vfe_history[-20:]))
+        return float(np.mean(list(self.vfe_history)[-20:]))
 
     def _calculate_vfe_surprise(self, observation: Dict[str, Any]) -> float:
         """

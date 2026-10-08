@@ -14,9 +14,13 @@ rehydrate from durable audit rows.
   details so advisor weights survive restart.
 """
 
+import inspect
+
 import pytest
 
-from trading_bot.core.csc.advisory import AdvisoryModuleAdapter, normalize_advisory
+from trading_bot.cognition.advisory_adapter import AUTHORITY_FIELDS
+from trading_bot.core.csc.advisory import (
+    AdvisoryModuleAdapter, DEFAULT_ADVISORY_FACTORIES, normalize_advisory)
 from trading_bot.core.csc.controller import CognitiveSystemController
 from trading_bot.core.csc.hypothesis import (
     ReasoningBranch, _observation_evidence_nodes)
@@ -58,6 +62,54 @@ def test_normalize_non_mapping_wrapped():
     out = normalize_advisory(42)
     assert out["direction"] is None
     assert out["evidence"] == {"result": 42}
+
+
+# ---------- per-factory contract: every wired service is advisory-only ----
+
+
+def _evidence_keys(obj):
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            yield str(k)
+            yield from _evidence_keys(v)
+    elif isinstance(obj, (list, tuple)):
+        for v in obj:
+            yield from _evidence_keys(v)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "capability_id", [c for c, _ in DEFAULT_ADVISORY_FACTORIES])
+async def test_every_wired_service_emits_advisory_contract(capability_id):
+    """Each registered factory must produce the normalized advisory
+    artifact — probe-gated, so missing optional deps (torch/scipy/
+    sklearn) skip rather than fail the suite."""
+    factory = dict(DEFAULT_ADVISORY_FACTORIES)[capability_id]
+    ctx = {
+        "symbol": "EURUSD", "price": 1.09, "close": 1.09, "open": 1.088,
+        "high": 1.091, "low": 1.087, "volatility": 0.01, "trend": "UP",
+        "trend_strength": 0.3, "sentiment": 0.1, "momentum": 0.01,
+        "volume": 1500.0, "volume_ratio": 1.1, "rsi": 55.0,
+        "spread": 0.0002, "timeframe": "M15",
+        "timestamp": "2026-01-01T00:00:00",
+    }
+    try:
+        service = factory()
+        result = service.analyze(ctx)
+        if inspect.isawaitable(result):
+            result = await result
+    except Exception as exc:
+        # Mirrors attach_advisory_modules' probe gate: any factory or
+        # first-call failure means the service is skipped in this env
+        # (missing torch/scipy/sklearn, uninitializable legacy brain).
+        pytest.skip(f"probe-gated out: {type(exc).__name__}: {exc}")
+    assert result["capability_id"] == capability_id
+    assert result["advisory_only"] is True
+    assert result["direction"] in ("BUY", "SELL", None)
+    assert isinstance(result["evidence"], dict)
+    for key in _evidence_keys(result["evidence"]):
+        assert key not in AUTHORITY_FIELDS
+        assert not key.startswith(("authorized", "risk_"))
 
 
 @pytest.mark.asyncio

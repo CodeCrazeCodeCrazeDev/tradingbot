@@ -190,15 +190,25 @@ class MT5DemoAdapter:
         login = self._resolve_secret("login_env", "MT5_LOGIN")
         password = self._resolve_secret("password_env", "MT5_PASSWORD")
         server = self._resolve_secret("server_env", "MT5_SERVER")
+        # current_session mode: attach to the terminal's already-authorized
+        # session. The account validation below still enforces DEMO-only —
+        # attaching to a live account is refused, never traded.
+        use_current = bool(self.config.get("current_session")) or not all(
+            (login, password, server))
         if not login or not password or not server:
-            raise MT5AdapterError(
-                "MT5 demo credentials not provisioned (expected env secrets "
-                "MT5_LOGIN / MT5_PASSWORD / MT5_SERVER or configured *_env names)")
+            if not use_current:
+                raise MT5AdapterError(
+                    "MT5 demo credentials not provisioned (expected env "
+                    "secrets MT5_LOGIN / MT5_PASSWORD / MT5_SERVER or "
+                    "configured *_env names)")
+            logger.warning(
+                "MT5 credentials not provisioned — attaching to the "
+                "terminal's current session; DEMO validation still applies")
 
         # initialize() needs the credentials inline when the terminal is not
         # already running + logged in; a bare initialize() only attaches to an
         # existing authorized session.
-        init_kwargs: Dict[str, Any] = {
+        init_kwargs: Dict[str, Any] = {} if use_current else {
             "login": int(login), "password": password, "server": server,
         }
         terminal_path = self.config.get("terminal_path")
@@ -211,9 +221,11 @@ class MT5DemoAdapter:
         if not initialized:
             raise MT5AdapterError(
                 f"MT5 initialize failed: {client.last_error()}")
-        if not client.login(int(login), password, server):
-            client.shutdown()
-            raise MT5AdapterError(f"MT5 login failed: {client.last_error()}")
+        if not use_current:
+            if not client.login(int(login), password, server):
+                client.shutdown()
+                raise MT5AdapterError(
+                    f"MT5 login failed: {client.last_error()}")
 
         try:
             self._validate_account(client)
@@ -222,9 +234,11 @@ class MT5DemoAdapter:
             client.shutdown()
             raise
         self.connected = True
+        self.session_mode = "current_session" if use_current else "credentials"
         logger.info(
-            "MT5 demo adapter connected: login=%s mode=%s symbol=%s tf=%s",
-            self.account_login, self.account_mode, self.symbol, self.timeframe)
+            "MT5 demo adapter connected: login=%s mode=%s symbol=%s tf=%s "
+            "session=%s", self.account_login, self.account_mode, self.symbol,
+            self.timeframe, self.session_mode)
 
     def _validate_account(self, client: Any) -> None:
         info = client.account_info()
