@@ -102,5 +102,6 @@
     "er_gated_regime_conditional": "FALSIFIED: net -0.011 to -0.012, ER<0.3/0.2 gating, win 13-43% \u2014 chop-only entries still lose",
     "conclusion": "EURUSD M15 offers no z-score reversion edge at 5bps costs; shelving is the honest verdict",
     "measured_at": "2026-10-07"
-  }
+  },
+  "operator_note": "SHELVED \u2014 z-score mean reversion falsified on EURUSD across four formulations: M15 naive (net -1.2 to -1.7%/20k bars, ~49% win), M15 ER-gated (net -0.011, win 13-43%), H4 flat-band (gross positive at lb=50 but net -0.31 to -1.04 on turnover), H4 hysteresis bands (best lb=50 en=3.0 ex=1.0: net -0.0104 over 4k bars). Gross edge at H4 is real but too thin to survive any realistic cost. Do not sign without a materially different formulation or cheaper venue."
 }
