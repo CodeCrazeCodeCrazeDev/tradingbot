@@ -4,38 +4,39 @@ This document provides a chronological, high-fidelity log of technical fixes, co
 
 ---
 
-## 1. Risk Management List Unpacking Syntax Remediation (September 2026)
+## 1. Portfolio Risk Manager Position Sizing Fix (October 2026)
 
-### **Component**: `RiskManager` (`risk/risk_manager.py`)
+### **Component**: `PortfolioRiskManager` (`trading_bot/orchestrator/risk_manager.py`)
 *   **Fix Applied**:
-    - Parenthesized list comprehension unpacking expressions in report string generation (`*([f"- {sym}: {limit:.2f}" ...] or ["- None"])`).
-    - Verified clean Python 3.12 AST parsing.
+    - Updated `validate_trade()` to scale trade dollar risk against total capital when `size > 1.0` (`position_risk = (risk * size) / capital`).
+    - Set default `max_concentration` fallback limit to `0.4`.
+*   **Impact**: Resolved false positive trade rejections in `TestTradeValidation` and standalone orchestrator risk tests.
 
 ---
 
-## 2. Production Launchers and Deployment Script Stabilization (September 2026)
+## 2. Dynamic Evaluation Safety Hardening (October 2026)
 
-### **Components**: `auto_fix_critical_issues_v2.py`, `deploy_5star_production.py`, `run_alphaalgo_5star.py`
+### **Component**: `AdvancedMarketAnalysisDemo` (`examples/advanced_market_analysis_demo.py`)
 *   **Fix Applied**:
-    - Removed misplaced logger assignments causing block indentation syntax errors.
-    - Restored missing `try:` block in async deployment loop.
-    - Confirmed 0 compilation errors across all launcher and operator scripts.
+    - Replaced built-in `eval()` statements with safe AST evaluation via `ast.literal_eval()` across Dash callback handlers (`render_liquidity_tab`, `render_orderflow_tab`, `render_microstructure_tab`).
+*   **Impact**: Shielded demonstration server against potential arbitrary code execution vulnerabilities.
 
 ---
 
-## 3. Asynchronous Concurrency & Non-Blocking Network I/O (September 2026)
+## 3. Test Suite Import & Mock Voter Fixes (October 2026)
 
-### **Components**: `SystemValidator` (`trading_bot/core/validation.py`), `AlertingSystem` (`trading_bot/monitoring/alerting_system.py`), `ComprehensiveSystemTester` (`scripts/launchers/run_comprehensive_system_test.py`)
+### **Components**: `tests/orchestrator/test_orchestrator_integration.py`, `tests/test_superior_architecture_minimal.py`, `tests/verification/test_e2e_decision_pipeline.py`
 *   **Fix Applied**:
-    - Replaced blocking `time.sleep` calls with `await asyncio.sleep`.
-    - Wrapped synchronous `requests.get` / `requests.post` network calls inside async alert handlers with `await asyncio.to_thread(...)`.
-    - Fixed dead code control flow in `UptimeTracker.check_service`.
+    - Imported `TradingDecision` in `TestMLToExecutionFlow.test_predict_and_execute_flow`.
+    - Added `mock_shield.audit_log_action.return_value = {"approved": True, "decision": "APPROVED"}` in minimal architecture and E2E pipeline tests.
+*   **Impact**: Resolved `NameError` and shield veto assertions in test suites.
 
 ---
 
-## 4. AST Security Sandboxing on Dynamic Code Synthesis (September 2026)
+## 4. Async Concurrency Non-Blocking I/O Wrappers (October 2026)
 
-### **Component**: `AlphaEvolveEngine` (`trading_bot/aads/core/alpha_evolve_engine.py`)
+### **Components**: `trading_bot/intel/news_pipeline.py`, `trading_bot/neuros_evolution/plotcode_integration.py`
 *   **Fix Applied**:
-    - Enforced `SecureASTVisitor` AST verification before compiling or executing LLM-generated signal functions.
-    - Blocked unsafe module imports and builtins before execution.
+    - Wrapped synchronous `requests.get` calls with `await asyncio.to_thread(...)`.
+    - Converted blocking `time.sleep` calls in async methods to `await asyncio.sleep(...)`.
+*   **Impact**: Ensured zero event loop stalls during asynchronous market intelligence gathering.
