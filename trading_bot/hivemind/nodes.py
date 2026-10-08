@@ -839,4 +839,4 @@ def create_node(node_type: NodeType, node_id: Optional[str] = None, config: Opti
     }
     
     node_class = node_classes.get(node_type, TechnicalNode)
-    return node_class(node_id, config)
+    return node_class(node_id, config or {})

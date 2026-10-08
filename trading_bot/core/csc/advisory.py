@@ -2092,6 +2092,217 @@ def _complete_impl_service() -> AdvisoryModuleAdapter:
 # observation-callable without fabricated stubs.
 
 
+# ---------------------------------------------------------------------------
+# Bucket D — non-AI-named orphan dirs (obs-callable surfaces found by audit)
+# ---------------------------------------------------------------------------
+
+def _hivemind_collective_service() -> AdvisoryModuleAdapter:
+    """hivemind TradingHiveMind — collective vote over real OHLCV bars."""
+    from trading_bot.hivemind.coordinator import TradingHiveMind
+
+    mind = TradingHiveMind()
+    hist = _BarHistory()
+
+    async def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        out = mind.analyze(
+            str(ctx.get("symbol") or "UNKNOWN"),
+            {"ohlcv": hist.bars(50),
+             "sentiment": {"score": _num(ctx.get("sentiment")) or 0.0}},
+            str(ctx.get("timeframe") or "M15"))
+        if inspect.isawaitable(out):
+            out = await out
+        return _payload(out)
+
+    return AdvisoryModuleAdapter("hivemind_collective", analyze)
+
+
+def _hivemind_threat_service() -> AdvisoryModuleAdapter:
+    """hivemind military ThreatAssessor — pure dict math on obs fields."""
+    from trading_bot.hivemind.military_protocols import ThreatAssessor
+
+    assessor = ThreatAssessor()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        market_data = {
+            "volatility_ratio": _num(ctx.get("volatility_ratio")) or 1.0,
+            "liquidity_score": _num(ctx.get("liquidity_score"))
+                or _num(ctx.get("volume_ratio")) or 0.8,
+            "high_impact_events_24h": _num(ctx.get("high_impact_events")) or 0,
+        }
+        portfolio_state = {
+            "current_drawdown": _num(ctx.get("current_drawdown")) or 0.0,
+        }
+        return _payload(assessor.assess(market_data, portfolio_state))
+
+    return AdvisoryModuleAdapter("hivemind_threat_assessment", analyze)
+
+
+def _apex_regime_service() -> AdvisoryModuleAdapter:
+    """apex_fi RegimeSurveillanceAI — feed obs indicators, classify regimes."""
+    from trading_bot.apex_fi.layer6_risk_governance import RegimeSurveillanceAI
+
+    surv = RegimeSurveillanceAI()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        vol = _num(ctx.get("volatility"))
+        surv.update_indicators({
+            "vix": (vol * 100.0) if vol is not None else 15.0,
+            "liquidity_score": _num(ctx.get("volume_ratio")) or 1.0,
+        })
+        out = {}
+        for name in ("volatility", "correlation", "liquidity", "trend"):
+            fn = getattr(surv, f"classify_{name}_regime", None)
+            if callable(fn):
+                try:
+                    regime, conf = fn()
+                    out[f"{name}_regime"] = str(regime)
+                    out[f"{name}_confidence"] = _num(conf)
+                except Exception:  # noqa: BLE001
+                    out[f"{name}_regime"] = None
+        trans = getattr(surv, "detect_regime_transition", None)
+        if callable(trans):
+            try:
+                out["transition"] = _primitive(trans())
+            except Exception:  # noqa: BLE001
+                out["transition"] = None
+        return out
+
+    return AdvisoryModuleAdapter("apex_regime_surveillance", analyze)
+
+
+def _apex_cost_service() -> AdvisoryModuleAdapter:
+    """apex_fi TransactionCostEngine — predicted cost bps from obs fields."""
+    from trading_bot.apex_fi.layer5_execution_intelligence import (
+        TransactionCostEngine)
+
+    engine = TransactionCostEngine()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        price = _num(ctx.get("close") or ctx.get("price")) or 0.0
+        spread = _num(ctx.get("spread"))
+        spread_bps = (spread / price * 1e4) if (spread and price) else 5.0
+        cost = engine.predict_cost(
+            str(ctx.get("symbol") or "UNKNOWN"),
+            _num(ctx.get("quantity")) or 0.01,
+            spread_bps,
+            _num(ctx.get("market_depth")) or 1.0,
+            _num(ctx.get("volatility")) or 0.01,
+            _num(ctx.get("participation_rate")) or 0.05)
+        return {"predicted_cost_bps": _num(cost), "spread_bps": spread_bps}
+
+    return AdvisoryModuleAdapter("apex_transaction_cost", analyze)
+
+
+def _dg_volatility_service() -> AdvisoryModuleAdapter:
+    """decision_governance VolatilityRegimeDetector — feed realized vol
+    computed from accumulated bars, then classify."""
+    from trading_bot.decision_governance.layer4_regime_engine import (
+        VolatilityRegimeDetector)
+
+    det = VolatilityRegimeDetector()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        closes = [b["close"] for b in hist.bars(30)]
+        if len(closes) >= 2:
+            rets = [closes[i] / closes[i - 1] - 1.0
+                    for i in range(1, len(closes)) if closes[i - 1]]
+            if rets:
+                mean = sum(rets) / len(rets)
+                var = sum((r - mean) ** 2 for r in rets) / len(rets)
+                det.update_realized_vol("1d", var ** 0.5)
+                det.update_realized_vol("5d", var ** 0.5)
+                det.update_realized_vol("20d", var ** 0.5)
+        return _payload(det.detect_volatility_regime())
+
+    return AdvisoryModuleAdapter("dg_volatility_regime", analyze)
+
+
+def _gets_structure_service() -> AdvisoryModuleAdapter:
+    """gets MarketStructureAnalyzer — needs a MarketData dataclass built
+    from the observation."""
+    from trading_bot.gets.multimodal_awareness import MarketStructureAnalyzer
+    from trading_bot.gets.types import MarketData
+
+    analyzer = MarketStructureAnalyzer()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        last = hist.bars(1)
+        close = _num(ctx.get("close") or ctx.get("price")) or 0.0
+        bar = last[0] if last else {
+            "open": close, "high": close, "low": close,
+            "close": close, "volume": 0.0}
+        md = MarketData(
+            symbol=str(ctx.get("symbol") or "UNKNOWN"),
+            timestamp=datetime.now(),
+            ohlcv=bar,
+            bid_ask_spread=_num(ctx.get("spread")),
+            realized_volatility=_num(ctx.get("volatility")))
+        return _payload(analyzer.analyze(md))
+
+    return AdvisoryModuleAdapter("gets_market_structure", analyze)
+
+
+def _feedback_perf_service() -> AdvisoryModuleAdapter:
+    """feedback FeedbackAnalyzer — realized performance evidence read from
+    its sqlite store; returns an error dict honestly when empty."""
+    from trading_bot.feedback.analyzer import FeedbackAnalyzer
+
+    analyzer = FeedbackAnalyzer()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        del ctx
+        return _payload(analyzer.analyze_performance(lookback_days=30))
+
+    return AdvisoryModuleAdapter("feedback_performance", analyze)
+
+
+def _alpha_evolve_regime_service() -> AdvisoryModuleAdapter:
+    """alpha_evolve RegimeClassifier — classify_regime on a DataFrame of
+    accumulated real closes. Deprecated RSI duplicate wired evidence-only."""
+    import pandas as pd
+    from trading_bot.alpha_evolve.regime_aware_backtester import (
+        RegimeClassifier)
+
+    clf = RegimeClassifier()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        bars = hist.bars(60)
+        if len(bars) < 10:
+            return {"status": "warming", "bars": len(bars)}
+        df = pd.DataFrame(bars)
+        regime = clf.classify_regime(df)
+        return {"regime": str(regime),
+                "direction": _enum_direction(regime),
+                "bars": len(bars)}
+
+    return AdvisoryModuleAdapter("alpha_evolve_regime", analyze)
+
+
+# neuros_evolution note: research_agents.MicrostructureExpert fabricates
+# analysis via np.random — quarantined like aads aip_agents.
+# LoadBalancingIntelligence needs a `network` ctor arg — no obs surface.
+# perplexity_trading note: QuantAgent needs an AgentContext task graph and
+# the orchestrator calls the external Perplexity API — external dep.
+# cos note: DecisionSupportSystem requires cognition_store +
+# simulation_engine ctor collaborators — not constructible standalone.
+# services note: AAMISService.analyze_symbol delegates to a started
+# orchestrator; IntelligenceDirectorateService.evaluate_signal needs a
+# Signal object — no obs-dict surface.
+# adversarial_verification note: RedTeam.analyze_strategy needs strategy
+# source code — operates on candidates, not observations.
+# events/metrics/registry/orchestration/master_system/meta_governance/
+# golden_path/realtime_trading_core/deepseek_engineer/tests note: plumbing,
+# authority surfaces, code tools or test packages — no obs-callable
+# analyzer exists to wire.
+
+
 # Factories for services that are genuinely observation-callable. Each
 # entry is attached at assembly time inside a probe; failures skip the
 # service rather than break the runtime.
@@ -2229,6 +2440,15 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("aean_meta_cycle", _aean_cycle_service),
     ("elite_master_analysis", _elite_master_service),
     ("complete_impl_market_intel", _complete_impl_service),
+    # Bucket D — non-AI-named orphan dirs
+    ("hivemind_collective", _hivemind_collective_service),
+    ("hivemind_threat_assessment", _hivemind_threat_service),
+    ("apex_regime_surveillance", _apex_regime_service),
+    ("apex_transaction_cost", _apex_cost_service),
+    ("dg_volatility_regime", _dg_volatility_service),
+    ("gets_market_structure", _gets_structure_service),
+    ("feedback_performance", _feedback_perf_service),
+    ("alpha_evolve_regime", _alpha_evolve_regime_service),
 )
 
 # Modules imported by the live path but with no advisory decision role —
@@ -2507,35 +2727,48 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
     #     (the 140 other non-manifest dirs ARE live imports — telemetry,
     #     brokers, monitoring etc. — and stay outside this manifest) ---
     ("adversarial_verification", "orphan parallel verification stack; "
-     "canonical path uses core/verification swarm"),
-    ("alpha_evolve", "deprecated RSI duplicate; RSI is canonical per "
-     "AGENTS.md"),
-    ("apex_fi", "orphan parallel APEX system; not on the canonical spine"),
-    ("cos", "orphan parallel orchestration system"),
-    ("decision_governance", "orphan parallel governance; canonical path "
-     "uses governance/policy_adapter + human_layer"),
+     "RedTeam.analyze_strategy needs strategy source code — operates on "
+     "candidates, not observations"),
+    ("alpha_evolve", "alpha_evolve_regime attached; evolution/fitness "
+     "remainder is an offline backtest loop, not obs-callable — "
+     "deprecated RSI duplicate per AGENTS.md"),
+    ("apex_fi", "apex_regime_surveillance + apex_transaction_cost "
+     "attached; model parliament/execution layers need trained models "
+     "and order-book depth"),
+    ("cos", "DecisionSupportSystem requires cognition_store + "
+     "simulation_engine ctor collaborators — not constructible "
+     "standalone"),
+    ("decision_governance", "dg_volatility_regime attached; governance "
+     "gates/arbiters are authority surfaces, not evidence"),
     ("deepseek_engineer", "offline engineering assistant; not a runtime "
      "advisor"),
     ("deepseek_engineer_pkg_tmp", "temporary packaging dir"),
     ("events", "orphan event plumbing; canonical path uses "
      "core/unified_event_bus"),
-    ("feedback", "orphan feedback plumbing; canonical path uses "
-     "record_outcome/decision sink"),
-    ("gets", "orphan governance-promotion experiment"),
+    ("feedback", "feedback_performance attached; remaining plumbing is "
+     "superseded by record_outcome/decision sink"),
+    ("gets", "gets_market_structure attached; promotion/evolution "
+     "remainder is authority surface"),
     ("golden_path", "orphan scripted demo path"),
-    ("hivemind", "orphan collective-intelligence loop"),
+    ("hivemind", "hivemind_collective + hivemind_threat_assessment "
+     "attached; GovernedHivemindEngine evolution remainder is an "
+     "authority surface"),
     ("master_system", "orphan parallel master orchestrator"),
     ("meta_governance", "orphan parallel governance layer"),
     ("metrics", "orphan metrics shim; canonical path uses telemetry/"),
-    ("neuros_evolution", "deprecated evolution duplicate; RSI is "
-     "canonical per AGENTS.md"),
+    ("neuros_evolution", "MicrostructureExpert fabricates analysis via "
+     "np.random — quarantined like aads aip_agents; remainder needs "
+     "ctor collaborators (network, codebase_path)"),
     ("orchestration", "orphan parallel orchestrator"),
-    ("perplexity_trading", "orphan external-API research path"),
+    ("perplexity_trading", "QuantAgent needs an AgentContext task graph; "
+     "orchestrator calls the external Perplexity API — external dep"),
     ("realtime_trading_core", "orphan parallel realtime engine; "
      "canonical path is unified_bot -> CSC"),
     ("registry", "orphan registry shim; canonical path uses "
      "core/unified_registry"),
-    ("services", "orphan service plumbing"),
+    ("services", "AAMISService delegates to a started orchestrator; "
+     "IntelligenceDirectorateService.evaluate_signal needs a Signal "
+     "object — no obs-dict surface"),
     ("tests", "in-repo test package, not a runtime module"),
 )
 
