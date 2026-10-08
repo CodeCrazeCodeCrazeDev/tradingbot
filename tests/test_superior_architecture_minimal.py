@@ -42,6 +42,15 @@ async def test_csc_pipeline_success():
     mock_shield.validate_action.return_value = mock_report
     mock_shield.GovernanceDecision = GovernanceDecision
 
+    async def mock_audit_log_action(action):
+        return {
+            "decision": "APPROVED",
+            "reason": "All shield checks passed",
+            "risk_score": 0.1,
+            "audit_id": "mock_audit_id"
+        }
+    mock_shield.audit_log_action = mock_audit_log_action
+
     csc = CognitiveSystemController(mock_world_model, mock_hms, shield=mock_shield)
 
     async def mock_gen_branches(observation):
