@@ -35,6 +35,7 @@ def build_cognitive_system(
     *,
     research_interval: Optional[int] = None,
     advisory_brain: bool = True,
+    discover: bool = False,
 ) -> Any:
     """Wire the complete cognitive system onto the CSC.
 
@@ -61,7 +62,7 @@ def build_cognitive_system(
         # services emit advisory_only evidence; UNWIRED_ORPHAN_MODULES
         # records why everything else is inert.
         from .advisory import attach_advisory_modules
-        attached, skipped = attach_advisory_modules(csc)
+        attached, skipped = attach_advisory_modules(csc, discover=discover)
         logger.info("cognitive assembly: advisory modules attached=%s "
                     "skipped=%s", attached, skipped)
 

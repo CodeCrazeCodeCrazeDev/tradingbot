@@ -148,7 +148,9 @@ async def run(args: argparse.Namespace) -> int:
     # every research_interval observations.
     if csc is not None:
         from trading_bot.core.csc.assembly import build_cognitive_system
-        build_cognitive_system(csc, research_interval=args.research_interval)
+        build_cognitive_system(
+            csc, research_interval=args.research_interval,
+            discover=args.discover_advisors)
         logger.info("cognitive system assembled (research_interval=%d)",
                     args.research_interval)
     if history:
@@ -237,6 +239,11 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--decision-stride", type=int, default=1,
                         help="CSC decides every Nth observation "
                              "(replicated-OOS evidence supports 4+)")
+    parser.add_argument("--discover-advisors", action="store_true",
+                        help="auto-scan quarantined AI packages for "
+                             "observation-callable analyzers and attach "
+                             "them as advisory services (probe-gated, "
+                             "timeout-bounded; default off)")
     parser.add_argument("--strategy-id", default=None,
                         help="optional registered strategy capability id")
     parser.add_argument("--log-level", default="INFO")

@@ -180,12 +180,127 @@ def _anomaly_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("market_anomaly_detection", analyze)
 
 
+def _regime_classifier_service() -> AdvisoryModuleAdapter:
+    """alphaalgo_core ensemble regime classifier → advisory regime call."""
+    from trading_bot.alphaalgo_core.alphaalgo_core import MarketStateEngine
+
+    engine = MarketStateEngine()
+    _DIR = {"trending_bull": "BUY", "trending_bear": "SELL"}
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        # The engine expects a numeric trend scalar; the observation
+        # carries a label. Feed it trend_strength (ER, [0,1]) signed by
+        # the label's direction so sign and magnitude both land.
+        data = dict(ctx)
+        label = str(ctx.get("trend") or "").upper()
+        sign = 1.0 if label in ("UP", "BULLISH") else (
+            -1.0 if label in ("DOWN", "BEARISH") else 0.0)
+        strength = ctx.get("trend_strength")
+        data["trend"] = sign * float(strength) if isinstance(
+            strength, (int, float)) else float(
+                ctx.get("momentum") or 0.0)
+        c = engine.classify_regime(data)
+        label = getattr(getattr(c, "label", None), "value",
+                        str(getattr(c, "label", "")))
+        return {
+            "label": label,
+            "direction": _DIR.get(str(label).lower()),
+            "confidence": float(getattr(c, "confidence", 0.0) or 0.0),
+            "stability": getattr(c, "stability", None),
+            "ensemble_agreement": getattr(c, "ensemble_agreement", None),
+            "transition_probability": getattr(
+                c, "transition_probability", None),
+        }
+
+    return AdvisoryModuleAdapter("regime_classification", analyze)
+
+
+def _adversarial_trade_service() -> AdvisoryModuleAdapter:
+    """adversarial_decision's 9-step red-team evaluated on *both*
+    directions — reports which survives; asymmetry is the signal."""
+    from trading_bot.adversarial_decision.adversarial_core import (
+        AdversarialDecisionEngine)
+
+    engine = AdversarialDecisionEngine()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        price = float(ctx.get("price") or ctx.get("close") or 0.0) or 1.0
+        vol = float(ctx.get("volatility") or 0.005) or 0.005
+        symbol = str(ctx.get("symbol") or "UNKNOWN")
+        results = {}
+        for d in ("BUY", "SELL"):
+            dec = engine.evaluate_trade(
+                symbol=symbol, direction=d, entry_price=price,
+                stop_loss=price * (1 - 2 * vol) if d == "BUY"
+                else price * (1 + 2 * vol),
+                take_profit=price * (1 + 3 * vol) if d == "BUY"
+                else price * (1 - 3 * vol),
+                market_data=dict(ctx), signal_data=dict(ctx),
+                portfolio_state={}, historical_data={})
+            results[d.lower()] = {
+                "approved": bool(getattr(dec, "approved", False)),
+                "outcome": str(getattr(
+                    getattr(dec, "outcome", None), "value",
+                    getattr(dec, "outcome", ""))),
+            }
+        direction = (
+            "BUY" if results["buy"]["approved"]
+            and not results["sell"]["approved"]
+            else "SELL" if results["sell"]["approved"]
+            and not results["buy"]["approved"] else None)
+        return {
+            "direction": direction,
+            "confidence": 0.6 if direction else None,
+            "buy_eval": results["buy"], "sell_eval": results["sell"],
+        }
+
+    return AdvisoryModuleAdapter("adversarial_trade_eval", analyze)
+
+
+def _trend_agent_service() -> AdvisoryModuleAdapter:
+    """core_agent_system legacy trend-following agent → AgentProposal."""
+    from trading_bot.core_agent_system.migrated_agents.legacy_agents import (
+        TrendFollowingAgent)
+
+    agent = TrendFollowingAgent()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        return agent.analyze_market(dict(ctx))
+
+    return AdvisoryModuleAdapter("trend_following_agent", analyze)
+
+
+def _failure_mode_service() -> AdvisoryModuleAdapter:
+    """intelligence_core model-degradation detector — evidence-only
+    (no direction; still scored for audit completeness)."""
+    from trading_bot.intelligence_core.failure_detector import (
+        ModelDegradationDetector)
+
+    detector = ModelDegradationDetector()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        outs = detector.detect(dict(ctx), []) or []
+        return {"detections": [str(o) for o in outs][:5],
+                "count": len(outs)}
+
+    return AdvisoryModuleAdapter("failure_mode_detection", analyze)
+
+
+# radar_ai is intentionally absent: its OntologyDrivenAgent declares
+# analyze/learn abstract — nothing in the package is directly
+# observation-callable without writing a stub subclass (fabricated
+# analysis is worse than no advisor). Kept in UNWIRED_ORPHAN_MODULES.
+
 # Factories for services that are genuinely observation-callable. Each
 # entry is attached at assembly time inside a probe; failures skip the
 # service rather than break the runtime.
 DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("multi_agent_debate", _debate_service),
     ("market_anomaly_detection", _anomaly_service),
+    ("regime_classification", _regime_classifier_service),
+    ("adversarial_trade_eval", _adversarial_trade_service),
+    ("trend_following_agent", _trend_agent_service),
+    ("failure_mode_detection", _failure_mode_service),
 )
 
 # Modules imported by the live path but with no advisory decision role —
@@ -207,11 +322,13 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
      "observation service"),
     ("autonomous_superintelligence", "parallel brain concept; superseded "
      "by CSC assembly"),
-    ("core_agent_system", "agent framework; subsumed by PCA channel"),
+    ("core_agent_system", "TrendFollowingAgent attached as "
+     "trend_following_agent; framework remainder subsumed by PCA"),
     ("adaptive_systems", "deprecated duplicate improvement systems"),
     ("alpha_research", "research tooling; not a per-observation analyzer"),
-    ("alphaalgo_core", "institutional pipeline; superseded by cognition "
-     "advisory"),
+    ("alphaalgo_core", "MarketStateEngine attached as "
+     "regime_classification; institutional pipeline remainder superseded "
+     "by cognition advisory"),
     ("alphaalgo_institutional", "institutional pipeline; superseded"),
     ("brain", "legacy brain dir; superseded by CSC"),
     ("cognitive_architecture", "layered architecture experiments; "
@@ -220,12 +337,18 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
     ("improvement_agent", "code-analysis agent; not a market advisory"),
     ("intel", "news/macro ingestion; external data dependencies"),
     ("intelligence", "framework; superseded"),
-    ("intelligence_core", "framework; superseded"),
+    ("intelligence_core", "ModelDegradationDetector attached as "
+     "failure_mode_detection (evidence-only); framework remainder "
+     "superseded"),
+    ("adversarial_decision", "AdversarialDecisionEngine attached as "
+     "adversarial_trade_eval (dual-direction probe); remainder "
+     "superseded"),
     ("market_intelligence(other)", "series-hungry analyzers; only "
      "AnomalyDetector is obs-callable"),
     ("meta_learning", "deprecated learner; RSI is canonical"),
     ("neural_integration", "torch-dependent integration layer"),
-    ("radar_ai", "strategy evaluation framework; not per-observation"),
+    ("radar_ai", "agents are abstract (analyze/learn abstract methods); "
+     "nothing directly observation-callable without fabricated stubs"),
     ("self_concepts", "self-model scaffolding; not a market advisory"),
     ("self_diagnostic", "system self-checks; not a market advisory"),
     ("self_healing_ai", "framework; superseded"),
@@ -252,10 +375,120 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
 )
 
 
+_DISCOVERY_METHODS = ("analyze", "detect", "classify", "predict",
+                      "assess", "estimate", "evaluate")
+_DISCOVERY_TIMEOUT_S = 0.5
+_DISCOVERY_CAP = 40
+
+
+def discover_advisory_callables(
+        packages: Tuple[str, ...],
+        max_services: int = _DISCOVERY_CAP,
+        probe: bool = True) -> Tuple[List[AdvisoryModuleAdapter], List[str]]:
+    """Long-tail wiring: scan orphan packages for observation-callable
+    analyzers and wrap them as advisory services.
+
+    For each ``trading_bot.<pkg>`` top-level module (no recursion): find
+    zero-arg-constructible classes exposing one of
+    analyze/detect/classify/predict/assess/estimate/evaluate(ctx). The
+    method is called with the observation dict only — modules needing
+    series or external data fail the probe and are skipped. Every import
+    and probe is inside try/except — discovery can never break the
+    runtime; it can only add evidence or report a skip.
+
+    Discovered services get ``capability_id = "discovered:<cls>"`` and a
+    per-call timeout so a hanging advisor cannot stall the pipeline.
+    """
+    import asyncio
+    import importlib
+    import inspect as _inspect
+    import pkgutil
+
+    found: List[AdvisoryModuleAdapter] = []
+    skipped: List[str] = []
+    probe_ctx = {
+        "symbol": "EURUSD", "price": 1.09, "close": 1.09,
+        "volatility": 0.01, "trend": "FLAT", "trend_strength": 0.1,
+        "sentiment": 0.0, "momentum": 0.0,
+    }
+
+    async def _probe(svc):
+        res = svc.analyze(probe_ctx)
+        if _inspect.isawaitable(res):
+            res = await asyncio.wait_for(res, _DISCOVERY_TIMEOUT_S)
+        return res
+
+    def _probe_sync(svc) -> None:
+        try:
+            asyncio.get_event_loop().run_until_complete(_probe(svc))
+        except RuntimeError:
+            asyncio.new_event_loop().run_until_complete(_probe(svc))
+
+    for pkg_name in packages:
+        if len(found) >= max_services:
+            break
+        try:
+            pkg = importlib.import_module(f"trading_bot.{pkg_name}")
+        except Exception:
+            skipped.append(pkg_name)
+            continue
+        try:
+            mod_infos = list(pkgutil.iter_modules(
+                pkg.__path__)) if hasattr(pkg, "__path__") else []
+        except Exception:
+            mod_infos = []
+        for mi in mod_infos:
+            if len(found) >= max_services:
+                break
+            try:
+                mod = importlib.import_module(
+                    f"trading_bot.{pkg_name}.{mi.name}")
+            except Exception:
+                continue
+            for _, cls in vars(mod).items():
+                if len(found) >= max_services:
+                    break
+                if not isinstance(cls, type) or cls.__module__ != mod.__name__:
+                    continue
+                method = next(
+                    (getattr(cls, m) for m in _DISCOVERY_METHODS
+                     if callable(getattr(cls, m, None))), None)
+                if method is None:
+                    continue
+                try:
+                    if len(_inspect.signature(cls.__init__).parameters) > 1:
+                        continue
+                    inst = cls()
+                except Exception:
+                    continue
+
+                cap_id = f"discovered:{cls.__name__}"
+                _meth = getattr(inst, next(
+                    m for m in _DISCOVERY_METHODS
+                    if callable(getattr(inst, m, None))))
+
+                async def _call(ctx, _m=_meth):
+                    out = _m(dict(ctx))
+                    if _inspect.isawaitable(out):
+                        out = await asyncio.wait_for(
+                            out, _DISCOVERY_TIMEOUT_S)
+                    return out
+
+                svc = AdvisoryModuleAdapter(cap_id, _call)
+                try:
+                    if probe:
+                        _probe_sync(svc)
+                    found.append(svc)
+                except Exception:
+                    skipped.append(cap_id)
+    return found, skipped
+
+
 def attach_advisory_modules(
     csc: Any,
     factories: Optional[Tuple[Tuple[str, Callable[[], Any]], ...]] = None,
     probe: bool = True,
+    discover: bool = False,
 ) -> Tuple[List[str], List[str]]:
     """Attach every wireable advisory service to the CSC.
 
@@ -286,4 +519,24 @@ def attach_advisory_modules(
             skipped.append(capability_id)
             logger.warning("advisory module skipped: %s (%s)",
                            capability_id, exc)
+
+    if discover:
+        orphan_pkgs = tuple(
+            name.split("(")[0] for name, _ in UNWIRED_ORPHAN_MODULES)
+        try:
+            found, disc_skipped = discover_advisory_callables(orphan_pkgs)
+            for svc in found:
+                try:
+                    csc.configure_cognition(svc)
+                    attached.append(svc.capability_id)
+                    logger.info("advisory module attached: %s",
+                                svc.capability_id)
+                except Exception as exc:
+                    skipped.append(svc.capability_id)
+                    logger.warning("advisory module skipped: %s (%s)",
+                                   svc.capability_id, exc)
+            skipped.extend(disc_skipped)
+        except Exception as exc:
+            logger.warning("advisory discovery failed: %s", exc)
+
     return attached, skipped

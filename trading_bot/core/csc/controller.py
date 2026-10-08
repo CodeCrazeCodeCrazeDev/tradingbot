@@ -549,6 +549,27 @@ class CognitiveSystemController:
                 "CSC-V6: reliability tracker rebuilt — %d outcomes replayed",
                 replayed)
 
+    def advisory_report(self) -> Dict[str, Any]:
+        """Read-only per-advisor standing: attached services plus measured
+        weight/precision per regime from the ReliabilityTracker. The audit
+        surface for 'which advisors actually earn their tilt'."""
+        attached = [
+            getattr(s, "capability_id", type(s).__name__)
+            for s in getattr(self, "_advisory_services", [])]
+        measured: Dict[str, Any] = {}
+        for agent_id, regimes in getattr(
+                self.reliability_tracker, "metrics", {}).items():
+            per_regime = {}
+            for regime, m in regimes.items():
+                per_regime[regime] = {
+                    "predictions": getattr(m, "total_predictions", 0),
+                    "precision": round(getattr(m, "precision", 0.0), 4),
+                    "weight": round(self.reliability_tracker.get_agent_weight(
+                        agent_id, regime), 4),
+                }
+            measured[str(agent_id)] = per_regime
+        return {"attached": attached, "measured": measured}
+
     def _rebuild_research_reports(self, rows: List[Any]) -> None:
         """Reconstruct report stubs from durable RESEARCH verdict rows —
         the journal's memory extends past process restarts."""
