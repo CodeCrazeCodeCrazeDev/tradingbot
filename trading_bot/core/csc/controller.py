@@ -104,6 +104,9 @@ class CognitiveSystemController:
 
     _instance = None
     _lock = threading.Lock()
+    # Max fractional tilt subordinate advisory calls can apply to branch
+    # ranking — advisors nudge selection, never override gates.
+    _ADVISORY_TILT = 0.25
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -530,6 +533,14 @@ class CognitiveSystemController:
                 was_correct = str(row.get("outcome") or "") == "correct"
                 self.reliability_tracker.update_metrics(
                     "csc", regime, was_correct, confidence)
+                action = str(inner.get("action") or row.get("action") or "")
+                for call in details.get("advisory_calls") or ():
+                    adv_dir = str(call.get("direction") or "")
+                    if adv_dir in ("BUY", "SELL"):
+                        self.reliability_tracker.update_metrics(
+                            str(call["capability_id"]), regime,
+                            (adv_dir == action) == was_correct,
+                            float(call.get("confidence") or 0.5))
                 replayed += 1
             except Exception:
                 continue
@@ -783,6 +794,23 @@ class CognitiveSystemController:
         self.reliability_tracker.update_metrics(
             "csc", regime, bool(was_correct), confidence)
 
+        # Score each advisor that expressed a direction on the opening
+        # observation: its call is correct iff its direction matched the
+        # realized move. Their weights tilt future ranking via
+        # get_agent_weight — advisors earn or lose influence by evidence.
+        action = pending.get("action")
+        for call in pending.get("advisory_calls") or ():
+            try:
+                adv_dir = str(call.get("direction") or "")
+                if adv_dir not in ("BUY", "SELL"):
+                    continue
+                adv_correct = (adv_dir == action) == bool(was_correct)
+                self.reliability_tracker.update_metrics(
+                    str(call["capability_id"]), regime, adv_correct,
+                    float(call.get("confidence") or 0.5))
+            except Exception:
+                continue
+
         # EV calibration pair: what the sim predicted vs what settled.
         _pred_ev = pending.get("expected_return")
         if (isinstance(_pred_ev, (int, float)) and _pred_ev > 0
@@ -816,6 +844,7 @@ class CognitiveSystemController:
                 "confidence": confidence,
                 "realized_return": realized_return,
                 "regime": regime,
+                "advisory_calls": pending.get("advisory_calls") or [],
             })
         return {
             "status": "recorded",
@@ -931,6 +960,10 @@ class CognitiveSystemController:
             "confidence": confidence,
             "regime": regime,
             "expected_return": expected_return,
+            # Advisor calls active when this decision opened — scored at
+            # settlement so advisor weights are measured against reality.
+            "advisory_calls": list(
+                getattr(self, "_last_advisory_calls", ()) or ()),
         }
 
     async def _close_position(
@@ -1118,11 +1151,41 @@ class CognitiveSystemController:
         """AutoResearchClaw Pivot/Refine logic (arXiv:2605.17734)."""
         if not branches:
             return None
+
+        # Advisory tilt: directional calls from subordinate advisors nudge
+        # ranking by at most ±ADVISORY_TILT, weighted by measured reliability
+        # (get_agent_weight defaults to 1.0 until ~10 scored outcomes — an
+        # equal prior, then decays on real precision). Advisors tilt; they
+        # never decide — the simulation filter, EV gate, churn guard, risk,
+        # and governance all remain downstream and unaware of them.
+        calls = list(getattr(self, "_last_advisory_calls", ()) or ())
+
+        def _advisory_tilt(branch) -> float:
+            action = str(
+                (branch.execution_plan or {}).get("action", "")).upper()
+            if action not in ("BUY", "SELL"):
+                return 0.0
+            regime = str(
+                getattr(self.state, "current_regime", None) or "unknown")
+            num = den = 0.0
+            for c in calls:
+                direction = str(c.get("direction") or "").upper()
+                if direction not in ("BUY", "SELL"):
+                    continue
+                w = self.reliability_tracker.get_agent_weight(
+                    str(c.get("capability_id")), regime)
+                conf = float(c.get("confidence") or 0.5)
+                num += w * conf * (1.0 if direction == action else -1.0)
+                den += w * conf
+            return (num / den) if den > 0 else 0.0  # normalized to [-1, 1]
+
         # Score on the full probabilistic signal — confidence alone is a
         # constant default (0.9) which degenerates to first-branch-wins.
         ranked = sorted(
             branches,
-            key=lambda b: b.confidence * b.probability * (1.0 - b.uncertainty),
+            key=lambda b: b.confidence * b.probability
+            * (1.0 - b.uncertainty)
+            * (1.0 + self._ADVISORY_TILT * _advisory_tilt(b)),
             reverse=True,
         )
         best = ranked[0]
@@ -1506,6 +1569,25 @@ class CognitiveSystemController:
             if isinstance(a, Mapping)
             and (a.get("agent") or a.get("capability_id"))
         })
+        # Normalized directional calls this cycle — consumed by branch
+        # ranking (bounded tilt) and scored against realized outcomes so
+        # advisor weights are measured, not asserted.
+        calls = []
+        for a in (artifacts or []):
+            if not isinstance(a, Mapping):
+                continue
+            cap = str(a.get("agent") or a.get("capability_id") or "")
+            direction = a.get("direction")
+            if not cap or direction not in ("BUY", "SELL"):
+                continue
+            conf = a.get("confidence")
+            calls.append({
+                "capability_id": cap,
+                "direction": direction,
+                "confidence": float(conf) if isinstance(conf, (int, float))
+                else None,
+            })
+        self._last_advisory_calls = calls
         return artifacts
 
     async def _stage_hypothesis_and_simulation(

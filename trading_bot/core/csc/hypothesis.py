@@ -148,13 +148,18 @@ def _observation_evidence_nodes(
             f"memory:hms:{i}", {"memory_ref": str(item)[:200]}))
 
     for i, artifact in enumerate(advisory_artifacts or []):
-        agent = (
-            artifact.get("agent") or artifact.get("source") or f"agent_{i}"
-            if isinstance(artifact, dict) else f"agent_{i}"
-        )
+        if isinstance(artifact, dict):
+            agent = str(artifact.get("agent") or artifact.get("source")
+                        or artifact.get("capability_id") or f"agent_{i}")
+            # Full normalized payload on the node — direction/confidence/
+            # evidence stay visible to downstream audit and explainability.
+            payload = {k: v for k, v in artifact.items() if k != "agent"}
+            payload.setdefault("advisory_only", True)
+        else:
+            agent, payload = f"agent_{i}", {"advisory_only": True}
         nodes.append(_evidence_node(
             f"ev_advisory_{i}", f"Advisory artifact from {agent}",
-            f"agent:{agent}", {"advisory_only": True}))
+            f"agent:{agent}", payload))
 
     return nodes
 

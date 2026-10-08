@@ -51,8 +51,21 @@ class AdvisoryCognitiveBrain:
         if inspect.isawaitable(result):
             result = await result
         evidence = self._strip_authority(result if isinstance(result, Mapping) else {})
+        # Normalized advisory contract: direction from the brain's market
+        # state, confidence from its calibrated probability — so the CSC
+        # can reliability-weight this advisor like any other.
+        direction = None
+        ms = evidence.get("market_state")
+        if isinstance(ms, Mapping):
+            direction = {"BULLISH": "BUY", "BEARISH": "SELL"}.get(
+                str(ms.get("trend_direction") or "").upper())
+        conf = evidence.get("calibrated_probability")
+        confidence = float(conf) if isinstance(conf, (int, float)) \
+            and 0.0 <= conf <= 1.0 else None
         return {
             "capability_id": self.capability_id,
+            "direction": direction,
+            "confidence": confidence,
             "evidence": evidence,
             "advisory_only": True,
         }

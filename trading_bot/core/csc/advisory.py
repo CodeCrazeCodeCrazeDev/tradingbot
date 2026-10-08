@@ -26,6 +26,55 @@ from trading_bot.cognition.advisory_adapter import AUTHORITY_FIELDS
 logger = logging.getLogger("alphaalgo.csc.advisory")
 
 
+_DIRECTION_MAP = {
+    "BUY": "BUY", "LONG": "BUY", "UP": "BUY", "BULLISH": "BUY",
+    "SELL": "SELL", "SHORT": "SELL", "DOWN": "SELL", "BEARISH": "SELL",
+    "HOLD": None, "NEUTRAL": None, "FLAT": None, "NONE": None,
+}
+_DIRECTION_KEYS = (
+    "direction", "signal", "action", "bias", "recommendation", "verdict")
+_CONFIDENCE_KEYS = (
+    "confidence", "calibrated_probability", "probability",
+    "win_probability", "score", "certainty")
+
+
+def normalize_advisory(payload: Any) -> Dict[str, Any]:
+    """Extract the advisory contract from a stripped payload.
+
+    Returns ``{direction, confidence, evidence}`` — direction is
+    BUY/SELL when the module expresses one (None for HOLD/NEUTRAL or
+    non-directional output), confidence is [0,1] when expressed. The
+    full stripped payload is preserved in ``evidence`` for audit.
+    Top-level keys are searched first, then one level of nesting."""
+    evidence = payload if isinstance(payload, dict) else {"result": payload}
+    direction: Optional[str] = None
+    confidence: Optional[float] = None
+
+    def _scan(m: Mapping) -> Tuple[Optional[str], Optional[float]]:
+        d: Optional[str] = None
+        c: Optional[float] = None
+        for key, value in m.items():
+            k = str(key).lower()
+            if d is None and k in _DIRECTION_KEYS and isinstance(
+                    value, str) and value.upper() in _DIRECTION_MAP:
+                d = _DIRECTION_MAP[value.upper()]
+            if c is None and k in _CONFIDENCE_KEYS and isinstance(
+                    value, (int, float)) and not isinstance(value, bool) \
+                    and 0.0 <= float(value) <= 1.0:
+                c = float(value)
+        return d, c
+
+    direction, confidence = _scan(evidence)
+    if direction is None and confidence is None:
+        for value in evidence.values():
+            if isinstance(value, Mapping):
+                direction, confidence = _scan(value)
+                if direction is not None or confidence is not None:
+                    break
+    return {"direction": direction, "confidence": confidence,
+            "evidence": evidence}
+
+
 def _strip_authority(payload: Any) -> Any:
     """Recursively remove authority-bearing fields — same policy as
     ``AdvisoryCognitiveBrain``: advisory evidence must not carry approval,
@@ -65,9 +114,12 @@ class AdvisoryModuleAdapter:
             result = result.to_dict()
         evidence = _strip_authority(result if isinstance(result, Mapping)
                                     else {"result": result})
+        norm = normalize_advisory(evidence)
         return {
             "capability_id": self.capability_id,
-            "evidence": evidence,
+            "direction": norm["direction"],
+            "confidence": norm["confidence"],
+            "evidence": norm["evidence"],
             "advisory_only": True,
         }
 
