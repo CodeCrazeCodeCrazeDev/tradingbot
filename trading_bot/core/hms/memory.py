@@ -19,6 +19,7 @@ from typing import List, Dict, Any, Optional, Tuple, Set, Union
 import logging
 import os
 import json
+import tempfile
 
 from enum import Enum
 from dataclasses import dataclass, field
@@ -141,6 +142,16 @@ class SAGEGraphMemory:
                 return graph
             except Exception as e:
                 logger.error(f"SAGE: Load failed: {e}")
+                # Quarantine the unparseable file — preserves it for
+                # inspection and stops every restart re-hitting the same
+                # parse error while a fresh graph accumulates.
+                try:
+                    quarantine = self.storage_path + ".corrupt"
+                    os.replace(self.storage_path, quarantine)
+                    logger.error(
+                        f"SAGE: quarantined unreadable store to {quarantine}")
+                except OSError:
+                    pass
         return CompatMultiDiGraph()
 
     def save(self):
@@ -152,7 +163,21 @@ class SAGEGraphMemory:
             for u, v, k, d in list(temp_graph.edges(keys=True, data=True)):
                 if 'context' in d: d['context'] = json.dumps(d['context'])
                 if 'evidence' in d: d['evidence'] = json.dumps(d['evidence'])
-            nx.write_graphml(temp_graph, self.storage_path)
+            # Atomic write: a partial GraphML from ENOSPC/crash corrupts the
+            # whole memory file on next load. Temp + os.replace is atomic on
+            # the same filesystem.
+            fd, tmp = tempfile.mkstemp(
+                dir=parent_dir or ".", suffix=".graphml.tmp")
+            try:
+                os.close(fd)
+                nx.write_graphml(temp_graph, tmp)
+                os.replace(tmp, self.storage_path)
+            except Exception:
+                try:
+                    os.unlink(tmp)
+                except OSError:
+                    pass
+                raise
         except Exception as e:
             logger.error(f"SAGE: Save failed: {e}")
 
@@ -344,6 +369,15 @@ class HierarchicalMemorySystem:
         self.memory_schema = self._load_schema()
         self.memory_window_size = 100
 
+        # Reflective stores (arXiv:2605.20025 adversarial pivot logging;
+        # arXiv:2607.01224 metamemory): what the system got wrong and what
+        # the RSI loop concluded — both recallable through the evidence plane.
+        from .reflection import FailureMemory, SelfImprovementMemory
+        self.failure_memory = FailureMemory(
+            os.path.join(base_path, "failure_memory"), sage=self.sage)
+        self.self_improvement = SelfImprovementMemory(
+            os.path.join(base_path, "self_improvement"), sage=self.sage)
+
         self._initialized = True
         logger.info(f"HMS V6: One Memory initialized at {base_path}")
 
@@ -507,6 +541,72 @@ class HierarchicalMemorySystem:
         """Multi-hop evidence retrieval via SAGE."""
         return self.sage.retrieve_subgraph(query, hops=2)
 
+    # -- Reflective memory (failure + self-improvement) -------------------
+
+    def record_failure(self, kind: str, summary: str, **kwargs: Any) -> str:
+        """Record a categorized failure into failure memory + SAGE index."""
+        from .reflection import FailureRecord
+        return self.failure_memory.record(
+            FailureRecord(kind=kind, summary=summary, **kwargs))
+
+    def recall_failures(self, **filters: Any) -> List[Dict[str, Any]]:
+        """Most-recent-first failure recall (kind/regime/symbol filters)."""
+        return self.failure_memory.recall(**filters)
+
+    def failure_summary(self) -> Dict[str, Any]:
+        """Aggregate failure counts — feeds the RSI observation seam."""
+        return self.failure_memory.summary()
+
+    def record_improvement(self, record_type: str, domain: str,
+                           summary: str, **kwargs: Any) -> str:
+        """Record an RSI proposal/decision/lesson — record-only, carries
+        no promotion authority by itself."""
+        from .reflection import ImprovementRecord
+        return self.self_improvement.record(ImprovementRecord(
+            record_type=record_type, domain=domain, summary=summary,
+            **kwargs))
+
+    def recall_lessons(self, domain: Optional[str] = None,
+                       limit: int = 20) -> List[Dict[str, Any]]:
+        """Most-recent self-improvement artifacts, optionally by domain."""
+        return self.self_improvement.lessons(domain=domain, limit=limit)
+
+    def improvement_summary(self) -> Dict[str, Any]:
+        return self.self_improvement.summary()
+
+    def retrieve_reflective_context(self, regime: Optional[str] = None,
+                                    symbol: Optional[str] = None,
+                                    limit: int = 10) -> List[Dict[str, Any]]:
+        """Evidence-plane view: recent relevant failures + lessons, shaped
+        like SAGE subgraph results so they join the evidence chain."""
+        context: List[Dict[str, Any]] = []
+        for rec in self.recall_failures(regime=regime, symbol=symbol,
+                                        limit=limit):
+            context.append({
+                "source": f"failure:{rec.get('failure_id')}",
+                "target": f"kind:{rec.get('kind')}",
+                "relation": "FAILED_IN_KIND",
+                "weight": 0.7,
+                "context": {
+                    "summary": rec.get("summary"),
+                    "regime": rec.get("regime"),
+                    "stage": rec.get("stage"),
+                },
+            })
+        for rec in self.recall_lessons(limit=limit):
+            context.append({
+                "source": f"improvement:{rec.get('record_id')}",
+                "target": f"domain:{rec.get('domain')}",
+                "relation": "LESSON_IN_DOMAIN",
+                "weight": 0.6,
+                "context": {
+                    "summary": rec.get("summary"),
+                    "status": rec.get("status"),
+                    "record_type": rec.get("record_type"),
+                },
+            })
+        return context
+
     @property
     def sage_graph(self):
         """Expose raw SAGE graph memory wrapped in a compatibility proxy."""
@@ -582,19 +682,60 @@ class HierarchicalMemorySystem:
                 timestamp=datetime.utcnow().isoformat(),
             )
 
-        # 3. Persist file with sufficient statistics (HIPIF)
+        # 3. Persist file with sufficient statistics (HIPIF) — the durable
+        # record must reconstruct WHY the decision was made, not just that
+        # it was: hypothesis, verifier verdicts, evidence-graph summary,
+        # provenance, and the scenario paths considered.
+        def _node_brief(n: EvidenceNode) -> Dict[str, Any]:
+            return {
+                "node_id": n.node_id, "node_type": n.node_type,
+                "confidence": n.confidence, "market_regime": n.market_regime,
+                "content": str(n.content)[:500],
+            }
+
+        hypothesis = getattr(entry, "hypothesis", None)
         entry_data = {
             "entry_id": str(entry.entry_id),
+            "trade_id": getattr(entry, "trade_id", None),
             "timestamp": entry.timestamp.isoformat(),
             "composite_confidence": entry.composite_confidence,
+            "uncertainty_estimate": getattr(entry, "uncertainty_estimate", 0.0),
             "reasoning_steps": entry.reasoning_steps,
+            "hypothesis": {
+                "hypothesis_id": getattr(hypothesis, "hypothesis_id", None),
+                "description": getattr(hypothesis, "description", ""),
+                "probability": getattr(hypothesis, "probability", 0.0),
+                "expected_return": getattr(hypothesis, "expected_return", 0.0),
+                "invalidation_conditions": list(
+                    getattr(hypothesis, "invalidation_conditions", []) or []),
+            } if hypothesis is not None else None,
+            "verifier_reports": [
+                {"agent_name": getattr(v, "agent_name", ""),
+                 "is_valid": bool(getattr(v, "is_valid", False)),
+                 "confidence": float(getattr(v, "confidence", 0.0) or 0.0),
+                 "critique": str(getattr(v, "critique", ""))[:500],
+                 "detected_hallucinations": list(
+                     getattr(v, "detected_hallucinations", []) or [])}
+                for v in (getattr(entry, "verifier_reports", []) or [])
+            ],
+            "evidence_graph": {
+                "node_count": len(entry.evidence_graph_snapshot.nodes),
+                "edge_count": len(entry.evidence_graph_snapshot.edges),
+                "nodes": [_node_brief(n) for n in list(
+                    entry.evidence_graph_snapshot.nodes.values())[:200]],
+            },
+            "world_model_state_hash": getattr(
+                entry, "world_model_state_hash", ""),
+            "multi_path_scenarios": list(
+                getattr(entry, "multi_path_scenarios", []) or [])[:20],
+            "model_version": getattr(entry, "model_version", ""),
             "folded": True,
             "provenance_hash": hashlib.sha256(
                 f"{entry.entry_id}_{entry.timestamp.isoformat()}_{entry.composite_confidence}".encode("utf-8")
             ).hexdigest()
         }
         with open(file_path, 'w') as f:
-            json.dump(entry_data, f, indent=2)
+            json.dump(entry_data, f, indent=2, default=str)
 
     def optimize_memory(self, feedback: List[Dict[str, Any]]):
         """
