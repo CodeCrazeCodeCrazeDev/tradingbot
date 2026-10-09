@@ -201,9 +201,11 @@ class HumanApprovalGate:
         """Check if approval is required for an action"""
         level = self.get_approval_level(action)
         
-        # In paper mode, reduce approval requirements; mt5_demo matches
+        # In paper mode, reduce approval requirements; 'analysis' mode
+        # maps to the paper execution service (no venue adapter can be
+        # attached), so it moves no capital either; mt5_demo matches
         # paper only when the operator explicitly opted in.
-        if self._trading_mode == 'paper' or (
+        if self._trading_mode in ('paper', 'analysis') or (
                 self._trading_mode == 'mt5_demo' and self._demo_auto_approve):
             if level in [ApprovalLevel.STANDARD, ApprovalLevel.NOTIFY]:
                 return False
@@ -253,9 +255,10 @@ class HumanApprovalGate:
         
         # Paper-mode reduction mirrors is_approval_required(): STANDARD
         # actions auto-pass without a human when not trading real capital.
-        # mt5_demo gets the same reduction only under explicit opt-in.
+        # 'analysis' mode is structurally capital-free (paper execution
+        # service); mt5_demo gets the reduction only under explicit opt-in.
         if level == ApprovalLevel.STANDARD and (
-                self._trading_mode == 'paper'
+                self._trading_mode in ('paper', 'analysis')
                 or (self._trading_mode == 'mt5_demo' and self._demo_auto_approve)):
             return True
         

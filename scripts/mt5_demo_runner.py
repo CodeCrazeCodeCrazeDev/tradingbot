@@ -74,6 +74,10 @@ def _mt5_config(args: argparse.Namespace) -> Dict[str, Any]:
         "account_currency": "USD",
         "terminal_path": args.terminal_path,
         "auto_approve": args.auto_approve,
+        # Explicit operator opt-in: attach to the terminal's already-open
+        # session when rotated creds aren't provisioned. DEMO-only
+        # account validation still applies in the adapter.
+        "current_session": args.current_session,
     }
 
 
@@ -266,6 +270,10 @@ def main(argv: Optional[list] = None) -> int:
                         help="STANDARD approvals auto-pass (demo account only; "
                              "audited). Without it each trade waits for an "
                              "operator decision file.")
+    parser.add_argument("--current-session", action="store_true",
+                        help="attach to the terminal's current session when "
+                             "MT5_LOGIN/MT5_PASSWORD/MT5_SERVER are not set; "
+                             "DEMO-only validation still enforced")
     parser.add_argument("--terminal-path", default=None)
     parser.add_argument("--state-dir", default=str(DEFAULT_STATE_DIR))
     parser.add_argument("--dashboard-port", type=int, default=0)
