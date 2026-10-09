@@ -4,12 +4,24 @@ Multi-Hypothesis Reasoning Engine - UCA-2026 Core
 
 Generates parallel reasoning branches and world model futures to ensure
 comprehensive market analysis and scenario coverage.
+
+Every market observation is analyzed through the canonical thinking-strategy
+lenses wired in ``strategies.py`` (first-principles, systems, analytical,
+creative). Each lens contributes one competing ReasoningBranch, so scenario
+coverage comes from genuinely different reasoning styles rather than
+hardcoded directional cases.
 """
 
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from ..hms.models import Hypothesis, EvidenceGraph, EvidenceNode, RelationType, EvidenceEdge
+from .strategies import (
+    ThinkingStrategy,
+    default_thinking_strategies,
+    extract_features,
+    score_to_action,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +31,7 @@ class ReasoningBranch:
     """A parallel reasoning thread focusing on a specific market interpretation."""
 
     branch_id: str
-    name: str  # e.g., "Bullish Breakout Team", "Liquidity Drain Team"
+    name: str  # e.g., "First-Principles Decomposition", "Creative Contrarian Analysis"
     hypotheses: List[Hypothesis] = field(default_factory=list)
     reasoning_trace: List[str] = field(default_factory=list)
     confidence: float = 0.9
@@ -37,67 +49,58 @@ class HypothesisGenerator:
     their associated world model simulations.
     """
 
-    def __init__(self, world_model: Any):
+    def __init__(self, world_model: Any, strategies: Optional[List[ThinkingStrategy]] = None):
         self.world_model = world_model
+        # Reasoning lenses wired to the CSC: injectable for tests/ablation.
+        self.strategies = (
+            list(strategies) if strategies is not None else default_thinking_strategies()
+        )
 
     async def generate_competing_branches(
         self, market_data: Dict[str, Any]
     ) -> List[ReasoningBranch]:
         """
-        Creates 10 diverse reasoning branches to ensure comprehensive scenario coverage.
+        Creates one competing reasoning branch per wired thinking strategy,
+        so each observation is analyzed through every thinking lens.
         """
-        logger.info("HypothesisGenerator creating 10 diverse competing branches")
+        features = extract_features(market_data if isinstance(market_data, dict) else {})
+        logger.info(
+            "HypothesisGenerator creating %d thinking-strategy branches",
+            len(self.strategies),
+        )
 
-        market_data = market_data if isinstance(market_data, dict) else {}
-        price = float(market_data.get("price", 0.0) or 0.0)
-        volume = market_data.get("volume", "n/a")
-        volatility_raw = market_data.get("volatility", 0.02)
-        volatility = float(volatility_raw if isinstance(volatility_raw, (int, float)) else 0.02)
-        sentiment = float(market_data.get("sentiment", 0.0) or 0.0)
-        symbol = market_data.get("symbol", "unknown")
+        analyses = [strategy.analyze(features) for strategy in self.strategies]
+        total_conviction = sum(a.conviction for a in analyses)
 
-        # Observation-derived priors: sentiment tilts directional odds while
-        # elevated volatility raises the mean-reversion (range) prior.
-        tilt = max(-0.20, min(0.20, sentiment * 0.20))
-        p_range = min(0.55, max(0.15, 0.30 + (volatility - 0.02) * 3.0))
-        remainder = 1.0 - p_range
-        p_bull = remainder * (0.5 + tilt)
-        p_bear = remainder * (0.5 - tilt)
-        ref = price if price > 0 else 1.0
+        branches: List[ReasoningBranch] = []
+        for analysis in analyses:
+            action = score_to_action(analysis.score)
+            execution_plan: Dict[str, Any] = {"action": action, "symbol": features.symbol}
+            if action == "BUY":
+                execution_plan["limit_price"] = round(features.ref_price * 1.002, 5)
+            elif action == "SELL":
+                execution_plan["limit_price"] = round(features.ref_price * 0.998, 5)
+            branches.append(
+                ReasoningBranch(
+                    branch_id=f"branch_{analysis.mode.value}",
+                    name=analysis.display_name,
+                    probability=(
+                        analysis.conviction / total_conviction
+                        if total_conviction > 0
+                        else 1.0 / len(analyses)
+                    ),
+                    confidence=analysis.conviction,
+                    uncertainty=analysis.uncertainty,
+                    causal_explanation=analysis.causal_explanation,
+                    invalidation_conditions=analysis.invalidation_conditions,
+                    execution_plan=execution_plan,
+                )
+            )
 
-        # Multi-Hypothesis Generation
-        branches = [
-            ReasoningBranch(
-                branch_id="branch_bull",
-                name="Bull Case",
-                probability=p_bull,
-                uncertainty=0.15,
-                causal_explanation="Expansion in liquidity combined with oversold RSI supports a mean reversion breakout.",
-                invalidation_conditions=[
-                    "Price closes below recent support",
-                    "Liquidity drops by >20%",
-                ],
-                execution_plan={"action": "BUY", "symbol": symbol, "limit_price": round(ref * 1.002, 5)},
-            ),
-            ReasoningBranch(
-                branch_id="branch_bear",
-                name="Bear Case",
-                probability=p_bear,
-                uncertainty=0.20,
-                causal_explanation="Macro headwinds and resistance at the current level suggest a continuation of the downtrend.",
-                invalidation_conditions=[f"Price breaks resistance at {round(ref * 1.01, 5)}"],
-                execution_plan={"action": "SELL", "symbol": symbol, "limit_price": round(ref * 0.998, 5)},
-            ),
-            ReasoningBranch(
-                branch_id="branch_range",
-                name="Range Case",
-                probability=p_range,
-                uncertainty=0.10,
-                causal_explanation="Consolidation between established levels with no clear macro catalyst.",
-                invalidation_conditions=["Expansion in volatility index"],
-                execution_plan={"action": "WAIT", "symbol": symbol},
-            ),
-        ]
+        price = features.price
+        volume = market_data.get("volume", "n/a") if isinstance(market_data, dict) else "n/a"
+        volatility = features.volatility
+        symbol = features.symbol
 
         # Attach a structured hypothesis and evidence graph to each branch
         for branch in branches:
@@ -110,7 +113,8 @@ class HypothesisGenerator:
 
             # Observation-grounded reasoning trace (regime + tail-risk coverage)
             branch.reasoning_trace.extend([
-                f"Regime assessment for {symbol}: price={price}, volatility={volatility}",
+                f"Thinking lens '{branch.name}' applied to {symbol}: "
+                f"price={price}, volatility={volatility}",
                 "Tail risk / black swan exposure evaluated against the current volatility regime",
                 f"Branch thesis applied to observed state: {branch.causal_explanation}",
             ])
@@ -129,7 +133,10 @@ class HypothesisGenerator:
                 branch.evidence_graph.add_node(
                     EvidenceNode(
                         node_id=f"node_{branch.branch_id}_{i}",
-                        content=f"Evidence {i} for {branch.name}",
+                        content=(
+                            f"Evidence {i} for {branch.name}: "
+                            f"{branch.reasoning_trace[min(i, len(branch.reasoning_trace) - 1)]}"
+                        ),
                         node_type="EVIDENCE",
                     )
                 )
