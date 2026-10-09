@@ -2493,6 +2493,11 @@ class CognitiveSystemController:
             self._funnel["verification_terminal"] += 1
             return verified.decision
         best_branch, ledger_entry = verified
+        # Which branch won — without this, terminal_ABSTAIN lumps
+        # "range/WAIT won the ranking" with "no viable branch", hiding
+        # where directional proposals actually die.
+        self._funnel[
+            f"won_by_{getattr(best_branch, 'branch_id', 'unknown')}"] += 1
 
         # 9. Decision synthesis on the verified branch
         decision_proposal = self._stage_synthesis(
