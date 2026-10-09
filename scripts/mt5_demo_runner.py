@@ -155,6 +155,17 @@ async def run(args: argparse.Namespace) -> int:
         console = OperatorConsole(runtime.bot)
         await console.restore_state()
 
+        if args.strategy_id:
+            # --strategy-id is a registered-capability name, not just a
+            # config string: without registration the registry is empty
+            # and obs['strategy_signals'] silently stays []. Only
+            # allow-listed families are feedable on a single symbol.
+            from trading_bot.strategies.adapter import (
+                build_builtin_strategy)
+            runtime.bot.register_strategy_adapter(
+                build_builtin_strategy(args.strategy_id))
+            logger.info("strategy_signals fed by %s", args.strategy_id)
+
         if args.replay:
             # Honest paper-fill frictions: zero-cost fills overstate edge
             # and would teach the reliability tracker a fantasy. Values

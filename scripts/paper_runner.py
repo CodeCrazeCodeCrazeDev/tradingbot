@@ -129,6 +129,15 @@ async def run(args: argparse.Namespace) -> int:
     state_dir = Path(args.state_dir)
     channel = ControlChannel(state_dir / "control")
 
+    if args.strategy_id:
+        # Register before start so the first enriched cycle already sees
+        # strategy_signals; the registry is otherwise empty and the
+        # strategy_id config string would resolve to [] forever.
+        from trading_bot.strategies.adapter import build_builtin_strategy
+        _builtin_strategy = build_builtin_strategy(args.strategy_id)
+    else:
+        _builtin_strategy = None
+
     runtime = ModularMonolithRuntime({
         "execution_mode": "paper",
         "symbol": args.symbol,
@@ -143,6 +152,9 @@ async def run(args: argparse.Namespace) -> int:
         },
     })
     await runtime.start()
+    if _builtin_strategy is not None:
+        runtime.bot.register_strategy_adapter(_builtin_strategy)
+        logger.info("strategy_signals fed by %s", args.strategy_id)
     console = OperatorConsole(runtime.bot)
     await console.restore_state()  # paused/emergency flags survive restart
 
