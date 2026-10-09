@@ -762,8 +762,14 @@ class ResearchEngine:
             self.uncertainty_map, n=max(1, max_questions))
         questions = self.policy.rank_questions(questions)
         if not questions:
+            snap = self.uncertainty_map.snapshot()
             return {"status": "no_consequential_uncertainty",
-                    "uncertainty_map": self.uncertainty_map.snapshot()}
+                    "reason": ("no tracked unknown cleared the "
+                               "consequence/priority threshold"),
+                    "tracked_uncertainties": len(snap),
+                    "reliability_signals": len(reliability or {}),
+                    "anomaly_signals": len(anomalies or []),
+                    "uncertainty_map": snap}
 
         # 2b. Experiment-design search — per question, every executable
         # design competes on VoI: a fresh investigation, an independent
