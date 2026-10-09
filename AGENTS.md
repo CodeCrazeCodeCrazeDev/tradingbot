@@ -84,6 +84,10 @@ python scripts/mt5_preflight.py --authorize-connect
 python scripts/mt5_demo_runner.py --replay 30 --auto-approve \
   --state-dir var/mt5_demo
 python scripts/mt5_demo_runner.py --follow --cycles 8 --dashboard-port 8080
+# Replay produces paper fills with measured-cost frictions
+# (--paper-spread-bps/--paper-slippage-bps/--paper-commission). When MT5
+# creds aren't provisioned, --current-session attaches to the terminal's
+# open session (explicit opt-in; DEMO validation still enforced).
 ```
 
 ### MT5 venue quirks (observed on MetaQuotes-Demo, 2026-10-07)
@@ -118,3 +122,20 @@ not silently resume trading.
 
 Disk space is tight (~2 GB free). Run pytest with `-p no:cacheprovider`;
 avoid large artifacts; keep `.merge_backup/` (pre-merge untracked files).
+
+## Concurrent editing hazard (observed 2026-10-09)
+
+Multiple agent sessions rewrote `trading_bot/core/csc/advisory.py` in
+parallel; it was truncated to 0 bytes three times and uncommitted work was
+lost repeatedly. Do NOT run concurrent agent sessions against this repo,
+and never against the same file. If a parallel session is unavoidable:
+commit work immediately after each change, use atomic temp-file
+replacement for large writes (plain `open(w)` truncates on ENOSPC), and
+verify `git status` before and after edits.
+
+## Trading bot diagnosis and recovery
+
+When asked why the bot is not running or behaving like an AI trading system,
+follow `DOCS/DEVIN_TRADING_BOT_RECOVERY_PLAN.md`. Start with offline evidence
+and its safety/authorization gates; treat findings there as scoped to its
+review date and verify them against the current code before changing anything.
