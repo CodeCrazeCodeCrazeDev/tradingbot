@@ -145,9 +145,11 @@ class AdvisoryModuleAdapter:
     """
 
     def __init__(self, capability_id: str,
-                 fn: Callable[[Mapping[str, Any]], Any]) -> None:
+                 fn: Callable[[Mapping[str, Any]], Any],
+                 timeout_s: float = 5.0) -> None:
         self.capability_id = capability_id
         self._fn = fn
+        self.timeout_s = timeout_s
 
     async def analyze(self, context: Mapping[str, Any]) -> Mapping[str, Any]:
         result = self._fn(context)
@@ -2116,7 +2118,7 @@ def _hivemind_collective_service() -> AdvisoryModuleAdapter:
             out = await out
         return _payload(out)
 
-    return AdvisoryModuleAdapter("hivemind_collective", analyze)
+    return AdvisoryModuleAdapter("hivemind_collective", analyze, timeout_s=20.0)
 
 
 def _hivemind_threat_service() -> AdvisoryModuleAdapter:
@@ -2382,7 +2384,7 @@ def _analysis_market_intel_service() -> AdvisoryModuleAdapter:
             out = await out
         return _payload(out)
 
-    return AdvisoryModuleAdapter("analysis_market_intel", analyze)
+    return AdvisoryModuleAdapter("analysis_market_intel", analyze, timeout_s=20.0)
 
 
 def _analysis_ict_service() -> AdvisoryModuleAdapter:
@@ -2696,8 +2698,10 @@ def _alpha_decay_service() -> AdvisoryModuleAdapter:
                    for i in range(1, len(closes)) if closes[i - 1]]
         if len(returns) < 20:
             return {"status": "warming", "bars": len(returns)}
+        import pandas as _pd
         return _payload(analyzer.analyze_decay(
-            returns, [0.0] * len(returns)))
+            _pd.Series(returns),
+            _pd.Series([0.0] * len(returns))))
 
     return AdvisoryModuleAdapter("alpha_decay", analyze)
 
@@ -3201,7 +3205,10 @@ def _deep_agent_system_service() -> AdvisoryModuleAdapter:
             return {"status": "warming", "bars": len(hist)}
         md = dict(_numeric_fields(ctx))
         md.update({"symbol": ctx.get("symbol"),
-                   "prices": hist.prices(),
+                   "close": hist.prices(),
+                   "high": [b["high"] for b in hist.bars(50)],
+                   "low": [b["low"] for b in hist.bars(50)],
+                   "volume": [b["volume"] for b in hist.bars(50)],
                    "ohlcv": hist.bars(50)})
         out = system.analyze_market(md)
         if inspect.isawaitable(out):

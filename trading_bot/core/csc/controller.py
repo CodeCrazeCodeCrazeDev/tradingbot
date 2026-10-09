@@ -869,6 +869,25 @@ class CognitiveSystemController:
                 "regime": regime,
                 "advisory_calls": pending.get("advisory_calls") or [],
             })
+
+        # Failure memory: an incorrect directional call is the single most
+        # informative artifact the system produces — persist it so the
+        # evidence plane and the RSI observer can both see it.
+        if not was_correct:
+            self._record_failure(
+                "prediction_incorrect",
+                f"{pending.get('action', 'UNKNOWN')} call on "
+                f"{pending.get('symbol')} failed in regime {regime}",
+                trade_id=trade_id,
+                symbol=pending.get("symbol"),
+                regime=regime,
+                stage="outcome",
+                confidence=confidence,
+                context={
+                    "realized_return": realized_return,
+                    "expected_return": pending.get("expected_return"),
+                    "advisory_calls": pending.get("advisory_calls") or [],
+                })
         return {
             "status": "recorded",
             "trade_id": trade_id,
@@ -1193,13 +1212,21 @@ class CognitiveSystemController:
         async def _one(svc):
             return await asyncio.wait_for(
                 self._safe_await(svc.analyze(observation)),
-                timeout=5.0)
+                timeout=float(getattr(svc, "timeout_s", 5.0)))
 
         results = await asyncio.gather(
             *(_one(s) for s in services), return_exceptions=True)
         for cap, result in zip(caps, results):
             if isinstance(result, Exception):
                 failures[cap] = failures.get(cap, 0) + 1
+                self._record_failure(
+                    "advisor_error",
+                    f"advisory {cap} raised {type(result).__name__}",
+                    symbol=observation.get("symbol"),
+                    stage="advisory_consult",
+                    context={"capability_id": cap,
+                             "error": str(result)[:200],
+                             "consecutive_failures": failures[cap]})
                 if failures[cap] == 5:
                     logger.warning(
                         "CSC-V6: advisory %s disabled after 5 failures",
@@ -1630,7 +1657,30 @@ class CognitiveSystemController:
         except Exception as e:
             logger.warning(f"CSC-V6: Evidence chain retrieval failed, falling back to empty chain: {e}")
             evidence_chain = []
+        # Reflective context: recent failures + RSI lessons join the
+        # evidence plane so the hypothesis stage sees what the system got
+        # wrong before it reasons — bounded, provenance-tagged, advisory.
+        try:
+            obs_d = observation if isinstance(observation, dict) else {}
+            reflective = self.hms.retrieve_reflective_context(
+                regime=obs_d.get("regime"), symbol=obs_d.get("symbol"),
+                limit=10)
+            if reflective:
+                evidence_chain = list(evidence_chain or []) + reflective
+        except Exception as e:
+            logger.debug(f"CSC-V6: reflective context unavailable: {e}")
         return evidence_chain
+
+    def _record_failure(self, kind: str, summary: str, **kwargs: Any) -> None:
+        """Write a categorized failure into HMS failure memory. Fail-soft —
+        a memory write must never break the decision path."""
+        hms = getattr(self, "hms", None)
+        if hms is None or not hasattr(hms, "record_failure"):
+            return
+        try:
+            hms.record_failure(kind, summary, **kwargs)
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("CSC-V6: failure-memory write failed: %s", exc)
 
     async def _stage_guardrails(self, observation: Any, obs_dict: Dict[str, Any]) -> Optional["_Terminal"]:
         """Stage 3: HASP volatility check, then skill-router guardrail."""
@@ -2158,7 +2208,23 @@ class CognitiveSystemController:
         research-scheduling seam fires on EVERY observation, including
         early terminal-return paths (guardrail vetoes, abstentions)."""
         try:
-            return await self._process_observation_pipeline(observation)
+            decision = await self._process_observation_pipeline(observation)
+            # Rejected decisions are failure evidence — one seam here covers
+            # every TRADE_REJECTED terminal (guardrail, verification, risk,
+            # shield, governance) without touching each return site.
+            if (decision is not None
+                    and getattr(decision, "outcome", None)
+                    is DecisionOutcome.TRADE_REJECTED):
+                obs_d = observation if isinstance(observation, dict) else {}
+                self._record_failure(
+                    "decision_rejected",
+                    str(getattr(decision, "dominant_rejection_reason", "")
+                        or "rejected"),
+                    trade_id=getattr(decision, "trade_id", None),
+                    symbol=obs_d.get("symbol"),
+                    regime=str(obs_d.get("regime") or "unknown"),
+                    stage="decision_terminal")
+            return decision
         finally:
             self._maybe_schedule_research_cycle(observation)
 

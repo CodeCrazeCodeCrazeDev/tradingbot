@@ -186,13 +186,13 @@ class MarketContextAnalyzer:
             elif trend < 0 and volatility < high_vol_threshold:
                 return MarketRegime.TRENDING_BEAR
             elif trend > 0 and volatility >= high_vol_threshold:
-                return MarketRegime.VOLATILE_BULL
+                return MarketRegime.TRENDING_BULL
             elif trend < 0 and volatility >= high_vol_threshold:
-                return MarketRegime.VOLATILE_BEAR
+                return MarketRegime.TRENDING_BEAR
             elif abs(trend) < 0.2 and volatility < high_vol_threshold:
-                return MarketRegime.RANGING_LOW_VOL
+                return MarketRegime.QUIET_RANGE
             elif abs(trend) < 0.2 and volatility >= high_vol_threshold:
-                return MarketRegime.RANGING_HIGH_VOL
+                return MarketRegime.VOLATILE_SIDEWAYS
             else:
                 return MarketRegime.UNKNOWN
                 
