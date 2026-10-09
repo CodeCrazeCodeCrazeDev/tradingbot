@@ -13,6 +13,9 @@ class VerifierVerdict:
     failure_modes: List[str] = field(default_factory=list)
     recommendation: str = ""
     critique: str = ""
+    # Evidence items actually examined — a verdict with items_checked=0
+    # passed vacuously and must not be reported as substantive consensus.
+    items_checked: int = 0
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
 class IVerifier(ABC):

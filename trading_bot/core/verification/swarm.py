@@ -117,16 +117,19 @@ class EvidenceProvenanceVerifier(BaseVerificationAgent):
 
     async def verify(self, ledger_entry: Any) -> VerifierVerdict:
         unprovenanced = []
+        checked = 0
         for node in _graph_nodes(ledger_entry):
             node_type = str(_eget(node, "node_type", "") or "").upper()
-            if node_type in ("EVIDENCE", "CLAIM") and not _is_provenanced_ref(
-                _node_source_ref(node)
-            ):
+            if node_type not in ("EVIDENCE", "CLAIM"):
+                continue
+            checked += 1
+            if not _is_provenanced_ref(_node_source_ref(node)):
                 unprovenanced.append(str(_eget(node, "node_id", "?")))
 
         return VerifierVerdict(
             agent_name="EvidenceProvenanceVerifier",
             is_valid=not unprovenanced,
+            items_checked=checked,
             confidence=0.95 if unprovenanced else 0.9,
             critique=(
                 f"FALSIFIED: {len(unprovenanced)} evidence nodes carry no "
@@ -149,11 +152,13 @@ class ClaimGroundingVerifier(BaseVerificationAgent):
         nodes = {str(_eget(n, "node_id")): n for n in _graph_nodes(ledger_entry)}
         edges = _graph_edges(ledger_entry)
         ungrounded = []
+        checked = 0
         for node_id, node in nodes.items():
             if str(_eget(node, "node_type", "") or "").upper() not in (
                 "HYPOTHESIS", "CLAIM"
             ):
                 continue
+            checked += 1
             grounded = any(
                 str(
                     getattr(_eget(e, "relation"), "value",
@@ -172,6 +177,7 @@ class ClaimGroundingVerifier(BaseVerificationAgent):
         return VerifierVerdict(
             agent_name="ClaimGroundingVerifier",
             is_valid=not ungrounded,
+            items_checked=checked,
             confidence=0.92 if ungrounded else 0.85,
             critique=(
                 f"FALSIFIED: claims with no evidence support: {ungrounded[:5]}"
@@ -196,22 +202,26 @@ class QuantitativeConsistencyVerifier(BaseVerificationAgent):
             problems.append(
                 f"composite_confidence out of [0,1]: {composite}")
 
+        checked = 1  # composite_confidence always probed above
         hypothesis = _eget(ledger_entry, "hypothesis")
         for field_name in ("probability", "epistemic_uncertainty",
                            "aleatoric_uncertainty", "expected_return",
                            "expected_drawdown"):
             value = _eget(hypothesis, field_name)
+            checked += 1
             if value is not None and not _is_finite(value):
                 problems.append(f"hypothesis.{field_name} is not finite")
 
         for node in _graph_nodes(ledger_entry):
             for field_name in ("confidence", "uncertainty", "freshness_score"):
                 value = _eget(node, field_name)
+                checked += 1
                 if value is not None and not _is_finite(value):
                     problems.append(
                         f"node {_eget(node, 'node_id')}.{field_name} not finite")
             metadata = _eget(node, "metadata", {}) or {}
             for key, value in metadata.items():
+                checked += 1
                 if not _is_finite(value):
                     problems.append(
                         f"node {_eget(node, 'node_id')} metadata {key!r} "
@@ -220,6 +230,7 @@ class QuantitativeConsistencyVerifier(BaseVerificationAgent):
         return VerifierVerdict(
             agent_name="QuantitativeConsistencyVerifier",
             is_valid=not problems,
+            items_checked=checked,
             confidence=0.9,
             critique=(
                 "Quantitative fields are consistent."
@@ -268,6 +279,7 @@ class RiskVerifier(BaseVerificationAgent):
         return VerifierVerdict(
             agent_name="RiskVerifier",
             is_valid=not failures,
+            items_checked=len(risk_nodes) + len(sim_nodes),
             confidence=0.92 if failures else 0.85,
             critique=(
                 "Risk quantities present and within bounds."
@@ -293,6 +305,7 @@ class LiquidityVerifier(BaseVerificationAgent):
                 agent_name="LiquidityVerifier",
                 is_valid=False,
                 confidence=0.85,
+                items_checked=0,
                 critique=(
                     "FALSIFIED: no measured liquidity/volume evidence in the "
                     "decision graph."
@@ -304,12 +317,14 @@ class LiquidityVerifier(BaseVerificationAgent):
                 agent_name="LiquidityVerifier",
                 is_valid=False,
                 confidence=0.85,
+                items_checked=1,
                 critique="FALSIFIED: measured volume is non-positive.",
             )
         return VerifierVerdict(
             agent_name="LiquidityVerifier",
             is_valid=True,
             confidence=0.9,
+            items_checked=len(liquidity_nodes),
             critique="Liquidity evidence present and positive.",
         )
 
@@ -333,6 +348,7 @@ class MarketStructureVerifier(BaseVerificationAgent):
         return VerifierVerdict(
             agent_name="MarketStructureVerifier",
             is_valid=bool(structure_nodes),
+            items_checked=len(structure_nodes),
             confidence=0.88 if structure_nodes else 0.9,
             critique=(
                 "Measured market-structure evidence present."
@@ -372,7 +388,16 @@ class VerificationSwarm:
 
         valid_count = sum(1 for v in verdicts if v.is_valid)
         consensus = valid_count / len(verdicts) if verdicts else 0
-        logger.info(f"VerificationSwarm: Consensus reached at {consensus:.1%}")
+        substantive = sum(
+            1 for v in verdicts if getattr(v, "items_checked", 0) > 0)
+        self.last_consensus = {
+            "consensus": consensus,
+            "substantive_verifiers": substantive,
+            "total_verifiers": len(verdicts),
+        }
+        logger.info(
+            f"VerificationSwarm: Consensus reached at {consensus:.1%} "
+            f"({substantive}/{len(verdicts)} verifiers examined evidence)")
 
         return verdicts
 
@@ -384,10 +409,12 @@ class CausalVerifier(BaseVerificationAgent):
         logger.info(f"CausalVerifier checking relations for entry {_eget(ledger_entry, 'entry_id', 'unknown')}")
 
         invalid_relations = []
+        causal_edges = 0
         for edge in _graph_edges(ledger_entry):
             relation = _eget(edge, "relation")
             relation_val = getattr(relation, "value", relation)
             if relation_val == "CAUSES":
+                causal_edges += 1
                 if (_eget(edge, "weight", 0.0) or 0.0) < 0.5:
                     invalid_relations.append(
                         f"Weak causal link: {_eget(edge, 'source_id')} -> "
@@ -396,6 +423,7 @@ class CausalVerifier(BaseVerificationAgent):
         return VerifierVerdict(
             agent_name="CausalVerifier",
             is_valid=len(invalid_relations) == 0,
+            items_checked=causal_edges,
             confidence=0.88,
             critique="Causal claims are sufficiently supported." if not invalid_relations else f"Weak links: {invalid_relations}"
         )
@@ -432,7 +460,7 @@ class EvidenceGraphGate:
                 EvidenceGraphGate.last_rejection_reason = (
                     f"Unprovenanced evidence nodes: {unprovenanced[:5]}"
                 )
-                logger.error(
+                logger.warning(
                     "EvidenceGate: REJECTED - %s",
                     EvidenceGraphGate.last_rejection_reason,
                 )
@@ -446,7 +474,7 @@ class EvidenceGraphGate:
             EvidenceGraphGate.last_rejection_reason = (
                 f"Consensus below 80% ({valid_count}/{len(verdicts)}): {critiques}"
             )
-            logger.error("EvidenceGate: REJECTED - Consensus below 80%")
+            logger.warning("EvidenceGate: REJECTED - Consensus below 80%")
             return False
 
         # 2. High-Confidence Veto check
@@ -461,7 +489,7 @@ class EvidenceGraphGate:
                 EvidenceGraphGate.last_rejection_reason = (
                     f"High-confidence VETO by {v.agent_name}: {str(v.critique)}"
                 )
-                logger.error(f"EvidenceGate: REJECTED - {EvidenceGraphGate.last_rejection_reason}")
+                logger.warning(f"EvidenceGate: REJECTED - {EvidenceGraphGate.last_rejection_reason}")
                 return False
 
         # 3. Evidence Graph Hard Constraints
@@ -472,7 +500,7 @@ class EvidenceGraphGate:
                 EvidenceGraphGate.last_rejection_reason = (
                     f"Insufficient evidence. Graph has {len(nodes)} nodes and {len(edges)} edges."
                 )
-                logger.error(f"EvidenceGate: REJECTED - {EvidenceGraphGate.last_rejection_reason}")
+                logger.warning(f"EvidenceGate: REJECTED - {EvidenceGraphGate.last_rejection_reason}")
                 return False
 
         return True
