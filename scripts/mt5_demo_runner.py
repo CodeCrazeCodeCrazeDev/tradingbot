@@ -7,8 +7,8 @@ canonical credential provider (MT5_LOGIN / MT5_PASSWORD / MT5_SERVER), and
 never falls back to paper execution.
 
 Sources:
-  --replay N     closed M15 bars from the terminal (validates the full
-                 pipeline on real recent market data)
+  --replay N     closed M15 bars from the terminal through a non-executing
+                 analysis runtime (real market data; paper boundary only)
   --follow       poll the terminal for each new closed M15 bar (the soak
                  mode; drains operator controls between polls)
 
@@ -67,6 +67,73 @@ def _closed_bars(client: Any, symbol: str, timeframe_const: int, n: int):
     return client.copy_rates_from_pos(symbol, timeframe_const, 1, n)
 
 
+def _mt5_config(args: argparse.Namespace) -> Dict[str, Any]:
+    return {
+        "symbol": args.symbol,
+        "timeframe": args.timeframe,
+        "account_currency": "USD",
+        "terminal_path": args.terminal_path,
+        "auto_approve": args.auto_approve,
+    }
+
+
+def _runtime_config(args: argparse.Namespace) -> Dict[str, Any]:
+    """Runtime config for live-follow vs non-executing historical replay.
+
+    Replay bars are real market data, but they cannot justify a live/demo
+    order. The replay runtime therefore uses analysis mode and a paper
+    execution boundary while a separate MT5 adapter supplies bars only.
+
+    trading_enabled stays on in replay: execution_mode="analysis" maps to
+    CanonicalExecutionService(mode="paper") with NO venue adapter attached,
+    so approvals can only produce paper fills labeled venue=paper. Those
+    paper fills settle on subsequent real bars and produce DECISION_OUTCOME
+    rows — the honest measurement feed for advisor reliability scoring and
+    research signals, without which the learning loop has nothing to
+    learn from.
+    """
+    replay = bool(args.replay)
+    return {
+        "execution_mode": "analysis" if replay else "mt5_demo",
+        "symbol": args.symbol,
+        "account_id": "mt5_replay" if replay else "mt5_demo",
+        "trading_state_path": str(Path(args.state_dir) / "trading_state.db"),
+        "decision_log_path": str(Path(args.state_dir) / "decision_log.jsonl"),
+        "strategy_id": args.strategy_id,
+        "initial_equity": args.initial_equity,
+        "trading_enabled": True,
+        "mt5": _mt5_config(args),
+        "cognitive_assembly": {
+            "enabled": True,
+            "research_interval": args.research_interval,
+            "discover_advisors": False,
+        },
+    }
+
+
+async def _connect_feed_adapter(args: argparse.Namespace) -> Any:
+    """Connect the MT5 terminal for market data without attaching it to the
+    runtime's execution service."""
+    from trading_bot.brokers.mt5_demo import MT5DemoAdapter
+
+    adapter = MT5DemoAdapter(config=_mt5_config(args))
+    await adapter.connect()
+    return adapter
+
+
+def _seed_warmup(runtime: Any, symbol: str, bars: Any) -> int:
+    """Seed derived-feature windows from closed bars without decision cycles."""
+    closes = [float(bar["close"]) for bar in (bars or [])
+              if float(bar["close"]) > 0]
+    csc = getattr(runtime.bot, "csc", None)
+    if csc is not None and hasattr(csc, "seed_observation_history"):
+        csc.seed_observation_history(symbol, closes)
+    window = getattr(runtime.bot, "_price_window", None)
+    if window is not None:
+        window.extend(closes)
+    return len(closes)
+
+
 async def run(args: argparse.Namespace) -> int:
     from trading_bot.foundation.runtime import ModularMonolithRuntime
     from trading_bot.interfaces.control import ControlChannel, OperatorConsole
@@ -74,41 +141,35 @@ async def run(args: argparse.Namespace) -> int:
     state_dir = Path(args.state_dir)
     channel = ControlChannel(state_dir / "control")
 
-    runtime = ModularMonolithRuntime({
-        "execution_mode": "mt5_demo",
-        "symbol": args.symbol,
-        "account_id": "mt5_demo",
-        "trading_state_path": str(state_dir / "trading_state.db"),
-        "decision_log_path": str(state_dir / "decision_log.jsonl"),
-        "strategy_id": args.strategy_id,
-        "initial_equity": args.initial_equity,
-        "mt5": {
-            "symbol": args.symbol,
-            "timeframe": args.timeframe,
-            "account_currency": "USD",
-            "terminal_path": args.terminal_path,
-            "auto_approve": args.auto_approve,
-        },
-    })
-    await runtime.start()  # connects + validates demo account inside start()
-    console = OperatorConsole(runtime.bot)
-    await console.restore_state()
-
-    adapter = runtime.bot.execution_service.adapter
-    client = adapter._client
-    tf = getattr(client, "TIMEFRAME_M15")
-
-    if args.dashboard_port:
-        serve_dashboard(state_dir, args.dashboard_port)
-
-    def tick_mark() -> None:
-        tick = client.symbol_info_tick(args.symbol)
-        if tick is not None:
-            console.last_price[args.symbol] = (
-                float(tick.bid) + float(tick.ask)) / 2.0
-
+    runtime = ModularMonolithRuntime(_runtime_config(args))
+    console = None
+    feed_adapter = None
+    adapter = None
     processed = 0
     try:
+        await runtime.start()
+        console = OperatorConsole(runtime.bot)
+        await console.restore_state()
+
+        if args.replay:
+            # Historical bars must never reach a venue adapter through the
+            # execution service. Connect MT5 separately for data only.
+            feed_adapter = await _connect_feed_adapter(args)
+            adapter = feed_adapter
+        else:
+            adapter = runtime.bot.execution_service.adapter
+        client = adapter._client
+        tf = getattr(client, "TIMEFRAME_M15")
+
+        if args.dashboard_port:
+            serve_dashboard(state_dir, args.dashboard_port)
+
+        def tick_mark() -> None:
+            tick = client.symbol_info_tick(args.symbol)
+            if tick is not None and console is not None:
+                console.last_price[args.symbol] = (
+                    float(tick.bid) + float(tick.ask)) / 2.0
+
         if args.replay:
             bars = _closed_bars(client, args.symbol, tf, args.replay)
             for bar in bars:
@@ -120,22 +181,19 @@ async def run(args: argparse.Namespace) -> int:
                 tick_mark()
                 await runtime.bot.run_cycle(obs)
                 processed += 1
-                publish_snapshot(state_dir, _snapshot(processed, console, args))
+                publish_snapshot(state_dir, _snapshot(
+                    processed, console, args, runtime, adapter))
         else:  # follow: poll for each newly closed M15 bar
-            # Warm-up: feed the last N closed bars first so derived
-            # features (volatility/trend — needed by the evidence gate
-            # after ~21 observations) exist before the first live bar.
+            # Seed only the causal feature windows. Warm-up must not run
+            # decisions through the live demo execution path.
             warm = _closed_bars(client, args.symbol, tf, args.warmup)
             last_bar_time = 0
             if warm is not None and len(warm):
-                logger.info("follow warm-up: %d closed bars", len(warm))
-                for bar in warm:
-                    obs = _bar_to_obs(args.symbol, bar, adapter)
-                    tick_mark()
-                    await runtime.bot.run_cycle(obs)
-                    publish_snapshot(state_dir,
-                                     _snapshot(processed, console, args))
+                seeded = _seed_warmup(runtime, args.symbol, warm)
+                logger.info("follow warm-up: seeded %d closed bars", seeded)
                 last_bar_time = int(warm[-1]["time"])
+                publish_snapshot(state_dir, _snapshot(
+                    processed, console, args, runtime, adapter))
             while not args.cycles or processed < args.cycles:
                 for command in channel.drain():
                     outcome = await console.apply(command)
@@ -148,29 +206,42 @@ async def run(args: argparse.Namespace) -> int:
                     obs = _bar_to_obs(args.symbol, bars[0], adapter)
                     await runtime.bot.run_cycle(obs)
                     processed += 1
-                    publish_snapshot(state_dir,
-                                     _snapshot(processed, console, args))
+                    publish_snapshot(state_dir, _snapshot(
+                        processed, console, args, runtime, adapter))
                 await asyncio.sleep(max(args.interval, 5.0))
     finally:
-        publish_snapshot(state_dir, _snapshot(processed, console, args))
+        if console is not None:
+            publish_snapshot(state_dir, _snapshot(
+                processed, console, args, runtime, adapter))
+        if feed_adapter is not None:
+            await feed_adapter.disconnect()
         await runtime.stop()
     logger.info("demo runner finished: %d cycles processed", processed)
     return 0
 
 
-def _snapshot(processed: int, console, args) -> Dict[str, Any]:
+def _snapshot(processed: int, console, args, runtime=None,
+              adapter=None) -> Dict[str, Any]:
+    if adapter is None:
+        adapter = getattr(
+            getattr(console.bot, "execution_service", None), "adapter", None)
+    csc = getattr(getattr(runtime, "bot", None), "csc", None)
     return {
         "as_of": time.time(),
         "cycles": processed,
         "control": console.control_state(),
-        "mode": "mt5_demo",
+        "mode": "mt5_replay" if args.replay else "mt5_demo",
+        "execution_mode": getattr(
+            getattr(runtime, "bot", None), "execution_mode", None),
         "symbol": args.symbol,
-        "account_login": getattr(
-            getattr(console.bot.execution_service, "adapter", None),
-            "account_login", None),
-        "account_mode": getattr(
-            getattr(console.bot.execution_service, "adapter", None),
-            "account_mode", None),
+        "account_login": getattr(adapter, "account_login", None),
+        "account_mode": getattr(adapter, "account_mode", None),
+        "advisors": csc.advisory_report() if csc is not None
+        and hasattr(csc, "advisory_report") else None,
+        "funnel": csc.funnel_report() if csc is not None
+        and hasattr(csc, "funnel_report") else None,
+        "ai_stack": runtime.ai_stack.explain()
+        if getattr(runtime, "ai_stack", None) is not None else None,
     }
 
 
@@ -199,6 +270,9 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--state-dir", default=str(DEFAULT_STATE_DIR))
     parser.add_argument("--dashboard-port", type=int, default=0)
     parser.add_argument("--strategy-id", default=None)
+    parser.add_argument("--research-interval", type=int, default=100,
+                        help="observations between automatic research cycles "
+                             "(0 disables cycles; evidence still flows)")
     parser.add_argument("--log-level", default="INFO")
     args = parser.parse_args(argv)
     logging.basicConfig(level=args.log_level,
