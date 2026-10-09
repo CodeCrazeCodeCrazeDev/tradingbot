@@ -375,7 +375,13 @@ class _BarHistory:
         close = _num(ctx.get("close") or ctx.get("price"))
         if close is None:
             return len(self._bars)
+        # Analyzers that compute time-deltas or annotate levels expect a
+        # numeric "time" column; use the observation's own timestamp when
+        # numeric, else the monotonically increasing bar index — never a
+        # fabricated wall-clock.
+        t = _num(ctx.get("time") or ctx.get("timestamp"))
         self._bars.append({
+            "time": float(t) if t is not None else float(len(self._bars)),
             "open": _num(ctx.get("open")) or close,
             "high": _num(ctx.get("high")) or close,
             "low": _num(ctx.get("low")) or close,
@@ -765,10 +771,13 @@ def _elite_factor_service() -> AdvisoryModuleAdapter:
                     return v
             return None
         ls, ss = _score(out["long"]), _score(out["short"])
-        direction = None
-        if ls is not None and ss is not None and abs(ls - ss) > 0.05:
-            direction = "BUY" if ls > ss else "SELL"
-        out["direction"] = direction
+        # A saturated matrix (identical scores both directions — e.g. all
+        # factors at the 50.0 error/default) discriminates nothing; report
+        # the indeterminate result, not two fake STRONG recommendations.
+        if ls is None or ss is None or ls == ss:
+            return {"status": "indeterminate",
+                    "long_score": ls, "short_score": ss}
+        out["direction"] = "BUY" if ls > ss else "SELL"
         return out
 
     return AdvisoryModuleAdapter("elite_factor_matrix", analyze)
@@ -808,13 +817,29 @@ def _adaptive_learning_service() -> AdvisoryModuleAdapter:
     engine = AdaptiveLearningEngine()
 
     def analyze(ctx: Mapping[str, Any]) -> Any:
+        from sklearn.exceptions import NotFittedError
+        from sklearn.utils.validation import check_is_fitted
         preds = {}
+        trained = 0
         for mt in ModelType:
+            model = engine.models.get(mt)
+            if model is None:
+                preds[mt.value] = None
+                continue
+            try:
+                check_is_fitted(model)
+            except NotFittedError:
+                preds[mt.value] = "untrained"
+                continue
+            except Exception:  # noqa: BLE001 - odd model, try predict
+                pass
             try:
                 preds[mt.value] = engine.predict(mt, _feature_vector(ctx))
             except Exception:  # noqa: BLE001 - per-model failures skip
                 preds[mt.value] = None
-        return {"predictions": preds}
+            else:
+                trained += isinstance(preds[mt.value], (int, float))
+        return {"predictions": preds, "models_trained": trained}
 
     return AdvisoryModuleAdapter("adaptive_learning_predict", analyze)
 
@@ -2376,8 +2401,11 @@ def _analysis_market_intel_service() -> AdvisoryModuleAdapter:
 
     async def analyze(ctx: Mapping[str, Any]) -> Any:
         hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
         out = system.analyze_market(
-            _md_dict(ctx, hist),
+            df,
             str(ctx.get("symbol") or "UNKNOWN"),
             str(ctx.get("timeframe") or "M15"))
         if inspect.isawaitable(out):
@@ -3682,11 +3710,17 @@ def _volatility_impulse_service() -> AdvisoryModuleAdapter:
     hist = _BarHistory()
 
     def analyze(ctx: Mapping[str, Any]) -> Any:
+        import pandas as pd
         hist.add(ctx)
         vols = [b["volume"] for b in hist.bars(60)]
         if len(vols) < 10:
             return {"status": "warming", "bars": len(vols)}
-        return _payload(vec.detect_volume_surge(vols))
+        surge = np.asarray(
+            vec.detect_volume_surge(pd.Series(vols, dtype=float)),
+            dtype=float)
+        return {"bars": len(vols),
+                "surge_ratio_last": float(surge[-1]),
+                "surge_ratio_max": float(np.nanmax(surge))}
 
     return AdvisoryModuleAdapter("volatility_impulse", analyze)
 
@@ -3917,7 +3951,6 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("multi_agent_debate", _debate_service),
     ("market_anomaly_detection", _anomaly_service),
     ("regime_classification", _regime_classifier_service),
-    ("adversarial_trade_eval", _adversarial_trade_service),
     ("trend_following_agent", _trend_agent_service),
     ("failure_mode_detection", _failure_mode_service),
     # Bucket A — orphan packages with genuinely obs-callable analyzers
@@ -3982,7 +4015,6 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
      _make_debate_agent_service("risk_sentinel_agent", "RiskSentinel")),
     ("adversarial_failure_match", _adversarial_failure_match_service),
     ("alphaalgo_performance_sensor", _alphaalgo_perf_sensor_service),
-    ("market_physics_filter", _market_physics_service),
     # Bucket C — loose orphan root files
     ("alphaalgo_5star_risk_metrics", _alphaalgo_5star_risk_service),
     ("world2agent_bridge", _world2agent_bridge_service),
@@ -4173,6 +4205,14 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
     ("ai_engineer", "code-change safeguard machinery (safeguards, "
      "sandbox, compliance audit); approval semantics, not a market "
      "advisory"),
+    ("adversarial_decision", "adversarial_trade_eval removed — "
+     "evaluate_trade hard-gates on signal_data['edge_density'], a "
+     "property of a proposed trade; no proposal exists at observation "
+     "time, so every cycle produced vacuous rejections"),
+    ("alphaalgo_core", "market_physics_filter removed — process() "
+     "requires orderbook bids/asks (L2 data) the observation does not "
+     "carry; 'spread inf / liquidity 0' verdicts were missing-data "
+     "noise, not market assessment"),
     ("aads", "alpha_evolve_signal + polymarket_estimate + maven_stats "
      "attached; aip_agents synthesize bull/bear cases via np.random — "
      "fabricated analysis, stays quarantined"),
@@ -4721,4 +4761,9 @@ def attach_advisory_modules(
         except Exception as exc:
             logger.warning("advisory discovery failed: %s", exc)
 
+    csc._advisory_attach_report = {
+        "attached": list(attached),
+        "skipped": list(skipped),
+        "discover": bool(discover),
+    }
     return attached, skipped
