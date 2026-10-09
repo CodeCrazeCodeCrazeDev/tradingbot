@@ -17,8 +17,10 @@ import time
 import logging
 import asyncio
 import copy
+import hashlib
+import json
 import threading
-from collections import deque
+from collections import Counter, deque
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 from datetime import datetime
@@ -260,6 +262,11 @@ class CognitiveSystemController:
         self._churn_budget = int(kwargs.get("churn_budget", 50))
         self._churn_window = int(kwargs.get("churn_window", 200))
         self._recent_trade_seqs: deque = deque(maxlen=self._churn_window)
+        # Stage funnel: per-process counts at each pipeline boundary so a
+        # run's "why no trades" is answerable from the snapshot without
+        # re-parsing audit rows. Durable per-decision detail stays in
+        # audit_events; this is the aggregate view.
+        self._funnel: Counter = Counter()
         # EV calibration: predicted-vs-realized pairs from settled
         # outcomes. Measured on forward data: simulated EV ~+0.0054,
         # realized ~+0.00004 — raw EV is ~150x optimistic, so the
@@ -444,10 +451,16 @@ class CognitiveSystemController:
         if advisory is None or not hasattr(advisory, "analyze"):
             raise TypeError(
                 "advisory cognition service must expose analyze(context)")
+        capability_id = str(getattr(
+            advisory, "capability_id", type(advisory).__name__))
+        self._advisory_services = [
+            service for service in self._advisory_services
+            if str(getattr(service, "capability_id",
+                           type(service).__name__)) != capability_id]
         self._advisory_services.append(advisory)
         logger.info(
             "CSC-V6: advisory cognition service registered: %s",
-            getattr(advisory, "capability_id", type(advisory).__name__))
+            capability_id)
 
     def configure_decision_sink(self, sink: Any) -> None:
         """Wire the durable decision sink (the canonical repository).
@@ -570,7 +583,52 @@ class CognitiveSystemController:
                         agent_id, regime), 4),
                 }
             measured[str(agent_id)] = per_regime
-        return {"attached": attached, "measured": measured}
+        report: Dict[str, Any] = {"attached": attached,
+                                  "measured": measured}
+        assembly_report = getattr(self, "_advisory_attach_report", None)
+        if isinstance(assembly_report, Mapping):
+            report["assembly"] = dict(assembly_report)
+        failures = getattr(self, "_advisory_failures", {}) or {}
+        disabled = sorted(str(cap) for cap, count in failures.items()
+                          if count >= 5)
+        if disabled:
+            report["disabled"] = disabled
+        quality = {
+            k: int(self._funnel.get(k, 0))
+            for k in ('advisor_directional_calls', 'advisor_substantive',
+                      'advisor_degenerate')}
+        quality['consulted_total'] = int(
+            self._funnel.get('advisory_artifacts', 0))
+        report['signal_quality'] = quality
+        return report
+
+    def funnel_report(self) -> Dict[str, int]:
+        """Ordered stage-funnel counts for this process.
+
+        Keys follow the canonical pipeline order: observations -> cadence
+        -> perception -> evidence -> guardrails -> internalization/advisors
+        -> hypothesis branches -> pivot/refine -> verification -> synthesis
+        -> net-cost gate -> risk -> shield -> governance -> consensus ->
+        terminal outcomes -> settled positions. ``*_terminal`` counts are
+        the cycles where that stage returned the final decision."""
+        order = (
+            "observations", "cadence_abstain", "perception",
+            "evidence_items", "guardrails", "guardrail_terminal",
+            "advisory_artifacts", "advisor_directional_calls",
+            "advisor_substantive", "advisor_degenerate",
+            "hypothesis_branches", "pivot_refine_terminal",
+            "verification", "verification_terminal", "synthesis",
+            "net_cost_downgrade", "directional_proposals",
+            "risk_check", "risk_terminal", "shield", "shield_terminal",
+            "governance", "governance_terminal", "consensus_rejected",
+            "churn_abstain", "nondirectional_abstain",
+            "terminal_TRADE_APPROVED", "terminal_TRADE_REJECTED",
+            "terminal_ABSTAIN", "settled_positions")
+        report = {k: int(self._funnel.get(k, 0)) for k in order}
+        for k, v in self._funnel.items():  # any unlisted counter survives
+            if k not in report:
+                report[k] = int(v)
+        return report
 
     def _rebuild_research_reports(self, rows: List[Any]) -> None:
         """Reconstruct report stubs from durable RESEARCH verdict rows —
@@ -1076,6 +1134,7 @@ class CognitiveSystemController:
         entry = pos["entry_price"]
         direction = 1.0 if pos["direction"] == "BUY" else -1.0
         realized = direction * (float(exit_price) - entry) / entry
+        self._funnel["settled_positions"] += 1
         for tid in list(pos["trade_ids"]):
             try:
                 await self.record_outcome(
@@ -1259,7 +1318,10 @@ class CognitiveSystemController:
             input_signal[1] = float(observation.get("volatility", 0.0) or 0.0)
             input_signal[2] = float(observation.get("volume", 0.0) or 0.0) / 1e6
             input_signal[3] = float(observation.get("sentiment", 0.0) or 0.0)
-            seed = hash(str(sorted(observation.items()))) & 0xFFFFFFFF
+            seed_material = json.dumps(
+                observation, sort_keys=True, default=str).encode("utf-8")
+            seed = int.from_bytes(
+                hashlib.sha256(seed_material).digest()[:4], "little")
             rng = np.random.RandomState(seed)
             input_signal += rng.normal(0, 0.01, (512,))
 
@@ -1746,6 +1808,26 @@ class CognitiveSystemController:
                 else None,
             })
         self._last_advisory_calls = calls
+
+        # Signal-quality ledger: attachment count is not intelligence.
+        # Classify what each advisor actually emitted this cycle so the
+        # report shows directional/substantive/degenerate honestly.
+        _degenerate = {'warming', 'no_read', 'no_data', 'no_signal',
+                       'none', 'skipped', 'unavailable', 'idle'}
+        for a in (artifacts or []):
+            if not isinstance(a, Mapping):
+                self._funnel['advisor_degenerate'] += 1
+                continue
+            if a.get('direction') in ('BUY', 'SELL'):
+                self._funnel['advisor_directional_calls'] += 1
+                continue
+            ev = a.get('evidence')
+            status = (str(ev.get('status')).lower()
+                      if isinstance(ev, Mapping) else '')
+            if status in _degenerate or not ev:
+                self._funnel['advisor_degenerate'] += 1
+            else:
+                self._funnel['advisor_substantive'] += 1
         return artifacts
 
     async def _stage_hypothesis_and_simulation(
@@ -1846,6 +1928,7 @@ class CognitiveSystemController:
         cal = self._ev_calibration_factor()
         ev_cal = ev * cal if isinstance(ev, (int, float)) else ev
         if not isinstance(ev_cal, (int, float)) or ev_cal < round_trip_cost:
+            self._funnel["net_cost_downgrade"] += 1
             proposal["action"] = "HOLD"
             proposal["downgraded_reason"] = (
                 f"insufficient net edge: calibrated EV "
@@ -2080,6 +2163,7 @@ class CognitiveSystemController:
                 and sum(1 for s in self._recent_trade_seqs
                         if s > self._observation_seq - self._churn_window)
                 >= self._churn_budget):
+            self._funnel["churn_abstain"] += 1
             await self._persist_audit_event(
                 event_type="DECISION",
                 action=action_name,
@@ -2102,6 +2186,7 @@ class CognitiveSystemController:
             )
 
         if action_name in ("HOLD", "WAIT", "NO_TRADE") or quantity <= 0.0:
+            self._funnel["nondirectional_abstain"] += 1
             await self._persist_audit_event(
                 event_type="DECISION",
                 action=action_name,
@@ -2151,6 +2236,7 @@ class CognitiveSystemController:
                 if isinstance(report, dict) and report.get("reason")
             ]
             detail = f" ({'; '.join(voter_reasons)})" if voter_reasons else ""
+            self._funnel["consensus_rejected"] += 1
             await self._persist_audit_event(
                 event_type="DECISION",
                 action=action_name,
@@ -2209,6 +2295,24 @@ class CognitiveSystemController:
         early terminal-return paths (guardrail vetoes, abstentions)."""
         try:
             decision = await self._process_observation_pipeline(observation)
+            if decision is not None:
+                obs_d = observation if isinstance(observation, dict) else {}
+                outcome = getattr(decision, "outcome", None)
+                outcome_value = getattr(outcome, "value", outcome)
+                self._funnel[f"terminal_{outcome_value or 'UNKNOWN'}"] += 1
+                await self._persist_audit_event(
+                    event_type="DECISION_TERMINAL",
+                    action="pipeline_terminal",
+                    outcome=str(outcome_value or "UNKNOWN"),
+                    correlation_id=str(
+                        getattr(decision, "trade_id", None) or "unknown"),
+                    details={
+                        "symbol": obs_d.get("symbol"),
+                        "dominant_rejection_reason": getattr(
+                            decision, "dominant_rejection_reason", None),
+                        "advisory_evidence": list(
+                            getattr(self, "_last_advisory_ids", ()) or ()),
+                    })
             # Rejected decisions are failure evidence — one seam here covers
             # every TRADE_REJECTED terminal (guardrail, verification, risk,
             # shield, governance) without touching each return site.
@@ -2312,6 +2416,9 @@ class CognitiveSystemController:
         # 0. Normalize + trade id
         obs_dict, trade_id = self._normalize_observation(observation)
         self._observation_seq += 1
+        self._funnel["observations"] += 1
+        self._last_advisory_calls = []
+        self._last_advisory_ids = []
 
         # 0.4. Causal feature enrichment: a raw OHLCV feed does not carry
         # volatility/trend/rsi — derive them from strictly-prior bars so the
@@ -2328,6 +2435,7 @@ class CognitiveSystemController:
         # a skipped bar costs nothing but the decision itself.
         if (self._decision_stride > 1
                 and self._observation_seq % self._decision_stride != 0):
+            self._funnel["cadence_abstain"] += 1
             await self._persist_audit_event(
                 event_type="DECISION",
                 action="HOLD",
@@ -2345,41 +2453,51 @@ class CognitiveSystemController:
 
         # 1. Perception
         await self._stage_perception(obs_dict)
+        self._funnel["perception"] += 1
 
         # 2. Evidence Retrieval
         evidence_chain = await self._stage_evidence_retrieval(observation)
+        self._funnel["evidence_items"] += len(evidence_chain or [])
 
         # 3. Guardrails (HASP volatility + skill-router prescriptive)
+        self._funnel["guardrails"] += 1
         terminal = await self._stage_guardrails(observation, obs_dict)
         if terminal is not None:
+            self._funnel["guardrail_terminal"] += 1
             return terminal.decision
 
         # 4/4.5. DiscoLoop + PCA internalization (advisory artifacts)
         advisory_artifacts = await self._stage_internalization(obs_dict)
+        self._funnel["advisory_artifacts"] += len(advisory_artifacts or [])
 
         # 5/6. Hypothesis generation + causal simulation — on the ENRICHED
         # observation so derived volatility/trend/rsi become evidence nodes.
         branches, sim_results = await self._stage_hypothesis_and_simulation(
             obs_dict, evidence_chain=evidence_chain,
             advisory_artifacts=advisory_artifacts)
+        self._funnel["hypothesis_branches"] += len(branches or [])
 
         # 7. Pivot/Refine
         best_branch = await self._stage_pivot_refine(
             branches, sim_results, trade_id=trade_id)
         if isinstance(best_branch, self._Terminal):
+            self._funnel["pivot_refine_terminal"] += 1
             return best_branch.decision
 
         # 8. Verification swarm + bounded refinement — BEFORE synthesis so
         # governance and shield only ever see a verified proposal.
+        self._funnel["verification"] += 1
         verified = await self._stage_verification(
             best_branch, sim_results, trade_id)
         if isinstance(verified, self._Terminal):
+            self._funnel["verification_terminal"] += 1
             return verified.decision
         best_branch, ledger_entry = verified
 
         # 9. Decision synthesis on the verified branch
         decision_proposal = self._stage_synthesis(
             best_branch, sim_results, trade_id, obs_dict)
+        self._funnel["synthesis"] += 1
 
         # 10-12. Execution gates apply to capital-moving proposals only —
         # a verified HOLD/WAIT/zero-size abstention skips straight to
@@ -2395,22 +2513,29 @@ class CognitiveSystemController:
             and qty > 0.0
 
         if is_directional:
+            self._funnel["directional_proposals"] += 1
             # 10. Canonical portfolio-risk boundary
+            self._funnel["risk_check"] += 1
             terminal, risk_decision = await self._stage_risk_check(
                 decision_proposal, obs_dict, trade_id)
             if terminal is not None:
+                self._funnel["risk_terminal"] += 1
                 return terminal.decision
 
             # 11. Immutable shield
+            self._funnel["shield"] += 1
             terminal = await self._stage_shield(decision_proposal, obs_dict)
             if terminal is not None:
+                self._funnel["shield_terminal"] += 1
                 return terminal.decision
 
             # 12. Human-governance gate on the verified, shield-passed
             # proposal
+            self._funnel["governance"] += 1
             terminal = await self._stage_governance(
                 decision_proposal, obs_dict, risk_decision, trade_id)
             if terminal is not None:
+                self._funnel["governance_terminal"] += 1
                 return terminal.decision
 
         # 13. Fold, persist, execution consensus (or durable abstain record)
