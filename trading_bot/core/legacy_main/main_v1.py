@@ -88,7 +88,7 @@ from trading_bot.connectivity.web_scraper import WebScraper, FinancialNewsScrape
 
 # Intelligence modules
 from trading_bot.intel.news_pipeline import NewsPipeline, NewsSignal
-from trading_bot.intel.strategy_researcher import StrategyResearcher
+from trading_bot.research.strategy_researcher import StrategyResearcher
 from trading_bot.intel.fundamental_analyzer import FundamentalAnalyzer
 
 # ============================================================================
@@ -584,7 +584,7 @@ except ImportError:
 
 # Alpha research
 try:
-    from trading_bot.alpha_research import alpha_discovery
+    from trading_bot.research.alpha_research import alpha_discovery
     _AVAILABLE['alpha_research'] = True
 except ImportError:
     _AVAILABLE['alpha_research'] = False
@@ -780,7 +780,7 @@ except ImportError:
 
 # Research ingestion
 try:
-    from trading_bot.research_ingestion import research_ingestor
+    from trading_bot.research.ingestion import research_ingestor
     _AVAILABLE['research_ingestion'] = True
 except ImportError:
     _AVAILABLE['research_ingestion'] = False

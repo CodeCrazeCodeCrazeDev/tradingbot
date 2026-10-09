@@ -148,7 +148,7 @@ class ModuleLoader:
         self.load_module('market_state', 'trading_bot.cognitive_architecture.layer1_market_state_detection', 'MarketStateEngine')
         
         # Alpha Research
-        self.load_module('alpha_research', 'trading_bot.alpha_research.alpha_research_orchestrator', 'AlphaResearchOrchestrator')
+        self.load_module('alpha_research', 'trading_bot.research.alpha_research.alpha_research_orchestrator', 'AlphaResearchOrchestrator')
         
         # Hedge Fund
         self.load_module('hedge_fund', 'trading_bot.hedge_fund.hedge_fund_orchestrator', 'HedgeFundOrchestrator')

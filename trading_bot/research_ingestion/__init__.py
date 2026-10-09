@@ -1,38 +1,21 @@
+"""Deprecated alias — moved to ``trading_bot.research.ingestion``.
+
+Kept so legacy imports (``import trading_bot.research_ingestion`` and
+submodule imports) keep resolving during the monolithic research
+consolidation. Importing this package emits a DeprecationWarning and
+forwards all resolution to the canonical package under
+``trading_bot/research/``.
 """
-Research Ingestion Module
-============================================================
 
-Auto-generated integration file.
-"""
+import importlib as _importlib
+import sys as _sys
+import warnings as _warnings
 
-# paper_ingestion
-try:
-    from .paper_ingestion import (
-        PaperIngestionEngine,
-    )
-except ImportError as e:
-    # paper_ingestion not available
-    pass
+_warnings.warn(
+    "trading_bot.research_ingestion moved to trading_bot.research.ingestion; "
+    "update imports to the canonical path.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
-# research_pipeline_orchestrator
-try:
-    from .research_pipeline_orchestrator import (
-        ResearchPipelineOrchestrator,
-    )
-except ImportError as e:
-    # research_pipeline_orchestrator not available
-    pass
-
-__all__ = [
-    'PaperIngestionEngine',
-    'ResearchPipelineOrchestrator',
-]
-
-
-class ResearchPipelineOrchestrator:
-    """Orchestrates research-ingestion pipelines (minimal reconstruction)."""
-    def __init__(self, *a, **k):
-        self.config = k.get('config', dict(k))
-        self.running = False
-    def get_status(self):
-        return {'status': 'operational', 'running': self.running}
+_sys.modules[__name__] = _importlib.import_module("trading_bot.research.ingestion")

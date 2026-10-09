@@ -5,6 +5,7 @@ peer review governance, knowledge archiving, and production feedback loops.
 """
 
 import logging
+import warnings as _warnings
 import uuid
 import hashlib
 import json
@@ -547,6 +548,13 @@ class ResearchWorkspace:
     the Experiment Manager, the Knowledge Base, and the underlying Research OS.
     """
     def __init__(self, target_sharpe: float = 2.0, max_drawdown: float = 8.0) -> None:
+        _warnings.warn(
+            "ResearchWorkspace is a legacy orchestration surface; the single authoritative "
+            "research orchestrator is "
+            "trading_bot.research.orchestration.kernel.SovereignResearchOrchestrator.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.target_sharpe = target_sharpe
         self.max_drawdown = max_drawdown
 

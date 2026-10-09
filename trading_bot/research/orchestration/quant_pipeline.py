@@ -14,6 +14,7 @@ Implements the 10-stage Continuous Quant Research Loop:
 """
 
 import logging
+import warnings as _warnings
 import uuid
 import numpy as np
 import pandas as pd
@@ -46,6 +47,13 @@ class ResearchLab:
     """Manages the generation, registration, and status of quantitative hypotheses."""
 
     def __init__(self):
+        _warnings.warn(
+            "ResearchLab is a legacy orchestration surface; the single authoritative "
+            "research orchestrator is "
+            "trading_bot.research.orchestration.kernel.SovereignResearchOrchestrator.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.hypothesis_registry: Dict[str, Hypothesis] = {}
 
     def propose_hypothesis(self, name: str, description: str, rationale: str, counterparty: str, falsifications: List[str]) -> Hypothesis:

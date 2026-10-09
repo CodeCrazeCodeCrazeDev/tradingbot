@@ -591,7 +591,7 @@ class IntegratedTradingSystem:
             ('trading_bot.master_integration', 'MasterTradingSystem'),
             ('trading_bot.unified_architecture.unified_trading_system', 'UnifiedTradingSystem'),
             ('trading_bot.alpha_engine.orchestrator', 'AlphaEngineOrchestrator'),
-            ('trading_bot.alpha_research.alpha_research_orchestrator', 'AlphaResearchOrchestrator'),
+            ('trading_bot.research.alpha_research.alpha_research_orchestrator', 'AlphaResearchOrchestrator'),
             ('trading_bot.elite_ai_system.elite_trading_orchestrator', 'EliteTradingOrchestrator'),
             ('trading_bot.ultimate_system.ultimate_orchestrator', 'UltimateOrchestrator'),
             ('trading_bot.hedge_fund.hedge_fund_orchestrator', 'HedgeFundOrchestrator'),

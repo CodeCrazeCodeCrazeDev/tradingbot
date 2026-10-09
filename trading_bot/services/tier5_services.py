@@ -276,7 +276,7 @@ class ResearchIngestionService(Tier5BaseService):
     
     async def _load_components(self) -> None:
         try:
-            from trading_bot.research_ingestion import ResearchIngestionPipeline
+            from trading_bot.research.ingestion import ResearchIngestionPipeline
             self._component = ResearchIngestionPipeline()
         except ImportError:
             pass

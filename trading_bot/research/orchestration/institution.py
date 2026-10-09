@@ -24,6 +24,7 @@ Inspired by Weco AI's AIDE²:
 """
 
 import logging
+import warnings as _warnings
 import uuid
 import hashlib
 import json
@@ -1516,6 +1517,13 @@ class QuantitativeResearchInstitution:
     Divisions, and the Palantir Enterprise Ontology & AIP Orchestrator layers.
     """
     def __init__(self) -> None:
+        _warnings.warn(
+            "QuantitativeResearchInstitution is a legacy orchestration surface; the single authoritative "
+            "research orchestrator is "
+            "trading_bot.research.orchestration.kernel.SovereignResearchOrchestrator.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         logger.info("🏛️ Initializing Autonomous Quantitative Research Institution (AQRI)")
 
         # Palantir-inspired Core Layer

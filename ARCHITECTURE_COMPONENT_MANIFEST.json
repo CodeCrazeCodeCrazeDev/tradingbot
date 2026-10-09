@@ -200,13 +200,31 @@
         "parse_errors": 0
       },
       "rule": "Classification does not move or delete files; unclassified or unsafe modules cannot be registered."
+    },
+    "research_orchestration": {
+      "owner": "SovereignResearchOrchestrator",
+      "path": "trading_bot/research/orchestration/kernel.py",
+      "status": "active",
+      "rule": "The single authoritative research orchestrator; ResearchWorkspace, ResearchWorkspaceV2, QuantitativeResearchInstitution, ResearchLab and AlphaAlgoResearchOrganization are deprecated compatibility surfaces."
     }
   },
   "bounded_contexts": {
     "foundation": {"path": "trading_bot/foundation", "status": "implemented"},
     "data": {"path": "trading_bot/data", "status": "migration_pending"},
     "cognition": {"path": "trading_bot/cognition", "status": "active"},
-    "research": {"path": "trading_bot/research", "status": "migration_pending"},
+    "research": {
+      "path": "trading_bot/research",
+      "status": "consolidated",
+      "compatibility_surfaces": [
+        "trading_bot/alpha_research -> trading_bot.research.alpha_research",
+        "trading_bot/research_ingestion -> trading_bot.research.ingestion",
+        "trading_bot/core/research_mvp_pipeline.py -> trading_bot.research.mvp_pipeline",
+        "trading_bot/core/aletheia_browser_research.py -> trading_bot.research.aletheia_browser_research",
+        "trading_bot/intel/strategy_researcher.py -> trading_bot.research.strategy_researcher",
+        "trading_bot/services/alpha_research_service.py -> trading_bot.research.alpha_research_service"
+      ],
+      "rule": "All research modules live under trading_bot/research; old paths emit DeprecationWarning and forward to the canonical package."
+    },
     "portfolio": {"path": "trading_bot/portfolio", "status": "migration_pending"},
     "risk": {"path": "trading_bot/risk", "status": "consolidation_in_progress"},
     "governance": {"path": "trading_bot/governance", "status": "consolidation_in_progress"},

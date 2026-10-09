@@ -333,7 +333,7 @@ TIER2_SERVICES: List[ServiceDefinition] = [
     # Alpha Research
     ServiceDefinition(
         name="alpha_research",
-        service_class="trading_bot.services.alpha_research_service.AlphaResearchService",
+        service_class="trading_bot.research.alpha_research_service.AlphaResearchService",
         layer=ServiceLayer.SIGNAL_GENERATION,
         priority=ServicePriority.LOW,
         dependencies=["alpha_engine"],

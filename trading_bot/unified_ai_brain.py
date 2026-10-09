@@ -500,7 +500,7 @@ SUBSYSTEM_REGISTRY: Dict[str, Dict[str, Any]] = {
     },
     "alpha_research": {
         "category": SubsystemCategory.STRATEGY,
-        "module": "trading_bot.alpha_research.alpha_research_orchestrator",
+        "module": "trading_bot.research.alpha_research.alpha_research_orchestrator",
         "class": "AlphaResearchOrchestrator",
         "priority": 62,
         "critical": False,
