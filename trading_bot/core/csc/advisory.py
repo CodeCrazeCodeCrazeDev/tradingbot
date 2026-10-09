@@ -24,7 +24,7 @@ import enum
 import inspect
 import logging
 from datetime import date, datetime
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple
 
 import numpy as np
 
@@ -2612,10 +2612,11 @@ def _analysis_context_service() -> AdvisoryModuleAdapter:
 
     def analyze(ctx: Mapping[str, Any]) -> Any:
         hist.add(ctx)
-        if len(hist) < 20:
+        df = _bars_df(hist, 60)
+        if df is None:
             return {"status": "warming", "bars": len(hist)}
         out = analyzer.analyze(
-            _md_dict(ctx, hist), str(ctx.get("timeframe") or "M15"))
+            df, str(ctx.get("timeframe") or "M15"))
         if inspect.isawaitable(out):
             out = _run_coro_sync(out)
         return _payload(out)
@@ -2624,25 +2625,6 @@ def _analysis_context_service() -> AdvisoryModuleAdapter:
 
 
 # --- cross-dir ---
-
-def _chrono_arbitrage_service() -> AdvisoryModuleAdapter:
-    """innovations ChronoArbitrageEngine — temporal-spread detection on
-    the real close series."""
-    from trading_bot.innovations.category_02_temporal_manipulation import (
-        ChronoArbitrageEngine)
-
-    engine = ChronoArbitrageEngine()
-    hist = _BarHistory()
-
-    def analyze(ctx: Mapping[str, Any]) -> Any:
-        hist.add(ctx)
-        prices = [b["close"] for b in hist.bars(50)]
-        if len(prices) < 10:
-            return {"status": "warming", "bars": len(prices)}
-        return _payload(engine.detect_temporal_spread(prices))
-
-    return AdvisoryModuleAdapter("chrono_arbitrage", analyze)
-
 
 def _black_swan_service() -> AdvisoryModuleAdapter:
     """advanced_features BlackSwanProtection — tail-risk conditions from
@@ -2787,6 +2769,479 @@ def _intelligence_brain_v2_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("intelligence_brain_v2", analyze)
 
 
+
+# ---------------------------------------------------------------------------
+# Bucket F - DOCS/CSC_WIRING_AUDIT.md: observation-callable analyzers
+# ---------------------------------------------------------------------------
+
+
+def _rsi_series(prices: List[float], period: int = 14) -> List[float]:
+    """Simple RSI series from real closes - honest indicator input for
+    divergence-style detectors (never fabricated)."""
+    out: List[float] = []
+    for i in range(1, len(prices)):
+        window = prices[max(0, i - period):i + 1]
+        gains = losses = 0.0
+        for j in range(1, len(window)):
+            ch = window[j] - window[j - 1]
+            if ch > 0:
+                gains += ch
+            else:
+                losses -= ch
+        out.append(100.0 if losses <= 0
+                   else 100.0 - 100.0 / (1.0 + gains / losses))
+    return out
+
+
+def _swing_levels(bars: List[Dict[str, float]], k: int = 3
+                  ) -> Tuple[List[float], List[float]]:
+    """Local swing highs/lows over the accumulated bar window."""
+    highs: List[float] = []
+    lows: List[float] = []
+    for i in range(k, len(bars) - k):
+        if all(bars[i]["high"] >= bars[j]["high"]
+               for j in range(i - k, i + k + 1)):
+            highs.append(bars[i]["high"])
+        if all(bars[i]["low"] <= bars[j]["low"]
+               for j in range(i - k, i + k + 1)):
+            lows.append(bars[i]["low"])
+    return highs[-20:], lows[-20:]
+
+
+def _probe_all(probes: Iterable[Tuple[str, Callable[[], Any]]]
+               ) -> Dict[str, Any]:
+    """Run independent detector probes; each failure is contained per-key
+    so one bad module can't void the whole advisory payload."""
+    out: Dict[str, Any] = {}
+    for key, fn in probes:
+        try:
+            res = fn()
+            if res is not None and res != [] and res != {}:
+                out[key] = _primitive(
+                    res[-10:] if isinstance(res, list) else res)
+        except Exception as exc:  # noqa: BLE001 - per-detector isolation
+            out[key] = {"error": str(exc)[:200]}
+    return out
+
+
+def _upgrades_structure_service() -> AdvisoryModuleAdapter:
+    """upgrades/ candle-shape detectors - order blocks, fair value gaps,
+    market structure, price-action patterns, liquidity sweeps. All read
+    the accumulated real bar window."""
+    from trading_bot.upgrades.core_upgrades_001_025 import (
+        OrderBlockDetector, FairValueGapDetector, MarketStructureAnalyzer,
+        PriceActionPatternDetector)
+    from trading_bot.upgrades.core_upgrades_026_050 import (
+        LiquiditySweepDetector)
+
+    obs_det = OrderBlockDetector()
+    fvg = FairValueGapDetector()
+    msa = MarketStructureAnalyzer()
+    pa = PriceActionPatternDetector()
+    sweep = LiquiditySweepDetector()
+    hist = _BarHistory(256)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 30:
+            return {"status": "warming", "bars": len(hist)}
+        bars = hist.bars()
+        highs = [b["high"] for b in bars]
+        lows = [b["low"] for b in bars]
+        sh, sl = _swing_levels(bars)
+        out = _probe_all((
+            ("order_blocks", lambda: obs_det.detect(bars)),
+            ("fair_value_gaps", lambda: fvg.detect(bars)),
+            ("market_structure", lambda: msa.analyze(highs, lows)),
+            ("price_patterns", lambda: pa.analyze(
+                bars[-1]["open"], bars[-1]["high"],
+                bars[-1]["low"], bars[-1]["close"])),
+            ("liquidity_sweeps", lambda: sweep.detect(bars, sh, sl)),
+        ))
+        return out or {"status": "no_structures"}
+
+    return AdvisoryModuleAdapter("upgrades_price_structure", analyze)
+
+
+def _upgrades_regime_service() -> AdvisoryModuleAdapter:
+    """upgrades/ VolatilityRegimeDetector + TradeClassifier +
+    DivergenceDetector - regime/classification/divergence evidence from
+    real returns and a computed RSI series."""
+    from trading_bot.upgrades.core_upgrades_001_025 import (
+        VolatilityRegimeDetector, TradeClassifier)
+    from trading_bot.upgrades.core_upgrades_026_050 import (
+        DivergenceDetector)
+
+    vol = VolatilityRegimeDetector()
+    tclf = TradeClassifier()
+    dv = DivergenceDetector()
+    hist = _BarHistory(256)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        prices = hist.prices()
+        if len(prices) < 21:
+            return {"status": "warming", "bars": len(prices)}
+        symbol = str(ctx.get("symbol") or "UNKNOWN")
+        rsi = _rsi_series(prices)
+        out = _probe_all((
+            ("volatility_regime",
+             lambda: vol.detect(symbol, hist.returns())),
+            ("divergence", lambda: dv.detect(prices, rsi)),
+            ("trade_classification",
+             lambda: tclf.classify(symbol, prices[-1])),
+        ))
+        return out or {"status": "no_signals"}
+
+    return AdvisoryModuleAdapter("upgrades_regime_divergence", analyze)
+
+
+def _institutional_footprint_service() -> AdvisoryModuleAdapter:
+    """institutional_entry - AbsorptionDetector + InstitutionalFootprint
+    + WyckoffICTFusion over the accumulated OHLCV window. The module's
+    timeframe labels map onto the single real feed; the bars are genuine
+    observations, the key is only a label."""
+    from trading_bot.institutional_entry.institutional_footprint import (
+        AbsorptionDetector, InstitutionalFootprint)
+    from trading_bot.institutional_entry.wyckoff_ict_fusion import (
+        WyckoffICTFusion)
+
+    absorb = AbsorptionDetector()
+    fp = InstitutionalFootprint({"high_volume_threshold": 1.5})
+    wyck = WyckoffICTFusion({"primary_timeframe": "primary",
+                             "confirmation_timeframes": ["primary"],
+                             "min_confirmations": 0})
+    hist = _BarHistory(256)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 30:
+            return {"status": "warming", "bars": len(hist)}
+        df = hist.frame()
+        symbol = str(ctx.get("symbol") or "UNKNOWN")
+        sh, sl = _swing_levels(hist.bars())
+        out = _probe_all((
+            ("absorption", lambda: absorb.detect_absorption(df)),
+            ("footprint", lambda: fp.analyze_footprint(df, "primary")),
+            ("institutional_sweep",
+             lambda: fp.detect_institutional_sweep(
+                 df, {"support": sl, "resistance": sh})),
+            ("wyckoff", lambda: wyck.analyze_market_structure(
+                symbol, {"primary": df})),
+        ))
+        return out or {"status": "no_footprint"}
+
+    return AdvisoryModuleAdapter("institutional_entry_footprint", analyze)
+
+
+def _unified_analyzer_service() -> AdvisoryModuleAdapter:
+    """analysis_unified UnifiedAnalyzer - its own sub-analysis loop is
+    already failure-tolerant; feed it the real bar window plus the raw
+    observation fields."""
+    from trading_bot.analysis_unified.unified_analyzer import (
+        UnifiedAnalyzer)
+
+    ua = UnifiedAnalyzer()
+    hist = _BarHistory(256)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 200)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        md = dict(ctx)
+        md["ohlcv"] = df
+        for col in ("open", "high", "low", "close", "volume"):
+            md[col] = df[col].tolist()
+        return _payload(ua.analyze(
+            str(ctx.get("symbol") or "UNKNOWN"), md))
+
+    return AdvisoryModuleAdapter("analysis_unified_analyzer", analyze)
+
+
+def _hypernetwork_regime_service() -> AdvisoryModuleAdapter:
+    """advanced_analysis HypernetworkAdapter - regime classification on
+    real prices/volatility (detect_regime only; predict() expects a
+    fixed-width model input the observation can't honestly supply)."""
+    from trading_bot.advanced_analysis.hypernetwork_adaptation import (
+        HypernetworkAdapter)
+
+    hn = HypernetworkAdapter()
+    hist = _BarHistory(128)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        prices = hist.prices()
+        if len(prices) < 20:
+            return {"status": "warming", "bars": len(prices)}
+        arr = np.asarray(prices, dtype=float)
+        rets = np.diff(arr) / np.maximum(arr[:-1], 1e-12)
+        return {"regime": _primitive(hn.detect_regime({
+            "prices": arr,
+            "volatility": (_num(ctx.get("volatility"))
+                           or float(np.std(rets))),
+            "trend_strength": _num(ctx.get("trend_strength")) or 0.0}))}
+
+    return AdvisoryModuleAdapter("hypernetwork_regime", analyze)
+
+
+def _marl_strategists_service() -> AdvisoryModuleAdapter:
+    """advanced_analysis multi_agent_rl - MacroStrategist +
+    TacticalExecutioner arguments on the market_data dict. AgentArgument
+    outputs are evidence; ConsensusDecision machinery is never reached."""
+    from trading_bot.advanced_analysis.multi_agent_rl import (
+        MacroStrategist, TacticalExecutioner)
+
+    macro = MacroStrategist()
+    tact = TacticalExecutioner()
+    hist = _BarHistory(128)
+
+    async def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 20:
+            return {"status": "warming", "bars": len(hist)}
+        md = dict(_numeric_fields(ctx))
+        md.update({"symbol": ctx.get("symbol"),
+                   "prices": hist.prices(),
+                   "ohlcv": hist.bars(60)})
+        out: Dict[str, Any] = {}
+        for key, agent in (("macro_strategist", macro),
+                           ("tactical_executioner", tact)):
+            try:
+                res = agent.analyze(md)
+                if inspect.isawaitable(res):
+                    res = await res
+                if res is not None:
+                    out[key] = _payload(res)
+            except Exception as exc:  # noqa: BLE001 - per-agent isolation
+                out[key] = {"error": str(exc)[:200]}
+        return out or {"status": "no_arguments"}
+
+    return AdvisoryModuleAdapter("marl_strategists", analyze)
+
+
+def _realtime_ensemble_service() -> AdvisoryModuleAdapter:
+    """realtime_ml EnsembleModel - online momentum/mean-reversion/trend/
+    volatility models voted on the observation's numeric fields. Models
+    start unfitted; the ensemble returns bounded-confidence predictions
+    that improve as update() calls land - evidence, not authority."""
+    from trading_bot.realtime.realtime_ml import (
+        EnsembleModel, FeatureVector, MomentumModel, MeanReversionModel,
+        TrendModel, VolatilityModel)
+
+    ens = EnsembleModel([MomentumModel(), MeanReversionModel(),
+                         TrendModel(), VolatilityModel()], {})
+    hist = _BarHistory(64)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        fv = FeatureVector(
+            symbol=str(ctx.get("symbol") or "UNKNOWN"),
+            timestamp=datetime.utcnow(),
+            features=_numeric_fields(ctx))
+        try:
+            value, conf = ens.predict(fv)
+        except Exception as exc:  # noqa: BLE001 - contained
+            return {"status": "predict_failed", "error": str(exc)[:200]}
+        return {"ensemble_value": float(value),
+                "ensemble_confidence": float(conf),
+                "feature_count": len(fv.features)}
+
+    return AdvisoryModuleAdapter("realtime_ensemble", analyze)
+
+
+def _feature_discovery_service() -> AdvisoryModuleAdapter:
+    """research FeatureDiscoveryEngine - generates microstructure features
+    from the real bar window and scores them by mutual information against
+    realized next-bar returns. Pure evidence about which features carry
+    signal right now."""
+    from trading_bot.research.features.engine import FeatureDiscoveryEngine
+    from trading_bot.research.core.interfaces import StandardizedDataset
+
+    eng = FeatureDiscoveryEngine()
+    hist = _BarHistory(256)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 60:
+            return {"status": "warming", "bars": len(hist)}
+        symbol = str(ctx.get("symbol") or "SYMBOL")
+        prices = np.asarray(hist.prices(), dtype=float)
+        vols = np.asarray(hist.volumes(), dtype=float)
+        ds = StandardizedDataset(
+            dataset_id="advisory_live", asset_class="fx",
+            symbols=[symbol], timeframe="obs",
+            start_time=datetime.utcnow(), end_time=datetime.utcnow(),
+            data={f"{symbol}_close": prices,
+                  f"{symbol}_volume": vols},
+            timestamps=np.arange(len(prices)))
+        feats = eng.generate_features(ds, symbol)
+        # Realized next-bar return - the honest target the features
+        # are scored against.
+        fwd = np.empty(len(prices))
+        fwd[:-1] = prices[1:] / prices[:-1] - 1.0
+        fwd[-1] = 0.0
+        scores = eng.score_features(feats, fwd)
+        return {"generated": len(feats),
+                "mi_scores": dict(list(scores.items())[:20]),
+                "top_features": sorted(scores.items(),
+                                       key=lambda kv: -kv[1])[:5]}
+
+    return AdvisoryModuleAdapter("feature_discovery", analyze)
+
+
+def _quant_regime_service() -> AdvisoryModuleAdapter:
+    """research quant_pipeline RegimeAndMicrostructureAnalyzer - regime
+    classification on the bar frame, plus classical OBI when the
+    observation carries bid/ask quantities."""
+    from trading_bot.research.orchestration.quant_pipeline import (
+        RegimeAndMicrostructureAnalyzer)
+
+    analyzer = RegimeAndMicrostructureAnalyzer()
+    hist = _BarHistory(256)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 10:
+            return {"status": "warming", "bars": len(hist)}
+        out: Dict[str, Any] = {
+            "regime": analyzer.classify_regime(hist.frame())}
+        bid = _num(ctx.get("bid_size") or ctx.get("bid_volume")
+                   or ctx.get("bid_qty"))
+        ask = _num(ctx.get("ask_size") or ctx.get("ask_volume")
+                   or ctx.get("ask_qty"))
+        if bid is not None and ask is not None:
+            out["order_book_imbalance"] = (
+                analyzer.calculate_order_book_imbalance(bid, ask))
+        return out
+
+    return AdvisoryModuleAdapter("quant_regime_microstructure", analyze)
+
+
+def _concept_drift_service() -> AdvisoryModuleAdapter:
+    """skills/ai_ml_enhancements ConceptDriftDetector - drift read on the
+    accumulated price/volume series."""
+    from trading_bot.skills.ai_ml_enhancements.concept_drift import (
+        ConceptDriftDetector)
+
+    det = ConceptDriftDetector()
+    hist = _BarHistory(256)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 50:
+            return {"status": "warming", "bars": len(hist)}
+        return _payload(det.detect(hist.prices(), hist.volumes()))
+
+    return AdvisoryModuleAdapter("concept_drift", analyze)
+
+
+def _profit_max_regime_service() -> AdvisoryModuleAdapter:
+    """profit_maximizer MarketRegimeAdapter - regime + confidence on the
+    bar frame. Sizing/stop adaptation fields are stripped by the shared
+    authority filter before they reach evidence."""
+    from trading_bot.profit_maximizer.market_regime_adapter import (
+        MarketRegimeAdapter)
+
+    adapter = MarketRegimeAdapter()
+    hist = _BarHistory(256)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 30:
+            return {"status": "warming", "bars": len(hist)}
+        return _payload(adapter.analyze_regime(hist.frame()))
+
+    return AdvisoryModuleAdapter("profit_max_market_regime", analyze)
+
+
+def _confluence_session_service() -> AdvisoryModuleAdapter:
+    """profit_maximizer SignalConfluenceScorer + SessionFilter -
+    confluence score on the observation's own trend label (fed the real
+    bar frame) and session-appropriateness read. Scores only."""
+    from trading_bot.profit_maximizer.profit_maximizer_core import (
+        SessionFilter, SignalConfluenceScorer)
+
+    scorer = SignalConfluenceScorer()
+    sess = SessionFilter()
+    hist = _BarHistory(64)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        direction = str(ctx.get("trend") or ctx.get("regime")
+                        or "FLAT").upper()
+        md = _numeric_fields(ctx)
+        out = _probe_all((
+            ("confluence", lambda: _payload(scorer.score_signal(
+                direction, df, 0.5))),
+            ("session", lambda: _payload(
+                sess.assess_session(market_data=md))),
+        ))
+        return out or {"status": "no_read"}
+
+    return AdvisoryModuleAdapter("confluence_session", analyze)
+
+
+def _deep_agent_system_service() -> AdvisoryModuleAdapter:
+    """ultimate_system DeepAgentSystem - multi-agent market analyses on
+    the observation dict; analyze only, the ensemble decision machinery
+    is never invoked."""
+    from trading_bot.ultimate_system.deep_agent_system import (
+        DeepAgentSystem)
+
+    system = DeepAgentSystem()
+    hist = _BarHistory(64)
+
+    async def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 20:
+            return {"status": "warming", "bars": len(hist)}
+        md = dict(_numeric_fields(ctx))
+        md.update({"symbol": ctx.get("symbol"),
+                   "prices": hist.prices(),
+                   "ohlcv": hist.bars(50)})
+        out = system.analyze_market(md)
+        if inspect.isawaitable(out):
+            out = await out
+        return _payload(out)
+
+    return AdvisoryModuleAdapter("deep_agent_market", analyze)
+
+
+def _hft_orderbook_service() -> AdvisoryModuleAdapter:
+    """hft OrderBookImbalanceDetector + upgrades LiquidityAnalyzer - only
+    emits when the observation actually carries an order book; honest
+    no-data status otherwise."""
+    from trading_bot.hft.tick_data_handler import (
+        OrderBookImbalanceDetector)
+    from trading_bot.upgrades.core_upgrades_001_025 import LiquidityAnalyzer
+
+    det = OrderBookImbalanceDetector()
+    liq = LiquidityAnalyzer()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        ob = (ctx.get("order_book") or ctx.get("orderbook")
+              or ctx.get("microstructure"))
+        bids = ctx.get("bids")
+        asks = ctx.get("asks")
+        has_levels = (isinstance(bids, (list, tuple))
+                      and isinstance(asks, (list, tuple))
+                      and len(bids) > 0 and len(asks) > 0)
+        probes = []
+        if ob is not None:
+            probes.append(("imbalance", lambda: det.analyze(ob)))
+        if has_levels:
+            probes.append(
+                ("liquidity", lambda: liq.analyze(list(bids), list(asks))))
+        out = _probe_all(probes)
+        return out or {"status": "no_order_book_in_observation"}
+
+    return AdvisoryModuleAdapter("hft_orderbook_imbalance", analyze)
+
+
 # ml/ + elite_system note: predictors ship unfitted — they'd emit noise,
 # not evidence. Wire only after a training/loading path exists.
 # analysis/ remainder note: sec_13f, cot_analysis, dark_pool, options_flow,
@@ -2875,7 +3330,7 @@ def _analysis_wyckoff_full_service() -> AdvisoryModuleAdapter:
 def _analysis_structure_service() -> AdvisoryModuleAdapter:
     """analysis/market_structure — swing structure on real bars."""
     from trading_bot.analysis.market_structure import (
-        MarketStructureAnalyzer)
+        MarketStructureAnalyzer, TimeFrame)
 
     analyzer = MarketStructureAnalyzer()
     hist = _BarHistory()
@@ -2885,8 +3340,7 @@ def _analysis_structure_service() -> AdvisoryModuleAdapter:
         df = _bars_df(hist, 60)
         if df is None:
             return {"status": "warming", "bars": len(hist)}
-        out = analyzer.detect_structure(
-            df, str(ctx.get("timeframe") or "M15"))
+        out = analyzer.detect_structure(df, TimeFrame.M15)
         if inspect.isawaitable(out):
             out = _run_coro_sync(out)
         return _payload(out)
@@ -2898,7 +3352,7 @@ def _analysis_mtf_intel_service() -> AdvisoryModuleAdapter:
     """analysis/multi_timeframe_intelligence — MTF confluence on real
     bars."""
     from trading_bot.analysis.multi_timeframe_intelligence import (
-        MultiTimeframeIntelligence)
+        MultiTimeframeIntelligence, TimeFrame)
 
     mtf = MultiTimeframeIntelligence()
     hist = _BarHistory()
@@ -2908,8 +3362,7 @@ def _analysis_mtf_intel_service() -> AdvisoryModuleAdapter:
         df = _bars_df(hist, 60)
         if df is None:
             return {"status": "warming", "bars": len(hist)}
-        out = mtf.analyze_timeframe(
-            df, str(ctx.get("timeframe") or "M15"))
+        out = mtf.analyze_timeframe(df, TimeFrame.M15)
         if inspect.isawaitable(out):
             out = _run_coro_sync(out)
         return _payload(out)
@@ -2926,11 +3379,11 @@ def _analysis_liq_simplified_service() -> AdvisoryModuleAdapter:
 
     def analyze(ctx: Mapping[str, Any]) -> Any:
         hist.add(ctx)
-        if len(hist) < 10:
+        df = _bars_df(hist, 60)
+        if df is None:
             return {"status": "warming", "bars": len(hist)}
         out = analyzer.analyze(
-            _md_dict(ctx, hist), {},
-            str(ctx.get("timeframe") or "M15"))
+            df, {}, str(ctx.get("timeframe") or "M15"))
         if inspect.isawaitable(out):
             out = _run_coro_sync(out)
         return _payload(out)
@@ -3047,7 +3500,7 @@ def _elite_price_action_service() -> AdvisoryModuleAdapter:
     """elite_system EliteMarketAnalyzer — load_data(df) then
     analyze_price_action on real bars."""
     from trading_bot.elite_system.market_analysis import (
-        EliteMarketAnalyzer)
+        EliteMarketAnalyzer, TimeFrame)
 
     analyzer = EliteMarketAnalyzer("EURUSD")
     hist = _BarHistory()
@@ -3058,7 +3511,7 @@ def _elite_price_action_service() -> AdvisoryModuleAdapter:
         if df is None:
             return {"status": "warming", "bars": len(hist)}
         try:
-            analyzer.load_data(df, str(ctx.get("timeframe") or "M15"))
+            analyzer.load_data(TimeFrame.M15, df)
         except Exception:  # noqa: BLE001
             return {"status": "load_failed"}
         out = {"bars": len(df)}
@@ -3068,8 +3521,7 @@ def _elite_price_action_service() -> AdvisoryModuleAdapter:
             fn = getattr(analyzer, name, None)
             if callable(fn):
                 try:
-                    out[name] = _primitive(
-                        fn(str(ctx.get("timeframe") or "M15")))
+                    out[name] = _primitive(fn(TimeFrame.M15))
                 except Exception:  # noqa: BLE001
                     try:
                         out[name] = _primitive(fn())
@@ -3179,7 +3631,10 @@ def _brain_condition_service() -> AdvisoryModuleAdapter:
 
     def analyze(ctx: Mapping[str, Any]) -> Any:
         hist.add(ctx)
-        out = system.detect_market_condition(_md_dict(ctx, hist))
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        out = system.detect_market_condition(df)
         if inspect.isawaitable(out):
             out = _run_coro_sync(out)
         return _payload(out)
@@ -3607,7 +4062,6 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("analysis_traps", _analysis_traps_service),
     ("analysis_volume_flow", _analysis_volume_flow_service),
     ("analysis_market_context", _analysis_context_service),
-    ("chrono_arbitrage", _chrono_arbitrage_service),
     ("black_swan_conditions", _black_swan_service),
     ("pullback_detector", _pullback_detector_service),
     ("alpha_decay", _alpha_decay_service),
@@ -3640,6 +4094,21 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("session_awareness", _session_awareness_service),
     ("signal_enhancement_mtf", _signal_enhancement_mtf_service),
     ("fourier_price", _fourier_service),
+    # Bucket F - DOCS/CSC_WIRING_AUDIT.md candidates
+    ("upgrades_price_structure", _upgrades_structure_service),
+    ("upgrades_regime_divergence", _upgrades_regime_service),
+    ("institutional_entry_footprint", _institutional_footprint_service),
+    ("analysis_unified_analyzer", _unified_analyzer_service),
+    ("hypernetwork_regime", _hypernetwork_regime_service),
+    ("marl_strategists", _marl_strategists_service),
+    ("realtime_ensemble", _realtime_ensemble_service),
+    ("feature_discovery", _feature_discovery_service),
+    ("quant_regime_microstructure", _quant_regime_service),
+    ("concept_drift", _concept_drift_service),
+    ("profit_max_market_regime", _profit_max_regime_service),
+    ("confluence_session", _confluence_session_service),
+    ("deep_agent_market", _deep_agent_system_service),
+    ("hft_orderbook_imbalance", _hft_orderbook_service),
 )
 
 # Modules imported by the live path but with no advisory decision role —
@@ -3968,9 +4437,9 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
      "vpin, liquidity_gravity); external-data remainder (sec_13f, cot, "
      "dark_pool, options, news, sentiment, cross_asset, sector) needs "
      "feeds the bot doesn't ingest"),
-    ("innovations", "chrono_arbitrage + fourier_price attached; "
-     "biological/cosmic/mythological categories are speculative "
-     "experiments"),
+    ("innovations", "fourier_price attached; chrono_arbitrage needs "
+     "multi-asset/multi-timezone prices the single-symbol obs can't "
+     "supply; biological/cosmic/mythological are speculative"),
     ("advanced_features", "black_swan, fractal_divergence, "
      "volatility_impulse, liquidity_holography attached (last three "
      "need scipy/sklearn, env-gated); institutional/footprint "
@@ -4020,6 +4489,48 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
      "surface"),
     ("orchestrator", "opportunity prediction needs opportunity objects, "
      "not observations"),
+    ("upgrades", "upgrades_price_structure + upgrades_regime_divergence "
+     "+ hft_orderbook_imbalance (LiquidityAnalyzer) attached; the "
+     "remaining ~40 upgrade classes are portfolio/execution tooling and "
+     "status facades - unverified members stay unwired"),
+    ("institutional_entry", "institutional_entry_footprint attached "
+     "(AbsorptionDetector + InstitutionalFootprint + WyckoffICTFusion); "
+     "EntrySignalGenerator needs upstream EntryTrigger objects that the "
+     "observation channel never produces"),
+    ("analysis_unified", "analysis_unified_analyzer attached"),
+    ("advanced_analysis", "hypernetwork_regime + marl_strategists "
+     "attached; ConsensusDecision/learning machinery is decision-layer "
+     "plumbing, not wired"),
+    ("realtime", "realtime_ensemble attached (online models, evidence "
+     "only); RealTimeMLEngine's deployment loop is not wired"),
+    ("research", "feature_discovery + quant_regime_microstructure "
+     "attached; pipeline orchestration is research-time, not runtime"),
+    ("skills", "concept_drift attached; CounterfactualAnalyzer needs "
+     "realized action/outcome pairs - route through HMS failure memory "
+     "if a future adapter consumes them"),
+    ("profit_maximizer", "profit_max_market_regime + confluence_session "
+     "attached; position-management remainder is a sizing/authority "
+     "surface"),
+    ("ultimate_system", "deep_agent_market attached; "
+     "AlphaDiscoveryEngine.get_signals emits np.random noise (stub) - "
+     "never wire a generator that fabricates evidence"),
+    ("psychology", "CognitiveBiasDetector/TiltDetector need realized "
+     "trade history and PnL - not present in the observation contract; "
+     "wire via HMS reflective context if ever needed"),
+    ("position", "CorrelationExposureMonitor/PositionAgingTracker need "
+     "position state - CSC-internal, not in the observation channel"),
+    ("hft", "hft_orderbook_imbalance attached (conditional - only emits "
+     "when the observation carries a real order book); feed handlers "
+     "are broker plumbing"),
+    ("hedge_fund", "MultiStrategyEngine starts with an empty strategy "
+     "registry - no live registration path exists, so it would emit "
+     "vacuous evidence"),
+    ("unified_system", "layer4/layer5 impls are literal stubs "
+     "(constant predictions, empty signal lists) - orchestrator is a "
+     "parallel pipeline regardless"),
+    ("production", "parallel production strategy lane - Signal objects "
+     "carry entry/stop/sizing; authority-adjacent and requires "
+     "StrategyConfig plumbing the obs channel lacks"),
 )
 
 
