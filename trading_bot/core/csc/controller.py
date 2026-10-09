@@ -840,6 +840,7 @@ class CognitiveSystemController:
         exit_price: Optional[float] = None,
         was_correct: Optional[bool] = None,
         realized_return: Optional[float] = None,
+        shared_settlement: int = 1,
     ) -> Dict[str, Any]:
         """Feed a realized outcome back into calibration and uncertainty.
 
@@ -926,6 +927,10 @@ class CognitiveSystemController:
                 "realized_return": realized_return,
                 "regime": regime,
                 "advisory_calls": pending.get("advisory_calls") or [],
+                # >1 means N decisions shared one settlement — the rows are
+                # correlated, not independent samples. Consumers counting
+                # outcomes for statistical weight must discount by this.
+                "shared_settlement": shared_settlement,
             })
 
         # Failure memory: an incorrect directional call is the single most
@@ -1138,7 +1143,8 @@ class CognitiveSystemController:
         for tid in list(pos["trade_ids"]):
             try:
                 await self.record_outcome(
-                    tid, was_correct=realized > 0, realized_return=realized)
+                    tid, was_correct=realized > 0, realized_return=realized,
+                    shared_settlement=len(pos["trade_ids"]))
             except Exception as exc:
                 logger.warning(
                     "CSC-V6: position outcome write failed for %s: %s",
