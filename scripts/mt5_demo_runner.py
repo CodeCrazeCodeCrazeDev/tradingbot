@@ -156,6 +156,25 @@ async def run(args: argparse.Namespace) -> int:
         await console.restore_state()
 
         if args.replay:
+            # Honest paper-fill frictions: zero-cost fills overstate edge
+            # and would teach the reliability tracker a fantasy. Values
+            # measured on this venue: ~1.25bps realized slippage on the
+            # recorded MT5 demo fill; EURUSD demo spread ~2bps;
+            # MetaQuotes-Demo is commission-free.
+            paper_adapter = getattr(
+                runtime.bot.execution_service, "adapter", None)
+            for attr, val in (("spread_bps", args.paper_spread_bps),
+                              ("slippage_bps", args.paper_slippage_bps),
+                              ("commission_per_unit",
+                               args.paper_commission)):
+                if hasattr(paper_adapter, attr):
+                    setattr(paper_adapter, attr, val)
+            logger.info(
+                "replay paper cost model: spread=%.2fbps slip=%.2fbps "
+                "comm=%.4f/unit", args.paper_spread_bps,
+                args.paper_slippage_bps, args.paper_commission)
+
+        if args.replay:
             # Historical bars must never reach a venue adapter through the
             # execution service. Connect MT5 separately for data only.
             feed_adapter = await _connect_feed_adapter(args)
@@ -270,6 +289,14 @@ def main(argv: Optional[list] = None) -> int:
                         help="STANDARD approvals auto-pass (demo account only; "
                              "audited). Without it each trade waits for an "
                              "operator decision file.")
+    parser.add_argument("--paper-spread-bps", type=float, default=2.0,
+                        help="replay paper-fill half-spread model (bps)")
+    parser.add_argument("--paper-slippage-bps", type=float, default=1.25,
+                        help="replay paper-fill adverse slippage (bps); "
+                             "measured ~1.25bps on the recorded MT5 demo fill")
+    parser.add_argument("--paper-commission", type=float, default=0.0,
+                        help="replay paper-fill commission per unit "
+                             "(MetaQuotes-Demo is commission-free)")
     parser.add_argument("--current-session", action="store_true",
                         help="attach to the terminal's current session when "
                              "MT5_LOGIN/MT5_PASSWORD/MT5_SERVER are not set; "
