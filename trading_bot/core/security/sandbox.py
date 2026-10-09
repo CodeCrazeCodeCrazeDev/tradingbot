@@ -129,6 +129,9 @@ def _worker_execute_code(code_str: str, entry_point: str, args_tuple: Tuple, see
         allowed_globals = restricted_exec_globals()
         local_scope = {}
 
+        # Validate AST safety before compiling/executing
+        SecureASTVisitor().validate_code(code_str)
+
         # Compile and run
         compiled = compile(code_str, "<sandbox>", "exec")
         exec(compiled, allowed_globals, local_scope)
