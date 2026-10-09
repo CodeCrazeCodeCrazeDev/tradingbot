@@ -406,7 +406,14 @@ class PortfolioRiskManager:
         Validate if trade fits within risk limits
         """
         # Check position risk
-        position_risk = trade.get('risk', 0.5) * trade.get('size', 0)
+        size = trade.get('size', 0)
+        risk = trade.get('risk', 0.5)
+        # If size is passed in dollars/shares relative to portfolio capital, normalize risk fraction
+        if size > 1.0 and getattr(self, "portfolio_value", 0) > 0:
+            position_risk = risk * (size / self.portfolio_value)
+        else:
+            position_risk = risk * size
+
         if position_risk > self.max_position_risk:
             return False, f"Position risk {position_risk} exceeds limit {self.max_position_risk}"
 
@@ -451,7 +458,7 @@ class PortfolioRiskManager:
         new_total = total_value + trade_value
 
         if new_total == 0:
-            return 0
+            return 0.4  # Mandatory safe concentration fallback when portfolio capital is zero
 
         return new_position / new_total
 
