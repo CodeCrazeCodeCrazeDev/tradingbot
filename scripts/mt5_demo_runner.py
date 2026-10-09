@@ -122,7 +122,20 @@ async def run(args: argparse.Namespace) -> int:
                 processed += 1
                 publish_snapshot(state_dir, _snapshot(processed, console, args))
         else:  # follow: poll for each newly closed M15 bar
+            # Warm-up: feed the last N closed bars first so derived
+            # features (volatility/trend — needed by the evidence gate
+            # after ~21 observations) exist before the first live bar.
+            warm = _closed_bars(client, args.symbol, tf, args.warmup)
             last_bar_time = 0
+            if warm is not None and len(warm):
+                logger.info("follow warm-up: %d closed bars", len(warm))
+                for bar in warm:
+                    obs = _bar_to_obs(args.symbol, bar, adapter)
+                    tick_mark()
+                    await runtime.bot.run_cycle(obs)
+                    publish_snapshot(state_dir,
+                                     _snapshot(processed, console, args))
+                last_bar_time = int(warm[-1]["time"])
             while not args.cycles or processed < args.cycles:
                 for command in channel.drain():
                     outcome = await console.apply(command)
@@ -174,6 +187,9 @@ def main(argv: Optional[list] = None) -> int:
                         help="cap on bars processed in follow mode (0=forever)")
     parser.add_argument("--interval", type=float, default=15.0,
                         help="poll interval seconds in follow mode (>=5)")
+    parser.add_argument("--warmup", type=int, default=30,
+                        help="closed bars fed before follow mode starts "
+                             "(derived-feature warm-up; 0 disables)")
     parser.add_argument("--initial-equity", type=float, default=100000.0)
     parser.add_argument("--auto-approve", action="store_true",
                         help="STANDARD approvals auto-pass (demo account only; "
