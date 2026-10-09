@@ -254,6 +254,12 @@ async def run(args: argparse.Namespace) -> int:
                 "cycles": processed,
                 "control": console.control_state(),
                 "mode": "paper",
+                # Data provenance: 'paper' mode alone is ambiguous —
+                # synthetic bars and real market_data.db replay produce
+                # identical-looking snapshots without the source label.
+                "data_source": args.source,
+                "data_timeframe": args.timeframe if args.source == "db"
+                else None,
                 "symbol": args.symbol,
                 # Read-only advisory standing — which advisors contribute
                 # and their measured weight/precision per regime.
