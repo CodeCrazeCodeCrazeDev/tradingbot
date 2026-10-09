@@ -37,50 +37,50 @@ class TestAgentOrchestrator:
         """Test AgentOrchestrator can be initialized"""
         if instance is not None:
             assert instance is not None
-            logger.info(f"AgentOrchestrator initialized successfully")
+            logger.info("AgentOrchestrator initialized successfully")
 
     def test_initialize(self, instance):
         """Test AgentOrchestrator.initialize method"""
         if instance is not None and hasattr(instance, "initialize"):
             try:
                 result = instance.initialize()
-                logger.info(f"Method {method} executed")
+                logger.info("Method initialize executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method initialize failed: {e}")
-                pytest.skip(f"Method not fully implemented")
+                pytest.skip("Method not fully implemented")
 
     def test_process(self, instance):
         """Test AgentOrchestrator.process method"""
         if instance is not None and hasattr(instance, "process"):
             try:
                 result = instance.process()
-                logger.info(f"Method {method} executed")
+                logger.info("Method process executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method process failed: {e}")
-                pytest.skip(f"Method not fully implemented")
+                pytest.skip("Method not fully implemented")
 
     def test_get_status(self, instance):
         """Test AgentOrchestrator.get_status method"""
         if instance is not None and hasattr(instance, "get_status"):
             try:
                 result = instance.get_status()
-                logger.info(f"Method {method} executed")
+                logger.info("Method get_status executed")
                 assert True  # Method executed without error
             except Exception as e:
                 logger.warning(f"Method get_status failed: {e}")
-                pytest.skip(f"Method not fully implemented")
+                pytest.skip("Method not fully implemented")
 
 def test_create_agent_orchestrator():
     """Test create_agent_orchestrator function"""
     try:
         result = create_agent_orchestrator()
-        logger.info(f"Function create_agent_orchestrator executed")
+        logger.info("Function create_agent_orchestrator executed")
         assert True  # Function executed
     except TypeError:
         # Function requires arguments
-        logger.info(f"Function create_agent_orchestrator requires arguments")
+        logger.info("Function create_agent_orchestrator requires arguments")
         pytest.skip("Function requires specific arguments")
     except Exception as e:
         logger.warning(f"Function create_agent_orchestrator failed: {e}")
@@ -90,11 +90,11 @@ def test_initialize():
     """Test initialize function"""
     try:
         result = initialize()
-        logger.info(f"Function initialize executed")
+        logger.info("Function initialize executed")
         assert True  # Function executed
     except TypeError:
         # Function requires arguments
-        logger.info(f"Function initialize requires arguments")
+        logger.info("Function initialize requires arguments")
         pytest.skip("Function requires specific arguments")
     except Exception as e:
         logger.warning(f"Function initialize failed: {e}")
@@ -104,11 +104,11 @@ def test_process():
     """Test process function"""
     try:
         result = process()
-        logger.info(f"Function process executed")
+        logger.info("Function process executed")
         assert True  # Function executed
     except TypeError:
         # Function requires arguments
-        logger.info(f"Function process requires arguments")
+        logger.info("Function process requires arguments")
         pytest.skip("Function requires specific arguments")
     except Exception as e:
         logger.warning(f"Function process failed: {e}")
@@ -118,11 +118,11 @@ def test_get_status():
     """Test get_status function"""
     try:
         result = get_status()
-        logger.info(f"Function get_status executed")
+        logger.info("Function get_status executed")
         assert True  # Function executed
     except TypeError:
         # Function requires arguments
-        logger.info(f"Function get_status requires arguments")
+        logger.info("Function get_status requires arguments")
         pytest.skip("Function requires specific arguments")
     except Exception as e:
         logger.warning(f"Function get_status failed: {e}")
