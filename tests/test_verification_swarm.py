@@ -6,19 +6,57 @@ from trading_bot.core.verification.interface import VerifierVerdict
 @pytest.mark.asyncio
 async def test_verification_swarm_execution():
     swarm = VerificationSwarm()
-    # Snapshot satisfying the falsification swarm's evidentiary bar:
-    # tail-risk reasoning, regime alignment, and liquidity evidence.
+    # Snapshot satisfying the falsification swarm's evidentiary bar: every
+    # EVIDENCE/CLAIM node carries a provenance-allowlisted source_ref, the
+    # claim is grounded by an evidence edge, and risk/liquidity/structure
+    # quantities are measured numbers — not prose.
     snapshot = {
         "entry_id": "test_123",
+        "composite_confidence": 0.7,
+        "hypothesis": {"probability": 0.6},
         "reasoning_steps": [
             "Assessed tail risk and black swan scenarios",
             "Current regime supports the proposed action",
         ],
         "evidence_graph_snapshot": {
             "nodes": {
-                "n1": {"content": "liquidity depth is sufficient"},
-                "n2": {"content": "volume profile supports entry"},
-            }
+                "obs1": {
+                    "node_id": "obs1",
+                    "node_type": "EVIDENCE",
+                    "metadata": {
+                        "source_ref": "obs:EURUSD:m15",
+                        "volume": 1200.0,
+                        "volatility": 0.0021,
+                        "trend": "up",
+                        "regime": "trending",
+                    },
+                },
+                "risk1": {
+                    "node_id": "risk1",
+                    "node_type": "EVIDENCE",
+                    "metadata": {
+                        "source_ref": "risk_eval:risk1",
+                        "exposure": 0.4,
+                    },
+                },
+                "sim1": {
+                    "node_id": "sim1",
+                    "node_type": "EVIDENCE",
+                    "metadata": {
+                        "source_ref": "sim:sim1",
+                        "p95_drawdown": 0.01,
+                    },
+                },
+                "claim1": {
+                    "node_id": "claim1",
+                    "node_type": "CLAIM",
+                    "metadata": {"source_ref": "strategy:test_hyp"},
+                },
+            },
+            "edges": [
+                {"source_id": "obs1", "target_id": "claim1",
+                 "relation": "SUPPORTS"},
+            ],
         },
     }
 
