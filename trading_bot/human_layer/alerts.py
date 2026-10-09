@@ -184,7 +184,9 @@ class AlertManager:
             channels=channels,
         )
         
-        # Send through channels
+        # Send through channels — a channel with no registered handler is
+        # NOT delivery; log it so EMERGENCY alerts can't silently evaporate
+        # while claiming TELEGRAM/EMAIL/SMS coverage.
         for channel in channels:
             if channel in self._handlers:
                 try:
@@ -196,6 +198,11 @@ class AlertManager:
                     alert.delivered_to.append(channel.value)
                 except Exception as e:
                     logger.error(f"Failed to send alert via {channel.value}: {e}")
+            else:
+                logger.warning(
+                    "Alert channel %s requested for '%s' but no handler is "
+                    "registered — alert NOT delivered there",
+                    channel.value, title)
         
         alert.delivered_at = datetime.now()
         
