@@ -164,11 +164,11 @@ class InternetResearchEngine:
         }
         
         # Session for async requests
-        self._session: Optional[aiohttp.ClientSession] = None
+        self._session: Optional["aiohttp.ClientSession"] = None
         
         logger.info("Internet Research Engine initialized")
     
-    async def _get_session(self) -> aiohttp.ClientSession:
+    async def _get_session(self) -> "aiohttp.ClientSession":
         """Get or create aiohttp session"""
         if self._session is None or self._session.closed:
             timeout = aiohttp.ClientTimeout(total=30)
