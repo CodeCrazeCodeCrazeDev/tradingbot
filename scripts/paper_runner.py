@@ -33,15 +33,27 @@ logger = logging.getLogger("paper_runner")
 DEFAULT_STATE_DIR = PROJECT_ROOT / "var" / "paper"
 
 
-def db_observations(db_path: Path, symbol: str) -> Iterator[Dict[str, Any]]:
-    """Replay market_data.db rows read-only as raw observations."""
+def db_observations(db_path: Path, symbol: str, timeframe: str,
+                    skip: int = 0) -> Iterator[Dict[str, Any]]:
+    """Replay market_data.db rows read-only as raw observations.
+
+    timeframe must be filtered — the table holds M15+H1 rows for the same
+    symbol; sorting all of them by timestamp interleaves cadences and
+    silently corrupts return/volatility features at every seam.
+    ``skip`` drops the first N matching bars so parallel runs can cover
+    disjoint historical windows.
+    """
     con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
     try:
         for ts, o, h, l, c, v in con.execute(
             "SELECT timestamp, open, high, low, close, volume "
-            "FROM market_data WHERE symbol=? ORDER BY timestamp ASC",
-            (symbol,),
+            "FROM market_data WHERE symbol=? AND timeframe=? "
+            "ORDER BY timestamp ASC",
+            (symbol, timeframe),
         ):
+            if skip > 0:
+                skip -= 1
+                continue
             yield {"symbol": symbol, "timestamp": ts, "open": o, "high": h,
                    "low": l, "close": c, "volume": v, "price": c}
     finally:
@@ -124,6 +136,11 @@ async def run(args: argparse.Namespace) -> int:
         "trading_state_path": str(state_dir / "trading_state.db"),
         "decision_log_path": str(state_dir / "decision_log.jsonl"),
         "strategy_id": args.strategy_id,
+        "cognitive_assembly": {
+            "enabled": True,
+            "research_interval": args.research_interval,
+            "discover_advisors": args.discover_advisors,
+        },
     })
     await runtime.start()
     console = OperatorConsole(runtime.bot)
@@ -142,17 +159,6 @@ async def run(args: argparse.Namespace) -> int:
         csc._decision_stride = args.decision_stride
         logger.info("decision_stride=%d applied to CSC (cadenced decisions)",
                     args.decision_stride)
-    # Assemble the ONE AI: CSC sole authority, the cognition package as
-    # an advisory-only service, the research engine attached so forward
-    # outcomes feed REAL_WORLD(venue=paper) evidence and auto-cycles run
-    # every research_interval observations.
-    if csc is not None:
-        from trading_bot.core.csc.assembly import build_cognitive_system
-        build_cognitive_system(
-            csc, research_interval=args.research_interval,
-            discover=args.discover_advisors)
-        logger.info("cognitive system assembled (research_interval=%d)",
-                    args.research_interval)
     if history:
         if csc is not None:
             csc.seed_observation_history(args.symbol, history)
@@ -173,11 +179,27 @@ async def run(args: argparse.Namespace) -> int:
             except Exception as exc:
                 logger.warning("open-position restore failed: %s", exc)
 
+    # Honest fill costs: paper fills at raw bar price would overstate every
+    # edge the outcome scorer learns from. Defaults are the measured
+    # MetaQuotes-Demo EURUSD figures (spread ~2bps, slip ~1.25bps from the
+    # real fill on 2026-10-07); commission 0 matches that venue.
+    adapter = getattr(
+        getattr(runtime.bot, "execution_service", None), "adapter", None)
+    for attr, val in (("spread_bps", args.spread_bps),
+                      ("slippage_bps", args.slippage_bps),
+                      ("commission_per_unit", args.commission)):
+        if adapter is not None and hasattr(adapter, attr):
+            setattr(adapter, attr, val)
+    if adapter is not None:
+        logger.info("paper cost model: spread=%.2fbps slip=%.2fbps comm=%.4f",
+                    args.spread_bps, args.slippage_bps, args.commission)
+
     if args.dashboard_port:
         serve_dashboard(state_dir, args.dashboard_port)
 
     if args.source == "db":
-        source = db_observations(PROJECT_ROOT / "market_data.db", args.symbol)
+        source = db_observations(PROJECT_ROOT / "market_data.db",
+                                 args.symbol, args.timeframe, args.skip)
     else:
         source = synthetic_observations(args.symbol, args.cycles or 200,
                                         args.seed)
@@ -225,6 +247,11 @@ async def run(args: argparse.Namespace) -> int:
                 # and their measured weight/precision per regime.
                 "advisors": csc.advisory_report() if csc is not None
                 and hasattr(csc, "advisory_report") else None,
+                # Ordered stage-funnel counts — where each observation's
+                # decision terminated (verification veto, net-cost,
+                # governance, consensus) or abstained.
+                "funnel": csc.funnel_report() if csc is not None
+                and hasattr(csc, "funnel_report") else None,
                 # Read-only AI-stack planes (state/evidence/selection)
                 # — one-line summaries per DOCS/CANONICAL_RUNTIME_DATAFLOW §4.
                 "ai_stack": runtime.ai_stack.explain()
@@ -263,7 +290,16 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--source", choices=("synthetic", "db"),
                         default="synthetic")
     parser.add_argument("--symbol", default="EURUSD")
+    parser.add_argument("--timeframe", default="M15",
+                        help="db source only: market_data.db holds M15+H1; "
+                             "unfiltered replay interleaves cadences")
+    parser.add_argument("--skip", type=int, default=0,
+                        help="db source only: drop the first N bars of the "
+                             "filtered timeframe (segments parallel runs)")
     parser.add_argument("--cycles", type=int, default=200)
+    parser.add_argument("--spread-bps", type=float, default=2.0)
+    parser.add_argument("--slippage-bps", type=float, default=1.25)
+    parser.add_argument("--commission", type=float, default=0.0)
     parser.add_argument("--interval", type=float, default=0.0,
                         help="seconds between cycles (0 = as fast as possible)")
     parser.add_argument("--seed", type=int, default=7)
