@@ -273,10 +273,10 @@ class UnifiedMasterIntegrator:
             ("strategy_manager", "trading_bot.strategy.strategy_manager", "strategy"),
             
             # Alpha Research (32 files, 18,000 LOC)
-            ("alpha_research_orchestrator", "trading_bot.alpha_research.alpha_research_orchestrator", "research"),
-            ("self_evolving_researcher", "trading_bot.alpha_research.self_evolving_researcher", "research"),
-            ("feature_mining_system", "trading_bot.alpha_research.feature_mining_system", "research"),
-            ("market_state_classifier", "trading_bot.alpha_research.market_state_classifier", "research"),
+            ("alpha_research_orchestrator", "trading_bot.research.alpha_research.alpha_research_orchestrator", "research"),
+            ("self_evolving_researcher", "trading_bot.research.alpha_research.self_evolving_researcher", "research"),
+            ("feature_mining_system", "trading_bot.research.alpha_research.feature_mining_system", "research"),
+            ("market_state_classifier", "trading_bot.research.alpha_research.market_state_classifier", "research"),
             
             # DeepChart (24 files, 13,729 LOC)
             ("market_intelligence_orchestrator", "trading_bot.deepchart.market_intelligence_orchestrator", "intelligence"),

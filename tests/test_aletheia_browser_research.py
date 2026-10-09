@@ -5,7 +5,7 @@ import importlib
 import time
 from pathlib import Path
 
-ab = importlib.import_module("trading_bot.core.aletheia_browser_research")
+ab = importlib.import_module("trading_bot.research.aletheia_browser_research")
 ci = importlib.import_module("trading_bot.core.signal_counterintelligence")
 
 

@@ -11,12 +11,12 @@ import logging
 from unittest.mock import Mock, patch, MagicMock
 
 try:
-    from trading_bot.alpha_research.research_ingestion import *
+    from trading_bot.research.alpha_research.research_ingestion import *
 except ImportError:
     # Fallback import
     import sys
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from trading_bot.alpha_research.research_ingestion import *
+    from trading_bot.research.alpha_research.research_ingestion import *
 
 logger = logging.getLogger(__name__)
 

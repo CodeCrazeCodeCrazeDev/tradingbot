@@ -11,6 +11,7 @@ import json
 import sqlite3
 import hashlib
 import logging
+import warnings as _warnings
 import numpy as np
 import pandas as pd
 import networkx as nx
@@ -30,6 +31,13 @@ class ResearchWorkspaceV2:
     """
 
     def __init__(self, db_path: str = "research.db", target_sharpe: float = 2.0, max_drawdown: float = 8.0) -> None:
+        _warnings.warn(
+            "ResearchWorkspaceV2 is a legacy orchestration surface; the single authoritative "
+            "research orchestrator is "
+            "trading_bot.research.orchestration.kernel.SovereignResearchOrchestrator.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.db_path = db_path
         self.target_sharpe = target_sharpe
         self.max_drawdown = max_drawdown

@@ -10,6 +10,7 @@ Models the organizational lifecycle of quantitative scientific discovery:
 """
 
 import logging
+import warnings as _warnings
 import uuid
 import numpy as np
 import pandas as pd
@@ -253,6 +254,13 @@ class AlphaAlgoResearchOrganization:
     Orchestrates thematic programs, scientific reviews, technology packaging, and meta-research.
     """
     def __init__(self) -> None:
+        _warnings.warn(
+            "AlphaAlgoResearchOrganization is a legacy orchestration surface; the single authoritative "
+            "research orchestrator is "
+            "trading_bot.research.orchestration.kernel.SovereignResearchOrchestrator.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         # Philosophy
         self.philosophy = ScientificPhilosophy()
 

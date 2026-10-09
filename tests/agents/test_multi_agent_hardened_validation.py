@@ -24,7 +24,7 @@ from trading_bot.agents.multi_agent_debate import (
     AgentArgument, DebateTopic, MultiAgentDebateSystem, HeadAI,
     create_debate_system, RiskSentinel, MacroStrategist, TacticalExecutioner, DebateRound
 )
-from trading_bot.alpha_research.dynamic_risk_matrix import TORCH_AVAILABLE
+from trading_bot.research.alpha_research.dynamic_risk_matrix import TORCH_AVAILABLE
 
 # =====================================================================
 # 1. RISKSENTINEL GATING RESTRICTION ASSERTION
@@ -469,7 +469,7 @@ def test_pytorch_fallback_classes_integrity():
     They must allow smooth startup and execution without NameError, and fail predictably on actual operations.
     """
     # Import the modules
-    from trading_bot.alpha_research.dynamic_risk_matrix import RiskNeuralNetwork, DynamicRiskMatrix
+    from trading_bot.research.alpha_research.dynamic_risk_matrix import RiskNeuralNetwork, DynamicRiskMatrix
 
     # Confirm the RiskNeuralNetwork class is successfully defined and initialized without NameErrors
     try:
