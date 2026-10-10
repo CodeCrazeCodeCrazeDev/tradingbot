@@ -817,19 +817,23 @@ class WeaknessDetector:
                 content = self.analyzer.get_file_content(file_path)
                 if not content:
                     continue
-            
+
+                lines = content.split('\n')
+                for i, line in enumerate(lines, 1):
                     if 'NotImplementedError' in line:
-                                category=WeaknessCategory.INCOMPLETE,
-                                severity=WeaknessSeverity.MEDIUM,
-                                title="Unimplemented method",
-                                description="Method raises NotImplementedError - implementation is missing.",
-                                file_path=file_path,
-                                line_number=i,
-                                code_snippet=line.strip()[:100],
-                                impact="Feature not working",
-                                suggested_fix="Implement the method or remove if not needed",
-                                fix_complexity="medium",
-                                detector="incomplete_detector",
+                        self._add_weakness(
+                            category=WeaknessCategory.INCOMPLETE,
+                            severity=WeaknessSeverity.MEDIUM,
+                            title="Unimplemented method",
+                            description="Method raises NotImplementedError - implementation is missing.",
+                            file_path=file_path,
+                            line_number=i,
+                            code_snippet=line.strip()[:100],
+                            impact="Feature not working",
+                            suggested_fix="Implement the method or remove if not needed",
+                            fix_complexity="medium",
+                            detector="incomplete_detector",
+                        )
                 
             
                 # Check for pass-only functions
