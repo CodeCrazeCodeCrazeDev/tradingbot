@@ -2966,6 +2966,124 @@ def _institutional_footprint_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("institutional_entry_footprint", analyze)
 
 
+def _improvements_regime_service() -> AdvisoryModuleAdapter:
+    """improvements MarketRegimeDetector — ADX trend regime, ATR
+    volatility regime, momentum regime from raw OHLCV. Structure
+    evidence; direction comes only from a NON-neutral momentum regime
+    aligned with the trend."""
+    import numpy as _np
+    from trading_bot.improvements.market_regime import MarketRegimeDetector
+
+    det = MarketRegimeDetector()
+    hist = _BarHistory(128)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 60:
+            return {"status": "warming", "bars": len(hist)}
+        bars = hist.bars()
+        highs = _np.asarray([b["high"] for b in bars], dtype=float)
+        lows = _np.asarray([b["low"] for b in bars], dtype=float)
+        closes = _np.asarray([b["close"] for b in bars], dtype=float)
+        vols = _np.asarray([b.get("volume") or 0.0 for b in bars],
+                           dtype=float)
+        res = det.detect(str(ctx.get("symbol") or "UNKNOWN"),
+                         highs, lows, closes, vols)
+        out = _payload(res)
+        if isinstance(out, dict):
+            mom = str(out.get("momentum_regime") or "").upper()
+            trend = str(out.get("regime") or out.get("regime_type") or "")
+            direction = None
+            if "BULL" in mom and "TREND" in trend.upper():
+                direction = "BUY"
+            elif "BEAR" in mom and "TREND" in trend.upper():
+                direction = "SELL"
+            out["direction"] = direction
+        return out
+
+    return AdvisoryModuleAdapter("improvements_regime", analyze)
+
+
+def _improvements_pullback_service() -> AdvisoryModuleAdapter:
+    """improvements EntryOptimizer — pullback detection in the direction
+    of the fast/slow EMA trend. Emits direction only when a pullback is
+    actually present AND trend-aligned; flat trend emits no direction."""
+    import numpy as _np
+    from trading_bot.improvements.entry_optimizer import PullbackDetector
+
+    opt = PullbackDetector()
+    hist = _BarHistory(128)
+
+    def _ema(vals, period):
+        if len(vals) < period:
+            return None
+        k = 2.0 / (period + 1)
+        e = float(vals[0])
+        for v in vals[1:]:
+            e = v * k + e * (1 - k)
+        return e
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 55:
+            return {"status": "warming", "bars": len(hist)}
+        bars = hist.bars()
+        highs = _np.asarray([b["high"] for b in bars], dtype=float)
+        lows = _np.asarray([b["low"] for b in bars], dtype=float)
+        closes = _np.asarray([b["close"] for b in bars], dtype=float)
+        fast, slow = _ema(closes, 10), _ema(closes, 50)
+        if fast is None or slow is None or fast == slow:
+            return {"status": "flat", "direction": None}
+        direction = "BUY" if fast > slow else "SELL"
+        is_pb, target, reason = opt.detect_pullback(
+            direction, highs, lows, closes)
+        return {
+            "trend_direction": direction,
+            "is_pullback": bool(is_pb),
+            "pullback_target": target,
+            "reason": reason,
+            # entry evidence exists only inside a live pullback
+            "direction": direction if is_pb else None,
+        }
+
+    return AdvisoryModuleAdapter("improvements_pullback", analyze)
+
+
+def _improvements_session_service() -> AdvisoryModuleAdapter:
+    """improvements SessionSpreadFilter — which trading session the
+    observation timestamp falls in and whether it's an optimal window.
+    Timing evidence (like time_to_move): never directional."""
+    from trading_bot.improvements.session_spread_filter import (
+        SessionFilter)
+
+    filt = SessionFilter()
+    _seen = [None]
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        ts = ctx.get("timestamp")
+        dt = None
+        if isinstance(ts, datetime):
+            dt = ts
+        elif isinstance(ts, str):
+            try:
+                dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+            except Exception:
+                dt = None
+        ok, reason = filt.should_trade(
+            str(ctx.get("symbol") or "UNKNOWN"), dt)
+        info = filt.get_current_session(dt)
+        out = _payload(info)
+        if not isinstance(out, dict):
+            out = {"info": str(info)}
+        out["should_trade"] = bool(ok)
+        out["reason"] = reason
+        out["direction"] = None  # timing evidence, never direction
+        return out
+
+    return AdvisoryModuleAdapter("improvements_session", analyze)
+
+
+
 def _tda_topology_service() -> AdvisoryModuleAdapter:
     """advanced_analysis TopologicalAnalyzer — persistent homology of the
     price trajectory: consolidation/trending/reversal/breakout/range
@@ -4309,6 +4427,9 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("tda_topology", _tda_topology_service),
     ("ricci_momentum", _ricci_momentum_service),
     ("fractal_momentum_div", _fractal_momentum_div_service),
+    ("improvements_regime", _improvements_regime_service),
+    ("improvements_pullback", _improvements_pullback_service),
+    ("improvements_session", _improvements_session_service),
     ("analysis_unified_analyzer", _unified_analyzer_service),
     ("hypernetwork_regime", _hypernetwork_regime_service),
     ("marl_strategists", _marl_strategists_service),
