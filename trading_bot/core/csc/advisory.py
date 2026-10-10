@@ -2966,6 +2966,34 @@ def _institutional_footprint_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("institutional_entry_footprint", analyze)
 
 
+def _deepchart_price_response_service() -> AdvisoryModuleAdapter:
+    """deepchart PriceResponseCurveEngine — fits a power-law price-
+    response-to-volume curve (elasticity, linearity, saturation point)
+    from real bars. Market-impact structure evidence; non-directional."""
+    from trading_bot.deepchart.execution_forecast_engine import (
+        PriceResponseCurveEngine)
+    from trading_bot.deepchart.market_intelligence_core import (
+        MarketIntelligenceConfig)
+
+    eng = PriceResponseCurveEngine(MarketIntelligenceConfig())
+    _last = [None]
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        price = _num(ctx.get("close") or ctx.get("price"))
+        if price is None:
+            return {"status": "no_price"}
+        change = price - _last[0] if _last[0] else 0.0
+        _last[0] = price
+        curve = eng.update(price, _num(ctx.get("volume")) or 0.0, abs(change))
+        out = _payload(curve)
+        if isinstance(out, dict):
+            out["direction"] = None
+        return out
+
+    return AdvisoryModuleAdapter("deepchart_price_response", analyze)
+
+
+
 def _black_swan_threat_service() -> AdvisoryModuleAdapter:
     """advanced_features BlackSwanProtection — tail-risk threat level.
     vol_ratio and drawdown are COMPUTED from the real bar window
@@ -4504,6 +4532,7 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("improvements_session", _improvements_session_service),
     ("black_swan_threat", _black_swan_threat_service),
     ("spai_trend_reversal", _spai_trend_reversal_service),
+    ("deepchart_price_response", _deepchart_price_response_service),
     ("analysis_unified_analyzer", _unified_analyzer_service),
     ("hypernetwork_regime", _hypernetwork_regime_service),
     ("marl_strategists", _marl_strategists_service),
