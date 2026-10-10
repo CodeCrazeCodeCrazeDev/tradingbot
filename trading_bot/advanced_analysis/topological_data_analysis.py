@@ -357,9 +357,9 @@ class TopologicalAnalyzer:
         
         # H1 (loops) - simplified detection
         # Count triangles that close loops
-        num_edges = len(complex.simplices[1])
+        num_edges = len(complex.simplices.get(1, []))
         num_vertices = n
-        num_triangles = len(complex.simplices[2])
+        num_triangles = len(complex.simplices.get(2, []))
         
         # Euler characteristic: χ = V - E + F
         # For connected graph: β0 - β1 = χ - 1
