@@ -2966,6 +2966,98 @@ def _institutional_footprint_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("institutional_entry_footprint", analyze)
 
 
+def _tda_topology_service() -> AdvisoryModuleAdapter:
+    """advanced_analysis TopologicalAnalyzer — persistent homology of the
+    price trajectory: consolidation/trending/reversal/breakout/range
+    pattern classification with Betti numbers. Non-directional structure
+    evidence — a TRENDING pattern does not say which way."""
+    from trading_bot.advanced_analysis.topological_data_analysis import (
+        TopologicalAnalyzer)
+
+    tda = TopologicalAnalyzer({"window_size": 50})
+    hist = _BarHistory(96)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 50:
+            return {"status": "warming", "bars": len(hist)}
+        try:
+            sig = tda.analyze(hist.prices()[-50:])
+        except Exception as exc:
+            return {"status": "no_signal", "reason": str(exc)[:120]}
+        out = _payload(sig)
+        if isinstance(out, dict):
+            out["direction"] = None  # structure, not direction
+        return out
+
+    return AdvisoryModuleAdapter("tda_topology", analyze)
+
+
+def _ricci_momentum_service() -> AdvisoryModuleAdapter:
+    """advanced_analysis RicciFlowMomentum — price-curvature momentum
+    (second derivative of the series). Emits BUY/SELL only on the
+    indicator's own signal; NEUTRAL maps to no direction."""
+    import numpy as _np
+    from trading_bot.advanced_analysis.proprietary_indicators import (
+        RicciFlowMomentum)
+
+    ind = RicciFlowMomentum()
+    hist = _BarHistory(96)
+    _DIR = {"BUY": "BUY", "BULLISH": "BUY",
+            "SELL": "SELL", "BEARISH": "SELL"}
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 25:
+            return {"status": "warming", "bars": len(hist)}
+        res = ind.calculate(_np.asarray(hist.prices(), dtype=float))
+        out = _payload(res)
+        if isinstance(out, dict):
+            sig = str(out.get("signal") or "").upper()
+            out["direction"] = _DIR.get(sig)
+        return out
+
+    return AdvisoryModuleAdapter("ricci_momentum", analyze)
+
+
+def _fractal_momentum_div_service() -> AdvisoryModuleAdapter:
+    """advanced_analysis FractalMomentumDivergence — divergence confirmed
+    across 3 timeframes. We hold M15 bars; tf2/tf3 are honest resamples of
+    the SAME real bars (3-bar -> M45, 4-bar -> H1 closes), not fabricated
+    data. Signals only on confirmed divergence."""
+    import numpy as _np
+    from trading_bot.advanced_analysis.proprietary_indicators import (
+        FractalMomentumDivergence)
+
+    ind = FractalMomentumDivergence()
+    hist = _BarHistory(256)
+    _DIR = {"BUY": "BUY", "BULLISH": "BUY",
+            "SELL": "SELL", "BEARISH": "SELL"}
+
+    def _resample(closes, n):
+        k = len(closes) // n
+        return closes[len(closes) - k * n:][::n] if k else closes[-1:]
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 60:
+            return {"status": "warming", "bars": len(hist)}
+        closes = hist.prices()
+        tf1 = _np.asarray(closes[-60:], dtype=float)
+        tf2 = _np.asarray(_resample(closes, 3)[-40:], dtype=float)
+        tf3 = _np.asarray(_resample(closes, 4)[-30:], dtype=float)
+        res = ind.calculate(tf1, tf2, tf3)
+        out = _payload(res)
+        if isinstance(out, dict):
+            sig = str(out.get("signal") or "").upper()
+            out["direction"] = _DIR.get(sig)
+            out["timeframes"] = "M15/M45/H1 resampled"
+        return out
+
+    return AdvisoryModuleAdapter("fractal_momentum_div", analyze)
+
+
+
 def _deepchart_ttm_service() -> AdvisoryModuleAdapter:
     """deepchart TimeToMovePredictor — bars-to-breakout/reversion timing
     estimates from price+volume alone. Explicitly non-directional: it
@@ -4214,6 +4306,9 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("institutional_entry_footprint", _institutional_footprint_service),
     ("deepchart_time_to_move", _deepchart_ttm_service),
     ("deepchart_sr_memory", _deepchart_sr_memory_service),
+    ("tda_topology", _tda_topology_service),
+    ("ricci_momentum", _ricci_momentum_service),
+    ("fractal_momentum_div", _fractal_momentum_div_service),
     ("analysis_unified_analyzer", _unified_analyzer_service),
     ("hypernetwork_regime", _hypernetwork_regime_service),
     ("marl_strategists", _marl_strategists_service),
@@ -4624,9 +4719,12 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
      "EntrySignalGenerator needs upstream EntryTrigger objects that the "
      "observation channel never produces"),
     ("analysis_unified", "analysis_unified_analyzer attached"),
-    ("advanced_analysis", "hypernetwork_regime + marl_strategists "
-     "attached; ConsensusDecision/learning machinery is decision-layer "
-     "plumbing, not wired"),
+    ("advanced_analysis", "hypernetwork_regime + marl_strategists + "
+     "tda_topology + ricci_momentum + fractal_momentum_div attached; "
+     "ConsensusDecision/learning machinery is decision-layer plumbing; "
+     "hawkes/lob_cnn/options_hedging/liquidity_holography need "
+     "orderflow/options flow/event streams the observation cannot "
+     "supply"),
     ("realtime", "realtime_ensemble attached (online models, evidence "
      "only); RealTimeMLEngine's deployment loop is not wired"),
     ("research", "feature_discovery + quant_regime_microstructure "
