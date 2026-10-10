@@ -2966,6 +2966,78 @@ def _institutional_footprint_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("institutional_entry_footprint", analyze)
 
 
+def _black_swan_threat_service() -> AdvisoryModuleAdapter:
+    """advanced_features BlackSwanProtection — tail-risk threat level.
+    vol_ratio and drawdown are COMPUTED from the real bar window
+    (realized vol 20 vs 100, close drawdown vs 128-bar max). No VIX feed
+    exists, so it uses the module default — the dominant measured inputs
+    are ours. Non-directional risk evidence, never a direction."""
+    import numpy as _np
+    from trading_bot.advanced_features.black_swan_protection import (
+        BlackSwanProtection)
+
+    prot = BlackSwanProtection({})
+    hist = _BarHistory(128)
+
+    async def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 40:
+            return {"status": "warming", "bars": len(hist)}
+        closes = _np.asarray(hist.prices(), dtype=float)
+        rets = _np.diff(closes) / closes[:-1]
+        vol_20 = float(_np.std(rets[-20:])) if len(rets) >= 20 else 0.0
+        vol_100 = float(_np.std(rets[-100:])) if len(rets) >= 100 else vol_20
+        peak = float(_np.max(closes))
+        ev = await prot.assess_market_conditions({
+            "volatility_ratio": vol_20 / vol_100 if vol_100 > 0 else 1.0,
+            "current_drawdown": (peak - closes[-1]) / peak if peak else 0.0,
+            "correlation_breakdown": False,
+        })
+        out = _payload(ev)
+        if isinstance(out, dict):
+            out["vol_ratio_measured"] = round(
+                vol_20 / vol_100, 4) if vol_100 > 0 else None
+            out["direction"] = None  # threat evidence, not a direction
+        return out
+
+    return AdvisoryModuleAdapter("black_swan_threat", analyze)
+
+
+def _spai_trend_reversal_service() -> AdvisoryModuleAdapter:
+    """superpowerful_ai PredictiveIntelligence.predict_trend_reversal —
+    divergence/sr-test/vol-expansion reversal score on OHLC. Direction is
+    the counter-trend lean ONLY when reversal_probability > 0.5; the
+    current trend is measured from the bar window, not assumed."""
+    import pandas as _pd
+    from trading_bot.superpowerful_ai.predictive_intelligence import (
+        PredictiveIntelligence)
+
+    pi = PredictiveIntelligence()
+    hist = _BarHistory(128)
+
+    async def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 55:
+            return {"status": "warming", "bars": len(hist)}
+        df = _pd.DataFrame(hist.bars())
+        res = await pi.predict_trend_reversal(str(ctx.get("symbol") or "UNKNOWN"), df)
+        out = _payload(res)
+        if not isinstance(out, dict):
+            return out
+        prob = out.get("reversal_probability") or 0.0
+        closes = [b["close"] for b in hist.bars()]
+        trend = 1 if closes[-1] > closes[-30] else -1
+        direction = None
+        if prob > 0.5:
+            direction = "SELL" if trend > 0 else "BUY"
+        out["direction"] = direction
+        out["measured_trend"] = "up" if trend > 0 else "down"
+        return out
+
+    return AdvisoryModuleAdapter("spai_trend_reversal", analyze)
+
+
+
 def _improvements_regime_service() -> AdvisoryModuleAdapter:
     """improvements MarketRegimeDetector — ADX trend regime, ATR
     volatility regime, momentum regime from raw OHLCV. Structure
@@ -4430,6 +4502,8 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("improvements_regime", _improvements_regime_service),
     ("improvements_pullback", _improvements_pullback_service),
     ("improvements_session", _improvements_session_service),
+    ("black_swan_threat", _black_swan_threat_service),
+    ("spai_trend_reversal", _spai_trend_reversal_service),
     ("analysis_unified_analyzer", _unified_analyzer_service),
     ("hypernetwork_regime", _hypernetwork_regime_service),
     ("marl_strategists", _marl_strategists_service),
