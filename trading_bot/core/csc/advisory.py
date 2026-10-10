@@ -2966,6 +2966,81 @@ def _institutional_footprint_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("institutional_entry_footprint", analyze)
 
 
+def _deepchart_ttm_service() -> AdvisoryModuleAdapter:
+    """deepchart TimeToMovePredictor — bars-to-breakout/reversion timing
+    estimates from price+volume alone. Explicitly non-directional: it
+    predicts WHEN a move happens, not which way — so it emits substantive
+    timing/volatility evidence and never a direction."""
+    from trading_bot.deepchart.time_to_move_engine import TimeToMovePredictor
+    from trading_bot.deepchart.market_intelligence_core import (
+        MarketIntelligenceConfig)
+
+    pred = TimeToMovePredictor(MarketIntelligenceConfig())
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        price = _num(ctx.get("close") or ctx.get("price"))
+        if price is None:
+            return {"status": "no_price"}
+        est = pred.update(price, _num(ctx.get("volume")) or 0.0)
+        if est is None:
+            return {"status": "warming"}
+        out = _payload(est)
+        if isinstance(out, dict):
+            out["interpretation"] = (
+                "compression" if out.get("compression_score", 0) < 0.5
+                else "expansion")
+        return out
+
+    return AdvisoryModuleAdapter("deepchart_time_to_move", analyze)
+
+
+def _deepchart_sr_memory_service() -> AdvisoryModuleAdapter:
+    """deepchart MarketMemoryEngine — support/resistance levels that decay
+    with learned reaction probabilities. Direction is a mean-reversion
+    lean ONLY when price sits within ~0.1% of a strong level: at strong
+    support lean BUY, at strong resistance lean SELL. Away from levels it
+    emits the level map without direction."""
+    from trading_bot.deepchart.memory_sr_engine import MarketMemoryEngine
+    from trading_bot.deepchart.market_intelligence_core import (
+        MarketIntelligenceConfig)
+
+    eng = MarketMemoryEngine(MarketIntelligenceConfig())
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        price = _num(ctx.get("close") or ctx.get("price"))
+        if price is None:
+            return {"status": "no_price"}
+        levels = eng.update(price, _num(ctx.get("volume")) or 0.0)
+        if not levels:
+            return {"status": "warming", "levels": 0}
+        levels = list(levels)
+        nearest = min(
+            levels,
+            key=lambda l: abs(float(getattr(l, "price", 0.0)) - price))
+        np_ = float(getattr(nearest, "price", 0.0))
+        strength = float(getattr(nearest, "current_strength", 0.0))
+        react_p = float(getattr(nearest, "reaction_probability", 0.0))
+        prox = abs(np_ - price) / price if price else 1.0
+        direction = None
+        if prox <= 0.001 and strength > 0.0 and react_p > 0.3:
+            if getattr(nearest, "level_type", "") == "support":
+                direction = "BUY"
+            elif getattr(nearest, "level_type", "") == "resistance":
+                direction = "SELL"
+        return {
+            "levels": len(levels),
+            "nearest_level_price": np_,
+            "nearest_level_type": getattr(nearest, "level_type", None),
+            "nearest_level_strength": strength,
+            "reaction_probability": react_p,
+            "proximity_pct": round(prox * 100, 4),
+            "direction": direction,
+        }
+
+    return AdvisoryModuleAdapter("deepchart_sr_memory", analyze)
+
+
+
 def _unified_analyzer_service() -> AdvisoryModuleAdapter:
     """analysis_unified UnifiedAnalyzer - its own sub-analysis loop is
     already failure-tolerant; feed it the real bar window plus the raw
@@ -4137,6 +4212,8 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("upgrades_price_structure", _upgrades_structure_service),
     ("upgrades_regime_divergence", _upgrades_regime_service),
     ("institutional_entry_footprint", _institutional_footprint_service),
+    ("deepchart_time_to_move", _deepchart_ttm_service),
+    ("deepchart_sr_memory", _deepchart_sr_memory_service),
     ("analysis_unified_analyzer", _unified_analyzer_service),
     ("hypernetwork_regime", _hypernetwork_regime_service),
     ("marl_strategists", _marl_strategists_service),
@@ -4519,7 +4596,9 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
      "observation is single-symbol"),
     ("hedge_fund_safety", "goal-drift detector needs strategy metric "
      "history, not observations"),
-    ("deepchart", "chart-intent tooling; not a market obs analyzer"),
+    ("deepchart", "time_to_move + sr_memory attached (price/volume "
+     "analyzers); friction/liquidity/intent engines need bid/ask or "
+     "orderflow the observation cannot supply"),
     ("dashboard", "read-only UI surface"),
     ("decision_layer", "parallel decision authority — never advisory"),
     ("exit_strategies", "exit authority surface — canonical path owns "
