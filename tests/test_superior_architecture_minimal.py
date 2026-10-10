@@ -39,7 +39,16 @@ async def test_csc_pipeline_success():
     mock_report = MagicMock()
     from trading_bot.core.immutable_shield import GovernanceDecision
     mock_report.decision = GovernanceDecision.APPROVED
+    mock_report.reason = "All shield checks passed"
+    mock_report.risk_score = 0.1
+    mock_report.audit_id = "mock_audit_id"
     mock_shield.validate_action.return_value = mock_report
+    mock_shield.audit_log_action.return_value = {
+        "decision": "APPROVED",
+        "reason": "All shield checks passed",
+        "risk_score": 0.1,
+        "audit_id": "mock_audit_id"
+    }
     mock_shield.GovernanceDecision = GovernanceDecision
 
     csc = CognitiveSystemController(mock_world_model, mock_hms, shield=mock_shield)
