@@ -145,13 +145,23 @@ class RollingWindowStrategyAdapter:
         )]
 
 
-def build_builtin_strategy(strategy_id: str) -> RollingWindowStrategyAdapter:
+def build_builtin_strategy(strategy_id: str) -> Any:
     """Factory for the RSI allow-listed strategy families.
+
+    ``canonical`` is the single composite signal surface — it consumes the
+    observation dict directly (needs measured rsi/trend_strength plus its
+    own close window), so it returns a ready StrategyPort, not a
+    RollingWindow adapter.
 
     ``stat_arb`` is deliberately absent — it prices a pair spread and the
     single-symbol observation cannot supply a second leg; registering it
     anyway would fabricate a signal from missing data.
     """
+    if strategy_id == "canonical":
+        from trading_bot.strategies.canonical_signal import (
+            CanonicalSignalGenerator)
+        return CanonicalSignalGenerator()
+
     from trading_bot.strategies.institutional_strategies import (
         MeanReversionStrategy, MomentumStrategy)
 
@@ -163,5 +173,5 @@ def build_builtin_strategy(strategy_id: str) -> RollingWindowStrategyAdapter:
     if engine_cls is None:
         raise ValueError(
             f"unknown or unfeedable builtin strategy '{strategy_id}'; "
-            f"available: {sorted(engines)}")
+            f"available: {sorted(engines) + ['canonical']}")
     return RollingWindowStrategyAdapter(strategy_id, engine_cls())
