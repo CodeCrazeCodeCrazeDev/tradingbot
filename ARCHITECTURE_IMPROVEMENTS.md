@@ -1,35 +1,20 @@
-# Architectural Improvements Report — 2026 Audit
+# AlphaAlgo Architecture Improvements 2026
 
-## Overview
-This document outlines the high-level architectural improvements and structural enhancements implemented across AlphaAlgo during the 2026 Production Engineering Audit.
+## Architectural Enhancements Achieved
 
-## Key Architectural Enhancements
+### 1. Hardened Event-Driven Consensus (LogAct)
+- Standardized voter response schema across `UnifiedEventBus` and governance voters.
+- Enforced affirmative decision checks (`APPROVED`, `APPROVE`, `ALLOW`, `PASS`) for capital-moving action proposals.
+- Fail-closed security design prevents silent approval when safety shield voters abstain or return unexpected formats.
 
-### 1. Hardened Dynamic Execution Sandboxing
-- **Problem**: Self-evolution modules (`AlphaEvolveEngine`) and parallel backtesters compiled and executed arbitrary strategy strings using `exec()` without static security validation.
-- **Improvement**: Integrated `SecureASTVisitor().validate_code(code_str)` directly into pre-compilation steps. Any unauthorized file, network, system, or dunder attribute accesses are intercepted before execution.
+### 2. Scientific Traceability & Verification
+- Module docstrings across core singletons now strictly maintain paper traceability matrices for all 8 mandatory arXiv citations.
+- Standardized verification swarm checks ensuring evidence graph sparsity and tail-risk reasoning before trade approval.
 
-Prior to the UCA-2026 migration, the AlphaAlgo codebase contained legacy modules and redundant orchestration loops competing for state and execution ownership.
+### 3. Non-blocking Async Concurrency Model
+- Converted blocking synchronous network I/O (`requests.get`) to non-blocking thread execution via `asyncio.to_thread`.
+- Maintained responsive asyncio event loop during external news ingestion and API polling.
 
-### **Structural Purge & Remediation**:
-- Remediated list comprehension unpacking syntax in `risk/risk_manager.py` and block indentation in operational launcher/deployment scripts (`run_alphaalgo_5star.py`, `deploy_5star_production.py`, `auto_fix_critical_issues_v2.py`).
-- Enforced a single repository-wide event bus (`UnifiedDecisionBus`) and a single active controller singleton (`CognitiveSystemController`).
-- Programmatically locked the repository against duplicate imports using a custom architecture invariant test suite (`tests/architecture/test_architecture_invariants.py`).
-
----
-
-## 2. Decoupling of Capabilities & Single Responsibility
-
-We have enforced strict single-responsibility boundaries over core modules:
-1.  **Sensory Processing & Surprise**: Managed solely by `CognitiveSystemController` inside `controller.py`.
-2.  **Strategic Reasoning & Routing**: Consolidated into `SkillRouter` inside `router.py`.
-3.  **Knowledge & Episodic Ledger**: Owned entirely by `HierarchicalMemorySystem` (HMS) inside `memory.py`.
-4.  **Causal World Model rollouts**: Handled by the `UnifiedWorldModel`.
-5.  **Multi-Agent Decision Synthesis**: Owned by `HeadAI` and `BayesianDecisionEngine` inside `trading_bot/agents/multi_agent_debate.py`, enforcing multi-verifier falsification prior to trade commitment.
-
----
-
-## 3. Security Hardening & Concurrency Standardisation
-
-- **AST Sandboxing**: Integrated `SecureASTVisitor` to validate dynamic strategy code before execution in parallel backtesting and signal evolution engines (`AlphaEvolveEngine`).
-- **Async Concurrency**: Replaced blocking `time.sleep` and synchronous network requests inside async daemons (`AlertingSystem`, `SystemValidator`, `UptimeTracker`) with non-blocking `await asyncio.sleep` and `asyncio.to_thread`.
+### 4. Resilient Dependency Architecture
+- Top-level imports for optional heavy ML and broker libraries (`gpt4all`, `MetaTrader5`, `dash_bootstrap_components`) are gracefully guarded.
+- System initializes reliably in lightweight environments without crashing on missing optional dependencies.

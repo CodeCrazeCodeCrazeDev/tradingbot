@@ -20,7 +20,10 @@ from enum import Enum
 
 import openai
 import aiohttp
-from gpt4all import GPT4All
+try:
+    from gpt4all import GPT4All
+except ImportError:
+    GPT4All = None
 
 from ..knowledge_acquisition.knowledge_base import KnowledgeBase, KnowledgeItem, KnowledgeType
 from enum import auto
