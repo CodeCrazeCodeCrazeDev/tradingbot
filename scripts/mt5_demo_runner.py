@@ -239,8 +239,9 @@ async def run(args: argparse.Namespace) -> int:
 
         peer_bars = []
         if args.peer_symbol:
-            peer_bars = list(_closed_bars(
-                client, args.peer_symbol, tf, (args.replay or 1500) + 60) or [])
+            _pb = _closed_bars(
+                client, args.peer_symbol, tf, (args.replay or 1500) + 60)
+            peer_bars = list(_pb) if _pb is not None else []
             logger.info("peer symbol %s: %d closed bars loaded",
                         args.peer_symbol, len(peer_bars))
         from collections import deque as _deque
