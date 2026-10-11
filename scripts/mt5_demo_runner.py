@@ -39,11 +39,12 @@ logger = logging.getLogger("mt5_demo_runner")
 DEFAULT_STATE_DIR = PROJECT_ROOT / "var" / "mt5_demo"
 
 
-def _bar_to_obs(symbol: str, bar: Any, adapter: Any) -> Dict[str, Any]:
+def _bar_to_obs(symbol: str, bar: Any, adapter: Any,
+                extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     names = getattr(getattr(bar, "dtype", None), "names", ()) or ()
     ts = int(bar["time"]) if "time" in names else 0
     volume = float(bar["tick_volume"]) if "tick_volume" in names else 0.0
-    return {
+    obs = {
         "symbol": symbol,
         "timestamp": datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
         if ts else datetime.now(timezone.utc).isoformat(),
@@ -60,11 +61,43 @@ def _bar_to_obs(symbol: str, bar: Any, adapter: Any) -> Dict[str, Any]:
         "volume_step": adapter._volume_step,
         "volume_min": adapter._volume_min,
     }
+    if extra:
+        obs.update(extra)
+    return obs
 
 
 def _closed_bars(client: Any, symbol: str, timeframe_const: int, n: int):
     """Closed bars only — position 0 is the still-forming bar."""
     return client.copy_rates_from_pos(symbol, timeframe_const, 1, n)
+
+
+def _quote_extra(client: Any, symbol: str) -> Dict[str, Any]:
+    """Live bid/ask for a freshly-closed bar — point-in-time correct in
+    follow mode only. Never attach to historical replay bars."""
+    tick = client.symbol_info_tick(symbol)
+    if tick is None:
+        return {}
+    bid, ask = float(tick.bid), float(tick.ask)
+    mid = (bid + ask) / 2.0
+    return {"bid": bid, "ask": ask,
+            "spread_bps": (ask - bid) / mid * 1e4 if mid else None,
+            "quote_time": int(getattr(tick, "time", 0))}
+
+
+def _peer_extra(peer_closes: "deque") -> Dict[str, Any]:
+    """Latest closed peer-symbol context: close + returns over 1/10 bars.
+
+    peer_closes is appended with only bars whose timestamp <= the current
+    obs bar — no lookahead."""
+    if len(peer_closes) < 2:
+        return {}
+    out = {"peer_close": peer_closes[-1]}
+    out["peer_return_1"] = (peer_closes[-1] - peer_closes[-2]) \
+        / peer_closes[-2] if peer_closes[-2] else None
+    if len(peer_closes) > 10:
+        out["peer_return_10"] = (peer_closes[-1] - peer_closes[-11]) \
+            / peer_closes[-11] if peer_closes[-11] else None
+    return out
 
 
 def _mt5_config(args: argparse.Namespace) -> Dict[str, Any]:
@@ -204,6 +237,16 @@ async def run(args: argparse.Namespace) -> int:
                 console.last_price[args.symbol] = (
                     float(tick.bid) + float(tick.ask)) / 2.0
 
+        peer_bars = []
+        if args.peer_symbol:
+            peer_bars = list(_closed_bars(
+                client, args.peer_symbol, tf, (args.replay or 1500) + 60) or [])
+            logger.info("peer symbol %s: %d closed bars loaded",
+                        args.peer_symbol, len(peer_bars))
+        from collections import deque as _deque
+        peer_closes = _deque(maxlen=256)
+        peer_idx = 0
+
         if args.replay:
             bars = _closed_bars(client, args.symbol, tf, args.replay)
             for bar in bars:
@@ -211,7 +254,16 @@ async def run(args: argparse.Namespace) -> int:
                     outcome = await console.apply(command)
                     logger.info("operator command %s -> %s",
                                 command.get("action"), outcome)
-                obs = _bar_to_obs(args.symbol, bar, adapter)
+                extra: Dict[str, Any] = {}
+                while (peer_idx < len(peer_bars)
+                       and int(peer_bars[peer_idx]["time"])
+                       <= int(bar["time"])):
+                    peer_closes.append(float(peer_bars[peer_idx]["close"]))
+                    peer_idx += 1
+                if args.peer_symbol:
+                    extra["peer_symbol"] = args.peer_symbol
+                    extra.update(_peer_extra(peer_closes))
+                obs = _bar_to_obs(args.symbol, bar, adapter, extra)
                 tick_mark()
                 await runtime.bot.run_cycle(obs)
                 processed += 1
@@ -237,7 +289,16 @@ async def run(args: argparse.Namespace) -> int:
                 bars = _closed_bars(client, args.symbol, tf, 1)
                 if bars is not None and len(bars) and int(bars[0]["time"]) != last_bar_time:
                     last_bar_time = int(bars[0]["time"])
-                    obs = _bar_to_obs(args.symbol, bars[0], adapter)
+                    extra = _quote_extra(client, args.symbol)
+                    if args.peer_symbol:
+                        fresh = _closed_bars(client, args.peer_symbol, tf, 60)
+                        if fresh is not None and len(fresh):
+                            peer_closes.clear()
+                            for pb in fresh:
+                                peer_closes.append(float(pb["close"]))
+                        extra["peer_symbol"] = args.peer_symbol
+                        extra.update(_peer_extra(peer_closes))
+                    obs = _bar_to_obs(args.symbol, bars[0], adapter, extra)
                     await runtime.bot.run_cycle(obs)
                     processed += 1
                     publish_snapshot(state_dir, _snapshot(
@@ -287,6 +348,10 @@ def main(argv: Optional[list] = None) -> int:
     src.add_argument("--follow", action="store_true",
                      help="poll for each new closed M15 bar (soak mode)")
     parser.add_argument("--symbol", default="EURUSD")
+    parser.add_argument("--peer-symbol", default="",
+                        help="attach peer-symbol closed-bar context "
+                             "(peer_close/peer_return_1/peer_return_10) "
+                             "aligned by timestamp — e.g. GBPUSD")
     parser.add_argument("--timeframe", default="M15")
     parser.add_argument("--cycles", type=int, default=0,
                         help="cap on bars processed in follow mode (0=forever)")

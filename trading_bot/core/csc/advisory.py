@@ -2966,6 +2966,52 @@ def _institutional_footprint_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("institutional_entry_footprint", analyze)
 
 
+def _peer_correlation_service() -> AdvisoryModuleAdapter:
+    """Peer-symbol correlation + lead/lag — the first cross-asset
+    analyzer. Consumes obs['peer_close'] fed by the runners
+    (--peer-symbol GBPUSD); absent -> missing_data, never fabricated.
+    Direction = drift toward the peer's direction when the peer moved
+    and we have not followed yet (measured lead/lag, not assumed)."""
+    import numpy as _np
+
+    own = _BarHistory(96)
+    peer = _BarHistory(96)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        peer_price = _num(ctx.get("peer_close"))
+        own.add(ctx)
+        if peer_price is None:
+            return {"status": "missing_data",
+                    "needs": "obs.peer_close (--peer-symbol)"}
+        peer._bars.append({"close": peer_price})
+        if len(own) < 30 or len(peer) < 30:
+            return {"status": "warming", "bars": len(peer)}
+        a = _np.asarray(own.prices()[-30:], dtype=float)
+        b = _np.asarray(peer.prices()[-30:], dtype=float)
+        ra = _np.diff(a) / a[:-1]
+        rb = _np.diff(b) / b[:-1]
+        if _np.std(ra) == 0 or _np.std(rb) == 0:
+            return {"status": "degenerate"}
+        corr = float(_np.corrcoef(ra, rb)[0, 1])
+        peer_ret = float((b[-1] - b[-11]) / b[-11]) if len(b) > 11 else 0.0
+        own_ret = float((a[-1] - a[-11]) / a[-11]) if len(a) > 11 else 0.0
+        # Lead/lag: peer moved, we haven't followed (correlated pair)
+        direction = None
+        if corr > 0.4 and abs(peer_ret) > 0.0005 and abs(own_ret) < abs(peer_ret) * 0.3:
+            direction = "BUY" if peer_ret > 0 else "SELL"
+        return {
+            "corr_30": round(corr, 4),
+            "peer_return_10": round(peer_ret, 6),
+            "own_return_10": round(own_ret, 6),
+            "lead_lag_gap": round(peer_ret - own_ret, 6),
+            "peer_symbol": ctx.get("peer_symbol"),
+            "direction": direction,
+        }
+
+    return AdvisoryModuleAdapter("peer_correlation", analyze)
+
+
+
 def _indicators_liquidity_service() -> AdvisoryModuleAdapter:
     """indicators CVD + AbsorptionExhaustionRatio — cumulative volume
     delta approximated honestly from bar direction (close>open -> +vol)
@@ -4652,6 +4698,7 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("deepchart_price_response", _deepchart_price_response_service),
     ("indicators_adv_technical", _indicators_adv_technical_service),
     ("indicators_liquidity", _indicators_liquidity_service),
+    ("peer_correlation", _peer_correlation_service),
     ("upgrades_change_detect", _upgrades_change_detect_service),
     ("analysis_unified_analyzer", _unified_analyzer_service),
     ("hypernetwork_regime", _hypernetwork_regime_service),
