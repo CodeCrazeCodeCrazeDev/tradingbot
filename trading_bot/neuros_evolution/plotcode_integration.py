@@ -104,11 +104,13 @@ class PlotCodeVisualTester:
             }
             
             # Send to PlotCode API
-            response = requests.post(
-                f"{self.plotcode_url}/api/test",
-                json=payload,
-                timeout=30
-            )
+            def _post():
+                return requests.post(
+                    f"{self.plotcode_url}/api/test",
+                    json=payload,
+                    timeout=30
+                )
+            response = await asyncio.to_thread(_post)
             
             if response.status_code == 200:
                 return response.json()

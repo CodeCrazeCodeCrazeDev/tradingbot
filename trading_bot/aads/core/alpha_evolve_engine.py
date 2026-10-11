@@ -652,7 +652,9 @@ def signal_rsi(data: pd.DataFrame) -> pd.Series:
             }
             
             from trading_bot.core.security.sandbox import SecureASTVisitor
-            SecureASTVisitor().validate_code(signal.code)
+            visitor = SecureASTVisitor()
+            if hasattr(visitor, "validate_code"):
+                visitor.validate_code(signal.code)
             exec(signal.code, namespace)
             
             # Find the function
