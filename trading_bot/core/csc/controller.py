@@ -250,6 +250,11 @@ class CognitiveSystemController:
         self._obs_history: Dict[str, "deque"] = {}
         # Max holding period in observations before a position auto-closes.
         self._position_max_hold = int(kwargs.get("position_horizon", 8))
+        # Per-symbol Wilder-ATR state for the adverse-move exit: a position
+        # that moves materially against its direction closes before the
+        # horizon instead of riding out a measured loss to a timer.
+        self._atr_state: Dict[str, Dict[str, float]] = {}
+        self._adverse_atr_mult = float(kwargs.get("adverse_atr_mult", 2.5))
         # Evidence-backed cadence: OOS replication on two independent
         # windows shows per-bar decisions lose the gross edge to costs;
         # stride>1 decides every Nth bar (settlement/features/research
@@ -1081,9 +1086,47 @@ class CognitiveSystemController:
         pos = self._open_positions.get(symbol)
         if pos is None:
             return
+        atr = self._update_atr(str(symbol), obs_dict)
+        if atr and atr > 0:
+            signed = (float(price) - pos["entry_price"]) * (
+                1.0 if pos["direction"] == "BUY" else -1.0)
+            if signed < -self._adverse_atr_mult * atr:
+                await self._close_position(symbol, float(price),
+                                           reason="adverse_move_atr")
+                return
         if self._observation_seq - pos["entry_seq"] >= self._position_max_hold:
             await self._close_position(symbol, float(price),
                                        reason="holding_horizon")
+
+    def _update_atr(self, symbol: str, obs_dict: Dict[str, Any]
+                    ) -> Optional[float]:
+        """Wilder-style EMA of true range from real bars.
+
+        True range = max(high-low, |high-prev_close|, |low-prev_close|);
+        when the observation carries only close, range degrades to
+        |close - prev_close|. Returns None until ~5 samples accumulate —
+        the adverse exit stays inactive rather than fire on noise."""
+        close = obs_dict.get("close", obs_dict.get("price"))
+        if not isinstance(close, (int, float)) or close <= 0:
+            return None
+        st = self._atr_state.setdefault(symbol, {"atr": 0.0, "n": 0,
+                                                 "prev": 0.0})
+        high = obs_dict.get("high")
+        low = obs_dict.get("low")
+        prev = st["prev"]
+        if isinstance(high, (int, float)) and isinstance(low, (int, float))                 and high >= low:
+            tr = float(high - low)
+            if prev > 0:
+                tr = max(tr, abs(high - prev), abs(low - prev))
+        else:
+            tr = abs(close - prev) if prev > 0 else 0.0
+        st["prev"] = float(close)
+        if tr <= 0:
+            return st["atr"] if st["n"] >= 5 else None
+        st["atr"] = tr if st["n"] == 0 else (
+            st["atr"] * 13 + tr) / 14.0  # Wilder(14)
+        st["n"] += 1
+        return st["atr"] if st["n"] >= 5 else None
 
     async def _register_directional(
         self, trade_id: str, action: str, symbol: Optional[str],
