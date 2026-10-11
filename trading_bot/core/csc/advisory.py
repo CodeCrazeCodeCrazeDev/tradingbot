@@ -4265,25 +4265,10 @@ def _brain_orderflow_service() -> AdvisoryModuleAdapter:
 
 
 def _brain_condition_service() -> AdvisoryModuleAdapter:
-    """brain adaptive_integration — market-condition read on the obs
-    dict."""
-    from trading_bot.brain.adaptive_integration import (
-        AdaptiveIntegrationSystem)
-
-    system = AdaptiveIntegrationSystem()
-    hist = _BarHistory()
-
-    def analyze(ctx: Mapping[str, Any]) -> Any:
-        hist.add(ctx)
-        df = _bars_df(hist, 60)
-        if df is None:
-            return {"status": "warming", "bars": len(hist)}
-        out = system.detect_market_condition(df)
-        if inspect.isawaitable(out):
-            out = _run_coro_sync(out)
-        return _payload(out)
-
-    return AdvisoryModuleAdapter("brain_market_condition", analyze)
+    """REMOVED — measured dead weight: emitted empty evidence on all
+    bars under all conditions in the real-envelope probe. Stub kept so
+    stale registry entries fail loudly rather than silently attach."""
+    raise RuntimeError("brain_market_condition removed — dead weight")
 
 
 def _fractal_divergence_service() -> AdvisoryModuleAdapter:
@@ -4730,7 +4715,6 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("elite_patterns", _elite_patterns_service),
     ("brain_tier3_structure", _brain_structure_service),
     ("brain_tier2_orderflow", _brain_orderflow_service),
-    ("brain_market_condition", _brain_condition_service),
     ("fractal_divergence", _fractal_divergence_service),
     ("volatility_impulse", _volatility_impulse_service),
     ("liquidity_holography", _liquidity_holography_service),

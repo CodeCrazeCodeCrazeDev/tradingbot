@@ -248,6 +248,7 @@ class CognitiveSystemController:
         # a raw OHLCV feed carries no volatility/trend/rsi so the CSC
         # computes them itself from strictly-prior bars.
         self._obs_history: Dict[str, "deque"] = {}
+        self._vol_history: Dict[str, "deque"] = {}
         # Max holding period in observations before a position auto-closes.
         self._position_max_hold = int(kwargs.get("position_horizon", 8))
         # Per-symbol Wilder-ATR state for the adverse-move exit: a position
@@ -1030,6 +1031,24 @@ class CognitiveSystemController:
         """Return the tracked close history for a symbol (read-only copy)."""
         return list(self._obs_history.get(str(symbol), ()))
 
+    async def seed_advisory_history(self, obs_list: List[Any]) -> int:
+        """Replay prior observations through attached advisory services so
+        their internal bar windows start pre-filled — real data fills the
+        window, so services emit from cycle 1 instead of spending 50-70
+        live cycles reporting 'warming'. Outputs are discarded: this
+        fills history, it does not decide."""
+        filled = 0
+        for obs in list(obs_list or ()):
+            if not isinstance(obs, Mapping):
+                continue
+            for svc in self._advisory_services:
+                try:
+                    await svc.analyze(obs)
+                    filled += 1
+                except Exception:  # noqa: BLE001
+                    continue
+        return filled
+
     def export_open_positions(self) -> Dict[str, Any]:
         """Serialize open positions for restart continuity — without this,
         a restart orphans fills that persist in the ledger: the CSC thinks
@@ -1120,6 +1139,38 @@ class CognitiveSystemController:
             obs_dict["rsi"] = (100.0 if losses == 0 else
                                100.0 - 100.0 / (1.0 + gains / losses))
             derived.add("rsi")
+        # Fields ~35 advisory services read but the raw feed never carries.
+        # Deriving them from strictly-prior bars is honest (same evidence
+        # provenance as volatility/trend/rsi above); fields that can't be
+        # derived — sentiment, order-book, portfolio state — stay absent.
+        if "rsi14" not in obs_dict and "rsi" in obs_dict:
+            obs_dict["rsi14"] = obs_dict["rsi"]
+            derived.add("rsi14")
+        if "momentum" not in obs_dict and len(closes) >= 11:
+            base = float(closes[-11])
+            if base > 0:
+                obs_dict["momentum"] = float(closes[-1] - base) / base
+                derived.add("momentum")
+        if "trend_strength" not in obs_dict and "momentum" in obs_dict:
+            vol = float(obs_dict.get("volatility") or 0.0)
+            obs_dict["trend_strength"] = (
+                abs(float(obs_dict["momentum"])) / vol if vol > 0 else 0.0)
+            derived.add("trend_strength")
+        if "regime" not in obs_dict and "trend" in obs_dict:
+            obs_dict["regime"] = {"BULLISH": "UP", "BEARISH": "DOWN"}.get(
+                str(obs_dict["trend"]), "RANGE")
+            derived.add("regime")
+        vol_hist = self._vol_history.setdefault(symbol, deque(maxlen=64))
+        volume = obs_dict.get("volume")
+        if ("volume_ratio" not in obs_dict
+                and isinstance(volume, (int, float)) and volume > 0
+                and len(vol_hist) >= 20):
+            mean_vol = sum(vol_hist) / len(vol_hist)
+            if mean_vol > 0:
+                obs_dict["volume_ratio"] = float(volume) / mean_vol
+                derived.add("volume_ratio")
+        if isinstance(volume, (int, float)) and volume > 0:
+            vol_hist.append(float(volume))
         if derived:
             obs_dict["_derived_features"] = sorted(derived)
         if isinstance(price, (int, float)) and price > 0:
@@ -1947,8 +1998,9 @@ class CognitiveSystemController:
         # Signal-quality ledger: attachment count is not intelligence.
         # Classify what each advisor actually emitted this cycle so the
         # report shows directional/substantive/degenerate honestly.
-        _degenerate = {'warming', 'no_read', 'no_data', 'no_signal',
-                       'none', 'skipped', 'unavailable', 'idle'}
+        _degenerate = {'warming', 'no_read', 'no_data', 'missing_data',
+                       'no_signal', 'none', 'skipped', 'unavailable',
+                       'idle', 'degenerate'}
         for a in (artifacts or []):
             if not isinstance(a, Mapping):
                 self._funnel['advisor_degenerate'] += 1

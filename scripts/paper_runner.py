@@ -219,6 +219,17 @@ async def run(args: argparse.Namespace) -> int:
     if history:
         if csc is not None:
             csc.seed_observation_history(args.symbol, history)
+            # Advisory services keep internal bar windows — replay the same
+            # closes through them so they emit from cycle 1 instead of
+            # reporting 'warming' for 50-70 live cycles.
+            if hasattr(csc, "seed_advisory_history"):
+                try:
+                    await csc.seed_advisory_history([
+                        {"symbol": args.symbol, "close": float(c),
+                         "price": float(c), "volume": 0.0}
+                        for c in history if isinstance(c, (int, float))])
+                except Exception:  # noqa: BLE001
+                    pass
         runtime.bot._price_window.extend(
             float(c) for c in history if isinstance(c, (int, float)))
         logger.info("seeded %d historical closes into feature windows",

@@ -158,13 +158,36 @@ async def _connect_feed_adapter(args: argparse.Namespace) -> Any:
     return adapter
 
 
-def _seed_warmup(runtime: Any, symbol: str, bars: Any) -> int:
+async def _seed_warmup(runtime: Any, symbol: str, bars: Any) -> int:
     """Seed derived-feature windows from closed bars without decision cycles."""
-    closes = [float(bar["close"]) for bar in (bars if bars is not None else [])
+    bar_list = list(bars) if bars is not None else []
+    closes = [float(bar["close"]) for bar in bar_list
               if float(bar["close"]) > 0]
     csc = getattr(runtime.bot, "csc", None)
     if csc is not None and hasattr(csc, "seed_observation_history"):
         csc.seed_observation_history(symbol, closes)
+    # Advisory services keep their own internal bar windows — replay the
+    # same warmup bars through them so they emit from the first live
+    # cycle instead of reporting 'warming' for 50-70 real cycles.
+    if csc is not None and hasattr(csc, "seed_advisory_history"):
+        def _vol(bar: Any) -> float:
+            for key in ("tick_volume", "volume"):
+                try:
+                    return float(bar[key])
+                except (KeyError, IndexError, TypeError, ValueError):
+                    continue
+            return 0.0
+        obs_list = [{
+            "symbol": symbol,
+            "timestamp": float(bar["time"]),
+            "open": float(bar["open"]), "high": float(bar["high"]),
+            "low": float(bar["low"]), "close": float(bar["close"]),
+            "price": float(bar["close"]), "volume": _vol(bar),
+        } for bar in bar_list]
+        try:
+            await csc.seed_advisory_history(obs_list)
+        except Exception:  # noqa: BLE001
+            pass
     window = getattr(runtime.bot, "_price_window", None)
     if window is not None:
         window.extend(closes)
@@ -276,7 +299,7 @@ async def run(args: argparse.Namespace) -> int:
             warm = _closed_bars(client, args.symbol, tf, args.warmup)
             last_bar_time = 0
             if warm is not None and len(warm):
-                seeded = _seed_warmup(runtime, args.symbol, warm)
+                seeded = await _seed_warmup(runtime, args.symbol, warm)
                 logger.info("follow warm-up: seeded %d closed bars", seeded)
                 last_bar_time = int(warm[-1]["time"])
                 publish_snapshot(state_dir, _snapshot(
