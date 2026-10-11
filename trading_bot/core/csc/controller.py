@@ -255,6 +255,12 @@ class CognitiveSystemController:
         # horizon instead of riding out a measured loss to a timer.
         self._atr_state: Dict[str, Dict[str, float]] = {}
         self._adverse_atr_mult = float(kwargs.get("adverse_atr_mult", 2.5))
+        # External-research conduit: bounded arxiv/github evidence for
+        # csc.research() questions. Fail-open — network errors report
+        # unavailable, never fabricated. Off via internet_research=False.
+        self._internet_researcher = None
+        self._internet_research_enabled = bool(
+            kwargs.get("internet_research", True))
         # Evidence-backed cadence: OOS replication on two independent
         # windows shows per-bar decisions lose the gross edge to costs;
         # stride>1 decides every Nth bar (settlement/features/research
@@ -694,6 +700,8 @@ class CognitiveSystemController:
         await self._maybe_rehydrate_research()
         obs = dict(market_data or {})
         self._enrich_derived_features(obs)
+        external = await self._fetch_internet_evidence(question)
+        obs["external_research"] = external
         report = await self.research_engine.investigate(
             question, obs,
             evidence_chain=None,
@@ -724,9 +732,45 @@ class CognitiveSystemController:
                 "verifier_verdicts": list(report.verifier_verdicts)[:16],
                 "boundary_conditions": dict(report.boundary_conditions),
                 "comparison": report.comparison,
+                "external_evidence": external,
                 "advisory_only": True,
             })
         return report
+
+    async def _fetch_internet_evidence(self, question: str
+            ) -> Dict[str, Any]:
+        """Bounded external evidence fetch via InternetResearcher
+        (arxiv + github). Any failure returns an explicit unavailable
+        status — the report records that research ran without external
+        input rather than fabricating sources."""
+        if not self._internet_research_enabled:
+            return {"status": "disabled"}
+        try:
+            if self._internet_researcher is None:
+                from trading_bot.autonomous_learner.internet_researcher import (
+                    DifficultyLevel, InternetResearcher)
+                self._internet_researcher = InternetResearcher()
+                self._ir_difficulty = DifficultyLevel.INTERMEDIATE
+            async with asyncio.timeout(30):
+                resources = await self._internet_researcher.research_topic(
+                    str(question)[:150], self._ir_difficulty)
+            return {"status": "ok", "sources": [
+                {"title": getattr(r, "title", ""),
+                 "url": getattr(r, "url", ""),
+                 "summary": (getattr(r, "summary", "") or "")[:240],
+                 "source": getattr(r, "source", ""),
+                 "relevance": getattr(r, "relevance_score", None)}
+                for r in resources[:6]]}
+        except Exception as exc:
+            return {"status": "unavailable", "reason": str(exc)[:120]}
+        finally:
+            _ir = self._internet_researcher
+            sess = getattr(_ir, "session", None) if _ir else None
+            if sess is not None and not sess.closed:
+                try:
+                    await sess.close()
+                except Exception:
+                    pass
 
     async def evaluate_strategy(
         self, question: str, candidate_positions: List[float],
