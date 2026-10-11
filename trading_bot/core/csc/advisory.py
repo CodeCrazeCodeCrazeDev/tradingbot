@@ -4970,7 +4970,7 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
      "collaborators; rest is offline enhancement tooling"),
     ("analytics", "alpha_decay attached; emotional/psychological "
      "trackers need trade-action history, not observations"),
-    ("indicators", "iceberg_detector attached; advanced_ml remainder "
+    ("indicators", "iceberg_detector + adv_technical (hurst/supertrend/ttm_squeeze) attached; advanced_ml remainder "
      "ships unfitted models"),
     ("market_teacher", "momentum_specialist attached; teacher/learning "
      "framework remainder is pedagogy, not market analysis"),
