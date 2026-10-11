@@ -2966,6 +2966,82 @@ def _institutional_footprint_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("institutional_entry_footprint", analyze)
 
 
+def _indicators_adv_technical_service() -> AdvisoryModuleAdapter:
+    """indicators AdvancedTechnicalIndicators — Hurst regime, SuperTrend
+    direction, TTM squeeze momentum, KAMA/Kalman on real OHLC bars.
+    Direction = SuperTrend and squeeze-momentum agreement; disagreement
+    emits the indicator values without a vote."""
+    import pandas as _pd
+    from trading_bot.indicators.advanced_technical import (
+        AdvancedTechnicalIndicators)
+
+    ind = AdvancedTechnicalIndicators()
+    hist = _BarHistory(128)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 35:
+            return {"status": "warming", "bars": len(hist)}
+        df = _pd.DataFrame(hist.bars())
+        res = ind.calculate_all(df)
+        last = res.iloc[-1]
+        st_dir = last.get("supertrend_direction")
+        mom = last.get("ttm_momentum") or last.get("ttm_histogram")
+        squeeze_on = bool(last.get("ttm_squeeze_on"))
+        hurst = last.get("hurst_exponent")
+        regime = last.get("hurst_regime")
+        st_sig = None
+        if isinstance(st_dir, (int, float)):
+            st_sig = "BUY" if st_dir > 0 else "SELL" if st_dir < 0 else None
+        elif isinstance(st_dir, str):
+            st_sig = {"up": "BUY", "down": "SELL"}.get(st_dir.lower())
+        direction = None
+        if st_sig and isinstance(mom, (int, float)):
+            agree = (mom > 0 and st_sig == "BUY") or                     (mom < 0 and st_sig == "SELL")
+            direction = st_sig if agree else None
+        return {
+            "hurst_exponent": float(hurst) if hurst is not None else None,
+            "hurst_regime": regime,
+            "supertrend_direction": st_sig,
+            "squeeze_on": squeeze_on,
+            "squeeze_momentum": float(mom)
+                if isinstance(mom, (int, float)) else None,
+            "direction": direction,
+        }
+
+    return AdvisoryModuleAdapter("indicators_adv_technical", analyze)
+
+
+
+def _upgrades_change_detect_service() -> AdvisoryModuleAdapter:
+    """upgrades RegimeChangeDetector + AnomalyDetector — mean-shift
+    (>2 sigma over 2x window) and z-score anomaly flags on the close
+    stream. Change-point evidence; non-directional by design."""
+    from trading_bot.upgrades.core_upgrades_051_075 import (
+        RegimeChangeDetector, AnomalyDetector)
+
+    regime_det = RegimeChangeDetector()
+    anom_det = AnomalyDetector()
+    _n = [0]
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        price = _num(ctx.get("close") or ctx.get("price"))
+        if price is None:
+            return {"status": "no_price"}
+        _n[0] += 1
+        regime_change = bool(regime_det.detect(price))
+        anomaly = bool(anom_det.check(price))
+        return {
+            "regime_change": regime_change,
+            "anomaly": anomaly,
+            "bars_seen": _n[0],
+            "direction": None,
+        }
+
+    return AdvisoryModuleAdapter("upgrades_change_detect", analyze)
+
+
+
 def _deepchart_price_response_service() -> AdvisoryModuleAdapter:
     """deepchart PriceResponseCurveEngine — fits a power-law price-
     response-to-volume curve (elasticity, linearity, saturation point)
@@ -4533,6 +4609,8 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("black_swan_threat", _black_swan_threat_service),
     ("spai_trend_reversal", _spai_trend_reversal_service),
     ("deepchart_price_response", _deepchart_price_response_service),
+    ("indicators_adv_technical", _indicators_adv_technical_service),
+    ("upgrades_change_detect", _upgrades_change_detect_service),
     ("analysis_unified_analyzer", _unified_analyzer_service),
     ("hypernetwork_regime", _hypernetwork_regime_service),
     ("marl_strategists", _marl_strategists_service),
