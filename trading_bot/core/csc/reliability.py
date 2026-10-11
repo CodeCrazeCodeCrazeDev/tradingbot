@@ -31,8 +31,16 @@ class ReliabilityTracker:
     """
     Tracks and updates agent reliability across different market regimes.
     """
+    # Regime×action suppression: the CSC's own measured record vetoes
+    # its own proposals. An action whose mean realized return in a
+    # regime is negative at n>=10 is measured-negative-expectancy —
+    # suppressed until new evidence overturns it. (UP-regime BUY was
+    # -0.80% over 36 outcomes across runs — the motivating defect.)
+    ACTION_MIN_SAMPLES = 10
+
     def __init__(self):
         self.metrics: Dict[str, Dict[str, ReliabilityMetrics]] = {} # agent_id -> {regime: metrics}
+        self.action_metrics: Dict[str, Dict[str, Dict[str, float]]] = {}  # regime -> action -> stats
 
     def get_agent_weight(self, agent_id: str, regime: str) -> float:
         """
@@ -73,6 +81,31 @@ class ReliabilityTracker:
         if not m or m.total_predictions < self.DIRECTION_MIN_SAMPLES:
             return True
         return m.precision >= self.DIRECTION_MIN_PRECISION
+
+    def update_action_outcome(self, regime: str, action: str,
+                              was_correct: bool,
+                              realized_return: Optional[float]) -> None:
+        """Accumulate the CSC's own realized return per (regime, action).
+        Expectancy (mean return), not precision — an action can win half
+        the time and still lose money to costs."""
+        if action not in ("BUY", "SELL"):
+            return
+        slot = self.action_metrics.setdefault(regime, {}).setdefault(
+            action, {"n": 0, "wins": 0, "ret": 0.0})
+        slot["n"] += 1
+        if was_correct:
+            slot["wins"] += 1
+        if isinstance(realized_return, (int, float)):
+            slot["ret"] += realized_return
+
+    def action_suppressed(self, regime: str, action: str) -> bool:
+        """True when the CSC's own measured expectancy for this action in
+        this regime is negative at sufficient sample — self-measurement,
+        not an advisory veto."""
+        m = self.action_metrics.get(regime, {}).get(action)
+        if not m or m["n"] < self.ACTION_MIN_SAMPLES:
+            return False
+        return (m["ret"] / m["n"]) < 0
 
     def update_metrics(self, agent_id: str, regime: str, was_correct: bool, confidence: float):
         """

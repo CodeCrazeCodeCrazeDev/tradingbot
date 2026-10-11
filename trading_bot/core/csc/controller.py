@@ -559,6 +559,10 @@ class CognitiveSystemController:
                 was_correct = str(row.get("outcome") or "") == "correct"
                 self.reliability_tracker.update_metrics(
                     "csc", regime, was_correct, confidence)
+                self.reliability_tracker.update_action_outcome(
+                    regime,
+                    str(inner.get("action") or row.get("action") or "").upper(),
+                    was_correct, details.get("realized_return"))
                 action = str(inner.get("action") or row.get("action") or "")
                 for call in details.get("advisory_calls") or ():
                     adv_dir = str(call.get("direction") or "")
@@ -924,6 +928,9 @@ class CognitiveSystemController:
         regime = pending.get("regime", "unknown")
         self.reliability_tracker.update_metrics(
             "csc", regime, bool(was_correct), confidence)
+        self.reliability_tracker.update_action_outcome(
+            regime, str(pending.get("action") or "").upper(),
+            bool(was_correct), realized_return)
 
         # Score each advisor that expressed a direction on the opening
         # observation: its call is correct iff its direction matched the
@@ -976,6 +983,7 @@ class CognitiveSystemController:
                 "realized_return": realized_return,
                 "regime": regime,
                 "advisory_calls": pending.get("advisory_calls") or [],
+                "gated_calls": int(pending.get("gated_calls") or 0),
                 # >1 means N decisions shared one settlement — the rows are
                 # correlated, not independent samples. Consumers counting
                 # outcomes for statistical weight must discount by this.
@@ -1212,6 +1220,9 @@ class CognitiveSystemController:
             # settlement so advisor weights are measured against reality.
             "advisory_calls": list(
                 getattr(self, "_last_advisory_calls", ()) or ()),
+            # Calls suppressed by regime-eligibility when this decision
+            # ranked — lets outcomes measure the gating's live effect.
+            "gated_calls": int(getattr(self, "_tilt_gated", 0)),
         }
 
     async def _close_position(
@@ -1453,7 +1464,7 @@ class CognitiveSystemController:
                 return 0.0
             regime = str(
                 getattr(self.state, "current_regime", None) or "unknown")
-            num = den = 0.0
+            num = den = gated = 0.0
             for c in calls:
                 direction = str(c.get("direction") or "").upper()
                 if direction not in ("BUY", "SELL"):
@@ -1465,12 +1476,14 @@ class CognitiveSystemController:
                 # data that measured it).
                 if not self.reliability_tracker.eligible_direction(
                         aid, regime):
+                    gated += 1
                     continue
                 w = self.reliability_tracker.get_agent_weight(
                     aid, regime)
                 conf = float(c.get("confidence") or 0.5)
                 num += w * conf * (1.0 if direction == action else -1.0)
                 den += w * conf
+            self._tilt_gated = int(gated)
             return (num / den) if den > 0 else 0.0  # normalized to [-1, 1]
 
         # Score on the full probabilistic signal — confidence alone is a
@@ -1504,13 +1517,33 @@ class CognitiveSystemController:
             return bool(triggers) or (
                 isinstance(ev, (int, float)) and ev < 0)
 
-        if not _fails_simulation(best):
+        def _measured_suppressed(branch) -> bool:
+            # CSC self-measurement: an action whose OWN realized-return
+            # history in this regime is negative-expectancy (n>=10) is
+            # suppressed via the same fallback as a failed simulation.
+            # Not an advisory veto — the system vetoing its own measured
+            # defect (UP-regime BUY: -0.80%% across 36 pooled outcomes).
+            action = str(
+                (branch.execution_plan or {}).get("action", "")).upper()
+            if action not in ("BUY", "SELL"):
+                return False
+            regime = str(
+                getattr(self.state, "current_regime", None) or "unknown")
+            suppressed = self.reliability_tracker.action_suppressed(
+                regime, action)
+            if suppressed:
+                logger.info(
+                    "CSC-V6: %s suppressed in regime %s — measured"
+                    "negative expectancy", action, regime)
+            return suppressed
+
+        if not (_fails_simulation(best) or _measured_suppressed(best)):
             return best
 
         # The best branch failed — fall back to the next-ranked viable
         # branch before collapsing to a no-exposure pivot.
         for candidate in ranked[1:]:
-            if not _fails_simulation(candidate):
+            if not (_fails_simulation(candidate) or _measured_suppressed(candidate)):
                 logger.warning(
                     "CSC-V6: Best branch %s failed simulation; falling back "
                     "to %s", best.branch_id, candidate.branch_id)
@@ -1873,6 +1906,7 @@ class CognitiveSystemController:
         # Reset per-cycle advisory state — a short-circuited cycle must
         # not leak last cycle's calls into this decision.
         self._last_advisory_calls = []
+        self._tilt_gated = 0
 
         # PCA Consultation — persistent agents share compressed artifacts
         artifacts = await self._consult_agent_population(obs_dict)
