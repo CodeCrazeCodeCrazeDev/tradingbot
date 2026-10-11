@@ -564,6 +564,10 @@ class CognitiveSystemController:
                     regime,
                     str(inner.get("action") or row.get("action") or "").upper(),
                     was_correct, details.get("realized_return"))
+                swarm = getattr(self, "verifier_swarm", None)
+                rec = getattr(swarm, "record_outcome", None)
+                if rec is not None:
+                    rec(confidence, was_correct)
                 action = str(inner.get("action") or row.get("action") or "")
                 for call in details.get("advisory_calls") or ():
                     adv_dir = str(call.get("direction") or "")
@@ -932,6 +936,12 @@ class CognitiveSystemController:
         self.reliability_tracker.update_action_outcome(
             regime, str(pending.get("action") or "").upper(),
             bool(was_correct), realized_return)
+        # The verification swarm's calibrator sees the same settlements —
+        # a 0.9-claimed decision that keeps losing flags overconfidence.
+        _swarm = getattr(self, "verifier_swarm", None)
+        _rec = getattr(_swarm, "record_outcome", None)
+        if _rec is not None:
+            _rec(confidence, bool(was_correct))
 
         # Score each advisor that expressed a direction on the opening
         # observation: its call is correct iff its direction matched the

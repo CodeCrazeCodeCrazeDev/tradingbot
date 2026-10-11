@@ -478,6 +478,71 @@ class AdversarialChallengeVerifier(BaseVerificationAgent):
                 f"biases={len(result.biases_detected)}"))
 
 
+
+class CalibrationVerifier(BaseVerificationAgent):
+    """Checks claimed confidence against the CSC's own measured
+    calibration history — a 0.9 claim should mean 0.9. The embedded
+    ConfidenceCalibrator accumulates outcomes via
+    VerificationSwarm.record_outcome (wired from settlement and the
+    reliability rebuild); with too little history it abstains honestly
+    rather than vetoing on noise. A severe measured overconfidence gap
+    fails the entry."""
+
+    _MIN_HISTORY = 30
+    _MAX_GAP = 0.25
+
+    def __init__(self) -> None:
+        from trading_bot.verification.confidence_calibrator import (
+            ConfidenceCalibrator)
+        self._calibrator = ConfidenceCalibrator()
+
+    def record_outcome(self, confidence: float, was_correct: bool) -> None:
+        try:
+            self._calibrator.record_outcome(
+                float(confidence), bool(was_correct))
+        except Exception:  # noqa: BLE001
+            pass
+
+    async def verify(self, ledger_entry: Any) -> VerifierVerdict:
+        claimed = _eget(ledger_entry, "composite_confidence", None)
+        try:
+            claimed = float(claimed)
+        except (TypeError, ValueError):
+            return VerifierVerdict(
+                agent_name="CalibrationVerifier", is_valid=True,
+                items_checked=0, confidence=0.5,
+                critique="no composite confidence to calibrate")
+        n = len(getattr(self._calibrator, "prediction_history", ()) or ())
+        if n < self._MIN_HISTORY:
+            return VerifierVerdict(
+                agent_name="CalibrationVerifier", is_valid=True,
+                items_checked=n, confidence=0.5,
+                critique=f"calibration history too thin (n={n}) — abstain")
+        try:
+            result = self._calibrator.calibrate(claimed)
+        except Exception as exc:  # noqa: BLE001
+            return VerifierVerdict(
+                agent_name="CalibrationVerifier", is_valid=True,
+                items_checked=n, confidence=0.4,
+                critique=f"calibrator unavailable: {str(exc)[:100]}")
+        # Prefer the direct bucket evidence (historical accuracy at this
+        # confidence) over the fitted calibrator — the learned parameters
+        # only refresh every 50 outcomes, but the bucket is live evidence.
+        measured = result.historical_accuracy_at_confidence
+        if not isinstance(measured, (int, float)):
+            measured = result.calibrated_confidence
+        gap = claimed - float(measured)
+        overconfident = gap > self._MAX_GAP
+        return VerifierVerdict(
+            agent_name="CalibrationVerifier",
+            is_valid=not overconfident,
+            items_checked=n,
+            confidence=max(0.0, min(1.0, float(measured))),
+            critique=(
+                f"claimed {claimed:.2f} vs measured "
+                f"{float(measured):.2f} "+
+                f"(gap {gap:+.2f}, n={n})"))
+
 class VerificationSwarm:
     """
     Independent Auditor Swarm for the Cognitive System Controller.
@@ -494,7 +559,17 @@ class VerificationSwarm:
             CausalVerifier(),
             CrossValidationVerifier(),
             AdversarialChallengeVerifier(),
+            CalibrationVerifier(),
         ]
+
+    def record_outcome(self, confidence: float, was_correct: bool) -> None:
+        """Feed the swarm's calibrators the same settlement events the
+        reliability tracker sees — calibration history survives restarts
+        via the same DECISION_OUTCOME replay."""
+        for verifier in self.verifiers:
+            rec = getattr(verifier, "record_outcome", None)
+            if rec is not None:
+                rec(confidence, was_correct)
 
     async def run_swarm(self, research_snapshot: Any) -> List[VerifierVerdict]:
         """
