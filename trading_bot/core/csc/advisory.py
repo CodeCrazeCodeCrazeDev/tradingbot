@@ -2966,6 +2966,67 @@ def _institutional_footprint_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("institutional_entry_footprint", analyze)
 
 
+def _volume_profile_service() -> AdvisoryModuleAdapter:
+    """forecast_improvements VolumeProfile — volume-at-price from real
+    OHLCV: Point of Control + Value Area as measured structure. Direction
+    = mean-reversion lean toward POC only when price sits OUTSIDE the
+    value area; inside VA it emits the profile, not a vote."""
+    from trading_bot.improvements.forecast_improvements.data_feed_quality import (
+        OHLCV)
+
+    hist = _BarHistory(128)
+    analyzer = [None]
+
+    def _bars_obj():
+        now = datetime.now()
+        return [OHLCV(symbol="EURUSD", timeframe="M15",
+                      open=b["open"], high=b["high"], low=b["low"],
+                      close=b["close"], volume=b.get("volume") or 0.0,
+                      timestamp=now)
+                for b in hist.bars()]
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        nonlocal analyzer
+        hist.add(ctx)
+        if len(hist) < 40:
+            return {"status": "warming", "bars": len(hist)}
+        if analyzer[0] is None:
+            from trading_bot.improvements.forecast_improvements import (
+                data_feed_quality as dfq)
+            import inspect as _in
+            # find the analyzer class that owns calculate_volume_profile
+            for _, obj in vars(dfq).items():
+                if isinstance(obj, type) and hasattr(
+                        obj, "calculate_volume_profile"):
+                    try:
+                        analyzer[0] = obj()
+                    except Exception:
+                        analyzer[0] = obj({})
+                    break
+            if analyzer[0] is None:
+                return {"status": "no_analyzer"}
+        prof = analyzer[0].calculate_volume_profile(_bars_obj())
+        if prof is None:
+            return {"status": "no_profile"}
+        price = _num(ctx.get("close") or ctx.get("price")) or 0.0
+        in_va = prof.value_area_low <= price <= prof.value_area_high
+        direction = None
+        if price and not in_va:
+            direction = "BUY" if price < prof.value_area_low else "SELL"
+        return {
+            "poc": prof.poc,
+            "value_area_high": prof.value_area_high,
+            "value_area_low": prof.value_area_low,
+            "in_value_area": in_va,
+            "dist_to_poc_pct": round(
+                (prof.poc - price) / price * 100, 4) if price else None,
+            "direction": direction,
+        }
+
+    return AdvisoryModuleAdapter("volume_profile", analyze)
+
+
+
 def _peer_correlation_service() -> AdvisoryModuleAdapter:
     """Peer-symbol correlation + lead/lag — the first cross-asset
     analyzer. Consumes obs['peer_close'] fed by the runners
@@ -4699,6 +4760,7 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("indicators_adv_technical", _indicators_adv_technical_service),
     ("indicators_liquidity", _indicators_liquidity_service),
     ("peer_correlation", _peer_correlation_service),
+    ("volume_profile", _volume_profile_service),
     ("upgrades_change_detect", _upgrades_change_detect_service),
     ("analysis_unified_analyzer", _unified_analyzer_service),
     ("hypernetwork_regime", _hypernetwork_regime_service),
