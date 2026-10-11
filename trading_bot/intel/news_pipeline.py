@@ -302,7 +302,10 @@ class NewsPipeline:
                 "pageSize": 100
             }
             
-            response = requests.get(url, params=params)
+            if requests is None:
+                logger.error("requests module is not available")
+                return []
+            response = await asyncio.to_thread(requests.get, url, params=params)
             data = response.json()
             
             if response.status_code != 200:
