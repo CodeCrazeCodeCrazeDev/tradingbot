@@ -21,6 +21,7 @@ async def test_e2e_pipeline_full_path():
     shield_report = MagicMock()
     shield_report.decision = GovernanceDecision.APPROVED
     shield.validate_action.return_value = shield_report
+    shield.audit_log_action.return_value = {"approved": True, "decision": "APPROVED"}
 
     # Mock Hypothesis Generation
     mock_branch = MagicMock()
