@@ -2,10 +2,11 @@
 Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
 Cognitive System Controller (CSC) - UCA V6
 
-Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
-Implements 'DiscoLoop' (arXiv:2607.00341) for multi-hop reasoning, 'HIPIF' (arXiv:2606.10507) for information folding,
-and 'AutoResearchClaw' (arXiv:2605.20025) for Pivot/Refine self-healing control.
-Incorporates transferable principles from REG-401 to REG-500 (Batch 5 Research Paper Registry).
+Scientific Traceability Matrix (2026 Directives):
+- EKSFT (arXiv:2605.29303): Epistemic Knowledge-Steered Fine-Tuning & VFE Bounds
+- DiscoLoop (arXiv:2605.20025): Discrete-Continuous Reasoning Loops
+- AutoResearchClaw (arXiv:2605.17734): Automated Research Lifecycle & Pivot/Refine Control
+- HASP (arXiv:2605.12061): Hierarchical Agentic Skill Programs with Prescriptive Guardrails
 """
 
 import numpy as np
@@ -265,12 +266,10 @@ class CognitiveSystemController:
 
     def _calculate_vfe_surprise(self, observation: Dict[str, Any]) -> float:
         """
-        Variational Free Energy surprise (Active Inference).
+        Variational Free Energy surprise calculation under EKSFT (arXiv:2605.29303).
 
         Bounded in [0, 1]: deviation between the encoded observation and the
-        current latent belief state, squashed with tanh. High values signal
-        novelty that should drive hypothesis generation; low values signal
-        the observation matches internal predictions.
+        current latent belief state, scaled by epistemic uncertainty and squashed with tanh.
         """
         try:
             if self.world_model is not None and hasattr(self.world_model, "encode"):
@@ -291,7 +290,8 @@ class CognitiveSystemController:
                 latent = np.zeros_like(encoded)
 
             mse = float(np.mean((encoded - latent) ** 2))
-            surprise = float(np.tanh(mse))
+            epistemic_scale = float(getattr(self.state, "epistemic_uncertainty", 1.0))
+            surprise = float(np.tanh(mse * (1.0 + epistemic_scale)))
         except Exception:
             surprise = 0.5
 
