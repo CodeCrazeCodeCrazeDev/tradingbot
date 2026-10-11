@@ -1,11 +1,15 @@
 """
-Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
-Cognitive System Controller (CSC) - UCA V6
+Cognitive System Controller (CSC) - UCA V6 Authoritative Brain
 
-Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
-Implements 'DiscoLoop' (arXiv:2607.00341) for multi-hop reasoning, 'HIPIF' (arXiv:2606.10507) for information folding,
-and 'AutoResearchClaw' (arXiv:2605.20025) for Pivot/Refine self-healing control.
-Incorporates transferable principles from REG-401 to REG-500 (Batch 5 Research Paper Registry).
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Epistemic Knowledge-Steered Fine-Tuning & Uncertainty Quantification.
+- arXiv:2607.00341 (LogAct / DiscoLoop): Total-Order Log Consensus & Discrete-Continuous Loop Recurrence.
+- arXiv:2607.01224 (CORAL / AutoMem): Active Inference Variational Free Energy & Metamemory Schema Adaptation.
+- arXiv:2605.12061 (Search-R1 / SAGE): Search-Augmented Reasoning & Self-Evolving Graph-Memory Retrieval.
+- arXiv:2605.10813 (NanoResearch): Compact Multi-Agent Research Execution & Role Scorecard Debate.
+- arXiv:2605.20025 (S2L / AutoResearchClaw): Behavioral Latent Routing, Pivot/Refine Loops & Self-Healing Execution.
+- arXiv:2605.17734 (HASP): Executable Skill Programs & Hard Safety Guardrail Interceptors.
+- arXiv:2605.21482 (DeepWeb-Bench): Calibration Evaluation (ECE) & Multi-Source Referencing Audit.
 """
 
 import numpy as np
@@ -90,11 +94,15 @@ class CognitiveSystemController:
     Implements 12-step Recursive Active Inference.
     Supports backward compatibility for legacy positional signatures.
 
-    Scientific Traceability:
-    - LogAct (arXiv:2605.29303): Byzantine consensus over decision_bus
-    - DiscoLoop (arXiv:2605.20025): Discrete-continuous reasoning iteration
-    - HASP (arXiv:2605.12061): Prescriptive guardrail skill verification
-    - AutoResearchClaw (arXiv:2605.17734): Pivot/Refine hypothesis loops
+    Paper Traceability Matrix:
+    - arXiv:2605.29303 (EKSFT): Epistemic uncertainty quantification & masking limits.
+    - arXiv:2607.00341 (LogAct / DiscoLoop): Discrete-continuous loop recurrence & shared log.
+    - arXiv:2607.01224 (CORAL / AutoMem): Variational free energy minimization & active inference.
+    - arXiv:2605.12061 (Search-R1 / SAGE): Multi-hop evidence graph search & hypothesis generation.
+    - arXiv:2605.10813 (NanoResearch): Dynamic multi-agent scorecards & evidence debate.
+    - arXiv:2605.20025 (S2L / AutoResearchClaw): Strategy pivot/refine self-healing control.
+    - arXiv:2605.17734 (HASP): Non-bypassable executable guardrail interceptors.
+    - arXiv:2605.21482 (DeepWeb-Bench): Expected calibration error (ECE) verification.
     """
 
     _instance = None
@@ -261,7 +269,11 @@ class CognitiveSystemController:
 
     @property
     def variational_free_energy(self) -> float:
-        return 0.15
+        return float(self.vfe_history[-1]) if self.vfe_history else 0.15
+
+    def calculate_variational_free_energy(self, observation: Dict[str, Any]) -> float:
+        """Active Inference Variational Free Energy calculation (arXiv:2607.01224)."""
+        return self._calculate_vfe_surprise(observation)
 
     def _calculate_vfe_surprise(self, observation: Dict[str, Any]) -> float:
         """
