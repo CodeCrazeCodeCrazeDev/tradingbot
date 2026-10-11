@@ -40,7 +40,14 @@ class ReliabilityTracker:
         """
         agent_regime_metrics = self.metrics.get(agent_id, {}).get(regime)
         if not agent_regime_metrics or agent_regime_metrics.total_predictions < 10:
-            return 1.0 # Default weight for new/untracked agents
+            # Trust ramp: unmeasured influence must sit below proven-good
+            # (~1.5+) but above proven-bad (~0.1). A flat 1.0 floor let
+            # untested advisors out-vote measured-bad ones; ramping
+            # 0.5 -> 1.0 across n preserves a uniform start (the tilt is
+            # normalized, so an all-new stack still votes) while new
+            # entrants can no longer out-influence a measured advisor.
+            n = agent_regime_metrics.total_predictions if agent_regime_metrics else 0
+            return 0.5 + 0.05 * n
 
         # Higher calibration error -> Lower weight
         # Higher precision -> Higher weight
