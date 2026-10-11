@@ -1458,8 +1458,16 @@ class CognitiveSystemController:
                 direction = str(c.get("direction") or "").upper()
                 if direction not in ("BUY", "SELL"):
                     continue
+                aid = str(c.get("capability_id"))
+                # Regime-conditional eligibility: a measured-below-
+                # chance advisor votes evidence-only here — direction
+                # dropped, not inverted (inverting would fit the same
+                # data that measured it).
+                if not self.reliability_tracker.eligible_direction(
+                        aid, regime):
+                    continue
                 w = self.reliability_tracker.get_agent_weight(
-                    str(c.get("capability_id")), regime)
+                    aid, regime)
                 conf = float(c.get("confidence") or 0.5)
                 num += w * conf * (1.0 if direction == action else -1.0)
                 den += w * conf

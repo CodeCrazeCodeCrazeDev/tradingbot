@@ -54,6 +54,26 @@ class ReliabilityTracker:
         reliability_score = agent_regime_metrics.precision * (1.0 - agent_regime_metrics.calibration_error)
         return max(0.1, min(2.0, reliability_score * 2.0))
 
+    # Regime-conditional directional eligibility: an advisor whose
+    # measured precision in a regime is significantly below chance is
+    # demoted to evidence-only — its direction stops voting in that
+    # regime rather than dragging consensus. 0.35 sits ~2 SEs below
+    # 0.5 at n=10, so noise doesn't flip eligibility; n<10 stays
+    # eligible (the trust ramp governs unmeasured influence).
+    DIRECTION_MIN_PRECISION = 0.35
+    DIRECTION_MIN_SAMPLES = 10
+
+    def eligible_direction(self, agent_id: str, regime: str) -> bool:
+        """False when the agent's measured regime precision is
+        significantly below chance — systematically-wrong votes are
+        evidence, not signal. (Inverting them is a research question,
+        not a live path — it would double-count the same data that
+        measured them.)"""
+        m = self.metrics.get(agent_id, {}).get(regime)
+        if not m or m.total_predictions < self.DIRECTION_MIN_SAMPLES:
+            return True
+        return m.precision >= self.DIRECTION_MIN_PRECISION
+
     def update_metrics(self, agent_id: str, regime: str, was_correct: bool, confidence: float):
         """
         Updates metrics after a trade outcome is known.
