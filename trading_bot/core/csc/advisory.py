@@ -2966,6 +2966,47 @@ def _institutional_footprint_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("institutional_entry_footprint", analyze)
 
 
+def _indicators_liquidity_service() -> AdvisoryModuleAdapter:
+    """indicators CVD + AbsorptionExhaustionRatio — cumulative volume
+    delta approximated honestly from bar direction (close>open -> +vol)
+    and absorption-vs-exhaustion balance. Direction = sign of the CVD
+    slope over the last 10 bars; slope near zero abstains."""
+    import pandas as _pd
+    from trading_bot.indicators.advanced_liquidity import (
+        CVDMultiTimeframe, AbsorptionExhaustionRatio)
+
+    cvd = CVDMultiTimeframe()
+    aer = AbsorptionExhaustionRatio()
+    hist = _BarHistory(128)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 30:
+            return {"status": "warming", "bars": len(hist)}
+        df = _pd.DataFrame(hist.bars())
+        cvd_series = cvd.calculate_cvd(df)
+        slope = (float(cvd_series.iloc[-1]) - float(cvd_series.iloc[-10]))             if len(cvd_series) >= 10 else 0.0
+        vols = df["volume"].astype(float)
+        vsum = float(vols.iloc[-10:].sum()) or 1.0
+        rel = slope / vsum
+        aer_val = aer.calculate(df)
+        last_aer = float(aer_val.iloc[-1]) if len(aer_val) else 0.0
+        direction = None
+        if rel > 0.05:
+            direction = "BUY"
+        elif rel < -0.05:
+            direction = "SELL"
+        return {
+            "cvd_slope_rel_10": round(rel, 4),
+            "absorption_exhaustion_ratio": round(last_aer, 4),
+            "note": "cvd approximated from bar direction",
+            "direction": direction,
+        }
+
+    return AdvisoryModuleAdapter("indicators_liquidity", analyze)
+
+
+
 def _indicators_adv_technical_service() -> AdvisoryModuleAdapter:
     """indicators AdvancedTechnicalIndicators — Hurst regime, SuperTrend
     direction, TTM squeeze momentum, KAMA/Kalman on real OHLC bars.
@@ -4610,6 +4651,7 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("spai_trend_reversal", _spai_trend_reversal_service),
     ("deepchart_price_response", _deepchart_price_response_service),
     ("indicators_adv_technical", _indicators_adv_technical_service),
+    ("indicators_liquidity", _indicators_liquidity_service),
     ("upgrades_change_detect", _upgrades_change_detect_service),
     ("analysis_unified_analyzer", _unified_analyzer_service),
     ("hypernetwork_regime", _hypernetwork_regime_service),
@@ -4970,7 +5012,7 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
      "collaborators; rest is offline enhancement tooling"),
     ("analytics", "alpha_decay attached; emotional/psychological "
      "trackers need trade-action history, not observations"),
-    ("indicators", "iceberg_detector + adv_technical (hurst/supertrend/ttm_squeeze) attached; advanced_ml remainder "
+    ("indicators", "iceberg_detector + adv_technical + liquidity (cvd/absorption) attached; advanced_ml remainder "
      "ships unfitted models"),
     ("market_teacher", "momentum_specialist attached; teacher/learning "
      "framework remainder is pedagogy, not market analysis"),
