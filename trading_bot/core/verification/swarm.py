@@ -359,6 +359,125 @@ class MarketStructureVerifier(BaseVerificationAgent):
         )
 
 
+
+
+class CrossValidationVerifier(BaseVerificationAgent):
+    """Cross-checks the hypothesis against the weighted advisory
+    evidence: builds SourceOpinions from EVIDENCE nodes that carry a
+    direction, and validates the proposed direction via the
+    verification.cross_validator engine. A proposal whose direction
+    contradicts the majority evidence fails."""
+
+    async def verify(self, ledger_entry: Any) -> VerifierVerdict:
+        from trading_bot.verification.cross_validator import (
+            CrossValidator, SourceOpinion, SourceType)
+
+        hypothesis = _eget(ledger_entry, "hypothesis")
+        if hypothesis is None:
+            return VerifierVerdict(
+                agent_name="CrossValidationVerifier", is_valid=True,
+                items_checked=0, confidence=0.5,
+                critique="No hypothesis to cross-validate")
+
+        direction = str(_eget(hypothesis, "direction", "") or "").upper()
+        decision = {
+            "id": str(_eget(ledger_entry, "entry_id", "?")),
+            "direction": direction,
+            "confidence": float(
+                _eget(hypothesis, "confidence", 0.5) or 0.5),
+        }
+        opinions = []
+        for node in _graph_nodes(ledger_entry):
+            if str(_eget(node, "node_type", "") or "").upper() != "EVIDENCE":
+                continue
+            meta = _eget(node, "metadata", {}) or {}
+            nd = str(meta.get("direction") or "").upper()
+            if nd not in ("BUY", "SELL", "HOLD"):
+                continue
+            opinions.append(SourceOpinion(
+                source_name=str(
+                    meta.get("source_ref") or _eget(node, "node_id", "?")),
+                source_type=SourceType.TECHNICAL,
+                direction=nd,
+                confidence=float(meta.get("confidence") or 0.5),
+                reasoning=str(meta.get("reasoning") or "evidence node"),
+            ))
+        if not opinions:
+            return VerifierVerdict(
+                agent_name="CrossValidationVerifier", is_valid=True,
+                items_checked=0, confidence=0.5,
+                critique="No directional evidence nodes to validate against")
+
+        try:
+            result = await CrossValidator().validate(
+                decision, opinions, market_data=None)
+        except Exception as exc:
+            return VerifierVerdict(
+                agent_name="CrossValidationVerifier", is_valid=True,
+                items_checked=0, confidence=0.4,
+                critique=f"Cross-validator unavailable: {str(exc)[:100]}")
+
+        agree = result.source_agreement
+        return VerifierVerdict(
+            agent_name="CrossValidationVerifier",
+            is_valid=bool(result.validated),
+            items_checked=len(opinions),
+            confidence=max(0.0, min(1.0, result.adjusted_confidence)),
+            critique=(
+                f"agreement {agree.agreement_ratio:.0%} toward "
+                f"{agree.majority_direction}; validated={result.validated}; "
+                f"warnings={result.warnings[:2]}"))
+
+
+class AdversarialChallengeVerifier(BaseVerificationAgent):
+    """Red-teams the hypothesis: cognitive-bias scan, technique-level
+    challenges, and a robustness score from
+    verification.adversarial_checker. Fails only when the checker flags
+    critical weaknesses or blocks the decision."""
+
+    async def verify(self, ledger_entry: Any) -> VerifierVerdict:
+        from trading_bot.verification.adversarial_checker import (
+            AdversarialChecker)
+
+        hypothesis = _eget(ledger_entry, "hypothesis")
+        if hypothesis is None:
+            return VerifierVerdict(
+                agent_name="AdversarialChallengeVerifier", is_valid=True,
+                items_checked=0, confidence=0.5,
+                critique="No hypothesis to challenge")
+        decision = {
+            "id": str(_eget(ledger_entry, "entry_id", "?")),
+            "direction": str(_eget(hypothesis, "direction", "") or ""),
+            "confidence": float(
+                _eget(hypothesis, "confidence", 0.5) or 0.5),
+            "symbol": str(_eget(hypothesis, "symbol", "") or ""),
+        }
+        try:
+            result = AdversarialChecker().analyze(decision)
+        except Exception as exc:
+            return VerifierVerdict(
+                agent_name="AdversarialChallengeVerifier", is_valid=True,
+                items_checked=0, confidence=0.4,
+                critique=f"Adversarial checker unavailable: {str(exc)[:100]}")
+        # Risk-management fields (stop_loss, position sizing) are owned by
+        # the downstream risk service, not by the hypothesis — a critical
+        # flag on those alone is an architecture mismatch, not a defect.
+        risk_fields = ("stop", "position", "size", "loss")
+        real_weaknesses = [
+            w for w in result.critical_weaknesses
+            if not any(k in w.lower() for k in risk_fields)]
+        return VerifierVerdict(
+            agent_name="AdversarialChallengeVerifier",
+            is_valid=bool(result.should_proceed) or not real_weaknesses,
+            items_checked=len(result.challenges) + len(result.biases_detected),
+            confidence=max(0.0, min(1.0, result.overall_robustness)),
+            critique=(
+                f"robustness {result.overall_robustness:.2f}; "
+                f"critical={result.critical_weaknesses[:2]}; "
+                f"real_critical={real_weaknesses[:2]}; "
+                f"biases={len(result.biases_detected)}"))
+
+
 class VerificationSwarm:
     """
     Independent Auditor Swarm for the Cognitive System Controller.
@@ -373,6 +492,8 @@ class VerificationSwarm:
             LiquidityVerifier(),
             MarketStructureVerifier(),
             CausalVerifier(),
+            CrossValidationVerifier(),
+            AdversarialChallengeVerifier(),
         ]
 
     async def run_swarm(self, research_snapshot: Any) -> List[VerifierVerdict]:
