@@ -10,7 +10,15 @@ import subprocess
 import sys
 import logging
 import importlib
-import pkg_resources
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    importlib_metadata = None
+
+try:
+    import pkg_resources
+except ImportError:
+    pkg_resources = None
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 from dataclasses import dataclass
@@ -313,20 +321,38 @@ class AutoDependencyManager:
             module = importlib.import_module(import_name)
             
             try:
-                # Get installed version
-                installed_version = pkg_resources.get_distribution(dep_info.name).version
+                installed_version = None
+                if importlib_metadata is not None:
+                    try:
+                        installed_version = importlib_metadata.version(dep_info.name)
+                    except importlib_metadata.PackageNotFoundError:
+                        pass
+
+                if installed_version is None and pkg_resources is not None:
+                    try:
+                        installed_version = pkg_resources.get_distribution(dep_info.name).version
+                    except pkg_resources.DistributionNotFound:
+                        pass
+
+                if installed_version is None:
+                    # Module exists and was imported successfully
+                    return DependencyStatus.INSTALLED
+
                 dep_info.installed_version = installed_version
                 
                 # Check if version meets requirements
-                if dep_info.required_version:
-                    req = pkg_resources.Requirement.parse(f"{dep_info.name}{dep_info.required_version}")
-                    if installed_version not in req:
-                        return DependencyStatus.OUTDATED
+                if dep_info.required_version and pkg_resources is not None:
+                    try:
+                        req = pkg_resources.Requirement.parse(f"{dep_info.name}{dep_info.required_version}")
+                        if installed_version not in req:
+                            return DependencyStatus.OUTDATED
+                    except Exception:
+                        pass
                 
                 return DependencyStatus.INSTALLED
                 
-            except pkg_resources.DistributionNotFound:
-                # Module exists but not installed via pip (e.g., built-in)
+            except Exception:
+                # Module exists but distribution info error
                 return DependencyStatus.INSTALLED
                 
         except ImportError:
