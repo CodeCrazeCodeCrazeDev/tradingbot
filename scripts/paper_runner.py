@@ -23,7 +23,7 @@ import sqlite3
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -33,8 +33,23 @@ logger = logging.getLogger("paper_runner")
 DEFAULT_STATE_DIR = PROJECT_ROOT / "var" / "paper"
 
 
+def _load_htf_bars(db_path: Path, symbol: str, timeframe: str
+                   ) -> List[Tuple[str, float]]:
+    """All (timestamp, close) rows for a second timeframe — loaded once so
+    the M15 replay can attach point-in-time higher-timeframe context."""
+    con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+    try:
+        return con.execute(
+            "SELECT timestamp, close FROM market_data "
+            "WHERE symbol=? AND timeframe=? ORDER BY timestamp ASC",
+            (symbol, timeframe)).fetchall()
+    finally:
+        con.close()
+
+
 def db_observations(db_path: Path, symbol: str, timeframe: str,
-                    skip: int = 0) -> Iterator[Dict[str, Any]]:
+                    skip: int = 0, htf_timeframe: str = ""
+                    ) -> Iterator[Dict[str, Any]]:
     """Replay market_data.db rows read-only as raw observations.
 
     timeframe must be filtered — the table holds M15+H1 rows for the same
@@ -42,7 +57,17 @@ def db_observations(db_path: Path, symbol: str, timeframe: str,
     silently corrupts return/volatility features at every seam.
     ``skip`` drops the first N matching bars so parallel runs can cover
     disjoint historical windows.
+
+    ``htf_timeframe`` (e.g. "H1") attaches point-in-time higher-timeframe
+    context to each obs: htf_close, htf_rsi14, htf_trend (return over the
+    last 10 completed higher-TF bars). Only bars CLOSED at or before the
+    current timestamp are used — no lookahead.
     """
+    htf = _load_htf_bars(db_path, symbol, htf_timeframe) \
+        if htf_timeframe else []
+    htf_idx = 0          # next htf bar not yet released
+    htf_closes: List[float] = []  # released closes, in order
+
     con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
     try:
         for ts, o, h, l, c, v in con.execute(
@@ -54,8 +79,28 @@ def db_observations(db_path: Path, symbol: str, timeframe: str,
             if skip > 0:
                 skip -= 1
                 continue
-            yield {"symbol": symbol, "timestamp": ts, "open": o, "high": h,
+            obs = {"symbol": symbol, "timestamp": ts, "open": o, "high": h,
                    "low": l, "close": c, "volume": v, "price": c}
+            while htf_idx < len(htf) and htf[htf_idx][0] <= ts:
+                htf_closes.append(htf[htf_idx][1])
+                htf_idx += 1
+            if htf_closes:
+                obs["htf_close"] = htf_closes[-1]
+                obs["htf_bars"] = len(htf_closes)
+                if len(htf_closes) > 10:
+                    obs["htf_trend"] = (
+                        (htf_closes[-1] - htf_closes[-11])
+                        / htf_closes[-11])
+                if len(htf_closes) > 14:
+                    ds = [htf_closes[i] - htf_closes[i - 1]
+                          for i in range(len(htf_closes) - 14,
+                                         len(htf_closes))]
+                    gains = sum(d for d in ds if d > 0)
+                    losses = -sum(d for d in ds if d < 0)
+                    obs["htf_rsi14"] = (
+                        100.0 - 100.0 / (1.0 + gains / losses)
+                        if losses > 0 else 100.0)
+            yield obs
     finally:
         con.close()
 
@@ -211,7 +256,8 @@ async def run(args: argparse.Namespace) -> int:
 
     if args.source == "db":
         source = db_observations(PROJECT_ROOT / "market_data.db",
-                                 args.symbol, args.timeframe, args.skip)
+                                 args.symbol, args.timeframe, args.skip,
+                                 args.htf_timeframe)
     else:
         source = synthetic_observations(args.symbol, args.cycles or 200,
                                         args.seed)
@@ -314,6 +360,10 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--skip", type=int, default=0,
                         help="db source only: drop the first N bars of the "
                              "filtered timeframe (segments parallel runs)")
+    parser.add_argument("--htf-timeframe", default="",
+                        help="db source only: attach point-in-time higher-"
+                             "timeframe context (htf_close/htf_trend/htf_rsi14) "
+                             "from this timeframe's closed bars — e.g. H1")
     parser.add_argument("--cycles", type=int, default=200)
     parser.add_argument("--spread-bps", type=float, default=2.0)
     parser.add_argument("--slippage-bps", type=float, default=1.25)

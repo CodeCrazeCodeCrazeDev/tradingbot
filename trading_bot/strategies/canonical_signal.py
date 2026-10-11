@@ -111,10 +111,22 @@ class CanonicalSignalGenerator:
         votes = self._component_votes()
         votes["rsi_fade"] = round(rsi_fade, 4)
 
+        # Higher-timeframe alignment (real point-in-time context when the
+        # runner feeds --htf-timeframe): an agreeing HTF trend sharpens
+        # the composite; a conflicting one dampens it. Absent → neutral.
+        htf = market.get("htf_trend")
+        htf_c = 0.0
+        if isinstance(htf, (int, float)) and not isinstance(htf, bool):
+            htf_c = max(-1.0, min(1.0, float(htf) * 200.0))
+            votes["htf_trend"] = round(htf_c, 4)
+
         follow = er_val >= self.follow_er
         fade_w, mom_w = (0.25, 0.75) if follow else (0.75, 0.25)
         fade = (votes["z_fade"] + votes["rsi_fade"]) / 2.0
         vote = fade_w * fade + mom_w * votes["momentum"]
+        if htf is not None and isinstance(htf, (int, float)) \
+                and not isinstance(htf, bool):
+            vote = 0.8 * vote + 0.2 * htf_c
         regime = "persistent" if follow else "chop"
 
         if abs(vote) < self.min_vote:
