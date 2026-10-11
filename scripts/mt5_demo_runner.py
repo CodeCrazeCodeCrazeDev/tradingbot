@@ -160,7 +160,7 @@ async def _connect_feed_adapter(args: argparse.Namespace) -> Any:
 
 def _seed_warmup(runtime: Any, symbol: str, bars: Any) -> int:
     """Seed derived-feature windows from closed bars without decision cycles."""
-    closes = [float(bar["close"]) for bar in (bars or [])
+    closes = [float(bar["close"]) for bar in (bars if bars is not None else [])
               if float(bar["close"]) > 0]
     csc = getattr(runtime.bot, "csc", None)
     if csc is not None and hasattr(csc, "seed_observation_history"):
