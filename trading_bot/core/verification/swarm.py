@@ -543,6 +543,72 @@ class CalibrationVerifier(BaseVerificationAgent):
                 f"{float(measured):.2f} "+
                 f"(gap {gap:+.2f}, n={n})"))
 
+class DecisionChainVerifier(BaseVerificationAgent):
+    """Runs the full trading_bot/verification DecisionVerificationChain
+    on the hypothesis — 6-stage hallucination detection (grounding,
+    logical consistency, cross-source, historical accuracy, adversarial
+    questioning, confidence calibration, reality anchor). Overlapping
+    stages are redundant but cheap; the unique ones catch magnitude
+    errors, temporal impossibilities and invented patterns the swarm
+    otherwise misses."""
+
+    _TIMEOUT_S = 20.0
+
+    def __init__(self) -> None:
+        from trading_bot.verification.decision_verification_chain import (
+            DecisionVerificationChain)
+        self._chain = DecisionVerificationChain()
+
+    async def verify(self, ledger_entry: Any) -> VerifierVerdict:
+        from trading_bot.verification.decision_verification_chain import (
+            DecisionAction)
+        hypothesis = _eget(ledger_entry, "hypothesis")
+        try:
+            claimed = float(_eget(ledger_entry, "composite_confidence", 0.5))
+        except (TypeError, ValueError):
+            claimed = 0.5
+        decision = {
+            "id": str(_eget(ledger_entry, "entry_id", "?")),
+            "direction": str(
+                _eget(hypothesis, "direction", "") or "").upper() or "HOLD",
+            "confidence": claimed,
+            "reasoning": " | ".join(
+                str(s) for s in (
+                    _eget(ledger_entry, "reasoning_steps", []) or [])[:8]),
+            "evidence_count": len(_graph_nodes(ledger_entry) or ()),
+        }
+        md = _eget(ledger_entry, "market_data", None)
+        market_data = dict(md) if isinstance(md, dict) else None
+        try:
+            result = await asyncio.wait_for(
+                self._chain.verify_decision(decision, market_data),
+                timeout=self._TIMEOUT_S)
+        except Exception as exc:  # noqa: BLE001
+            return VerifierVerdict(
+                agent_name="DecisionChainVerifier", is_valid=True,
+                items_checked=0, confidence=0.4,
+                critique=f"chain unavailable: {str(exc)[:100]}")
+        status = getattr(result, "overall_status", None)
+        action = getattr(result, "recommended_action", None)
+        stage_results = list(
+            getattr(result, "stage_results", ()) or ())
+        n_pass = sum(1 for s in stage_results
+                     if getattr(s, "passed", False))
+        # Veto only on the chain's own REJECT action — its unsupported-
+        # claim findings assume a claims/counter-evidence structure our
+        # ledger entries don't carry, so SUSPICIOUS/MODIFY stay advisory.
+        is_valid = action != DecisionAction.REJECT
+        return VerifierVerdict(
+            agent_name="DecisionChainVerifier",
+            is_valid=bool(is_valid),
+            items_checked=len(stage_results),
+            confidence=max(0.0, min(1.0, float(
+                getattr(result, "overall_confidence", 0.5) or 0.5))),
+            critique=(
+                f"status={status} action={action} stages_passed="
+                f"{n_pass}/{len(stage_results)}"))
+
+
 class VerificationSwarm:
     """
     Independent Auditor Swarm for the Cognitive System Controller.
@@ -560,6 +626,7 @@ class VerificationSwarm:
             CrossValidationVerifier(),
             AdversarialChallengeVerifier(),
             CalibrationVerifier(),
+            DecisionChainVerifier(),
         ]
 
     def record_outcome(self, confidence: float, was_correct: bool) -> None:
