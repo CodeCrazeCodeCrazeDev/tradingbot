@@ -351,6 +351,24 @@ def _predict_logistic(obs: Mapping[str, Any], params: Dict[str, Any]
     return None
 
 
+def _bootstrap_significance(signal_returns: List[float], n_boot: int = 5000,
+                            seed: int = 7) -> Dict[str, Any]:
+    """ASRS Promotion Gate standard: paired bootstrap on the out-of-sample
+    net-return series. Returns P(mean_return > 0) and the 95% CI — the
+    gate requires significance, not just a positive sample mean."""
+    arr = np.asarray(signal_returns, dtype=float)
+    arr = arr[~np.isnan(arr)]
+    if len(arr) < 5:
+        return {"p_gt_0": 0.0, "ci95": [0.0, 0.0], "n": int(len(arr))}
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(arr), size=(n_boot, len(arr)))
+    means = arr[idx].mean(axis=1)
+    return {"p_gt_0": float(np.mean(means > 0)),
+            "ci95": [float(np.quantile(means, 0.025)),
+                     float(np.quantile(means, 0.975))],
+            "n": int(len(arr))}
+
+
 def evaluate_holdout(spec: Dict[str, Any], params: Dict[str, Any],
                      holdout: List[Dict[str, Any]],
                      horizon: int = 8) -> Dict[str, Any]:
@@ -358,6 +376,7 @@ def evaluate_holdout(spec: Dict[str, Any], params: Dict[str, Any],
     expectancy after the cost model — accuracy alone is not success."""
     n_calls = wins = 0
     ret = 0.0
+    signal_returns: List[float] = []
     for i, o in enumerate(holdout):
         r = _forward_return(holdout, i, horizon)
         if r is None:
@@ -379,15 +398,24 @@ def evaluate_holdout(spec: Dict[str, Any], params: Dict[str, Any],
         signed = r if pred == "BUY" else -r
         net = signed - COST_BPS * 1e-4
         ret += net
+        signal_returns.append(net)
         if signed > 0:
             wins += 1
-    return {
+    result = {
         "holdout_signals": n_calls,
         "accuracy": (wins / n_calls) if n_calls else None,
         "net_return": ret,
         "mean_net_bps": (ret / n_calls * 1e4) if n_calls else None,
         "horizon": horizon,
     }
+    result["significance"] = _bootstrap_significance(signal_returns)
+    return result
+
+
+# Promotion-gate significance bar for advisory candidates (ASRS asks
+# P(Δ>0) >= 0.95 for production promotion; advisory candidates earn only
+# trust-ramp influence, so 0.90 is the honest bar for a voting slot).
+SIGNIFICANCE_THRESHOLD = 0.90
 
 
 def fit_candidate(spec: Dict[str, Any], train: List[Dict[str, Any]]
@@ -478,6 +506,61 @@ def candidate_adapter(candidate: ModelCandidate) -> Any:
                 "evidence": evidence, "advisory_only": True}
 
     return AdvisoryModuleAdapter(f"engineered:{candidate.name}", analyze)
+
+
+def benjamini_hochberg(p_values: List[float], q: float = 0.05
+                       ) -> List[bool]:
+    """BH procedure (ASRS FDR standard): when m candidates are validated
+    in parallel, only the ones surviving FDR control may be promoted —
+    the rest are multiple-comparison luck, not edge."""
+    m = len(p_values)
+    order = sorted(range(m), key=lambda i: p_values[i])
+    passed = [False] * m
+    k_max = -1
+    for k, i in enumerate(order, start=1):
+        if p_values[i] <= (k / m) * q:
+            k_max = k
+    for k, i in enumerate(order, start=1):
+        if k <= k_max:
+            passed[i] = True
+    return passed
+
+
+async def validate_alpha_generation(
+    csc: Any,
+    candidate_ids: List[str],
+    bars: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """Batch validation with FDR control (ASRS Promotion Gate): validate
+    every candidate on the same bars, then apply Benjamini-Hochberg on
+    the per-candidate p(Δ≤0). Survivors stay VALIDATED; the rest are
+    re-verdicted FDR_REJECTED — statistically, most 'wins' in a
+    generation sweep are luck."""
+    results: List[Dict[str, Any]] = []
+    p_values: List[float] = []
+    for cid in candidate_ids:
+        r = await csc.validate_model(cid, bars)
+        sig = (r.get("validation") or {}).get("significance") or {}
+        p = 1.0 - float(sig.get("p_gt_0") or 0.0)
+        p_values.append(p)
+        results.append({"candidate_id": cid, "status": r.get("status"),
+                        "p_le_0": p})
+    survivors = benjamini_hochberg(p_values)
+    n_survived = 0
+    for res, survived in zip(results, survivors):
+        res["fdr_survived"] = bool(survived)
+        c = csc._engineered_models.get(res["candidate_id"])
+        if c is not None and c.status == "VALIDATED" and not survived:
+            c.status = "REJECTED"
+            c.verdict = "FDR_REJECTED"
+            await csc._persist_audit_event(
+                event_type="MODEL_VALIDATION", action="fdr_gate",
+                outcome="FDR_REJECTED", correlation_id=res["candidate_id"],
+                details={"name": c.name, "p_le_0": res["p_le_0"]})
+        elif c is not None and survived:
+            n_survived += 1
+    return {"validated": n_survived, "tested": len(candidate_ids),
+            "candidates": results}
 
 
 async def propose_alpha_generation(

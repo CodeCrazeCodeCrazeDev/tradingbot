@@ -1098,7 +1098,8 @@ class CognitiveSystemController:
         on unseen data — accuracy alone does not qualify a model."""
         from .model_engineering import (evaluate_holdout, fit_candidate,
                                         HOLDOUT_FRACTION, MIN_HOLDOUT_SIGNALS,
-                                        MIN_EXPECTANCY_BPS)
+                                        MIN_EXPECTANCY_BPS,
+                                        SIGNIFICANCE_THRESHOLD)
         c = self._engineered_models.get(candidate_id)
         if c is None:
             return {"status": "error", "reason": "unknown candidate_id"}
@@ -1119,9 +1120,14 @@ class CognitiveSystemController:
             return {"status": "rejected", "reason": c.validation["error"]}
         c.fitted_params = params
         c.validation = evaluate_holdout(c.spec, params, holdout)
+        # Promotion Gate standard (ASRS): positive OOS net expectancy AND
+        # bootstrap significance P(Δ>0) >= threshold — a positive sample
+        # mean without significance is luck, not edge.
+        sig = (c.validation.get("significance") or {})
         ok = (c.validation["holdout_signals"] >= MIN_HOLDOUT_SIGNALS
               and isinstance(c.validation["mean_net_bps"], float)
-              and c.validation["mean_net_bps"] > MIN_EXPECTANCY_BPS)
+              and c.validation["mean_net_bps"] > MIN_EXPECTANCY_BPS
+              and float(sig.get("p_gt_0") or 0.0) >= SIGNIFICANCE_THRESHOLD)
         c.status = "VALIDATED" if ok else "REJECTED"
         c.verdict = "CONFIRMED" if ok else "FALSIFIED"
         await self._persist_audit_event(
