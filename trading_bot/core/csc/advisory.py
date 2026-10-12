@@ -1019,6 +1019,44 @@ def _optionality_service() -> AdvisoryModuleAdapter:
 
     return AdvisoryModuleAdapter("tamic_optionality", analyze)
 
+def _time_risk_service() -> AdvisoryModuleAdapter:
+    """tamic DrawdownSpeedMonitor + RecoveryDurationTracker — time-based
+    risk evidence: drawdown velocity, recovery duration, loss clustering.
+    Accumulates real price history itself (warm-up seeding fills it);
+    evidence only — it may not size or veto."""
+    from trading_bot.tamic.time_risk import (
+        DrawdownSpeedMonitor, RecoveryDurationTracker)
+    from trading_bot.tamic.core import TimeHorizon
+
+    monitor = DrawdownSpeedMonitor()
+    recovery = RecoveryDurationTracker()
+
+    async def analyze(ctx: Mapping[str, Any]) -> Any:
+        symbol = str(ctx.get("symbol") or "UNKNOWN")
+        price = _num(ctx.get("close") or ctx.get("price"))
+        if price is None or price <= 0:
+            return {"status": "no_data", "reason": "no price"}
+        try:
+            dd = await monitor.update(
+                symbol, TimeHorizon.INTRADAY, float(price))
+            rec = await recovery.update(
+                symbol, TimeHorizon.INTRADAY, float(price), dd or {})
+        except Exception as exc:  # noqa: BLE001
+            return {"status": "no_data", "reason": str(exc)[:100]}
+        return {
+            "drawdown": _payload(dd) if isinstance(
+                dd, Mapping) else {},
+            "recovery": _payload(rec) if isinstance(
+                rec, Mapping) else {},
+            "drawdown_velocity": str((dd or {}).get(
+                "drawdown_speed") or (dd or {}).get("speed") or ""),
+            "loss_clustering": (dd or {}).get("loss_clustering"),
+            "recovery_state": (rec or {}).get(
+                "recovery_classification") or (rec or {}).get("state"),
+        }
+
+    return AdvisoryModuleAdapter("tamic_time_risk", analyze)
+
 
 def _self_diagnostic_service() -> AdvisoryModuleAdapter:
     """self_diagnostic ComprehensiveDiagnosticSuite health score —
@@ -4624,6 +4662,7 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("tamic_market_time", _tamic_market_time_service),
     ("tamic_institutional_time", _institutional_time_service),
     ("tamic_optionality", _optionality_service),
+    ("tamic_time_risk", _time_risk_service),
     ("self_diagnostic_health", _self_diagnostic_service),
     ("aletheia_decision_audit", _aletheia_audit_service),
     ("superintelligence_regime_strategy", _superintel_regime_service),
