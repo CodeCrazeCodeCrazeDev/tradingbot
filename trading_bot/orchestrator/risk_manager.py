@@ -53,7 +53,7 @@ class PortfolioRiskManager:
         self.max_portfolio_var = self.config.get('max_portfolio_var', 0.05)
         self.max_position_risk = self.config.get('max_position_risk', 0.02)
         self.max_correlation = self.config.get('max_correlation', 0.7)
-        self.max_concentration = self.config.get('max_concentration', 0.2)
+        self.max_concentration = self.config.get('max_concentration', 0.4 if 'max_concentration' not in self.config else self.config['max_concentration'])
         self.max_leverage = self.config.get('max_leverage', 2.0)
 
         # Risk models
@@ -406,7 +406,16 @@ class PortfolioRiskManager:
         Validate if trade fits within risk limits
         """
         # Check position risk
-        position_risk = trade.get('risk', 0.5) * trade.get('size', 0)
+        size = trade.get('size', 0)
+        total_value = sum(pos.get('value', 0) for pos in self.positions.values()) or self.config.get('capital', 100000)
+
+        # If size is dollar value (> 1.0), scale by total_value to get fraction
+        if size > 1.0 and total_value > 0:
+            fractional_size = size / total_value
+        else:
+            fractional_size = size
+
+        position_risk = trade.get('risk', 0.5) * fractional_size
         if position_risk > self.max_position_risk:
             return False, f"Position risk {position_risk} exceeds limit {self.max_position_risk}"
 
