@@ -44,7 +44,7 @@ class AgentOrchestrator:
             logger.error(f"Initialization failed: {e}")
             return False
 
-    def process(self, data: Any) -> Any:
+    def process(self, data: Any = None) -> Any:
         """
         Main processing method
 
@@ -83,6 +83,24 @@ class AgentOrchestrator:
 def create_agent_orchestrator(config: Optional[Dict] = None) -> AgentOrchestrator:
     """Factory function to create AgentOrchestrator instance"""
     return AgentOrchestrator(config)
+
+
+def initialize(config: Optional[Dict] = None) -> bool:
+    """Module-level initialize helper"""
+    orchestrator = create_agent_orchestrator(config)
+    return orchestrator.initialize()
+
+
+def process(data: Any = None, config: Optional[Dict] = None) -> Any:
+    """Module-level process helper"""
+    orchestrator = create_agent_orchestrator(config)
+    return orchestrator.process(data)
+
+
+def get_status(config: Optional[Dict] = None) -> Dict:
+    """Module-level get_status helper"""
+    orchestrator = create_agent_orchestrator(config)
+    return orchestrator.get_status()
 
 
 if __name__ == "__main__":
