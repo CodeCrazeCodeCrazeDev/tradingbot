@@ -30,7 +30,135 @@ from typing import Any, Dict, List, Mapping, Optional
 
 import numpy as np
 
-ALLOWED_KINDS = ("threshold_rule", "logistic")
+ALLOWED_KINDS = ("threshold_rule", "logistic", "ga_expression")
+
+# --- alpha-grammar evaluator (subset of apex_fi GeneticAlphaSearch's
+# vocabulary, evaluated over rolling obs series — the bridge between the
+# quarantined generator and the gated candidate pipeline) ---
+GA_FIELDS = ("close", "volume", "high", "low", "vwap", "returns",
+             "log_returns", "volatility")
+
+
+def _expr_series(series: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    """Derived fields the grammar expects, from raw obs series."""
+    out = dict(series)
+    c = out.get("close")
+    h, l, v = out.get("high"), out.get("low"), out.get("volume")
+    if c is not None:
+        out["returns"] = np.diff(c, prepend=c[0]) / np.where(c == 0, 1, c)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            out["log_returns"] = np.diff(
+                np.log(np.where(c > 0, c, np.nan)), prepend=np.nan)
+        if h is not None and l is not None:
+            out["vwap"] = (h + l + c) / 3.0
+        if len(c) >= 10:
+            out["volatility"] = np.array([
+                float(np.std(out["returns"][max(0, i - 9):i + 1]))
+                for i in range(len(c))])
+    return out
+
+
+def _parse_expr(expr: str):
+    """Tiny recursive parser for the alpha grammar: op(...) chains or a
+    bare field name. Returns nested tuples: ('op', arg...) | ('field', n)."""
+    expr = expr.strip()
+    if expr in GA_FIELDS:
+        return ("field", expr)
+    if "(" not in expr:
+        return ("field", expr)
+    op, rest = expr.split("(", 1)
+    inner = rest.rsplit(")", 1)[0]
+    args, depth, cur = [], 0, ""
+    for ch in inner:
+        if ch == "," and depth == 0:
+            args.append(cur.strip()); cur = ""; continue
+        depth += (ch == "(") - (ch == ")")
+        cur += ch
+    if cur.strip():
+        args.append(cur.strip())
+    parsed = [a if a.lstrip("-").replace(".", "", 1).isdigit()
+              else _parse_expr(a) for a in args]
+    return (op.strip(), *parsed)
+
+
+def _eval_expr(ast, series: Dict[str, np.ndarray]) -> np.ndarray:
+    """Evaluate the expression AST elementwise over the series dict.
+    Unknown ops/fields produce NaN arrays — honest failure, not zeros."""
+    n = len(next(iter(series.values()))) if series else 1
+    if isinstance(ast, float) or isinstance(ast, int) or (
+            isinstance(ast, str) and ast.lstrip("-").replace(
+                ".", "", 1).isdigit()):
+        return np.full(n, float(ast))
+    tag = ast[0]
+    if tag == "field":
+        return np.asarray(series.get(ast[1], np.full(n, np.nan)),
+                          dtype=float)
+    args = [_eval_expr(a, series) for a in ast[1:]
+            if not (isinstance(a, str) and a.lstrip("-").replace(
+                ".", "", 1).isdigit())]
+    nums = [float(a) for a in ast[1:]
+            if isinstance(a, (int, float)) or (isinstance(a, str)
+                and a.lstrip("-").replace(".", "", 1).isdigit())]
+    w = int(nums[0]) if nums else 10
+    x = args[0]
+    nan = np.full(n, np.nan)
+    try:
+        if tag == "delta":
+            d = np.diff(x, prepend=np.nan)
+            return d
+        if tag == "zscore":
+            mu, sd = np.nanmean(x), np.nanstd(x)
+            return (x - mu) / sd if sd > 0 else nan
+        if tag == "rank":
+            valid = x[~np.isnan(x)]
+            if not len(valid):
+                return nan
+            order = np.argsort(np.argsort(valid))
+            ranks = np.full(n, np.nan)
+            ranks[~np.isnan(x)] = order / max(1, len(valid) - 1)
+            return ranks
+        if tag in ("ts_mean", "ts_std", "ts_min", "ts_max", "ts_rank",
+                   "decay_linear"):
+            fn = {"ts_mean": np.nanmean, "ts_std": np.nanstd,
+                  "ts_min": np.nanmin, "ts_max": np.nanmax}[tag] \
+                if tag != "ts_rank" else None
+            out = np.full(n, np.nan)
+            for i in range(n):
+                win = x[max(0, i - w + 1):i + 1]
+                win = win[~np.isnan(win)]
+                if not len(win):
+                    continue
+                if tag == "ts_rank":
+                    out[i] = float(np.mean(win <= x[i]))
+                elif tag == "decay_linear":
+                    weights = np.arange(1, len(win) + 1)
+                    out[i] = float(np.average(win, weights=weights))
+                else:
+                    out[i] = float(fn(win))
+            return out
+        if tag in ("correlation", "covariance") and len(args) >= 2:
+            y = args[1]
+            out = np.full(n, np.nan)
+            for i in range(n):
+                xs, ys = x[max(0, i - w + 1):i + 1], y[max(0, i - w + 1):i + 1]
+                m = ~(np.isnan(xs) | np.isnan(ys))
+                if m.sum() < 3:
+                    continue
+                out[i] = float(np.corrcoef(xs[m], ys[m])[0, 1]) \
+                    if tag == "correlation" \
+                    else float(np.cov(xs[m], ys[m])[0, 1])
+            return out
+    except (ValueError, FloatingPointError, IndexError):
+        return nan
+    return nan
+
+
+def _obs_to_series(obs_list: List[Dict[str, Any]]
+                   ) -> Dict[str, np.ndarray]:
+    fields = ("close", "volume", "high", "low")
+    return {f: np.array([
+        float(o[f]) if isinstance(o.get(f), (int, float)) else np.nan
+        for o in obs_list]) for f in fields}
 # Features derivable honestly from bar history — the enriched obs set
 # plus raw fields. Anything else is not a valid engineered input.
 DERIVABLE_FEATURES = {
@@ -39,7 +167,7 @@ DERIVABLE_FEATURES = {
     "trend_strength", "regime", "volume_ratio",
     "htf_close", "htf_trend", "htf_rsi14",
     "peer_close", "peer_return", "peer_corr", "bid", "ask",
-    "spread_bps",
+    "spread_bps", "advisory_disagreement",
 }
 _DIRECTION_NUM = {"BUY": 1.0, "SELL": -1.0}
 
@@ -129,6 +257,59 @@ def _fit_threshold(train: List[Dict[str, Any]], feature: str,
             "insample_net_return": best[1], "insample_n": best[2]}
 
 
+def _ga_signal(obs_list: List[Dict[str, Any]], expr: str) -> np.ndarray:
+    """Evaluate an alpha expression over a bar sequence → signal per bar."""
+    series = _expr_series(_obs_to_series(obs_list))
+    return _eval_expr(_parse_expr(expr), series)
+
+
+def _fit_ga_expression(train: List[Dict[str, Any]], expr: str
+                       ) -> Optional[Dict[str, Any]]:
+    """Fit direction + activation threshold for a fixed alpha expression
+    on the training slice: sweep both directions and signal-magnitude
+    quantiles, keep the best in-sample net expectancy."""
+    sig = _ga_signal(train, expr)
+    best = None
+    for direction in ("BUY", "SELL"):
+        side = sig if direction == "BUY" else -sig
+        valid = side[~np.isnan(side)]
+        if len(valid) < 40:
+            continue
+        for q in np.quantile(valid, [0.5, 0.6, 0.7, 0.8, 0.9]):
+            hits = 0
+            ret = 0.0
+            for i, o in enumerate(train):
+                if i >= len(side) or np.isnan(side[i]) or side[i] <= q:
+                    continue
+                r = _forward_return(train, i)
+                if r is None:
+                    continue
+                hits += 1
+                ret += r - COST_BPS * 1e-4
+            if hits >= MIN_HOLDOUT_SIGNALS and (best is None or ret > best[1]):
+                best = (float(q), ret, hits, direction)
+    if best is None:
+        return None
+    return {"expression": expr, "threshold": best[0],
+            "direction": best[3],
+            "insample_net_return": best[1], "insample_n": best[2]}
+
+
+def _predict_ga(history: List[Dict[str, Any]], params: Dict[str, Any]
+                ) -> Optional[str]:
+    """Live prediction: evaluate the expression on the rolling window and
+    emit the fitted direction when the signal exceeds the fitted
+    threshold."""
+    if len(history) < 10:
+        return None
+    sig = _ga_signal(history, params["expression"])
+    s = sig[-1] if len(sig) else np.nan
+    if np.isnan(s):
+        return None
+    side = s if params["direction"] == "BUY" else -s
+    return params["direction"] if side > params["threshold"] else None
+
+
 def _fit_logistic(train: List[Dict[str, Any]], features: List[str],
                   horizon: int = 8) -> Optional[Dict[str, Any]]:
     """sklearn logistic regression on the derived feature vector; labels are
@@ -184,6 +365,10 @@ def evaluate_holdout(spec: Dict[str, Any], params: Dict[str, Any],
         if spec["kind"] == "threshold_rule":
             pred = _predict_threshold(o, params)
             conf = 0.6
+        elif spec["kind"] == "ga_expression":
+            hist = holdout[max(0, i - 63):i + 1]
+            pred = _predict_ga(hist, params)
+            conf = 0.6
         else:
             pred = _predict_logistic(o, params)
             conf = pred[1] if pred else 0.5
@@ -209,6 +394,8 @@ def fit_candidate(spec: Dict[str, Any], train: List[Dict[str, Any]]
                   ) -> Optional[Dict[str, Any]]:
     if spec["kind"] == "threshold_rule":
         return _fit_threshold(train, spec["feature"], spec["direction"])
+    if spec["kind"] == "ga_expression":
+        return _fit_ga_expression(train, str(spec["expression"]))
     if spec["kind"] == "logistic":
         return _fit_logistic(train, list(spec["features"]))
     return None
@@ -239,6 +426,15 @@ def validate_spec(spec: Mapping[str, Any]) -> List[str]:
             errs.append("logistic needs 1+ derivable features")
         if len(feats) > 8:
             errs.append("logistic limited to 8 features")
+    if kind == "ga_expression":
+        expr = str(spec.get("expression") or "")
+        if not expr:
+            errs.append("ga_expression needs an expression")
+        else:
+            try:
+                _parse_expr(expr)
+            except Exception as exc:  # noqa: BLE001
+                errs.append(f"expression does not parse: {exc}")
     return errs
 
 
@@ -251,9 +447,21 @@ def candidate_adapter(candidate: ModelCandidate) -> Any:
     spec = dict(candidate.spec)
     params = dict(candidate.fitted_params)
     horizon = 8
+    # Rolling raw-bar history for expression evaluation — the adapter
+    # accumulates it itself, so it benefits from the same startup
+    # warm-up seeding every other advisor gets.
+    history: List[Dict[str, Any]] = []
 
     async def analyze(ctx: Mapping[str, Any]) -> Dict[str, Any]:
-        if spec["kind"] == "threshold_rule":
+        if spec["kind"] == "ga_expression":
+            if isinstance(ctx.get("close"), (int, float)):
+                history.append({k: ctx.get(k) for k in
+                                ("close", "volume", "high", "low")})
+                if len(history) > 64:
+                    del history[:-64]
+            direction = _predict_ga(history, params)
+            confidence = 0.6
+        elif spec["kind"] == "threshold_rule":
             direction = _predict_threshold(ctx, params)
             confidence = 0.6
         else:
@@ -270,3 +478,46 @@ def candidate_adapter(candidate: ModelCandidate) -> Any:
                 "evidence": evidence, "advisory_only": True}
 
     return AdvisoryModuleAdapter(f"engineered:{candidate.name}", analyze)
+
+
+async def propose_alpha_generation(
+    csc: Any,
+    n_proposals: int = 20,
+    population_size: int = 200,
+) -> List[str]:
+    """Bridge: the quarantined apex_fi GeneticAlphaSearch generates
+    candidate alpha expressions; the ones our safe evaluator can actually
+    compute become ``ga_expression`` proposals. Everything still faces
+    the full gate — OOS validation, then human approval — before any
+    voice is earned."""
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        from trading_bot.apex_fi.alpha_mining import GeneticAlphaSearch
+        gen = GeneticAlphaSearch(population_size=population_size)
+        gen.initialize_population()
+    probe_series = _expr_series({
+        f: (np.arange(1, 65, dtype=float) * 0.01) + 1.1
+        for f in ("close", "volume", "high", "low")})
+    proposed: List[str] = []
+    seen = set()
+    for cand in list(getattr(gen, "_population", ())):
+        expr = str(getattr(cand, "expression", "") or "")
+        if not expr or expr in seen:
+            continue
+        try:
+            sig = _eval_expr(_parse_expr(expr), probe_series)
+        except Exception:  # noqa: BLE001
+            continue
+        if not isinstance(sig, np.ndarray) or np.isnan(sig).all():
+            continue
+        seen.add(expr)
+        r = await csc.propose_model(
+            {"kind": "ga_expression", "expression": expr,
+             "name": f"ga:{expr[:32]}"},
+            proposed_by="alpha_mining")
+        if r.get("status") == "proposed":
+            proposed.append(r["candidate_id"])
+        if len(proposed) >= n_proposals:
+            break
+    return proposed

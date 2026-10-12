@@ -1306,6 +1306,10 @@ class CognitiveSystemController:
                 derived.add("volume_ratio")
         if isinstance(volume, (int, float)) and volume > 0:
             vol_hist.append(float(volume))
+        disagreement = getattr(self, "_last_advisory_disagreement", None)
+        if disagreement is not None and "advisory_disagreement" not in obs_dict:
+            obs_dict["advisory_disagreement"] = float(disagreement)
+            derived.add("advisory_disagreement")
         if derived:
             obs_dict["_derived_features"] = sorted(derived)
         if isinstance(price, (int, float)) and price > 0:
@@ -1642,6 +1646,22 @@ class CognitiveSystemController:
         # never decide — the simulation filter, EV gate, churn guard, risk,
         # and governance all remain downstream and unaware of them.
         calls = list(getattr(self, "_last_advisory_calls", ()) or ())
+
+        # Model-parliament disagreement signal: normalized dispersion of
+        # weighted directional votes — 0 when advisors agree, 1 when
+        # split. Stored strictly-prior and enriched into the NEXT obs as
+        # `advisory_disagreement`; point-in-time safe, provenance-marked.
+        _signed = []
+        for c in calls:
+            d = str(c.get("direction") or "").upper()
+            if d in ("BUY", "SELL"):
+                _signed.append(float(c.get("confidence") or 0.5)
+                               * (1.0 if d == "BUY" else -1.0))
+        if _signed:
+            _net = abs(sum(_signed)) / max(1e-9, sum(abs(v) for v in _signed))
+            self._last_advisory_disagreement = float(1.0 - _net)
+        else:
+            self._last_advisory_disagreement = None
 
         def _advisory_tilt(branch) -> float:
             action = str(
