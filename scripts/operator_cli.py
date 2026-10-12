@@ -49,12 +49,75 @@ def main(argv=None) -> int:
     parser.add_argument("--reason", default="")
     parser.add_argument("command",
                         choices=list(COMMAND_MAP) + ["status", "positions",
-                                                     "explain", "ai"])
+                                                     "explain", "ai",
+                                                     "approve-model",
+                                                     "list-models"])
     parser.add_argument("trade_id", nargs="?", default=None,
-                        help="required by 'explain'")
+                        help="required by 'explain'; candidate_id for "
+                             "'approve-model'")
     args = parser.parse_args(argv)
 
     state_dir = Path(args.state_dir)
+    if args.command == "approve-model":
+        # Human gate for engineered models: writes the durable flag the
+        # CSC checks before attaching a candidate. Persistent, audited —
+        # not a drainable command, since approval is a standing fact.
+        if not args.trade_id:
+            print("usage: operator_cli.py approve-model CANDIDATE_ID")
+            return 2
+        db_path = state_dir / "trading_state.db"
+        if not db_path.exists():
+            print(f"no state db at {db_path}")
+            return 2
+        import datetime as _dt
+        con = sqlite3.connect(str(db_path))
+        try:
+            con.execute(
+                "INSERT INTO account_state(key, value, updated_at) "
+                "VALUES (?, 'approved', ?) ON CONFLICT(key) DO UPDATE SET "
+                "value='approved', updated_at=excluded.updated_at",
+                (f"control:model_approval:{args.trade_id}",
+                 _dt.datetime.utcnow().isoformat()))
+            import uuid as _uuid
+            con.execute(
+                "INSERT INTO audit_events(audit_id, event_type, actor, "
+                "action, outcome, correlation_id, event_json, occurred_at) "
+                "VALUES (?,'operator_control','operator','approve_model',"
+                "'applied',?,?,?)",
+                (_uuid.uuid4().hex, args.trade_id,
+                 json.dumps({"details": {"candidate_id": args.trade_id,
+                                         "user": args.user,
+                                         "reason": args.reason}}),
+                 _dt.datetime.utcnow().isoformat()))
+            con.commit()
+        finally:
+            con.close()
+        print(f"model_approval written for candidate {args.trade_id[:12]}")
+        return 0
+    if args.command == "list-models":
+        db_path = state_dir / "trading_state.db"
+        if not db_path.exists():
+            print(f"no state db at {db_path}")
+            return 2
+        con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        try:
+            rows = con.execute(
+                "SELECT correlation_id, action, outcome, occurred_at, "
+                "event_json FROM audit_events WHERE event_type LIKE "
+                "'MODEL_%' ORDER BY occurred_at").fetchall()
+        finally:
+            con.close()
+        if not rows:
+            print("no engineered-model events recorded")
+            return 0
+        for cid, action, outcome, ts, ej in rows:
+            name = ""
+            try:
+                name = (json.loads(ej).get("details") or {}).get("name", "")
+            except (json.JSONDecodeError, AttributeError):
+                pass
+            print(f"{ts}  {action:12s} {outcome:10s} {name}  {cid}")
+        return 0
     if args.command == "explain":
         if not args.trade_id:
             print("usage: operator_cli.py explain TRADE_ID")

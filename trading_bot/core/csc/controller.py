@@ -14,6 +14,7 @@ try:
 except ImportError:  # pragma: no cover - environment without torch
     torch = None
 import time
+import uuid
 import logging
 import asyncio
 import copy
@@ -221,6 +222,7 @@ class CognitiveSystemController:
         # provenance-tagged advisory evidence — never authority. Disabled by
         # default; wired by the runtime when explicitly enabled.
         self._advisory_services: List[Any] = []
+        self._engineered_models: Dict[str, Any] = {}
 
         # Durable decision sink — an object with async record_audit_event()
         # (the canonical SqliteTradingRepository). Wired by the runtime after
@@ -1040,6 +1042,129 @@ class CognitiveSystemController:
     def observation_history(self, symbol: str) -> List[float]:
         """Return the tracked close history for a symbol (read-only copy)."""
         return list(self._obs_history.get(str(symbol), ()))
+
+    # ---------- engineered-model lifecycle ----------
+    # The AI may engineer models; it may not grant them authority.
+    # propose -> out-of-sample validate -> HUMAN approval flag -> attach.
+    # Attached candidates are advisory-only services subject to the same
+    # trust ramp, regime eligibility and reliability weighting as every
+    # other advisor — no path to execution authority exists here.
+
+    async def propose_model(self, spec: Dict[str, Any],
+                            proposed_by: str = "user") -> Dict[str, Any]:
+        """Register a model-engineering candidate. Spec is validated
+        against the derivable-feature set — a candidate asking for data
+        that can't honestly exist is rejected at proposal, not at runtime."""
+        from .model_engineering import ModelCandidate, validate_spec
+        errs = validate_spec(spec)
+        if errs:
+            await self._persist_audit_event(
+                event_type="MODEL_CANDIDATE", action="propose",
+                outcome="rejected", correlation_id="spec-invalid",
+                details={"spec": dict(spec), "errors": errs})
+            return {"status": "rejected", "errors": errs}
+        c = ModelCandidate(
+            candidate_id=str(uuid.uuid4()), name=str(spec.get("name") or
+                f"{spec['kind']}-{uuid.uuid4().hex[:8]}"),
+            spec=dict(spec), proposed_by=proposed_by)
+        self._engineered_models[c.candidate_id] = c
+        await self._persist_audit_event(
+            event_type="MODEL_CANDIDATE", action="propose",
+            outcome="proposed", correlation_id=c.candidate_id,
+            details={"name": c.name, "spec": c.spec,
+                     "proposed_by": proposed_by})
+        return {"status": "proposed", "candidate_id": c.candidate_id,
+                "name": c.name}
+
+    async def validate_model(self, candidate_id: str,
+                             bars: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Fit on the first 70% of bars, score on the held-out rest.
+        VALIDATED only if net expectancy after the cost model is positive
+        on unseen data — accuracy alone does not qualify a model."""
+        from .model_engineering import (evaluate_holdout, fit_candidate,
+                                        HOLDOUT_FRACTION, MIN_HOLDOUT_SIGNALS,
+                                        MIN_EXPECTANCY_BPS)
+        c = self._engineered_models.get(candidate_id)
+        if c is None:
+            return {"status": "error", "reason": "unknown candidate_id"}
+        obs = [dict(b) for b in bars if isinstance(b, Mapping)]
+        for o in obs:
+            self._enrich_derived_features(o)
+        split = int(len(obs) * (1 - HOLDOUT_FRACTION))
+        train, holdout = obs[:split], obs[split:]
+        params = fit_candidate(c.spec, train)
+        if params is None:
+            c.status, c.verdict = "REJECTED", "FALSIFIED"
+            c.validation = {"error": "fit failed — insufficient in-sample "
+                                     "data or missing dependency"}
+            await self._persist_audit_event(
+                event_type="MODEL_VALIDATION", action="validate",
+                outcome="REJECTED", correlation_id=candidate_id,
+                details={"name": c.name, "validation": c.validation})
+            return {"status": "rejected", "reason": c.validation["error"]}
+        c.fitted_params = params
+        c.validation = evaluate_holdout(c.spec, params, holdout)
+        ok = (c.validation["holdout_signals"] >= MIN_HOLDOUT_SIGNALS
+              and isinstance(c.validation["mean_net_bps"], float)
+              and c.validation["mean_net_bps"] > MIN_EXPECTANCY_BPS)
+        c.status = "VALIDATED" if ok else "REJECTED"
+        c.verdict = "CONFIRMED" if ok else "FALSIFIED"
+        await self._persist_audit_event(
+            event_type="MODEL_VALIDATION", action="validate",
+            outcome=c.verdict, correlation_id=candidate_id,
+            details={"name": c.name, "validation": c.validation,
+                     "fitted_params": params})
+        return {"status": c.status.lower(), "verdict": c.verdict,
+                "validation": c.validation}
+
+    async def approve_model(self, candidate_id: str) -> Dict[str, Any]:
+        """The human gate: attach requires the durable operator flag
+        ``control:model_approval:<id>`` — written via
+        ``operator_cli approve-model`` — in account_state. No flag, no
+        attach, no exceptions."""
+        c = self._engineered_models.get(candidate_id)
+        if c is None:
+            return {"status": "error", "reason": "unknown candidate_id"}
+        if c.status != "VALIDATED":
+            return {"status": "blocked",
+                    "reason": f"candidate is {c.status}, not VALIDATED"}
+        sink = getattr(self, "_decision_sink", None)
+        flag = None
+        if sink is not None and hasattr(sink, "get_account_state"):
+            flag = await self._safe_await(sink.get_account_state(
+                f"control:model_approval:{candidate_id}"))
+        if str(flag or "") not in ("1", "true", "approved"):
+            return {"status": "awaiting_human",
+                    "reason": "no durable operator approval found"}
+        c.status = "APPROVED"
+        await self._persist_audit_event(
+            event_type="MODEL_APPROVAL", action="approve",
+            outcome="approved", correlation_id=candidate_id,
+            details={"name": c.name})
+        return {"status": "approved", "candidate_id": candidate_id}
+
+    async def attach_engineered_model(self, candidate_id: str
+                                      ) -> Dict[str, Any]:
+        """Final step — approved candidates become advisory services only.
+        They enter with the trust ramp's unmeasured weight and must earn
+        influence like every other advisor."""
+        from .model_engineering import candidate_adapter
+        c = self._engineered_models.get(candidate_id)
+        if c is None:
+            return {"status": "error", "reason": "unknown candidate_id"}
+        if c.status != "APPROVED":
+            return {"status": "blocked",
+                    "reason": f"candidate is {c.status}, not APPROVED"}
+        service = candidate_adapter(c)
+        self.configure_cognition(service)
+        c.status = "ATTACHED"
+        await self._persist_audit_event(
+            event_type="MODEL_ATTACHED", action="attach",
+            outcome="attached", correlation_id=candidate_id,
+            details={"name": c.name,
+                     "capability_id": service.capability_id})
+        return {"status": "attached",
+                "capability_id": service.capability_id}
 
     async def seed_advisory_history(self, obs_list: List[Any]) -> int:
         """Replay prior observations through attached advisory services so
