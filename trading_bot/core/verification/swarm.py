@@ -609,6 +609,62 @@ class DecisionChainVerifier(BaseVerificationAgent):
                 f"{n_pass}/{len(stage_results)}"))
 
 
+class ForbiddenBehaviorsVerifier(BaseVerificationAgent):
+    """Runs the tamic ForbiddenBehaviorGuard on the hypothesis — detects
+    horizon-mixing, stale-signal reuse, recency chasing, drawdown
+    retraining, and post-loss leverage escalation. Its structural
+    findings veto; absence of context is reported, not punished."""
+
+    _TIMEOUT_S = 15.0
+
+    def __init__(self) -> None:
+        from trading_bot.tamic.forbidden_behaviors import (
+            ForbiddenBehaviorGuard)
+        self._guard = ForbiddenBehaviorGuard()
+
+    async def verify(self, ledger_entry: Any) -> VerifierVerdict:
+        from trading_bot.tamic.core import (
+            MarketTimeState, SignalHalfLife, TAMICDecision, TimeHorizon)
+        hypothesis = _eget(ledger_entry, "hypothesis")
+        try:
+            claimed = float(_eget(ledger_entry, "composite_confidence", 0.5))
+        except (TypeError, ValueError):
+            claimed = 0.5
+        direction = str(
+            _eget(hypothesis, "direction", "") or "").upper()
+        symbol = str(_eget(hypothesis, "symbol", "EURUSD") or "EURUSD")
+        decision = TAMICDecision(
+            time_horizon=TimeHorizon.INTRADAY,
+            signal_half_life=SignalHalfLife.SHORT,
+            market_time_state=MarketTimeState.NORMAL,
+            confidence_level=claimed,
+            is_trade_recommended=direction in ("BUY", "SELL"),
+        )
+        md = _eget(ledger_entry, "market_data", None)
+        market_data = dict(md) if isinstance(md, dict) else {}
+        try:
+            result = await asyncio.wait_for(
+                self._guard.check_behaviors(
+                    symbol, TimeHorizon.INTRADAY, market_data, decision),
+                timeout=self._TIMEOUT_S)
+        except Exception as exc:  # noqa: BLE001
+            return VerifierVerdict(
+                agent_name="ForbiddenBehaviorsVerifier", is_valid=True,
+                items_checked=0, confidence=0.4,
+                critique=f"guard unavailable: {str(exc)[:100]}")
+        forbidden = bool(getattr(result, "has_forbidden_behaviors", False))
+        score = float(getattr(result, "behavior_score", 0.0) or 0.0)
+        btype = getattr(result, "behavior_type", None)
+        return VerifierVerdict(
+            agent_name="ForbiddenBehaviorsVerifier",
+            is_valid=not (forbidden and score >= 0.5),
+            items_checked=6,
+            confidence=max(0.0, min(1.0, 1.0 - score)),
+            critique=(
+                f"forbidden={forbidden} type={btype} score={score:.2f} "
+                f"{str(getattr(result, 'explanation', '') or '')[:90]}"))
+
+
 class VerificationSwarm:
     """
     Independent Auditor Swarm for the Cognitive System Controller.
@@ -627,6 +683,7 @@ class VerificationSwarm:
             AdversarialChallengeVerifier(),
             CalibrationVerifier(),
             DecisionChainVerifier(),
+            ForbiddenBehaviorsVerifier(),
         ]
 
     def record_outcome(self, confidence: float, was_correct: bool) -> None:

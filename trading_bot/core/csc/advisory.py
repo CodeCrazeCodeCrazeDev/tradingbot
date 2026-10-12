@@ -962,6 +962,63 @@ def _tamic_market_time_service() -> AdvisoryModuleAdapter:
 
     return AdvisoryModuleAdapter("tamic_market_time", analyze)
 
+def _institutional_time_service() -> AdvisoryModuleAdapter:
+    """tamic InstitutionalTimeEngine — calendar-driven flow flags
+    (month/quarter-end rebalancing, expiry, roll, central-bank windows).
+    Honest derivable context: obs timestamp → institutional calendar."""
+    from trading_bot.tamic.institutional_time import (
+        InstitutionalTimeEngine)
+
+    engine = InstitutionalTimeEngine()
+
+    async def analyze(ctx: Mapping[str, Any]) -> Any:
+        symbol = str(ctx.get("symbol") or "UNKNOWN")
+        result = await engine.check_institutional_flows(
+            symbol, dict(ctx))
+        flows = getattr(result, "active_flows", None) or \
+            getattr(result, "flows", None) or []
+        payload = _payload(result) if isinstance(result, Mapping) else {}
+        flow_dicts = [_payload(f) for f in list(flows)[:6]]
+        strong = [f for f in flow_dicts
+                  if str(f.get("strength", "")).upper()
+                  in ("STRONG", "EXTREME")]
+        return {"institutional_flows": flow_dicts,
+                "strong_flow_count": len(strong),
+                "flow_types": [str(f.get("flow_type") or f.get("type"))
+                               for f in flow_dicts],
+                **({"result": payload} if payload else {})}
+
+    return AdvisoryModuleAdapter("tamic_institutional_time", analyze)
+
+
+def _optionality_service() -> AdvisoryModuleAdapter:
+    """tamic OptionalityPreservationEngine — preservation-pressure
+    evidence: low optionality value means the current setup offers poor
+    asymmetric opportunity. Evidence only — it may not size or veto."""
+    from trading_bot.tamic.optionality import (
+        OptionalityPreservationEngine)
+    from trading_bot.tamic.core import TimeHorizon
+
+    engine = OptionalityPreservationEngine()
+
+    async def analyze(ctx: Mapping[str, Any]) -> Any:
+        symbol = str(ctx.get("symbol") or "UNKNOWN")
+        try:
+            result = await engine.evaluate_optionality(
+                symbol, TimeHorizon.INTRADAY, dict(ctx))
+        except Exception as exc:  # noqa: BLE001
+            return {"status": "no_data", "reason": str(exc)[:100]}
+        value = getattr(result, "optionality_value", None)
+        metrics = getattr(result, "metrics", None)
+        payload = _payload(result) if isinstance(result, Mapping) else {}
+        cat = getattr(value, "value", value)
+        return {"optionality_value": str(cat),
+                "preservation_pressure":
+                    str(cat).upper() in ("LOW", "MINIMAL"),
+                "metrics": _payload(metrics) if metrics else payload}
+
+    return AdvisoryModuleAdapter("tamic_optionality", analyze)
+
 
 def _self_diagnostic_service() -> AdvisoryModuleAdapter:
     """self_diagnostic ComprehensiveDiagnosticSuite health score —
@@ -4565,6 +4622,8 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("signal_regime_change", _signal_regime_change_service),
     ("signal_statistical_outliers", _signal_outlier_service),
     ("tamic_market_time", _tamic_market_time_service),
+    ("tamic_institutional_time", _institutional_time_service),
+    ("tamic_optionality", _optionality_service),
     ("self_diagnostic_health", _self_diagnostic_service),
     ("aletheia_decision_audit", _aletheia_audit_service),
     ("superintelligence_regime_strategy", _superintel_regime_service),
