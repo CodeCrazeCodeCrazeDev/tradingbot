@@ -243,6 +243,11 @@ class CognitiveSystemController:
         self.research_engine = None
         self._research_hydrated = False
         self._research_interval = int(kwargs.get("research_interval", 100) or 0)
+        # Bounded RSI reflection: the HMS bridge reports observed failure
+        # gaps every N observations (0 disables). The full promotion cycle
+        # stays operator-invoked by design.
+        self._rsi_gap_interval = int(kwargs.get("rsi_gap_interval", 250) or 0)
+        self._rsi_bridge = None
         self._research_cycle_task = None
         self._research_reports: "deque" = deque(maxlen=64)
         self._research_artifacts: "deque" = deque(maxlen=64)
@@ -938,6 +943,16 @@ class CognitiveSystemController:
         self.reliability_tracker.update_action_outcome(
             regime, str(pending.get("action") or "").upper(),
             bool(was_correct), realized_return)
+        # Feed HMS failure memory — the RSI bridge's observe_gaps reads
+        # these aggregates, so losing settlements become real RSI input.
+        if was_correct is False:
+            self._record_failure(
+                "outcome_loss",
+                f"{pending.get('action')} {regime} "
+                f"r={realized_return:+.4f} conf={confidence:.2f}",
+                regime=regime,
+                action=str(pending.get("action") or ""),
+                confidence=confidence)
         # The verification swarm's calibrator sees the same settlements —
         # a 0.9-claimed decision that keeps losing flags overconfidence.
         _swarm = getattr(self, "verifier_swarm", None)
@@ -2673,6 +2688,7 @@ class CognitiveSystemController:
             return decision
         finally:
             self._maybe_schedule_research_cycle(observation)
+            self._maybe_report_rsi_gaps()
 
     def _maybe_schedule_research_cycle(self, observation: Any) -> None:
         """Budgeted background research: every ``research_interval``
@@ -2690,6 +2706,47 @@ class CognitiveSystemController:
             return
         self._research_cycle_task = loop.create_task(
             self._run_research_cycle_guarded(observation))
+
+    def _maybe_report_rsi_gaps(self) -> None:
+        """Bounded RSI reflection: every ``rsi_gap_interval`` observations
+        the RSI-HMS bridge reads real failure memory and reports observed
+        performance gaps as advisory evidence. The bridge is deliberately
+        cycle-free here — the full promotion cycle stays operator-invoked
+        by design; this makes its registration honest: it works on real
+        failures instead of nothing."""
+        interval = int(getattr(self, "_rsi_gap_interval", 0) or 0)
+        if interval <= 0 or self._observation_seq % interval != 0:
+            return
+        hms = getattr(self, "hms", None)
+        if hms is None:
+            return
+        try:
+            from trading_bot.recursive_self_improvement.hms_bridge import (
+                RSIHMSBridge)
+            bridge = getattr(self, "_rsi_bridge", None)
+            if bridge is None:
+                bridge = RSIHMSBridge(hms=hms)
+                self._rsi_bridge = bridge
+            gaps = bridge.observe_gaps()
+            if gaps:
+                summary = [
+                    {"kind": str(getattr(g, "kind", "") or ""),
+                     "count": int(getattr(g, "count", 0) or 0)}
+                    for g in list(gaps)[:10]]
+                # Persist into the RSI self-improvement ledger — durable,
+                # sync, and the same store mirror_decisions writes.
+                try:
+                    hms.record_improvement(
+                        record_type="gap_report", domain="rsi",
+                        summary=f"{len(gaps)} observed gaps",
+                        details={"gaps": summary})
+                except Exception:  # noqa: BLE001
+                    pass
+                logger.info(
+                    "CSC-V6: RSI gap report — %d gaps observed: %s",
+                    len(gaps), summary[:3])
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("CSC-V6: RSI gap observation failed: %s", exc)
 
     async def _run_research_cycle_guarded(self, observation: Any) -> None:
         """Research failures never reach the trading path — a research
