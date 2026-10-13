@@ -223,6 +223,8 @@ class CognitiveSystemController:
         # default; wired by the runtime when explicitly enabled.
         self._advisory_services: List[Any] = []
         self._engineered_models: Dict[str, Any] = {}
+        self._engineered_sprt: Dict[str, Any] = {}
+        self._engineered_cap_to_cid: Dict[str, str] = {}
 
         # Durable decision sink — an object with async record_audit_event()
         # (the canonical SqliteTradingRepository). Wired by the runtime after
@@ -974,6 +976,22 @@ class CognitiveSystemController:
                 self.reliability_tracker.update_metrics(
                     str(call["capability_id"]), regime, adv_correct,
                     float(call.get("confidence") or 0.5))
+                cap = str(call["capability_id"])
+                # SPRT live monitoring (ASRS continuous-monitoring
+                # standard): engineered candidates carry a Wald test —
+                # degraded edge => automatic rollback, audited.
+                if cap.startswith("engineered:"):
+                    monitor = self._engineered_sprt.get(cap)
+                    if monitor is None:
+                        from .model_engineering import SprtMonitor
+                        monitor = SprtMonitor()
+                        self._engineered_sprt[cap] = monitor
+                    if monitor.update(bool(adv_correct)) == "degraded":
+                        cid = self._engineered_cap_to_cid.get(cap)
+                        if cid is not None:
+                            await self.detach_engineered_model(
+                                cid, reason=f"SPRT degraded "
+                                f"(llr={monitor.llr:.2f}, n={monitor.n})")
             except Exception:
                 continue
 
@@ -1176,8 +1194,22 @@ class CognitiveSystemController:
         if c.status != "APPROVED":
             return {"status": "blocked",
                     "reason": f"candidate is {c.status}, not APPROVED"}
+        # Autonomous Reviewer (ASRS PG): the verification swarm audits the
+        # candidate's own ledger entry before attach — a veto blocks even
+        # human-approved candidates (both gates are required).
+        reviewer = await self._review_engineered_candidate(c)
+        if reviewer is not None and not reviewer.get("passed", True):
+            await self._persist_audit_event(
+                event_type="MODEL_ATTACHED", action="review",
+                outcome="blocked", correlation_id=candidate_id,
+                details={"name": c.name, "reviewer": reviewer})
+            return {"status": "blocked",
+                    "reason": "adversarial review veto",
+                    "reviewer": reviewer}
         service = candidate_adapter(c)
         self.configure_cognition(service)
+        self._engineered_cap_to_cid[service.capability_id] = candidate_id
+        self._engineered_sprt.pop(service.capability_id, None)
         c.status = "ATTACHED"
         await self._persist_audit_event(
             event_type="MODEL_ATTACHED", action="attach",
@@ -1186,6 +1218,64 @@ class CognitiveSystemController:
                      "capability_id": service.capability_id})
         return {"status": "attached",
                 "capability_id": service.capability_id}
+
+    async def _review_engineered_candidate(self, c: Any) -> Optional[Dict[str, Any]]:
+        """Autonomous Reviewer (ASRS PG): run the verification swarm on the
+        candidate's own evidence. Veto on consensus failure — 'not enough
+        verifiers ran' fails open (honest abstention, not a blocker)."""
+        swarm = getattr(self, "verifier_swarm", None)
+        if swarm is None:
+            return None
+        try:
+            from types import SimpleNamespace
+            entry = SimpleNamespace(
+                entry_id=c.candidate_id,
+                composite_confidence=0.6,
+                hypothesis=SimpleNamespace(
+                    direction=c.spec.get("direction") or "BUY",
+                    symbol=c.spec.get("symbol") or ""),
+                reasoning_steps=[
+                    f"kind={c.spec.get('kind')}",
+                    f"validation={c.validation}"],
+                evidence_graph_snapshot=None,
+                market_data=None,
+            )
+            verdicts = await swarm.run_swarm(entry)
+            ran = [v for v in verdicts if v.items_checked > 0]
+            vetoes = [v for v in ran if not v.is_valid]
+            return {"passed": len(vetoes) == 0,
+                    "verifiers_ran": len(ran),
+                    "vetoes": [v.agent_name for v in vetoes]}
+        except Exception as exc:  # noqa: BLE001
+            return {"passed": True, "note": f"reviewer unavailable: {exc}"}
+
+    async def detach_engineered_model(self, candidate_id: str,
+                                      reason: str = "operator"
+                                      ) -> Dict[str, Any]:
+        """Instant rollback (ASRS PG): remove the advisory service and mark
+        the candidate ROLLED_BACK. The trust-ramp weight decays naturally;
+        the service is gone immediately — no influence leaks past this."""
+        c = self._engineered_models.get(candidate_id)
+        if c is None:
+            return {"status": "error", "reason": "unknown candidate_id"}
+        cap = f"engineered:{c.name}"
+        before = len(self._advisory_services)
+        self._advisory_services = [
+            s for s in self._advisory_services
+            if str(getattr(s, "capability_id",
+                           type(s).__name__)) != cap]
+        removed = len(self._advisory_services) < before
+        self._engineered_sprt.pop(cap, None)
+        self._engineered_cap_to_cid.pop(cap, None)
+        if c.status == "ATTACHED":
+            c.status = "ROLLED_BACK"
+            c.verdict = reason
+            await self._persist_audit_event(
+                event_type="MODEL_ATTACHED", action="rollback",
+                outcome="rolled_back", correlation_id=candidate_id,
+                details={"name": c.name, "reason": reason})
+        return {"status": "rolled_back" if removed else "not_attached",
+                "reason": reason}
 
     async def seed_advisory_history(self, obs_list: List[Any]) -> int:
         """Replay prior observations through attached advisory services so

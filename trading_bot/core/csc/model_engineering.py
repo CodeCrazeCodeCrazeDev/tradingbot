@@ -508,6 +508,37 @@ def candidate_adapter(candidate: ModelCandidate) -> Any:
     return AdvisoryModuleAdapter(f"engineered:{candidate.name}", analyze)
 
 
+class SprtMonitor:
+    """Wald SPRT on an attached model's live outcomes (ASRS continuous
+    monitoring). H0: win rate >= p0 (edge persists); H1: win rate <= p1
+    (edge degraded). Crossing the lower bound => accept H1 => the caller
+    rolls the model back. Bounds use Wald approximations
+    A=(1-beta)/alpha, B=beta/(1-alpha) on the log-likelihood ratio."""
+
+    def __init__(self, p0: float = 0.50, p1: float = 0.42,
+                 alpha: float = 0.05, beta: float = 0.10):
+        self.p0, self.p1 = p0, p1
+        self.upper = math.log((1 - beta) / alpha)   # ~ln18 ≈ 2.89
+        self.lower = math.log(beta / (1 - alpha))   # ~ln(0.105) ≈ -2.25
+        self.llr = 0.0
+        self.n = 0
+        self.verdict = "monitoring"  # | "degraded" | "confirms_edge"
+
+    def update(self, win: bool) -> str:
+        # LLR = log(f(x|H1)/f(x|H0)) — losses push toward the upper bound
+        # (accept H1: edge degraded); wins pull toward the lower bound
+        # (accept H0: edge persists).
+        self.n += 1
+        p_win = self.p1 if win else (1 - self.p1)
+        p_null = self.p0 if win else (1 - self.p0)
+        self.llr += math.log(p_win / p_null)
+        if self.llr >= self.upper:
+            self.verdict = "degraded"
+        elif self.llr <= self.lower and self.n >= 20:
+            self.verdict = "confirms_edge"
+        return self.verdict
+
+
 def benjamini_hochberg(p_values: List[float], q: float = 0.05
                        ) -> List[bool]:
     """BH procedure (ASRS FDR standard): when m candidates are validated
