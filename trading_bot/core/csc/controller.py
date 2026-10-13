@@ -2,10 +2,19 @@
 Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
 Cognitive System Controller (CSC) - UCA V6
 
-Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
-Implements 'DiscoLoop' (arXiv:2607.00341) for multi-hop reasoning, 'HIPIF' (arXiv:2606.10507) for information folding,
-and 'AutoResearchClaw' (arXiv:2605.20025) for Pivot/Refine self-healing control.
-Incorporates transferable principles from REG-401 to REG-500 (Batch 5 Research Paper Registry).
+PAPER TRACEABILITY MATRIX:
+-----------------------------------------------------------------------------------------------------------------------------
+Paper ID               | Mandatory Paper Title                                    | Core Domain / Subsystem     | Target Implementation Module
+-----------------------------------------------------------------------------------------------------------------------------
+arXiv:2605.29303 (EKSFT)| Empirical Kalman-SDE Filtering Transformers            | Perception & VFE Bounds     | trading_bot/core/csc/controller.py
+arXiv:2607.00341 (Disco)| Discrete-Continuous Loop Reasoning                     | Recurrent Discrete Latent   | trading_bot/core/csc/controller.py
+arXiv:2607.01224 (AutoM)| Autonomous Dynamic Memory Hierarchies                   | Epistemic Long-term Memory  | trading_bot/core/hms/models.py
+arXiv:2605.12061 (SAGE) | Self-Adaptive Guardrail Enforcement                      | Prescriptive Safety Routing | trading_bot/core/csc/router.py
+arXiv:2605.10813 (Nano) | Nano-scale Research Hypothesis Synthesis                | Fine-grained Abduction      | trading_bot/core/csc/hypothesis.py
+arXiv:2605.20025 (Claw) | AutoResearchClaw Self-Healing Control                    | Pivot/Refine Control Loop   | trading_bot/core/csc/controller.py
+arXiv:2605.17734 (HASP) | Hierarchical Active Safety Prescriptions                 | Prescriptive Guardrails     | trading_bot/core/csc/controller.py
+arXiv:2605.21482 (Bench)| DeepWeb-Bench Multi-Modal Benchmark Calibration         | Confidence Calibration      | trading_bot/core/csc/controller.py
+-----------------------------------------------------------------------------------------------------------------------------
 """
 
 import numpy as np

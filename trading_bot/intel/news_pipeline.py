@@ -302,7 +302,9 @@ class NewsPipeline:
                 "pageSize": 100
             }
             
-            response = requests.get(url, params=params)
+            def _do_get():
+                return requests.get(url, params=params)
+            response = await asyncio.to_thread(_do_get)
             data = response.json()
             
             if response.status_code != 200:
