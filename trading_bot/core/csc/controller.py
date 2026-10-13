@@ -1421,6 +1421,12 @@ class CognitiveSystemController:
         if disagreement is not None and "advisory_disagreement" not in obs_dict:
             obs_dict["advisory_disagreement"] = float(disagreement)
             derived.add("advisory_disagreement")
+        health = self._compute_self_health()
+        if health is not None:
+            obs_dict["system_health_score"] = health["score"]
+            obs_dict["system_health_flags"] = health["flags"]
+            derived.update(("system_health_score",
+                            "system_health_flags"))
         if derived:
             obs_dict["_derived_features"] = sorted(derived)
         if isinstance(price, (int, float)) and price > 0:
@@ -2183,6 +2189,52 @@ class CognitiveSystemController:
         except Exception as e:
             logger.debug(f"CSC-V6: reflective context unavailable: {e}")
         return evidence_chain
+
+    def _compute_self_health(self) -> Optional[Dict[str, Any]]:
+        """Measured self-diagnosis: the CSC scores its own operational
+        health from real counters — advisor error rate, eligibility
+        gating fraction, suppressed actions, emergency state, funnel
+        degeneracy. 100 = clean, each degradation deducts. This is what
+        the self-* advisory services were missing: real state to see.
+        A degraded score also writes to failure memory — self-concern
+        feeding the RSI gap path (self-healing's input)."""
+        calls = int(getattr(self, "_funnel_counters", {}).get(
+            "advisory_artifacts", 0) or 0)
+        if calls <= 0:
+            return None
+        fc = getattr(self, "_funnel_counters", {}) or {}
+        errors = int(fc.get("advisor_exceptions", 0) or 0)
+        degenerate = int(fc.get("advisor_degenerate", 0) or 0)
+        gated = int(getattr(self, "_tilt_gated", 0) or 0)
+        suppressed = len(getattr(
+            self.reliability_tracker, "_suppressed", {}) or {})
+        flags: List[str] = []
+        score = 100.0
+        err_rate = errors / calls
+        if err_rate > 0.05:
+            score -= min(30.0, err_rate * 200.0)
+            flags.append(f"advisor_error_rate={err_rate:.2f}")
+        degen_rate = degenerate / calls
+        if degen_rate > 0.95:
+            score -= 15.0
+            flags.append(f"funnel_degenerate={degen_rate:.2f}")
+        if suppressed > 0:
+            score -= min(20.0, suppressed * 5.0)
+            flags.append(f"actions_suppressed={suppressed}")
+        if getattr(self.state, "trading_halted", False) or getattr(
+                self.state, "emergency_stop", False):
+            score -= 40.0
+            flags.append("emergency_stop")
+        health = {"score": round(max(0.0, score), 1), "flags": flags,
+                  "advisor_error_rate": round(err_rate, 4),
+                  "degenerate_rate": round(degen_rate, 4),
+                  "suppressed": suppressed}
+        if health["score"] < 60.0:
+            self._record_failure(
+                "system_health_degraded",
+                f"health={health['score']} flags={flags}",
+                score=health["score"])
+        return health
 
     def _record_failure(self, kind: str, summary: str, **kwargs: Any) -> None:
         """Write a categorized failure into HMS failure memory. Fail-soft —

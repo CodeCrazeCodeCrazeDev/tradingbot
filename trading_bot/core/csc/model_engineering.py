@@ -168,6 +168,7 @@ DERIVABLE_FEATURES = {
     "htf_close", "htf_trend", "htf_rsi14",
     "peer_close", "peer_return", "peer_corr", "bid", "ask",
     "spread_bps", "advisory_disagreement",
+    "system_health_score", "system_health_flags",
 }
 _DIRECTION_NUM = {"BUY": 1.0, "SELL": -1.0}
 
