@@ -1128,9 +1128,32 @@ class CognitiveSystemController:
         c = self._engineered_models.get(candidate_id)
         if c is None:
             return {"status": "error", "reason": "unknown candidate_id"}
-        obs = [dict(b) for b in bars if isinstance(b, Mapping)]
-        for o in obs:
-            self._enrich_derived_features(o)
+        # Isolated history: feature enrichment uses the CSC's live obs
+        # deques — validating against them both contaminates the result
+        # (features see live history the validation batch shouldn't have)
+        # and pollutes live state with replay bars. Snapshot and restore.
+        from collections import deque as _dq
+        hist_snap = {k: _dq(v, maxlen=v.maxlen)
+                     for k, v in self._obs_history.items()}
+        vol_snap = {k: _dq(v, maxlen=v.maxlen)
+                    for k, v in self._vol_history.items()}
+        self._obs_history = {}
+        self._vol_history = {}
+        # Live advisory disagreement and health are runtime state — a
+        # sealed trial must not inherit them or the result is unrepeatable.
+        disagree_snap = getattr(self, "_last_advisory_disagreement", None)
+        self._last_advisory_disagreement = None
+        sealed_snap = getattr(self, "_sealed_trial", False)
+        self._sealed_trial = True
+        try:
+            obs = [dict(b) for b in bars if isinstance(b, Mapping)]
+            for o in obs:
+                self._enrich_derived_features(o)
+        finally:
+            self._obs_history = hist_snap
+            self._vol_history = vol_snap
+            self._last_advisory_disagreement = disagree_snap
+            self._sealed_trial = sealed_snap
         split = int(len(obs) * (1 - HOLDOUT_FRACTION))
         train, holdout = obs[:split], obs[split:]
         params = fit_candidate(c.spec, train)
@@ -1145,6 +1168,11 @@ class CognitiveSystemController:
             return {"status": "rejected", "reason": c.validation["error"]}
         c.fitted_params = params
         c.validation = evaluate_holdout(c.spec, params, holdout)
+        # Sealed evaluation: the verdict is bound to spec + dataset +
+        # params + cost model — it can never be re-attributed silently.
+        from .model_engineering import validation_seal, dataset_hash
+        c.validation["seal"] = validation_seal(c.spec, obs, params)
+        c.validation["dataset_hash"] = dataset_hash(obs)
         # Promotion Gate standard (ASRS): positive OOS net expectancy AND
         # bootstrap significance P(Δ>0) >= threshold — a positive sample
         # mean without significance is luck, not edge.
@@ -2207,6 +2235,9 @@ class CognitiveSystemController:
         return evidence_chain
 
     def _compute_self_health(self) -> Optional[Dict[str, Any]]:
+        # Sealed validation trials must not inherit live runtime counters.
+        if getattr(self, "_sealed_trial", False):
+            return None
         """Measured self-diagnosis: the CSC scores its own operational
         health from real counters — advisor error rate, eligibility
         gating fraction, suppressed actions, emergency state, funnel

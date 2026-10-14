@@ -182,6 +182,34 @@ MIN_HOLDOUT_SIGNALS = 10
 MIN_EXPECTANCY_BPS = 0.0
 
 
+def dataset_hash(bars: List[Dict[str, Any]]) -> str:
+    """Seal the trial dataset: sha256 over every bar's ordered values —
+    a validation verdict can never be silently re-attributed to
+    different data."""
+    import hashlib
+    h = hashlib.sha256()
+    for b in bars:
+        h.update(repr(sorted(
+            (k, v) for k, v in b.items()
+            if k != "_derived_features")).encode())
+    return h.hexdigest()
+
+
+def validation_seal(spec: Dict[str, Any], bars: List[Dict[str, Any]],
+                    params: Dict[str, Any]) -> str:
+    """Bind the verdict to what was evaluated: spec + dataset + fitted
+    params + cost model + split. Changing any input changes the seal."""
+    import hashlib
+    import json
+    payload = json.dumps({
+        "spec": spec, "dataset": dataset_hash(bars),
+        "params": params, "cost_bps": COST_BPS,
+        "holdout_fraction": HOLDOUT_FRACTION,
+        "min_signals": MIN_HOLDOUT_SIGNALS,
+    }, sort_keys=True, default=str)
+    return hashlib.sha256(payload.encode()).hexdigest()
+
+
 @dataclass
 class ModelCandidate:
     candidate_id: str
@@ -664,6 +692,8 @@ async def evolve_alpha_generation(
     crossover, propose each offspring through the same gated pipeline,
     batch-validate with FDR control. The AI evolves its own attached
     models — every generation still faces the gate."""
+    import random as _global_random
+    _global_random.seed(13)  # GeneticAlphaSearch uses global random
     from trading_bot.apex_fi.alpha_mining import GeneticAlphaSearch
     search = GeneticAlphaSearch(population_size=20, mutation_rate=0.4)
     parents: List[str] = []
@@ -712,7 +742,8 @@ async def propose_alpha_generation(
     compute become ``ga_expression`` proposals. Everything still faces
     the full gate — OOS validation, then human approval — before any
     voice is earned."""
-    import warnings
+    import warnings, random as _global_random
+    _global_random.seed(7)  # deterministic proposal population
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
         from trading_bot.apex_fi.alpha_mining import GeneticAlphaSearch
