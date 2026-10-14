@@ -118,10 +118,9 @@ def _eval_expr(ast, series: Dict[str, np.ndarray]) -> np.ndarray:
             ranks[~np.isnan(x)] = order / max(1, len(valid) - 1)
             return ranks
         if tag in ("ts_mean", "ts_std", "ts_min", "ts_max", "ts_rank",
-                   "decay_linear"):
+                   "decay_linear", "ts_argmax", "ts_argmin"):
             fn = {"ts_mean": np.nanmean, "ts_std": np.nanstd,
-                  "ts_min": np.nanmin, "ts_max": np.nanmax}[tag] \
-                if tag != "ts_rank" else None
+                  "ts_min": np.nanmin, "ts_max": np.nanmax}.get(tag)
             out = np.full(n, np.nan)
             for i in range(n):
                 win = x[max(0, i - w + 1):i + 1]
@@ -133,6 +132,10 @@ def _eval_expr(ast, series: Dict[str, np.ndarray]) -> np.ndarray:
                 elif tag == "decay_linear":
                     weights = np.arange(1, len(win) + 1)
                     out[i] = float(np.average(win, weights=weights))
+                elif tag == "ts_argmax":
+                    out[i] = float(len(win) - 1 - np.argmax(win[::-1]))
+                elif tag == "ts_argmin":
+                    out[i] = float(len(win) - 1 - np.argmin(win[::-1]))
                 else:
                     out[i] = float(fn(win))
             return out
@@ -461,9 +464,21 @@ def validate_spec(spec: Mapping[str, Any]) -> List[str]:
             errs.append("ga_expression needs an expression")
         else:
             try:
-                _parse_expr(expr)
+                ast = _parse_expr(expr)
+                # Evaluate on a small synthetic series — parses is not
+                # enough; unknown ops (all-NaN output) must die here,
+                # not at validation.
+                probe = 1.0 + np.linspace(0, 0.1, 160) + np.random.RandomState(3).normal(0, 0.001, 160)
+                sig = _eval_expr(ast, {
+                    "close": probe, "high": probe, "low": probe,
+                    "volume": probe, "returns": probe,
+                    "log_returns": probe, "volatility": probe,
+                    "vwap": probe})
+                if not np.isfinite(np.asarray(sig)).any():
+                    errs.append("expression evaluates to no signal "
+                                "(all-NaN on a probe series)")
             except Exception as exc:  # noqa: BLE001
-                errs.append(f"expression does not parse: {exc}")
+                errs.append(f"expression does not evaluate: {exc}")
     return errs
 
 
@@ -593,6 +608,55 @@ async def validate_alpha_generation(
             n_survived += 1
     return {"validated": n_survived, "tested": len(candidate_ids),
             "candidates": results}
+
+
+async def evolve_alpha_generation(
+    csc: Any,
+    parent_candidate_ids: List[str],
+    bars: List[Dict[str, Any]],
+    n_offspring: int = 8,
+) -> Dict[str, Any]:
+    """Generational self-training (ASRS Evolution Engine): breed new
+    candidates from FDR survivors via the alpha grammar's own mutation/
+    crossover, propose each offspring through the same gated pipeline,
+    batch-validate with FDR control. The AI evolves its own attached
+    models — every generation still faces the gate."""
+    from trading_bot.apex_fi.alpha_mining import GeneticAlphaSearch
+    search = GeneticAlphaSearch(population_size=20, mutation_rate=0.4)
+    parents: List[str] = []
+    for cid in parent_candidate_ids:
+        c = csc._engineered_models.get(cid)
+        if c is not None and c.spec.get("kind") == "ga_expression":
+            parents.append(str(c.spec.get("expression") or ""))
+    parents = [p for p in parents if p]
+    if not parents:
+        return {"status": "no_parents",
+                "reason": "no ga_expression parents to breed from"}
+    import random as _rnd
+    rng = _rnd.Random(13)
+    offspring: List[str] = []
+    while len(offspring) < n_offspring:
+        if len(parents) >= 2 and rng.random() < 0.5:
+            expr = search._crossover(
+                rng.choice(parents), rng.choice(parents))
+        else:
+            expr = rng.choice(parents)
+        if rng.random() < 0.6:
+            expr = search._mutate(expr)
+        if expr and expr not in offspring:
+            offspring.append(expr)
+    proposed: List[str] = []
+    for i, expr in enumerate(offspring):
+        r = await csc.propose_model(
+            {"kind": "ga_expression", "expression": expr,
+             "name": f"gen2:{expr[:28]}"},
+            proposed_by="self_training:evolve")
+        if r.get("status") == "proposed":
+            proposed.append(r["candidate_id"])
+    verdict = await validate_alpha_generation(csc, proposed, bars)
+    return {"parents": len(parents), "offspring": len(proposed),
+            "validated": verdict["validated"],
+            "candidates": verdict["candidates"]}
 
 
 async def propose_alpha_generation(

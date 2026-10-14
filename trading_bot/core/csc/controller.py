@@ -23,7 +23,7 @@ import json
 import threading
 from collections import Counter, deque
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 from datetime import datetime
 from trading_bot.core.governance.determinism import determinism as _determinism
 from unittest.mock import MagicMock, AsyncMock
@@ -250,6 +250,13 @@ class CognitiveSystemController:
         # stays operator-invoked by design.
         self._rsi_gap_interval = int(kwargs.get("rsi_gap_interval", 250) or 0)
         self._rsi_bridge = None
+        # Self-questioning: the CSC asks itself research questions derived
+        # from its own weakest measured spots (suppression, health,
+        # degraded models). Interval in observations; 0 disables.
+        self._self_question_interval = int(
+            kwargs.get("self_question_interval", 500) or 0)
+        self._last_self_question_seq = 0
+        self._frontier_engine = None
         self._research_cycle_task = None
         self._research_reports: "deque" = deque(maxlen=64)
         self._research_artifacts: "deque" = deque(maxlen=64)
@@ -2229,6 +2236,7 @@ class CognitiveSystemController:
                   "advisor_error_rate": round(err_rate, 4),
                   "degenerate_rate": round(degen_rate, 4),
                   "suppressed": suppressed}
+        self._last_self_health = health
         if health["score"] < 60.0:
             self._record_failure(
                 "system_health_degraded",
@@ -2837,6 +2845,7 @@ class CognitiveSystemController:
         finally:
             self._maybe_schedule_research_cycle(observation)
             self._maybe_report_rsi_gaps()
+            self._maybe_self_question(observation)
 
     def _maybe_schedule_research_cycle(self, observation: Any) -> None:
         """Budgeted background research: every ``research_interval``
@@ -2895,6 +2904,102 @@ class CognitiveSystemController:
                     len(gaps), summary[:3])
         except Exception as exc:  # noqa: BLE001
             logger.debug("CSC-V6: RSI gap observation failed: %s", exc)
+
+    def _self_question(self) -> Optional[str]:
+        """Generate a research question from the CSC's own weakest
+        measured state — self-questioning as a first-class function.
+        Sources (in priority order): SPRT-degraded models, suppressed
+        actions, degraded self-health, weakest reliability spot. Returns
+        the question text or None when nothing is measurably weak."""
+        rolled_back = [c for c in self._engineered_models.values()
+                       if c.status == "ROLLED_BACK"]
+        if rolled_back:
+            c = rolled_back[-1]
+            return (f"Why did engineered model '{c.name}' degrade "
+                    f"({c.verdict}) — was the holdout edge regime-bound "
+                    f"or overfit?")
+        suppressed = getattr(
+            self.reliability_tracker, "_suppressed", {}) or {}
+        if suppressed:
+            key = next(iter(suppressed))
+            return (f"Suppressed action '{key}' persists — is the "
+                    f"measured negative expectancy structural to this "
+                    f"regime or a recoverable failure mode?")
+        health = getattr(self, "_last_self_health", None)
+        if health and health.get("score", 100) < 70:
+            return (f"System health degraded to {health['score']} "
+                    f"({health['flags']}) — which component failure "
+                    f"drives it and what restores it?")
+        return None
+
+    def _maybe_self_question(self, observation: Any) -> None:
+        """Bounded self-questioning: every ``self_question_interval``
+        observations the CSC formalizes its weakest measured spot into a
+        research question and investigates it in the background. Never
+        two at once; failures never reach the trading path."""
+        interval = int(getattr(self, "_self_question_interval", 0) or 0)
+        if (interval <= 0
+                or self._observation_seq - self._last_self_question_seq
+                < interval):
+            return
+        task = getattr(self, "_research_cycle_task", None)
+        if task is not None and not task.done():
+            return
+        question = self._self_question()
+        if not question:
+            return
+        self._last_self_question_seq = self._observation_seq
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        loop.create_task(self._self_question_guarded(question))
+
+    async def _self_question_guarded(self, question: str) -> None:
+        try:
+            report = await self.research(
+                question, context={"source": "self_question"})
+            verdict = getattr(report, "verdict", None) or report
+            logger.info("CSC-V6: self-question verdict: %s | %s",
+                        verdict, question[:80])
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("CSC-V6: self-question cycle failed: %s", exc)
+
+    def distill_frontier(self, model_name: str,
+                         observations: Sequence[Any],
+                         benchmark_tasks: Sequence[Any],
+                         benchmark_results: Sequence[Any]
+                         ) -> Dict[str, Any]:
+        """Frontier capability distillation (operator/research-invoked):
+        external frontier evidence (papers, eval results, observed
+        behaviors) -> capability profile -> patterns -> AlphaAlgo-native
+        artifacts -> governance -> lineage. Report persisted; artifacts
+        feed propose_model via the normal gated path, never authority."""
+        if self._frontier_engine is None:
+            from trading_bot.core.frontier_capability_distillation import (
+                FrontierCapabilityDistillationEngine)
+            self._frontier_engine = FrontierCapabilityDistillationEngine()
+        report = self._frontier_engine.run(
+            model_name, observations, benchmark_tasks, benchmark_results)
+        summary = {
+            "model": model_name,
+            "patterns": len(getattr(report, "extracted_patterns", [])
+                          or []),
+            "artifacts": len(getattr(report, "compiled_artifacts", [])
+                             or []),
+            "rejected": list(getattr(report, "rejected_patterns", [])
+                             or [])[:10],
+        }
+        try:
+            hms = getattr(self, "hms", None)
+            if hms is not None:
+                hms.record_improvement(
+                    record_type="frontier_distillation",
+                    domain="research", summary=str(summary)[:200],
+                    details=summary)
+        except Exception:  # noqa: BLE001
+            pass
+        return summary
 
     async def _run_research_cycle_guarded(self, observation: Any) -> None:
         """Research failures never reach the trading path — a research
