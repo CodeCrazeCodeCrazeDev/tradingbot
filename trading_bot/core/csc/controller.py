@@ -1135,7 +1135,7 @@ class CognitiveSystemController:
         train, holdout = obs[:split], obs[split:]
         params = fit_candidate(c.spec, train)
         if params is None:
-            c.status, c.verdict = "REJECTED", "FALSIFIED"
+            c.status, c.verdict = "REJECTED", "INSUFFICIENT_DATA"
             c.validation = {"error": "fit failed — insufficient in-sample "
                                      "data or missing dependency"}
             await self._persist_audit_event(
@@ -1149,12 +1149,14 @@ class CognitiveSystemController:
         # bootstrap significance P(Δ>0) >= threshold — a positive sample
         # mean without significance is luck, not edge.
         sig = (c.validation.get("significance") or {})
-        ok = (c.validation["holdout_signals"] >= MIN_HOLDOUT_SIGNALS
+        thin = c.validation["holdout_signals"] < MIN_HOLDOUT_SIGNALS
+        ok = (not thin
               and isinstance(c.validation["mean_net_bps"], float)
               and c.validation["mean_net_bps"] > MIN_EXPECTANCY_BPS
               and float(sig.get("p_gt_0") or 0.0) >= SIGNIFICANCE_THRESHOLD)
         c.status = "VALIDATED" if ok else "REJECTED"
-        c.verdict = "CONFIRMED" if ok else "FALSIFIED"
+        c.verdict = ("CONFIRMED" if ok else
+                     "INCONCLUSIVE" if thin else "FALSIFIED")
         await self._persist_audit_event(
             event_type="MODEL_VALIDATION", action="validate",
             outcome=c.verdict, correlation_id=candidate_id,
@@ -1249,12 +1251,19 @@ class CognitiveSystemController:
             )
             verdicts = await swarm.run_swarm(entry)
             ran = [v for v in verdicts if v.items_checked > 0]
+            if not ran:
+                return {"passed": False,
+                        "note": "no verifiers could evaluate the "
+                                "candidate — review inconclusive"}
             vetoes = [v for v in ran if not v.is_valid]
             return {"passed": len(vetoes) == 0,
                     "verifiers_ran": len(ran),
                     "vetoes": [v.agent_name for v in vetoes]}
         except Exception as exc:  # noqa: BLE001
-            return {"passed": True, "note": f"reviewer unavailable: {exc}"}
+            # A reviewer that errors is a failed gate, not a pass — the
+            # attach path treats unavailable review as blocked.
+            return {"passed": False,
+                    "note": f"reviewer error: {exc}"}
 
     async def detach_engineered_model(self, candidate_id: str,
                                       reason: str = "operator"
@@ -2205,11 +2214,11 @@ class CognitiveSystemController:
         the self-* advisory services were missing: real state to see.
         A degraded score also writes to failure memory — self-concern
         feeding the RSI gap path (self-healing's input)."""
-        calls = int(getattr(self, "_funnel_counters", {}).get(
+        calls = int(getattr(self, "_funnel", {}).get(
             "advisory_artifacts", 0) or 0)
         if calls <= 0:
             return None
-        fc = getattr(self, "_funnel_counters", {}) or {}
+        fc = getattr(self, "_funnel", {}) or {}
         errors = int(fc.get("advisor_exceptions", 0) or 0)
         degenerate = int(fc.get("advisor_degenerate", 0) or 0)
         gated = int(getattr(self, "_tilt_gated", 0) or 0)
@@ -2958,7 +2967,8 @@ class CognitiveSystemController:
     async def _self_question_guarded(self, question: str) -> None:
         try:
             report = await self.research(
-                question, context={"source": "self_question"})
+                question,
+                market_data={"question_source": "self_question"})
             verdict = getattr(report, "verdict", None) or report
             logger.info("CSC-V6: self-question verdict: %s | %s",
                         verdict, question[:80])
@@ -2983,12 +2993,15 @@ class CognitiveSystemController:
             model_name, observations, benchmark_tasks, benchmark_results)
         summary = {
             "model": model_name,
-            "patterns": len(getattr(report, "extracted_patterns", [])
-                          or []),
-            "artifacts": len(getattr(report, "compiled_artifacts", [])
-                             or []),
-            "rejected": list(getattr(report, "rejected_patterns", [])
-                             or [])[:10],
+            "patterns": len(getattr(report, "patterns", ()) or ()),
+            "artifacts": len(getattr(report, "artifacts", ()) or ()),
+            "governance": [getattr(g, "accepted", None)
+                           for g in (getattr(
+                               report, "governance_results", ()) or ())][:10],
+            "rejected": list(getattr(report, "rejected_patterns", ())
+                             or ())[:10],
+            "report": (report.to_dict()
+                       if hasattr(report, "to_dict") else {}),
         }
         try:
             hms = getattr(self, "hms", None)

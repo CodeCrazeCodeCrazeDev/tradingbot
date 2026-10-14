@@ -267,12 +267,30 @@ def _ga_signal(obs_list: List[Dict[str, Any]], expr: str) -> np.ndarray:
     return _eval_expr(_parse_expr(expr), series)
 
 
+def _ga_signal_causal(obs_list: List[Dict[str, Any]], expr: str,
+                      window: int = 64) -> np.ndarray:
+    """Causal signal: bar i's value comes only from bars ≤ i (rolling
+    window ≤ ``window``), matching what the live adapter can compute.
+    Full-series rank/zscore see the future — fitting on them would
+    teach the candidate lookahead that live prediction can't have."""
+    series = _expr_series(_obs_to_series(obs_list))
+    ast = _parse_expr(expr)
+    n = len(obs_list)
+    out = np.full(n, np.nan)
+    for i in range(n):
+        lo = max(0, i - window + 1)
+        win = {k: v[lo:i + 1] for k, v in series.items()}
+        sig = _eval_expr(ast, win)
+        out[i] = sig[-1] if len(sig) else np.nan
+    return out
+
+
 def _fit_ga_expression(train: List[Dict[str, Any]], expr: str
                        ) -> Optional[Dict[str, Any]]:
     """Fit direction + activation threshold for a fixed alpha expression
     on the training slice: sweep both directions and signal-magnitude
     quantiles, keep the best in-sample net expectancy."""
-    sig = _ga_signal(train, expr)
+    sig = _ga_signal_causal(train, expr)
     best = None
     for direction in ("BUY", "SELL"):
         side = sig if direction == "BUY" else -sig
@@ -289,7 +307,7 @@ def _fit_ga_expression(train: List[Dict[str, Any]], expr: str
                 if r is None:
                     continue
                 hits += 1
-                ret += r - COST_BPS * 1e-4
+                ret += (r if direction == "BUY" else -r) - COST_BPS * 1e-4
             if hits >= MIN_HOLDOUT_SIGNALS and (best is None or ret > best[1]):
                 best = (float(q), ret, hits, direction)
     if best is None:
@@ -355,22 +373,41 @@ def _predict_logistic(obs: Mapping[str, Any], params: Dict[str, Any]
     return None
 
 
-def _bootstrap_significance(signal_returns: List[float], n_boot: int = 5000,
-                            seed: int = 7) -> Dict[str, Any]:
-    """ASRS Promotion Gate standard: paired bootstrap on the out-of-sample
-    net-return series. Returns P(mean_return > 0) and the 95% CI — the
-    gate requires significance, not just a positive sample mean."""
+def _bootstrap_significance(signal_returns: List[float],
+                            baseline_returns: Optional[List[float]] = None,
+                            n_boot: int = 5000, seed: int = 7,
+                            block: int = 8) -> Dict[str, Any]:
+    """Promotion-gate bootstrap on the out-of-sample net-return series.
+    Block bootstrap (block ≈ holding horizon) preserves dependence between
+    overlapping trades — an i.i.d. resample understates variance for
+    correlated signals. If a baseline series is supplied, the test is
+    paired: P(candidate mean - baseline mean > 0), the ASRS Δ test."""
     arr = np.asarray(signal_returns, dtype=float)
-    arr = arr[~np.isnan(arr)]
-    if len(arr) < 5:
-        return {"p_gt_0": 0.0, "ci95": [0.0, 0.0], "n": int(len(arr))}
+    if baseline_returns is not None:
+        base = np.asarray(baseline_returns[:len(arr)], dtype=float)
+        m = ~(np.isnan(arr) | np.isnan(base[:len(arr)]))
+        arr, base = arr[m], base[m]
+    else:
+        base = None
+        arr = arr[~np.isnan(arr)]
+    n = len(arr)
+    if n < 5:
+        return {"p_gt_0": 0.0, "ci95": [0.0, 0.0], "n": n}
     rng = np.random.default_rng(seed)
-    idx = rng.integers(0, len(arr), size=(n_boot, len(arr)))
+    n_blocks = max(1, (n + block - 1) // block)
+    starts = rng.integers(0, n, size=(n_boot, n_blocks))
+    # Wrap-around block indices (stationary circular bootstrap).
+    idx = (starts[:, :, None] + np.arange(block)).reshape(
+        n_boot, n_blocks * block)[:, :n] % n
     means = arr[idx].mean(axis=1)
-    return {"p_gt_0": float(np.mean(means > 0)),
-            "ci95": [float(np.quantile(means, 0.025)),
-                     float(np.quantile(means, 0.975))],
-            "n": int(len(arr))}
+    out = {"p_gt_0": float(np.mean(means > 0)),
+           "ci95": [float(np.quantile(means, 0.025)),
+                    float(np.quantile(means, 0.975))],
+           "n": n, "block": block, "n_boot": n_boot}
+    if base is not None:
+        dmeans = (arr[idx] - base[idx]).mean(axis=1)
+        out["p_gt_baseline"] = float(np.mean(dmeans > 0))
+    return out
 
 
 def evaluate_holdout(spec: Dict[str, Any], params: Dict[str, Any],
@@ -381,6 +418,7 @@ def evaluate_holdout(spec: Dict[str, Any], params: Dict[str, Any],
     n_calls = wins = 0
     ret = 0.0
     signal_returns: List[float] = []
+    baseline_returns: List[float] = []
     for i, o in enumerate(holdout):
         r = _forward_return(holdout, i, horizon)
         if r is None:
@@ -403,6 +441,10 @@ def evaluate_holdout(spec: Dict[str, Any], params: Dict[str, Any],
         net = signed - COST_BPS * 1e-4
         ret += net
         signal_returns.append(net)
+        # Paired baseline: buy-and-hold forward return on the same bars —
+        # the ASRS Δ test compares the candidate against a frozen
+        # benchmark, not just against zero.
+        baseline_returns.append(float(r))
         if signed > 0:
             wins += 1
     result = {
@@ -412,7 +454,8 @@ def evaluate_holdout(spec: Dict[str, Any], params: Dict[str, Any],
         "mean_net_bps": (ret / n_calls * 1e4) if n_calls else None,
         "horizon": horizon,
     }
-    result["significance"] = _bootstrap_significance(signal_returns)
+    result["significance"] = _bootstrap_significance(
+        signal_returns, baseline_returns, block=horizon)
     return result
 
 
