@@ -66,6 +66,7 @@ class ResearchReport:
     comparison: Optional[Dict[str, Any]] = None
     confidence_profile: Optional[ConfidenceProfile] = None
     boundary_conditions: Dict[str, List[str]] = field(default_factory=dict)
+    seal: str = ""  # sha256(question + dataset) — verdict provenance
     advisory_only: bool = True
     promotion_eligible: bool = False
 
@@ -88,6 +89,7 @@ class ResearchReport:
                 self.confidence_profile.__dict__
                 if self.confidence_profile else None),
             "boundary_conditions": dict(self.boundary_conditions),
+            "seal": self.seal,
             "advisory_only": True,
             "promotion_eligible": False,
         }
@@ -114,12 +116,16 @@ def _classify_question(question: str, market_data: Dict[str, Any]
     branch simulation. Explicit routing beats keyword guessing: a caller
     may set market_data['question_type']."""
     explicit = str((market_data or {}).get("question_type") or "")
-    if explicit in ("market_edge", "operational"):
+    if explicit in ("market_edge", "operational", "calibration",
+                    "data_quality", "execution_quality"):
         return explicit
-    q = (question or "").lower()
+    q = (question or {}).lower() if isinstance(question, dict) else (
+        question or "").lower()
     op_markers = ("degrad", "health", "suppressed", "failure", "error",
                   "advisor", "component", "our own", "self_",
-                  "sprt", "rollback", "drift", "latency", "pipeline")
+                  "sprt", "rollback", "drift", "latency", "pipeline",
+                  "calibrat", "execution", "fill", "slippage",
+                  "missing data", "leakage", "timestamp", "stale")
     if any(m in q for m in op_markers):
         return "operational"
     return "market_edge"
@@ -296,6 +302,8 @@ class ResearchEngine:
             metadata={"verdict": report.verdict,
                       "symbol": report.symbol,
                       "direction": direction,
+                      "question_type": report.question_type,
+                      "seal": report.seal,
                       "sim": report.sim_summary},
         ))
         self._claims[claim.node_id] = claim
@@ -411,8 +419,23 @@ class ResearchEngine:
             symbol=str((market_data or {}).get("symbol") or "unknown"),
         )
         report.question_type = _classify_question(question, market_data)
+        # Source-linked claims: where the question came from travels with
+        # the report into the KG (self_question / operator / curriculum /
+        # literature id) — provenance, not just verdicts.
+        report.sim_summary["question_source"] = str(
+            (market_data or {}).get("question_source") or "operator")
+        # Seal: the verdict is bound to this question + this dataset —
+        # a report can't be silently re-attributed to different evidence.
+        import hashlib, json as _json
+        report.seal = hashlib.sha256(_json.dumps(
+            {"q": report.question, "type": report.question_type,
+             "data": repr(sorted((market_data or {}).items()))[:20000]},
+            sort_keys=True, default=str).encode()).hexdigest()
 
-        if report.question_type == "operational":
+        # Every non-market-edge type is a measured-state diagnostic —
+        # calibration, execution quality and data quality are answered
+        # from the system's own measured evidence, not market branches.
+        if report.question_type != "market_edge":
             return self._investigate_operational(report, market_data)
 
         branches = await self.hypothesis_gen.generate_competing_branches(

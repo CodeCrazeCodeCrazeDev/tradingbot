@@ -224,6 +224,11 @@ class CognitiveSystemController:
         self._advisory_services: List[Any] = []
         self._engineered_models: Dict[str, Any] = {}
         self._engineered_sprt: Dict[str, Any] = {}
+        # Shadow mode: newly attached engineered models must survive N
+        # measured live outcomes with a healthy SPRT before their calls
+        # influence the advisory tilt — evidence is recorded, influence
+        # is not granted. Improvement survives shadow operation or dies.
+        self._engineered_shadow: Dict[str, int] = {}
         self._engineered_cap_to_cid: Dict[str, str] = {}
 
         # Durable decision sink — an object with async record_audit_event()
@@ -1035,6 +1040,16 @@ class CognitiveSystemController:
                             await self.detach_engineered_model(
                                 cid, reason=f"SPRT degraded "
                                 f"(llr={monitor.llr:.2f}, n={monitor.n})")
+                    elif cap in self._engineered_shadow:
+                        # Shadow graduation: enough real outcomes with a
+                        # healthy monitor → the model earns its tilt.
+                        need = self._engineered_shadow[cap]
+                        if monitor.n >= need:
+                            self._engineered_shadow.pop(cap, None)
+                            await self._persist_audit_event(
+                                event_type="MODEL_SHADOW", action="graduate",
+                                outcome="graduated", correlation_id=cap,
+                                details={"outcomes_seen": monitor.n})
             except Exception:
                 continue
 
@@ -1283,14 +1298,22 @@ class CognitiveSystemController:
         self.configure_cognition(service)
         self._engineered_cap_to_cid[service.capability_id] = candidate_id
         self._engineered_sprt.pop(service.capability_id, None)
+        self._engineered_shadow.pop(service.capability_id, None)
+        # Shadow attach: the model's calls are recorded and settled like
+        # any advisor's, but excluded from the advisory tilt until its
+        # monitor has seen enough real outcomes to confirm the edge
+        # survives live data — ASRS 'prospective shadow' before adoption.
+        self._engineered_shadow[service.capability_id] = 20
         c.status = "ATTACHED"
         await self._persist_audit_event(
             event_type="MODEL_ATTACHED", action="attach",
-            outcome="attached", correlation_id=candidate_id,
+            outcome="attached_shadow", correlation_id=candidate_id,
             details={"name": c.name,
-                     "capability_id": service.capability_id})
-        return {"status": "attached",
-                "capability_id": service.capability_id}
+                     "capability_id": service.capability_id,
+                     "shadow_outcomes_required": 20})
+        return {"status": "attached_shadow",
+                "capability_id": service.capability_id,
+                "shadow_outcomes_required": 20}
 
     async def _review_engineered_candidate(self, c: Any) -> Optional[Dict[str, Any]]:
         """Autonomous Reviewer (ASRS PG): run the verification swarm on the
@@ -1346,6 +1369,7 @@ class CognitiveSystemController:
                            type(s).__name__)) != cap]
         removed = len(self._advisory_services) < before
         self._engineered_sprt.pop(cap, None)
+        self._engineered_shadow.pop(cap, None)
         self._engineered_cap_to_cid.pop(cap, None)
         if c.status == "ATTACHED":
             c.status = "ROLLED_BACK"
@@ -1873,6 +1897,11 @@ class CognitiveSystemController:
                 if direction not in ("BUY", "SELL"):
                     continue
                 aid = str(c.get("capability_id"))
+                # Shadow mode: engineered advisors earn measured outcomes
+                # but cast no tilt until they graduate live observation.
+                if aid in self._engineered_shadow:
+                    gated += 1
+                    continue
                 # Regime-conditional eligibility: a measured-below-
                 # chance advisor votes evidence-only here — direction
                 # dropped, not inverted (inverting would fit the same
