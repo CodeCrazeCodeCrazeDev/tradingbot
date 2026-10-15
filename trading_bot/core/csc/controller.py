@@ -621,6 +621,29 @@ class CognitiveSystemController:
             measured[str(agent_id)] = per_regime
         report: Dict[str, Any] = {"attached": attached,
                                   "measured": measured}
+        # Measured active-set verdicts: an attached advisor that earns
+        # nothing is dead weight; one that earns negative precision is a
+        # candidate for ablation. Verdicts are evidence for operators,
+        # never automatic removal.
+        verdicts: Dict[str, str] = {}
+        for cap in attached:
+            regimes = (measured or {}).get(str(cap)) or {}
+            total = sum(m.get("predictions", 0)
+                        for m in regimes.values())
+            if total == 0:
+                verdicts[str(cap)] = "no_calls_measured"
+                continue
+            prec = sum(m.get("predictions", 0) * m.get("precision", 0.0)
+                       for m in regimes.values()) / total
+            if total < 20:
+                verdicts[str(cap)] = "insufficient_evidence"
+            elif prec < 0.4:
+                verdicts[str(cap)] = "measured_negative"
+            elif prec >= 0.5:
+                verdicts[str(cap)] = "measured_positive"
+            else:
+                verdicts[str(cap)] = "marginal"
+        report["contribution_verdicts"] = verdicts
         assembly_report = getattr(self, "_advisory_attach_report", None)
         if isinstance(assembly_report, Mapping):
             report["assembly"] = dict(assembly_report)
@@ -993,7 +1016,20 @@ class CognitiveSystemController:
                         from .model_engineering import SprtMonitor
                         monitor = SprtMonitor()
                         self._engineered_sprt[cap] = monitor
-                    if monitor.update(bool(adv_correct)) == "degraded":
+                    # Magnitude-aware feed when the realized return is
+                    # known — win rate alone can hide negative expectancy.
+                    if isinstance(realized_return, (int, float)):
+                        # realized_return is signed by the DECISION's
+                        # direction — an advisor's own net is that value
+                        # when it agreed, its negation when it did not.
+                        _signed = (float(realized_return)
+                                   if adv_dir == str(action or "").upper()
+                                   else -float(realized_return))
+                        _net_bps = _signed * 1e4 - 3.25
+                        verdict = monitor.feed(_net_bps)
+                    else:
+                        verdict = monitor.update(bool(adv_correct))
+                    if verdict == "degraded":
                         cid = self._engineered_cap_to_cid.get(cap)
                         if cid is not None:
                             await self.detach_engineered_model(
@@ -2945,31 +2981,43 @@ class CognitiveSystemController:
         except Exception as exc:  # noqa: BLE001
             logger.debug("CSC-V6: RSI gap observation failed: %s", exc)
 
-    def _self_question(self) -> Optional[str]:
+    def _self_question(self) -> Optional[Tuple[str, List[Dict[str, Any]]]]:
         """Generate a research question from the CSC's own weakest
         measured state — self-questioning as a first-class function.
-        Sources (in priority order): SPRT-degraded models, suppressed
-        actions, degraded self-health, weakest reliability spot. Returns
-        the question text or None when nothing is measurably weak."""
+        Returns (question, findings) where findings are the measured
+        facts the operational-diagnostic experiment will verify. Sources
+        (in priority order): SPRT-degraded models, suppressed actions,
+        degraded self-health. Returns None when nothing is measurably
+        weak."""
         rolled_back = [c for c in self._engineered_models.values()
                        if c.status == "ROLLED_BACK"]
         if rolled_back:
             c = rolled_back[-1]
             return (f"Why did engineered model '{c.name}' degrade "
                     f"({c.verdict}) — was the holdout edge regime-bound "
-                    f"or overfit?")
+                    f"or overfit?",
+                    [{"claim": f"{c.name} degraded",
+                      "supported": True,
+                      "evidence": {"name": c.name, "verdict": c.verdict,
+                                   "status": c.status}}])
         suppressed = getattr(
             self.reliability_tracker, "_suppressed", {}) or {}
         if suppressed:
             key = next(iter(suppressed))
             return (f"Suppressed action '{key}' persists — is the "
                     f"measured negative expectancy structural to this "
-                    f"regime or a recoverable failure mode?")
+                    f"regime or a recoverable failure mode?",
+                    [{"claim": f"{key} measured negative expectancy",
+                      "supported": True,
+                      "evidence": dict(suppressed.get(key) or {})}])
         health = getattr(self, "_last_self_health", None)
         if health and health.get("score", 100) < 70:
             return (f"System health degraded to {health['score']} "
                     f"({health['flags']}) — which component failure "
-                    f"drives it and what restores it?")
+                    f"drives it and what restores it?",
+                    [{"claim": "system health degraded",
+                      "supported": True,
+                      "evidence": dict(health)}])
         return None
 
     def _maybe_self_question(self, observation: Any) -> None:
@@ -2985,21 +3033,27 @@ class CognitiveSystemController:
         task = getattr(self, "_research_cycle_task", None)
         if task is not None and not task.done():
             return
-        question = self._self_question()
-        if not question:
+        found = self._self_question()
+        if not found:
             return
+        question, findings = found
         self._last_self_question_seq = self._observation_seq
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
             return
-        loop.create_task(self._self_question_guarded(question))
+        loop.create_task(self._self_question_guarded(question, findings))
 
-    async def _self_question_guarded(self, question: str) -> None:
+    async def _self_question_guarded(
+            self, question: str, findings: List[Dict[str, Any]]) -> None:
         try:
             report = await self.research(
                 question,
-                market_data={"question_source": "self_question"})
+                market_data={
+                    "question_source": "self_question",
+                    "question_type": "operational",
+                    "operational_context": {
+                        "findings": findings, "confidence": 0.6}})
             verdict = getattr(report, "verdict", None) or report
             logger.info("CSC-V6: self-question verdict: %s | %s",
                         verdict, question[:80])
@@ -3033,6 +3087,15 @@ class CognitiveSystemController:
                              or ())[:10],
             "report": (report.to_dict()
                        if hasattr(report, "to_dict") else {}),
+            # Honest handoff boundary: distillation artifacts are
+            # playbooks/policies/governance invariants — not model specs.
+            # A compiler bridge would be needed to turn them into
+            # propose_model candidates; until one exists, nothing here
+            # enters the candidate pipeline automatically.
+            "specs_produced": 0,
+            "note": ("artifacts are playbook/policy/invariant kinds, not "
+                     "model specs — no automatic handoff to "
+                     "propose_model"),
         }
         try:
             hms = getattr(self, "hms", None)

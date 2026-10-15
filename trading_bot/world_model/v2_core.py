@@ -352,6 +352,11 @@ class WorldModelV2(nn.Module):
         self.volatility_head = nn.Linear(latent_dim, 1)    # Predicted volatility
         self.liquidity_head = nn.Linear(latent_dim, 1)     # Predicted liquidity
 
+        # Honesty flag: outputs are scaffold computations until a trained
+        # checkpoint is loaded — consumers must not treat them as
+        # calibrated foresight.
+        self._trained = False
+
     def forward(self, market_data: Dict[str, torch.Tensor], order_size: Optional[torch.Tensor] = None) -> Dict[str, Any]:
         """
         The main 'Think' step of the World Model.
@@ -384,7 +389,11 @@ class WorldModelV2(nn.Module):
             "regime_logits": regime_logits,
             "volatility": volatility,
             "liquidity": liquidity,
-            "execution": exec_metrics
+            "execution": exec_metrics,
+            # Architecture exists; learned foresight requires a trained
+            # checkpoint — callers must weight evidence accordingly.
+            "trained": self._trained,
+            "advisory_only": True,
         }
 
     def simulate_what_if(self, market_data: Dict[str, torch.Tensor], intervention: Dict[int, float]) -> List[MarketScenario]:
@@ -407,4 +416,5 @@ class WorldModelV2(nn.Module):
     def load(self, path: str):
         # SEC-05: Use weights_only=True for safe loading
         self.load_state_dict(torch.load(path, weights_only=True))
+        self._trained = True
         logger.info(f"Model V2 loaded from {path}")

@@ -596,30 +596,71 @@ def candidate_adapter(candidate: ModelCandidate) -> Any:
 
 
 class SprtMonitor:
-    """Wald SPRT on an attached model's live outcomes (ASRS continuous
-    monitoring). H0: win rate >= p0 (edge persists); H1: win rate <= p1
-    (edge degraded). Crossing the lower bound => accept H1 => the caller
-    rolls the model back. Bounds use Wald approximations
-    A=(1-beta)/alpha, B=beta/(1-alpha) on the log-likelihood ratio."""
+    """Sequential edge monitoring on an attached model's live outcomes
+    (ASRS continuous monitoring). Two tracks, both must stay healthy:
+
+    - **Bernoulli SPRT on wins** — Wald LLR, H0: win rate >= p0 (edge
+      persists), H1: win rate <= p1 (degraded).
+    - **Net-expectancy drawdown guard** — cumulative net bps falling
+      below -drift_bps per call is degradation even when the win rate
+      looks fine (a high-win-rate model can still lose money — the
+      audit's central correction). Implemented as an EWMA drift test:
+      the running mean of net bps with a lower control bound.
+
+    Crossing either bound => degraded => caller rolls the model back."""
 
     def __init__(self, p0: float = 0.50, p1: float = 0.42,
-                 alpha: float = 0.05, beta: float = 0.10):
+                 alpha: float = 0.05, beta: float = 0.10,
+                 drift_floor_bps: float = -3.0):
         self.p0, self.p1 = p0, p1
         self.upper = math.log((1 - beta) / alpha)   # ~ln18 ≈ 2.89
         self.lower = math.log(beta / (1 - alpha))   # ~ln(0.105) ≈ -2.25
         self.llr = 0.0
         self.n = 0
+        self.drift_floor_bps = drift_floor_bps
+        self._net_bps_sum = 0.0
+        self._net_bps_min = 0.0      # worst cumulative drawdown seen
+        self._ewma_bps: Optional[float] = None
         self.verdict = "monitoring"  # | "degraded" | "confirms_edge"
 
     def update(self, win: bool) -> str:
-        # LLR = log(f(x|H1)/f(x|H0)) — losses push toward the upper bound
-        # (accept H1: edge degraded); wins pull toward the lower bound
-        # (accept H0: edge persists).
         self.n += 1
         p_win = self.p1 if win else (1 - self.p1)
         p_null = self.p0 if win else (1 - self.p0)
         self.llr += math.log(p_win / p_null)
-        if self.llr >= self.upper:
+        # Bernoulli magnitude proxy: winners count as +1 unit net of the
+        # win/loss binary; the richer net-bps path goes through feed().
+        self._track_outcome(1.0 if win else -1.0)
+        return self._verdict()
+
+    def feed(self, net_bps: float) -> str:
+        """Magnitude-aware update: feed the realized net basis points
+        from each signal-conditional outcome. Win-rate monitoring can
+        mask a negative-expectancy strategy (many small wins, few large
+        losses); this catches it."""
+        self.n += 1
+        p_win = self.p1 if net_bps > 0 else (1 - self.p1)
+        p_null = self.p0 if net_bps > 0 else (1 - self.p0)
+        self.llr += math.log(p_win / p_null)
+        self._track_outcome(net_bps)
+        return self._verdict()
+
+    def _track_outcome(self, net: float) -> None:
+        self._net_bps_sum += net
+        self._net_bps_min = min(self._net_bps_min, self._net_bps_sum)
+        lam = 0.15  # EWMA half-life ~4.6 outcomes
+        self._ewma_bps = (net if self._ewma_bps is None else
+                          (1 - lam) * self._ewma_bps + lam * net)
+
+    def _verdict(self) -> str:
+        # Drawdown guard fires early — you do not need 20 outcomes to
+        # know a cumulative -30bps track is degraded.
+        if self._net_bps_min <= self.drift_floor_bps * 10:
+            self.verdict = "degraded"
+        elif (self._ewma_bps is not None and self.n >= 15
+              and self._ewma_bps <= self.drift_floor_bps):
+            self.verdict = "degraded"
+        elif self.llr >= self.upper:
             self.verdict = "degraded"
         elif self.llr <= self.lower and self.n >= 20:
             self.verdict = "confirms_edge"
@@ -686,12 +727,15 @@ async def evolve_alpha_generation(
     parent_candidate_ids: List[str],
     bars: List[Dict[str, Any]],
     n_offspring: int = 8,
+    dev_fraction: float = 0.6,
 ) -> Dict[str, Any]:
     """Generational self-training (ASRS Evolution Engine): breed new
     candidates from FDR survivors via the alpha grammar's own mutation/
     crossover, propose each offspring through the same gated pipeline,
-    batch-validate with FDR control. The AI evolves its own attached
-    models — every generation still faces the gate."""
+    batch-validate with FDR control — then re-validate survivors on a
+    SEALED outer slice. Bars are split so the data that selected the
+    parents is never reused as evidence for the children; only the
+    untouched tail produces CONFIRMED verdicts."""
     import random as _global_random
     _global_random.seed(13)  # GeneticAlphaSearch uses global random
     from trading_bot.apex_fi.alpha_mining import GeneticAlphaSearch
@@ -726,10 +770,41 @@ async def evolve_alpha_generation(
             proposed_by="self_training:evolve")
         if r.get("status") == "proposed":
             proposed.append(r["candidate_id"])
-    verdict = await validate_alpha_generation(csc, proposed, bars)
+    # Development/outer split: the parent-generation data selected these
+    # expressions — validating offspring on it again would make the
+    # verdict circular. Offspring earn selection on the dev slice and a
+    # real verdict only on the sealed outer tail.
+    split = max(40, int(len(bars) * dev_fraction))
+    dev_bars, outer_bars = bars[:split], bars[split:]
+    verdict = await validate_alpha_generation(csc, proposed, dev_bars)
+    selected = [r["candidate_id"] for r in verdict["candidates"]
+                if r.get("fdr_survived")]
+    outer_results = []
+    for cid in selected:
+        r = await csc.validate_model(cid, outer_bars)
+        c = csc._engineered_models.get(cid)
+        if c is not None:
+            c.validation = dict(c.validation or {}, data_role="sealed_outer",
+                                selection_trials=len(proposed))
+        outer_results.append({"candidate_id": cid,
+                              "status": r.get("status"),
+                              "verdict": r.get("verdict")})
+    await csc._persist_audit_event(
+        event_type="MODEL_EVOLUTION", action="evolve_generation",
+        outcome="complete",
+        details={"parents": len(parents), "offspring": len(proposed),
+                 "dev_survivors": len(selected),
+                 "outer_confirmed": sum(
+                     1 for r in outer_results
+                     if r["verdict"] == "CONFIRMED"),
+                 "selection_trials": len(proposed)})
     return {"parents": len(parents), "offspring": len(proposed),
-            "validated": verdict["validated"],
-            "candidates": verdict["candidates"]}
+            "dev_validated": verdict["validated"],
+            "outer_confirmed": sum(
+                1 for r in outer_results if r["verdict"] == "CONFIRMED"),
+            "selection_trials": len(proposed),
+            "candidates": verdict["candidates"],
+            "outer": outer_results}
 
 
 async def propose_alpha_generation(

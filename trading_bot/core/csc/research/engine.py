@@ -22,7 +22,7 @@ import logging
 import time
 from collections import deque
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 import numpy as np
 
@@ -56,6 +56,7 @@ class ResearchReport:
                                       # INCONCLUSIVE / INSUFFICIENT_EVIDENCE
     created_at: float
     symbol: str = "unknown"
+    question_type: str = "market_edge"  # market_edge | operational
     branches_considered: int = 0
     surviving_branch: Optional[str] = None
     evidence_node_count: int = 0
@@ -75,6 +76,7 @@ class ResearchReport:
             "verdict": self.verdict,
             "created_at": self.created_at,
             "symbol": self.symbol,
+            "question_type": self.question_type,
             "branches_considered": self.branches_considered,
             "surviving_branch": self.surviving_branch,
             "evidence_node_count": self.evidence_node_count,
@@ -102,6 +104,25 @@ class ResearchReport:
             },
             "advisory_only": True,
         }
+
+
+def _classify_question(question: str, market_data: Dict[str, Any]
+                       ) -> str:
+    """Route the question to a matching experiment type. A market
+    simulation cannot answer 'why did our own advisor degrade' —
+    operational questions get a measured-state diagnostic instead of
+    branch simulation. Explicit routing beats keyword guessing: a caller
+    may set market_data['question_type']."""
+    explicit = str((market_data or {}).get("question_type") or "")
+    if explicit in ("market_edge", "operational"):
+        return explicit
+    q = (question or "").lower()
+    op_markers = ("degrad", "health", "suppressed", "failure", "error",
+                  "advisor", "component", "our own", "self_",
+                  "sprt", "rollback", "drift", "latency", "pipeline")
+    if any(m in q for m in op_markers):
+        return "operational"
+    return "market_edge"
 
 
 def _content_overlap(a: str, b: str) -> float:
@@ -318,6 +339,60 @@ class ResearchEngine:
     # Core pipeline
     # ------------------------------------------------------------------
 
+    def _investigate_operational(self, report: ResearchReport,
+                                 market_data: Dict[str, Any]
+                                 ) -> ResearchReport:
+        """Operational-diagnostic experiment: questions about the system's
+        own state (degraded model, suppressed action, unhealthy component)
+        are answered from MEASURED state passed as
+        ``market_data['operational_context']`` — not from market branch
+        simulation, which cannot falsify a claim about our own pipeline.
+
+        The caller supplies measured facts; the engine's job is honest
+        verdict mapping:
+          CONFIRMED — the questioned condition is supported by measured
+                      evidence (e.g. a SPRT-degraded model really is
+                      degraded in the monitor's verdict)
+          FALSIFIED — measured state contradicts the question's premise
+          INSUFFICIENT_EVIDENCE — no measured context was supplied"""
+        ctx = (market_data or {}).get("operational_context")
+        if not isinstance(ctx, Mapping):
+            report.verdict = "INSUFFICIENT_EVIDENCE"
+            report.sim_summary = {
+                "experiment": "operational_diagnostic",
+                "reason": "no measured operational_context supplied"}
+            return report
+        report.sim_summary = {"experiment": "operational_diagnostic",
+                              "evidence": dict(ctx)}
+        findings = ctx.get("findings")
+        if isinstance(findings, list) and findings:
+            supported = [f for f in findings
+                         if isinstance(f, Mapping) and f.get("supported")]
+            refuted = [f for f in findings
+                       if isinstance(f, Mapping)
+                       and f.get("supported") is False]
+            if supported:
+                report.verdict = "CONFIRMED"
+                report.evidence_node_count = len(supported)
+                report.composite_confidence = float(
+                    ctx.get("confidence") or 0.6)
+            elif refuted and len(refuted) == len(findings):
+                report.verdict = "FALSIFIED"
+                report.evidence_node_count = len(refuted)
+            else:
+                report.verdict = "INCONCLUSIVE"
+                report.evidence_node_count = len(findings)
+        elif ctx.get("evidence"):
+            report.verdict = "CONFIRMED"
+            report.evidence_node_count = 1
+            report.composite_confidence = float(
+                ctx.get("confidence") or 0.5)
+        else:
+            report.verdict = "INSUFFICIENT_EVIDENCE"
+            report.sim_summary["reason"] = (
+                "operational_context carried no findings or evidence")
+        return report
+
     async def investigate(
         self,
         question: str,
@@ -335,6 +410,10 @@ class ResearchEngine:
             created_at=time.time(),
             symbol=str((market_data or {}).get("symbol") or "unknown"),
         )
+        report.question_type = _classify_question(question, market_data)
+
+        if report.question_type == "operational":
+            return self._investigate_operational(report, market_data)
 
         branches = await self.hypothesis_gen.generate_competing_branches(
             market_data,
