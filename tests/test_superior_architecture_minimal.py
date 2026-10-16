@@ -41,8 +41,10 @@ async def test_csc_pipeline_success():
     mock_report.decision = GovernanceDecision.APPROVED
     mock_shield.validate_action.return_value = mock_report
     mock_shield.GovernanceDecision = GovernanceDecision
+    mock_shield.audit_log_action.return_value = {"decision": "APPROVE", "reason": "Approved by mock shield"}
 
     csc = CognitiveSystemController(mock_world_model, mock_hms, shield=mock_shield)
+    csc.decision_bus.register_voter("shield", mock_shield.audit_log_action)
 
     async def mock_gen_branches(observation):
         branch = ReasoningBranch(branch_id="test", name="Test Branch")

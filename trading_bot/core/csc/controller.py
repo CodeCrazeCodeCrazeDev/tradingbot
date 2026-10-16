@@ -1,11 +1,16 @@
 """
-Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
 Cognitive System Controller (CSC) - UCA V6
+Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
 
-Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
-Implements 'DiscoLoop' (arXiv:2607.00341) for multi-hop reasoning, 'HIPIF' (arXiv:2606.10507) for information folding,
-and 'AutoResearchClaw' (arXiv:2605.20025) for Pivot/Refine self-healing control.
-Incorporates transferable principles from REG-401 to REG-500 (Batch 5 Research Paper Registry).
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Epistemic knowledge steering and active inference.
+- arXiv:2607.00341 (DiscoLoop): LogAct shared log backbone and Byzantine consensus.
+- arXiv:2607.01224 (CORAL): Active inference Variational Free Energy minimization.
+- arXiv:2605.12061 (Search-R1 / SAGE): Multi-perspective reasoning and graph memory.
+- arXiv:2605.10813 (NanoResearch): Specialized role-based agent debate architectures.
+- arXiv:2605.20025 (S2L / AutoResearchClaw): Dynamic skill routing and Pivot/Refine loops.
+- arXiv:2605.17734 (HASP): Prescriptive guardrail skill verification.
+- arXiv:2605.21482 (DeepWeb-Bench): High-fidelity verification and confidence calibration.
 """
 
 import numpy as np
@@ -90,11 +95,15 @@ class CognitiveSystemController:
     Implements 12-step Recursive Active Inference.
     Supports backward compatibility for legacy positional signatures.
 
-    Scientific Traceability:
-    - LogAct (arXiv:2605.29303): Byzantine consensus over decision_bus
-    - DiscoLoop (arXiv:2605.20025): Discrete-continuous reasoning iteration
-    - HASP (arXiv:2605.12061): Prescriptive guardrail skill verification
-    - AutoResearchClaw (arXiv:2605.17734): Pivot/Refine hypothesis loops
+    Paper Traceability Matrix:
+    - 2605.29303: Epistemic knowledge steering and active inference.
+    - 2607.00341: LogAct shared log backbone and Byzantine consensus.
+    - 2607.01224: CORAL active inference Variational Free Energy minimization.
+    - 2605.12061: SAGE / Search-R1 multi-perspective reasoning.
+    - 2605.10813: NanoResearch role-based debate architecture.
+    - 2605.20025: S2L skill-to-task latent routing and DiscoLoop recurrence.
+    - 2605.17734: HASP guardrails and AutoResearchClaw Pivot/Refine loops.
+    - 2605.21482: DeepWeb-Bench verification framework and confidence calibration.
     """
 
     _instance = None
