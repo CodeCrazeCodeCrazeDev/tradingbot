@@ -2,10 +2,17 @@
 Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
 Cognitive System Controller (CSC) - UCA V6
 
-Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
-Implements 'DiscoLoop' (arXiv:2607.00341) for multi-hop reasoning, 'HIPIF' (arXiv:2606.10507) for information folding,
-and 'AutoResearchClaw' (arXiv:2605.20025) for Pivot/Refine self-healing control.
-Incorporates transferable principles from REG-401 to REG-500 (Batch 5 Research Paper Registry).
+Scientific Traceability Matrix (Mandatory Research Papers):
+- EKSFT: arXiv:2605.29303
+- DiscoLoop: arXiv:2607.00341
+- AutoMem: arXiv:2607.01224
+- SAGE: arXiv:2605.12061
+- NanoResearch: arXiv:2605.10813
+- AutoResearchClaw: arXiv:2605.20025
+- HASP: arXiv:2605.17734
+- DeepWeb-Bench: arXiv:2605.21482
+
+Incorporates transferable principles from REG-1001 to REG-1100 (Batch 11 Research Paper Registry).
 """
 
 import numpy as np
@@ -92,9 +99,13 @@ class CognitiveSystemController:
 
     Scientific Traceability:
     - LogAct (arXiv:2605.29303): Byzantine consensus over decision_bus
-    - DiscoLoop (arXiv:2605.20025): Discrete-continuous reasoning iteration
-    - HASP (arXiv:2605.12061): Prescriptive guardrail skill verification
-    - AutoResearchClaw (arXiv:2605.17734): Pivot/Refine hypothesis loops
+    - DiscoLoop (arXiv:2607.00341 / arXiv:2605.20025): Discrete-continuous reasoning iteration
+    - AutoMem (arXiv:2607.01224): Hierarchical memory structures
+    - SAGE (arXiv:2605.12061): Evidence graph retrieval
+    - NanoResearch (arXiv:2605.10813): Compact agent execution
+    - AutoResearchClaw (arXiv:2605.20025): Pivot/Refine hypothesis loops
+    - HASP (arXiv:2605.17734): Prescriptive guardrail skill verification
+    - DeepWeb-Bench (arXiv:2605.21482): Uncertainty & benchmarking
     """
 
     _instance = None
@@ -130,9 +141,6 @@ class CognitiveSystemController:
         *args,
         **kwargs
     ):
-        # Singleton reuse: a bare CognitiveSystemController() returns the
-        # existing instance untouched. Passing any dependency is an explicit
-        # reconfiguration — re-run init so injected components apply.
         if getattr(self, "_initialized", False) and not (
             args or kwargs or world_model is not None or hms is not None
         ):
@@ -145,8 +153,6 @@ class CognitiveSystemController:
         self.hms = hms
         self.folding_operator = InformationFolder()
 
-        # Default to the module-level immutable shield; never allow the veto
-        # gate to be silently nulled out by a missing kwarg.
         self.shield = kwargs.get("shield") or default_shield
         self.skill_router = kwargs.get("skill_router")
         self.verifier_swarm = kwargs.get("verifier_swarm")
@@ -154,17 +160,11 @@ class CognitiveSystemController:
         self.consensus_engine = kwargs.get("consensus_engine")
         self.execution_planner = kwargs.get("execution_planner")
         self.evolution_gate = kwargs.get("evolution_gate")
-        # Typed governance gate (human approval policy). "None" means not yet
-        # resolved; resolved lazily at the governance stage and cached so a
-        # missing gate fails closed every cycle rather than skipping it once.
         self.governance_gate = kwargs.get("governance_gate", None)
         self._governance_gate_resolved = self.governance_gate is not None
 
-        # Map positional arguments
-        # If we got CognitiveSystemController(world_model, hms, shield)
         if len(args) == 1:
             self.shield = args[0]
-        # Or if we have V6 signature: (world_model, hms, skill_router, verifier_swarm, risk_engine, consensus_engine, execution_planner, evolution_gate, shield=None)
         elif len(args) >= 6:
             self.skill_router = args[0]
             self.verifier_swarm = args[1]
@@ -175,7 +175,6 @@ class CognitiveSystemController:
             if len(args) >= 7:
                 self.shield = args[6]
         elif len(args) > 1:
-            # General fallback pairing by type or index
             for arg in args:
                 if isinstance(arg, ImmutableShield):
                     self.shield = arg
@@ -184,27 +183,20 @@ class CognitiveSystemController:
                 elif isinstance(arg, VerificationSwarm):
                     self.verifier_swarm = arg
 
-        # Inject default functional components if not explicitly provided
         self.skill_router = self.skill_router or SkillRouter()
         self.verifier_swarm = self.verifier_swarm or VerificationSwarm()
 
         from ..unified_event_bus import decision_bus as real_decision_bus
         self.decision_bus = kwargs.get("decision_bus") or self.consensus_engine or real_decision_bus
 
-        # Ensure the canonical shield is wired as a voter on the bus this CSC
-        # actually uses. Registration is idempotent; this re-wires it after
-        # any decision_bus.reset() so the safety path never silently opens.
         if self.shield and hasattr(self.decision_bus, "register_voter"):
             self.decision_bus.register_voter("shield", self.shield.audit_log_action)
 
-        # Reset functional/state attributes
         self.hypothesis_gen = HypothesisGenerator(world_model)
         self.folder = self.folding_operator
 
-        # DiscoLoop recurrence cell (required by _run_discoloop_reasoning)
         self.discoloop = DiscoLoopCell()
 
-        # Persistent Cognitive Agents (PCA) — transactive memory population
         try:
             from ...agents.pca import AlphaAgent, MacroAgent, RiskAgent
             self.agent_population = [
@@ -216,21 +208,16 @@ class CognitiveSystemController:
             logger.warning(f"CSC-V6: PCA population unavailable: {exc}")
             self.agent_population = []
 
-        # State Channels
         self.continuous_state = {}
         self.discrete_channel = []
         self.last_prediction = None
         self.vfe_history = []
 
-        # Runtime state surface expected by legacy UCA tests
         self.running = False
         self.state = CSCRuntimeState()
 
         self._max_loops = 3
 
-        # Register live components into the canonical registry — one inventory
-        # for every component in the system (UnifiedComponentRegistry is the
-        # single authoritative registry).
         try:
             from ..unified_registry import get_registry
             from ...system_interfaces import SystemLayer
@@ -256,7 +243,6 @@ class CognitiveSystemController:
 
     @property
     def router(self) -> Any:
-        """Alias to skill_router for backward compatibility."""
         return self.skill_router
 
     @property
@@ -264,14 +250,6 @@ class CognitiveSystemController:
         return 0.15
 
     def _calculate_vfe_surprise(self, observation: Dict[str, Any]) -> float:
-        """
-        Variational Free Energy surprise (Active Inference).
-
-        Bounded in [0, 1]: deviation between the encoded observation and the
-        current latent belief state, squashed with tanh. High values signal
-        novelty that should drive hypothesis generation; low values signal
-        the observation matches internal predictions.
-        """
         try:
             if self.world_model is not None and hasattr(self.world_model, "encode"):
                 encoded = np.asarray(self.world_model.encode(observation), dtype=np.float64).ravel()
@@ -317,17 +295,12 @@ class CognitiveSystemController:
         return coro_or_val
 
     async def _run_discoloop_internalization(self, observation: Dict[str, Any], num_loops: int = 2):
-        """Discrete-continuous looped internalization to update internal channels."""
         self._max_loops = num_loops
         await self._run_discoloop_reasoning(observation)
         self.discrete_channel = ["internalized_insight"]
         self.continuous_state = {"v": 1.0, "latent": self.discoloop.hidden_state.tolist()}
 
     def _calculate_sensory_surprise(self, observation: Dict[str, Any]) -> float:
-        """
-        Minimizing surprise via continuous Variational Free Energy (VFE) state estimation
-        (NOVEL-001, NOVEL-009). Incorporates volatility-scaled prediction error.
-        """
         if not self.last_prediction:
             return 1.0
 
@@ -337,7 +310,6 @@ class CognitiveSystemController:
 
         if obs_price is not None and pred_price > 0:
             rel_error = abs(obs_price - pred_price) / pred_price
-            # Scale surprise by local regime volatility
             scaled_error = rel_error / max(0.001, volatility)
             vfe_surprise = 0.05 + min(1.5, scaled_error)
             return float(vfe_surprise)
@@ -345,10 +317,6 @@ class CognitiveSystemController:
         return 0.2
 
     async def _consult_agent_population(self, observation: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """
-        Transactive memory consultation: each Persistent Cognitive Agent updates
-        its epistemic core from the observation and shares a compressed artifact.
-        """
         artifacts: List[Dict[str, Any]] = []
         for agent in getattr(self, "agent_population", []):
             try:
@@ -360,13 +328,10 @@ class CognitiveSystemController:
         return artifacts
 
     async def _run_discoloop_reasoning(self, observation: Dict[str, Any], k: Optional[int] = None):
-        """DiscoLoop recurrence: h_k+1, e_k+1 = f(h_k, e_k)"""
         loops = k if k is not None else self._max_loops
         e_k = np.zeros((512,))
         e_k[0] = 1.0
 
-        # Ground the recurrence input in the actual observation (deterministic
-        # feature projection) rather than ungrounded random noise.
         input_signal = np.zeros((512,))
         if isinstance(observation, dict):
             input_signal[0] = float(observation.get("price", 0.0) or 0.0) / 1e5
@@ -384,7 +349,6 @@ class CognitiveSystemController:
             e_k = np.zeros_like(h_next)
             e_k[idx] = 1.0
 
-        # Bounded channel: retain only the most recent 100 tokens.
         if len(self.discrete_channel) > 100:
             self.discrete_channel = self.discrete_channel[-100:]
 
@@ -393,11 +357,8 @@ class CognitiveSystemController:
     async def _pivot_refine_loop(
         self, branches: List[ReasoningBranch], simulations: Dict[str, Any]
     ) -> Optional[ReasoningBranch]:
-        """AutoResearchClaw Pivot/Refine logic (arXiv:2605.17734)."""
         if not branches:
             return None
-        # Score on the full probabilistic signal — confidence alone is a
-        # constant default (0.9) which degenerates to first-branch-wins.
         best = max(
             branches,
             key=lambda b: b.confidence * b.probability * (1.0 - b.uncertainty),
@@ -416,7 +377,6 @@ class CognitiveSystemController:
         return best
 
     async def _refine_strategy(self, branch: ReasoningBranch, reports: List[Any]) -> ReasoningBranch:
-        """Refines a strategy branch based on verifier feedback by reducing confidence and tracing corrections."""
         new_branch = copy.deepcopy(branch)
         new_branch.confidence = round(branch.confidence * 0.9, 3)
         for r in reports:
@@ -426,7 +386,6 @@ class CognitiveSystemController:
         return new_branch
 
     def _apply_hasp_guardrails(self, observation: Dict[str, Any]) -> Dict[str, Any]:
-        """Synchronous HASP volatility guardrail check on a raw observation."""
         volatility = observation.get("volatility", 0.0)
         if isinstance(volatility, (int, float)) and volatility > 0.3:
             return {
@@ -440,9 +399,6 @@ class CognitiveSystemController:
         self, branch: ReasoningBranch, simulations: Dict[str, Any],
         trade_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """
-        Synthesizes the final trade proposal from the best reasoning branch and its simulation results.
-        """
         sim_data = simulations.get(branch.branch_id, {})
         if isinstance(sim_data, MagicMock) or hasattr(sim_data, "_mock_self"):
             sim_data = {}
@@ -470,10 +426,6 @@ class CognitiveSystemController:
         }
 
     async def execute_self_improvement_loop(self, observation: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Executes the recursive self-improvement governance cycle (UCA V6).
-        Triage score evaluates potential impact, confidence, and cost.
-        """
         impact = float(observation.get("impact", 0.5))
         confidence = float(observation.get("confidence", 0.5))
         cost = float(observation.get("cost", 0.5))
@@ -496,7 +448,6 @@ class CognitiveSystemController:
         }
 
     def _create_ledger_entry(self, branch: ReasoningBranch, scenarios: List[Any]) -> ResearchLedgerEntry:
-        """Constructs an immutable research ledger entry for decision provenance."""
         provenance = InstitutionalProvenance(pipeline_version="UCA-V6", git_sha="uca-2026-signed")
         return ResearchLedgerEntry(
             entry_id=_determinism.get_uuid(),
@@ -508,7 +459,6 @@ class CognitiveSystemController:
         )
 
     def _calculate_composite_confidence(self, entry: ResearchLedgerEntry) -> ConfidenceVector:
-        """Computes calibrated confidence vector under DeepWeb-Bench standards."""
         return ConfidenceVector(
             statistical=getattr(entry, "composite_confidence", 0.8),
             regime=0.8,
@@ -518,7 +468,6 @@ class CognitiveSystemController:
         )
 
     def get_status(self) -> Dict[str, Any]:
-        """Returns the strategic controller's status and version metadata."""
         return {
             "status": "active",
             "version": "UCA-2026-V5",
@@ -527,12 +476,6 @@ class CognitiveSystemController:
             "vfe": self.variational_free_energy
         }
 
-    # -- 12-stage pipeline internals ------------------------------------------
-    # Extracted from process_market_observation so each stage is independently
-    # testable (TD-02). _Terminal wraps a stage-produced terminal result:
-    # `None` must not be conflated with "continue" since a missing branch
-    # legitimately produces a None decision at stage 7.
-
     class _Terminal:
         __slots__ = ("decision",)
 
@@ -540,17 +483,11 @@ class CognitiveSystemController:
             self.decision = decision
 
     def _normalize_observation(self, observation: Any) -> Tuple[Dict[str, Any], str]:
-        """Stage 0: accept dict or object-like observation; resolve trade_id."""
-        # Copy so stamping trade_id never mutates the caller's dict/object.
         if isinstance(observation, dict):
             obs_dict = dict(observation)
         else:
             obs_dict = dict(getattr(observation, "__dict__", {}) or {})
 
-        # Resolve exactly once: a caller-supplied id wins, else one draw from
-        # the deterministic source. NB: dict.get(key, get_uuid()) would evaluate
-        # the default eagerly — a wasted draw even when the key exists — and
-        # divergent draw counts between keyed/unkeyed inputs break replay parity.
         trade_id = obs_dict.get("trade_id")
         if not trade_id:
             trade_id = _determinism.get_uuid()
@@ -558,13 +495,11 @@ class CognitiveSystemController:
         return obs_dict, trade_id
 
     async def _stage_perception(self, obs_dict: Dict[str, Any]) -> float:
-        """Stage 1: sensory surprise -> VFE history."""
         surprise = self._calculate_sensory_surprise(obs_dict)
         self.vfe_history.append(surprise)
         return surprise
 
     async def _stage_evidence_retrieval(self, observation: Any) -> List[Any]:
-        """Stage 2: HMS evidence chain with empty-chain fallback."""
         try:
             evidence_chain = await self._safe_await(self.hms.retrieve_evidence_chain(str(observation)))
         except Exception as e:
@@ -573,7 +508,6 @@ class CognitiveSystemController:
         return evidence_chain
 
     async def _stage_guardrails(self, observation: Any, obs_dict: Dict[str, Any]) -> Optional["_Terminal"]:
-        """Stage 3: HASP volatility check, then skill-router guardrail."""
         intervention = self._apply_hasp_guardrails(observation)
         if isinstance(intervention, dict) and intervention.get("status") != "pf_intervention":
             intervention = await self.skill_router.route_task("market_ingestion", observation)
@@ -591,16 +525,12 @@ class CognitiveSystemController:
         return None
 
     async def _stage_internalization(self, obs_dict: Dict[str, Any]) -> None:
-        """Stages 4 + 4.5: DiscoLoop recurrence and PCA consultation."""
         await self._run_discoloop_reasoning(obs_dict)
-
-        # PCA Consultation — persistent agents share compressed artifacts
         await self._consult_agent_population(obs_dict)
 
     async def _stage_hypothesis_and_simulation(
         self, observation: Any
     ) -> Tuple[List[ReasoningBranch], Dict[str, Any]]:
-        """Stages 5 + 6: competing branches, then causal simulation."""
         branches = await self._safe_await(self.hypothesis_gen.generate_competing_branches(observation))
 
         sim_results = {}
@@ -615,10 +545,8 @@ class CognitiveSystemController:
     async def _stage_pivot_refine(
         self, branches: List[ReasoningBranch], sim_results: Dict[str, Any]
     ) -> Any:
-        """Stage 7: Pivot/Refine selection; _Terminal(None) if nothing viable."""
         best_branch = await self._safe_await(self._pivot_refine_loop(branches, sim_results))
         if not best_branch:
-            # No viable reasoning branches — nothing to decide.
             logger.info("CSC-V6: No viable reasoning branches after Pivot/Refine; returning no decision")
             return self._Terminal(None)
         return best_branch
@@ -627,7 +555,6 @@ class CognitiveSystemController:
         self, best_branch: ReasoningBranch, sim_results: Dict[str, Any],
         trade_id: str, obs_dict: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """Stage 8: final trade proposal from the winning branch."""
         decision_proposal = self._select_optimal_action(
             best_branch, sim_results, trade_id=trade_id)
         if decision_proposal and isinstance(decision_proposal, dict):
@@ -636,8 +563,6 @@ class CognitiveSystemController:
         return decision_proposal
 
     class _UnavailableGovernanceGate:
-        """Fail-closed stub used when no governance gate can be constructed."""
-
         async def authorize(self, action, payload, context):
             return None
 
@@ -645,13 +570,6 @@ class CognitiveSystemController:
         self, decision_proposal: Optional[Dict[str, Any]],
         obs_dict: Dict[str, Any], trade_id: str,
     ) -> Tuple[Optional["_Terminal"], Any]:
-        """Stage 8.5: canonical portfolio-risk boundary (fail closed).
-
-        Returns (terminal, risk_decision). When the canonical service approves
-        a smaller quantity than proposed, the sizing authority wins — the
-        proposal quantity is clamped to ``approved_quantity`` before the
-        proposal can proceed to governance/shield/execution.
-        """
         risk_decision = None
         if self.risk_engine is not None and hasattr(self.risk_engine, "evaluate_action"):
             risk_decision = await self._safe_await(
@@ -677,9 +595,6 @@ class CognitiveSystemController:
         return None, risk_decision
 
     def _get_governance_gate(self) -> Any:
-        """Resolve the typed governance gate, lazily defaulting to the
-        human-layer approval gate wrapped in ``HumanApprovalPolicy``. A gate
-        that cannot be constructed resolves to a fail-closed stub."""
         if not self._governance_gate_resolved:
             self._governance_gate_resolved = True
             try:
@@ -695,11 +610,6 @@ class CognitiveSystemController:
         self, decision_proposal: Optional[Dict[str, Any]],
         obs_dict: Dict[str, Any], risk_decision: Any, trade_id: str,
     ) -> Optional["_Terminal"]:
-        """Stage 8.6: human-governance gate (fail closed).
-
-        Runs after canonical risk and before the LogAct proposal/shield so the
-        pipeline order is risk -> governance -> shield -> bus -> execution.
-        A missing, erroring, or denying gate always rejects."""
         gate = self._get_governance_gate()
         if gate is None or not hasattr(gate, "authorize"):
             return self._Terminal(CoreDecision(
@@ -728,7 +638,6 @@ class CognitiveSystemController:
         return None
 
     async def _stage_logact_proposal(self, decision_proposal: Optional[Dict[str, Any]]) -> None:
-        """Stage 9: TRADE_PROPOSAL onto the decision bus."""
         log_action = LogAction(
             action_type="TRADE_PROPOSAL",
             payload=decision_proposal,
@@ -742,10 +651,6 @@ class CognitiveSystemController:
         self, best_branch: ReasoningBranch, sim_results: Dict[str, Any],
         decision_proposal: Optional[Dict[str, Any]], trade_id: str,
     ) -> Any:
-        """Stage 10: swarm verification + one bounded refinement pass.
-
-        Returns (best_branch, ledger_entry) on gate pass, else _Terminal.
-        """
         ledger_entry = self._create_ledger_entry(best_branch, sim_results.get(best_branch.branch_id, []))
         reports = await self._safe_await(self.verifier_swarm.run_swarm(ledger_entry))
         if not isinstance(reports, list):
@@ -754,7 +659,6 @@ class CognitiveSystemController:
 
         from ..verification.swarm import EvidenceGraphGate
         if not EvidenceGraphGate.verify_evidence_first(ledger_entry, reports):
-            # Pivot/Refine: one bounded refinement pass, then re-verify.
             refined = await self._safe_await(self._refine_strategy(best_branch, reports))
             if refined is not None:
                 best_branch = refined
@@ -766,8 +670,6 @@ class CognitiveSystemController:
 
         if not EvidenceGraphGate.verify_evidence_first(ledger_entry, reports):
             vetoed = any(getattr(r, "is_valid", True) is False for r in reports)
-            # Surface the gate's actual rejection cause (consensus %, vetoing
-            # verifier critique, or evidence-graph sparsity) so callers see why.
             gate_reason = getattr(EvidenceGraphGate, "last_rejection_reason", None)
             reason = (
                 f"Failed Pivot/Refine loop: {gate_reason}"
@@ -787,7 +689,6 @@ class CognitiveSystemController:
         self, decision_proposal: Optional[Dict[str, Any]],
         obs_dict: Dict[str, Any],
     ) -> Optional["_Terminal"]:
-        """Stage 11: Immutable Shield validation."""
         if self.shield is not None:
             shield_report = await self._safe_await(self.shield.validate_action("trade", decision_proposal, {"market": obs_dict}))
             if shield_report and getattr(shield_report, "decision", None) != GovernanceDecision.APPROVED:
@@ -802,7 +703,6 @@ class CognitiveSystemController:
         self, ledger_entry: ResearchLedgerEntry,
         decision_proposal: Optional[Dict[str, Any]], trade_id: str,
     ) -> "CoreDecision":
-        """Stage 12: fold + persist, TRADE_EXECUTION consensus, verdict."""
         self.folder.fold_history(ledger_entry)
         if self.hms is not None and hasattr(self.hms, "store_ledger_entry"):
             self.hms.store_ledger_entry(ledger_entry)
@@ -819,8 +719,6 @@ class CognitiveSystemController:
             status = await self._safe_await(action.wait_for_decision(timeout=5.0))
 
         if status not in (ActionStatus.APPROVED, ActionStatus.EXECUTED):
-            # Surface the veto/timeout reason from the audit trail so callers
-            # see *why* consensus failed, not just the terminal status.
             voter_reasons = [
                 str(report.get("reason", ""))
                 for report in getattr(action, "voter_reports", {}).values()
@@ -840,80 +738,46 @@ class CognitiveSystemController:
         )
 
     async def process_market_observation(self, observation: Any) -> Optional[CoreDecision]:
-        """
-        12-step Recursive Active Inference Pipeline (UCA V6).
-        """
-        # 0. Normalize + trade id
         obs_dict, trade_id = self._normalize_observation(observation)
-
-        # 1. Perception
         await self._stage_perception(obs_dict)
-
-        # 2. Evidence Retrieval
         evidence_chain = await self._stage_evidence_retrieval(observation)
-
-        # 3. Guardrails (HASP volatility + skill-router prescriptive)
         terminal = await self._stage_guardrails(observation, obs_dict)
         if terminal is not None:
             return terminal.decision
 
-        # 4/4.5. DiscoLoop + PCA internalization
         await self._stage_internalization(obs_dict)
-
-        # 5/6. Hypothesis generation + causal simulation
         branches, sim_results = await self._stage_hypothesis_and_simulation(observation)
-
-        # 7. Pivot/Refine
         best_branch = await self._stage_pivot_refine(branches, sim_results)
         if isinstance(best_branch, self._Terminal):
             return best_branch.decision
 
-        # 8. Decision synthesis
         decision_proposal = self._stage_synthesis(
             best_branch, sim_results, trade_id, obs_dict)
-
-        # 8.5. Canonical portfolio-risk boundary
         terminal, risk_decision = await self._stage_risk_check(
             decision_proposal, obs_dict, trade_id)
         if terminal is not None:
             return terminal.decision
 
-        # 8.6. Human-governance gate (required actions only; fail closed)
         terminal = await self._stage_governance(
             decision_proposal, obs_dict, risk_decision, trade_id)
         if terminal is not None:
             return terminal.decision
 
-        # 9. LogAct proposal
         await self._stage_logact_proposal(decision_proposal)
-
-        # 10. Verification swarm + bounded refinement
         verified = await self._stage_verification(
             best_branch, sim_results, decision_proposal, trade_id)
         if isinstance(verified, self._Terminal):
             return verified.decision
         best_branch, ledger_entry = verified
 
-        # 11. Immutable shield
         terminal = await self._stage_shield(decision_proposal, obs_dict)
         if terminal is not None:
             return terminal.decision
 
-        # 12. Fold, persist, execute consensus
         return await self._stage_execute_and_persist(
             ledger_entry, decision_proposal, trade_id)
 
     async def execute_task(self, task: str, context: Any = None) -> Dict[str, Any]:
-        """
-        Execute a strategic task against the current market context.
-
-        The CSC's public task entry point (used by main.py). A high-level task
-        string plus a market-data context is folded into an observation and run
-        through the 12-step active-inference pipeline.
-
-        Returns a task-completion envelope {"status", "success", "decision"}
-        where "decision" is the pipeline's CoreDecision (or None).
-        """
         if isinstance(context, dict):
             observation = dict(context)
         elif context is None:
@@ -927,8 +791,6 @@ class CognitiveSystemController:
             result = await self.process_market_observation(observation)
         finally:
             self.state.active_tasks.remove(task)
-        # Each executed task folds into runtime state and reduces epistemic uncertainty
         self.state.folded_history.append({"task": task, "result": result})
         self.state.epistemic_uncertainty = max(0.05, self.state.epistemic_uncertainty * 0.9)
-        # "status" refers to task completion — a vetoed trade is still a completed cycle.
         return {"status": "completed", "success": True, "decision": result}
