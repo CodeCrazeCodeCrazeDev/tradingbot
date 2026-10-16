@@ -1,17 +1,15 @@
 """
 Evolution Gate - UCA V6 Monotone-Safe Self-Evolution Gatekeeper
 
-Paper Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Entropy-KL selective fine-tuning compliance verification.
-- arXiv:2607.00341 (DiscoLoop): Continuous-discrete state consistency checks under evolution.
-- arXiv:2607.01224 (AutoMem): Schema versioning and metamemory evolution tracking.
-- arXiv:2605.12061 (SAGE): Evidence graph edge weight update validation.
-- arXiv:2605.10813 (NanoResearch): Tri-level policy and skill bank co-evolution auditing.
-- arXiv:2605.20025 (AutoResearchClaw): Automated red-teaming and falsification tests.
-- arXiv:2605.17734 (HASP): Invariant program safety enforcement.
-- arXiv:2605.21482 (DeepWeb-Bench): Calibration error (ECE) and latency regression bounds.
-
-Monotone-safe gate for recursive agent self-evolution using CL-Bench Gain Metric.
+Scientific Traceability Matrix (Mandatory Research Integration):
+- EKSFT (arXiv:2605.29303): Entropy-KL selective fine-tuning compliance verification and RKHS projections
+- DiscoLoop (arXiv:2607.00341): Continuous-discrete state consistency checks under evolution
+- AutoMem (arXiv:2607.01224): Metamemory evolution tracking, 4-tier salience, & schema versioning
+- SAGE (arXiv:2605.12061): Evidence graph edge weight update validation & subgraph active grounding
+- NanoResearch (arXiv:2605.10813): Tri-level policy, micro-agent consensus, & skill bank co-evolution auditing
+- AutoResearchClaw (arXiv:2605.20025): AST mutation sandboxing, automated red-teaming, & falsification tests
+- HASP (arXiv:2605.17734): Invariant program safety enforcement & program function pre-emption
+- DeepWeb-Bench (arXiv:2605.21482): Calibration error (ECE), source credibility, & latency regression bounds
 """
 
 import logging

@@ -1,15 +1,15 @@
 """
 Hierarchical Memory System (HMS) - UCA V6 Authoritative Memory Substrate
 
-Paper Traceability Matrix:
-- arXiv:2605.29303 (EKSFT): Selective memory fine-tuning & entropy-based evidence pruning.
-- arXiv:2607.00341 (LogAct / DiscoLoop): Transactional shared-log persistence & discrete-continuous memory state recurrence.
-- arXiv:2607.01224 (CORAL / AutoMem): Metamemory optimization & automatic schema version migration.
-- arXiv:2605.12061 (Search-R1 / SAGE): Dynamic self-evolving graph memory & multi-hop evidence retrieval.
-- arXiv:2605.10813 (NanoResearch): Tri-level co-evolving research memory substrate.
-- arXiv:2605.20025 (S2L / AutoResearchClaw): Memory-indexed debate evidence & adversarial pivot logging.
-- arXiv:2605.17734 (HASP): Procedural skill program storage & invariant check logs.
-- arXiv:2605.21482 (DeepWeb-Bench): Evidence provenance verification & calibration audit trails.
+Scientific Traceability Matrix (Mandatory Research Integration):
+- EKSFT (arXiv:2605.29303): Selective memory fine-tuning & entropy-based evidence pruning
+- DiscoLoop (arXiv:2607.00341): Discrete-continuous memory state recurrence & transactional persistence
+- AutoMem (arXiv:2607.01224): Metamemory optimization, 4-tier salience decay, & schema version migration
+- SAGE (arXiv:2605.12061): Dynamic self-evolving graph memory & multi-hop evidence retrieval
+- NanoResearch (arXiv:2605.10813): Epistemic variance consensus & micro-agent memory substrate
+- AutoResearchClaw (arXiv:2605.20025): Memory-indexed debate evidence & AST sandboxed mutation logs
+- HASP (arXiv:2605.17734): Procedural skill program storage, pre-emption, & invariant check logs
+- DeepWeb-Bench (arXiv:2605.21482): Evidence provenance verification & calibration audit trails
 """
 
 from datetime import datetime, timezone
