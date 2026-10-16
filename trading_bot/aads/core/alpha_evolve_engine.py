@@ -635,7 +635,7 @@ def signal_rsi(data: pd.DataFrame) -> pd.Series:
             return None
         
         try:
-            from trading_bot.core.security.sandbox import SecureASTVisitor, UnsafeCodeError
+            from trading_bot.core.security.sandbox import SecureASTVisitor
             visitor = SecureASTVisitor()
             tree = ast.parse(signal.code)
             visitor.visit(tree)
@@ -651,8 +651,6 @@ def signal_rsi(data: pd.DataFrame) -> pd.Series:
                 'math': __import__('math'),
             }
             
-            from trading_bot.core.security.sandbox import SecureASTVisitor
-            SecureASTVisitor().validate_code(signal.code)
             exec(signal.code, namespace)
             
             # Find the function

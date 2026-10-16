@@ -302,12 +302,15 @@ class NewsPipeline:
                 "pageSize": 100
             }
             
-            response = requests.get(url, params=params)
-            data = response.json()
-            
-            if response.status_code != 200:
-                logger.error(f"NewsAPI error: {data.get('message', 'Unknown error')}")
-                return []
+            if requests:
+                response = await asyncio.to_thread(requests.get, url, params=params)
+                if response.status_code != 200:
+                    data = response.json()
+                    logger.error(f"NewsAPI error: {data.get('message', 'Unknown error')}")
+                    return []
+                data = response.json()
+            else:
+                data = {}
             
             # Process articles
             for item in data.get("articles", []):
