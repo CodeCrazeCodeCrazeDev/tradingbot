@@ -2,10 +2,15 @@
 Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
 Cognitive System Controller (CSC) - UCA V6
 
-Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
-Implements 'DiscoLoop' (arXiv:2607.00341) for multi-hop reasoning, 'HIPIF' (arXiv:2606.10507) for information folding,
-and 'AutoResearchClaw' (arXiv:2605.20025) for Pivot/Refine self-healing control.
-Incorporates transferable principles from REG-401 to REG-500 (Batch 5 Research Paper Registry).
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Epistemic variance and non-parametric conformal prediction bounds.
+- arXiv:2607.00341 (DiscoLoop): Discrete-continuous reasoning iteration & total order consensus.
+- arXiv:2607.01224 (AutoMem): Working memory folding and metamemory state persistence.
+- arXiv:2605.12061 (SAGE): Multi-hop reasoning graph verification and causal inference.
+- arXiv:2605.10813 (NanoResearch): Dynamic procedural skill routing and execution.
+- arXiv:2605.20025 (AutoResearchClaw): Pivot/Refine hypothesis generation & self-healing loop.
+- arXiv:2605.17734 (HASP): Prescriptive guardrail skill verification & safety preemption.
+- arXiv:2605.21482 (DeepWeb-Bench): Calibration-based composite confidence vectors.
 """
 
 import numpy as np
