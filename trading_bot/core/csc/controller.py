@@ -1,10 +1,17 @@
 """
-Integrated "One Brain" implementing the 12-step Recursive Active Inference pipeline.
-Cognitive System Controller (CSC) - UCA V6
+Cognitive System Controller (CSC) - UCA V6 Integrated "One Brain"
+
+Paper Traceability Matrix:
+- arXiv:2605.29303 (EKSFT): Verification-backed active inference & selective model fine-tuning.
+- arXiv:2607.00341 (LogAct / DiscoLoop): Total order execution routing & continuous-discrete loop orchestration.
+- arXiv:2607.01224 (CORAL / AutoMem): Metamemory integration & context persistence across active inference cycles.
+- arXiv:2605.12061 (Search-R1 / SAGE): Causal graph-guided multi-hop reasoning & evidence retrieval.
+- arXiv:2605.10813 (NanoResearch): Tri-level co-evolving procedural skill selection.
+- arXiv:2605.20025 (S2L / AutoResearchClaw): Pivot/Refine self-healing control & automated red-teaming.
+- arXiv:2605.17734 (HASP): Non-negotiable financial risk sentinels & invariant safety guardrails.
+- arXiv:2605.21482 (DeepWeb-Bench): Conformal prediction calibration & expected calibration error bounds.
 
 Integrated "One Brain" implementing the 12-stage Recursive Active Inference pipeline.
-Implements 'DiscoLoop' (arXiv:2607.00341) for multi-hop reasoning, 'HIPIF' (arXiv:2606.10507) for information folding,
-and 'AutoResearchClaw' (arXiv:2605.20025) for Pivot/Refine self-healing control.
 Incorporates transferable principles from REG-401 to REG-500 (Batch 5 Research Paper Registry).
 """
 
