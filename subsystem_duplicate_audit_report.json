@@ -2,44 +2,44 @@
   "Orchestrator": {
     "authoritative": "CognitiveSystemController",
     "occurrences": [
-      "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\core\\csc\\controller.py"
+      "/app/trading_bot/core/csc/controller.py"
     ],
     "deprecated_occurrences": [
       {
-        "file": "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\autonomous_superintelligence\\meta_orchestrator.py",
-        "class": "MetaOrchestrator"
-      },
-      {
-        "file": "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\core_agent_system\\master_orchestrator.py",
+        "file": "/app/trading_bot/orchestrator/master_orchestrator.py",
         "class": "MasterOrchestrator"
       },
       {
-        "file": "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\core_agent_system\\meta_orchestrator.py",
+        "file": "/app/trading_bot/core_agent_system/master_orchestrator.py",
+        "class": "MasterOrchestrator"
+      },
+      {
+        "file": "/app/trading_bot/core_agent_system/meta_orchestrator.py",
         "class": "MetaOrchestrator"
       },
       {
-        "file": "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\neuros_evolution\\meta_intelligence_orchestrator.py",
+        "file": "/app/trading_bot/autonomous_superintelligence/meta_orchestrator.py",
+        "class": "MetaOrchestrator"
+      },
+      {
+        "file": "/app/trading_bot/orchestration/master_orchestrator.py",
+        "class": "MasterOrchestrator"
+      },
+      {
+        "file": "/app/trading_bot/neuros_evolution/meta_intelligence_orchestrator.py",
         "class": "MetaIntelligenceOrchestrator"
       },
       {
-        "file": "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\neuros_evolution\\neuros_orchestrator.py",
+        "file": "/app/trading_bot/neuros_evolution/neuros_orchestrator.py",
         "class": "NeurosEvolutionOrchestrator"
       },
       {
-        "file": "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\orchestration\\master_orchestrator.py",
+        "file": "/app/trading_bot/unified_architecture/layer6_orchestration.py",
         "class": "MasterOrchestrator"
       },
       {
-        "file": "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\orchestrator\\master_orchestrator.py",
-        "class": "MasterOrchestrator"
-      },
-      {
-        "file": "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\radar_ai\\agents\\meta_orchestrator.py",
+        "file": "/app/trading_bot/radar_ai/agents/meta_orchestrator.py",
         "class": "MetaOrchestrator"
-      },
-      {
-        "file": "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\unified_architecture\\layer6_orchestration.py",
-        "class": "MasterOrchestrator"
       }
     ],
     "status": "DEPRECATED_ACTIVE_WARNING"
@@ -47,7 +47,7 @@
   "World Model": {
     "authoritative": "CausalWorldModel",
     "occurrences": [
-      "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\world_model\\causal_model.py"
+      "/app/trading_bot/world_model/causal_model.py"
     ],
     "deprecated_occurrences": [],
     "status": "PASS"
@@ -55,7 +55,7 @@
   "Planner": {
     "authoritative": "FoldingOperator",
     "occurrences": [
-      "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\core\\csc\\folding.py"
+      "/app/trading_bot/core/csc/folding.py"
     ],
     "deprecated_occurrences": [],
     "status": "PASS"
@@ -63,7 +63,7 @@
   "Risk Engine": {
     "authoritative": "UnifiedRiskEngine",
     "occurrences": [
-      "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\core\\risk\\unified_risk_engine.py"
+      "/app/trading_bot/core/risk/unified_risk_engine.py"
     ],
     "deprecated_occurrences": [],
     "status": "PASS"
@@ -71,7 +71,7 @@
   "Memory Authority": {
     "authoritative": "HierarchicalMemorySystem",
     "occurrences": [
-      "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\core\\hms\\memory.py"
+      "/app/trading_bot/core/hms/memory.py"
     ],
     "deprecated_occurrences": [],
     "status": "PASS"
@@ -79,7 +79,7 @@
   "Event Bus": {
     "authoritative": "UnifiedDecisionBus",
     "occurrences": [
-      "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\core\\unified_event_bus.py"
+      "/app/trading_bot/core/unified_event_bus.py"
     ],
     "deprecated_occurrences": [],
     "status": "PASS"
@@ -87,7 +87,7 @@
   "Registry": {
     "authoritative": "UnifiedComponentRegistry",
     "occurrences": [
-      "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\core\\unified_registry.py"
+      "/app/trading_bot/core/unified_registry.py"
     ],
     "deprecated_occurrences": [],
     "status": "PASS"
@@ -101,7 +101,7 @@
   "Serialization Framework": {
     "authoritative": "SerializerRegistry",
     "occurrences": [
-      "C:\\Users\\peterson\\trading bot-merge-six\\trading_bot\\core\\governance\\serialization.py"
+      "/app/trading_bot/core/governance/serialization.py"
     ],
     "deprecated_occurrences": [],
     "status": "PASS"
