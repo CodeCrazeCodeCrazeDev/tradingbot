@@ -1286,7 +1286,9 @@ class CognitiveSystemController:
                 details={"name": c.name, "validation": c.validation})
             return {"status": "rejected", "reason": c.validation["error"]}
         c.fitted_params = params
-        c.validation = evaluate_holdout(c.spec, params, holdout)
+        c.validation = evaluate_holdout(c.spec, params, holdout,
+                                        horizon=int(c.spec.get("horizon")
+                                                    or 8))
         # Sealed evaluation: the verdict is bound to spec + dataset +
         # params + cost model — it can never be re-attributed silently.
         from .model_engineering import validation_seal, dataset_hash
@@ -1306,10 +1308,16 @@ class CognitiveSystemController:
         # mean without significance is luck, not edge.
         sig = (c.validation.get("significance") or {})
         thin = c.validation["holdout_signals"] < MIN_HOLDOUT_SIGNALS
+        # Promotion standard: beat zero AND beat the paired buy-and-hold
+        # baseline. Positive expectancy that loses to passive exposure is
+        # not edge — p_gt_baseline >= 0.5 closes that hole.
+        p_base = sig.get("p_gt_baseline")
         ok = (not thin
               and isinstance(c.validation["mean_net_bps"], float)
               and c.validation["mean_net_bps"] > MIN_EXPECTANCY_BPS
-              and float(sig.get("p_gt_0") or 0.0) >= SIGNIFICANCE_THRESHOLD)
+              and float(sig.get("p_gt_0") or 0.0) >= SIGNIFICANCE_THRESHOLD
+              and isinstance(p_base, (int, float))
+              and float(p_base) >= 0.5)
         c.status = "VALIDATED" if ok else "REJECTED"
         c.verdict = ("CONFIRMED" if ok else
                      "INCONCLUSIVE" if thin else "FALSIFIED")

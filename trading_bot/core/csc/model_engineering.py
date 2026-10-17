@@ -266,7 +266,8 @@ def _predict_threshold(obs: Mapping[str, Any], params: Dict[str, Any]
 
 
 def _fit_threshold(train: List[Dict[str, Any]], feature: str,
-                   direction: str) -> Optional[Dict[str, Any]]:
+                   direction: str, horizon: int = 8
+                   ) -> Optional[Dict[str, Any]]:
     """Sweep the in-sample quantiles of `feature`; keep the threshold with
     the best in-sample net expectancy. Returns None if nothing qualifies —
     validation decides honestly on the holdout regardless."""
@@ -280,7 +281,7 @@ def _fit_threshold(train: List[Dict[str, Any]], feature: str,
             hits = 0
             ret = 0.0
             for i, o in enumerate(train):
-                r = _forward_return(train, i)
+                r = _forward_return(train, i, horizon)
                 if r is None:
                     continue
                 pred = _predict_threshold(
@@ -309,7 +310,7 @@ def _fit_threshold(train: List[Dict[str, Any]], feature: str,
             hits = 0
             ret = 0.0
             for i, o in enumerate(train):
-                r = _forward_return(train, i)
+                r = _forward_return(train, i, horizon)
                 if r is None:
                     continue
                 pred = _predict_threshold(
@@ -352,7 +353,8 @@ def _ga_signal_causal(obs_list: List[Dict[str, Any]], expr: str,
     return out
 
 
-def _fit_ga_expression(train: List[Dict[str, Any]], expr: str
+def _fit_ga_expression(train: List[Dict[str, Any]], expr: str,
+                       horizon: int = 8
                        ) -> Optional[Dict[str, Any]]:
     """Fit direction + activation threshold for a fixed alpha expression
     on the training slice: sweep both directions and signal-magnitude
@@ -370,7 +372,7 @@ def _fit_ga_expression(train: List[Dict[str, Any]], expr: str
             for i, o in enumerate(train):
                 if i >= len(side) or np.isnan(side[i]) or side[i] <= q:
                     continue
-                r = _forward_return(train, i)
+                r = _forward_return(train, i, horizon)
                 if r is None:
                     continue
                 hits += 1
@@ -559,12 +561,16 @@ SIGNIFICANCE_THRESHOLD = 0.90
 
 def fit_candidate(spec: Dict[str, Any], train: List[Dict[str, Any]]
                   ) -> Optional[Dict[str, Any]]:
+    horizon = int(spec.get("horizon") or 8)
     if spec["kind"] == "threshold_rule":
-        return _fit_threshold(train, spec["feature"], spec["direction"])
+        return _fit_threshold(train, spec["feature"], spec["direction"],
+                              horizon=horizon)
     if spec["kind"] == "ga_expression":
-        return _fit_ga_expression(train, str(spec["expression"]))
+        return _fit_ga_expression(train, str(spec["expression"]),
+                                  horizon=horizon)
     if spec["kind"] == "logistic":
-        return _fit_logistic(train, list(spec["features"]))
+        return _fit_logistic(train, list(spec["features"]),
+                             horizon=horizon)
     return None
 
 
@@ -575,6 +581,9 @@ def validate_spec(spec: Mapping[str, Any]) -> List[str]:
     if kind not in ALLOWED_KINDS:
         errs.append(f"kind must be one of {ALLOWED_KINDS}")
         return errs
+    hz = spec.get("horizon")
+    if hz is not None and (not isinstance(hz, int) or hz < 4 or hz > 64):
+        errs.append("horizon must be an int in [4, 64]")
     if kind == "threshold_rule":
         feat = spec.get("feature")
         if feat not in DERIVABLE_FEATURES:
