@@ -232,6 +232,7 @@ class CognitiveSystemController:
         # Advisory-only runtime monitors (drift/kill-switch reality gates):
         # trip reasons accumulate here and surface as self-health flags.
         self._runtime_advisory_flags: set = set()
+        self._peer_history: Dict[str, deque] = {}
         self._engineered_cap_to_cid: Dict[str, str] = {}
 
         # Durable decision sink — an object with async record_audit_event()
@@ -1637,6 +1638,29 @@ class CognitiveSystemController:
             obs_dict["_derived_features"] = sorted(derived)
         if isinstance(price, (int, float)) and price > 0:
             hist.append(float(price))
+        # Cross-instrument features: runners feed obs['peer_close'] from a
+        # synchronized second symbol (--peer-symbol); derive peer_return
+        # and peer_corr from strictly-prior joint history. Absent peer
+        # feed → features stay absent, never fabricated.
+        peer_price = obs_dict.get("peer_close")
+        phist = self._peer_history.setdefault(symbol, deque(maxlen=96))
+        if isinstance(peer_price, (int, float)) and peer_price > 0:
+            phist.append(float(peer_price))
+        pcloses = list(phist)
+        if "peer_return" not in obs_dict and len(pcloses) > 11 \
+                and pcloses[-11] > 0:
+            obs_dict["peer_return"] = float(
+                (pcloses[-1] - pcloses[-11]) / pcloses[-11])
+            derived.add("peer_return")
+        if ("peer_corr" not in obs_dict and len(pcloses) >= 30
+                and len(closes) >= 30):
+            a = np.asarray(closes[-30:], dtype=float)
+            b = np.asarray(pcloses[-30:], dtype=float)
+            ra = np.diff(a) / a[:-1]
+            rb = np.diff(b) / b[:-1]
+            if float(np.std(ra)) > 0 and float(np.std(rb)) > 0:
+                obs_dict["peer_corr"] = float(np.corrcoef(ra, rb)[0, 1])
+                derived.add("peer_corr")
 
     async def _settle_pending_predictions(self, obs_dict: Dict[str, Any]) -> None:
         """Close positions that have reached the holding horizon.
