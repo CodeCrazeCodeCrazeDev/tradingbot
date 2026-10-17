@@ -229,6 +229,9 @@ class CognitiveSystemController:
         # influence the advisory tilt — evidence is recorded, influence
         # is not granted. Improvement survives shadow operation or dies.
         self._engineered_shadow: Dict[str, int] = {}
+        # Advisory-only runtime monitors (drift/kill-switch reality gates):
+        # trip reasons accumulate here and surface as self-health flags.
+        self._runtime_advisory_flags: set = set()
         self._engineered_cap_to_cid: Dict[str, str] = {}
 
         # Durable decision sink — an object with async record_audit_event()
@@ -1059,6 +1062,70 @@ class CognitiveSystemController:
                 and isinstance(realized_return, (int, float))):
             self._ev_pairs.append((float(_pred_ev), float(realized_return)))
 
+        # Reality-gate runtime monitors — advisory only. They emit
+        # DRIFT_ADVISORY / KILL_SWITCH_ADVISORY evidence; the canonical
+        # risk service and operator controls retain all halt authority.
+        try:
+            if getattr(self, "_drift_gate", None) is None:
+                from trading_bot.reality_gates.drift_detection_gate import (
+                    DriftDetectionGate)
+                self._drift_gate = DriftDetectionGate()
+            _feats = {k: float(pending[k]) for k in
+                      ("volatility", "momentum", "ret_autocorr",
+                       "trend_strength")
+                      if isinstance(pending.get(k), (int, float))}
+            drift = self._drift_gate.check_drift(
+                features=_feats,
+                prediction=float(_pred_ev) if isinstance(
+                    _pred_ev, (int, float)) else None,
+                actual=float(realized_return) if isinstance(
+                    realized_return, (int, float)) else None,
+                current_return=float(realized_return) if isinstance(
+                    realized_return, (int, float)) else None,
+                current_volatility=float(pending["volatility"]) if
+                isinstance(pending.get("volatility"), (int, float)) else None,
+                current_regime=str(regime))
+            for alert in getattr(drift, "alerts", []) or []:
+                await self._persist_audit_event(
+                    event_type="DRIFT_ADVISORY", action="detect",
+                    outcome=str(getattr(alert, "severity", "info")),
+                    correlation_id=trade_id,
+                    details={"alert": str(alert)})
+                flag = str(getattr(getattr(alert, "drift_type", ""),
+                                   "value", "drift"))
+                self._runtime_advisory_flags.add(f"drift:{flag}")
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("drift advisory monitor unavailable: %s", exc)
+        try:
+            if getattr(self, "_kill_gate", None) is None:
+                from trading_bot.reality_gates.kill_switch_gate import (
+                    KillSwitchGate)
+                self._kill_gate = KillSwitchGate()
+            if not hasattr(self, "_advisory_equity"):
+                self._advisory_equity = 100000.0
+            if isinstance(realized_return, (int, float)):
+                self._advisory_equity += float(realized_return) * \
+                    self._advisory_equity
+            allowed, reasons = self._kill_gate.check(
+                current_equity=self._advisory_equity,
+                current_return=float(realized_return) if isinstance(
+                    realized_return, (int, float)) else None,
+                current_volatility=float(pending["volatility"]) if
+                isinstance(pending.get("volatility"), (int, float)) else None,
+                trade_result={"pnl": float(realized_return or 0.0),
+                              "was_correct": bool(was_correct)})
+            if not allowed and reasons:
+                await self._persist_audit_event(
+                    event_type="KILL_SWITCH_ADVISORY", action="trip",
+                    outcome="advisory_only", correlation_id=trade_id,
+                    details={"reasons": [str(getattr(r, "value", r))
+                                         for r in reasons],
+                             "advisory_equity": self._advisory_equity})
+                self._runtime_advisory_flags.update(
+                    f"kill:{getattr(r, 'value', r)}" for r in reasons)
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("kill-switch advisory monitor unavailable: %s", exc)
+
         # Evidence-based uncertainty update: surprise moves it up, confirmed
         # predictions move it down — bounded and proportional to measured
         # error, not a fixed per-task multiplier.
@@ -1224,6 +1291,15 @@ class CognitiveSystemController:
         from .model_engineering import validation_seal, dataset_hash
         c.validation["seal"] = validation_seal(c.spec, obs, params)
         c.validation["dataset_hash"] = dataset_hash(obs)
+        c.validation["train_bars"] = len(train)
+        c.validation["holdout_bars"] = len(holdout)
+        # Representative bar for the data-integrity verifier — bounded to
+        # OHLCV+timestamp so the sealed record stays JSON-serializable.
+        if obs:
+            c.validation["sample_bar"] = {
+                k: obs[-1].get(k) for k in
+                ("open", "high", "low", "close", "volume", "timestamp",
+                 "symbol")}
         # Promotion Gate standard (ASRS): positive OOS net expectancy AND
         # bootstrap significance P(Δ>0) >= threshold — a positive sample
         # mean without significance is luck, not edge.
@@ -1510,6 +1586,32 @@ class CognitiveSystemController:
             obs_dict["regime"] = {"BULLISH": "UP", "BEARISH": "DOWN"}.get(
                 str(obs_dict["trend"]), "RANGE")
             derived.add("regime")
+        # Regime-validity discriminator (research proposal from the
+        # anti-predictive Sep-25-30 window): lag-1 return autocorrelation
+        # distinguishes trending regimes from chop. In negative-autocorr
+        # markets an above-MA close marks the TOP of the range, not
+        # continuation — trend labels there produce anti-predictive votes.
+        # Emitted as evidence features only; no advisor is forced to gate
+        # on them and the CSC retains all authority.
+        if "ret_autocorr" not in obs_dict and len(closes) >= 22:
+            r = np.diff(np.asarray(closes[-22:])) / \
+                np.asarray(closes[-22:-1])
+            if float(np.std(r)) > 0:
+                obs_dict["ret_autocorr"] = float(
+                    np.corrcoef(r[:-1], r[1:])[0, 1])
+                derived.add("ret_autocorr")
+        if ("trend_reliability" not in obs_dict
+                and "ret_autocorr" in obs_dict):
+            obs_dict["trend_reliability"] = float(
+                np.clip(1.0 + 3.0 * float(obs_dict["ret_autocorr"]),
+                        0.0, 1.0))
+            derived.add("trend_reliability")
+        if ("trend_effective" not in obs_dict and "trend" in obs_dict
+                and "ret_autocorr" in obs_dict):
+            obs_dict["trend_effective"] = (
+                obs_dict["trend"]
+                if float(obs_dict["ret_autocorr"]) > -0.05 else "NEUTRAL")
+            derived.add("trend_effective")
         vol_hist = self._vol_history.setdefault(symbol, deque(maxlen=64))
         volume = obs_dict.get("volume")
         if ("volume_ratio" not in obs_dict
@@ -2337,6 +2439,11 @@ class CognitiveSystemController:
                 self.state, "emergency_stop", False):
             score -= 40.0
             flags.append("emergency_stop")
+        # Runtime advisory monitors (drift/kill-switch gates) surface as
+        # health flags — evidence for diagnostics, never halt authority.
+        for adv_flag in getattr(self, "_runtime_advisory_flags", ()):
+            score -= 10.0
+            flags.append(str(adv_flag))
         health = {"score": round(max(0.0, score), 1), "flags": flags,
                   "advisor_error_rate": round(err_rate, 4),
                   "degenerate_rate": round(degen_rate, 4),

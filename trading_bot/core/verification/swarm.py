@@ -685,6 +685,24 @@ class VerificationSwarm:
             DecisionChainVerifier(),
             ForbiddenBehaviorsVerifier(),
         ]
+        # Reality-gate adapters (trading_bot/reality_gates +
+        # ml/data_leakage_guard): they only engage on engineered-candidate
+        # reviews carrying a validation={...} payload — ledger entries
+        # without one get an abstention, never a veto.
+        try:
+            from .reality_gate_verifiers import (
+                DataIntegrityVerifier, DataLeakageVerifier,
+                ExecutionRealismVerifier, MultipleTestingVerifier,
+                WalkForwardVerifier)
+            self.verifiers.extend([
+                ExecutionRealismVerifier(),
+                MultipleTestingVerifier(),
+                DataLeakageVerifier(),
+                DataIntegrityVerifier(),
+                WalkForwardVerifier(),
+            ])
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Reality-gate verifiers unavailable: %s", exc)
 
     def record_outcome(self, confidence: float, was_correct: bool) -> None:
         """Feed the swarm's calibrators the same settlement events the

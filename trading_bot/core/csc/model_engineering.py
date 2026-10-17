@@ -481,6 +481,10 @@ def evaluate_holdout(spec: Dict[str, Any], params: Dict[str, Any],
         "net_return": ret,
         "mean_net_bps": (ret / n_calls * 1e4) if n_calls else None,
         "horizon": horizon,
+        # Recorded for verifier inspection: a zero/missing cost model is
+        # fantasy execution; causal_eval marks the rolling-window semantics.
+        "cost_bps": COST_BPS,
+        "causal_eval": True,
     }
     result["significance"] = _bootstrap_significance(
         signal_returns, baseline_returns, block=horizon)

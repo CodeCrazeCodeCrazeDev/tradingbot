@@ -8,6 +8,16 @@ Constitutional Version: 4.0 · Immutable
 A self-contained financial intelligence organism capable of sensing market reality,
 building world models, generating hypotheses, deploying capital, learning from outcomes,
 and recursively improving its own architecture.
+
+AUTHORITY BOUNDARY 2026-10: this package is advisory/research only.
+Layers 3-6 (model_parliament, portfolio_architect,
+execution_intelligence, risk_governance, meta_intelligence,
+constitutional_layer) describe a parallel decision/risk/execution stack
+— the canonical CSC, risk service, and execution service already own
+that authority. These modules carry NO decision, sizing, veto, capital-
+deployment, or governance authority. Wired uses (alpha_mining,
+regime surveillance, transaction-cost estimation) are subordinate
+evidence services only.
 """
 
 try:

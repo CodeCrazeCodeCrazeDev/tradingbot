@@ -3,7 +3,24 @@ Self Improvement Module
 ============================================================
 
 Auto-generated integration file.
+
+QUARANTINED 2026-10: this package is a PARALLEL improvement engine and
+carries NO authority to modify code, strategy parameters, evaluators,
+risk limits, or protected controls. The canonical improvement path is
+trading_bot/recursive_self_improvement/ (propose → sealed validate →
+human approve → shadow → graduate/rollback). Individual tools here
+(e.g. mirror_market_tester, root_cause_analyzer) may be re-homed as
+subordinate research/diagnostic services only through CSC-gated calls.
 """
+
+import warnings as _warnings
+_warnings.warn(
+    "trading_bot.self_improvement is a quarantined parallel improvement "
+    "path: no mutation/promotion authority; canonical RSI lives in "
+    "trading_bot.recursive_self_improvement",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 # approval_manager
 try:
