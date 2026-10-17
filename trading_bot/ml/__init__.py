@@ -3,7 +3,26 @@ Ml Module
 ============================================================
 
 Auto-generated integration file.
+
+QUARANTINED 2026-10: this package is a grab-bag. Most modules are
+scaffolding stubs (`_process_internal` returns input unchanged),
+merge-loss compatibility shims, offline RL requiring trained policies,
+or parallel trading agents that duplicate CSC authority — none carry
+decision, sizing, veto, or improvement authority. Two exempted keepers:
+- data_leakage_guard   — wired into the verification swarm
+- confidence_calibration — fit-time ECE evidence in evaluate_holdout
+Do not attach stubs as advisory services; the active set is measured
+and every advisor must justify its cycle cost.
 """
+
+import warnings as _warnings
+_warnings.warn(
+    "trading_bot.ml is quarantined: mostly stubs/shims/competing "
+    "agents with no authority; only data_leakage_guard and "
+    "confidence_calibration are on the canonical path",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 # advanced_features
 try:

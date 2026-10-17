@@ -447,6 +447,8 @@ def evaluate_holdout(spec: Dict[str, Any], params: Dict[str, Any],
     ret = 0.0
     signal_returns: List[float] = []
     baseline_returns: List[float] = []
+    confs: List[float] = []
+    win_flags: List[int] = []
     for i, o in enumerate(holdout):
         r = _forward_return(holdout, i, horizon)
         if r is None:
@@ -473,6 +475,8 @@ def evaluate_holdout(spec: Dict[str, Any], params: Dict[str, Any],
         # the ASRS Δ test compares the candidate against a frozen
         # benchmark, not just against zero.
         baseline_returns.append(float(r))
+        confs.append(float(conf))
+        win_flags.append(1 if signed > 0 else 0)
         if signed > 0:
             wins += 1
     result = {
@@ -486,6 +490,23 @@ def evaluate_holdout(spec: Dict[str, Any], params: Dict[str, Any],
         "cost_bps": COST_BPS,
         "causal_eval": True,
     }
+    # Calibration evidence: expected calibration error on the holdout's
+    # per-call confidences. Threshold/GA candidates emit a constant 0.6 —
+    # their ECE is still honest (it measures how wrong fixed confidence
+    # is); logistic candidates get a real curve. Requires sklearn — absent
+    # in the light test env, recorded as None there rather than faked.
+    if confs:
+        try:
+            from trading_bot.ml.confidence_calibration import (
+                ConfidenceCalibrator)
+            cal = ConfidenceCalibrator(method="isotonic")
+            cal.fit(np.asarray(win_flags, dtype=float),
+                    np.asarray(confs, dtype=float))
+            result["calibration_ece"] = cal.evaluate_calibration(
+                np.asarray(win_flags, dtype=float),
+                np.asarray(confs, dtype=float))
+        except Exception:  # noqa: BLE001
+            result["calibration_ece"] = None
     result["significance"] = _bootstrap_significance(
         signal_returns, baseline_returns, block=horizon)
     return result
