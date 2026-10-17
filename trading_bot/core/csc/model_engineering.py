@@ -36,7 +36,9 @@ ALLOWED_KINDS = ("threshold_rule", "logistic", "ga_expression")
 # vocabulary, evaluated over rolling obs series — the bridge between the
 # quarantined generator and the gated candidate pipeline) ---
 GA_FIELDS = ("close", "volume", "high", "low", "vwap", "returns",
-             "log_returns", "volatility")
+             "log_returns", "volatility", "peer_close", "peer_return",
+             "peer_corr", "ret_autocorr", "trend_reliability",
+             "momentum", "session_hour")
 
 
 def _expr_series(series: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
@@ -158,7 +160,9 @@ def _eval_expr(ast, series: Dict[str, np.ndarray]) -> np.ndarray:
 
 def _obs_to_series(obs_list: List[Dict[str, Any]]
                    ) -> Dict[str, np.ndarray]:
-    fields = ("close", "volume", "high", "low")
+    fields = ("close", "volume", "high", "low", "peer_close",
+              "peer_return", "peer_corr", "ret_autocorr",
+              "trend_reliability", "momentum", "session_hour")
     return {f: np.array([
         float(o[f]) if isinstance(o.get(f), (int, float)) else np.nan
         for o in obs_list]) for f in fields}
@@ -177,6 +181,8 @@ DERIVABLE_FEATURES = {
     # from it. Evidence features — they gate candidate signals, never
     # authority.
     "ret_autocorr", "trend_reliability", "trend_effective",
+    # Session effects: derived causally from the bar's own timestamp.
+    "session", "session_hour",
 }
 _DIRECTION_NUM = {"BUY": 1.0, "SELL": -1.0}
 
@@ -247,7 +253,7 @@ def _predict_threshold(obs: Mapping[str, Any], params: Dict[str, Any]
     feat = params.get("feature")
     val = obs.get(feat)
     if isinstance(val, str) and feat in ("trend", "regime", "htf_trend",
-                                         "trend_effective"):
+                                         "trend_effective", "session"):
         target = params.get("equals")
         if target is not None:
             return params["direction"] if val == target else None
@@ -264,7 +270,8 @@ def _fit_threshold(train: List[Dict[str, Any]], feature: str,
     """Sweep the in-sample quantiles of `feature`; keep the threshold with
     the best in-sample net expectancy. Returns None if nothing qualifies —
     validation decides honestly on the holdout regardless."""
-    if feature in ("trend", "regime", "htf_trend", "trend_effective"):
+    if feature in ("trend", "regime", "htf_trend", "trend_effective",
+                   "session"):
         # Categorical: enumerate the labels present and keep the best.
         labels = sorted({str(o.get(feature)) for o in train
                          if o.get(feature) is not None})
@@ -575,9 +582,11 @@ def validate_spec(spec: Mapping[str, Any]) -> List[str]:
         if spec.get("direction") not in ("BUY", "SELL"):
             errs.append("direction must be BUY or SELL")
         if spec.get("op", ">") not in (">", "<") and feat not in (
-                "trend", "regime", "htf_trend", "trend_effective"):
+                "trend", "regime", "htf_trend", "trend_effective",
+                "session"):
             errs.append("numeric features need op > or <")
-        if feat in ("trend", "regime", "htf_trend", "trend_effective") and \
+        if feat in ("trend", "regime", "htf_trend", "trend_effective",
+                    "session") and \
                 spec.get("equals") is None:
             errs.append("categorical feature needs 'equals'")
     if kind == "logistic":
@@ -598,10 +607,7 @@ def validate_spec(spec: Mapping[str, Any]) -> List[str]:
                 # not at validation.
                 probe = 1.0 + np.linspace(0, 0.1, 160) + np.random.RandomState(3).normal(0, 0.001, 160)
                 sig = _eval_expr(ast, {
-                    "close": probe, "high": probe, "low": probe,
-                    "volume": probe, "returns": probe,
-                    "log_returns": probe, "volatility": probe,
-                    "vwap": probe})
+                    f: probe for f in GA_FIELDS})
                 if not np.isfinite(np.asarray(sig)).any():
                     errs.append("expression evaluates to no signal "
                                 "(all-NaN on a probe series)")

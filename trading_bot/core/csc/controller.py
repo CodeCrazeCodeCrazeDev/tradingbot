@@ -1638,6 +1638,28 @@ class CognitiveSystemController:
             obs_dict["_derived_features"] = sorted(derived)
         if isinstance(price, (int, float)) and price > 0:
             hist.append(float(price))
+        if "session" not in obs_dict or "session_hour" not in obs_dict:
+            ts = obs_dict.get("timestamp")
+            hour = None
+            try:
+                if isinstance(ts, str):
+                    hour = int(ts[11:13])  # 'YYYY-MM-DDTHH:MM:SS...'
+                elif hasattr(ts, "hour"):
+                    hour = int(ts.hour)
+            except (ValueError, IndexError, TypeError):
+                hour = None
+            if hour is not None and 0 <= hour <= 23:
+                if "session_hour" not in obs_dict:
+                    obs_dict["session_hour"] = float(hour)
+                    derived.add("session_hour")
+                if "session" not in obs_dict:
+                    # UTC sessions: ASIA 0-6, LONDON 7-11, NY 12-16,
+                    # OFF otherwise — coarse but honest market-time bins.
+                    obs_dict["session"] = (
+                        "ASIA" if hour < 7 else
+                        "LONDON" if hour < 12 else
+                        "NY" if hour < 17 else "OFF")
+                    derived.add("session")
         # Cross-instrument features: runners feed obs['peer_close'] from a
         # synchronized second symbol (--peer-symbol); derive peer_return
         # and peer_corr from strictly-prior joint history. Absent peer
