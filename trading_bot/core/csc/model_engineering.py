@@ -172,6 +172,11 @@ DERIVABLE_FEATURES = {
     "peer_close", "peer_return", "peer_corr", "bid", "ask",
     "spread_bps", "advisory_disagreement",
     "system_health_score", "system_health_flags",
+    # Regime-validity discriminator (chop gating): causal lag-1 return
+    # autocorrelation and the reliability-weighted trend label derived
+    # from it. Evidence features — they gate candidate signals, never
+    # authority.
+    "ret_autocorr", "trend_reliability", "trend_effective",
 }
 _DIRECTION_NUM = {"BUY": 1.0, "SELL": -1.0}
 
@@ -241,7 +246,8 @@ def _predict_threshold(obs: Mapping[str, Any], params: Dict[str, Any]
                        ) -> Optional[str]:
     feat = params.get("feature")
     val = obs.get(feat)
-    if isinstance(val, str) and feat in ("trend", "regime", "htf_trend"):
+    if isinstance(val, str) and feat in ("trend", "regime", "htf_trend",
+                                         "trend_effective"):
         target = params.get("equals")
         if target is not None:
             return params["direction"] if val == target else None
@@ -258,6 +264,32 @@ def _fit_threshold(train: List[Dict[str, Any]], feature: str,
     """Sweep the in-sample quantiles of `feature`; keep the threshold with
     the best in-sample net expectancy. Returns None if nothing qualifies —
     validation decides honestly on the holdout regardless."""
+    if feature in ("trend", "regime", "htf_trend", "trend_effective"):
+        # Categorical: enumerate the labels present and keep the best.
+        labels = sorted({str(o.get(feature)) for o in train
+                         if o.get(feature) is not None})
+        best = None
+        for lab in labels:
+            hits = 0
+            ret = 0.0
+            for i, o in enumerate(train):
+                r = _forward_return(train, i)
+                if r is None:
+                    continue
+                pred = _predict_threshold(
+                    o, {"feature": feature, "equals": lab,
+                        "direction": direction})
+                if pred is None:
+                    continue
+                hits += 1
+                ret += (r if direction == "BUY" else -r) - COST_BPS * 1e-4
+            if hits >= MIN_HOLDOUT_SIGNALS and (
+                    best is None or ret > best[1]):
+                best = (lab, ret, hits)
+        if best is None:
+            return None
+        return {"feature": feature, "equals": best[0],
+                "direction": direction}
     vals = [o.get(feature) for o in train]
     vals = [v for v in vals if isinstance(v, (int, float))]
     if len(vals) < 30:
@@ -543,9 +575,9 @@ def validate_spec(spec: Mapping[str, Any]) -> List[str]:
         if spec.get("direction") not in ("BUY", "SELL"):
             errs.append("direction must be BUY or SELL")
         if spec.get("op", ">") not in (">", "<") and feat not in (
-                "trend", "regime", "htf_trend"):
+                "trend", "regime", "htf_trend", "trend_effective"):
             errs.append("numeric features need op > or <")
-        if feat in ("trend", "regime", "htf_trend") and \
+        if feat in ("trend", "regime", "htf_trend", "trend_effective") and \
                 spec.get("equals") is None:
             errs.append("categorical feature needs 'equals'")
     if kind == "logistic":
