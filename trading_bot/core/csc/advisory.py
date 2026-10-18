@@ -4857,6 +4857,21 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("hft_orderbook_imbalance", _hft_orderbook_service),
 )
 
+# Services measured substantive or directional on real EURUSD bars
+# (scripts/advisor_degeneracy_report.py, 60-bar replay): 18/172.
+# Everything else emitted only degenerate/missing_data statuses - safe
+# to exclude by construction, no outcome history required.
+MEASURED_ACTIVE_SET = frozenset((
+    "aean_meta_cycle", "alpha_evolve_signal", "analysis_mtf_confirmation",
+    "brain_technical_analysis", "deepchart_sr_memory",
+    "dg_volatility_regime", "directional_bias", "elite_factor_matrix",
+    "hft_orderbook_imbalance", "improvements_pullback",
+    "improvements_regime", "indicators_adv_technical",
+    "indicators_liquidity", "market_anomaly_detection",
+    "mixture_of_experts", "ricci_momentum", "self_learning_health",
+    "volume_profile",
+))
+
 # Modules imported by the live path but with no advisory decision role —
 # wired as dependencies, not as cognition (kept separate from orphans so
 # the audit map stays honest).
