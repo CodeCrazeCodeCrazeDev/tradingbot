@@ -5440,12 +5440,27 @@ def attach_advisory_modules(
     the service is exercised once with a synthetic observation so a
     malformed signature fails at attach time, not mid-pipeline. Returns
     ``(attached_capability_ids, skipped_capability_ids)``.
+
+    ``TB_MEASURED_ADVISORS=1`` restricts the set to services measured
+    substantive on real bars (``advisor_degeneracy_report.py``) - the
+    degenerate tail consumes the cycle budget without producing evidence;
+    orphan discovery is disabled in measured mode.
     """
     import asyncio
+    import os
+
+    measured_only = os.environ.get("TB_MEASURED_ADVISORS", "") == "1"
+    selected = factories or DEFAULT_ADVISORY_FACTORIES
+    if measured_only:
+        selected = tuple(f for f in selected
+                         if f[0] in MEASURED_ACTIVE_SET)
+        logger.info("advisory attach: measured-only mode - %d/%d "
+                    "services selected", len(selected),
+                    len(DEFAULT_ADVISORY_FACTORIES))
 
     attached: List[str] = []
     skipped: List[str] = []
-    for capability_id, factory in (factories or DEFAULT_ADVISORY_FACTORIES):
+    for capability_id, factory in selected:
         try:
             service = factory()
             if probe:
@@ -5464,7 +5479,7 @@ def attach_advisory_modules(
             logger.warning("advisory module skipped: %s (%s)",
                            capability_id, exc)
 
-    if discover:
+    if discover and not measured_only:
         # Only package names — root .py manifest entries resolve to dead
         # stubs or side-effect modules (installers, stdout patchers) that
         # must never be imported by discovery.
