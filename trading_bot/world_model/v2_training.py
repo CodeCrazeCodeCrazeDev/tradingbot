@@ -10,6 +10,7 @@ Implements the three-stage paradigm from arXiv:2606.27483:
 
 import logging
 import torch
+import torch.nn.functional as F
 import torch.optim as optim
 from typing import Any, Dict, List
 
@@ -22,15 +23,63 @@ class WorldModelTrainer:
 
 class WorldModelSpecialistTrainer(WorldModelTrainer):
 
-    def train_amt_step(self, historical_data: torch.Tensor):
-        """
-        Stage 1: Predictive Market Physics.
-        Self-supervised learning on high-frequency tick/L2 data.
+    def train_amt_step(self, batch: Dict[str, torch.Tensor]) -> float:
+        """Stage 1: Predictive Market Physics (self-supervised).
+
+        ``batch``: {asset_type: [B, T, D] feature tensor}. The model
+        encodes the window, then must predict the *next* encoded state —
+        a JEPA-style objective that needs no labels:
+
+            z_t   = encoder(x_t .. x_{t+T-1})          # context latent
+            mu    = core(z_t)                          # predicted next
+            z_{t+1} = encoder(x_{t+1} .. x_{t+T})      # target (detached)
+
+        Loss = MSE(mu, z_{t+1}) + entropy penalty on the uncertainty
+        head (prevents collapse to zero-variance predictions).
         """
         self.model.train()
-        # Loss = Predictive_MSE + Causal_Sparsity + Regime_Consistency
-        logger.debug("LearningPipeline: Executing WM-AMT step")
-        pass
+        context = {k: v[:, :-1, :] for k, v in batch.items()}
+        target = {k: v[:, 1:, :] for k, v in batch.items()}
+
+        z_ctx = self.model.encoder(context)
+        with torch.no_grad():
+            z_tgt = self.model.encoder(target)[:, -1, :]
+
+        mu, uncertainty = self.model.core(z_ctx)
+        pred_loss = F.mse_loss(mu, z_tgt)
+        # Keep uncertainty positive and non-degenerate: penalize both
+        # collapse (|u|->0) and runaway (|u|->inf) on the head's output.
+        unc_loss = F.mse_loss(
+            uncertainty.mean(dim=0).norm().unsqueeze(0),
+            torch.ones(1, device=mu.device))
+        loss = pred_loss + 0.1 * unc_loss
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+        self.optimizer.step()
+        return float(pred_loss.item())
+
+    @torch.no_grad()
+    def eval_amt(self, batch: Dict[str, torch.Tensor]) -> Dict[str, float]:
+        """Held-out skill: predicted next latent vs persistence baseline
+        (predicting z_{t} == z_{t+1}). Cosine skill > 0 means the model
+        learned something beyond 'next = same'."""
+        self.model.eval()
+        context = {k: v[:, :-1, :] for k, v in batch.items()}
+        target = {k: v[:, 1:, :] for k, v in batch.items()}
+        z_ctx = self.model.encoder(context)
+        z_tgt = self.model.encoder(target)[:, -1, :]
+        mu, _ = self.model.core(z_ctx)
+
+        z_last = z_ctx[:, -1, :]
+        model_cos = F.cosine_similarity(mu, z_tgt, dim=-1).mean()
+        persist_cos = F.cosine_similarity(z_last, z_tgt, dim=-1).mean()
+        return {
+            "model_cos": float(model_cos.item()),
+            "persistence_cos": float(persist_cos.item()),
+            "mse": float(F.mse_loss(mu, z_tgt).item()),
+        }
 
     def train_sft_step(self, expert_trajectories: List[Dict]):
         """
