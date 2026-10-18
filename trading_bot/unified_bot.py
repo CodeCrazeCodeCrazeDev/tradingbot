@@ -125,6 +125,14 @@ class UnifiedTradingBot:
 
         # 4. World model
         self.world_model = WorldModelV2(asset_dims={"FX": 64, "Equities": 128})
+        wm_ckpt = self.config.get("world_model_checkpoint")
+        if wm_ckpt:
+            try:
+                self.world_model.load(wm_ckpt)
+                logger.info("world model checkpoint loaded: %s", wm_ckpt)
+            except Exception as exc:
+                logger.warning("world model checkpoint %s failed (%s) — "
+                               "running untrained scaffold", wm_ckpt, exc)
         registry.register("world_model", self.world_model, "Intelligence", overwrite=True)
 
         # 5. Data foundation and capability registries
