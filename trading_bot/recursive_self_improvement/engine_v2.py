@@ -915,13 +915,16 @@ class RecursiveImprovementCycle:
     def _finish(self, genome: ImprovementGenome, trial_id: str, status: str,
                 reason: str, metrics: Mapping[str, Any],
                 verdict: Mapping[str, Any]) -> PromotionDecision:
+        from .rewards import reward_from_verdict
+        reward = reward_from_verdict(
+            trial_id, {**verdict, "status": status, "metrics": metrics}).to_dict()
         try:
             self.memory.append_evidence(
                 trial_id=trial_id, nonce=uuid.uuid4().hex,
                 status=status,
                 payload={"genome_id": genome.genome_id, "status": status,
                          "reason": reason, "metrics": dict(metrics),
-                         "verdict": dict(verdict)})
+                         "verdict": dict(verdict), "reward": reward})
         except Exception:  # noqa: BLE001
             status, reason = "insufficient_evidence", "durable ledger write failed"
         return PromotionDecision(genome_id=genome.genome_id, status=status,

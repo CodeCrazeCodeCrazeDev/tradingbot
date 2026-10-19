@@ -255,12 +255,31 @@ async def run(args: argparse.Namespace) -> int:
         getattr(runtime.bot, "execution_service", None), "adapter", None)
     for attr, val in (("spread_bps", args.spread_bps),
                       ("slippage_bps", args.slippage_bps),
-                      ("commission_per_unit", args.commission)):
+                      ("commission_per_unit", args.commission),
+                      ("market_data_source", args.source)):
         if adapter is not None and hasattr(adapter, attr):
             setattr(adapter, attr, val)
     if adapter is not None:
         logger.info("paper cost model: spread=%.2fbps slip=%.2fbps comm=%.4f",
                     args.spread_bps, args.slippage_bps, args.commission)
+
+    from trading_bot.execution.paper_feedback import PaperSettlementFeedback
+    feedback = PaperSettlementFeedback(
+        runtime.bot.execution_service.repository, csc) if csc is not None else None
+    feedback_status = {}
+
+    async def sync_economic_feedback():
+        if feedback is None:
+            return {}
+        try:
+            return await feedback.sync()
+        except Exception as exc:
+            # Missing or conflicting receipts must never become positive
+            # reward; retain the durable fills for investigation/replay.
+            logger.error("paper settlement feedback unavailable: %s", exc)
+            return {"status": "unavailable", "reason": str(exc)}
+
+    feedback_status = await sync_economic_feedback()
 
     if args.dashboard_port:
         serve_dashboard(state_dir, args.dashboard_port)
@@ -306,6 +325,7 @@ async def run(args: argparse.Namespace) -> int:
             if not emergency:
                 await runtime.bot.run_cycle(obs)
                 processed += 1
+            feedback_status = await sync_economic_feedback()
             publish_snapshot(state_dir, {
                 "as_of": time.time(),
                 "cycles": processed,
@@ -315,6 +335,7 @@ async def run(args: argparse.Namespace) -> int:
                 # synthetic bars and real market_data.db replay produce
                 # identical-looking snapshots without the source label.
                 "data_source": args.source,
+                "economic_rewards": feedback_status,
                 "data_timeframe": args.timeframe if args.source == "db"
                 else None,
                 "symbol": args.symbol,
@@ -347,7 +368,7 @@ async def run(args: argparse.Namespace) -> int:
                          if isinstance(p, (int, float)) and p > 0}
                 realized = await csc.close_all_positions(marks)
                 if realized:
-                    logger.info("end-of-run flush settled: %s",
+                    logger.info("end-of-run forecast flush settled: %s",
                                 list(realized))
                 tmp = (state_dir / "open_positions.json")
                 tmp.write_text(json.dumps(
@@ -355,6 +376,7 @@ async def run(args: argparse.Namespace) -> int:
                     encoding="utf-8")
             except Exception as exc:
                 logger.warning("position flush/persist failed: %s", exc)
+        await sync_economic_feedback()
         await runtime.stop()
     logger.info("runner finished: %d cycles processed", processed)
     return 0

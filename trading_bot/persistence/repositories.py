@@ -79,6 +79,7 @@ def decode_report(payload: Any) -> ExecutionReport:
             price=float(fill["price"]),
             commission=float(fill.get("commission", 0.0)),
             liquidity=fill.get("liquidity"),
+            execution_reference=dict(fill.get("execution_reference") or {}),
             **({"occurred_at": _ts(fill["occurred_at"])}
                if fill.get("occurred_at") else {}),
         )
@@ -399,6 +400,42 @@ class SqliteTradingRepository:
             )
             self._connection.commit()
         return audit_id
+
+    async def record_audit_event_once(self, event: AuditEvent, audit_id: str) -> bool:
+        """Atomically append deterministic feedback, or verify its replay.
+
+        A crash between this write and the caller's acknowledgement cannot
+        duplicate credit. Reusing an ID with different evidence is an error.
+        """
+        payload = json.dumps(event.to_dict(), sort_keys=True, allow_nan=False)
+        with self._lock:
+            with self._connection:
+                cursor = self._connection.execute(
+                    """INSERT OR IGNORE INTO audit_events
+                       (audit_id, event_type, actor, action, outcome, correlation_id,
+                        event_json, occurred_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (audit_id, event.event_type, event.actor, event.action,
+                     event.outcome, event.correlation_id, payload,
+                     event.occurred_at.isoformat()))
+                if cursor.rowcount:
+                    return True
+                existing = self._connection.execute(
+                    "SELECT event_json FROM audit_events WHERE audit_id=?",
+                    (audit_id,)).fetchone()
+                if existing["event_json"] != payload:
+                    raise ValueError("audit identity reused with different evidence")
+                return False
+
+    async def list_fill_receipts(self) -> List[Dict[str, Any]]:
+        """Full immutable fill evidence with stable keys and decision lineage."""
+        with self._lock:
+            rows = self._connection.execute(
+                """SELECT f.fill_key, f.fill_json, o.decision_id, o.order_json
+                   FROM fills f LEFT JOIN orders o
+                   ON f.client_order_id=o.client_order_id
+                   ORDER BY f.occurred_at ASC, f.rowid ASC"""
+            ).fetchall()
+        return [dict(row) for row in rows]
 
     async def list_audit_events(
         self,

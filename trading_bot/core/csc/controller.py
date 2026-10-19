@@ -248,6 +248,10 @@ class CognitiveSystemController:
         # single bar's move.
         self._pending_predictions: Dict[str, Dict[str, Any]] = {}
         self._open_positions: Dict[str, Dict[str, Any]] = {}
+        # Bounded journal of settled position outcomes — the real
+        # action/outcome pairs consumed by self-state advisory modules
+        # (psychology tilt, counterfactual analysis, model-decay checks).
+        self._settled_outcomes: "deque" = deque(maxlen=256)
         self._observation_seq = 0
         # Unified research: subordinate engine + bounded report journal +
         # advisory artifacts queued into the next observation's evidence.
@@ -947,6 +951,11 @@ class CognitiveSystemController:
         was_correct: Optional[bool] = None,
         realized_return: Optional[float] = None,
         shared_settlement: int = 1,
+        *,
+        outcome_origin: str = "unknown",
+        cost_return: Optional[float] = None,
+        baseline_net_return: Optional[float] = None,
+        constraints_satisfied: Optional[bool] = None,
     ) -> Dict[str, Any]:
         """Feed a realized outcome back into calibration and uncertainty.
 
@@ -1144,6 +1153,20 @@ class CognitiveSystemController:
                 except Exception as exc:
                     logger.warning("CSC-V6: advisory outcome update failed: %s", exc)
 
+        # Diagnostic rewards share the outcome's existing durable audit event.
+        # Gross price settlement is never silently labelled net execution PnL.
+        from .rewards import prediction_reward, trading_reward
+        economic_reward = trading_reward(
+            trade_id, realized_return, cost_return=cost_return,
+            baseline_net_return=baseline_net_return, origin=outcome_origin,
+            shared_settlement=shared_settlement,
+            constraints_satisfied=constraints_satisfied)
+        rewards = [
+            economic_reward.to_dict(),
+            prediction_reward(
+                trade_id, confidence, was_correct, origin=outcome_origin,
+                sample_weight=economic_reward.sample_weight).to_dict(),
+        ]
         await self._persist_audit_event(
             event_type="DECISION_OUTCOME",
             action=pending.get("action", "UNKNOWN"),
@@ -1160,6 +1183,7 @@ class CognitiveSystemController:
                 # correlated, not independent samples. Consumers counting
                 # outcomes for statistical weight must discount by this.
                 "shared_settlement": shared_settlement,
+                "rewards": rewards,
             })
 
         # Failure memory: an incorrect directional call is the single most
@@ -1186,7 +1210,52 @@ class CognitiveSystemController:
             "was_correct": bool(was_correct),
             "realized_return": realized_return,
             "epistemic_uncertainty": self.state.epistemic_uncertainty,
+            "rewards": rewards,
         }
+
+    async def record_paper_settlement(self, settlement: Mapping[str, Any]) -> Dict[str, Any]:
+        """Persist actual paper-fill economics separately from mark forecasts.
+
+        The receipt matcher owns quantity allocation; this method issues no
+        orders and does not consume/score pending predictions a second time.
+        """
+        from dataclasses import replace
+        from datetime import timezone
+        from trading_bot.foundation.contracts import AuditEvent
+        from .rewards import trading_reward
+
+        if settlement.get("origin") != "paper":
+            raise ValueError("paper settlement feedback requires paper receipts")
+        sink = getattr(self, "_decision_sink", None)
+        if sink is None or not hasattr(sink, "record_audit_event_once"):
+            raise RuntimeError("durable idempotent reward sink is required")
+        reward = trading_reward(
+            str(settlement["settlement_id"]), settlement.get("gross_return"),
+            cost_return=settlement.get("cost_return"),
+            baseline_net_return=settlement.get("baseline_net_return"),
+            origin="paper",
+            # Execution receipts prove fills, not all risk/governance checks.
+            constraints_satisfied=None)
+        reward = replace(
+            reward, sample_weight=float(settlement["sample_weight"]),
+            blockers=tuple(dict.fromkeys(
+                (*reward.blockers, *settlement.get("blockers", ())))))
+        occurred_at = datetime.fromisoformat(str(settlement["exit_time"]))
+        if occurred_at.tzinfo is None:
+            occurred_at = occurred_at.replace(tzinfo=timezone.utc)
+        event = AuditEvent(
+            event_type="PAPER_SETTLEMENT", actor="CSC",
+            action="execution_reward",
+            outcome="costed" if not settlement.get("blockers") else "insufficient_evidence",
+            correlation_id=str(settlement.get("decision_id")
+                               or settlement["entry_order_id"]),
+            occurred_at=occurred_at,
+            details={**settlement, "rewards": [reward.to_dict()]})
+        inserted = await sink.record_audit_event_once(
+            event, audit_id="paper-settlement:" + str(settlement["settlement_id"]))
+        return {"status": "recorded" if inserted else "duplicate",
+                "settlement_id": settlement["settlement_id"],
+                "reward": reward.to_dict()}
 
     def seed_observation_history(self, symbol: str, closes: List[float]) -> None:
         """Seed the derived-feature window from durable market history.
@@ -1805,6 +1874,14 @@ class CognitiveSystemController:
         direction = 1.0 if pos["direction"] == "BUY" else -1.0
         realized = direction * (float(exit_price) - entry) / entry
         self._funnel["settled_positions"] += 1
+        self._settled_outcomes.append({
+            "symbol": pos["symbol"], "direction": pos["direction"],
+            "entry_price": entry, "exit_price": float(exit_price),
+            "realized_return": realized, "reason": reason,
+            "entry_seq": pos.get("entry_seq"),
+            "exit_seq": self._observation_seq,
+            "regime": pos.get("regime"),
+        })
         for tid in list(pos["trade_ids"]):
             try:
                 await self.record_outcome(
@@ -3366,6 +3443,10 @@ class CognitiveSystemController:
         obs_dict, trade_id = self._normalize_observation(observation)
         self._observation_seq += 1
         self._funnel["observations"] += 1
+        # Keep the previous cycle's calls for the self_state channel
+        # (meta-aggregation advisors read them) before resetting.
+        self._prev_advisory_calls = list(
+            getattr(self, "_last_advisory_calls", ()) or ())
         self._last_advisory_calls = []
         self._last_advisory_ids = []
 
@@ -3378,6 +3459,29 @@ class CognitiveSystemController:
         # the live outcome path. A decision approved at observation t is
         # scored against the realized move by observation t+horizon.
         await self._settle_pending_predictions(obs_dict)
+
+        # 0.55. Self-state channel: expose the controller's real internal
+        # state (open positions, settled outcomes, advisor health) so
+        # state-consuming advisory modules (position aging, tilt
+        # detection, counterfactual analysis, model-decay scans) see
+        # honest data instead of being fabricated. Placed after
+        # settlement so this bar's closes are included.
+        obs_dict["self_state"] = {
+            "open_positions": {
+                s: {k: v for k, v in p.items() if k != "trade_ids"}
+                for s, p in self._open_positions.items()},
+            "settled_outcomes": list(self._settled_outcomes)[-64:],
+            "pending_predictions": len(self._pending_predictions),
+            "advisory_failures": dict(
+                getattr(self, "_advisory_failures", {}) or {}),
+            "funnel": dict(self._funnel),
+            "observation_seq": self._observation_seq,
+            # Previous cycle's advisor calls (capability, direction,
+            # confidence) — consumed by meta-aggregation advisors such as
+            # unified_alpha_brain.
+            "last_advisory_calls": list(
+                getattr(self, "_prev_advisory_calls", ()) or ()),
+        }
 
         # 0.6. Cadence gate: decide every Nth bar. Everything above still
         # ran — history, enrichment, settlement, research scheduling — so

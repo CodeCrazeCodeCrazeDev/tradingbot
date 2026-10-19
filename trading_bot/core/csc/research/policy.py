@@ -38,6 +38,28 @@ class MethodStats:
 class ResearchPolicy:
     def __init__(self) -> None:
         self.method_stats: Dict[str, MethodStats] = {}
+        self.reward_stats: Dict[str, List[float]] = {}
+        self._reward_evidence: set = set()
+
+    def record_reward(self, method: str, reward: Dict[str, Any]) -> None:
+        """Once per identical experiment, including after KG replay.
+
+        Repeated runs, renamed questions and changing compute timings cannot
+        inflate knowledge credit. Unknown/simulated origins earn no credit.
+        """
+        counts = self.reward_stats.setdefault(method, [0.0, 0.0])
+        identity = (method, reward.get("evidence_id"), reward.get("origin"),
+                    reward.get("policy_version"))
+        if (not identity[1] or identity in self._reward_evidence
+                or reward.get("blockers")):
+            return
+        values = {o["name"]: o["value"] for o in reward.get("objectives", ())}
+        credit = values.get("resolved_question")
+        if credit not in (0.0, 1.0):
+            return
+        self._reward_evidence.add(identity)
+        counts[0] += 1
+        counts[1] += credit
 
     def record(self, method: str, verdict: str) -> None:
         s = self.method_stats.setdefault(method, MethodStats())
@@ -53,6 +75,9 @@ class ResearchPolicy:
         """Learned VoI input: methods/topics that historically produced
         verdicts (supported OR falsified — a decisive answer is information)
         earn a higher prior; <3 attempts stays at the uninformative 0.5."""
+        measured = self.reward_stats.get(topic_hint)
+        if measured is not None:
+            return measured[1] / measured[0] if measured[0] >= 3 else 0.5
         stats = self.method_stats.get(topic_hint)
         if stats is None or stats.attempts < 3:
             return 0.5
@@ -61,6 +86,10 @@ class ResearchPolicy:
     def priority_adjustment(self, topic_hint: str) -> float:
         """Bounded ±0.15 nudge toward methods that produce verdicts.
         Never a gate — only ordering."""
+        measured = self.reward_stats.get(topic_hint)
+        if measured is not None:
+            return (max(-0.15, min(0.15, measured[1] / measured[0] - 0.5))
+                    if measured[0] >= 3 else 0.0)
         stats = self.method_stats.get(topic_hint)
         if stats is None or stats.attempts < 3:
             return 0.0
@@ -75,5 +104,7 @@ class ResearchPolicy:
     def snapshot(self) -> Dict[str, Dict[str, Any]]:
         return {k: {"attempts": v.attempts, "supported": v.supported,
                     "falsified": v.falsified, "inconclusive": v.inconclusive,
-                    "yield_rate": round(v.yield_rate, 3)}
+                    "yield_rate": round(v.yield_rate, 3),
+                    "reward_experiments": int(self.reward_stats.get(k, [0, 0])[0]),
+                    "resolved_credit": self.reward_stats.get(k, [0, 0])[1]}
                 for k, v in self.method_stats.items()}

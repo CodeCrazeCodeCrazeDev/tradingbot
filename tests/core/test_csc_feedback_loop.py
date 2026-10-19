@@ -113,7 +113,7 @@ class TestDecisionPersistence:
         assert decision is not None
         assert sink.events, "terminal decision was not persisted durably"
         evt = sink.events[-1]
-        assert evt.event_type == "DECISION"
+        assert evt.event_type == "DECISION_TERMINAL"
         assert evt.correlation_id == decision.trade_id
 
 
@@ -160,6 +160,14 @@ class TestOutcomeFeedback:
         outcomes = [e for e in sink.events if e.event_type == "DECISION_OUTCOME"]
         assert outcomes and outcomes[0].correlation_id == "t3"
         assert outcomes[0].details["realized_return"] > 0  # SELL gains on drop
+        rewards = outcomes[0].details["rewards"]
+        assert [r["domain"] for r in rewards] == ["trading", "prediction"]
+        assert "missing_costs" in rewards[0]["blockers"]
+        assert all(r["advisory_only"] and not r["promotion_eligible"] for r in rewards)
+        # No pending prediction remains: a duplicate receipt earns nothing.
+        repeated = await csc.record_outcome("t3", exit_price=0.99)
+        assert repeated["status"] == "unmatched"
+        assert len([e for e in sink.events if e.event_type == "DECISION_OUTCOME"]) == 1
 
 
 class TestLiveOutcomeSettlement:

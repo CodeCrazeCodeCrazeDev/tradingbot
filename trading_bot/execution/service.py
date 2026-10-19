@@ -58,6 +58,7 @@ class PaperBrokerAdapter:
         self._resting: Dict[str, OrderRequest] = {}
         self._pending_market: List[str] = []
         self.connected = False
+        self.market_data_source = "unknown"
 
     async def connect(self) -> None:
         self.connected = True
@@ -130,6 +131,16 @@ class PaperBrokerAdapter:
             quantity=order.quantity,
             price=fill_price,
             commission=order.quantity * self.commission_per_unit,
+            execution_reference={
+                "schema": "paper_fill_v1",
+                "mark_price": mark,
+                "spread_bps": self.spread_bps,
+                "slippage_bps": self.slippage_bps,
+                "commission_per_unit": self.commission_per_unit,
+                "order_type": order.order_type.value,
+                "baseline_id": "always_long_same_fills_v1",
+                "market_data_source": self.market_data_source,
+            },
         )
         update = OrderUpdate(
             client_order_id=order.client_order_id,

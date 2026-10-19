@@ -39,6 +39,50 @@ def load_source_bars(symbol: str, timeframe: str, skip: int):
     return rows[skip:]
 
 
+def fill_reward_report(state_dir: Path) -> dict:
+    """Read actual matched-fill feedback without replaying decision indices."""
+    db = (state_dir / "trading_state.db").resolve()
+    connection = sqlite3.connect(db.as_uri() + "?mode=ro", uri=True)
+    try:
+        rows = connection.execute(
+            "SELECT event_json FROM audit_events WHERE event_type='PAPER_SETTLEMENT'"
+        ).fetchall()
+    finally:
+        connection.close()
+    settlements = [json.loads(row[0])["details"] for row in rows]
+    complete = [s for s in settlements if not s["blockers"]]
+    currencies = {}
+    for s in complete:
+        bucket = currencies.setdefault(s["currency"], {
+            "entry_notional": 0.0, "gross_pnl": 0.0, "costs": 0.0,
+            "net_pnl": 0.0, "baseline_net_pnl": 0.0})
+        notional = s["entry_notional"]
+        bucket["entry_notional"] += notional
+        bucket["gross_pnl"] += notional * s["gross_return"]
+        bucket["costs"] += notional * s["cost_return"]
+        bucket["net_pnl"] += s["net_pnl"]
+        bucket["baseline_net_pnl"] += notional * s["baseline_net_return"]
+    for bucket in currencies.values():
+        bucket["net_advantage"] = bucket["net_pnl"] - bucket["baseline_net_pnl"]
+    return {
+        "evidence_class": "diagnostic", "promotion_eligible": False,
+        "origin": "paper", "baseline_provenance": "counterfactual",
+        "baseline_id": "always_long_same_fills_v1",
+        "matched_lots": len(settlements), "costed_lots": len(complete),
+        "blocked_lots": len(settlements) - len(complete),
+        "opening_decisions": len({s["decision_id"] or s["entry_order_id"]
+                                  for s in complete}),
+        "market_data_sources": sorted({s.get("market_data_source", "unknown")
+                                       for s in complete}),
+        "by_currency": currencies,
+        "limitations": [
+            "Matched lots may be correlated; no significance claim.",
+            "Open inventory and mark-only forecast closes are excluded.",
+            "Notional and PnL are in quote currency; not account-equity returns.",
+        ],
+    }
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--state-dir", type=Path, required=True)
@@ -48,7 +92,17 @@ def main(argv=None) -> int:
                    help="bars skipped before the run's first bar")
     p.add_argument("--cost-bps", type=float, default=5.0)
     p.add_argument("--min-decisions", type=int, default=20)
+    p.add_argument("--fill-rewards", action="store_true",
+                   help="score durable paper fill settlements, without source-bar replay")
     args = p.parse_args(argv)
+
+    if args.fill_rewards:
+        report = fill_reward_report(args.state_dir)
+        out = args.state_dir / "fill_reward_score.json"
+        out.write_text(json.dumps(report, indent=2), encoding="utf-8")
+        print(json.dumps(report, indent=2))
+        print(f"\n-> {out}")
+        return 0
 
     log = args.state_dir / "decision_log.jsonl"
     if not log.exists():

@@ -35,7 +35,7 @@ def build_cognitive_system(
     *,
     research_interval: Optional[int] = None,
     advisory_brain: bool = True,
-    discover: bool = False,
+    discover_advisors: bool = False,
 ) -> Any:
     """Wire the complete cognitive system onto the CSC.
 
@@ -62,9 +62,15 @@ def build_cognitive_system(
         # services emit advisory_only evidence; UNWIRED_ORPHAN_MODULES
         # records why everything else is inert.
         from .advisory import attach_advisory_modules
-        attached, skipped = attach_advisory_modules(csc, discover=discover)
+        attached, skipped = attach_advisory_modules(
+            csc, discover=discover_advisors)
         logger.info("cognitive assembly: advisory modules attached=%s "
                     "skipped=%s", attached, skipped)
+
+    # Survival feedback is independent of optional directional advisor pruning.
+    # Only the diagnostic adapter is attached, never MSOS's legacy governor.
+    from trading_bot.msos.rewards import MSOSRewardAdvisor
+    csc.configure_cognition(MSOSRewardAdvisor())
 
     eng = csc.configure_research()
     if research_interval is not None:

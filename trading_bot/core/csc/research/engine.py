@@ -69,6 +69,7 @@ class ResearchReport:
     seal: str = ""  # sha256(question + dataset) — verdict provenance
     advisory_only: bool = True
     promotion_eligible: bool = False
+    reward: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -92,6 +93,7 @@ class ResearchReport:
             "seal": self.seal,
             "advisory_only": True,
             "promotion_eligible": False,
+            "reward": self.reward,
         }
 
     def to_advisory_artifact(self) -> Dict[str, Any]:
@@ -206,6 +208,10 @@ class ResearchEngine:
             nid: n for nid, n in self.knowledge_graph.nodes.items()
             if n.kind == "claim" and n.status == "active"}
         self._rebuild_uncertainty_from_kg()
+        for claim in self.knowledge_graph.nodes.values():
+            reward = claim.metadata.get("reward")
+            if claim.kind == "claim" and reward:
+                self.policy.record_reward("evaluate_strategy", reward)
         return restored
 
     def _rebuild_uncertainty_from_kg(self) -> None:
@@ -304,6 +310,7 @@ class ResearchEngine:
                       "direction": direction,
                       "question_type": report.question_type,
                       "seal": report.seal,
+                      "reward": report.reward,
                       "sim": report.sim_summary},
         ))
         self._claims[claim.node_id] = claim
@@ -561,12 +568,38 @@ class ResearchEngine:
         max_dd_regression: float = 0.0,
         dataset_id: str = "unlabelled",
         tier: EvidenceTier = EvidenceTier.CONTROLLED,
+        origin: str = "unknown",
     ) -> ResearchReport:
         """Candidate vs frozen baseline on identical bars/costs. Diagnostic:
         promotion stays False — only the signed RSI evaluator with a sealed
         holdout attestation may authorize promotion."""
         from trading_bot.evaluation.frozen_baseline import (
             compare_candidate_vs_baseline)
+        from ..rewards import finite, research_reward
+
+        # Commit the exact paired arrays and scoring settings before scoring.
+        # Diagnostic replay only: this is not an untouched holdout attestation.
+        import hashlib
+        import json
+        aligned = (len(candidate_positions) == len(baseline_positions)
+                   == len(bar_returns) and len(bar_returns) > 0)
+        valid_data = aligned and all(finite(v) for seq in (
+            candidate_positions, baseline_positions, bar_returns) for v in seq)
+        evidence_id = hashlib.sha256(json.dumps({
+            "candidate": candidate_positions, "baseline": baseline_positions,
+            "returns": bar_returns, "cost_bps": cost_bps, "fraction": fraction,
+            "min_decisions": min_decisions, "max_dd_regression": max_dd_regression,
+        }, sort_keys=True).encode()).hexdigest()
+        contract = make_contract(
+            hypothesis_id=question, baseline_id="paired_baseline",
+            treatment_id="paired_candidate",
+            dataset_id=f"{dataset_id}:{evidence_id}",
+            primary_metric="paired_verdict",
+            secondary_metrics=("net_return", "max_drawdown", "cost_paid"),
+            evaluation_set="diagnostic_replay")
+        self._persist_buffer.append(
+            ("RESEARCH_REWARD_CONTRACT", dict(contract.__dict__)))
+        started = time.perf_counter()
 
         comparison = compare_candidate_vs_baseline(
             candidate_positions, baseline_positions, bar_returns,
@@ -587,10 +620,19 @@ class ResearchEngine:
                 comparison.get("verdict"), "INCONCLUSIVE"),
             created_at=time.time(),
             comparison=comparison,
+            seal=contract.seal_hash,
         )
+        report.reward = research_reward(
+            evidence_id, report.verdict, origin=origin,
+            protocol_verified=(valid_data and contract.verify_seal()
+                               and dataset_id != "unlabelled"),
+            comparison_complete=valid_data and comparison.get("verdict") in {
+                "candidate_superior", "not_superior", "unprofitable"},
+            compute_seconds=time.perf_counter() - started).to_dict()
         claim = self._record_claim(report, tier=tier)
         claim.metadata["dataset_id"] = dataset_id
         self.policy.record("evaluate_strategy", report.verdict)
+        self.policy.record_reward("evaluate_strategy", report.reward)
         return report
 
     def replicate(

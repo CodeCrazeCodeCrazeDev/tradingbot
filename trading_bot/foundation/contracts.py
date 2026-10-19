@@ -291,6 +291,9 @@ class Fill(ContractMixin):
     commission: float = 0.0
     occurred_at: datetime = field(default_factory=utc_now)
     liquidity: Optional[str] = None
+    # Venue-generated reference at fill time. Empty on legacy/live receipts;
+    # consumers must not reconstruct historical costs from current settings.
+    execution_reference: Mapping[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
