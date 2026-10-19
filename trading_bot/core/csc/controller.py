@@ -3677,4 +3677,17 @@ class CognitiveSystemController:
         elif context is None:
             observation = {}
         else:
-            observation = dict(getattr(context, "__
+            observation = dict(getattr(context, "__dict__", {}) or {})
+        observation.setdefault("task", task)
+        observation.setdefault("timestamp", datetime.utcnow().isoformat())
+        self.state.active_tasks.append(task)
+        try:
+            result = await self.process_market_observation(observation)
+        finally:
+            self.state.active_tasks.remove(task)
+        # Each executed task is recorded; epistemic_uncertainty only moves
+        # when the outcome pipeline feeds measured results back through the
+        # ReliabilityTracker — task count alone is not learning.
+        self.state.folded_history.append({"task": task, "result": result})
+        # "status" refers to task completion — a vetoed trade is still a completed cycle.
+        return {"status": "completed", "success": True, "decision": result}
