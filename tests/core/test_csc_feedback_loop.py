@@ -204,6 +204,84 @@ class TestLiveOutcomeSettlement:
         assert "EURUSD" in csc._open_positions
 
     @pytest.mark.asyncio
+    async def test_close_dispatches_ledger_order_and_settles_at_fill(self, csc):
+        """With an execution service wired, a horizon close must dispatch a
+        real opposing order through the bus and settle at the actual fill
+        price — the mark is not the exit."""
+        from trading_bot.core.unified_event_bus import ActionStatus
+
+        class FakeBus:
+            def __init__(self):
+                self.actions = []
+            async def propose_action(self, action):
+                self.actions.append(action)
+                action.status = ActionStatus.EXECUTED
+
+        class FakeAdapter:
+            def __init__(self, qty, fill_price):
+                from trading_bot.foundation.contracts import (
+                    Fill, Instrument, InstrumentType, OrderSide,
+                    OrderStatus, ExecutionReport)
+                self._qty = qty
+                self._fill_price = fill_price
+                self._I, self._S, self._R = Instrument, OrderSide, ExecutionReport
+            async def get_positions(self):
+                inst = self._I("EURUSD", InstrumentType.SYNTHETIC, "paper")
+                return [SimpleNamespace(instrument=inst, quantity=self._qty)]
+            async def get_order(self, client_order_id):
+                from trading_bot.foundation.contracts import (
+                    Fill, Instrument, InstrumentType, OrderSide,
+                    OrderStatus, ExecutionReport)
+                inst = Instrument("EURUSD", InstrumentType.SYNTHETIC, "paper")
+                fill = Fill(client_order_id=client_order_id,
+                            venue_order_id="v", instrument=inst,
+                            side=OrderSide.BUY, quantity=1.0,
+                            price=self._fill_price)
+                return ExecutionReport(client_order_id=client_order_id,
+                                       status=OrderStatus.FILLED,
+                                       fills=[fill])
+
+        bus = FakeBus()
+        csc.decision_bus = bus
+        csc.execution_service = SimpleNamespace(
+            adapter=FakeAdapter(qty=-2.0, fill_price=1.015))
+        csc._observation_seq = 5
+        await self._open(csc, action="SELL", price=1.0)
+        csc._observation_seq = 5 + csc._position_max_hold
+        await csc._settle_pending_predictions(
+            {"symbol": "EURUSD", "price": 1.01})
+        # Close went through the bus as a position-close order
+        assert any(a.payload.get("intent") == "position_close"
+                   for a in bus.actions)
+        # Position settled at the actual fill, not the mark
+        settled = list(csc._settled_outcomes)
+        assert settled[-1]["exit_price"] == 1.015
+        assert settled[-1]["settled_at_fill"] is True
+        # SELL entry at 1.0, filled exit at 1.015 -> realized = -0.015
+        assert settled[-1]["realized_return"] == pytest.approx(-0.015)
+        assert "EURUSD" not in csc._open_positions
+
+    @pytest.mark.asyncio
+    async def test_vetoed_close_keeps_position_open(self, csc):
+        """A close order that fails must NOT mark the position settled —
+        the ledger still holds exposure."""
+        from trading_bot.core.unified_event_bus import ActionStatus
+
+        class FakeBus:
+            async def propose_action(self, action):
+                action.status = ActionStatus.VETOED
+
+        csc.decision_bus = FakeBus()
+        csc.execution_service = SimpleNamespace(adapter=None)
+        csc._observation_seq = 5
+        await self._open(csc, action="BUY", price=1.0)
+        csc._observation_seq = 5 + csc._position_max_hold
+        await csc._settle_pending_predictions(
+            {"symbol": "EURUSD", "price": 1.01})
+        # Position stayed open — close was rejected, ledger exposure real
+        assert "EURUSD" in csc._open_positions
+
+    @pytest.mark.asyncio
     async def test_foreign_symbol_observation_does_not_settle(self, csc):
         csc._observation_seq = 5
         await self._open(csc, action="SELL", symbol="GBPUSD", price=1.3,

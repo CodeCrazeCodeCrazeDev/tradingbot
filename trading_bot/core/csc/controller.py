@@ -164,6 +164,9 @@ class CognitiveSystemController:
         self.risk_engine = kwargs.get("risk_engine")
         self.consensus_engine = kwargs.get("consensus_engine")
         self.execution_planner = kwargs.get("execution_planner")
+        # Canonical execution service — when wired, position closes dispatch
+        # real opposing orders; absent means mark-only settlement (tests).
+        self.execution_service = kwargs.get("execution_service")
         self.evolution_gate = kwargs.get("evolution_gate")
         # Typed governance gate (human approval policy). "None" means not yet
         # resolved; resolved lazily at the governance stage and cached so a
@@ -502,6 +505,11 @@ class CognitiveSystemController:
         logger.info(
             "CSC-V6: advisory cognition service registered: %s",
             capability_id)
+
+    def configure_execution_service(self, service: Any) -> None:
+        """Wire the canonical execution service so position closes dispatch
+        real opposing orders through the bus. Absent → mark-only settlement."""
+        self.execution_service = service
 
     def configure_decision_sink(self, sink: Any) -> None:
         """Wire the durable decision sink (the canonical repository).

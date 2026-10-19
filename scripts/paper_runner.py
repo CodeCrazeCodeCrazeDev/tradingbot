@@ -215,6 +215,11 @@ async def run(args: argparse.Namespace) -> int:
     except (OSError, json.JSONDecodeError):
         history = []
     csc = getattr(runtime.bot, "csc", None)
+    if csc is not None:
+        # Position closes must hit the ledger, not just CSC bookkeeping —
+        # wire the canonical execution service so horizon/adverse/reversal
+        # exits submit real opposing orders.
+        csc.configure_execution_service(runtime.bot.execution_service)
     if args.decision_stride > 1 and csc is not None:
         csc._decision_stride = args.decision_stride
         logger.info("decision_stride=%d applied to CSC (cadenced decisions)",
