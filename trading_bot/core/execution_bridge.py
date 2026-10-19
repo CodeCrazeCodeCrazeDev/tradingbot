@@ -153,6 +153,10 @@ class PaperExecutionBridge:
         # so side/quantity are resolved from actual fills, not the payload.
         if payload.get("intent") == "position_close":
             qty = await self._ledger_position(symbol)
+            if qty is None:
+                # Lookup failed — a close on unknown ledger state is not safe
+                # to fabricate. Leave the action unexecuted; the CSC retries.
+                return {"status": "error", "reason": "position_lookup_failed"}
             if qty == 0.0:
                 # No ledger exposure — the mark-only settlement is honest.
                 self._mark_executed(action)
@@ -341,7 +345,7 @@ class PaperExecutionBridge:
                     logger.error(
                         "PaperExecutionBridge: ledger position lookup failed "
                         "for %s: %s", symbol, exc)
-                    return float("nan")
+                    return None
         return float(self.positions.get(symbol, 0.0))
 
     async def _submit_with_timeout(self, order: Any) -> Any:
