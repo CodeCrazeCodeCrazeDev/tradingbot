@@ -83,8 +83,11 @@ class MarketIntelligenceSystem:
         self.technical_analyzer = TechnicalAnalyzer(self.config.get('technical_config')) if TechnicalAnalyzer else None
         self.sentiment_analyzer = SentimentAnalyzer(self.config.get('sentiment_config')) if SentimentAnalyzer else None
         self.alternative_data = AlternativeDataIntegrator(self.config.get('alternative_data_config')) if AlternativeDataIntegrator else None
-        self.regime_detector = MarketRegimeDetector(self.config.get('regime_config')) if MarketRegimeDetector else None
-        self.order_flow_analyzer = OrderFlowAnalyzer(self.config.get('order_flow_config')) if OrderFlowAnalyzer else None
+        # These ctors take numeric knobs, not a config dict — passing
+        # config.get() (None) made lookback_period/imbalance_threshold None
+        # and every call raised TypeError. Use their defaults.
+        self.regime_detector = MarketRegimeDetector() if MarketRegimeDetector else None
+        self.order_flow_analyzer = OrderFlowAnalyzer() if OrderFlowAnalyzer else None
         self.liquidity_analyzer = LiquidityAnalyzer(self.config.get('liquidity_config')) if LiquidityAnalyzer else None
         self.anomaly_detector = AdvancedAnomalyDetector(self.config.get('anomaly_config')) if AdvancedAnomalyDetector else None
         
@@ -164,58 +167,106 @@ class MarketIntelligenceSystem:
     
     async def _run_technical_analysis(self, data: pd.DataFrame,
                                    symbol: str, timeframe: str) -> Dict[str, Any]:
-        """Run technical analysis."""
+        """Run technical analysis (quiet {} when the analyzer is absent)."""
+        if self.technical_analyzer is None or not hasattr(
+                self.technical_analyzer, "analyze"):
+            return {}
         try:
-            return await self.technical_analyzer.analyze(data, symbol, timeframe)
+            out = self.technical_analyzer.analyze(data, symbol, timeframe)
+            return await out if asyncio.iscoroutine(out) else (out or {})
         except Exception as e:
             logger.error(f"Technical analysis error: {e}")
             return {}
-    
+
     async def _run_sentiment_analysis(self, symbol: str) -> Dict[str, Any]:
-        """Run sentiment analysis."""
+        """Run sentiment analysis (module not installed -> quiet {})."""
+        if self.sentiment_analyzer is None or not hasattr(
+                self.sentiment_analyzer, "analyze_sentiment"):
+            return {}
         try:
-            return await self.sentiment_analyzer.analyze_sentiment(symbol)
+            out = self.sentiment_analyzer.analyze_sentiment(symbol)
+            return await out if asyncio.iscoroutine(out) else (out or {})
         except Exception as e:
             logger.error(f"Sentiment analysis error: {e}")
             return {}
-    
+
     async def _run_alternative_analysis(self, symbol: str) -> Dict[str, Any]:
-        """Run alternative data analysis."""
+        """Run alternative data analysis (integrator has no analyze() ->
+        quiet {})."""
+        if self.alternative_data is None or not hasattr(
+                self.alternative_data, "analyze"):
+            return {}
         try:
-            return await self.alternative_data.analyze(symbol)
+            out = self.alternative_data.analyze(symbol)
+            return await out if asyncio.iscoroutine(out) else (out or {})
         except Exception as e:
             logger.error(f"Alternative data analysis error: {e}")
             return {}
-    
+
     async def _run_regime_analysis(self, data: pd.DataFrame,
                                 timeframe: str) -> Dict[str, Any]:
-        """Run regime analysis."""
+        """Run regime analysis — MarketRegimeDetector is fed via update()
+        per bar, then detect_regime() takes no data argument."""
+        if self.regime_detector is None:
+            return {}
         try:
-            return await self.regime_detector.detect_regime(data, timeframe)
+            self.regime_detector.reset()
+            for _, row in data.tail(60).iterrows():
+                self.regime_detector.update(
+                    float(row["high"]), float(row["low"]),
+                    float(row["close"]), float(row.get("volume", 0.0)))
+            m = self.regime_detector.detect_regime()
+            if m is None:
+                return {}
+            regime = getattr(m, "regime", None)
+            return {
+                "current_regime": str(
+                    getattr(regime, "value", regime) or "unknown"),
+                "trend_strength": getattr(m, "trend_strength", None),
+                "volatility": getattr(m, "volatility", None),
+            }
         except Exception as e:
             logger.error(f"Regime analysis error: {e}")
             return {}
-    
+
     async def _run_order_flow_analysis(self, data: pd.DataFrame,
                                     symbol: str) -> Dict[str, Any]:
-        """Run order flow analysis."""
+        """Run order-flow delta analysis (real API is analyze_delta, not
+        analyze_flow)."""
+        if self.order_flow_analyzer is None or not hasattr(
+                self.order_flow_analyzer, "analyze_delta"):
+            return {}
         try:
-            return await self.order_flow_analyzer.analyze_flow(data, symbol)
+            deltas = self.order_flow_analyzer.analyze_delta(data)
+            deltas = list(deltas or [])
+            last = deltas[-1] if deltas else None
+            return {
+                "delta_bars": len(deltas),
+                "last_delta": getattr(last, "delta", None),
+                "last_signal": str(getattr(last, "signal", "") or ""),
+            }
         except Exception as e:
             logger.error(f"Order flow analysis error: {e}")
             return {}
-    
+
     async def _run_liquidity_analysis(self, data: pd.DataFrame,
                                    symbol: str) -> Dict[str, Any]:
-        """Run liquidity analysis."""
+        """Run liquidity analysis (module not installed -> quiet {})."""
+        if self.liquidity_analyzer is None or not hasattr(
+                self.liquidity_analyzer, "analyze_liquidity"):
+            return {}
         try:
-            return await self.liquidity_analyzer.analyze_liquidity(data, symbol)
+            out = self.liquidity_analyzer.analyze_liquidity(data, symbol)
+            return await out if asyncio.iscoroutine(out) else (out or {})
         except Exception as e:
             logger.error(f"Liquidity analysis error: {e}")
             return {}
-    
+
     async def _run_anomaly_detection(self, data: pd.DataFrame) -> List[Dict]:
         """Run anomaly detection."""
+        if self.anomaly_detector is None or not hasattr(
+                self.anomaly_detector, "detect_anomalies"):
+            return []
         try:
             return self.anomaly_detector.detect_anomalies(data)
         except Exception as e:

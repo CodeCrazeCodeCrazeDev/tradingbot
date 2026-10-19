@@ -1831,7 +1831,23 @@ class CognitiveSystemController:
         if existing is not None and existing["direction"] != action:
             await self._close_position(symbol, float(price),
                                        reason="reversed_by_decision")
-            existing = None
+            # Re-fetch: a vetoed close leaves the old position on the ledger —
+            # it must not be silently overwritten by the new direction.
+            existing = self._open_positions.get(symbol)
+        if existing is not None and existing["direction"] != action:
+            # Close order failed/vetoed — the ledger still holds the old
+            # exposure. Register the prediction without position attachment:
+            # it reports as unmatched rather than inheriting the old side's PnL.
+            self._pending_predictions[trade_id] = {
+                "action": action, "symbol": symbol,
+                "entry_price": float(price), "confidence": confidence,
+                "regime": regime, "expected_return": expected_return,
+                "advisory_calls": list(
+                    getattr(self, "_last_advisory_calls", ()) or ()),
+                "gated_calls": int(getattr(self, "_tilt_gated", 0)),
+                "unpositioned": True,
+            }
+            return
         if existing is None:
             existing = {
                 "direction": action,
@@ -1864,23 +1880,68 @@ class CognitiveSystemController:
     async def _close_position(
         self, symbol: str, exit_price: float, reason: str = "exit",
     ) -> Optional[float]:
-        """Close the open position, compute entry->exit PnL, and settle every
-        contributing prediction through record_outcome."""
-        pos = self._open_positions.pop(symbol, None)
+        """Close the open position through the canonical execution path.
+
+        When an execution service is wired (paper/live), the close dispatches
+        a real opposing order through the decision bus — the ledger is the
+        authoritative exposure record, so internal bookkeeping only settles
+        after the close order reaches a terminal state. A vetoed/failed close
+        leaves the position open (retried on the next qualifying bar) rather
+        than pretending flat while the ledger holds exposure. With no
+        execution service wired (evaluators/tests), settlement is mark-only."""
+        pos = self._open_positions.get(symbol)
         if pos is None or not isinstance(exit_price, (int, float)) \
                 or exit_price <= 0:
             return None
+        fill_price = None
+        close_id = None
+        svc = getattr(self, "execution_service", None)
+        if svc is not None and self.decision_bus is not None \
+                and hasattr(self.decision_bus, "propose_action"):
+            close_id = f"close-{symbol}-{uuid.uuid4().hex[:10]}"
+            action = LogAction(
+                action_type="TRADE_EXECUTION",
+                payload={
+                    "symbol": symbol, "action": "CLOSE", "quantity": 0.0,
+                    "price": float(exit_price), "trade_id": close_id,
+                    "intent": "position_close", "reason": reason,
+                },
+                agent_id="CSC_V6",
+                priority=EventPriority.CRITICAL,
+            )
+            await self._safe_await(self.decision_bus.propose_action(action))
+            status = await self._safe_await(
+                action.wait_for_decision(timeout=5.0))
+            if status not in (ActionStatus.APPROVED, ActionStatus.EXECUTED):
+                logger.warning(
+                    "CSC-V6: close order for %s not approved (%s) — position "
+                    "stays open on the ledger", symbol, status)
+                return None
+            adapter = getattr(svc, "adapter", None)
+            if adapter is not None and hasattr(adapter, "get_order"):
+                try:
+                    report = await adapter.get_order(close_id)
+                    if report.fills:
+                        fill_price = float(report.fills[-1].price)
+                except Exception as exc:
+                    logger.warning(
+                        "CSC-V6: close order %s executed but fill lookup "
+                        "failed: %s", close_id, exc)
+        self._open_positions.pop(symbol, None)
+        exit_used = fill_price if fill_price is not None else float(exit_price)
         entry = pos["entry_price"]
         direction = 1.0 if pos["direction"] == "BUY" else -1.0
-        realized = direction * (float(exit_price) - entry) / entry
+        realized = direction * (exit_used - entry) / entry
         self._funnel["settled_positions"] += 1
         self._settled_outcomes.append({
             "symbol": pos["symbol"], "direction": pos["direction"],
-            "entry_price": entry, "exit_price": float(exit_price),
+            "entry_price": entry, "exit_price": exit_used,
             "realized_return": realized, "reason": reason,
             "entry_seq": pos.get("entry_seq"),
             "exit_seq": self._observation_seq,
             "regime": pos.get("regime"),
+            "close_order_id": close_id,
+            "settled_at_fill": fill_price is not None,
         })
         for tid in list(pos["trade_ids"]):
             try:
@@ -1905,7 +1966,7 @@ class CognitiveSystemController:
         logger.info(
             "CSC-V6: closed %s position on %s (%s): entry %.6f exit %.6f "
             "ret %+.5f", pos["direction"], symbol, reason, entry,
-            exit_price, realized)
+            exit_used, realized)
         return realized
 
     async def close_all_positions(
@@ -3616,17 +3677,4 @@ class CognitiveSystemController:
         elif context is None:
             observation = {}
         else:
-            observation = dict(getattr(context, "__dict__", {}) or {})
-        observation.setdefault("task", task)
-        observation.setdefault("timestamp", datetime.utcnow().isoformat())
-        self.state.active_tasks.append(task)
-        try:
-            result = await self.process_market_observation(observation)
-        finally:
-            self.state.active_tasks.remove(task)
-        # Each executed task is recorded; epistemic_uncertainty only moves
-        # when the outcome pipeline feeds measured results back through the
-        # ReliabilityTracker — task count alone is not learning.
-        self.state.folded_history.append({"task": task, "result": result})
-        # "status" refers to task completion — a vetoed trade is still a completed cycle.
-        return {"status": "completed", "success": True, "decision": result}
+            observation = dict(getattr(context, "__

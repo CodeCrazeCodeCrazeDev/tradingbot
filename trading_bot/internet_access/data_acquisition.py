@@ -549,6 +549,206 @@ class DataAcquisitionEngine:
         
         return data_package
     
+    # ---- Free public regulatory data (no API key required) ----------------
+    # SEC EDGAR 13F filings, CFTC Commitment of Traders (Socrata), and
+    # FINRA ATS weekly volume. All return real published data; on failure
+    # they return {} so consumers abstain rather than see synthetic data.
+
+    async def fetch_sec_13f(self, cik: str, max_holdings: int = 10) -> Dict:
+        """Latest 13F-HR filing + top holdings for a filer CIK.
+
+        Public SEC EDGAR — no key, but a declared User-Agent is required
+        by SEC fair-access rules."""
+        if aiohttp is None:
+            return {}
+        ua = {"User-Agent": self.endpoints.get(
+            "sec", {}).get("user_agent",
+                           "alphaalgo-research contact@example.com")}
+        try:
+            async with aiohttp.ClientSession(headers=ua) as session:
+                cik10 = str(cik).zfill(10)
+                async with session.get(
+                        f"https://data.sec.gov/submissions/CIK{cik10}.json",
+                        timeout=15) as resp:
+                    if resp.status != 200:
+                        return {}
+                    sub = await resp.json()
+                recent = sub.get("filings", {}).get("recent", {})
+                forms = recent.get("form", [])
+                accs = recent.get("accessionNumber", [])
+                idx = next(
+                    (i for i, f in enumerate(forms)
+                     if f.startswith("13F-HR")), None)
+                if idx is None:
+                    return {"filer": sub.get("name"), "filings": []}
+                acc = accs[idx].replace("-", "")
+                filer_name = sub.get("name")
+                filing_date = recent.get("filingDate", [])[idx]
+                # holdings info-table: accession-index -> infotable.xml
+                cik_short = str(int(cik))
+                idx_url = (f"https://www.sec.gov/Archives/edgar/data/"
+                           f"{cik_short}/{acc}/index.json")
+                async with session.get(idx_url, timeout=15) as resp:
+                    if resp.status != 200:
+                        return {"filer": filer_name,
+                                "filing_date": filing_date,
+                                "holdings": []}
+                    listing = await resp.json()
+                infotables = [it["name"] for it in
+                              listing.get("directory", {}).get("item", [])
+                              if "info" in it.get("name", "").lower()
+                              and it.get("name", "").endswith(".xml")]
+                holdings: List[Dict] = []
+                if infotables:
+                    xml_url = (f"https://www.sec.gov/Archives/edgar/data/"
+                               f"{cik_short}/{acc}/{infotables[0]}")
+                    async with session.get(xml_url, timeout=15) as resp:
+                        if resp.status == 200:
+                            import xml.etree.ElementTree as ET
+                            root = ET.fromstring(await resp.text())
+                            ns = {"n": "http://www.sec.gov/edgar/document/"
+                                       "thirteenf/informationtable"}
+                            for tbl in root.findall(
+                                    ".//n:infoTable", ns)[:max_holdings]:
+                                def _t(tag):
+                                    e = tbl.find(f"n:{tag}", ns)
+                                    return e.text if e is not None else ""
+                                holdings.append({
+                                    "issuer": _t("nameOfIssuer"),
+                                    "value_usd_k": _t("value"),
+                                    "shares": _t("shrsOrPrnAmt"),
+                                })
+                return {"filer": filer_name, "filing_date": filing_date,
+                        "holdings": holdings}
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("sec_13f fetch failed: %s", exc)
+            return {}
+
+    async def fetch_cot(self, market: str) -> Dict:
+        """CFTC Commitment of Traders — latest weekly report for a market.
+
+        Public Socrata endpoint (Traders in Financial Futures):
+        publicreporting.cftc.gov — free, no key. ``market`` is the CFTC
+        market name, e.g. 'EURO FX - CHICAGO MERCANTILE EXCHANGE'."""
+        if aiohttp is None:
+            return {}
+        try:
+            url = ("https://publicreporting.cftc.gov/resource/"
+                   "6dca-aqww.json")
+            params = {
+                "market_and_exchange_names": market,
+                "$order": "report_date_as_yyyy_mm_dd DESC",
+                "$limit": 1,
+            }
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params,
+                                       timeout=15) as resp:
+                    if resp.status != 200:
+                        return {}
+                    rows = await resp.json()
+            if not rows:
+                return {}
+            r = rows[0]
+
+            def _num(key):
+                try:
+                    return float(r.get(key) or 0)
+                except (TypeError, ValueError):
+                    return 0.0
+
+            nc_long = _num("noncomm_positions_long_all")
+            nc_short = _num("noncomm_positions_short_all")
+            net = nc_long - nc_short
+            total = nc_long + nc_short
+            return {
+                "market": r.get("market_and_exchange_names"),
+                "report_date": r.get("report_date_as_yyyy_mm_dd"),
+                "noncomm_long": nc_long, "noncomm_short": nc_short,
+                "noncomm_net": net,
+                "noncomm_net_pct": (net / total * 100) if total else None,
+            }
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("cot fetch failed: %s", exc)
+            return {}
+
+    async def fetch_dark_pool(self, symbol: str) -> Dict:
+        """FINRA weekly ATS + OTC off-exchange volume for a ticker.
+
+        FINRA API needs a free Platform OAuth client — gated on
+        api_keys['finra'] (config['finra']['client_id'/'client_secret']).
+        No key -> {} and the consumer abstains honestly."""
+        finra = (self.api_keys.get("finra") if isinstance(
+            self.api_keys, dict) else None) or self.config.get("finra", {})
+        cid = finra.get("client_id") if isinstance(finra, dict) else None
+        csecret = finra.get("client_secret") if isinstance(finra, dict) else None
+        if aiohttp is None or not (cid and csecret):
+            return {}
+        try:
+            async with aiohttp.ClientSession() as session:
+                # OAuth token
+                async with session.post(
+                        "https://ews.fip.finra.org/fip-rest/ews/oauth2/"
+                        "access_token?grant_type=client_credentials",
+                        auth=aiohttp.BasicAuth(cid, csecret),
+                        timeout=15) as resp:
+                    if resp.status != 200:
+                        return {}
+                    token = (await resp.json()).get("access_token")
+                async with session.post(
+                        "https://api.finra.org/data/group/otcMarket/name/"
+                        "weeklySummary",
+                        headers={"Authorization": f"Bearer {token}",
+                                 "Accept": "application/json"},
+                        json={
+                            "compareFilters": [{
+                                "fieldName": "issueSymbolIdentifier",
+                                "fieldValue": symbol,
+                                "compareType": "EQUAL"}],
+                            "limit": 4,
+                        },
+                        timeout=15) as resp:
+                    if resp.status != 200:
+                        return {}
+                    rows = await resp.json()
+            if not rows:
+                return {}
+            latest = rows[0]
+            ats = float(latest.get("totalWeeklyTradeCount", 0) or 0)
+            vol = float(latest.get("totalWeeklyShareQuantity", 0) or 0)
+            return {
+                "symbol": symbol,
+                "week_start": latest.get("weekStartDate"),
+                "total_ats_volume": vol,
+                "total_ats_trades": ats,
+                "tiers": len(rows),
+            }
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("dark_pool fetch failed: %s", exc)
+            return {}
+
+    async def fetch_alt_data(
+        self, symbols: List[str],
+        cik: Optional[str] = None,
+        cot_market: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Concurrent regulatory-data package: 13F + COT + dark pool."""
+        tasks = []
+        if cik:
+            tasks.append(("sec_13f", self.fetch_sec_13f(cik)))
+        if cot_market:
+            tasks.append(("cot", self.fetch_cot(cot_market)))
+        for sym in symbols[:1]:
+            tasks.append(("dark_pool", self.fetch_dark_pool(sym)))
+        if not tasks:
+            return {}
+        results = await asyncio.gather(
+            *[t for _, t in tasks], return_exceptions=True)
+        return {
+            name: (res if not isinstance(res, Exception) else {})
+            for (name, _), res in zip(tasks, results)
+            if res and not isinstance(res, Exception)
+        }
+
     def get_cached_data(
         self,
         source: DataSource,

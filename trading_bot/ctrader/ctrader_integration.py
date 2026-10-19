@@ -43,12 +43,11 @@ logger = logging.getLogger(__name__)
 # CTRADER CREDENTIALS
 # ============================================================================
 CTRADER_CONFIG = {
-    'login_email': 'petesonmwangi206@gmail.com',
-    'password': 'Peter/2006',
     'api_host': 'demo.ctraderapi.com',
     'api_port': 5035,
     'client_id': '',       # Set via env var CTRADER_CLIENT_ID
     'client_secret': '',   # Set via env var CTRADER_CLIENT_SECRET
+    'access_token': '',    # Set via env var CTRADER_ACCESS_TOKEN
 }
 
 
@@ -197,6 +196,11 @@ class CTraderConnection:
             self.config['client_id'] = _env_secret("CTRADER_CLIENT_ID", '')
         if not self.config['client_secret']:
             self.config['client_secret'] = _env_secret("CTRADER_CLIENT_SECRET", '')
+        if not self.config.get('access_token'):
+            self.config['access_token'] = _env_secret(
+                "CTRADER_ACCESS_TOKEN", '')
+        if not self.access_token:
+            self.access_token = self.config.get('access_token')
 
         logger.info("CTraderConnection initialized")
 

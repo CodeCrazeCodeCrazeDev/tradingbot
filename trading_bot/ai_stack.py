@@ -104,6 +104,34 @@ class AIStack:
                 for a in getattr(csc, "agent_population", [])],
         }
 
+    # -- Reflection plane -------------------------------------------------
+
+    def reflection_plane(self) -> Dict[str, Any]:
+        """Failure memory + self-improvement memory (HMS reflective
+        stores): what the system got wrong and what the RSI loop learned."""
+        hms = getattr(self._csc, "hms", None)
+        plane: Dict[str, Any] = {
+            "failures": {"total": 0, "by_kind": {}, "by_regime": {}},
+            "recent_failures": [],
+            "improvements": {"total": 0, "by_domain": {},
+                             "decisions_by_status": {}},
+            "recent_lessons": [],
+        }
+        if hms is None:
+            return plane
+        try:
+            if hasattr(hms, "failure_summary"):
+                plane["failures"] = hms.failure_summary()
+            if hasattr(hms, "recall_failures"):
+                plane["recent_failures"] = hms.recall_failures(limit=5)
+            if hasattr(hms, "improvement_summary"):
+                plane["improvements"] = hms.improvement_summary()
+            if hasattr(hms, "recall_lessons"):
+                plane["recent_lessons"] = hms.recall_lessons(limit=5)
+        except Exception:  # noqa: BLE001 - introspection must not fail
+            pass
+        return plane
+
     # -- Selection plane -------------------------------------------------
 
     def selection_plane(self) -> Dict[str, Any]:
@@ -159,12 +187,14 @@ class AIStack:
             state=self.state_plane(),
             evidence=self.evidence_plane(),
             selection=self.selection_plane(),
+            reflection=self.reflection_plane(),
         )
 
     def explain(self) -> Dict[str, str]:
         """Human-readable one-liner per plane — for logs/CLI."""
-        s, e, sel = (
-            self.state_plane(), self.evidence_plane(), self.selection_plane())
+        s, e, sel, r = (
+            self.state_plane(), self.evidence_plane(),
+            self.selection_plane(), self.reflection_plane())
         return {
             "state": (
                 f"VFE={s['vfe']} · uncertainty="
@@ -180,6 +210,9 @@ class AIStack:
                 f"{sel['churn']['budget']} · "
                 f"EV-calibration {sel['ev_calibration']['factor']} "
                 f"({sel['ev_calibration']['pairs']} pairs)"),
+            "reflection": (
+                f"{r['failures'].get('total', 0)} failures recorded · "
+                f"{r['improvements'].get('total', 0)} RSI artifacts"),
         }
 
 

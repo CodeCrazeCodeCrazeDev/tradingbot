@@ -11,7 +11,7 @@ The AlphaAlgo system currently consists of over 100 subsystems with high degree 
 
 ## Tier 1: Decision Quality Audit
 - **Signals/Indicators**: Robust but often duplicate logic found in `ml` and `quant_analysis`.
-- **Execution**: Basic execution paths exist, but lack Active Inference feedback loops.
+- **execution **: Basic execution paths exist, but lack Active Inference feedback loops.
 
 ## Major Issues Identified
 1. **Structural Fragmentation**: Too many small, overlapping modules.

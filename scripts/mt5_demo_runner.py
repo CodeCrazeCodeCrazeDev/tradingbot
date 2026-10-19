@@ -205,6 +205,8 @@ async def run(args: argparse.Namespace) -> int:
     console = None
     feed_adapter = None
     adapter = None
+    l2_feed = None
+    mt5_l2 = None
     processed = 0
     try:
         await runtime.start()
@@ -294,26 +296,106 @@ async def run(args: argparse.Namespace) -> int:
                 publish_snapshot(state_dir, _snapshot(
                     processed, console, args, runtime, adapter))
         else:  # follow: poll for each newly closed M15 bar
-            # Seed only the causal feature windows. Warm-up must not run
-            # decisions through the live demo execution path.
-            warm = _closed_bars(client, args.symbol, tf, args.warmup)
-            last_bar_time = 0
-            if warm is not None and len(warm):
-                seeded = await _seed_warmup(runtime, args.symbol, warm)
-                logger.info("follow warm-up: seeded %d closed bars", seeded)
-                last_bar_time = int(warm[-1]["time"])
-                publish_snapshot(state_dir, _snapshot(
-                    processed, console, args, runtime, adapter))
+            # Autonomous market selection: --symbols auto lets the bot
+            # choose its trading set from real venue data. Scoring reads
+            # real closed bars + live spread per candidate; the ranking
+            # is re-run every selector.reselect_every polls and the set
+            # rotates when the evidence moves.
+            selector = None
+            active = [args.symbol]
+            if args.symbols == "auto":
+                from trading_bot.foundation.market_selector import (
+                    MarketSelector)
+                selector = MarketSelector(
+                    reselect_every=args.reselect_interval)
+
+                def _score(sym: str) -> Dict[str, Any]:
+                    cand = _closed_bars(client, sym, tf, 120)
+                    tick = client.symbol_info_tick(sym)
+                    sp = None
+                    if tick is not None:
+                        mid = (float(tick.bid) + float(tick.ask)) / 2.0
+                        sp = ((float(tick.ask) - float(tick.bid)) / mid * 1e4
+                              if mid else None)
+                    from trading_bot.foundation.market_selector import (
+                        score_symbol)
+                    return score_symbol(cand, sp)
+
+                active = selector.reselect(
+                    _score, top_n=args.max_symbols)
+                logger.info("autonomous market selection: %s", active)
+            elif args.symbols:
+                active = [s.strip().upper() for s in
+                          args.symbols.split(",") if s.strip()]
+
+            # cTrader Level-2 feed: real DOM snapshots -> order_book fields.
+            l2_feed = None
+            if args.ctrader_l2:
+                from trading_bot.feeds.ctrader_l2 import CTraderL2Feed
+                l2_feed = CTraderL2Feed()
+                if not await l2_feed.start(active):
+                    logger.warning("ctrader L2 unavailable - order-book "
+                                   "adapters keep abstaining")
+                    l2_feed = None
+
+            # MT5-native L2 + tape: market_book depth -> order_book fields;
+            # trade-flagged ticks -> order_flow. Free on the same terminal
+            # connection the runner already owns.
+            mt5_l2 = None
+            if args.mt5_l2:
+                from trading_bot.feeds.mt5_l2 import MT5L2Feed
+                mt5_l2 = MT5L2Feed(client)
+                book_syms = mt5_l2.start(active)
+                if not book_syms:
+                    logger.info("mt5 market book not published - lob "
+                                "adapters keep abstaining")
+                    mt5_l2 = None
+                else:
+                    logger.info("mt5 L2 feed live for %s", book_syms)
+
+            last_bar_time: Dict[str, int] = {}
+            for sym in active:
+                # Seed only the causal feature windows. Warm-up must not
+                # run decisions through the live demo execution path.
+                warm = _closed_bars(client, sym, tf, args.warmup)
+                if warm is not None and len(warm):
+                    seeded = await _seed_warmup(runtime, sym, warm)
+                    logger.info("follow warm-up %s: seeded %d closed bars",
+                                sym, seeded)
+                    last_bar_time[sym] = int(warm[-1]["time"])
+            publish_snapshot(state_dir, _snapshot(
+                processed, console, args, runtime, adapter))
             while not args.cycles or processed < args.cycles:
                 for command in channel.drain():
                     outcome = await console.apply(command)
                     logger.info("operator command %s -> %s",
                                 command.get("action"), outcome)
                 tick_mark()
-                bars = _closed_bars(client, args.symbol, tf, 1)
-                if bars is not None and len(bars) and int(bars[0]["time"]) != last_bar_time:
-                    last_bar_time = int(bars[0]["time"])
-                    extra = _quote_extra(client, args.symbol)
+                if selector is not None and selector.needs_reselect():
+                    active = selector.reselect(
+                        _score, top_n=args.max_symbols)
+                    if l2_feed is not None:
+                        await l2_feed.stop()
+                        l2_feed = CTraderL2Feed()
+                        await l2_feed.start(active)
+                    if mt5_l2 is not None:
+                        mt5_l2.stop()
+                        mt5_l2.start(active)
+                    for sym in active:
+                        last_bar_time.setdefault(sym, 0)
+                for sym in active:
+                    bars = _closed_bars(client, sym, tf, 1)
+                    if (bars is None or not len(bars)
+                            or int(bars[0]["time"])
+                            == last_bar_time.get(sym)):
+                        continue
+                    last_bar_time[sym] = int(bars[0]["time"])
+                    extra = _quote_extra(client, sym)
+                    if l2_feed is not None:
+                        extra.update(l2_feed.snapshot(sym))
+                    if mt5_l2 is not None:
+                        extra.update(mt5_l2.snapshot(sym))
+                        extra.update(mt5_l2.tape(sym))
                     if args.peer_symbol:
                         fresh = _closed_bars(client, args.peer_symbol, tf, 60)
                         if fresh is not None and len(fresh):
@@ -322,7 +404,7 @@ async def run(args: argparse.Namespace) -> int:
                                 peer_closes.append(float(pb["close"]))
                         extra["peer_symbol"] = args.peer_symbol
                         extra.update(_peer_extra(peer_closes))
-                    obs = _bar_to_obs(args.symbol, bars[0], adapter, extra)
+                    obs = _bar_to_obs(sym, bars[0], adapter, extra)
                     await runtime.bot.run_cycle(obs)
                     processed += 1
                     publish_snapshot(state_dir, _snapshot(
@@ -334,6 +416,10 @@ async def run(args: argparse.Namespace) -> int:
                 processed, console, args, runtime, adapter))
         if feed_adapter is not None:
             await feed_adapter.disconnect()
+        if l2_feed is not None:
+            await l2_feed.stop()
+        if mt5_l2 is not None:
+            mt5_l2.stop()
         await runtime.stop()
     logger.info("demo runner finished: %d cycles processed", processed)
     return 0
@@ -372,6 +458,26 @@ def main(argv: Optional[list] = None) -> int:
     src.add_argument("--follow", action="store_true",
                      help="poll for each new closed M15 bar (soak mode)")
     parser.add_argument("--symbol", default="EURUSD")
+    parser.add_argument("--symbols", default="",
+                        help="follow-mode symbol set: 'auto' lets the bot "
+                             "choose from the venue universe scored on real "
+                             "bars+spread; comma list fixes the set; empty "
+                             "uses --symbol")
+    parser.add_argument("--max-symbols", type=int, default=3,
+                        help="auto-selection: how many top-scored symbols "
+                             "to trade")
+    parser.add_argument("--reselect-interval", type=int, default=60,
+                        help="auto-selection: polls between re-scoring the "
+                             "candidate universe")
+    parser.add_argument("--ctrader-l2", action="store_true",
+                        help="attach the cTrader Open API depth feed: real "
+                             "Level-2 snapshots -> order_book/bids/asks/"
+                             "imbalance fields in each observation (needs "
+                             "CTRADER_CLIENT_ID/SECRET/ACCESS_TOKEN)")
+    parser.add_argument("--mt5-l2", action="store_true",
+                        help="subscribe the MT5 Market Book + trade-flagged "
+                             "tick tape: real order_book + order_flow "
+                             "fields (free on the same terminal feed)")
     parser.add_argument("--peer-symbol", default="",
                         help="attach peer-symbol closed-bar context "
                              "(peer_close/peer_return_1/peer_return_10) "

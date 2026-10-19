@@ -43,6 +43,20 @@ flowchart TB
     FL --> HMS
     PR -.tilt source.-> SVC
 
+    subgraph REFLECT["REFLECTION PLANE — what it got wrong & learned"]
+        FM[core/hms/reflection.py FailureMemory<br/>prediction_incorrect · decision_rejected<br/>advisor_error · execution_fault<br/>failures.jsonl + SAGE triplets]
+        SIM2[SelfImprovementMemory<br/>RSI proposals/decisions/lessons<br/>improvements.jsonl — record-only]
+        BRIDGE[recursive_self_improvement/hms_bridge.py<br/>failure_summary → PerformanceGaps<br/>verdicts → lessons]
+    end
+
+    DEC[CoreDecision<br/>TRADE_REJECTED / outcome settle] -.-> FM
+    SVC -.advisor_error.-> FM
+    FM -->|gaps| BRIDGE
+    BRIDGE --> RSI[RecursiveImprovementCycle<br/>sandboxed replay → verifier<br/>human-gated promotion]
+    RSI -->|decisions + lessons| SIM2
+    FM -->|retrieve_reflective_context| HG
+    SIM2 -->|retrieve_reflective_context| HG
+
 ---
 
 flowchart LR

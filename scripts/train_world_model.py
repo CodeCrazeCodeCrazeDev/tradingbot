@@ -41,7 +41,6 @@ def load_features(db: str, symbol: str, timeframe: str, limit: int):
     ret = np.diff(np.log(c), prepend=np.log(c[0]))
     rng = (h - lo) / np.maximum(c, 1e-12)
     vol_z = (v - v.mean()) / (v.std() + 1e-9)
-    mom = np.concatenate([[0], np.log(c[1:] / c[:-1])]) * 0
     mom8 = np.concatenate([np.zeros(8), np.log(c[8:] / c[:-8])])
     roll_std = np.array([ret[max(0, i - 20):i + 1].std() for i in range(len(ret))])
     try:
@@ -50,11 +49,32 @@ def load_features(db: str, symbol: str, timeframe: str, limit: int):
                          for t in ts], dtype=np.float64)
     except Exception:
         hour = np.zeros(len(c))
-    feats = np.stack([
-        ret, rng, vol_z, mom8, roll_std,
-        np.sin(hour / 24 * 2 * math.pi), np.cos(hour / 24 * 2 * math.pi),
-    ], axis=1)
-    return feats
+    return rows, ret, rng, vol_z, mom8, roll_std, hour
+
+
+def to_obs(rows, ret, rng, vol_z, mom8, roll_std, hour, i):
+    """Rebuild the observation dict a live cycle would produce, so the
+    trained featurizer sees the same distribution as encode()."""
+    r = rows[i]
+    ts = str(r[0])
+    try:
+        from datetime import datetime
+        h = datetime.fromisoformat(ts.replace("Z", "+00:00")).hour
+    except Exception:
+        h = 0
+    return {
+        "timestamp": ts, "symbol": "EURUSD",
+        "open": r[1], "high": r[2], "low": r[3], "close": r[4],
+        "price": r[4], "volume": r[5],
+        "returns": ret[i], "log_returns": ret[i],
+        "volatility": roll_std[i], "volume_ratio": vol_z[i],
+        "momentum": mom8[i], "session_hour": hour[i],
+        "hour_sin": math.sin(h / 24 * 2 * math.pi),
+        "hour_cos": math.cos(h / 24 * 2 * math.pi),
+        "high_24h": r[2], "low_24h": r[3],
+        "uncertainty": 0.2, "rsi": 50.0, "atr": rng[i],
+        "trend": "FLAT", "regime": "FLAT",
+    }
 
 
 def main():
@@ -66,22 +86,30 @@ def main():
     ap.add_argument("--seq", type=int, default=32)
     ap.add_argument("--steps", type=int, default=600)
     ap.add_argument("--batch", type=int, default=64)
-    ap.add_argument("--latent", type=int, default=128)
+    ap.add_argument("--latent", type=int, default=256)
+    ap.add_argument("--fx-dim", type=int, default=64)
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--out", default="var/world_model_v2.pt")
     args = ap.parse_args()
 
     torch.manual_seed(0)
-    feats = load_features(args.db, args.symbol, args.timeframe, args.bars)
-    n_feat = feats.shape[1]
-    T = torch.tensor(feats, dtype=torch.float32)
-    T = (T - T.mean(0)) / (T.std(0) + 1e-9)
+    rows, ret, rng, vol_z, mom8, roll_std, hour = load_features(
+        args.db, args.symbol, args.timeframe, args.bars)
 
-    n = len(T)
+    model = WorldModelV2(asset_dims={"FX": args.fx_dim, "Equities": 128},
+                         latent_dim=args.latent)
+
+    # Featurize every bar through the model's own encode() path so the
+    # training distribution exactly matches what the live pipeline feeds.
+    feats = torch.stack([
+        model._obs_to_features(to_obs(rows, ret, rng, vol_z, mom8,
+                                      roll_std, hour, i))
+        for i in range(len(rows))]).float()
+
+    n = len(feats)
     split = int(n * 0.7)
-    train, held = T[:split], T[split:]
+    train, held = feats[:split], feats[split:]
 
-    model = WorldModelV2(asset_dims={"FX": n_feat}, latent_dim=args.latent)
     trainer = WorldModelSpecialistTrainer(model, lr=args.lr)
 
     S = args.seq

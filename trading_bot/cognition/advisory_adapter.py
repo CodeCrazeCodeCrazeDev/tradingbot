@@ -29,6 +29,21 @@ AUTHORITY_FIELDS = frozenset(
         "quantity",
         "order",
         "execution",
+        # Sizing / trade-parameter vocabulary emitted by regime adapters
+        # and strategy analyzers — evidence may describe a setup but must
+        # never carry entry/stop/target/size instructions.
+        "position_size",
+        "size_adjustment",
+        "size_adj",
+        "stop_adjustment",
+        "stop_adj",
+        "target_adjustment",
+        "target_adj",
+        "stop_loss",
+        "take_profit",
+        "entry_price",
+        "risk_per_trade",
+        "leverage",
     }
 )
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from typing import Any, Dict, Iterator, Optional
@@ -9,6 +10,95 @@ from typing import Any, Dict, Iterator, Optional
 from trading_bot.unified_bot import UnifiedTradingBot
 
 logger = logging.getLogger(__name__)
+
+
+class _ExternalFeedBridge:
+    """internet_access DataAcquisitionEngine -> observation enrichment.
+
+    Only real fetched data is injected: each source is pulled only when
+    its API key is configured, and mock-fallback fields are never added.
+    When a fetch fails or no key exists the key simply stays absent and
+    the conditional advisory adapters emit their honest no-data status.
+    """
+
+    def __init__(self, engine: Any, cfg: Dict[str, Any]) -> None:
+        self.engine = engine
+        self.cfg = cfg
+        self.symbols = list(cfg.get("symbols")
+                            or [cfg.get("symbol", "EURUSD")])
+        self.refresh_s = float(cfg.get("refresh_seconds", 300))
+        self.keys = set(engine.api_keys or {})
+        self._snapshot: Dict[str, Any] = {}
+        self._task: Optional[asyncio.Task] = None
+
+    async def start(self) -> None:
+        self._task = asyncio.create_task(self._loop())
+
+    async def stop(self) -> None:
+        if self._task is not None:
+            self._task.cancel()
+            try:
+                await self._task
+            except asyncio.CancelledError:
+                pass
+            self._task = None
+
+    async def _loop(self) -> None:
+        while True:
+            try:
+                await self._refresh()
+            except Exception as exc:  # noqa: BLE001 - feed must not kill run
+                logger.debug("external feed refresh failed: %s", exc)
+            await asyncio.sleep(self.refresh_s)
+
+    async def _refresh(self) -> None:
+        feeds: Dict[str, Any] = {}
+        if "news" in self.keys:
+            feeds["news_items"] = await self.engine.fetch_news_headlines(
+                self.symbols)
+        if "sentiment" in self.keys:
+            feeds["sentiment"] = await self.engine.fetch_sentiment_metrics(
+                self.symbols)
+        if "macro" in self.keys:
+            macro = await self.engine.fetch_macro_data()
+            feeds["macro"] = macro
+            # FRED interest-rate series -> cb_rates map for the CB adapter
+            ir = macro.get("interest_rate") if isinstance(macro, dict) else None
+            if isinstance(ir, dict) and ir.get("value") is not None:
+                feeds["cb_rates"] = {"FED": ir["value"]}
+        # Free public regulatory data — keyless, gated on config flags.
+        alt = await self.engine.fetch_alt_data(
+            self.symbols,
+            cik=self.cfg.get("sec_13f_cik"),
+            cot_market=self.cfg.get("cot_market"))
+        feeds.update({k: v for k, v in alt.items() if v})
+        # market_data fetch is same-symbol multi-TF (not a second venue),
+        # so venue_prices/order_flow stay absent until a real feed exists.
+        if feeds:
+            self._snapshot = feeds
+
+    def enrich(self, obs: Dict[str, Any]) -> Dict[str, Any]:
+        if self._snapshot and isinstance(obs, dict):
+            obs.update(self._snapshot)
+        return obs
+
+
+def _build_feed_bridge(bot: Any) -> Optional[_ExternalFeedBridge]:
+    """Construct the feed bridge when config['external_feeds'].enabled."""
+    config = getattr(bot, "config", {}) or {}
+    cfg = config.get("external_feeds") or {}
+    if not cfg.get("enabled"):
+        return None
+    try:
+        from trading_bot.internet_access.data_acquisition import (
+            DataAcquisitionEngine)
+
+        engine = DataAcquisitionEngine(
+            dict(cfg), cache_dir=str(cfg.get("cache_dir", "data_cache")))
+        return _ExternalFeedBridge(engine, cfg)
+    except Exception as exc:  # noqa: BLE001 - optional feed
+        logger.warning("External feed bridge unavailable: %s", exc)
+        return None
 
 
 class ModularMonolithRuntime:
@@ -24,6 +114,8 @@ class ModularMonolithRuntime:
         self._reconciler = None
         self.recovery_report = None
         self.last_reconciliation = None
+        self.rsi_bridge = None
+        self.rsi_memory = None
 
     @property
     def running(self) -> bool:
@@ -67,12 +159,12 @@ class ModularMonolithRuntime:
 
     def _wire_csc_persistence(self) -> None:
         """Wire the CSC decision journal to the durable repository and attach
-        the optional advisory cognition service.
+        the requested cognitive assembly or advisory cognition service.
 
-        The advisory brain is disabled by default — it only attaches when
-        ``enable_cognitive_advisory`` is explicitly configured, and even then
-        it can only emit provenance-tagged evidence (its authority fields are
-        stripped by the advisory adapter; the CSC remains sole authority).
+        ``cognitive_assembly`` requests the canonical ``build_cognitive_system``
+        path (advisors plus research). ``enable_cognitive_advisory`` remains as
+        the narrower legacy switch for only ``AdvisoryCognitiveBrain``. All
+        outputs are provenance-tagged evidence; the CSC remains sole authority.
         """
         csc = getattr(self.bot, "csc", None)
         if csc is None:
@@ -81,7 +173,29 @@ class ModularMonolithRuntime:
         if repository is not None and hasattr(csc, "configure_decision_sink"):
             csc.configure_decision_sink(repository)
         config = getattr(self.bot, "config", {}) or {}
-        if config.get("enable_cognitive_advisory") and hasattr(
+        assembly_config = config.get("cognitive_assembly")
+        if isinstance(assembly_config, dict):
+            assembly_enabled = bool(assembly_config.get("enabled", True))
+            assembly_options = assembly_config
+        else:
+            assembly_enabled = bool(assembly_config)
+            assembly_options = {}
+        if assembly_enabled:
+            try:
+                from trading_bot.core.csc.assembly import (
+                    build_cognitive_system)
+
+                build_cognitive_system(
+                    csc,
+                    research_interval=assembly_options.get(
+                        "research_interval"),
+                    advisory_brain=assembly_options.get(
+                        "advisory_brain", True),
+                    discover_advisors=assembly_options.get(
+                        "discover_advisors", False))
+            except Exception as exc:
+                logger.warning("Cognitive assembly unavailable: %s", exc)
+        elif config.get("enable_cognitive_advisory") and hasattr(
                 csc, "configure_cognition"):
             try:
                 from trading_bot.cognition.advisory_adapter import (
@@ -100,6 +214,47 @@ class ModularMonolithRuntime:
             self.ai_stack = AIStack(csc)
         except Exception as exc:
             logger.warning("AI-stack projection unavailable: %s", exc)
+        self._wire_rsi_reflection()
+
+    def _wire_rsi_reflection(self) -> None:
+        """Couple the RSI substrate to the HMS reflective stores.
+
+        The durable ImprovementMemory ledger and the RSIHMSBridge live
+        beside the trading state so the recursive loop observes *this*
+        runtime's failures and writes its verdicts back into HMS
+        self-improvement memory. Nothing here runs a cycle by itself or
+        promotes a candidate — the bridge is operator-invoked evidence
+        plumbing; promotion still requires a signed OperatorAuthorization
+        at the PromotionLadder (research-only per AGENTS.md).
+        """
+        hms = getattr(self.bot, "hms", None)
+        if hms is None:
+            return
+        config = getattr(self.bot, "config", {}) or {}
+        state_path = str(
+            config.get("trading_state_path", "alphaalgo_data/trading_state.db"))
+        rsi_dir = os.path.join(os.path.dirname(state_path) or ".", "rsi")
+        try:
+            from trading_bot.recursive_self_improvement.hms_bridge import (
+                RSIHMSBridge)
+            from trading_bot.recursive_self_improvement.memory import (
+                ImprovementMemory)
+
+            self.rsi_memory = ImprovementMemory(
+                os.path.join(rsi_dir, "improvement_memory.db"))
+            self.rsi_bridge = RSIHMSBridge(hms=hms, memory=self.rsi_memory)
+            from trading_bot.core.unified_registry import registry
+
+            registry.register(
+                "rsi_bridge", self.rsi_bridge, "Intelligence",
+                dependencies=["hms"],
+                metadata={"read_only": True, "capital_path": "none",
+                          "authority": "research_only"},
+                overwrite=True)
+        except Exception as exc:  # noqa: BLE001 - reflection is advisory
+            logger.warning("RSI reflection wiring unavailable: %s", exc)
+            self.rsi_bridge = None
+            self.rsi_memory = None
 
     def _build_reconciler(self) -> Any:
         """Reconciler over the canonical execution boundary, when wired."""
@@ -220,9 +375,20 @@ class ModularMonolithRuntime:
         interval: float = 1.0,
     ) -> None:
         await self.start()
+        bridge = _build_feed_bridge(self.bot)
+        if bridge is not None:
+            await bridge.start()
+
+            def _enriched():
+                for obs in observations:
+                    yield bridge.enrich(obs)
+
+            observations = _enriched()
         try:
             await self.bot.run(observations, cycles=cycles, interval=interval)
         finally:
+            if bridge is not None:
+                await bridge.stop()
             await self._reconcile_after_run()
 
     async def stop(self) -> None:

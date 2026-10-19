@@ -102,6 +102,11 @@ async def main():
         "trading_enabled": args.mode != "analysis",
         "max_spread_bps": args.max_spread_bps,
         "mode": args.mode,
+        "cognitive_assembly": {
+            "enabled": True,
+            "research_interval": args.research_interval,
+            "discover_advisors": args.discover_advisors,
+        },
     })
 
     if args.synthetic:
@@ -129,6 +134,12 @@ def parse_args():
                         help="Immutable Shield spread guard: veto entries when live spread exceeds this (bps)")
     parser.add_argument("--synthetic", action="store_true",
                         help="Use the labeled synthetic feed instead of real market_data.db replay")
+    parser.add_argument("--research-interval", type=int, default=100,
+                        help="observations between automatic research cycles "
+                             "(0 disables cycles; evidence still flows)")
+    parser.add_argument("--discover-advisors", action="store_true",
+                        help="probe-gated scan for additional advisory-only "
+                             "analyzers (default off)")
     return parser.parse_args()
 
 

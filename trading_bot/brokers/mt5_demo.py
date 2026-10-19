@@ -190,12 +190,12 @@ class MT5DemoAdapter:
         login = self._resolve_secret("login_env", "MT5_LOGIN")
         password = self._resolve_secret("password_env", "MT5_PASSWORD")
         server = self._resolve_secret("server_env", "MT5_SERVER")
-        # current_session mode: attach to the terminal's already-authorized
-        # session. The account validation below still enforces DEMO-only —
-        # attaching to a live account is refused, never traded.
-        use_current = bool(self.config.get("current_session")) or not all(
-            (login, password, server))
-        if not login or not password or not server:
+        # current_session mode is an explicit, operator-selected attach mode.
+        # Missing credentials must otherwise fail closed: silently attaching
+        # to whatever account happens to be open would bypass the rotated
+        # credential gate. DEMO-only validation still applies either way.
+        use_current = bool(self.config.get("current_session"))
+        if not all((login, password, server)):
             if not use_current:
                 raise MT5AdapterError(
                     "MT5 demo credentials not provisioned (expected env "
@@ -203,7 +203,8 @@ class MT5DemoAdapter:
                     "configured *_env names)")
             logger.warning(
                 "MT5 credentials not provisioned — attaching to the "
-                "terminal's current session; DEMO validation still applies")
+                "terminal's current session because current_session=true; "
+                "DEMO validation still applies")
 
         # initialize() needs the credentials inline when the terminal is not
         # already running + logged in; a bare initialize() only attaches to an

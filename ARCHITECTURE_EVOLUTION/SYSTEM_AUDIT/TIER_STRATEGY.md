@@ -10,7 +10,7 @@
 **Objective**: Real-time integration and Predictive Accuracy.
 - Connect `market_intelligence` and `signals` directly to the GWM (Generative World Model).
 - Consolidate `risk` into a unified engine.
-- Evolve `execution` to be Active Inference driven (Expected Free Energy minimization for trade placement).
+- Execution.
 
 ## Tier 2: Agent Intelligence
 **Objective**: Swarm Coordination and Multi-Agent Debate.

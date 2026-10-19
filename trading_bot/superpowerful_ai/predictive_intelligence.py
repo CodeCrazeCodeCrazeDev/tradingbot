@@ -643,7 +643,8 @@ class PredictiveIntelligence:
             # 4. Volatility expansion
             if len(close) >= 40:
                 recent_vol = np.std(np.diff(close[-10:]) / close[-10:-1])
-                historical_vol = np.std(np.diff(close[-40:-10]) / close[-40:-10])
+                historical_vol = np.std(
+                    np.diff(close[-40:-10]) / close[-40:-10][:-1])
                 
                 if recent_vol > historical_vol * 1.5:
                     reversal_signals.append('volatility_expansion')

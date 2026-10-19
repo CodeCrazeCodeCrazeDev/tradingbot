@@ -100,14 +100,79 @@ class EvidenceGraph:
     def add_edge(self, edge: EvidenceEdge):
         self.edges.append(edge)
 
-    def query_counterfactual(self, intervention: Dict[str, Any]) -> 'EvidenceGraph':
+    def query_counterfactual(self, intervention: Dict[str, Any],
+                             context: Optional[Dict[str, Any]] = None
+                             ) -> 'EvidenceGraph':
         """
-        Simulates the effect of an intervention on the evidence graph.
-        Part of the UCA V4 Do-Calculus implementation.
+        do(X=x): Pearl graph surgery on the causal evidence graph
+        (UCA V4 do-calculus).
+
+        Intervened nodes are forced to the supplied values and their
+        incoming causal edges are severed — under do(), a node no longer
+        depends on its parents. The intervention then propagates downstream
+        along causal edges whose QKG ``context_validity_mask`` holds in
+        ``context``, attenuated by edge weight and by the ratio between the
+        intervened and prior parent confidence.
+
+        ``intervention`` maps ``node_id`` to a scalar confidence override
+        (``{"node_a": 0.9}``) or a field dict
+        (``{"node_a": {"confidence": 0.9}}``).
         """
-        # Return a copy with modified nodes based on causal links
-        # This is a stub for the full structural causal model (SCM) implementation
-        return self
+        import copy
+
+        counterfactual = EvidenceGraph(graph_id=f"{self.graph_id}-cf")
+        counterfactual.nodes = copy.deepcopy(self.nodes)
+        counterfactual.edges = copy.deepcopy(self.edges)
+
+        severed: set = set()
+        factors: Dict[str, float] = {}
+        ctx = dict(context or {})
+
+        for node_id, value in intervention.items():
+            node = counterfactual.nodes.get(str(node_id))
+            if node is None:
+                continue
+            # sever incoming causal edges INTO the intervened node
+            counterfactual.edges = [
+                e for e in counterfactual.edges
+                if not (e.is_causal and e.target_id == node.node_id)]
+            prior = float(node.confidence or 0.0)
+            if isinstance(value, dict):
+                for k, v in value.items():
+                    if hasattr(node, k):
+                        setattr(node, k, v)
+                new_conf = float(node.confidence)
+            else:
+                new_conf = float(value)
+                node.confidence = new_conf
+            factors[node.node_id] = new_conf / max(prior, 1e-9)
+            severed.add(node.node_id)
+            node.metadata["counterfactual"] = True
+
+        # BFS downstream along context-valid causal edges; each child is
+        # attenuated once by parent factor * edge weight.
+        queue = list(severed)
+        seen: set = set()
+        while queue:
+            parent = queue.pop(0)
+            for edge in counterfactual.edges:
+                if (not edge.is_causal or edge.source_id != parent
+                        or edge.target_id in severed
+                        or edge.target_id in seen):
+                    continue
+                if not edge.is_valid_in_context(ctx):
+                    continue
+                child = counterfactual.nodes.get(edge.target_id)
+                if child is None:
+                    continue
+                child.confidence = max(0.0, min(1.0, child.confidence
+                                                * factors.get(parent, 1.0)
+                                                * edge.weight))
+                child.metadata["counterfactual_propagated_from"] = parent
+                seen.add(edge.target_id)
+                queue.append(edge.target_id)
+
+        return counterfactual
 
 @dataclass
 class Hypothesis:

@@ -202,9 +202,11 @@ sequenceDiagram
 ## 4. The AI / cognition stack — inside CSC
 
 Everything in this section lives inside `_process_observation_pipeline`
-(controller.py:2233). Three planes run per bar: **state** (what the system
-believes), **evidence** (what advisors and memory contribute), and
-**selection** (how a proposal survives to the gates in §6).
+(controller.py:2233). Four planes run per bar: **state** (what the system
+believes), **evidence** (what advisors and memory contribute),
+**selection** (how a proposal survives to the gates in §6), and
+**reflection** (what the system got wrong and learned — HMS failure +
+self-improvement memory).
 
 ```mermaid
 flowchart TB
@@ -251,6 +253,20 @@ flowchart TB
     HG --> SIM --> PR --> VS --> SYN --> FL
     FL --> HMS
     PR -.tilt source.-> SVC
+
+    subgraph REFLECT["REFLECTION PLANE — what it got wrong & learned"]
+        FM[core/hms/reflection.py FailureMemory<br/>kinds: prediction_incorrect · decision_rejected<br/>advisor_error · execution_fault · verification_failed<br/>bounded deque + failures.jsonl + SAGE triplets]
+        SIM2[SelfImprovementMemory<br/>RSI proposals/decisions/lessons<br/>improvements.jsonl — record-only]
+        BRIDGE[recursive_self_improvement/hms_bridge.py<br/>RSIHMSBridge — evidence plumbing only]
+    end
+
+    DEC[CoreDecision<br/>TRADE_REJECTED / outcome settle] -.-> FM
+    SVC -.advisor_error.-> FM
+    FM -->|failure_summary → PerformanceGaps| BRIDGE
+    BRIDGE -->|run_cycle gaps → verdicts| RSI[engine_v2.py<br/>RecursiveImprovementCycle<br/>sandboxed replay → verifier → archive<br/>human-gated promotion]
+    RSI -->|decisions + lessons| SIM2
+    FM -->|retrieve_reflective_context| HG
+    SIM2 -->|retrieve_reflective_context| HG
 ```
 
 ### What each AI component actually is
@@ -270,6 +286,31 @@ flowchart TB
 | Verification | `core/verification/swarm.py` | swarm reports + `EvidenceGraphGate.verify_evidence_first`; one bounded refine, then reject |
 | Synthesis | `_select_optimal_action` | proposal + `_apply_net_of_cost_gate` — calibrated EV must beat cost |
 | Research engine | `csc/research/engine.py` | `run_research_cycle` every `research_interval` bars; reports re-enter as advisory artifacts |
+| Failure memory | `core/hms/reflection.py` | categorized failure records written by `record_outcome` (incorrect calls), the `process_market_observation` wrapper (every TRADE_REJECTED), and the advisory gather (advisor errors); durable JSONL + SAGE triplets |
+| Self-improvement memory | `core/hms/reflection.py` | RSI proposals/decisions/lessons — record-only, promotion stays behind signed `OperatorAuthorization` |
+| RSI↔HMS bridge | `recursive_self_improvement/hms_bridge.py` | `observe_gaps()` turns `failure_summary()` into `PerformanceGap`s for `RecursiveImprovementCycle.run_cycle(gaps=...)`; `mirror_decisions()` writes verdicts+lessons back — operator-invoked, never auto-run |
+
+### Recursive self-improvement loop (closed through HMS)
+
+```text
+decision/outcome ──► HMS FailureMemory ──► failure_summary()
+                                                 │  (≥3 recurrences → gap)
+                                                 ▼
+                           RecursiveImprovementCycle.run_cycle(gaps)
+                             observe→hypothesize→sandboxed replay→verify
+                                                 │
+                                                 ▼
+                    PromotionDecisions ──► HMS SelfImprovementMemory
+                                                 │
+                                                 ▼
+              retrieve_reflective_context() ──► evidence plane (next bar)
+```
+
+The loop closes on *memory*, not on code: the cycle proposes bounded
+parameter candidates for allow-listed families, replays them in a sandbox,
+and archives verdicts. Promotion past `eligible_for_operator_review`
+requires a signed `OperatorAuthorization` — the RSI path can change what
+the system *remembers and studies*, never what it *is authorized to do*.
 
 ### The advisory contract — how AI feeds the brain without authority
 
@@ -294,7 +335,8 @@ flowchart LR
 ### Introspection: `trading_bot/ai_stack.py`
 
 `AIStack(csc)` is the read-only surface for this section — it snapshots
-the three planes (`state_plane()`, `evidence_plane()`, `selection_plane()`)
+the four planes (`state_plane()`, `evidence_plane()`,
+`selection_plane()`, `reflection_plane()`)
 and renders one-line explanations (`explain()`). It is wired by
 `ModularMonolithRuntime._wire_csc_persistence` as `runtime.ai_stack`,
 registered in the component graph as `interface_ai_stack`

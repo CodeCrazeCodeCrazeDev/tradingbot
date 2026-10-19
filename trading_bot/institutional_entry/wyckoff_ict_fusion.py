@@ -544,29 +544,33 @@ class WyckoffICTFusion:
                 # Create bins
                 bins = np.arange(df['low'].min(), df['high'].max() + bin_size, bin_size)
             
-                # Initialize volume profile
-                volume_profile = {bin_mid: 0 for bin_mid in (bins[:-1] + bins[1:]) / 2}
-            
+                # Initialize volume profile — keyed by bin INDEX, not the
+                # float midpoint: recomputing midpoints as low + size/2
+                # rounds differently than (bins[:-1]+bins[1:])/2, so
+                # float keys raise KeyError on np.float64 lookups.
+                volume_profile = {i: 0.0 for i in range(len(bins) - 1)}
+
                 # Distribute volume across price range of each candle
                 for i in range(len(df)):
                     candle_low = df.iloc[i]['low']
                     candle_high = df.iloc[i]['high']
                     candle_volume = df.iloc[i]['volume']
-                
+
                     # Find bins that overlap with this candle
-                    overlap_bins = [b for b in bins[:-1] if b >= candle_low and b <= candle_high]
-                
-                    if overlap_bins:
+                    overlap_idx = [j for j in range(len(bins) - 1)
+                                   if bins[j] >= candle_low
+                                   and bins[j] <= candle_high]
+
+                    if overlap_idx:
                         # Distribute volume equally across overlapping bins
-                        volume_per_bin = candle_volume / len(overlap_bins)
-                    
-                        for bin_low in overlap_bins:
-                            bin_mid = bin_low + bin_size / 2
-                            volume_profile[bin_mid] += volume_per_bin
-            
-                # Convert to array for easier analysis
-                bin_mids = np.array(list(volume_profile.keys()))
-                bin_volumes = np.array(list(volume_profile.values()))
+                        volume_per_bin = candle_volume / len(overlap_idx)
+                        for j in overlap_idx:
+                            volume_profile[j] += volume_per_bin
+
+                # Convert to arrays for easier analysis
+                bin_mids = (bins[:-1] + bins[1:]) / 2
+                bin_volumes = np.array(
+                    [volume_profile[j] for j in range(len(bins) - 1)])
             
                 # Find low volume areas (potential liquidity voids)
                 avg_volume = np.mean(bin_volumes[bin_volumes > 0])

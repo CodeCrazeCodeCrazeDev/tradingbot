@@ -10,7 +10,7 @@ and probabilistic future scenario simulation.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Mapping, Optional, Tuple, Any
 import numpy as np
 import logging
 from dataclasses import dataclass, field
@@ -356,6 +356,58 @@ class WorldModelV2(nn.Module):
         # checkpoint is loaded — consumers must not treat them as
         # calibrated foresight.
         self._trained = False
+
+    # Ordered observation fields featurized for the live encode() path.
+    # Missing fields contribute zeros — never fabricated values.
+    OBSERVATION_FEATURES: Tuple[str, ...] = (
+        "price", "close", "open", "high", "low", "spread", "volume",
+        "returns", "log_returns", "volatility", "volatility_percentile",
+        "volume_ratio", "vwap", "momentum", "ret_autocorr",
+        "trend_reliability", "peer_close", "peer_return", "peer_corr",
+        "session_hour", "asia_session", "london_session", "ny_session",
+        "hour_sin", "hour_cos", "uncertainty", "rsi", "atr",
+        "bid", "ask", "high_24h", "low_24h", "num_trades",
+    )
+
+    _TREND_CODES = {"BEARISH": -1.0, "FLAT": 0.0, "BULLISH": 1.0}
+
+    def _obs_to_features(self, observation: Mapping) -> torch.Tensor:
+        """Map an observation dict to the model's FX input width.
+
+        Numeric fields are taken directly (clamped, tanh-squashed);
+        categorical labels (trend, trend_effective, regime, htf_trend)
+        map to the trend codes. The vector is repeated/tiled to exactly
+        the FX encoder's input width so dims always match.
+        """
+        fx_dim = self.encoder.asset_dims.get("FX", 64)
+        vals = []
+        for key in self.OBSERVATION_FEATURES:
+            v = observation.get(key)
+            if isinstance(v, str):
+                v = self._TREND_CODES.get(v.upper())
+            try:
+                vals.append(float(v))
+            except (TypeError, ValueError):
+                vals.append(0.0)
+        for cat_key in ("trend", "trend_effective", "regime", "htf_trend"):
+            v = observation.get(cat_key)
+            code = self._TREND_CODES.get(str(v).upper(), 0.0)
+            vals.append(code)
+        t = torch.tensor(vals, dtype=torch.float32).nan_to_num(0.0)
+        t = torch.tanh(t.clamp(-1e6, 1e6))
+        reps = -(-fx_dim // t.numel())
+        tiled = t.repeat(reps)[:fx_dim]
+        return tiled
+
+    def encode(self, observation: Mapping) -> torch.Tensor:
+        """Encode a live observation dict to a latent vector.
+
+        Compatibility surface for CSC VFE surprise: returns
+        ``[1, latent_dim]`` — the last-step latent of the FX stream.
+        """
+        fx = self._obs_to_features(observation)
+        z_seq = self.encoder({"FX": fx.view(1, 1, -1)})
+        return z_seq[:, -1, :]
 
     def forward(self, market_data: Dict[str, torch.Tensor], order_size: Optional[torch.Tensor] = None) -> Dict[str, Any]:
         """

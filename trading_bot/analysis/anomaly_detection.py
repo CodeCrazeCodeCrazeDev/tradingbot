@@ -165,7 +165,7 @@ class AdvancedAnomalyDetector:
         
         # Clean and normalize features
         features = features.replace([np.inf, -np.inf], np.nan)
-        features = features.fillna(method='ffill')
+        features = features.ffill()
         features = features.fillna(0)
         
         return features

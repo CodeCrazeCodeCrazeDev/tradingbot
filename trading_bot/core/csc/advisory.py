@@ -4633,6 +4633,466 @@ def _fourier_service() -> AdvisoryModuleAdapter:
 # footprint data the bars don't carry.
 
 
+
+# ---------------------------------------------------------------------------
+# Bucket H - follow-on audit remainder: hawkes events, signal fusion,
+# feature mining (deepchart/tda/ricci/indicators already wired above)
+# ---------------------------------------------------------------------------
+
+
+def _hawkes_service() -> AdvisoryModuleAdapter:
+    """advanced_analysis HawkesProcessDetector - each real bar is an
+    aggregated trade event (TRADE / LARGE_ORDER on volume spikes /
+    AGGRESSIVE_* on directional bursts); the detector's event intensity
+    and next-event prediction are evidence only."""
+    from trading_bot.advanced_analysis.hawkes_process import (
+        EventType, HawkesProcessDetector, MarketEvent)
+
+    det = HawkesProcessDetector()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        close = _num(ctx.get("close") or ctx.get("price"))
+        if close is None:
+            return {"status": "no_price"}
+        vol = _num(ctx.get("volume")) or 0.0
+        vol_ratio = _num(ctx.get("volume_ratio")) or 1.0
+        opn = _num(ctx.get("open")) or close
+        side = "BUY" if close >= opn else "SELL"
+        if vol_ratio >= 2.0:
+            etype = (EventType.AGGRESSIVE_BUY if side == "BUY"
+                     else EventType.AGGRESSIVE_SELL)
+        elif vol_ratio >= 1.5:
+            etype = EventType.LARGE_ORDER
+        else:
+            etype = EventType.TRADE
+        ts = ctx.get("timestamp")
+        det.add_event(MarketEvent(
+            timestamp=datetime.fromisoformat(str(ts))
+            if ts else datetime.utcnow(),
+            event_type=etype, price=close, volume=vol,
+            side=side, is_aggressive=vol_ratio >= 1.5))
+        return {"hawkes_state": _payload(det.get_current_state()),
+                "recent_signals": _primitive(det.get_recent_signals(5)),
+                "next_event": _payload(det.predict_next_event(300))}
+
+    return AdvisoryModuleAdapter("hawkes_event_intensity", analyze)
+
+
+def _alpha_fusion_service() -> AdvisoryModuleAdapter:
+    """alpha_research AlphaFusionGraph - trend/momentum/volume/volatility
+    generators run on real market_data; lob/sentiment/macro/alt-data
+    inputs left None (not fabricated)."""
+    from trading_bot.alpha_research.alpha_fusion_graph import (
+        AlphaFusionGraph)
+
+    fusion = AlphaFusionGraph()
+    hist = _BarHistory(256)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 200)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        return _payload(fusion.generate_and_fuse(
+            df, str(ctx.get("symbol") or "UNKNOWN")))
+
+    return AdvisoryModuleAdapter("alpha_fusion_graph", analyze)
+
+
+# feature_mining note: FeatureMiningSystem.get_live_features needs a
+# saved selected_features.parquet (prior fit run) - vacuous without
+# training artifacts; not wired.
+
+
+
+# ---------------------------------------------------------------------------
+# Bucket I - self-state + conditional-feed + online-fit adapters.
+# self_state channel: controller injects real CSC internals
+# (open positions, settled outcomes, advisor health, prev advisory calls)
+# into the observation - these modules need state, not market fields.
+# ---------------------------------------------------------------------------
+
+
+def _self_state(ctx: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Read the controller-injected self_state block; empty when the
+    observation is probed outside the CSC pipeline."""
+    st = ctx.get("self_state")
+    return st if isinstance(st, Mapping) else {}
+
+
+def _position_state_service() -> AdvisoryModuleAdapter:
+    """position/ CorrelationExposureMonitor + PositionAgingTracker on
+    CSC's real open positions (self_state.open_positions)."""
+    from trading_bot.position.position_management import (
+        CorrelationExposureMonitor, Position, PositionAgingTracker,
+        PositionSide)
+
+    corr = CorrelationExposureMonitor()
+    aging = PositionAgingTracker()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        raw = _self_state(ctx).get("open_positions") or {}
+        if not raw:
+            return {"status": "no_open_positions"}
+        positions = []
+        for sym, p in raw.items():
+            positions.append(Position(
+                position_id=str(p.get("trade_ids", sym)),
+                account_id="csc", symbol=str(sym),
+                side=(PositionSide.LONG
+                      if p.get("direction") == "BUY" else PositionSide.SHORT),
+                quantity=1.0,
+                entry_price=float(p.get("entry_price") or 0.0),
+                current_price=float(
+                    ctx.get("close") or ctx.get("price")
+                    or p.get("entry_price") or 0.0),
+                open_time=datetime.utcnow()))
+        out = _probe_all((
+            ("correlation_exposure", lambda: corr.analyze(positions)),
+            ("position_aging", lambda: aging.analyze(positions)),
+        ))
+        return out or {"status": "no_position_read"}
+
+    return AdvisoryModuleAdapter("position_state_monitor", analyze)
+
+
+def _psychology_service() -> AdvisoryModuleAdapter:
+    """psychology/ CognitiveBiasDetector + TiltDetector fed the real
+    settled-outcome journal - trade history IS the observation here."""
+    from trading_bot.psychology.behavioral_features import (
+        CognitiveBiasDetector, EmotionalState, TiltDetector, TradeRecord)
+
+    bias = CognitiveBiasDetector()
+    tilt = TiltDetector()
+    fed: set = set()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        st = _self_state(ctx)
+        settled = st.get("settled_outcomes") or []
+        for o in settled:
+            key = (o.get("symbol"), o.get("entry_seq"), o.get("exit_seq"))
+            if key in fed:
+                continue
+            fed.add(key)
+            t = TradeRecord(
+                trade_id="%s_%s" % (key[0], key[2]),
+                symbol=str(key[0]), direction=str(o.get("direction")),
+                entry_time=datetime.utcnow(), exit_time=datetime.utcnow(),
+                entry_price=float(o.get("entry_price") or 0.0),
+                exit_price=float(o.get("exit_price") or 0.0),
+                planned_stop=0.0, actual_stop=0.0,
+                planned_target=0.0, actual_target=0.0,
+                pnl=float(o.get("realized_return") or 0.0),
+                followed_plan=True,
+                emotional_state=EmotionalState.CALM,
+                notes=str(o.get("reason") or ""))
+            for d in (bias, tilt):
+                try:
+                    d.add_trade(t)
+                except Exception:
+                    pass
+        run_pnl = sum(float(o.get("realized_return") or 0.0)
+                      for o in settled[-10:])
+        out = _probe_all((
+            ("bias_report", lambda: bias.get_bias_report()),
+            ("tilt", lambda: tilt.assess_tilt(
+                run_pnl, EmotionalState.CALM,
+                rule_violations=int(
+                    st.get("funnel", {}).get("risk_rejected", 0) or 0))),
+        ))
+        out["trades_seen"] = len(fed)
+        return out
+
+    return AdvisoryModuleAdapter("psychology_bias_tilt", analyze)
+
+
+def _counterfactual_service() -> AdvisoryModuleAdapter:
+    """skills CounterfactualAnalyzer on the real action/outcome journal:
+    prices = real closes, actions = settled decisions, outcomes =
+    realized returns."""
+    from trading_bot.skills.ai_ml_enhancements.counterfactual_analyzer import (
+        CounterfactualAnalyzer)
+
+    ca = CounterfactualAnalyzer()
+    hist = _BarHistory(256)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        prices = hist.prices()
+        settled = _self_state(ctx).get("settled_outcomes") or []
+        if len(prices) < 10 or not settled:
+            return {"status": "warming_or_no_outcomes",
+                    "bars": len(prices), "outcomes": len(settled)}
+        actions = [str(o.get("direction") or "HOLD") for o in settled]
+        outcomes = [float(o.get("realized_return") or 0.0) for o in settled]
+        import numpy as np
+        return _payload(ca.analyze(
+            np.asarray(prices[-len(settled):]),
+            actions[-len(prices[-len(settled):]):]
+            if len(settled) > len(prices) else actions,
+            outcomes[-len(prices[-len(settled):]):]
+            if len(settled) > len(prices) else outcomes))
+
+    return AdvisoryModuleAdapter("counterfactual_outcomes", analyze)
+
+
+def _hf_decay_service() -> AdvisoryModuleAdapter:
+    """hedge_fund_safety HiddenRiskDetection - ModelDecayDetector fed real
+    settled predictions (predicted direction vs realized return sign)."""
+    from trading_bot.hedge_fund_safety.hidden_risk_detection import (
+        HiddenRiskDetection)
+
+    hrd = HiddenRiskDetection({})
+    fed: set = set()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        st = _self_state(ctx)
+        for o in st.get("settled_outcomes") or []:
+            key = (o.get("symbol"), o.get("exit_seq"))
+            if key in fed:
+                continue
+            fed.add(key)
+            try:
+                hrd.record_prediction(
+                    "csc_direction",
+                    1.0 if o.get("direction") == "BUY" else -1.0,
+                    1.0 if float(o.get("realized_return") or 0) > 0
+                    else -1.0,
+                    0.6)
+            except Exception:
+                pass
+        out = _probe_all((
+            ("model_health", lambda: hrd.get_status()),
+            ("decay", lambda: hrd.run_full_scan(["csc_direction"],
+                                              [ctx.get("symbol")])),
+        ))
+        out["predictions_fed"] = len(fed)
+        return out
+
+    return AdvisoryModuleAdapter("hf_model_decay", analyze)
+
+
+def _alpha_brain_service() -> AdvisoryModuleAdapter:
+    """alpha_research UnifiedAlphaBrain - register advisory capabilities
+    as strategies, submit last cycle's real advisory calls as signals,
+    read the collective aggregate. Evidence aggregation of advisor
+    outputs; CSC remains the sole decision authority."""
+    from trading_bot.alpha_research.unified_alpha_brain import (
+        SignalStrength, StrategySignal, UnifiedAlphaBrain)
+
+    brain = UnifiedAlphaBrain()
+    known: set = set()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        calls = _self_state(ctx).get("last_advisory_calls") or []
+        symbol = str(ctx.get("symbol") or "UNKNOWN")
+        submitted = 0
+        for c in calls:
+            cap = str(c.get("capability_id") or c.get("agent") or "")
+            if not cap:
+                continue
+            if cap not in known:
+                try:
+                    brain.register_strategy(cap, "advisory")
+                    known.add(cap)
+                except Exception:
+                    pass
+            d = c.get("direction")
+            if d not in ("BUY", "SELL"):
+                continue
+            try:
+                conf = float(c.get("confidence") or 0.3)
+                brain.submit_signal(StrategySignal(
+                    signal_id="%s_%s" % (cap,
+                                         _self_state(ctx).get(
+                                             "observation_seq")),
+                    strategy_name=cap, timestamp=datetime.utcnow(),
+                    symbol=symbol,
+                    direction="long" if d == "BUY" else "short",
+                    strength=(SignalStrength.STRONG if conf > 0.6
+                              else SignalStrength.MODERATE),
+                    confidence=min(max(conf, 0.0), 1.0)))
+                submitted += 1
+            except Exception:
+                pass
+        try:
+            dec = brain.get_collective_decision(symbol)
+            brain.clear_pending_signals()
+            out = _payload(dec)
+            out["signals_submitted"] = submitted
+            out["strategies_registered"] = len(known)
+            return out
+        except Exception as e:
+            return {"status": "aggregate_error", "error": str(e)[:200]}
+
+    return AdvisoryModuleAdapter("alpha_brain_collective", analyze)
+
+
+def _ml_online_service() -> AdvisoryModuleAdapter:
+    """ml/ PricePredictor.detect_anomalies + PatternRecognizer.scan -
+    statistical reads on the real bar frame; no training required."""
+    from trading_bot.ml.predictive_models import (
+        PatternRecognizer, PricePredictor)
+
+    pp = PricePredictor()
+    pr = PatternRecognizer()
+    hist = _BarHistory(128)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        out = _probe_all((
+            ("price_anomalies",
+             lambda: pp.detect_anomalies(df.copy())),
+            ("chart_patterns", lambda: pr.scan(df.copy())),
+        ))
+        return out or {"status": "no_ml_read"}
+
+    return AdvisoryModuleAdapter("ml_statistical", analyze)
+
+
+def _ensemble_meta_service() -> AdvisoryModuleAdapter:
+    """alpha_research EnsembleMetaLearner - lazily fits sklearn models on
+    (feature vector -> next-bar direction) once enough real samples
+    exist. Hermes-only (sklearn)."""
+    import numpy as np
+    from trading_bot.alpha_research.ensemble_meta_learner import (
+        EnsembleMetaLearner)
+
+    meta = EnsembleMetaLearner()
+    X: list = []
+    y: list = []
+    pending: Dict[str, Any] = {}
+    fitted = {"ok": False}
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        close = _num(ctx.get("close") or ctx.get("price"))
+        feats = list(_feature_vector(ctx))
+        # label the pending sample with this bar's realized move
+        if pending and close is not None:
+            y.append(1.0 if close > pending["price"] else -1.0)
+        if close is not None:
+            X.append(feats)
+            pending["price"] = close
+        if not fitted["ok"]:
+            n = min(len(X), len(y))
+            if n >= 60:
+                try:
+                    meta.fit(np.asarray(X[:n]), np.asarray(y[:n]))
+                    fitted["ok"] = True
+                except Exception:
+                    pass
+            else:
+                return {"status": "fitting", "samples": n}
+        try:
+            pred = meta.predict(np.asarray([feats]))
+            return {"prediction": _primitive(pred),
+                    "samples": len(y)}
+        except Exception as e:
+            return {"status": "predict_error", "error": str(e)[:200]}
+
+    return AdvisoryModuleAdapter("ensemble_meta_online", analyze)
+
+
+def _conditional_feed_service() -> AdvisoryModuleAdapter:
+    """Conditional external-feed adapters - each emits ONLY when the
+    observation carries the real feed field; abstains otherwise.
+    arbitrage: venue_prices; central_bank_tracker: cb_rates;
+    market_microbiome: order_flow; news sentiment: news_items;
+    social sentiment: sentiment."""
+    from trading_bot.arbitrage.arbitrage_network import (
+        CrossExchangeArbitrage)
+    from trading_bot.advanced_analysis.central_bank_tracker import (
+        CentralBankTracker)
+    from trading_bot.advanced_analysis.market_microbiome import (
+        MarketMicrobiome)
+    arb = CrossExchangeArbitrage()
+    cb = CentralBankTracker()
+    micro = MarketMicrobiome()
+    news_state: Dict[str, Any] = {"agg": None}
+    # lazy: NewsAggregator needs aiohttp (hermes)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        probes = []
+        venues = ctx.get("venue_prices")
+        if isinstance(venues, Mapping) and len(venues) >= 2:
+            probes.append(("arbitrage", lambda: _payload(
+                arb.detect_opportunities(dict(venues)))))
+        rates = ctx.get("cb_rates")
+        if isinstance(rates, Mapping) and rates:
+            for bank, rate in list(rates.items())[:8]:
+                try:
+                    cb.update_rate(str(bank), float(rate))
+                except Exception:
+                    pass
+            probes.append(("central_bank", lambda: _payload(
+                cb.get_trading_signals())))
+        flow = ctx.get("order_flow")
+        if isinstance(flow, (list, tuple)) and flow:
+            try:
+                micro.process_order_flow(list(flow))
+            except Exception:
+                pass
+            probes.append(("microbiome", lambda: _payload(
+                micro.get_ecosystem_state())))
+        items = ctx.get("news_items")
+        if isinstance(items, (list, tuple)) and items:
+            if news_state["agg"] is None:
+                try:
+                    from trading_bot.sentiment.realtime_sentiment_engine import (
+                        NewsAggregator)
+                    news_state["agg"] = NewsAggregator()
+                except Exception:
+                    news_state["agg"] = False
+            news = news_state["agg"]
+            for art in items[:10] if news else ():
+                if isinstance(art, Mapping):
+                    try:
+                        news.process_news(
+                            str(art.get("title") or ""),
+                            str(art.get("description")
+                                or art.get("summary") or ""),
+                            str((art.get("source") or {}).get("name")
+                                if isinstance(art.get("source"), Mapping)
+                                else art.get("source") or "unknown"))
+                    except Exception:
+                        pass
+            cache = list(news.news_cache) if news else []
+            probes.append(("news_sentiment", lambda: {
+                "articles_processed": len(cache),
+                "mean_sentiment": (sum(
+                    float(getattr(e, "sentiment", 0) or 0)
+                    for e in cache) / len(cache)) if cache else None,
+                "top_impact": [
+                    {"headline": getattr(e, "headline", "")[:80],
+                     "sentiment": getattr(e, "sentiment", None),
+                     "impact": getattr(e, "impact_score", None)}
+                    for e in sorted(
+                        cache, key=lambda e: abs(
+                            getattr(e, "impact_score", 0) or 0),
+                        reverse=True)[:3]],
+            }))
+        social = ctx.get("sentiment")
+        if isinstance(social, Mapping) and social:
+            probes.append(("social_sentiment", lambda: _primitive(social)))
+        f13 = ctx.get("sec_13f")
+        if isinstance(f13, Mapping) and f13.get("holdings"):
+            probes.append(("sec_13f_filings", lambda: _primitive(f13)))
+        cot = ctx.get("cot")
+        if isinstance(cot, Mapping) and cot.get("report_date"):
+            probes.append(("cot_positioning", lambda: _primitive(cot)))
+        dp = ctx.get("dark_pool")
+        if isinstance(dp, Mapping) and dp.get("total_ats_volume"):
+            probes.append(("dark_pool_volume", lambda: _primitive(dp)))
+        if not probes:
+            return {"status": "no_external_feeds"}
+        return _probe_all(probes) or {"status": "no_external_feeds"}
+
+    return AdvisoryModuleAdapter("external_feed_conditional", analyze)
+
+
 # Factories for services that are genuinely observation-callable. Each
 # entry is attached at assembly time inside a probe; failures skip the
 # service rather than break the runtime.
@@ -4855,6 +5315,18 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("confluence_session", _confluence_session_service),
     ("deep_agent_market", _deep_agent_system_service),
     ("hft_orderbook_imbalance", _hft_orderbook_service),
+    # Bucket H - follow-on audit remainder
+    ("hawkes_event_intensity", _hawkes_service),
+    ("alpha_fusion_graph", _alpha_fusion_service),
+    # Bucket I - self-state + conditional-feed + online-fit
+    ("position_state_monitor", _position_state_service),
+    ("psychology_bias_tilt", _psychology_service),
+    ("counterfactual_outcomes", _counterfactual_service),
+    ("hf_model_decay", _hf_decay_service),
+    ("alpha_brain_collective", _alpha_brain_service),
+    ("ml_statistical", _ml_online_service),
+    ("ensemble_meta_online", _ensemble_meta_service),
+    ("external_feed_conditional", _conditional_feed_service),
 )
 
 # Services measured substantive or directional on real EURUSD bars
@@ -4882,6 +5354,9 @@ LIVE_IMPORTED_NON_ADVISORY: Tuple[Tuple[str, str], ...] = (
      "dependency, sentiment stack not in the decision path"),
     ("autonomous_financial_intelligence", "imported by "
      "core/chainofthoughtreasoner.py — legacy compat, no decision role"),
+    ("ml", "imported by core/csc/model_engineering.py "
+     "(confidence_calibration + data_leakage_guard) - canonical "
+     "dependency, statistical analyzers attached via advisory seam"),
 )
 
 # Orphan modules that are NOT observation-callable advisory services —
@@ -4927,10 +5402,11 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
     ("ai_engineer", "code-change safeguard machinery (safeguards, "
      "sandbox, compliance audit); approval semantics, not a market "
      "advisory"),
-    ("adversarial_decision", "adversarial_trade_eval removed — "
-     "evaluate_trade hard-gates on signal_data['edge_density'], a "
-     "property of a proposed trade; no proposal exists at observation "
-     "time, so every cycle produced vacuous rejections"),
+    ("adversarial_decision", "adversarial_trade_eval + adversarial_ — "
+     "failure_match attached - the 7-stage red-team runs on both "
+     "directions with evidence-only output; decision_gate and "
+     "position_sizer stages stay inside the adapter, authority "
+     "surfaces"),
     ("alphaalgo_core", "market_physics_filter removed — process() "
      "requires orderbook bids/asks (L2 data) the observation does not "
      "carry; 'spread inf / liquidity 0' verdicts were missing-data "
@@ -5224,8 +5700,10 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
      "framework remainder is pedagogy, not market analysis"),
     ("alphaalgo_v2", "intelligence_brain_v2 attached; models/forecasting "
      "remainder overlaps the brain service"),
-    ("ml", "predictors ship unfitted — would emit noise, not evidence; "
-     "wire after a training/loading path exists"),
+    # ml is live-imported canonical (confidence_calibration/
+    # data_leakage_guard) - see LIVE_IMPORTED_NON_ADVISORY; the
+    # ml_statistical adapter attaches its obs-callable surface.
+
     ("elite_system", "elite_price_action attached; equal_levels, "
      "swing_points, patterns env-gated on scipy/sklearn; LSTMPredictor "
      "and siblings need trained weights"),
@@ -5239,8 +5717,9 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
     ("msos", "vendor-bias detection needs vendor/reference data feeds"),
     ("opportunity_scanner", "spread analyzer needs two symbols; "
      "observation is single-symbol"),
-    ("hedge_fund_safety", "goal-drift detector needs strategy metric "
-     "history, not observations"),
+    ("hedge_fund_safety", "hf_model_decay attached "
+     "(ModelDecayDetector fed real settled predictions via self_state); "
+     "kill-switches/oversight/leverage limits are authority surfaces"),
     ("deepchart", "time_to_move + sr_memory attached (price/volume "
      "analyzers); friction/liquidity/intent engines need bid/ask or "
      "orderflow the observation cannot supply"),
@@ -5272,27 +5751,30 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
     ("advanced_analysis", "hypernetwork_regime + marl_strategists + "
      "tda_topology + ricci_momentum + fractal_momentum_div attached; "
      "ConsensusDecision/learning machinery is decision-layer plumbing; "
-     "hawkes/lob_cnn/options_hedging/liquidity_holography need "
-     "orderflow/options flow/event streams the observation cannot "
-     "supply"),
+     "hawkes_event_intensity attached (bars->event stream); "
+     "lob_cnn/options_hedging need orderflow/options flow the "
+     "observation cannot supply"),
     ("realtime", "realtime_ensemble attached (online models, evidence "
      "only); RealTimeMLEngine's deployment loop is not wired"),
     ("research", "feature_discovery + quant_regime_microstructure "
      "attached; pipeline orchestration is research-time, not runtime"),
-    ("skills", "concept_drift attached; CounterfactualAnalyzer needs "
-     "realized action/outcome pairs - route through HMS failure memory "
-     "if a future adapter consumes them"),
+    ("skills", "concept_drift + counterfactual_outcomes attached "
+     "(fed real settled action/outcome pairs via self_state); RL "
+     "trainer remainder is offline tooling"),
     ("profit_maximizer", "profit_max_market_regime + confluence_session "
      "attached; position-management remainder is a sizing/authority "
      "surface"),
     ("ultimate_system", "deep_agent_market attached; "
      "AlphaDiscoveryEngine.get_signals emits np.random noise (stub) - "
      "never wire a generator that fabricates evidence"),
-    ("psychology", "CognitiveBiasDetector/TiltDetector need realized "
-     "trade history and PnL - not present in the observation contract; "
-     "wire via HMS reflective context if ever needed"),
-    ("position", "CorrelationExposureMonitor/PositionAgingTracker need "
-     "position state - CSC-internal, not in the observation channel"),
+    ("psychology", "psychology_bias_tilt attached (fed the real "
+     "settled-outcome journal via self_state); EmotionalStateTracker "
+     "needs a live emotional-state feed the controller doesn't "
+     "produce"),
+    ("position", "position_state_monitor attached "
+     "(CorrelationExposure + PositionAging on real CSC open positions "
+     "via self_state); sizing/pyramid/scale-out tools are authority "
+     "surfaces"),
     ("hft", "hft_orderbook_imbalance attached (conditional - only emits "
      "when the observation carries a real order book); feed handlers "
      "are broker plumbing"),

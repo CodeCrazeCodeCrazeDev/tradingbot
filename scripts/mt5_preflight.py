@@ -187,7 +187,10 @@ def main(argv=None) -> int:
     parser.add_argument("--server-env", default="MT5_SERVER")
     parser.add_argument("--terminal-path", default=None,
                         help="path to terminal64.exe; auto-detected when omitted")
-    parser.add_argument("--state-db", default="var/paper/trading_state.db")
+    parser.add_argument("--state-db",
+                        default="var/mt5_demo/trading_state.db",
+                        help="durable ledger for the selected MT5 demo state "
+                             "directory (must match the runner's --state-dir)")
     parser.add_argument("--out", default=None)
     args = parser.parse_args(argv)
 

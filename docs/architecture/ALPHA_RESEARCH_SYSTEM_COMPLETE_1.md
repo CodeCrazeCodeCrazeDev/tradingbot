@@ -21,14 +21,14 @@ trading_bot/alpha_research/
 ├── alpha_fusion_graph.py            # Signal fusion (~800 lines)
 ├── trust_safety_layer.py            # Audit & compliance (~850 lines)
 ├── market_impact_predator.py        # Protection (~900 lines)
-└── alpha_research_orchestrator.py   # Master controller (~500 lines)
+└── alpha_researAutonomous strategy research, generation, backtesting, and deployment system.ch_orchestrator.py   # Master controller (~500 lines)
 ```
 
 ## Components
 
 ### 1. Self-Evolving Researcher (`self_evolving_researcher.py`)
 
-Autonomous strategy research, generation, backtesting, and deployment system.
+
 
 **Features:**
 - Genetic programming for strategy generation

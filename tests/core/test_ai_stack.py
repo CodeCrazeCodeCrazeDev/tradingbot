@@ -22,8 +22,9 @@ def csc():
 
 def test_snapshot_has_three_planes(csc):
     snap = AIStack(csc).snapshot()
-    assert set(snap) == {"status", "state", "evidence", "selection"}
-    for plane in ("state", "evidence", "selection"):
+    assert set(snap) == {"status", "state", "evidence", "selection",
+                        "reflection"}
+    for plane in ("state", "evidence", "selection", "reflection"):
         assert isinstance(snap[plane], dict)
 
 
@@ -42,7 +43,7 @@ def test_no_authority_fields(csc):
 
 def test_explain_lines(csc):
     lines = AIStack(csc).explain()
-    assert set(lines) == {"state", "evidence", "selection"}
+    assert set(lines) == {"state", "evidence", "selection", "reflection"}
     assert all(isinstance(v, str) for v in lines.values())
 
 
