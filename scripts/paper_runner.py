@@ -189,6 +189,9 @@ async def run(args: argparse.Namespace) -> int:
         "account_id": "paper",
         "trading_state_path": str(state_dir / "trading_state.db"),
         "decision_log_path": str(state_dir / "decision_log.jsonl"),
+        # Live-dims world model (FX=64 / latent 256); load is advisory-only —
+        # a dim mismatch warns and falls back to scaffold weights, never dies.
+        "world_model_checkpoint": str(PROJECT_ROOT / "var" / "world_model_v2.pt"),
         "strategy_id": args.strategy_id,
         "cognitive_assembly": {
             "enabled": True,
