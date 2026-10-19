@@ -148,6 +148,21 @@ class PaperExecutionBridge:
         quantity = payload.get("quantity", 0.0)
         price = payload.get("price") or payload.get("mark_price") or 0.0
 
+        # Position-close intent: the CSC asks the venue to flatten its real
+        # ledger position — the ledger is the authoritative exposure record,
+        # so side/quantity are resolved from actual fills, not the payload.
+        if payload.get("intent") == "position_close":
+            qty = await self._ledger_position(symbol)
+            if qty == 0.0:
+                # No ledger exposure — the mark-only settlement is honest.
+                self._mark_executed(action)
+                return {"status": "skipped", "reason": "no_ledger_position"}
+            side = "SELL" if qty > 0 else "BUY"
+            quantity = abs(qty)
+            logger.info(
+                "PaperExecutionBridge: position close %s %s qty=%.6f",
+                symbol, side, quantity)
+
         if not isinstance(quantity, (int, float)) or quantity <= 0:
             logger.warning(f"PaperExecutionBridge: rejecting fill with invalid quantity {quantity}")
             return {"status": "rejected", "reason": "invalid_quantity"}
@@ -309,6 +324,25 @@ class PaperExecutionBridge:
         result = {"status": "filled", "fill_id": fill.fill_id}
         self._processed_trade_ids[trade_id] = result
         return result
+
+    async def _ledger_position(self, symbol: str) -> float:
+        """Net signed quantity for ``symbol`` per the authoritative ledger —
+        venue positions when the adapter exposes them, in-memory projection
+        otherwise. Zero means flat."""
+        if self.execution_service is not None:
+            adapter = getattr(self.execution_service, "adapter", None)
+            if adapter is not None and hasattr(adapter, "get_positions"):
+                try:
+                    positions = await adapter.get_positions()
+                    return float(sum(
+                        float(p.quantity) for p in positions
+                        if p.instrument.symbol == symbol))
+                except Exception as exc:
+                    logger.error(
+                        "PaperExecutionBridge: ledger position lookup failed "
+                        "for %s: %s", symbol, exc)
+                    return float("nan")
+        return float(self.positions.get(symbol, 0.0))
 
     async def _submit_with_timeout(self, order: Any) -> Any:
         """Submit through the single execution boundary under a deadline."""
