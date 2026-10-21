@@ -404,7 +404,34 @@ class CognitiveSystemController:
         except Exception as e:
             logger.warning(f"CSC-V6: registry registration skipped ({e})")
 
+        # Scientific Reasoning Engine — hypothesis lifecycle tracker wired
+        # on real CSC machinery (HMS chain, world model, verifier swarm).
+        # Advisory only: its outputs are provenance-tagged evidence, and
+        # the SRE itself is a self-wiring node like any other service.
+        self._sre = None
+        if kwargs.get("enable_sre", True):
+            try:
+                self.configure_sre()
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("CSC-V6: SRE wiring skipped (%s)", exc)
+
         logger.info("CSC-V6: Brain initialized with dynamic argument mapping.")
+
+    def configure_sre(self) -> Any:
+        """Construct + attach the Scientific Reasoning Engine as an
+        advisory cognition service. Real HMS, world model, and verifier
+        swarm handles — every fabricated fallback in the SRE has been
+        removed, so unmeasured stages honestly report 'unmeasured'."""
+        if self._sre is not None:
+            return self._sre
+        from .scientific_reasoning import ScientificReasoningEngine
+        from .sre_bridge import SREAdvisoryService
+        self._sre = ScientificReasoningEngine(
+            controller=self, hms=self.hms,
+            world_model=self.world_model)
+        self.configure_cognition(SREAdvisoryService(self._sre))
+        logger.info("CSC-V6: SRE wired as advisory cognition service.")
+        return self._sre
 
     async def initialize(self):
         """Start the controller's runtime loop (marks the brain as running)."""
