@@ -35,6 +35,7 @@ from .router import SkillRouter
 from ..verification.swarm import VerificationSwarm
 from .swarm_intelligence.service import SwarmIntelligenceService
 from .self_wiring import NodeState, SelfWiringSupervisor
+from .autonomy import AutonomyManager
 from ..hms.models import (
     ResearchLedgerEntry,
     EvidenceGraph,
@@ -238,6 +239,11 @@ class CognitiveSystemController:
         # invariant and unreachable from it.
         self._self_wiring = kwargs.get("self_wiring") or (
             SelfWiringSupervisor())
+
+        # Autonomy manager: the organism's operations layer — one audited
+        # activity-portfolio decision per cycle instead of scattered
+        # interval hooks, plus the capability-expansion ledger.
+        self._autonomy = kwargs.get("autonomy") or AutonomyManager()
 
         # Subordinate advisory cognition services (e.g. AdvisoryCognitiveBrain).
         # Configured via configure_cognition(); their analyze() output becomes
@@ -3409,9 +3415,29 @@ class CognitiveSystemController:
                     stage="decision_terminal")
             return decision
         finally:
-            self._maybe_schedule_research_cycle(observation)
-            self._maybe_report_rsi_gaps()
-            self._maybe_self_question(observation)
+            # Autonomy tick: one managed ops decision per cycle — the
+            # manager reads health/slot/pipeline state, allows or defers
+            # each activity with a reason, and periodically persists an
+            # AUTONOMY audit event. Execution still runs through the
+            # existing bounded hooks.
+            tick = self._autonomy.tick(self)
+            if self._autonomy.should_audit():
+                await self._persist_audit_event(
+                    event_type="AUTONOMY", action="tick",
+                    outcome="scheduled",
+                    correlation_id=f"autonomy-{tick.cycle}",
+                    details=tick.to_dict())
+            for _d in tick.decisions:
+                if not _d.allowed:
+                    continue
+                if _d.activity == "self_question":
+                    self._maybe_self_question(observation)
+                elif _d.activity == "research_cycle":
+                    self._maybe_schedule_research_cycle(observation)
+                elif _d.activity == "rsi_gap":
+                    self._maybe_report_rsi_gaps()
+                elif _d.activity == "capability_review":
+                    self._capability_review()
 
     def _maybe_schedule_research_cycle(self, observation: Any) -> None:
         """Budgeted background research: every ``research_interval``
@@ -3509,6 +3535,46 @@ class CognitiveSystemController:
                       "supported": True,
                       "evidence": dict(health)}])
         return None
+
+    def _capability_review(self) -> None:
+        """Capability-expansion review: validated research claims produce
+        capability proposals; each new proposal is surfaced as an advisory
+        artifact for the next cycle's evidence channel — the organism's
+        growth is evidence, never authority."""
+        engine = getattr(self, "research_engine", None)
+        if engine is None:
+            return
+        try:
+            props = engine.capability_proposals()
+        except Exception:  # noqa: BLE001
+            return
+        seen = getattr(self, "_capability_seen", None)
+        if seen is None:
+            seen = self._capability_seen = set()
+        new = [p for p in props
+               if getattr(p, "proposal_id", None) not in seen]
+        for p in new:
+            seen.add(getattr(p, "proposal_id"))
+            self._funnel["capability_proposal_new"] += 1
+        if new and getattr(self, "_research_artifacts", None) is not None:
+            for p in new[:3]:
+                self._research_artifacts.append({
+                    "agent": "capability_proposal",
+                    "capability_id": "capability_proposal",
+                    "evidence": {
+                        "status": "proposal",
+                        "proposal_id": str(getattr(p, "proposal_id", "")),
+                        "summary": str(getattr(p, "summary", ""))[:120],
+                        "confidence_level": str(getattr(
+                            getattr(p, "confidence_profile", None),
+                            "level", ""))},
+                    "advisory_only": True})
+
+    def autonomy_report(self) -> Dict[str, Any]:
+        """Transparency surface: the organism's ops decisions and its
+        capability-expansion ledger."""
+        am = getattr(self, "_autonomy", None)
+        return am.report() if am is not None else {}
 
     def _maybe_self_question(self, observation: Any) -> None:
         """Bounded self-questioning: every ``self_question_interval``
