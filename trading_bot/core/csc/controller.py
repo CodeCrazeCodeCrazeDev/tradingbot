@@ -33,6 +33,7 @@ from .hypothesis import HypothesisGenerator, ReasoningBranch
 from .reliability import ReliabilityTracker
 from .router import SkillRouter
 from ..verification.swarm import VerificationSwarm
+from .swarm_intelligence.service import SwarmIntelligenceService
 from ..hms.models import (
     ResearchLedgerEntry,
     EvidenceGraph,
@@ -219,6 +220,15 @@ class CognitiveSystemController:
         # the outcome pipeline (record_outcome). Empty until real outcomes
         # are fed back — never prefilled with fabricated accuracy.
         self.reliability_tracker = ReliabilityTracker()
+
+        # Advisory swarm intelligence: the deliberation substrate that
+        # aggregates subordinate advisor calls into one consensus evidence
+        # artifact — advisory only, no order/risk/veto/execution authority.
+        self._swarm_intel = kwargs.get("swarm_intelligence") or (
+            SwarmIntelligenceService(
+                reliability_tracker=self.reliability_tracker))
+        self._last_swarm_consensus: Optional[Any] = None
+        self._last_swarm_snapshot: Optional[Dict[str, float]] = None
 
         # Subordinate advisory cognition services (e.g. AdvisoryCognitiveBrain).
         # Configured via configure_cognition(); their analyze() output becomes
@@ -506,6 +516,18 @@ class CognitiveSystemController:
             "CSC-V6: advisory cognition service registered: %s",
             capability_id)
 
+    def configure_swarm_state(self, path: Any) -> None:
+        """Point the swarm knowledge base at a persistence file — learned
+        node skill and patterns survive restarts beside the run state."""
+        _si = getattr(self, "_swarm_intel", None)
+        if _si is not None:
+            _si.set_persistence(str(path))
+
+    def swarm_intelligence_report(self) -> Dict[str, Any]:
+        """Transparency surface: what the swarm has learned and deliberated."""
+        _si = getattr(self, "_swarm_intel", None)
+        return _si.report() if _si is not None else {}
+
     def configure_execution_service(self, service: Any) -> None:
         """Wire the canonical execution service so position closes dispatch
         real opposing orders through the bus. Absent → mark-only settlement."""
@@ -696,6 +718,7 @@ class CognitiveSystemController:
             "evidence_items", "guardrails", "guardrail_terminal",
             "advisory_artifacts", "advisor_directional_calls",
             "advisor_substantive", "advisor_degenerate",
+            "swarm_deliberations",
             "hypothesis_branches", "pivot_refine_terminal",
             "verification", "verification_terminal", "synthesis",
             "net_cost_downgrade", "directional_proposals",
@@ -1001,6 +1024,12 @@ class CognitiveSystemController:
         self.reliability_tracker.update_action_outcome(
             regime, str(pending.get("action") or "").upper(),
             bool(was_correct), realized_return)
+        # Swarm consensus learns from the same settled outcome.
+        _si = getattr(self, "_swarm_intel", None)
+        if _si is not None:
+            _si.record_consensus_outcome(
+                regime, str(pending.get("action") or "").upper(),
+                bool(was_correct))
         # Feed HMS failure memory — the RSI bridge's observe_gaps reads
         # these aggregates, so losing settlements become real RSI input.
         if was_correct is False:
@@ -1033,6 +1062,11 @@ class CognitiveSystemController:
                     str(call["capability_id"]), regime, adv_correct,
                     float(call.get("confidence") or 0.5))
                 cap = str(call["capability_id"])
+                # The swarm knowledge base scores the same node outcome —
+                # vote-level skill is learned, never asserted.
+                _si = getattr(self, "_swarm_intel", None)
+                if _si is not None:
+                    _si.record_node_outcome(cap, regime, adv_correct)
                 # SPRT live monitoring (ASRS continuous-monitoring
                 # standard): engineered candidates carry a Wald test —
                 # degraded edge => automatic rollback, audited.
@@ -1339,6 +1373,8 @@ class CognitiveSystemController:
         # sealed trial must not inherit them or the result is unrepeatable.
         disagree_snap = getattr(self, "_last_advisory_disagreement", None)
         self._last_advisory_disagreement = None
+        swarm_snap = getattr(self, "_last_swarm_snapshot", None)
+        self._last_swarm_snapshot = None
         sealed_snap = getattr(self, "_sealed_trial", False)
         self._sealed_trial = True
         try:
@@ -1349,6 +1385,7 @@ class CognitiveSystemController:
             self._obs_history = hist_snap
             self._vol_history = vol_snap
             self._last_advisory_disagreement = disagree_snap
+            self._last_swarm_snapshot = swarm_snap
             self._sealed_trial = sealed_snap
         split = int(len(obs) * (1 - HOLDOUT_FRACTION))
         train, holdout = obs[:split], obs[split:]
@@ -1713,6 +1750,12 @@ class CognitiveSystemController:
         if disagreement is not None and "advisory_disagreement" not in obs_dict:
             obs_dict["advisory_disagreement"] = float(disagreement)
             derived.add("advisory_disagreement")
+        swarm_snap = getattr(self, "_last_swarm_snapshot", None)
+        if swarm_snap:
+            for key, value in swarm_snap.items():
+                if key not in obs_dict:
+                    obs_dict[key] = value
+                    derived.add(key)
         health = self._compute_self_health()
         if health is not None:
             obs_dict["system_health_score"] = health["score"]
@@ -2185,6 +2228,24 @@ class CognitiveSystemController:
             self._last_advisory_disagreement = float(1.0 - _net)
         else:
             self._last_advisory_disagreement = None
+
+        # Swarm deliberation over the same ballots: all four voting
+        # mechanisms run, emergent signals attach, and the consensus is
+        # snapshotted for the NEXT observation's features — point-in-time
+        # safe, like advisory_disagreement. Advisory evidence only.
+        try:
+            _swarm_consensus = self._swarm_intel.deliberate(
+                calls,
+                regime=str(getattr(self.state, "current_regime", None)
+                           or "unknown"))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("CSC-V6: swarm deliberation failed: %s", exc)
+            _swarm_consensus = None
+        self._last_swarm_consensus = _swarm_consensus
+        self._last_swarm_snapshot = (
+            _swarm_consensus.feature_dict()
+            if _swarm_consensus is not None else None)
+        self._funnel["swarm_deliberations"] += 1
 
         def _advisory_tilt(branch) -> float:
             action = str(
