@@ -2551,6 +2551,15 @@ class CognitiveSystemController:
         if slippage is not None:
             qty *= max(0.0, 1.0 - (float(slippage) * 5.0))
 
+        # Epistemic-uncertainty sizing: when the model is ignorant,
+        # exposure shrinks linearly toward zero — at u >= 0.7 a BUY/SELL
+        # collapses to HOLD (zero size). Cold start (u=1.0) is maximum
+        # ignorance -> no exposure until predictions are confirmed.
+        _u = float(
+            getattr(self.state, "epistemic_uncertainty", 0.5) or 0.5)
+        uncertainty_factor = float(max(0.0, min(1.0, 1.0 - _u / 0.7)))
+        qty *= uncertainty_factor
+
         # Unmeasurable size on a directional action -> explicit no-position.
         if action in ("BUY", "SELL") and qty <= 0.0:
             action = "HOLD"
@@ -2571,6 +2580,7 @@ class CognitiveSystemController:
             "causal_impact": sim_data.get("structural_impact", {}) if isinstance(sim_data, dict) else {},
             "expected_return": expected_return,
             "slippage_measured": slippage is not None,
+            "uncertainty_size_factor": uncertainty_factor,
             "reasoning_token": self.discrete_channel[-1] if self.discrete_channel else "none"
         }
 

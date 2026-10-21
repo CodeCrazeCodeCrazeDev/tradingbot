@@ -138,6 +138,42 @@ def test_autonomy_report_surface(csc):
     assert "ticks" in report and "activity_counts" in report
 
 
+def _branch(action="BUY", qty=10.0):
+    from trading_bot.core.csc.hypothesis import ReasoningBranch
+    return ReasoningBranch(
+        branch_id="b1", name="test",
+        execution_plan={"action": action, "quantity": qty,
+                        "symbol": "EURUSD"})
+
+
+def test_uncertainty_scales_exposure(csc):
+    # Confident state: small uncertainty -> near-full size
+    csc.state.epistemic_uncertainty = 0.14
+    proposal = csc._select_optimal_action(
+        _branch(), {}, trade_id="t1", market_data={"symbol": "EURUSD"})
+    assert proposal["action"] == "BUY"
+    assert proposal["uncertainty_size_factor"] == pytest.approx(0.8)
+    assert proposal["quantity"] == pytest.approx(8.0)
+
+
+def test_ignorant_model_forces_zero_size(csc):
+    # Cold start: u=1.0 -> clipped runtime range reaches 0.95 -> factor 0.
+    csc.state.epistemic_uncertainty = 0.95
+    proposal = csc._select_optimal_action(
+        _branch(), {}, trade_id="t2", market_data={"symbol": "EURUSD"})
+    assert proposal["uncertainty_size_factor"] == 0.0
+    assert proposal["action"] == "HOLD"
+    assert proposal["quantity"] == 0.0
+
+
+def test_moderate_uncertainty_partial_size(csc):
+    csc.state.epistemic_uncertainty = 0.35
+    proposal = csc._select_optimal_action(
+        _branch(), {}, trade_id="t3", market_data={"symbol": "EURUSD"})
+    assert proposal["uncertainty_size_factor"] == pytest.approx(0.5)
+    assert proposal["quantity"] == pytest.approx(5.0)
+
+
 def test_capability_review_surfaces_proposals(csc):
     class _Engine:
         def capability_proposals(self):
