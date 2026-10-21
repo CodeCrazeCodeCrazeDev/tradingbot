@@ -121,6 +121,7 @@ class ScientificHypothesis:
     falsification_attempts: int = 0
     validation_score: float = 0.0
     calibration_error: float = 1.0
+    replay_count: int = 0  # scientific replays — bounded, evidence-gated
 
     # Bayesian Meta-data
     p_lower: float = 0.0 # Credal lower bound
@@ -584,13 +585,50 @@ class ScientificReasoningEngine:
             hyp.state = HypothesisState.INSTITUTIONALIZED
         elif hyp.posterior < 0.2:
             hyp.state = HypothesisState.REJECTED
+            # Mark the evidence baseline — replay is gated on *new*
+            # measured evidence arriving after this point.
+            hyp.boundary_conditions["evidence_at_reject"] = len(
+                hyp.evidence_ids)
         elif hyp.uncertainty > 0.7:
             hyp.state = HypothesisState.INCONCLUSIVE
         else:
             hyp.state = HypothesisState.DORMANT
 
+    async def replay_rejected(self, max_replays: int = 3) -> int:
+        """Scientific replay: a REJECTED hypothesis re-enters the
+        lifecycle only when new measured evidence arrived after its
+        rejection — the amnesia defense without resurrection-by-noise."""
+        reactivated = 0
+        for hyp in list(self.registry.values()):
+            if hyp.state is not HypothesisState.REJECTED:
+                continue
+            if hyp.replay_count >= max_replays:
+                continue
+            baseline = int(hyp.boundary_conditions.get(
+                "evidence_at_reject", 0) or 0)
+            if len(hyp.evidence_ids) <= baseline:
+                continue  # nothing new measured -> stays rejected
+            hyp.replay_count += 1
+            hyp.state = HypothesisState.REACTIVATED
+            try:
+                await self.bayesian_update(hyp.id)
+                await self.calibrate_confidence(hyp.id)
+            except Exception as exc:  # noqa: BLE001
+                logger.debug(f"SRE: replay re-eval failed for {hyp.id}: {exc}")
+            if hyp.posterior < 0.5:
+                hyp.state = HypothesisState.REJECTED
+                hyp.boundary_conditions["evidence_at_reject"] = len(
+                    hyp.evidence_ids)
+            else:
+                reactivated += 1
+                logger.info(
+                    f"SRE: {hyp.id} reactivated by new evidence "
+                    f"(replay {hyp.replay_count})")
+        return reactivated
+
     async def discover_new_hypotheses(self, hid: str = None):
         """Step 19: Meta-discovery of new research directions with recursive self-improvement (SEAL)."""
+        await self.replay_rejected()
         if len(self.registry) < 10:
             return
 

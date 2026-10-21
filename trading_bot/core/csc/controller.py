@@ -244,6 +244,10 @@ class CognitiveSystemController:
         # activity-portfolio decision per cycle instead of scattered
         # interval hooks, plus the capability-expansion ledger.
         self._autonomy = kwargs.get("autonomy") or AutonomyManager()
+        # Curiosity engine: measured-surprise hypothesis generator —
+        # emits SRE-ingestible payloads only on real statistical triggers.
+        from .curiosity import CuriosityEngine
+        self._curiosity = kwargs.get("curiosity") or CuriosityEngine()
 
         # Subordinate advisory cognition services (e.g. AdvisoryCognitiveBrain).
         # Configured via configure_cognition(); their analyze() output becomes
@@ -3507,6 +3511,15 @@ class CognitiveSystemController:
                     self._maybe_report_rsi_gaps()
                 elif _d.activity == "capability_review":
                     self._capability_review()
+            # Curiosity step: measured-surprise hypotheses feed the SRE
+            # lifecycle via the provenance bridge (bounded, deduped).
+            try:
+                for _c in self._curiosity.observe(
+                        observation if isinstance(observation, dict)
+                        else {}):
+                    self._sre_ingest("curiosity", _c)
+            except Exception as exc:  # noqa: BLE001
+                logger.debug("CSC-V6: curiosity step failed: %s", exc)
 
     def _maybe_schedule_research_cycle(self, observation: Any) -> None:
         """Budgeted background research: every ``research_interval``

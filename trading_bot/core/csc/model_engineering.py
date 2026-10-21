@@ -23,6 +23,7 @@ risk, governance, shield and the execution service are untouched.
 from __future__ import annotations
 
 import math
+import re
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -577,6 +578,16 @@ def fit_candidate(spec: Dict[str, Any], train: List[Dict[str, Any]]
 def validate_spec(spec: Mapping[str, Any]) -> List[str]:
     """Fail fast on specs that can't be honestly engineered or evaluated."""
     errs: List[str] = []
+    # AST-gate defense-in-depth: no spec field may carry code-like
+    # content — candidate params are numeric/bounded by contract.
+    _codeish = re.compile(
+        r"(\bimport\b|\beval\b|\bexec\b|__import__|\bopen\s*\(|"
+        r"\bos\.|\bsys\.|\bsubprocess\b|__\w+__)")
+    for key, val in spec.items():
+        if isinstance(val, str) and _codeish.search(val):
+            errs.append(f"field {key!r} contains code-like content")
+    if errs:
+        return errs
     kind = spec.get("kind")
     if kind not in ALLOWED_KINDS:
         errs.append(f"kind must be one of {ALLOWED_KINDS}")
