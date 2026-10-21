@@ -21,6 +21,17 @@ DEFAULT_PROTECTED_PATHS: Tuple[str, ...] = (
     "trading_bot/execution/service.py",
     "trading_bot/unified_bot.py",
     "main.py",
+    # The brain and its self-modification machinery: a candidate that can
+    # edit the controller, the wiring rules, the ops layer, the swarm
+    # aggregation, or the measured-weights ledger can rewrite what
+    # "improvement" means — reward hacking at the control-plane level.
+    "trading_bot/core/csc/controller.py",
+    "trading_bot/core/csc/self_wiring.py",
+    "trading_bot/core/csc/autonomy.py",
+    "trading_bot/core/csc/reliability.py",
+    "trading_bot/core/csc/swarm_intelligence/service.py",
+    "trading_bot/core/csc/swarm_intelligence/aggregation.py",
+    "trading_bot/core/csc/swarm_intelligence/knowledge.py",
     "trading_bot/recursive_self_improvement/contracts.py",
     "trading_bot/recursive_self_improvement/multi_objective.py",
     "trading_bot/recursive_self_improvement/anti_gaming.py",
