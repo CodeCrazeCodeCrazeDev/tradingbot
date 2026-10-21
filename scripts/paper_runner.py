@@ -224,6 +224,9 @@ async def run(args: argparse.Namespace) -> int:
         # node skill and patterns survive restarts.
         csc.configure_swarm_state(
             str(Path(args.state_dir) / "swarm_kb.json"))
+        # Self-wiring inventory likewise — measured node states persist.
+        csc.configure_self_wiring_state(
+            str(Path(args.state_dir) / "self_wiring.json"))
     if args.decision_stride > 1 and csc is not None:
         csc._decision_stride = args.decision_stride
         logger.info("decision_stride=%d applied to CSC (cadenced decisions)",

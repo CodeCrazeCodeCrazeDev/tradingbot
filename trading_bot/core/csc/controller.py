@@ -34,6 +34,7 @@ from .reliability import ReliabilityTracker
 from .router import SkillRouter
 from ..verification.swarm import VerificationSwarm
 from .swarm_intelligence.service import SwarmIntelligenceService
+from .self_wiring import NodeState, SelfWiringSupervisor
 from ..hms.models import (
     ResearchLedgerEntry,
     EvidenceGraph,
@@ -229,6 +230,14 @@ class CognitiveSystemController:
                 reliability_tracker=self.reliability_tracker))
         self._last_swarm_consensus: Optional[Any] = None
         self._last_swarm_snapshot: Optional[Dict[str, float]] = None
+
+        # Self-wiring supervisor: the organism's own network rewiring —
+        # advisory services live in shadow/attached/dormant/quarantined
+        # states driven by measured emit quality and settled outcomes.
+        # Bounded to the advisory electorate; the authority chain is
+        # invariant and unreachable from it.
+        self._self_wiring = kwargs.get("self_wiring") or (
+            SelfWiringSupervisor())
 
         # Subordinate advisory cognition services (e.g. AdvisoryCognitiveBrain).
         # Configured via configure_cognition(); their analyze() output becomes
@@ -512,6 +521,15 @@ class CognitiveSystemController:
             if str(getattr(service, "capability_id",
                            type(service).__name__)) != capability_id]
         self._advisory_services.append(advisory)
+        # Self-wiring inventory: the runtime's attachments join the
+        # electorate as ATTACHED; engineered/shadow candidates the
+        # supervisor discovered itself stay SHADOW until measured.
+        _sup = getattr(self, "_self_wiring", None)
+        if _sup is not None:
+            _state = (NodeState.SHADOW
+                      if capability_id in self._engineered_shadow
+                      else NodeState.ATTACHED)
+            _sup.register(capability_id, advisory, state=_state)
         logger.info(
             "CSC-V6: advisory cognition service registered: %s",
             capability_id)
@@ -527,6 +545,64 @@ class CognitiveSystemController:
         """Transparency surface: what the swarm has learned and deliberated."""
         _si = getattr(self, "_swarm_intel", None)
         return _si.report() if _si is not None else {}
+
+    def configure_self_wiring_state(self, path: Any) -> None:
+        """Persist the wiring inventory beside the run state — measured
+        node states survive restarts; service objects re-register on
+        attach."""
+        _sup = getattr(self, "_self_wiring", None)
+        if _sup is not None:
+            _sup.set_persistence(str(path))
+
+    def self_model_report(self) -> Dict[str, Any]:
+        """The organism's self-model: every advisory node, its wiring
+        state, measured emit quality, and recent rewire events."""
+        _sup = getattr(self, "_self_wiring", None)
+        return _sup.report() if _sup is not None else {}
+
+    async def _maybe_rewire_electorate(self) -> None:
+        """Periodic measured rewiring of the advisory electorate.
+
+        The supervisor evaluates emit-quality streaks and shadow
+        probation, then applies transitions by changing which service
+        objects sit in _advisory_services. Transitions are durable
+        SELF_WIRE audit events. The authority chain is never touched —
+        it isn't in the inventory.
+        """
+        _sup = getattr(self, "_self_wiring", None)
+        if _sup is None:
+            return
+        if self._observation_seq % max(1, _sup.rewire_interval) != 0:
+            return
+        try:
+            events = _sup.reevaluate(self._observation_seq)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("CSC-V6: self-wiring evaluation failed: %s", exc)
+            return
+        for ev in events:
+            node = _sup.nodes.get(ev.node_id)
+            service = getattr(node, "service", None)
+            if ev.kind in ("demote", "quarantine"):
+                self._advisory_services = [
+                    s for s in self._advisory_services
+                    if str(getattr(s, "capability_id",
+                                   type(s).__name__)) != ev.node_id]
+            elif ev.kind in ("probe", "promote") and service is not None:
+                attached = {str(getattr(s, "capability_id",
+                                        type(s).__name__))
+                            for s in self._advisory_services}
+                if ev.node_id not in attached:
+                    self._advisory_services.append(service)
+            self._funnel[f"self_wire_{ev.kind}"] += 1
+            await self._persist_audit_event(
+                event_type="SELF_WIRE", action=ev.kind,
+                outcome=f"{ev.from_state}->{ev.to_state}",
+                correlation_id=ev.node_id,
+                details={"reason": ev.reason, "cycle": ev.cycle})
+        if events:
+            logger.info(
+                "CSC-V6: self-wiring applied %d transitions: %s",
+                len(events), [f"{e.kind}:{e.node_id}" for e in events])
 
     def configure_execution_service(self, service: Any) -> None:
         """Wire the canonical execution service so position closes dispatch
@@ -1503,6 +1579,10 @@ class CognitiveSystemController:
         # monitor has seen enough real outcomes to confirm the edge
         # survives live data — ASRS 'prospective shadow' before adoption.
         self._engineered_shadow[service.capability_id] = 20
+        _sup = getattr(self, "_self_wiring", None)
+        if _sup is not None:
+            _sup.register(service.capability_id, service,
+                          state=NodeState.SHADOW)
         c.status = "ATTACHED"
         await self._persist_audit_event(
             event_type="MODEL_ATTACHED", action="attach",
@@ -2247,6 +2327,9 @@ class CognitiveSystemController:
             if _swarm_consensus is not None else None)
         self._funnel["swarm_deliberations"] += 1
 
+        _sup = getattr(self, "_self_wiring", None)
+        _shadow_ids = (_sup.shadow_ids() if _sup is not None else frozenset())
+
         def _advisory_tilt(branch) -> float:
             action = str(
                 (branch.execution_plan or {}).get("action", "")).upper()
@@ -2260,9 +2343,11 @@ class CognitiveSystemController:
                 if direction not in ("BUY", "SELL"):
                     continue
                 aid = str(c.get("capability_id"))
-                # Shadow mode: engineered advisors earn measured outcomes
-                # but cast no tilt until they graduate live observation.
-                if aid in self._engineered_shadow:
+                # Shadow mode: engineered advisors and self-wiring
+                # shadow nodes earn measured outcomes but cast no tilt
+                # until they graduate live observation.
+                if (aid in self._engineered_shadow
+                        or aid in _shadow_ids):
                     gated += 1
                     continue
                 # Regime-conditional eligibility: a measured-below-
@@ -2800,20 +2885,28 @@ class CognitiveSystemController:
         _degenerate = {'warming', 'no_read', 'no_data', 'missing_data',
                        'no_signal', 'none', 'skipped', 'unavailable',
                        'idle', 'degenerate'}
+        _sup = getattr(self, "_self_wiring", None)
         for a in (artifacts or []):
             if not isinstance(a, Mapping):
                 self._funnel['advisor_degenerate'] += 1
                 continue
+            _cap = str(a.get("agent") or a.get("capability_id") or "")
             if a.get('direction') in ('BUY', 'SELL'):
                 self._funnel['advisor_directional_calls'] += 1
+                if _sup is not None and _cap:
+                    _sup.observe(_cap, "substantive")
                 continue
             ev = a.get('evidence')
             status = (str(ev.get('status')).lower()
                       if isinstance(ev, Mapping) else '')
             if status in _degenerate or not ev:
                 self._funnel['advisor_degenerate'] += 1
+                if _sup is not None and _cap:
+                    _sup.observe(_cap, "degenerate")
             else:
                 self._funnel['advisor_substantive'] += 1
+                if _sup is not None and _cap:
+                    _sup.observe(_cap, "substantive")
         return artifacts
 
     async def _stage_hypothesis_and_simulation(
@@ -3633,6 +3726,12 @@ class CognitiveSystemController:
                 dominant_rejection_reason=(
                     f"cadence gate: deciding every "
                     f"{self._decision_stride} bars"))
+
+        # 0.7. Self-wiring: every REWIRE_INTERVAL observations the
+        # supervisor applies measured transitions to the advisory
+        # electorate (demote/promote/probe/discover). Bounded — only
+        # _advisory_services membership changes; authority is invariant.
+        await self._maybe_rewire_electorate()
 
         # 1. Perception
         await self._stage_perception(obs_dict)
