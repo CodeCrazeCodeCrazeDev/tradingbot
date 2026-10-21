@@ -132,11 +132,15 @@ class ScientificHypothesis:
     approval_trace: Dict[str, Any] = field(default_factory=dict)  # Stores review metadata, who trusted, why
 
 class ScientificReasoningEngine:
-    def __init__(self, controller: Any = None, hms: Any = None, world_model: Any = None, governance: Any = None):
+    def __init__(self, controller: Any = None, hms: Any = None, world_model: Any = None, governance: Any = None,
+                 causal_model: Any = None):
         self.controller = controller
         self.hms = hms
         self.world_model = world_model
         self.governance = governance
+        # Do-calculus counterfactual engine (torch-dependent; absent in
+        # the lightweight env -> counterfactuals stay 'unmeasured').
+        self.causal_model = causal_model
         self.registry: Dict[str, ScientificHypothesis] = {}
         # Real baseline metrics — ScientificMetrics.update_from_registry
         # consumes the live registry each cycle (counts, survival,
@@ -371,11 +375,28 @@ class ScientificReasoningEngine:
         hyp = self.registry[hid]
         hyp.state = HypothesisState.COUNTERFACTUAL_GENERATION
 
-        if self.world_model and hasattr(self.world_model, "simulate_intervention"):
-            intervention = hyp.model_params.get("intervention", {"target": "price_action", "value": "reversed"})
-            results = await self.world_model.simulate_intervention(intervention)
+        # Do-calculus path: the CausalWorldModel runs real interventional
+        # rollouts (Pearl's do()); a correlation model cannot answer this.
+        intervention = hyp.model_params.get(
+            "intervention", {"target": "price_action", "quantity": 1.0})
+        results = None
+        if self.causal_model is not None:
+            try:
+                results = await self.causal_model.simulate_intervention(
+                    hyp.boundary_conditions, intervention)
+            except Exception as exc:  # noqa: BLE001
+                logger.debug(f"SRE: causal intervention failed for {hid}: {exc}")
+        elif self.world_model and hasattr(self.world_model, "simulate_intervention"):
+            try:
+                results = await self.world_model.simulate_intervention(
+                    intervention)
+            except Exception as exc:  # noqa: BLE001
+                logger.debug(f"SRE: world-model intervention failed for {hid}: {exc}")
+        if results:
             hyp.validation_score = float(results.get("causal_stability", 0.0))
             hyp.ambiguity = 1.0 - float(results.get("confidence", 0.0))
+            hyp.boundary_conditions["counterfactual_source"] = (
+                results.get("latent_state", "measured"))
             logger.info(f"SRE: Counterfactual simulation completed for {hid}. Causal Stability: {hyp.validation_score:.4f}")
         else:
             # Unmeasured counterfactual — validation stays at zero,

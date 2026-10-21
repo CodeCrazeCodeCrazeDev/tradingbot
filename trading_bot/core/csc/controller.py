@@ -426,9 +426,17 @@ class CognitiveSystemController:
             return self._sre
         from .scientific_reasoning import ScientificReasoningEngine
         from .sre_bridge import SREAdvisoryService
+        # Do-calculus counterfactual engine — torch-dependent, absent in
+        # the lightweight env (counterfactuals stay 'unmeasured' there).
+        causal_wm = None
+        try:
+            from ...world_model.causal_model import CausalWorldModel
+            causal_wm = CausalWorldModel(hms=self.hms)
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("CSC-V6: causal world model unavailable (%s)", exc)
         self._sre = ScientificReasoningEngine(
             controller=self, hms=self.hms,
-            world_model=self.world_model)
+            world_model=self.world_model, causal_model=causal_wm)
         self.configure_cognition(SREAdvisoryService(self._sre))
         logger.info("CSC-V6: SRE wired as advisory cognition service.")
         return self._sre

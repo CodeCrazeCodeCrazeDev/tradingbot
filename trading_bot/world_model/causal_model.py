@@ -154,7 +154,9 @@ class CausalWorldModel:
         """
         Simulates the market impact using Pearl's do-calculus.
         """
-        # 1. Use provided latent state if available, else encode
+        # 1. Use provided latent state if available — a synthetic prior is
+        # labelled as such, never presented as observed.
+        synthetic_state = latent_z is None
         z = latent_z if latent_z is not None else torch.randn(1, 512)
 
         # 2. Map action to causal intervention
@@ -170,11 +172,22 @@ class CausalWorldModel:
         market_impact = float(impact.get("total_impact", 0.0))
         if not market_impact:
             market_impact = float(np.mean(list(impact.values()))) if impact else 0.0
+        # Slippage is derived from measured structural impact magnitude,
+        # not a constant; confidence scales with scratchpad maturity.
+        derived_slippage = float(np.clip(market_impact * 0.1, 0.0, 0.01))
+        causal_confidence = float(min(
+            0.9, 0.3 + 0.05 * self.scm.scratchpad.discovery_rounds))
+        if synthetic_state:
+            causal_confidence = min(causal_confidence, 0.4)
         return {
-            "expected_slippage": 0.0005,
+            "expected_slippage": derived_slippage,
             "market_impact": market_impact,
             "structural_impact": impact,
-            "causal_confidence": 0.85
+            "causal_confidence": causal_confidence,
+            "causal_stability": market_impact,
+            "confidence": causal_confidence,
+            "latent_state": ("synthetic_prior" if synthetic_state
+                             else "observed"),
         }
 
     def update_scratchpad(self, insights: List[Dict[str, Any]]):
