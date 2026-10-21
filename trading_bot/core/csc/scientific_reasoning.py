@@ -8,6 +8,7 @@ evidence synthesis, Active Inference (VFE minimization), and Leni AI-style
 structured traces and human-in-the-loop trust auditing.
 """
 
+from collections import deque
 from enum import Enum, auto
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -137,6 +138,27 @@ class ScientificReasoningEngine:
         self.world_model = world_model
         self.governance = governance
         self.registry: Dict[str, ScientificHypothesis] = {}
+        # Real baseline metrics — ScientificMetrics.update_from_registry
+        # consumes the live registry each cycle (counts, survival,
+        # rejection rate, avg posterior/vfe, ECE, bottleneck detection).
+        try:
+            from trading_bot.observability.scientific_metrics import (
+                ScientificMetrics)
+            self.metrics_tracker: Any = ScientificMetrics()
+        except Exception:  # noqa: BLE001
+            self.metrics_tracker = None
+        # Rolling observed closes for real anomaly detection when no
+        # forward world-model prediction is available.
+        self._closes: "deque" = deque(maxlen=120)
+        # Lazily-imported CDS epistemology gate (torch-chain package —
+        # unavailable means promotion is HELD, never waived).
+        self._epistemology: Any = None
+        self._epistemology_tried = False
+        # Bridge ledger: external hypothesis sources (PHCE-D verdicts,
+        # research reports, swarm consensus) ingested with provenance.
+        self.ingest_log: List[Dict[str, Any]] = []
+        # Step-19 discovery directives — suggestions only, no authority.
+        self.discovery_suggestions: List[str] = []
         self.metrics = {
             "hypothesis_quality": [],
             "research_efficiency": 0,
@@ -169,7 +191,31 @@ class ScientificReasoningEngine:
             await stage(hyp_id)
             if self.registry[hyp_id].state in [HypothesisState.REJECTED, HypothesisState.DEPRECATED, HypothesisState.INSTITUTIONALIZED]:
                 break
+        # Baseline metrics refresh every completed cycle.
+        if self.metrics_tracker is not None:
+            try:
+                self.metrics_tracker.update_from_registry(self.registry)
+            except Exception as exc:  # noqa: BLE001
+                logger.debug(f"SRE: metrics update failed: {exc}")
         return hyp_id
+
+    def report(self) -> Dict[str, Any]:
+        """Transparent ops surface: registry census + measured baselines
+        + bridge/self-improvement logs."""
+        states: Dict[str, int] = {}
+        for h in self.registry.values():
+            states[h.state.name] = states.get(h.state.name, 0) + 1
+        mt = self.metrics_tracker
+        return {
+            "registry_size": len(self.registry),
+            "states": states,
+            "anomaly_threshold": self.anomaly_threshold,
+            "credal_contraction_factor": self.credal_contraction_factor,
+            "ingest_events": len(self.ingest_log),
+            "discovery_suggestions": list(self.discovery_suggestions[-10:]),
+            "self_improvement_logs": len(self.self_improvement_logs),
+            "metrics": (vars(mt) if mt is not None else None),
+        }
 
     async def observe(self, data: Dict[str, Any]) -> str:
         hyp = ScientificHypothesis(name=f"Obs-{uuid.uuid4().hex[:4]}", state=HypothesisState.OBSERVATION)
@@ -178,7 +224,34 @@ class ScientificReasoningEngine:
         hyp.model_params.update({
             k: float(v) for k, v in (data or {}).items()
             if isinstance(v, (int, float)) and not isinstance(v, bool)})
+        close = hyp.model_params.get("close") or hyp.model_params.get("price")
+        if isinstance(close, (int, float)) and close > 0:
+            self._closes.append(float(close))
         self.registry[hyp.id] = hyp
+        return hyp.id
+
+    def ingest_external(self, source: str, payload: Dict[str, Any]
+                        ) -> Optional[str]:
+        """Phase-1 bridge: register a hypothesis produced by an external
+        module (PHCE-D verdict, research report, curiosity output) into
+        the SRE lifecycle with provenance. Returns the new id."""
+        if not isinstance(payload, dict):
+            return None
+        hyp = ScientificHypothesis(
+            name=str(payload.get("name") or source or "external"),
+            description=str(payload.get("description")
+                            or payload.get("summary") or ""),
+            state=HypothesisState.OBSERVATION)
+        hyp.lineage.derivation_path = f"external:{source}"
+        hyp.boundary_conditions["provenance"] = source
+        for k, v in payload.items():
+            if isinstance(v, (int, float)) and not isinstance(v, bool):
+                hyp.model_params[k] = float(v)
+        if isinstance(payload.get("confidence"), (int, float)):
+            hyp.prior = float(np.clip(payload["confidence"], 0.01, 0.99))
+        self.registry[hyp.id] = hyp
+        self.ingest_log.append({"source": source, "hypothesis_id": hyp.id,
+                                "timestamp": datetime.now().isoformat()})
         return hyp.id
 
     async def detect_anomalies(self, hid: str):
@@ -196,10 +269,25 @@ class ScientificReasoningEngine:
             else:
                 hyp.boundary_conditions["anomaly_status"] = "none"
         else:
-            # No forward model available — anomaly status is unmeasured,
-            # never defaulted to "detected".
-            hyp.vfe = None
-            hyp.boundary_conditions["anomaly_status"] = "unmeasured"
+            # No forward model — fall back to a real statistical anomaly:
+            # z-score of the latest return over the rolling close window.
+            # Unmeasured stays unmeasured; measured anomalies are real.
+            closes = list(self._closes)
+            if len(closes) >= 12:
+                arr = np.asarray(closes, dtype=float)
+                rets = np.diff(arr) / np.where(arr[:-1] == 0, 1.0, arr[:-1])
+                hist = rets[:-1]
+                mu, sd = float(np.nanmean(hist)), float(np.nanstd(hist))
+                z = float(abs(rets[-1] - mu) / sd) if sd > 0 else 0.0
+                hyp.vfe = z
+                hyp.boundary_conditions["anomaly_zscore"] = round(z, 4)
+                hyp.boundary_conditions["anomaly_status"] = (
+                    "detected" if z > 2.0 else "none")
+                if z > 2.0:
+                    logger.info(f"SRE: statistical anomaly {hid} — return z-score {z:.2f}")
+            else:
+                hyp.vfe = None
+                hyp.boundary_conditions["anomaly_status"] = "unmeasured"
 
     async def generate_questions(self, hid: str):
         """Step 3: Formulate concrete scientific questions about anomalous parameters or features."""
@@ -377,8 +465,73 @@ class ScientificReasoningEngine:
         hyp = self.registry[hid]
         hyp.state = HypothesisState.KNOWLEDGE_INTEGRATION
         if hyp.posterior > 0.85:
-            hyp.level = PromotionLevel.LEVEL_3
-            logger.info(f"SRE: Promoted {hid} to PromotionLevel {hyp.level.name} based on high empirical confidence.")
+            # Roadmap Phase 2: Level-3 promotion requires surviving the
+            # adversarial debate AND the epistemology audit. When the
+            # CDS engine is unavailable the promotion is HELD — an
+            # un-audited promotion is not a promotion.
+            debate = hyp.boundary_conditions.get("debate")
+            ep_ok, ep_detail = await self._epistemology_gate(hyp)
+            if debate == "survived" and ep_ok:
+                hyp.level = PromotionLevel.LEVEL_3
+                logger.info(f"SRE: Promoted {hid} to LEVEL_3 (debate survived, epistemology passed).")
+            else:
+                hyp.boundary_conditions["promotion_hold"] = (
+                    f"debate={debate} epistemology={ep_detail}")
+
+    async def _epistemology_gate(self, hyp: ScientificHypothesis
+                                 ) -> Tuple[bool, str]:
+        """Adversarial epistemic audit via the CDS EpistemologyEngine on
+        a graph built from the hypothesis's own measured fields. Lazy
+        import (torch-chain package); unavailable -> hold."""
+        if not self._epistemology_tried:
+            self._epistemology_tried = True
+            try:
+                from trading_bot.core_agent_system.cds.epistemology_engine import (  # noqa: E501
+                    EpistemologyEngine)
+                self._epistemology = EpistemologyEngine()
+            except Exception as exc:  # noqa: BLE001
+                logger.debug(f"SRE: epistemology engine unavailable: {exc}")
+        engine = self._epistemology
+        if engine is None:
+            return False, "epistemology_engine_unavailable"
+        try:
+            from trading_bot.core_agent_system.cds.evidence_graph import (  # noqa: E501
+                CDSElement, EvidenceGraph, NodeType, RelationType)
+            graph = EvidenceGraph()
+            graph.add_node(CDSElement(
+                id=hyp.id, type=NodeType.HYPOTHESIS,
+                content={"description": hyp.description,
+                         "assumptions": hyp.boundary_conditions.get(
+                             "assumptions", [])},
+                confidence=float(hyp.posterior),
+                uncertainty=float(hyp.uncertainty)))
+            # Evidence relations reflect measured fields only.
+            if hyp.validation_score > 0:
+                eid = f"{hyp.id}-val"
+                graph.add_node(CDSElement(
+                    id=eid, type=NodeType.EVIDENCE,
+                    content={"statement": "counterfactual_validation",
+                             "score": hyp.validation_score},
+                    confidence=float(hyp.validation_score)))
+                graph.add_relation(eid, hyp.id, RelationType.SUPPORTS)
+            if hyp.boundary_conditions.get("debate") == "vetoed":
+                cid = f"{hyp.id}-veto"
+                graph.add_node(CDSElement(
+                    id=cid, type=NodeType.EVIDENCE,
+                    content={"statement": "verifier_veto"},
+                    confidence=0.9))
+                graph.add_relation(cid, hyp.id, RelationType.CONTRADICTS)
+            report = engine.analyze_hypothesis(hyp.id, graph)
+            ok = report.belief_score >= 0.5 and report.uncertainty <= 0.8
+            hyp.boundary_conditions["epistemology_report"] = {
+                "belief_score": report.belief_score,
+                "uncertainty": report.uncertainty,
+                "adversarial_risk": report.adversarial_risk_score,
+                "missing_info": report.missing_critical_info}
+            return bool(ok), f"belief={report.belief_score}"
+        except Exception as exc:  # noqa: BLE001
+            logger.debug(f"SRE: epistemology audit failed for {hyp.id}: {exc}")
+            return False, f"audit_error:{exc}"
 
     async def consolidate_memory(self, hid: str):
         """Step 15: Store persistent research findings and ledger snapshots inside HMS."""
@@ -440,8 +593,18 @@ class ScientificReasoningEngine:
                 "new_credal_contraction_factor": self.credal_contraction_factor
             })
 
+            # Roadmap Phase 4: the directive is recorded for the alpha
+            # search priors and surfaced via report() — SRE does not
+            # mutate GeneticAlphaSearch internals from this process.
+            suggestion = (f"raise alpha-search priors: SRE rejection rate "
+                          f"{rejection_rate:.0%}")
+            self.discovery_suggestions.append(suggestion)
             if self.controller and hasattr(self.controller, "alpha_mining"):
-                await self.controller.alpha_mining.adjust_search_strategy(reason="high_rejection_rate")
+                try:
+                    await self.controller.alpha_mining.adjust_search_strategy(
+                        reason="high_rejection_rate")
+                except Exception as exc:  # noqa: BLE001
+                    logger.debug(f"SRE: alpha_mining adjust failed: {exc}")
 
         confirmed = [h for h in self.registry.values() if h.state == HypothesisState.INSTITUTIONALIZED]
         if len(confirmed) > 2:

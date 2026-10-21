@@ -102,6 +102,58 @@ async def test_adapter_throttles_and_bounds_registry():
     assert len(sre.registry) == 2
 
 
+@pytest.mark.asyncio
+async def test_statistical_anomaly_detection():
+    """No world model -> real z-score anomaly over observed closes."""
+    sre = ScientificReasoningEngine()
+    for i in range(14):
+        await sre.observe({"close": 1.09 + i * 0.0001})
+    # A real shock: +3% against a flat series -> z-score anomaly.
+    hid = await sre.observe({"close": 1.09 * 1.03})
+    hyp = sre.get_hypothesis(hid)
+    await sre.detect_anomalies(hid)
+    assert hyp.boundary_conditions["anomaly_status"] == "detected"
+    assert hyp.boundary_conditions["anomaly_zscore"] > 2.0
+
+
+@pytest.mark.asyncio
+async def test_ingest_external_provenance():
+    sre = ScientificReasoningEngine()
+    hid = sre.ingest_external(
+        "phce_d", {"name": "cost_stress_survivor",
+                   "description": "spread stress passed",
+                   "confidence": 0.7})
+    hyp = sre.get_hypothesis(hid)
+    assert hyp is not None
+    assert hyp.lineage.derivation_path == "external:phce_d"
+    assert hyp.prior == pytest.approx(0.7)
+    assert sre.ingest_log[-1]["source"] == "phce_d"
+
+
+@pytest.mark.asyncio
+async def test_epistemology_gate_holds_without_engine():
+    """High posterior alone doesn't promote — the CDS epistemology audit
+    must run; unavailable -> promotion HELD, not waived."""
+    sre = ScientificReasoningEngine()
+    sre._epistemology_tried = True   # engine absent in .venv
+    hid = await sre.observe({"close": 1.09})
+    hyp = sre.get_hypothesis(hid)
+    hyp.posterior = 0.9
+    hyp.boundary_conditions["debate"] = "survived"
+    await sre.integrate_knowledge(hid)
+    assert hyp.level.name != "LEVEL_3"
+    assert "epistemology" in hyp.boundary_conditions["promotion_hold"]
+
+
+def test_sre_report_surface():
+    sre = ScientificReasoningEngine()
+    sre.ingest_external("test", {"name": "h1"})
+    rep = sre.report()
+    assert rep["registry_size"] == 1
+    assert rep["ingest_events"] == 1
+    assert isinstance(rep["states"], dict)
+
+
 # ------------------------------------------------- controller integration
 
 

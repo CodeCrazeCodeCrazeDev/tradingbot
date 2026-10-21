@@ -433,6 +433,22 @@ class CognitiveSystemController:
         logger.info("CSC-V6: SRE wired as advisory cognition service.")
         return self._sre
 
+    def _sre_ingest(self, source: str, payload: Dict[str, Any]) -> None:
+        """Bridge: register externally-produced hypotheses (research
+        reports, swarm verdicts) into the SRE lifecycle with provenance."""
+        sre = getattr(self, "_sre", None)
+        if sre is None:
+            return
+        try:
+            sre.ingest_external(source, payload)
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("CSC-V6: SRE ingest failed: %s", exc)
+
+    def sre_report(self) -> Dict[str, Any]:
+        """Transparency surface: SRE lifecycle census + measured baselines."""
+        sre = getattr(self, "_sre", None)
+        return sre.report() if sre is not None else {}
+
     async def initialize(self):
         """Start the controller's runtime loop (marks the brain as running)."""
         self.running = True
@@ -909,6 +925,10 @@ class CognitiveSystemController:
             advisory_artifacts=None)
         self._research_reports.append(report)
         self._research_artifacts.append(report.to_advisory_artifact())
+        self._sre_ingest("research_report", {
+            "name": str(getattr(report, "question", "") or "")[:80],
+            "description": str(getattr(report, "verdict", "") or ""),
+            "research_id": str(getattr(report, "research_id", ""))})
         # Buffered KG events (nodes/edges) land in the durable audit log so
         # the knowledge graph can be reconstructed after restart.
         for kind, payload in self.research_engine.drain_persisted_events():
@@ -1006,6 +1026,10 @@ class CognitiveSystemController:
         reports produced outside investigate()."""
         self._research_reports.append(report)
         self._research_artifacts.append(report.to_advisory_artifact())
+        self._sre_ingest("research_report", {
+            "name": str(getattr(report, "question", "") or "")[:80],
+            "description": str(getattr(report, "verdict", "") or ""),
+            "research_id": str(getattr(report, "research_id", ""))})
         for kind, payload in self.research_engine.drain_persisted_events():
             await self._persist_audit_event(
                 event_type="RESEARCH_KG", action=kind,
