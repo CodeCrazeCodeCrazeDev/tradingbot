@@ -274,6 +274,20 @@ async def run(args: argparse.Namespace) -> int:
         peer_idx = 0
 
         if args.replay:
+            # Cold replays start with empty derived-feature windows: the
+            # structure gate needs ~21 prior closes, so every decision is
+            # vetoed for the first ~20 bars. Seed the windows from the
+            # closed bars immediately *before* the replay window — real
+            # older history, no lookahead.
+            if args.warmup:
+                warm = _closed_bars(client, args.symbol, tf,
+                                    args.replay + args.warmup)
+                if warm is not None and len(warm) > args.replay:
+                    seeded = await _seed_warmup(
+                        runtime, args.symbol,
+                        warm[:len(warm) - args.replay])
+                    logger.info("replay warm-up: seeded %d closed bars "
+                                "from before the replay window", seeded)
             bars = _closed_bars(client, args.symbol, tf, args.replay)
             for bar in bars:
                 for command in channel.drain():
