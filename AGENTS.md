@@ -139,3 +139,26 @@ When asked why the bot is not running or behaving like an AI trading system,
 follow `DOCS/DEVIN_TRADING_BOT_RECOVERY_PLAN.md`. Start with offline evidence
 and its safety/authorization gates; treat findings there as scoped to its
 review date and verify them against the current code before changing anything.
+
+## Reasoning and sandbox policy (operator-directed)
+
+- Use strong reasoning models for defensive security review, code
+  hardening, trading research, and post-trade analysis — not for
+  autonomous live execution decisions.
+- Prefer real-world validation and regression tests over
+  benchmark-only confidence claims.
+- Untrusted strategy code, generated patches, unknown files, and
+  external-repo experiments run in ephemeral sandbox sessions with no
+  persistent secrets and no production access (`SandboxManager`
+  subprocess backend; still process-level, not container isolation).
+- Live deployment, broker credential changes, risk-limit changes,
+  capital scaling, production patching, strategy promotion, and
+  kill-switch overrides require signed operator approval
+  (`OperatorAuthorization`, Ed25519).
+- Keep vulnerability details private until patched or maintainers
+  approve coordinated disclosure.
+- Specialist-agent routing already exists: verifier swarm
+  (market-structure/cost/risk), advisory electorate, RSI evaluators.
+  Route new risky work through them rather than new parallel brains.
+- Risky decisions use sealed provenance traces and append-only audit
+  (decision-bus jsonl, hash-chained archive, evidence_ledger triggers).

@@ -23,6 +23,7 @@ import dataclasses
 import enum
 import inspect
 import logging
+import statistics
 from datetime import date, datetime
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple
 
@@ -5144,6 +5145,71 @@ def _edgar_13f_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("edgar_13f", analyze)
 
 
+
+def _innovative_decision_service() -> AdvisoryModuleAdapter:
+    """decision_layer InnovativeDecisionEngine - 110 concepts across 11
+    categories aggregated into a multi-perspective vote. Wired as
+    ADVISORY EVIDENCE ONLY: its internal risk adjustment and position
+    sizing remain provenance inside the payload - canonical risk and
+    the shield own sizing and vetoes. The engine was previously excluded
+    as a 'parallel decision authority'; through this adapter it can only
+    emit evidence, never authority."""
+    from trading_bot.decision_layer.innovative_decision_engine import (
+        InnovativeDecisionEngine)
+    from trading_bot.decision_layer.core_types import DecisionContext
+
+    engine = InnovativeDecisionEngine()
+    hist = _BarHistory(64)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        price = _num(ctx.get("close") or ctx.get("price"))
+        if price is None:
+            return {"status": "no_price"}
+        hist.add(ctx)
+        closes = hist.prices()
+        rets = hist.returns()
+        vol = _num(ctx.get("volatility"))
+        if vol is None and len(rets) >= 10:
+            vol = statistics.pstdev(rets[-20:])
+        trend = 0.0
+        if len(closes) >= 20 and closes[-20]:
+            trend = max(-1.0, min(1.0,
+                (closes[-1] / closes[-20] - 1.0) * 20.0))
+        mom = max(-1.0, min(1.0, rets[-1] * 50.0)) if rets else 0.0
+        dctx = DecisionContext(
+            symbol=str(ctx.get("symbol") or "UNKNOWN"),
+            price=price,
+            volume=_num(ctx.get("volume")) or 0.0,
+            volatility=float(vol or 0.0),
+            trend=trend,
+            momentum=mom,
+            sentiment=float(_num(ctx.get("sentiment")) or 0.0),
+            regime=str(ctx.get("regime") or ctx.get("trend")
+                       or "unknown"),
+            timeframe=str(ctx.get("timeframe") or "unknown"),
+            portfolio_value=float(_num(ctx.get("portfolio_value"))
+                                  or 1.0),
+            current_position=float(_num(ctx.get("position")) or 0.0),
+            drawdown=float(_num(ctx.get("drawdown")) or 0.0),
+            win_rate=float(_num(ctx.get("win_rate")) or 0.5),
+        )
+        agg = engine.decide(dctx)
+        return {
+            "action": getattr(agg.risk_adjusted_action, "value",
+                              agg.risk_adjusted_action),
+            "raw_action": getattr(agg.final_action, "value",
+                                  agg.final_action),
+            "confidence": round(float(agg.final_confidence), 4),
+            "consensus_level": round(float(agg.consensus_level), 4),
+            "contributing": len(agg.contributing_concepts),
+            "dissenting": len(agg.dissenting_concepts),
+            "concepts_run": len(engine.concepts),
+            "reasoning": list(agg.reasoning_chain or [])[:5],
+        }
+
+    return AdvisoryModuleAdapter("innovative_decision_engine", analyze)
+
+
 # Factories for services that are genuinely observation-callable. Each
 # entry is attached at assembly time inside a probe; failures skip the
 # service rather than break the runtime.
@@ -5381,6 +5447,7 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("wyckoff_phases", _wyckoff_phases_service),
     ("lead_lag", _lead_lag_service),
     ("edgar_13f", _edgar_13f_service),
+    ("innovative_decision_engine", _innovative_decision_service),
 )
 
 # Services measured substantive or directional on real EURUSD bars
@@ -5778,7 +5845,7 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
      "analyzers); friction/liquidity/intent engines need bid/ask or "
      "orderflow the observation cannot supply"),
     ("dashboard", "read-only UI surface"),
-    ("decision_layer", "parallel decision authority — never advisory"),
+    ("decision_layer", "innovative_decision_engine attached as advisory evidence; bridge/execution remainder stays unwired - parallel decision authority never attaches"),
     ("exit_strategies", "exit authority surface — canonical path owns "
      "exits via risk + governance"),
     ("adversarial_curriculum", "training curriculum generator, not an "

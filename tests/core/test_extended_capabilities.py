@@ -158,3 +158,26 @@ class TestCSCReports:
         mh = csc.ml_health_report()
         assert mh["status"] == "measured"
         CognitiveSystemController._instance = None
+
+
+class TestInnovativeDecisionAdvisory:
+    def test_engine_emits_advisory_evidence(self):
+        import inspect
+        from trading_bot.core.csc.advisory import (
+            _innovative_decision_service, _run_coro_sync)
+        svc = _innovative_decision_service()
+        out = None
+        for i in range(30):
+            ctx = {"symbol": "EURUSD", "close": 1.09 + i * 0.0005,
+                   "price": 1.09 + i * 0.0005, "volume": 100.0,
+                   "volatility": 0.01, "trend": "UP", "sentiment": 0.1}
+            out = svc.analyze(ctx)
+            if inspect.isawaitable(out):
+                out = _run_coro_sync(out)
+        assert out["capability_id"] == "innovative_decision_engine"
+        ev = out["evidence"]
+        assert ev["concepts_run"] == 110
+        assert ev["contributing"] > 0
+        assert 0.0 <= ev["consensus_level"] <= 1.0
+        # evidence only — advisory strip leaves no authority
+        assert out["advisory_only"] is True
