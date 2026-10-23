@@ -122,3 +122,80 @@ class TestVoiceRateLimit:
         assert v.alert("one") is True
         assert v.alert("two") is False
         assert v.alert("three") is False
+
+
+class TestCuriositySymbolIsolation:
+    def test_interleaved_symbols_dont_conflate(self):
+        from trading_bot.core.csc.curiosity import CuriosityEngine
+        ce = CuriosityEngine()
+        # Slightly-varying EURUSD for 25 obs (sd>0), interleaved with
+        # volatile GBPUSD — a global window would contaminate EURUSD's
+        # return distribution with GBPUSD's swings.
+        for i in range(25):
+            ce.observe({"symbol": "EURUSD",
+                        "close": 1.10 + (0.0005 if i % 2 else -0.0005)})
+            ce.observe({"symbol": "GBPUSD",
+                        "close": 1.30 * (1 + (-1) ** i * 0.02)})
+        out = ce.observe({"symbol": "EURUSD", "close": 1.1001})
+        shocks = [c for c in out if c["name"] == "return_shock"]
+        assert shocks == []
+
+    def test_nan_volume_rejected(self):
+        from trading_bot.core.csc.curiosity import CuriosityEngine
+        ce = CuriosityEngine()
+        ce.observe({"symbol": "X", "close": 1.0,
+                    "volume_ratio": float("nan")})
+        st = ce._state["X"]
+        assert len(st["volumes"]) == 0
+
+    def test_inf_close_rejected(self):
+        from trading_bot.core.csc.curiosity import CuriosityEngine
+        ce = CuriosityEngine()
+        ce.observe({"symbol": "X", "close": float("inf")})
+        assert len(ce._state["X"]["closes"]) == 0
+
+    def test_symbol_bound(self):
+        from trading_bot.core.csc.curiosity import CuriosityEngine
+        ce = CuriosityEngine()
+        for i in range(40):
+            ce.observe({"symbol": f"S{i}", "close": 1.0})
+        assert len(ce._state) <= ce._MAX_SYMBOLS
+
+
+class TestSettleFiniteness:
+    @pytest.mark.asyncio
+    async def test_inf_price_does_not_settle(self, csc):
+        csc._open_positions["X"] = {
+            "direction": "BUY", "entry_price": 1.0,
+            "entry_seq": 0, "symbol": "X", "confidence": 0.5,
+            "regime": "x", "trade_ids": []}
+        await csc._settle_pending_predictions(
+            {"symbol": "X", "price": float("inf")})
+        assert "X" in csc._open_positions
+
+    @pytest.mark.asyncio
+    async def test_inf_exit_price_rejected(self, csc):
+        csc._open_positions["X"] = {
+            "direction": "BUY", "entry_price": 1.0,
+            "entry_seq": 0, "symbol": "X", "confidence": 0.5,
+            "regime": "x", "trade_ids": []}
+        out = await csc._close_position("X", float("inf"))
+        assert out is None
+        assert "X" in csc._open_positions
+
+
+class TestBoundedSymbolDicts:
+    def test_obs_history_symbol_cap(self, csc):
+        for i in range(70):
+            csc._symbol_hist(csc._obs_history, f"S{i}", 64)
+        assert len(csc._obs_history) <= csc._MAX_TRACKED_SYMBOLS
+
+
+class TestMalformedPersistence:
+    def test_malformed_schema_load_falls_back(self, tmp_path):
+        p = tmp_path / "swarm_kb.json"
+        p.write_text('{"unexpected": {"schema": 1}}')
+        from trading_bot.core.csc.swarm_intelligence.knowledge import (
+            SwarmKnowledgeBase)
+        kb = SwarmKnowledgeBase.load(str(p))
+        assert kb is not None  # fresh base, not a crash

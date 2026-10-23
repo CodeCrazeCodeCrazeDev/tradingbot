@@ -37,7 +37,7 @@ def test_level_break_on_range_exit():
 
 def test_reemit_gap_bounds_repeats():
     ce = CuriosityEngine()
-    ce._emitted = {}
+    ce._state = {}
     emits1 = ce.observe  # fill window
     for i in range(30):
         ce.observe({"close": 1.0 + i * 0.001})
@@ -64,7 +64,8 @@ def test_corr_shift_detects_decoupling():
                     "volume_ratio": 0.5 if sign > 0 else 2.0})
     ce.observe({"close": 1.15, "volume_ratio": 0.5})
     # The decoupling fires mid-feed at the flip point (dedup-gated after).
-    assert "volume_price_decoupling" in ce._emitted
+    st = ce._state["UNKNOWN"]
+    assert "volume_price_decoupling" in st["emitted"]
 
 
 def test_controller_wires_curiosity_and_sre_ingest():
