@@ -146,7 +146,19 @@ def serve_dashboard(state_dir: Path, port: int) -> None:
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):  # noqa: N802 - stdlib hook name
-            if self.path.rstrip("/") not in ("", "/snapshot", "/snapshot.json"):
+            path = self.path.rstrip("/")
+            if path == "":
+                from trading_bot.core.csc.extended_capabilities import (
+                    MOBILE_DASHBOARD_HTML)
+                body = MOBILE_DASHBOARD_HTML.encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type",
+                                 "text/html; charset=utf-8")
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                self.wfile.write(body)
+                return
+            if path not in ("/snapshot", "/snapshot.json"):
                 self.send_error(404)
                 return
             try:
@@ -227,6 +239,15 @@ async def run(args: argparse.Namespace) -> int:
         # Self-wiring inventory likewise — measured node states persist.
         csc.configure_self_wiring_state(
             str(Path(args.state_dir) / "self_wiring.json"))
+        # Opt-in voice alerts on critical events (estop / circuit
+        # breaker); silent by default.
+        if getattr(args, "voice_alerts", False):
+            try:
+                from trading_bot.core.csc.extended_capabilities import (
+                    VoiceAlerter)
+                csc.configure_voice_alerter(VoiceAlerter(enabled=True))
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("voice alerts unavailable: %s", exc)
         # Session-gate self-validation: the bot must verify its own
         # safety chain before the first real observation — the probe
         # can never dispatch an order. Fails closed unless --no-preflight.
@@ -450,6 +471,9 @@ def main(argv: Optional[list] = None) -> int:
                              "observation-callable analyzers and attach "
                              "them as advisory services (probe-gated, "
                              "timeout-bounded; default off)")
+    parser.add_argument("--voice-alerts", action="store_true",
+                        help="speak critical events via Windows SAPI "
+                             "(opt-in; silent default)")
     parser.add_argument("--no-preflight", action="store_true",
                         help="skip the session-gate self-check (default: "
                              "runner fails closed on preflight failure)")

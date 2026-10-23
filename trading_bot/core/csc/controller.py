@@ -461,6 +461,53 @@ class CognitiveSystemController:
         sre = getattr(self, "_sre", None)
         return sre.report() if sre is not None else {}
 
+    def configure_voice_alerter(self, alerter: Any) -> None:
+        """Opt-in voice alerts on critical events (EMERGENCY_HALT/estop).
+        Silent no-op unless the operator enables the alerter."""
+        self._voice_alerter = alerter
+
+    def pruning_report(self) -> Dict[str, Any]:
+        """'Synaptic pruning' — honest surface over the self-wiring
+        electorate lifecycle: measured-reliability states (attached/
+        shadow/dormant/quarantined) ARE the pruning mechanism."""
+        sw = getattr(self, "_self_wiring", None)
+        if sw is None:
+            return {"status": "unavailable"}
+        states: Dict[str, int] = {}
+        nodes = getattr(sw, "_states", None) or getattr(sw, "nodes", {})
+        for rec in (nodes.values() if isinstance(nodes, dict) else []):
+            s = str(getattr(rec, "state", rec.get("state", "?"))
+                    if isinstance(rec, (dict,)) else
+                    getattr(rec, "state", "?")).split(".")[-1]
+            states[s] = states.get(s, 0) + 1
+        return {"status": "measured",
+                "pruned_quarantined": states.get("QUARANTINED", 0),
+                "dormant": states.get("DORMANT", 0),
+                "shadow_probation": states.get("SHADOW", 0),
+                "attached": states.get("ATTACHED", 0),
+                "electorate_states": states}
+
+    def ml_health_report(self) -> Dict[str, Any]:
+        """ML monitoring: measured advisory drift + reliability, not a
+        serving-layer monitor (see UnavailableCapability for that)."""
+        out: Dict[str, Any] = {"status": "measured"}
+        rt = getattr(self, "reliability_tracker", None)
+        if rt is not None and hasattr(rt, "snapshot"):
+            try:
+                out["reliability"] = rt.snapshot()
+            except Exception:  # noqa: BLE001
+                out["reliability"] = "unavailable"
+        sw = getattr(self, "_swarm_intel", None)
+        if sw is not None and hasattr(sw, "report"):
+            try:
+                rep = sw.report()
+                out["swarm_health"] = rep.get("health") or rep
+            except Exception:  # noqa: BLE001
+                out["swarm_health"] = "unavailable"
+        out["degenerate_suppressed"] = getattr(
+            self, "_funnel", {}).get("degenerate_suppressed", 0)
+        return out
+
     async def preflight_self_check(self) -> Dict[str, Any]:
         """Session-gate self-validation: verify the safety chain before
         the first real observation. Component presence plus one
@@ -2255,6 +2302,17 @@ class CognitiveSystemController:
     ) -> None:
         """Append a durable AuditEvent to the configured sink, fail-open in
         memory-only contexts (the bus jsonl still carries the proposal)."""
+        alerter = getattr(self, "_voice_alerter", None)
+        if (alerter is not None and getattr(alerter, "enabled", False)
+                and (event_type in ("EMERGENCY_HALT", "ESTOP",
+                                     "EMERGENCY_STOP")
+                     or outcome in ("EMERGENCY_HALT", "ESTOP",
+                                    "circuit_breaker"))):
+            try:
+                alerter.alert(
+                    f"Trading system alert: {event_type} {outcome}")
+            except Exception:  # noqa: BLE001
+                pass
         sink = getattr(self, "_decision_sink", None)
         if sink is None:
             return

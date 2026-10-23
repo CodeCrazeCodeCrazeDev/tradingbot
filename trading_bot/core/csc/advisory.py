@@ -5094,6 +5094,56 @@ def _conditional_feed_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("external_feed_conditional", analyze)
 
 
+
+def _wyckoff_phases_service() -> AdvisoryModuleAdapter:
+    """Measured Wyckoff phase analyzer over accumulated OHLCV bars -
+    range compression + up-volume share + trend slope + spring tests.
+    Emits phase evidence only; advisory, never authority."""
+    from .extended_capabilities import WyckoffPhaseAnalyzer
+    analyzer = WyckoffPhaseAnalyzer()
+    hist = _BarHistory(128)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        return analyzer.analyze(hist.bars())
+
+    return AdvisoryModuleAdapter("wyckoff_phases", analyze)
+
+
+def _lead_lag_service() -> AdvisoryModuleAdapter:
+    """Measured cross-correlation lead-lag between the traded close
+    series and any secondary numeric series the observation carries
+    (peer/dxy/spx or peer_*/corr_* fields)."""
+    from .extended_capabilities import LeadLagAnalyzer
+    analyzer = LeadLagAnalyzer()
+    hist: List[Mapping[str, Any]] = []
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.append(dict(ctx))
+        if len(hist) > 256:
+            del hist[:128]
+        return analyzer.analyze(hist)
+
+    return AdvisoryModuleAdapter("lead_lag", analyze)
+
+
+def _edgar_13f_service() -> AdvisoryModuleAdapter:
+    """SEC EDGAR 13F institutional-positioning evidence. Offline or
+    unprovisioned environments degrade to status=unavailable - never
+    fabricates holdings."""
+    from .extended_capabilities import Edgar13FAdvisor
+    advisor = Edgar13FAdvisor(enabled=True)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        cik = ctx.get("edgar_cik") or ctx.get("cik")
+        if not cik:
+            return {"status": "no_cik",
+                    "detail": "observation carries no edgar_cik field"}
+        return advisor.recent_13f(cik)
+
+    return AdvisoryModuleAdapter("edgar_13f", analyze)
+
+
 # Factories for services that are genuinely observation-callable. Each
 # entry is attached at assembly time inside a probe; failures skip the
 # service rather than break the runtime.
@@ -5328,6 +5378,9 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("ml_statistical", _ml_online_service),
     ("ensemble_meta_online", _ensemble_meta_service),
     ("external_feed_conditional", _conditional_feed_service),
+    ("wyckoff_phases", _wyckoff_phases_service),
+    ("lead_lag", _lead_lag_service),
+    ("edgar_13f", _edgar_13f_service),
 )
 
 # Services measured substantive or directional on real EURUSD bars
