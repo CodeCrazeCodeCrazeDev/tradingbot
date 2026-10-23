@@ -227,6 +227,22 @@ async def run(args: argparse.Namespace) -> int:
         # Self-wiring inventory likewise — measured node states persist.
         csc.configure_self_wiring_state(
             str(Path(args.state_dir) / "self_wiring.json"))
+        # Session-gate self-validation: the bot must verify its own
+        # safety chain before the first real observation — the probe
+        # can never dispatch an order. Fails closed unless --no-preflight.
+        if not getattr(args, "no_preflight", False):
+            try:
+                report = await csc.preflight_self_check()
+            except Exception as exc:  # noqa: BLE001
+                report = {"all_passed": False,
+                          "blocking": [f"preflight_error:{exc}"]}
+            if not report.get("all_passed"):
+                logger.error(
+                    "preflight self-check FAILED: %s — refusing to run",
+                    report.get("blocking"))
+                return 2
+            logger.info("preflight self-check passed (%d checks)",
+                        len(report.get("checks", [])))
     if args.decision_stride > 1 and csc is not None:
         csc._decision_stride = args.decision_stride
         logger.info("decision_stride=%d applied to CSC (cadenced decisions)",
@@ -434,6 +450,9 @@ def main(argv: Optional[list] = None) -> int:
                              "observation-callable analyzers and attach "
                              "them as advisory services (probe-gated, "
                              "timeout-bounded; default off)")
+    parser.add_argument("--no-preflight", action="store_true",
+                        help="skip the session-gate self-check (default: "
+                             "runner fails closed on preflight failure)")
     parser.add_argument("--strategy-id", default=None,
                         help="optional registered strategy capability id")
     parser.add_argument("--log-level", default="INFO")

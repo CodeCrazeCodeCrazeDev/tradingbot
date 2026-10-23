@@ -461,6 +461,70 @@ class CognitiveSystemController:
         sre = getattr(self, "_sre", None)
         return sre.report() if sre is not None else {}
 
+    async def preflight_self_check(self) -> Dict[str, Any]:
+        """Session-gate self-validation: verify the safety chain before
+        the first real observation. Component presence plus one
+        end-to-end probe decision through the canonical pipeline —
+        the probe carries ``preflight=True`` so it can never produce a
+        venue-visible order. Fails closed: any failed check blocks."""
+        checks: List[Dict[str, Any]] = []
+
+        def _ck(name: str, passed: bool, detail: str = "") -> None:
+            checks.append({"check": name, "passed": bool(passed),
+                           "detail": str(detail)[:200]})
+
+        # Required: the safety chain that may never be absent in a session.
+        for name, obj in (
+                ("shield", self.shield), ("decision_bus", self.decision_bus),
+                ("verifier_swarm", self.verifier_swarm),
+                ("reliability_tracker", self.reliability_tracker),
+                ("skill_router", self.skill_router),
+                ("swarm_intelligence", self._swarm_intel),
+                ("self_wiring", self._self_wiring),
+                ("autonomy", self._autonomy),
+                ("curiosity", self._curiosity),
+                ("sre", self._sre)):
+            _ck(f"component:{name}", obj is not None)
+        # Optional runtime-injected services — informational only; absence
+        # never blocks (the canonical runtime wires them in live runs).
+        for name, obj in (("risk_engine", self.risk_engine),):
+            checks.append({"check": f"optional:{name}",
+                           "passed": bool(obj is not None),
+                           "detail": "informational"})
+
+        probe = {"symbol": "PREFLIGHT", "price": 1.0, "close": 1.0,
+                 "open": 1.0, "high": 1.0, "low": 1.0, "volume": 1.0,
+                 "timeframe": "probe", "timestamp": "preflight",
+                 "preflight": True}
+        try:
+            decision = await self.process_market_observation(probe)
+            outcome = getattr(decision, "outcome", None)
+            valid = outcome is not None and str(outcome).split(".")[-1] in (
+                "ABSTAIN", "TRADE_APPROVED", "TRADE_REJECTED",
+                "POSITION_MANAGEMENT", "EMERGENCY_HALT")
+            _ck("end_to_end_decision", valid,
+                detail=f"outcome={outcome}")
+            _ck("audit_trail",
+                len(getattr(decision, "audit_events", []) or []) > 0,
+                detail="decision carried audit events")
+        except Exception as exc:  # noqa: BLE001
+            _ck("end_to_end_decision", False, detail=repr(exc))
+
+        failures = [c["check"] for c in checks if not c["passed"]]
+        report = {
+            "all_passed": not failures,
+            "checks": checks,
+            "blocking": failures,
+            "probe_disposition": ("pipeline verified; no order "
+                                  "dispatched"),
+        }
+        await self._persist_audit_event(
+            event_type="PREFLIGHT", action="self_check",
+            outcome="passed" if not failures else "failed",
+            correlation_id=f"preflight-{self._observation_seq}",
+            details={"blocking": failures})
+        return report
+
     async def initialize(self):
         """Start the controller's runtime loop (marks the brain as running)."""
         self.running = True
@@ -3381,9 +3445,16 @@ class CognitiveSystemController:
             priority=EventPriority.CRITICAL,
         )
         status = action.status
-        if self.decision_bus is not None and hasattr(self.decision_bus, "propose_action"):
+        # Preflight probe: the proposal dispatch above already exercised
+        # bus reachability; the execution order itself is never sent —
+        # a probe observation must never produce a venue-visible order.
+        if (obs_dict or {}).get("preflight"):
+            status = ActionStatus.EXECUTED
+        elif self.decision_bus is not None and hasattr(
+                self.decision_bus, "propose_action"):
             await self._safe_await(self.decision_bus.propose_action(action))
-            status = await self._safe_await(action.wait_for_decision(timeout=5.0))
+            status = await self._safe_await(
+                action.wait_for_decision(timeout=5.0))
 
         if status not in (ActionStatus.APPROVED, ActionStatus.EXECUTED):
             # Surface the veto/timeout reason from the audit trail so callers
