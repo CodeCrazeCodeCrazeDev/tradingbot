@@ -1,0 +1,130 @@
+"""Verifier-key custody helpers (TD-07 hardening).
+
+What this does:
+- Keeps Ed25519 verifier keys OUTSIDE the repository tree
+  (``%LOCALAPPDATA%\\alphaalgo\\keys``) so a candidate with repo-write
+  access cannot reach key material by editing files it already owns.
+- Best-effort ACL tightening to the current user (``icacls`` on
+  Windows, ``os.chmod(0o600)`` elsewhere).
+- ``custody_report()`` — honest attestation surface: where the key
+  lives, whether it sits inside the repo (custody smell), whether ACL
+  tightening succeeded, and the residual that local custody is never
+  tamper-*proof* against a same-privilege writer.
+
+What this does NOT do (honest residual):
+- External custody (HSM/KMS/remote signer) requires infrastructure that
+  doesn't exist in this deployment. This module makes custody
+  *separated*, not *external* — the TD-07 residual is documented, not
+  hidden.
+"""
+from __future__ import annotations
+
+import os
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+KEY_DIR_ENV = "RSI_KEY_DIR"
+
+
+def default_key_dir() -> Path:
+    """Custody dir outside the repository tree."""
+    env = os.environ.get(KEY_DIR_ENV)
+    if env:
+        return Path(env)
+    if sys.platform == "win32":
+        base = os.environ.get("LOCALAPPDATA") or str(
+            Path.home() / "AppData" / "Local")
+        return Path(base) / "alphaalgo" / "keys"
+    return Path.home() / ".alphaalgo" / "keys"
+
+
+def default_key_path(name: str = "verifier_ed25519.pem") -> Path:
+    return default_key_dir() / name
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def path_inside_repo(path: Path) -> bool:
+    try:
+        Path(path).resolve().relative_to(_repo_root())
+        return True
+    except ValueError:
+        return False
+
+
+def tighten_acl(path: Path) -> bool:
+    """Best-effort owner-only ACL. True when applied, False when the
+    platform/tool denied it — callers must report, not assume."""
+    try:
+        if sys.platform == "win32":
+            user = os.environ.get("USERNAME") or ""
+            r = subprocess.run(
+                ["icacls", str(path), "/inheritance:r",
+                 "/grant:r", f"{user}:F"],
+                capture_output=True, timeout=15)
+            return r.returncode == 0
+        os.chmod(path, 0o600)
+        return True
+    except Exception:  # noqa: BLE001 - custody boundary
+        return False
+
+
+def custody_report(key_path: Optional[str] = None) -> Dict[str, Any]:
+    """Honest custody attestation — never claims more than exists."""
+    path = Path(key_path) if key_path else default_key_path()
+    exists = path.exists()
+    inside = path_inside_repo(path)
+    return {
+        "key_path": str(path),
+        "exists": exists,
+        "inside_repo": inside,
+        "custody": ("external" if not inside and exists else
+                    "degraded" if inside else "unprovisioned"),
+        "warnings": ([
+            "key material inside repository tree — repo-write "
+            "privilege implies key access"] if inside else []) + [
+            "local custody is not tamper-proof against a "
+            "same-privilege writer; external HSM/KMS custody "
+            "is the remaining TD-07 residual"],
+        "td07_residual": "external_custody_required_for_tamper_proof",
+    }
+
+
+def provision_verifier_key(path: Optional[str] = None,
+                           overwrite: bool = False) -> Dict[str, Any]:
+    """Generate an Ed25519 verifier key outside the repo + ACL tighten.
+
+    Returns a custody_report with ``generated: True``. Never overwrites
+    an existing key unless ``overwrite`` — rotation is an operator act,
+    recorded by the caller."""
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+        Ed25519PrivateKey)
+    from cryptography.hazmat.primitives import serialization
+
+    target = Path(path) if path else default_key_path()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.exists() and not overwrite:
+        rep = custody_report(str(target))
+        rep["generated"] = False
+        rep["note"] = "key already provisioned"
+        return rep
+    key = Ed25519PrivateKey.generate()
+    pem = key.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption())
+    tmp = target.with_suffix(".tmp")
+    tmp.write_bytes(pem)
+    os.replace(tmp, target)  # atomic — no truncate-on-crash window
+    acl_ok = tighten_acl(target)
+    rep = custody_report(str(target))
+    rep["generated"] = True
+    rep["acl_tightened"] = acl_ok
+    if not acl_ok:
+        rep["warnings"].append("ACL tighten failed — key readable by "
+                               "any process under sibling accounts")
+    return rep

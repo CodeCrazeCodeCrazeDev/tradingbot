@@ -317,6 +317,9 @@ class SandboxManager:
         self.guard = guard
         self.wall_clock_s = wall_clock_s
         self.backend = backend
+        # Whether the last subprocess run ran under kernel Job Object
+        # limits (False = degraded deadline-kill-only sandbox).
+        self._job_limited: Optional[bool] = None
 
     def run(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> SandboxResult:
         before = self.guard.snapshot()
@@ -370,6 +373,19 @@ class SandboxManager:
                            args=(result_q, payload), daemon=True)
         proc.start()
 
+        # TD-06 upgrade: kernel Job Object limits — the child cannot
+        # spawn subprocesses (ACTIVE_PROCESS=1), is memory-capped, and
+        # is hard-killed on job close. Assign failure degrades honestly:
+        # the process is still deadline-killed, just unjobed. Not a
+        # container — no FS virtualization or network namespace.
+        from .job_limits import JobLimits
+        job = JobLimits(process_memory_bytes=1 << 30,
+                        max_active_processes=1)
+        self._job_limited = job.assign(proc.pid)
+        if not self._job_limited:
+            logger.debug("sandbox: job-object limits unavailable, " + 
+                         "falling back to deadline kill only")
+
         # Phase 1 — bounded startup: wait for the child's "ready" sentinel
         # (spawn + imports are not candidate work and must not consume the
         # wall-clock budget, but they are still hard-bounded).
@@ -388,6 +404,7 @@ class SandboxManager:
                 break
         if not ready:
             _kill(proc)
+            job.close()
             try:
                 self.guard.assert_unchanged(before)
             except ProtectedPathViolation as exc:
@@ -420,6 +437,7 @@ class SandboxManager:
                 msg = None
         if proc.is_alive():
             _kill(proc)
+        job.close()
         try:
             self.guard.assert_unchanged(before)
         except ProtectedPathViolation as exc:
@@ -489,6 +507,15 @@ class IndependentVerifier:
         path = key_path or _env_secret(IndependentVerifier.KEY_ENV_VAR)
         if not path:
             return None
+        # TD-07: keys inside the repository tree are a custody smell —
+        # repo-write privilege implies key access. Flag it; do not
+        # silently refuse (operator provisioning is still honored).
+        from .key_custody import path_inside_repo
+        if path_inside_repo(Path(path)):
+            logger.warning(
+                "verifier key loaded from inside the repository tree "
+                "(%s) — degraded custody; provision outside the repo "
+                "via key_custody.provision_verifier_key()", path)
         data = Path(path).read_bytes()
         if b"-----BEGIN" in data:
             key = load_pem_private_key(data, password=None)
@@ -502,6 +529,13 @@ class IndependentVerifier:
         if not isinstance(key, Ed25519PrivateKey):
             raise ValueError(f"{path} does not contain an Ed25519 private key")
         return key
+
+    def custody_report(self, key_path: Optional[str] = None
+                       ) -> Dict[str, Any]:
+        """Honest custody attestation — where the key lives, whether it
+        sits inside the repo, and the residual TD-07 gap."""
+        from .key_custody import custody_report
+        return custody_report(key_path)
 
     def export_private_key(self, path: str) -> None:
         """Provision the local key to an operator-controlled file path."""
