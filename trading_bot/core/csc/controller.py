@@ -543,6 +543,7 @@ class CognitiveSystemController:
                  "open": 1.0, "high": 1.0, "low": 1.0, "volume": 1.0,
                  "timeframe": "probe", "timestamp": "preflight",
                  "preflight": True}
+        self._preflight_active = True
         try:
             decision = await self.process_market_observation(probe)
             outcome = getattr(decision, "outcome", None)
@@ -556,6 +557,8 @@ class CognitiveSystemController:
                 detail="decision carried audit events")
         except Exception as exc:  # noqa: BLE001
             _ck("end_to_end_decision", False, detail=repr(exc))
+        finally:
+            self._preflight_active = False
 
         failures = [c["check"] for c in checks if not c["passed"]]
         report = {
@@ -1562,7 +1565,8 @@ class CognitiveSystemController:
         window and re-lock directional decisions for a warmup period."""
         hist = self._obs_history.setdefault(str(symbol), deque(maxlen=64))
         for close in list(closes)[-64:]:
-            if isinstance(close, (int, float)) and close > 0:
+            if isinstance(close, (int, float)) and np.isfinite(close) \
+                    and close > 0:
                 hist.append(float(close))
 
     def observation_history(self, symbol: str) -> List[float]:
@@ -1896,7 +1900,8 @@ class CognitiveSystemController:
             direction = p.get("direction")
             entry = p.get("entry_price")
             if direction not in ("BUY", "SELL") or not isinstance(
-                    entry, (int, float)) or entry <= 0:
+                    entry, (int, float)) or not np.isfinite(entry) \
+                    or entry <= 0:
                 continue
             self._open_positions[str(sym)] = {
                 "direction": direction,
@@ -1928,7 +1933,8 @@ class CognitiveSystemController:
         derived = set()
         hist = self._obs_history.setdefault(symbol, deque(maxlen=64))
         closes = list(hist)
-        if isinstance(price, (int, float)) and price > 0:
+        if isinstance(price, (int, float)) and np.isfinite(price) \
+                and price > 0:
             closes.append(float(price))
 
         if "volatility" not in obs_dict and len(closes) >= 21:
@@ -2024,7 +2030,8 @@ class CognitiveSystemController:
                             "system_health_flags"))
         if derived:
             obs_dict["_derived_features"] = sorted(derived)
-        if isinstance(price, (int, float)) and price > 0:
+        if isinstance(price, (int, float)) and np.isfinite(price) \
+                and price > 0:
             hist.append(float(price))
         if "session" not in obs_dict or "session_hour" not in obs_dict:
             ts = obs_dict.get("timestamp")
@@ -2054,7 +2061,8 @@ class CognitiveSystemController:
         # feed → features stay absent, never fabricated.
         peer_price = obs_dict.get("peer_close")
         phist = self._peer_history.setdefault(symbol, deque(maxlen=96))
-        if isinstance(peer_price, (int, float)) and peer_price > 0:
+        if isinstance(peer_price, (int, float)) \
+                and np.isfinite(peer_price) and peer_price > 0:
             phist.append(float(peer_price))
         pcloses = list(phist)
         if "peer_return" not in obs_dict and len(pcloses) > 11 \
@@ -3506,7 +3514,8 @@ class CognitiveSystemController:
         # Preflight probe: the proposal dispatch above already exercised
         # bus reachability; the execution order itself is never sent —
         # a probe observation must never produce a venue-visible order.
-        if (obs_dict or {}).get("preflight"):
+        if (obs_dict or {}).get("preflight") and \
+                getattr(self, "_preflight_active", False):
             status = ActionStatus.EXECUTED
         elif self.decision_bus is not None and hasattr(
                 self.decision_bus, "propose_action"):

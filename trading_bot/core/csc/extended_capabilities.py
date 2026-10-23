@@ -257,9 +257,12 @@ class VoiceAlerter:
     operator opts in (runner flag / kwargs); silent no-op otherwise."""
 
     def __init__(self, enabled: bool = False,
-                 speaker: Optional[Callable[[str], None]] = None) -> None:
+                 speaker: Optional[Callable[[str], None]] = None,
+                 min_interval_s: float = 30.0) -> None:
         self.enabled = enabled
         self._speaker = speaker or self._sapi_speak
+        self.min_interval_s = min_interval_s
+        self._last_alert_at = 0.0
         self.alerts_sent = 0
 
     @staticmethod
@@ -274,6 +277,13 @@ class VoiceAlerter:
     def alert(self, message: str) -> bool:
         if not self.enabled:
             return False
+        # Rate-limit: an alert storm (repeated estop/circuit events)
+        # must not flood the speech queue or spawn unbounded threads.
+        import time as _t
+        now = _t.monotonic()
+        if now - self._last_alert_at < self.min_interval_s:
+            return False
+        self._last_alert_at = now
         def _go() -> None:
             try:
                 self._speaker(message)

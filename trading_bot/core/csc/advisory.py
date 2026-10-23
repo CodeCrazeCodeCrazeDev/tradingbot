@@ -372,6 +372,16 @@ class _BarHistory:
     def __init__(self, maxlen: int = 512) -> None:
         self._bars: "collections.deque" = collections.deque(maxlen=maxlen)
 
+    def _window(self) -> List[Dict[str, Any]]:
+        """Bars for the most-recently-observed symbol only. Without this
+        filter an interleaved multi-symbol feed silently concatenates
+        EURUSD and GBPUSD closes into one nonsense series."""
+        bars = list(self._bars)
+        if not bars:
+            return bars
+        sym = bars[-1].get("_symbol")
+        return [b for b in bars if b.get("_symbol") == sym]
+
     def add(self, ctx: Mapping[str, Any]) -> int:
         close = _num(ctx.get("close") or ctx.get("price"))
         if close is None:
@@ -382,6 +392,7 @@ class _BarHistory:
         # fabricated wall-clock.
         t = _num(ctx.get("time") or ctx.get("timestamp"))
         self._bars.append({
+            "_symbol": str(ctx.get("symbol") or "UNKNOWN"),
             "time": float(t) if t is not None else float(len(self._bars)),
             "open": _num(ctx.get("open")) or close,
             "high": _num(ctx.get("high")) or close,
@@ -395,18 +406,20 @@ class _BarHistory:
         return len(self._bars)
 
     def bars(self, last: Optional[int] = None) -> List[Dict[str, float]]:
-        bars = list(self._bars)
+        bars = [{k: v for k, v in b.items() if k != "_symbol"}
+                for b in self._window()]
         return bars[-last:] if last else bars
 
     def frame(self) -> Any:
         import pandas as pd
-        return pd.DataFrame(list(self._bars))
+        return pd.DataFrame(self._window()).drop(
+            columns=["_symbol"], errors="ignore")
 
     def prices(self) -> List[float]:
-        return [b["close"] for b in self._bars]
+        return [b["close"] for b in self._window()]
 
     def volumes(self) -> List[float]:
-        return [b["volume"] for b in self._bars]
+        return [b["volume"] for b in self._window()]
 
     def returns(self) -> List[float]:
         p = self.prices()
@@ -5134,13 +5147,17 @@ def _edgar_13f_service() -> AdvisoryModuleAdapter:
     fabricates holdings."""
     from .extended_capabilities import Edgar13FAdvisor
     advisor = Edgar13FAdvisor(enabled=True)
+    _memo: Dict[str, Any] = {}
 
     def analyze(ctx: Mapping[str, Any]) -> Any:
         cik = ctx.get("edgar_cik") or ctx.get("cik")
         if not cik:
             return {"status": "no_cik",
                     "detail": "observation carries no edgar_cik field"}
-        return advisor.recent_13f(cik)
+        key = str(cik)
+        if key not in _memo:
+            _memo[key] = advisor.recent_13f(cik)
+        return _memo[key]
 
     return AdvisoryModuleAdapter("edgar_13f", analyze)
 
