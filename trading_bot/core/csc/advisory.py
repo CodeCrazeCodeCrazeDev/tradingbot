@@ -4666,9 +4666,10 @@ def _hawkes_service() -> AdvisoryModuleAdapter:
         else:
             etype = EventType.TRADE
         ts = ctx.get("timestamp")
+        _parsed = (datetime.fromisoformat(str(ts)).replace(tzinfo=None)
+                   if ts else datetime.utcnow())
         det.add_event(MarketEvent(
-            timestamp=datetime.fromisoformat(str(ts))
-            if ts else datetime.utcnow(),
+            timestamp=_parsed,
             event_type=etype, price=close, volume=vol,
             side=side, is_aggressive=vol_ratio >= 1.5))
         return {"hawkes_state": _payload(det.get_current_state()),
