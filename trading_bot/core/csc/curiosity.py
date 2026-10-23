@@ -33,29 +33,48 @@ class CuriosityEngine:
     statistic that produced it.
     """
 
+    _MAX_SYMBOLS = 32
+
     def __init__(self) -> None:
-        self._closes: Deque[float] = deque(maxlen=240)
-        self._volumes: Deque[float] = deque(maxlen=240)
-        self._emitted: Dict[str, int] = {}
-        self._seq = 0
+        # Per-symbol state — a global window would concatenate different
+        # instruments into one nonsense series (same conflation bug as
+        # the advisor _BarHistory). Bounded symbol count evicts the
+        # oldest-inserted entry.
+        self._state: Dict[str, Dict[str, Any]] = {}
+        self._cur: Optional[Dict[str, Any]] = None
         self.emitted_total = 0
 
+    def _st(self, symbol: str) -> Dict[str, Any]:
+        st = self._state.get(symbol)
+        if st is None:
+            if len(self._state) >= self._MAX_SYMBOLS:
+                self._state.pop(next(iter(self._state)))
+            st = self._state[symbol] = {
+                "closes": deque(maxlen=240),
+                "volumes": deque(maxlen=240),
+                "emitted": {}, "seq": 0}
+        return st
+
     def observe(self, obs: Mapping[str, Any]) -> List[Dict[str, Any]]:
-        self._seq += 1
+        symbol = str(obs.get("symbol") or "UNKNOWN")
+        st = self._st(symbol)
+        self._cur = st
+        st["seq"] += 1
         close = obs.get("close") or obs.get("price")
         vol = obs.get("volume_ratio") or obs.get("volume")
-        if isinstance(close, (int, float)) and close > 0:
-            self._closes.append(float(close))
-        if isinstance(vol, (int, float)):
-            self._volumes.append(float(vol))
-        if len(self._closes) < _MIN_HISTORY:
+        if isinstance(close, (int, float)) and np.isfinite(close) \
+                and close > 0:
+            st["closes"].append(float(close))
+        if isinstance(vol, (int, float)) and np.isfinite(vol):
+            st["volumes"].append(float(vol))
+        if len(st["closes"]) < _MIN_HISTORY:
             return []
 
         out: List[Dict[str, Any]] = []
         for cand in (self._anomaly(), self._level_break(),
                      self._corr_shift()):
             if cand and self._fresh(cand["name"]):
-                self._emitted[cand["name"]] = self._seq
+                st["emitted"][cand["name"]] = st["seq"]
                 self.emitted_total += 1
                 out.append(cand)
         return out
@@ -63,7 +82,7 @@ class CuriosityEngine:
     # -- mechanisms ------------------------------------------------------
 
     def _returns(self) -> np.ndarray:
-        c = np.asarray(self._closes, dtype=float)
+        c = np.asarray(self._cur["closes"], dtype=float)
         return np.diff(c) / np.where(c[:-1] == 0, 1.0, c[:-1])
 
     def _anomaly(self) -> Optional[Dict[str, Any]]:
@@ -92,7 +111,7 @@ class CuriosityEngine:
 
     def _level_break(self) -> Optional[Dict[str, Any]]:
         """Close clears the rolling window's range."""
-        c = list(self._closes)
+        c = list(self._cur["closes"])
         prior = c[:-1]
         if max(prior) > c[-1] > min(prior):
             return None
@@ -110,11 +129,11 @@ class CuriosityEngine:
 
     def _corr_shift(self) -> Optional[Dict[str, Any]]:
         """Rolling price/volume coupling changed regime."""
-        n = min(len(self._closes), len(self._volumes))
+        n = min(len(self._cur["closes"]), len(self._cur["volumes"]))
         if n < _MIN_HISTORY:
             return None
-        c = np.asarray(self._closes)[-n:]
-        v = np.asarray(self._volumes)[-n:]
+        c = np.asarray(self._cur["closes"])[-n:]
+        v = np.asarray(self._cur["volumes"])[-n:]
         rets = np.diff(c) / np.where(c[:-1] == 0, 1.0, c[:-1])
         vol = v[1:]
         half = len(rets) // 2
@@ -141,4 +160,4 @@ class CuriosityEngine:
         }
 
     def _fresh(self, name: str) -> bool:
-        return self._seq - self._emitted.get(name, -10**9) > _REEMIT_GAP
+        return self._cur["seq"] - self._cur["emitted"].get(name, -10**9) > _REEMIT_GAP

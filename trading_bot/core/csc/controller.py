@@ -1558,12 +1558,26 @@ class CognitiveSystemController:
                 "settlement_id": settlement["settlement_id"],
                 "reward": reward.to_dict()}
 
+    _MAX_TRACKED_SYMBOLS = 64
+
+    def _symbol_hist(self, store: Dict[str, deque], symbol: str,
+                     maxlen: int) -> deque:
+        """setdefault bounded at _MAX_TRACKED_SYMBOLS — an unbounded
+        feed of new symbols would otherwise grow the map forever."""
+        key = str(symbol)
+        dq = store.get(key)
+        if dq is None:
+            if len(store) >= self._MAX_TRACKED_SYMBOLS:
+                store.pop(next(iter(store)))
+            dq = store[key] = deque(maxlen=maxlen)
+        return dq
+
     def seed_observation_history(self, symbol: str, closes: List[float]) -> None:
         """Seed the derived-feature window from durable market history.
 
         Called at startup so a restart does not discard the prior bar
         window and re-lock directional decisions for a warmup period."""
-        hist = self._obs_history.setdefault(str(symbol), deque(maxlen=64))
+        hist = self._symbol_hist(self._obs_history, str(symbol), 64)
         for close in list(closes)[-64:]:
             if isinstance(close, (int, float)) and np.isfinite(close) \
                     and close > 0:
@@ -1931,7 +1945,7 @@ class CognitiveSystemController:
         price = obs_dict.get("price") or obs_dict.get("close")
         symbol = str(obs_dict.get("symbol") or "unknown")
         derived = set()
-        hist = self._obs_history.setdefault(symbol, deque(maxlen=64))
+        hist = self._symbol_hist(self._obs_history, symbol, 64)
         closes = list(hist)
         if isinstance(price, (int, float)) and np.isfinite(price) \
                 and price > 0:
@@ -2001,7 +2015,7 @@ class CognitiveSystemController:
                 obs_dict["trend"]
                 if float(obs_dict["ret_autocorr"]) > -0.05 else "NEUTRAL")
             derived.add("trend_effective")
-        vol_hist = self._vol_history.setdefault(symbol, deque(maxlen=64))
+        vol_hist = self._symbol_hist(self._vol_history, symbol, 64)
         volume = obs_dict.get("volume")
         if ("volume_ratio" not in obs_dict
                 and isinstance(volume, (int, float)) and volume > 0
@@ -2060,7 +2074,7 @@ class CognitiveSystemController:
         # and peer_corr from strictly-prior joint history. Absent peer
         # feed → features stay absent, never fabricated.
         peer_price = obs_dict.get("peer_close")
-        phist = self._peer_history.setdefault(symbol, deque(maxlen=96))
+        phist = self._symbol_hist(self._peer_history, symbol, 96)
         if isinstance(peer_price, (int, float)) \
                 and np.isfinite(peer_price) and peer_price > 0:
             phist.append(float(peer_price))
@@ -2087,7 +2101,8 @@ class CognitiveSystemController:
         settles against the bar at t+max_hold (or earlier when an opposing
         decision reverses it). Only the observed symbol's position settles."""
         price = obs_dict.get("price") or obs_dict.get("close")
-        if not isinstance(price, (int, float)) or price <= 0:
+        if not isinstance(price, (int, float)) \
+                or not np.isfinite(price) or price <= 0:
             return
         symbol = obs_dict.get("symbol")
         pos = self._open_positions.get(symbol)
@@ -2210,7 +2225,7 @@ class CognitiveSystemController:
         execution service wired (evaluators/tests), settlement is mark-only."""
         pos = self._open_positions.get(symbol)
         if pos is None or not isinstance(exit_price, (int, float)) \
-                or exit_price <= 0:
+                or not np.isfinite(exit_price) or exit_price <= 0:
             return None
         fill_price = None
         close_id = None

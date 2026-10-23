@@ -128,5 +128,8 @@ class SwarmKnowledgeBase:
         try:
             with open(path, "r", encoding="utf-8") as fh:
                 return cls.from_dict(json.load(fh))
-        except (OSError, ValueError):
+        except (OSError, ValueError, KeyError, TypeError,
+                AttributeError):
+            # valid JSON with a malformed schema is as unsafe to
+            # trust as missing state — fail to a fresh base.
             return cls()
