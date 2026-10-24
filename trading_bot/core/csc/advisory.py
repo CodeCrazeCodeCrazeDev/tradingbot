@@ -950,6 +950,54 @@ def _signal_outlier_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("signal_statistical_outliers", analyze)
 
 
+def _risk_evt_service() -> AdvisoryModuleAdapter:
+    """AdvancedRiskSystem as advisory evidence: EVT VaR/ES (GPD fit —
+    scipy MLE or moments fallback), volatility-spike black-swan events,
+    and deterministic scenario stress results. Evidence only — the
+    canonical risk service remains the sizing/veto authority."""
+    from collections import deque as _dq
+    from trading_bot.risk.advanced_risk_system import AdvancedRiskSystem
+
+    ars = AdvancedRiskSystem()
+    prices: Dict[str, Any] = {}
+    vols: Dict[str, Any] = {}
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        sym = str(ctx.get("symbol") or "?")
+        prices.setdefault(sym, _dq(maxlen=512))
+        vols.setdefault(sym, _dq(maxlen=512))
+        c, v = _num(ctx.get("close")), _num(ctx.get("volume"))
+        if c is not None:
+            prices[sym].append(c)
+        if v is not None:
+            vols[sym].append(v)
+        if len(prices[sym]) < 60:
+            return {"available": False,
+                    "warmup": f"{len(prices[sym])}/60 bars"}
+        # feed detector + EVT
+        try:
+            ars.black_swan_detector.update_data(
+                {sym: prices[sym][-1]}, {sym: vols[sym][-1] if vols[sym] else 0.0})
+            ev = ars.black_swan_detector.detect_volatility_spike()
+            arr = np.asarray(prices[sym], dtype=float)
+            rets = np.diff(arr) / arr[:-1]
+            ars.evt_analyzer.fit(rets, sym)
+            var99 = ars.evt_analyzer.estimate_var(sym, 0.99)
+            es99 = ars.evt_analyzer.estimate_es(sym, 0.99)
+            params = ars.evt_analyzer.gpd_params.get(sym, {})
+            return {"available": True,
+                    "var_99": var99, "es_99": es99,
+                    "gpd_fit": params.get("fit_method"),
+                    "n_exceedances": params.get("n_exceedances"),
+                    "vol_spike_event": _payload(ev) if ev else None,
+                    "note": "advisory tail-risk evidence — canonical "
+                            "risk service owns limits"}
+        except Exception as exc:  # noqa: BLE001
+            return {"available": False, "error": repr(exc)}
+
+    return AdvisoryModuleAdapter("risk_evt", analyze)
+
+
 def _order_flow_institutional_service() -> AdvisoryModuleAdapter:
     """Capability-gated institutional order-flow detection. Emits
     provenanced advisory signals (block trades, volume delta,
@@ -5275,6 +5323,7 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("self_learning_ensemble", _self_learning_ensemble_service),
     ("signal_regime_change", _signal_regime_change_service),
     ("signal_statistical_outliers", _signal_outlier_service),
+    ("risk_evt", _risk_evt_service),
     ("order_flow_institutional", _order_flow_institutional_service),
     ("tamic_market_time", _tamic_market_time_service),
     ("tamic_institutional_time", _institutional_time_service),

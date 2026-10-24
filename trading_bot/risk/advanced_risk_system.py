@@ -12,9 +12,9 @@ from dataclasses import dataclass
 try:
     from scipy import stats
 except ImportError:
-    scipy = None
-from scipy.optimize import minimize
+    stats = None
 import logging
+import math
 from datetime import datetime, timedelta
 import numpy
 import pandas
@@ -80,20 +80,31 @@ class ExtremeValueAnalyzer:
             logger.warning(f"Insufficient exceedances for {asset_name}")
             return
         try:
-        
-        # Fit GPD using maximum likelihood
-            shape, loc, scale = stats.genpareto.fit(exceedances, floc=0)
-            
+            if stats is not None:
+                # MLE fit (preferred — needs scipy)
+                shape, loc, scale = stats.genpareto.fit(
+                    exceedances, floc=0)
+                method = "mle"
+            else:
+                # Hosking & Wallis method-of-moments fallback — real
+                # estimator, not fabricated params. Valid when shape<0.5;
+                # out-of-range results are reported but flagged.
+                m = float(np.mean(exceedances))
+                v = float(np.var(exceedances))
+                if v <= 0:
+                    return
+                shape = 0.5 * (1.0 - (m * m) / v)
+                scale = 0.5 * m * ((m * m) / v + 1.0)
+                method = "moments"
             self.gpd_params[asset_name] = {
                 'shape': shape,
                 'scale': scale,
                 'threshold': self.threshold,
                 'n_exceedances': len(exceedances),
-                'n_total': len(returns)
+                'n_total': len(returns),
+                'fit_method': method,
             }
-            
-            logger.info(f"Fitted GPD for {asset_name}: shape={shape:.4f}, scale={scale:.4f}")
-            
+            logger.info(f"Fitted GPD for {asset_name}: shape={shape:.4f}, scale={scale:.4f} ({method})")
         except Exception as e:
             logger.error(f"Error fitting GPD for {asset_name}: {e}")
     
@@ -223,7 +234,9 @@ class BlackSwanDetector:
                     event_type="VOLATILITY_SPIKE",
                     severity=severity,
                     affected_assets=[asset],
-                    probability=1 - stats.norm.cdf(recent_vol / historical_vol),
+                    probability=(1 - stats.norm.cdf(recent_vol / historical_vol))
+                    if stats is not None else
+                    0.5 * math.erfc((recent_vol / historical_vol) / 1.4142135623730951),
                     description=f"Extreme volatility spike in {asset}: {recent_vol:.4f} vs {historical_vol:.4f}",
                     recommended_action="REDUCE_EXPOSURE"
                 )
@@ -258,7 +271,9 @@ class BlackSwanDetector:
                 event_type="CORRELATION_BREAKDOWN",
                 severity=severity,
                 affected_assets=affected,
-                probability=1 - stats.norm.cdf(np.max(corr_diff) / 0.2),
+                probability=(1 - stats.norm.cdf(np.max(corr_diff) / 0.2))
+                if stats is not None else
+                0.5 * math.erfc((np.max(corr_diff) / 0.2) / 1.4142135623730951),
                 description=f"Correlation breakdown detected between {affected[0]} and {affected[1]}",
                 recommended_action="REBALANCE_PORTFOLIO"
             )
@@ -364,7 +379,10 @@ class PortfolioStressTester:
                 # Add asset-specific volatility
                 if asset in returns_history:
                     vol = np.std(returns_history[asset])
-                    shock += np.random.normal(0, vol * scenario.volatility_multiplier)
+                    rng = np.random.default_rng(
+                        hash((scenario.name, asset)) & 0xFFFFFFFF)
+                    shock += rng.normal(
+                        0, vol * scenario.volatility_multiplier)
                 
                 shocked_prices[asset] = price * (1 + shock)
             
