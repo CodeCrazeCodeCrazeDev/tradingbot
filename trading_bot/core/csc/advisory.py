@@ -2361,7 +2361,16 @@ def _microfish_swarm_service() -> AdvisoryModuleAdapter:
         sig = swarm.get_consensus(symbol, {
             "prices": prices,
             "regime": str(ctx.get("regime") or "unknown")})
-        return _payload(sig)
+        out = _payload(sig)
+        d = getattr(sig, "direction", None)
+        if isinstance(d, (int, float)):
+            if d > 0.3:
+                out["direction"] = "BUY"
+            elif d < -0.3:
+                out["direction"] = "SELL"
+            out["confidence"] = _primitive(
+                getattr(sig, "strength", None))
+        return out
 
     return AdvisoryModuleAdapter("microfish_consensus", analyze)
 
@@ -6126,9 +6135,12 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
      "requires orderbook bids/asks (L2 data) the observation does not "
      "carry; 'spread inf / liquidity 0' verdicts were missing-data "
      "noise, not market assessment"),
-    ("aads", "alpha_evolve_signal + polymarket_estimate + maven_stats "
-     "attached; aip_agents synthesize bull/bear cases via np.random — "
-     "fabricated analysis, stays quarantined"),
+    ("aads", "alpha_evolve_signal + polymarket_estimate + maven_stats + "
+     "microfish_consensus + aads_causal_counterfactual attached; "
+     "aip_agents synthesize bull/bear cases via np.random — fabricated "
+     "analysis, stays quarantined; gotham needs a real entity-ingest "
+     "path (vacuous graph otherwise); sakana/simulation/self_improvement "
+     "are research-lane, not per-obs"),
     ("aamis_v3", "aamis_market attached; consolidated-engine status "
      "facades are not obs-callable"),
     ("learning", "rl_distributional + rl_adaptive_objectives attached "
