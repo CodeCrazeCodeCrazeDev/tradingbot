@@ -56,12 +56,21 @@ def classify(out):
 
 async def measure(factories, obs_list):
     report = {}
-    for cap_id, factory in factories:
+    total = len(factories)
+    for i, (cap_id, factory) in enumerate(factories):
+        # Progress logging: an unlogged stall previously killed this
+        # report silently (Introspector's per-obs rglob walked the whole
+        # repo). Print before/after each factory so a hang/crash names
+        # the offender.
+        print(f"[{i}/{total}] {cap_id} ...", flush=True)
+        import time as _t
+        t0 = _t.time()
         counts = Counter()
         try:
             svc = factory()
         except Exception as exc:
             report[cap_id] = {"error": str(exc)[:200]}
+            print(f"    init error: {exc!r:.100}", flush=True)
             continue
         for obs in obs_list:
             try:
@@ -71,7 +80,10 @@ async def measure(factories, obs_list):
                 counts[classify(out)] += 1
             except Exception:
                 counts["failed"] += 1
+        elapsed = _t.time() - t0
         report[cap_id] = dict(counts)
+        flag = " SLOW" if elapsed > 30 else ""
+        print(f"    {dict(counts)} [{elapsed:.1f}s]{flag}", flush=True)
     return report
 
 

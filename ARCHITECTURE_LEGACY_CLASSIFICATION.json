@@ -89523,14 +89523,15 @@
       ],
       "migration_wave": 1,
       "module": "trading_bot.evolution_layer",
+      "notes": "Root module deleted in 163298d7 (shadowed by the evolution_layer/ package); manifest entry kept for history, no longer reachable.",
       "owner": "infrastructure",
       "parse_error": null,
-      "parse_status": "pass",
+      "parse_status": "deleted",
       "path": "trading_bot/evolution_layer.py",
       "quarantine_reason": null,
       "removal_ready": false,
       "review_priority": 0,
-      "runtime_reachable": true,
+      "runtime_reachable": false,
       "secondary_tags": [
         "top_level_module"
       ],

@@ -1836,14 +1836,28 @@ def _mastery_reflection_service() -> AdvisoryModuleAdapter:
 
 
 def _introspection_service() -> AdvisoryModuleAdapter:
-    """sentient_core Introspector — code health score evidence."""
+    """sentient_core Introspector — code health score evidence.
+
+    get_code_health_score() does project_root.rglob('*.py') — a full
+    repo-tree walk including .venv — on EVERY observation. That stalled
+    the degeneracy sweep indefinitely at 400 bars. Code health is
+    quasi-static, so compute once and cache for the process lifetime."""
     from trading_bot.sentient_core.introspector import Introspector
 
     intro = Introspector()
+    cache: Dict[str, Any] = {"score": None}
 
     def analyze(ctx: Mapping[str, Any]) -> Any:
-        return {"code_health_score": _primitive(
-            intro.get_code_health_score())}
+        if cache["score"] is None:
+            try:
+                cache["score"] = _primitive(
+                    intro.get_code_health_score())
+            except Exception as exc:  # noqa: BLE001
+                return {"status": "unavailable",
+                        "reason": repr(exc)[:120]}
+        score = cache["score"]
+        return {"status": "active" if score is not None else "no_data",
+                "code_health_score": score}
 
     return AdvisoryModuleAdapter("codebase_introspection", analyze)
 
@@ -2437,6 +2451,22 @@ def _hivemind_threat_service() -> AdvisoryModuleAdapter:
         return _payload(assessor.assess(market_data, portfolio_state))
 
     return AdvisoryModuleAdapter("hivemind_threat_assessment", analyze)
+
+
+def make_genetic_alpha_search(population_size: int = 20,
+                              mutation_rate: float = 0.4,
+                              seed: int = 13) -> Any:
+    """Seam-mediated constructor for the quarantined apex_fi
+    GeneticAlphaSearch. Canonical research code (model_engineering)
+    must reach the orphan only through here — the returned searcher
+    produces candidate alpha expressions; nothing it emits carries
+    authority. Callers still run every candidate through the full
+    propose -> OOS-validate -> human-approve gate."""
+    import random as _global_random
+    _global_random.seed(seed)  # GeneticAlphaSearch uses global random
+    from trading_bot.apex_fi.alpha_mining import GeneticAlphaSearch
+    return GeneticAlphaSearch(population_size=population_size,
+                              mutation_rate=mutation_rate)
 
 
 def _apex_regime_service() -> AdvisoryModuleAdapter:

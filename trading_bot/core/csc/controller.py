@@ -130,10 +130,16 @@ class CognitiveSystemController:
         """
         with cls._lock:
             if cls._instance is not None:
-                cls._instance.continuous_state.clear()
-                cls._instance.discrete_channel.clear()
-                cls._instance.vfe_history.clear()
-                cls._instance.last_prediction = None
+                # Partially-constructed instances (init exception or
+                # __new__-only) may lack these attrs — reset must not
+                # raise during teardown.
+                for attr in ("continuous_state", "discrete_channel",
+                             "vfe_history"):
+                    container = getattr(cls._instance, attr, None)
+                    if hasattr(container, "clear"):
+                        container.clear()
+                if hasattr(cls._instance, "last_prediction"):
+                    cls._instance.last_prediction = None
                 cls._instance = None
         logger.info("CognitiveSystemController reset completed.")
 

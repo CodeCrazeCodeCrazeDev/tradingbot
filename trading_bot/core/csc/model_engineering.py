@@ -819,10 +819,10 @@ async def evolve_alpha_generation(
     SEALED outer slice. Bars are split so the data that selected the
     parents is never reused as evidence for the children; only the
     untouched tail produces CONFIRMED verdicts."""
-    import random as _global_random
-    _global_random.seed(13)  # GeneticAlphaSearch uses global random
-    from trading_bot.apex_fi.alpha_mining import GeneticAlphaSearch
-    search = GeneticAlphaSearch(population_size=20, mutation_rate=0.4)
+    from trading_bot.core.csc.advisory import (
+        make_genetic_alpha_search)
+    search = make_genetic_alpha_search(population_size=20,
+                                       mutation_rate=0.4, seed=13)
     parents: List[str] = []
     for cid in parent_candidate_ids:
         c = csc._engineered_models.get(cid)
@@ -900,12 +900,13 @@ async def propose_alpha_generation(
     compute become ``ga_expression`` proposals. Everything still faces
     the full gate — OOS validation, then human approval — before any
     voice is earned."""
-    import warnings, random as _global_random
-    _global_random.seed(7)  # deterministic proposal population
+    import warnings
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
-        from trading_bot.apex_fi.alpha_mining import GeneticAlphaSearch
-        gen = GeneticAlphaSearch(population_size=population_size)
+        from trading_bot.core.csc.advisory import (
+            make_genetic_alpha_search)
+        gen = make_genetic_alpha_search(
+            population_size=population_size, seed=7)
         gen.initialize_population()
     probe_series = _expr_series({
         f: (np.arange(1, 65, dtype=float) * 0.01) + 1.1
