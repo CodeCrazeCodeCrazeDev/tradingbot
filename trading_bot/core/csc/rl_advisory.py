@@ -56,9 +56,12 @@ def _pip_size(symbol: str) -> float:
 
 
 def _session_bucket(ts: Any) -> int:
-    """UTC session bucket — London/NY microstructure differs ~5x from
-    Asia; pooling them into one Q-row learns a policy that fits
-    neither."""
+    """Session bucket on the observation's own clock. NOTE: the
+    market_data timestamps are broker server time (EET-style,
+    verified by the volume-by-hour signature: liquidity trough at
+    0:00 == NY close), NOT UTC — buckets are consistent but shifted
+    ~2h from true UTC sessions and drift ±1h across DST. Do not
+    re-interpret as UTC without de-offsetting first."""
     try:
         h = int(str(ts)[11:13])
         return 0 if h < 7 else (1 if h < 13 else 2)

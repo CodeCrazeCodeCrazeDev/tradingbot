@@ -461,6 +461,7 @@ async def run(args: argparse.Namespace) -> int:
                 # cycle can take minutes, and an estop that waits for
                 # the cycle boundary is not a safety control.
                 task = asyncio.ensure_future(runtime.bot.run_cycle(obs))
+                _completed = True
                 while not task.done():
                     for command in channel.drain():
                         outcome = await console.apply(command)
@@ -474,9 +475,11 @@ async def run(args: argparse.Namespace) -> int:
                             await task
                         except (asyncio.CancelledError, Exception):
                             pass
+                        _completed = False
                         break
                     await asyncio.sleep(0.25)
-                processed += 1
+                if _completed:
+                    processed += 1
             feedback_status = await sync_economic_feedback()
             publish_snapshot(state_dir, {
                 "as_of": time.time(),
