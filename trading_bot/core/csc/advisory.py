@@ -950,6 +950,207 @@ def _signal_outlier_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("signal_statistical_outliers", analyze)
 
 
+def _mm_adaptive_spread_service() -> AdvisoryModuleAdapter:
+    """adaptive_systems AdaptiveMarketMaker — Avellaneda-Stoikov
+    quote-geometry evidence over real bars: adaptive spread target,
+    inventory skew, expected pnl, risk metrics. Evidence only — these
+    are quote proposals, never order submissions; the canonical
+    execution path owns all dispatch."""
+    from trading_bot.adaptive_systems.market_maker import (
+        AdaptiveMarketMaker, MarketMakingParameters)
+
+    params = MarketMakingParameters(
+        gamma=0.1, k=1.5, sigma=0.0004, T=60.0,
+        inventory_limit=50, position_fade_time=300.0,
+        min_spread=0.0001, max_spread=0.002,
+        tick_size=0.00001, lot_size=0.01, risk_limit=0.02)
+    mm = AdaptiveMarketMaker(params)
+    hist = _BarHistory(120)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        close = _num(ctx.get("close") or ctx.get("price"))
+        if close is None or len(hist) < 30:
+            return {"status": "warming", "bars": len(hist)}
+        closes = np.asarray(hist.prices()[-60:], dtype=float)
+        rets = np.diff(np.log(closes))
+        vol = float(np.std(rets)) if len(rets) > 2 else 0.0004
+        spread = _num(ctx.get("spread")) or close * 0.0002
+        try:
+            q = mm.generate_quotes({
+                "mid_price": close, "spread": spread,
+                "volatility": max(vol, 1e-6)})
+        except Exception as exc:  # noqa: BLE001
+            return {"status": "unavailable", "reason": repr(exc)[:120]}
+        return {"status": "active",
+                "adaptive_spread": _primitive(getattr(q, "spread", None)),
+                "bid_price": _primitive(getattr(q, "bid_price", None)),
+                "ask_price": _primitive(getattr(q, "ask_price", None)),
+                "inventory_skew": _primitive(
+                    getattr(q, "inventory_skew", None)),
+                "expected_pnl": _primitive(getattr(q, "expected_pnl", None)),
+                "risk_metrics": _payload(
+                    getattr(q, "risk_metrics", {})),
+                "volatility_estimate": vol,
+                "note": "advisory quote geometry — canonical execution "
+                        "service owns all dispatch"}
+
+    return AdvisoryModuleAdapter("mm_adaptive_spread", analyze)
+
+
+def _rl_adaptive_objectives_service() -> AdvisoryModuleAdapter:
+    """learning MultiObjectiveRL — regime-adaptive objective-weight
+    evidence. adapts profit/sharpe/drawdown/stability/execution weights
+    to the detected market regime; inference from realized vol is
+    explicitly labeled."""
+    from trading_bot.learning.multi_objective_rl import MultiObjectiveRL
+
+    rl = MultiObjectiveRL(history_size=200)
+    hist = _BarHistory(120)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 30:
+            return {"status": "warming", "bars": len(hist)}
+        regime = str(ctx.get("regime") or ctx.get("trend") or "")
+        inferred = False
+        if regime not in ("high_volatility", "trending", "ranging",
+                          "crisis"):
+            closes = np.asarray(hist.prices()[-60:], dtype=float)
+            rets = np.diff(np.log(closes))
+            vol = float(np.std(rets)) if len(rets) > 2 else 0.0
+            tr = np.asarray(hist.prices())
+            denom = float(tr[0]) if len(tr) and tr[0] else 1.0
+            drift = abs(float(tr[-1] - tr[0])) / denom
+            if vol > 0.002:
+                regime = "high_volatility"
+            elif drift > 0.002:
+                regime = "trending"
+            else:
+                regime = "ranging"
+            inferred = True
+        try:
+            rl.adapt_objectives(regime)
+            w = rl.objectives.to_dict()
+        except Exception as exc:  # noqa: BLE001
+            return {"status": "unavailable", "reason": repr(exc)[:120]}
+        return {"status": "active",
+                "regime": regime, "regime_inferred": inferred,
+                "objective_weights": w,
+                "note": "advisory reward geometry — no sizing authority"}
+
+    return AdvisoryModuleAdapter("rl_adaptive_objectives", analyze)
+
+
+def _market_profile_service() -> AdvisoryModuleAdapter:
+    """skills/market_analysis MarketProfileAnalyzer — TPO profile,
+    value area, initial balance over the accumulated real-bar window."""
+    from trading_bot.skills.market_analysis.market_profile import (
+        MarketProfileAnalyzer)
+
+    prof = MarketProfileAnalyzer()
+    hist = _BarHistory(256)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 64:
+            return {"status": "warming", "bars": len(hist)}
+        try:
+            bars = hist.bars()
+            res = prof.analyze(
+                highs=np.asarray([b["high"] for b in bars], dtype=float),
+                lows=np.asarray([b["low"] for b in bars], dtype=float),
+                closes=np.asarray(hist.prices(), dtype=float),
+                volumes=np.asarray(hist.volumes(), dtype=float),
+                timestamps=[b["time"] for b in bars],
+                timeframe_minutes=15)
+        except Exception as exc:  # noqa: BLE001
+            return {"status": "unavailable", "reason": repr(exc)[:120]}
+        va = getattr(res, "value_area", None)
+        return {"status": "active",
+                "profile_type": str(getattr(
+                    getattr(res, "profile_type", None), "value",
+                    getattr(res, "profile_type", None))),
+                "market_state": str(getattr(
+                    getattr(res, "market_state", None), "value",
+                    getattr(res, "market_state", None))),
+                "value_area_high": _primitive(
+                    getattr(va, "high", None)),
+                "value_area_low": _primitive(
+                    getattr(va, "low", None)),
+                "poc": _primitive(getattr(res, "point_of_control", None))}
+
+    return AdvisoryModuleAdapter("market_profile_skills", analyze)
+
+
+def _large_trader_service() -> AdvisoryModuleAdapter:
+    """skills/market_analysis LargeTraderDetector — inferred large-order
+    activity from price/volume structure (labeled inference, not true
+    trade prints)."""
+    from trading_bot.skills.market_analysis.large_trader import (
+        LargeTraderDetector)
+
+    det = LargeTraderDetector()
+    hist = _BarHistory(256)
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < 30:
+            return {"status": "warming", "bars": len(hist)}
+        try:
+            bars = hist.bars()
+            res = det.analyze(
+                prices=np.asarray(hist.prices(), dtype=float),
+                volumes=np.asarray(hist.volumes(), dtype=float),
+                timestamps=[b["time"] for b in bars])
+        except Exception as exc:  # noqa: BLE001
+            return {"status": "unavailable", "reason": repr(exc)[:120]}
+        activity = getattr(res, "activity_pattern", None)
+        orders = list(getattr(res, "large_orders", None) or [])
+        return {"status": "active" if orders else "no_signal",
+                "activity_pattern": str(getattr(activity, "value",
+                                              activity)),
+                "large_order_count": len(orders),
+                "confidence": _primitive(getattr(res, "confidence", None)),
+                "note": "volume-structure inference — not true prints"}
+
+    return AdvisoryModuleAdapter("large_trader", analyze)
+
+
+def _alpha_discovery_status_service() -> AdvisoryModuleAdapter:
+    """aads AutonomousAlphaDiscoveryLoop — status/performance evidence
+    only. The loop's deploy/decide phases are authority surfaces and are
+    never invoked here; a per-obs advisor can only *report* the loop's
+    state — it reports 'idle' until a campaign actually runs."""
+    holder = {"loop": None, "err": None}
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        if holder["loop"] is None and holder["err"] is None:
+            try:
+                from trading_bot.aads.core.alpha_discovery_loop import (
+                    AutonomousAlphaDiscoveryLoop)
+                holder["loop"] = AutonomousAlphaDiscoveryLoop()
+            except Exception as exc:  # noqa: BLE001
+                holder["err"] = repr(exc)[:160]
+        if holder["err"] is not None:
+            return {"status": "unavailable", "reason": holder["err"]}
+        try:
+            st = holder["loop"].get_loop_status()
+        except Exception as exc:  # noqa: BLE001
+            return {"status": "unavailable", "reason": repr(exc)[:120]}
+        phase = st.get("current_phase")
+        running = bool(st.get("running")) or (
+            phase is not None
+            and str(getattr(phase, "value", phase)).lower() not in
+            ("idle", "none"))
+        return {"status": "active" if running else "idle",
+                "loop_status": _payload(st),
+                "note": "report-only — no discovery/deploy invocation "
+                        "from the advisory seam"}
+
+    return AdvisoryModuleAdapter("alpha_discovery_status", analyze)
+
+
 def _gated_ml_analyzer(cap_id: str, import_path: str, cls: str,
                        ckpt_env: str) -> Any:
     """Torch-gated ML advisory: three honest states —
@@ -5446,6 +5647,11 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("self_learning_ensemble", _self_learning_ensemble_service),
     ("signal_regime_change", _signal_regime_change_service),
     ("signal_statistical_outliers", _signal_outlier_service),
+    ("mm_adaptive_spread", _mm_adaptive_spread_service),
+    ("rl_adaptive_objectives", _rl_adaptive_objectives_service),
+    ("market_profile_skills", _market_profile_service),
+    ("large_trader", _large_trader_service),
+    ("alpha_discovery_status", _alpha_discovery_status_service),
     ("ml_transformer", _ml_transformer_service),
     ("ml_ensemble", _ml_ensemble_service),
     ("rl_distributional", _rl_distributional_service),
@@ -5686,6 +5892,12 @@ MEASURED_ACTIVE_SET = frozenset((
     "tamic_time_risk",          # 400/400 substantive
     "lead_lag",                 # 400/400 substantive
     "edgar_13f",                # 400/400 substantive (network-gated)
+    # Round-2 measured additions (400 EURUSD M15 bars):
+    "mm_adaptive_spread",       # 371/400 substantive (29-bar warmup)
+    "rl_adaptive_objectives",   # 371/400 substantive
+    "market_profile_skills",    # 337/400 substantive (64-bar warmup)
+    "large_trader",             # 371/400 substantive
+    # alpha_discovery_status honest-idle (no campaign run) — held out
     # Degenerate on this feed — stay unmeasured: tamic_market_time,
     # tamic_institutional_time, wyckoff_phases
 ))
@@ -5762,8 +5974,9 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
      "fabricated analysis, stays quarantined"),
     ("aamis_v3", "aamis_market attached; consolidated-engine status "
      "facades are not obs-callable"),
-    ("learning", "RL learners (DistributionalQLearning, EKSFTTrainer) "
-     "are offline training loops, not obs-callable advisors"),
+    ("learning", "rl_distributional + rl_adaptive_objectives attached "
+     "(checkpoint-gated + regime-adaptive objective evidence); "
+     "EKSFTTrainer and training loops remain offline"),
     ("agents", "multi_agent_debate attached (system + MacroStrategist + "
      "RiskSentinel + TacticalExecutioner); prosecutor roles need an "
      "in-flight DebateTopic"),
@@ -6133,6 +6346,9 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
     ("production", "parallel production strategy lane - Signal objects "
      "carry entry/stop/sizing; authority-adjacent and requires "
      "StrategyConfig plumbing the obs channel lacks"),
+    ("market_making", "rl_market_maker is torch-gated simulation; "
+     "adaptive spread evidence attaches via adaptive_systems "
+     "AdaptiveMarketMaker (mm_adaptive_spread)"),
 )
 
 

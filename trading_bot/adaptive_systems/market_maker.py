@@ -9,7 +9,16 @@ from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from datetime import datetime
 import logging
-from scipy.stats import norm
+try:
+    from scipy.stats import norm
+except ImportError:
+    # stdlib fallback — statistics.NormalDist().inv_cdf is the exact
+    # equivalent of scipy norm.ppf
+    from statistics import NormalDist
+    class norm:  # noqa: D101 — scipy-compatible shim
+        @staticmethod
+        def ppf(q):
+            return NormalDist().inv_cdf(q)
 import numpy
 import pandas
 
