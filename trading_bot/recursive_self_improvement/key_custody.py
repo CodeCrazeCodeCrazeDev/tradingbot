@@ -128,3 +128,105 @@ def provision_verifier_key(path: Optional[str] = None,
         rep["warnings"].append("ACL tighten failed — key readable by "
                                "any process under sibling accounts")
     return rep
+
+
+# ---------------------------------------------------------------------------
+# DPAPI-encrypted at-rest keys (Windows). CryptProtectData binds the blob to
+# the current user account — a file copied off this host, or read by another
+# user, cannot decrypt it. Not external custody (TD-07 residual stands), but
+# the key at rest is no longer plaintext-in-a-file.
+# ---------------------------------------------------------------------------
+
+_DPAPI_MAGIC = b"DPAPI\x01"
+
+if sys.platform == "win32":
+    import ctypes
+
+    class _DATA_BLOB(ctypes.Structure):
+        _fields_ = [("cbData", ctypes.c_ulong),
+                    ("pbData", ctypes.POINTER(ctypes.c_char))]
+
+    def _dpapi_crypt(data: bytes, protect: bool) -> bytes:
+        crypt32 = ctypes.windll.crypt32
+        kernel32 = ctypes.windll.kernel32
+        inbuf = ctypes.create_string_buffer(data, len(data))
+        blob_in = _DATA_BLOB(len(data),
+                             ctypes.cast(inbuf, ctypes.POINTER(ctypes.c_char)))
+        blob_out = _DATA_BLOB()
+        fn = crypt32.CryptProtectData if protect \
+            else crypt32.CryptUnprotectData
+        if not fn(ctypes.byref(blob_in), None, None, None, None, 0,
+                  ctypes.byref(blob_out)):
+            raise OSError(ctypes.get_last_error(), "DPAPI call failed")
+        try:
+            return ctypes.string_at(blob_out.pbData, blob_out.cbData)
+        finally:
+            kernel32.LocalFree(blob_out.pbData)
+
+
+def dpapi_encrypt(data: bytes) -> bytes:
+    """Encrypt with the current user's DPAPI secret. Raises on non-Windows —
+    callers must check platform rather than fall back silently."""
+    if sys.platform != "win32":
+        raise OSError("DPAPI is Windows-only")
+    return _DPAPI_MAGIC + _dpapi_crypt(data, protect=True)
+
+
+def dpapi_decrypt(blob: bytes) -> bytes:
+    """Decrypt a DPAPI blob; raises OSError if the blob is not ours."""
+    if sys.platform != "win32":
+        raise OSError("DPAPI is Windows-only")
+    if not blob.startswith(_DPAPI_MAGIC):
+        raise OSError("not a DPAPI-wrapped key")
+    return _dpapi_crypt(blob[len(_DPAPI_MAGIC):], protect=False)
+
+
+def provision_verifier_key_dpapi(path: Optional[str] = None,
+                                 overwrite: bool = False
+                                 ) -> Dict[str, Any]:
+    """Provision an Ed25519 verifier key, DPAPI-encrypted at rest.
+
+    The file on disk is ciphertext bound to this user account; plaintext
+    never touches disk. Returns a custody report with
+    ``encryption='dpapi'``. On non-Windows the caller gets an honest
+    error report, not a plaintext write."""
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+        Ed25519PrivateKey)
+    from cryptography.hazmat.primitives import serialization
+
+    if sys.platform != "win32":
+        return {"status": "unavailable",
+                "reason": "DPAPI is Windows-only — use external custody"}
+
+    target = Path(path) if path else default_key_path()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.exists() and not overwrite:
+        rep = custody_report(str(target))
+        rep["generated"] = False
+        rep["note"] = "key already provisioned"
+        return rep
+    pem = Ed25519PrivateKey.generate().private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption())
+    blob = dpapi_encrypt(pem)
+    tmp = target.with_suffix(".tmp")
+    tmp.write_bytes(blob)
+    os.replace(tmp, target)
+    acl_ok = tighten_acl(target)
+    rep = custody_report(str(target))
+    rep.update({"generated": True, "encryption": "dpapi",
+                "acl_tightened": acl_ok})
+    return rep
+
+
+def load_verifier_key_bytes(path: Optional[str] = None) -> Optional[bytes]:
+    """Read a verifier key file — DPAPI-decrypts if wrapped, returns raw
+    bytes otherwise. Callers decide what encoding to accept."""
+    target = Path(path) if path else default_key_path()
+    if not target.exists():
+        return None
+    data = target.read_bytes()
+    if data.startswith(_DPAPI_MAGIC):
+        return dpapi_decrypt(data)
+    return data

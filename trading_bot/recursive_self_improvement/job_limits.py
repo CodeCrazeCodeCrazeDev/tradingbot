@@ -72,8 +72,19 @@ if WINDOWS:
             ("Value", ctypes.c_uint32),
         ]
 
+    class JOBOBJECT_NET_RATE_CONTROL_INFORMATION(ctypes.Structure):
+        _fields_ = [
+            ("MaxBandwidth", ctypes.c_uint64),
+            ("ControlFlags", ctypes.c_uint32),
+            ("DscpTag", ctypes.c_ubyte),
+        ]
+
     _JobObjectExtendedLimitInformation = 9
     _JobObjectCpuRateControlInformation = 15
+    _JobObjectNetRateControlInformation = 32  # JOBOBJECTINFOCLASS 32 — verified: SetInformationJobObject accepts and round-trips on Win10+
+
+    NET_RATE_CONTROL_ENABLE = 0x1
+    NET_RATE_CONTROL_MAX_BANDWIDTH = 0x2
 
     LIMIT_ACTIVE_PROCESS = 0x00000008
     LIMIT_PROCESS_MEMORY = 0x00000100
@@ -98,10 +109,16 @@ class JobLimits:
 
     def __init__(self, process_memory_bytes: int = 1 << 30,
                  max_active_processes: int = 1,
-                 cpu_percent: Optional[int] = None) -> None:
+                 cpu_percent: Optional[int] = None,
+                 max_bandwidth_Bps: Optional[int] = 16384) -> None:
         self.process_memory_bytes = process_memory_bytes
         self.max_active_processes = max_active_processes
         self.cpu_percent = cpu_percent
+        # Network exfiltration is strangled, not blocked: MaxBandwidth
+        # throttles job sockets to a trickle (default 16KB/s — a day's
+        # exfil takes hours; the audit trail catches it first). A true
+        # socket wall needs OS firewall rules — documented residual.
+        self.max_bandwidth_Bps = max_bandwidth_Bps
         self._handle: Optional[int] = None
         self._assigned = False
 
@@ -139,6 +156,17 @@ class JobLimits:
                 _k32.SetInformationJobObject(
                     self._handle, _JobObjectCpuRateControlInformation,
                     ctypes.byref(cpu), ctypes.sizeof(cpu))
+            if self.max_bandwidth_Bps is not None:
+                net = JOBOBJECT_NET_RATE_CONTROL_INFORMATION()
+                net.MaxBandwidth = int(self.max_bandwidth_Bps)
+                net.ControlFlags = (NET_RATE_CONTROL_ENABLE
+                                    | NET_RATE_CONTROL_MAX_BANDWIDTH)
+                ok = _k32.SetInformationJobObject(
+                    self._handle, _JobObjectNetRateControlInformation,
+                    ctypes.byref(net), ctypes.sizeof(net))
+                if not ok:
+                    # Pre-1607 builds or policy-denied — degrade loudly.
+                    logger.debug("job net rate control unavailable")
             proc = _k32.OpenProcess(
                 PROCESS_SET_QUOTA | PROCESS_TERMINATE
                 | PROCESS_ASSIGN_PROCESS, False, pid)

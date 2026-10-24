@@ -150,7 +150,14 @@ review date and verify them against the current code before changing anything.
 - Untrusted strategy code, generated patches, unknown files, and
   external-repo experiments run in ephemeral sandbox sessions with no
   persistent secrets and no production access (`SandboxManager`
-  subprocess backend; still process-level, not container isolation).
+  subprocess backend with kernel Job Object limits: memory cap,
+  child-spawn ban, kill-on-close, network bandwidth strangle; child
+  environment is scrubbed of secret variables. Still not a
+  container — no FS virtualization or true socket blocking).
+- Verifier keys provisioned outside the repo tree
+  (`key_custody`); on Windows they are DPAPI-encrypted at rest
+  (bound to the user account). External HSM/KMS custody remains
+  the declared residual.
 - Live deployment, broker credential changes, risk-limit changes,
   capital scaling, production patching, strategy promotion, and
   kill-switch overrides require signed operator approval

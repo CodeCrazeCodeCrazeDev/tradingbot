@@ -257,3 +257,83 @@ class TestProposalFiniteness:
                 or not np.isfinite(qty):
             qty = 0.0
         assert qty == 0.0
+
+
+class TestSandboxResidualClosure:
+    """TD-06/TD-07 residual hardening: env scrubbing + DPAPI key storage."""
+
+    def test_worker_entry_scrubs_env(self):
+        """The spawn entry must purge secret-like vars before any
+        candidate code or import can read them."""
+        src = open('trading_bot/recursive_self_improvement/engine_v2.py',
+                   encoding='utf-8').read()
+        i = src.index('_report_worker_entry')
+        seg = src[i:i+2000]
+        assert 'RSI_VERIFIER_KEY_FILE' in seg
+        assert '_SECRET_HINTS' in seg
+
+    def test_env_scrub_logic(self, monkeypatch):
+        monkeypatch.setenv('MT5_PASSWORD', 'x')
+        monkeypatch.setenv('RSI_VERIFIER_KEY_FILE', 'x')
+        monkeypatch.setenv('INTER_AGENT_SIGNING_KEY', 'x')
+        hints = ("KEY", "SECRET", "TOKEN", "PASSWORD", "CREDENTIAL",
+                 "PRIVATE", "CERT", "AUTH")
+        for k in list(os.environ):
+            if any(h in k.upper() for h in hints):
+                monkeypatch.delenv(k, raising=False)
+        for k in ('MT5_PASSWORD', 'RSI_VERIFIER_KEY_FILE'):
+            assert k not in os.environ
+
+    @pytest.mark.skipif(sys.platform != 'win32',
+                        reason='DPAPI is Windows-only')
+    def test_dpapi_key_roundtrip(self, tmp_path):
+        from trading_bot.recursive_self_improvement.key_custody import (
+            provision_verifier_key_dpapi, load_verifier_key_bytes,
+            _DPAPI_MAGIC)
+        keyp = tmp_path / 'vkey.bin'
+        rep = provision_verifier_key_dpapi(str(keyp))
+        assert rep['generated'] and rep['encryption'] == 'dpapi'
+        # Ciphertext on disk — no PEM headers
+        assert keyp.read_bytes().startswith(_DPAPI_MAGIC)
+        assert b'-----BEGIN' not in keyp.read_bytes()
+        # Decrypts to a loadable Ed25519 PEM
+        pem = load_verifier_key_bytes(str(keyp))
+        assert b'-----BEGIN' in pem
+        from cryptography.hazmat.primitives.serialization import (
+            load_pem_private_key)
+        load_pem_private_key(pem, password=None)
+
+    @pytest.mark.skipif(sys.platform != 'win32',
+                        reason='DPAPI is Windows-only')
+    def test_verifier_loads_dpapi_key(self, tmp_path):
+        from trading_bot.recursive_self_improvement.key_custody import (
+            provision_verifier_key_dpapi)
+        from trading_bot.recursive_self_improvement.engine_v2 import (
+            IndependentVerifier)
+        keyp = tmp_path / 'vkey.bin'
+        provision_verifier_key_dpapi(str(keyp))
+        iv = IndependentVerifier(verifier_id='t', key_path=str(keyp))
+        assert iv._custody == 'provisioned'
+
+    @pytest.mark.skipif(sys.platform != 'win32',
+                        reason='job objects are Windows-only')
+    def test_net_rate_control_applied(self):
+        from trading_bot.recursive_self_improvement.job_limits import (
+            JobLimits, JOBOBJECT_NET_RATE_CONTROL_INFORMATION,
+            _JobObjectNetRateControlInformation)
+        import ctypes
+        import subprocess
+        limits = JobLimits(max_bandwidth_Bps=4096)
+        p = subprocess.Popen(
+            [sys.executable, '-c', 'import time; time.sleep(8)'])
+        try:
+            assert limits.assign(p.pid)
+            q = JOBOBJECT_NET_RATE_CONTROL_INFORMATION()
+            ok = ctypes.windll.kernel32.QueryInformationJobObject(
+                limits._handle, _JobObjectNetRateControlInformation,
+                ctypes.byref(q), ctypes.sizeof(q), None)
+            assert ok
+            assert q.MaxBandwidth == 4096
+            assert q.ControlFlags & 0x2  # MAX_BANDWIDTH flag
+        finally:
+            p.terminate(); p.wait(timeout=15)

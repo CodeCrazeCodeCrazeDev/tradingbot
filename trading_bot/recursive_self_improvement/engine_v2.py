@@ -286,6 +286,21 @@ def _report_worker(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _report_worker_entry(queue: Any, payload: Dict[str, Any]) -> None:
+    # Data-leakage control (TD-06): spawned children inherit the
+    # parent's entire environment — verifier-key paths, signing keys,
+    # broker creds, API tokens would all reach the sandboxed process.
+    # Scrub secret-looking variables before warm imports run.
+    import os as _os
+    _SECRET_HINTS = ("KEY", "SECRET", "TOKEN", "PASSWORD", "CREDENTIAL",
+                     "PRIVATE", "CERT", "AUTH")
+    for _k in list(_os.environ):
+        if any(h in _k.upper() for h in _SECRET_HINTS):
+            _os.environ.pop(_k, None)
+    for _k in ("RSI_VERIFIER_KEY_FILE", "INTER_AGENT_SIGNING_KEY",
+               "MT5_LOGIN", "MT5_PASSWORD", "MT5_SERVER",
+               "API_KEY", "OPENAI_API_KEY"):
+        _os.environ.pop(_k, None)
+
     # Warm the replay path's lazy imports during startup so the wall-clock
     # budget only covers actual candidate work. The "ready" sentinel then
     # lets the parent start the work deadline after child startup (spawn +
@@ -516,7 +531,13 @@ class IndependentVerifier:
                 "verifier key loaded from inside the repository tree "
                 "(%s) — degraded custody; provision outside the repo "
                 "via key_custody.provision_verifier_key()", path)
-        data = Path(path).read_bytes()
+        # DPAPI-aware load: ciphertext blobs (provisioned via
+        # provision_verifier_key_dpapi) decrypt in-process bound to the
+        # current user account; plaintext files still accepted.
+        from .key_custody import load_verifier_key_bytes
+        data = load_verifier_key_bytes(path)
+        if data is None:
+            return None
         if b"-----BEGIN" in data:
             key = load_pem_private_key(data, password=None)
         else:
