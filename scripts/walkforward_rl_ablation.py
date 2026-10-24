@@ -332,6 +332,15 @@ async def main_async(args):
 
 
 def main():
+    # Run-scoped RL checkpoints: the with-RL arm must learn within a
+    # run (chronological transfer across windows is legitimate) but
+    # must NOT inherit Q from previous invocations — otherwise two
+    # runs of the same script produce different results.
+    os.environ.setdefault(
+        "TB_RL_STATE_DIR",
+        str(PROJECT_ROOT / "var" / "rl_ablation_state"))
+    import shutil
+    shutil.rmtree(os.environ["TB_RL_STATE_DIR"], ignore_errors=True)
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--symbol", default="EURUSD")
     p.add_argument("--timeframe", default="M15")

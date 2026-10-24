@@ -362,7 +362,7 @@ class CognitiveSystemController:
         # Pending directional claims per capability, resolved against
         # the next observation's price so self-wiring promotion gates
         # on measured predictive value rather than emit presence.
-        self._advisor_dir_pending: Dict[str, Tuple[float, str]] = {}
+        self._advisor_dir_pending: Dict[str, Tuple[float, str, float]] = {}
         # EV calibration: predicted-vs-realized pairs from settled
         # outcomes. Measured on forward data: simulated EV ~+0.0054,
         # realized ~+0.00004 — raw EV is ~150x optimistic, so the
@@ -3312,8 +3312,24 @@ class CognitiveSystemController:
         if (_sup is not None and self._advisor_dir_pending
                 and isinstance(_cur_price, (int, float))
                 and _cur_price > 0):
-            for _cap2, (_p0, _dir) in list(
+            # Claims older than ~4 M15 bars are gap-contaminated —
+            # resolving a Tuesday claim against a Sunday-open price
+            # measures the gap, not the advisor.
+            # Use the observation's own timestamp, not wall clock —
+            # in replay a week of bars processes in seconds and every
+            # claim would look 'fresh' by wall time.
+            _now = time.time()
+            try:
+                from datetime import datetime as _dtx
+                _now = _dtx.fromisoformat(str(
+                    obs_dict.get("timestamp", "")).replace(
+                    "Z", "+00:00")).timestamp()
+            except (TypeError, ValueError):
+                pass
+            for _cap2, (_p0, _dir, _t0) in list(
                     self._advisor_dir_pending.items()):
+                if _now - _t0 > 4 * 900:
+                    continue  # expired — don't score gap noise
                 hit = (_dir == "BUY" and _cur_price > _p0) or                       (_dir == "SELL" and _cur_price < _p0)
                 _sup.observe_outcome(_cap2, hit)
             self._advisor_dir_pending.clear()
@@ -3327,8 +3343,15 @@ class CognitiveSystemController:
                 if _sup is not None and _cap:
                     _sup.observe(_cap, "substantive")
                     if _cur_price:
+                        try:
+                            from datetime import datetime as _dty
+                            _ct = _dty.fromisoformat(str(
+                                obs_dict.get("timestamp", "")).replace(
+                                "Z", "+00:00")).timestamp()
+                        except (TypeError, ValueError):
+                            _ct = time.time()
                         self._advisor_dir_pending[_cap] = (
-                            _cur_price, a.get('direction'))
+                            _cur_price, a.get('direction'), _ct)
                 continue
             ev = a.get('evidence')
             status = (str(ev.get('status')).lower()
@@ -3419,7 +3442,16 @@ class CognitiveSystemController:
         A non-positive realized mean -> 0.0 (no proposal earns approval).
         """
         if len(self._ev_pairs) < self._ev_min_samples:
-            return 1.0
+            # Under-sampled -> CONSERVATIVE prior, not full trust.
+            # Measured on this system: sim EV ~+0.0054 vs realized
+            # ~+0.00004 (raw EV ~150x optimistic). Trusting raw EV
+            # during warmup makes the net-cost gate weakest exactly
+            # when the evidence is thinnest — inverted safety. The
+            # prior ramps with evidence so learning still gets data.
+            n = len(self._ev_pairs)
+            _prior = float(os.environ.get(
+                "TB_CSC_EV_COLD_PRIOR", "0.05"))
+            return min(1.0, max(_prior, 0.2 * n / self._ev_min_samples))
         preds = [p for p, _ in self._ev_pairs]
         mean_p = float(np.mean(preds))
         mean_r = float(np.mean([r for _, r in self._ev_pairs]))
