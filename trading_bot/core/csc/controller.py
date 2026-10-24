@@ -559,6 +559,7 @@ class CognitiveSystemController:
                  "timeframe": "probe", "timestamp": "preflight",
                  "preflight": True}
         self._preflight_active = True
+        audit_baseline = getattr(self, "_audit_writes_ok", 0)
         try:
             decision = await self.process_market_observation(probe)
             outcome = getattr(decision, "outcome", None)
@@ -567,9 +568,19 @@ class CognitiveSystemController:
                 "POSITION_MANAGEMENT", "EMERGENCY_HALT")
             _ck("end_to_end_decision", valid,
                 detail=f"outcome={outcome}")
+            # CoreDecision carries no audit_events field — verify the
+            # probe actually persisted events to the sink instead. In
+            # memory-only contexts (no sink configured) the check is
+            # informational, matching the intentional fail-open design.
+            sink = getattr(self, "_decision_sink", None)
+            wrote = getattr(self, "_audit_writes_ok", 0) > audit_baseline
             _ck("audit_trail",
-                len(getattr(decision, "audit_events", []) or []) > 0,
-                detail="decision carried audit events")
+                wrote or sink is None,
+                detail=("probe audit events persisted"
+                        if wrote else
+                        "no sink configured (memory-only)"
+                        if sink is None else
+                        "sink configured but accepted no writes"))
         except Exception as exc:  # noqa: BLE001
             _ck("end_to_end_decision", False, detail=repr(exc))
         finally:
@@ -2403,6 +2414,10 @@ class CognitiveSystemController:
                 correlation_id=correlation_id,
                 details=details,
             )))
+            # Preflight self-check counts durable writes — the check must
+            # observe the ledger accept events, not merely be called.
+            self._audit_writes_ok = getattr(
+                self, "_audit_writes_ok", 0) + 1
         except Exception as exc:
             # Shutdown drain race: writes can land after the repository
             # closed — expected noise, log once at debug, not per-write.
