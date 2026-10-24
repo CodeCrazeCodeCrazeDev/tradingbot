@@ -153,6 +153,39 @@ def db_observations(db_path: Path, symbol: str, timeframe: str,
         con.close()
 
 
+def _detect_broker_tz_offset(db_path: Path, symbol: str,
+                             timeframe: str = "M15") -> float:
+    """Detect broker-server-tz -> UTC offset from the liquidity
+    signature: FX tick volume troughs at NY close (~22:00 UTC).
+    Trough at hour H means server clock = UTC + (H-22 mod 24).
+    Returns 0.0 on insufficient data (caller treats 0 as UTC).
+    """
+    from collections import defaultdict
+    con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+    try:
+        v = defaultdict(float); c = defaultdict(int)
+        for ts, vol in con.execute(
+                "SELECT timestamp, volume FROM market_data "
+                "WHERE symbol=? AND timeframe=? LIMIT 50000",
+                (symbol, timeframe)):
+            h = int(str(ts)[11:13])
+            v[h] += float(vol or 0); c[h] += 1
+        if not v:
+            return 0.0
+        avg = {h: v[h] / max(c[h], 1) for h in v}
+        trough = min(avg, key=avg.get)
+        off = (trough - 22) % 24
+        # plausible offsets: -2..+12; a trough at 22:xx means already UTC
+        if off > 12:
+            off = 0.0
+        logger.info(
+            "broker tz detected: volume trough at %02d:00 server "
+            "-> UTC offset +%.0fh", trough, off)
+        return float(off)
+    finally:
+        con.close()
+
+
 def cross_observations(db_path: Path, num_symbol: str, den_symbol: str,
                        timeframe: str, skip: int = 0
                        ) -> Iterator[Dict[str, Any]]:
@@ -183,7 +216,7 @@ def cross_observations(db_path: Path, num_symbol: str, den_symbol: str,
             n += 1
             no, nh, nl, nc, nv = num[ts]
             do, dh, dl, dc, dv = den[ts]
-            yield {"symbol": f"{num_symbol}{den_symbol[3:]}",
+            yield {"symbol": f"{num_symbol[:3]}{den_symbol[:3]}",
                    "timestamp": ts,
                    "open": no / do, "high": nh / dl,
                    "low": nl / dh, "close": nc / dc,
@@ -475,12 +508,20 @@ async def run(args: argparse.Namespace) -> int:
         serve_dashboard(state_dir, args.dashboard_port)
 
     if args.source == "db":
+        _btz = args.broker_tz_offset
+        if str(_btz).lower() in ("auto", ""):
+            _btz = _detect_broker_tz_offset(
+                PROJECT_ROOT / "market_data.db", args.symbol,
+                args.timeframe)
+        elif str(_btz).lower() in ("utc", "none"):
+            _btz = 0.0
+        else:
+            _btz = float(_btz)
         source = db_observations(
             PROJECT_ROOT / "market_data.db",
                                  args.symbol, args.timeframe, args.skip,
                                  args.htf_timeframe,
-                                 broker_tz_offset=
-                                 args.broker_tz_offset)
+                                 broker_tz_offset=_btz)
     elif args.source == "cross":
         source = cross_observations(
             PROJECT_ROOT / "market_data.db", args.symbol,
@@ -658,10 +699,11 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--interval", type=float, default=0.0,
                         help="seconds between cycles (0 = as fast as possible)")
     parser.add_argument("--seed", type=int, default=7)
-    parser.add_argument("--broker-tz-offset", type=float, default=0.0,
-                        help="hours to subtract from broker server "
-                             "timestamps to reach UTC (EET ≈ 2); DST "
-                             "drift is NOT corrected")
+    parser.add_argument("--broker-tz-offset", default="auto",
+                        help="'auto' detects via the volume-trough "
+                             "signature; a number overrides; '0'/'utc' "
+                             "means timestamps are already UTC. DST "
+                             "drift is NOT corrected either way")
     parser.add_argument("--stale-drop-seconds", type=float, default=0,
                         help="drop obs whose timestamp is more than N "
                              "seconds older than wall clock; live-feed "

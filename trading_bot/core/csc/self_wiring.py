@@ -265,9 +265,14 @@ class SelfWiringSupervisor:
 
     def _predictive_ok(self, node: ServiceNode) -> bool:
         """Promotion needs measured predictive value, not just
-        emit presence. No directional calls yet -> can't block on it
-        (many advisors legitimately emit non-directional evidence);
-        enough calls and >=55% correct -> qualified."""
+        emit presence. Once causal samples exist they take priority —
+        dir_hits measures correlation with moves; causal_hits measures
+        whether the advisor's removal would have changed decisions
+        AND whether those decisions were right."""
+        # Causal credit takes priority once stocked — it is strictly
+        # stronger evidence than directional correlation.
+        if node.causal_total >= 10:
+            return node.causal_hits / node.causal_total >= 0.55
         if node.dir_total < 10:
             return True
         return node.dir_hits / node.dir_total >= 0.55
