@@ -68,6 +68,11 @@ class ServiceNode:
     substantive_streak: int = 0
     emits: int = 0
     substantive: int = 0
+    # Predictive tracking: directional emits scored against realized
+    # next-cycle moves. Output presence alone must not promote a
+    # node — 'substantive' counts garbage that emits confidently.
+    dir_hits: int = 0
+    dir_total: int = 0
     shadow_cycles: int = 0
     last_rewired_cycle: int = 0
     rewires: int = 0
@@ -83,6 +88,8 @@ class ServiceNode:
             "substantive_streak": self.substantive_streak,
             "emits": self.emits,
             "substantive": self.substantive,
+            "dir_hits": self.dir_hits,
+            "dir_total": self.dir_total,
             "shadow_cycles": self.shadow_cycles,
             "last_rewired_cycle": self.last_rewired_cycle,
             "rewires": self.rewires,
@@ -99,6 +106,8 @@ class ServiceNode:
             substantive_streak=int(d.get("substantive_streak", 0)),
             emits=int(d.get("emits", 0)),
             substantive=int(d.get("substantive", 0)),
+            dir_hits=int(d.get("dir_hits", 0)),
+            dir_total=int(d.get("dir_total", 0)),
             shadow_cycles=int(d.get("shadow_cycles", 0)),
             last_rewired_cycle=int(d.get("last_rewired_cycle", 0)),
             rewires=int(d.get("rewires", 0)),
@@ -227,6 +236,24 @@ class SelfWiringSupervisor:
         if node.state == NodeState.SHADOW:
             node.shadow_cycles += 1
 
+    def observe_outcome(self, node_id: str, hit: bool) -> None:
+        """Record whether a node's directional emit was correct."""
+        node = self.nodes.get(str(node_id))
+        if node is None:
+            return
+        node.dir_total += 1
+        if hit:
+            node.dir_hits += 1
+
+    def _predictive_ok(self, node: ServiceNode) -> bool:
+        """Promotion needs measured predictive value, not just
+        emit presence. No directional calls yet -> can't block on it
+        (many advisors legitimately emit non-directional evidence);
+        enough calls and >=55% correct -> qualified."""
+        if node.dir_total < 10:
+            return True
+        return node.dir_hits / node.dir_total >= 0.55
+
     # -- evaluation -----------------------------------------------------
 
     def reevaluate(self, cycle: int) -> List[RewireEvent]:
@@ -243,7 +270,8 @@ class SelfWiringSupervisor:
             elif node.state == NodeState.SHADOW:
                 share = (node.substantive / max(1, node.emits))
                 if (node.shadow_cycles >= self.graduate_cycles
-                        and share >= self.graduate_substantive):
+                        and share >= self.graduate_substantive
+                        and self._predictive_ok(node)):
                     ev = self._transition(
                         node, NodeState.ATTACHED, "promote", cycle,
                         f"graduated shadow: {node.emits} emits, "

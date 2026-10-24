@@ -8,6 +8,7 @@ and 'AutoResearchClaw' (arXiv:2605.20025) for Pivot/Refine self-healing control.
 Incorporates transferable principles from REG-401 to REG-500 (Batch 5 Research Paper Registry).
 """
 
+import os
 import numpy as np
 try:
     import torch  # noqa: F401 — optional; the CSC pipeline is numpy-only.
@@ -245,6 +246,16 @@ class CognitiveSystemController:
         # invariant and unreachable from it.
         self._self_wiring = kwargs.get("self_wiring") or (
             SelfWiringSupervisor())
+        # Restore measured wiring state across restarts — without this
+        # the organism re-makes its promote/demote mistakes every
+        # session (persist exists but load was never called).
+        try:
+            _sw_path = os.environ.get(
+                "TB_SELF_WIRING_STATE", "var/self_wiring.json")
+            if self._self_wiring is not None:
+                self._self_wiring.set_persistence(_sw_path)
+        except Exception as exc:
+            logger.warning("self-wiring restore skipped: %s", exc)
 
         # Autonomy manager: the organism's operations layer — one audited
         # activity-portfolio decision per cycle instead of scattered
@@ -348,6 +359,10 @@ class CognitiveSystemController:
         # re-parsing audit rows. Durable per-decision detail stays in
         # audit_events; this is the aggregate view.
         self._funnel: Counter = Counter()
+        # Pending directional claims per capability, resolved against
+        # the next observation's price so self-wiring promotion gates
+        # on measured predictive value rather than emit presence.
+        self._advisor_dir_pending: Dict[str, Tuple[float, str]] = {}
         # EV calibration: predicted-vs-realized pairs from settled
         # outcomes. Measured on forward data: simulated EV ~+0.0054,
         # realized ~+0.00004 — raw EV is ~150x optimistic, so the
@@ -355,6 +370,20 @@ class CognitiveSystemController:
         self._ev_pairs: deque = deque(maxlen=int(
             kwargs.get("ev_calibration_window", 200)))
         self._ev_min_samples = int(kwargs.get("ev_min_samples", 20))
+        # Bounded exploration: the epistemic-uncertainty sizing floor
+        # creates a circular abstention trap (u=1.0 -> qty=0 -> no
+        # fills -> u stays 1.0). TB_CSC_EXPLORE_BUDGET=N allows N
+        # exploratory trades at reduced size so real outcomes can
+        # break the trap. Default 0 = current fail-closed behavior.
+        self._explore_budget = int(
+            kwargs.get("explore_budget",
+                       os.environ.get("TB_CSC_EXPLORE_BUDGET", "0")))
+        self._explore_factor = 0.1  # exploratory trades at ~10% size
+        # Calibration-probe trickle: once cal hits 0.0 (realized mean
+        # <= 0), every proposal would downgrade forever and _ev_pairs
+        # could never refill. Every 10th blocked proposal goes through
+        # anyway (tagged) so fresh realizations can unbrick the gate.
+        self._cal_probe_counter = 0
         # Round-trip cost estimate for the net-of-cost edge gate — a
         # directional proposal whose simulated expected value cannot beat it
         # downgrades to an honest abstention.
@@ -2899,6 +2928,16 @@ class CognitiveSystemController:
             getattr(self.state, "epistemic_uncertainty", 0.5) or 0.5)
         uncertainty_factor = float(max(0.0, min(1.0, 1.0 - _u / 0.7)))
         qty *= uncertainty_factor
+        _exploratory = False
+        if (action in ("BUY", "SELL") and qty <= 0.0
+                and self._explore_budget > 0):
+            # Bounded escape from the abstention trap: allow a small
+            # exploratory position so real fills can feed the
+            # epistemic-uncertainty / EV-calibration learning loops.
+            qty = self._explore_factor
+            uncertainty_factor = self._explore_factor
+            _exploratory = True
+            self._explore_budget -= 1
 
         # Unmeasurable size on a directional action -> explicit no-position.
         if action in ("BUY", "SELL") and qty <= 0.0:
@@ -2926,6 +2965,7 @@ class CognitiveSystemController:
             "expected_return": expected_return,
             "slippage_measured": slippage is not None,
             "uncertainty_size_factor": uncertainty_factor,
+            "exploratory": _exploratory,
             "reasoning_token": self.discrete_channel[-1] if self.discrete_channel else "none"
         }
 
@@ -3247,6 +3287,20 @@ class CognitiveSystemController:
                        'no_signal', 'none', 'skipped', 'unavailable',
                        'idle', 'degenerate'}
         _sup = getattr(self, "_self_wiring", None)
+        _cur_price = None
+        try:
+            _cur_price = float(
+                obs_dict.get("price") or obs_dict.get("close") or 0)
+        except (TypeError, ValueError):
+            _cur_price = None
+        if (_sup is not None and self._advisor_dir_pending
+                and isinstance(_cur_price, (int, float))
+                and _cur_price > 0):
+            for _cap2, (_p0, _dir) in list(
+                    self._advisor_dir_pending.items()):
+                hit = (_dir == "BUY" and _cur_price > _p0) or                       (_dir == "SELL" and _cur_price < _p0)
+                _sup.observe_outcome(_cap2, hit)
+            self._advisor_dir_pending.clear()
         for a in (artifacts or []):
             if not isinstance(a, Mapping):
                 self._funnel['advisor_degenerate'] += 1
@@ -3256,6 +3310,9 @@ class CognitiveSystemController:
                 self._funnel['advisor_directional_calls'] += 1
                 if _sup is not None and _cap:
                     _sup.observe(_cap, "substantive")
+                    if _cur_price:
+                        self._advisor_dir_pending[_cap] = (
+                            _cur_price, a.get('direction'))
                 continue
             ev = a.get('evidence')
             status = (str(ev.get('status')).lower()
@@ -3381,6 +3438,17 @@ class CognitiveSystemController:
         # trades of this kind actually earned, not what the sim hoped.
         cal = self._ev_calibration_factor()
         ev_cal = ev * cal if isinstance(ev, (int, float)) else ev
+        if (cal == 0.0 and isinstance(ev, (int, float))
+                and ev >= round_trip_cost):
+            # Bricked calibration: the raw sim edge is sufficient but
+            # realized evidence is negative. Let every 10th proposal
+            # through as a measured probe — without new realizations
+            # the gate can never recover.
+            self._cal_probe_counter += 1
+            if self._cal_probe_counter % 10 == 0:
+                proposal["calibration_probe"] = True
+                self._funnel["net_cost_probe"] += 1
+                return
         if not isinstance(ev_cal, (int, float)) or ev_cal < round_trip_cost:
             self._funnel["net_cost_downgrade"] += 1
             proposal["action"] = "HOLD"

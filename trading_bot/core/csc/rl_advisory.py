@@ -44,6 +44,46 @@ import numpy as np
 RL_STATE_DIR = Path(os.environ.get("TB_RL_STATE_DIR",
                                    "var/rl_state"))
 
+def _pip_size(symbol: str) -> float:
+    """JPY pairs price in 0.01 pips; everything else 0.0001."""
+    return 0.01 if "JPY" in str(symbol).upper() else 0.0001
+
+
+def _session_bucket(ts: Any) -> int:
+    """UTC session bucket — London/NY microstructure differs ~5x from
+    Asia; pooling them into one Q-row learns a policy that fits
+    neither."""
+    try:
+        h = int(str(ts)[11:13])
+        return 0 if h < 7 else (1 if h < 13 else 2)
+    except (TypeError, ValueError, IndexError):
+        return -1
+
+
+def _sym_key(obs: Dict[str, Any]) -> str:
+    """(symbol, timeframe) — an interleaved M15+H1 feed for the same
+    instrument must not share pending-label queues."""
+    return f"{obs.get('symbol') or '?'}:{obs.get('timeframe') or 'raw'}"
+
+
+def _soft(x: float) -> float:
+    """Tail-preserving squashing: tanh keeps ordering information past
+    |1| where clip(-1,1) treats a flash crash like noise."""
+    return float(np.tanh(x))
+
+
+def _obs_ts(obs: Dict[str, Any]) -> Optional[float]:
+    """Observation timestamp as epoch seconds, or None."""
+    from datetime import datetime
+    t = obs.get("timestamp")
+    if isinstance(t, (int, float)):
+        return float(t)
+    try:
+        return datetime.fromisoformat(
+            str(t).replace("Z", "+00:00")).timestamp()
+    except (TypeError, ValueError, OSError):
+        return None
+
 
 def _num(v: Any) -> Optional[float]:
     try:
@@ -170,18 +210,37 @@ class _Pending:
     price: float
     bar_idx: int
     extra: Dict[str, Any] = field(default_factory=dict)
+    ts: Optional[float] = None  # epoch seconds when emitted
 
 
 class _DeferredLearner:
     """Mixin: records pending decisions, resolves them once ``horizon``
     bars have elapsed. Reward_fn(pending, current_obs) -> float."""
 
-    def __init__(self, horizon: int, max_pending: int = 512):
+    def __init__(self, horizon: int, max_pending: int = 512,
+                 max_label_seconds: Optional[float] = None):
         self.horizon = int(horizon)
-        # Per-symbol pending queues: on an interleaved multi-symbol
-        # feed, a EURUSD pending must not resolve against a GBPUSD bar.
+        # Labels older than this are discarded, not scored — a
+        # deferred reward resolved across a weekend gap measures gap
+        # noise, not policy quality. None = bar-count-only (legacy).
+        self.max_label_seconds = max_label_seconds
+        # Per-(symbol,timeframe) pending queues: on an interleaved
+        # feed, a EURUSD-M15 pending must not resolve against a
+        # GBPUSD or EURUSD-H1 bar.
         self._pending: Dict[str, Deque[_Pending]] = {}
         self._bar_idx: Dict[str, int] = {}
+        self.labels_dropped_stale = 0
+
+    def _stale(self, p: "_Pending", obs: Dict[str, Any]) -> bool:
+        """True when this pending's label window exceeded
+        max_label_seconds — resolves across gaps are dropped, not
+        scored as if the market traded through them."""
+        if not self.max_label_seconds or p.ts is None:
+            return False
+        now = _obs_ts(obs)
+        if now is None:
+            return False
+        return (now - p.ts) > self.max_label_seconds
 
     def _resolve(self, obs: Dict[str, Any], reward_fn) -> int:
         """Resolve matured pendings against the CURRENT obs. Returns
@@ -220,7 +279,9 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
 
     def __init__(self, horizon: int = 8):
         _TabularQ.__init__(self, n_actions=4, epsilon=0.2)
-        _DeferredLearner.__init__(self, horizon=horizon)
+        _DeferredLearner.__init__(
+            self, horizon=horizon,
+            max_label_seconds=horizon * 900 * 3)
         # Per-symbol state — an interleaved feed must not bleed one
         # instrument's returns into another's state/pending queue.
         self._prev_close: Dict[str, float] = {}
@@ -236,27 +297,29 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
         if len(hist) >= 8:
             sd = float(np.std(hist))
             vol = 2 if sd > 0.003 else (1 if sd > 0.001 else 0)
-        return (mom, vol)
+        return (mom, vol, _session_bucket(obs.get("timestamp")))
 
     def _reward(self, p: _Pending, obs: Dict[str, Any]) -> Optional[float]:
         c = _num(obs.get("close"))
         if c is None or p.price <= 0:
             return None
+        pip = _pip_size(obs.get("symbol"))
         fwd = (c - p.price) / p.price
+        fwd_pips = fwd / pip  # symbol-aware: USDJPY != EURUSD scale
         if self.ACTIONS[p.action] == "long_lean":
-            return float(np.clip(fwd * 500, -1, 1))
+            return _soft(fwd_pips * 0.05)
         if self.ACTIONS[p.action] == "short_lean":
-            return float(np.clip(-fwd * 500, -1, 1))
+            return _soft(-fwd_pips * 0.05)
         if self.ACTIONS[p.action] == "defensive":
-            return float(np.clip(0.5 - abs(fwd) * 200, -1, 1))
-        return float(np.clip(0.1 - abs(fwd) * 50, -1, 1))  # neutral
+            return _soft(0.5 - abs(fwd_pips) * 0.02)
+        return _soft(0.1 - abs(fwd_pips) * 0.005)  # neutral
 
     def _apply(self, pr) -> None:
         p, r = pr
         self.update(p.state, p.action, r)
 
     def analyze(self, obs: Dict[str, Any]) -> Dict[str, Any]:
-        sym = str(obs.get("symbol") or "?")
+        sym = _sym_key(obs)
         self._bar_idx[sym] = self._bar_idx.get(sym, 0) + 1
         bar_idx = self._bar_idx[sym]
         close = _num(obs.get("close"))
@@ -272,6 +335,9 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
         resolved = 0
         still: Deque[_Pending] = deque(maxlen=pend.maxlen)
         for p_ in pend:
+            if self._stale(p_, obs):
+                self.labels_dropped_stale += 1
+                continue  # gap-spanning label: discard, don't score
             if bar_idx - p_.bar_idx >= self.horizon:
                 r = self._reward(p_, obs)
                 if r is not None:
@@ -283,7 +349,8 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
 
         state = self._state(obs)
         action, explored = self.act(state)
-        still.append(_Pending(state, action, close, bar_idx))
+        still.append(_Pending(state, action, close, bar_idx,
+                              ts=_obs_ts(obs)))
         if self.updates and self.updates % 32 == 0:
             self.save()
         q = self.row(state)
@@ -291,6 +358,7 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
             "status": "active" if self.updates >= 20 else "warming",
             "posture": self.ACTIONS[action],
             "explored": explored,
+            "evidence_weight": 0.3 if explored else 1.0,
             "q_values": {a: round(float(q[i]), 4)
                          for i, a in enumerate(self.ACTIONS)},
             "updates": self.updates,
@@ -326,7 +394,9 @@ class AdaptiveSpreadRL(_TabularQ, _DeferredLearner):
 
     def __init__(self, horizon: int = 5):
         _TabularQ.__init__(self, n_actions=12, epsilon=0.25)
-        _DeferredLearner.__init__(self, horizon=horizon)
+        _DeferredLearner.__init__(
+            self, horizon=horizon,
+            max_label_seconds=horizon * 900 * 3)
         self._prev_close: Dict[str, float] = {}
         self._ret_hist: Dict[str, Deque[float]] = {}
         self._inventory_proxy: Dict[str, float] = {}
@@ -344,7 +414,8 @@ class AdaptiveSpreadRL(_TabularQ, _DeferredLearner):
             r = sum(list(_h)[-12:])
             trend = 1 if r > 0.002 else (-1 if r < -0.002 else 0)
         inv = 1 if ip > 0.5 else (-1 if ip < -0.5 else 0)
-        return (vol, trend, inv)
+        return (vol, trend, inv,
+                _session_bucket(obs.get("timestamp")))
 
     def _reward(self, p: _Pending, obs: Dict[str, Any]) -> Optional[float]:
         c = _num(obs.get("close"))
@@ -366,7 +437,7 @@ class AdaptiveSpreadRL(_TabularQ, _DeferredLearner):
         return float(np.clip(r, -1, 1))
 
     def analyze(self, obs: Dict[str, Any]) -> Dict[str, Any]:
-        sym = str(obs.get("symbol") or "?")
+        sym = _sym_key(obs)
         self._bar_idx[sym] = self._bar_idx.get(sym, 0) + 1
         bar_idx = self._bar_idx[sym]
         close = _num(obs.get("close"))
@@ -385,6 +456,9 @@ class AdaptiveSpreadRL(_TabularQ, _DeferredLearner):
         resolved = 0
         still: Deque[_Pending] = deque(maxlen=pend.maxlen)
         for p_ in pend:
+            if self._stale(p_, obs):
+                self.labels_dropped_stale += 1
+                continue  # gap-spanning label: discard, don't score
             if bar_idx - p_.bar_idx >= self.horizon:
                 r = self._reward(p_, obs)
                 if r is not None:
@@ -396,7 +470,8 @@ class AdaptiveSpreadRL(_TabularQ, _DeferredLearner):
 
         state = self._state(obs)
         action, explored = self.act(state)
-        still.append(_Pending(state, action, close, bar_idx))
+        still.append(_Pending(state, action, close, bar_idx,
+                              ts=_obs_ts(obs)))
         if self.updates and self.updates % 32 == 0:
             self.save()
         mult = self.SPREADS[action // 3]
@@ -407,6 +482,7 @@ class AdaptiveSpreadRL(_TabularQ, _DeferredLearner):
             "spread_multiplier": mult,
             "quote_skew": skew,
             "explored": explored,
+            "evidence_weight": 0.3 if explored else 1.0,
             "best_q": round(float(np.max(q)), 4),
             "updates": self.updates,
             "label_source": "real_fills" if obs.get(
@@ -429,7 +505,9 @@ class AnalysisLensRL(_TabularQ, _DeferredLearner):
 
     def __init__(self, horizon: int = 4):
         _TabularQ.__init__(self, n_actions=4, epsilon=0.2)
-        _DeferredLearner.__init__(self, horizon=horizon)
+        _DeferredLearner.__init__(
+            self, horizon=horizon,
+            max_label_seconds=horizon * 900 * 3)
         self._hist: Dict[str, Deque[float]] = {}
 
     def _lens_forecast(self, hist: Deque[float]) -> Dict[str, float]:
@@ -462,7 +540,7 @@ class AnalysisLensRL(_TabularQ, _DeferredLearner):
         return (regime, trend)
 
     def analyze(self, obs: Dict[str, Any]) -> Dict[str, Any]:
-        sym = str(obs.get("symbol") or "?")
+        sym = _sym_key(obs)
         self._bar_idx[sym] = self._bar_idx.get(sym, 0) + 1
         bar_idx = self._bar_idx[sym]
         close = _num(obs.get("close"))
@@ -479,13 +557,15 @@ class AnalysisLensRL(_TabularQ, _DeferredLearner):
         resolved = 0
         still: Deque[_Pending] = deque(maxlen=pend.maxlen)
         for p_ in pend:
+            if self._stale(p_, obs):
+                self.labels_dropped_stale += 1
+                continue
             if bar_idx - p_.bar_idx >= self.horizon:
                 fwd = (close - p_.price) / p_.price
                 for lens, f in p_.extra.get("preds", {}).items():
                     li = self.LENSES.index(lens)
-                    self.update(p_.state, li, float(np.clip(
-                        np.sign(fwd) * np.sign(f)
-                        * min(abs(fwd) * 400, 1.0), -1, 1)))
+                    self.update(p_.state, li, _soft(
+                        np.sign(fwd) * np.sign(f) * abs(fwd) * 400))
                     resolved += 1
             else:
                 still.append(p_)
@@ -496,7 +576,7 @@ class AnalysisLensRL(_TabularQ, _DeferredLearner):
         q = self.row(state)
         best_i = int(np.argmax(q))
         still.append(_Pending(state, best_i, close, bar_idx,
-                              {"preds": preds}))
+                              {"preds": preds}, ts=_obs_ts(obs)))
         if self.updates and self.updates % 32 == 0:
             self.save()
         return {
@@ -726,7 +806,7 @@ class AlphaSearchRL(_TabularQ):
             else None
 
     def analyze(self, obs: Dict[str, Any]) -> Dict[str, Any]:
-        sym = str(obs.get("symbol") or "?")
+        sym = _sym_key(obs)
         close = _num(obs.get("close"))
         vol = _num(obs.get("volume"))
         if close is None or close <= 0:

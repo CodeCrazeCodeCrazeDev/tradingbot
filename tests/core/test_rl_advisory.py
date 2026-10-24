@@ -7,7 +7,8 @@ import pytest
 
 np = pytest.importorskip("numpy")
 
-from trading_bot.core.csc.rl_advisory import (  # noqa: E402
+from trading_bot.core.csc.rl_advisory import (
+    _pip_size,  # noqa: E402
     AdaptiveDecisionRL, AdaptiveSpreadRL, AnalysisLensRL,
     AlphaSearchRL, _TabularQ)
 
@@ -157,8 +158,8 @@ class TestAlphaSearchRL:
         for o in _bars(30):
             a.analyze(o)
         # candidates born recently can't be scored yet
-        for c in a._candidates["EURUSD"]:
-            assert c["born_at"] <= len(a._hist["EURUSD"])
+        for c in a._candidates["EURUSD:raw"]:
+            assert c["born_at"] <= len(a._hist["EURUSD:raw"])
 
     def test_checkpoint_roundtrip(self, tmp_path):
         """Q-tables survive a process restart via durable checkpoint."""
@@ -200,15 +201,15 @@ class TestAlphaSearchRL:
         for o in _bars(6):
             a.analyze(o)                       # EURUSD pendings
         # bars 1-2 matured by bar 6 (legal same-symbol resolution)
-        eu_before = len(a._pending["EURUSD"])
+        eu_before = len(a._pending["EURUSD:raw"])
         # interleave GBPUSD bars — must not touch EURUSD pending queue
         for p in [1.25, 1.26, 1.27, 1.28, 1.29]:
             a.analyze({"symbol": "GBPUSD", "close": p})
-        assert len(a._pending["EURUSD"]) == eu_before
+        assert len(a._pending["EURUSD:raw"]) == eu_before
         # GBPUSD bar-1 pending legitimately resolves at its own bar 5
-        assert len(a._pending["GBPUSD"]) == 4
-        assert a._bar_idx["EURUSD"] == 6
-        assert a._bar_idx["GBPUSD"] == 5
+        assert len(a._pending["GBPUSD:raw"]) == 4
+        assert a._bar_idx["EURUSD:raw"] == 6
+        assert a._bar_idx["GBPUSD:raw"] == 5
 
     def test_bounded_candidates(self):
         # The pending window floors at eval_horizon*4 so candidates
@@ -217,10 +218,43 @@ class TestAlphaSearchRL:
         assert a._cand_max >= a._eval_horizon * 4
         for o in _bars(80):
             a.analyze(o)
-        assert len(a._candidates["EURUSD"]) <= a._cand_max
+        assert len(a._candidates["EURUSD:raw"]) <= a._cand_max
 
     def test_unscored_never_evicted_early(self):
         """Scoring lag must not exceed the pending window or updates
         can never accumulate."""
         a = AlphaSearchRL(eval_horizon=6)
         assert a._cand_max >= a._eval_horizon * 2 + 3
+
+
+class TestLabelHonesty:
+    def test_stale_labels_dropped_not_scored(self):
+        """A pending whose label window spans a market close must be
+        discarded — gap noise is not policy signal."""
+        a = AdaptiveDecisionRL(horizon=4)
+        ts0 = 1_700_000_000.0
+        for i in range(6):
+            a.analyze({"symbol": "EURUSD", "timeframe": "M15",
+                       "close": 1.1 + i * 1e-5, "timestamp": ts0 + i * 900})
+        pend_before = len(a._pending["EURUSD:M15"])
+        # next obs arrives 50h later (weekend) — stale pendings dropped
+        a.analyze({"symbol": "EURUSD", "timeframe": "M15",
+                   "close": 1.3, "timestamp": ts0 + 50 * 3600})
+        assert a.labels_dropped_stale >= pend_before - 1
+
+    def test_session_bucket_differs(self):
+        """London vs Asia must land in different state buckets."""
+        a = AdaptiveDecisionRL(horizon=2)
+        for i in range(12):
+            a.analyze({"symbol": "EURUSD", "close": 1.1 + i * 1e-4,
+                       "timestamp": f"2026-01-05T0{i%2}:00:00+00:00"})
+        s_asia = a._state({"symbol": "EURUSD",
+                           "timestamp": "2026-01-05T03:00:00+00:00"})
+        s_ny = a._state({"symbol": "EURUSD",
+                         "timestamp": "2026-01-05T15:00:00+00:00"})
+        assert s_asia != s_ny
+
+    def test_usdjpy_pip_scale(self):
+        """JPY pip = 0.01; same fwd move must not be 100x weight."""
+        assert _pip_size("USDJPY") == 0.01
+        assert _pip_size("EURUSD") == 0.0001

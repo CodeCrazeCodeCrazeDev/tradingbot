@@ -80,7 +80,11 @@ def db_observations(db_path: Path, symbol: str, timeframe: str,
                 skip -= 1
                 continue
             obs = {"symbol": symbol, "timestamp": ts, "open": o, "high": h,
-                   "low": l, "close": c, "volume": v, "price": c}
+                   "low": l, "close": c, "volume": v, "price": c,
+                   # MT5/broker FX 'volume' is tick count, not traded
+                   # volume — advisors must not calibrate on it as
+                   # real size.
+                   "volume_kind": "tick", "timeframe": timeframe}
             while htf_idx < len(htf) and htf[htf_idx][0] <= ts:
                 htf_closes.append(htf[htf_idx][1])
                 htf_idx += 1
