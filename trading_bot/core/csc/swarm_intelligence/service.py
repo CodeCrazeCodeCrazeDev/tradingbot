@@ -159,6 +159,12 @@ class SwarmIntelligenceService:
         self.kb.deliberations += 1
         self.kb.record_signals(consensus.feature_dict())
         if symbol:
+            if symbol not in self._pending_votes and                     len(self._pending_votes) >= 64:
+                # bound pending deliberations — an unbounded symbol feed
+                # would otherwise leak one entry per unseen symbol
+                self._pending_votes.pop(next(iter(self._pending_votes)))
+                self._pending_meta.pop(
+                    next(iter(self._pending_meta)), None)
             self._pending_votes[symbol] = votes
             self._pending_meta[symbol] = {"regime": regime,
                                           "direction": direction}

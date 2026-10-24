@@ -7,6 +7,7 @@ per agent and market regime.
 """
 
 import logging
+import math
 import numpy as np
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
@@ -82,6 +83,9 @@ class ReliabilityTracker:
             return True
         return m.precision >= self.DIRECTION_MIN_PRECISION
 
+    _MAX_REGIMES = 64
+    _MAX_AGENTS = 256
+
     def update_action_outcome(self, regime: str, action: str,
                               was_correct: bool,
                               realized_return: Optional[float]) -> None:
@@ -90,13 +94,20 @@ class ReliabilityTracker:
         the time and still lose money to costs."""
         if action not in ("BUY", "SELL"):
             return
-        slot = self.action_metrics.setdefault(regime, {}).setdefault(
+        regime = str(regime)
+        if regime not in self.action_metrics:
+            if len(self.action_metrics) >= self._MAX_REGIMES:
+                self.action_metrics.pop(next(iter(self.action_metrics)))
+            self.action_metrics[regime] = {}
+        slot = self.action_metrics[regime].setdefault(
             action, {"n": 0, "wins": 0, "ret": 0.0})
         slot["n"] += 1
         if was_correct:
             slot["wins"] += 1
-        if isinstance(realized_return, (int, float)):
-            slot["ret"] += realized_return
+        if isinstance(realized_return, (int, float)) \
+                and not isinstance(realized_return, bool) \
+                and math.isfinite(float(realized_return)):
+            slot["ret"] += float(realized_return)
 
     def action_suppressed(self, regime: str, action: str) -> bool:
         """True when the CSC's own measured expectancy for this action in
@@ -111,11 +122,22 @@ class ReliabilityTracker:
         """
         Updates metrics after a trade outcome is known.
         """
+        agent_id = str(agent_id)
         if agent_id not in self.metrics:
+            if len(self.metrics) >= self._MAX_AGENTS:
+                self.metrics.pop(next(iter(self.metrics)))
             self.metrics[agent_id] = {}
         if regime not in self.metrics[agent_id]:
             self.metrics[agent_id][regime] = ReliabilityMetrics(agent_id=agent_id, regime=regime)
 
+        if not isinstance(confidence, (int, float)) or isinstance(
+                confidence, bool) or not math.isfinite(float(confidence)):
+            # A nonfinite confidence cannot be scored honestly — drop
+            # the update rather than poison Brier/calibration (nan would
+            # otherwise propagate and, via min(2.0, nan) == 2.0, inflate
+            # the agent's weight to maximum).
+            return
+        confidence = float(min(1.0, max(0.0, confidence)))
         m = self.metrics[agent_id][regime]
         m.total_predictions += 1
 

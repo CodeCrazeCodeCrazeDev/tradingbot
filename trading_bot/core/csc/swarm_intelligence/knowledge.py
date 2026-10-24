@@ -54,9 +54,17 @@ class SwarmKnowledgeBase:
         rec["n"] += 1.0
         rec["wins"] += 1.0 if correct else 0.0
 
+    _MAX_PATTERNS = 512
+
     def observe_pattern(self, regime: str, domains: List[str]) -> int:
-        """Record the domain coalition and return how often it was seen."""
+        """Record the domain coalition and return how often it was seen.
+
+        Keys are regime x sorted-domain-coalition strings — combinatorial
+        growth is attacker-influenced, so the map is bounded and evicts
+        oldest-inserted keys."""
         key = f"{regime or 'unknown'}|{','.join(sorted(domains))}"
+        if key not in self.domain_patterns and                 len(self.domain_patterns) >= self._MAX_PATTERNS:
+            self.domain_patterns.pop(next(iter(self.domain_patterns)))
         seen = self.domain_patterns.get(key, 0)
         self.domain_patterns[key] = seen + 1
         return seen

@@ -2319,6 +2319,27 @@ class CognitiveSystemController:
                     realized[symbol] = result
         return realized
 
+    @staticmethod
+    def _jsonable(value: Any) -> Any:
+        """Coerce audit-detail values into JSON-safe primitives.
+
+        numpy scalars (int64/float32/ndarray) and arbitrary objects make
+        json.dumps raise TypeError downstream — one bad field would drop
+        the entire audit event. Coerce rather than lose the record."""
+        if isinstance(value, dict):
+            return {str(k): CognitiveSystemController._jsonable(v)
+                    for k, v in value.items()}
+        if isinstance(value, (list, tuple, set)):
+            return [CognitiveSystemController._jsonable(v)
+                    for v in value]
+        if isinstance(value, np.generic):
+            return value.item()
+        if isinstance(value, np.ndarray):
+            return value.tolist()
+        if isinstance(value, (str, int, float, bool, type(None))):
+            return value
+        return str(value)
+
     async def _persist_audit_event(
         self, event_type: str, action: str, outcome: str,
         correlation_id: str, details: Dict[str, Any],
@@ -2336,6 +2357,7 @@ class CognitiveSystemController:
                     f"Trading system alert: {event_type} {outcome}")
             except Exception:  # noqa: BLE001
                 pass
+        details = self._jsonable(details)
         sink = getattr(self, "_decision_sink", None)
         if sink is None:
             return
@@ -2752,6 +2774,8 @@ class CognitiveSystemController:
         if not isinstance(qty, (int, float)) or isinstance(qty, bool):
             qty = 0.0
         qty = float(qty)
+        if not np.isfinite(qty):
+            qty = 0.0
 
         slippage = sim_data.get("expected_slippage") if isinstance(sim_data, dict) else None
         if isinstance(slippage, MagicMock) or not isinstance(slippage, (int, float)):
@@ -2776,15 +2800,20 @@ class CognitiveSystemController:
         expected_return = None
         if isinstance(sim_data, dict):
             exp_val = sim_data.get("expected_value")
-            if isinstance(exp_val, (int, float)) and qty > 0:
+            if isinstance(exp_val, (int, float)) and qty > 0 \
+                    and np.isfinite(exp_val):
                 expected_return = float(exp_val) / qty
+                if not np.isfinite(expected_return):
+                    expected_return = None
 
         return {
             "trade_id": trade_id or _determinism.get_uuid(),
             "symbol": symbol,
             "action": action,
             "quantity": max(0.0, qty),
-            "confidence": branch.confidence,
+            "confidence": (float(min(1.0, max(0.0, branch.confidence)))
+                           if isinstance(branch.confidence, (int, float))
+                           and np.isfinite(branch.confidence) else 0.0),
             "causal_impact": sim_data.get("structural_impact", {}) if isinstance(sim_data, dict) else {},
             "expected_return": expected_return,
             "slippage_measured": slippage is not None,
@@ -4095,7 +4124,8 @@ class CognitiveSystemController:
         action_name = str(
             (decision_proposal or {}).get("action") or "HOLD").upper()
         qty = (decision_proposal or {}).get("quantity", 0.0)
-        if not isinstance(qty, (int, float)) or isinstance(qty, bool):
+        if not isinstance(qty, (int, float)) or isinstance(qty, bool) \
+                or not np.isfinite(qty):
             qty = 0.0
         is_directional = action_name not in ("HOLD", "WAIT", "NO_TRADE") \
             and qty > 0.0
