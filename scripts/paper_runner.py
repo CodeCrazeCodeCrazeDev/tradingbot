@@ -397,6 +397,22 @@ async def run(args: argparse.Namespace) -> int:
         history = json.loads(history_path.read_text(encoding="utf-8"))[-64:]
     except (OSError, json.JSONDecodeError):
         history = []
+    if not history and args.seed_bars > 0:
+        # Warm the feature windows from strictly-prior DB bars — the
+        # same data source the replay reads, so provenance is honest.
+        con = sqlite3.connect(
+            f"file:{PROJECT_ROOT / 'market_data.db'}?mode=ro", uri=True)
+        try:
+            rows = con.execute(
+                "SELECT close FROM market_data WHERE symbol=? "
+                "AND timeframe=? ORDER BY timestamp "
+                "LIMIT ? OFFSET ?",
+                (args.symbol, args.timeframe, args.seed_bars,
+                 max(0, args.skip - args.seed_bars))).fetchall()
+            history = [r[0] for r in rows]
+            logger.info("seed-bars: %d prior closes", len(history))
+        finally:
+            con.close()
     csc = getattr(runtime.bot, "csc", None)
     if csc is not None:
         # Position closes must hit the ledger, not just CSC bookkeeping —
@@ -685,6 +701,12 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--timeframe", default="M15",
                         help="db source only: market_data.db holds M15+H1; "
                              "unfiltered replay interleaves cadences")
+    parser.add_argument("--seed-bars", type=int, default=0,
+                        help="bootstrap feature windows from the N bars "
+                             "strictly BEFORE the replay start — the "
+                             "verifier needs ~21 bars of measured "
+                             "structure or it vetoes every hypothesis "
+                             "for ~21 cold-start cycles")
     parser.add_argument("--skip", type=int, default=0,
                         help="db source only: drop the first N bars of the "
                              "filtered timeframe (segments parallel runs)")
