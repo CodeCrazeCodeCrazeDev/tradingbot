@@ -950,6 +950,92 @@ def _signal_outlier_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("signal_statistical_outliers", analyze)
 
 
+def _gated_ml_analyzer(cap_id: str, import_path: str, cls: str,
+                       ckpt_env: str) -> Any:
+    """Torch-gated ML advisory: three honest states —
+    'unavailable' (torch/model import fails), 'untrained' (no
+    checkpoint env var or file), 'active' (trained model loaded and
+    forecasting). Random-init weights never emit evidence."""
+    state = {"tried": False, "ready": None, "reason": None}
+    holder = {"model": None}
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        if state["ready"] is None and not state["tried"]:
+            state["tried"] = True
+            try:
+                import os as _os
+                ckpt = _os.environ.get(ckpt_env)
+                mod = __import__(import_path, fromlist=[cls])
+                if not ckpt or not _os.path.exists(ckpt):
+                    state["ready"] = False
+                    state["reason"] = (f"no trained checkpoint "
+                                       f"({ckpt_env} unset/missing) — "
+                                       f"refusing random-init evidence")
+                else:
+                    inst = getattr(mod, cls)({"checkpoint": ckpt})
+                    if hasattr(inst, "load"):
+                        inst.load(ckpt)
+                    holder["model"] = inst
+                    state["ready"] = True
+            except Exception as exc:  # noqa: BLE001
+                state["ready"] = False
+                state["reason"] = repr(exc)[:160]
+        if not state["ready"]:
+            reason = state["reason"] or "uninitialized"
+            return {"status": "unavailable",
+                    "requires": "torch + trained checkpoint "
+                                f"({ckpt_env})",
+                    "reason": reason}
+        close = _num(ctx.get("close"))
+        if close is None:
+            return {"status": "no_data"}
+        # minimal real call — adapters feed raw closes; models define
+        # their own feature extraction in the hermes env
+        try:
+            model = holder["model"]
+            if hasattr(model, "forecast"):
+                pred = model.forecast([close])
+            elif hasattr(model, "predict"):
+                pred = model.predict(
+                    __import__("numpy").asarray([[close]]))
+            else:
+                return {"status": "unavailable",
+                        "reason": "model exposes no forecast/predict"}
+            return {"status": "active",
+                    "prediction": _payload(pred)}
+        except Exception as exc:  # noqa: BLE001
+            return {"status": "unavailable", "reason": repr(exc)[:160]}
+
+    return analyze
+
+
+def _ml_transformer_service() -> AdvisoryModuleAdapter:
+    return AdvisoryModuleAdapter(
+        "ml_transformer",
+        _gated_ml_analyzer("ml_transformer",
+                           "trading_bot.ml.transformer_forecaster",
+                           "TransformerForecaster",
+                           "ML_TRANSFORMER_CKPT"))
+
+
+def _ml_ensemble_service() -> AdvisoryModuleAdapter:
+    return AdvisoryModuleAdapter(
+        "ml_ensemble",
+        _gated_ml_analyzer("ml_ensemble",
+                           "trading_bot.ml.ensemble_predictor",
+                           "EnsemblePredictor",
+                           "ML_ENSEMBLE_CKPT"))
+
+
+def _rl_distributional_service() -> AdvisoryModuleAdapter:
+    return AdvisoryModuleAdapter(
+        "rl_distributional",
+        _gated_ml_analyzer("rl_distributional",
+                           "trading_bot.learning.distributional_rl",
+                           "DistributionalQLearning",
+                           "RL_DIST_CKPT"))
+
+
 def _risk_evt_service() -> AdvisoryModuleAdapter:
     """AdvancedRiskSystem as advisory evidence: EVT VaR/ES (GPD fit —
     scipy MLE or moments fallback), volatility-spike black-swan events,
@@ -5330,6 +5416,9 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("self_learning_ensemble", _self_learning_ensemble_service),
     ("signal_regime_change", _signal_regime_change_service),
     ("signal_statistical_outliers", _signal_outlier_service),
+    ("ml_transformer", _ml_transformer_service),
+    ("ml_ensemble", _ml_ensemble_service),
+    ("rl_distributional", _rl_distributional_service),
     ("risk_evt", _risk_evt_service),
     ("order_flow_institutional", _order_flow_institutional_service),
     ("tamic_market_time", _tamic_market_time_service),

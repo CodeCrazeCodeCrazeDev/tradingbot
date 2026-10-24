@@ -2,6 +2,12 @@
 Dark Pool Access: POSIT, Liquidnet, and Smart Order Routing
 
 Implements institutional-grade dark pool execution with AI-driven venue selection.
+
+SIMULATION-ONLY MODULE: execute_order fabricates fills via np.random —
+no real venue connectivity exists here. This class is a planning/replay
+harness for evaluating routing heuristics. It must NEVER be invoked on
+the canonical execution path; real dispatch belongs to
+trading_bot/execution/service.py via CSC-governed proposals.
 """
 
 import numpy as np
@@ -251,6 +257,9 @@ class VenueSelector:
 
 
 class DarkPoolExecutor:
+    # Simulation harness — execute_order fabricates fills via
+    # np.random. Guard rails make accidental production use loud.
+    SIMULATION_ONLY = True
     """
     Dark Pool Execution Engine
     
@@ -288,6 +297,9 @@ class DarkPoolExecutor:
         Returns:
             List of execution reports
         """
+        logger.warning(
+            "DarkPoolExecutor.execute_order is SIMULATION-ONLY — fills "
+            "are fabricated (np.random). Never route real orders here.")
         logger.info(f"Executing dark pool order {order.order_id}: {order.side} {order.quantity} {order.symbol}")
         
         # Select venues
