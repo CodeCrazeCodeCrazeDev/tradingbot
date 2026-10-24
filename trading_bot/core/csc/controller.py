@@ -3531,6 +3531,14 @@ class CognitiveSystemController:
         # Calibrate before comparing: raw simulated EV systematically
         # overestimates (~150x measured); the gate compares cost to what
         # trades of this kind actually earned, not what the sim hoped.
+        if proposal.get("exploratory"):
+            # Exploration is explicitly for gathering realized
+            # evidence — applying the (uncalibrated) net-cost gate
+            # here would block the very fills the budget exists to
+            # produce. Size is already capped at 10% by the floor.
+            proposal["net_cost_bypass"] = "exploration"
+            self._funnel["net_cost_explore_bypass"] += 1
+            return
         cal = self._ev_calibration_factor(
             (obs_dict or {}).get("regime")
             or (obs_dict or {}).get("trend"))

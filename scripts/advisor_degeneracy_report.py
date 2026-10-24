@@ -76,6 +76,9 @@ async def measure(factories, obs_list):
         prev_close = None
         import concurrent.futures as _cf
         _pool = _cf.ThreadPoolExecutor(max_workers=1)
+        def _shutdown(_p=_pool):
+            _p.shutdown(wait=False)
+        import atexit as _ax; _ax.register(_shutdown)
         for obs in obs_list:
             try:
                 # Bound EVERY call — a sync analyze has no timeout
