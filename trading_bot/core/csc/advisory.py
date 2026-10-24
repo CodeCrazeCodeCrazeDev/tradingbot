@@ -6568,7 +6568,15 @@ def attach_advisory_modules(
     import os
 
     measured_only = os.environ.get("TB_MEASURED_ADVISORS", "") == "1"
+    disabled = {n.strip() for n in
+                os.environ.get("TB_DISABLED_ADVISORS", "").split(",")
+                if n.strip()}
     selected = factories or DEFAULT_ADVISORY_FACTORIES
+    if disabled:
+        selected = tuple(f for f in selected
+                         if f[0] not in disabled)
+        logger.info("advisory attach: %d factories disabled via "
+                    "TB_DISABLED_ADVISORS", len(disabled))
     if measured_only:
         selected = tuple(f for f in selected
                          if f[0] in MEASURED_ACTIVE_SET)
