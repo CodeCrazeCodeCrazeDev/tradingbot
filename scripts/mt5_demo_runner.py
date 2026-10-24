@@ -408,6 +408,7 @@ async def run(args: argparse.Namespace) -> int:
 
             quiet_polls = 0
             quiet_logged = False
+            peer_hist: Dict[str, Any] = {}
             publish_snapshot(state_dir, _snapshot(
                 processed, console, args, runtime, adapter))
             while not args.cycles or processed < args.cycles:
@@ -454,9 +455,36 @@ async def run(args: argparse.Namespace) -> int:
                                 peer_closes.append(float(pb["close"]))
                         extra["peer_symbol"] = args.peer_symbol
                         extra.update(_peer_extra(peer_closes))
+                    elif len(tracked) > 1:
+                        # Sibling symbols ARE the peer set in multi-symbol
+                        # mode — feed another tracked symbol's real close
+                        # history as peer context (correlation/lead-lag
+                        # adapters get real cross-asset data, no fetch).
+                        for sib in tracked:
+                            if sib == sym:
+                                continue
+                            sib_hist = peer_hist.get(sib)
+                            if sib_hist and len(sib_hist) >= 2:
+                                extra["peer_symbol"] = sib
+                                extra.update(_peer_extra(sib_hist))
+                                break
                     obs = _bar_to_obs(sym, bars[0], adapter, extra)
                     await runtime.bot.run_cycle(obs)
                     processed += 1
+                    # Track each symbol's own close history for sibling
+                    # peer context — only bars strictly before or at this
+                    # bar's timestamp (all are already closed; no future).
+                    h = peer_hist.get(sym)
+                    if h is None:
+                        from collections import deque as _dq
+                        h = peer_hist[sym] = _dq(maxlen=256)
+                        prior = _closed_bars(client, sym, tf, 60)
+                        if prior is not None:
+                            for pb in prior:
+                                if int(pb["time"]) <= int(bars[0]["time"]):
+                                    h.append(float(pb["close"]))
+                    else:
+                        h.append(float(bars[0]["close"]))
                     publish_snapshot(state_dir, _snapshot(
                         processed, console, args, runtime, adapter))
                 if produced:

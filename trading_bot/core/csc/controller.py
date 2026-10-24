@@ -931,6 +931,14 @@ class CognitiveSystemController:
                 was_correct = str(row.get("outcome") or "") == "correct"
                 self.reliability_tracker.update_metrics(
                     "csc", regime, was_correct, confidence)
+                # EV calibration pairs rehydrate too — predicted-vs-
+                # realized survives restart alongside reliability.
+                _exp = details.get("expected_return")
+                _real = details.get("realized_return")
+                if (isinstance(_exp, (int, float)) and _exp > 0
+                        and isinstance(_real, (int, float))):
+                    self._ev_pairs.append(
+                        (float(_exp), float(_real), regime))
                 self.reliability_tracker.update_action_outcome(
                     regime,
                     str(inner.get("action") or row.get("action") or "").upper(),
@@ -1575,6 +1583,9 @@ class CognitiveSystemController:
                 "symbol": pending.get("symbol"),
                 "confidence": confidence,
                 "realized_return": realized_return,
+                # Predicted-vs-realized pair — lets the EV calibration
+                # deque rehydrate from this durable row after restart.
+                "expected_return": pending.get("expected_return"),
                 "regime": regime,
                 "advisory_calls": pending.get("advisory_calls") or [],
                 "gated_calls": int(pending.get("gated_calls") or 0),
@@ -1991,6 +2002,8 @@ class CognitiveSystemController:
                     "trade_ids": list(p.get("trade_ids") or []),
                     "mfe": p.get("mfe"),
                     "mae": p.get("mae"),
+                    "bars_held": p.get("bars_held"),
+                    "last_price": p.get("last_price"),
                 }
                 for sym, p in self._open_positions.items()
             },
@@ -2027,6 +2040,8 @@ class CognitiveSystemController:
                 "trade_ids": [],
                 "mfe": p.get("mfe"),
                 "mae": p.get("mae"),
+                "bars_held": int(p.get("bars_held") or 0),
+                "last_price": p.get("last_price"),
             }
             restored += 1
         if restored:
@@ -2231,9 +2246,30 @@ class CognitiveSystemController:
                 await self._close_position(symbol, float(price),
                                            reason="adverse_move_atr")
                 return
-        if self._observation_seq - pos["entry_seq"] >= self._position_max_hold:
+        # Position lifetime is counted in THIS symbol's bars, not global
+        # observation seq — in multi-symbol mode one venue bar produces N
+        # obs, so comparing against _observation_seq settles positions
+        # ~N times earlier than the configured horizon.
+        pos["bars_held"] = int(pos.get("bars_held") or 0) + 1
+        pos["last_price"] = float(price)
+        if pos["bars_held"] >= self._position_max_hold:
             await self._close_position(symbol, float(price),
                                        reason="holding_horizon")
+        # Unpositioned predictions (their close was vetoed/failed) have no
+        # position to settle through — resolve them at horizon against
+        # this bar's price so their advisory calls still get scored and
+        # the pending count doesn't leak. Age counts own-symbol bars, not
+        # global obs seq (same multi-symbol pitfall as the position
+        # horizon above).
+        for tid, pred in list(self._pending_predictions.items()):
+            if str(pred.get("symbol")) != str(symbol):
+                continue
+            pred["bars_seen"] = int(pred.get("bars_seen") or 0) + 1
+            if (pred.get("unpositioned")
+                    and pred["bars_seen"] >= self._position_max_hold):
+                await self.record_outcome(
+                    tid, exit_price=float(price),
+                    outcome_origin="unpositioned_horizon")
 
     def _update_atr(self, symbol: str, obs_dict: Dict[str, Any]
                     ) -> Optional[float]:

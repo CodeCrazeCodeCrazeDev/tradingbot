@@ -5304,9 +5304,15 @@ def _position_state_service() -> AdvisoryModuleAdapter:
                       if p.get("direction") == "BUY" else PositionSide.SHORT),
                 quantity=1.0,
                 entry_price=float(p.get("entry_price") or 0.0),
+                # Per-position mark: the obs close is only valid for the
+                # matching symbol — other symbols fall back to their own
+                # last-seen mark, then entry (never a foreign price).
                 current_price=float(
-                    ctx.get("close") or ctx.get("price")
-                    or p.get("entry_price") or 0.0),
+                    (ctx.get("close") or ctx.get("price"))
+                    if str(p.get("symbol") or sym) == str(
+                        ctx.get("symbol") or "")
+                    else (p.get("last_price")
+                          or p.get("entry_price") or 0.0)),
                 open_time=datetime.utcnow()))
         out = _probe_all((
             ("correlation_exposure", lambda: corr.analyze(positions)),
@@ -5647,6 +5653,25 @@ def _conditional_feed_service() -> AdvisoryModuleAdapter:
         dp = ctx.get("dark_pool")
         if isinstance(dp, Mapping) and dp.get("total_ats_volume"):
             probes.append(("dark_pool_volume", lambda: _primitive(dp)))
+        # Economic calendar: real upcoming high/medium-impact events as
+        # event-risk evidence; the blackout flag marks obs inside the
+        # embargo window (evidence, not a gate — the risk service owns
+        # veto authority).
+        events = ctx.get("economic_events")
+        if isinstance(events, (list, tuple)) and events:
+            probes.append(("economic_calendar", lambda: {
+                "events": _primitive(list(events)[:6]),
+                "next_event_minutes": _primitive(
+                    (events[0] or {}).get("minutes_until")
+                    if events else None),
+                "high_impact_imminent": any(
+                    e.get("impact") == "High"
+                    and abs(float(e.get("minutes_until") or 1e9)) <= 60
+                    for e in events),
+            }))
+        if ctx.get("calendar_blackout"):
+            probes.append(("calendar_blackout", lambda: {
+                "blackout": True}))
         if not probes:
             return {"status": "no_external_feeds"}
         return _probe_all(probes) or {"status": "no_external_feeds"}
