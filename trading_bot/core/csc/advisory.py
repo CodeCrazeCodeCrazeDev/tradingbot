@@ -1237,6 +1237,45 @@ def _rl_distributional_service() -> AdvisoryModuleAdapter:
                            "RL_DIST_CKPT"))
 
 
+def _rl_adaptive_decision_service() -> AdvisoryModuleAdapter:
+    """Tabular RL over decision posture — learns defensive/neutral/
+    long-lean/short-lean from deferred realized returns. Causal: labels
+    resolve only after the horizon elapses on future bars."""
+    from .rl_advisory import AdaptiveDecisionRL
+    agent = AdaptiveDecisionRL(horizon=8)
+    return AdvisoryModuleAdapter("rl_adaptive_decision", agent.analyze)
+
+
+def _rl_adaptive_spread_service() -> AdvisoryModuleAdapter:
+    """Tabular RL for market-making spread/skew policy — learns spread
+    multiplier and inventory skew from capture-vs-adverse-selection
+    rewards (bar proxy now; real fill capture when the feed carries
+    it). Quote-policy evidence only."""
+    from .rl_advisory import AdaptiveSpreadRL
+    agent = AdaptiveSpreadRL(horizon=5)
+    return AdvisoryModuleAdapter("rl_adaptive_spread", agent.analyze)
+
+
+def _rl_analysis_lens_service() -> AdvisoryModuleAdapter:
+    """Contextual bandit scoring which analysis lens (momentum /
+    mean-reversion / vol-breakout / level) is actually predictive in
+    the current microstate — reliability evidence for the electorate."""
+    from .rl_advisory import AnalysisLensRL
+    agent = AnalysisLensRL(horizon=4)
+    return AdvisoryModuleAdapter("rl_analysis_lens", agent.analyze)
+
+
+def _rl_alpha_search_service() -> AdvisoryModuleAdapter:
+    """RL over alpha-grammar mutation operators — learns which operator
+    (tweak/mutate/crossover/prune) yields expressions whose signals
+    stay consistent on bars the candidate never saw. Emits candidate
+    expressions as evidence; the full propose-OOS-approve gate still
+    applies downstream."""
+    from .rl_advisory import AlphaSearchRL
+    agent = AlphaSearchRL()
+    return AdvisoryModuleAdapter("rl_alpha_search", agent.analyze)
+
+
 def _risk_evt_service() -> AdvisoryModuleAdapter:
     """AdvancedRiskSystem as advisory evidence: EVT VaR/ES (GPD fit —
     scipy MLE or moments fallback), volatility-spike black-swan events,
@@ -5655,6 +5694,10 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("ml_transformer", _ml_transformer_service),
     ("ml_ensemble", _ml_ensemble_service),
     ("rl_distributional", _rl_distributional_service),
+    ("rl_adaptive_decision", _rl_adaptive_decision_service),
+    ("rl_adaptive_spread", _rl_adaptive_spread_service),
+    ("rl_analysis_lens", _rl_analysis_lens_service),
+    ("rl_alpha_search", _rl_alpha_search_service),
     ("risk_evt", _risk_evt_service),
     ("order_flow_institutional", _order_flow_institutional_service),
     ("tamic_market_time", _tamic_market_time_service),
