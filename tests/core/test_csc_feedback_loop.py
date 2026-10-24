@@ -184,9 +184,12 @@ class TestLiveOutcomeSettlement:
     async def test_position_closes_at_holding_horizon(self, csc):
         csc._observation_seq = 5
         await self._open(csc)
-        csc._observation_seq = 5 + csc._position_max_hold
-        await csc._settle_pending_predictions(
-            {"symbol": "EURUSD", "price": 1.01})
+        # Horizon counts own-symbol bars — each settle call is one bar,
+        # not a seq jump (multi-symbol feeds advance seq Nx per bar).
+        for _ in range(csc._position_max_hold):
+            csc._observation_seq += 1
+            await csc._settle_pending_predictions(
+                {"symbol": "EURUSD", "price": 1.01})
         assert "t-live" not in csc._pending_predictions
         assert "EURUSD" not in csc._open_positions
         m = csc.reliability_tracker.metrics["csc"]["bull"]
@@ -247,9 +250,10 @@ class TestLiveOutcomeSettlement:
             adapter=FakeAdapter(qty=-2.0, fill_price=1.015))
         csc._observation_seq = 5
         await self._open(csc, action="SELL", price=1.0)
-        csc._observation_seq = 5 + csc._position_max_hold
-        await csc._settle_pending_predictions(
-            {"symbol": "EURUSD", "price": 1.01})
+        for _ in range(csc._position_max_hold):
+            csc._observation_seq += 1
+            await csc._settle_pending_predictions(
+                {"symbol": "EURUSD", "price": 1.01})
         # Close went through the bus as a position-close order
         assert any(a.payload.get("intent") == "position_close"
                    for a in bus.actions)
