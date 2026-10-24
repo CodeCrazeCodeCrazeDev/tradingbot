@@ -248,6 +248,8 @@ class CognitiveSystemController:
         # emits SRE-ingestible payloads only on real statistical triggers.
         from .curiosity import CuriosityEngine
         self._curiosity = kwargs.get("curiosity") or CuriosityEngine()
+        from .execution_learning import ExecutionLearningService
+        self._exec_learning = kwargs.get("exec_learning")             or ExecutionLearningService()
 
         # Subordinate advisory cognition services (e.g. AdvisoryCognitiveBrain).
         # Configured via configure_cognition(); their analyze() output becomes
@@ -460,6 +462,13 @@ class CognitiveSystemController:
         """Transparency surface: SRE lifecycle census + measured baselines."""
         sre = getattr(self, "_sre", None)
         return sre.report() if sre is not None else {}
+
+    def execution_learning_report(self) -> Dict[str, Any]:
+        """Venue-performance evidence learned from measured canonical
+        execution outcomes. Advisory only — dispatch authority stays
+        with the canonical execution service."""
+        el = getattr(self, "_exec_learning", None)
+        return el.advisory_report() if el is not None else {}
 
     def configure_voice_alerter(self, alerter: Any) -> None:
         """Opt-in voice alerts on critical events (EMERGENCY_HALT/estop).
@@ -2257,6 +2266,23 @@ class CognitiveSystemController:
                     report = await adapter.get_order(close_id)
                     if report.fills:
                         fill_price = float(report.fills[-1].price)
+                        try:
+                            intended = float(pos.get("quantity") or 0.0)
+                            filled_q = float(sum(
+                                float(f.quantity) for f in report.fills))
+                            fill_rate = (filled_q / intended
+                                         if intended > 0 else 1.0)
+                            venue = (getattr(adapter, "venue", None)
+                                     or type(adapter).__name__)
+                            slip = getattr(report, "slippage_bps", None)
+                            self._exec_learning.record_fill(
+                                str(venue), fill_rate=fill_rate,
+                                shortfall_bps=slip
+                                if np.isfinite(slip or np.nan) else None)
+                        except Exception as exc:
+                            logger.debug(
+                                "CSC-V6: exec-learning record failed: %s",
+                                exc)
                 except Exception as exc:
                     logger.warning(
                         "CSC-V6: close order %s executed but fill lookup "
