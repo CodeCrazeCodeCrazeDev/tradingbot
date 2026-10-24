@@ -157,19 +157,70 @@ class TestAlphaSearchRL:
         for o in _bars(30):
             a.analyze(o)
         # candidates born recently can't be scored yet
-        assert all(c["born_at"] <= len(a._hist) for c in a._candidates)
+        for c in a._candidates["EURUSD"]:
+            assert c["born_at"] <= len(a._hist["EURUSD"])
+
+    def test_checkpoint_roundtrip(self, tmp_path):
+        """Q-tables survive a process restart via durable checkpoint."""
+        import trading_bot.core.csc.rl_advisory as m
+        old_dir = m.RL_STATE_DIR
+        m.RL_STATE_DIR = tmp_path
+        try:
+            a = AdaptiveDecisionRL(horizon=2)
+            a.bind_checkpoint("t", "v1")
+            for _ in range(20):
+                a.update((1, 0), 2, 0.8)
+            a.save()
+            b = AdaptiveDecisionRL(horizon=2)
+            b.bind_checkpoint("t", "v1")
+            assert b.updates == 20
+            assert float(b.row((1, 0))[2]) > 0.3
+        finally:
+            m.RL_STATE_DIR = old_dir
+
+    def test_checkpoint_key_mismatch_discards(self, tmp_path):
+        import trading_bot.core.csc.rl_advisory as m
+        old_dir = m.RL_STATE_DIR
+        m.RL_STATE_DIR = tmp_path
+        try:
+            a = AdaptiveDecisionRL()
+            a.bind_checkpoint("t", "v1")
+            a.update(("s",), 0, 1.0)
+            a.save()
+            b = AdaptiveDecisionRL()
+            b.bind_checkpoint("t", "v2")  # schema changed
+            assert b.updates == 0
+            assert len(b._q) == 0
+        finally:
+            m.RL_STATE_DIR = old_dir
+
+    def test_per_symbol_isolation(self):
+        """A EURUSD pending must not resolve against a GBPUSD bar."""
+        a = AdaptiveDecisionRL(horizon=4)
+        for o in _bars(6):
+            a.analyze(o)                       # EURUSD pendings
+        # bars 1-2 matured by bar 6 (legal same-symbol resolution)
+        eu_before = len(a._pending["EURUSD"])
+        # interleave GBPUSD bars — must not touch EURUSD pending queue
+        for p in [1.25, 1.26, 1.27, 1.28, 1.29]:
+            a.analyze({"symbol": "GBPUSD", "close": p})
+        assert len(a._pending["EURUSD"]) == eu_before
+        # GBPUSD bar-1 pending legitimately resolves at its own bar 5
+        assert len(a._pending["GBPUSD"]) == 4
+        assert a._bar_idx["EURUSD"] == 6
+        assert a._bar_idx["GBPUSD"] == 5
 
     def test_bounded_candidates(self):
         # The pending window floors at eval_horizon*4 so candidates
         # cannot be evicted before their labels mature.
         a = AlphaSearchRL(eval_horizon=4, max_candidates=6)
-        assert a._candidates.maxlen >= a._eval_horizon * 4
+        assert a._cand_max >= a._eval_horizon * 4
         for o in _bars(80):
             a.analyze(o)
-        assert len(a._candidates) <= a._candidates.maxlen
+        assert len(a._candidates["EURUSD"]) <= a._cand_max
 
     def test_unscored_never_evicted_early(self):
         """Scoring lag must not exceed the pending window or updates
         can never accumulate."""
         a = AlphaSearchRL(eval_horizon=6)
-        assert a._candidates.maxlen >= a._eval_horizon * 2 + 3
+        assert a._cand_max >= a._eval_horizon * 2 + 3

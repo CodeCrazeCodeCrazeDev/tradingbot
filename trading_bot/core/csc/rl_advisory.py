@@ -26,13 +26,23 @@ execution service own that.
 """
 from __future__ import annotations
 
+import json
 import math
+import os
 import re
+import tempfile
 from collections import deque
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Deque, Dict, List, Optional, Tuple
 
 import numpy as np
+
+# Durable checkpoint root — overridden by TB_RL_STATE_DIR for isolated
+# runs/tests. Version keys bind a checkpoint to a learner+schema; a
+# mismatch discards rather than silently reusing stale Q-values.
+RL_STATE_DIR = Path(os.environ.get("TB_RL_STATE_DIR",
+                                   "var/rl_state"))
 
 
 def _num(v: Any) -> Optional[float]:
@@ -65,6 +75,57 @@ class _TabularQ:
         self._order: Deque[Tuple] = deque(maxlen=max_states)
         self._rng = np.random.default_rng(7)  # deterministic exploration
         self.updates = 0
+        self._ckpt: Optional[Path] = None
+        self._key = "tabular_v1"
+
+    def bind_checkpoint(self, name: str, key: str) -> None:
+        """Enable durable persistence under RL_STATE_DIR/<name>.json."""
+        self._ckpt = RL_STATE_DIR / f"{name}.json"
+        self._key = key
+        self._restore()
+
+    def _restore(self) -> None:
+        if not self._ckpt or not self._ckpt.exists():
+            return
+        try:
+            blob = json.loads(self._ckpt.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return
+        if blob.get("key") != self._key:
+            return  # version/schema mismatch — never reuse stale Q
+        q = blob.get("q", {})
+        for sk, vals in q.items():
+            if len(vals) == self.n_actions and all(
+                    math.isfinite(v) for v in vals):
+                state = tuple(json.loads(sk))
+                self._q[state] = np.asarray(vals, dtype=float)
+                self._order.append(state)
+        self.updates = int(blob.get("updates", 0))
+        self.epsilon = max(self._eps_min,
+                           float(blob.get("epsilon", self.epsilon)))
+
+    def save(self) -> None:
+        if not self._ckpt:
+            return
+        self._ckpt.parent.mkdir(parents=True, exist_ok=True)
+        blob = {
+            "key": self._key,
+            "updates": self.updates,
+            "epsilon": self.epsilon,
+            "q": {json.dumps(list(s)): [float(v) for v in arr]
+                  for s, arr in self._q.items()},
+        }
+        fd, tmp = tempfile.mkstemp(dir=self._ckpt.parent,
+                                   suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w") as f:
+                json.dump(blob, f)
+            Path(tmp).replace(self._ckpt)
+        except OSError:
+            try:
+                Path(tmp).unlink()
+            except OSError:
+                pass
 
     def row(self, state: Tuple) -> np.ndarray:
         if state not in self._q:
@@ -117,8 +178,10 @@ class _DeferredLearner:
 
     def __init__(self, horizon: int, max_pending: int = 512):
         self.horizon = int(horizon)
-        self._pending: Deque[_Pending] = deque(maxlen=max_pending)
-        self._bar_idx = 0
+        # Per-symbol pending queues: on an interleaved multi-symbol
+        # feed, a EURUSD pending must not resolve against a GBPUSD bar.
+        self._pending: Dict[str, Deque[_Pending]] = {}
+        self._bar_idx: Dict[str, int] = {}
 
     def _resolve(self, obs: Dict[str, Any], reward_fn) -> int:
         """Resolve matured pendings against the CURRENT obs. Returns
@@ -158,17 +221,20 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
     def __init__(self, horizon: int = 8):
         _TabularQ.__init__(self, n_actions=4, epsilon=0.2)
         _DeferredLearner.__init__(self, horizon=horizon)
-        self._prev_close: Optional[float] = None
-        self._ret_hist: Deque[float] = deque(maxlen=32)
+        # Per-symbol state — an interleaved feed must not bleed one
+        # instrument's returns into another's state/pending queue.
+        self._prev_close: Dict[str, float] = {}
+        self._ret_hist: Dict[str, Deque[float]] = {}
 
     def _state(self, obs: Dict[str, Any]) -> Tuple:
+        hist = self._ret_hist.get(obs.get("symbol", ""), ())
         mom = 0
-        if len(self._ret_hist) >= 5:
-            r = sum(self._ret_hist) / len(self._ret_hist)
+        if len(hist) >= 5:
+            r = sum(hist) / len(hist)
             mom = 1 if r > 1e-4 else (-1 if r < -1e-4 else 0)
         vol = 0
-        if len(self._ret_hist) >= 8:
-            sd = float(np.std(self._ret_hist))
+        if len(hist) >= 8:
+            sd = float(np.std(hist))
             vol = 2 if sd > 0.003 else (1 if sd > 0.001 else 0)
         return (mom, vol)
 
@@ -190,30 +256,36 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
         self.update(p.state, p.action, r)
 
     def analyze(self, obs: Dict[str, Any]) -> Dict[str, Any]:
-        self._bar_idx += 1
+        sym = str(obs.get("symbol") or "?")
+        self._bar_idx[sym] = self._bar_idx.get(sym, 0) + 1
+        bar_idx = self._bar_idx[sym]
         close = _num(obs.get("close"))
         if close is None or close <= 0:
             return {"status": "no_data"}
-        if self._prev_close and self._prev_close > 0:
-            self._ret_hist.append(close / self._prev_close - 1.0)
-        self._prev_close = close
+        prev = self._prev_close.get(sym)
+        if prev and prev > 0:
+            self._ret_hist.setdefault(sym, deque(maxlen=32)).append(
+                close / prev - 1.0)
+        self._prev_close[sym] = close
 
+        pend = self._pending.setdefault(sym, deque(maxlen=512))
         resolved = 0
-        still: Deque[_Pending] = deque(maxlen=self._pending.maxlen)
-        for p in self._pending:
-            if self._bar_idx - p.bar_idx >= self.horizon:
-                r = self._reward(p, obs)
+        still: Deque[_Pending] = deque(maxlen=pend.maxlen)
+        for p_ in pend:
+            if bar_idx - p_.bar_idx >= self.horizon:
+                r = self._reward(p_, obs)
                 if r is not None:
-                    self.update(p.state, p.action, r)
+                    self.update(p_.state, p_.action, r)
                     resolved += 1
             else:
-                still.append(p)
-        self._pending = still
+                still.append(p_)
+        self._pending[sym] = still
 
         state = self._state(obs)
         action, explored = self.act(state)
-        self._pending.append(_Pending(state, action, close,
-                                      self._bar_idx))
+        still.append(_Pending(state, action, close, bar_idx))
+        if self.updates and self.updates % 32 == 0:
+            self.save()
         q = self.row(state)
         return {
             "status": "active" if self.updates >= 20 else "warming",
@@ -222,7 +294,7 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
             "q_values": {a: round(float(q[i]), 4)
                          for i, a in enumerate(self.ACTIONS)},
             "updates": self.updates,
-            "pending_labels": len(self._pending),
+            "pending_labels": len(self._pending[sym]),
             "resolved_this_bar": resolved,
             "horizon_bars": self.horizon,
             "note": "posture evidence only — canonical risk sizes "
@@ -252,21 +324,23 @@ class AdaptiveSpreadRL(_TabularQ, _DeferredLearner):
     def __init__(self, horizon: int = 5):
         _TabularQ.__init__(self, n_actions=12, epsilon=0.25)
         _DeferredLearner.__init__(self, horizon=horizon)
-        self._prev_close: Optional[float] = None
-        self._ret_hist: Deque[float] = deque(maxlen=24)
-        self._inventory_proxy = 0.0  # accumulated directional pressure
+        self._prev_close: Dict[str, float] = {}
+        self._ret_hist: Dict[str, Deque[float]] = {}
+        self._inventory_proxy: Dict[str, float] = {}
 
     def _state(self, obs: Dict[str, Any]) -> Tuple:
+        sym_ = str(obs.get("symbol") or "?")
+        _h = self._ret_hist.get(sym_, ())
+        ip = self._inventory_proxy.get(sym_, 0.0)
         vol = 0
-        if len(self._ret_hist) >= 8:
-            sd = float(np.std(self._ret_hist))
+        if len(_h) >= 8:
+            sd = float(np.std(_h))
             vol = 2 if sd > 0.003 else (1 if sd > 0.001 else 0)
         trend = 0
-        if len(self._ret_hist) >= 12:
-            r = sum(list(self._ret_hist)[-12:])
+        if len(_h) >= 12:
+            r = sum(list(_h)[-12:])
             trend = 1 if r > 0.002 else (-1 if r < -0.002 else 0)
-        inv = 1 if self._inventory_proxy > 0.5 else (
-            -1 if self._inventory_proxy < -0.5 else 0)
+        inv = 1 if ip > 0.5 else (-1 if ip < -0.5 else 0)
         return (vol, trend, inv)
 
     def _reward(self, p: _Pending, obs: Dict[str, Any]) -> Optional[float]:
@@ -276,8 +350,8 @@ class AdaptiveSpreadRL(_TabularQ, _DeferredLearner):
         s_mult = self.SPREADS[p.action // 3]
         skew = self.SKEWS[p.action % 3]
         fwd = (c - p.price) / p.price
-        vol = float(np.std(self._ret_hist)) if len(self._ret_hist) >= 8 \
-            else 0.001
+        _h = self._ret_hist.get(str(obs.get("symbol") or "?"), ())
+        vol = float(np.std(_h)) if len(_h) >= 8 else 0.001
         # half-spread capture proxy vs adverse move
         half_spread = 0.0002 * s_mult
         adverse = max(0.0, abs(fwd) - half_spread) * 3.0
@@ -289,34 +363,39 @@ class AdaptiveSpreadRL(_TabularQ, _DeferredLearner):
         return float(np.clip(r, -1, 1))
 
     def analyze(self, obs: Dict[str, Any]) -> Dict[str, Any]:
-        self._bar_idx += 1
+        sym = str(obs.get("symbol") or "?")
+        self._bar_idx[sym] = self._bar_idx.get(sym, 0) + 1
+        bar_idx = self._bar_idx[sym]
         close = _num(obs.get("close"))
         if close is None or close <= 0:
             return {"status": "no_data"}
-        if self._prev_close and self._prev_close > 0:
-            r = close / self._prev_close - 1.0
-            self._ret_hist.append(r)
-            self._inventory_proxy = float(
-                np.clip(self._inventory_proxy * 0.95 + np.sign(r) * 0.1,
-                        -3, 3))
-        self._prev_close = close
+        prev = self._prev_close.get(sym)
+        if prev and prev > 0:
+            r = close / prev - 1.0
+            self._ret_hist.setdefault(sym, deque(maxlen=24)).append(r)
+            ip = self._inventory_proxy.get(sym, 0.0)
+            self._inventory_proxy[sym] = float(
+                np.clip(ip * 0.95 + np.sign(r) * 0.1, -3, 3))
+        self._prev_close[sym] = close
 
+        pend = self._pending.setdefault(sym, deque(maxlen=512))
         resolved = 0
-        still: Deque[_Pending] = deque(maxlen=self._pending.maxlen)
-        for p in self._pending:
-            if self._bar_idx - p.bar_idx >= self.horizon:
-                r = self._reward(p, obs)
+        still: Deque[_Pending] = deque(maxlen=pend.maxlen)
+        for p_ in pend:
+            if bar_idx - p_.bar_idx >= self.horizon:
+                r = self._reward(p_, obs)
                 if r is not None:
-                    self.update(p.state, p.action, r)
+                    self.update(p_.state, p_.action, r)
                     resolved += 1
             else:
-                still.append(p)
-        self._pending = still
+                still.append(p_)
+        self._pending[sym] = still
 
         state = self._state(obs)
         action, explored = self.act(state)
-        self._pending.append(_Pending(state, action, close,
-                                      self._bar_idx))
+        still.append(_Pending(state, action, close, bar_idx))
+        if self.updates and self.updates % 32 == 0:
+            self.save()
         mult = self.SPREADS[action // 3]
         skew = self.SKEWS[action % 3]
         q = self.row(state)
@@ -348,15 +427,14 @@ class AnalysisLensRL(_TabularQ, _DeferredLearner):
     def __init__(self, horizon: int = 4):
         _TabularQ.__init__(self, n_actions=4, epsilon=0.2)
         _DeferredLearner.__init__(self, horizon=horizon)
-        self._hist: Deque[float] = deque(maxlen=64)
-        self._lens_preds: Deque[Dict[str, float]] = deque(maxlen=16)
+        self._hist: Dict[str, Deque[float]] = {}
 
-    def _lens_forecast(self) -> Dict[str, float]:
+    def _lens_forecast(self, hist: Deque[float]) -> Dict[str, float]:
         """Each lens's current directional forecast in [-1, 1],
         computed from the same real bar history."""
-        if len(self._hist) < 8:
+        if len(hist) < 8:
             return {ln: 0.0 for ln in self.LENSES}
-        arr = np.asarray(self._hist)
+        arr = np.asarray(hist)
         mom = float(np.clip((arr[-1] / arr[-8] - 1) * 300, -1, 1))
         sma = float(np.mean(arr[-16:])) if len(arr) >= 16 else arr[-1]
         mr = float(np.clip((sma - arr[-1]) / max(arr[-1], 1e-9) * 300,
@@ -371,49 +449,53 @@ class AnalysisLensRL(_TabularQ, _DeferredLearner):
         return {"momentum": mom, "mean_reversion": mr,
                 "vol_breakout": vb, "level": lvl}
 
-    def _state(self) -> Tuple:
-        if len(self._hist) < 16:
+    def _state(self, hist: Deque[float]) -> Tuple:
+        if len(hist) < 16:
             return (0, 0)
-        arr = np.asarray(self._hist)
+        arr = np.asarray(hist)
         vol = float(np.std(np.diff(arr[-12:]) / arr[-12:-1]))
         regime = 2 if vol > 0.003 else (1 if vol > 0.001 else 0)
         trend = 1 if arr[-1] > np.median(arr[-24:]) else -1
         return (regime, trend)
 
     def analyze(self, obs: Dict[str, Any]) -> Dict[str, Any]:
-        self._bar_idx += 1
+        sym = str(obs.get("symbol") or "?")
+        self._bar_idx[sym] = self._bar_idx.get(sym, 0) + 1
+        bar_idx = self._bar_idx[sym]
         close = _num(obs.get("close"))
         if close is None or close <= 0:
             return {"status": "no_data"}
-        self._hist.append(close)
-        if len(self._hist) < 10:
-            return {"status": "warming",
-                    "bars": len(self._hist)}
+        hist = self._hist.setdefault(sym, deque(maxlen=64))
+        hist.append(close)
+        if len(hist) < 10:
+            return {"status": "warming", "bars": len(hist)}
 
         # Resolve: each recorded forecast gets scored on the realized
-        # forward move.
+        # forward move — same symbol only.
+        pend = self._pending.setdefault(sym, deque(maxlen=512))
         resolved = 0
-        still: Deque[_Pending] = deque(maxlen=self._pending.maxlen)
-        for p in self._pending:
-            if self._bar_idx - p.bar_idx >= self.horizon:
-                fwd = (close - p.price) / p.price
-                for lens, f in p.extra.get("preds", {}).items():
+        still: Deque[_Pending] = deque(maxlen=pend.maxlen)
+        for p_ in pend:
+            if bar_idx - p_.bar_idx >= self.horizon:
+                fwd = (close - p_.price) / p_.price
+                for lens, f in p_.extra.get("preds", {}).items():
                     li = self.LENSES.index(lens)
-                    self.update(p.state, li, float(np.clip(
+                    self.update(p_.state, li, float(np.clip(
                         np.sign(fwd) * np.sign(f)
                         * min(abs(fwd) * 400, 1.0), -1, 1)))
                     resolved += 1
             else:
-                still.append(p)
-        self._pending = still
+                still.append(p_)
+        self._pending[sym] = still
 
-        preds = self._lens_forecast()
-        state = self._state()
+        preds = self._lens_forecast(hist)
+        state = self._state(hist)
         q = self.row(state)
         best_i = int(np.argmax(q))
-        self._pending.append(_Pending(state, best_i, close,
-                                      self._bar_idx,
-                                      {"preds": preds}))
+        still.append(_Pending(state, best_i, close, bar_idx,
+                              {"preds": preds}))
+        if self.updates and self.updates % 32 == 0:
+            self.save()
         return {
             "status": "active" if self.updates >= 30 else "warming",
             "trusted_lens": self.LENSES[best_i],
@@ -446,15 +528,20 @@ class AlphaSearchRL(_TabularQ):
     def __init__(self, eval_horizon: int = 6, max_candidates: int = 48):
         super().__init__(n_actions=4, epsilon=0.25)
         self._eval_horizon = eval_horizon
-        self._hist: Deque[float] = deque(maxlen=256)
-        self._vol_hist: Deque[float] = deque(maxlen=256)
+        self._hist: Dict[str, Deque[float]] = {}
+        self._vol_hist: Dict[str, Deque[float]] = {}
         # Pending window must exceed the scoring lag (eval_horizon*2 +
         # margin) or unscored candidates are evicted before they can
         # mature — which produces zero updates forever.
-        self._candidates: Deque[Dict[str, Any]] = deque(
-            maxlen=max(eval_horizon * 4, max_candidates))
-        self._last_outcome = "none"
+        self._cand_max = max(eval_horizon * 4, max_candidates)
+        self._candidates: Dict[str, Deque[Dict[str, Any]]] = {}
+        self._last_outcome: Dict[str, str] = {}
         self._produced = 0
+        self._born_idx = 0
+        # Anti-overfit guard: do not report operator advantage until
+        # at least this many candidates have matured — early winners
+        # on noise are indistinguishable from real signal.
+        self.min_mature_for_active = 15
 
     def _gen_candidate(self, op: int) -> Dict[str, Any]:
         """Produce a bounded expression under the chosen operator."""
@@ -471,7 +558,7 @@ class AlphaSearchRL(_TabularQ):
         else:  # prune — simplest form
             expr = f"ret({t1},{n})"
         return {"operator": op_name, "expression": expr,
-                "born_at": len(self._hist)}
+                "born_at": self._born_idx}
 
     def _eval_node(self, node: Any, env: Dict[str, np.ndarray]
                    ) -> Optional[np.ndarray]:
@@ -608,16 +695,17 @@ class AlphaSearchRL(_TabularQ):
                 ("low", close), ("volume", volume))}
         return self._eval_node(node, env)
 
-    def _score(self, cand: Dict[str, Any]) -> Optional[float]:
+    def _score(self, cand: Dict[str, Any], sym: str) -> Optional[float]:
         """Sign-consistency of the candidate's REAL signal vs realized
         forward returns, evaluated ONLY on bars born after the
         candidate. Returns None until enough fresh bars exist."""
         born = cand["born_at"]
-        n_fresh = len(self._hist) - born - self._eval_horizon
+        hist = self._hist[sym]
+        n_fresh = len(hist) - born - self._eval_horizon
         if n_fresh < self._eval_horizon * 2:
             return None
-        close = np.asarray(self._hist)
-        vol = np.asarray(self._vol_hist)
+        close = np.asarray(hist)
+        vol = np.asarray(self._vol_hist[sym])
         sig = self._eval_expression(cand["expression"], close, vol)
         if sig is None or len(sig) < self._eval_horizon + 2:
             return None
@@ -635,37 +723,48 @@ class AlphaSearchRL(_TabularQ):
             else None
 
     def analyze(self, obs: Dict[str, Any]) -> Dict[str, Any]:
+        sym = str(obs.get("symbol") or "?")
         close = _num(obs.get("close"))
         vol = _num(obs.get("volume"))
         if close is None or close <= 0:
             return {"status": "no_data"}
-        self._hist.append(close)
-        self._vol_hist.append(vol or 0.0)
+        hist = self._hist.setdefault(sym, deque(maxlen=256))
+        hist.append(close)
+        self._vol_hist.setdefault(sym, deque(maxlen=256)).append(
+            vol or 0.0)
+        self._born_idx = len(hist)
 
         # Score matured candidates, update operator Q-values.
+        cands = self._candidates.setdefault(
+            sym, deque(maxlen=self._cand_max))
+        last_out = self._last_outcome.get(sym, "none")
         matured = 0
-        for cand in list(self._candidates):
-            s = self._score(cand)
+        for cand in list(cands):
+            s = self._score(cand, sym)
             if s is not None and cand.get("scored") is not True:
                 op_i = self.OPERATORS.index(cand["operator"])
-                state = (self._last_outcome,)
-                self.update(state, op_i, s)
-                self._last_outcome = "win" if s > 0.05 else (
+                self.update((last_out,), op_i, s)
+                last_out = "win" if s > 0.05 else (
                     "loss" if s < -0.05 else "flat")
                 cand["scored"] = True
                 matured += 1
-        self._candidates = deque(
-            [c for c in self._candidates if not c.get("scored")],
-            maxlen=self._candidates.maxlen)
+        self._last_outcome[sym] = last_out
+        self._candidates[sym] = deque(
+            [c for c in cands if not c.get("scored")],
+            maxlen=cands.maxlen)
 
-        state = (self._last_outcome,)
+        state = (last_out,)
         action, explored = self.act(state)
         cand = self._gen_candidate(action)
-        self._candidates.append(cand)
+        cand["born_at"] = len(hist)
+        self._candidates[sym].append(cand)
         self._produced += 1
+        if self.updates and self.updates % 32 == 0:
+            self.save()
         q = self.row(state)
         return {
-            "status": "active" if self.updates >= 15 else "warming",
+            "status": "active" if self.updates >=
+                self.min_mature_for_active else "warming",
             "chosen_operator": self.OPERATORS[action],
             "candidate_expression": cand["expression"],
             "operator_q": {o: round(float(q[i]), 4)
@@ -673,7 +772,7 @@ class AlphaSearchRL(_TabularQ):
             "explored": explored,
             "updates": self.updates,
             "matured_this_bar": matured,
-            "pending_candidates": len(self._candidates),
+            "pending_candidates": len(self._candidates[sym]),
             "note": "candidate expressions are evidence for the "
                     "proposal pipeline only — OOS gate + human approval "
                     "still apply",

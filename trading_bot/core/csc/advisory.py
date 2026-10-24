@@ -1252,6 +1252,7 @@ def _rl_adaptive_decision_service() -> AdvisoryModuleAdapter:
     resolve only after the horizon elapses on future bars."""
     from .rl_advisory import AdaptiveDecisionRL
     agent = AdaptiveDecisionRL(horizon=8)
+    agent.bind_checkpoint("rl_adaptive_decision", "decision_posture_v1")
     return AdvisoryModuleAdapter("rl_adaptive_decision", agent.analyze)
 
 
@@ -1262,6 +1263,7 @@ def _rl_adaptive_spread_service() -> AdvisoryModuleAdapter:
     it). Quote-policy evidence only."""
     from .rl_advisory import AdaptiveSpreadRL
     agent = AdaptiveSpreadRL(horizon=5)
+    agent.bind_checkpoint("rl_adaptive_spread", "spread_skew_v1")
     return AdvisoryModuleAdapter("rl_adaptive_spread", agent.analyze)
 
 
@@ -1271,6 +1273,7 @@ def _rl_analysis_lens_service() -> AdvisoryModuleAdapter:
     the current microstate — reliability evidence for the electorate."""
     from .rl_advisory import AnalysisLensRL
     agent = AnalysisLensRL(horizon=4)
+    agent.bind_checkpoint("rl_analysis_lens", "lens_bandit_v1")
     return AdvisoryModuleAdapter("rl_analysis_lens", agent.analyze)
 
 
@@ -1282,6 +1285,7 @@ def _rl_alpha_search_service() -> AdvisoryModuleAdapter:
     applies downstream."""
     from .rl_advisory import AlphaSearchRL
     agent = AlphaSearchRL()
+    agent.bind_checkpoint("rl_alpha_search", "alpha_operators_v1")
     return AdvisoryModuleAdapter("rl_alpha_search", agent.analyze)
 
 
