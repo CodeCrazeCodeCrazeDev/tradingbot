@@ -1061,7 +1061,9 @@ class CognitiveSystemController:
             "governance", "governance_terminal", "consensus_rejected",
             "churn_abstain", "nondirectional_abstain",
             "terminal_TRADE_APPROVED", "terminal_TRADE_REJECTED",
-            "terminal_ABSTAIN", "settled_positions")
+            "terminal_ABSTAIN",
+            "abstain_opp_cost_sum", "self_feedback_suspect",
+            "net_cost_probe", "exploratory_trades", "settled_positions")
         report = {k: int(self._funnel.get(k, 0)) for k in order}
         for k, v in self._funnel.items():  # any unlisted counter survives
             if k not in report:
@@ -1455,7 +1457,12 @@ class CognitiveSystemController:
         _pred_ev = pending.get("expected_return")
         if (isinstance(_pred_ev, (int, float)) and _pred_ev > 0
                 and isinstance(realized_return, (int, float))):
-            self._ev_pairs.append((float(_pred_ev), float(realized_return)))
+            # Regime-tagged pairs: a calibration learned in trend must
+            # not be applied in range — the deque slides on time, not
+            # on regime.
+            self._ev_pairs.append((float(_pred_ev),
+                                   float(realized_return),
+                                   str(pending.get("regime", "unknown"))))
 
         # Reality-gate runtime monitors — advisory only. They emit
         # DRIFT_ADVISORY / KILL_SWITCH_ADVISORY evidence; the canonical
@@ -2688,6 +2695,22 @@ class CognitiveSystemController:
             self._last_advisory_disagreement = float(1.0 - _net)
         else:
             self._last_advisory_disagreement = None
+        # Self-referential loop check: disagreement feeds the NEXT
+        # obs's features — if it predicts next-cycle disagreement the
+        # electorate is arguing with its own echo. Track autocorr
+        # so the feedback is measured, not assumed benign.
+        if self._last_advisory_disagreement is not None:
+            _d = self._last_advisory_disagreement
+            _hist = getattr(self, "_disagreement_hist", None)
+            if _hist is None:
+                _hist = self._disagreement_hist = deque(maxlen=64)
+            _hist.append(_d)
+            if len(_hist) >= 8:
+                import numpy as _npd
+                _x = _npd.asarray(_hist)
+                _ac = float(_npd.corrcoef(_x[:-1], _x[1:])[0, 1])
+                if _ac > 0.5:
+                    self._funnel["self_feedback_suspect"] += 1
 
         # Swarm deliberation over the same ballots: all four voting
         # mechanisms run, emergent signals attach, and the consensus is
@@ -3303,12 +3326,25 @@ class CognitiveSystemController:
                        'no_signal', 'none', 'skipped', 'unavailable',
                        'idle', 'degenerate'}
         _sup = getattr(self, "_self_wiring", None)
+        # Abstention has a price nobody scores: the system's own
+        # abstain decision is never punished for missed moves.
+        # Measure it — record each abstain cycle's close and resolve
+        # against the next obs so funnel_report shows the honest
+        # opportunity cost of inaction.
+        _prev_close = getattr(self, "_last_obs_close", None)
+        _last_outcome = getattr(self, "_last_outcome_was_abstain", False)
         _cur_price = None
         try:
             _cur_price = float(
                 obs_dict.get("price") or obs_dict.get("close") or 0)
         except (TypeError, ValueError):
             _cur_price = None
+        if (_last_outcome and _prev_close and _cur_price
+                and _prev_close > 0):
+            _abs_move = abs(_cur_price - _prev_close) / _prev_close
+            self._funnel["abstain_opp_cost_sum"] += int(_abs_move * 1e6)
+        if _cur_price:
+            self._last_obs_close = _cur_price
         if (_sup is not None and self._advisor_dir_pending
                 and isinstance(_cur_price, (int, float))
                 and _cur_price > 0):
@@ -3435,12 +3471,23 @@ class CognitiveSystemController:
                 decision_proposal, best_branch, sim_results, obs_dict)
         return decision_proposal
 
-    def _ev_calibration_factor(self) -> float:
+    def _ev_calibration_factor(self, regime: Optional[str] = None) -> float:
         """Shrinkage between simulated and realized EV: mean(realized) /
         mean(predicted) over recent settled trades, clamped to [0, 1].
         Insufficient samples -> 1.0 (raw gate; learning needs data).
         A non-positive realized mean -> 0.0 (no proposal earns approval).
         """
+        # Prefer same-regime pairs when they have enough samples —
+        # a bull-regime calibration is not evidence about range.
+        if regime is not None:
+            _sub = [(p, r) for p, r, g in self._ev_pairs if g == regime]
+            if len(_sub) >= self._ev_min_samples:
+                preds = [p for p, _ in _sub]
+                mean_p = float(np.mean(preds))
+                mean_r = float(np.mean([r for _, r in _sub]))
+                if mean_p <= 0 or mean_r <= 0:
+                    return 0.0
+                return float(np.clip(mean_r / mean_p, 0.0, 1.0))
         if len(self._ev_pairs) < self._ev_min_samples:
             # Under-sampled -> CONSERVATIVE prior, not full trust.
             # Measured on this system: sim EV ~+0.0054 vs realized
@@ -3452,9 +3499,9 @@ class CognitiveSystemController:
             _prior = float(os.environ.get(
                 "TB_CSC_EV_COLD_PRIOR", "0.05"))
             return min(1.0, max(_prior, 0.2 * n / self._ev_min_samples))
-        preds = [p for p, _ in self._ev_pairs]
+        preds = [p for p, _, _ in self._ev_pairs]
         mean_p = float(np.mean(preds))
-        mean_r = float(np.mean([r for _, r in self._ev_pairs]))
+        mean_r = float(np.mean([r for _, r, _ in self._ev_pairs]))
         if mean_p <= 0 or mean_r <= 0:
             return 0.0
         return float(np.clip(mean_r / mean_p, 0.0, 1.0))
@@ -3484,7 +3531,9 @@ class CognitiveSystemController:
         # Calibrate before comparing: raw simulated EV systematically
         # overestimates (~150x measured); the gate compares cost to what
         # trades of this kind actually earned, not what the sim hoped.
-        cal = self._ev_calibration_factor()
+        cal = self._ev_calibration_factor(
+            (obs_dict or {}).get("regime")
+            or (obs_dict or {}).get("trend"))
         ev_cal = ev * cal if isinstance(ev, (int, float)) else ev
         if (cal == 0.0 and isinstance(ev, (int, float))
                 and ev >= round_trip_cost):
@@ -3884,6 +3933,10 @@ class CognitiveSystemController:
                 obs_d = observation if isinstance(observation, dict) else {}
                 outcome = getattr(decision, "outcome", None)
                 outcome_value = getattr(outcome, "value", outcome)
+                # Abstention-cost bookkeeping: next obs resolves the
+                # move skipped by this abstain.
+                self._last_outcome_was_abstain = (
+                    str(outcome_value or "") == "ABSTAIN")
                 self._funnel[f"terminal_{outcome_value or 'UNKNOWN'}"] += 1
                 await self._persist_audit_event(
                     event_type="DECISION_TERMINAL",

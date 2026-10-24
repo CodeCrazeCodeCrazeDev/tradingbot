@@ -36,6 +36,17 @@ DEFAULT_STATE_DIR = PROJECT_ROOT / "var" / "paper"
 
 def _load_htf_bars(db_path: Path, symbol: str, timeframe: str
                    ) -> List[Tuple[str, float]]:
+    rows = _load_htf_bars_raw(db_path, symbol, timeframe)
+    if not rows:
+        logger.warning(
+            "htf_timeframe=%s returned 0 rows for %s — htf_* features "
+            "will be ABSENT, not stale (GBPUSD has no H4, e.g.)",
+            timeframe, symbol)
+    return rows
+
+
+def _load_htf_bars_raw(db_path: Path, symbol: str, timeframe: str
+                   ) -> List[Tuple[str, float]]:
     """All (timestamp, close) rows for a second timeframe — loaded once so
     the M15 replay can attach point-in-time higher-timeframe context."""
     con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
@@ -433,6 +444,24 @@ async def run(args: argparse.Namespace) -> int:
                     logger.info("cycle skipped — event window: %s",
                                 _in_ev[2])
                     continue
+            # Backpressure: a live obs older than the staleness budget
+            # is dropped — deciding on stale prices is worse than
+            # missing a bar. Only applies when obs time is within a
+            # day of wall clock (a real feed), not historical replay.
+            if args.stale_drop_seconds > 0:
+                try:
+                    from datetime import datetime as _ds
+                    _o = _ds.fromisoformat(
+                        str(obs.get("timestamp", "")).replace(
+                            "Z", "+00:00")).timestamp()
+                    _age = time.time() - _o
+                    if 0 < _age < 86400 and _age > args.stale_drop_seconds:
+                        logger.warning(
+                            "dropping stale obs (%.0fs > %ss budget)",
+                            _age, args.stale_drop_seconds)
+                        continue
+                except (TypeError, ValueError):
+                    pass
             for command in channel.drain():
                 outcome = await console.apply(command)
                 logger.info("operator command %s -> %s",
@@ -563,6 +592,11 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--interval", type=float, default=0.0,
                         help="seconds between cycles (0 = as fast as possible)")
     parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument("--stale-drop-seconds", type=float, default=0,
+                        help="drop obs whose timestamp is more than N "
+                             "seconds older than wall clock; live-feed "
+                             "backpressure policy (0=off; leave off for "
+                             "replay — historical bars are always 'stale')")
     parser.add_argument("--event-windows", default="",
                         help="JSON file with [{start,end,reason}] ISO "
                              "intervals; cycles inside a window are "
