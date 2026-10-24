@@ -160,7 +160,16 @@ class TestAlphaSearchRL:
         assert all(c["born_at"] <= len(a._hist) for c in a._candidates)
 
     def test_bounded_candidates(self):
+        # The pending window floors at eval_horizon*4 so candidates
+        # cannot be evicted before their labels mature.
         a = AlphaSearchRL(eval_horizon=4, max_candidates=6)
+        assert a._candidates.maxlen >= a._eval_horizon * 4
         for o in _bars(80):
             a.analyze(o)
-        assert len(a._candidates) <= 6
+        assert len(a._candidates) <= a._candidates.maxlen
+
+    def test_unscored_never_evicted_early(self):
+        """Scoring lag must not exceed the pending window or updates
+        can never accumulate."""
+        a = AlphaSearchRL(eval_horizon=6)
+        assert a._candidates.maxlen >= a._eval_horizon * 2 + 3

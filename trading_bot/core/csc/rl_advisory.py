@@ -27,6 +27,7 @@ execution service own that.
 from __future__ import annotations
 
 import math
+import re
 from collections import deque
 from dataclasses import dataclass, field
 from typing import Any, Deque, Dict, List, Optional, Tuple
@@ -442,13 +443,16 @@ class AlphaSearchRL(_TabularQ):
                  "prune")
     _TERMS = ("close", "open", "high", "low", "volume")
 
-    def __init__(self, eval_horizon: int = 6, max_candidates: int = 8):
+    def __init__(self, eval_horizon: int = 6, max_candidates: int = 48):
         super().__init__(n_actions=4, epsilon=0.25)
         self._eval_horizon = eval_horizon
         self._hist: Deque[float] = deque(maxlen=256)
         self._vol_hist: Deque[float] = deque(maxlen=256)
+        # Pending window must exceed the scoring lag (eval_horizon*2 +
+        # margin) or unscored candidates are evicted before they can
+        # mature — which produces zero updates forever.
         self._candidates: Deque[Dict[str, Any]] = deque(
-            maxlen=max_candidates)
+            maxlen=max(eval_horizon * 4, max_candidates))
         self._last_outcome = "none"
         self._produced = 0
 
@@ -469,27 +473,166 @@ class AlphaSearchRL(_TabularQ):
         return {"operator": op_name, "expression": expr,
                 "born_at": len(self._hist)}
 
+    def _eval_node(self, node: Any, env: Dict[str, np.ndarray]
+                   ) -> Optional[np.ndarray]:
+        """Recursive evaluator over the tiny expression grammar."""
+        if isinstance(node, str):
+            return env.get(node)
+        if isinstance(node, (int, float)):
+            return np.asarray(float(node))
+        if not isinstance(node, tuple):
+            return None
+        fn, args = node[0], node[1:]
+        try:
+            if fn == "sma" and len(args) == 2:
+                x, n = self._eval_node(args[0], env), int(args[1])
+                if x is None or len(x) < n or n < 1:
+                    return None
+                return np.convolve(x, np.ones(n) / n, "valid")
+            if fn == "std" and len(args) == 2:
+                x, n = self._eval_node(args[0], env), int(args[1])
+                if x is None or len(x) < n or n < 1:
+                    return None
+                return np.array([float(np.std(x[i - n:i]))
+                                 for i in range(n, len(x) + 1)])
+            if fn == "ret" and len(args) == 2:
+                x, n = self._eval_node(args[0], env), int(args[1])
+                if x is None or len(x) <= n or n < 1:
+                    return None
+                return x[n:] / np.maximum(x[:-n], 1e-12) - 1.0
+            if fn == "delta" and len(args) in (1, 2):
+                x = self._eval_node(args[0], env)
+                n = int(args[1]) if len(args) == 2 else 1
+                if x is None or n < 1 or len(x) <= n:
+                    return None
+                return x[n:] - x[:-n]
+            if fn == "sign" and len(args) == 1:
+                x = self._eval_node(args[0], env)
+                return None if x is None else np.sign(x)
+            if fn == "sma_diff" and len(args) == 3:
+                x = self._eval_node(args[0], env)
+                a, b = int(args[1]), int(args[2])
+                if x is None or b <= a or len(x) < b or a < 1:
+                    return None
+                fast = np.convolve(x, np.ones(a) / a, "valid")
+                slow = np.convolve(x, np.ones(b) / b, "valid")
+                # both 'valid' windows are right-aligned — fast must
+                # drop its first b-a entries to align with slow.
+                return fast[b - a:] / np.maximum(slow, 1e-12) - 1.0
+            if fn in ("add", "sub", "mul", "div") and len(args) == 2:
+                a = self._eval_node(args[0], env)
+                b = self._eval_node(args[1], env)
+                if a is None or b is None:
+                    return None
+                a = np.atleast_1d(np.asarray(a, dtype=float))
+                b = np.atleast_1d(np.asarray(b, dtype=float))
+                k = min(len(a), len(b))
+                a, b = a[-k:], b[-k:]
+                if fn == "add":
+                    return a + b
+                if fn == "sub":
+                    return a - b
+                if fn == "mul":
+                    return a * b
+                return a / np.maximum(np.abs(b), 1e-9)
+        except (ValueError, TypeError, ZeroDivisionError, IndexError):
+            return None
+        return None
+
+    def _parse_expression(self, expr: str) -> Any:
+        """Parse 'fn(a,b,c)' / arithmetic forms into tuples.
+        Grammar: fn(term|num,...) | node - node | node / (node+num)."""
+        expr = expr.strip()
+        # top-level '-' split (sub)
+        depth = 0
+        for i, ch in enumerate(expr):
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+            elif (ch == "-" and depth == 0 and i > 0
+                  and expr[i - 1] not in "eE"):
+                return ("sub", self._parse_expression(expr[:i]),
+                        self._parse_expression(expr[i + 1:]))
+        depth = 0
+        for i, ch in enumerate(expr):
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+            elif ch == "/" and depth == 0:
+                return ("div", self._parse_expression(expr[:i]),
+                        self._parse_expression(expr[i + 1:]))
+        if expr.startswith("(") and expr.endswith(")"):
+            inner = expr[1:-1].strip()
+            # strip a trailing '+const' guard like (x+1e-9)
+            depth = 0
+            for i, ch in enumerate(inner):
+                if ch == "(":
+                    depth += 1
+                elif ch == ")":
+                    depth -= 1
+                elif ch == "+" and depth == 0:
+                    return ("add", self._parse_expression(inner[:i]),
+                            self._parse_expression(inner[i + 1:]))
+            return self._parse_expression(inner)
+        m = re.match(r"^([a-zA-Z_][a-zA-Z0-9_]*)\((.*)\)$", expr)
+        if m:
+            fn = m.group(1)
+            raw = m.group(2)
+            parts, depth, last = [], 0, 0
+            for i, ch in enumerate(raw):
+                if ch == "(":
+                    depth += 1
+                elif ch == ")":
+                    depth -= 1
+                elif ch == "," and depth == 0:
+                    parts.append(raw[last:i]); last = i + 1
+            parts.append(raw[last:])
+            return (fn,) + tuple(self._parse_expression(a)
+                                 for a in parts if a.strip())
+        try:
+            return float(expr)
+        except ValueError:
+            return expr if re.match(r"^[a-zA-Z_]+$", expr) else None
+
+    def _eval_expression(self, expr: str, close: np.ndarray,
+                         volume: np.ndarray) -> Optional[np.ndarray]:
+        """Evaluate a grammar expression against bar history. Returns
+        a per-bar signal series or None if the form is unknown."""
+        node = self._parse_expression(expr)
+        if node is None:
+            return None
+        env = {t: a for t, a in
+               (("close", close), ("open", close), ("high", close),
+                ("low", close), ("volume", volume))}
+        return self._eval_node(node, env)
+
     def _score(self, cand: Dict[str, Any]) -> Optional[float]:
-        """Sign-consistency of the candidate's signal vs realized
+        """Sign-consistency of the candidate's REAL signal vs realized
         forward returns, evaluated ONLY on bars born after the
         candidate. Returns None until enough fresh bars exist."""
         born = cand["born_at"]
         n_fresh = len(self._hist) - born - self._eval_horizon
         if n_fresh < self._eval_horizon * 2:
             return None
-        arr = np.asarray(self._hist)[born:]
-        if len(arr) < self._eval_horizon + 3:
+        close = np.asarray(self._hist)
+        vol = np.asarray(self._vol_hist)
+        sig = self._eval_expression(cand["expression"], close, vol)
+        if sig is None or len(sig) < self._eval_horizon + 2:
             return None
-        # simple proxy: does the expression's recent sign match the
-        # subsequent move? crude but causal and honest.
-        fwd = np.diff(arr) / arr[:-1]
-        hits = np.abs(fwd[-self._eval_horizon:])
-        score = float(np.mean(np.sign(fwd[-self._eval_horizon:]) *
-                              np.sign(np.diff(arr[-self._eval_horizon-1:-1])))
-                      ) if len(fwd) else 0.0
-        if not math.isfinite(score) or not np.isfinite(hits).all():
+        # signal at bar t should predict close[t+1]/close[t]-1 — the
+        # tail of sig aligns with the tail of close automatically since
+        # every transform trims the left edge uniformly.
+        h = self._eval_horizon
+        sig_tail = sig[-h - 1:-1]
+        fwd = close[-h:] / np.maximum(close[-h - 1:-1], 1e-12) - 1.0
+        ok = np.isfinite(sig_tail) & np.isfinite(fwd)
+        if ok.sum() < h:
             return None
-        return float(np.clip(score, -1, 1))
+        score = float(np.mean(np.sign(sig_tail[ok]) * np.sign(fwd[ok])))
+        return float(np.clip(score, -1, 1)) if math.isfinite(score) \
+            else None
 
     def analyze(self, obs: Dict[str, Any]) -> Dict[str, Any]:
         close = _num(obs.get("close"))

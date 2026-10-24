@@ -5943,6 +5943,14 @@ MEASURED_ACTIVE_SET = frozenset((
     # alpha_discovery_status honest-idle (no campaign run) — held out
     # Degenerate on this feed — stay unmeasured: tamic_market_time,
     # tamic_institutional_time, wyckoff_phases
+    # RL cohort — measured at 400 bars (all earned substantive output;
+    # rl_alpha_search fixed first: scoring-lag eviction bug).
+    "rl_adaptive_decision",     # 373/400
+    "rl_adaptive_spread",       # 376/400
+    "rl_analysis_lens",         # 380/400
+    "rl_alpha_search",          # 367/400
+    "mm_adaptive_spread",       # 371/400
+    "rl_adaptive_objectives",   # 371/400
 ))
 
 # Modules imported by the live path but with no advisory decision role —
