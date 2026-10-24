@@ -19,6 +19,7 @@ import argparse
 import asyncio
 import json
 import logging
+import os
 import sqlite3
 import sys
 import time
@@ -222,6 +223,35 @@ async def run(args: argparse.Namespace) -> int:
     state_dir = Path(args.state_dir)
     channel = ControlChannel(state_dir / "control")
 
+    # Determinism: RL advisors seed their own RNGs, but the wider
+    # advisory/verification stack calls np.random unseeded — pin the
+    # global stream so replayed runs are reproducible.
+    import numpy as _np
+    _np.random.seed(args.seed)
+
+    # Per-run RL checkpoint isolation: two concurrent runners sharing
+    # var/rl_state silently discard each other's learned updates.
+    os.environ.setdefault(
+        "TB_RL_STATE_DIR", str(state_dir / "rl"))
+
+    # Macro-event gate: NFP/CPI/central-bank windows are the dominant
+    # FX hazard — obs inside a declared window is skipped, not
+    # analyzed. Window file is data-driven, not hardcoded.
+    event_windows = []
+    if args.event_windows:
+        try:
+            from datetime import datetime as _dt
+            def _iso(s):
+                return _dt.fromisoformat(
+                    str(s).replace("Z", "+00:00")).timestamp()
+            for w in json.loads(Path(args.event_windows).read_text()):
+                event_windows.append((_iso(w["start"]),
+                                      _iso(w["end"]),
+                                      str(w.get("reason", "event"))))
+            logger.info("loaded %d event windows", len(event_windows))
+        except (OSError, KeyError, json.JSONDecodeError) as exc:
+            logger.warning("event windows load failed: %s", exc)
+
     if args.strategy_id:
         # Register before start so the first enriched cycle already sees
         # strategy_signals; the registry is otherwise empty and the
@@ -384,6 +414,21 @@ async def run(args: argparse.Namespace) -> int:
     emergency = False
     try:
         for obs in source:
+            if event_windows:
+                from datetime import datetime as _dt
+                try:
+                    _o_ts = _dt.fromisoformat(
+                        str(obs.get("timestamp", "")).replace(
+                            "Z", "+00:00")).timestamp()
+                except (TypeError, ValueError):
+                    _o_ts = 0.0
+                _in_ev = next(
+                    (w for w in event_windows
+                     if w[0] <= _o_ts <= w[1]), None)
+                if _in_ev is not None:
+                    logger.info("cycle skipped — event window: %s",
+                                _in_ev[2])
+                    continue
             for command in channel.drain():
                 outcome = await console.apply(command)
                 logger.info("operator command %s -> %s",
@@ -511,6 +556,14 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--interval", type=float, default=0.0,
                         help="seconds between cycles (0 = as fast as possible)")
     parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument("--event-windows", default="",
+                        help="JSON file with [{start,end,reason}] ISO "
+                             "intervals; cycles inside a window are "
+                             "skipped (macro-event no-trade gate)")
+    parser.add_argument("--rl-state-dir", default="",
+                        help="checkpoint dir for RL advisors; defaults "
+                             "to <state-dir>/rl so concurrent runs "
+                             "don't race on shared checkpoints")
     parser.add_argument("--state-dir", default=str(DEFAULT_STATE_DIR))
     parser.add_argument("--dashboard-port", type=int, default=0,
                         help="serve the read-only snapshot on 127.0.0.1:PORT")

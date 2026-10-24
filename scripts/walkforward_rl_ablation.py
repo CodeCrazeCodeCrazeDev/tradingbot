@@ -155,6 +155,44 @@ async def replay_csc(rows, context_end, test_rows, args, disable_rl):
     return positions[1:]
 
 
+def apply_exec_lag(positions, lag):
+    """Decision->fill latency: replay fills at decision-bar close; a
+    real order fills later. Shifting the position series by `lag`
+    bars is the honest model — you get the move from fill, not
+    decision."""
+    if lag <= 0:
+        return list(positions)
+    return list(positions[:1]) * lag + list(positions[:-lag])
+
+
+def exit_efficiency(positions, rets, horizon=8):
+    """Score exit timing: for each closed position run, fraction of
+    the max attainable forward move actually captured. 1.0 = perfect
+    exits; negative = exits cost more than they saved."""
+    pos = list(positions)
+    r = list(rets)
+    effs = []
+    i = 0
+    n = len(pos)
+    while i < n:
+        if pos[i] == 0:
+            i += 1
+            continue
+        j = i
+        while j < n and pos[j] == pos[i]:
+            j += 1
+        side = pos[i]
+        realized = sum(r[k] * side for k in range(i + 1, min(j + 1, len(r))))
+        # best attainable over next `horizon` bars from exit bar
+        future = [sum(r[k] * side for k in range(j + 1, min(j + 1 + h, len(r))))
+                  for h in range(1, horizon + 1) if j + 1 + h <= len(r)]
+        best = max(future) if future else realized
+        denom = abs(best) if abs(best) > 1e-9 else 1e-9
+        effs.append(realized / denom)
+        i = j
+    return float(np.mean(effs)) if effs else 0.0
+
+
 def score(positions, rets, cost_bps):
     """Net/gross/dd/turnover/Sharpe — mirrors score_side semantics."""
     pos = np.asarray(positions, dtype=float)
@@ -208,21 +246,30 @@ async def main_async(args):
         t0 = time.time()
         mp = momentum_positions(rows, start, end,
                                 args.momentum_lookback)
-        arms["momentum"].append(score(mp, rets, args.cost_bps))
+        mp = apply_exec_lag(mp, args.exec_lag_bars)
+        s = score(mp, rets, args.cost_bps)
+        s["exit_efficiency"] = exit_efficiency(mp, rets)
+        arms["momentum"].append(s)
         print(f"   momentum    net={arms['momentum'][-1]['total_net']:+.6f} "
               f"[{time.time()-t0:.0f}s]")
 
         t0 = time.time()
         p = await replay_csc(rows, start, test_rows, args,
                              disable_rl=True)
-        arms["csc_no_rl"].append(score(p, rets, args.cost_bps))
+        p = apply_exec_lag(p, args.exec_lag_bars)
+        s = score(p, rets, args.cost_bps)
+        s["exit_efficiency"] = exit_efficiency(p, rets)
+        arms["csc_no_rl"].append(s)
         print(f"   csc_no_rl   net={arms['csc_no_rl'][-1]['total_net']:+.6f} "
               f"[{time.time()-t0:.0f}s]")
 
         t0 = time.time()
         p = await replay_csc(rows, start, test_rows, args,
                              disable_rl=False)
-        arms["csc_with_rl"].append(score(p, rets, args.cost_bps))
+        p = apply_exec_lag(p, args.exec_lag_bars)
+        s = score(p, rets, args.cost_bps)
+        s["exit_efficiency"] = exit_efficiency(p, rets)
+        arms["csc_with_rl"].append(s)
         print(f"   csc_with_rl net={arms['csc_with_rl'][-1]['total_net']:+.6f} "
               f"[{time.time()-t0:.0f}s]")
 
@@ -276,6 +323,8 @@ def main():
     p.add_argument("--momentum-lookback", type=int, default=10)
     p.add_argument("--embargo-bars", type=int, default=20,
                    help="purged gap between context end and window start")
+    p.add_argument("--exec-lag-bars", type=int, default=1,
+                   help="bars between decision and modeled fill")
     p.add_argument("--stride", type=int, default=1)
     p.add_argument("--position-horizon", type=int, default=8)
     args = p.parse_args()

@@ -74,9 +74,15 @@ async def measure(factories, obs_list):
             continue
         pending_dir = None  # direction emitted at bar t-1, scored at t
         prev_close = None
+        import concurrent.futures as _cf
+        _pool = _cf.ThreadPoolExecutor(max_workers=1)
         for obs in obs_list:
             try:
-                out = svc.analyze(dict(obs))
+                # Bound EVERY call — a sync analyze has no timeout
+                # otherwise and one pathological advisor stalls the
+                # whole report (institutional_entry_footprint did).
+                out = _pool.submit(svc.analyze, dict(obs)).result(
+                    timeout=10.0)
                 if inspect.isawaitable(out):
                     out = await asyncio.wait_for(out, 5.0)
                 counts[classify(out)] += 1

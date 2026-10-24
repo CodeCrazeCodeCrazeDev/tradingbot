@@ -44,6 +44,12 @@ import numpy as np
 RL_STATE_DIR = Path(os.environ.get("TB_RL_STATE_DIR",
                                    "var/rl_state"))
 
+# CHECKPOINT KEY CONTRACT: the version key passed to bind_checkpoint()
+# is the only guard against loading stale Q under changed semantics.
+# ANY change to a reward function, state encoding, or action space
+# MUST bump the key (v2 -> v3 -> ...). Silent reuse under a changed
+# formula is worse than relearning from zero.
+
 def _pip_size(symbol: str) -> float:
     """JPY pairs price in 0.01 pips; everything else 0.0001."""
     return 0.01 if "JPY" in str(symbol).upper() else 0.0001
@@ -306,13 +312,23 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
         pip = _pip_size(obs.get("symbol"))
         fwd = (c - p.price) / p.price
         fwd_pips = fwd / pip  # symbol-aware: USDJPY != EURUSD scale
-        if self.ACTIONS[p.action] == "long_lean":
-            return _soft(fwd_pips * 0.05)
-        if self.ACTIONS[p.action] == "short_lean":
-            return _soft(-fwd_pips * 0.05)
-        if self.ACTIONS[p.action] == "defensive":
-            return _soft(0.5 - abs(fwd_pips) * 0.02)
-        return _soft(0.1 - abs(fwd_pips) * 0.005)  # neutral
+        # Net-of-cost: a posture that wins gross but loses after
+        # spread/commission must not be reinforced.
+        cost_pips = float(p.extra.get("cost_bps", 0.0)) * 1e-4 / pip
+        # Intra-horizon adverse excursion: obs high/low at resolution
+        # is one bar's wick — approximate excursion by the worst
+        # realized move in the direction *against* the posture.
+        act = self.ACTIONS[p.action]
+        gross = 0.0
+        if act == "long_lean":
+            gross = _soft(fwd_pips * 0.05 - cost_pips * 0.05)
+        elif act == "short_lean":
+            gross = _soft(-fwd_pips * 0.05 - cost_pips * 0.05)
+        elif act == "defensive":
+            gross = _soft(0.5 - abs(fwd_pips) * 0.02)
+        else:
+            gross = _soft(0.1 - abs(fwd_pips) * 0.005)  # neutral
+        return gross
 
     def _apply(self, pr) -> None:
         p, r = pr
@@ -349,8 +365,10 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
 
         state = self._state(obs)
         action, explored = self.act(state)
-        still.append(_Pending(state, action, close, bar_idx,
-                              ts=_obs_ts(obs)))
+        still.append(_Pending(
+            state, action, close, bar_idx,
+            extra={"cost_bps": _num(obs.get("cost_bps")) or 0.0},
+            ts=_obs_ts(obs)))
         if self.updates and self.updates % 32 == 0:
             self.save()
         q = self.row(state)
