@@ -950,6 +950,28 @@ def _signal_outlier_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("signal_statistical_outliers", analyze)
 
 
+def _order_flow_institutional_service() -> AdvisoryModuleAdapter:
+    """Capability-gated institutional order-flow detection. Emits
+    provenanced advisory signals (block trades, volume delta,
+    absorption/exhaustion proxies, book indicators) — authority-free."""
+    from .order_flow import OrderFlowService
+
+    svc = OrderFlowService()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        try:
+            rep = svc.analyze(dict(ctx))
+        except Exception as exc:  # noqa: BLE001 — advisory isolation
+            return {"available": False, "error": repr(exc)}
+        return {"available": True,
+                "capabilities": rep["capabilities"],
+                "signals": rep["signals"][:20],
+                "unavailable": rep["unavailable"][:8],
+                "n_signals": len(rep["signals"])}
+
+    return AdvisoryModuleAdapter("order_flow_institutional", analyze)
+
+
 def _tamic_market_time_service() -> AdvisoryModuleAdapter:
     """tamic MarketTimeEngine — registers real obs baselines and reports
     active market-time acceleration events for the symbol."""
@@ -5253,6 +5275,7 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("self_learning_ensemble", _self_learning_ensemble_service),
     ("signal_regime_change", _signal_regime_change_service),
     ("signal_statistical_outliers", _signal_outlier_service),
+    ("order_flow_institutional", _order_flow_institutional_service),
     ("tamic_market_time", _tamic_market_time_service),
     ("tamic_institutional_time", _institutional_time_service),
     ("tamic_optionality", _optionality_service),
