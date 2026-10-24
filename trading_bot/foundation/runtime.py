@@ -72,8 +72,42 @@ class _ExternalFeedBridge:
             cik=self.cfg.get("sec_13f_cik"),
             cot_market=self.cfg.get("cot_market"))
         feeds.update({k: v for k, v in alt.items() if v})
+        # Free public crypto market data — keyless. Config names the
+        # Binance pair to read microstructure for; a list enables real
+        # cross-exchange venue_prices (Binance vs Bybit).
+        crypto = self.cfg.get("crypto_symbol")
+        if crypto:
+            micro = await self.engine.fetch_crypto_microstructure(crypto)
+            for key in ("order_book", "bids", "asks", "bid_volume",
+                        "ask_volume", "imbalance_ratio", "depth_ratio",
+                        "order_flow"):
+                if micro.get(key):
+                    feeds[key] = micro[key]
+            # Provenance: this book/tape is the configured crypto pair's,
+            # not the obs symbol's — consumers must not mislabel it.
+            feeds["microstructure_symbol"] = micro.get("symbol")
+        crypto_list = self.cfg.get("crypto_cross_venue") or []
+        if crypto_list:
+            venue = await self.engine.fetch_crypto_cross_venue(crypto_list)
+            if venue:
+                feeds["venue_prices"] = venue
+        # Economic calendar — keyless ForexFactory mirror. High/medium
+        # impact events inside the lookahead window become calendar_risk
+        # evidence; an imminent high-impact event raises the blackout
+        # flag for the decision path's own risk gating.
+        cal = await self.engine.fetch_economic_calendar(
+            lookahead_hours=int(self.cfg.get("calendar_lookahead", 24)))
+        events = cal.get("events") if isinstance(cal, dict) else None
+        if events:
+            feeds["economic_events"] = events
+            blackout_min = int(self.cfg.get("calendar_blackout_min", 15))
+            feeds["calendar_blackout"] = any(
+                e.get("impact") == "High"
+                and -blackout_min <= float(e.get("minutes_until") or 1e9)
+                <= blackout_min
+                for e in events)
         # market_data fetch is same-symbol multi-TF (not a second venue),
-        # so venue_prices/order_flow stay absent until a real feed exists.
+        # so same-venue venue_prices stay absent until a real feed exists.
         if feeds:
             self._snapshot = feeds
 

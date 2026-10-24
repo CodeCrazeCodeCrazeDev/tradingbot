@@ -27,7 +27,7 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -80,6 +80,9 @@ def _quote_extra(client: Any, symbol: str) -> Dict[str, Any]:
     bid, ask = float(tick.bid), float(tick.ask)
     mid = (bid + ask) / 2.0
     return {"bid": bid, "ask": ask,
+            # Fresh live mark: decision/execution prices should key off the
+            # quote at decision time, not the minutes-old bar close.
+            "mark_price": mid,
             "spread_bps": (ask - bid) / mid * 1e4 if mid else None,
             "quote_time": int(getattr(tick, "time", 0))}
 
@@ -212,6 +215,22 @@ async def run(args: argparse.Namespace) -> int:
         await runtime.start()
         console = OperatorConsole(runtime.bot)
         await console.restore_state()
+
+        # Restore open positions from the prior session — without this a
+        # restart orphans persisted fills: the ledger holds exposure the
+        # CSC forgot, so those positions never settle and never score
+        # their predictions (self_state then reports phantom exposure).
+        csc0 = getattr(runtime.bot, "csc", None)
+        pos_state_path = state_dir / "open_positions.json"
+        if (csc0 is not None and hasattr(csc0, "import_open_positions")
+                and pos_state_path.exists()):
+            try:
+                n = csc0.import_open_positions(json.loads(
+                    pos_state_path.read_text(encoding="utf-8")))
+                if n:
+                    logger.info("restored %d open positions", n)
+            except Exception as exc:
+                logger.warning("open-position restore failed: %s", exc)
 
         if args.strategy_id:
             # --strategy-id is a registered-capability name, not just a
@@ -377,6 +396,18 @@ async def run(args: argparse.Namespace) -> int:
                     logger.info("follow warm-up %s: seeded %d closed bars",
                                 sym, seeded)
                     last_bar_time[sym] = int(warm[-1]["time"])
+
+            def _held_symbols() -> List[str]:
+                """Symbols the CSC still has open positions on. Rotation
+                must keep polling these — a dropped symbol with an open
+                position would otherwise never see another bar, never
+                settle, and leak a phantom position into self_state."""
+                csc = getattr(getattr(runtime, "bot", None), "csc", None)
+                return sorted((getattr(csc, "_open_positions", {}) or {})
+                              .keys())
+
+            quiet_polls = 0
+            quiet_logged = False
             publish_snapshot(state_dir, _snapshot(
                 processed, console, args, runtime, adapter))
             while not args.cycles or processed < args.cycles:
@@ -397,12 +428,17 @@ async def run(args: argparse.Namespace) -> int:
                         mt5_l2.start(active)
                     for sym in active:
                         last_bar_time.setdefault(sym, 0)
-                for sym in active:
+                # Poll the union of selected symbols + symbols with open
+                # positions, so rotation can't orphan unsettled exposure.
+                tracked = sorted(set(active) | set(_held_symbols()))
+                produced = 0
+                for sym in tracked:
                     bars = _closed_bars(client, sym, tf, 1)
                     if (bars is None or not len(bars)
                             or int(bars[0]["time"])
                             == last_bar_time.get(sym)):
                         continue
+                    produced += 1
                     last_bar_time[sym] = int(bars[0]["time"])
                     extra = _quote_extra(client, sym)
                     if l2_feed is not None:
@@ -423,11 +459,58 @@ async def run(args: argparse.Namespace) -> int:
                     processed += 1
                     publish_snapshot(state_dir, _snapshot(
                         processed, console, args, runtime, adapter))
+                if produced:
+                    quiet_polls = 0
+                    quiet_logged = False
+                else:
+                    quiet_polls += 1
+                    # Forex venue quiet hours: Sat all day + Sun before
+                    # ~22:00 UTC + Fri after ~22:00 UTC the FX tape is
+                    # dead. Crypto symbols on the venue may still print,
+                    # so keep polling at reduced cadence rather than
+                    # suspending — but say so once instead of idling
+                    # silently for days.
+                    now = datetime.now(timezone.utc)
+                    fx_quiet = (now.weekday() == 5
+                                or (now.weekday() == 6 and now.hour < 22)
+                                or (now.weekday() == 4 and now.hour >= 22))
+                    if quiet_polls >= 3 and not quiet_logged:
+                        quiet_logged = True
+                        if fx_quiet:
+                            logger.info(
+                                "FX market closed (weekend) - no new bars "
+                                "after %d polls; polling at reduced "
+                                "cadence until the Sunday reopen",
+                                quiet_polls)
+                        else:
+                            logger.info(
+                                "no new bars after %d polls - venue feed "
+                                "may be idle; continuing to poll",
+                                quiet_polls)
+                    await asyncio.sleep(
+                        max(args.interval * 6.0, 60.0)
+                        if fx_quiet and quiet_polls >= 3
+                        else max(args.interval, 5.0))
+                    continue
                 await asyncio.sleep(max(args.interval, 5.0))
     finally:
         if console is not None:
             publish_snapshot(state_dir, _snapshot(
                 processed, console, args, runtime, adapter))
+        # Persist open positions so a restart keeps tracking them (see
+        # import_open_positions above) — atomic temp+replace; a crashed
+        # write must not corrupt the prior session's state file.
+        csc1 = getattr(getattr(runtime, "bot", None), "csc", None)
+        if csc1 is not None and hasattr(csc1, "export_open_positions"):
+            try:
+                pos_state_path = state_dir / "open_positions.json"
+                tmp = pos_state_path.with_suffix(".tmp")
+                tmp.write_text(json.dumps(
+                    csc1.export_open_positions(), default=str),
+                    encoding="utf-8")
+                tmp.replace(pos_state_path)
+            except Exception as exc:
+                logger.warning("open-position export failed: %s", exc)
         if feed_adapter is not None:
             await feed_adapter.disconnect()
         if l2_feed is not None:

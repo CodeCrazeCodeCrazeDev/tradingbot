@@ -44,7 +44,7 @@ def _atr_pct(bars: Sequence[Any], period: int = 14) -> Optional[float]:
         if prev_close is not None:
             trs.append(max(h - l, abs(h - prev_close), abs(l - prev_close)))
         prev_close = c
-    if not trs or not bars:
+    if not trs or len(bars) == 0:
         return None
     try:
         last = float(bars[-1]["close"])
@@ -134,15 +134,42 @@ class MarketSelector:
         """``score_fn(symbol) -> dict`` returns real-data scores; the
         caller supplies the venue's fetch path. Symbols scoring <= 0 are
         never selected."""
-        ranked = []
+        scored: Dict[str, Dict[str, Any]] = {}
         for sym in (candidates or self.universe):
             try:
                 s = score_fn(sym)
             except Exception as exc:  # noqa: BLE001
                 s = {"score": 0.0, "reason": str(exc)[:80]}
+            scored[sym] = s
+        # Liquidity is pool-relative: tick_volume is quote count, and a
+        # gold bar naturally carries ~3x an FX major's count — an
+        # absolute scale would always crown metals regardless of real
+        # interest. Normalizing by the candidate pool median compares
+        # like-for-like market interest instead of raw instrument scale.
+        vols = sorted(float(s.get("median_volume") or 0)
+                      for s in scored.values()
+                      if s.get("median_volume"))
+        pool_med = vols[len(vols) // 2] if vols else 0.0
+        ranked = []
+        for sym, s in scored.items():
+            med_vol = float(s.get("median_volume") or 0)
+            atr_pct = s.get("atr_pct")
+            if (s.get("reason") or atr_pct is None or not med_vol
+                    or not pool_med):
+                final = float(s.get("score") or 0)
+            else:
+                opportunity = float(atr_pct) / 0.2
+                sp = s.get("spread_bps")
+                cost = (float(sp) / 2.0) if sp else 0.5
+                liquidity = min(med_vol / pool_med, 2.0)
+                clarity = float(s.get("trend_clarity") or 0)
+                final = (opportunity * min(liquidity, 1.5)
+                         * (1 + clarity) - cost)
+            s["score"] = round(final, 4)
+            s["liquidity_ref"] = round(pool_med, 1)
             self._ranking[sym] = s
-            if float(s.get("score") or 0) > 0:
-                ranked.append((float(s["score"]), sym))
+            if final > 0:
+                ranked.append((final, sym))
         ranked.sort(reverse=True)
         self._selected = [sym for _, sym in ranked[:top_n]]
         if self._selected:

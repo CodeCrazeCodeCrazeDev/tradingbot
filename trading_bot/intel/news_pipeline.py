@@ -55,17 +55,27 @@ def _env_required(name):
     return get_credential_provider().require_secret(name)
 
 
-# Ensure NLTK resources are available
-try:
-    nltk.data.find('vader_lexicon')
-    nltk.data.find('punkt')
-    nltk.data.find('stopwords')
-except LookupError:
-    nltk.download('vader_lexicon', quiet=True)
-    nltk.download('punkt', quiet=True)
-    nltk.download('stopwords', quiet=True)
-
 logger = logging.getLogger(__name__)
+
+_nltk_ready = False
+
+
+def _ensure_nltk_resources() -> None:
+    """Download NLTK data lazily on first use — never at import time.
+    The module-level download previously blocked every importer for the
+    duration of a (possibly unreachable) network fetch."""
+    global _nltk_ready
+    if _nltk_ready:
+        return
+    try:
+        nltk.data.find('vader_lexicon')
+        nltk.data.find('punkt')
+        nltk.data.find('stopwords')
+    except LookupError:
+        nltk.download('vader_lexicon', quiet=True)
+        nltk.download('punkt', quiet=True)
+        nltk.download('stopwords', quiet=True)
+    _nltk_ready = True
 
 
 @dataclass
@@ -188,6 +198,7 @@ class NewsPipeline:
         logger.info(f"Loading sentence transformer model: {model_name}")
         self.model = SentenceTransformer('all-MiniLM-L6-v2')
         self.embedding_dim = self.model.get_sentence_embedding_dimension()
+        _ensure_nltk_resources()
         self.sentiment_analyzer = SentimentIntensityAnalyzer()
         
         # Initialize FAISS index

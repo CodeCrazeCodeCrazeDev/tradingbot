@@ -7,9 +7,10 @@ import asyncio
 import json
 import random
 import logging
+import time
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import pandas as pd
 from enum import Enum
@@ -20,6 +21,26 @@ except ImportError:
     aiohttp = None
 
 logger = logging.getLogger(__name__)
+
+
+def _aiohttp_session(**kwargs) -> Any:
+    """ClientSession pinned to the OS resolver.
+
+    When aiodns is installed aiohttp auto-selects its c-ares resolver,
+    which bypasses the OS resolver path (and any VPN/secure-DNS setup)
+    — on such hosts every request dies in DNS while urllib works fine.
+    ThreadedResolver uses socket.getaddrinfo, the same resolution path
+    the standard library uses."""
+    if aiohttp is None:
+        raise RuntimeError("aiohttp unavailable")
+    connector = kwargs.pop("connector", None)
+    if connector is None:
+        try:
+            connector = aiohttp.TCPConnector(
+                resolver=aiohttp.resolver.ThreadedResolver())
+        except Exception:  # noqa: BLE001 - older aiohttp
+            connector = None
+    return aiohttp.ClientSession(connector=connector, **kwargs)
 
 
 class DataSource(Enum):
@@ -152,7 +173,7 @@ class DataAcquisitionEngine:
             return self._generate_mock_ohlcv(symbol, timeframe)
         try:
         
-            async with aiohttp.ClientSession() as session:
+            async with _aiohttp_session() as session:
                 params = {
                     'symbol': symbol,
                     'interval': timeframe,
@@ -219,7 +240,7 @@ class DataAcquisitionEngine:
                 logger.warning("No news API key configured, using mock data")
                 headlines = self._generate_mock_news(symbols, limit)
             else:
-                async with aiohttp.ClientSession() as session:
+                async with _aiohttp_session() as session:
                     query = ' OR '.join(symbols)
                     params = {
                         'q': query,
@@ -293,7 +314,7 @@ class DataAcquisitionEngine:
                     # Mock sentiment data
                     sentiment = self._generate_mock_sentiment(symbol)
                 else:
-                    async with aiohttp.ClientSession() as session:
+                    async with _aiohttp_session() as session:
                         params = {
                             'symbol': symbol,
                             'apikey': api_key
@@ -366,7 +387,7 @@ class DataAcquisitionEngine:
                 for indicator in indicators:
                     macro_data[indicator] = self._generate_mock_macro(indicator)
             else:
-                async with aiohttp.ClientSession() as session:
+                async with _aiohttp_session() as session:
                     for indicator in indicators:
                         try:
                             params = {
@@ -565,7 +586,7 @@ class DataAcquisitionEngine:
             "sec", {}).get("user_agent",
                            "alphaalgo-research contact@example.com")}
         try:
-            async with aiohttp.ClientSession(headers=ua) as session:
+            async with _aiohttp_session(headers=ua) as session:
                 cik10 = str(cik).zfill(10)
                 async with session.get(
                         f"https://data.sec.gov/submissions/CIK{cik10}.json",
@@ -640,7 +661,7 @@ class DataAcquisitionEngine:
                 "$order": "report_date_as_yyyy_mm_dd DESC",
                 "$limit": 1,
             }
-            async with aiohttp.ClientSession() as session:
+            async with _aiohttp_session() as session:
                 async with session.get(url, params=params,
                                        timeout=15) as resp:
                     if resp.status != 200:
@@ -684,7 +705,7 @@ class DataAcquisitionEngine:
         if aiohttp is None or not (cid and csecret):
             return {}
         try:
-            async with aiohttp.ClientSession() as session:
+            async with _aiohttp_session() as session:
                 # OAuth token
                 async with session.post(
                         "https://ews.fip.finra.org/fip-rest/ews/oauth2/"
@@ -748,6 +769,171 @@ class DataAcquisitionEngine:
             for (name, _), res in zip(tasks, results)
             if res and not isinstance(res, Exception)
         }
+
+    async def fetch_economic_calendar(
+        self, lookahead_hours: int = 24,
+    ) -> Dict[str, Any]:
+        """This week's macro calendar — public ForexFactory mirror at
+        nfs.faireconomy.media, no key. Returns high/medium-impact events
+        inside the lookahead window with real timestamps so the decision
+        path can treat event risk as evidence (not a fabricated score)."""
+        if aiohttp is None:
+            return {}
+        try:
+            async with _aiohttp_session() as session:
+                async with session.get(
+                        "https://nfs.faireconomy.media/"
+                        "ff_calendar_thisweek.json",
+                        timeout=15) as resp:
+                    if resp.status != 200:
+                        return {}
+                    rows = await resp.json()
+            now = datetime.now(timezone.utc)
+            horizon = now + timedelta(hours=lookahead_hours)
+            events: List[Dict[str, Any]] = []
+            for e in rows or []:
+                try:
+                    when = datetime.fromisoformat(
+                        str(e.get("date", "")).replace("Z", "+00:00"))
+                except (TypeError, ValueError):
+                    continue
+                impact = str(e.get("impact", ""))
+                if impact not in ("High", "Medium"):
+                    continue
+                if when <= horizon:
+                    events.append({
+                        "title": e.get("title"),
+                        "currency": e.get("country"),
+                        "impact": impact,
+                        "at": when.isoformat(),
+                        "minutes_until": round(
+                            (when - now).total_seconds() / 60.0, 1),
+                        "forecast": e.get("forecast"),
+                        "previous": e.get("previous"),
+                    })
+            events.sort(key=lambda x: x["minutes_until"])
+            return {"events": events, "fetched_at": time.time()}
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("economic calendar fetch failed: %s", exc)
+            return {}
+
+    async def fetch_crypto_microstructure(
+        self, symbol: str, depth_limit: int = 20,
+        trade_limit: int = 50,
+    ) -> Dict[str, Any]:
+        """Binance public spot microstructure — no key required.
+
+        ``/api/v3/depth``  -> real L2 order book (order_book/bids/asks +
+        imbalance metrics the lob/hft/liquidity adapters consume)
+        ``/api/v3/trades`` -> real public trade prints (order_flow: side
+        is inferred from buyer-taker flag, size/price are real)
+        ``symbol`` is a Binance pair name, e.g. ``BTCUSDT``.
+        Empty dict on any failure — consumers abstain honestly.
+        """
+        if aiohttp is None:
+            return {}
+        sym = str(symbol).upper().replace("/", "").replace("-", "")
+        base = "https://api.binance.com"
+        try:
+            async with _aiohttp_session() as session:
+                async with session.get(
+                        f"{base}/api/v3/depth",
+                        params={"symbol": sym, "limit": depth_limit},
+                        timeout=10) as resp:
+                    if resp.status != 200:
+                        return {}
+                    book = await resp.json()
+                async with session.get(
+                        f"{base}/api/v3/trades",
+                        params={"symbol": sym, "limit": trade_limit},
+                        timeout=10) as resp:
+                    trades = await resp.json() if resp.status == 200 else []
+
+            bids = [[float(p), float(q)]
+                    for p, q in book.get("bids", [])]
+            asks = [[float(p), float(q)]
+                    for p, q in book.get("asks", [])]
+            if not bids or not asks:
+                return {}
+            bid_vol = sum(q for _, q in bids)
+            ask_vol = sum(q for _, q in asks)
+            best_bid, best_ask = bids[0][0], asks[0][0]
+            mid = (best_bid + best_ask) / 2.0
+
+            # Binance /trades: maker=False -> buyer is the taker (aggressive
+            # buy); maker=True -> seller is the taker (aggressive sell).
+            order_flow = [{
+                "price": float(t["price"]),
+                "quantity": float(t["qty"]),
+                "side": "sell" if t.get("isBuyerMaker") else "buy",
+                "time": int(t["time"]),
+                "venue": "binance",
+            } for t in trades if isinstance(t, dict)]
+
+            return {
+                "symbol": sym,
+                "order_book": {"bids": bids, "asks": asks,
+                               "symbol": sym,
+                               "source": "binance_rest"},
+                "bids": bids, "asks": asks,
+                "bid": best_bid, "ask": best_ask,
+                "mark_price": mid,
+                "spread_bps": ((best_ask - best_bid) / mid * 1e4
+                               if mid else None),
+                "bid_volume": bid_vol, "ask_volume": ask_vol,
+                "imbalance_ratio": (bid_vol / ask_vol
+                                    if ask_vol > 0 else None),
+                "depth_ratio": (bid_vol - ask_vol) / (bid_vol + ask_vol)
+                if (bid_vol + ask_vol) > 0 else None,
+                "order_flow": order_flow,
+                "fetched_at": time.time(),
+            }
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("crypto microstructure fetch failed: %s", exc)
+            return {}
+
+    async def fetch_crypto_cross_venue(
+        self, symbols: List[str],
+    ) -> Dict[str, Any]:
+        """Real cross-exchange quotes for crypto pairs — Binance vs Bybit
+        public tickers, no keys. Returns ``venue_prices`` shaped as
+        ``{SYMBOL: {"binance": px, "bybit": px}}`` — the honest input for
+        genuine cross-exchange arbitrage evidence."""
+        if aiohttp is None or not symbols:
+            return {}
+        out: Dict[str, Dict[str, float]] = {}
+        try:
+            async with _aiohttp_session() as session:
+                for sym in symbols:
+                    pair = str(sym).upper().replace("/", "").replace("-", "")
+                    venues: Dict[str, float] = {}
+                    try:
+                        async with session.get(
+                                "https://api.binance.com/api/v3/ticker/price",
+                                params={"symbol": pair},
+                                timeout=10) as resp:
+                            if resp.status == 200:
+                                venues["binance"] = float(
+                                    (await resp.json())["price"])
+                        async with session.get(
+                                "https://api.bybit.com/v5/market/tickers",
+                                params={"category": "spot", "symbol": pair},
+                                timeout=10) as resp:
+                            if resp.status == 200:
+                                rows = (await resp.json()).get(
+                                    "result", {}).get("list", [])
+                                if rows:
+                                    venues["bybit"] = float(
+                                        rows[0]["lastPrice"])
+                    except Exception as exc:  # noqa: BLE001
+                        logger.debug("cross-venue %s fetch failed: %s",
+                                     pair, exc)
+                    if len(venues) >= 2:
+                        out[pair] = venues
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("cross-venue fetch failed: %s", exc)
+            return {}
+        return out
 
     def get_cached_data(
         self,

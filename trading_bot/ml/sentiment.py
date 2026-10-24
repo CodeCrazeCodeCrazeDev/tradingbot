@@ -49,15 +49,25 @@ from trading_bot.adaptive_systems.adaptive_learning import AdaptiveLearningEngin
 import numpy
 import pandas
 
-# Download necessary NLTK resources
-try:
-    nltk.data.find('tokenizers/punkt')
-    nltk.data.find('sentiment/vader_lexicon')
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    nltk.download('punkt', quiet=True)
-    nltk.download('vader_lexicon', quiet=True)
-    nltk.download('stopwords', quiet=True)
+# NLTK resources are resolved lazily at analyzer init — a module-level
+# download blocks every importer for the duration of a (possibly
+# unreachable) network fetch.
+_nltk_ready = False
+
+
+def _ensure_nltk_resources() -> None:
+    global _nltk_ready
+    if _nltk_ready:
+        return
+    try:
+        nltk.data.find('tokenizers/punkt')
+        nltk.data.find('sentiment/vader_lexicon')
+        nltk.data.find('corpora/stopwords')
+    except LookupError:
+        nltk.download('punkt', quiet=True)
+        nltk.download('vader_lexicon', quiet=True)
+        nltk.download('stopwords', quiet=True)
+    _nltk_ready = True
 
 # Define specific exceptions
 class SentimentAnalysisError(Exception):
@@ -227,6 +237,7 @@ class SentimentAnalyzer:
     
     def _initialize_nlp(self) -> SentimentIntensityAnalyzer:
         """Initialize NLP components for sentiment analysis."""
+        _ensure_nltk_resources()
         return SentimentIntensityAnalyzer()
     
     def _initialize_adaptive_learner(self) -> Optional[AdaptiveLearningEngine]:

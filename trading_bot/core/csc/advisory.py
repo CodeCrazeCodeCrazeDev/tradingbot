@@ -370,40 +370,49 @@ class _BarHistory:
     """
 
     def __init__(self, maxlen: int = 512) -> None:
-        self._bars: "collections.deque" = collections.deque(maxlen=maxlen)
+        # Per-symbol windows: an interleaved multi-symbol feed must not
+        # split one bounded deque across instruments — each symbol keeps
+        # its own full maxlen of real bars.
+        self._maxlen = maxlen
+        self._bars_by_sym: Dict[str, "collections.deque"] = {}
+        self._last_sym: Optional[str] = None
 
     def _window(self) -> List[Dict[str, Any]]:
         """Bars for the most-recently-observed symbol only. Without this
         filter an interleaved multi-symbol feed silently concatenates
         EURUSD and GBPUSD closes into one nonsense series."""
-        bars = list(self._bars)
-        if not bars:
-            return bars
-        sym = bars[-1].get("_symbol")
-        return [b for b in bars if b.get("_symbol") == sym]
+        if self._last_sym is None:
+            return []
+        return list(self._bars_by_sym.get(self._last_sym) or [])
 
     def add(self, ctx: Mapping[str, Any]) -> int:
         close = _num(ctx.get("close") or ctx.get("price"))
         if close is None:
-            return len(self._bars)
+            return len(self)
         # Analyzers that compute time-deltas or annotate levels expect a
         # numeric "time" column; use the observation's own timestamp when
         # numeric, else the monotonically increasing bar index — never a
         # fabricated wall-clock.
         t = _num(ctx.get("time") or ctx.get("timestamp"))
-        self._bars.append({
-            "_symbol": str(ctx.get("symbol") or "UNKNOWN"),
-            "time": float(t) if t is not None else float(len(self._bars)),
+        sym = str(ctx.get("symbol") or "UNKNOWN")
+        bars = self._bars_by_sym.get(sym)
+        if bars is None:
+            bars = self._bars_by_sym[sym] = collections.deque(
+                maxlen=self._maxlen)
+        self._last_sym = sym
+        bars.append({
+            "_symbol": sym,
+            "time": float(t) if t is not None else float(len(bars)),
             "open": _num(ctx.get("open")) or close,
             "high": _num(ctx.get("high")) or close,
             "low": _num(ctx.get("low")) or close,
             "close": close,
             "volume": _num(ctx.get("volume")) or 0.0,
         })
-        return len(self._bars)
+        return len(bars)
 
     def __len__(self) -> int:
-        return len(self._bars)
+        return len(self._window())
 
     def bars(self, last: Optional[int] = None) -> List[Dict[str, float]]:
         bars = [{k: v for k, v in b.items() if k != "_symbol"}
@@ -2598,15 +2607,29 @@ def _elite_master_service() -> AdvisoryModuleAdapter:
             result = _run_coro_sync(result)
         return result
 
+    in_flight = False
+
     async def analyze(ctx: Mapping[str, Any]) -> Any:
         # Run in an executor: with torch present this module spins up heavy
         # subsystems synchronously — a direct await would block the whole
         # loop past the per-service timeout and stall the pipeline.
-        loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, _sync_round, ctx)
-        return _payload(result)
+        # wait_for can abandon the await but cannot kill the executor
+        # thread, so repeated timeouts would stack heavy background rounds
+        # competing for the GIL. Skip the consult while a previous round
+        # is still computing instead of queueing another.
+        nonlocal in_flight
+        if in_flight:
+            return {"status": "busy"}
+        in_flight = True
+        try:
+            loop = asyncio.get_running_loop()
+            result = await loop.run_in_executor(None, _sync_round, ctx)
+            return _payload(result)
+        finally:
+            in_flight = False
 
-    return AdvisoryModuleAdapter("elite_master_analysis", analyze)
+    return AdvisoryModuleAdapter(
+        "elite_master_analysis", analyze, timeout_s=20.0)
 
 
 def _complete_impl_service() -> AdvisoryModuleAdapter:

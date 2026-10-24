@@ -872,6 +872,12 @@ class CognitiveSystemController:
             outcome_rows = await self._safe_await(sink.list_audit_events(
                 event_type="DECISION_OUTCOME", limit=10000))
             self._rebuild_reliability(outcome_rows or [])
+            # The settled-outcome journal feeds the self-state advisors —
+            # rebuild it from durable POSITION_SETTLED rows so psychology/
+            # counterfactual/decay evidence survives restarts too.
+            settled_rows = await self._safe_await(sink.list_audit_events(
+                event_type="POSITION_SETTLED", limit=1000))
+            self._rehydrate_settled_journal(settled_rows or [])
             if restored.get("nodes") or restored.get("edges") or policy_n:
                 logger.info(
                     "CSC-V6: rehydrated research state — %d nodes, %d edges, "
@@ -919,6 +925,29 @@ class CognitiveSystemController:
             logger.info(
                 "CSC-V6: reliability tracker rebuilt — %d outcomes replayed",
                 replayed)
+
+    def _rehydrate_settled_journal(self, rows: List[Any]) -> None:
+        """Replay POSITION_SETTLED rows into _settled_outcomes — the
+        bounded journal the self-state advisors consume. Details carry the
+        full entry shape, so dedup keys (entry_seq/exit_seq) stay unique."""
+        import json as _json
+        restored = 0
+        for row in reversed(rows or []):  # repository returns newest-first
+            try:
+                inner = row.get("event_json")
+                inner = _json.loads(inner) if isinstance(inner, str) \
+                    else (inner or row)
+                details = inner.get("details") or {}
+                entry = dict(details)
+                entry["rehydrated"] = True
+                self._settled_outcomes.append(entry)
+                restored += 1
+            except Exception:
+                continue
+        if restored:
+            logger.info(
+                "CSC-V6: settled journal rehydrated — %d outcomes restored",
+                restored)
 
     def advisory_report(self) -> Dict[str, Any]:
         """Read-only per-advisor standing: attached services plus measured
@@ -1917,6 +1946,8 @@ class CognitiveSystemController:
                     "confidence": p.get("confidence"),
                     "regime": p.get("regime"),
                     "trade_ids": list(p.get("trade_ids") or []),
+                    "mfe": p.get("mfe"),
+                    "mae": p.get("mae"),
                 }
                 for sym, p in self._open_positions.items()
             },
@@ -1951,6 +1982,8 @@ class CognitiveSystemController:
                 "confidence": p.get("confidence"),
                 "regime": p.get("regime"),
                 "trade_ids": [],
+                "mfe": p.get("mfe"),
+                "mae": p.get("mae"),
             }
             restored += 1
         if restored:
@@ -2134,6 +2167,19 @@ class CognitiveSystemController:
         pos = self._open_positions.get(symbol)
         if pos is None:
             return
+        # Intra-bar excursion: settling on bar close alone understates the
+        # real path — a spike against the position inside the bar is
+        # invisible at M15. Track max favorable/adverse excursion from the
+        # real high/low so settled outcomes carry honest path data.
+        entry = float(pos.get("entry_price") or 0)
+        if entry > 0:
+            side = 1.0 if pos["direction"] == "BUY" else -1.0
+            for px_key in ("high", "low", "close", "price"):
+                px = obs_dict.get(px_key)
+                if isinstance(px, (int, float)) and np.isfinite(px) and px > 0:
+                    exc = side * (float(px) - entry) / entry
+                    pos["mfe"] = max(pos.get("mfe", exc), exc)
+                    pos["mae"] = min(pos.get("mae", exc), exc)
         atr = self._update_atr(str(symbol), obs_dict)
         if atr and atr > 0:
             signed = (float(price) - pos["entry_price"]) * (
@@ -2310,7 +2356,7 @@ class CognitiveSystemController:
         direction = 1.0 if pos["direction"] == "BUY" else -1.0
         realized = direction * (exit_used - entry) / entry
         self._funnel["settled_positions"] += 1
-        self._settled_outcomes.append({
+        journal_entry = {
             "symbol": pos["symbol"], "direction": pos["direction"],
             "entry_price": entry, "exit_price": exit_used,
             "realized_return": realized, "reason": reason,
@@ -2319,7 +2365,22 @@ class CognitiveSystemController:
             "regime": pos.get("regime"),
             "close_order_id": close_id,
             "settled_at_fill": fill_price is not None,
-        })
+            # Intra-bar path: realized_return alone hides the excursion.
+            "mfe": pos.get("mfe"),
+            "mae": pos.get("mae"),
+        }
+        self._settled_outcomes.append(journal_entry)
+        # Durable journal: the settled-outcome deque is the real input to
+        # psychology/counterfactual/decay self-state advisors. Persisting
+        # it lets _rehydrate_settled_journal restore it after restart —
+        # learning state must outlive the process.
+        await self._persist_audit_event(
+            event_type="POSITION_SETTLED",
+            action=pos.get("direction", "UNKNOWN"),
+            outcome="correct" if realized > 0 else "incorrect",
+            correlation_id=str(
+                close_id or (pos.get("trade_ids") or [""])[0] or ""),
+            details=journal_entry)
         for tid in list(pos["trade_ids"]):
             try:
                 await self.record_outcome(
@@ -3259,7 +3320,21 @@ class CognitiveSystemController:
             best_branch, sim_results, trade_id=trade_id, market_data=obs_dict)
         if decision_proposal and isinstance(decision_proposal, dict):
             decision_proposal["trade_id"] = trade_id
-            decision_proposal["price"] = obs_dict.get("price", obs_dict.get("close"))
+            # Execution price should be the freshest real mark, not the
+            # minutes-old bar close the pipeline decided on. mark_price +
+            # quote_time are injected only by live quote paths (follow
+            # mode); replay bars carry neither, so replay stays causal.
+            mark = obs_dict.get("mark_price")
+            quote_ts = obs_dict.get("quote_time")
+            fresh = False
+            try:
+                fresh = (mark is not None and quote_ts is not None
+                         and abs(time.time() - float(quote_ts)) <= 30.0)
+            except (TypeError, ValueError):
+                pass
+            decision_proposal["price"] = (
+                float(mark) if fresh
+                else obs_dict.get("price", obs_dict.get("close")))
             self._apply_net_of_cost_gate(
                 decision_proposal, best_branch, sim_results, obs_dict)
         return decision_proposal
