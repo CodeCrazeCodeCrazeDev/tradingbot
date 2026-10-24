@@ -2701,9 +2701,13 @@ class CognitiveSystemController:
         # so the feedback is measured, not assumed benign.
         if self._last_advisory_disagreement is not None:
             _d = self._last_advisory_disagreement
-            _hist = getattr(self, "_disagreement_hist", None)
-            if _hist is None:
-                _hist = self._disagreement_hist = deque(maxlen=64)
+            # Per-symbol: disagreement on EURUSD must not measure
+            # autocorrelation against GBPUSD's next cycle.
+            _sym = str(obs_dict.get("symbol") or "?")
+            _hmap = getattr(self, "_disagreement_hist", None)
+            if _hmap is None:
+                _hmap = self._disagreement_hist = {}
+            _hist = _hmap.setdefault(_sym, deque(maxlen=64))
             _hist.append(_d)
             if len(_hist) >= 8:
                 import numpy as _npd

@@ -60,7 +60,8 @@ def _load_htf_bars_raw(db_path: Path, symbol: str, timeframe: str
 
 
 def db_observations(db_path: Path, symbol: str, timeframe: str,
-                    skip: int = 0, htf_timeframe: str = ""
+                    skip: int = 0, htf_timeframe: str = "",
+                    broker_tz_offset: float = 0.0
                     ) -> Iterator[Dict[str, Any]]:
     """Replay market_data.db rows read-only as raw observations.
 
@@ -105,16 +106,28 @@ def db_observations(db_path: Path, symbol: str, timeframe: str,
             if skip > 0:
                 skip -= 1
                 continue
-            obs = {"symbol": symbol, "timestamp": ts, "open": o, "high": h,
+            _ts = ts
+            if broker_tz_offset:
+                # De-offset broker server time to UTC: the volume-by-
+                # hour signature proves an EET-style clock (trough at
+                # 0:00 == NY close). DST drift (~+-1h, twice yearly)
+                # is NOT corrected — a fixed offset is honest about
+                # what it can't know.
+                from datetime import datetime as _dd, timedelta as _td
+                _ts = (_dd.fromisoformat(ts.replace("Z", "+00:00"))
+                       - _td(hours=broker_tz_offset)).isoformat()
+            obs = {"symbol": symbol, "timestamp": _ts, "open": o, "high": h,
                    "low": l, "close": c, "volume": v, "price": c,
                    # MT5/broker FX 'volume' is tick count, not traded
                    # volume — advisors must not calibrate on it as
                    # real size.
                    "volume_kind": "tick", "timeframe": timeframe,
-                   # Timestamps are broker server time (EET-style),
-                   # NOT UTC — session features must not treat them
-                   # as UTC without de-offsetting.
-                   "ts_is_broker_time": True}
+                   # Source timestamps are broker server time
+                   # (EET-style), NOT UTC. When broker_tz_offset is
+                   # set, `timestamp` is UTC-shifted and
+                   # `broker_timestamp` retains the raw value.
+                   "ts_is_broker_time": True,
+                   "broker_timestamp": ts}
             while (htf_idx < len(htf)
                    and htf_tss[htf_idx] + htf_sec <= _ts_sec(ts)):
                 htf_closes.append(htf[htf_idx][1])
@@ -418,9 +431,12 @@ async def run(args: argparse.Namespace) -> int:
         serve_dashboard(state_dir, args.dashboard_port)
 
     if args.source == "db":
-        source = db_observations(PROJECT_ROOT / "market_data.db",
+        source = db_observations(
+            PROJECT_ROOT / "market_data.db",
                                  args.symbol, args.timeframe, args.skip,
-                                 args.htf_timeframe)
+                                 args.htf_timeframe,
+                                 broker_tz_offset=
+                                 args.broker_tz_offset)
     else:
         source = synthetic_observations(args.symbol, args.cycles or 200,
                                         args.seed)
@@ -592,6 +608,10 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--interval", type=float, default=0.0,
                         help="seconds between cycles (0 = as fast as possible)")
     parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument("--broker-tz-offset", type=float, default=0.0,
+                        help="hours to subtract from broker server "
+                             "timestamps to reach UTC (EET ≈ 2); DST "
+                             "drift is NOT corrected")
     parser.add_argument("--stale-drop-seconds", type=float, default=0,
                         help="drop obs whose timestamp is more than N "
                              "seconds older than wall clock; live-feed "

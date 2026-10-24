@@ -8,6 +8,7 @@ resubmission — and every recovery leaves an ``audit_events`` row.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any, Dict, Optional
 
@@ -90,48 +91,61 @@ class ExecutionReconciler:
             return {"count": 0, "recovered": []}
 
         pending = await repo.list_orders(statuses=list(NON_TERMINAL_STATUSES))
-        recovered = []
-        for row in pending:
+        # Bounded-parallel recovery: hundreds of orphaned orders must
+        # not serialize into minutes of restart latency while live
+        # exposure sits at the venue. Cap in-flight venue calls.
+        _sem = asyncio.Semaphore(8)
+
+        async def _one(row):
             client_order_id = row["client_order_id"]
             order = repo.decode_order(row["order_json"])
-            try:
-                report = await self.service.adapter.get_order(client_order_id)
-            except Exception as exc:
-                logger.warning("Recovery lookup failed for %s: %s", client_order_id, exc)
-                await self._audit("order_recovery", "lookup_failed", client_order_id,
-                                  {"error": str(exc)})
-                recovered.append({"client_order_id": client_order_id, "outcome": "lookup_failed"})
-                continue
+            async with _sem:
+                try:
+                    report = await self.service.adapter.get_order(
+                        client_order_id)
+                except Exception as exc:
+                    logger.warning(
+                        "Recovery lookup failed for %s: %s",
+                        client_order_id, exc)
+                    await self._audit(
+                        "order_recovery", "lookup_failed",
+                        client_order_id, {"error": str(exc)})
+                    return {"client_order_id": client_order_id,
+                            "outcome": "lookup_failed"}
 
-            if report.status in _TERMINAL:
-                await repo.record_execution(order, report)
-                outcome = report.status.value
-            else:
-                # Non-terminal at the venue = a live resting order the
-                # crashed process left behind. Fail closed: cancel it so
-                # no unowned exposure can fill while the bot is down,
-                # then record the venue's verdict.
-                cancel = getattr(self.service.adapter, "cancel_order",
-                                 None)
-                cancelled = False
-                if cancel is not None:
-                    try:
-                        cancelled = bool(await cancel(client_order_id))
-                    except Exception as exc:
-                        logger.warning(
-                            "Recovery cancel failed for %s: %s",
-                            client_order_id, exc)
-                        await self._audit(
-                            "order_recovery", "cancel_failed",
-                            client_order_id, {"error": str(exc)})
-                await repo.record_order(
-                    order,
-                    OrderStatus.CANCELLED if cancelled
-                    else OrderStatus.UNKNOWN)
-                outcome = "cancelled" if cancelled else "unknown"
-            await self._audit("order_recovery", outcome, client_order_id)
-            recovered.append({"client_order_id": client_order_id, "outcome": outcome})
+                if report.status in _TERMINAL:
+                    await repo.record_execution(order, report)
+                    outcome = report.status.value
+                else:
+                    # Non-terminal at the venue = a live resting order
+                    # the crashed process left behind. Fail closed:
+                    # cancel it so no unowned exposure can fill while
+                    # the bot is down, then record the venue's verdict.
+                    cancel = getattr(self.service.adapter,
+                                     "cancel_order", None)
+                    cancelled = False
+                    if cancel is not None:
+                        try:
+                            cancelled = bool(
+                                await cancel(client_order_id))
+                        except Exception as exc:
+                            logger.warning(
+                                "Recovery cancel failed for %s: %s",
+                                client_order_id, exc)
+                            await self._audit(
+                                "order_recovery", "cancel_failed",
+                                client_order_id, {"error": str(exc)})
+                    await repo.record_order(
+                        order,
+                        OrderStatus.CANCELLED if cancelled
+                        else OrderStatus.UNKNOWN)
+                    outcome = "cancelled" if cancelled else "unknown"
+                await self._audit("order_recovery", outcome,
+                                  client_order_id)
+                return {"client_order_id": client_order_id,
+                        "outcome": outcome}
 
+        recovered = await asyncio.gather(*[_one(r) for r in pending])
         return {"count": len(pending), "recovered": recovered}
 
     async def reconcile_positions(self, account_id: Optional[str] = None) -> ReconciliationResult:

@@ -7,6 +7,7 @@ visible to the caller rather than silently losing state.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import sqlite3
@@ -388,6 +389,15 @@ class SqliteTradingRepository:
 
     async def record_audit_event(self, event: AuditEvent) -> str:
         audit_id = str(uuid4())
+        # Sync sqlite in an async method blocks the event loop for
+        # the write duration — offload to a thread so a slow disk
+        # doesn't stall cycles (or mid-cycle estop checks).
+        await asyncio.to_thread(self._record_audit_event_sync,
+                                event, audit_id)
+        return audit_id
+
+    def _record_audit_event_sync(self, event: AuditEvent,
+                                 audit_id: str) -> str:
         with self._lock:
             self._connection.execute(
                 """INSERT INTO audit_events

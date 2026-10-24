@@ -303,15 +303,23 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
         self._ret_hist: Dict[str, Deque[float]] = {}
 
     def _state(self, obs: Dict[str, Any]) -> Tuple:
-        hist = self._ret_hist.get(obs.get("symbol", ""), ())
+        # _ret_hist is keyed by _sym_key (symbol:timeframe) — a raw
+        # symbol lookup returns () forever, collapsing every state to
+        # (0,0,session). Verified live bug.
+        hist = self._ret_hist.get(_sym_key(obs), ())
+        # Instrument-adaptive buckets: thresholds scale by the
+        # instrument's own return dispersion — fixed 1e-4/0.003
+        # magnitudes are EURUSD-calibrated and mis-bucket JPY/GDP.
+        scale = float(np.median(np.abs(hist))) if len(hist) >= 8 else 1e-4
+        scale = max(scale, 1e-5)
         mom = 0
         if len(hist) >= 5:
             r = sum(hist) / len(hist)
-            mom = 1 if r > 1e-4 else (-1 if r < -1e-4 else 0)
+            mom = 1 if r > scale else (-1 if r < -scale else 0)
         vol = 0
         if len(hist) >= 8:
             sd = float(np.std(hist))
-            vol = 2 if sd > 0.003 else (1 if sd > 0.001 else 0)
+            vol = 2 if sd > 3 * scale else (1 if sd > 1.5 * scale else 0)
         return (mom, vol, _session_bucket(obs.get("timestamp")))
 
     def _reward(self, p: _Pending, obs: Dict[str, Any]) -> Optional[float]:
@@ -429,17 +437,22 @@ class AdaptiveSpreadRL(_TabularQ, _DeferredLearner):
         self._inventory_proxy: Dict[str, float] = {}
 
     def _state(self, obs: Dict[str, Any]) -> Tuple:
-        sym_ = str(obs.get("symbol") or "?")
+        sym_ = _sym_key(obs)
         _h = self._ret_hist.get(sym_, ())
         ip = self._inventory_proxy.get(sym_, 0.0)
+        # Instrument-adaptive buckets — fixed magnitudes mis-bucket
+        # instruments with different return dispersion.
+        scale = float(np.median(np.abs(_h))) if len(_h) >= 8 else 1e-4
+        scale = max(scale, 1e-5)
         vol = 0
         if len(_h) >= 8:
             sd = float(np.std(_h))
-            vol = 2 if sd > 0.003 else (1 if sd > 0.001 else 0)
+            vol = 2 if sd > 3 * scale else (1 if sd > 1.5 * scale else 0)
         trend = 0
         if len(_h) >= 12:
             r = sum(list(_h)[-12:])
-            trend = 1 if r > 0.002 else (-1 if r < -0.002 else 0)
+            trend = 1 if r > 2 * scale else (
+                -1 if r < -2 * scale else 0)
         inv = 1 if ip > 0.5 else (-1 if ip < -0.5 else 0)
         return (vol, trend, inv,
                 _session_bucket(obs.get("timestamp")))
@@ -451,7 +464,7 @@ class AdaptiveSpreadRL(_TabularQ, _DeferredLearner):
         s_mult = self.SPREADS[p.action // 3]
         skew = self.SKEWS[p.action % 3]
         fwd = (c - p.price) / p.price
-        _h = self._ret_hist.get(str(obs.get("symbol") or "?"), ())
+        _h = self._ret_hist.get(_sym_key(obs), ())
         vol = float(np.std(_h)) if len(_h) >= 8 else 0.001
         # half-spread capture proxy vs adverse move
         half_spread = 0.0002 * s_mult

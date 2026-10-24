@@ -2329,6 +2329,83 @@ def _maven_stats_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("maven_stats", analyze)
 
 
+def _microfish_swarm_service() -> AdvisoryModuleAdapter:
+    """aads MicroFishSwarm - emergent micro-agent consensus on real
+    prices. Fish track their own accuracy; settled outcomes feed their
+    weight updates via self_state so the swarm's internal reliability is
+    measured, not assumed."""
+    from trading_bot.aads.core.microfish_swarm import MicroFishSwarm
+
+    swarm = MicroFishSwarm()
+    hist = _BarHistory()
+    fed: set = set()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        symbol = str(ctx.get("symbol") or "UNKNOWN")
+        # Feed realized outcomes into fish weight updates — deduped by
+        # the same journal key the other self-state adapters use.
+        for o in (_self_state(ctx).get("settled_outcomes") or []):
+            key = (o.get("symbol"), o.get("entry_seq"), o.get("exit_seq"))
+            if key in fed or str(o.get("symbol")) != symbol:
+                continue
+            fed.add(key)
+            try:
+                swarm.update_fish_outcomes(
+                    symbol, float(o.get("realized_return") or 0.0))
+            except Exception:  # noqa: BLE001
+                pass
+        prices = hist.prices()
+        if len(prices) < 10:
+            return {"status": "warming", "bars": len(prices)}
+        sig = swarm.get_consensus(symbol, {
+            "prices": prices,
+            "regime": str(ctx.get("regime") or "unknown")})
+        return _payload(sig)
+
+    return AdvisoryModuleAdapter("microfish_consensus", analyze)
+
+
+def _aads_causal_service() -> AdvisoryModuleAdapter:
+    """aads CausalWorldModel - Pearl do-calculus counterfactuals on a
+    real macro graph. cb_rates values from the external feed set the
+    Fed_Rate node; scenario impacts are model estimates reported as
+    evidence, never executed decisions."""
+    from trading_bot.aads.core.causal_world_model import CausalWorldModel
+
+    model = CausalWorldModel()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        # Inject real fetched data where the graph has a node for it.
+        cb = ctx.get("cb_rates")
+        if isinstance(cb, Mapping):
+            fed_rate = _num(cb.get("FED") or cb.get("fed"))
+            if fed_rate is not None:
+                try:
+                    model.set_node_value("Fed_Rate", float(fed_rate))
+                except Exception:  # noqa: BLE001
+                    pass
+        symbol = str(ctx.get("symbol") or "UNKNOWN")
+        scenarios = model.counterfactual_trade_analysis(
+            symbol, "long", 0.0)
+        out: Dict[str, Any] = {}
+        for name, res in (scenarios or {}).items():
+            # causal_effects = do-intervention deltas vs baseline — the
+            # actual scenario signal; observed_variables is just the
+            # pre-intervention state.
+            if isinstance(res, Mapping):
+                obs = res.get("causal_effects") or {}
+            else:
+                obs = getattr(res, "causal_effects", None) or {}
+            out[name] = {str(k): _primitive(v)
+                         for k, v in list(obs.items())[:8]}
+        return {"scenarios": out, "fed_rate": _primitive(
+            model.get_node_value("Fed_Rate"))}
+
+    return AdvisoryModuleAdapter("aads_causal_counterfactual", analyze)
+
+
+
 def _aamis_service() -> AdvisoryModuleAdapter:
     """aamis_v3 master orchestrator — its (deliberately abstaining)
     consolidated report is real advisory evidence."""
@@ -5817,6 +5894,8 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("alpha_evolve_signal", _alpha_evolve_service),
     ("polymarket_estimate", _polymarket_service),
     ("maven_stats", _maven_stats_service),
+    ("microfish_consensus", _microfish_swarm_service),
+    ("aads_causal_counterfactual", _aads_causal_service),
     ("aamis_market", _aamis_service),
     ("learner_knowledge", _learner_knowledge_service),
     ("decision_explainer", _decision_explainer_service),
