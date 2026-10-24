@@ -1526,8 +1526,15 @@ class CognitiveSystemController:
         # error, not a fixed per-task multiplier.
         error = abs(confidence - (1.0 if was_correct else 0.0))
         cur = float(getattr(self.state, "epistemic_uncertainty", 0.5) or 0.5)
+        # While an exploration budget is active, decay faster on
+        # correct outcomes — the point of the budget is to teach the
+        # gate, and a 50-trade grind undoes its purpose. Scale via
+        # TB_CSC_U_DECAY for tuning without code edits.
+        _step = float(os.environ.get("TB_CSC_U_DECAY", "0.1"))
+        if self._explore_budget > 0:
+            _step *= 2.0
         self.state.epistemic_uncertainty = float(
-            np.clip(cur + (error - 0.25) * 0.1, 0.05, 0.95))
+            np.clip(cur + (error - 0.25) * _step, 0.05, 0.95))
 
         # Advisory calibrators learn from the same realized outcome.
         for service in self._advisory_services:
@@ -2733,6 +2740,7 @@ class CognitiveSystemController:
                     continue
                 w = self.reliability_tracker.get_agent_weight(
                     aid, regime)
+                w *= float(c.get("evidence_weight") or 1.0)
                 conf = float(c.get("confidence") or 0.5)
                 num += w * conf * (1.0 if direction == action else -1.0)
                 den += w * conf
@@ -2937,7 +2945,9 @@ class CognitiveSystemController:
             qty = self._explore_factor
             uncertainty_factor = self._explore_factor
             _exploratory = True
-            self._explore_budget -= 1
+            # Budget decrements at approval, not proposal — a
+            # proposal that dies at risk/shield/governance should not
+            # spend exploration allowance it never used.
 
         # Unmeasurable size on a directional action -> explicit no-position.
         if action in ("BUY", "SELL") and qty <= 0.0:
@@ -3277,6 +3287,12 @@ class CognitiveSystemController:
                 "direction": direction,
                 "confidence": float(conf) if isinstance(conf, (int, float))
                 else None,
+                # Exploration-weighted evidence: advisors that
+                # emit while exploring (epsilon-greedy) flag a lower
+                # weight so exploration noise doesn't read as
+                # conviction.
+                "evidence_weight": float(a.get("evidence_weight")
+                                         or 1.0),
             })
         self._last_advisory_calls = calls
 
@@ -3445,7 +3461,11 @@ class CognitiveSystemController:
             # through as a measured probe — without new realizations
             # the gate can never recover.
             self._cal_probe_counter += 1
-            if self._cal_probe_counter % 10 == 0:
+            # Adaptive trickle: while _ev_pairs is still below the
+            # minimum-sample count, probe more often so realizations
+            # refill quickly; once stocked, rare probes keep it fresh.
+            _rate = 5 if len(self._ev_pairs) < self._ev_min_samples                 else 20
+            if self._cal_probe_counter % _rate == 0:
                 proposal["calibration_probe"] = True
                 self._funnel["net_cost_probe"] += 1
                 return
@@ -3787,6 +3807,9 @@ class CognitiveSystemController:
         # outcome is measured entry->exit over the position's lifetime, and
         # persist the decision durably for the decision journal / read models.
         self._recent_trade_seqs.append(self._observation_seq)
+        if proposal.get("exploratory") and self._explore_budget > 0:
+            self._explore_budget -= 1
+            self._funnel["exploratory_trades"] += 1
         if isinstance(price, (int, float)) and price > 0:
             await self._register_directional(
                 trade_id, action_name, proposal.get("symbol"), float(price),

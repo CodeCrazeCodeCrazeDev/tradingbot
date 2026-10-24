@@ -99,7 +99,11 @@ def db_observations(db_path: Path, symbol: str, timeframe: str,
                    # MT5/broker FX 'volume' is tick count, not traded
                    # volume — advisors must not calibrate on it as
                    # real size.
-                   "volume_kind": "tick", "timeframe": timeframe}
+                   "volume_kind": "tick", "timeframe": timeframe,
+                   # Timestamps are broker server time (EET-style),
+                   # NOT UTC — session features must not treat them
+                   # as UTC without de-offsetting.
+                   "ts_is_broker_time": True}
             while (htf_idx < len(htf)
                    and htf_tss[htf_idx] + htf_sec <= _ts_sec(ts)):
                 htf_closes.append(htf[htf_idx][1])

@@ -112,7 +112,7 @@ class _TabularQ:
     def __init__(self, n_actions: int, *, alpha: float = 0.15,
                  gamma: float = 0.0, epsilon: float = 0.15,
                  epsilon_min: float = 0.03, epsilon_decay: float = 0.9995,
-                 max_states: int = 4096):
+                 max_states: int = 4096, forget: float = 0.999):
         self.n_actions = n_actions
         self.alpha = float(alpha)
         self.gamma = float(gamma)
@@ -123,6 +123,11 @@ class _TabularQ:
         self._q: Dict[Tuple, np.ndarray] = {}
         self._order: Deque[Tuple] = deque(maxlen=max_states)
         self._rng = np.random.default_rng(7)  # deterministic exploration
+        # Forgetting: Q-values learned under an old regime must decay
+        # or checkpointed tables pollute new regimes forever. Applied
+        # per-update on the visited row — unrevisited states are stale
+        # anyway and won't be chosen.
+        self._forget = float(forget)
         self.updates = 0
         self._ckpt: Optional[Path] = None
         self._key = "tabular_v1"
@@ -198,6 +203,7 @@ class _TabularQ:
         if not math.isfinite(reward):
             return
         q = self.row(state)
+        q *= self._forget  # recency decay before the update
         target = reward
         if next_state is not None and self.gamma > 0:
             target = reward + self.gamma * float(

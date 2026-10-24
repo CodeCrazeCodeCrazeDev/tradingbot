@@ -222,9 +222,23 @@ def score(positions, rets, cost_bps):
 async def main_async(args):
     rows = load_bars(PROJECT_ROOT / "market_data.db", args.symbol,
                      args.timeframe)
+    # Data cutoff: pin the eval horizon — a live feed keeps appending
+    # rows, and two runs on different days must not see different data.
+    if args.data_cutoff:
+        rows = [r for r in rows if str(r[0]) <= args.data_cutoff]
     n = len(rows)
-    span = min(n // 5, args.windows * args.window_bars)
-    pool_start = n - span
+    if args.spread_windows:
+        # Regime-stratified windows across the whole series instead of
+        # a contiguous tail — contiguous windows all sample the same
+        # vol regime and don't generalize.
+        stride = n // (args.windows + 1)
+        starts = [stride * (w + 1) - args.window_bars // 2
+                  for w in range(args.windows)]
+    else:
+        span = min(n // 5, args.windows * args.window_bars)
+        pool_start = n - span
+        starts = [pool_start + w * (span // args.windows)
+                  for w in range(args.windows)]
 
     rets_by_window, arms = [], {"momentum": [], "csc_no_rl": [],
                                 "csc_with_rl": []}
@@ -232,9 +246,15 @@ async def main_async(args):
         # Purged embargo: skip embargo_bars between context and the test
         # window so serial correlation cannot leak regime information
         # across the boundary.
-        start = pool_start + w * (span // args.windows)             + args.embargo_bars
-        end = min(start + args.window_bars,
-                  pool_start + (w + 1) * (span // args.windows))
+        start = max(0, starts[w]) + args.embargo_bars
+        if args.spread_windows:
+            end = min(start + args.window_bars,
+                      starts[w + 1] if w + 1 < len(starts) else n)
+        else:
+            span = min(n // 5, args.windows * args.window_bars)
+            pool_start = n - span
+            end = min(start + args.window_bars,
+                      pool_start + (w + 1) * (span // args.windows))
         test_rows = rows[start:end]
         rets = [float(test_rows[i][4]) / float(test_rows[i - 1][4]) - 1.0
                 for i in range(1, len(test_rows))]
@@ -321,6 +341,12 @@ def main():
                    help="round-trip-equivalent cost per unit turnover")
     p.add_argument("--controller-cost-bps", type=float, default=5.0)
     p.add_argument("--momentum-lookback", type=int, default=10)
+    p.add_argument("--data-cutoff", default="",
+                   help="ISO timestamp; bars after this are excluded "
+                        "(pins eval against a growing feed)")
+    p.add_argument("--spread-windows", action="store_true",
+                   help="regime-stratified windows across the series "
+                        "instead of a contiguous tail")
     p.add_argument("--embargo-bars", type=int, default=20,
                    help="purged gap between context end and window start")
     p.add_argument("--exec-lag-bars", type=int, default=1,
