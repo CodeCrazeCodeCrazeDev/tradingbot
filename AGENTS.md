@@ -150,10 +150,14 @@ review date and verify them against the current code before changing anything.
 - Untrusted strategy code, generated patches, unknown files, and
   external-repo experiments run in ephemeral sandbox sessions with no
   persistent secrets and no production access (`SandboxManager`
-  subprocess backend with kernel Job Object limits: memory cap,
-  child-spawn ban, kill-on-close, network bandwidth strangle; child
-  environment is scrubbed of secret variables. Still not a
-  container — no FS virtualization or true socket blocking).
+  subprocess backend with kernel Job Object limits (memory cap,
+  child-spawn ban, kill-on-close, network bandwidth strangle),
+  secret env scrubbing, dead-proxy injection, and LOW-integrity
+  FS confinement — sandbox children are kernel-blocked from
+  writing to medium-integrity objects (profile, repo) and are
+  confined to a per-eval low-labeled scratch dir. Still not a
+  container: no FS virtualization for reads, bandwidth strangle
+  is not a socket wall (true blocking needs OS firewall rules).
 - Verifier keys provisioned outside the repo tree
   (`key_custody`); on Windows they are DPAPI-encrypted at rest
   (bound to the user account). External HSM/KMS custody remains

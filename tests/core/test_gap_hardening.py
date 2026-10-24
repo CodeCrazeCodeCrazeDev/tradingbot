@@ -1,6 +1,8 @@
 """Gap-hardening tests — nonfinite rejection, symbol isolation,
 preflight scoping, EDGAR memoization, alert rate limits."""
 import inspect
+import os
+import sys
 
 import pytest
 
@@ -337,3 +339,53 @@ class TestSandboxResidualClosure:
             assert q.ControlFlags & 0x2  # MAX_BANDWIDTH flag
         finally:
             p.terminate(); p.wait(timeout=15)
+
+
+class TestLowIntegrityFSConfinement:
+    """TD-06 FS layer: sandbox child runs at LOW integrity — kernel
+    blocks writes to medium-integrity objects (profile, repo)."""
+
+    @pytest.mark.skipif(sys.platform != 'win32',
+                        reason='mandatory integrity levels are Windows-only')
+    def test_drop_and_query(self):
+        from trading_bot.recursive_self_improvement.job_limits import (
+            current_integrity_level, drop_to_low_integrity)
+        # Parent stays medium — dropping must happen in the CHILD.
+        assert current_integrity_level() == 0x2000
+        # We cannot drop self here (irreversible); verify in a child:
+        import multiprocessing as mp
+        ctx = mp.get_context('spawn')
+        q = ctx.Queue()
+        p = ctx.Process(target=_il_probe_child, args=(q,))
+        p.start()
+        dropped, il, home_write = q.get(timeout=30)
+        p.join(10)
+        assert dropped is True
+        assert il == 0x1000  # LOW RID
+        assert home_write is not True  # medium-integrity write denied
+
+    def test_dead_proxies_in_worker_entry(self):
+        src = open('trading_bot/recursive_self_improvement/engine_v2.py',
+                   encoding='utf-8').read()
+        i = src.index('_report_worker_entry')
+        seg = src[i:i + 3500]
+        assert '127.0.0.1:9' in seg            # dead proxy injection
+        assert 'drop_to_low_integrity' in seg  # FS confinement
+        assert 'scratch_dir' in seg            # env redirect
+        assert 'USERPROFILE' in seg
+
+
+def _il_probe_child(qq):
+    """Spawn-target probe (module level for picklability): drop own
+    integrity, then attempt a medium-integrity write."""
+    from trading_bot.recursive_self_improvement.job_limits import (
+        drop_to_low_integrity, current_integrity_level)
+    dropped = drop_to_low_integrity()
+    il = current_integrity_level()
+    import os
+    try:
+        open(os.path.join(os.path.expanduser('~'), '.il_probe_denied'), 'w')
+        home_write = True
+    except Exception:
+        home_write = None
+    qq.put((dropped, il, home_write))

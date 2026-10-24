@@ -23,8 +23,10 @@ from __future__ import annotations
 
 import ctypes
 import logging
+import os
 import sys
-from typing import Any, Optional
+from ctypes import wintypes
+from typing import Any, Optional, Union
 
 logger = logging.getLogger(__name__)
 
@@ -202,3 +204,112 @@ class JobLimits:
 
     def __exit__(self, *_: Any) -> None:
         self.close()
+
+
+# ---------------------------------------------------------------------------
+# Low-integrity filesystem confinement (TD-06, FS-write layer)
+# ---------------------------------------------------------------------------
+#
+# A process can voluntarily drop its own integrity level to LOW
+# (S-1-16-4096). From that point the kernel denies writes to any object
+# labeled medium or higher — which covers the user profile, the repo, and
+# virtually the whole filesystem. Reads are unaffected, so replay workers
+# still see the datasets they need. Writable space is a per-eval scratch
+# directory explicitly labeled Low (icacls /setintegritylevel Low).
+#
+# Verified empirically: a LOW child gets PermissionError writing to the
+# user profile while still delivering results over mp.Queue and writing
+# to its low-labeled scratch dir.
+
+_LOW_IL_SID = 'S-1-16-4096'          # SECURITY_MANDATORY_LOW_RID
+_SE_GROUP_INTEGRITY_ENABLED = 0x20
+_TokenIntegrityLevel = 25
+
+
+def drop_to_low_integrity() -> bool:
+    """Drop the *current* process to LOW integrity.
+
+    Irreversible within the process — integrity can only go down, never
+    up. Returns False (loud, logged) on any platform or API failure; the
+    caller must treat False as "FS confinement not active"."""
+    if sys.platform != 'win32':
+        logger.debug('low-integrity drop unsupported on %s', sys.platform)
+        return False
+    adv = ctypes.windll.advapi32
+    k32 = ctypes.windll.kernel32
+    k32.GetCurrentProcess.restype = wintypes.HANDLE
+    adv.OpenProcessToken.argtypes = [wintypes.HANDLE, wintypes.DWORD,
+                                     ctypes.POINTER(wintypes.HANDLE)]
+    tok = wintypes.HANDLE()
+    TOKEN_ALL_ACCESS = 0xF01FF
+    if not adv.OpenProcessToken(k32.GetCurrentProcess(), TOKEN_ALL_ACCESS,
+                                ctypes.byref(tok)):
+        logger.debug('OpenProcessToken failed: %s', k32.GetLastError())
+        return False
+    try:
+        sid = wintypes.LPVOID()
+        if not adv.ConvertStringSidToSidW(_LOW_IL_SID, ctypes.byref(sid)):
+            return False
+        try:
+            class _SID_ATTR(ctypes.Structure):
+                _fields_ = [('Sid', wintypes.LPVOID),
+                            ('Attributes', wintypes.DWORD)]
+            attr = _SID_ATTR(sid, _SE_GROUP_INTEGRITY_ENABLED)
+            ok = bool(adv.SetTokenInformation(tok, _TokenIntegrityLevel,
+                                              ctypes.byref(attr),
+                                              ctypes.sizeof(attr)))
+            if not ok:
+                logger.debug('SetTokenInformation(IL=low) failed: %s',
+                             k32.GetLastError())
+            return ok
+        finally:
+            k32.LocalFree(sid)
+    finally:
+        k32.CloseHandle(tok)
+
+
+def current_integrity_level() -> Optional[int]:
+    """Query the process's mandatory integrity RID (0x2000=medium,
+    0x1000=low). Returns None on failure — callers treat None as
+    'unknown', never as 'high'."""
+    if sys.platform != 'win32':
+        return None
+    adv = ctypes.windll.advapi32
+    k32 = ctypes.windll.kernel32
+    k32.GetCurrentProcess.restype = wintypes.HANDLE
+    adv.OpenProcessToken.argtypes = [wintypes.HANDLE, wintypes.DWORD,
+                                     ctypes.POINTER(wintypes.HANDLE)]
+    tok = wintypes.HANDLE()
+    if not adv.OpenProcessToken(k32.GetCurrentProcess(), 0x0008 | 0x0002,
+                                ctypes.byref(tok)):  # QUERY|DUPLICATE
+        return None
+    try:
+        buf = ctypes.create_string_buffer(1024)
+        ret_len = wintypes.DWORD(0)
+        if not adv.GetTokenInformation(tok, _TokenIntegrityLevel, buf,
+                                     1024, ctypes.byref(ret_len)):
+            return None
+        # TOKEN_MANDATORY_LABEL: { SID_AND_ATTRIBUTES Label } — the RID
+        # is the last DWORD of the SID sub-authority array.
+        sid_ptr = ctypes.cast(buf, ctypes.POINTER(wintypes.LPVOID)).contents
+        adv.GetSidSubAuthority.restype = wintypes.LPVOID
+        rid_ptr = adv.GetSidSubAuthority(sid_ptr, 0)
+        if not rid_ptr:
+            return None
+        return int(ctypes.cast(rid_ptr,
+                               ctypes.POINTER(wintypes.DWORD)).contents.value)
+    finally:
+        k32.CloseHandle(tok)
+
+
+def make_scratch_dir(parent: Union[str, 'Path']) -> 'Path':
+    """Create a per-eval scratch dir labeled LOW integrity so a
+    low-integrity child can write inside it."""
+    import subprocess as _sp
+    from pathlib import Path as _P
+    d = _P(parent) / ('scratch_%08x' % (os.getpid() & 0xFFFFFFFF))
+    d.mkdir(parents=True, exist_ok=True)
+    if sys.platform == 'win32':
+        _sp.run(['icacls', str(d), '/setintegritylevel', 'Low', '/q'],
+                capture_output=True)
+    return d

@@ -301,6 +301,32 @@ def _report_worker_entry(queue: Any, payload: Dict[str, Any]) -> None:
                "API_KEY", "OPENAI_API_KEY"):
         _os.environ.pop(_k, None)
 
+    # FS confinement (TD-06): redirect all writable anchor env vars to a
+    # per-eval scratch dir, then drop to LOW integrity — the kernel then
+    # denies writes to medium-integrity objects (user profile, repo,
+    # other datasets) while reads remain unrestricted. Verified: the
+    # LOW child still returns results over mp.Queue.
+    _scratch = payload.pop("scratch_dir", None)  # out-of-band, not a
+    # candidate kwarg — _report_worker explodes payload as **kwargs
+    if _scratch:
+        for _v in ("TMP", "TEMP", "TMPDIR", "USERPROFILE", "HOME",
+                   "HOMEPATH", "APPDATA", "LOCALAPPDATA"):
+            _os.environ[_v] = _scratch
+        try:
+            _os.chdir(_scratch)
+        except OSError:
+            pass
+    # Dead-end outbound HTTP(S): common exfil paths (urllib/requests)
+    # honor proxy vars; point them at the discard port.
+    for _v in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY",
+               "http_proxy", "https_proxy", "all_proxy"):
+        _os.environ[_v] = "http://127.0.0.1:9"
+    try:
+        from .job_limits import drop_to_low_integrity
+        queue.put(("diag", {"low_integrity": drop_to_low_integrity()}, 0.0))
+    except Exception:
+        queue.put(("diag", {"low_integrity": False}, 0.0))
+
     # Warm the replay path's lazy imports during startup so the wall-clock
     # budget only covers actual candidate work. The "ready" sentinel then
     # lets the parent start the work deadline after child startup (spawn +
@@ -382,6 +408,15 @@ class SandboxManager:
                 proc.join()
 
         before = self.guard.snapshot()
+        try:
+            import tempfile as _tf
+            from .job_limits import make_scratch_dir
+            scratch = make_scratch_dir(_tf.mkdtemp(prefix='rsi_sbx_'))
+            payload = {**payload, "scratch_dir": str(scratch)}
+        except Exception:
+            pass  # no scratch -> child skips FS redirect (degraded)
+        except Exception:
+            pass  # no scratch -> child skips FS redirect (degraded)
         ctx = mp.get_context("spawn")
         result_q: mp.Queue = ctx.Queue()
         proc = ctx.Process(target=_report_worker_entry,
@@ -414,6 +449,15 @@ class SandboxManager:
                 continue
             except Exception:
                 break
+            if msg[0] == "diag":
+                # child reports its own confinement state (e.g.
+                # low_integrity drop result) — record, keep waiting.
+                try:
+                    self._last_low_integrity = bool(
+                        msg[1].get("low_integrity"))
+                except Exception:
+                    pass
+                continue
             if msg[0] == "ready":
                 ready = True
                 break
