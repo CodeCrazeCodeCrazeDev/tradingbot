@@ -972,7 +972,7 @@ def _risk_evt_service() -> AdvisoryModuleAdapter:
         if v is not None:
             vols[sym].append(v)
         if len(prices[sym]) < 60:
-            return {"available": False,
+            return {"status": "warming", "available": False,
                     "warmup": f"{len(prices[sym])}/60 bars"}
         # feed detector + EVT
         try:
@@ -985,7 +985,7 @@ def _risk_evt_service() -> AdvisoryModuleAdapter:
             var99 = ars.evt_analyzer.estimate_var(sym, 0.99)
             es99 = ars.evt_analyzer.estimate_es(sym, 0.99)
             params = ars.evt_analyzer.gpd_params.get(sym, {})
-            return {"available": True,
+            return {"status": "active", "available": True,
                     "var_99": var99, "es_99": es99,
                     "gpd_fit": params.get("fit_method"),
                     "n_exceedances": params.get("n_exceedances"),
@@ -993,7 +993,8 @@ def _risk_evt_service() -> AdvisoryModuleAdapter:
                     "note": "advisory tail-risk evidence — canonical "
                             "risk service owns limits"}
         except Exception as exc:  # noqa: BLE001
-            return {"available": False, "error": repr(exc)}
+            return {"status": "unavailable", "available": False,
+                    "error": repr(exc)}
 
     return AdvisoryModuleAdapter("risk_evt", analyze)
 
@@ -1010,8 +1011,10 @@ def _order_flow_institutional_service() -> AdvisoryModuleAdapter:
         try:
             rep = svc.analyze(dict(ctx))
         except Exception as exc:  # noqa: BLE001 — advisory isolation
-            return {"available": False, "error": repr(exc)}
-        return {"available": True,
+            return {"status": "unavailable", "available": False,
+                    "error": repr(exc)}
+        return {"status": "active" if rep["signals"] else "no_signal",
+                "available": True,
                 "capabilities": rep["capabilities"],
                 "signals": rep["signals"][:20],
                 "unavailable": rep["unavailable"][:8],
@@ -1041,7 +1044,8 @@ def _tamic_market_time_service() -> AdvisoryModuleAdapter:
             events = engine.get_active_events(symbol) or []
         except Exception:  # noqa: BLE001
             events = []
-        return {"active_events": [_payload(e) for e in events[:5]],
+        return {"status": "active" if events else "no_signal",
+                "active_events": [_payload(e) for e in events[:5]],
                 "count": len(events)}
 
     return AdvisoryModuleAdapter("tamic_market_time", analyze)
@@ -1066,7 +1070,8 @@ def _institutional_time_service() -> AdvisoryModuleAdapter:
         strong = [f for f in flow_dicts
                   if str(f.get("strength", "")).upper()
                   in ("STRONG", "EXTREME")]
-        return {"institutional_flows": flow_dicts,
+        return {"status": "active" if flow_dicts else "no_signal",
+                "institutional_flows": flow_dicts,
                 "strong_flow_count": len(strong),
                 "flow_types": [str(f.get("flow_type") or f.get("type"))
                                for f in flow_dicts],
@@ -1096,7 +1101,8 @@ def _optionality_service() -> AdvisoryModuleAdapter:
         metrics = getattr(result, "metrics", None)
         payload = _payload(result) if isinstance(result, Mapping) else {}
         cat = getattr(value, "value", value)
-        return {"optionality_value": str(cat),
+        return {"status": "active" if cat not in (None, "") else "no_data",
+                "optionality_value": str(cat),
                 "preservation_pressure":
                     str(cat).upper() in ("LOW", "MINIMAL"),
                 "metrics": _payload(metrics) if metrics else payload}
@@ -1128,6 +1134,7 @@ def _time_risk_service() -> AdvisoryModuleAdapter:
         except Exception as exc:  # noqa: BLE001
             return {"status": "no_data", "reason": str(exc)[:100]}
         return {
+            "status": "active",
             "drawdown": _payload(dd) if isinstance(
                 dd, Mapping) else {},
             "recovery": _payload(rec) if isinstance(
@@ -5552,6 +5559,16 @@ MEASURED_ACTIVE_SET = frozenset((
     "indicators_liquidity", "market_anomaly_detection",
     "mixture_of_experts", "ricci_momentum", "self_learning_health",
     "volume_profile",
+    # Earned activation via measured degeneracy run (400 real EURUSD
+    # M15 bars): substantive output once warm.
+    "risk_evt",                 # 341/400 substantive (59-bar warmup)
+    "order_flow_institutional", # 291/400 substantive (no_signal honest)
+    "tamic_optionality",        # 400/400 substantive
+    "tamic_time_risk",          # 400/400 substantive
+    "lead_lag",                 # 400/400 substantive
+    "edgar_13f",                # 400/400 substantive (network-gated)
+    # Degenerate on this feed — stay unmeasured: tamic_market_time,
+    # tamic_institutional_time, wyckoff_phases
 ))
 
 # Modules imported by the live path but with no advisory decision role —
