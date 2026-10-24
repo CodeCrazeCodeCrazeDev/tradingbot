@@ -153,6 +153,50 @@ def db_observations(db_path: Path, symbol: str, timeframe: str,
         con.close()
 
 
+def cross_observations(db_path: Path, num_symbol: str, den_symbol: str,
+                       timeframe: str, skip: int = 0
+                       ) -> Iterator[Dict[str, Any]]:
+    """Derived cross rate: close = num/den on joined timestamps.
+
+    EURGBP = EURUSD/GBPUSD is real market data — the canonical cross
+    is defined this way — computed from bars we already have. Breaks
+    the USD-leg correlation every eval pair shares. Only bars that
+    exist in BOTH series are emitted (no forward-fill fabrication).
+    """
+    con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+    try:
+        num = {ts: (o, h, l, c, v) for ts, o, h, l, c, v in con.execute(
+            "SELECT timestamp, open, high, low, close, volume "
+            "FROM market_data WHERE symbol=? AND timeframe=? "
+            "ORDER BY timestamp", (num_symbol, timeframe))}
+        den = {ts: (o, h, l, c, v) for ts, o, h, l, c, v in con.execute(
+            "SELECT timestamp, open, high, low, close, volume "
+            "FROM market_data WHERE symbol=? AND timeframe=? "
+            "ORDER BY timestamp", (den_symbol, timeframe))}
+        n = 0
+        for ts in sorted(num):
+            if ts not in den:
+                continue
+            if skip > 0:
+                skip -= 1
+                continue
+            n += 1
+            no, nh, nl, nc, nv = num[ts]
+            do, dh, dl, dc, dv = den[ts]
+            yield {"symbol": f"{num_symbol}{den_symbol[3:]}",
+                   "timestamp": ts,
+                   "open": no / do, "high": nh / dl,
+                   "low": nl / dh, "close": nc / dc,
+                   "volume": min(nv, dv), "price": nc / dc,
+                   "volume_kind": "tick", "timeframe": timeframe,
+                   "ts_is_broker_time": True,
+                   "cross_derived": True}
+        logger.info("cross %s/%s: %d joined bars",
+                    num_symbol, den_symbol, n)
+    finally:
+        con.close()
+
+
 def synthetic_observations(symbol: str, n_bars: int, seed: int
                            ) -> Iterator[Dict[str, Any]]:
     from trading_bot.evaluation.synthetic_market import (
@@ -437,6 +481,10 @@ async def run(args: argparse.Namespace) -> int:
                                  args.htf_timeframe,
                                  broker_tz_offset=
                                  args.broker_tz_offset)
+    elif args.source == "cross":
+        source = cross_observations(
+            PROJECT_ROOT / "market_data.db", args.symbol,
+            args.cross_denominator, args.timeframe, args.skip)
     else:
         source = synthetic_observations(args.symbol, args.cycles or 200,
                                         args.seed)
@@ -588,9 +636,11 @@ async def run(args: argparse.Namespace) -> int:
 
 def main(argv: Optional[list] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", choices=("synthetic", "db"),
+    parser.add_argument("--source", choices=("synthetic", "db", "cross"),
                         default="synthetic")
     parser.add_argument("--symbol", default="EURUSD")
+    parser.add_argument("--cross-denominator", default="GBPUSD",
+                        help="for --source cross: denominator leg")
     parser.add_argument("--timeframe", default="M15",
                         help="db source only: market_data.db holds M15+H1; "
                              "unfiltered replay interleaves cadences")

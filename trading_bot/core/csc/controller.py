@@ -2716,6 +2716,29 @@ class CognitiveSystemController:
         # and governance all remain downstream and unaware of them.
         calls = list(getattr(self, "_last_advisory_calls", ()) or ())
 
+        # Vote-agreement measurement: many advisors are redundant
+        # transforms of the same price features — five RSI-family voters
+        # agreeing is not five independent signals. Pairwise directional
+        # agreement is measured per cycle so the tilt can bound cluster
+        # influence by evidence, not by assumed independence.
+        _votes: Dict[str, str] = {}
+        for c in calls:
+            d = str(c.get("direction") or "").upper()
+            if d in ("BUY", "SELL"):
+                _votes[str(c.get("capability_id"))] = d
+        _agr = getattr(self, "_vote_agreement", None)
+        if _agr is None:
+            _agr = self._vote_agreement = {}
+        _ids = sorted(_votes)
+        for _i in range(len(_ids)):
+            for _j in range(_i + 1, len(_ids)):
+                _key = (_ids[_i], _ids[_j])
+                _dq = _agr.get(_key)
+                if _dq is None:
+                    _dq = _agr[_key] = deque(maxlen=48)
+                _dq.append(1.0 if _votes[_ids[_i]]
+                           == _votes[_ids[_j]] else 0.0)
+
         # Model-parliament disagreement signal: normalized dispersion of
         # weighted directional votes — 0 when advisors agree, 1 when
         # split. Stored strictly-prior and enriched into the NEXT obs as
@@ -2781,6 +2804,7 @@ class CognitiveSystemController:
             regime = str(
                 getattr(self.state, "current_regime", None) or "unknown")
             num = den = gated = 0.0
+            eligible: List[Tuple[str, str, float, float]] = []
             for c in calls:
                 direction = str(c.get("direction") or "").upper()
                 if direction not in ("BUY", "SELL"):
@@ -2805,8 +2829,26 @@ class CognitiveSystemController:
                     aid, regime)
                 w *= float(c.get("evidence_weight") or 1.0)
                 conf = float(c.get("confidence") or 0.5)
-                num += w * conf * (1.0 if direction == action else -1.0)
-                den += w * conf
+                eligible.append((aid, direction, w, conf))
+            # Measured-redundancy downweight: an advisor whose directional
+            # vote tracks an already-placed peer's >85% of the time casts
+            # (1 - 0.5*agreement) of its weight — floor ~0.5x, provenance
+            # kept (the call still records), independence unassumed.
+            eligible.sort(key=lambda e: -e[2])
+            placed: List[str] = []
+            for aid, direction, w, conf in eligible:
+                red = 1.0
+                for pid in placed:
+                    _pk = (aid, pid) if aid <= pid else (pid, aid)
+                    _pdq = _agr.get(_pk)
+                    if _pdq and len(_pdq) >= 10:
+                        _a = sum(_pdq) / len(_pdq)
+                        if _a > 0.85:
+                            red = min(red, 1.0 - 0.5 * _a)
+                placed.append(aid)
+                num += w * red * conf * (
+                    1.0 if direction == action else -1.0)
+                den += w * red * conf
             self._tilt_gated = int(gated)
             return (num / den) if den > 0 else 0.0  # normalized to [-1, 1]
 
@@ -2999,6 +3041,37 @@ class CognitiveSystemController:
             getattr(self.state, "epistemic_uncertainty", 0.5) or 0.5)
         uncertainty_factor = float(max(0.0, min(1.0, 1.0 - _u / 0.7)))
         qty *= uncertainty_factor
+
+        # Portfolio correlation cap — CSC's own sizing constraint, not a
+        # risk-rule edit and not advisor veto: a same-direction entry on a
+        # symbol whose measured returns correlate strongly with an
+        # already-open position is one economic bet, not two. Scale size
+        # by 1 - |corr| so corr ~0 keeps full size and corr →1 → no new
+        # exposure. Opposite-direction entries (partial hedges) keep size.
+        _corr_factor = 1.0
+        if action in ("BUY", "SELL") and qty > 0:
+            own = list(self._obs_history.get(str(symbol), ()))
+            for osym, opos in self._open_positions.items():
+                if str(osym) == str(symbol) \
+                        or opos.get("direction") != action:
+                    continue
+                peer = list(self._obs_history.get(str(osym), ()))
+                if len(own) < 15 or len(peer) < 15:
+                    continue
+                n = min(len(own), len(peer), 30)
+                a = np.diff(np.asarray(own[-n:], dtype=float))
+                b = np.diff(np.asarray(peer[-n:], dtype=float))
+                if float(np.std(a)) <= 0 or float(np.std(b)) <= 0:
+                    continue
+                corr = float(np.corrcoef(a, b)[0, 1])
+                if np.isfinite(corr):
+                    _corr_factor = min(
+                        _corr_factor, max(0.0, 1.0 - abs(corr)))
+        if _corr_factor < 1.0:
+            qty *= _corr_factor
+            self._funnel["corr_capped"] = self._funnel.get(
+                "corr_capped", 0) + 1
+
         _exploratory = False
         if (action in ("BUY", "SELL") and qty <= 0.0
                 and self._explore_budget > 0):

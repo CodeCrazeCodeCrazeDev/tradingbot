@@ -73,6 +73,10 @@ class ServiceNode:
     # node — 'substantive' counts garbage that emits confidently.
     dir_hits: int = 0
     dir_total: int = 0
+    # Causal credit: outcomes scored only on decisions the advisor's
+    # removal would have flipped — correlation counts nothing.
+    causal_hits: int = 0
+    causal_total: int = 0
     shadow_cycles: int = 0
     last_rewired_cycle: int = 0
     rewires: int = 0
@@ -90,6 +94,8 @@ class ServiceNode:
             "substantive": self.substantive,
             "dir_hits": self.dir_hits,
             "dir_total": self.dir_total,
+            "causal_hits": self.causal_hits,
+            "causal_total": self.causal_total,
             "shadow_cycles": self.shadow_cycles,
             "last_rewired_cycle": self.last_rewired_cycle,
             "rewires": self.rewires,
@@ -108,6 +114,8 @@ class ServiceNode:
             substantive=int(d.get("substantive", 0)),
             dir_hits=int(d.get("dir_hits", 0)),
             dir_total=int(d.get("dir_total", 0)),
+            causal_hits=int(d.get("causal_hits", 0)),
+            causal_total=int(d.get("causal_total", 0)),
             shadow_cycles=int(d.get("shadow_cycles", 0)),
             last_rewired_cycle=int(d.get("last_rewired_cycle", 0)),
             rewires=int(d.get("rewires", 0)),
@@ -244,6 +252,16 @@ class SelfWiringSupervisor:
         node.dir_total += 1
         if hit:
             node.dir_hits += 1
+
+    def observe_causal(self, node_id: str, hit: bool) -> None:
+        """Score an outcome on a decision the advisor's removal would
+        have flipped — causal credit, not correlation."""
+        node = self.nodes.get(str(node_id))
+        if node is None:
+            return
+        node.causal_total += 1
+        if hit:
+            node.causal_hits += 1
 
     def _predictive_ok(self, node: ServiceNode) -> bool:
         """Promotion needs measured predictive value, not just

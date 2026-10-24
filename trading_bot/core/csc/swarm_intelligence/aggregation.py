@@ -112,9 +112,30 @@ def aggregate_all(
     votes: List[SwarmVote],
     reliabilities: Optional[Dict[str, float]] = None,
 ) -> Dict[str, MethodResult]:
-    """Run every mechanism on the same ballots."""
-    results = {}
-    for fn in (majority, weighted, borda):
-        results[fn.__name__] = fn(votes)
-    results["bayesian"] = bayesian(votes, reliabilities)
+    """Run every mechanism on a DIFFERENT view of the ballots.
+
+    Identical inputs make mechanism agreement nearly guaranteed — the
+    agreement-modulated confidence then carries no information.
+    Diversity views make disagreement informative:
+    - majority: raw votes (one advisor, one ballot)
+    - weighted: votes as measured (reliability-weighted already)
+    - borda: confident voters only — does consensus survive among
+      the high-conviction subset?
+    - bayesian: domain-deduplicated — one vote per domain so cloned
+      signal families can't fake consensus.
+    """
+    confident = [v for v in votes if v.confidence >= 0.6] or votes
+    by_domain: Dict[str, SwarmVote] = {}
+    for v in votes:
+        cur = by_domain.get(v.domain)
+        if cur is None or v.weight * v.confidence > cur.weight * cur.confidence:
+            by_domain[v.domain] = v
+    deduped = list(by_domain.values()) or votes
+
+    results = {
+        "majority": majority(votes),
+        "weighted": weighted(votes),
+        "borda": borda(confident),
+        "bayesian": bayesian(deduped, reliabilities),
+    }
     return results
