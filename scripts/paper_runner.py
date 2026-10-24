@@ -67,6 +67,20 @@ def db_observations(db_path: Path, symbol: str, timeframe: str,
         if htf_timeframe else []
     htf_idx = 0          # next htf bar not yet released
     htf_closes: List[float] = []  # released closes, in order
+    # Timestamps are bar OPEN times (verified: H1@23:00 close ==
+    # M15@23:45 close). An HTF bar is only safe to read after it
+    # closes: release when m15_ts >= htf_ts + htf_seconds. The old
+    # '<=' released the still-forming bar — a 45-minute lookahead
+    # into every htf_* feature.
+    _HTF_SEC = {"M5": 300, "M15": 900, "M30": 1800, "H1": 3600,
+                "H4": 14400, "D1": 86400}
+    htf_sec = _HTF_SEC.get(htf_timeframe.upper(), 3600)         if htf_timeframe else 0
+
+    def _ts_sec(t: str) -> float:
+        from datetime import datetime
+        return datetime.fromisoformat(
+            t.replace("Z", "+00:00")).timestamp()
+    htf_tss = [_ts_sec(r[0]) for r in htf]
 
     con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
     try:
@@ -85,7 +99,8 @@ def db_observations(db_path: Path, symbol: str, timeframe: str,
                    # volume — advisors must not calibrate on it as
                    # real size.
                    "volume_kind": "tick", "timeframe": timeframe}
-            while htf_idx < len(htf) and htf[htf_idx][0] <= ts:
+            while (htf_idx < len(htf)
+                   and htf_tss[htf_idx] + htf_sec <= _ts_sec(ts)):
                 htf_closes.append(htf[htf_idx][1])
                 htf_idx += 1
             if htf_closes:
