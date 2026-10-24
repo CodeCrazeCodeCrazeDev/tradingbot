@@ -234,9 +234,17 @@ class SelfWiringSupervisor:
                 NodeState.DORMANT, NodeState.QUARANTINED):
             return
         node.emits += 1
+        # Honest non-emits (warming, no_data, no_read, missing_data,
+        # skipped) are NOT failures — an advisor still training or
+        # starved by a replay feed must not streak toward demotion.
+        # That's how 185/190 got demoted on one cold-start cycle.
+        _honest = {"warming", "no_data", "no_read", "missing_data",
+                   "skipped", "unavailable", "idle", "none"}
         if status == "degenerate":
             node.degenerate_streak += 1
             node.substantive_streak = 0
+        elif status in _honest:
+            node.substantive_streak = 0  # neutral — no streak either way
         else:
             node.degenerate_streak = 0
             node.substantive_streak += 1

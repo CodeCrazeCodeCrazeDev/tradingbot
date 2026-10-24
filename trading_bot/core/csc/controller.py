@@ -2761,8 +2761,13 @@ class CognitiveSystemController:
         if self._last_advisory_disagreement is not None:
             _d = self._last_advisory_disagreement
             # Per-symbol: disagreement on EURUSD must not measure
-            # autocorrelation against GBPUSD's next cycle.
-            _sym = str(obs_dict.get("symbol") or "?")
+            # autocorrelation against GBPUSD's next cycle. Symbol
+            # comes from the branch plans — this method has no
+            # obs_dict in scope.
+            _sym = next(
+                (str((b.execution_plan or {}).get("symbol"))
+                 for b in (branches or [])
+                 if (b.execution_plan or {}).get("symbol")), "?")
             _hmap = getattr(self, "_disagreement_hist", None)
             if _hmap is None:
                 _hmap = self._disagreement_hist = {}
@@ -3508,7 +3513,10 @@ class CognitiveSystemController:
             if status in _degenerate or not ev:
                 self._funnel['advisor_degenerate'] += 1
                 if _sup is not None and _cap:
-                    _sup.observe(_cap, "degenerate")
+                    # Pass the raw status — 'warming' and feed-limited
+                    # states are honest, not failures; only genuinely
+                    # broken emits should streak toward demotion.
+                    _sup.observe(_cap, status or "degenerate")
             else:
                 self._funnel['advisor_substantive'] += 1
                 if _sup is not None and _cap:
