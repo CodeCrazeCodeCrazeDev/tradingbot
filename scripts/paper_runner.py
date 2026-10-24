@@ -110,10 +110,27 @@ def synthetic_observations(symbol: str, n_bars: int, seed: int
     from trading_bot.evaluation.synthetic_market import (
         RegimeSpec, SyntheticMarketGenerator, SyntheticMarketSpec)
 
+    # Multi-regime: a single mean-reverting sine teaches regime-specific
+    # behavior that does not transfer to real FX. Rotate trend, chop,
+    # high-vol and a crash so learned state sees distribution shift.
+    q = max(8, n_bars // 8)
     spec = SyntheticMarketSpec(
         seed=seed, instruments=(symbol,),
-        regimes=(RegimeSpec("mean_revert", n_bars, vol=0.0002,
-                            sine_amp=0.01, sine_period=8),))
+        regimes=(
+            RegimeSpec("trend", q, drift=0.0004, vol=0.0006),
+            RegimeSpec("mean_revert", q, vol=0.0003, ar1=-0.25,
+                       sine_amp=0.008, sine_period=12),
+            RegimeSpec("high_vol", q, drift=-0.0001, vol=0.002),
+            RegimeSpec("flat", q, vol=0.0001),
+            RegimeSpec("crash", max(4, q // 2), drift=-0.006,
+                       vol=0.003),
+            RegimeSpec("mean_revert", q, vol=0.0004, ar1=-0.15,
+                       sine_amp=0.005, sine_period=20),
+            RegimeSpec("trend", q, drift=-0.0003, vol=0.0007),
+            # tail fills the remainder so n_bars is respected
+            RegimeSpec("high_vol",
+                       n_bars - q * 6 - max(4, q // 2), vol=0.001),
+        ))
     frames = SyntheticMarketGenerator(spec).generate()
     frame = frames[symbol]
     for row in frame.to_dict("records"):
@@ -375,7 +392,26 @@ async def run(args: argparse.Namespace) -> int:
                 except OSError:
                     logger.warning("market history persistence failed")
             if not emergency:
-                await runtime.bot.run_cycle(obs)
+                # Run the cycle as a cancellable task and poll the
+                # control channel mid-cycle — under load a single
+                # cycle can take minutes, and an estop that waits for
+                # the cycle boundary is not a safety control.
+                task = asyncio.ensure_future(runtime.bot.run_cycle(obs))
+                while not task.done():
+                    for command in channel.drain():
+                        outcome = await console.apply(command)
+                        if command.get("action") == "emergency_stop":
+                            emergency = True
+                    if emergency or getattr(
+                            console.override.emergency_stop,
+                            "is_triggered", False):
+                        task.cancel()
+                        try:
+                            await task
+                        except (asyncio.CancelledError, Exception):
+                            pass
+                        break
+                    await asyncio.sleep(0.25)
                 processed += 1
             feedback_status = await sync_economic_feedback()
             publish_snapshot(state_dir, {

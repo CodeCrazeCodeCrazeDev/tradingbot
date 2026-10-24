@@ -297,8 +297,11 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
             "pending_labels": len(self._pending[sym]),
             "resolved_this_bar": resolved,
             "horizon_bars": self.horizon,
+            "labels_autocorrelated": True,
             "note": "posture evidence only — canonical risk sizes "
-                    "everything",
+                    "everything. Deferred rewards resolve on overlapping"
+                    " windows; do not treat per-update counts as "
+                    "independent samples.",
         }
 
 

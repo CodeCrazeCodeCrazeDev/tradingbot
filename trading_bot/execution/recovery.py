@@ -107,10 +107,28 @@ class ExecutionReconciler:
                 await repo.record_execution(order, report)
                 outcome = report.status.value
             else:
-                # Venue can't confirm a terminal state — fail closed to
-                # UNKNOWN rather than trusting the stale durable record.
-                await repo.record_order(order, OrderStatus.UNKNOWN)
-                outcome = "unknown"
+                # Non-terminal at the venue = a live resting order the
+                # crashed process left behind. Fail closed: cancel it so
+                # no unowned exposure can fill while the bot is down,
+                # then record the venue's verdict.
+                cancel = getattr(self.service.adapter, "cancel_order",
+                                 None)
+                cancelled = False
+                if cancel is not None:
+                    try:
+                        cancelled = bool(await cancel(client_order_id))
+                    except Exception as exc:
+                        logger.warning(
+                            "Recovery cancel failed for %s: %s",
+                            client_order_id, exc)
+                        await self._audit(
+                            "order_recovery", "cancel_failed",
+                            client_order_id, {"error": str(exc)})
+                await repo.record_order(
+                    order,
+                    OrderStatus.CANCELLED if cancelled
+                    else OrderStatus.UNKNOWN)
+                outcome = "cancelled" if cancelled else "unknown"
             await self._audit("order_recovery", outcome, client_order_id)
             recovered.append({"client_order_id": client_order_id, "outcome": outcome})
 

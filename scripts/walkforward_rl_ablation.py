@@ -191,7 +191,10 @@ async def main_async(args):
     rets_by_window, arms = [], {"momentum": [], "csc_no_rl": [],
                                 "csc_with_rl": []}
     for w in range(args.windows):
-        start = pool_start + w * (span // args.windows)
+        # Purged embargo: skip embargo_bars between context and the test
+        # window so serial correlation cannot leak regime information
+        # across the boundary.
+        start = pool_start + w * (span // args.windows)             + args.embargo_bars
         end = min(start + args.window_bars,
                   pool_start + (w + 1) * (span // args.windows))
         test_rows = rows[start:end]
@@ -271,6 +274,8 @@ def main():
                    help="round-trip-equivalent cost per unit turnover")
     p.add_argument("--controller-cost-bps", type=float, default=5.0)
     p.add_argument("--momentum-lookback", type=int, default=10)
+    p.add_argument("--embargo-bars", type=int, default=20,
+                   help="purged gap between context end and window start")
     p.add_argument("--stride", type=int, default=1)
     p.add_argument("--position-horizon", type=int, default=8)
     args = p.parse_args()

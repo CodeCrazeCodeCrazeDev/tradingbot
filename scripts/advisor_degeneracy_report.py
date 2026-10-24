@@ -72,12 +72,30 @@ async def measure(factories, obs_list):
             report[cap_id] = {"error": str(exc)[:200]}
             print(f"    init error: {exc!r:.100}", flush=True)
             continue
+        pending_dir = None  # direction emitted at bar t-1, scored at t
+        prev_close = None
         for obs in obs_list:
             try:
                 out = svc.analyze(dict(obs))
                 if inspect.isawaitable(out):
                     out = await asyncio.wait_for(out, 5.0)
                 counts[classify(out)] += 1
+                d = out.get("direction") if isinstance(out, dict) else None
+                # Predictive check: last bar's direction vs this bar's
+                # realized return — a directional claim that never beats
+                # the coin is decorative, not evidence.
+                c = obs.get("close")
+                if pending_dir is not None and prev_close and c:
+                    fwd = c / prev_close - 1.0
+                    sgn = 1 if pending_dir == "BUY" else -1
+                    counts["dir_total"] += 1
+                    if fwd * sgn > 0:
+                        counts["dir_hits"] += 1
+                if d in ("BUY", "SELL"):
+                    pending_dir = d
+                else:
+                    pending_dir = None
+                prev_close = c
             except Exception:
                 counts["failed"] += 1
         elapsed = _t.time() - t0
@@ -97,6 +115,34 @@ def main():
     print(f"measuring {len(DEFAULT_ADVISORY_FACTORIES)} advisory "
           f"factories over {len(obs)} bars")
     report = asyncio.run(measure(DEFAULT_ADVISORY_FACTORIES, obs))
+
+    # FDR-corrected predictive gate: among advisors that emitted
+    # directional calls, keep only those whose hit rate beats the coin
+    # under Benjamini-Hochberg at q=0.1. dir_total < 30 stays
+    # 'insufficient' — not enough calls to judge.
+    from math import comb
+    dir_stats = {}
+    for name, v in report.items():
+        if not isinstance(v, dict):
+            continue
+        t = v.get("dir_total", 0)
+        h = v.get("dir_hits", 0)
+        if t > 0:
+            pval = sum(comb(t, k) * (0.5 ** t)
+                       for k in range(h, t + 1))
+            dir_stats[name] = {"hits": h, "total": t,
+                               "hit_rate": h / t, "p": pval}
+    ranked = sorted(dir_stats.items(), key=lambda kv: kv[1]["p"])
+    m = len(ranked)
+    kept = set()
+    for i, (name, s) in enumerate(ranked, 1):
+        s["bh_threshold"] = 0.1 * i / m
+        if s["p"] <= s["bh_threshold"]:
+            kept.add(name)
+    for name, s in dir_stats.items():
+        s["fdr_significant"] = name in kept and s["total"] >= 30
+        report[name]["predictive"] = s
+
     summary = {"substantive": 0, "directional": 0, "degenerate": 0,
                "failed": 0, "error": 0}
     for v in report.values():

@@ -190,7 +190,7 @@ class InformationTheoreticDecision(DecisionConcept):
     def __init__(self):
         try:
             super().__init__(16, "Information Theoretic", DecisionCategory.PROBABILISTIC)
-            self.history: deque = deque(maxlen=50)
+            self._sig_history: deque = deque(maxlen=50)
         except Exception as e:
             logger.error(f"Error in __init__: {e}")
             raise
@@ -198,12 +198,12 @@ class InformationTheoreticDecision(DecisionConcept):
     def decide(self, context: DecisionContext) -> DecisionResult:
         try:
             current = (1 if context.trend > 0 else 0, 1 if context.momentum > 0 else 0)
-            self.history.append(current)
+            self._sig_history.append(current)
         
-            if len(self.history) < 10:
-                return self._create_result(DecisionAction.HOLD, 0.3, DecisionUrgency.LOW, "Insufficient data", {'history': len(self.history)})
+            if len(self._sig_history) < 10:
+                return self._create_result(DecisionAction.HOLD, 0.3, DecisionUrgency.LOW, "Insufficient data", {'history': len(self._sig_history)})
         
-            agreements = sum(1 for h in self.history if h[0] == current[0]) / len(self.history)
+            agreements = sum(1 for h in self._sig_history if h[0] == current[0]) / len(self._sig_history)
             info_gain = 1 - agreements
             signal = current[0] * 2 - 1 + (current[1] * 2 - 1) * 0.5
         

@@ -725,7 +725,21 @@ class InstitutionalFootprint:
                 # Check for high volume
                 if df.iloc[i]['rel_volume'] >= self.config["high_volume_threshold"]:
                     # Check if price swept through liquidity levels
-                    for level, strength in liquidity_levels:
+                    for _lvl in liquidity_levels:
+                        # Elements arrive as (price, strength) tuples,
+                        # dicts, or longer sequences — unpack robustly
+                        # instead of dying on 'too many values'.
+                        if isinstance(_lvl, dict):
+                            level = _lvl.get("price", _lvl.get("level"))
+                            strength = _lvl.get("strength", 1.0)
+                        else:
+                            try:
+                                level, strength = _lvl[0], (
+                                    _lvl[1] if len(_lvl) > 1 else 1.0)
+                            except (TypeError, IndexError, KeyError):
+                                continue
+                        if level is None:
+                            continue
                         # Bullish sweep (price sweeps below level then closes above)
                         if (df.iloc[i]['low'] < level and 
                             df.iloc[i]['close'] > level and 
