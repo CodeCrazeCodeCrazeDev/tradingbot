@@ -1295,6 +1295,14 @@ def _opportunity_scanner_service() -> AdvisoryModuleAdapter:
                 "status": "active",
                 "opportunities": opps[:3],
                 "best": best["type"],
+                # Top-level direction+confidence so the advisory tilt
+                # consumer treats this like every other directional
+                # voter — net_edge_positive decides whether the call
+                # is worth casting at all.
+                "direction": (best["direction"]
+                              if best.get("net_edge_positive")
+                              else None),
+                "confidence": best["confidence"],
                 "efficiency_ratio": er,
                 "tick_imbalance": ti,
                 "est_spread_bps": spread,

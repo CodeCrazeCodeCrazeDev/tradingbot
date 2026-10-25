@@ -114,7 +114,8 @@ class PolicyLifecycle:
         visits: Dict[Tuple, int] = {}
         a, g = self.agent.alpha, self.agent.gamma
         for _ in range(self.epochs):
-            for s, act, r, _ts in train:
+            for rec in train:
+                s, act, r = rec[0], rec[1], rec[2]
                 if not (isinstance(act, (int, np.integer))
                         and math.isfinite(r)):
                     continue
@@ -134,12 +135,23 @@ class PolicyLifecycle:
 
     def _evaluate(self, table: Dict[Tuple, np.ndarray],
                   holdout) -> Dict[str, float]:
-        """Action-matching OPE: credit the policy with a logged reward
-        only where its greedy action equals the action that was taken."""
+        """OPE on logged transitions. When a transition carries the
+        full counterfactual reward vector (5-tuple: every action's
+        reward is exact because _reward is pure), score the policy's
+        greedy pick DIRECTLY — full-coverage eval, no matching needed.
+        Falls back to action-matching for legacy 4-tuples."""
         matched = []
-        for s, act, r, _ts in holdout:
+        for rec in holdout:
+            s, act, r = rec[0], rec[1], rec[2]
+            cf = rec[4] if len(rec) > 4 else None
             row = table.get(s)
-            if row is not None and self._greedy(row) == act:
+            if row is None:
+                continue
+            if isinstance(cf, dict) and cf:
+                pick = self._greedy(row)
+                if pick in cf:
+                    matched.append(cf[pick])
+            elif self._greedy(row) == act:
                 matched.append(r)
         sd = pstdev(matched) if len(matched) > 1 else 0.0
         return {

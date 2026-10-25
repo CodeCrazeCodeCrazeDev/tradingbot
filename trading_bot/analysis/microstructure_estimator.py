@@ -50,6 +50,37 @@ def roll_spread(closes: Sequence[float], window: int = 30
     return 2.0 * math.sqrt(-cov)
 
 
+def corwin_schultz_spread(highs: Sequence[float],
+                          lows: Sequence[float],
+                          window: int = 20) -> Optional[float]:
+    """Corwin-Schultz (2012) spread estimator from consecutive
+    HIGH/LOW pairs — works in TRENDING markets where Roll's
+    covariance method returns nothing (exactly the inverted-coverage
+    gap). spread as a fraction of price; negative estimates clipped
+    to 0 (honest: it can't see tighter than the bar width)."""
+    n = min(len(highs), len(lows))
+    if n < window + 1:
+        return None
+    h = np.asarray(highs[-(window + 1):], dtype=float)
+    l = np.asarray(lows[-(window + 1):], dtype=float)
+    mask = (h > 0) & (l > 0)
+    if mask.sum() < 3:
+        return None
+    h, l = h[mask], l[mask]
+    hl2 = np.log(h / l) ** 2
+    beta = float(hl2[:-1].sum() + hl2[1:].sum())
+    h2 = np.maximum(h[:-1], h[1:])
+    l2 = np.minimum(l[:-1], l[1:])
+    gamma = float(np.log(h2 / l2).sum() ** 2) if len(h2) else 0.0
+    k = 3.0 - 2.0 * math.sqrt(2.0)
+    alpha = ((math.sqrt(2 * beta) - math.sqrt(beta)) / k
+             - math.sqrt(gamma / k)) if beta >= 0 else 0.0
+    if not math.isfinite(alpha):
+        return None
+    spread = 2.0 * (math.exp(alpha) - 1.0) / (1.0 + math.exp(alpha))
+    return max(0.0, spread)
+
+
 def kyle_lambda(closes: Sequence[float], volumes: Sequence[float],
                 window: int = 30) -> Optional[float]:
     """Median |return| / volume — price impact per unit size."""
@@ -137,6 +168,14 @@ def estimate_all(closes: Sequence[float],
     rs = roll_spread(c)
     if rs is not None and c and c[-1] > 0:
         out["est_spread_bps"] = float(rs / c[-1] * 1e4)
+        out["spread_est_method"] = "roll"
+    elif highs is not None and lows is not None and c and c[-1] > 0:
+        # Trending regime: Roll has no bounce signal -> Corwin-Schultz
+        # on high/low pairs covers the window Roll can't.
+        cs = corwin_schultz_spread(list(highs), list(lows))
+        if cs is not None:
+            out["est_spread_bps"] = float(cs * 1e4)
+            out["spread_est_method"] = "corwin_schultz"
     if v:
         lam = kyle_lambda(c, v)
         if lam is not None:

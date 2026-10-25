@@ -183,6 +183,15 @@ class _TabularQ:
                 state = tuple(json.loads(sk))
                 self._q[state] = np.asarray(vals, dtype=float)
                 self._order.append(state)
+        # Teacher persists with the student — restarting without the
+        # distilled policy makes turn-2 corrections vanish for ~1
+        # warmup window after every boot.
+        tq = blob.get("teacher", {})
+        for sk, vals in tq.items():
+            if len(vals) == self.n_actions and all(
+                    math.isfinite(v) for v in vals):
+                self._teacher[tuple(json.loads(sk))] = np.asarray(
+                    vals, dtype=float)
         self.updates = int(blob.get("updates", 0))
         self.epsilon = max(self._eps_min,
                            float(blob.get("epsilon", self.epsilon)))
@@ -197,6 +206,8 @@ class _TabularQ:
             "epsilon": self.epsilon,
             "q": {json.dumps(list(s)): [float(v) for v in arr]
                   for s, arr in self._q.items()},
+            "teacher": {json.dumps(list(s)): [float(v) for v in arr]
+                        for s, arr in self._teacher.items()},
         }
         fd, tmp = tempfile.mkstemp(dir=self._ckpt.parent,
                                    suffix=".tmp")
@@ -261,9 +272,11 @@ class _TabularQ:
         if not self._rlsf or not self._teacher:
             return 0
         n = 0
-        for s in list(self._q.keys())[-self._distill_max_states:]:
+        # Visit-recency order via _order deque (insertion-ordered but
+        # bounded to live states — stale states were already evicted).
+        for s in list(self._order)[-self._distill_max_states:]:
             t = self._teacher.get(s)
-            if t is None:
+            if t is None or s not in self._q:
                 continue
             q = self._q[s]
             if int(np.argmax(q)) == int(np.argmax(t)):
@@ -486,8 +499,9 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
                                     self.selfplay["ties"] += 1
                     else:
                         self.update(p_.state, p_.action, r)
+                        r_all = None
                     self.experience_log.append(
-                        (p_.state, p_.action, r, _obs_ts(obs)))
+                        (p_.state, p_.action, r, _obs_ts(obs), r_all))
                     resolved += 1
             else:
                 still.append(p_)

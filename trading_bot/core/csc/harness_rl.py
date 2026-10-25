@@ -80,6 +80,7 @@ class WorkingMemory:
         self._maxlen = maxlen
         self._persist = persist_path
         self.writes = 0
+        self._persist_cap = _env_i("TB_WM_PERSIST_CAP", 4 << 20)
 
     @classmethod
     def get(cls, namespace: str, **kw) -> "WorkingMemory":
@@ -96,6 +97,13 @@ class WorkingMemory:
         if self._persist is not None:
             try:
                 self._persist.parent.mkdir(parents=True, exist_ok=True)
+                if (self._persist.exists()
+                        and self._persist.stat().st_size
+                        > self._persist_cap):
+                    # Rotate: unbounded append-only growth is a disk
+                    # leak on tight environments.
+                    self._persist.replace(
+                        self._persist.with_suffix(".jsonl.1"))
                 with open(self._persist, "a", encoding="utf-8") as f:
                     f.write(json.dumps(
                         {"ns": self.namespace, "key": key,
@@ -156,6 +164,10 @@ class HarnessOptimizer:
             "epochs": float(lifecycle.epochs),
             "holdout_frac": lifecycle.holdout_frac,
         }
+        # Anchor: the ORIGINAL harness stays in every population so a
+        # bad H-step can never strand the lifecycle on drifted knobs —
+        # the population can always re-elect the baseline.
+        self._base_cfg: Dict[str, float] = dict(self.active_cfg)
         self.generations = 0
         self.h_steps = 0
         self.memory = WorkingMemory.get(
@@ -185,7 +197,8 @@ class HarnessOptimizer:
         return out
 
     def _seed_population(self) -> None:
-        self.candidates = [HarnessCandidate(dict(self.active_cfg))]
+        self.candidates = [HarnessCandidate(dict(self.active_cfg)),
+                           HarnessCandidate(dict(self._base_cfg))]
         while len(self.candidates) < self.population:
             self.candidates.append(
                 HarnessCandidate(self._perturb(self.active_cfg)))
