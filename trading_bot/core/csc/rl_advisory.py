@@ -245,6 +245,10 @@ class _DeferredLearner:
         self._pending: Dict[str, Deque[_Pending]] = {}
         self._bar_idx: Dict[str, int] = {}
         self.labels_dropped_stale = 0
+        # Resolved transitions for OFFLINE RL: (state, action, reward,
+        # timestamp-of-resolution). The lifecycle trainer fits
+        # candidate policies on this log — bounded memory.
+        self.experience_log: Deque[Tuple] = deque(maxlen=8192)
 
     def _stale(self, p: "_Pending", obs: Dict[str, Any]) -> bool:
         """True when this pending's label window exceeded
@@ -375,6 +379,8 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
                 r = self._reward(p_, obs)
                 if r is not None:
                     self.update(p_.state, p_.action, r)
+                    self.experience_log.append(
+                        (p_.state, p_.action, r, _obs_ts(obs)))
                     resolved += 1
             else:
                 still.append(p_)
@@ -503,6 +509,8 @@ class AdaptiveSpreadRL(_TabularQ, _DeferredLearner):
                 r = self._reward(p_, obs)
                 if r is not None:
                     self.update(p_.state, p_.action, r)
+                    self.experience_log.append(
+                        (p_.state, p_.action, r, _obs_ts(obs)))
                     resolved += 1
             else:
                 still.append(p_)

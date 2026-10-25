@@ -1251,9 +1251,19 @@ def _rl_adaptive_decision_service() -> AdvisoryModuleAdapter:
     long-lean/short-lean from deferred realized returns. Causal: labels
     resolve only after the horizon elapses on future bars."""
     from .rl_advisory import AdaptiveDecisionRL
+    from .policy_lifecycle import PolicyLifecycle
     agent = AdaptiveDecisionRL(horizon=8)
     agent.bind_checkpoint("rl_adaptive_decision", "decision_posture_v2")
-    return AdvisoryModuleAdapter("rl_adaptive_decision", agent.analyze)
+    lifecycle = PolicyLifecycle(agent, "rl_adaptive_decision")
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        out = agent.analyze(ctx)
+        lifecycle.maybe_update()
+        if isinstance(out, dict):
+            out["policy_lifecycle"] = lifecycle.status()
+        return out
+
+    return AdvisoryModuleAdapter("rl_adaptive_decision", analyze)
 
 
 def _rl_adaptive_spread_service() -> AdvisoryModuleAdapter:
@@ -1262,9 +1272,19 @@ def _rl_adaptive_spread_service() -> AdvisoryModuleAdapter:
     rewards (bar proxy now; real fill capture when the feed carries
     it). Quote-policy evidence only."""
     from .rl_advisory import AdaptiveSpreadRL
+    from .policy_lifecycle import PolicyLifecycle
     agent = AdaptiveSpreadRL(horizon=5)
     agent.bind_checkpoint("rl_adaptive_spread", "spread_skew_v2")
-    return AdvisoryModuleAdapter("rl_adaptive_spread", agent.analyze)
+    lifecycle = PolicyLifecycle(agent, "rl_adaptive_spread")
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        out = agent.analyze(ctx)
+        lifecycle.maybe_update()
+        if isinstance(out, dict):
+            out["policy_lifecycle"] = lifecycle.status()
+        return out
+
+    return AdvisoryModuleAdapter("rl_adaptive_spread", analyze)
 
 
 def _rl_analysis_lens_service() -> AdvisoryModuleAdapter:
