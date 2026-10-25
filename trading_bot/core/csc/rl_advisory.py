@@ -514,9 +514,22 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
                                 decided = sp["student_wins"] + sp["teacher_wins"]
                                 if decided >= 10 and \
                                         sp["teacher_wins"] / decided < 0.25:
-                                    self._teacher = {
-                                        k: list(v)
-                                        for k, v in self._q.items()}
+                                    # soft reset — keep half of what
+                                    # the teacher learned, pull the
+                                    # rest toward the student
+                                    for k, tv in self._teacher.items():
+                                        sv = self._q.get(k)
+                                        if sv is not None:
+                                            for a in range(
+                                                    min(len(tv),
+                                                        len(sv))):
+                                                tv[a] = 0.5 * tv[a] \
+                                                    + 0.5 * sv[a]
+                                    # states the teacher never visited
+                                    # get the student's view wholesale
+                                    for k, sv in self._q.items():
+                                        if k not in self._teacher:
+                                            self._teacher[k] = list(sv)
                                     self.selfplay = {
                                         "matches": 0, "student_wins": 0,
                                         "teacher_wins": 0, "ties": 0}

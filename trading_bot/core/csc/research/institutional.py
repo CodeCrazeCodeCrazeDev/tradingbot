@@ -19,6 +19,8 @@ from __future__ import annotations
 
 import logging
 import os
+import re
+import time
 from typing import Any, Dict, List, Optional
 
 from .evidence_quality import filter_documents
@@ -43,6 +45,15 @@ class InstitutionalResearchSystem:
             os.environ.get("TB_EQE_FLOOR", "0.30"))
         self.questions_asked = 0
         self.reports: List[Dict[str, Any]] = []
+
+    @staticmethod
+    def _sanitize_query(q: str) -> str:
+        # strip provider query operators so user text can't reshape
+        # the search grammar (site:, filetype:, AND/OR blocks)
+        q = re.sub(r"[<>\x00-\x1f]", " ", q or "")
+        q = re.sub(r"\b(site|filetype|inurl|intitle|"
+                   r"ext|cache|related|define):", " ", q, flags=re.I)
+        return " ".join(q.split())[:200]
 
     # --------------------------------------------------------------
     def fetch(self, question: str,
@@ -78,6 +89,8 @@ class InstitutionalResearchSystem:
         """The full loop. ``investigate=False`` stops after ingestion
         (cheap probe — no hypothesis work)."""
         self.questions_asked += 1
+        t0 = time.time()
+        question = self._sanitize_query(question)
         out: Dict[str, Any] = {
             "question": question,
             "question_id": f"q-{self.questions_asked}",
@@ -160,6 +173,11 @@ class InstitutionalResearchSystem:
             except Exception as e:
                 out["stages"]["investigate"] = {"error": str(e)}
 
+        # cost accounting: research that starves the trading cycle is
+        # a bug, not a feature — meter every ask
+        out["cost"] = {"wall_s": round(time.time() - t0, 3)}
+        if time.time() - t0 > 30.0:
+            out["cost"]["warning"] = "research_cost_exceeds_30s"
         out["authority"] = "advisory_only"   # research never decides
         self.reports.append(out)
         return out
