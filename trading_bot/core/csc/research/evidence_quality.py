@@ -17,7 +17,9 @@ Signals (each 0-1, weighted):
 
 from __future__ import annotations
 
+import json
 import math
+import os
 import re
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -140,6 +142,26 @@ def filter_documents(docs: List[SourceDocument],
             "claims_dropped": len(cs) - len(kept),
             "top_score": max((s["score"] for s in scored), default=0.0),
         })
+    # Calibration ledger: every keep/drop decision is journaled so a
+    # later calibration pass can compare kept-claim outcomes against
+    # dropped-claim outcomes. The floor stays seeded at 0.30 until
+    # KG verdict history exists to measure it against.
+    try:
+        led = os.environ.get("TB_EQE_LEDGER",
+                             "var/research_cache/eqe_ledger.jsonl")
+        os.makedirs(os.path.dirname(led), exist_ok=True)
+        with open(led, "a", encoding="utf-8") as fh:
+            for d, cs in zip(docs, claims_per_doc):
+                for c in cs:
+                    s_ = score_claim(d, c, all_texts)
+                    fh.write(json.dumps({
+                        "src": d.source_id, "claim": c.text[:80],
+                        "score": s_["score"],
+                        "kept": s_["score"] >= floor,
+                        "polarity": c.polarity,
+                        "validated": None}) + "\n")
+    except Exception:
+        pass  # journaling must never break the fetch path
     return {
         "documents": len(docs),
         "claims_total": sum(r["claims_total"] for r in report),
@@ -184,3 +206,42 @@ def detect_contradictions(docs: List[SourceDocument],
                 "flag": "literature_conflict",
             })
     return pairs
+
+def calibrate_floor(verdicts_by_claim: dict = None,
+                    ledger_path: str = None) -> dict:
+    """Close the loop: given KG verdicts keyed by claim text prefix,
+    pick the floor that maximizes validated-claim recall at fixed
+    false-positive budget. Returns the calibrated floor + evidence —
+    seed stays 0.30 when history is too thin to measure."""
+    led = ledger_path or os.environ.get(
+        "TB_EQE_LEDGER", "var/research_cache/eqe_ledger.jsonl")
+    rows = []
+    try:
+        for line in open(led, encoding="utf-8"):
+            rows.append(json.loads(line))
+    except OSError:
+        return {"floor": 0.30, "evidence": "no_ledger"}
+    if verdicts_by_claim:
+        for r in rows:
+            key = r["claim"][:80]
+            if key in verdicts_by_claim:
+                r["validated"] = bool(verdicts_by_claim[key])
+    measured = [r for r in rows if r["validated"] is not None]
+    if len(measured) < 20:
+        return {"floor": 0.30, "evidence": "insufficient_history",
+                "measured": len(measured), "journaled": len(rows)}
+    # walk the candidate floors; pick the one keeping >=90% of
+    # validated claims while minimizing kept-unvalidated
+    best = {"floor": 0.30, "recall": 0.0, "precision": 0.0}
+    for cand in (x / 20 for x in range(2, 15)):
+        kept = [r for r in measured if r["score"] >= cand]
+        val = sum(1 for r in kept if r["validated"])
+        tot = sum(1 for r in measured if r["validated"]) or 1
+        recall = val / tot
+        prec = val / max(1, len(kept))
+        if recall >= 0.9 and prec > best["precision"]:
+            best = {"floor": cand, "recall": recall,
+                    "precision": prec}
+    best["evidence"] = "calibrated"
+    best["measured"] = len(measured)
+    return best

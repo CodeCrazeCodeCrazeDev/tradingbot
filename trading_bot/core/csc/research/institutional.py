@@ -130,6 +130,21 @@ class InstitutionalResearchSystem:
         except Exception as e:
             out["stages"]["contradictions"] = {"error": str(e)}
 
+        # contradiction -> bounded proposal: opposing claims become a
+        # PROPOSAL the operator can approve into an experiment — never
+        # an auto-created hypothesis (that boundary is governance)
+        try:
+            if con:
+                props = [{"kind": "arbiter_hypothesis_proposal",
+                          "question": question,
+                          "claim_a": c["a"]["text"],
+                          "claim_b": c["b"]["text"],
+                          "status": "awaiting_operator"}
+                         for c in con[:5]]
+                out["stages"]["contradictions"]["proposals"] = props
+        except Exception:
+            pass
+
         # ingest -> KG as theoretical-tier claims
         if self.engine is not None and docs:
             try:
