@@ -52,7 +52,9 @@ def _recency(published: str, half_life_days: float = 365.0) -> float:
         return 0.5
 
 
-def _corroboration(claim_text: str, all_claims: List[str]) -> float:
+def _corroboration(claim_text: str, all_claims: List[str],
+                   my_source: str = "",
+                   claim_sources: Optional[List[str]] = None) -> float:
     """Cheap cross-source corroboration: shared content words with any
     other claim. Real corroboration needs embeddings — this counts
     non-trivial token overlap as a bounded proxy."""
@@ -60,8 +62,12 @@ def _corroboration(claim_text: str, all_claims: List[str]) -> float:
     if not toks:
         return 0.0
     best = 0.0
-    for other in all_claims:
+    for i, other in enumerate(all_claims):
         if other is claim_text:
+            continue
+        # source-identity dedup: a repo quoting its own abstract is
+        # NOT independent corroboration
+        if claim_sources is not None and i < len(claim_sources)                 and claim_sources[i] == my_source and my_source:
             continue
         ot = {t for t in re.findall(r"[a-z]{5,}", other.lower())}
         if not ot:
@@ -72,7 +78,8 @@ def _corroboration(claim_text: str, all_claims: List[str]) -> float:
 
 
 def score_claim(doc: SourceDocument, claim: ExtractedClaim,
-                all_claims: List[str]) -> Dict[str, Any]:
+                all_claims: List[str],
+                claim_sources: Optional[List[str]] = None) -> Dict[str, Any]:
     """Weighted quality score for one claim. Returns score + per-signal
     breakdown for audit."""
     src = doc.source_id.split(":", 1)[0]
@@ -82,7 +89,10 @@ def score_claim(doc: SourceDocument, claim: ExtractedClaim,
         "quantified": 1.0 if claim.quantified else 0.0,
         "unhedged": 0.0 if claim.hedged else 1.0,
         "declared": 1.0 if claim.extraction == "declared" else 0.0,
-        "corroboration": _corroboration(claim.text, all_claims),
+        "corroboration": _corroboration(
+            claim.text, all_claims,
+            my_source=doc.source_id.split(":", 1)[0],
+            claim_sources=claim_sources),
     }
     score = sum(_WEIGHTS[k] * sig[k] for k in _WEIGHTS)
     # Negation parses are the least reliable signal — discount them.
@@ -106,8 +116,13 @@ def filter_documents(docs: List[SourceDocument],
         cs = extract_claims(d)
         claims_per_doc.append(cs)
         all_texts.extend(c.text for c in cs)
+    claim_sources = [d.source_id.split(":", 1)[0]
+                     for d, cs in zip(docs, claims_per_doc)
+                     for _ in cs]
     for d, cs in zip(docs, claims_per_doc):
-        scored = [score_claim(d, c, all_texts) for c in cs]
+        scored = [score_claim(d, c, all_texts,
+                              claim_sources=claim_sources)
+                  for c in cs]
         kept = [c for c, s in zip(cs, scored) if s["score"] >= floor]
         report.append({
             "source_id": d.source_id,

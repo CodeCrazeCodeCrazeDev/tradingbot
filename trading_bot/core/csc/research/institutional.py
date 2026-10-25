@@ -63,7 +63,12 @@ class InstitutionalResearchSystem:
             except Exception as e:
                 per_source[name] = f"fetch_failed:{type(e).__name__}"
         eqe = filter_documents(docs, floor=self.quality_floor)
+        failed = [k for k, v in per_source.items()
+                  if isinstance(v, str)]
+        silent = [k for k, v in per_source.items() if v == 0]
         return {"documents": docs, "per_source": per_source,
+                "sources_failed": failed, "sources_silent": silent,
+                "coverage_ok": len(docs) > 0,
                 "eqe": {k: eqe[k] for k in
                         ("documents", "claims_total", "claims_kept",
                          "claims_dropped")}}
@@ -120,10 +125,23 @@ class InstitutionalResearchSystem:
                 try:
                     loop = asyncio.get_running_loop()
                     # inside the async pipeline — schedule, don't block
+                    # persist the outcome when the task lands — the
+                    # report shouldn't lose the investigation result
+                    task = asyncio.ensure_future(coro)
+                    rep = out  # closure over the live report dict
+
+                    def _stash(t):
+                        try:
+                            rep["stages"]["investigate"] = {
+                                "result": t.result()}
+                        except Exception as exc:
+                            rep["stages"]["investigate"] = {
+                                "error": str(exc)}
+                    task.add_done_callback(_stash)
                     out["stages"]["investigate"] = {
                         "scheduled": True,
-                        "note": "async task queued inside the loop"}
-                    asyncio.ensure_future(coro)
+                        "note": "result stashes back into this report "
+                                "when the task lands"}
                 except RuntimeError:
                     out["stages"]["investigate"] = asyncio.run(coro) \
                         if asyncio.iscoroutine(coro) else coro

@@ -55,9 +55,13 @@ _SIGNATURES = [
 def invert_weaknesses(text: str) -> List[Dict[str, Any]]:
     """Scan one source's text/code for weakness signatures; return the
     inverted governance rules each weakness implies."""
+    # Weakness signatures live in CODE — pull fenced blocks first so
+    # marketing prose can't hide or fake a finding.
+    blocks = re.findall("```(?:\\w*)?\\n?(.*?)```", text or "", re.S)
+    scan_target = chr(10).join(blocks) if blocks else (text or "")
     findings = []
     for rx, wid, rule in _SIGNATURES:
-        m = rx.search(text or "")
+        m = rx.search(scan_target)
         if m:
             findings.append({
                 "weakness_id": wid,
