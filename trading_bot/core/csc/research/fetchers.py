@@ -203,3 +203,8 @@ FETCHERS = {
     "huggingface": fetch_huggingface,
     "hf_papers": lambda q, n=10: fetch_huggingface_papers(n),
 }
+try:
+    from .fetchers_extra import EXTRA_FETCHERS
+    FETCHERS.update(EXTRA_FETCHERS)
+except Exception:  # pragma: no cover
+    pass

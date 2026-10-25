@@ -1,0 +1,263 @@
+"""Ten additional keyless research fetchers — same SourceDocument
+contract as fetchers.py, all public APIs, failures -> []."""
+
+from __future__ import annotations
+
+import json
+import logging
+import re
+import urllib.parse
+from typing import List
+
+from .fetchers import _get
+from .sources import SourceDocument
+
+logger = logging.getLogger(__name__)
+
+
+def _docs(items, source, id_of, title_of, text_of, url_of, date_of=None):
+    out: List[SourceDocument] = []
+    for it in items:
+        try:
+            t, x = title_of(it), text_of(it)
+            if t and x:
+                out.append(SourceDocument(
+                    source_id=f"{source}:{id_of(it)}", title=str(t),
+                    text=re.sub(r"\s+", " ", str(x))[:6000],
+                    url=url_of(it),
+                    published=str(date_of(it) or "") if date_of else ""))
+        except Exception:
+            continue
+    return out
+
+
+def fetch_semantic_scholar(query: str, max_results: int = 10):
+    q = urllib.parse.quote(query)
+    try:
+        d = json.loads(_get(
+            "https://api.semanticscholar.org/graph/v1/paper/search"
+            f"?query={q}&limit={max_results}"
+            "&fields=title,abstract,year,url,paperId"))
+    except Exception as e:
+        logger.warning("semantic_scholar failed: %s", e)
+        return []
+    return _docs(d.get("data", [])[:max_results], "s2",
+                 lambda p: p.get("paperId", ""),
+                 lambda p: p.get("title", ""),
+                 lambda p: p.get("abstract") or "",
+                 lambda p: p.get("url") or "",
+                 lambda p: p.get("year", ""))
+
+
+def fetch_openalex(query: str, max_results: int = 10):
+    q = urllib.parse.quote(query)
+    try:
+        d = json.loads(_get(
+            f"https://api.openalex.org/works?search={q}"
+            f"&per-page={max_results}&sort=relevance_score:desc"))
+    except Exception as e:
+        logger.warning("openalex failed: %s", e)
+        return []
+
+    def _abs(w):
+        inv = w.get("abstract_inverted_index") or {}
+        pos = {i: wd for wd, ii in inv.items() for i in ii}
+        return " ".join(pos[i] for i in sorted(pos)) if pos else ""
+
+    return _docs(d.get("results", [])[:max_results], "openalex",
+                 lambda w: (w.get("id") or "").rsplit("/", 1)[-1],
+                 lambda w: w.get("title") or w.get("display_name") or "",
+                 _abs,
+                 lambda w: w.get("id") or "",
+                 lambda w: w.get("publication_date", ""))
+
+
+def fetch_crossref(query: str, max_results: int = 10):
+    q = urllib.parse.quote(query)
+    try:
+        d = json.loads(_get(
+            f"https://api.crossref.org/works?query={q}&rows={max_results}"
+            "&select=DOI,title,abstract,URL,published"))
+    except Exception as e:
+        logger.warning("crossref failed: %s", e)
+        return []
+    return _docs(
+        d.get("message", {}).get("items", [])[:max_results],
+        "crossref",
+        lambda w: w.get("DOI", ""),
+        lambda w: (w.get("title") or [""])[0],
+        lambda w: re.sub(r"<[^>]+>", " ", w.get("abstract") or ""),
+        lambda w: w.get("URL") or "",
+        lambda w: (w.get("published") or {})
+        .get("date-parts", [[""]])[0][0])
+
+
+def fetch_pubmed(query: str, max_results: int = 10):
+    q = urllib.parse.quote(query)
+    try:
+        ids = json.loads(_get(
+            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
+            f"?db=pubmed&term={q}&retmax={max_results}&retmode=json")
+        ).get("esearchresult", {}).get("idlist", [])
+        if not ids:
+            return []
+        sm = json.loads(_get(
+            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"
+            f"?db=pubmed&id={','.join(ids)}&retmode=json"))
+    except Exception as e:
+        logger.warning("pubmed failed: %s", e)
+        return []
+    res = sm.get("result", {})
+    return _docs([res.get(i, {}) for i in ids], "pubmed",
+                 lambda w: w.get("uid", ""),
+                 lambda w: w.get("title", ""),
+                 lambda w: w.get("description") or w.get("title", ""),
+                 lambda w: "https://pubmed.ncbi.nlm.nih.gov/"
+                           f"{w.get('uid','')}/",
+                 lambda w: w.get("pubdate", ""))
+
+
+def fetch_dblp(query: str, max_results: int = 10):
+    q = urllib.parse.quote(query)
+    try:
+        d = json.loads(_get(
+            f"https://dblp.org/search/publ/api?q={q}"
+            f"&h={max_results}&format=json"))
+    except Exception as e:
+        logger.warning("dblp failed: %s", e)
+        return []
+    hits = d.get("result", {}).get("hits", {}).get("hit", [])
+    return _docs([h.get("info", {}) for h in hits], "dblp",
+                 lambda w: w.get("key", "").rsplit("/", 1)[-1],
+                 lambda w: w.get("title", ""),
+                 lambda w: f"{w.get('title','')}. {w.get('venue','')} "
+                           f"{w.get('year','')}",
+                 lambda w: w.get("url") or "",
+                 lambda w: w.get("year", ""))
+
+
+def fetch_openreview(query: str, max_results: int = 10):
+    q = urllib.parse.quote(query)
+    try:
+        d = json.loads(_get(
+            f"https://api2.openreview.net/notes/search?term={q}"
+            f"&limit={max_results}"))
+    except Exception as e:
+        logger.warning("openreview failed: %s", e)
+        return []
+
+    def _c(n, k):
+        v = (n.get("content") or {}).get(k, "")
+        return v if isinstance(v, str) else (v or {}).get("value", "")
+
+    return _docs(d.get("notes", [])[:max_results], "openreview",
+                 lambda n: n.get("id", ""),
+                 lambda n: _c(n, "title"),
+                 lambda n: _c(n, "abstract"),
+                 lambda n: "https://openreview.net/forum?id="
+                           f"{n.get('id','')}")
+
+
+def fetch_edgar(query: str, max_results: int = 10):
+    q = urllib.parse.quote(query)
+    try:
+        d = json.loads(_get(
+            "https://efts.sec.gov/LATEST/search-index"
+            f"?q=%22{q}%22&forms=10-K,10-Q,8-K"))
+    except Exception as e:
+        logger.warning("edgar failed: %s", e)
+        return []
+    return _docs(
+        d.get("hits", {}).get("hits", [])[:max_results], "edgar",
+        lambda h: h.get("_id", "")[:40],
+        lambda h: (f"{h.get('_source', {}).get('display_names', ['?'])[0]}"
+                   f" {h.get('_source', {}).get('form', '')}"),
+        lambda h: re.sub(r"<[^>]+>", " ", " ".join(
+            h.get("highlight", {}).get("text", []))),
+        lambda h: ("https://www.sec.gov/cgi-bin/browse-edgar?action="
+                   "getcompany&CIK="
+                   f"{h.get('_source', {}).get('ciks', [''])[0]}"),
+        lambda h: h.get("_source", {}).get("file_date", ""))
+
+
+def fetch_hackernews(query: str, max_results: int = 10):
+    q = urllib.parse.quote(query)
+    try:
+        d = json.loads(_get(
+            f"https://hn.algolia.com/api/v1/search?query={q}"
+            f"&tags=(story,comment)&hitsPerPage={max_results}"))
+    except Exception as e:
+        logger.warning("hackernews failed: %s", e)
+        return []
+    return _docs(d.get("hits", [])[:max_results], "hn",
+                 lambda h: h.get("objectID", ""),
+                 lambda h: h.get("title") or
+                 f"comment by {h.get('author','')}",
+                 lambda h: re.sub(
+                     r"<[^>]+>", " ",
+                     h.get("story_text") or h.get("comment_text")
+                     or h.get("title") or ""),
+                 lambda h: "https://news.ycombinator.com/item?id="
+                           f"{h.get('objectID','')}",
+                 lambda h: h.get("created_at", ""))
+
+
+def fetch_zenodo(query: str, max_results: int = 10):
+    q = urllib.parse.quote(query)
+    try:
+        d = json.loads(_get(
+            f"https://zenodo.org/api/records?q={q}"
+            f"&size={max_results}&sort=mostrecent"))
+    except Exception as e:
+        logger.warning("zenodo failed: %s", e)
+        return []
+    return _docs(
+        d.get("hits", {}).get("hits", [])[:max_results], "zenodo",
+        lambda r: str(r.get("id", "")),
+        lambda r: (r.get("metadata") or {}).get("title", ""),
+        lambda r: re.sub(r"<[^>]+>", " ",
+                         (r.get("metadata") or {})
+                         .get("description", "")),
+        lambda r: (r.get("links") or {}).get("html", ""),
+        lambda r: r.get("created", ""))
+
+
+def fetch_wikipedia(query: str, max_results: int = 10):
+    q = urllib.parse.quote(query)
+    try:
+        sr = json.loads(_get(
+            "https://en.wikipedia.org/w/api.php?action=opensearch"
+            f"&search={q}&limit={max_results}&namespace=0&format=json"))
+        titles = sr[1] if len(sr) > 1 else []
+    except Exception as e:
+        logger.warning("wikipedia failed: %s", e)
+        return []
+    docs = []
+    for t in titles[:max_results]:
+        try:
+            s = json.loads(_get(
+                "https://en.wikipedia.org/api/rest_v1/page/summary/"
+                + urllib.parse.quote(t)))
+            if s.get("extract"):
+                docs.append(SourceDocument(
+                    source_id=f"wiki:{t.replace(' ', '_')}", title=t,
+                    text=s["extract"],
+                    url=(s.get("content_urls", {}).get("desktop", {})
+                         .get("page", ""))))
+        except Exception:
+            continue
+    return docs
+
+
+EXTRA_FETCHERS = {
+    "semantic_scholar": fetch_semantic_scholar,
+    "openalex": fetch_openalex,
+    "crossref": fetch_crossref,
+    "pubmed": fetch_pubmed,
+    "dblp": fetch_dblp,
+    "openreview": fetch_openreview,
+    "edgar": fetch_edgar,
+    "hackernews": fetch_hackernews,
+    "zenodo": fetch_zenodo,
+    "wikipedia": fetch_wikipedia,
+}
