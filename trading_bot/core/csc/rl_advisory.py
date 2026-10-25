@@ -32,7 +32,7 @@ import os
 import re
 import tempfile
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Deque, Dict, List, Optional, Tuple
 
@@ -131,6 +131,15 @@ class _TabularQ:
         self.updates = 0
         self._ckpt: Optional[Path] = None
         self._key = "tabular_v1"
+        # RLSF: self-distillation teacher — an EMA of the agent's OWN
+        # table plays the frozen-teacher role (SIRLC student-teacher
+        # duality, no external labels or reward model). Consulted only
+        # for states the student has never visited.
+        self._rlsf = os.environ.get("TB_RLSF", "1") == "1"
+        self._teacher: Dict[Tuple, np.ndarray] = {}
+        self._teacher_beta = float(os.environ.get(
+            "TB_RLSF_TEACHER_BETA", "0.05"))
+        self.teacher_guided = 0
 
     def bind_checkpoint(self, name: str, key: str) -> None:
         """Enable durable persistence under RL_STATE_DIR/<name>.json."""
@@ -196,6 +205,11 @@ class _TabularQ:
         if self._rng.random() < self.epsilon:
             return int(self._rng.integers(self.n_actions)), True
         q = self.row(state)
+        if self._rlsf and not np.any(q):
+            t = self._teacher.get(state)
+            if t is not None and np.any(t):
+                self.teacher_guided += 1
+                return int(np.argmax(t)), False
         return int(np.argmax(q)), False
 
     def update(self, state: Tuple, action: int, reward: float,
@@ -209,6 +223,15 @@ class _TabularQ:
             target = reward + self.gamma * float(
                 np.max(self.row(next_state)))
         q[action] += self.alpha * (target - q[action])
+        if self._rlsf:
+            if state not in self._teacher:
+                if len(self._teacher) >= self._max_states:
+                    self._teacher.pop(
+                        next(iter(self._teacher)), None)
+                self._teacher[state] = np.zeros(
+                    self.n_actions, dtype=float)
+            self._teacher[state] += self._teacher_beta * (
+                q - self._teacher[state])
         self.updates += 1
 
     def best(self, state: Tuple) -> Tuple[int, float]:
@@ -305,6 +328,13 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
         # instrument's returns into another's state/pending queue.
         self._prev_close: Dict[str, float] = {}
         self._ret_hist: Dict[str, Deque[float]] = {}
+        self.rlsf_cf_updates = 0
+        self.self_corrections = 0
+        self.self_corr_delta = 0.0
+        self.self_corr_n = 0
+        self._rlsf_correct = os.environ.get("TB_RLSF_CORRECT", "1") == "1"
+        self._correct_margin = float(os.environ.get(
+            "TB_RLSF_CORRECT_MARGIN", "0.02"))
 
     def _state(self, obs: Dict[str, Any]) -> Tuple:
         # _ret_hist is keyed by _sym_key (symbol:timeframe) — a raw
@@ -378,7 +408,27 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
             if bar_idx - p_.bar_idx >= self.horizon:
                 r = self._reward(p_, obs)
                 if r is not None:
-                    self.update(p_.state, p_.action, r)
+                    # RLSF dense feedback (SDPO-style): _reward is a
+                    # pure (pending, obs) map, so every action's
+                    # counterfactual reward is exact — one label yields
+                    # n_actions updates + a measured self-correction
+                    # delta instead of a single sparse update.
+                    if self._rlsf:
+                        r_all = {}
+                        for a in range(self.n_actions):
+                            ra = self._reward(
+                                replace(p_, action=a), obs)
+                            if ra is not None:
+                                r_all[a] = ra
+                                self.update(p_.state, a, ra)
+                                self.rlsf_cf_updates += 1
+                        orig = p_.extra.get("rlsf_orig_action")
+                        if orig is not None and orig in r_all:
+                            self.self_corr_delta += (
+                                r_all[p_.action] - r_all[orig])
+                            self.self_corr_n += 1
+                    else:
+                        self.update(p_.state, p_.action, r)
                     self.experience_log.append(
                         (p_.state, p_.action, r, _obs_ts(obs)))
                     resolved += 1
@@ -388,9 +438,23 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
 
         state = self._state(obs)
         action, explored = self.act(state)
+        # RLSF self-correction (SCoRe): an exploratory pick the agent's
+        # own table already scored badly is revised to the greedy
+        # action BEFORE commit — learning from self-generated mistakes
+        # with the counterfactual delta measured at resolution.
+        corrected_from = None
+        if (self._rlsf_correct and explored and self.updates >= 20):
+            q = self.row(state)
+            greedy = int(np.argmax(q))
+            if (greedy != action
+                    and q[greedy] - q[action] > self._correct_margin):
+                corrected_from = action
+                action = greedy
+                self.self_corrections += 1
         still.append(_Pending(
             state, action, close, bar_idx,
-            extra={"cost_bps": _num(obs.get("cost_bps")) or 0.0},
+            extra={"cost_bps": _num(obs.get("cost_bps")) or 0.0,
+                   "rlsf_orig_action": corrected_from},
             ts=_obs_ts(obs)))
         if self.updates and self.updates % 32 == 0:
             self.save()
@@ -403,6 +467,14 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
             "q_values": {a: round(float(q[i]), 4)
                          for i, a in enumerate(self.ACTIONS)},
             "updates": self.updates,
+            "rlsf": {
+                "counterfactual_updates": self.rlsf_cf_updates,
+                "self_corrections": self.self_corrections,
+                "self_corr_avg_delta": round(
+                    self.self_corr_delta / self.self_corr_n, 5)
+                if self.self_corr_n else None,
+                "teacher_guided": self.teacher_guided,
+            },
             "pending_labels": len(self._pending[sym]),
             "resolved_this_bar": resolved,
             "horizon_bars": self.horizon,
