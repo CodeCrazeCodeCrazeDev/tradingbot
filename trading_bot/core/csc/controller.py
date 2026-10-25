@@ -881,6 +881,7 @@ class CognitiveSystemController:
             raise TypeError(
                 "research engine must expose investigate(question, market_data)")
         self.research_engine = engine
+        self._institutional_research = None
         self._research_hydrated = False
         return engine
 
@@ -3344,6 +3345,18 @@ class CognitiveSystemController:
         except Exception as e:
             logger.debug(f"CSC-V6: reflective context unavailable: {e}")
         return evidence_chain
+
+    def ask_research(self, question: str, sources=None,
+                     investigate: bool = True):
+        """Operator/CSC -> research engine: send a question down the
+        institutional pipeline (fetch -> EQE -> weakness inversion ->
+        KG ingest -> investigate). Advisory evidence only."""
+        if self._institutional_research is None:
+            from .research.institutional import InstitutionalResearchSystem
+            self._institutional_research = InstitutionalResearchSystem(
+                engine=self.research_engine)
+        return self._institutional_research.ask(
+            question, sources=sources, investigate=investigate)
 
     def _compute_self_health(self) -> Optional[Dict[str, Any]]:
         # Sealed validation trials must not inherit live runtime counters.
