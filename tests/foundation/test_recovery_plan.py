@@ -24,7 +24,12 @@ async def test_cognitive_registration_is_idempotent_and_reports_assembly():
         second = _Service()
         csc.configure_cognition(first)
         csc.configure_cognition(second)
-        assert csc._advisory_services == [second]
+        # CSC self-registers built-in services (e.g. SRE advisory) at
+        # init — idempotence means exactly one entry per capability_id.
+        same_cap = [s for s in csc._advisory_services
+                    if getattr(s, "capability_id", None)
+                    == "test_advisory"]
+        assert same_cap == [second]
 
         attach_advisory_modules(csc, factories=(
             ("attach_ok", lambda: _Service()),
@@ -122,16 +127,21 @@ def test_mt5_replay_uses_non_executing_analysis_runtime():
     args = Namespace(
         replay=3, symbol="EURUSD", timeframe="M15", terminal_path=None,
         auto_approve=True, state_dir="var/test_mt5", strategy_id=None,
-        initial_equity=10000.0, research_interval=0)
+        initial_equity=10000.0, research_interval=0,
+        current_session=False)
     config = mt5_demo_runner._runtime_config(args)
 
     assert config["execution_mode"] == "analysis"
     assert config["account_id"] == "mt5_replay"
-    assert config["trading_enabled"] is False
+    # Replay keeps trading_enabled on so approvals produce paper fills
+    # (analysis mode -> paper boundary, no venue adapter) — the
+    # non-execution guarantee lives in execution_mode, not this flag.
+    assert config["trading_enabled"] is True
     assert config["cognitive_assembly"]["enabled"] is True
 
 
-def test_mt5_warmup_seeds_features_without_decision_cycles():
+@pytest.mark.asyncio
+async def test_mt5_warmup_seeds_features_without_decision_cycles():
     from scripts import mt5_demo_runner
 
     class CSC:
@@ -149,7 +159,8 @@ def test_mt5_warmup_seeds_features_without_decision_cycles():
     runtime = Namespace(bot=Bot())
     bars = [{"close": 1.10}, {"close": 1.11}, {"close": 1.12}]
 
-    assert mt5_demo_runner._seed_warmup(runtime, "EURUSD", bars) == 3
+    assert await mt5_demo_runner._seed_warmup(
+        runtime, "EURUSD", bars) == 3
     assert runtime.bot.csc.seeded == [("EURUSD", [1.10, 1.11, 1.12])]
     assert runtime.bot._price_window == [1.10, 1.11, 1.12]
 
@@ -218,16 +229,26 @@ async def test_discoloop_projection_does_not_use_process_randomized_hash(
 
     from trading_bot.core.csc.controller import CognitiveSystemController
 
-    def fail_hash(_value):
-        raise AssertionError("process-randomized hash used")
+    # Record rather than raise: a raising patch is still installed when
+    # pytest builds the failure report (pathlib hashes internally) and
+    # crashes the run with INTERNALERROR; also patch only around the
+    # call under test — CSC construction legitimately hashes.
+    real_hash = builtins.hash
+    hash_calls = []
 
-    monkeypatch.setattr(builtins, "hash", fail_hash)
+    def spy_hash(value):
+        hash_calls.append(value)
+        return real_hash(value)
+
     CognitiveSystemController._instance = None
     csc = CognitiveSystemController()
+    monkeypatch.setattr(builtins, "hash", spy_hash)
     try:
         await csc._run_discoloop_reasoning({
             "symbol": "EURUSD", "price": 1.1, "volume": 1000.0,
             "volatility": 0.01, "sentiment": 0.0})
         assert np.asarray(csc.continuous_state["latent"]).shape == (512,)
+        assert not hash_calls, (
+            f"process-randomized hash used on {hash_calls!r}")
     finally:
         CognitiveSystemController._instance = None

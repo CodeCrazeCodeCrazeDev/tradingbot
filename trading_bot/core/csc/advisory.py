@@ -6808,6 +6808,7 @@ def attach_advisory_modules(
 
     attached: List[str] = []
     skipped: List[str] = []
+    skipped_reasons: Dict[str, str] = {}
     for capability_id, factory in selected:
         try:
             service = factory()
@@ -6824,6 +6825,7 @@ def attach_advisory_modules(
             logger.info("advisory module attached: %s", capability_id)
         except Exception as exc:
             skipped.append(capability_id)
+            skipped_reasons[capability_id] = str(exc)[:160]
             logger.warning("advisory module skipped: %s (%s)",
                            capability_id, exc)
 
@@ -6845,6 +6847,7 @@ def attach_advisory_modules(
                                 svc.capability_id)
                 except Exception as exc:
                     skipped.append(svc.capability_id)
+                    skipped_reasons[svc.capability_id] = str(exc)[:160]
                     logger.warning("advisory module skipped: %s (%s)",
                                    svc.capability_id, exc)
             skipped.extend(disc_skipped)
@@ -6854,6 +6857,7 @@ def attach_advisory_modules(
     csc._advisory_attach_report = {
         "attached": list(attached),
         "skipped": list(skipped),
+        "skipped_reasons": skipped_reasons,
         "discover": bool(discover),
     }
     return attached, skipped

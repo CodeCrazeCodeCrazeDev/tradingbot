@@ -89,11 +89,19 @@ class AdvisoryCognitiveBrain:
     def _strip_authority(payload: Mapping[str, Any]) -> Dict[str, Any]:
         evidence: Dict[str, Any] = {}
         for key, value in payload.items():
-            if key in AUTHORITY_FIELDS or key.startswith(("authorized", "risk_")):
+            if key in AUTHORITY_FIELDS or str(key).startswith(("authorized", "risk_")):
                 continue
-            evidence[key] = (
-                AdvisoryCognitiveBrain._strip_authority(value)
-                if isinstance(value, Mapping)
-                else value
-            )
+            evidence[key] = AdvisoryCognitiveBrain._strip_value(value)
         return evidence
+
+    @staticmethod
+    def _strip_value(value: Any) -> Any:
+        # Authority vocabulary nested inside lists/tuples of mappings is
+        # still authority vocabulary — a dict hidden in a list must not
+        # bypass the strip (same policy as csc.advisory._strip_authority).
+        if isinstance(value, Mapping):
+            return AdvisoryCognitiveBrain._strip_authority(value)
+        if isinstance(value, (list, tuple)):
+            return [AdvisoryCognitiveBrain._strip_value(item)
+                    for item in value]
+        return value

@@ -114,6 +114,11 @@ class CognitiveSystemController:
     # Max fractional tilt subordinate advisory calls can apply to branch
     # ranking — advisors nudge selection, never override gates.
     _ADVISORY_TILT = 0.25
+    # Ceiling on an advisor's self-declared per-call budget — a
+    # subordinate service must not stretch the decision cycle past the
+    # electorate's bound by claiming a huge timeout_s.
+    _ADVISORY_TIMEOUT_CEILING_S = 10.0
+    _ADVISORY_TIMEOUT_DEFAULT_S = 5.0
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -362,7 +367,10 @@ class CognitiveSystemController:
         # Pending directional claims per capability, resolved against
         # the next observation's price so self-wiring promotion gates
         # on measured predictive value rather than emit presence.
-        self._advisor_dir_pending: Dict[str, Tuple[float, str, float]] = {}
+        # Tuple: (price, direction, timestamp, symbol) — symbol matters:
+        # a EURUSD claim must never be scored against a GBPUSD print.
+        self._advisor_dir_pending: Dict[
+            str, Tuple[float, str, float, str]] = {}
         # EV calibration: predicted-vs-realized pairs from settled
         # outcomes. Measured on forward data: simulated EV ~+0.0054,
         # realized ~+0.00004 — raw EV is ~150x optimistic, so the
@@ -2658,15 +2666,27 @@ class CognitiveSystemController:
                 for s in services]
 
         async def _one(svc):
+            # timeout_s is advisor-controlled: coerce garbage to the
+            # default and clamp to the ceiling — a service declaring
+            # timeout_s=None/3600 must not stall the pipeline.
+            try:
+                budget = float(getattr(
+                    svc, "timeout_s", self._ADVISORY_TIMEOUT_DEFAULT_S)
+                    or self._ADVISORY_TIMEOUT_DEFAULT_S)
+            except (TypeError, ValueError):
+                budget = self._ADVISORY_TIMEOUT_DEFAULT_S
+            budget = max(0.1, min(
+                budget, self._ADVISORY_TIMEOUT_CEILING_S))
             return await asyncio.wait_for(
                 self._safe_await(svc.analyze(observation)),
-                timeout=float(getattr(svc, "timeout_s", 5.0)))
+                timeout=budget)
 
         results = await asyncio.gather(
             *(_one(s) for s in services), return_exceptions=True)
         for cap, result in zip(caps, results):
             if isinstance(result, Exception):
                 failures[cap] = failures.get(cap, 0) + 1
+                self._funnel["advisor_exceptions"] += 1
                 self._record_failure(
                     "advisor_error",
                     f"advisory {cap} raised {type(result).__name__}",
@@ -3432,34 +3452,48 @@ class CognitiveSystemController:
         # terminal DECISION row carries evidence provenance — the audit
         # trail must show what informed an approval, not just its result.
         self._last_advisory_ids = sorted({
-            str(a.get("agent") or a.get("capability_id"))
+            str(a.get("agent") or a.get("capability_id")
+                or a.get("agent_id"))
             for a in (artifacts or [])
             if isinstance(a, Mapping)
-            and (a.get("agent") or a.get("capability_id"))
+            and (a.get("agent") or a.get("capability_id")
+                 or a.get("agent_id"))
         })
         # Normalized directional calls this cycle — consumed by branch
         # ranking (bounded tilt) and scored against realized outcomes so
-        # advisor weights are measured, not asserted.
+        # advisor weights are measured, not asserted. confidence and
+        # evidence_weight are advisor-controlled: coerce into [0,1] —
+        # a garbage or oversized value must neither crash this stage
+        # nor let one voter crowd out the rest of the electorate.
+        def _unit01(val: Any, default: Optional[float]
+                    ) -> Optional[float]:
+            try:
+                f = float(val)
+            except (TypeError, ValueError):
+                return default
+            if f != f:  # NaN poisons every downstream comparison
+                return default
+            return min(1.0, max(0.0, f))
+
         calls = []
         for a in (artifacts or []):
             if not isinstance(a, Mapping):
                 continue
-            cap = str(a.get("agent") or a.get("capability_id") or "")
+            cap = str(a.get("agent") or a.get("capability_id")
+                      or a.get("agent_id") or "")
             direction = a.get("direction")
             if not cap or direction not in ("BUY", "SELL"):
                 continue
-            conf = a.get("confidence")
             calls.append({
                 "capability_id": cap,
                 "direction": direction,
-                "confidence": float(conf) if isinstance(conf, (int, float))
-                else None,
+                "confidence": _unit01(a.get("confidence"), None),
                 # Exploration-weighted evidence: advisors that
                 # emit while exploring (epsilon-greedy) flag a lower
                 # weight so exploration noise doesn't read as
                 # conviction.
-                "evidence_weight": float(a.get("evidence_weight")
-                                         or 1.0),
+                "evidence_weight": _unit01(
+                    a.get("evidence_weight"), 1.0),
             })
         self._last_advisory_calls = calls
 
@@ -3475,8 +3509,17 @@ class CognitiveSystemController:
         # Measure it — record each abstain cycle's close and resolve
         # against the next obs so funnel_report shows the honest
         # opportunity cost of inaction.
-        _prev_close = getattr(self, "_last_obs_close", None)
-        _last_outcome = getattr(self, "_last_outcome_was_abstain", False)
+        _sym_key = str(obs_dict.get("symbol") or "?")
+        _closes = getattr(self, "_last_obs_close", None)
+        if not isinstance(_closes, dict):
+            # Per-symbol last-seen close — a GBPUSD print must never
+            # measure the opportunity cost of a EURUSD abstain.
+            _closes = self._last_obs_close = {}
+        _abstains = getattr(self, "_last_outcome_was_abstain", None)
+        if not isinstance(_abstains, dict):
+            _abstains = self._last_outcome_was_abstain = {}
+        _prev_close = _closes.get(_sym_key)
+        _last_outcome = _abstains.get(_sym_key, False)
         _cur_price = None
         try:
             _cur_price = float(
@@ -3488,7 +3531,7 @@ class CognitiveSystemController:
             _abs_move = abs(_cur_price - _prev_close) / _prev_close
             self._funnel["abstain_opp_cost_sum"] += int(_abs_move * 1e6)
         if _cur_price:
-            self._last_obs_close = _cur_price
+            _closes[_sym_key] = _cur_price
         if (_sup is not None and self._advisor_dir_pending
                 and isinstance(_cur_price, (int, float))
                 and _cur_price > 0):
@@ -3506,18 +3549,28 @@ class CognitiveSystemController:
                     "Z", "+00:00")).timestamp()
             except (TypeError, ValueError):
                 pass
-            for _cap2, (_p0, _dir, _t0) in list(
+            for _cap2, (_p0, _dir, _t0, _sym0) in list(
                     self._advisor_dir_pending.items()):
+                if _sym0 and _sym0 != _sym_key:
+                    continue  # other instrument's bar — claim stays open
+                del self._advisor_dir_pending[_cap2]
                 if _now - _t0 > 4 * 900:
                     continue  # expired — don't score gap noise
-                hit = (_dir == "BUY" and _cur_price > _p0) or                       (_dir == "SELL" and _cur_price < _p0)
+                hit = (_dir == "BUY" and _cur_price > _p0) or \
+                    (_dir == "SELL" and _cur_price < _p0)
                 _sup.observe_outcome(_cap2, hit)
-            self._advisor_dir_pending.clear()
+        # Metadata keys carry identity/framing, not content — an
+        # artifact holding only these emitted nothing measurable.
+        _META_KEYS = frozenset({
+            "agent", "capability_id", "agent_id", "advisory_only",
+            "type", "timestamp", "source", "direction", "confidence",
+            "evidence", "status", "evidence_weight"})
         for a in (artifacts or []):
             if not isinstance(a, Mapping):
                 self._funnel['advisor_degenerate'] += 1
                 continue
-            _cap = str(a.get("agent") or a.get("capability_id") or "")
+            _cap = str(a.get("agent") or a.get("capability_id")
+                       or a.get("agent_id") or "")
             if a.get('direction') in ('BUY', 'SELL'):
                 self._funnel['advisor_directional_calls'] += 1
                 if _sup is not None and _cap:
@@ -3531,12 +3584,23 @@ class CognitiveSystemController:
                         except (TypeError, ValueError):
                             _ct = time.time()
                         self._advisor_dir_pending[_cap] = (
-                            _cur_price, a.get('direction'), _ct)
+                            _cur_price, a.get('direction'), _ct,
+                            _sym_key if _sym_key != "?" else "")
                 continue
             ev = a.get('evidence')
+            # Status may sit inside an evidence mapping or at top level
+            # (raw advisor output). Artifacts that carry no 'evidence'
+            # key at all — research reports ('artifact'), PCA insights
+            # ('data') — are still substantive payloads, not degenerate
+            # emits; classifying them degenerate corrupted the funnel
+            # and fed false failure signals to the wiring supervisor.
             status = (str(ev.get('status')).lower()
-                      if isinstance(ev, Mapping) else '')
-            if status in _degenerate or not ev:
+                      if isinstance(ev, Mapping)
+                      else str(a.get('status') or '').lower())
+            has_payload = any(
+                a.get(k) not in (None, "", {}, [], ())
+                for k in a.keys() - _META_KEYS)
+            if status in _degenerate or (not ev and not has_payload):
                 self._funnel['advisor_degenerate'] += 1
                 if _sup is not None and _cap:
                     # Pass the raw status — 'warming' and feed-limited
@@ -4099,8 +4163,13 @@ class CognitiveSystemController:
                 outcome = getattr(decision, "outcome", None)
                 outcome_value = getattr(outcome, "value", outcome)
                 # Abstention-cost bookkeeping: next obs resolves the
-                # move skipped by this abstain.
-                self._last_outcome_was_abstain = (
+                # move skipped by this abstain — keyed per symbol so a
+                # different instrument's bar can't clear another's cost.
+                _abstains = getattr(
+                    self, "_last_outcome_was_abstain", None)
+                if not isinstance(_abstains, dict):
+                    _abstains = self._last_outcome_was_abstain = {}
+                _abstains[str(obs_d.get("symbol") or "?")] = (
                     str(outcome_value or "") == "ABSTAIN")
                 self._funnel[f"terminal_{outcome_value or 'UNKNOWN'}"] += 1
                 await self._persist_audit_event(

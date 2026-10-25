@@ -93,6 +93,15 @@ class AIStack:
         return {
             "attached": list(report.get("attached", [])),
             "measured": dict(report.get("measured", {})),
+            # The report already computes assembly/skipped, disabled
+            # circuit-breakers, contribution verdicts, and signal
+            # quality — a snapshot that drops them hides exactly the
+            # advisors that failed to wire or went quiet.
+            "assembly": dict(report.get("assembly", {})),
+            "disabled": list(report.get("disabled", [])),
+            "contribution_verdicts": dict(
+                report.get("contribution_verdicts", {})),
+            "signal_quality": dict(report.get("signal_quality", {})),
             "last_advisory_calls": list(
                 getattr(csc, "_last_advisory_calls", []) or []),
             "last_advisory_ids": list(
