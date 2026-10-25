@@ -1255,12 +1255,15 @@ def _rl_adaptive_decision_service() -> AdvisoryModuleAdapter:
     agent = AdaptiveDecisionRL(horizon=8)
     agent.bind_checkpoint("rl_adaptive_decision", "decision_posture_v2")
     lifecycle = PolicyLifecycle(agent, "rl_adaptive_decision")
+    from .harness_rl import HarnessOptimizer
+    hpo = HarnessOptimizer(lifecycle, "rl_adaptive_decision")
 
     def analyze(ctx: Mapping[str, Any]) -> Any:
         out = agent.analyze(ctx)
-        lifecycle.maybe_update()
+        hpo.maybe_update()
         if isinstance(out, dict):
             out["policy_lifecycle"] = lifecycle.status()
+            out["hpo"] = hpo.status()
         return out
 
     return AdvisoryModuleAdapter("rl_adaptive_decision", analyze)
@@ -1276,12 +1279,15 @@ def _rl_adaptive_spread_service() -> AdvisoryModuleAdapter:
     agent = AdaptiveSpreadRL(horizon=5)
     agent.bind_checkpoint("rl_adaptive_spread", "spread_skew_v2")
     lifecycle = PolicyLifecycle(agent, "rl_adaptive_spread")
+    from .harness_rl import HarnessOptimizer
+    hpo = HarnessOptimizer(lifecycle, "rl_adaptive_spread")
 
     def analyze(ctx: Mapping[str, Any]) -> Any:
         out = agent.analyze(ctx)
-        lifecycle.maybe_update()
+        hpo.maybe_update()
         if isinstance(out, dict):
             out["policy_lifecycle"] = lifecycle.status()
+            out["hpo"] = hpo.status()
         return out
 
     return AdvisoryModuleAdapter("rl_adaptive_spread", analyze)

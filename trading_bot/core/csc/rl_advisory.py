@@ -451,6 +451,16 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
                 corrected_from = action
                 action = greedy
                 self.self_corrections += 1
+                try:
+                    from .harness_rl import WorkingMemory
+                    WorkingMemory.get("rlsf:decision").write(sym, {
+                        "event": "self_correction", "state": state,
+                        "from_action": corrected_from,
+                        "to_action": action,
+                        "q_gap": float(q[greedy] - q[action]),
+                        "bar_idx": bar_idx})
+                except Exception:
+                    pass
         still.append(_Pending(
             state, action, close, bar_idx,
             extra={"cost_bps": _num(obs.get("cost_bps")) or 0.0,
