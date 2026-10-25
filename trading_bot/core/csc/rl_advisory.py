@@ -75,6 +75,13 @@ def _sym_key(obs: Dict[str, Any]) -> str:
     return f"{obs.get('symbol') or '?'}:{obs.get('timeframe') or 'raw'}"
 
 
+def _softmax(q: np.ndarray, tau: float = 1.0) -> np.ndarray:
+    z = q / max(tau, 1e-6)
+    z = z - float(np.max(z))
+    e = np.exp(z)
+    return e / float(np.sum(e))
+
+
 def _soft(x: float) -> float:
     """Tail-preserving squashing: tanh keeps ordering information past
     |1| where clip(-1,1) treats a flash crash like noise."""
@@ -140,6 +147,19 @@ class _TabularQ:
         self._teacher_beta = float(os.environ.get(
             "TB_RLSF_TEACHER_BETA", "0.05"))
         self.teacher_guided = 0
+        # On-policy self-distillation (KL-matching): periodically pull
+        # the student's action distribution toward the teacher's over
+        # VISITED states — softmax(·/tau) matching, not empty-row
+        # consults only.
+        self._distill_alpha = float(os.environ.get(
+            "TB_RLSF_DISTILL_ALPHA", "0.02"))
+        self._distill_tau = float(os.environ.get(
+            "TB_RLSF_DISTILL_TAU", "0.5"))
+        self._distill_max_states = 256
+        # Self-play arena stats: student vs teacher scored on exact
+        # counterfactuals at resolution.
+        self.selfplay = {"matches": 0, "student_wins": 0,
+                         "teacher_wins": 0, "ties": 0}
 
     def bind_checkpoint(self, name: str, key: str) -> None:
         """Enable durable persistence under RL_STATE_DIR/<name>.json."""
@@ -233,6 +253,26 @@ class _TabularQ:
             self._teacher[state] += self._teacher_beta * (
                 q - self._teacher[state])
         self.updates += 1
+
+    def distill_step(self) -> int:
+        """KL-matching pass: for visited states where the student and
+        teacher disagree, pull the student's softmax policy toward the
+        teacher's. Bounded to the most recent states."""
+        if not self._rlsf or not self._teacher:
+            return 0
+        n = 0
+        for s in list(self._q.keys())[-self._distill_max_states:]:
+            t = self._teacher.get(s)
+            if t is None:
+                continue
+            q = self._q[s]
+            if int(np.argmax(q)) == int(np.argmax(t)):
+                continue
+            p_t = _softmax(t, self._distill_tau)
+            p_s = _softmax(q, self._distill_tau)
+            q += self._distill_alpha * (p_t - p_s)
+            n += 1
+        return n
 
     def best(self, state: Tuple) -> Tuple[int, float]:
         q = self.row(state)
@@ -427,6 +467,23 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
                             self.self_corr_delta += (
                                 r_all[p_.action] - r_all[orig])
                             self.self_corr_n += 1
+                        # Self-play arena: score student-vs-teacher
+                        # picks on the SAME counterfactual rewards.
+                        t = self._teacher.get(p_.state)
+                        if t is not None and np.any(t):
+                            self.selfplay["matches"] += 1
+                            s_pick = int(np.argmax(
+                                self._q[p_.state]))                                 if p_.state in self._q else p_.action
+                            t_pick = int(np.argmax(t))
+                            s_r = r_all.get(s_pick)
+                            t_r = r_all.get(t_pick)
+                            if s_r is not None and t_r is not None:
+                                if s_r > t_r + 1e-9:
+                                    self.selfplay["student_wins"] += 1
+                                elif t_r > s_r + 1e-9:
+                                    self.selfplay["teacher_wins"] += 1
+                                else:
+                                    self.selfplay["ties"] += 1
                     else:
                         self.update(p_.state, p_.action, r)
                     self.experience_log.append(
@@ -443,13 +500,34 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
         # action BEFORE commit — learning from self-generated mistakes
         # with the counterfactual delta measured at resolution.
         corrected_from = None
+        corr_turns = 0
         if (self._rlsf_correct and explored and self.updates >= 20):
             q = self.row(state)
+            max_turns = int(os.environ.get("TB_RLSF_TURNS", "2"))
+            # Turn 1: student self-critique — revise toward the
+            # student's own greedy when the exploratory pick is
+            # already scored badly.
             greedy = int(np.argmax(q))
             if (greedy != action
                     and q[greedy] - q[action] > self._correct_margin):
                 corrected_from = action
                 action = greedy
+                corr_turns += 1
+            # Turn 2: teacher consult — when the student is still
+            # uncertain (thin top-two margin) and the distilled
+            # teacher has visited this state, defer to it.
+            if (corr_turns < max_turns
+                    and self._teacher.get(state) is not None):
+                q = self.row(state)
+                order = np.argsort(-q)
+                if len(order) >= 2 and                         q[order[0]] - q[order[1]] < self._correct_margin:
+                    t_pick = int(np.argmax(self._teacher[state]))
+                    if t_pick != action:
+                        if corrected_from is None:
+                            corrected_from = action
+                        action = t_pick
+                        corr_turns += 1
+            if corr_turns:
                 self.self_corrections += 1
                 try:
                     from .harness_rl import WorkingMemory
@@ -457,7 +535,9 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
                         "event": "self_correction", "state": state,
                         "from_action": corrected_from,
                         "to_action": action,
-                        "q_gap": float(q[greedy] - q[action]),
+                        "turns": corr_turns,
+                        "q_gap": float(q[int(np.argmax(q))] -
+                                       q[action]),
                         "bar_idx": bar_idx})
                 except Exception:
                     pass
@@ -467,6 +547,7 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
                    "rlsf_orig_action": corrected_from},
             ts=_obs_ts(obs)))
         if self.updates and self.updates % 32 == 0:
+            distilled = self.distill_step()
             self.save()
         q = self.row(state)
         return {
@@ -484,6 +565,7 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
                     self.self_corr_delta / self.self_corr_n, 5)
                 if self.self_corr_n else None,
                 "teacher_guided": self.teacher_guided,
+                "selfplay": dict(self.selfplay),
             },
             "pending_labels": len(self._pending[sym]),
             "resolved_this_bar": resolved,
