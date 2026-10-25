@@ -10,9 +10,11 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 import urllib.parse
 import urllib.request
+from pathlib import Path
 from typing import List
 from xml.etree import ElementTree as ET
 
@@ -21,14 +23,37 @@ from .sources import SourceDocument
 logger = logging.getLogger(__name__)
 _UA = {"User-Agent": "trading-bot-research/1.0"}
 _TIMEOUT = 30
+_CACHE_DIR = Path(os.environ.get(
+    "TB_RESEARCH_CACHE", "var/research_cache"))
+_CACHE_TTL = float(os.environ.get("TB_RESEARCH_CACHE_TTL", 86400.0))
 
 _NS = {"a": "http://www.w3.org/2005/Atom"}
 
 
 def _get(url: str) -> bytes:
+    """GET with a disk cache — unauthenticated rate limits (~60/hr
+    GitHub) make repeated pulls fatal; identical URLs inside the TTL
+    replay from disk instead of re-spending calls."""
+    import hashlib
+    import time as _t
+    key = hashlib.sha256(url.encode()).hexdigest()[:32]
+    fp = _CACHE_DIR / f"{key}.bin"
+    try:
+        if fp.exists() and (_t.time() - fp.stat().st_mtime) < _CACHE_TTL:
+            return fp.read_bytes()
+    except OSError:
+        pass
     req = urllib.request.Request(url, headers=_UA)
     with urllib.request.urlopen(req, timeout=_TIMEOUT) as r:
-        return r.read()
+        body = r.read()
+    try:
+        _CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = fp.with_suffix(".tmp")
+        tmp.write_bytes(body)
+        tmp.replace(fp)
+    except OSError:
+        pass
+    return body
 
 
 def fetch_arxiv(query: str, max_results: int = 10

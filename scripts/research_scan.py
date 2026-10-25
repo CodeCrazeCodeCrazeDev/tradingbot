@@ -40,9 +40,12 @@ def main() -> int:
     ap.add_argument("--max", type=int, default=5, dest="maxn")
     ap.add_argument("--claims", type=int, default=8,
                     help="max claims printed per source")
+    ap.add_argument("--ingest", action="store_true",
+                    help="feed docs into ResearchEngine.ingest_literature")
     args = ap.parse_args()
 
     total_docs = total_claims = 0
+    all_docs = []
     for name in (s.strip() for s in args.sources.split(",")):
         fn = FETCHERS.get(name)
         if not fn:
@@ -55,6 +58,7 @@ def main() -> int:
             print(f"[fetch-fail] {e}")
             continue
         print(f"fetched {len(docs)} documents")
+        all_docs.extend(docs)
         for d in docs:
             claims = extract_claims(d)
             total_claims += len(claims)
@@ -75,6 +79,18 @@ def main() -> int:
 
     print(f"\n=== summary: {total_docs} docs, "
           f"{total_claims} claims extracted ===")
+    if args.ingest and all_docs:
+        print("\n=== ingest into ResearchEngine ===")
+        try:
+            from trading_bot.core.csc.research.engine import ResearchEngine
+            # ingest_literature only touches the knowledge graph —
+            # hypothesis_gen/verifier_swarm unused on this path.
+            report = ResearchEngine(None, None).ingest_literature(all_docs)
+            print(f"ingested: docs={report.get('documents')} "
+                  f"claims={report.get('claims')}")
+            print(f"claim_ids: {report.get('claim_ids', [])[:6]}")
+        except Exception as e:
+            print(f"ingest failed: {type(e).__name__}: {e}")
     return 0
 
 
