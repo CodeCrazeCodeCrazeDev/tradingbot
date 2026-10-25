@@ -50,6 +50,25 @@ def roll_spread(closes: Sequence[float], window: int = 30
     return 2.0 * math.sqrt(-cov)
 
 
+def roll_spread_multi(closes: Sequence[float], window: int = 30,
+                      n_windows: int = 3):
+    """Multi-window Roll: median of estimates over overlapping
+    trailing sub-windows. A single 30-bar covariance sample is noisy;
+    the median across shifted windows is what production estimators
+    approximate with rolling multi-day averages."""
+    vals = []
+    n = len(closes)
+    step = max(1, window // 4)
+    for i in range(n_windows):
+        end = n - i * step
+        if end - window < 1:
+            break
+        v = roll_spread(closes[:end], window)
+        if v is not None:
+            vals.append(v)
+    return float(np.median(vals)) if vals else None
+
+
 def corwin_schultz_spread(highs: Sequence[float],
                           lows: Sequence[float],
                           window: int = 20) -> Optional[float]:

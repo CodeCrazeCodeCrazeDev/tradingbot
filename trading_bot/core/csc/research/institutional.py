@@ -105,6 +105,18 @@ class InstitutionalResearchSystem:
         except Exception as e:
             out["stages"]["weakness_inversion"] = {"error": str(e)}
 
+        # contradiction detection — opposite-polarity claims on the
+        # same subject get flagged before they land as independent nodes
+        try:
+            from .evidence_quality import detect_contradictions
+            con = detect_contradictions(docs) if docs else []
+            out["stages"]["contradictions"] = {
+                "pairs": len(con),
+                "flags": [c["flag"] for c in con][:10],
+                "detail": con[:5]}
+        except Exception as e:
+            out["stages"]["contradictions"] = {"error": str(e)}
+
         # ingest -> KG as theoretical-tier claims
         if self.engine is not None and docs:
             try:

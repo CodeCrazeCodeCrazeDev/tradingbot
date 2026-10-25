@@ -139,3 +139,39 @@ def filter_documents(docs: List[SourceDocument],
         "floor": floor,
         "per_doc": report,
     }
+
+
+def detect_contradictions(docs: List[SourceDocument],
+                          min_overlap: float = 0.30) -> List[Dict[str, Any]]:
+    """Cross-source contradiction detector. Two claims about the same
+    subject with OPPOSITE polarity are a contradiction — the KG should
+    link them as conflict edges rather than independent nodes.
+    Polarity comes from extract_claims (negation-aware); overlap is
+    token-Jaccard on content words."""
+    from .sources import extract_claims
+    claims = []  # (doc_id, claim)
+    for d in docs:
+        for c in extract_claims(d):
+            claims.append((d.source_id, c))
+    pairs = []
+    for i in range(len(claims)):
+        for j in range(i + 1, len(claims)):
+            (da, ca), (db, cb) = claims[i], claims[j]
+            if ca.polarity == cb.polarity:
+                continue                       # same polarity: no conflict
+            ta = set(re.findall(r"[a-z]{5,}", ca.text.lower()))
+            tb = set(re.findall(r"[a-z]{5,}", cb.text.lower()))
+            if not ta or not tb:
+                continue
+            j_ = len(ta & tb) / max(1, len(ta | tb))
+            if j_ < min_overlap:
+                continue                       # different subject
+            pairs.append({
+                "a": {"source_id": da, "polarity": ca.polarity,
+                      "text": ca.text[:120]},
+                "b": {"source_id": db, "polarity": cb.polarity,
+                      "text": cb.text[:120]},
+                "overlap": round(j_, 3),
+                "flag": "literature_conflict",
+            })
+    return pairs

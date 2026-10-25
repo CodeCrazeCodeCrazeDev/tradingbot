@@ -506,6 +506,20 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
                                     self.selfplay["teacher_wins"] += 1
                                 else:
                                     self.selfplay["ties"] += 1
+                            # regime-drift reset: a teacher that keeps
+                            # losing head-to-head gets rebuilt from the
+                            # student rather than advising stale policy
+                            sp = self.selfplay
+                            if sp["matches"] >= 30 and sp["matches"] % 10 == 0:
+                                decided = sp["student_wins"] + sp["teacher_wins"]
+                                if decided >= 10 and \
+                                        sp["teacher_wins"] / decided < 0.25:
+                                    self._teacher = {
+                                        k: list(v)
+                                        for k, v in self._q.items()}
+                                    self.selfplay = {
+                                        "matches": 0, "student_wins": 0,
+                                        "teacher_wins": 0, "ties": 0}
                     else:
                         self.update(p_.state, p_.action, r)
                         r_all = None
