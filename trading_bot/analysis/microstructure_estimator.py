@@ -71,7 +71,10 @@ def corwin_schultz_spread(highs: Sequence[float],
     beta = float(hl2[:-1].sum() + hl2[1:].sum())
     h2 = np.maximum(h[:-1], h[1:])
     l2 = np.minimum(l[:-1], l[1:])
-    gamma = float(np.log(h2 / l2).sum() ** 2) if len(h2) else 0.0
+    # gamma = sum over pairs of [ln(h2/l2)]^2 — NOT square-of-sum;
+    # that inflated gamma suppressed alpha and forced the estimate
+    # toward zero in exactly the trending windows CS exists to cover.
+    gamma = float(np.sum(np.log(h2 / l2) ** 2)) if len(h2) else 0.0
     k = 3.0 - 2.0 * math.sqrt(2.0)
     alpha = ((math.sqrt(2 * beta) - math.sqrt(beta)) / k
              - math.sqrt(gamma / k)) if beta >= 0 else 0.0

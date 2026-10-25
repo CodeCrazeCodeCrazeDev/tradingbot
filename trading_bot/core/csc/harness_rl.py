@@ -170,6 +170,7 @@ class HarnessOptimizer:
         self._base_cfg: Dict[str, float] = dict(self.active_cfg)
         self.generations = 0
         self.h_steps = 0
+        self._last_eval_len = 0   # rate-limit P-step retraining
         self.memory = WorkingMemory.get(
             f"hpo:{name}",
             persist_path=self._memory_path())
@@ -239,7 +240,13 @@ class HarnessOptimizer:
         lifecycle train/evaluate/deploy under it."""
         lc = self.lifecycle
         log = lc.agent.experience_log
-        if len(log) >= lc.min_train + lc.min_holdout:
+        # Rate limit: retraining K candidates over the full log on every
+        # call is O(K x epochs x log) per observation — only re-run the
+        # P-step when materially new data arrived since the last eval.
+        need_reval = (len(log) >= lc.min_train + lc.min_holdout
+                      and len(log) - self._last_eval_len >= lc.min_train)
+        if need_reval:
+            self._last_eval_len = len(log)
             n_hold = max(lc.min_holdout,
                          int(len(log) * lc.holdout_frac))
             seq = list(log)

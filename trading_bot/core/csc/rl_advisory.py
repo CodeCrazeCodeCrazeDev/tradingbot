@@ -244,11 +244,13 @@ class _TabularQ:
         return int(np.argmax(q)), False
 
     def update(self, state: Tuple, action: int, reward: float,
-               next_state: Optional[Tuple] = None) -> None:
+               next_state: Optional[Tuple] = None,
+               decay: bool = True) -> None:
         if not math.isfinite(reward):
             return
         q = self.row(state)
-        q *= self._forget  # recency decay before the update
+        if decay:
+            q *= self._forget  # recency decay before the update
         target = reward
         if next_state is not None and self.gamma > 0:
             target = reward + self.gamma * float(
@@ -473,7 +475,12 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
                                 replace(p_, action=a), obs)
                             if ra is not None:
                                 r_all[a] = ra
-                                self.update(p_.state, a, ra)
+                                # decay once per LABEL, not per
+                                # action — four counterfactual updates
+                                # would otherwise compound the row's
+                                # recency decay to forget^4.
+                                self.update(p_.state, a, ra,
+                                            decay=(a == p_.action))
                                 self.rlsf_cf_updates += 1
                         orig = p_.extra.get("rlsf_orig_action")
                         if orig is not None and orig in r_all:
