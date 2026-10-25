@@ -160,6 +160,11 @@ class _TabularQ:
         # counterfactuals at resolution.
         self.selfplay = {"matches": 0, "student_wins": 0,
                          "teacher_wins": 0, "ties": 0}
+        # survivorship telemetry: corrections that resolve vs
+        # corrections whose pending entry never lands a label —
+        # the gap is where _corr_ok silently flatters itself
+        self._corr_pending = 0
+        self._corr_resolved = 0
 
     def bind_checkpoint(self, name: str, key: str) -> None:
         """Enable durable persistence under RL_STATE_DIR/<name>.json."""
@@ -485,6 +490,8 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
                                             decay=(a == p_.action))
                                 self.rlsf_cf_updates += 1
                         orig = p_.extra.get("rlsf_orig_action")
+                        if orig is not None:
+                            self._corr_resolved += 1
                         if orig is not None and orig in r_all:
                             self.self_corr_delta += (
                                 r_all[p_.action] - r_all[orig])
@@ -590,6 +597,7 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
                         corr_turns += 1
             if corr_turns:
                 self.self_corrections += 1
+                self._corr_pending += 1
                 try:
                     from .harness_rl import WorkingMemory
                     WorkingMemory.get("rlsf:decision").write(sym, {
@@ -626,6 +634,9 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
                 if self.self_corr_n else None,
                 "teacher_guided": self.teacher_guided,
                 "selfplay": dict(self.selfplay),
+                "corr_resolved": self._corr_resolved,
+                "corr_unresolved":
+                    self._corr_pending - self._corr_resolved,
             },
             "pending_labels": len(self._pending[sym]),
             "resolved_this_bar": resolved,

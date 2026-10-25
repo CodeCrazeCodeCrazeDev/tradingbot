@@ -83,6 +83,15 @@ def score_claim(doc: SourceDocument, claim: ExtractedClaim,
     """Weighted quality score for one claim. Returns score + per-signal
     breakdown for audit."""
     src = doc.source_id.split(":", 1)[0]
+    # retraction/correction check: a retracted source scores 0
+    # regardless of every other signal — the cache can't see
+    # corrections, so the text itself must carry the signal
+    blob = f"{doc.title} {doc.text[:400]}".lower()
+    if re.search(r"retract|withdrawn|correction notice|erratum",
+                 blob):
+        return {"score": 0.0, "signals": {"retracted": 1.0},
+                "extraction": claim.extraction,
+                "note": "retraction_or_correction_detected"}
     sig = {
         "source_prior": _SOURCE_PRIOR.get(src, 0.35),
         "recency": _recency(doc.published),
