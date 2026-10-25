@@ -68,20 +68,21 @@ def corwin_schultz_spread(highs: Sequence[float],
         return None
     h, l = h[mask], l[mask]
     hl2 = np.log(h / l) ** 2
-    beta = float(hl2[:-1].sum() + hl2[1:].sum())
+    # Canonical CS: one alpha per CONSECUTIVE PAIR, then average the
+    # spreads — summing betas/gammas over the whole window inflates
+    # the estimate ~sqrt(N)x.
+    betas = hl2[:-1] + hl2[1:]
     h2 = np.maximum(h[:-1], h[1:])
     l2 = np.minimum(l[:-1], l[1:])
-    # gamma = sum over pairs of [ln(h2/l2)]^2 — NOT square-of-sum;
-    # that inflated gamma suppressed alpha and forced the estimate
-    # toward zero in exactly the trending windows CS exists to cover.
-    gamma = float(np.sum(np.log(h2 / l2) ** 2)) if len(h2) else 0.0
+    gammas = np.log(h2 / l2) ** 2
     k = 3.0 - 2.0 * math.sqrt(2.0)
-    alpha = ((math.sqrt(2 * beta) - math.sqrt(beta)) / k
-             - math.sqrt(gamma / k)) if beta >= 0 else 0.0
-    if not math.isfinite(alpha):
+    alphas = (np.sqrt(2.0 * betas) - np.sqrt(betas)) / k \
+        - np.sqrt(gammas / k)
+    alphas = alphas[np.isfinite(alphas)]
+    if not len(alphas):
         return None
-    spread = 2.0 * (math.exp(alpha) - 1.0) / (1.0 + math.exp(alpha))
-    return max(0.0, spread)
+    spreads = 2.0 * (np.exp(alphas) - 1.0) / (1.0 + np.exp(alphas))
+    return max(0.0, float(np.mean(spreads)))
 
 
 def kyle_lambda(closes: Sequence[float], volumes: Sequence[float],
@@ -102,9 +103,20 @@ def kyle_lambda(closes: Sequence[float], volumes: Sequence[float],
 
 def amihud(closes: Sequence[float], volumes: Sequence[float],
            window: int = 30) -> Optional[float]:
-    """Amihud illiquidity: mean |return| / volume. Larger = thinner."""
-    lam = kyle_lambda(closes, volumes, window)
-    return lam  # same estimator family; reported under its own name
+    """Amihud (2002) illiquidity: mean |return| / dollar-volume.
+    Tick volume x price approximates traded value on FX feeds."""
+    n = min(len(closes), len(volumes))
+    if n < window + 1:
+        return None
+    c = np.asarray(closes[-(window + 1):], dtype=float)
+    v = np.asarray(volumes[-window:], dtype=float)
+    r = np.abs(np.diff(c) / c[:-1])
+    dv = v * c[1:]
+    mask = dv > 0
+    if not mask.any():
+        return None
+    out = float(np.mean(r[mask] / dv[mask]))
+    return out if math.isfinite(out) else None
 
 
 def tick_imbalance(closes: Sequence[float], volumes: Sequence[float],
@@ -176,14 +188,21 @@ def estimate_all(closes: Sequence[float],
         # Trending regime: Roll has no bounce signal -> Corwin-Schultz
         # on high/low pairs covers the window Roll can't.
         cs = corwin_schultz_spread(list(highs), list(lows))
-        if cs is not None:
+        if cs is not None and cs > 1e-8:
             out["est_spread_bps"] = float(cs * 1e4)
             out["spread_est_method"] = "corwin_schultz"
+        elif cs is not None:
+            # CS clipped to zero = 'below estimator resolution', NOT
+            # 'free to trade' — a 0.0 cost estimate would let every
+            # EV sail through the net-cost gate.
+            out["spread_est_method"] = "cs_below_resolution"
     if v:
         lam = kyle_lambda(c, v)
         if lam is not None:
             out["kyle_lambda"] = lam
-            out["amihud"] = lam
+        am = amihud(c, v)
+        if am is not None:
+            out["amihud"] = am
         ti = tick_imbalance(c, v)
         if ti is not None:
             out["tick_imbalance"] = ti

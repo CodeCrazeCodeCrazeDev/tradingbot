@@ -3674,6 +3674,8 @@ class CognitiveSystemController:
             # Roll-estimated spread from strictly-prior closes — real
             # measured cost > estimate > flat default.
             cost_bps = obs_dict.get("est_spread_bps")
+            if cost_bps is not None and float(cost_bps) <= 0:
+                cost_bps = None  # 0 = below resolution, not free
             if cost_bps is not None:
                 proposal["cost_source"] = "roll_estimate"
         if cost_bps is None:

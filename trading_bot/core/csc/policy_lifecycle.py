@@ -92,11 +92,14 @@ class PolicyLifecycle:
         self.rollback_window = _env_i("TB_POLICY_ROLLBACK_WINDOW", 100)
         self.rollback_degradation = _env_f("TB_POLICY_ROLLBACK_DD", 0.20)
 
-        self._deployed_since = 0           # log length at last deploy
+        self._deployed_since = 0           # total-seen at last deploy
         self._backup: Optional[Dict[Tuple, np.ndarray]] = None
         self._baseline_mean = 0.0          # holdout mean at deploy
         self.rolling: Deque[float] = deque(maxlen=self.rollback_window)
-        self._seen = 0                     # transitions consumed
+        self._seen = 0                     # deque index consumed
+        self._total_seen = 0               # monotonic — deque maxlen
+        # wraparound drops oldest rows but len() stays capped; index-
+        # based gates would freeze at 8192 forever.
 
         self.deploys = 0
         self.rollbacks = 0
@@ -182,9 +185,16 @@ class PolicyLifecycle:
     # ------------------------------------------------------------------
     def maybe_update(self) -> Optional[str]:
         log = self.agent.experience_log
+        if self._seen > len(log) or (
+                len(log) == log.maxlen and self._seen >= len(log)):
+            # deque wrapped — rescan the tail; a few entries may
+            # re-count but the monitor stays honest and live.
+            self._seen = max(0, len(log) - self.rollback_window)
+            self.rolling.clear()
         while self._seen < len(log):
             self.rolling.append(log[self._seen][2])
             self._seen += 1
+            self._total_seen += 1
 
         # Rollback monitor: needs a deployed policy + full window.
         if self._backup is not None and \
@@ -198,7 +208,7 @@ class PolicyLifecycle:
         if len(log) < self.min_train + self.min_holdout:
             self.last_gate_reason = "insufficient_data"
             return None
-        if len(log) - self._deployed_since < self.min_train:
+        if self._total_seen - self._deployed_since < self.min_train:
             self.last_gate_reason = "no_new_data"
             return None
 
@@ -224,7 +234,7 @@ class PolicyLifecycle:
                 metrics: Dict[str, float]) -> None:
         self._backup = {s: arr.copy() for s, arr in self.agent._q.items()}
         self.agent._q = {s: arr.copy() for s, arr in table.items()}
-        self._deployed_since = len(self.agent.experience_log)
+        self._deployed_since = self._total_seen
         self._baseline_mean = metrics["mean"]
         self.rolling.clear()
         self.agent.save()
