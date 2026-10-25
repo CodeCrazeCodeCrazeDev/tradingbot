@@ -83,6 +83,15 @@ def test_deploy_and_rollback():
     assert res == "rolled_back"
     assert lc.rollbacks == 1
     assert agent._q == {}               # incumbent (empty) restored
+    # Second degradation: backup was consumed — no double-rollback,
+    # no crash on the missing backup.
+    for i in range(lc.rollback_window):
+        agent.experience_log.append(((0, 0, 0), 0, -0.5, 2000.0 + i))
+    res = lc.maybe_update()
+    # re-deploy under fresh evidence is legitimate; what must NOT
+    # happen is a second rollback or a crash on the consumed backup
+    assert res != "rolled_back"
+    assert lc.rollbacks == 1
 
 
 def test_no_new_data_short_circuits():

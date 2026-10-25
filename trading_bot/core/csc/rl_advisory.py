@@ -469,6 +469,8 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
                     # n_actions updates + a measured self-correction
                     # delta instead of a single sparse update.
                     if self._rlsf:
+                        # list-indexed, not dict — JSON-serializable
+                        # keys can't silently stringify on persist.
                         r_all = {}
                         for a in range(self.n_actions):
                             ra = self._reward(
@@ -507,8 +509,11 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
                     else:
                         self.update(p_.state, p_.action, r)
                         r_all = None
+                    cf_list = ([r_all.get(a) for a in
+                                range(self.n_actions)]
+                               if isinstance(r_all, dict) else None)
                     self.experience_log.append(
-                        (p_.state, p_.action, r, _obs_ts(obs), r_all))
+                        (p_.state, p_.action, r, _obs_ts(obs), cf_list))
                     resolved += 1
             else:
                 still.append(p_)
@@ -523,7 +528,13 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
         corrected_from = None
         corr_turns = 0
         pre_gap = 0.0
-        if (self._rlsf_correct and explored and self.updates >= 20):
+        # Self-gating: once enough corrections have resolved, a
+        # NEGATIVE measured delta means self-correction is hurting —
+        # stop trusting it. The mechanism polices itself.
+        _corr_ok = (self.self_corr_n < 20 or
+                    self.self_corr_delta / max(1, self.self_corr_n) >= 0)
+        if (self._rlsf_correct and _corr_ok and explored
+                and self.updates >= 20):
             q = self.row(state)
             max_turns = int(os.environ.get("TB_RLSF_TURNS", "2"))
             # Turn 1: student self-critique — revise toward the

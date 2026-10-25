@@ -150,9 +150,12 @@ class PolicyLifecycle:
             row = table.get(s)
             if row is None:
                 continue
-            if isinstance(cf, dict) and cf:
+            if isinstance(cf, (list, tuple, dict)) and cf:
                 pick = self._greedy(row)
-                if pick in cf:
+                if isinstance(cf, dict):
+                    if pick in cf:
+                        matched.append(cf[pick])
+                elif pick < len(cf) and cf[pick] is not None:
                     matched.append(cf[pick])
             elif self._greedy(row) == act:
                 matched.append(r)

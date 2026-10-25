@@ -398,6 +398,7 @@ async def run(args: argparse.Namespace) -> int:
     except (OSError, json.JSONDecodeError):
         history = []
     seed_hl = []
+    _hl_needs = args.seed_bars > 0
     if not history and args.seed_bars > 0:
         # Warm the feature windows from strictly-prior DB bars — the
         # same data source the replay reads, so provenance is honest.
@@ -419,14 +420,27 @@ async def run(args: argparse.Namespace) -> int:
         finally:
             con.close()
     csc = getattr(runtime.bot, "csc", None)
-    if csc is not None and seed_hl:
+    if csc is not None and _hl_needs:
         hlq = getattr(csc, "_hl_history", None)
-        if isinstance(hlq, dict):
-            from collections import deque as _dq
-            hlq.setdefault(args.symbol, _dq(maxlen=64))
-            for hh, ll in seed_hl:
-                if isinstance(hh, (int, float))                         and isinstance(ll, (int, float)):
-                    hlq[args.symbol].append((float(hh), float(ll)))
+        if isinstance(hlq, dict) and not hlq.get(args.symbol):
+            # State dir had closes but no HL bars — warm path_risk
+            # from the DB anyway so it isn't absent ~20 bars in.
+            con2 = sqlite3.connect(
+                f"file:{PROJECT_ROOT / args.db_path}?mode=ro", uri=True)
+            try:
+                for hh, ll in con2.execute(
+                        "SELECT high, low FROM market_data "
+                        "WHERE symbol=? AND timeframe=? ORDER BY "
+                        "timestamp LIMIT ? OFFSET ?",
+                        (args.symbol, args.timeframe, args.seed_bars,
+                         max(0, args.skip - args.seed_bars))):
+                    if isinstance(hh, (int, float))                             and isinstance(ll, (int, float)):
+                        from collections import deque as _dq
+                        hlq.setdefault(
+                            args.symbol, _dq(maxlen=64)).append(
+                                (float(hh), float(ll)))
+            finally:
+                con2.close()
         # Position closes must hit the ledger, not just CSC bookkeeping —
         # wire the canonical execution service so horizon/adverse/reversal
         # exits submit real opposing orders.
