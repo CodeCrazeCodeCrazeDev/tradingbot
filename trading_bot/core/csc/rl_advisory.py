@@ -501,6 +501,7 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
         # with the counterfactual delta measured at resolution.
         corrected_from = None
         corr_turns = 0
+        pre_gap = 0.0
         if (self._rlsf_correct and explored and self.updates >= 20):
             q = self.row(state)
             max_turns = int(os.environ.get("TB_RLSF_TURNS", "2"))
@@ -508,8 +509,9 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
             # student's own greedy when the exploratory pick is
             # already scored badly.
             greedy = int(np.argmax(q))
+            pre_gap = float(q[greedy] - q[action])
             if (greedy != action
-                    and q[greedy] - q[action] > self._correct_margin):
+                    and pre_gap > self._correct_margin):
                 corrected_from = action
                 action = greedy
                 corr_turns += 1
@@ -536,8 +538,7 @@ class AdaptiveDecisionRL(_TabularQ, _DeferredLearner):
                         "from_action": corrected_from,
                         "to_action": action,
                         "turns": corr_turns,
-                        "q_gap": float(q[int(np.argmax(q))] -
-                                       q[action]),
+                        "q_gap": pre_gap,
                         "bar_idx": bar_idx})
                 except Exception:
                     pass

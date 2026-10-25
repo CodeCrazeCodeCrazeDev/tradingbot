@@ -1319,7 +1319,7 @@ def _rl_adaptive_decision_service() -> AdvisoryModuleAdapter:
     from .rl_advisory import AdaptiveDecisionRL
     from .policy_lifecycle import PolicyLifecycle
     agent = AdaptiveDecisionRL(horizon=8)
-    agent.bind_checkpoint("rl_adaptive_decision", "decision_posture_v2")
+    agent.bind_checkpoint("rl_adaptive_decision", "decision_posture_v3")
     lifecycle = PolicyLifecycle(agent, "rl_adaptive_decision")
     from .harness_rl import HarnessOptimizer
     hpo = HarnessOptimizer(lifecycle, "rl_adaptive_decision")
@@ -1343,7 +1343,7 @@ def _rl_adaptive_spread_service() -> AdvisoryModuleAdapter:
     from .rl_advisory import AdaptiveSpreadRL
     from .policy_lifecycle import PolicyLifecycle
     agent = AdaptiveSpreadRL(horizon=5)
-    agent.bind_checkpoint("rl_adaptive_spread", "spread_skew_v2")
+    agent.bind_checkpoint("rl_adaptive_spread", "spread_skew_v3")
     lifecycle = PolicyLifecycle(agent, "rl_adaptive_spread")
     from .harness_rl import HarnessOptimizer
     hpo = HarnessOptimizer(lifecycle, "rl_adaptive_spread")
