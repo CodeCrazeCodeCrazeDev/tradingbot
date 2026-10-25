@@ -42,6 +42,9 @@ def main() -> int:
                     help="max claims printed per source")
     ap.add_argument("--ingest", action="store_true",
                     help="feed docs into ResearchEngine.ingest_literature")
+    ap.add_argument("--invert", action="store_true",
+                    help="run weakness inversion — emit the defensive "
+                         "rules each source's weaknesses imply")
     args = ap.parse_args()
 
     total_docs = total_claims = 0
@@ -91,6 +94,15 @@ def main() -> int:
             print(f"claim_ids: {report.get('claim_ids', [])[:6]}")
         except Exception as e:
             print(f"ingest failed: {type(e).__name__}: {e}")
+
+    if args.invert and all_docs:
+        from trading_bot.core.csc.research.weakness_inversion import (
+            invert_documents)
+        inv = invert_documents(all_docs)
+        print(f"\n=== weakness inversion: {inv['rules_total']} rules ===")
+        for r in inv["rules"]:
+            print(f"  [{r['severity']}] {r['weakness_id']} "
+                  f"({len(r['seen_in'])} srcs) -> {r['inverted_rule'][:70]}")
     return 0
 
 

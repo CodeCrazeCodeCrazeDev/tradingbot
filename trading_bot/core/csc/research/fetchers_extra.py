@@ -261,3 +261,96 @@ EXTRA_FETCHERS = {
     "zenodo": fetch_zenodo,
     "wikipedia": fetch_wikipedia,
 }
+
+
+def fetch_creator(query: str, max_results: int = 10):
+    """Creator Intelligence — keyless dev.to + Reddit JSON. Extracts
+    operational/workflow blueprints from creator content rather than
+    content copying (EIP adapter #3)."""
+    q = urllib.parse.quote(query)
+    docs = []
+    try:
+        arts = json.loads(_get(
+            f"https://dev.to/api/articles?tag={q}"
+            f"&per_page={max_results}"))
+        for a in arts[:max_results]:
+            t = a.get("title", "")
+            x = a.get("description") or " ".join(
+                a.get("tag_list", []))
+            if t and x:
+                docs.append(SourceDocument(
+                    source_id=f"creator:devto:{a.get('id','')}",
+                    title=t, text=f"{t}. {x}",
+                    author=(a.get("user") or {}).get("name", ""),
+                    published=a.get("published_at", ""),
+                    url=a.get("url", "")))
+    except Exception as e:
+        logger.warning("creator devto failed: %s", e)
+    try:
+        rd = json.loads(_get(
+            f"https://www.reddit.com/search.json?q={q}"
+            f"&limit={max_results}&sort=relevance&t=year"))
+        for c in rd.get("data", {}).get("children", [])[:max_results]:
+            d = c.get("data", {})
+            t = d.get("title", "")
+            x = d.get("selftext") or d.get("title", "")
+            if t and x:
+                docs.append(SourceDocument(
+                    source_id=f"creator:reddit:{d.get('id','')}",
+                    title=t, text=x[:6000],
+                    author=d.get("author", ""),
+                    published=str(d.get("created_utc", "")),
+                    url="https://reddit.com" + d.get("permalink", "")))
+    except Exception as e:
+        logger.warning("creator reddit failed: %s", e)
+    return docs
+
+
+def fetch_frontier_models(query: str, max_results: int = 10):
+    """Frontier Model observation (EIP adapter #4) — keyless HF model
+    metadata. 'Reverse engineers' capability patterns from public
+    card fields: params, pipeline_tag, license, downloads, tags —
+    never weights. A 7B 'trading' model card reveals its pattern
+    without the weights."""
+    q = urllib.parse.quote(query)
+    try:
+        items = json.loads(_get(
+            "https://huggingface.co/api/models?search="
+            f"{q}&sort=downloads&direction=-1&limit={max_results}"
+            "&full=true"))
+    except Exception as e:
+        logger.warning("frontier_models failed: %s", e)
+        return []
+    docs = []
+    for it in items[:max_results]:
+        mid = it.get("id") or it.get("modelId") or ""
+        if not mid:
+            continue
+        tags = it.get("tags", [])
+        cfg = it.get("config", {}) or {}
+        # Capability pattern: what the metadata reveals about the arch
+        pattern = {
+            "pipeline_tag": it.get("pipeline_tag"),
+            "params_b": (cfg.get("num_parameters") or 0) / 1e9
+            if isinstance(cfg.get("num_parameters"), (int, float))
+            else None,
+            "license": next((t for t in tags if t.startswith("license:")),
+                            None),
+            "library": it.get("library_name"),
+            "downloads": it.get("downloads"),
+        }
+        text = (f"Model {mid} pattern: "
+                + "; ".join(f"{k}={v}" for k, v in pattern.items()
+                            if v is not None)
+                + "; tags: " + " ".join(tags[:12]))
+        docs.append(SourceDocument(
+            source_id=f"frontier:{mid}", title=f"{mid} (frontier obs)",
+            text=text, published=it.get("lastModified", ""),
+            url=f"https://huggingface.co/{mid}"))
+    return docs
+
+
+EXTRA_FETCHERS.update({
+    "creator": fetch_creator,
+    "frontier_models": fetch_frontier_models,
+})
