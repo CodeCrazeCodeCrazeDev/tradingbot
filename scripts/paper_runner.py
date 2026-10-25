@@ -401,7 +401,7 @@ async def run(args: argparse.Namespace) -> int:
         # Warm the feature windows from strictly-prior DB bars — the
         # same data source the replay reads, so provenance is honest.
         con = sqlite3.connect(
-            f"file:{PROJECT_ROOT / 'market_data.db'}?mode=ro", uri=True)
+            f"file:{PROJECT_ROOT / args.db_path}?mode=ro", uri=True)
         try:
             rows = con.execute(
                 "SELECT close FROM market_data WHERE symbol=? "
@@ -527,20 +527,20 @@ async def run(args: argparse.Namespace) -> int:
         _btz = args.broker_tz_offset
         if str(_btz).lower() in ("auto", ""):
             _btz = _detect_broker_tz_offset(
-                PROJECT_ROOT / "market_data.db", args.symbol,
+                PROJECT_ROOT / args.db_path, args.symbol,
                 args.timeframe)
         elif str(_btz).lower() in ("utc", "none"):
             _btz = 0.0
         else:
             _btz = float(_btz)
         source = db_observations(
-            PROJECT_ROOT / "market_data.db",
+            PROJECT_ROOT / args.db_path,
                                  args.symbol, args.timeframe, args.skip,
                                  args.htf_timeframe,
                                  broker_tz_offset=_btz)
     elif args.source == "cross":
         source = cross_observations(
-            PROJECT_ROOT / "market_data.db", args.symbol,
+            PROJECT_ROOT / args.db_path, args.symbol,
             args.cross_denominator, args.timeframe, args.skip)
     else:
         source = synthetic_observations(args.symbol, args.cycles or 200,
@@ -693,6 +693,10 @@ async def run(args: argparse.Namespace) -> int:
 
 def main(argv: Optional[list] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--db-path", default="market_data.db",
+                        help="db/cross source: SQLite path with a "
+                             "market_data table (default market_data.db; "
+                             "use lse_data.db for LSE-synced data)")
     parser.add_argument("--source", choices=("synthetic", "db", "cross"),
                         default="synthetic")
     parser.add_argument("--symbol", default="EURUSD")
