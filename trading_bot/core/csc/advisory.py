@@ -1246,6 +1246,72 @@ def _rl_distributional_service() -> AdvisoryModuleAdapter:
                            "RL_DIST_CKPT"))
 
 
+def _opportunity_scanner_service() -> AdvisoryModuleAdapter:
+    """Bar-derived opportunity scan — replaces the hollow
+    UnifiedScanner sub-stubs (MomentumCapture/VolatilityTrading/
+    FlowAnalysis were never shipped, so it returned [] forever).
+    Scores momentum / flow / execution-quality candidates from the
+    enriched microstructure fields (efficiency_ratio, tick_imbalance,
+    est_spread_bps, momentum, volatility). Evidence only."""
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        er = _num(ctx.get("efficiency_ratio"))
+        ti = _num(ctx.get("tick_imbalance"))
+        mom = _num(ctx.get("momentum"))
+        vol = _num(ctx.get("volatility"))
+        spread = _num(ctx.get("est_spread_bps"))
+        close = _num(ctx.get("close"))
+        if close is None or er is None:
+            return {"status": "warming", "opportunities": []}
+        opps = []
+        if er >= 0.3 and mom is not None and abs(mom) > 0:
+            direction = "BUY" if mom > 0 else "SELL"
+            opps.append({
+                "type": "momentum",
+                "direction": direction,
+                "confidence": round(min(0.95, er), 3),
+                "flow_aligned": ti is None or (ti > 0) == (mom > 0),
+                "expected_return": abs(mom),
+            })
+        if ti is not None and abs(ti) >= 0.5:
+            opps.append({
+                "type": "flow",
+                "direction": "BUY" if ti > 0 else "SELL",
+                "confidence": round(min(0.9, abs(ti)), 3),
+                "expected_return": abs(ti) * (vol or 0.001),
+                "note": "tick-imbalance proxy, not footprint delta",
+            })
+        # Execution quality: the good-trade/bad-trade discriminator —
+        # a cheap-to-fill candidate is only real if the estimated
+        # round-trip cost is below the candidate edge.
+        if opps and spread is not None:
+            best = max(opps, key=lambda o: o["expected_return"])
+            for o in opps:
+                o["est_cost_bps"] = round(spread, 2)
+                o["net_edge_positive"] = bool(
+                    o["expected_return"] > 2.0 * spread / 1e4)
+            opps.sort(key=lambda o: o["expected_return"], reverse=True)
+            return {
+                "status": "active",
+                "opportunities": opps[:3],
+                "best": best["type"],
+                "efficiency_ratio": er,
+                "tick_imbalance": ti,
+                "est_spread_bps": spread,
+            }
+        return {
+            "status": "active" if er is not None else "warming",
+            "opportunities": opps[:3],
+            "efficiency_ratio": er,
+            "tick_imbalance": ti,
+            "est_spread_bps": spread,
+            "note": ("no opportunity met thresholds"
+                     if not opps else None),
+        }
+
+    return AdvisoryModuleAdapter("opportunity_scanner", analyze)
+
+
 def _rl_adaptive_decision_service() -> AdvisoryModuleAdapter:
     """Tabular RL over decision posture — learns defensive/neutral/
     long-lean/short-lean from deferred realized returns. Causal: labels
@@ -5858,6 +5924,7 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("ml_transformer", _ml_transformer_service),
     ("ml_ensemble", _ml_ensemble_service),
     ("rl_distributional", _rl_distributional_service),
+    ("opportunity_scanner", _opportunity_scanner_service),
     ("rl_adaptive_decision", _rl_adaptive_decision_service),
     ("rl_adaptive_spread", _rl_adaptive_spread_service),
     ("rl_analysis_lens", _rl_analysis_lens_service),
@@ -6111,6 +6178,7 @@ MEASURED_ACTIVE_SET = frozenset((
     # tamic_institutional_time, wyckoff_phases
     # RL cohort — measured at 400 bars (all earned substantive output;
     # rl_alpha_search fixed first: scoring-lag eviction bug).
+    "opportunity_scanner",      # bar-derived microstructure scan
     "rl_adaptive_decision",     # 373/400
     "rl_adaptive_spread",       # 376/400
     "rl_analysis_lens",         # 380/400

@@ -388,6 +388,8 @@ class CognitiveSystemController:
         # directional proposal whose simulated expected value cannot beat it
         # downgrades to an honest abstention.
         self._default_cost_bps = float(kwargs.get("cost_bps", 5.0))
+        # Per-symbol (high,low) deque for intrabar path-risk estimation
+        self._hl_history: Dict[str, Deque[Tuple[float, float]]] = {}
 
         # HASP guardrail baseline: recent observed volatility per instrument
         # class. The guardrail fires on a large multiple of the running
@@ -2143,6 +2145,30 @@ class CognitiveSystemController:
                 derived.add("volume_ratio")
         if isinstance(volume, (int, float)) and volume > 0:
             vol_hist.append(float(volume))
+        # Bar-derived microstructure (Roll spread, Kyle lambda,
+        # Amihud, tick-imbalance, Kaufman ER, intrabar path risk) —
+        # the published estimators that work on OHLCV where L2/footprint
+        # data doesn't exist. Lets the simulator/net-cost gate price
+        # execution quality instead of assuming a flat cost.
+        try:
+            from trading_bot.analysis.microstructure_estimator import (
+                estimate_all)
+            hl = self._hl_history.setdefault(symbol, deque(maxlen=64))
+            h_cur = obs_dict.get("high")
+            l_cur = obs_dict.get("low")
+            if isinstance(h_cur, (int, float)) and \
+                    isinstance(l_cur, (int, float)):
+                hl.append((float(h_cur), float(l_cur)))
+            est = estimate_all(
+                closes, list(vol_hist),
+                [x[0] for x in hl] if hl else None,
+                [x[1] for x in hl] if hl else None)
+            for _k, _v in est.items():
+                if _k not in obs_dict:
+                    obs_dict[_k] = _v
+                    derived.add(_k)
+        except Exception:
+            pass
         disagreement = getattr(self, "_last_advisory_disagreement", None)
         if disagreement is not None and "advisory_disagreement" not in obs_dict:
             obs_dict["advisory_disagreement"] = float(disagreement)
@@ -3643,8 +3669,16 @@ class CognitiveSystemController:
             return  # legacy/mock sim payloads (lists, mocks) — not gated here
         sim = sim if isinstance(sim, dict) else {}
         ev = sim.get("expected_value")
-        cost_bps = obs_dict.get("cost_bps") or obs_dict.get("spread_bps") \
-            or self._default_cost_bps
+        cost_bps = obs_dict.get("cost_bps") or obs_dict.get("spread_bps")
+        if cost_bps is None:
+            # Roll-estimated spread from strictly-prior closes — real
+            # measured cost > estimate > flat default.
+            cost_bps = obs_dict.get("est_spread_bps")
+            if cost_bps is not None:
+                proposal["cost_source"] = "roll_estimate"
+        if cost_bps is None:
+            cost_bps = self._default_cost_bps
+            proposal["cost_source"] = "flat_default"
         try:
             round_trip_cost = 2.0 * float(cost_bps) / 1e4
         except (TypeError, ValueError):
