@@ -20,6 +20,10 @@ def _docs(items, source, id_of, title_of, text_of, url_of, date_of=None):
     for it in items:
         try:
             t, x = title_of(it), text_of(it)
+            # Crossref/edgar items often carry no abstract/highlight —
+            # a title-only document is still evidence (weak, but real)
+            if t and not x:
+                x = t
             if t and x:
                 out.append(SourceDocument(
                     source_id=f"{source}:{id_of(it)}", title=str(t),
@@ -139,9 +143,16 @@ def fetch_dblp(query: str, max_results: int = 10):
 def fetch_openreview(query: str, max_results: int = 10):
     q = urllib.parse.quote(query)
     try:
-        d = json.loads(_get(
-            f"https://api2.openreview.net/notes/search?term={q}"
-            f"&limit={max_results}"))
+        # api.openreview.net (v1) returns content as plain strings;
+        # api2 returns {value: ...} dicts — try v1 first, fall back.
+        try:
+            d = json.loads(_get(
+                f"https://api.openreview.net/notes/search?term={q}"
+                f"&limit={max_results}"))
+        except Exception:
+            d = json.loads(_get(
+                f"https://api2.openreview.net/notes/search?term={q}"
+                f"&limit={max_results}"))
     except Exception as e:
         logger.warning("openreview failed: %s", e)
         return []
@@ -173,7 +184,11 @@ def fetch_edgar(query: str, max_results: int = 10):
         lambda h: (f"{h.get('_source', {}).get('display_names', ['?'])[0]}"
                    f" {h.get('_source', {}).get('form', '')}"),
         lambda h: re.sub(r"<[^>]+>", " ", " ".join(
-            h.get("highlight", {}).get("text", []))),
+            h.get("highlight", {}).get("text", [])) or " ".join(
+            f"{k}={v}" for k, v in
+            h.get("_source", {}).items()
+            if k in ("display_names", "form", "file_date",
+                     "root_form"))),
         lambda h: ("https://www.sec.gov/cgi-bin/browse-edgar?action="
                    "getcompany&CIK="
                    f"{h.get('_source', {}).get('ciks', [''])[0]}"),
@@ -237,7 +252,7 @@ def fetch_wikipedia(query: str, max_results: int = 10):
         try:
             s = json.loads(_get(
                 "https://en.wikipedia.org/api/rest_v1/page/summary/"
-                + urllib.parse.quote(t)))
+                + urllib.parse.quote(t.replace(" ", "_"))))
             if s.get("extract"):
                 docs.append(SourceDocument(
                     source_id=f"wiki:{t.replace(' ', '_')}", title=t,
