@@ -2684,9 +2684,19 @@ class CognitiveSystemController:
                  str(getattr(s, "capability_id", ""))
                  in MEASURED_ACTIVE_SET)]
         if not full_cycle:
+            deferred = [
+                s for s in total
+                if str(getattr(s, "capability_id", ""))
+                not in MEASURED_ACTIVE_SET]
             self._funnel["advisors_deferred"] = \
-                self._funnel.get("advisors_deferred", 0) + (
-                    len(total) - len(services))
+                self._funnel.get("advisors_deferred", 0) + len(deferred)
+            for s in deferred:
+                artifacts.append({  # explicit abstention, not absence
+                    "agent": str(getattr(s, "capability_id",
+                                         type(s).__name__)),
+                    "advisory_only": True,
+                    "status": "deferred",
+                    "defer_cycle": self._advisory_cycle})
         caps = [str(getattr(s, "capability_id", type(s).__name__))
                 for s in services]
 
