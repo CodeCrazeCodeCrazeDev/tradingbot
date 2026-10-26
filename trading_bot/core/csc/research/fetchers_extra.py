@@ -285,10 +285,24 @@ def fetch_creator(query: str, max_results: int = 10):
     q = urllib.parse.quote(query)
     docs = []
     try:
+        # dev.to tags are single-word — a multi-word query 404s the
+        # endpoint. Use the first keyword as tag, then client-filter
+        # the rest of the query terms against title/description.
+        kw = (query.split() or [""])[0]
         arts = json.loads(_get(
-            f"https://dev.to/api/articles?tag={q}"
-            f"&per_page={max_results}"))
-        for a in arts[:max_results]:
+            f"https://dev.to/api/articles?tag={urllib.parse.quote(kw)}"
+            f"&per_page={max_results * 4}"))
+        if not arts:
+            arts = json.loads(_get(
+                "https://dev.to/api/articles"
+                f"?per_page={max_results * 4}&top=14"))
+        terms = {t.lower() for t in query.split() if len(t) > 3}
+        scored = []
+        for a in arts:
+            hay = f"{a.get('title','')} {a.get('description','')}".lower()
+            scored.append((len(terms & set(hay.split())), a))
+        scored.sort(key=lambda x: -x[0])
+        for _, a in scored[:max_results]:
             t = a.get("title", "")
             x = a.get("description") or " ".join(
                 a.get("tag_list", []))

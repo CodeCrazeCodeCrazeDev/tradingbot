@@ -21,8 +21,16 @@ from xml.etree import ElementTree as ET
 from .sources import SourceDocument
 
 logger = logging.getLogger(__name__)
-_UA = {"User-Agent": "trading-bot-research/1.0"}
+# Descriptive UA — Reddit/S2 403/429 generic bot agents; a UA naming
+# the project + purpose is what both providers ask for.
+_UA = {"User-Agent": "alphaalgo-research/1.0 "
+                     "(academic meta-research; contact: local-user)"}
 _TIMEOUT = 30
+try:
+    import certifi, ssl as _ssl
+    _CTX = _ssl.create_default_context(cafile=certifi.where())
+except Exception:  # noqa: BLE001 — certifi absent: platform trust store
+    _CTX = None
 _CACHE_DIR = Path(os.environ.get(
     "TB_RESEARCH_CACHE", "var/research_cache"))
 _CACHE_TTL = float(os.environ.get("TB_RESEARCH_CACHE_TTL", 86400.0))
@@ -44,8 +52,22 @@ def _get(url: str) -> bytes:
     except OSError:
         pass
     req = urllib.request.Request(url, headers=_UA)
-    with urllib.request.urlopen(req, timeout=_TIMEOUT) as r:
-        body = r.read()
+    kwargs = {"timeout": _TIMEOUT}
+    if _CTX is not None:
+        kwargs["context"] = _CTX
+    try:
+        with urllib.request.urlopen(req, **kwargs) as r:
+            body = r.read()
+    except urllib.error.HTTPError as e:
+        if e.code == 429:
+            # one bounded retry — S2's public quota resets per-second;
+            # still-429 -> caller's [] (no key = hard limit, honest)
+            import time as _t2
+            _t2.sleep(2.0)
+            with urllib.request.urlopen(req, **kwargs) as r:
+                body = r.read()
+        else:
+            raise
     try:
         _CACHE_DIR.mkdir(parents=True, exist_ok=True)
         tmp = fp.with_suffix(".tmp")
