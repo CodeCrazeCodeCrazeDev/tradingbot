@@ -3409,8 +3409,19 @@ class CognitiveSystemController:
             logger.debug(f"CSC-V6: reflective context unavailable: {e}")
         return evidence_chain
 
+    def _research_market_data(self, symbol: str = None) -> dict:
+        """Build the market_data payload investigate() needs: live close
+        history so a market_edge question can simulate branches. The
+        caller may override symbol; default = most recent tracked."""
+        sym = symbol or next(iter(self._obs_history), None)
+        closes = self.observation_history(sym) if sym else []
+        return {"symbol": sym or "unknown",
+                "closes": closes[-256:],
+                "question_source": "csc"}
+
     def ask_research(self, question: str, sources=None,
-                     investigate: bool = True):
+                     investigate: bool = True,
+                     market_data: dict = None):
         """Operator/CSC -> research engine: send a question down the
         institutional pipeline (fetch -> EQE -> weakness inversion ->
         KG ingest -> investigate). Advisory evidence only."""
@@ -3419,10 +3430,12 @@ class CognitiveSystemController:
             self._institutional_research = InstitutionalResearchSystem(
                 engine=self.research_engine)
         return self._institutional_research.ask(
-            question, sources=sources, investigate=investigate)
+            question, sources=sources, investigate=investigate,
+            market_data=market_data or self._research_market_data())
 
     async def ask_research_async(self, question: str, sources=None,
-                                 investigate: bool = True):
+                                 investigate: bool = True,
+                                 market_data: dict = None):
         """In-loop variant: awaits the investigate stage so the verdict
         lands IN the returned report (no polling). Use from run_cycle
         and the operator channel's async handlers."""
@@ -3432,7 +3445,8 @@ class CognitiveSystemController:
             irs = self._institutional_research = \
                 InstitutionalResearchSystem(engine=self.research_engine)
         return await irs.ask_async(
-            question, sources=sources, investigate=investigate)
+            question, sources=sources, investigate=investigate,
+            market_data=market_data or self._research_market_data())
 
     def _compute_self_health(self) -> Optional[Dict[str, Any]]:
         # Sealed validation trials must not inherit live runtime counters.

@@ -85,9 +85,13 @@ class InstitutionalResearchSystem:
                          "claims_dropped")}}
 
     def ask(self, question: str, sources=None,
-            investigate: bool = True) -> Dict[str, Any]:
+            investigate: bool = True,
+            market_data: Optional[Dict[str, Any]] = None
+            ) -> Dict[str, Any]:
         """The full loop. ``investigate=False`` stops after ingestion
-        (cheap probe — no hypothesis work)."""
+        (cheap probe — no hypothesis work). ``market_data`` feeds the
+        engine's investigate stage (symbol/closes/question_source);
+        without it a market_edge question can't simulate branches."""
         self.questions_asked += 1
         t0 = time.time()
         question = self._sanitize_query(question)
@@ -156,12 +160,35 @@ class InstitutionalResearchSystem:
             except Exception as e:
                 out["stages"]["ingest"] = {"error": str(e)}
 
-        # investigate -> hypothesis/debate/experiment via the engine
+        # investigate -> hypothesis/debate/experiment via the engine.
+        # market_edge questions need hypothesis_gen for branch
+        # simulation; operational diagnostics don't. Skip only the
+        # market_edge path on a bare ingest-only engine.
+        self._inv_skip = False
         if self.engine is not None and investigate and \
-                hasattr(self.engine, "investigate"):
+                getattr(self.engine, "hypothesis_gen", None) is None:
+            qtype = "market_edge"
+            try:
+                from .engine import _classify_question
+                qtype = _classify_question(
+                    question, dict(market_data or {}))
+            except Exception:
+                pass
+            if qtype == "market_edge":
+                out["stages"]["investigate"] = {
+                    "skipped": "no_hypothesis_gen",
+                    "note": "market_edge needs the CSC's "
+                            "hypothesis_gen for branch simulation; "
+                            "operational questions still run"}
+                self._inv_skip = True
+        if self.engine is not None and investigate and \
+                hasattr(self.engine, "investigate") and \
+                not self._inv_skip:
             try:
                 import asyncio
-                coro = self.engine.investigate(question)
+                md = dict(market_data or {})
+                md.setdefault("question_source", "literature")
+                coro = self.engine.investigate(question, md)
                 try:
                     loop = asyncio.get_running_loop()
                     # inside the async pipeline — schedule, don't block
@@ -198,7 +225,9 @@ class InstitutionalResearchSystem:
         return out
 
     async def ask_async(self, question: str, sources=None,
-                        investigate: bool = True) -> Dict[str, Any]:
+                        investigate: bool = True,
+                        market_data: Optional[Dict[str, Any]] = None
+                        ) -> Dict[str, Any]:
         """Async variant for callers inside the event loop: the
         investigate stage is AWAITED, so the returned report carries
         the verdict — no polling, no lost result."""
@@ -249,11 +278,27 @@ class InstitutionalResearchSystem:
                     "claim_ids": rep.get("claim_ids", [])[:10]}
             except Exception as e:
                 out["stages"]["ingest"] = {"error": str(e)}
+        inv_ok = True
         if self.engine is not None and investigate and \
-                hasattr(self.engine, "investigate"):
+                getattr(self.engine, "hypothesis_gen", None) is None:
+            try:
+                from .engine import _classify_question
+                inv_ok = _classify_question(
+                    question, dict(market_data or {})) != "market_edge"
+            except Exception:
+                pass
+            if not inv_ok:
+                out["stages"]["investigate"] = {
+                    "skipped": "no_hypothesis_gen",
+                    "note": "market_edge needs the CSC's "
+                            "hypothesis_gen for branch simulation"}
+        if self.engine is not None and investigate and \
+                hasattr(self.engine, "investigate") and inv_ok:
             try:
                 import asyncio
-                coro = self.engine.investigate(question)
+                md = dict(market_data or {})
+                md.setdefault("question_source", "literature")
+                coro = self.engine.investigate(question, md)
                 if asyncio.iscoroutine(coro):
                     out["stages"]["investigate"] = {
                         "result": await coro}  # verdict, awaited
