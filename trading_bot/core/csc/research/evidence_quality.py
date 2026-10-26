@@ -89,8 +89,13 @@ def score_claim(doc: SourceDocument, claim: ExtractedClaim,
     # regardless of every other signal — the cache can't see
     # corrections, so the text itself must carry the signal
     blob = f"{doc.title} {doc.text[:400]}".lower()
-    if re.search(r"retract|withdrawn|correction notice|erratum",
-                 blob):
+    # Gate on retraction-specific PHRASES, not the bare word —
+    # "we retract our earlier assumption" is methodology, not a
+    # retraction notice.
+    if re.search(r"(has been|this (article|paper|work) (was|is|has"
+                 r" been))\s+retract|retraction notice|"
+                 r"withdrawn from|notice of retraction|"
+                 r"erratum|corrigendum", blob):
         return {"score": 0.0, "signals": {"retracted": 1.0},
                 "extraction": claim.extraction,
                 "note": "retraction_or_correction_detected"}

@@ -2669,25 +2669,54 @@ class CognitiveSystemController:
         except (TypeError, ValueError):
             defer_n = 4
         self._advisory_cycle = getattr(self, "_advisory_cycle", 0) + 1
+        # Event trigger, not just frequency: a volatility/regime shock
+        # consults the full electorate immediately rather than waiting
+        # out the defer window. Cycle 1 is always full — cold start
+        # needs breadth, not the narrowest electorate.
+        vol_now = 0.0
+        try:
+            vol_now = float(observation.get("volatility") or 0.0)
+        except (TypeError, ValueError):
+            pass
+        vol_prev = getattr(self, "_last_obs_vol", None)
+        self._last_obs_vol = vol_now
+        vol_shock = (vol_prev is not None and vol_prev > 0 and
+                     (vol_now / vol_prev > 2.0 or
+                      vol_now / vol_prev < 0.5))
         full_cycle = (defer_n <= 1 or
-                      self._advisory_cycle % defer_n == 0)
+                      self._advisory_cycle == 1 or
+                      self._advisory_cycle % defer_n == 0 or
+                      vol_shock)
         try:
             from .advisory import MEASURED_ACTIVE_SET
         except Exception:  # noqa: BLE001 — never gate on import failure
             MEASURED_ACTIVE_SET = frozenset()
         total = getattr(self, "_advisory_services", [])
+
+        def _cap(s):
+            return str(getattr(s, "capability_id", "")
+                       or type(s).__name__)
+
+        # Per-advisor cadence override: a service may declare its own
+        # defer_n (fast-decaying orderflow wants 1-2; EDGAR filings are
+        # fine at 8+). Global defer_n is the floor, not the law.
+        def _due(s):
+            if full_cycle:
+                return True
+            if _cap(s) in MEASURED_ACTIVE_SET:
+                return True
+            try:
+                n = int(getattr(s, "defer_n", defer_n) or defer_n)
+            except (TypeError, ValueError):
+                n = defer_n
+            return n <= 1 or self._advisory_cycle % n == 0
+
         services = [
             s for s in total
-            if failures.get(str(getattr(s, "capability_id",
-                                        type(s).__name__)), 0) < 5
-            and (full_cycle or
-                 str(getattr(s, "capability_id", ""))
-                 in MEASURED_ACTIVE_SET)]
+            if failures.get(_cap(s), 0) < 5 and _due(s)]
         if not full_cycle:
-            deferred = [
-                s for s in total
-                if str(getattr(s, "capability_id", ""))
-                not in MEASURED_ACTIVE_SET]
+            deferred = [s for s in total if not _due(s)
+                        and _cap(s) not in MEASURED_ACTIVE_SET]
             self._funnel["advisors_deferred"] = \
                 self._funnel.get("advisors_deferred", 0) + len(deferred)
             for s in deferred:
