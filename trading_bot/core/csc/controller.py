@@ -2659,10 +2659,34 @@ class CognitiveSystemController:
         failures = getattr(self, "_advisory_failures", None)
         if failures is None:
             self._advisory_failures = failures = {}
+        # Advisor tiering: measured-active advisors run EVERY cycle;
+        # the long tail defers to every Nth cycle (its output was
+        # measured degenerate anyway — spending minutes collecting
+        # 'warming' payloads buys nothing). TB_ADVISORY_DEFER_N=1
+        # restores the old every-advisor-every-cycle behavior.
+        try:
+            defer_n = int(os.environ.get("TB_ADVISORY_DEFER_N", "4"))
+        except (TypeError, ValueError):
+            defer_n = 4
+        self._advisory_cycle = getattr(self, "_advisory_cycle", 0) + 1
+        full_cycle = (defer_n <= 1 or
+                      self._advisory_cycle % defer_n == 0)
+        try:
+            from .advisory import MEASURED_ACTIVE_SET
+        except Exception:  # noqa: BLE001 — never gate on import failure
+            MEASURED_ACTIVE_SET = frozenset()
+        total = getattr(self, "_advisory_services", [])
         services = [
-            s for s in getattr(self, "_advisory_services", [])
+            s for s in total
             if failures.get(str(getattr(s, "capability_id",
-                                        type(s).__name__)), 0) < 5]
+                                        type(s).__name__)), 0) < 5
+            and (full_cycle or
+                 str(getattr(s, "capability_id", ""))
+                 in MEASURED_ACTIVE_SET)]
+        if not full_cycle:
+            self._funnel["advisors_deferred"] = \
+                self._funnel.get("advisors_deferred", 0) + (
+                    len(total) - len(services))
         caps = [str(getattr(s, "capability_id", type(s).__name__))
                 for s in services]
 
