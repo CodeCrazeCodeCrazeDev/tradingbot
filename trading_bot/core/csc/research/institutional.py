@@ -197,6 +197,77 @@ class InstitutionalResearchSystem:
         self.reports.append(out)
         return out
 
+    async def ask_async(self, question: str, sources=None,
+                        investigate: bool = True) -> Dict[str, Any]:
+        """Async variant for callers inside the event loop: the
+        investigate stage is AWAITED, so the returned report carries
+        the verdict — no polling, no lost result."""
+        self.questions_asked += 1
+        t0 = time.time()
+        question = self._sanitize_query(question)
+        out: Dict[str, Any] = {"question": question,
+                               "question_id": f"q-{self.questions_asked}",
+                               "stages": {}}
+        try:
+            fetched = self.fetch(question, sources)
+            out["stages"]["fetch"] = {
+                "documents": len(fetched["documents"]),
+                "per_source": fetched["per_source"],
+                "sources_failed": fetched.get("sources_failed"),
+                "sources_silent": fetched.get("sources_silent"),
+                "eqe": fetched["eqe"]}
+            docs = fetched["documents"]
+        except Exception as e:
+            out["stages"]["fetch"] = {"error": str(e)}
+            docs = []
+        try:
+            inv = invert_documents(docs) if docs else {"rules_total": 0}
+            out["stages"]["weakness_inversion"] = {
+                "rules_total": inv["rules_total"],
+                "rules": [r["weakness_id"] for r in inv["rules"]]}
+        except Exception as e:
+            out["stages"]["weakness_inversion"] = {"error": str(e)}
+        try:
+            from .evidence_quality import detect_contradictions
+            con = detect_contradictions(docs) if docs else []
+            out["stages"]["contradictions"] = {
+                "pairs": len(con), "detail": con[:5],
+                "proposals": [{"kind": "arbiter_hypothesis_proposal",
+                               "question": question,
+                               "claim_a": c["a"]["text"],
+                               "claim_b": c["b"]["text"],
+                               "status": "awaiting_operator"}
+                              for c in con[:5]]}
+        except Exception as e:
+            out["stages"]["contradictions"] = {"error": str(e)}
+        if self.engine is not None and docs:
+            try:
+                rep = self.engine.ingest_literature(docs)
+                out["stages"]["ingest"] = {
+                    "documents": rep.get("documents"),
+                    "claims": rep.get("claims"),
+                    "claim_ids": rep.get("claim_ids", [])[:10]}
+            except Exception as e:
+                out["stages"]["ingest"] = {"error": str(e)}
+        if self.engine is not None and investigate and \
+                hasattr(self.engine, "investigate"):
+            try:
+                import asyncio
+                coro = self.engine.investigate(question)
+                if asyncio.iscoroutine(coro):
+                    out["stages"]["investigate"] = {
+                        "result": await coro}  # verdict, awaited
+                else:
+                    out["stages"]["investigate"] = {"result": coro}
+            except Exception as e:
+                out["stages"]["investigate"] = {"error": str(e)}
+        out["cost"] = {"wall_s": round(time.time() - t0, 3)}
+        if out["cost"]["wall_s"] > 30.0:
+            out["cost"]["warning"] = "research_cost_exceeds_30s"
+        out["authority"] = "advisory_only"
+        self.reports.append(out)
+        return out
+
     def status(self) -> Dict[str, Any]:
         return {"questions_asked": self.questions_asked,
                 "reports": len(self.reports),

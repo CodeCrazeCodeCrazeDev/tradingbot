@@ -3421,6 +3421,19 @@ class CognitiveSystemController:
         return self._institutional_research.ask(
             question, sources=sources, investigate=investigate)
 
+    async def ask_research_async(self, question: str, sources=None,
+                                 investigate: bool = True):
+        """In-loop variant: awaits the investigate stage so the verdict
+        lands IN the returned report (no polling). Use from run_cycle
+        and the operator channel's async handlers."""
+        irs = getattr(self, "_institutional_research", None)
+        if irs is None:
+            from .research.institutional import InstitutionalResearchSystem
+            irs = self._institutional_research = \
+                InstitutionalResearchSystem(engine=self.research_engine)
+        return await irs.ask_async(
+            question, sources=sources, investigate=investigate)
+
     def _compute_self_health(self) -> Optional[Dict[str, Any]]:
         # Sealed validation trials must not inherit live runtime counters.
         if getattr(self, "_sealed_trial", False):
