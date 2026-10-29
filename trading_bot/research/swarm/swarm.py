@@ -96,11 +96,14 @@ class ResearchSwarm:
     """
 
     def __init__(self, max_workers: int = 4, config: Optional[Dict[str, Any]] = None,
-                 lab_factory: Optional[Callable[[], InstitutionalResearchLab]] = None):
+                 lab_factory: Optional[Callable[[], InstitutionalResearchLab]] = None,
+                 proceedings_registry: Optional[StandardKnowledgeRegistry] = None):
         self.config = config or {}
         self.max_workers = max(1, max_workers)
         self._lab_factory = lab_factory or InstitutionalResearchLab
-        self.proceedings_registry = StandardKnowledgeRegistry()
+        # When driven by an InstitutionalResearchLab, proceedings archive into
+        # the lab's knowledge registry so the institutional KB is complete.
+        self.proceedings_registry = proceedings_registry or StandardKnowledgeRegistry()
 
     # ------------------------------------------------------------------
     # Public API

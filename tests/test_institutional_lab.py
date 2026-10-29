@@ -98,10 +98,29 @@ def test_lab_run_research_program_produces_institutional_report():
     engaged = {d.division_key for d in report.division_reports if d.stages_run > 0}
     assert engaged == set(report.divisions_engaged)
 
+    # Every division-owned stage of the lifecycle must have recorded a minute.
+    stages_run = {m.stage for m in report.minutes}
+    assert {"feature_engineering", "feature_selection",
+            "strategy_synthesis", "experiment_registration"} <= stages_run
+
     # Proceedings archived to the institutional knowledge base.
     archived = lab.orchestrator.knowledge_registry.get_knowledge(report.program_id)
     assert archived is not None
     assert archived["category"] == "lab_proceedings"
+
+
+def test_dispatch_swarm_archives_proceedings_to_lab_knowledge_base():
+    """Swarm proceedings dispatched by the lab must land in the lab's own
+    knowledge registry — the institutional KB is incomplete otherwise."""
+    lab = InstitutionalResearchLab()
+    proceedings = lab.dispatch_swarm(
+        [{"kind": "full_pipeline", "symbol": "EURUSD", "query": "microstructure"}],
+        max_workers=1, replication=1,
+    )
+
+    archived = lab.orchestrator.knowledge_registry.get_knowledge(proceedings.swarm_id)
+    assert archived is not None
+    assert archived["category"] == "swarm_proceedings"
 
 
 def test_lab_minutes_replay_isolated_per_task():

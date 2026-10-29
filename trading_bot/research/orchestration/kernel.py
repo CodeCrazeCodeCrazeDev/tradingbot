@@ -332,11 +332,15 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
         scores = self.feature_engine.score_features(features, fwd_returns)
         for feat_id, score in scores.items():
             self.feature_registry.record_importance(feat_id, score)
+        self._emit_stage("feature_engineering", "completed", {
+            "features_generated": len(features)
+        }, task_id)
 
         # Prune redundant features
         pruned_features = self.feature_engine.prune_redundant_features(features, threshold=0.90)
-        self._emit_stage("feature_engineering", "completed", {
-            "features_generated": len(features), "features_after_pruning": len(pruned_features)
+        self._emit_stage("feature_selection", "completed", {
+            "features_selected": len(pruned_features),
+            "features_pruned": len(features) - len(pruned_features)
         }, task_id)
 
         # P2-ADDITION: Causal Discovery DAG building
@@ -392,6 +396,9 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
         # STAGE 7: Strategy Synthesis
         synthesizer = StrategySynthesizer()
         strategy = synthesizer.synthesize_strategy(alpha_signal)
+        self._emit_stage("strategy_synthesis", "completed", {
+            "strategy_id": strategy.strategy_id, "threshold": strategy.threshold
+        }, task_id)
 
         # Register experiment run with Experiment OS
         experiment_id = f"exp_{task_id}"
@@ -407,9 +414,8 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
         })
         self.graph_store.add_node(experiment_id, "experiment", {"success": True, "repro_score": repro_score})
         self.graph_store.add_edge(experiment_id, alpha_signal.alpha_id, "validates")
-        self._emit_stage("strategy_synthesis", "completed", {
-            "strategy_id": strategy.strategy_id, "experiment_id": experiment_id,
-            "reproducibility_score": repro_score
+        self._emit_stage("experiment_registration", "completed", {
+            "experiment_id": experiment_id, "reproducibility_score": repro_score
         }, task_id)
 
         # STAGE 8 & 9: Realistic Backtesting & Robustness Testing

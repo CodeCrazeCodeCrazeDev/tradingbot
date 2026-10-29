@@ -123,15 +123,13 @@ def run_cli():
                 print(f"      objection: {obj}")
 
     elif args.command == "org-chart":
-        from trading_bot.research.lab.institutional_lab import InstitutionalResearchLab
-        lab = InstitutionalResearchLab()
-        chart = lab.org_chart_report()
+        from trading_bot.research.lab.divisions import build_org_chart
         print("\n================== INSTITUTIONAL LAB ORG CHART ==================")
-        for div in chart["divisions"]:
-            print(f"\n{div['name']}  [{div['key']}]")
-            print(f"  Mandate:    {div['mandate']}")
-            print(f"  Stages:     {', '.join(div['stages'])}")
-            print(f"  Subsystems: {', '.join(div['subsystems'])}")
+        for div in build_org_chart():
+            print(f"\n{div.name}  [{div.key}]")
+            print(f"  Mandate:    {div.mandate}")
+            print(f"  Stages:     {', '.join(div.stages)}")
+            print(f"  Subsystems: {', '.join(div.subsystems)}")
 
     elif args.command == "swarm-run":
         from trading_bot.research.lab.institutional_lab import InstitutionalResearchLab

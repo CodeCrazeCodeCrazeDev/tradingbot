@@ -201,7 +201,8 @@ class InstitutionalResearchLab:
         each on its own lab instance) and return the SwarmProceedings.
         """
         from trading_bot.research.swarm.swarm import ResearchSwarm
-        swarm = ResearchSwarm(max_workers=max_workers, config=self.config)
+        swarm = ResearchSwarm(max_workers=max_workers, config=self.config,
+                              proceedings_registry=self.orchestrator.knowledge_registry)
         return swarm.swarm(programs, replication=replication)
 
     # ------------------------------------------------------------------
