@@ -6,7 +6,7 @@ Converts scientific claims into live production strategies, updating registries 
 
 import uuid
 import logging
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Callable, Dict, Any, List, Optional, Tuple
 from datetime import datetime, timedelta
 import numpy as np
 
@@ -109,6 +109,34 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
         self.running_continuous = False
         self._historical_papers: List[ResearchPaper] = []
 
+        # Institutional lab instrumentation: observers receive one event dict
+        # per pipeline stage so facades (e.g. InstitutionalResearchLab) can
+        # record division minutes without re-implementing orchestration.
+        self._stage_observers: List[Callable[[Dict[str, Any]], None]] = []
+
+    def register_stage_observer(self, observer: Callable[[Dict[str, Any]], None]) -> None:
+        """Register a callable invoked once per pipeline stage boundary."""
+        self._stage_observers.append(observer)
+
+    def _emit_stage(self, stage: str, status: str = "completed",
+                    details: Optional[Dict[str, Any]] = None,
+                    task_id: Optional[str] = None) -> None:
+        """Emit a stage event to all registered lab observers."""
+        if not self._stage_observers:
+            return
+        event = {
+            "stage": stage,
+            "status": status,
+            "task_id": task_id,
+            "details": details or {},
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        for observer in self._stage_observers:
+            try:
+                observer(event)
+            except Exception as e:
+                logger.warning(f"Stage observer failed on '{stage}': {e}")
+
     def submit_task(self, task_type: str, payload: Dict[str, Any]) -> str:
         """
         Executes an on-demand scientific workflow task.
@@ -164,6 +192,8 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
             category=payload.get("category", "risk_management")
         )
 
+        self._emit_stage("literature_intake", "completed", {"paper_id": paper_id, "title": title}, task_id)
+
         # Generate embeddings
         paper.embeddings = self.embedding_provider.embed(paper.abstract)
 
@@ -171,7 +201,12 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
         duplicates = self.duplicate_detector.find_duplicates(paper, self._historical_papers)
         if duplicates:
             logger.info(f"Paper '{title}' is a potential duplicate of '{duplicates[0][0].title}' (Similarity: {duplicates[0][1]:.2%}).")
+            self._emit_stage("duplicate_check", "rejected", {
+                "duplicate_of": duplicates[0][0].paper_id,
+                "similarity": duplicates[0][1]
+            }, task_id)
             return {"status": "rejected", "reason": "duplicate_found", "duplicate_of": duplicates[0][0].paper_id}
+        self._emit_stage("duplicate_check", "completed", {"duplicates_found": 0}, task_id)
 
         self._historical_papers.append(paper)
 
@@ -181,6 +216,7 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
             "category": paper.category,
             "url": paper.url
         })
+        self._emit_stage("graph_persistence", "completed", {"paper_id": paper.paper_id}, task_id)
 
         logger.info(f"Paper '{title}' Ingested successfully in Cognitive memory.")
         return {"status": "success", "paper_id": paper.paper_id}
@@ -207,6 +243,9 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
         # Ensure paper has embeddings and is represented in graph
         paper.embeddings = self.embedding_provider.embed(paper.abstract)
         self.graph_store.add_node(paper.paper_id, "paper", {"title": paper.title, "category": paper.category})
+        self._emit_stage("literature_discovery", "completed", {
+            "query": query, "papers_found": len(papers), "paper_id": paper.paper_id
+        }, task_id)
 
         hypothesis = self.hypothesis_generator.generate_from_paper(paper, market=symbol, timeframe="15m")
         self.graph_store.add_node(hypothesis.hypothesis_id, "hypothesis", {
@@ -214,6 +253,10 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
             "measurable_prediction": hypothesis.measurable_prediction
         })
         self.graph_store.add_edge(hypothesis.hypothesis_id, paper.paper_id, "inspired_by")
+        self._emit_stage("hypothesis_generation", "completed", {
+            "hypothesis_id": hypothesis.hypothesis_id,
+            "measurable_prediction": hypothesis.measurable_prediction
+        }, task_id)
 
         # P2-ADDITION: Experiment OS Scheduling and Prioritization
         proposal = ResearchProposal(
@@ -233,20 +276,29 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
 
         if not selected_prop:
             logger.error("Prioritization allocation denied execution quota limit. Aborting.")
+            self._emit_stage("proposal_prioritization", "failed", {"gate": "scheduler_quota"}, task_id)
             return {"status": "failed", "gate": "scheduler_quota"}
+        self._emit_stage("proposal_prioritization", "completed", {
+            "proposal_id": selected_prop.proposal_id, "evi_score": evi_score
+        }, task_id)
 
         # STAGE 3: Data Ingestion & Quality Validation
         start_time = datetime.utcnow() - timedelta(days=60)
         end_time = datetime.utcnow()
 
         dataset = self.data_provider.load_dataset([symbol], "15m", start_time, end_time)
+        self._emit_stage("data_ingestion", "completed", {
+            "dataset_id": dataset.dataset_id, "records": len(dataset.timestamps)
+        }, task_id)
         valid, anomalies = self.dataset_validator.validate(dataset)
 
         if not valid:
             logger.error(f"Dataset validation failed: {anomalies}. Aborting promotion.")
             self.graph_store.add_node(dataset.dataset_id, "dataset", {"status": "rejected"})
             self.graph_store.add_edge(dataset.dataset_id, hypothesis.hypothesis_id, "contradicts", {"reason": "failed_validation"})
+            self._emit_stage("data_validation", "failed", {"anomalies": anomalies}, task_id)
             return {"status": "failed", "gate": "data_validation"}
+        self._emit_stage("data_validation", "completed", {"anomalies": anomalies}, task_id)
 
         self.dataset_registry.register_dataset(dataset)
         self.graph_store.add_node(dataset.dataset_id, "dataset", {
@@ -259,9 +311,11 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
         gaps = self.active_learner.select_regime_gaps([dataset])
         if gaps:
             logger.info(f"Active Learning: Scanned {len(gaps)} regime gap(s) for further observation acquisition.")
+        self._emit_stage("active_learning", "completed", {"regime_gaps": len(gaps)}, task_id)
 
         # P2-ADDITION: Learn latent states via World Model
         wm_states = self.world_model.predict_latent_states(dataset)
+        self._emit_stage("world_modeling", "completed", {"latent_states": len(wm_states)}, task_id)
 
         # STAGE 4 & 5: Feature Engineering & Selection Scoring
         features = self.feature_engine.generate_features(dataset, symbol)
@@ -281,9 +335,13 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
 
         # Prune redundant features
         pruned_features = self.feature_engine.prune_redundant_features(features, threshold=0.90)
+        self._emit_stage("feature_engineering", "completed", {
+            "features_generated": len(features), "features_after_pruning": len(pruned_features)
+        }, task_id)
 
         # P2-ADDITION: Causal Discovery DAG building
         causal_graph = self.causal_engine.discover_causal_graph(dataset, pruned_features)
+        self._emit_stage("causal_discovery", "completed", {}, task_id)
 
         # STAGE 5: Statistical Validation Gates
         adf_test = ADFStationarityTest()
@@ -298,6 +356,9 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
         granger_res = granger_test.run_test(causality_data)
 
         statistical_passed = adf_res["passed"] and granger_res["passed"]
+        self._emit_stage("statistical_validation", "completed", {
+            "adf_passed": adf_res["passed"], "granger_passed": granger_res["passed"]
+        }, task_id)
 
         self.graph_store.add_node(f"stat_test_{task_id}", "statistical_test", {
             "adf_passed": adf_res["passed"],
@@ -310,6 +371,7 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
         alpha_gen = QuantitativeAlphaGenerator()
         alpha_signals = alpha_gen.generate_alpha(dataset, pruned_features)
         if not alpha_signals:
+            self._emit_stage("alpha_generation", "failed", {"gate": "alpha_generation"}, task_id)
             return {"status": "failed", "gate": "alpha_generation"}
 
         alpha_signal = alpha_signals[0]
@@ -323,6 +385,9 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
         self.graph_store.add_edge(alpha_signal.alpha_id, hypothesis.hypothesis_id, "generated")
         for feat_id in alpha_signal.lineage_feature_ids:
             self.graph_store.add_edge(alpha_signal.alpha_id, feat_id, "depends_on")
+        self._emit_stage("alpha_generation", "completed", {
+            "alpha_id": alpha_signal.alpha_id, "metrics": alpha_signal.metrics
+        }, task_id)
 
         # STAGE 7: Strategy Synthesis
         synthesizer = StrategySynthesizer()
@@ -342,19 +407,35 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
         })
         self.graph_store.add_node(experiment_id, "experiment", {"success": True, "repro_score": repro_score})
         self.graph_store.add_edge(experiment_id, alpha_signal.alpha_id, "validates")
+        self._emit_stage("strategy_synthesis", "completed", {
+            "strategy_id": strategy.strategy_id, "experiment_id": experiment_id,
+            "reproducibility_score": repro_score
+        }, task_id)
 
         # STAGE 8 & 9: Realistic Backtesting & Robustness Testing
         backtest_res = self.backtester.run_backtest(strategy, dataset)
+        self._emit_stage("backtesting", "completed", {
+            "sharpe": backtest_res.get("sharpe"), "max_drawdown": backtest_res.get("max_drawdown")
+        }, task_id)
         wf_res = self.robustness_tester.walk_forward_validation(strategy.__class__, alpha_signal, dataset)
         regime_res = self.robustness_tester.regime_stress_test(strategy, dataset)
+        self._emit_stage("robustness_testing", "completed", {
+            "walk_forward_passed": wf_res["passed"], "regime_passed": regime_res["passed"]
+        }, task_id)
 
         # P2-ADDITION: Digital Twin Adversarial stress scenario
         twin_dataset = self.digital_twin.instantiate_scenario("flash_crash", dataset)
         twin_backtest = self.backtester.run_backtest(strategy, twin_dataset)
+        self._emit_stage("digital_twin_stress", "completed", {
+            "scenario": "flash_crash", "max_drawdown": twin_backtest.get("max_drawdown")
+        }, task_id)
 
         # STAGE 10: Portfolio Optimization and Contribution
         fake_portfolio_returns = np.column_stack((fwd_returns, fwd_returns * 0.9 + np.random.normal(0, 0.0001, len(fwd_returns))))
         hrp_weights = self.portfolio_optimizer.optimize_hrp(fake_portfolio_returns)
+        self._emit_stage("portfolio_optimization", "completed", {
+            "hrp_weight": float(hrp_weights[0])
+        }, task_id)
 
         # Build gatekeeper results manifest (merges statistical, backtest, and digital twin results)
         results_manifest = {
@@ -379,9 +460,16 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
 
         # P2-ADDITION: Multi-Agent Review Marketplace Debate
         prom_deb, consensus_score, opinions, debate_msg = self.debate_engine.conduct_debate(hypothesis, results_manifest["backtest_results"])
+        self._emit_stage("peer_review", "completed", {
+            "promoted_by_board": prom_deb, "consensus_score": consensus_score,
+            "objections": sum(len(o.objections) for o in opinions)
+        }, task_id)
 
         # Execute promotion checks incorporating SCM and debate score
         promoted, decision_msg = self.gatekeeper.execute_promotion_pipeline(strategy.strategy_id, results_manifest, consensus_score, causal_graph)
+        self._emit_stage("promotion_governance", "completed" if promoted else "failed", {
+            "promoted": promoted, "decision": decision_msg
+        }, task_id)
 
         # P2-ADDITION: Scientific Decision Intelligence Audit log
         decision_rec = self.decision_auditor.create_signed_decision(
@@ -393,10 +481,13 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
             rationale=decision_msg
         )
 
+        self._emit_stage("decision_audit", "completed", {"decision_id": decision_rec.decision_id}, task_id)
+
         # P2-ADDITION: Meta-Research Reviewer Calibration Evaluation
         # Correlate reviewer opinions with outcomes
         strategy_outcomes = {strategy.strategy_id: backtest_res["sharpe"]}
         calibration = self.meta_research_engine.analyze_reviewer_calibration(opinions, strategy_outcomes)
+        self._emit_stage("meta_research", "completed", {"calibration": calibration}, task_id)
 
         # Register strategy with its lifecycle metadata
         self.strategy_registry.register_strategy(strategy, {
@@ -413,6 +504,9 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
         })
         self.graph_store.add_edge(strategy.strategy_id, alpha_signal.alpha_id, "derived_from")
         self.graph_store.add_edge(strategy.strategy_id, f"stat_test_{task_id}", "depends_on")
+        self._emit_stage("strategy_registration", "completed", {
+            "strategy_id": strategy.strategy_id, "promoted": promoted
+        }, task_id)
 
         # Archive results to Knowledgebase
         self.knowledge_registry.archive_knowledge(strategy.strategy_id, {
@@ -422,6 +516,8 @@ class SovereignResearchOrchestrator(ResearchOrchestrator):
             "evidence": results_manifest,
             "tags": [symbol, query, "phase_2_run"]
         })
+
+        self._emit_stage("knowledge_archival", "completed", {"archive_key": strategy.strategy_id}, task_id)
 
         logger.info(f"Full run completed. Strategy Promoted: {promoted}. Details: {decision_msg}")
         return {
