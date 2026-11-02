@@ -28,6 +28,22 @@ def run_cli():
     graph_parser = subparsers.add_parser("export-graph", help="Export the Cognitive Research Graph")
     graph_parser.add_argument("--format", type=str, choices=["json", "graphml"], default="json", help="Graph export format")
 
+    # 4. lab-run command
+    lab_parser = subparsers.add_parser("lab-run", help="Run a research program through the Institutional Research Lab")
+    lab_parser.add_argument("--symbol", type=str, default="EURUSD", help="Forex ticker symbol")
+    lab_parser.add_argument("--query", type=str, default="microstructure", help="Scientific literature search topic")
+
+    # 5. org-chart command
+    subparsers.add_parser("org-chart", help="Print the Institutional Research Lab org chart")
+
+    # 6. swarm-run command
+    swarm_parser = subparsers.add_parser("swarm-run", help="Dispatch research programs to the Research Swarm")
+    swarm_parser.add_argument("--symbol", type=str, default="EURUSD", help="Forex ticker symbol")
+    swarm_parser.add_argument("--query", type=str, default="microstructure", help="Scientific literature search topic")
+    swarm_parser.add_argument("--programs", type=int, default=2, help="Number of programs to dispatch")
+    swarm_parser.add_argument("--replication", type=int, default=1, help="Independent re-runs per program")
+    swarm_parser.add_argument("--workers", type=int, default=4, help="Max concurrent research agents")
+
     # Parse arguments
     args = parser.parse_args()
 
@@ -87,6 +103,54 @@ def run_cli():
             print(json.dumps(parsed, indent=2))
         else:
             print(graph_data)
+
+    elif args.command == "lab-run":
+        from trading_bot.research.lab.institutional_lab import InstitutionalResearchLab
+        lab = InstitutionalResearchLab()
+        report = lab.run_research_program(symbol=args.symbol, query=args.query)
+        print("\n================== INSTITUTIONAL LAB REPORT ==================")
+        print(f"Program ID:         {report.program_id}")
+        print(f"Status:             {report.status.upper()}")
+        print(f"Promoted to Live:   {report.promoted}")
+        print(f"Strategy ID:        {report.strategy_id}")
+        print(f"Debate Consensus:   {report.debate_consensus:.2%}")
+        print(f"Decision:           {report.decision}")
+        print("\n------------------ DIVISION MINUTES ------------------")
+        for div in report.division_reports:
+            print(f"  {div.division_name:<42} {div.verdict:<12} "
+                  f"({div.stages_run} stage(s), {div.failed_stages} failed)")
+            for obj in div.objections:
+                print(f"      objection: {obj}")
+
+    elif args.command == "org-chart":
+        from trading_bot.research.lab.divisions import build_org_chart
+        print("\n================== INSTITUTIONAL LAB ORG CHART ==================")
+        for div in build_org_chart():
+            print(f"\n{div.name}  [{div.key}]")
+            print(f"  Mandate:    {div.mandate}")
+            print(f"  Stages:     {', '.join(div.stages)}")
+            print(f"  Subsystems: {', '.join(div.subsystems)}")
+
+    elif args.command == "swarm-run":
+        from trading_bot.research.lab.institutional_lab import InstitutionalResearchLab
+        lab = InstitutionalResearchLab()
+        programs = [
+            {"kind": "full_pipeline", "symbol": args.symbol, "query": args.query}
+            for _ in range(args.programs)
+        ]
+        proceedings = lab.dispatch_swarm(
+            programs, max_workers=args.workers, replication=args.replication
+        )
+        print("\n================== RESEARCH SWARM PROCEEDINGS ==================")
+        print(f"Swarm ID:           {proceedings.swarm_id}")
+        print(f"Programs:           {proceedings.programs}")
+        print(f"Findings:           {len(proceedings.findings)}")
+        print(f"Promoted strategies: {proceedings.promoted_strategies}")
+        print("\n------------------ PROGRAM VERDICTS ------------------")
+        for v in proceedings.verdicts:
+            print(f"  {v.program_key}: {v.verdict.upper()} "
+                  f"(agreement {v.replication_agreement:.0%}, "
+                  f"promoted votes {v.promoted_votes}/{v.completed_runs})")
 
 
 if __name__ == "__main__":

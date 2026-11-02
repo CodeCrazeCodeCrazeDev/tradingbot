@@ -146,6 +146,27 @@ from .marketplace.agents import (
 )
 from .marketplace.debate import ScientificDebateEngine
 
+# Institutional Research Lab & Research Swarm (canonical)
+from .lab import (
+    ResearchDivision,
+    LabMinute,
+    LabMinutesLedger,
+    DivisionReport,
+    InstitutionalResearchLab,
+    LabReport,
+    build_org_chart,
+    division_for_stage,
+)
+from .swarm import (
+    ResearchAgentRole,
+    ResearchTask,
+    SwarmFinding,
+    SwarmResearchAgent,
+    ProgramVerdict,
+    ResearchSwarm,
+    SwarmProceedings,
+)
+
 # Preserve legacy fallback exports if other legacy parts of AlphaAlgo load them
 try:
     from .experimentation.free_research_lab import (
@@ -401,6 +422,21 @@ except ImportError as e:
     logging.getLogger(__name__).debug(f'Optional import failed in research.institution: {e}')
 
 __all__ = [
+    'ResearchDivision',
+    'LabMinute',
+    'LabMinutesLedger',
+    'DivisionReport',
+    'InstitutionalResearchLab',
+    'LabReport',
+    'build_org_chart',
+    'division_for_stage',
+    'ResearchAgentRole',
+    'ResearchTask',
+    'SwarmFinding',
+    'SwarmResearchAgent',
+    'ProgramVerdict',
+    'ResearchSwarm',
+    'SwarmProceedings',
     'ResearchWorkspaceV2',
     'SEALSelfEdit',
     'SEALInnerLoop',
