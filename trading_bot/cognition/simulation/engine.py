@@ -27,7 +27,8 @@ class CounterfactualSimulator:
         return (0.0002 + 0.004 * pct) * vol_mult
 
     def _monte_carlo(self, request: SimulationRequest, state: MarketState,
-                     aligned: bool, vol_mult: float) -> Dict[str, float]:
+                     aligned: bool, vol_mult: float,
+                     prior: float = 1.0) -> Dict[str, float]:
         """Fat-tailed Monte Carlo: Student-t shocks, seeded by request_id so
         the same observation always produces the same empiricals (determinism)."""
         rng = np.random.default_rng(zlib.crc32(request.request_id.encode()))
@@ -35,7 +36,8 @@ class CounterfactualSimulator:
         horizon = max(1, request.time_horizon_bars)
         sigma = self._per_bar_sigma(state, vol_mult)
         strength = float(np.clip(getattr(state, "trend_strength", 0.0) or 0.0, 0.0, 1.0))
-        drift = 0.0002 * (1.2 * strength if aligned else -(0.4 + 0.8 * strength))
+        drift = 0.0002 * prior * (1.2 * strength if aligned
+                                else -(0.4 + 0.8 * strength))
         sign = 1.0 if request.proposed_action == "BUY" else (-1.0 if request.proposed_action == "SELL" else 0.0)
 
         # Standardized Student-t (unit variance) shocks
@@ -80,10 +82,25 @@ class CounterfactualSimulator:
         # near-zero (no information, no edge); opposing a strong trend is
         # worse than opposing a weak one; no-trend trades carry a small
         # negative prior (they only ever pay costs).
+        #
+        # Regime calibration: the SIGN of alignment value is a market
+        # fact, not a constant — trend-following prior fails inverted
+        # in mean-reverting regimes (measured: EURUSD M15 2026Q3,
+        # aligned trades net-negative). ``alignment_prior`` lets the
+        # caller inject a measured estimate: +1.0 = canonical
+        # trend-continuation (default), -1.0 = full reversal. Absent
+        # the flag, the hardcoded prior applies and the result marks
+        # itself "assumed" so downstream knows it was never measured.
+        prior = request.scenario_adjustments.get("alignment_prior")
+        prior_src = "measured" if prior is not None else "assumed"
+        prior = float(np.clip(prior if prior is not None else 1.0,
+                              -1.0, 1.0))
         if aligned:
-            drift_coef = 1.2 * float(np.clip(trend_str, 0.0, 1.0))
+            drift_coef = prior * 1.2 * float(
+                np.clip(trend_str, 0.0, 1.0))
         elif opposed:
-            drift_coef = -(0.4 + 0.8 * float(np.clip(trend_str, 0.0, 1.0)))
+            drift_coef = prior * -(
+                0.4 + 0.8 * float(np.clip(trend_str, 0.0, 1.0)))
         else:
             drift_coef = -0.3
 
@@ -121,7 +138,8 @@ class CounterfactualSimulator:
         # threshold, so it informs rather than vetoes.
         mc: Dict[str, float] = {}
         if request.monte_carlo_paths > 0:
-            mc = self._monte_carlo(request, state, aligned, vol_mult)
+            mc = self._monte_carlo(request, state, aligned, vol_mult,
+                                   prior=prior)
             base_win_prob = 0.5 * base_win_prob + 0.5 * mc["mc_win_probability"]
 
         return SimulationResult(
@@ -137,4 +155,5 @@ class CounterfactualSimulator:
             mc_win_probability=mc.get("mc_win_probability"),
             mc_expected_value=mc.get("mc_expected_value"),
             mc_p95_drawdown=mc.get("mc_p95_drawdown"),
+            alignment_prior_source=prior_src,
         )

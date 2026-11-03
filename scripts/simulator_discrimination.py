@@ -81,6 +81,9 @@ def main():
     ap.add_argument("--eval-frac", type=float, default=0.40)
     ap.add_argument("--embargo", type=int, default=20)
     ap.add_argument("--mc-paths", type=int, default=32)
+    ap.add_argument("--alignment-prior", type=str, default="1.0",
+                    help="float in [-1,1] or 'auto' = estimate the sign "
+                         "of alignment value from the DISCOVERY window")
     args = ap.parse_args()
 
     ts, bars = load_bars(args.db_path, args.symbol, args.timeframe)
@@ -91,6 +94,40 @@ def main():
     roll = roll_spread_bps(closes)
     cost_bps = max(roll or 0.0, 5.0)
     print(f"eval {eval_start}..{eval_end} | cost {cost_bps:.1f}bps")
+
+    # alignment_prior: 'auto' measures whether trend-alignment paid on
+    # the DISCOVERY window (never the eval window — no leakage). Mean
+    # net of aligned trades vs opposed trades on discovery, squashed to
+    # [-1,1] by sign + magnitude ratio.
+    alignment_prior = 1.0
+    if str(args.alignment_prior).lower() == "auto":
+        al_net, op_net = [], []
+        for name, fn in RULES.items():
+            for i in range(64, disc_end - args.horizon):
+                s = fn(closes, i)
+                if s == 0:
+                    continue
+                mom = (closes[i] - closes[i - 20]) / closes[i - 20]
+                bullish = mom > 0.0005
+                bearish = mom < -0.0005
+                aligned = (s > 0 and bullish) or (s < 0 and bearish)
+                opposed = (s > 0 and bearish) or (s < 0 and bullish)
+                net = s * (closes[i + args.horizon] - closes[i]) \
+                    / closes[i] * 1e4 - cost_bps
+                if aligned:
+                    al_net.append(net)
+                elif opposed:
+                    op_net.append(net)
+        ma = float(np.mean(al_net)) if al_net else 0.0
+        mo = float(np.mean(op_net)) if op_net else 0.0
+        # measured sign: does alignment beat opposition on discovery?
+        denom = abs(ma) + abs(mo) or 1.0
+        alignment_prior = max(-1.0, min(1.0, (ma - mo) / denom))
+        print(f"auto alignment_prior={alignment_prior:.3f} "
+              f"(disc: aligned {ma:.2f}bps n={len(al_net)} "
+              f"vs opposed {mo:.2f}bps n={len(op_net)})")
+    else:
+        alignment_prior = float(args.alignment_prior)
 
     sim = CounterfactualSimulator()
     rows = []
@@ -109,7 +146,9 @@ def main():
                     current_state=state,
                     proposed_action=action,
                     position_size=0.1,
-                    monte_carlo_paths=args.mc_paths))
+                    monte_carlo_paths=args.mc_paths,
+                    scenario_adjustments={
+                        "alignment_prior": alignment_prior}))
                 ev = float(res.expected_value or 0.0)
                 wp = float(res.win_probability or 0.0)
             except Exception as e:
@@ -143,6 +182,7 @@ def main():
     out = {
         "candidates": n_ev, "eval_window": [eval_start, eval_end],
         "cost_bps": cost_bps,
+        "alignment_prior": alignment_prior,
         "spearman_ev_vs_net": round(rho, 4),
         "ev_positive": {"n": int(len(pos)),
                         "mean_net_bps": round(

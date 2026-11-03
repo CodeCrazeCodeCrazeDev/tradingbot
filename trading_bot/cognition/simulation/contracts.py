@@ -44,3 +44,6 @@ class SimulationResult:
     mc_win_probability: Optional[float] = None
     mc_expected_value: Optional[float] = None
     mc_p95_drawdown: Optional[float] = None
+    # "assumed" = hardcoded trend-continuation prior (unmeasured);
+    # "measured" = caller injected an outcome-estimated prior.
+    alignment_prior_source: str = "assumed"
