@@ -268,7 +268,17 @@ class MarketIntelligenceSystem:
                 self.anomaly_detector, "detect_anomalies"):
             return []
         try:
-            return self.anomaly_detector.detect_anomalies(data)
+            out = self.anomaly_detector.detect_anomalies(data)
+            # Detectors return AnomalySignal objects, not dicts —
+            # normalize so downstream .get() consumers never see a
+            # dataclass where they expected a mapping.
+            normed = []
+            for item in (out or []):
+                if isinstance(item, dict):
+                    normed.append(item)
+                elif hasattr(item, "__dict__"):
+                    normed.append(dict(item.__dict__))
+            return normed
         except Exception as e:
             logger.error(f"Anomaly detection error: {e}")
             return []

@@ -117,8 +117,11 @@ class AbsorptionDetector:
             if 'volume' not in df.columns:
                 return signals
             
-            # Calculate volume metrics
+            # Calculate volume metrics — volume can arrive as object
+            # dtype (string values mixed in); coerce or every compare
+            # below dies on Float64-vs-Str ufunc errors.
             df = df.copy()
+            df['volume'] = pd.to_numeric(df['volume'], errors='coerce')
             df['vol_ma'] = df['volume'].rolling(window=self.config["volume_ma_period"]).mean()
             df['rel_volume'] = df['volume'] / df['vol_ma']
         
@@ -275,8 +278,11 @@ class InstitutionalFootprint:
             if 'volume' not in df.columns:
                 return results
             
-            # Calculate volume metrics
+            # Calculate volume metrics — volume can arrive as object
+            # dtype (string values mixed in); coerce or every compare
+            # below dies on Float64-vs-Str ufunc errors.
             df = df.copy()
+            df['volume'] = pd.to_numeric(df['volume'], errors='coerce')
             df['vol_ma'] = df['volume'].rolling(window=self.config["volume_ma_period"]).mean()
             df['rel_volume'] = df['volume'] / df['vol_ma']
         
@@ -711,8 +717,11 @@ class InstitutionalFootprint:
             if 'volume' not in df.columns or not liquidity_levels:
                 return signals
             
-            # Calculate volume metrics
+            # Calculate volume metrics — volume can arrive as object
+            # dtype (string values mixed in); coerce or every compare
+            # below dies on Float64-vs-Str ufunc errors.
             df = df.copy()
+            df['volume'] = pd.to_numeric(df['volume'], errors='coerce')
             df['vol_ma'] = df['volume'].rolling(window=self.config["volume_ma_period"]).mean()
             df['rel_volume'] = df['volume'] / df['vol_ma']
         
