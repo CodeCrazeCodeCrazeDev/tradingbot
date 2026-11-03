@@ -182,6 +182,24 @@ class CognitiveSystemController:
         # Canonical execution service — when wired, position closes dispatch
         # real opposing orders; absent means mark-only settlement (tests).
         self.execution_service = kwargs.get("execution_service")
+        # Capability domains for the canonical services: advisory
+        # agents get INTELLIGENCE at configure_cognition; the trusted
+        # services carry their own domains so require() is meaningful.
+        try:
+            from .security_kernel import CapabilityDomain
+            _sk = self._security_kernel()
+            if self.shield is not None:
+                _sk.issue_identity("immutable_shield",
+                                   [CapabilityDomain.GOVERNANCE,
+                                    CapabilityDomain.RISK],
+                                   capabilities=[], version="canonical")
+            if self.execution_service is not None:
+                _sk.issue_identity("execution_service",
+                                   [CapabilityDomain.EXECUTION],
+                                   capabilities=["live_trade"],
+                                   version="canonical")
+        except Exception:  # noqa: BLE001 — identity is best-effort
+            pass
         self.evolution_gate = kwargs.get("evolution_gate")
         # Typed governance gate (human approval policy). "None" means not yet
         # resolved; resolved lazily at the governance stage and cached so a
@@ -2440,6 +2458,8 @@ class CognitiveSystemController:
                 agent_id="CSC_V6",
                 priority=EventPriority.CRITICAL,
             )
+            action.sign()  # provenance on the capital path — the
+            # signature gate in propose_action vetoes any forgery
             await self._safe_await(self.decision_bus.propose_action(action))
             status = await self._safe_await(
                 action.wait_for_decision(timeout=5.0))
@@ -2855,6 +2875,17 @@ class CognitiveSystemController:
         # never decide — the simulation filter, EV gate, churn guard, risk,
         # and governance all remain downstream and unaware of them.
         calls = list(getattr(self, "_last_advisory_calls", ()) or ())
+        # Signature quarantine is a vote filter, not just a label:
+        # artifacts marked quarantined by the verify sweep carry no
+        # tilt weight — forged provenance votes as zero, not as "also".
+        _raw_n = len(calls)
+        calls = [c for c in calls
+                 if str(c.get("status") or "") != "quarantined"
+                 and not c.get("sig_fail")]
+        if len(calls) < _raw_n:
+            self._funnel["tilt_quarantined"] = \
+                self._funnel.get("tilt_quarantined", 0) \
+                + (_raw_n - len(calls))
 
         # Vote-agreement measurement: many advisors are redundant
         # transforms of the same price features — five RSI-family voters

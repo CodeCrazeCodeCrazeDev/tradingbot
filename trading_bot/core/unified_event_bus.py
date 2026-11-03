@@ -142,8 +142,36 @@ class LogAction:
     voter_reports: Dict[str, Any] = field(default_factory=dict)
     sequence_number: Optional[int] = None
     priority: EventPriority = EventPriority.NORMAL
+    signature: str = ""
 
     _completed_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
+
+    def _signing_material(self) -> str:
+        body = hashlib.sha256(json.dumps(
+            self.payload, sort_keys=True, default=str).encode()).hexdigest()
+        return f"{self.agent_id}:{self.action_type}:{self.action_id}:{body}"
+
+    def sign(self, secret: Optional[str] = None) -> None:
+        """Sign agent_id+type+id+payload_hash — the capital path must
+        prove origin, not just claim it via the agent_id string."""
+        key = secret if secret is not None else _inter_agent_signing_key()
+        if key:
+            self.signature = hmac.new(
+                key.encode("utf-8"),
+                self._signing_material().encode("utf-8"),
+                hashlib.sha256).hexdigest()
+
+    def verify_signature(self, secret: Optional[str] = None) -> bool:
+        if not self.signature:
+            return False
+        key = secret if secret is not None else _inter_agent_signing_key()
+        if not key:
+            return False  # no verifier key: fail closed
+        expected = hmac.new(
+            key.encode("utf-8"),
+            self._signing_material().encode("utf-8"),
+            hashlib.sha256).hexdigest()
+        return hmac.compare_digest(expected, self.signature)
 
     @property
     def event_type(self) -> str:
@@ -375,6 +403,25 @@ class UnifiedDecisionBus:
             action._completed_event.set()
             return
 
+        # Signature gate: a signed-but-invalid action is a FORGERY
+        # attempt — vetoed before voters ever see it. Unsigned actions
+        # are admitted but audited (internal callers may legitimately
+        # construct them; only forged claims are fatal).
+        if action.signature:
+            if not action.verify_signature():
+                logger.warning(
+                    f"LogAct: action {action.action_id} signature "
+                    f"invalid — vetoed before voter consensus")
+                action.status = ActionStatus.VETOED
+                action.voter_reports["signature_gate"] = {
+                    "verdict": "forged_or_tampered",
+                    "agent_id": action.agent_id}
+                action._completed_event.set()
+                return
+        else:
+            action.voter_reports.setdefault(
+                "signature_gate", {})["unsigned"] = True
+
         action.status = ActionStatus.PROPOSED
         if self._action_queue is None:
             self._action_queue = asyncio.PriorityQueue()
@@ -438,6 +485,7 @@ class UnifiedDecisionBus:
             agent_id=source,
             priority=priority,
         )
+        action.sign()
         await self.propose_action(action)
         return action
 
