@@ -3069,6 +3069,140 @@ def _alpha_evolve_regime_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("alpha_evolve_regime", analyze)
 
 
+def _alpha_evolve_lab_service() -> AdvisoryModuleAdapter:
+    """alpha_evolve full evolutionary lab — a bounded incremental GA that
+    advances exactly one generation per observation over the real
+    accumulated bar window. Wires the complete component set:
+    SearchSpace/StrategyGenome population, GeneticOperators
+    mutation+crossover, LeakageFreeBacktester, MultiObjectiveFitness,
+    WalkForwardValidator (periodic OOS check on the incumbent),
+    EdgeDecayMonitor (incumbent fitness tracking), and
+    DistributedComputeOrchestrator (constructed and reported for
+    capability — heavy parallel sweeps stay out of the per-cycle path).
+    Deprecated RSI duplicate wired evidence-only: emits research
+    evidence, never proposals, and carries no promotion authority."""
+    import pandas as pd
+    from trading_bot.alpha_evolve.strategy_genome import SearchSpace
+    from trading_bot.alpha_evolve.genetic_operators import GeneticOperators
+    from trading_bot.alpha_evolve.backtesting_engine import (
+        LeakageFreeBacktester)
+    from trading_bot.alpha_evolve.fitness_evaluator import (
+        MultiObjectiveFitness)
+    from trading_bot.alpha_evolve.walk_forward import WalkForwardValidator
+    from trading_bot.alpha_evolve.edge_monitor import EdgeDecayMonitor
+    from trading_bot.alpha_evolve.distributed_compute import (
+        DistributedComputeOrchestrator)
+
+    POP, ELITE, WARMUP, WF_EVERY = 10, 2, 200, 12
+    space = SearchSpace()
+    ops = GeneticOperators(search_space=space, mutation_rate=0.15)
+    # Real advisory windows are short; the canonical RSI evaluator keeps
+    # its own stricter trade-count gates. This lab is evidence only.
+    fitness = MultiObjectiveFitness(min_trades=3)
+    wf = WalkForwardValidator(
+        train_period_days=120, test_period_days=40,
+        step_days=20, min_periods=2)
+    edge_mon = EdgeDecayMonitor(min_trades_per_period=2)
+    orchestrator = DistributedComputeOrchestrator(
+        num_workers=2, use_multiprocessing=False)
+    hist = _BarHistory(384)
+    state: Dict[str, Any] = {
+        "population": None, "gen": 0, "best": None,
+        "best_fitness": None, "last_wf": None, "edge": None}
+
+    def _lab_frame(h: "_BarHistory") -> Any:
+        df = h.frame()
+        # LeakageFreeBacktester requires a DatetimeIndex. Positions are
+        # synthetic 15-minute steps; only the OHLCV prices are real.
+        df.index = pd.date_range(
+            periods=len(df), freq="15min",
+            end=pd.Timestamp.now(tz="UTC"))
+        return df
+
+    def _tournament(scored: List[Any]) -> Any:
+        import random as _r
+        return max(_r.sample(scored, min(3, len(scored))),
+                   key=lambda t: t[0].total_fitness)[1]
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        if len(hist) < WARMUP:
+            return {"status": "warming", "bars": len(hist),
+                    "warmup": WARMUP,
+                    "workers_available": orchestrator.num_workers}
+        if state["population"] is None:
+            state["population"] = [
+                space.create_random_genome() for _ in range(POP)]
+        df = _lab_frame(hist)
+
+        scored: List[Any] = []
+        for genome in state["population"]:
+            try:
+                bt = LeakageFreeBacktester(df)
+                result = bt.backtest(genome)
+                score = fitness.evaluate(
+                    result, genome.get_complexity(), df)
+                scored.append((score, genome, result))
+            except Exception:
+                continue
+        if not scored:
+            return {"status": "no_viable_genomes",
+                    "generation": state["gen"],
+                    "bars": len(hist)}
+        scored.sort(key=lambda t: t[0].total_fitness, reverse=True)
+        state["gen"] += 1
+        state["best"] = scored[0][1]
+        state["best_fitness"] = scored[0][0]
+        elites = [g for _, g, _ in scored[:ELITE]]
+        children = list(elites)
+        while len(children) < POP:
+            p1, p2 = _tournament(scored), _tournament(scored)
+            c1, c2 = ops.crossover(p1, p2)
+            children.extend([ops.mutate(c1), ops.mutate(c2)])
+        state["population"] = children[:POP]
+
+        best = scored[0]
+        edge = edge_mon.monitor_strategy(
+            best[1].get_genome_id(),
+            best[2].returns.to_frame("returns"))
+        state["edge"] = edge
+
+        out: Dict[str, Any] = {
+            "status": "evolving",
+            "generation": state["gen"],
+            "bars": len(hist),
+            "population": POP,
+            "best_fitness": round(float(best[0].total_fitness), 4),
+            "best_sharpe": round(float(best[0].sharpe_ratio), 4),
+            "best_max_drawdown": round(float(best[0].max_drawdown), 4),
+            "num_trades": int(best[2].num_trades),
+            "fitness_spread": round(
+                float(scored[0][0].total_fitness
+                      - scored[-1][0].total_fitness), 4),
+            "genome_id": str(best[1].get_genome_id())[:16],
+            "genome_complexity": int(best[1].get_complexity()),
+            "edge_active": bool(edge.is_active),
+            "edge_recommendation": str(edge.recommendation),
+            "edge_decay_signals": len(edge.decay_signals),
+            "workers_available": orchestrator.num_workers,
+            "authority": "evidence_only",
+        }
+        if state["gen"] % WF_EVERY == 0:
+            try:
+                state["last_wf"] = wf.validate(best[1], df, fitness)
+            except Exception as exc:
+                out["walkforward_error"] = str(exc)[:120]
+        if state["last_wf"] is not None:
+            out["walkforward"] = {
+                k: v for k, v in _payload(state["last_wf"]).items()
+                if k in ("is_valid", "num_periods", "avg_oos_sharpe",
+                         "avg_oos_return", "oos_consistency",
+                         "degradation_ratio")}
+        return out
+
+    return AdvisoryModuleAdapter("alpha_evolve_lab", analyze)
+
+
 # neuros_evolution note: research_agents.MicrostructureExpert fabricates
 # analysis via np.random — quarantined like aads aip_agents.
 # LoadBalancingIntelligence needs a `network` ctor arg — no obs surface.
@@ -6062,6 +6196,7 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("gets_market_structure", _gets_structure_service),
     ("feedback_performance", _feedback_perf_service),
     ("alpha_evolve_regime", _alpha_evolve_regime_service),
+    ("alpha_evolve_lab", _alpha_evolve_lab_service),
     # Bucket E — analysis/ package + cross-dir obs-feedable analyzers
     ("analysis_patterns", _analysis_patterns_service),
     ("analysis_market_intel", _analysis_market_intel_service),

@@ -203,10 +203,11 @@ class HumanApprovalGate:
         
         # In paper mode, reduce approval requirements; 'analysis' mode
         # maps to the paper execution service (no venue adapter can be
-        # attached), so it moves no capital either; mt5_demo matches
+        # attached), so it moves no capital either; demo venues match
         # paper only when the operator explicitly opted in.
         if self._trading_mode in ('paper', 'analysis') or (
-                self._trading_mode == 'mt5_demo' and self._demo_auto_approve):
+                self._trading_mode in ('mt5_demo', 'ctrader_demo')
+                and self._demo_auto_approve):
             if level in [ApprovalLevel.STANDARD, ApprovalLevel.NOTIFY]:
                 return False
         
@@ -256,10 +257,11 @@ class HumanApprovalGate:
         # Paper-mode reduction mirrors is_approval_required(): STANDARD
         # actions auto-pass without a human when not trading real capital.
         # 'analysis' mode is structurally capital-free (paper execution
-        # service); mt5_demo gets the reduction only under explicit opt-in.
+        # service); demo venues get the reduction only under explicit opt-in.
         if level == ApprovalLevel.STANDARD and (
                 self._trading_mode in ('paper', 'analysis')
-                or (self._trading_mode == 'mt5_demo' and self._demo_auto_approve)):
+                or (self._trading_mode in ('mt5_demo', 'ctrader_demo')
+                    and self._demo_auto_approve)):
             return True
         
         # Create approval request
@@ -474,7 +476,7 @@ class HumanApprovalGate:
         logger.info(f"Trading mode set to: {mode}")
 
     def set_demo_auto_approve(self, enabled: bool) -> None:
-        """Opt-in: STANDARD approvals auto-pass in mt5_demo mode."""
+        """Opt-in: STANDARD approvals auto-pass in demo-venue modes."""
         self._demo_auto_approve = bool(enabled)
         logger.info("Demo auto-approve %s",
                     "ENABLED" if self._demo_auto_approve else "disabled")
