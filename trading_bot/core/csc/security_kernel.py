@@ -132,6 +132,11 @@ class AgentSecurityKernel:
                  max_dangerous: int = _MAX_DANGEROUS) -> None:
         self.ttl_s = ttl_s or float(
             os.environ.get("TB_AGENT_MSG_TTL", "60"))
+        # Artifacts live for a whole advisory cycle (~minutes) — the
+        # 60s wire TTL expired every signature before the verify sweep
+        # ran (377 false quarantines on the tiered run).
+        self.artifact_ttl_s = float(
+            os.environ.get("TB_ARTIFACT_SIG_TTL", "900"))
         self.max_dangerous = max_dangerous
         self._identities: Dict[str, AgentIdentity] = {}
 
@@ -223,7 +228,7 @@ class AgentSecurityKernel:
             raise PermissionError(f"unsigned agent: {agent_id}")
         body = {k: v for k, v in artifact.items()
                 if k not in ("sig", "sig_agent", "sig_exp")}
-        exp = time.time() + (ttl_s or self.ttl_s)
+        exp = time.time() + (ttl_s or self.artifact_ttl_s)
         material = self._artifact_material(
             agent_id, ident.version, body, exp)
         out = dict(artifact)
