@@ -761,6 +761,17 @@ class CognitiveSystemController:
             if str(getattr(service, "capability_id",
                            type(service).__name__)) != capability_id]
         self._advisory_services.append(advisory)
+        # Security kernel: every advisor gets an INTELLIGENCE-domain
+        # identity so its emitted artifacts can be signed + verified.
+        # Advisory services hold no dangerous capabilities by rule.
+        try:
+            from .security_kernel import CapabilityDomain
+            self._security_kernel().issue_identity(
+                capability_id, [CapabilityDomain.INTELLIGENCE],
+                capabilities=[],
+                version=str(getattr(advisory, "version", "unknown")))
+        except Exception as exc:  # noqa: BLE001 — identity is best-effort
+            logger.debug("advisory identity issue skipped: %s", exc)
         # Self-wiring inventory: the runtime's attachments join the
         # electorate as ATTACHED; engineered/shadow candidates the
         # supervisor discovered itself stay SHADOW until measured.
@@ -2774,8 +2785,27 @@ class CognitiveSystemController:
                 artifact["agent"] = cap
             else:
                 artifact["evidence"] = {"result": result}
+            try:
+                artifact = self._security_kernel().sign_artifact(
+                    cap, artifact)
+            except Exception:  # noqa: BLE001 — unsigned evidence is
+                pass            # still admitted; see verify sweep below
             artifacts.append(artifact)
-        return artifacts
+        # Anti-hallucination sweep: artifacts claiming to be signed
+        # that fail verification are quarantined, not silently
+        # admitted — provenance forgery is worse than no evidence.
+        verified = []
+        kernel = self._security_kernel()
+        for art in artifacts:
+            if "sig" in art:
+                ok, reason = kernel.verify_artifact(art)
+                if not ok:
+                    art["status"] = "quarantined"
+                    art["sig_fail"] = reason
+                    self._funnel["sig_quarantined"] = \
+                        self._funnel.get("sig_quarantined", 0) + 1
+            verified.append(art)
+        return verified
 
     async def _run_discoloop_reasoning(self, observation: Dict[str, Any], k: Optional[int] = None):
         """DiscoLoop recurrence: h_k+1, e_k+1 = f(h_k, e_k)"""
@@ -3408,6 +3438,15 @@ class CognitiveSystemController:
         except Exception as e:
             logger.debug(f"CSC-V6: reflective context unavailable: {e}")
         return evidence_chain
+
+    def _security_kernel(self):
+        """Lazy AgentSecurityKernel — signs/verifies advisory artifacts
+        and issues capability-domain identities."""
+        k = getattr(self, "_sk", None)
+        if k is None:
+            from .security_kernel import AgentSecurityKernel
+            k = self._sk = AgentSecurityKernel()
+        return k
 
     def _research_market_data(self, symbol: str = None) -> dict:
         """Build the market_data payload investigate() needs: live close
