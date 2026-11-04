@@ -616,6 +616,17 @@ async def run(args: argparse.Namespace) -> int:
                             command.get("action"), outcome)
                 if command.get("action") == "emergency_stop":
                     emergency = True
+            if args.hl_l2:
+                # Live book merged onto each obs. In replay this is the
+                # CURRENT book, not the bar's historical book — flagged
+                # so nothing treats it as point-in-time evidence.
+                try:
+                    from trading_bot.feeds import hl_l2 as _hl_l2
+                    obs.update(_hl_l2.snapshot(str(obs.get("symbol")
+                                                   or args.symbol)))
+                    obs["order_book_time"] = "live"
+                except Exception:  # noqa: BLE001
+                    obs["order_book"] = None
             price = obs.get("price", obs.get("close"))
             if price is not None:
                 symbol = str(obs.get("symbol") or args.symbol)
@@ -799,6 +810,11 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--log-level", default="INFO")
     parser.add_argument("--stop-file", default="",
                         help="supervisor-owned stop request; checked between and during cycles")
+    parser.add_argument("--hl-l2", action="store_true",
+                        help="merge the LIVE Hyperliquid L2 order book onto "
+                             "each observation (keyless; flagged "
+                             "order_book_time='live' — in replay this is "
+                             "current state, NOT point-in-time evidence)")
     args = parser.parse_args(argv)
     logging.basicConfig(level=args.log_level,
                         format="%(asctime)s %(name)s %(levelname)s %(message)s")

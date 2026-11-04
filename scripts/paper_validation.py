@@ -172,6 +172,8 @@ def main(argv=None):
     parser.add_argument("--duration-seconds", type=float, default=3600)
     parser.add_argument("--symbol", default="BTC")
     parser.add_argument("--timeframe", default="15m")
+    parser.add_argument("--hl-l2", action="store_true",
+                        help="attach live Hyperliquid L2 orderbook to each obs")
     args = parser.parse_args(argv)
     state_dir = Path(args.state_dir).resolve()
     if not math.isfinite(args.duration_seconds) or args.duration_seconds <= 0:
@@ -202,6 +204,8 @@ def main(argv=None):
             "--state-dir", str(state_dir), "--cycles", "0", "--interval", "1",
             "--skip", "64", "--seed-bars", "64", "--stop-file", str(stop_file),
         ]
+        if args.hl_l2:
+            command.append("--hl-l2")
         print(f"Paper replay deadline: {args.duration_seconds}s from launch; "
               "up to 30s shutdown grace. Dashboard: http://localhost:8080", flush=True)
         result = supervise(command, state_dir, stop_file, args.duration_seconds)
