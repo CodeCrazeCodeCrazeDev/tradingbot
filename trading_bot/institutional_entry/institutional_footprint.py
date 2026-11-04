@@ -722,9 +722,24 @@ class InstitutionalFootprint:
             # below dies on Float64-vs-Str ufunc errors.
             df = df.copy()
             df['volume'] = pd.to_numeric(df['volume'], errors='coerce')
+            # OHLC can likewise arrive object-typed; sweep comparisons
+            # below fail on any non-numeric column, not just volume.
+            for _col in ("open", "high", "low", "close"):
+                if _col in df.columns:
+                    df[_col] = pd.to_numeric(df[_col], errors='coerce')
             df['vol_ma'] = df['volume'].rolling(window=self.config["volume_ma_period"]).mean()
             df['rel_volume'] = df['volume'] / df['vol_ma']
         
+            # Normalize levels: callers pass a name->price mapping
+            # ({"support": s, "resistance": r}) OR a list of
+            # (price, strength) tuples / level dicts. Iterating a dict
+            # yields its KEYS, which crashed the price comparisons.
+            _normalized = []
+            if isinstance(liquidity_levels, dict):
+                _normalized = [(v, 1.0) for v in liquidity_levels.values()]
+            else:
+                _normalized = list(liquidity_levels)
+
             # Look for sweeps of liquidity levels
             for i in range(1, len(df)):
                 # Skip if volume is too low
@@ -734,7 +749,7 @@ class InstitutionalFootprint:
                 # Check for high volume
                 if df.iloc[i]['rel_volume'] >= self.config["high_volume_threshold"]:
                     # Check if price swept through liquidity levels
-                    for _lvl in liquidity_levels:
+                    for _lvl in _normalized:
                         # Elements arrive as (price, strength) tuples,
                         # dicts, or longer sequences — unpack robustly
                         # instead of dying on 'too many values'.
@@ -748,6 +763,14 @@ class InstitutionalFootprint:
                             except (TypeError, IndexError, KeyError):
                                 continue
                         if level is None:
+                            continue
+                        # Levels arrive from external sources as strings;
+                        # comparing float prices to a str is the ufunc
+                        # error seen in production.
+                        try:
+                            level = float(level)
+                            strength = float(strength)
+                        except (TypeError, ValueError):
                             continue
                         # Bullish sweep (price sweeps below level then closes above)
                         if (df.iloc[i]['low'] < level and 
