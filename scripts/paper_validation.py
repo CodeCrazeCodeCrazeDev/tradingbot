@@ -1,4 +1,4 @@
-"""Supervise a bounded BTC database replay; never clears an operator stop.
+"""Supervise a bounded single-symbol database replay; never clears an operator stop.
 
 The deadline includes runner startup. A stop request cancels the active
 cycle; after 30 seconds of cleanup grace the process tree is terminated.
@@ -170,6 +170,8 @@ def main(argv=None):
     parser.add_argument("--state-dir", default="var/hl_run")
     parser.add_argument("--db-path", default="hl_data.db")
     parser.add_argument("--duration-seconds", type=float, default=3600)
+    parser.add_argument("--symbol", default="BTC")
+    parser.add_argument("--timeframe", default="15m")
     args = parser.parse_args(argv)
     state_dir = Path(args.state_dir).resolve()
     if not math.isfinite(args.duration_seconds) or args.duration_seconds <= 0:
@@ -184,9 +186,10 @@ def main(argv=None):
         parser.error("Pending operator commands must be resolved first.")
     with sqlite3.connect(Path(args.db_path).resolve().as_uri() + "?mode=ro", uri=True) as con:
         count = con.execute(
-            "SELECT COUNT(*) FROM market_data WHERE symbol='BTC' AND timeframe='15m'").fetchone()[0]
+            "SELECT COUNT(*) FROM market_data WHERE symbol=? AND timeframe=?",
+            (args.symbol, args.timeframe)).fetchone()[0]
     if count <= 64:
-        parser.error("At least 65 real BTC 15m candles are required.")
+        parser.error(f"At least 65 real {args.symbol} {args.timeframe} candles are required.")
     from trading_bot.interfaces.operator_reset import runner_lock
     # Separate supervisor lock; paper_runner owns the state lock for its lifetime.
     with runner_lock(state_dir / ".validation_supervisor"):
@@ -194,7 +197,8 @@ def main(argv=None):
         command = [
             sys.executable, "-u", str(PROJECT_ROOT / "scripts" / "paper_runner.py"),
             "--source", "db", "--db-path", str(Path(args.db_path).resolve()),
-            "--symbol", "BTC", "--timeframe", "15m", "--broker-tz-offset", "utc",
+            "--symbol", args.symbol, "--timeframe", args.timeframe,
+            "--broker-tz-offset", "utc",
             "--state-dir", str(state_dir), "--cycles", "0", "--interval", "1",
             "--skip", "64", "--seed-bars", "64", "--stop-file", str(stop_file),
         ]
