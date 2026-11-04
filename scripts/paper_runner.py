@@ -33,6 +33,21 @@ logger = logging.getLogger("paper_runner")
 
 DEFAULT_STATE_DIR = PROJECT_ROOT / "var" / "paper"
 
+def stop_requested(args: argparse.Namespace) -> bool:
+    path = getattr(args, "stop_file", "")
+    return bool(path and Path(path).exists())
+
+
+def prior_seed_rows(db_path: Path, symbol: str, timeframe: str,
+                    skip: int, seed_bars: int) -> list:
+    """Only the rows strictly before the selected replay window."""
+    with sqlite3.connect(Path(db_path).resolve().as_uri() + "?mode=ro", uri=True) as con:
+        return con.execute(
+            "SELECT close,high,low FROM market_data WHERE symbol=? AND timeframe=? "
+            "ORDER BY timestamp LIMIT ? OFFSET ?",
+            (symbol, timeframe, max(0, min(seed_bars, skip)),
+             max(0, skip - seed_bars))).fetchall()
+
 
 def _load_htf_bars(db_path: Path, symbol: str, timeframe: str
                    ) -> List[Tuple[str, float]]:
@@ -388,6 +403,10 @@ async def run(args: argparse.Namespace) -> int:
         logger.info("strategy_signals fed by %s", args.strategy_id)
     console = OperatorConsole(runtime.bot)
     await console.restore_state()  # paused/emergency flags survive restart
+    if console.override.emergency_stop.is_triggered or stop_requested(args):
+        logger.error("runner stopped before replay: emergency active or stop requested")
+        await runtime.stop()
+        return 2
 
     # Seed the derived-feature windows from the durable history file so a
     # restart does not re-lock directional decisions for a warmup period.
@@ -399,48 +418,27 @@ async def run(args: argparse.Namespace) -> int:
         history = []
     seed_hl = []
     _hl_needs = args.seed_bars > 0
-    if not history and args.seed_bars > 0:
+    if args.seed_bars > 0:
         # Warm the feature windows from strictly-prior DB bars — the
         # same data source the replay reads, so provenance is honest.
-        con = sqlite3.connect(
-            f"file:{PROJECT_ROOT / args.db_path}?mode=ro", uri=True)
-        try:
-            rows = con.execute(
-                "SELECT close, high, low FROM market_data WHERE symbol=? "
-                "AND timeframe=? ORDER BY timestamp "
-                "LIMIT ? OFFSET ?",
-                (args.symbol, args.timeframe, args.seed_bars,
-                 max(0, args.skip - args.seed_bars))).fetchall()
-            history = [r[0] for r in rows]
-            # Seed the (high,low) history too — path_risk otherwise
-            # stays absent for ~20 bars on every fresh start, the
-            # same cold-start asymmetry --seed-bars fixed for closes.
-            seed_hl = [(r[1], r[2]) for r in rows]
-            logger.info("seed-bars: %d prior closes", len(history))
-        finally:
-            con.close()
+        rows = prior_seed_rows(PROJECT_ROOT / args.db_path, args.symbol,
+                               args.timeframe, args.skip, args.seed_bars)
+        history = [r[0] for r in rows]
+        seed_hl = [(r[1], r[2]) for r in rows]
+        logger.info("seed-bars: %d strictly prior closes (replacing saved history)", len(history))
     csc = getattr(runtime.bot, "csc", None)
     if csc is not None and _hl_needs:
         hlq = getattr(csc, "_hl_history", None)
         if isinstance(hlq, dict) and not hlq.get(args.symbol):
             # State dir had closes but no HL bars — warm path_risk
             # from the DB anyway so it isn't absent ~20 bars in.
-            con2 = sqlite3.connect(
-                f"file:{PROJECT_ROOT / args.db_path}?mode=ro", uri=True)
-            try:
-                for hh, ll in con2.execute(
-                        "SELECT high, low FROM market_data "
-                        "WHERE symbol=? AND timeframe=? ORDER BY "
-                        "timestamp LIMIT ? OFFSET ?",
-                        (args.symbol, args.timeframe, args.seed_bars,
-                         max(0, args.skip - args.seed_bars))):
-                    if isinstance(hh, (int, float))                             and isinstance(ll, (int, float)):
-                        from collections import deque as _dq
-                        hlq.setdefault(
-                            args.symbol, _dq(maxlen=64)).append(
-                                (float(hh), float(ll)))
-            finally:
-                con2.close()
+            for _, hh, ll in prior_seed_rows(
+                    PROJECT_ROOT / args.db_path, args.symbol,
+                    args.timeframe, args.skip, args.seed_bars):
+                if isinstance(hh, (int, float)) and isinstance(ll, (int, float)):
+                    from collections import deque as _dq
+                    hlq.setdefault(args.symbol, _dq(maxlen=64)).append(
+                        (float(hh), float(ll)))
         # Position closes must hit the ledger, not just CSC bookkeeping —
         # wire the canonical execution service so horizon/adverse/reversal
         # exits submit real opposing orders.
@@ -576,6 +574,9 @@ async def run(args: argparse.Namespace) -> int:
     emergency = False
     try:
         for obs in source:
+            if stop_requested(args):
+                logger.info("supervisor requested end of paper session")
+                break
             if event_windows:
                 from datetime import datetime as _dt
                 try:
@@ -647,7 +648,7 @@ async def run(args: argparse.Namespace) -> int:
                         outcome = await console.apply(command)
                         if command.get("action") == "emergency_stop":
                             emergency = True
-                    if emergency or getattr(
+                    if stop_requested(args) or emergency or getattr(
                             console.override.emergency_stop,
                             "is_triggered", False):
                         task.cancel()
@@ -659,6 +660,7 @@ async def run(args: argparse.Namespace) -> int:
                         break
                     await asyncio.sleep(0.25)
                 if _completed:
+                    await task  # surface cycle failures instead of counting them as success
                     processed += 1
             feedback_status = await sync_economic_feedback()
             publish_snapshot(state_dir, {
@@ -688,6 +690,8 @@ async def run(args: argparse.Namespace) -> int:
                 "ai_stack": runtime.ai_stack.explain()
                 if getattr(runtime, "ai_stack", None) is not None else None,
             })
+            if emergency or console.override.emergency_stop.is_triggered or stop_requested(args):
+                break
             if args.cycles and processed >= args.cycles:
                 break
             if args.interval > 0:
@@ -793,10 +797,14 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--strategy-id", default=None,
                         help="optional registered strategy capability id")
     parser.add_argument("--log-level", default="INFO")
+    parser.add_argument("--stop-file", default="",
+                        help="supervisor-owned stop request; checked between and during cycles")
     args = parser.parse_args(argv)
     logging.basicConfig(level=args.log_level,
                         format="%(asctime)s %(name)s %(levelname)s %(message)s")
-    return asyncio.run(run(args))
+    from trading_bot.interfaces.operator_reset import runner_lock
+    with runner_lock(Path(args.state_dir)):
+        return asyncio.run(run(args))
 
 
 if __name__ == "__main__":

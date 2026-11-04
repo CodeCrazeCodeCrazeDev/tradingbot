@@ -5,6 +5,144 @@ from argparse import Namespace
 import pytest
 
 
+def test_dashboard_reports_actual_stop_and_stale_snapshot():
+    from scripts.dashboard import dashboard_status
+    status = dashboard_status({
+        "as_of": 100,
+        "control": {"trading_allowed": False, "trading_paused": False,
+                    "emergency_stop": {"triggered": True}},
+    }, now=200)
+    assert status == {"trading": "BLOCKED", "emergency": "ACTIVE",
+                      "age_seconds": 100, "freshness": "STALE"}
+    assert dashboard_status({}, now=200)["emergency"] == "UNKNOWN"
+    assert dashboard_status({"as_of": float("nan")}, now=200)["freshness"] == "UNKNOWN"
+    status = dashboard_status({
+        "as_of": 195,
+        "control": {"trading_allowed": True, "trading_paused": False,
+                    "emergency_stop": {"triggered": False}},
+    }, now=200)
+    assert status["trading"] == "ALLOWED"
+    assert status["freshness"] == "RECENT"
+
+
+def test_paper_supervisor_deadline_requests_graceful_stop(tmp_path):
+    import json
+    import sys
+    from scripts.paper_validation import supervise
+    stop = tmp_path / "stop"
+    script = ("import pathlib,sys,time; p=pathlib.Path(sys.argv[1]); "
+              "exec('while not p.exists(): time.sleep(0.01)')")
+    result = supervise([sys.executable, "-c", script, str(stop)],
+                       tmp_path, stop, seconds=0.4, grace_seconds=5)
+    assert result["status"] == "completed"
+    assert result["elapsed_seconds"] >= 0.4
+    assert not result["forced_stop"]
+    assert json.loads((tmp_path / "validation_run.json").read_text()) == result
+
+
+def test_paper_supervisor_terminates_unresponsive_process(tmp_path):
+    import sys
+    from scripts.paper_validation import supervise
+    result = supervise([sys.executable, "-c", "import time; time.sleep(60)"],
+                       tmp_path, tmp_path / "stop", seconds=0.3, grace_seconds=0.2)
+    assert result["status"] == "forced_stop"
+    assert result["forced_stop"]
+    assert result["exit_code"] is not None
+
+
+def test_paper_supervisor_does_not_call_early_failure_completion(tmp_path):
+    import sys
+    from scripts.paper_validation import supervise
+    result = supervise([sys.executable, "-c", "raise SystemExit(7)"],
+                       tmp_path, tmp_path / "stop", seconds=5)
+    assert result["status"] == "failed"
+    assert result["exit_code"] == 7
+
+
+def test_paper_supervisor_keeps_deadline_when_heartbeat_write_fails(tmp_path, monkeypatch):
+    import sys
+    from scripts import paper_validation
+    real_write = paper_validation.write_status
+    calls = 0
+
+    def flaky_write(path, status):
+        nonlocal calls
+        calls += 1
+        if calls in (2, 3):
+            raise PermissionError("simulated Windows reader contention")
+        real_write(path, status)
+
+    monkeypatch.setattr(paper_validation, "write_status", flaky_write)
+    stop = tmp_path / "stop"
+    script = ("import pathlib,sys,time; p=pathlib.Path(sys.argv[1]); "
+              "exec('while not p.exists(): time.sleep(0.01)')")
+    result = paper_validation.supervise(
+        [sys.executable, "-c", script, str(stop)],
+        tmp_path, stop, seconds=0.4, grace_seconds=5)
+    assert result["status"] == "completed"
+    assert "PermissionError" in result["telemetry_error"]
+
+
+def test_windows_deadline_kills_descendant_interpreter(tmp_path):
+    import ctypes
+    from ctypes import wintypes
+    import sys
+    from scripts.paper_validation import supervise
+    if sys.platform != "win32":
+        pytest.skip("Windows process-tree lifetime")
+    pidfile = tmp_path / "grandchild.pid"
+    script = (
+        "import subprocess,sys,pathlib,time;"
+        "child=subprocess.Popen([sys.executable,'-c','import time;time.sleep(60)']);"
+        "pathlib.Path(sys.argv[1]).write_text(str(child.pid));time.sleep(60)")
+    result = supervise([sys.executable, "-c", script, str(pidfile)],
+                       tmp_path, tmp_path / "stop", seconds=3, grace_seconds=0.2)
+    assert result["status"] == "forced_stop"
+    pid = int(pidfile.read_text())
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    kernel.OpenProcess.restype = wintypes.HANDLE
+    kernel.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+    kernel.WaitForSingleObject.restype = wintypes.DWORD
+    kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+    handle = kernel.OpenProcess(0x00100000, False, pid)
+    if handle:
+        try:
+            assert kernel.WaitForSingleObject(handle, 5000) == 0
+        finally:
+            kernel.CloseHandle(handle)
+
+
+def test_paper_entrypoint_locks_state_for_runtime_lifetime(tmp_path, monkeypatch):
+    from scripts import paper_runner
+    from trading_bot.interfaces.operator_reset import runner_lock, ResetApprovalError
+
+    async def fake_run(args):
+        with pytest.raises(ResetApprovalError, match="active"):
+            with runner_lock(tmp_path):
+                pass
+        return 0
+
+    monkeypatch.setattr(paper_runner, "run", fake_run)
+    assert paper_runner.main(["--state-dir", str(tmp_path)]) == 0
+    with runner_lock(tmp_path):
+        pass
+
+
+def test_paper_warmup_never_reads_bars_from_replay_window(tmp_path):
+    import sqlite3
+    from scripts.paper_runner import prior_seed_rows
+    db = tmp_path / "candles.db"
+    with sqlite3.connect(db) as con:
+        con.execute("CREATE TABLE market_data(symbol,timeframe,timestamp,close,high,low)")
+        con.executemany("INSERT INTO market_data VALUES('BTC','15m',?,?,?,?)",
+                        [(f"2026-01-01T00:{i*15:02}:00", i, i+1, i-1) for i in range(4)])
+    assert prior_seed_rows(db, "BTC", "15m", 0, 64) == []
+    assert [r[0] for r in prior_seed_rows(db, "BTC", "15m", 2, 64)] == [0, 1]
+    assert [r[0] for r in prior_seed_rows(db, "BTC", "15m", 3, 1)] == [2]
+    assert prior_seed_rows(db, "ETH", "15m", 2, 64) == []
+
+
 class _Service:
     capability_id = "test_advisory"
 

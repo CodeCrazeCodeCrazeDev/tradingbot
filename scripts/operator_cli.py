@@ -47,6 +47,10 @@ def main(argv=None) -> int:
     parser.add_argument("--state-dir", default=str(DEFAULT_STATE_DIR))
     parser.add_argument("--user", default="operator")
     parser.add_argument("--reason", default="")
+    parser.add_argument("--interactive", action="store_true",
+                        help="review and sign an offline paper emergency reset")
+    parser.add_argument("--approval-file",
+                        help="externally signed reset JSON; verified against the pinned operator key")
     parser.add_argument("command",
                         choices=list(COMMAND_MAP) + ["status", "positions",
                                                      "explain", "ai",
@@ -58,6 +62,28 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
 
     state_dir = Path(args.state_dir)
+    if args.command == "reset-emergency":
+        from trading_bot.interfaces.operator_reset import (
+            ResetApprovalError, consume_reset, reset_request,
+            runner_lock, sign_interactively)
+        if bool(args.interactive) == bool(args.approval_file):
+            print("reset-emergency requires exactly one of --interactive or --approval-file; "
+                  "the runner must be stopped.")
+            return 2
+        try:
+            with runner_lock(state_dir):
+                if args.interactive:
+                    request = reset_request(state_dir, args.user, args.reason)
+                    approval = sign_interactively(state_dir, request)
+                else:
+                    approval = json.loads(Path(args.approval_file).read_text(encoding="utf-8"))
+                receipt = consume_reset(state_dir, approval)
+            print(f"Signed paper reset applied and audited: {receipt['correlation_id']}. "
+                  "The runner is still stopped; pause and other gates are unchanged.")
+            return 0
+        except (ResetApprovalError, OSError, ValueError, sqlite3.Error) as exc:
+            print(f"Reset not applied: {exc}")
+            return 2
     if args.command == "approve-model":
         # Human gate for engineered models: writes the durable flag the
         # CSC checks before attaching a candidate. Persistent, audited —

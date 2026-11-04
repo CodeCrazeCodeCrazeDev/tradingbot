@@ -134,18 +134,13 @@ class OperatorConsole:
                 OverrideAction.EMERGENCY_STOP, user,
                 params or {"reason": "operator emergency stop"})
         elif action == "reset_emergency":
-            # Operator acknowledgement of an emergency stop — the only
-            # sanctioned way to clear the flag, including one raised by the
-            # reconciliation gate.
-            from trading_bot.human_layer.override import (
-                OverrideAction as _OA, OverrideResult)
-            from datetime import datetime
-            ok = self.override.emergency_stop.reset(user)
-            result = OverrideResult(
-                success=ok, action=_OA.EMERGENCY_STOP, user=user,
-                timestamp=datetime.utcnow(),
-                details={"emergency_cleared": ok},
-                error=None if ok else "no emergency stop active")
+            outcome = {
+                "action": action, "applied": False,
+                "error": "Emergency reset requires the signed offline paper "
+                         "workflow in operator_cli.py; queued resets are rejected.",
+            }
+            await self._audit(command, outcome)
+            return outcome
         elif action == "flatten":
             result = await self.override.execute(
                 OverrideAction.CLOSE_ALL_POSITIONS, user, params)

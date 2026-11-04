@@ -2014,16 +2014,24 @@ class CognitiveSystemController:
         live cycles reporting 'warming'. Outputs are discarded: this
         fills history, it does not decide."""
         filled = 0
+        services = list(self._advisory_services)
         for obs in list(obs_list or ()):
             if not isinstance(obs, Mapping):
                 continue
-            for svc in self._advisory_services:
-                try:
-                    await svc.analyze(obs)
-                    filled += 1
-                except Exception:  # noqa: BLE001
-                    continue
+            # Sequential across obs (window order matters) but parallel
+            # across services: ~200 advisors × 64 bars serially cost ~20
+            # minutes of warmup. Per-service timeout matches the live
+            # consult budget so a slow advisor can't stall seeding.
+            results = await asyncio.gather(
+                *(self._seed_one(svc, obs) for svc in services),
+                return_exceptions=True)
+            filled += sum(1 for r in results if r is not None
+                          and not isinstance(r, BaseException))
         return filled
+
+    async def _seed_one(self, svc: Any, obs: Any) -> Any:
+        timeout = float(getattr(svc, "timeout_s", 5.0) or 5.0)
+        return await asyncio.wait_for(svc.analyze(obs), timeout)
 
     def export_open_positions(self) -> Dict[str, Any]:
         """Serialize open positions for restart continuity — without this,
