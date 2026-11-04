@@ -22,12 +22,20 @@ from __future__ import annotations
 
 import argparse
 import json
+import sqlite3
 import subprocess
 import sys
 import time
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+
+_KRAKEN = "https://api.kraken.com/0/public/OHLC"
+_KRAKEN_PAIRS = {"BTC": "XXBTZUSD", "ETH": "XETHZUSD",
+                 "SOL": "SOLUSD", "XRP": "XXRPZUSD",
+                 "DOGE": "XDGUSD", "LTC": "XLTCZUSD"}
+_KRAKEN_TF = {"5m": 5, "15m": 15, "1h": 60, "4h": 240, "1d": 1440}
 
 
 def run(cmd: list[str]) -> tuple[int, str]:
@@ -36,16 +44,66 @@ def run(cmd: list[str]) -> tuple[int, str]:
     return proc.returncode, proc.stdout + proc.stderr
 
 
-def scout(coins, timeframes, days, db_path, horizon) -> dict:
+def kraken_sync(coin: str, tf: str, db_path: str) -> int:
+    """Keyless public Kraken OHLC -> market_data schema. Cross-venue
+    evidence: a rule that only wins on one exchange's bars is suspect."""
+    pair = _KRAKEN_PAIRS.get(coin)
+    interval = _KRAKEN_TF.get(tf)
+    if pair is None or interval is None:
+        return 0
+    url = (f"{_KRAKEN}?pair={pair}&interval={interval}&since="
+           f"{int(time.time()) - 720 * 24 * 3600}")
+    req = urllib.request.Request(
+        url, headers={"User-Agent": "alphaalgo-research/1.0"})
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        result = json.loads(resp.read())["result"]
+    rows_raw = next((v for k, v in result.items() if isinstance(v, list)
+                     and v and isinstance(v[0], list)), [])
+    con = sqlite3.connect(db_path)
+    try:
+        con.execute(
+            "CREATE TABLE IF NOT EXISTS market_data ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, "
+            "symbol TEXT, timeframe TEXT, open REAL, high REAL, "
+            "low REAL, close REAL, volume REAL)")
+        con.execute(
+            "CREATE INDEX IF NOT EXISTS idx_md ON "
+            "market_data(symbol, timeframe, timestamp)")
+        for r in rows_raw:
+            ts = time.strftime("%Y-%m-%dT%H:%M:%S+00:00",
+                               time.gmtime(int(r[0])))
+            con.execute(
+                "INSERT INTO market_data"
+                "(timestamp,symbol,timeframe,open,high,low,close,volume)"
+                " VALUES(?,?,?,?,?,?,?,?)",
+                (ts, coin, tf, float(r[1]), float(r[2]), float(r[3]),
+                 float(r[4]), float(r[6])))
+        con.commit()
+        return con.execute(
+            "SELECT COUNT(*) FROM market_data "
+            "WHERE symbol=? AND timeframe=?", (coin, tf)).fetchone()[0]
+    finally:
+        con.close()
+
+
+def scout(coins, timeframes, days, db_path, horizon,
+          source="hyperliquid") -> dict:
     report_path = ROOT / "var" / "edge_baseline.json"
     results = []
     for tf in timeframes:
         for coin in coins:
-            combo = {"coin": coin, "timeframe": tf}
-            print(f"\n=== {coin} {tf} ===", flush=True)
-            rc, log = run(["scripts/hyperliquid_sync.py", "--coin", coin,
-                           "--timeframe", tf, "--days", str(days),
-                           "--db-path", str(db_path)])
+            combo = {"coin": coin, "timeframe": tf, "source": source}
+            print(f"\n=== {coin} {tf} [{source}] ===", flush=True)
+            if source == "kraken":
+                try:
+                    n = kraken_sync(coin, tf, str(db_path))
+                    rc, log = (0, f"kraken {coin} {tf}: {n} rows")
+                except Exception as exc:
+                    rc, log = 1, str(exc)
+            else:
+                rc, log = run(["scripts/hyperliquid_sync.py", "--coin", coin,
+                               "--timeframe", tf, "--days", str(days),
+                               "--db-path", str(db_path)])
             if rc != 0:
                 combo["status"] = f"sync_failed rc={rc}"
                 print("  " + log.strip().splitlines()[-1][:200])
@@ -106,17 +164,23 @@ def main() -> int:
     ap.add_argument("--days", type=int, default=60)
     ap.add_argument("--horizon", type=int, default=4)
     ap.add_argument("--db-path", default="hl_data.db")
+    ap.add_argument("--source", choices=("hyperliquid", "kraken"),
+                    default="hyperliquid",
+                    help="kraken uses its own db (default kraken_data.db "
+                         "if --db-path left at default)")
     args = ap.parse_args()
+    if args.source == "kraken" and args.db_path == "hl_data.db":
+        args.db_path = "kraken_data.db"
     out = scout([c.strip() for c in args.coins.split(",") if c.strip()],
                 [t.strip() for t in args.timeframes.split(",") if t.strip()],
-                args.days, args.db_path, args.horizon)
+                args.days, args.db_path, args.horizon, args.source)
     rp = ROOT / "var" / "data_scout.json"
     rp.parent.mkdir(parents=True, exist_ok=True)
     rp.write_text(json.dumps(out, indent=2))
     print(f"\n{'='*56}\nVERDICT: {out['verdict']}  report: {rp}")
-    print(f"{'combo':<10}{'bars':>6}{'cost':>7}{'best rule':<16}{'lcb5':>8}")
+    print(f"{'combo':<18}{'bars':>6}{'cost':>7}{'best rule':<16}{'lcb5':>8}")
     for r in out["ranked"]:
-        print(f"{r['coin']+'/'+r['timeframe']:<10}{r['bars'] or 0:>6}"
+        print(f"{r['coin']+'/'+r['timeframe']+'@'+r['source']:<18}{r['bars'] or 0:>6}"
               f"{r['cost_bps'] or 0:>7.1f}{str(r['best_rule']):<16}"
               f"{r['best_lcb5_net_bps']:>8}")
     return 0
