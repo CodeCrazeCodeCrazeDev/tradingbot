@@ -267,6 +267,48 @@ class TestLiveOutcomeSettlement:
         assert "EURUSD" not in csc._open_positions
 
     @pytest.mark.asyncio
+    async def test_close_payload_carries_no_quantity(self, csc):
+        """A position_close resolves size from the ledger at the bridge —
+        sending quantity=0.0 trips the shield's quantity sanity veto and
+        every close dies at consensus while the brain thinks it settled."""
+        from trading_bot.core.unified_event_bus import ActionStatus
+
+        captured = []
+
+        class CaptureBus:
+            async def propose_action(self, action):
+                captured.append(action)
+                action.status = ActionStatus.EXECUTED
+                action._completed_event.set()
+
+        csc.decision_bus = CaptureBus()
+        csc.execution_service = SimpleNamespace(adapter=None)
+        csc._observation_seq = 5
+        await self._open(csc, action="BUY", price=1.0)
+        await csc._close_position("EURUSD", 1.01, reason="stream_end")
+        closes = [a for a in captured
+                  if a.payload.get("intent") == "position_close"]
+        assert closes, "close never dispatched to the bus"
+        assert closes[0].payload.get("quantity") is None
+
+    @pytest.mark.asyncio
+    async def test_real_shield_approves_position_close(self, csc):
+        """The real ImmutableShield must approve a close-intent payload —
+        exit intents are already exempt from entry guards; only a bogus
+        quantity was vetoing them."""
+        from trading_bot.core.immutable_shield import (
+            ImmutableShield, GovernanceDecision)
+
+        shield = ImmutableShield()
+        report = await shield.validate_action(
+            "TRADE_EXECUTION",
+            {"symbol": "EURUSD", "action": "CLOSE",
+             "price": 1.01, "trade_id": "close-x",
+             "intent": "position_close", "reason": "stream_end"},
+            {"market": {}})
+        assert report.decision == GovernanceDecision.APPROVED
+
+    @pytest.mark.asyncio
     async def test_vetoed_close_keeps_position_open(self, csc):
         """A close order that fails must NOT mark the position settled —
         the ledger still holds exposure."""

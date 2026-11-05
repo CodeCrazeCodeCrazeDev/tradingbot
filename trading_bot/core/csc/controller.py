@@ -2517,7 +2517,10 @@ class CognitiveSystemController:
             action = LogAction(
                 action_type="TRADE_EXECUTION",
                 payload={
-                    "symbol": symbol, "action": "CLOSE", "quantity": 0.0,
+                    # No quantity: the ledger is the sizing authority — the
+                    # bridge resolves the real signed exposure from fills.
+                    # A literal 0.0 trips the shield's quantity sanity veto.
+                    "symbol": symbol, "action": "CLOSE",
                     "price": float(exit_price), "trade_id": close_id,
                     "intent": "position_close", "reason": reason,
                 },
