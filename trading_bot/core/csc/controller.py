@@ -3910,6 +3910,7 @@ class CognitiveSystemController:
         _win_action = str(
             (best_branch.execution_plan or {}).get("action", "")
         ).upper()
+        _win_branch_id = getattr(best_branch, "branch_id", "unknown")
         if (self._explore_budget > 0
                 and _win_action not in ("BUY", "SELL") and branches):
             # Explore-probe promotion: the electorate's honest verdict
@@ -3943,6 +3944,12 @@ class CognitiveSystemController:
             best_branch, sim_results, trade_id=trade_id, market_data=obs_dict)
         if _explore_probe and isinstance(decision_proposal, dict):
             decision_proposal["exploratory"] = True
+            # Provenance: the folded ledger entry describes the verified
+            # winner; the executed proposal is the promoted probe. Both
+            # ids ride the proposal so the audit trail can join them.
+            decision_proposal["verified_winner_id"] = _win_branch_id
+            decision_proposal["promoted_branch_id"] = getattr(
+                best_branch, "branch_id", "unknown")
             _q = decision_proposal.get("quantity")
             if isinstance(_q, (int, float)) and _q > 0:
                 decision_proposal["quantity"] = min(

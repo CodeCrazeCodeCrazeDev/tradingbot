@@ -489,6 +489,10 @@ class TestExploreProbe:
         assert proposal["action"] == "BUY"
         assert proposal["exploratory"] is True
         assert proposal["quantity"] == pytest.approx(csc._explore_factor)
+        # Audit join: the folded ledger entry is the verified winner's;
+        # the proposal records which branch was actually promoted.
+        assert proposal["verified_winner_id"] == "branch_hold"
+        assert proposal["promoted_branch_id"] == "branch_bull"
         assert csc._funnel["explore_probes"] == 1
         # Budget is spent at approval, not at proposal time — a gated
         # probe must not consume allowance it never used.
