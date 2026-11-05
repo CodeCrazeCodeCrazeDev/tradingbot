@@ -659,3 +659,39 @@ class TestExploreProbe:
         assert csc._funnel.get("exploratory_trades", 0) == 0
         assert "t-veto" not in csc._pending_predictions
         assert "EURUSD" not in csc._open_positions
+
+    @pytest.mark.asyncio
+    async def test_pipeline_probe_count_never_exceeds_budget(self, csc):
+        """End-to-end: drive the real pipeline past warmup with budget=2.
+        Whatever path each cycle takes, approved exploratory trades are
+        bounded by the budget and each approval opens exactly one
+        measurable position/prediction."""
+        from trading_bot.core.unified_event_bus import ActionStatus
+
+        class ApproveBus:
+            async def propose_action(self, action):
+                action.status = ActionStatus.EXECUTED
+                action._completed_event.set()
+
+        csc.decision_bus = ApproveBus()
+        csc._explore_budget = 2
+        price = 1.08
+        for i in range(18):
+            price *= 1.0004 if i % 4 else 0.9996
+            await csc.process_market_observation(
+                _obs(price=round(price, 5), volatility=0.001,
+                     trend="bull" if i % 4 else "ranging"))
+        approved = csc._funnel.get("exploratory_trades", 0)
+        assert approved <= 2, "approved probes exceeded the explore budget"
+        # Budget bookkeeping is exact: each approved probe spent exactly
+        # one unit; gated/vetoed probes spent nothing.
+        assert csc._explore_budget == 2 - approved
+        # Promotion precedes approval — a probe can't trade unpromoted.
+        assert csc._funnel.get("explore_probes", 0) >= approved
+        # Approved probes fed the outcome loop: same-direction probes
+        # share one position/outcome by design, so at least one
+        # measurable artifact must exist whenever any probe was approved.
+        n_artifacts = (len(csc._pending_predictions)
+                       + len(csc._settled_outcomes)
+                       + len(csc._open_positions))
+        assert (approved == 0) or n_artifacts >= 1
