@@ -175,8 +175,12 @@ class VenueBackedStateProvider(PortfolioStateProvider):
     async def portfolio_state(
         self, observation: Optional[Mapping[str, Any]] = None
     ) -> Dict[str, Any]:
-        client = getattr(self._adapter, "_client", None)
-        info = client.account_info() if client is not None else None
+        account_info = getattr(self._adapter, "account_info", None)
+        if account_info is not None:
+            info = await account_info()
+        else:
+            client = getattr(self._adapter, "_client", None)
+            info = client.account_info() if client is not None else None
         if info is None:
             raise RuntimeError("venue account_info unavailable — fail closed")
         equity = float(getattr(info, "equity", 0.0))

@@ -30,7 +30,8 @@ A self-evolving, research-driven, hardware-optimized trading AI that combines:
 - Self-regulates performance
 - Continuous evolution forever
 
-### 3. 🔬 Alpha Discovery Engine
+### 3. 🔬 
+Alpha Discovery Engine
 - Genetic programming for alpha generation
 - Machine learning alpha mining
 - Template-based strategy discovery

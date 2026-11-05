@@ -88,7 +88,7 @@ class UnifiedTradingBot:
         """Boot all infrastructure and register components exactly once."""
         if self.running:
             return
-        if self.execution_mode not in {"paper", "analysis", "mt5_demo"}:
+        if self.execution_mode not in {"paper", "analysis", "mt5_demo", "ctrader_demo"}:
             raise RuntimeError(
                 f"Execution mode '{self.execution_mode}' is not wired to the canonical execution service; "
                 "refusing to silently fall back to paper trading."
@@ -214,15 +214,20 @@ class UnifiedTradingBot:
         # persisted fills/positions, never fabricated defaults.
         from trading_bot.risk.state_provider import (
             PortfolioStateProvider, VenueBackedStateProvider)
-        if self.execution_mode == "mt5_demo":
-            # Demo-only MT5 adapter — connect() itself hard-fails on any
+        if self.execution_mode in ("mt5_demo", "ctrader_demo"):
+            # Demo-only venue adapters — connect() itself hard-fails on any
             # non-DEMO account; credentials resolve through the canonical
             # credential provider (env names configurable).
-            from trading_bot.brokers.mt5_demo import MT5DemoAdapter
-            adapter = MT5DemoAdapter(config=self.config.get("mt5", {}))
+            if self.execution_mode == "mt5_demo":
+                from trading_bot.brokers.mt5_demo import MT5DemoAdapter
+                adapter = MT5DemoAdapter(config=self.config.get("mt5", {}))
+            else:
+                from trading_bot.brokers.ctrader_demo import CTraderDemoAdapter
+                adapter = CTraderDemoAdapter(
+                    config=self.config.get("ctrader", {}))
             await adapter.connect()  # demo-only validation happens here
             self.execution_service = CanonicalExecutionService(
-                adapter=adapter, mode="mt5_demo",
+                adapter=adapter, mode=self.execution_mode,
                 repository=self.trading_repository)
             # Venue-backed risk state: margin-FX accounting needs the real
             # account equity/positions, not the spot-model ledger cash.
@@ -252,6 +257,14 @@ class UnifiedTradingBot:
                 "contract_size": getattr(
                     getattr(self.execution_service, "adapter", None),
                     "_contract_size", 100000.0),
+            }
+        elif self.execution_mode == "ctrader_demo":
+            bridge_spec = {
+                "instrument_type": "fx",
+                "venue": "ctrader_demo",
+                "contract_size": getattr(
+                    getattr(self.execution_service, "adapter", None),
+                    "_lot_size", 100000.0),
             }
         self.bridge = PaperExecutionBridge(
             execution_service=self.execution_service,
@@ -342,6 +355,9 @@ class UnifiedTradingBot:
             if self.execution_mode == "mt5_demo":
                 self.layers["human"]["approval_gate"].set_demo_auto_approve(
                     bool(self.config.get("mt5", {}).get("auto_approve")))
+            if self.execution_mode == "ctrader_demo":
+                self.layers["human"]["approval_gate"].set_demo_auto_approve(
+                    bool(self.config.get("ctrader", {}).get("auto_approve")))
             registry.register("human_approval_gate", self.layers["human"]["approval_gate"], "Governance", overwrite=True)
             registry.register(
                 "human_approval_policy",
