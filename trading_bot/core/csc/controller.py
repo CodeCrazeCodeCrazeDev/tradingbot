@@ -3910,7 +3910,8 @@ class CognitiveSystemController:
         _win_action = str(
             (best_branch.execution_plan or {}).get("action", "")
         ).upper()
-        if self._explore_budget > 0                 and _win_action not in ("BUY", "SELL") and branches:
+        if (self._explore_budget > 0
+                and _win_action not in ("BUY", "SELL") and branches):
             # Explore-probe promotion: the electorate's honest verdict
             # is nondirectional every cycle, so the exploration budget
             # would otherwise never engage and _ev_pairs/_feature_pairs
@@ -3929,13 +3930,15 @@ class CognitiveSystemController:
                 _dir_cands.sort(key=_score, reverse=True)
                 def _sim_ev(b):
                     sd = sim_results.get(b.branch_id)
-                    ev = sd.get("expected_value") if isinstance(sd, dict)                         else None
+                    ev = (sd.get("expected_value")
+                          if isinstance(sd, dict) else None)
                     return ev if isinstance(ev, (int, float)) else 0.0
                 best_branch = next(
                     (b for b in _dir_cands if _sim_ev(b) >= 0.0),
                     _dir_cands[0])
                 _explore_probe = True
-                self._funnel["explore_probes"] =                     self._funnel.get("explore_probes", 0) + 1
+                self._funnel["explore_probes"] = (
+                    self._funnel.get("explore_probes", 0) + 1)
         decision_proposal = self._select_optimal_action(
             best_branch, sim_results, trade_id=trade_id, market_data=obs_dict)
         if _explore_probe and isinstance(decision_proposal, dict):
@@ -4057,7 +4060,8 @@ class CognitiveSystemController:
             # Adaptive trickle: while _ev_pairs is still below the
             # minimum-sample count, probe more often so realizations
             # refill quickly; once stocked, rare probes keep it fresh.
-            _rate = 5 if len(self._ev_pairs) < self._ev_min_samples                 else 20
+            _rate = (5 if len(self._ev_pairs) < self._ev_min_samples
+                     else 20)
             if self._cal_probe_counter % _rate == 0:
                 proposal["calibration_probe"] = True
                 self._funnel["net_cost_probe"] += 1
@@ -4344,12 +4348,14 @@ class CognitiveSystemController:
 
         # Verified proposal audit entry: proposal first, then execution.
         if self.decision_bus is not None and hasattr(self.decision_bus, "propose_action"):
-            await self._safe_await(self.decision_bus.propose_action(LogAction(
+            _prop = LogAction(
                 action_type="TRADE_PROPOSAL",
                 payload=decision_proposal,
                 agent_id="CSC_V6",
                 priority=EventPriority.HIGH,
-            )))
+            )
+            _prop.sign()
+            await self._safe_await(self.decision_bus.propose_action(_prop))
 
         action = LogAction(
             action_type="TRADE_EXECUTION",
@@ -4357,6 +4363,8 @@ class CognitiveSystemController:
             agent_id="CSC_V6",
             priority=EventPriority.CRITICAL,
         )
+        action.sign()  # provenance on the capital path — unsigned
+        # rides the audited-admission path, signed proves origin
         status = action.status
         # Preflight probe: the proposal dispatch above already exercised
         # bus reachability; the execution order itself is never sent —

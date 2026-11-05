@@ -419,8 +419,11 @@ class UnifiedDecisionBus:
                 action._completed_event.set()
                 return
         else:
-            action.voter_reports.setdefault(
-                "signature_gate", {})["unsigned"] = True
+            action.voter_reports["signature_gate"] = {
+                "decision": "PASS",
+                "unsigned": True,
+                "reason": "unsigned internal action admitted for "
+                          "auditing — only forged signatures veto"}
 
         action.status = ActionStatus.PROPOSED
         if self._action_queue is None:
