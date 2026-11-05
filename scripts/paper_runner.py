@@ -766,6 +766,12 @@ async def run(args: argparse.Namespace) -> int:
                 # and their measured weight/precision per regime.
                 "advisors": csc.advisory_report() if csc is not None
                 and hasattr(csc, "advisory_report") else None,
+                # Per-feature outcome attribution — assumed weights
+                # become measured once settled trades accumulate.
+                "feature_attribution": (
+                    csc.feature_attribution_report()
+                    if csc is not None and hasattr(
+                        csc, "feature_attribution_report") else None),
                 # Ordered stage-funnel counts — where each observation's
                 # decision terminated (verification veto, net-cost,
                 # governance, consensus) or abstained.

@@ -396,6 +396,12 @@ class CognitiveSystemController:
         self._ev_pairs: deque = deque(maxlen=int(
             kwargs.get("ev_calibration_window", 200)))
         self._ev_min_samples = int(kwargs.get("ev_min_samples", 20))
+        # Per-feature attribution: (feature, signed_contribution,
+        # realized_return, regime) recorded at settlement alongside
+        # _ev_pairs — this is what turns an assumed feature weight into
+        # a measured one (e.g. order_imbalance from the live L2 soak).
+        self._feature_pairs: deque = deque(maxlen=int(
+            kwargs.get("feature_attrib_window", 500)))
         # Bounded exploration: the epistemic-uncertainty sizing floor
         # creates a circular abstention trap (u=1.0 -> qty=0 -> no
         # fills -> u stays 1.0). TB_CSC_EXPLORE_BUDGET=N allows N
@@ -979,6 +985,14 @@ class CognitiveSystemController:
                         and isinstance(_real, (int, float))):
                     self._ev_pairs.append(
                         (float(_exp), float(_real), regime))
+                    _fc = details.get("feature_contributions")
+                    if isinstance(_fc, dict) and isinstance(
+                            _real, (int, float)):
+                        for _fn, _fv in _fc.items():
+                            if isinstance(_fv, (int, float)):
+                                self._feature_pairs.append(
+                                    (str(_fn), float(_fv),
+                                     float(_real), str(regime)))
                 self.reliability_tracker.update_action_outcome(
                     regime,
                     str(inner.get("action") or row.get("action") or "").upper(),
@@ -1025,6 +1039,38 @@ class CognitiveSystemController:
             logger.info(
                 "CSC-V6: settled journal rehydrated — %d outcomes restored",
                 restored)
+
+    def feature_attribution_report(self) -> Dict[str, Any]:
+        """Measured per-feature outcome attribution: for each drift
+        feature, the count and mean realized return of settled trades
+        where it contributed in the trade's direction. A feature whose
+        signed contribution actually earned marks itself 'measured' —
+        the simulator's assumed weights can then be replaced by
+        evidence (and ones that earned nothing get trimmed)."""
+        agg: Dict[str, Dict[str, Any]] = {}
+        for name, contrib, realized, regime in self._feature_pairs:
+            e = agg.setdefault(
+                name, {"trades": 0, "aligned": 0, "realized_sum": 0.0,
+                       "regimes": {}})
+            e["trades"] += 1
+            # 'aligned' = the feature's sign agreed with the realized
+            # sign — measures direction quality, not just magnitude.
+            if (contrib > 0) == (realized > 0):
+                e["aligned"] += 1
+            e["realized_sum"] += realized
+            e["regimes"][regime] = e["regimes"].get(regime, 0) + 1
+        out = {}
+        for name, e in agg.items():
+            n = max(1, e["trades"])
+            out[name] = {
+                "trades": e["trades"],
+                "aligned_rate": round(e["aligned"] / n, 4),
+                "mean_realized": round(e["realized_sum"] / n, 6),
+                "regimes": e["regimes"],
+                "status": ("measured"
+                           if e["trades"] >= self._ev_min_samples
+                           else "insufficient_samples")}
+        return out
 
     def advisory_report(self) -> Dict[str, Any]:
         """Read-only per-advisor standing: attached services plus measured
@@ -1511,6 +1557,14 @@ class CognitiveSystemController:
             self._ev_pairs.append((float(_pred_ev),
                                    float(realized_return),
                                    str(pending.get("regime", "unknown"))))
+            _fcontrib = pending.get("feature_contributions")
+            if isinstance(_fcontrib, dict):
+                for _fname, _fval in _fcontrib.items():
+                    if isinstance(_fval, (int, float)):
+                        self._feature_pairs.append(
+                            (str(_fname), float(_fval),
+                             float(realized_return),
+                             str(pending.get("regime", "unknown"))))
 
         # Reality-gate runtime monitors — advisory only. They emit
         # DRIFT_ADVISORY / KILL_SWITCH_ADVISORY evidence; the canonical
@@ -2377,6 +2431,7 @@ class CognitiveSystemController:
         self, trade_id: str, action: str, symbol: Optional[str],
         price: float, confidence: Any, regime: Any,
         expected_return: Any = None,
+        feature_contributions: Any = None,
     ) -> None:
         """Attach an approved directional decision to a position.
 
@@ -2399,6 +2454,8 @@ class CognitiveSystemController:
                 "action": action, "symbol": symbol,
                 "entry_price": float(price), "confidence": confidence,
                 "regime": regime, "expected_return": expected_return,
+                "feature_contributions": dict(feature_contributions
+                                              or {}),
                 "advisory_calls": list(
                     getattr(self, "_last_advisory_calls", ()) or ()),
                 "gated_calls": int(getattr(self, "_tilt_gated", 0)),
@@ -2425,6 +2482,7 @@ class CognitiveSystemController:
             "confidence": confidence,
             "regime": regime,
             "expected_return": expected_return,
+            "feature_contributions": dict(feature_contributions or {}),
             # Advisor calls active when this decision opened — scored at
             # settlement so advisor weights are measured against reality.
             "advisory_calls": list(
@@ -3293,6 +3351,11 @@ class CognitiveSystemController:
                            and np.isfinite(branch.confidence) else 0.0),
             "causal_impact": sim_data.get("structural_impact", {}) if isinstance(sim_data, dict) else {},
             "expected_return": expected_return,
+            "feature_contributions": (
+                dict(sim_data["feature_contributions"])
+                if isinstance(sim_data, dict)
+                and isinstance(sim_data.get("feature_contributions"),
+                               dict) else {}),
             "slippage_measured": slippage is not None,
             "uncertainty_size_factor": uncertainty_factor,
             "exploratory": _exploratory,
@@ -4307,7 +4370,9 @@ class CognitiveSystemController:
                 confidence=proposal.get("confidence", 0.5),
                 regime=(obs_dict or {}).get("trend")
                     or (obs_dict or {}).get("regime") or "unknown",
-                expected_return=proposal.get("expected_return"))
+                expected_return=proposal.get("expected_return"),
+                feature_contributions=proposal.get(
+                    "feature_contributions"))
         await self._persist_audit_event(
             event_type="DECISION",
             action=action_name,
@@ -4321,6 +4386,8 @@ class CognitiveSystemController:
                 # Predicted vs realized: recording the simulated EV lets
                 # forward outcomes measure EV calibration directly.
                 "expected_return": proposal.get("expected_return"),
+                "feature_contributions": proposal.get(
+                    "feature_contributions"),
                 # Evidence provenance: which advisory capabilities
                 # contributed analysis to this cycle's decision.
                 "advisory_evidence": list(

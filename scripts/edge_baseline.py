@@ -146,12 +146,66 @@ def rule_rsi_fade(closes, i):
     return 0
 
 
+def rule_vol_squeeze(closes, i):
+    """Volatility contraction -> expansion: 20-bar bandwidth in its
+    lowest quintile over 100 bars AND today's close breaks the
+    20-bar close-extreme -> follow the break. Squeeze-breakout is
+    the canonical vol-regime hypothesis."""
+    if i < 120:
+        return 0
+    w = closes[i - 19:i + 1]
+    m, s = np.mean(w), np.std(w)
+    if m <= 0 or s <= 0:
+        return 0
+    bw_now = (4.0 * s) / m
+    bws = []
+    for j in range(i - 99, i + 1):
+        wj = closes[j - 19:j + 1]
+        mj, sj = np.mean(wj), np.std(wj)
+        if mj > 0 and sj > 0:
+            bws.append((4.0 * sj) / mj)
+    if len(bws) < 50 or bw_now > np.percentile(bws, 20):
+        return 0
+    hi = np.max(closes[i - 20:i])
+    lo = np.min(closes[i - 20:i])
+    if closes[i] > hi:
+        return 1
+    if closes[i] < lo:
+        return -1
+    return 0
+
+
+def rule_lowvol_trend(closes, i):
+    """Trend follow only in below-median realized vol — the
+    anti-predictive-chop finding says trend signals die in high-vol
+    noise; gate them to quiet regimes."""
+    if i < 110:
+        return 0
+    r = np.diff(np.log(closes[i - 19:i + 1]))
+    vol_now = float(np.std(r)) if len(r) else 0.0
+    vols = []
+    for j in range(i - 99, i + 1):
+        rj = np.diff(np.log(closes[j - 19:j + 1]))
+        if len(rj):
+            vols.append(float(np.std(rj)))
+    if len(vols) < 50 or vol_now >= np.median(vols):
+        return 0
+    ret5 = (closes[i] - closes[i - 5]) / closes[i - 5]
+    if ret5 > 0.001:
+        return 1
+    if ret5 < -0.001:
+        return -1
+    return 0
+
+
 RULES = {"pullback_long": rule_pullback_long,
          "momentum": rule_momentum,
          "meanrev": rule_meanrev,
          "donchian": rule_donchian,
          "er_trend": rule_er_trend,
-         "rsi_fade": rule_rsi_fade}
+         "rsi_fade": rule_rsi_fade,
+         "vol_squeeze": rule_vol_squeeze,
+         "lowvol_trend": rule_lowvol_trend}
 
 
 def block_bootstrap_lcb(returns, block=8, n_boot=2000, seed=7):
