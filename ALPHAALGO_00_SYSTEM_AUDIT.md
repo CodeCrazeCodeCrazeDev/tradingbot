@@ -288,3 +288,15 @@ soak running, var/hl_soak).
 paper_runner 4-cycle BTC replay on compute-behind code finished
 clean: 4 cycles, 0 advisory failures (vs 3 timeouts on the prior
 run), 4 audited ABSTAIN, 0 fills. Compute-behind verified end-to-end.
+
+### Vol-regime + horizon sweep (session 3 close-out)
+
+- `edge_gate_15m_v2` (8 rules incl. vol_squeeze/lowvol_trend, 6 coins
+  x 2 venues): **0/48 qualified**. Vol-regime conditioning does not
+  rescue candle rules either — rejected on both venues, all coins.
+- Horizon sweep h12/h16 (3h/4h on 15m) still in flight ->
+  var/edge_gate_15m_h{12,16}.json.
+- Running total: **0/200+ segment-level rule evaluations qualified**
+  across every channel measurable on candle data. Order flow
+  (var/hl_soak) is the only active learning channel with unmeasured
+  hypotheses left in flight.
