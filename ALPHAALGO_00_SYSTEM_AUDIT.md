@@ -62,3 +62,74 @@ sim features so EV can discriminate; P4 more venues/instruments via scout;
 P5 multi-window cross-venue walk-forward before any promotion.
 
 Generated with Devin — measured, not asserted.
+
+---
+
+## Re-verification — 2026-11-05
+
+Verified the 2026-11-04 findings against current code and fixed the
+top-priority advisory defects. Measured evidence below.
+
+### Defects fixed this pass
+
+1. **x35 "too many values to unpack" — root caused and fixed.**
+   `feeds/hl_l2.py` emitted raw Hyperliquid level dicts (`{"px","sz","n"}`)
+   while its own contract (and ctrader_l2/mt5_l2) is `[price, size]`
+   pairs. `upgrades LiquidityAnalyzer.analyze` unpacks pairs → crash
+   every observation with a live book. Feed now normalizes to pairs.
+   Verified: stubbed HL response → `[[px, sz], ...]` output; adapter
+   `liquidity` probe returns real numbers instead of `{"error": ...}`.
+2. **`hft_orderbook_imbalance` imbalance probe was dead on arrival.**
+   The adapter passed the raw `{"bids":..., "asks":...}` dict to
+   `OrderBookImbalanceDetector.analyze`, which expects an `OrderBook`
+   dataclass → `AttributeError` every cycle (silently contained by
+   `_probe_all`). Adapter now converts dict/pair/dict-level inputs into
+   `OrderBook`/`OrderBookLevel`. Verified: probe emits a real
+   `ImbalanceSignal` (ratio, direction, magnitude) on synthetic ctx.
+   Net effect: HL L2 evidence now actually reaches the electorate.
+3. **`hawkes_event_intensity` preflight crash — fixed.** The preflight
+   probe sends `timestamp="preflight"`; `datetime.fromisoformat` threw.
+   Parse now guarded with a utcnow fallback.
+4. **Heavy-advisor timeouts — fixed at the declared-budget layer.**
+   `hivemind_collective` and `analysis_market_intel` already declared
+   `timeout_s=20.0` but `_ADVISORY_TIMEOUT_CEILING_S=10.0` clamped them
+   to 10s while hivemind measures ~10s/cycle → TimeoutError (empty
+   `str()`, matching the empty failure messages) on every due cycle.
+   Ceiling raised to 20.0 (still bounded vs the 3600-abuse it exists
+   to catch; these advisors run only on full/defer cycles anyway —
+   none is in MEASURED_ACTIVE_SET). `deep_agent_market` now declares
+   `timeout_s=20.0` like its heavy peers (was default 5s).
+
+### Pre-existing test failures root-caused (not regressions)
+
+- `test_advisor_timeout_coerced_and_ceiling_enforced`: broken by the
+  long-tail deferral feature (second consult lands on cycle 2, advisor
+  absent from MEASURED_ACTIVE_SET → deferred, never times out). Fixed
+  by declaring `defer_n = 1` on the test's hogging service — the
+  idiomatic "always due" override. Fails identically at HEAD.
+- `test_directional_beating_cost_survives`: encodes pre-calibration
+  gate semantics. The net-of-cost gate now compares *calibrated* EV
+  (commit 969d1fcc, cold prior 0.05 — deliberately distrusts raw sim
+  EV with zero realized evidence). Updated the test to seed `_ev_pairs`
+  at par (cal=1.0 → survives) and added
+  `test_directional_beating_cost_downgrades_without_evidence` locking
+  in the cold-prior downgrade. Fails identically at HEAD.
+
+### Test evidence (.venv)
+
+- tests/foundation/test_advisory_blind_spots.py — 9/9 pass (was 8+1 fail)
+- tests/core/test_csc_advisory_influence + csc_v5 + csc_v5_fix +
+  rl_advisory — 215 pass, 28 skip (incl. every-wired-service contract)
+- tests/core/test_csc_feedback_loop — 27/27 pass (was 26+1 fail)
+- decision_bus_isolation + brain_audit_integrity — pass
+- tests/data_feeds — 2 collection errors: `aiohttp` missing from .venv
+  (documented env limitation, pre-existing; not a code failure)
+
+### Still open (unchanged from 2026-11-04)
+
+- No verified edge remains the blocker; honesty gates are intact and
+  now also verified by the new cold-prior regression test.
+- Uncommitted foreign-session files (unified_bot.py,
+  risk/state_provider.py, cTrader trio, docs readme) left untouched.
+- Warmup cost, live-only L2 replay caveat, dashboard duplicates as
+  before.

@@ -109,6 +109,11 @@ async def test_advisor_timeout_coerced_and_ceiling_enforced():
         class HoggingSvc:
             capability_id = "hogging"
             timeout_s = 3600
+            # Must be consultable on cycle 2: the long-tail deferral
+            # would otherwise skip an advisor absent from
+            # MEASURED_ACTIVE_SET and the timeout path under test
+            # never executes.
+            defer_n = 1
 
             async def analyze(self, ctx):
                 await asyncio.sleep(0.5)

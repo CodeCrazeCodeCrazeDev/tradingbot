@@ -43,14 +43,17 @@ def snapshot(coin: str, depth: int = 10) -> Dict[str, Any]:
         return {}
     try:
         bids, asks = d["levels"][0], d["levels"][1]
-        bids = bids[:depth]
-        asks = asks[:depth]
+        # Normalize to [[price, size], ...] pairs — the same level shape
+        # ctrader_l2.py and mt5_l2.py emit. Raw HL dicts break every
+        # pair-unpacking consumer (e.g. upgrades LiquidityAnalyzer).
+        bids = [[float(l["px"]), float(l["sz"])] for l in bids[:depth]]
+        asks = [[float(l["px"]), float(l["sz"])] for l in asks[:depth]]
         if not bids or not asks:
             return {}
-        bb = sum(float(l["sz"]) for l in bids)
-        ba = sum(float(l["sz"]) for l in asks)
-        best_bid = float(bids[0]["px"])
-        best_ask = float(asks[0]["px"])
+        bb = sum(l[1] for l in bids)
+        ba = sum(l[1] for l in asks)
+        best_bid = bids[0][0]
+        best_ask = asks[0][0]
         mid = (best_bid + best_ask) / 2.0
         spread_bps = (best_ask - best_bid) / mid * 1e4 if mid else None
         out = {

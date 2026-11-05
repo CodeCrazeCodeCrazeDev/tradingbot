@@ -349,11 +349,28 @@ class TestNetOfCostGate:
     def test_directional_beating_cost_survives(self, csc):
         proposal = {"action": "BUY", "symbol": "EURUSD"}
         branch = SimpleNamespace(branch_id="b1")
-        # 0.002 EV > 10bps round-trip on default 5bps cost.
+        # 0.002 EV > 10bps round-trip on default 5bps cost. The gate
+        # compares CALIBRATED EV — seed realized evidence at par so
+        # calibration stops shrinking the simulated value.
+        for _ in range(csc._ev_min_samples):
+            csc._ev_pairs.append((0.002, 0.002, "ranging"))
         csc._apply_net_of_cost_gate(
             proposal, branch, {"b1": {"expected_value": 0.002}},
             {"symbol": "EURUSD"})
         assert proposal["action"] == "BUY"
+
+    def test_directional_beating_cost_downgrades_without_evidence(self, csc):
+        # Cold prior: with no realized EV pairs the sim's raw edge is
+        # deliberately not trusted — an uncalibrated 'beating-cost'
+        # proposal still downgrades (except the deliberate trickle
+        # probe every Nth call).
+        proposal = {"action": "BUY", "symbol": "EURUSD"}
+        branch = SimpleNamespace(branch_id="b1")
+        csc._apply_net_of_cost_gate(
+            proposal, branch, {"b1": {"expected_value": 0.002}},
+            {"symbol": "EURUSD"})
+        assert proposal["action"] == "HOLD"
+        assert "insufficient net edge" in proposal["downgraded_reason"]
 
     def test_missing_sim_evidence_downgrades(self, csc):
         proposal = {"action": "SELL", "symbol": "EURUSD"}

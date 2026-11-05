@@ -24,7 +24,7 @@ import enum
 import inspect
 import logging
 import statistics
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple
 
 import numpy as np
@@ -4743,7 +4743,8 @@ def _deep_agent_system_service() -> AdvisoryModuleAdapter:
             out = await out
         return _payload(out)
 
-    return AdvisoryModuleAdapter("deep_agent_market", analyze)
+    return AdvisoryModuleAdapter("deep_agent_market", analyze,
+                               timeout_s=20.0)
 
 
 def _hft_orderbook_service() -> AdvisoryModuleAdapter:
@@ -4751,26 +4752,53 @@ def _hft_orderbook_service() -> AdvisoryModuleAdapter:
     emits when the observation actually carries an order book; honest
     no-data status otherwise."""
     from trading_bot.hft.tick_data_handler import (
-        OrderBookImbalanceDetector)
+        OrderBook, OrderBookImbalanceDetector, OrderBookLevel)
     from trading_bot.upgrades.core_upgrades_001_025 import LiquidityAnalyzer
 
     det = OrderBookImbalanceDetector()
     liq = LiquidityAnalyzer()
 
+    def _pairs(levels: Any) -> List[List[float]]:
+        """Normalize book levels to [price, size] pairs; accepts pair
+        sequences or exchange-style dicts ({px,sz}/{price,size})."""
+        out: List[List[float]] = []
+        for l in levels or []:
+            if isinstance(l, Mapping):
+                p = l.get("px", l.get("price"))
+                s = l.get("sz", l.get("size", l.get("volume")))
+                if p is not None and s is not None:
+                    out.append([float(p), float(s)])
+            elif isinstance(l, (list, tuple)) and len(l) >= 2:
+                out.append([float(l[0]), float(l[1])])
+        return out
+
+    def _as_orderbook(ob: Any, ctx: Mapping[str, Any]) -> Any:
+        if isinstance(ob, OrderBook):
+            return ob
+        if not isinstance(ob, Mapping):
+            return None
+        bids = [OrderBookLevel(p, s) for p, s in _pairs(ob.get("bids"))]
+        asks = [OrderBookLevel(p, s) for p, s in _pairs(ob.get("asks"))]
+        if not bids or not asks:
+            return None
+        now = datetime.now(timezone.utc)
+        return OrderBook(symbol=str(ctx.get("symbol") or ""),
+                         timestamp=now,
+                         timestamp_ns=int(now.timestamp() * 1e9),
+                         bids=bids, asks=asks)
+
     def analyze(ctx: Mapping[str, Any]) -> Any:
         ob = (ctx.get("order_book") or ctx.get("orderbook")
               or ctx.get("microstructure"))
-        bids = ctx.get("bids")
-        asks = ctx.get("asks")
-        has_levels = (isinstance(bids, (list, tuple))
-                      and isinstance(asks, (list, tuple))
-                      and len(bids) > 0 and len(asks) > 0)
+        bids = _pairs(ctx.get("bids"))
+        asks = _pairs(ctx.get("asks"))
+        book = _as_orderbook(ob, ctx)
         probes = []
-        if ob is not None:
-            probes.append(("imbalance", lambda: det.analyze(ob)))
-        if has_levels:
+        if book is not None:
+            probes.append(("imbalance", lambda: det.analyze(book)))
+        if bids and asks:
             probes.append(
-                ("liquidity", lambda: liq.analyze(list(bids), list(asks))))
+                ("liquidity", lambda: liq.analyze(bids, asks)))
         out = _probe_all(probes)
         return out or {"status": "no_order_book_in_observation"}
 
@@ -5462,8 +5490,11 @@ def _hawkes_service() -> AdvisoryModuleAdapter:
         else:
             etype = EventType.TRADE
         ts = ctx.get("timestamp")
-        _parsed = (datetime.fromisoformat(str(ts)).replace(tzinfo=None)
-                   if ts else datetime.utcnow())
+        try:
+            _parsed = (datetime.fromisoformat(str(ts)).replace(tzinfo=None)
+                       if ts else datetime.utcnow())
+        except (TypeError, ValueError):
+            _parsed = datetime.utcnow()
         det.add_event(MarketEvent(
             timestamp=_parsed,
             event_type=etype, price=close, volume=vol,

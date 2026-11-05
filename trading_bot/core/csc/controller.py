@@ -117,7 +117,7 @@ class CognitiveSystemController:
     # Ceiling on an advisor's self-declared per-call budget — a
     # subordinate service must not stretch the decision cycle past the
     # electorate's bound by claiming a huge timeout_s.
-    _ADVISORY_TIMEOUT_CEILING_S = 10.0
+    _ADVISORY_TIMEOUT_CEILING_S = 20.0
     _ADVISORY_TIMEOUT_DEFAULT_S = 5.0
 
     def __new__(cls, *args, **kwargs):
