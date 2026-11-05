@@ -168,6 +168,72 @@ def db_observations(db_path: Path, symbol: str, timeframe: str,
         con.close()
 
 
+def hl_seed_rows(coin: str, hl_tf: str, n: int) -> list:
+    """Closed Hyperliquid candles as (close, high, low) tuples — the
+    same shape prior_seed_rows returns so a live follow gets the same
+    honest warmup path (strictly-prior closes only)."""
+    from scripts.hyperliquid_sync import fetch_candles, _TF_MS
+    now = int(time.time() * 1000)
+    candles = fetch_candles(
+        coin, hl_tf, now - (n + 4) * _TF_MS[hl_tf], now) or []
+    rows = [(float(c["c"]), float(c["h"]), float(c["l"]))
+            for c in candles if int(c["T"]) <= now]
+    return rows[-n:]
+
+
+def hl_live_observations(coin: str, symbol: str, hl_tf: str = "15m",
+                         timeframe_label: str = "M15",
+                         poll_s: float = 15.0
+                         ) -> Iterator[Dict[str, Any]]:
+    """Follow Hyperliquid live: yield one obs per newly CLOSED candle.
+
+    Each emitted bar gets the L2 book fetched at detection time —
+    point-in-time-valid order flow, unlike --hl-l2 on a replay which
+    attaches the current book to historical bars (anachronistic).
+    HL perp volume is real traded volume on a centralized venue, not
+    a broker tick count: volume_kind="real" preserves that distinction.
+    Polls every poll_s seconds; a failed poll logs and retries.
+    """
+    from datetime import datetime as _dt, timezone as _tz
+    from scripts.hyperliquid_sync import fetch_candles, _TF_MS
+    from trading_bot.feeds import hl_l2
+    tf_ms = _TF_MS[hl_tf]
+    last_open = 0
+    while True:
+        now = int(time.time() * 1000)
+        try:
+            candles = fetch_candles(coin, hl_tf, now - 4 * tf_ms, now)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("hl_live candle poll failed: %s", exc)
+            candles = []
+        emitted = False
+        for c in candles or []:
+            t_open = int(c["t"])
+            t_close = int(c["T"])
+            if t_open <= last_open or t_close > now:
+                continue  # already seen, or still forming
+            obs = {"symbol": symbol,
+                   "timestamp": _dt.fromtimestamp(
+                       t_open / 1000, tz=_tz.utc).isoformat(),
+                   "open": float(c["o"]), "high": float(c["h"]),
+                   "low": float(c["l"]), "close": float(c["c"]),
+                   "volume": float(c["v"]), "price": float(c["c"]),
+                   "timeframe": timeframe_label,
+                   "volume_kind": "real",
+                   "data_source": "hyperliquid_live",
+                   "ts_is_broker_time": False}
+            try:
+                obs.update(hl_l2.snapshot(coin))
+                obs["order_book_time"] = "live"
+            except Exception:  # noqa: BLE001 — book absent, not faked
+                pass
+            last_open = t_open
+            emitted = True
+            yield obs
+        if not emitted:
+            time.sleep(poll_s)
+
+
 def _detect_broker_tz_offset(db_path: Path, symbol: str,
                              timeframe: str = "M15") -> float:
     """Detect broker-server-tz -> UTC offset from the liquidity
@@ -421,8 +487,13 @@ async def run(args: argparse.Namespace) -> int:
     if args.seed_bars > 0:
         # Warm the feature windows from strictly-prior DB bars — the
         # same data source the replay reads, so provenance is honest.
-        rows = prior_seed_rows(PROJECT_ROOT / args.db_path, args.symbol,
-                               args.timeframe, args.skip, args.seed_bars)
+        if args.source == "hl_live":
+            rows = hl_seed_rows(args.hl_coin or args.symbol, args.hl_tf,
+                                args.seed_bars)
+        else:
+            rows = prior_seed_rows(
+                PROJECT_ROOT / args.db_path, args.symbol,
+                args.timeframe, args.skip, args.seed_bars)
         history = [r[0] for r in rows]
         seed_hl = [(r[1], r[2]) for r in rows]
         logger.info("seed-bars: %d strictly prior closes (replacing saved history)", len(history))
@@ -431,10 +502,8 @@ async def run(args: argparse.Namespace) -> int:
         hlq = getattr(csc, "_hl_history", None)
         if isinstance(hlq, dict) and not hlq.get(args.symbol):
             # State dir had closes but no HL bars — warm path_risk
-            # from the DB anyway so it isn't absent ~20 bars in.
-            for _, hh, ll in prior_seed_rows(
-                    PROJECT_ROOT / args.db_path, args.symbol,
-                    args.timeframe, args.skip, args.seed_bars):
+            # from the same seed rows so it isn't absent ~20 bars in.
+            for hh, ll in seed_hl:
                 if isinstance(hh, (int, float)) and isinstance(ll, (int, float)):
                     from collections import deque as _dq
                     hlq.setdefault(args.symbol, _dq(maxlen=64)).append(
@@ -566,6 +635,11 @@ async def run(args: argparse.Namespace) -> int:
         source = cross_observations(
             PROJECT_ROOT / args.db_path, args.symbol,
             args.cross_denominator, args.timeframe, args.skip)
+    elif args.source == "hl_live":
+        source = hl_live_observations(
+            args.hl_coin or args.symbol, args.symbol,
+            hl_tf=args.hl_tf, timeframe_label=args.timeframe,
+            poll_s=args.hl_poll_s)
     else:
         source = synthetic_observations(args.symbol, args.cycles or 200,
                                         args.seed)
@@ -616,10 +690,11 @@ async def run(args: argparse.Namespace) -> int:
                             command.get("action"), outcome)
                 if command.get("action") == "emergency_stop":
                     emergency = True
-            if args.hl_l2:
+            if args.hl_l2 and "order_book_time" not in obs:
                 # Live book merged onto each obs. In replay this is the
                 # CURRENT book, not the bar's historical book — flagged
                 # so nothing treats it as point-in-time evidence.
+                # (hl_live attaches a truly point-in-time book upstream.)
                 try:
                     from trading_bot.feeds import hl_l2 as _hl_l2
                     obs.update(_hl_l2.snapshot(str(obs.get("symbol")
@@ -738,7 +813,8 @@ def main(argv: Optional[list] = None) -> int:
                         help="db/cross source: SQLite path with a "
                              "market_data table (default market_data.db; "
                              "use lse_data.db for LSE-synced data)")
-    parser.add_argument("--source", choices=("synthetic", "db", "cross"),
+    parser.add_argument("--source",
+                        choices=("synthetic", "db", "cross", "hl_live"),
                         default="synthetic")
     parser.add_argument("--symbol", default="EURUSD")
     parser.add_argument("--cross-denominator", default="GBPUSD",
@@ -810,6 +886,13 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--log-level", default="INFO")
     parser.add_argument("--stop-file", default="",
                         help="supervisor-owned stop request; checked between and during cycles")
+    parser.add_argument("--hl-coin", default="",
+                        help="hl_live: Hyperliquid coin name (default "
+                             "= --symbol)")
+    parser.add_argument("--hl-tf", default="15m",
+                        help="hl_live: API interval (1m/5m/15m/1h/4h/1d)")
+    parser.add_argument("--hl-poll-s", type=float, default=15.0,
+                        help="hl_live: seconds between candle polls")
     parser.add_argument("--hl-l2", action="store_true",
                         help="merge the LIVE Hyperliquid L2 order book onto "
                              "each observation (keyless; flagged "
