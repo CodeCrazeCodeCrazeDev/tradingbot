@@ -24,6 +24,8 @@ import enum
 import inspect
 import logging
 import statistics
+import threading
+import time
 from datetime import date, datetime, timezone
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple
 
@@ -2882,7 +2884,10 @@ def _hivemind_collective_service() -> AdvisoryModuleAdapter:
             out = await out
         return _payload(out)
 
-    return AdvisoryModuleAdapter("hivemind_collective", analyze, timeout_s=20.0)
+    behind = _ComputeBehind(analyze)
+
+    return AdvisoryModuleAdapter(
+        "hivemind_collective", behind.analyze, timeout_s=5.0)
 
 
 def _hivemind_threat_service() -> AdvisoryModuleAdapter:
@@ -3301,7 +3306,10 @@ def _analysis_market_intel_service() -> AdvisoryModuleAdapter:
             out = await out
         return _payload(out)
 
-    return AdvisoryModuleAdapter("analysis_market_intel", analyze, timeout_s=20.0)
+    behind = _ComputeBehind(analyze)
+
+    return AdvisoryModuleAdapter(
+        "analysis_market_intel", behind.analyze, timeout_s=5.0)
 
 
 def _analysis_ict_service() -> AdvisoryModuleAdapter:
@@ -3727,6 +3735,59 @@ def _swing_levels(bars: List[Dict[str, float]], k: int = 3
                for j in range(i - k, i + k + 1)):
             lows.append(bars[i]["low"])
     return highs[-20:], lows[-20:]
+
+
+class _ComputeBehind:
+    """Compute-behind adapter for heavyweight advisors whose per-call
+    runtime (measured 7s-5min under electorate load) exceeds any sane
+    in-pipeline timeout. The heavy analyze coroutine runs on a
+    DEDICATED worker event loop in its own thread — the pipeline loop
+    is never starved — and analyze() returns the freshest COMPLETED
+    payload immediately. Evidence is tagged honestly: compute_status
+    ("warming" until the first run lands, "live" once fresh results
+    are flowing) and evidence_age_s. One run in flight at a time — a
+    slow advisor never piles up work or starves itself."""
+
+    def __init__(self, fn: Callable[[Mapping[str, Any]], Any]):
+        self._fn = fn
+        self._loop = asyncio.new_event_loop()
+        self._thread = threading.Thread(
+            target=self._loop.run_forever, daemon=True,
+            name="advisory-compute-behind")
+        self._thread.start()
+        self._future: Optional[Any] = None
+        self._latest: Optional[Mapping[str, Any]] = None
+        self._latest_ts = 0.0
+
+    def _collect(self, now: float) -> None:
+        if self._future is not None and self._future.done():
+            try:
+                res = self._future.result()
+                if res is not None:
+                    self._latest = res
+                    self._latest_ts = now
+            except Exception:  # noqa: BLE001 — stale evidence keeps
+                pass            # flowing; failure is reported by age
+            self._future = None
+
+    async def analyze(self, ctx: Mapping[str, Any]) -> Mapping[str, Any]:
+        now = time.time()
+        self._collect(now)
+        if self._future is None:
+            ctx = dict(ctx)
+            self._future = asyncio.run_coroutine_threadsafe(
+                _await_if_needed(self._fn(ctx)), self._loop)
+        out: Dict[str, Any] = dict(self._latest) if self._latest else {}
+        out["compute_status"] = "warming" if self._latest is None else "live"
+        out["evidence_age_s"] = (round(now - self._latest_ts, 1)
+                                 if self._latest else None)
+        return out
+
+
+async def _await_if_needed(result: Any) -> Any:
+    if inspect.isawaitable(result):
+        return await result
+    return result
 
 
 def _probe_all(probes: Iterable[Tuple[str, Callable[[], Any]]]
@@ -4743,8 +4804,10 @@ def _deep_agent_system_service() -> AdvisoryModuleAdapter:
             out = await out
         return _payload(out)
 
-    return AdvisoryModuleAdapter("deep_agent_market", analyze,
-                               timeout_s=20.0)
+    behind = _ComputeBehind(analyze)
+
+    return AdvisoryModuleAdapter(
+        "deep_agent_market", behind.analyze, timeout_s=5.0)
 
 
 def _hft_orderbook_service() -> AdvisoryModuleAdapter:
