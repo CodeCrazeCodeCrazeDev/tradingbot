@@ -133,3 +133,81 @@ top-priority advisory defects. Measured evidence below.
   risk/state_provider.py, cTrader trio, docs readme) left untouched.
 - Warmup cost, live-only L2 replay caveat, dashboard duplicates as
   before.
+
+---
+
+## Session 2 — P3/P2 implemented + live validation — 2026-11-05
+
+### P3 — sim EV discrimination (was: no_discrimination)
+
+- `cognition/simulation/engine.py`: new `feature_priors` channel in
+  `scenario_adjustments` — bounded (+-0.4) weight*value contributions to
+  the drift coefficient on BOTH the heuristic and MC paths; results now
+  carry `feature_contributions` + `feature_drift_source`
+  (none/assumed/measured/mixed), same provenance discipline as
+  `alignment_prior_source`.
+- `core/csc/hypothesis.simulate_branches`: injects a MEASURED
+  `alignment_prior` derived from the observation's `ret_autocorr` (the
+  controller's existing regime-validity discriminator — negative-
+  autocorrelation chop is where aligned trades measured net-negative)
+  and emits sign-aligned feature priors from real obs fields:
+  `momentum_x_action`, `rsi_fade`, `order_imbalance` (only when
+  `order_book_time=="live"` — the replay book is anachronistic and
+  stays out of the drift).
+- Measured effect (synthetic states): trend BUY +0.0059 vs SELL
+  -0.0062; chop BUY -0.0019 vs SELL -0.0008. Weights are small assumed
+  priors flagged for outcome attribution — discrimination exists; edge
+  still has to be measured.
+- Tests: `test_feature_priors_make_ev_discriminate`,
+  `test_measured_alignment_prior_flips_drift_sign` — both green;
+  cognition suite 17/17, CSC suites 42/42.
+
+### P2 — honest live L2 (was: anachronistic replay book)
+
+- `paper_runner --source hl_live`: follows Hyperliquid candle closes
+  (`--hl-poll-s`, default 15s) and fetches the book at bar-detection
+  time — genuinely point-in-time order flow (`order_book_time="live"`),
+  `volume_kind="real"` (HL perp volume is real, not a tick proxy).
+  `--seed-bars` warms windows from strictly-prior closed candles from
+  the same venue. Verified via stubbed feeds (closed-bar emission,
+  forming-bar suppression, dedup, book attach, seed shape);
+  recovery-plan suite 16/16.
+
+### Validation run (hermes env, real code path)
+
+`paper_runner --source db --db-path hl_data.db --symbol BTC
+--timeframe 15m --skip 12000 --cycles 4 --seed-bars 64 --hl-l2`:
+
+- 4 cycles processed, clean shutdown. Funnel: 4 obs -> 4 terminal
+  ABSTAIN, 837 advisory artifacts, 442 substantive, 32 directional
+  calls, 16 hypothesis branches, `won_by_branch_range` x4.
+- ZERO "too many values to unpack" (was x35/run). ZERO hawkes
+  isoformat errors (was 5/run). ZERO hft_orderbook_imbalance
+  exceptions — the live book reaches the electorate.
+- Residual: 3 advisor_exceptions = hivemind_collective,
+  analysis_market_intel, deep_agent_market x1 each. Root cause
+  measured: 7s-5min per-call variance under full-electorate load —
+  no timeout value fixes that. `_ComputeBehind` added: heavy advisors
+  run on a dedicated worker event loop/thread
+  (`run_coroutine_threadsafe`), returning the freshest completed
+  payload instantly tagged `compute_status`/`evidence_age_s`. The
+  pipeline can no longer be starved; one computation in flight max.
+  Unit-verified + contract tests pass. (The run predates this commit —
+  next validation run should show 0 heavy-advisor failures.)
+
+### Foreign-session work preserved
+
+Committed the uncommitted cTrader-demo package (adapter pinned to
+demo endpoint + isLive check, runner/preflight scripts, 31 broker
+tests green, unified_bot ctrader_demo mode, state_provider fix,
+tv_sync.py retired) and removed the NUL junk file. Working tree is
+now clean of stranded sessions.
+
+### Status of the vertical slice
+
+Full loop RUNS end-to-end with real evidence flow: obs ->
+207 advisors (incl. real L2 imbalance + hawkes intensity) ->
+branches -> verification -> sim (now discriminating, measured prior)
+-> decision -> audited ABSTAIN -> snapshot. Remaining blocker
+unchanged: no verified directional edge — everything downstream of
+the sim gate is now capable of ranking candidates when one appears.
