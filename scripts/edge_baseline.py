@@ -99,9 +99,59 @@ def rule_meanrev(closes, i):
     return 0
 
 
+def rule_donchian(closes, i):
+    """Donchian breakout: close breaks the 20-bar close channel ->
+    follow the break direction."""
+    if i < 22:
+        return 0
+    hi = np.max(closes[i - 20:i])
+    lo = np.min(closes[i - 20:i])
+    if closes[i] > hi:
+        return 1
+    if closes[i] < lo:
+        return -1
+    return 0
+
+
+def rule_er_trend(closes, i):
+    """Kaufman efficiency-ratio trend follow: persistent moves
+    (ER > 0.3 over 10 bars) get followed; chop is ignored. Same
+    discriminator the runtime uses for trend_strength."""
+    if i < 15:
+        return 0
+    net = closes[i] - closes[i - 10]
+    path = float(np.abs(np.diff(closes[i - 10:i + 1])).sum())
+    if path <= 0:
+        return 0
+    er = abs(net) / path
+    if er <= 0.3:
+        return 0
+    return 1 if net > 0 else -1
+
+
+def rule_rsi_fade(closes, i):
+    """RSI-14 fade: oversold -> long, overbought -> short. The
+    symmetric short leg is what the runtime's rsi_fade feature
+    prior also assumes."""
+    if i < 16:
+        return 0
+    d = np.diff(closes[i - 14:i + 1])
+    g = d[d > 0].sum()
+    lo = -d[d < 0].sum()
+    rsi = 100.0 if lo == 0 else 100.0 - 100.0 / (1.0 + g / lo)
+    if rsi < 30:
+        return 1
+    if rsi > 70:
+        return -1
+    return 0
+
+
 RULES = {"pullback_long": rule_pullback_long,
          "momentum": rule_momentum,
-         "meanrev": rule_meanrev}
+         "meanrev": rule_meanrev,
+         "donchian": rule_donchian,
+         "er_trend": rule_er_trend,
+         "rsi_fade": rule_rsi_fade}
 
 
 def block_bootstrap_lcb(returns, block=8, n_boot=2000, seed=7):

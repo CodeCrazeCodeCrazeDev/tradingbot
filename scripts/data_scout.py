@@ -36,6 +36,11 @@ _KRAKEN_PAIRS = {"BTC": "XXBTZUSD", "ETH": "XETHZUSD",
                  "SOL": "SOLUSD", "XRP": "XXRPZUSD",
                  "DOGE": "XDGUSD", "LTC": "XLTCZUSD"}
 _KRAKEN_TF = {"5m": 5, "15m": 15, "1h": 60, "4h": 240, "1d": 1440}
+_BINANCE = "https://api.binance.com/api/v3/klines"
+_BINANCE_SYM = {"BTC": "BTCUSDT", "ETH": "ETHUSDT", "SOL": "SOLUSDT",
+                "XRP": "XRPUSDT", "DOGE": "DOGEUSDT", "LTC": "LTCUSDT"}
+_BINANCE_TF = {"5m": "5m", "15m": "15m", "1h": "1h",
+               "4h": "4h", "1d": "1d"}
 
 
 def run(cmd: list[str]) -> tuple[int, str]:
@@ -51,14 +56,32 @@ def kraken_sync(coin: str, tf: str, db_path: str) -> int:
     interval = _KRAKEN_TF.get(tf)
     if pair is None or interval is None:
         return 0
-    url = (f"{_KRAKEN}?pair={pair}&interval={interval}&since="
-           f"{int(time.time()) - 720 * 24 * 3600}")
-    req = urllib.request.Request(
-        url, headers={"User-Agent": "alphaalgo-research/1.0"})
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        result = json.loads(resp.read())["result"]
-    rows_raw = next((v for k, v in result.items() if isinstance(v, list)
-                     and v and isinstance(v[0], list)), [])
+    # Paginate on the `last` cursor: one request caps ~720 bars, which
+    # left cross-venue eval windows too thin to reject the null.
+    rows_raw = []
+    since = int(time.time()) - 200 * 24 * 3600
+    for _ in range(12):
+        url = f"{_KRAKEN}?pair={pair}&interval={interval}&since={since}"
+        req = urllib.request.Request(
+            url, headers={"User-Agent": "alphaalgo-research/1.0"})
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            result = json.loads(resp.read())["result"]
+        batch = next((v for k, v in result.items() if isinstance(v, list)
+                      and v and isinstance(v[0], list)), [])
+        if not batch:
+            break
+        rows_raw.extend(batch)
+        cursor = int(result.get("last") or 0)
+        if cursor <= since or len(batch) < 2:
+            break
+        since = cursor
+    # dedupe on timestamp (pages overlap at the seam)
+    seen, dedup = set(), []
+    for r in rows_raw:
+        if int(r[0]) not in seen:
+            seen.add(int(r[0]))
+            dedup.append(r)
+    rows_raw = dedup
     con = sqlite3.connect(db_path)
     try:
         con.execute(
@@ -69,6 +92,9 @@ def kraken_sync(coin: str, tf: str, db_path: str) -> int:
         con.execute(
             "CREATE INDEX IF NOT EXISTS idx_md ON "
             "market_data(symbol, timeframe, timestamp)")
+        con.execute(
+            "DELETE FROM market_data WHERE symbol=? AND timeframe=?",
+            (coin, tf))
         for r in rows_raw:
             ts = time.strftime("%Y-%m-%dT%H:%M:%S+00:00",
                                time.gmtime(int(r[0])))
@@ -78,6 +104,62 @@ def kraken_sync(coin: str, tf: str, db_path: str) -> int:
                 " VALUES(?,?,?,?,?,?,?,?)",
                 (ts, coin, tf, float(r[1]), float(r[2]), float(r[3]),
                  float(r[4]), float(r[6])))
+        con.commit()
+        return con.execute(
+            "SELECT COUNT(*) FROM market_data "
+            "WHERE symbol=? AND timeframe=?", (coin, tf)).fetchone()[0]
+    finally:
+        con.close()
+
+
+def binance_sync(coin: str, tf: str, db_path: str,
+                 days: int = 200) -> int:
+    """Keyless Binance spot klines -> market_data schema. Unlike
+    Kraken's 720-row OHLC cap, klines paginate via startTime — deep
+    enough for multi-segment walk-forward. Third venue for the
+    cross-venue edge gate."""
+    sym = _BINANCE_SYM.get(coin)
+    interval = _BINANCE_TF.get(tf)
+    if sym is None or interval is None:
+        return 0
+    end = int(time.time() * 1000)
+    cur = end - days * 86_400_000
+    rows_raw = []
+    while cur < end:
+        url = (f"{_BINANCE}?symbol={sym}&interval={interval}"
+               f"&startTime={cur}&endTime={end}&limit=1000")
+        req = urllib.request.Request(
+            url, headers={"User-Agent": "alphaalgo-research/1.0"})
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            batch = json.loads(resp.read())
+        if not batch:
+            break
+        rows_raw.extend(batch)
+        cur = int(batch[-1][0]) + 1
+        if len(batch) < 1000:
+            break
+    con = sqlite3.connect(db_path)
+    try:
+        con.execute(
+            "CREATE TABLE IF NOT EXISTS market_data ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, "
+            "symbol TEXT, timeframe TEXT, open REAL, high REAL, "
+            "low REAL, close REAL, volume REAL)")
+        con.execute(
+            "CREATE INDEX IF NOT EXISTS idx_md ON "
+            "market_data(symbol, timeframe, timestamp)")
+        con.execute(
+            "DELETE FROM market_data WHERE symbol=? AND timeframe=?",
+            (coin, tf))
+        for r in rows_raw:
+            ts = time.strftime("%Y-%m-%dT%H:%M:%S+00:00",
+                               time.gmtime(int(r[0]) // 1000))
+            con.execute(
+                "INSERT INTO market_data"
+                "(timestamp,symbol,timeframe,open,high,low,close,volume)"
+                " VALUES(?,?,?,?,?,?,?,?)",
+                (ts, coin, tf, float(r[1]), float(r[2]), float(r[3]),
+                 float(r[4]), float(r[5])))
         con.commit()
         return con.execute(
             "SELECT COUNT(*) FROM market_data "
@@ -98,6 +180,12 @@ def scout(coins, timeframes, days, db_path, horizon,
                 try:
                     n = kraken_sync(coin, tf, str(db_path))
                     rc, log = (0, f"kraken {coin} {tf}: {n} rows")
+                except Exception as exc:
+                    rc, log = 1, str(exc)
+            elif source == "binance":
+                try:
+                    n = binance_sync(coin, tf, str(db_path), days=days)
+                    rc, log = (0, f"binance {coin} {tf}: {n} rows")
                 except Exception as exc:
                     rc, log = 1, str(exc)
             else:
@@ -164,13 +252,16 @@ def main() -> int:
     ap.add_argument("--days", type=int, default=60)
     ap.add_argument("--horizon", type=int, default=4)
     ap.add_argument("--db-path", default="hl_data.db")
-    ap.add_argument("--source", choices=("hyperliquid", "kraken"),
+    ap.add_argument("--source",
+                    choices=("hyperliquid", "kraken", "binance"),
                     default="hyperliquid",
-                    help="kraken uses its own db (default kraken_data.db "
-                         "if --db-path left at default)")
+                    help="kraken/binance use their own db (kraken_data.db "
+                         "/ binance_data.db if --db-path left at default)")
     args = ap.parse_args()
     if args.source == "kraken" and args.db_path == "hl_data.db":
         args.db_path = "kraken_data.db"
+    if args.source == "binance" and args.db_path == "hl_data.db":
+        args.db_path = "binance_data.db"
     out = scout([c.strip() for c in args.coins.split(",") if c.strip()],
                 [t.strip() for t in args.timeframes.split(",") if t.strip()],
                 args.days, args.db_path, args.horizon, args.source)

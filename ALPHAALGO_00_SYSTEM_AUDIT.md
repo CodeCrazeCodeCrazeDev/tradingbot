@@ -211,3 +211,58 @@ branches -> verification -> sim (now discriminating, measured prior)
 -> decision -> audited ABSTAIN -> snapshot. Remaining blocker
 unchanged: no verified directional edge — everything downstream of
 the sim gate is now capable of ranking candidates when one appears.
+
+---
+
+## Session 3 — P4 edge hunt + P5 gate — 2026-11-05
+
+### New measurement infrastructure
+
+- `scripts/edge_baseline.py`: rule set widened 3 -> 6 (added
+  `donchian`, `er_trend`, `rsi_fade` — the last two mirror the sim
+  feature priors so measured verdicts can later replace assumed
+  weights).
+- `scripts/data_scout.py`: Kraken sync now paginates (single-request
+  cap made every cross-venue window 720 bars = insufficient); added
+  `binance` source (keyless klines, full pagination) -> `binance_data.db`
+  now holds 6 coins x {15m,1h,4h}, 200 days deep (19,200 bars/15m).
+- `scripts/edge_gate.py` (new, P5): walk-forward cross-venue gate.
+  Eval tail split into K chronological segments; a rule must clear
+  bootstrap 5% LCB > margin on EVERY segment AND on >= min-venues
+  independent venues to be a `qualified_candidate`. Same embargo +
+  Roll-floored cost model as edge_baseline.
+
+### Gate results (measured, not asserted)
+
+| Grid | Combos | Qualified | Detail |
+|---|---|---|---|
+| crypto 15m | 6 coins x 2 venues | 0/36 | all rejected 0/2 venues |
+| crypto 1h | 6 coins x 2 venues | 0/36 | all rejected 0/2 venues |
+| FX | EURUSD/GBPUSD/USDJPY M15 + EURUSD/GBPUSD H1 | 0/30 | all rejected |
+
+102 segment-level rule evaluations, zero passes anywhere. Best
+single-segment LCB observed: -5.4 bps (er_trend BTC 15m) — not
+borderline, clearly negative after costs. Reports:
+var/edge_gate_{15m,1h,fx}.json.
+
+**Interpretation:** 6 simple technical rules hold no net-of-cost edge
+on 6 crypto pairs (2 venues) or 3 FX majors, M15-H1, 200d/2.5y
+windows. The honest "no edge" verdict now rests on ~40x deeper
+measurement than the single-window baseline that produced it.
+
+### Confirmation run (compute-behind, in progress at write time)
+
+paper_runner 4-cycle BTC replay: **0 advisory failures** so far
+(previous run: 3 heavy-advisor timeouts). Compute-behind verified
+end-to-end.
+
+### What this means for the roadmap
+
+The vertical slice is complete and every gate is honest: the system
+abstains because the evidence says abstain. Remaining edge-hunt
+options ranked by prior: (a) order-flow/microstructure features —
+only measurable via the hl_live soak (item 4), untestable on OHLC;
+(b) cross-asset lead-lag (lead_lag advisor exists, untested);
+(c) longer-horizon/regime-conditioned rules — the gate is built,
+rules are cheap to add. Anything not measurable on candle data can't
+be honestly evaluated until the soak produces labeled L2 outcomes.
