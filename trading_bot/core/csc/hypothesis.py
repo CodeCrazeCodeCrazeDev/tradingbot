@@ -368,6 +368,7 @@ class HypothesisGenerator:
         self,
         branches: List[ReasoningBranch],
         market_data: Optional[Dict[str, Any]] = None,
+        measured_features: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Runs the counterfactual simulator for each reasoning branch and
@@ -401,6 +402,18 @@ class HypothesisGenerator:
         if ac is not None:
             base_scen["alignment_prior"] = _clip(ac * 3.0)
 
+        def _weight(name: str, assumed: float) -> tuple:
+            """Measured weight from settled attribution, else the small
+            assumed prior. mean_realized is a per-trade return (~1e-3
+            scale); x100 maps it onto the drift-weight scale and lets a
+            negative earner flip sign — measured > assumed either way."""
+            mf = measured_features or {}
+            st = mf.get(name)
+            if (isinstance(st, dict) and st.get("status") == "measured"
+                    and isinstance(st.get("mean_realized"), (int, float))):
+                return _clip(st["mean_realized"] * 100.0, -0.5, 0.5),                     "measured"
+            return assumed, "assumed"
+
         def _feature_priors(action: str) -> Dict[str, Dict[str, Any]]:
             """Sign-aligned per-candidate features so EV discriminates
             between market states sharing a trend label. Weights are
@@ -414,23 +427,26 @@ class HypothesisGenerator:
             feats: Dict[str, Dict[str, Any]] = {}
             mom = _finite_float(obs.get("momentum"))
             if mom is not None:
+                w, s = _weight("momentum_x_action", 0.25)
                 feats["momentum_x_action"] = {
                     "value": _clip(mom / 0.005 * sign),
-                    "weight": 0.25, "source": "assumed"}
+                    "weight": w, "source": s}
             rsi = _finite_float(obs.get("rsi"))
             if rsi is not None:
+                w, s = _weight("rsi_fade", 0.2)
                 feats["rsi_fade"] = {
                     "value": _clip((50.0 - rsi) / 50.0 * sign),
-                    "weight": 0.2, "source": "assumed"}
+                    "weight": w, "source": s}
             # L2 imbalance only when the book is point-in-time valid —
             # in replay the runner flags the live book anachronistically;
             # a book attached to a historical bar is not evidence.
             if obs.get("order_book_time") == "live":
                 imb = _finite_float(obs.get("imbalance_ratio"))
                 if imb is not None:
+                    w, s = _weight("order_imbalance", 0.3)
                     feats["order_imbalance"] = {
                         "value": _clip(imb * sign),
-                        "weight": 0.3, "source": "assumed"}
+                        "weight": w, "source": s}
             return feats
 
         for branch in branches:

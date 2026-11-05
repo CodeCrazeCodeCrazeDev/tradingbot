@@ -3874,7 +3874,9 @@ class CognitiveSystemController:
             try:
                 sim_results = await self._safe_await(
                     self.hypothesis_gen.simulate_branches(
-                        branches, market_data=observation)) or {}
+                        branches, market_data=observation,
+                        measured_features=(
+                            self.feature_attribution_report()))) or {}
             except Exception as e:
                 logger.warning(f"CSC-V6: Causal simulation error: {e}")
                 sim_results = {}
