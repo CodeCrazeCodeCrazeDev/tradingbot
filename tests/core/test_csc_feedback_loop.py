@@ -18,6 +18,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from trading_bot.core.alphaalgo_core_engine import DecisionOutcome
 from trading_bot.core.csc.controller import CognitiveSystemController
+from trading_bot.core.csc.hypothesis import ReasoningBranch
 from trading_bot.core.hms.models import VerifierReport
 
 
@@ -432,3 +433,225 @@ class TestOperatorReadSurface:
 
         none = await rm.explain_decision("no-such-trade")
         assert none["status"] == "no_record"
+
+
+def _explore_branch(branch_id, action, quantity=1.0, confidence=0.8,
+                    probability=0.5, uncertainty=0.1):
+    return ReasoningBranch(
+        branch_id=branch_id,
+        name=branch_id,
+        confidence=confidence,
+        probability=probability,
+        uncertainty=uncertainty,
+        execution_plan={
+            "action": action,
+            "symbol": "EURUSD",
+            "quantity": quantity,
+        })
+
+
+class TestExploreProbe:
+    """Bounded exploration (TB_CSC_EXPLORE_BUDGET) must promote a
+    directional probe only when the electorate's winner is nondirectional,
+    cap its size, bypass ONLY the net-cost gate, and spend budget solely
+    at approval — risk, shield, governance, and consensus still gate it."""
+
+    @staticmethod
+    def _synthesize(csc, winner, sim_results, branches, trade_id="t-x"):
+        return csc._stage_synthesis(
+            winner, sim_results, trade_id, _obs(), branches=branches)
+
+    def test_budget_off_keeps_hold_winner(self, csc):
+        csc._explore_budget = 0
+        hold = _explore_branch("branch_hold", "HOLD")
+        bull = _explore_branch("branch_bull", "BUY")
+        proposal = self._synthesize(
+            csc, hold,
+            {"branch_hold": {}, "branch_bull": {"expected_value": 0.01}},
+            [hold, bull])
+        assert proposal["action"] == "HOLD"
+        assert proposal["quantity"] == 0.0
+        assert csc._funnel.get("explore_probes", 0) == 0
+
+    def test_probe_promotes_directional_and_caps_size(self, csc):
+        csc._explore_budget = 2
+        hold = _explore_branch("branch_hold", "HOLD")
+        bull = _explore_branch(
+            "branch_bull", "BUY", confidence=0.9, probability=0.6)
+        bear = _explore_branch(
+            "branch_bear", "SELL", confidence=0.5, probability=0.3)
+        proposal = self._synthesize(
+            csc, hold,
+            {"branch_hold": {},
+             "branch_bull": {"expected_value": 0.005},
+             "branch_bear": {"expected_value": 0.004}},
+            [hold, bull, bear])
+        assert proposal["action"] == "BUY"
+        assert proposal["exploratory"] is True
+        assert proposal["quantity"] == pytest.approx(csc._explore_factor)
+        assert csc._funnel["explore_probes"] == 1
+        # Budget is spent at approval, not at proposal time — a gated
+        # probe must not consume allowance it never used.
+        assert csc._explore_budget == 2
+
+    def test_probe_prefers_nonnegative_sim_ev(self, csc):
+        csc._explore_budget = 2
+        hold = _explore_branch("branch_hold", "HOLD")
+        # Higher score but negative sim EV -> the lower-scored
+        # non-negative-EV candidate wins promotion.
+        bear = _explore_branch(
+            "branch_bear", "SELL", confidence=0.95, probability=0.9)
+        bull = _explore_branch(
+            "branch_bull", "BUY", confidence=0.5, probability=0.4)
+        proposal = self._synthesize(
+            csc, hold,
+            {"branch_hold": {},
+             "branch_bear": {"expected_value": -0.5},
+             "branch_bull": {"expected_value": 0.0}},
+            [hold, bear, bull])
+        assert proposal["action"] == "BUY"
+        assert proposal["exploratory"] is True
+
+    def test_no_directional_candidate_keeps_hold(self, csc):
+        csc._explore_budget = 2
+        hold = _explore_branch("branch_hold", "HOLD")
+        rng = _explore_branch("branch_range", "WAIT")
+        proposal = self._synthesize(
+            csc, hold, {"branch_hold": {}, "branch_range": {}},
+            [hold, rng])
+        assert proposal["action"] == "HOLD"
+        assert csc._funnel.get("explore_probes", 0) == 0
+
+    def test_directional_winner_not_retagged_exploratory(self, csc):
+        csc._explore_budget = 2
+        # Moderate measured confidence so sizing survives the epistemic-
+        # uncertainty shrink — otherwise the (pre-existing) qty<=0 trap
+        # escape marks even a directional winner exploratory.
+        csc.state.epistemic_uncertainty = 0.5
+        # Seed realized EV pairs at par so the net-cost gate's calibration
+        # passes a genuine directional proposal through unchanged.
+        for _ in range(csc._ev_min_samples):
+            csc._ev_pairs.append((0.005, 0.005, "ranging"))
+        bull = _explore_branch("branch_bull", "BUY")
+        proposal = self._synthesize(
+            csc, bull, {"branch_bull": {"expected_value": 0.005}},
+            [bull])
+        assert proposal["action"] == "BUY"
+        assert proposal["exploratory"] is False
+        assert 0.0 < proposal["quantity"] <= 1.0
+        # The promotion path only fires for a nondirectional winner.
+        assert csc._funnel.get("explore_probes", 0) == 0
+
+    def test_exploratory_bypasses_net_cost_gate_only(self, csc):
+        proposal = {"action": "BUY", "symbol": "EURUSD",
+                    "exploratory": True}
+        branch = SimpleNamespace(branch_id="b1")
+        csc._apply_net_of_cost_gate(
+            proposal, branch, {"b1": {"expected_value": -1.0}}, _obs())
+        assert proposal["action"] == "BUY"  # not downgraded to HOLD
+        assert proposal["net_cost_bypass"] == "exploration"
+        assert csc._funnel["net_cost_explore_bypass"] == 1
+
+    @pytest.mark.asyncio
+    async def test_risk_gate_still_rejects_probe(self, csc):
+        class DenyRisk:
+            async def evaluate_action(self, proposal, obs):
+                return SimpleNamespace(
+                    approved=False, reason="exposure limit hit")
+
+        csc.risk_engine = DenyRisk()
+        proposal = {"action": "BUY", "symbol": "EURUSD", "quantity": 0.1,
+                    "exploratory": True, "trade_id": "t-risk"}
+        terminal, _ = await csc._stage_risk_check(
+            proposal, _obs(), "t-risk")
+        assert terminal is not None
+        assert terminal.decision.outcome == DecisionOutcome.TRADE_REJECTED
+        assert "Risk" in terminal.decision.dominant_rejection_reason
+
+    @pytest.mark.asyncio
+    async def test_shield_gate_still_rejects_probe(self, csc):
+        class VetoShield:
+            async def validate_action(self, kind, proposal, context):
+                return SimpleNamespace(
+                    decision="VETOED", reason="shield veto")
+
+        csc.shield = VetoShield()
+        proposal = {"action": "BUY", "symbol": "EURUSD", "quantity": 0.1,
+                    "exploratory": True, "trade_id": "t-shield"}
+        terminal = await csc._stage_shield(proposal, _obs())
+        assert terminal is not None
+        assert terminal.decision.outcome == DecisionOutcome.TRADE_REJECTED
+        assert "Shield" in terminal.decision.dominant_rejection_reason
+
+    @pytest.mark.asyncio
+    async def test_governance_gate_still_rejects_probe(self, csc):
+        class DenyGate:
+            async def authorize(self, action, payload, context):
+                return SimpleNamespace(
+                    approved=False, reason="operator denied")
+
+        csc._governance_gate_resolved = True
+        csc.governance_gate = DenyGate()
+        proposal = {"action": "BUY", "symbol": "EURUSD", "quantity": 0.1,
+                    "exploratory": True, "trade_id": "t-gov"}
+        terminal = await csc._stage_governance(
+            proposal, _obs(), None, "t-gov")
+        assert terminal is not None
+        assert terminal.decision.outcome == DecisionOutcome.TRADE_REJECTED
+        assert "Governance" in terminal.decision.dominant_rejection_reason
+
+    @pytest.mark.asyncio
+    async def test_approved_probe_spends_budget_and_opens_position(
+            self, csc):
+        from trading_bot.core.unified_event_bus import ActionStatus
+
+        class ApproveBus:
+            async def propose_action(self, action):
+                action.status = ActionStatus.EXECUTED
+                action._completed_event.set()
+
+        csc.decision_bus = ApproveBus()
+        csc._explore_budget = 1
+        hold = _explore_branch("branch_hold", "HOLD")
+        bull = _explore_branch("branch_bull", "BUY")
+        proposal = self._synthesize(
+            csc, hold,
+            {"branch_hold": {}, "branch_bull": {"expected_value": 0.005}},
+            [hold, bull], trade_id="t-spend")
+        ledger = csc._create_ledger_entry(
+            bull, {"expected_value": 0.005})
+        decision = await csc._stage_execute_and_persist(
+            ledger, proposal, "t-spend", _obs())
+        assert decision.outcome == DecisionOutcome.TRADE_APPROVED
+        assert csc._explore_budget == 0
+        assert csc._funnel["exploratory_trades"] == 1
+        # A real pending prediction opened — the outcome feedback loop
+        # now has measurable fill to settle against.
+        assert "t-spend" in csc._pending_predictions
+
+    @pytest.mark.asyncio
+    async def test_vetoed_probe_keeps_budget_and_no_position(self, csc):
+        from trading_bot.core.unified_event_bus import ActionStatus
+
+        class VetoBus:
+            async def propose_action(self, action):
+                action.status = ActionStatus.VETOED
+                action._completed_event.set()
+
+        csc.decision_bus = VetoBus()
+        csc._explore_budget = 1
+        hold = _explore_branch("branch_hold", "HOLD")
+        bull = _explore_branch("branch_bull", "BUY")
+        proposal = self._synthesize(
+            csc, hold,
+            {"branch_hold": {}, "branch_bull": {"expected_value": 0.005}},
+            [hold, bull], trade_id="t-veto")
+        ledger = csc._create_ledger_entry(
+            bull, {"expected_value": 0.005})
+        decision = await csc._stage_execute_and_persist(
+            ledger, proposal, "t-veto", _obs())
+        assert decision.outcome == DecisionOutcome.TRADE_REJECTED
+        assert csc._explore_budget == 1  # vetoed probe spends nothing
+        assert csc._funnel.get("exploratory_trades", 0) == 0
+        assert "t-veto" not in csc._pending_predictions
+        assert "EURUSD" not in csc._open_positions

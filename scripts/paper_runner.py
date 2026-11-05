@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import dataclasses
 import json
 import logging
 import os
@@ -319,24 +320,36 @@ def synthetic_observations(symbol: str, n_bars: int, seed: int
     # Multi-regime: a single mean-reverting sine teaches regime-specific
     # behavior that does not transfer to real FX. Rotate trend, chop,
     # high-vol and a crash so learned state sees distribution shift.
+    # Short runs truncate blocks in order so total bars == n_bars; a
+    # small --cycles diagnostic must not produce a negative tail.
     q = max(8, n_bars // 8)
+    blocks = [
+        RegimeSpec("trend", q, drift=0.0004, vol=0.0006),
+        RegimeSpec("mean_revert", q, vol=0.0003, ar1=-0.25,
+                   sine_amp=0.008, sine_period=12),
+        RegimeSpec("high_vol", q, drift=-0.0001, vol=0.002),
+        RegimeSpec("flat", q, vol=0.0001),
+        RegimeSpec("crash", max(4, q // 2), drift=-0.006, vol=0.003),
+        RegimeSpec("mean_revert", q, vol=0.0004, ar1=-0.15,
+                   sine_amp=0.005, sine_period=20),
+        RegimeSpec("trend", q, drift=-0.0003, vol=0.0007),
+        # tail fills the remainder so n_bars is respected
+        RegimeSpec("high_vol", q, vol=0.001),
+    ]
+    regimes: List[RegimeSpec] = []
+    used = 0
+    for block in blocks:
+        take = min(block.n_bars, n_bars - used)
+        if take <= 0:
+            break
+        regimes.append(dataclasses.replace(block, n_bars=take))
+        used += take
+    if used < n_bars:
+        # Blocks exhausted before n_bars (q quantized below n_bars/8):
+        # the remainder becomes an explicit high-vol tail.
+        regimes.append(RegimeSpec("high_vol", n_bars - used, vol=0.001))
     spec = SyntheticMarketSpec(
-        seed=seed, instruments=(symbol,),
-        regimes=(
-            RegimeSpec("trend", q, drift=0.0004, vol=0.0006),
-            RegimeSpec("mean_revert", q, vol=0.0003, ar1=-0.25,
-                       sine_amp=0.008, sine_period=12),
-            RegimeSpec("high_vol", q, drift=-0.0001, vol=0.002),
-            RegimeSpec("flat", q, vol=0.0001),
-            RegimeSpec("crash", max(4, q // 2), drift=-0.006,
-                       vol=0.003),
-            RegimeSpec("mean_revert", q, vol=0.0004, ar1=-0.15,
-                       sine_amp=0.005, sine_period=20),
-            RegimeSpec("trend", q, drift=-0.0003, vol=0.0007),
-            # tail fills the remainder so n_bars is respected
-            RegimeSpec("high_vol",
-                       n_bars - q * 6 - max(4, q // 2), vol=0.001),
-        ))
+        seed=seed, instruments=(symbol,), regimes=tuple(regimes))
     frames = SyntheticMarketGenerator(spec).generate()
     frame = frames[symbol]
     for row in frame.to_dict("records"):
