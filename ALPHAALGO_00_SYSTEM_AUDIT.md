@@ -266,3 +266,25 @@ only measurable via the hl_live soak (item 4), untestable on OHLC;
 (c) longer-horizon/regime-conditioned rules — the gate is built,
 rules are cheap to add. Anything not measurable on candle data can't
 be honestly evaluated until the soak produces labeled L2 outcomes.
+
+### Lead-lag result (BTC -> majors, walk-forward + cross-venue gate)
+
+`scripts/edge_leadlag.py` (new): leader 1-bar return > threshold
+predicts follower return over next horizon; same LCB/segment/venue
+machinery as edge_gate.
+
+- 15m, horizon=1, thresh=0.15%: 0/10 venue-pairs qualified
+  (BTC->ETH/SOL/XRP/DOGE/LTC on HL+Binance). Best LCB -5.4bps.
+- 1h, horizon=1, thresh=0.3%: 0/10 qualified; all LCBs -3 to -34bps.
+
+Leader-conditioned follower trades are net-of-cost NEGATIVE
+everywhere tested — crypto majors co-move within the bar, not after
+it. Lead-lag on candle data: eliminated as an edge candidate. The
+only remaining candle-unmeasurable channel is order flow (hl_live
+soak running, var/hl_soak).
+
+### Confirmation run — final
+
+paper_runner 4-cycle BTC replay on compute-behind code finished
+clean: 4 cycles, 0 advisory failures (vs 3 timeouts on the prior
+run), 4 audited ABSTAIN, 0 fills. Compute-behind verified end-to-end.
