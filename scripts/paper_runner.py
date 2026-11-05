@@ -511,19 +511,22 @@ async def run(args: argparse.Namespace) -> int:
         seed_hl = [(r[1], r[2]) for r in rows]
         logger.info("seed-bars: %d strictly prior closes (replacing saved history)", len(history))
     csc = getattr(runtime.bot, "csc", None)
-    if csc is not None and _hl_needs:
-        hlq = getattr(csc, "_hl_history", None)
-        if isinstance(hlq, dict) and not hlq.get(args.symbol):
-            # State dir had closes but no HL bars — warm path_risk
-            # from the same seed rows so it isn't absent ~20 bars in.
-            for hh, ll in seed_hl:
-                if isinstance(hh, (int, float)) and isinstance(ll, (int, float)):
-                    from collections import deque as _dq
-                    hlq.setdefault(args.symbol, _dq(maxlen=64)).append(
-                        (float(hh), float(ll)))
+    if csc is not None:
+        if _hl_needs:
+            hlq = getattr(csc, "_hl_history", None)
+            if isinstance(hlq, dict) and not hlq.get(args.symbol):
+                # State dir had closes but no HL bars — warm path_risk
+                # from the same seed rows so it isn't absent ~20 bars in.
+                for hh, ll in seed_hl:
+                    if isinstance(hh, (int, float)) and isinstance(ll, (int, float)):
+                        from collections import deque as _dq
+                        hlq.setdefault(args.symbol, _dq(maxlen=64)).append(
+                            (float(hh), float(ll)))
         # Position closes must hit the ledger, not just CSC bookkeeping —
         # wire the canonical execution service so horizon/adverse/reversal
-        # exits submit real opposing orders.
+        # exits submit real opposing orders. This must NOT be gated on
+        # --seed-bars: without it every close is mark-only and the venue
+        # ledger keeps exposure the brain believes is flat.
         csc.configure_execution_service(runtime.bot.execution_service)
         # Swarm knowledge base persists beside the run state — learned
         # node skill and patterns survive restarts.
