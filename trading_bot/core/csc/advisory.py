@@ -4530,10 +4530,12 @@ def _marl_strategists_service() -> AdvisoryModuleAdapter:
         hist.add(ctx)
         if len(hist) < 20:
             return {"status": "warming", "bars": len(hist)}
+        prices = hist.prices()
         md = dict(_numeric_fields(ctx))
         md.update({"symbol": ctx.get("symbol"),
-                   "prices": hist.prices(),
-                   "ohlcv": hist.bars(60)})
+                   "prices": prices,
+                   "prices_htf": prices,
+                   "prices_ltf": prices})
         out: Dict[str, Any] = {}
         for key, agent in (("macro_strategist", macro),
                            ("tactical_executioner", tact)):
