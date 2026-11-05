@@ -3902,11 +3902,48 @@ class CognitiveSystemController:
     def _stage_synthesis(
         self, best_branch: ReasoningBranch, sim_results: Dict[str, Any],
         trade_id: str, obs_dict: Dict[str, Any],
+        branches: Optional[List[ReasoningBranch]] = None,
     ) -> Dict[str, Any]:
         """Post-verification synthesis: final trade proposal from the
         verified branch, grounded in the observation's symbol/price."""
+        _explore_probe = False
+        _win_action = str(
+            (best_branch.execution_plan or {}).get("action", "")
+        ).upper()
+        if self._explore_budget > 0                 and _win_action not in ("BUY", "SELL") and branches:
+            # Explore-probe promotion: the electorate's honest verdict
+            # is nondirectional every cycle, so the exploration budget
+            # would otherwise never engage and _ev_pairs/_feature_pairs
+            # would never refill. Promote the highest-scoring
+            # directional branch (preferring non-negative sim EV) as a
+            # bounded exploratory probe — tagged, sized at ~10%, and
+            # still routed through risk/shield/governance downstream.
+            _dir_cands = [
+                b for b in branches
+                if str((b.execution_plan or {}).get("action", "")
+                       ).upper() in ("BUY", "SELL")]
+            if _dir_cands:
+                def _score(b):
+                    return (b.confidence * b.probability
+                            * (1.0 - b.uncertainty))
+                _dir_cands.sort(key=_score, reverse=True)
+                def _sim_ev(b):
+                    sd = sim_results.get(b.branch_id)
+                    ev = sd.get("expected_value") if isinstance(sd, dict)                         else None
+                    return ev if isinstance(ev, (int, float)) else 0.0
+                best_branch = next(
+                    (b for b in _dir_cands if _sim_ev(b) >= 0.0),
+                    _dir_cands[0])
+                _explore_probe = True
+                self._funnel["explore_probes"] =                     self._funnel.get("explore_probes", 0) + 1
         decision_proposal = self._select_optimal_action(
             best_branch, sim_results, trade_id=trade_id, market_data=obs_dict)
+        if _explore_probe and isinstance(decision_proposal, dict):
+            decision_proposal["exploratory"] = True
+            _q = decision_proposal.get("quantity")
+            if isinstance(_q, (int, float)) and _q > 0:
+                decision_proposal["quantity"] = min(
+                    float(_q), float(self._explore_factor))
         if decision_proposal and isinstance(decision_proposal, dict):
             decision_proposal["trade_id"] = trade_id
             # Execution price should be the freshest real mark, not the
@@ -4895,7 +4932,8 @@ class CognitiveSystemController:
 
         # 9. Decision synthesis on the verified branch
         decision_proposal = self._stage_synthesis(
-            best_branch, sim_results, trade_id, obs_dict)
+            best_branch, sim_results, trade_id, obs_dict,
+            branches=branches)
         self._funnel["synthesis"] += 1
 
         # 10-12. Execution gates apply to capital-moving proposals only —
