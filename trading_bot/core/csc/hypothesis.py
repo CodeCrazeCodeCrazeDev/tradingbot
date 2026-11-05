@@ -377,14 +377,61 @@ class HypothesisGenerator:
         failure_rate, mc_p95_drawdown, invalidation_triggers, ...}}``.
         """
         simulation_results: Dict[str, Any] = {}
+        obs = market_data if isinstance(market_data, dict) else {}
         try:
             simulator = self._get_simulator()
-            market_state = self._build_market_state(market_data or {})
+            market_state = self._build_market_state(obs)
         except Exception as exc:
             logger.warning(f"HypothesisGen: simulator unavailable: {exc}")
             return {b.branch_id: {} for b in branches}
 
         from ...cognition.simulation.contracts import SimulationRequest
+
+        def _clip(v: float, lo: float = -1.0, hi: float = 1.0) -> float:
+            return max(lo, min(hi, v))
+
+        # Measured alignment prior: the controller derives ret_autocorr
+        # (lag-1 return autocorrelation) as the regime-validity
+        # discriminator — negative autocorr is the chop where
+        # trend-following priors measured anti-predictive. Injecting it
+        # here turns the simulator's assumed +1 trend-continuation prior
+        # into a measured one; ~+-0.33 autocorr saturates the prior.
+        base_scen: Dict[str, Any] = {}
+        ac = _finite_float(obs.get("ret_autocorr"))
+        if ac is not None:
+            base_scen["alignment_prior"] = _clip(ac * 3.0)
+
+        def _feature_priors(action: str) -> Dict[str, Dict[str, Any]]:
+            """Sign-aligned per-candidate features so EV discriminates
+            between market states sharing a trend label. Weights are
+            deliberately small (drift contribution is capped at +-0.4 in
+            the engine) and marked 'assumed' until outcome attribution
+            measures them — same provenance discipline as
+            alignment_prior_source."""
+            sign = {"BUY": 1.0, "SELL": -1.0}.get(action)
+            if sign is None:
+                return {}
+            feats: Dict[str, Dict[str, Any]] = {}
+            mom = _finite_float(obs.get("momentum"))
+            if mom is not None:
+                feats["momentum_x_action"] = {
+                    "value": _clip(mom / 0.005 * sign),
+                    "weight": 0.25, "source": "assumed"}
+            rsi = _finite_float(obs.get("rsi"))
+            if rsi is not None:
+                feats["rsi_fade"] = {
+                    "value": _clip((50.0 - rsi) / 50.0 * sign),
+                    "weight": 0.2, "source": "assumed"}
+            # L2 imbalance only when the book is point-in-time valid —
+            # in replay the runner flags the live book anachronistically;
+            # a book attached to a historical bar is not evidence.
+            if obs.get("order_book_time") == "live":
+                imb = _finite_float(obs.get("imbalance_ratio"))
+                if imb is not None:
+                    feats["order_imbalance"] = {
+                        "value": _clip(imb * sign),
+                        "weight": 0.3, "source": "assumed"}
+            return feats
 
         for branch in branches:
             plan = branch.execution_plan if isinstance(
@@ -392,12 +439,17 @@ class HypothesisGenerator:
             action = str(plan.get("action") or "HOLD")
             size = _finite_float(
                 plan.get("quantity", plan.get("position_size"))) or 0.1
+            scen = dict(base_scen)
+            feats = _feature_priors(action)
+            if feats:
+                scen["feature_priors"] = feats
             try:
                 result = simulator.simulate(SimulationRequest(
                     request_id=f"{branch.branch_id}:{market_state.instrument}",
                     current_state=market_state,
                     proposed_action=action,
                     position_size=max(0.0, size),
+                    scenario_adjustments=scen,
                     monte_carlo_paths=64,
                 ))
                 sim = {
@@ -408,6 +460,9 @@ class HypothesisGenerator:
                     "mc_p95_drawdown": result.mc_p95_drawdown,
                     "invalidation_triggers": result.invalidation_triggers,
                     "mc_paths": result.mc_paths,
+                    "alignment_prior_source": result.alignment_prior_source,
+                    "feature_drift_source": result.feature_drift_source,
+                    "feature_contributions": result.feature_contributions,
                 }
             except Exception as exc:
                 logger.warning(

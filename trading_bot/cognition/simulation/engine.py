@@ -28,7 +28,8 @@ class CounterfactualSimulator:
 
     def _monte_carlo(self, request: SimulationRequest, state: MarketState,
                      aligned: bool, vol_mult: float,
-                     prior: float = 1.0) -> Dict[str, float]:
+                     prior: float = 1.0,
+                     feature_drift: float = 0.0) -> Dict[str, float]:
         """Fat-tailed Monte Carlo: Student-t shocks, seeded by request_id so
         the same observation always produces the same empiricals (determinism)."""
         rng = np.random.default_rng(zlib.crc32(request.request_id.encode()))
@@ -38,6 +39,7 @@ class CounterfactualSimulator:
         strength = float(np.clip(getattr(state, "trend_strength", 0.0) or 0.0, 0.0, 1.0))
         drift = 0.0002 * prior * (1.2 * strength if aligned
                                 else -(0.4 + 0.8 * strength))
+        drift += 0.0002 * feature_drift
         sign = 1.0 if request.proposed_action == "BUY" else (-1.0 if request.proposed_action == "SELL" else 0.0)
 
         # Standardized Student-t (unit variance) shocks
@@ -104,6 +106,42 @@ class CounterfactualSimulator:
         else:
             drift_coef = -0.3
 
+        # Per-candidate feature drift: scenario_adjustments["feature_priors"]
+        # maps name -> {"value", "weight", "source"} (a bare scalar is a
+        # value with default weight, marked assumed). Each feature
+        # contributes weight*value to the drift coefficient — this is what
+        # lets EV discriminate between candidates/market states that share
+        # the same trend label. Bounded at +-0.4 so alignment remains the
+        # dominant term; contributions are recorded for attribution.
+        feature_priors = request.scenario_adjustments.get(
+            "feature_priors") or {}
+        feature_contributions: Dict[str, float] = {}
+        feature_sources = set()
+        feature_drift = 0.0
+        if isinstance(feature_priors, dict):
+            for name, spec in feature_priors.items():
+                if isinstance(spec, dict):
+                    raw_v, raw_w = spec.get("value"), spec.get("weight")
+                    src = str(spec.get("source") or "assumed")
+                else:
+                    raw_v, raw_w, src = spec, 0.2, "assumed"
+                try:
+                    val = float(np.clip(float(raw_v), -1.0, 1.0))
+                    w = float(np.clip(float(raw_w), -1.0, 1.0))
+                except (TypeError, ValueError):
+                    continue
+                contrib = w * val
+                if contrib:
+                    feature_contributions[str(name)] = round(contrib, 6)
+                    feature_drift += contrib
+                    feature_sources.add(src)
+        feature_drift = float(np.clip(feature_drift, -0.4, 0.4))
+        drift_coef = float(np.clip(drift_coef + feature_drift, -1.5, 1.5))
+        feature_drift_source = (
+            "none" if not feature_contributions else
+            next(iter(feature_sources)) if len(feature_sources) == 1
+            else "mixed")
+
         base_win_prob = 0.55 if aligned else (0.35 if opposed else 0.45)
         base_win_prob /= max(1.0, (vol_mult * 0.2 + spread_mult * 0.1))
 
@@ -139,7 +177,8 @@ class CounterfactualSimulator:
         mc: Dict[str, float] = {}
         if request.monte_carlo_paths > 0:
             mc = self._monte_carlo(request, state, aligned, vol_mult,
-                                   prior=prior)
+                                   prior=prior,
+                                   feature_drift=feature_drift)
             base_win_prob = 0.5 * base_win_prob + 0.5 * mc["mc_win_probability"]
 
         return SimulationResult(
@@ -156,4 +195,6 @@ class CounterfactualSimulator:
             mc_expected_value=mc.get("mc_expected_value"),
             mc_p95_drawdown=mc.get("mc_p95_drawdown"),
             alignment_prior_source=prior_src,
+            feature_drift_source=feature_drift_source,
+            feature_contributions=feature_contributions,
         )

@@ -47,3 +47,10 @@ class SimulationResult:
     # "assumed" = hardcoded trend-continuation prior (unmeasured);
     # "measured" = caller injected an outcome-estimated prior.
     alignment_prior_source: str = "assumed"
+    # Per-candidate feature drift (scenario_adjustments["feature_priors"]):
+    # "none" = no feature channel used; otherwise the source(s) of the
+    # feature weights ("assumed" | "measured" | "mixed").
+    feature_drift_source: str = "none"
+    # Per-feature signed contributions applied to the drift coefficient —
+    # recorded so attribution/audit can see WHICH feature moved the EV.
+    feature_contributions: Dict[str, float] = field(default_factory=dict)
