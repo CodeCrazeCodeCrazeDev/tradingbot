@@ -31,6 +31,10 @@ import numpy as np  # noqa: E402
 
 from scripts.edge_baseline import (  # noqa: E402
     RULES, block_bootstrap_lcb, evaluate, load_bars, roll_spread_bps)
+from scripts.edge_hypotheses import HYPOTHESES  # noqa: E402
+
+ALL_RULES = dict(RULES)
+ALL_RULES.update(HYPOTHESES)
 
 
 def segment_eval(closes, fn, horizon, seg_start, seg_end, cost_bps):
@@ -62,7 +66,7 @@ def gate_combo(db_path: Path, symbol: str, timeframe: str,
                n - eval_n + embargo + (k + 1) * seg_len)
               for k in range(segments)]
     out_rules = {}
-    for name, fn in RULES.items():
+    for name, fn in ALL_RULES.items():
         segs = [segment_eval(closes, fn, horizon, a, b, cost_bps)
                 for a, b in bounds]
         evaluated = [s for s in segs if s["status"] == "evaluated"]
