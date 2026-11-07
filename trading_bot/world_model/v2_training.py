@@ -23,7 +23,8 @@ class WorldModelTrainer:
 
 class WorldModelSpecialistTrainer(WorldModelTrainer):
 
-    def train_amt_step(self, batch: Dict[str, torch.Tensor]) -> float:
+    def train_amt_step(self, batch: Dict[str, torch.Tensor],
+                       extra_loss_fn=None) -> float:
         """Stage 1: Predictive Market Physics (self-supervised).
 
         ``batch``: {asset_type: [B, T, D] feature tensor}. The model
@@ -36,6 +37,11 @@ class WorldModelSpecialistTrainer(WorldModelTrainer):
 
         Loss = MSE(mu, z_{t+1}) + entropy penalty on the uncertainty
         head (prevents collapse to zero-variance predictions).
+
+        ``extra_loss_fn``: optional callable z_ctx[:, -1] -> scalar loss
+        (e.g. an observable-space decoder objective). Its gradients flow
+        into the encoder/core but its parameters need their own
+        optimizer — only model parameters are stepped here.
         """
         self.model.train()
         context = {k: v[:, :-1, :] for k, v in batch.items()}
@@ -53,6 +59,8 @@ class WorldModelSpecialistTrainer(WorldModelTrainer):
             uncertainty.mean(dim=0).norm().unsqueeze(0),
             torch.ones(1, device=mu.device))
         loss = pred_loss + 0.1 * unc_loss
+        if extra_loss_fn is not None:
+            loss = loss + extra_loss_fn(z_ctx[:, -1, :])
 
         self.optimizer.zero_grad()
         loss.backward()
