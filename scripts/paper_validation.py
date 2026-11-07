@@ -181,6 +181,9 @@ def main(argv=None):
                         help="hl_live: API interval (default: --timeframe)")
     parser.add_argument("--hl-poll-s", type=float, default=15.0,
                         help="hl_live: seconds between candle polls")
+    parser.add_argument("--seed-bars", type=int, default=64,
+                        help="advisory warmup bars; lower = shorter warmup "
+                             "(on loaded machines 64 bars exceeds a 1h run)")
     parser.add_argument("--hl-archive", default=None,
                         help="hl_live: JSONL path to archive every obs+book "
                              "(point-in-time orderflow history)")
@@ -210,10 +213,15 @@ def main(argv=None):
         command = [
             sys.executable, "-u", str(PROJECT_ROOT / "scripts" / "paper_runner.py"),
             "--source", args.source,
-            "--symbol", args.symbol, "--timeframe", args.timeframe,
+            "--symbol", args.symbol,
+            # hl_live: obs timeframe label must match the polled bar
+            # cadence or advisors frame 5m bars as M15.
+            "--timeframe", (args.hl_timeframe or args.timeframe)
+            if args.source == "hl_live" else args.timeframe,
             "--broker-tz-offset", "utc",
             "--state-dir", str(state_dir), "--cycles", "0", "--interval", "1",
-            "--skip", "64", "--seed-bars", "64", "--stop-file", str(stop_file),
+            "--skip", "64", "--seed-bars", str(args.seed_bars),
+            "--stop-file", str(stop_file),
         ]
         if args.source == "db":
             command += ["--db-path", str(Path(args.db_path).resolve())]
