@@ -326,6 +326,11 @@ class CognitiveSystemController:
         # action/outcome pairs consumed by self-state advisory modules
         # (psychology tilt, counterfactual analysis, model-decay checks).
         self._settled_outcomes: "deque" = deque(maxlen=256)
+        # HIPIF fold state: the journal is a temporary buffer — every
+        # FOLD_WINDOW settlements its tail compresses into a durable
+        # 'lesson' record in HMS self-improvement memory.
+        self._fold_cursor = 0
+        self._fold_seq = 0
         self._observation_seq = 0
         # Unified research: subordinate engine + bounded report journal +
         # advisory artifacts queued into the next observation's evidence.
@@ -2107,6 +2112,8 @@ class CognitiveSystemController:
         flat while positions remain open and never settle."""
         return {
             "observation_seq": self._observation_seq,
+            "fold_cursor": int(getattr(self, "_fold_cursor", 0)),
+            "fold_seq": int(getattr(self, "_fold_seq", 0)),
             "positions": {
                 sym: {
                     "direction": p.get("direction"),
@@ -2140,6 +2147,8 @@ class CognitiveSystemController:
         positions = state.get("positions") or {}
         self._observation_seq = int(
             state.get("observation_seq") or self._observation_seq)
+        self._fold_cursor = int(state.get("fold_cursor") or 0)
+        self._fold_seq = int(state.get("fold_seq") or 0)
         restored = 0
         for sym, p in positions.items():
             if not isinstance(p, dict):
@@ -2510,6 +2519,63 @@ class CognitiveSystemController:
             logger.debug(
                 "CSC-V6: SAGE outcome feedback failed: %s", exc)
 
+    _FOLD_WINDOW = 16  # settled outcomes per strategic fold
+
+    def _maybe_fold_lessons(self) -> None:
+        """HIPIF strategic folding: the settled-outcome journal is a
+        temporary buffer — every FOLD_WINDOW settlements its tail is
+        compressed into a durable 'lesson' record in HMS self-improvement
+        memory (record-only; evidence-plane retrievable; no authority)."""
+        record = getattr(getattr(self, "hms", None),
+                         "record_improvement", None)
+        if record is None:
+            return
+        outcomes = list(getattr(self, "_settled_outcomes", ()) or ())
+        # Clamp survives deque eviction: unfurled evicted entries are
+        # simply gone — the journal is a lossy buffer by design. The
+        # clamped value is written back so a stale oversized cursor can
+        # never permanently starve folding.
+        cursor = min(int(getattr(self, "_fold_cursor", 0)), len(outcomes))
+        self._fold_cursor = cursor
+        if len(outcomes) - cursor < self._FOLD_WINDOW:
+            return
+        window = outcomes[cursor:]
+        self._fold_cursor = len(outcomes)
+        by_regime: Dict[str, list] = {}
+        for e in window:
+            by_regime.setdefault(
+                str(e.get("regime") or "unknown"), []).append(e)
+        lessons = {}
+        for regime, rows in by_regime.items():
+            rets = [float(e.get("realized_return") or 0.0) for e in rows]
+            reasons: Dict[str, int] = {}
+            for e in rows:
+                key = str(e.get("reason") or "unknown")
+                reasons[key] = reasons.get(key, 0) + 1
+            lessons[regime] = {
+                "n": len(rows),
+                "win_rate": sum(1 for r in rets if r > 0) / len(rets),
+                "mean_return": sum(rets) / len(rets),
+                "exit_reasons": sorted(reasons.items(),
+                                       key=lambda kv: -kv[1])[:3],
+            }
+        self._fold_seq = int(getattr(self, "_fold_seq", 0)) + 1
+        summary = "; ".join(
+            f"{r}: n={v['n']} win={v['win_rate']:.2f} "
+            f"mu={v['mean_return']:+.4f}" for r, v in lessons.items())
+        try:
+            record("lesson", "execution_outcomes",
+                   f"settlement fold #{self._fold_seq}: {summary}",
+                   evidence={
+                       "fold_seq": self._fold_seq,
+                       "window": len(window),
+                       "lessons": lessons,
+                       "symbols": sorted({
+                           str(e.get("symbol") or "?") for e in window}),
+                   })
+        except Exception as exc:
+            logger.debug("CSC-V6: lesson fold failed: %s", exc)
+
     async def _register_directional(
         self, trade_id: str, action: str, symbol: Optional[str],
         price: float, confidence: Any, regime: Any,
@@ -2680,6 +2746,9 @@ class CognitiveSystemController:
         # SAGE edge evolution: the advisory claims that informed this
         # position get their weights adjusted by realized utility.
         self._sage_outcome_feedback(pos, realized)
+        # HIPIF: periodically fold the settled journal tail into durable
+        # regime-level lessons (context buffers are temporary).
+        self._maybe_fold_lessons()
         # Durable journal: the settled-outcome deque is the real input to
         # psychology/counterfactual/decay self-state advisors. Persisting
         # it lets _rehydrate_settled_journal restore it after restart —

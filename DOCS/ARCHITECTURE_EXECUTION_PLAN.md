@@ -71,11 +71,11 @@ Binding references: `AGENTS.md`, `DOCS/DEVIN_TRADING_BOT_RECOVERY_PLAN.md`.
 ### P2 — capability (spec gaps still real)
 | Item | Source | Status |
 |---|---|---|
-| ECE calibration in EvolutionGate | GAP_MATRIX / VALIDATION | Partial — calibrator exists; ECE<0.1 gate not enforced |
+| ~~ECE calibration in EvolutionGate~~ | GAP_MATRIX / VALIDATION | DONE `9a5079fe` — absolute `calibration_error ≤ 0.1` hard reject in `EvolutionGate` |
 | DiscoLoop coupled discrete-continuous trackers | GAP_MATRIX | Partial — `ai_stack` shows `discoloop tokens`; coupled trackers not implemented |
-| AutoMem schema-versioned memory | GAP_MATRIX | Partial — HMS exists; sequential schema versioning stubbed |
-| SAGE online edge-weight updates from outcomes | GAP_MATRIX | Partial — HMS graph exists; utility-feedback edge updates not wired |
-| HIPIF information folding | PRINCIPLE_EXTRACTION / MAPPING | Missing — CSC context still append-mostly |
+| ~~AutoMem schema-versioned memory~~ | GAP_MATRIX | STALE-claim — `migrate_to_version` + `_run_migration_step` implement real sequential ±0.1 up/down migrations with `migration_history` (`hms/memory.py:458`). No auto-trigger on load by design — migrations stay explicit. |
+| ~~SAGE online edge-weight updates from outcomes~~ | GAP_MATRIX | DONE `3003e60a` — advisor→signal edges at decision time; `tanh`-scaled realized utility feeds `evolve_weights` at settlement (dissent gets inverse delta); ids persist via position export/import |
+| ~~HIPIF information folding~~ | PRINCIPLE_EXTRACTION / MAPPING | DONE — settled-outcome journal folds every 16 settlements into durable `lesson` records in HMS self-improvement memory (regime stats, win-rate, exit reasons); re-enters evidence plane via `recall_lessons`/reflective context |
 | NanoResearch skill-bank DPO | GAP_MATRIX | Missing |
 
 ### P3 — hygiene
