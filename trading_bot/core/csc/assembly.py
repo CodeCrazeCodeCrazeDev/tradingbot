@@ -67,6 +67,20 @@ def build_cognitive_system(
         logger.info("cognitive assembly: advisory modules attached=%s "
                     "skipped=%s", attached, skipped)
 
+        # Canonical expansion engine — measured growth services
+        # (opportunity scan, resource governor, ecosystem lifecycle,
+        # evidence-derived research domains, data-resource inventory,
+        # gated agent foundry). Advisory evidence only; every report is
+        # a measurement, never a simulated capability.
+        try:
+            from trading_bot.expansion.service import (
+                attach_expansion_services)
+            expansion = attach_expansion_services(csc)
+            logger.info("cognitive assembly: expansion services %s",
+                        expansion)
+        except Exception as exc:
+            logger.warning("expansion services unavailable: %s", exc)
+
     # Survival feedback is independent of optional directional advisor pruning.
     # Only the diagnostic adapter is attached, never MSOS's legacy governor.
     from trading_bot.msos.rewards import MSOSRewardAdvisor
