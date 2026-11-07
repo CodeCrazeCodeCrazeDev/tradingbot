@@ -30,6 +30,7 @@ from trading_bot.core.governance.determinism import determinism as _determinism
 from unittest.mock import MagicMock, AsyncMock
 
 from .folding import InformationFolder
+from .loop_tracker import DiscoLoopTracker
 from .hypothesis import HypothesisGenerator, ReasoningBranch
 from .reliability import ReliabilityTracker
 from .router import SkillRouter
@@ -439,6 +440,9 @@ class CognitiveSystemController:
 
         # DiscoLoop recurrence cell (required by _run_discoloop_reasoning)
         self.discoloop = DiscoLoopCell()
+        # Coupled discrete-continuous tracker (DiscoLoop): watches the
+        # recurrence's entity/drift coherence — evidence only.
+        self._loop_tracker = DiscoLoopTracker()
 
         # Persistent Cognitive Agents (PCA) — transactive memory population
         try:
@@ -1150,6 +1154,11 @@ class CognitiveSystemController:
         quality['consulted_total'] = int(
             self._funnel.get('advisory_artifacts', 0))
         report['signal_quality'] = quality
+        # DiscoLoop coupled tracker: discrete/continuous coherence of the
+        # reasoning recurrence — observability, not authority.
+        tracker = getattr(self, "_loop_tracker", None)
+        if tracker is not None:
+            report['loop_state'] = tracker.snapshot()
         return report
 
     def funnel_report(self) -> Dict[str, int]:
@@ -2276,6 +2285,20 @@ class CognitiveSystemController:
                 derived.add("volume_ratio")
         if isinstance(volume, (int, float)) and volume > 0:
             vol_hist.append(float(volume))
+        # DiscoLoop coupled-tracker state as evidence features: discrete
+        # subgoal dwell, latent drift, channel fragility. Advisors may
+        # read them; they carry no gating authority.
+        _lt = getattr(self, "_loop_tracker", None)
+        if _lt is not None and getattr(_lt, "seq", 0) > 0:
+            if "loop_dwell" not in obs_dict:
+                obs_dict["loop_dwell"] = int(_lt.dwell)
+                derived.add("loop_dwell")
+            if "loop_drift" not in obs_dict:
+                obs_dict["loop_drift"] = float(_lt.drift)
+                derived.add("loop_drift")
+            if "loop_fragile" not in obs_dict:
+                obs_dict["loop_fragile"] = 1 if _lt.fragile else 0
+                derived.add("loop_fragile")
         # Bar-derived microstructure (Roll spread, Kyle lambda,
         # Amihud, tick-imbalance, Kaufman ER, intrabar path risk) —
         # the published estimators that work on OHLCV where L2/footprint
@@ -3105,6 +3128,15 @@ class CognitiveSystemController:
             h_next, token = self.discoloop.transition(input_signal, e_k, k)
             self.discrete_channel.append(token)
             idx = getattr(self.discoloop, "last_entity_idx", 0)
+            # Coupled tracker: discrete subgoal (entity idx) vs latent
+            # drift — fragmentation shows up as incoherent channels.
+            tracker = getattr(self, "_loop_tracker", None)
+            if tracker is not None:
+                try:
+                    tracker.step(idx, h_next)
+                except Exception as exc:
+                    logger.debug(
+                        "CSC-V6: loop tracker step failed: %s", exc)
             e_k = np.zeros_like(h_next)
             e_k[idx] = 1.0
 
