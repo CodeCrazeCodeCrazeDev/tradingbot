@@ -86,8 +86,8 @@ Binding references: `AGENTS.md`, `DOCS/DEVIN_TRADING_BOT_RECOVERY_PLAN.md`.
 
 ## 4. Sequenced plan
 
-1. **P0-a** `paper_runner` regime-spec scaling (this session — implemented below).
-2. **P0-b** replay-cannot-order regression test for both demo runners (fake adapter).
+1. **P0-a** `paper_runner` regime-spec scaling (this session — implemented below). ✅
+2. **P0-b** replay-cannot-order regression test for both demo runners — done: `tests/test_demo_runner_replay_isolation.py` (6/6 pass; pins replay→analysis, follow→venue, paper-only service, feed-adapter seam). ✅
 3. **P1-a** advisory latency/skip telemetry in snapshot `advisory_report`.
 4. **P1-b** cTrader demo preflight run when rotated creds provisioned.
 5. **P2** capability items each get their own failing-test-first cycle under RSI governance; do NOT batch.
