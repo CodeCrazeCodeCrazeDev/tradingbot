@@ -1159,6 +1159,12 @@ class CognitiveSystemController:
         tracker = getattr(self, "_loop_tracker", None)
         if tracker is not None:
             report['loop_state'] = tracker.snapshot()
+        # Skill preference bank: measured (chosen, rejected) routing
+        # preference — evidence for which skills earn their mapping.
+        _spb = getattr(getattr(self, "skill_router", None),
+                       "_preference_bank", None)
+        if _spb is not None:
+            report['skill_preferences'] = _spb.snapshot()
         return report
 
     def funnel_report(self) -> Dict[str, int]:
@@ -2140,6 +2146,10 @@ class CognitiveSystemController:
                         dict(e) for e in
                         (p.get("evidence_edge_ids") or ())
                         if isinstance(e, dict)],
+                    "skill_choices": [
+                        dict(e) for e in
+                        (p.get("skill_choices") or ())
+                        if isinstance(e, dict)],
                 }
                 for sym, p in self._open_positions.items()
             },
@@ -2183,6 +2193,10 @@ class CognitiveSystemController:
                 "evidence_edge_ids": [
                     dict(e) for e in
                     (p.get("evidence_edge_ids") or ())
+                    if isinstance(e, dict)],
+                "skill_choices": [
+                    dict(e) for e in
+                    (p.get("skill_choices") or ())
                     if isinstance(e, dict)],
             }
             restored += 1
@@ -2542,6 +2556,36 @@ class CognitiveSystemController:
             logger.debug(
                 "CSC-V6: SAGE outcome feedback failed: %s", exc)
 
+    def _skill_preference_feedback(self, pos: Dict[str, Any],
+                                   realized: float) -> None:
+        """DPO pair feedback (NanoResearch): the skill choice that served
+        each settled decision is scored against its capability-equal
+        alternatives by realized utility — chosen vs unchosen is a real
+        (chosen, rejected) pair."""
+        bank = getattr(getattr(self, "skill_router", None),
+                       "_preference_bank", None)
+        choices = (pos or {}).get("skill_choices") or ()
+        if bank is None or not choices:
+            return
+        try:
+            margin = float(np.tanh(float(realized or 0.0) / 0.005))
+        except Exception:
+            return
+        for ch in choices:
+            task = str(ch.get("task") or "default")
+            chosen = str(ch.get("chosen") or "")
+            if not chosen:
+                continue
+            for cand in (ch.get("candidates") or ()):
+                cand = str(cand)
+                if not cand or cand == chosen:
+                    continue
+                try:
+                    bank.record_pair(task, chosen, cand, margin)
+                except Exception as exc:
+                    logger.debug(
+                        "CSC-V6: skill-preference update failed: %s", exc)
+
     _FOLD_WINDOW = 16  # settled outcomes per strategic fold
 
     def _maybe_fold_lessons(self) -> None:
@@ -2656,6 +2700,15 @@ class CognitiveSystemController:
             if _key not in _ev_seen and len(_ev_acc) < 128:
                 _ev_acc.append(_ev)
                 _ev_seen.add(_key)
+        # Skill-route provenance: the routing decision active this cycle
+        # pairs the chosen skill against its candidates at settlement.
+        _sc = getattr(self, "_last_skill_choice", None)
+        if isinstance(_sc, dict) and _sc.get("chosen"):
+            _sc_acc = existing.setdefault("skill_choices", [])
+            _sc_key = (str(_sc.get("task")), str(_sc.get("chosen")))
+            if not any((e.get("task"), e.get("chosen")) == _sc_key
+                       for e in _sc_acc) and len(_sc_acc) < 32:
+                _sc_acc.append(dict(_sc))
         self._pending_predictions[trade_id] = {
             "position_symbol": symbol,
             "action": action,
@@ -2772,6 +2825,8 @@ class CognitiveSystemController:
         # HIPIF: periodically fold the settled journal tail into durable
         # regime-level lessons (context buffers are temporary).
         self._maybe_fold_lessons()
+        # NanoResearch: realized utility updates skill-route preferences.
+        self._skill_preference_feedback(pos, realized)
         # Durable journal: the settled-outcome deque is the real input to
         # psychology/counterfactual/decay self-state advisors. Persisting
         # it lets _rehydrate_settled_journal restore it after restart —
@@ -3877,8 +3932,13 @@ class CognitiveSystemController:
     async def _stage_guardrails(self, observation: Any, obs_dict: Dict[str, Any]) -> Optional["_Terminal"]:
         """Stage 3: HASP volatility check, then skill-router guardrail."""
         intervention = self._apply_hasp_guardrails(observation)
+        # Per-cycle routing provenance: cleared before the route so a
+        # stale choice from a prior observation can't be misattributed.
+        self.skill_router.last_choice = None
         if isinstance(intervention, dict) and intervention.get("status") != "pf_intervention":
             intervention = await self.skill_router.route_task("market_ingestion", observation)
+        self._last_skill_choice = getattr(
+            self.skill_router, "last_choice", None)
         if hasattr(intervention, "to_dict"):
             intervention = intervention.to_dict()
         if isinstance(intervention, dict) and intervention.get("status") == "pf_intervention":

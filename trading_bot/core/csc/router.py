@@ -14,6 +14,7 @@ Paper Traceability Matrix:
 
 import logging
 import asyncio
+import os
 import threading
 from enum import Enum
 from typing import Any, Dict, List, Optional, Callable, Set
@@ -236,6 +237,16 @@ class SkillRouter:
             "sentiment": "sentiment_lora_v2",
             "market_analysis": "default_reasoning",
         }
+        # NanoResearch preference bank: per-task DPO logits over skills,
+        # updated from measured (chosen, rejected) pairs at settlement.
+        from .skill_preferences import SkillPreferenceBank
+        self._preference_bank = SkillPreferenceBank(
+            state_path=os.environ.get(
+                "SKILL_PREF_STATE", "var/skill_prefs.json"))
+        # Provenance of the most recent routing decision: controllers
+        # attach it to the decision's pending prediction so settlement
+        # can feed the (chosen, rejected) pair back to the bank.
+        self.last_choice: Optional[Dict[str, Any]] = None
         self._initialize_default_skills()
         if getattr(self, "_initialized", False):
             return
@@ -338,8 +349,14 @@ class SkillRouter:
             if "derivative" in task.lower():
                 required_caps.add("complex_derivatives")
 
-            skill = self._resolve_best_skill(required_caps)
+            skill = self._resolve_best_skill(required_caps, task=task)
             if skill:
+                self.last_choice = {
+                    "task": task,
+                    "chosen": skill.skill_id,
+                    "candidates": [s.skill_id for s, _ in
+                                   getattr(self, "_last_candidates", [])],
+                }
                 if skill.skill_type in (SkillType.LORA,):
                     return SkillRouteOutcome(
                         status="s2l_routed",
@@ -374,8 +391,13 @@ class SkillRouter:
             return None
         return versions[0]
 
-    def _resolve_best_skill(self, required_caps: Set[str]) -> Optional[SkillArtifact]:
-        """Capability Conflict Resolution: finds the best matching skill."""
+    def _resolve_best_skill(self, required_caps: Set[str],
+                            task: str = "default") -> Optional[SkillArtifact]:
+        """Capability Conflict Resolution: finds the best matching skill.
+
+        Candidates rank by capability overlap then version; skills tied
+        on overlap are ordered by the measured preference bank (DPO
+        logits) rather than version alone."""
         candidates = []
         for skill_list in self._registry.values():
             latest = skill_list[0]
@@ -384,8 +406,19 @@ class SkillRouter:
                 candidates.append((latest, len(overlap)))
 
         if not candidates:
+            self._last_candidates = []
             return None
         candidates.sort(key=lambda x: (x[1], x[0].version), reverse=True)
+        self._last_candidates = list(candidates)
+        top_overlap = candidates[0][1]
+        tied = [c for c, n in candidates if n == top_overlap]
+        bank = getattr(self, "_preference_bank", None)
+        if bank is not None and len(tied) > 1:
+            preferred = bank.choose(task, [c.skill_id for c in tied])
+            if preferred is not None:
+                for c, n in candidates:
+                    if c.skill_id == preferred:
+                        return c
         return candidates[0][0]
 
     def _pf_volatility_guardrail(self, context: Dict[str, Any]) -> Dict[str, Any]:

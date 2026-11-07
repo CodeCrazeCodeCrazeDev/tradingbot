@@ -72,11 +72,11 @@ Binding references: `AGENTS.md`, `DOCS/DEVIN_TRADING_BOT_RECOVERY_PLAN.md`.
 | Item | Source | Status |
 |---|---|---|
 | ~~ECE calibration in EvolutionGate~~ | GAP_MATRIX / VALIDATION | DONE `9a5079fe` — absolute `calibration_error ≤ 0.1` hard reject in `EvolutionGate` |
-| DiscoLoop coupled discrete-continuous trackers | GAP_MATRIX | Partial — `ai_stack` shows `discoloop tokens`; coupled trackers not implemented |
+| ~~DiscoLoop coupled discrete-continuous trackers~~ | GAP_MATRIX | DONE `b1ae01dd` — `DiscoLoopTracker` couples entity dwell/churn to latent drift + net-displacement EMAs; fragile flag on incoherent channels; `loop_state` in advisory_report + loop_* derived features |
 | ~~AutoMem schema-versioned memory~~ | GAP_MATRIX | STALE-claim — `migrate_to_version` + `_run_migration_step` implement real sequential ±0.1 up/down migrations with `migration_history` (`hms/memory.py:458`). No auto-trigger on load by design — migrations stay explicit. |
 | ~~SAGE online edge-weight updates from outcomes~~ | GAP_MATRIX | DONE `3003e60a` — advisor→signal edges at decision time; `tanh`-scaled realized utility feeds `evolve_weights` at settlement (dissent gets inverse delta); ids persist via position export/import |
 | ~~HIPIF information folding~~ | PRINCIPLE_EXTRACTION / MAPPING | DONE — settled-outcome journal folds every 16 settlements into durable `lesson` records in HMS self-improvement memory (regime stats, win-rate, exit reasons); re-enters evidence plane via `recall_lessons`/reflective context |
-| NanoResearch skill-bank DPO | GAP_MATRIX | Missing |
+| ~~NanoResearch skill-bank DPO~~ | GAP_MATRIX | DONE — `SkillPreferenceBank` (Bradley-Terry/DPO logits per task, durable JSON state); chosen-vs-candidates pairs scored by settled utility; capability-tie preference selection in `_resolve_best_skill`; `skill_preferences` in advisory_report |
 
 ### P3 — hygiene
 | Item | Note |
