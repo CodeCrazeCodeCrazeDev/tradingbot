@@ -14,6 +14,10 @@ scipy>=1.10.0
 python-dateutil>=2.8.2
 pytz>=2023.3
 MetaTrader5>=5.0.45
+# cTrader Open API (demo adapter, scripts/ctrader_*) — install with
+# --no-deps: SDK pins protobuf==3.20.1/requests==2.32.3 which would
+# downgrade this env's protobuf 6.x / requests 2.33.x.
+ctrader-open-api==0.9.3
 
 # -----------------------------------------------------------------------------
 # REAL-TIME DATA & STREAMING
