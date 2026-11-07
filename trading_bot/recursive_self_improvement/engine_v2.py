@@ -852,7 +852,16 @@ class RecursiveImprovementCycle:
         self._trial_counter = 0
 
     # -- one full cycle -------------------------------------------------------
-    def run_cycle(self, gaps: Optional[Sequence[PerformanceGap]] = None) -> List[PromotionDecision]:
+    def run_cycle(self, gaps: Optional[Sequence[PerformanceGap]] = None,
+                  selector: Optional[Callable[[Sequence[Hypothesis], int],
+                                            Sequence[Hypothesis]]] = None
+                  ) -> List[PromotionDecision]:
+        """Run one improvement cycle.
+
+        ``selector`` optionally re-picks which ranked hypotheses spend the
+        per-cycle candidate budget (e.g. the sleep phase's diversity-aware
+        selection); the default keeps the top of the prioritizer's order.
+        """
         decisions: List[PromotionDecision] = []
         obs = ObservationEngine(self.archive, self.contract)
         causes = RootCauseEngine()
@@ -870,7 +879,10 @@ class RecursiveImprovementCycle:
             hyps = prioritizer.rank(
                 hypotheses.generate(gap, cause, self.incumbent_params, self.archive),
                 self.archive, self.adapter.family)
-            for hyp in hyps[: self.config.max_candidates_per_cycle]:
+            chosen = (list(selector(hyps, self.config.max_candidates_per_cycle))
+                      if selector is not None
+                      else hyps[: self.config.max_candidates_per_cycle])
+            for hyp in chosen:
                 self._trial_counter += 1
                 trial_id = f"TRIAL-{self._trial_counter:05d}-{uuid.uuid4().hex[:6]}"
                 decisions.append(self._run_trial(hyp, generator, sandbox,

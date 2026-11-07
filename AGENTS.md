@@ -37,6 +37,31 @@ python scripts/rsi_synthetic_benchmark.py --seeds 20            # ablation
 python scripts/rsi_reachability_inventory.py                   # audit refresh
 ```
 
+## Sleep phase (arXiv:2606.03979 transfer)
+
+`trading_bot/recursive_self_improvement/sleep_cycle.py` implements an
+offline "sleep" phase on top of `RecursiveImprovementCycle`:
+consolidation distills archive records into memory `lessons` and prunes
+the `experiments` buffer (the hash-chained `evidence_ledger` is never
+touched); "dreaming" generates regime-shifted synthetic scenarios, keeps
+those with discriminative power across bounded parameter probes, and
+rehearses cross-regime recombinations of archived specialist parameters.
+Dream output is ledger-recorded as `dream_diagnostic` with
+`promotion_eligible: false` — only the gated paired-replay cycle can
+produce `eligible_for_operator_review` verdicts, and deployment still
+requires signed `OperatorAuthorization`. `run_cycle(selector=...)` is the
+diversity-selection seam (`select_diverse_hypotheses` spends the
+per-cycle budget across distinct parameters). `SleepPhaseRunner` is
+fail-closed: an awake runtime without a wired `pause_fn` refuses to run.
+`channel_sleep_controller(state_dir)` wires pause/resume through the
+operator `ControlChannel`.
+
+```bash
+python scripts/rsi_sleep_cycle.py --work-dir var/rsi_sleep            # standalone
+python scripts/rsi_sleep_cycle.py --state-dir var/paper_run           # pauses a live runner
+python scripts/rsi_sleep_cycle.py --db market_data.db --instruments EURUSD
+```
+
 ## Environments
 
 Two interpreters, different roles:

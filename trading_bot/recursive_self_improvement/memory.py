@@ -204,6 +204,41 @@ class ImprovementMemory:
             ))
             conn.commit()
 
+    def lesson_source_ids(self) -> set:
+        """Experiment/genome ids already distilled into lessons.
+
+        Used by sleep-phase consolidation to keep distillation idempotent:
+        an archive record contributes at most one durable lesson.
+        """
+        with sqlite3.connect(self.db_path) as conn:
+            rows = conn.execute(
+                "SELECT DISTINCT source_experiment_id FROM lessons "
+                "WHERE source_experiment_id IS NOT NULL").fetchall()
+        return {r[0] for r in rows}
+
+    def prune_experiments(self, keep_last: int) -> int:
+        """Delete the oldest ``experiments`` rows beyond ``keep_last``.
+
+        Sleep-phase "synaptic pruning": the experiments table is the
+        fragile episodic buffer — once findings are consolidated into
+        lessons and archive records, raw rows are disposable. The
+        hash-chained ``evidence_ledger`` is intentionally not prunable
+        (database triggers forbid UPDATE/DELETE on it). Returns the
+        number of rows deleted.
+        """
+        if keep_last < 0:
+            raise ValueError("keep_last must be >= 0")
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                DELETE FROM experiments WHERE experiment_id NOT IN (
+                    SELECT experiment_id FROM experiments
+                    ORDER BY created_at DESC, experiment_id DESC LIMIT ?)
+            ''', (keep_last,))
+            deleted = cursor.rowcount
+            conn.commit()
+            return deleted
+
     def get_recent_experiments(self, domain: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
         """Retrieve recent experiments for analysis."""
         with sqlite3.connect(self.db_path) as conn:

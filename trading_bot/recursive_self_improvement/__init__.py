@@ -28,6 +28,12 @@ from .meta_proposals import gate_meta, level2_proposal, level3_proposal
 from .multi_objective import MultiObjectiveEvaluator
 from .protected_control_plane import ProtectedPathGuard
 from .scorecard import RSIScorecard
+from .sleep_cycle import (
+    SleepPhaseConfig,
+    SleepPhaseRunner,
+    SleepQuiesceError,
+    SleepReport,
+)
 from .transfer import TransferEvaluator
 
 __all__ = [
@@ -56,5 +62,9 @@ __all__ = [
     "MultiObjectiveEvaluator",
     "ProtectedPathGuard",
     "RSIScorecard",
+    "SleepPhaseConfig",
+    "SleepPhaseRunner",
+    "SleepQuiesceError",
+    "SleepReport",
     "TransferEvaluator",
 ]
