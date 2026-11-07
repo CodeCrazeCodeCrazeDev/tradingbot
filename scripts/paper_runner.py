@@ -708,6 +708,21 @@ async def run(args: argparse.Namespace) -> int:
     if args.dashboard_port:
         serve_dashboard(state_dir, args.dashboard_port)
 
+    rv_forecaster = None
+    rv_last = None
+    if args.rv_forecast:
+        try:
+            from trading_bot.world_model.rv_forecaster import (
+                RVBlendForecaster)
+            rv_forecaster = RVBlendForecaster(
+                PROJECT_ROOT / args.rv_forecast, timeframe=args.timeframe)
+            logger.info("rv forecaster armed (shadow/advisory only): %s",
+                        args.rv_forecast)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "rv forecaster unavailable (%s) — running without", exc)
+    rv_log_path = state_dir / "rv_forecast_log.jsonl"
+
     if args.source == "db":
         _btz = args.broker_tz_offset
         if str(_btz).lower() in ("auto", ""):
@@ -827,6 +842,30 @@ async def run(args: argparse.Namespace) -> int:
                     tmp.replace(history_path)
                 except OSError:
                     logger.warning("market history persistence failed")
+            if rv_forecaster is not None:
+                # Shadow-mode advisory: the forecast rides obs as rvf_*
+                # fields (never consulted for decisions) and lands in an
+                # append-only JSONL log for later outcome analysis.
+                try:
+                    rv_last = rv_forecaster.update(obs)
+                except Exception as exc:  # noqa: BLE001
+                    rv_last = {"ready": False, "status": "error",
+                               "error": str(exc)}
+                if rv_last and rv_last.get("ready"):
+                    for _k in rv_last["log_ratio"]:
+                        obs[f"rvf_log_{_k}"] = rv_last["log_ratio"][_k]
+                        obs[f"rvf_mult_{_k}"] = rv_last["vol_mult"][_k]
+                    obs["rvf_source"] = "rv_blend_forecaster"
+                try:
+                    with open(rv_log_path, "a", encoding="utf-8") as _rf:
+                        _rf.write(json.dumps({
+                            "timestamp": obs.get("broker_timestamp")
+                            or obs.get("timestamp"),
+                            "symbol": symbol,
+                            "close": float(price),
+                            "forecast": rv_last}, default=str) + "\n")
+                except OSError:
+                    logger.warning("rv forecast log write failed")
             if not emergency:
                 # Run the cycle as a cancellable task and poll the
                 # control channel mid-cycle — under load a single
@@ -867,6 +906,9 @@ async def run(args: argparse.Namespace) -> int:
                 "data_timeframe": args.timeframe if args.source == "db"
                 else None,
                 "symbol": args.symbol,
+                # Shadow vol-change forecast (advisory only — rvf_*
+                # fields on the obs carry the same values downstream).
+                "rv_forecast": rv_last,
                 # Read-only advisory standing — which advisors contribute
                 # and their measured weight/precision per regime.
                 "advisors": csc.advisory_report() if csc is not None
@@ -1014,6 +1056,14 @@ def main(argv: Optional[list] = None) -> int:
                         help="append each processed observation (bar + book) "
                              "to this JSONL path — point-in-time orderflow "
                              "history for later backtesting")
+    parser.add_argument("--rv-forecast", nargs="?", metavar="PATH",
+                        const="var/rv_blend_forecaster.pt", default=None,
+                        help="shadow-mode vol-change forecaster: attach "
+                             "rvf_* advisory fields to each obs + append "
+                             "<state-dir>/rv_forecast_log.jsonl (PATH "
+                             "defaults to the blend checkpoint; needs "
+                             "torch — hermes env). Advisory only: nothing "
+                             "in the decision path reads these fields.")
     args = parser.parse_args(argv)
     logging.basicConfig(level=args.log_level,
                         format="%(asctime)s %(name)s %(levelname)s %(message)s")

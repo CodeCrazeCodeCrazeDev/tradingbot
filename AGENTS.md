@@ -229,5 +229,25 @@ review date and verify them against the current code before changing anything.
   Observable probes: trained latent ≈ random-init latent on every target;
   raw features predict next range R² +0.32 / |ret| +0.26 over naive
   baselines, latent probes negative R² at any ridge λ. The latent is not
-  currently a usable predictive representation; latent-cosine save gate
-  (`train_world_model.py`) is necessary-but-not-sufficient evidence.
+  currently a usable predictive representation.
+- 2026-11-07 retrain (filtered data + joint observable decoder head +
+  strengthened gate in `train_world_model.py`): 600 steps -> latent skill
+  -0.001, decoder range R2 -1.26 vs raw-ridge -0.17 -> gate REJECTED, no
+  checkpoint written (old Oct-19 ckpt untouched). Metrics +
+  provenance in `var/world_model_v2.train_meta.json`. Even clean data +
+  decoder-shaped encoder did not transfer across the train/held-out
+  regime boundary; the JEPA-latent objective at this scale is not
+  producing observable-predictive structure. Save gate is now: latent
+  skill > 0 AND decoder range R2 >= raw-feature ridge R2.
+- `scripts/train_vol_forecaster.py` (GRU 25k params, raw features ->
+  next range + |ret|, same split/gate protocol): 1000 steps ->
+  range R2 -1.00, |ret| R2 -0.21 vs persistence -> REJECTED, worse than
+  the per-bar ridge (-0.11 / +0.08). Verdict: on this M15 EURUSD
+  series, next-bar vol has no transferable predictability past the
+  70/30 regime boundary for anything tried (WM latents, joint decoder,
+  direct GRU). Persistence is near-optimal here; only the +0.32 figure
+  seen earlier was an adjacent-regime probe fit, not a transferable one.
+- `load_features` in train script now drops off-grid rows
+  (`on_grid`); eval imports the same loader, so both paths are clean.
+- torch on this box needs `torch.set_num_threads(1)` + OMP/MKL env
+  caps: multi-threaded runs deadlock with ~0 CPU (seen twice).
