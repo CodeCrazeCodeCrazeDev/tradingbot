@@ -137,7 +137,8 @@ def _ctrader_config(args: argparse.Namespace) -> Dict[str, Any]:
     return {
         "symbol": args.symbol,
         "timeframe": args.timeframe,
-        "account_currency": "USD",
+        "account_currency": str(
+            getattr(args, "account_currency", "USD")).upper(),
         "auto_approve": args.auto_approve,
     }
 
@@ -380,6 +381,10 @@ def main(argv: Optional[list] = None) -> int:
                           "(soak mode)")
     parser.add_argument("--symbol", default="EURUSD")
     parser.add_argument("--timeframe", default="M15")
+    parser.add_argument("--account-currency", default="USD",
+                        help="declared deposit currency — the adapter "
+                             "fails closed if the account's actual "
+                             "currency differs")
     parser.add_argument("--cycles", type=int, default=0,
                         help="cap on bars processed in follow mode (0=forever)")
     parser.add_argument("--interval", type=float, default=15.0,
