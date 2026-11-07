@@ -174,6 +174,16 @@ def main(argv=None):
     parser.add_argument("--timeframe", default="15m")
     parser.add_argument("--hl-l2", action="store_true",
                         help="attach live Hyperliquid L2 orderbook to each obs")
+    parser.add_argument("--source", default="db",
+                        choices=("db", "hl_live"),
+                        help="db=replay hl_data.db; hl_live=poll newly closed HL bars")
+    parser.add_argument("--hl-timeframe", default=None,
+                        help="hl_live: API interval (default: --timeframe)")
+    parser.add_argument("--hl-poll-s", type=float, default=15.0,
+                        help="hl_live: seconds between candle polls")
+    parser.add_argument("--hl-archive", default=None,
+                        help="hl_live: JSONL path to archive every obs+book "
+                             "(point-in-time orderflow history)")
     args = parser.parse_args(argv)
     state_dir = Path(args.state_dir).resolve()
     if not math.isfinite(args.duration_seconds) or args.duration_seconds <= 0:
@@ -186,26 +196,35 @@ def main(argv=None):
         parser.error("Paper validation blocked: emergency/pause must be explicitly clear.")
     if any((state_dir / "control").glob("cmd-*.json")):
         parser.error("Pending operator commands must be resolved first.")
-    with sqlite3.connect(Path(args.db_path).resolve().as_uri() + "?mode=ro", uri=True) as con:
-        count = con.execute(
-            "SELECT COUNT(*) FROM market_data WHERE symbol=? AND timeframe=?",
-            (args.symbol, args.timeframe)).fetchone()[0]
-    if count <= 64:
-        parser.error(f"At least 65 real {args.symbol} {args.timeframe} candles are required.")
+    if args.source == "db":
+        with sqlite3.connect(Path(args.db_path).resolve().as_uri() + "?mode=ro", uri=True) as con:
+            count = con.execute(
+                "SELECT COUNT(*) FROM market_data WHERE symbol=? AND timeframe=?",
+                (args.symbol, args.timeframe)).fetchone()[0]
+        if count <= 64:
+            parser.error(f"At least 65 real {args.symbol} {args.timeframe} candles are required.")
     from trading_bot.interfaces.operator_reset import runner_lock
     # Separate supervisor lock; paper_runner owns the state lock for its lifetime.
     with runner_lock(state_dir / ".validation_supervisor"):
         stop_file = state_dir / ("validation-stop-" + uuid.uuid4().hex)
         command = [
             sys.executable, "-u", str(PROJECT_ROOT / "scripts" / "paper_runner.py"),
-            "--source", "db", "--db-path", str(Path(args.db_path).resolve()),
+            "--source", args.source,
             "--symbol", args.symbol, "--timeframe", args.timeframe,
             "--broker-tz-offset", "utc",
             "--state-dir", str(state_dir), "--cycles", "0", "--interval", "1",
             "--skip", "64", "--seed-bars", "64", "--stop-file", str(stop_file),
         ]
+        if args.source == "db":
+            command += ["--db-path", str(Path(args.db_path).resolve())]
+        else:
+            command += ["--hl-coin", args.symbol,
+                        "--hl-tf", args.hl_timeframe or args.timeframe,
+                        "--hl-poll-s", str(args.hl_poll_s)]
         if args.hl_l2:
             command.append("--hl-l2")
+        if args.hl_archive:
+            command += ["--hl-archive", str(Path(args.hl_archive).resolve())]
         print(f"Paper replay deadline: {args.duration_seconds}s from launch; "
               "up to 30s shutdown grace. Dashboard: http://localhost:8080", flush=True)
         result = supervise(command, state_dir, stop_file, args.duration_seconds)
