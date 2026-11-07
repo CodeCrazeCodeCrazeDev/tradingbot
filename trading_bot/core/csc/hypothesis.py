@@ -438,8 +438,9 @@ class HypothesisGenerator:
                     "value": _clip((50.0 - rsi) / 50.0 * sign),
                     "weight": w, "source": s}
             # L2 imbalance only when the book is point-in-time valid —
-            # in replay the runner flags the live book anachronistically;
-            # a book attached to a historical bar is not evidence.
+            # hl_live tags the book "live" (fetched at bar-detection);
+            # replay merges are tagged "anachronistic" and a book
+            # attached to a historical bar is not evidence.
             if obs.get("order_book_time") == "live":
                 imb = _finite_float(obs.get("imbalance_ratio"))
                 if imb is not None:

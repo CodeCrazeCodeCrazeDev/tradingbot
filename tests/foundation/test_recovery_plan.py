@@ -90,13 +90,23 @@ def test_windows_deadline_kills_descendant_interpreter(tmp_path):
     from scripts.paper_validation import supervise
     if sys.platform != "win32":
         pytest.skip("Windows process-tree lifetime")
+    import subprocess
+    import time
+    # The supervised child must itself boot, spawn the grandchild, and
+    # write the pidfile before the deadline — a fixed 3s is shorter than
+    # interpreter startup on loaded boxes. Scale the deadline to a
+    # measured bare-interpreter launch instead of wall-clock guessing.
+    _t0 = time.monotonic()
+    subprocess.run([sys.executable, "-c", "pass"], check=True)
+    deadline = max(6.0, (time.monotonic() - _t0) * 3 + 2.0)
     pidfile = tmp_path / "grandchild.pid"
     script = (
         "import subprocess,sys,pathlib,time;"
         "child=subprocess.Popen([sys.executable,'-c','import time;time.sleep(60)']);"
         "pathlib.Path(sys.argv[1]).write_text(str(child.pid));time.sleep(60)")
     result = supervise([sys.executable, "-c", script, str(pidfile)],
-                       tmp_path, tmp_path / "stop", seconds=3, grace_seconds=0.2)
+                       tmp_path, tmp_path / "stop",
+                       seconds=deadline, grace_seconds=0.5)
     assert result["status"] == "forced_stop"
     pid = int(pidfile.read_text())
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)
@@ -141,6 +151,119 @@ def test_paper_warmup_never_reads_bars_from_replay_window(tmp_path):
     assert [r[0] for r in prior_seed_rows(db, "BTC", "15m", 2, 64)] == [0, 1]
     assert [r[0] for r in prior_seed_rows(db, "BTC", "15m", 3, 1)] == [2]
     assert prior_seed_rows(db, "ETH", "15m", 2, 64) == []
+
+
+def _stub_hyperliquid(monkeypatch, candles, tf=900_000):
+    """Install a stub hyperliquid_sync module; return it for inspection."""
+    import sys
+    import types
+    sync = types.ModuleType("scripts.hyperliquid_sync")
+    sync.fetch_candles = lambda *a, **k: candles
+    sync._TF_MS = {"15m": tf}
+    monkeypatch.setitem(sys.modules, "scripts.hyperliquid_sync", sync)
+    return sync
+
+
+def _stub_hl_l2(monkeypatch):
+    """Stub the L2 feed so hl_live emits bars without a book."""
+    import sys
+    import types
+    feeds = types.ModuleType("trading_bot.feeds")
+    feeds.hl_l2 = types.SimpleNamespace(
+        snapshot=lambda coin: {"imbalance_ratio": 0.8,
+                               "order_book": {"bids": [[99, 1]],
+                                              "asks": [[101, 1]]}})
+    monkeypatch.setitem(sys.modules, "trading_bot.feeds", feeds)
+
+
+def test_hl_seed_rows_report_strictly_prior_boundary(monkeypatch):
+    """Seeded warmup must carry its own end boundary so a live follow can
+    start strictly after it — never before or inside the seeded window."""
+    from scripts import paper_runner
+    tf = 900_000
+    candles = [{"t": i * tf, "T": (i + 1) * tf - 1, "o": 100 + i,
+                "h": 101 + i, "l": 99 + i, "c": 100 + i, "v": 1.0}
+               for i in range(4, 10)]
+    _stub_hyperliquid(monkeypatch, candles, tf)
+    monkeypatch.setattr(paper_runner.time, "time", lambda: 10 * tf / 1000)
+    rows, boundary = paper_runner.hl_seed_rows("BTC", "15m", 4)
+    assert [r[0] for r in rows] == [106.0, 107.0, 108.0, 109.0]
+    # Boundary is the OPEN time of the newest seeded bar — a follow that
+    # starts strictly after it cannot overlap the warmup window.
+    assert boundary == 9 * tf
+
+
+def test_hl_live_follow_never_reemits_seeded_bars(monkeypatch):
+    """Regression: warmup previously took the newest closed candles while
+    the follow emitted from last_open=0 — the first processed bar was
+    EARLIER than warmup's end (time-inverted features)."""
+    from scripts import paper_runner
+    tf = 900_000
+    candles = [{"t": i * tf, "T": (i + 1) * tf - 1, "o": 100 + i,
+                "h": 101 + i, "l": 99 + i, "c": 100 + i, "v": 1.0}
+               for i in range(6, 11)]
+    _stub_hyperliquid(monkeypatch, candles, tf)
+    _stub_hl_l2(monkeypatch)
+    monkeypatch.setattr(paper_runner.time, "time", lambda: 11 * tf / 1000)
+    boundary = 9 * tf  # newest seeded bar's open time
+    gen = paper_runner.hl_live_observations(
+        "BTC", "BTC", hl_tf="15m", start_after_open=boundary)
+    first = next(gen)
+    # Only the candle opening strictly after the seeded window emits.
+    assert first["close"] == 110.0
+    assert int(candles[-1]["t"]) > boundary
+    # And the point-in-time book is tagged live on the true live path.
+    assert first["order_book_time"] == "live"
+
+
+def test_replay_l2_book_label_is_anachronistic():
+    from scripts.paper_runner import order_book_time_label
+    assert order_book_time_label("hl_live") == "live"
+    for source in ("db", "cross", "synthetic"):
+        assert order_book_time_label(source) == "anachronistic"
+
+
+async def test_anachronistic_book_never_enters_sim_drift():
+    """Regression: a current book merged onto a historical replay bar was
+    tagged 'live', so order_imbalance entered feature priors as if it were
+    point-in-time evidence. Anachronistic books must be excluded."""
+    from types import SimpleNamespace
+    from trading_bot.core.csc.hypothesis import (
+        HypothesisGenerator, ReasoningBranch)
+
+    class _RecSim:
+        def __init__(self):
+            self.requests = []
+
+        def simulate(self, req):
+            self.requests.append(req)
+            return SimpleNamespace(
+                win_probability=0.5, expected_value=0.0,
+                mc_win_probability=0.5, mc_p95_drawdown=0.01,
+                invalidation_triggers=[], mc_paths=64,
+                alignment_prior_source="none",
+                feature_drift_source="none", feature_contributions={})
+
+    sim = _RecSim()
+    hg = HypothesisGenerator(simulator=sim)
+    branch = ReasoningBranch(
+        branch_id="b1", name="b1",
+        execution_plan={"action": "BUY", "quantity": 0.1})
+    obs = {"symbol": "BTC", "close": 100.0, "momentum": 0.001,
+           "imbalance_ratio": 0.9, "timestamp": 1700000000.0,
+           "order_book": {"bids": [[99, 1]], "asks": [[101, 1]]}}
+
+    await hg.simulate_branches(
+        [branch], market_data={**obs, "order_book_time": "anachronistic"})
+    feats = sim.requests[-1].scenario_adjustments.get("feature_priors", {})
+    assert "order_imbalance" not in feats
+    # Non-book evidence still flows — the tag narrows, not mutes.
+    assert "momentum_x_action" in feats
+
+    await hg.simulate_branches(
+        [branch], market_data={**obs, "order_book_time": "live"})
+    feats = sim.requests[-1].scenario_adjustments["feature_priors"]
+    assert feats["order_imbalance"]["value"] > 0
 
 
 class _Service:

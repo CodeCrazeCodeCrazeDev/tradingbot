@@ -430,6 +430,43 @@ class TestNetOfCostGate:
         assert proposal["action"] == "HOLD"
         assert "downgraded_reason" not in proposal
 
+    def test_gate_verdict_marks_edge_qualified_pass(self, csc):
+        # An approval is only edge-qualified when the verdict is "pass" —
+        # calibrated EV covered the round-trip cost on real evidence.
+        for _ in range(csc._ev_min_samples):
+            csc._ev_pairs.append((0.002, 0.002, "ranging"))
+        proposal = {"action": "BUY", "symbol": "EURUSD"}
+        branch = SimpleNamespace(branch_id="b1")
+        csc._apply_net_of_cost_gate(
+            proposal, branch, {"b1": {"expected_value": 0.002}}, _obs())
+        assert proposal["net_cost_gate"] == "pass"
+        assert csc._last_net_cost_gate == "pass"
+
+    def test_gate_verdict_marks_downgrade(self, csc):
+        proposal = {"action": "BUY", "symbol": "EURUSD"}
+        branch = SimpleNamespace(branch_id="b1")
+        csc._apply_net_of_cost_gate(
+            proposal, branch, {"b1": {"expected_value": -1.0}}, _obs())
+        assert proposal["action"] == "HOLD"
+        assert proposal["net_cost_gate"] == "downgraded"
+        assert csc._last_net_cost_gate == "downgraded"
+
+    def test_gate_verdict_marks_calibration_probe(self, csc):
+        # Bricked calibration (negative realized mean): the deliberate
+        # trickle probe is tagged so its approval is not mistaken for
+        # an edge-qualified pass.
+        for _ in range(csc._ev_min_samples):
+            csc._ev_pairs.append((0.002, -0.002, "ranging"))
+        csc._cal_probe_counter = 19  # next call hits the 1-in-20 trickle
+        proposal = {"action": "BUY", "symbol": "EURUSD"}
+        branch = SimpleNamespace(branch_id="b1")
+        csc._apply_net_of_cost_gate(
+            proposal, branch, {"b1": {"expected_value": 0.002}}, _obs())
+        assert proposal["action"] == "BUY"
+        assert proposal["calibration_probe"] is True
+        assert proposal["net_cost_gate"] == "bypass_calibration_probe"
+        assert csc._last_net_cost_gate == "bypass_calibration_probe"
+
 
 class TestOperatorReadSurface:
 
@@ -596,6 +633,7 @@ class TestExploreProbe:
             proposal, branch, {"b1": {"expected_value": -1.0}}, _obs())
         assert proposal["action"] == "BUY"  # not downgraded to HOLD
         assert proposal["net_cost_bypass"] == "exploration"
+        assert proposal["net_cost_gate"] == "bypass_exploration"
         assert csc._funnel["net_cost_explore_bypass"] == 1
 
     @pytest.mark.asyncio

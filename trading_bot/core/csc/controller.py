@@ -1124,6 +1124,20 @@ class CognitiveSystemController:
                           if count >= 5)
         if disabled:
             report["disabled"] = disabled
+        # Per-advisor latency/timeout telemetry: which services burn the
+        # cycle budget and which keep timing out. Read-only evidence.
+        lat = getattr(self, "_advisory_latency", {}) or {}
+        if lat:
+            report["latency_ms"] = {
+                cap: {"calls": d["calls"],
+                      "last": round(d["last_ms"], 1),
+                      "avg": round(d["total_ms"] / max(d["calls"], 1), 1),
+                      "max": round(d["max_ms"], 1)}
+                for cap, d in lat.items()}
+        timeouts = getattr(self, "_advisory_timeouts", {}) or {}
+        if timeouts:
+            report["timeout_counts"] = {
+                str(cap): n for cap, n in timeouts.items() if n}
         quality = {
             k: int(self._funnel.get(k, 0))
             for k in ('advisor_directional_calls', 'advisor_substantive',
@@ -2841,15 +2855,34 @@ class CognitiveSystemController:
                 budget = self._ADVISORY_TIMEOUT_DEFAULT_S
             budget = max(0.1, min(
                 budget, self._ADVISORY_TIMEOUT_CEILING_S))
-            return await asyncio.wait_for(
-                self._safe_await(svc.analyze(observation)),
-                timeout=budget)
+            lat = getattr(self, "_advisory_latency", None)
+            if lat is None:
+                self._advisory_latency = lat = {}
+            t0 = time.monotonic()
+            try:
+                return await asyncio.wait_for(
+                    self._safe_await(svc.analyze(observation)),
+                    timeout=budget)
+            finally:
+                ms = (time.monotonic() - t0) * 1000.0
+                d = lat.setdefault(_cap(svc), {
+                    "calls": 0, "total_ms": 0.0,
+                    "last_ms": 0.0, "max_ms": 0.0})
+                d["calls"] += 1
+                d["total_ms"] += ms
+                d["last_ms"] = ms
+                d["max_ms"] = max(d["max_ms"], ms)
 
         results = await asyncio.gather(
             *(_one(s) for s in services), return_exceptions=True)
+        timeouts = getattr(self, "_advisory_timeouts", None)
+        if timeouts is None:
+            self._advisory_timeouts = timeouts = {}
         for cap, result in zip(caps, results):
             if isinstance(result, Exception):
                 failures[cap] = failures.get(cap, 0) + 1
+                if isinstance(result, asyncio.TimeoutError):
+                    timeouts[cap] = timeouts.get(cap, 0) + 1
                 self._funnel["advisor_exceptions"] += 1
                 self._record_failure(
                     "advisor_error",
@@ -4024,6 +4057,10 @@ class CognitiveSystemController:
         action = str(proposal.get("action") or "").upper()
         if action not in ("BUY", "SELL", "STRONG_BUY", "STRONG_SELL"):
             return
+        # Explicit gate verdict on every directional proposal — a
+        # TRADE_APPROVED must be readable as edge-qualified vs
+        # evidence-gathering bypass, not assumed to beat costs.
+        self._last_net_cost_gate = "not_applicable"
         sim = sim_results.get(branch.branch_id)
         if sim is not None and not isinstance(sim, dict):
             return  # legacy/mock sim payloads (lists, mocks) — not gated here
@@ -4054,7 +4091,9 @@ class CognitiveSystemController:
             # here would block the very fills the budget exists to
             # produce. Size is already capped at 10% by the floor.
             proposal["net_cost_bypass"] = "exploration"
+            proposal["net_cost_gate"] = "bypass_exploration"
             self._funnel["net_cost_explore_bypass"] += 1
+            self._last_net_cost_gate = "bypass_exploration"
             return
         cal = self._ev_calibration_factor(
             (obs_dict or {}).get("regime")
@@ -4074,17 +4113,24 @@ class CognitiveSystemController:
                      else 20)
             if self._cal_probe_counter % _rate == 0:
                 proposal["calibration_probe"] = True
+                proposal["net_cost_gate"] = "bypass_calibration_probe"
                 self._funnel["net_cost_probe"] += 1
+                self._last_net_cost_gate = "bypass_calibration_probe"
                 return
         if not isinstance(ev_cal, (int, float)) or ev_cal < round_trip_cost:
             self._funnel["net_cost_downgrade"] += 1
             proposal["action"] = "HOLD"
+            proposal["net_cost_gate"] = "downgraded"
+            self._last_net_cost_gate = "downgraded"
             proposal["downgraded_reason"] = (
                 f"insufficient net edge: calibrated EV "
                 f"{ev_cal if isinstance(ev_cal, (int, float)) else ev} "
                 f"< round-trip cost {round_trip_cost:.6f} "
                 f"(calibration {cal:.4f})")
             proposal["downgraded_from"] = action
+        else:
+            proposal["net_cost_gate"] = "pass"
+            self._last_net_cost_gate = "pass"
 
     class _UnavailableGovernanceGate:
         """Fail-closed stub used when no governance gate can be constructed."""
@@ -4445,6 +4491,11 @@ class CognitiveSystemController:
                 "expected_return": proposal.get("expected_return"),
                 "feature_contributions": proposal.get(
                     "feature_contributions"),
+                # Net-cost gate verdict: "pass" = edge-qualified per
+                # current calibration; bypass_* = deliberate evidence-
+                # gathering probe, not a positive-edge claim.
+                "net_cost_gate": proposal.get("net_cost_gate"),
+                "exploratory": bool(proposal.get("exploratory")),
                 # Evidence provenance: which advisory capabilities
                 # contributed analysis to this cycle's decision.
                 "advisory_evidence": list(
@@ -4489,6 +4540,10 @@ class CognitiveSystemController:
                             decision, "dominant_rejection_reason", None),
                         "advisory_evidence": list(
                             getattr(self, "_last_advisory_ids", ()) or ()),
+                        # An approved trade is edge-qualified only when
+                        # this reads "pass"; bypass_* = evidence probe.
+                        "net_cost_gate": getattr(
+                            self, "_last_net_cost_gate", "not_applicable"),
                     })
             # Rejected decisions are failure evidence — one seam here covers
             # every TRADE_REJECTED terminal (guardrail, verification, risk,
@@ -4839,6 +4894,10 @@ class CognitiveSystemController:
             getattr(self, "_last_advisory_calls", ()) or ())
         self._last_advisory_calls = []
         self._last_advisory_ids = []
+        # Gate verdict for this observation's terminal audit row —
+        # reset per cycle so an early terminal never inherits the
+        # previous observation's classification.
+        self._last_net_cost_gate = "not_applicable"
 
         # 0.4. Causal feature enrichment: a raw OHLCV feed does not carry
         # volatility/trend/rsi — derive them from strictly-prior bars so the
