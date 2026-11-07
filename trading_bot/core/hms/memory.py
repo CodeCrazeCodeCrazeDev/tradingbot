@@ -199,6 +199,30 @@ class SAGEGraphMemory:
             timestamp=datetime.utcnow().isoformat()
         )
         self.save()
+        return (u, v, edge_key)
+
+    def upsert_evidence_edge(self, triplet: Tuple[str, str, str],
+                             context: Dict[str, Any],
+                             evidence: Dict[str, Any]) -> Tuple[str, str, str]:
+        """Return the edge_id for (u, r, v), reusing the strongest existing
+        edge with that relation when present.
+
+        Outcome feedback (evolve_weights) must converge one weight per
+        evidence claim; a fresh uuid-keyed edge per observation would
+        scatter that feedback across parallel edges and never let a claim's
+        weight reflect its measured utility."""
+        u, r, v = triplet
+        if self.graph.has_edge(u, v):
+            best_k, best_w = None, -1.0
+            for k, d in self.graph.get_edge_data(u, v).items():
+                if d.get("relation") != r:
+                    continue
+                w = float(d.get("weight", 0.0))
+                if w > best_w:
+                    best_k, best_w = k, w
+            if best_k is not None:
+                return (u, v, best_k)
+        return self.add_evidence(triplet, context, evidence)
 
     def retrieve_subgraph(self, query: str, hops: int = 2) -> List[Dict[str, Any]]:
         """SAGE: Multi-hop retrieval utility (arXiv:2607.00341)."""

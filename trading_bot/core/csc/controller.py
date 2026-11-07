@@ -2120,6 +2120,10 @@ class CognitiveSystemController:
                     "mae": p.get("mae"),
                     "bars_held": p.get("bars_held"),
                     "last_price": p.get("last_price"),
+                    "evidence_edge_ids": [
+                        dict(e) for e in
+                        (p.get("evidence_edge_ids") or ())
+                        if isinstance(e, dict)],
                 }
                 for sym, p in self._open_positions.items()
             },
@@ -2158,6 +2162,10 @@ class CognitiveSystemController:
                 "mae": p.get("mae"),
                 "bars_held": int(p.get("bars_held") or 0),
                 "last_price": p.get("last_price"),
+                "evidence_edge_ids": [
+                    dict(e) for e in
+                    (p.get("evidence_edge_ids") or ())
+                    if isinstance(e, dict)],
             }
             restored += 1
         if restored:
@@ -2441,6 +2449,67 @@ class CognitiveSystemController:
         st["n"] += 1
         return st["atr"] if st["n"] >= 5 else None
 
+    def _sage_signal_evidence(self, symbol: str,
+                              action: str) -> List[Dict[str, Any]]:
+        """Advisor→signal SAGE edges for the directional calls active at a
+        decision. Evidence-only: edges are memory claims, not authority —
+        a settled outcome adjusts their weights via optimize_memory."""
+        sage = getattr(getattr(self, "hms", None), "sage", None)
+        upsert = getattr(sage, "upsert_evidence_edge", None)
+        if upsert is None:
+            return []
+        entries = []
+        for c in getattr(self, "_last_advisory_calls", ()) or ():
+            cap = str(c.get("capability_id") or "")
+            direction = c.get("direction")
+            if not cap or direction not in ("BUY", "SELL"):
+                continue
+            try:
+                eid = upsert(
+                    (f"advisor:{cap}", "SIGNALED", f"{symbol}:{direction}"),
+                    context={"symbol": symbol, "direction": direction},
+                    evidence={"confidence": min(1.0, max(0.0, float(
+                        c.get("confidence") or 0.5)))},
+                )
+            except Exception as exc:
+                logger.debug(
+                    "CSC-V6: SAGE evidence edge failed: %s", exc)
+                continue
+            if eid:
+                entries.append({
+                    "edge_id": list(eid),
+                    "agree": 1 if direction == action else -1,
+                })
+        return entries
+
+    def _sage_outcome_feedback(self, pos: Dict[str, Any],
+                               realized: float) -> None:
+        """Feed settled position utility into the SAGE edges that carried
+        the decision's advisory evidence. Dissenting calls receive the
+        inverse delta — a direction the advisor argued against and lost
+        still weakens its edge."""
+        optimize = getattr(getattr(self, "hms", None),
+                           "optimize_memory", None)
+        entries = (pos or {}).get("evidence_edge_ids") or ()
+        if optimize is None or not entries:
+            return
+        try:
+            base = float(np.tanh(float(realized or 0.0) / 0.005))
+        except Exception:
+            return
+        feedback = [
+            {"edge_id": e.get("edge_id"),
+             "delta": base * (1 if int(e.get("agree") or 1) >= 0 else -1)}
+            for e in entries if e.get("edge_id")
+        ]
+        if not feedback:
+            return
+        try:
+            optimize(feedback)
+        except Exception as exc:
+            logger.debug(
+                "CSC-V6: SAGE outcome feedback failed: %s", exc)
+
     async def _register_directional(
         self, trade_id: str, action: str, symbol: Optional[str],
         price: float, confidence: Any, regime: Any,
@@ -2488,6 +2557,16 @@ class CognitiveSystemController:
             }
             self._open_positions[symbol] = existing
         existing["trade_ids"].append(trade_id)
+        # SAGE provenance: advisor→signal edges for the directional calls
+        # active at this decision. The settled outcome feeds their weights
+        # back through evolve_weights — measured utility, not asserted.
+        _ev_acc = existing.setdefault("evidence_edge_ids", [])
+        _ev_seen = {(tuple(e["edge_id"]), e["agree"]) for e in _ev_acc}
+        for _ev in self._sage_signal_evidence(symbol, action):
+            _key = (tuple(_ev["edge_id"]), _ev["agree"])
+            if _key not in _ev_seen and len(_ev_acc) < 128:
+                _ev_acc.append(_ev)
+                _ev_seen.add(_key)
         self._pending_predictions[trade_id] = {
             "position_symbol": symbol,
             "action": action,
@@ -2598,6 +2677,9 @@ class CognitiveSystemController:
             "mae": pos.get("mae"),
         }
         self._settled_outcomes.append(journal_entry)
+        # SAGE edge evolution: the advisory claims that informed this
+        # position get their weights adjusted by realized utility.
+        self._sage_outcome_feedback(pos, realized)
         # Durable journal: the settled-outcome deque is the real input to
         # psychology/counterfactual/decay self-state advisors. Persisting
         # it lets _rehydrate_settled_journal restore it after restart —
