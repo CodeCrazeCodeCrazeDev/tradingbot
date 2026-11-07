@@ -28,6 +28,7 @@ import argparse
 import json
 import sys
 import tempfile
+import time
 from dataclasses import asdict
 from pathlib import Path
 
@@ -111,6 +112,21 @@ def main() -> int:
                     help="skip the gated improvement cycle")
     ap.add_argument("--no-consolidate", action="store_true")
     ap.add_argument("--max-experiment-rows", type=int, default=500)
+    ap.add_argument("--quiesce-timeout", type=float, default=600.0,
+                    help="seconds to wait for the runtime to drain the "
+                         "pause command and report control:paused=1; the "
+                         "channel only drains mid-cycle, so this must "
+                         "outlast one runner cycle")
+    ap.add_argument("--every-cycles", type=int, default=0,
+                    help="repeat the sleep phase every N runner cycles "
+                         "(needs --state-dir; polls snapshot.json)")
+    ap.add_argument("--every-seconds", type=float, default=0.0,
+                    help="repeat the sleep phase every N seconds "
+                         "(wall-clock fallback when no runner snapshot "
+                         "is available)")
+    ap.add_argument("--max-sleeps", type=int, default=0,
+                    help="stop after N sleep phases (0 = run until "
+                         "interrupted)")
     ap.add_argument("--sandbox-backend", default="thread",
                     choices=["thread", "subprocess"],
                     help="'subprocess' is the isolation-correct backend; "
@@ -159,15 +175,60 @@ def main() -> int:
             n_dream_scenarios=args.dreams, dream_bars=args.dream_bars,
             run_gated_cycle=not args.no_gated,
             consolidate=not args.no_consolidate,
-            max_experiment_rows=args.max_experiment_rows))
+            max_experiment_rows=args.max_experiment_rows,
+            quiesce_timeout_s=args.quiesce_timeout))
 
+    def _cycles_now() -> float:
+        """Runner's published cycle count; -1 when no fresh snapshot."""
+        if not args.state_dir:
+            return -1
+        try:
+            snap = json.loads(
+                (Path(args.state_dir) / "snapshot.json").read_text(
+                    encoding="utf-8"))
+            return float(snap.get("cycles", -1))
+        except (OSError, json.JSONDecodeError, TypeError, ValueError):
+            return -1
+
+    periodic = args.every_cycles > 0 or args.every_seconds > 0
+    slept = 0
+    rc = 0
     try:
-        report = runner.run_sleep()
-    except SleepQuiesceError as exc:
-        print(f"sleep phase refused: {exc}", file=sys.stderr)
-        return 2
+        while True:
+            try:
+                report = runner.run_sleep()
+            except SleepQuiesceError as exc:
+                print(f"sleep phase refused: {exc}", file=sys.stderr)
+                return 2
+            slept += 1
+            print(json.dumps(_report_json(report), indent=2, default=str))
+            if not report.ledger_ok:
+                rc = 3
+            if not periodic or (args.max_sleeps and slept >= args.max_sleeps):
+                return rc
+            # Periodic window: wait until the runner's cycle count has
+            # advanced by --every-cycles since this sleep, or the
+            # --every-seconds wall clock elapses.
+            mark = _cycles_now()
+            deadline = (time.monotonic() + args.every_seconds
+                        if args.every_seconds > 0 else None)
+            while True:
+                time.sleep(10)
+                if args.every_cycles > 0:
+                    now = _cycles_now()
+                    if now >= 0 and mark >= 0 \
+                            and now - mark >= args.every_cycles:
+                        break
+                elif deadline is not None and time.monotonic() >= deadline:
+                    break
+    except KeyboardInterrupt:
+        print(f"sleep scheduler stopped after {slept} sleep phase(s)",
+              file=sys.stderr)
+        return rc
 
-    out = {
+
+def _report_json(report) -> dict:
+    return {
         "paused_here": report.paused_here,
         "consolidation": asdict(report.consolidation)
         if report.consolidation else None,
@@ -187,8 +248,6 @@ def main() -> int:
             "promote; 'decisions' come from the gated paired-replay cycle "
             "and at most reach eligible_for_operator_review."),
     }
-    print(json.dumps(out, indent=2, default=str))
-    return 0 if report.ledger_ok else 3
 
 
 if __name__ == "__main__":

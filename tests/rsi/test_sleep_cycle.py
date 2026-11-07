@@ -23,10 +23,11 @@ from trading_bot.recursive_self_improvement.memory import ImprovementMemory
 from trading_bot.recursive_self_improvement.protected_control_plane import (
     ProtectedPathGuard)
 from trading_bot.recursive_self_improvement.sleep_cycle import (
-    DREAM_STATUS, DreamScenarioFactory, SleepConsolidator, SleepPhaseConfig,
-    SleepPhaseRunner, SleepQuiesceError, SpecialistRecombiner,
-    DreamFilter, channel_sleep_controller, probe_parameter_sets,
-    select_diverse_hypotheses)
+    DREAM_STATUS, DreamScore, DreamScenarioFactory, SleepConsolidator,
+    SleepPhaseConfig, SleepPhaseRunner, SleepQuiesceError,
+    SpecialistRecombiner, DreamFilter, channel_sleep_controller,
+    dream_param_signal, probe_parameter_sets, select_diverse_hypotheses,
+    steered_diverse_selector)
 
 from tests.rsi.helpers import make_contract, make_frames
 
@@ -154,6 +155,56 @@ def test_select_diverse_preserves_rank_within_bucket():
     ranked = [_hyp("a", 1), _hyp("a", 2), _hyp("b", 1)]
     chosen = select_diverse_hypotheses(ranked, 3)
     assert chosen[0].param == "a" and chosen[0].value == 1
+
+
+# -- dream-informed steering ---------------------------------------------------
+def _dream(param, param_val, power, incumbent={"lookback": 100,
+                                              "entry_threshold": 1.0}):
+    probe = dict(incumbent)
+    probe[param] = param_val
+    return DreamScore(label="d", regime="mean_revert", seed=1,
+                      frames_hash="h", power=power, best_probe=probe,
+                      probe_deltas=())
+
+
+def test_dream_param_signal_credits_varied_param():
+    incumbent = {"lookback": 100, "entry_threshold": 1.0}
+    scores = [_dream("lookback", 20.0, 0.01, incumbent),
+              _dream("entry_threshold", 2.0, 0.005, incumbent)]
+    w = dream_param_signal(scores, incumbent)
+    # lookback carried the max-power dream -> weight 2.0 at gain=1;
+    # entry_threshold got half the peak power -> weight 1.5.
+    assert w["lookback"] == pytest.approx(2.0)
+    assert w["entry_threshold"] == pytest.approx(1.5)
+
+
+def test_dream_param_signal_empty_on_zero_power():
+    assert dream_param_signal([_dream("lookback", 20.0, 0.0)],
+                             {"lookback": 100}) == {}
+    assert dream_param_signal([], {"lookback": 100}) == {}
+
+
+def test_steered_selector_reranks_by_dream_weight():
+    # Two equally-ranked hypotheses on different params; dream weight on
+    # 'b' should pull b's hypothesis ahead in the round-robin order.
+    ranked = [_hyp("a", 1), _hyp("b", 1)]
+    chosen = steered_diverse_selector({"b": 2.0})(ranked, 1)
+    assert chosen[0].param == "b"
+    # No dream signal -> falls back to prioritizer order.
+    chosen = steered_diverse_selector({})(ranked, 1)
+    assert chosen[0].param == "a"
+
+
+def test_run_sleep_exposes_param_weights(stack):
+    runner = SleepPhaseRunner(
+        cycle=stack["cycle"],
+        config=SleepPhaseConfig(n_dream_scenarios=4, dream_bars=120,
+                                run_gated_cycle=True))
+    report = runner.run_sleep()
+    assert report.dreams_kept >= 1
+    for name, w in report.param_weights.items():
+        assert name in stack["cycle"].adapter.allowed
+        assert 1.0 < w <= 2.0
 
 
 # -- consolidation + synaptic pruning -------------------------------------------

@@ -33,6 +33,8 @@ python -m pytest tests/foundation/test_rsi_evidence.py \
   tests/foundation/test_rsi_replay_causality.py \
   tests/foundation/test_walk_forward_runner.py \
   tests/recursive_self_improvement -q --no-cov                  # v1 regression
+# NOTE: tests/recursive_self_improvement needs the Hermes env (imports
+# torch via governance_bridge); run it there, the rest in .venv.
 python scripts/rsi_synthetic_benchmark.py --seeds 20            # ablation
 python scripts/rsi_reachability_inventory.py                   # audit refresh
 ```
@@ -56,10 +58,20 @@ fail-closed: an awake runtime without a wired `pause_fn` refuses to run.
 `channel_sleep_controller(state_dir)` wires pause/resume through the
 operator `ControlChannel`.
 
+`rsi_sleep_cycle.py` also schedules periodic windows
+(`--every-cycles N` polls the runner's `snapshot.json` cycle count,
+`--every-seconds N` is the wall-clock fallback, `--max-sleeps` bounds
+the loop) and `--quiesce-timeout` must outlast one runner cycle —
+mid-cycle control drains starve when `run_cycle` is CPU-bound, so the
+pause effectively lands at the next cycle boundary.
+
 ```bash
 python scripts/rsi_sleep_cycle.py --work-dir var/rsi_sleep            # standalone
 python scripts/rsi_sleep_cycle.py --state-dir var/paper_run           # pauses a live runner
+python scripts/rsi_sleep_cycle.py --state-dir var/paper_run \
+  --every-cycles 100 --quiesce-timeout 1800                           # scheduled window
 python scripts/rsi_sleep_cycle.py --db market_data.db --instruments EURUSD
+python scripts/rsi_synthetic_benchmark.py --sleep --seeds 5           # sleep ablation
 ```
 
 ## Environments
@@ -198,3 +210,24 @@ review date and verify them against the current code before changing anything.
   Route new risky work through them rather than new parallel brains.
 - Risky decisions use sealed provenance traces and append-only audit
   (decision-bus jsonl, hash-chained archive, evidence_ledger triggers).
+
+## World-model V2 evaluation + market_data.db quality
+
+- `scripts/eval_world_model.py` (hermes env — needs torch) evaluates
+  `var/world_model_v2.pt`: per-block latent skill vs persistence and
+  random-init control, plus ridge probes latent-vs-raw-features on
+  observable next-bar targets (return, |return|, range), chronological
+  fit/test, off-grid bars excluded. Artifact: `var/world_model_eval.json`.
+- `market_data.db` EURUSD M15 contains 1,000 off-grid spliced rows
+  (fractional-second timestamps, ~:09:51.890219), 2026-06-04→2026-06-14,
+  interleaved with real bars producing ±6.7% alternating fake returns.
+  Detect with minute%15!=0 or fractional seconds (see `off_grid_mask` in
+  eval script). ~1,274 contaminated the v2 checkpoint's training split.
+  ~26 other |ret|>0.5% bars over 2024-2026 look like genuine news/gap moves.
+- Eval result 2026-11-07: checkpoint beats persistence on held-out latent
+  cosine only +0.0026 (metric saturates: consecutive-bar cos ~0.99).
+  Observable probes: trained latent ≈ random-init latent on every target;
+  raw features predict next range R² +0.32 / |ret| +0.26 over naive
+  baselines, latent probes negative R² at any ridge λ. The latent is not
+  currently a usable predictive representation; latent-cosine save gate
+  (`train_world_model.py`) is necessary-but-not-sufficient evidence.

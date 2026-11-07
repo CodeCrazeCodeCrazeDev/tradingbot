@@ -69,7 +69,7 @@ def _frames(seed, n=160, edge=True):
     return SyntheticMarketGenerator(spec).generate()
 
 
-def run_cycle(seed, edge, workdir, verifier_key):
+def run_cycle(seed, edge, workdir, verifier_key, sleep=False):
     frames = _frames(seed, edge=edge)
     contract = _contract(frames, 160)
     archive = ParetoArchive(Path(workdir) / f"a{seed}-{edge}.jsonl")
@@ -82,6 +82,19 @@ def run_cycle(seed, edge, workdir, verifier_key):
         adapter=ADAPTERS["mean_reversion"],
         config=CycleConfig(run_transfer=False, max_candidates_per_cycle=4,
                            wall_clock_s=25.0))
+    if sleep:
+        from trading_bot.recursive_self_improvement.sleep_cycle import (
+            SleepPhaseConfig, SleepPhaseRunner)
+        report = SleepPhaseRunner(
+            cycle=cycle,
+            config=SleepPhaseConfig(n_dream_scenarios=4, dream_bars=120,
+                                    dream_seed_base=90000 + seed)
+        ).run_sleep()
+        card = RSIScorecard(archive, memory).compute()
+        card["dreams_generated"] = report.dreams_generated
+        card["dreams_kept"] = report.dreams_kept
+        card["param_weights"] = report.param_weights
+        return report.decisions, card
     decisions = cycle.run_cycle()
     return decisions, RSIScorecard(archive, memory).compute()
 
@@ -90,10 +103,19 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", type=int, default=5)
     ap.add_argument("--out", default="ABLATION_RSI_SYNTHETIC.json")
+    ap.add_argument("--sleep", action="store_true",
+                    help="add a sleep-phase arm: each seed/edge runs both "
+                         "the baseline cycle and a sleep phase (dreams + "
+                         "diversity-steered selection) so their machinery "
+                         "metrics can be compared")
     args = ap.parse_args()
 
-    results = {"edge": {"eligible": 0, "rejected": 0, "insufficient": 0, "runs": []},
-               "no_edge": {"eligible": 0, "rejected": 0, "insufficient": 0, "runs": []}}
+    arms = ["baseline", "sleep"] if args.sleep else ["baseline"]
+    results = {arm: {"edge": {"eligible": 0, "rejected": 0,
+                              "insufficient": 0, "runs": []},
+                     "no_edge": {"eligible": 0, "rejected": 0,
+                                 "insufficient": 0, "runs": []}}
+               for arm in arms}
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
         # Provisioned key custody: an ephemeral in-process key cannot attest
         # holdout evidence, so the benchmark signs with a file-backed key.
@@ -105,17 +127,22 @@ def main() -> int:
         ).export_private_key(str(key_path))
         for seed in range(args.seeds):
             for edge in (True, False):
-                decisions, card = run_cycle(seed, edge, tmp, str(key_path))
                 key = "edge" if edge else "no_edge"
-                for d in decisions:
-                    bucket = ("eligible" if d.status == "eligible_for_operator_review"
-                              else "rejected" if d.status == "rejected"
-                              else "insufficient")
-                    results[key][bucket] += 1
-                results[key]["runs"].append(
-                    {"seed": seed, "decisions": len(decisions),
-                     "eligible_rate": card["eligible_rate"],
-                     "chain_valid": card["archive_chain_valid"]})
+                for arm in arms:
+                    decisions, card = run_cycle(
+                        seed, edge, tmp, str(key_path), sleep=(arm == "sleep"))
+                    for d in decisions:
+                        bucket = ("eligible" if d.status == "eligible_for_operator_review"
+                                  else "rejected" if d.status == "rejected"
+                                  else "insufficient")
+                        results[arm][key][bucket] += 1
+                    results[arm][key]["runs"].append(
+                        {"seed": seed, "decisions": len(decisions),
+                         "eligible_rate": card["eligible_rate"],
+                         "chain_valid": card["archive_chain_valid"],
+                         **({"dreams_kept": card.get("dreams_kept"),
+                             "param_weights": card.get("param_weights")}
+                            if arm == "sleep" else {})})
     results["interpretation"] = (
         "eligible rate under 'edge' = planted-fixture sensitivity; under "
         "'no_edge' should be ~0 (false-eligible rate on noise). These are "

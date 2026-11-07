@@ -366,6 +366,52 @@ class SleepConsolidator:
 # Diversity-aware candidate selection ("better-conditioned search")
 # ---------------------------------------------------------------------------
 
+def dream_param_signal(scores: Sequence[DreamScore],
+                       incumbent_params: Mapping[str, Any],
+                       signal_gain: float = 1.0) -> Dict[str, float]:
+    """Per-parameter steering weights from kept dream scores.
+
+    Each dream's best probe varies exactly one parameter; that parameter
+    gets credited with the dream's discriminative power (max wins across
+    dreams). Weights normalize to ``1 + signal_gain * power/max_power``
+    so a parameter with strong dream evidence re-ranks up to 2x —
+    steering only: parameters with no dream signal keep weight 1.0 and
+    are never demoted below the prioritizer's own ordering for their
+    bucket. The signal cannot create hypotheses, widen the candidate
+    budget, or touch the gate — it only reorders which of the cycle's
+    already-admissible hypotheses get tried first.
+    """
+    raw: Dict[str, float] = {}
+    for s in scores:
+        for name, v in s.best_probe.items():
+            if incumbent_params.get(name) != v:
+                raw[name] = max(raw.get(name, 0.0), s.power)
+    peak = max(raw.values()) if raw else 0.0
+    if peak <= 0:
+        return {}
+    return {k: 1.0 + signal_gain * (v / peak) for k, v in raw.items()}
+
+
+def steered_diverse_selector(
+    param_weights: Mapping[str, float],
+) -> Callable[[Sequence[Hypothesis], int], List[Hypothesis]]:
+    """Selector: re-rank by dream-weighted expected value, then diversify.
+
+    Mirrors ``ExperimentPrioritizer``'s expected-value-of-information
+    proxy (gain / cost), scaled by the dream per-parameter weight, then
+    hands the re-ranked pool to ``select_diverse_hypotheses`` so the
+    per-cycle budget still spans distinct parameters.
+    """
+    def _select(hyps: Sequence[Hypothesis], k: int) -> List[Hypothesis]:
+        reranked = sorted(
+            hyps,
+            key=lambda h: -(h.expected_gain
+                            * param_weights.get(h.param, 1.0)
+                            / max(h.est_cost, 1.0)))
+        return select_diverse_hypotheses(reranked, k)
+    return _select
+
+
 def select_diverse_hypotheses(hypotheses: Sequence[Hypothesis],
                               k: int) -> List[Hypothesis]:
     """Round-robin across parameter buckets, preserving rank order.
@@ -454,6 +500,7 @@ class SleepPhaseConfig:
     dream_bars: int = 160
     dream_keep_fraction: float = 0.5
     min_discriminative_power: float = 0.0
+    dream_signal_gain: float = 1.0
     recombination_count: int = 4
     run_gated_cycle: bool = True
     consolidate: bool = True
@@ -470,6 +517,7 @@ class SleepReport:
     dreams_kept: int = 0
     top_dreams: List[DreamScore] = field(default_factory=list)
     recombinations: List[Mapping[str, Any]] = field(default_factory=list)
+    param_weights: Dict[str, float] = field(default_factory=dict)
     decisions: List[Any] = field(default_factory=list)
     ledger_ok: bool = False
     notes: List[str] = field(default_factory=list)
@@ -544,6 +592,7 @@ class SleepPhaseRunner:
                 for s in report.top_dreams
             ],
             "recombinations": report.recombinations,
+            "param_weights": dict(report.param_weights),
             "dreams_generated": report.dreams_generated,
             "dreams_kept": report.dreams_kept,
         }
@@ -606,11 +655,17 @@ class SleepPhaseRunner:
                 recomb.evaluate(h, kept_scenarios, self.cycle.incumbent_params,
                                 cost_bps=cost, fraction=self.cycle.config.fraction)
                 for h in hybrid_sets]
+            report.param_weights = dream_param_signal(
+                kept, self.cycle.incumbent_params,
+                signal_gain=cfg.dream_signal_gain)
             self._record_dream_evidence(report)
 
             if cfg.run_gated_cycle:
+                selector = (steered_diverse_selector(report.param_weights)
+                            if report.param_weights
+                            else select_diverse_hypotheses)
                 report.decisions = self.cycle.run_cycle(
-                    gaps=gaps, selector=select_diverse_hypotheses)
+                    gaps=gaps, selector=selector)
 
             report.ledger_ok = self.cycle.memory.verify_evidence_chain()
         finally:
