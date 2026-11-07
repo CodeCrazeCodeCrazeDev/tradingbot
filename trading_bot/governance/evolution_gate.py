@@ -198,6 +198,7 @@ class EvolutionGate:
         # EKSFT Thresholds
         self.tau_h = 0.8  # Entropy threshold
         self.tau_kl = 0.5 # KL Divergence threshold
+        self.ece_max = kwargs.get("ece_max", 0.1)  # absolute ECE floor
         logger.info(f"EvolutionGate V6: Monotone-Safe enabled (threshold={self.threshold})")
 
     def _get_metric(self, obj: Any, name: str, default: Any = None) -> Any:
@@ -414,6 +415,17 @@ class EvolutionGate:
             if cand_latency > base_latency * 1.2:
                 no_regressions = False
                 reasons.append(f"latency regression {cand_latency} > {base_latency * 1.2}")
+
+        # Absolute ECE floor (VALIDATION_AND_FITNESS: ECE < 0.1) — a
+        # wildly miscalibrated candidate must fail even when it beats a
+        # poorly-calibrated baseline. Relative drift is checked below.
+        if "calibration_error" in cand_supplied:
+            cand_ece = float(_get_metric(candidate, "calibration_error"))
+            if cand_ece > self.ece_max:
+                logger.error(
+                    f"EvolutionGate: REJECTED - calibration error "
+                    f"{cand_ece:.4f} > {self.ece_max} (absolute floor)")
+                return False
 
         if "calibration" in cand_supplied:
             cand_calibration = float(_get_metric(candidate, "calibration"))
