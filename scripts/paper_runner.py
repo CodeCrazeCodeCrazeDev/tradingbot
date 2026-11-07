@@ -185,6 +185,45 @@ def hl_seed_rows(coin: str, hl_tf: str, n: int) -> tuple:
     return rows, last_open
 
 
+def _bar_features(closes) -> Dict[str, Any]:
+    """Measured per-bar features from a rolling close window.
+
+    Returns volatility (stdev of log returns), ret_autocorr (lag-1),
+    rsi (Wilder-14 approx), momentum (5-bar ROC), and a trend label —
+    all computed from real bars; empty dict until the window has
+    enough data rather than fabricated values.
+    """
+    import math
+    from statistics import fmean, pstdev
+    cs = list(closes)
+    if len(cs) < 21:
+        return {}
+    rets = [math.log(cs[i] / cs[i - 1]) for i in range(1, len(cs))
+            if cs[i - 1] > 0]
+    f: Dict[str, Any] = {}
+    w = rets[-20:]
+    if len(w) >= 2:
+        f["volatility"] = pstdev(w)
+    r = rets[-30:]
+    if len(r) >= 10:
+        m = fmean(r)
+        den = sum((x - m) ** 2 for x in r)
+        if den > 0:
+            f["ret_autocorr"] = sum(
+                (r[i] - m) * (r[i - 1] - m)
+                for i in range(1, len(r))) / den
+    if len(rets) >= 14:
+        ag = fmean([max(x, 0.0) for x in rets[-14:]])
+        al = fmean([max(-x, 0.0) for x in rets[-14:]])
+        f["rsi"] = 100.0 if al == 0 else 100.0 - 100.0 / (1.0 + ag / al)
+    if len(cs) >= 6 and cs[-6] > 0:
+        f["momentum"] = (cs[-1] - cs[-6]) / cs[-6]
+    sma = fmean(cs[-20:])
+    f["trend"] = ("up" if cs[-1] > sma * 1.0005 else
+                  "down" if cs[-1] < sma * 0.9995 else "flat")
+    return f
+
+
 def order_book_time_label(source: str) -> str:
     """Point-in-time tag for an L2 book merged onto an observation.
     Only hl_live fetches the book at bar-detection time; on replay the
@@ -211,10 +250,29 @@ def hl_live_observations(coin: str, symbol: str, hl_tf: str = "15m",
     contains bars later than the first processed observation.
     """
     from datetime import datetime as _dt, timezone as _tz
+    from collections import deque
     from scripts.hyperliquid_sync import fetch_candles, _TF_MS
     from trading_bot.feeds import hl_l2
     tf_ms = _TF_MS[hl_tf]
     last_open = int(start_after_open)
+    # Rolling close window for MEASURED features (volatility/rsi/
+    # momentum/ret_autocorr/trend). Primed from already-closed bars
+    # before the live boundary so the first emitted obs is fully
+    # featured — all values are computed from real candles, never
+    # assumed. Without these keys the MarketStructureVerifier
+    # falsifies 100% of directional branches (no structure evidence).
+    closes: "deque[float]" = deque(maxlen=96)
+    try:
+        primed = fetch_candles(coin, hl_tf,
+                               max(0, last_open - 120 * tf_ms) or
+                               int(time.time() * 1000) - 120 * tf_ms,
+                               int(time.time() * 1000))
+        for c in primed or []:
+            if int(c["t"]) <= last_open and int(c["T"]) <= int(
+                    time.time() * 1000):
+                closes.append(float(c["c"]))
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("hl_live feature prime failed: %s", exc)
     while True:
         now = int(time.time() * 1000)
         try:
@@ -238,6 +296,8 @@ def hl_live_observations(coin: str, symbol: str, hl_tf: str = "15m",
                    "volume_kind": "real",
                    "data_source": "hyperliquid_live",
                    "ts_is_broker_time": False}
+            closes.append(float(c["c"]))
+            obs.update(_bar_features(closes))
             try:
                 obs.update(hl_l2.snapshot(coin))
                 obs["order_book_time"] = "live"
