@@ -164,6 +164,7 @@ async def run_preflight(args) -> int:
 
 async def _fetch_trendbars(adapter, count: int = 5) -> list:
     """Closed M15 trendbars via the read-only data path."""
+    from trading_bot.brokers.ctrader_demo import _messages
     msgs = _messages()
     req = msgs.ProtoOAGetTrendbarsReq()
     req.ctidTraderAccountId = adapter.ctid_trader_account_id
