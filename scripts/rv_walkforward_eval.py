@@ -75,6 +75,33 @@ def r2(pred, y):
     return 1.0 - float(np.mean((pred - y) ** 2)) / mse_b if mse_b else float("nan")
 
 
+def _pinball(y, pred, tau):
+    d = y - pred
+    return float(np.mean(np.maximum(tau * d, (tau - 1.0) * d)))
+
+
+def eval_quantiles(args, X_tr, y_tr, X_ev, y_ev, hi, hrec):
+    """GBM pinball-regression vs the constant train-quantile baseline.
+
+    skill = 1 - model_pinball/const_pinball (>0 = heteroscedastic
+    information the unconditional quantile misses); coverage should
+    approximate tau. Hermes-only import — sklearn lives there, not .venv.
+    """
+    from sklearn.ensemble import GradientBoostingRegressor
+    for tau in args.quantiles:
+        g = GradientBoostingRegressor(loss="quantile", alpha=tau,
+                                      n_estimators=150, max_depth=2,
+                                      learning_rate=0.05, random_state=0)
+        g.fit(X_tr, y_tr[:, hi])
+        qp = g.predict(X_ev)
+        q_const = float(np.quantile(y_tr[:, hi], tau))
+        pin_m, pin_b = _pinball(y_ev[:, hi], qp, tau), \
+            _pinball(y_ev[:, hi], q_const, tau)
+        tag = f"q{int(round(tau * 100))}"
+        hrec[f"{tag}_skill"] = (1.0 - pin_m / pin_b) if pin_b else float("nan")
+        hrec[f"{tag}_coverage"] = float(np.mean(y_ev[:, hi] <= qp))
+
+
 def eval_symbol(args, symbol, ckpt, ckpt_train_end):
     rows, ret, rng, vol_z, mom8, roll_std, hour = load_features(
         args.db, symbol, args.timeframe, args.bars)
@@ -108,6 +135,9 @@ def eval_symbol(args, symbol, ckpt, ckpt_train_end):
                 "ridge_r2": r2(ridge_pred_np(mr, X_ev), y[j_ev, hi]),
                 "target_var": float(np.mean(y[j_ev, hi] ** 2)),
             }
+            if args.quantile:
+                eval_quantiles(args, X_tr, y[j_tr], X_ev, y[j_ev],
+                               hi, rec["horizons"][f"rv{hh}"])
         if ckpt is not None:
             net, y_mu, y_sd, rdg, bw = ckpt
             preds = []
@@ -133,15 +163,24 @@ def eval_symbol(args, symbol, ckpt, ckpt_train_end):
 
     summary = {}
     for hi, hh in enumerate(HORIZONS):
-        for key in ("ridge_r2", "ckpt_r2"):
+        keys = {"ridge_r2", "ckpt_r2"}
+        for f in folds:
+            keys.update(k for k in f["horizons"][f"rv{hh}"]
+                        if k.startswith("q") and k.endswith(
+                            ("_skill", "_coverage")))
+        for key in sorted(keys):
             vals = [f["horizons"][f"rv{hh}"].get(key) for f in folds]
             vals = [v for v in vals if v is not None]
             if vals:
-                summary[f"rv{hh}.{key}"] = {
+                entry = {
                     "mean": float(np.mean(vals)),
                     "min": float(np.min(vals)),
                     "folds_positive": f"{sum(v > 0 for v in vals)}/{len(vals)}",
                 }
+                if key.endswith("_coverage"):
+                    tau = float(key[1:3]) / 100.0
+                    entry["target_coverage"] = tau
+                summary[f"rv{hh}.{key}"] = entry
     return {"n_bars": n, "folds": folds, "summary": summary}
 
 
@@ -158,8 +197,13 @@ def main():
     ap.add_argument("--min-train", type=int, default=5000)
     ap.add_argument("--lam", type=float, default=1.0)
     ap.add_argument("--ckpt", default="var/rv_blend_forecaster.pt")
+    ap.add_argument("--quantile", action="store_true",
+                    help="also fit GBM quantile regressors per fold "
+                         "(hermes env — sklearn)")
+    ap.add_argument("--quantiles", default="0.5,0.8,0.95")
     ap.add_argument("--out", default="var/rv_walkforward.json")
     args = ap.parse_args()
+    args.quantiles = [float(t) for t in str(args.quantiles).split(",")]
 
     ckpt, ckpt_train_end = None, None
     if args.ckpt and Path(args.ckpt).exists():

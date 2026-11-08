@@ -3558,6 +3558,30 @@ class CognitiveSystemController:
         uncertainty_factor = float(max(0.0, min(1.0, 1.0 - _u / 0.7)))
         qty *= uncertainty_factor
 
+        # Realized-vol advisory sizing: when the gated RV forecaster rides
+        # the observation (paper_runner --rv-forecast emits rvf_mult_rv16,
+        # the expected vol-change factor over the next 16 bars), scale size
+        # down when a vol expansion is forecast. With the quantile heads
+        # armed (--rv-quantile) the P95 multiplier rvf_q95mult_rv16 is used
+        # instead — size against the tail forecast, not the mean.
+        # Asymmetric by design — the forecast only ever shrinks size
+        # (scalar <= 1); a predicted vol contraction never inflates
+        # exposure. Bounded at 0.25 so a wild forecast cannot zero a trade
+        # on its own; the risk service remains the sizing authority
+        # downstream.
+        _rvf = market.get("rvf_q95mult_rv16")
+        if not (isinstance(_rvf, (int, float)) and not isinstance(_rvf, bool)
+                and np.isfinite(_rvf) and _rvf > 0):
+            _rvf = market.get("rvf_mult_rv16")
+        vol_factor = 1.0
+        if isinstance(_rvf, (int, float)) and not isinstance(_rvf, bool) \
+                and np.isfinite(_rvf) and _rvf > 0:
+            vol_factor = float(min(1.0, max(0.25, 1.0 / _rvf)))
+        if vol_factor < 1.0:
+            qty *= vol_factor
+            self._funnel["rv_vol_scaled"] = self._funnel.get(
+                "rv_vol_scaled", 0) + 1
+
         # Portfolio correlation cap — CSC's own sizing constraint, not a
         # risk-rule edit and not advisor veto: a same-direction entry on a
         # symbol whose measured returns correlate strongly with an
@@ -3632,6 +3656,7 @@ class CognitiveSystemController:
                                dict) else {}),
             "slippage_measured": slippage is not None,
             "uncertainty_size_factor": uncertainty_factor,
+            "rv_vol_size_factor": vol_factor,
             "exploratory": _exploratory,
             "reasoning_token": self.discrete_channel[-1] if self.discrete_channel else "none"
         }

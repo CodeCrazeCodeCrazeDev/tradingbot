@@ -251,9 +251,9 @@ review date and verify them against the current code before changing anything.
   log(rv_H/roll21|ret|) targets, H in {4,8,16}): rv16 blend R2 +0.43 /
   corr 0.67 — first artifact to pass its gate
   (`var/rv_blend_forecaster.pt`). Next-BAR vol is unpredictable (above),
-  but multi-bar forward vol is not. Shadow-only in paper_runner
-  (`--rv-forecast` -> `rvf_*` obs fields + `rv_forecast_log.jsonl`;
-  nothing in the decision path reads them).
+  but multi-bar forward vol is not. paper_runner `--rv-forecast` emits
+  `rvf_*` obs fields + `rv_forecast_log.jsonl`; the CSC consumes
+  `rvf_mult_rv16` as a bounded down-only sizing scalar.
 - `scripts/rv_walkforward_eval.py` (hermes env) re-judges RV claims on
   contiguous expanding-window folds with an S+H embargo — single 70/30
   splits kept producing adjacent-regime mirages. 2026-11-07 result:
@@ -265,6 +265,20 @@ review date and verify them against the current code before changing anything.
   mean +0.19. Vol-ratio skill is the first verified transferable signal;
   JPY needs its own weights, EURUSD covers both EURUSD and GBPUSD.
   Reports: `var/rv_walkforward.json`, `var/rv_walkforward_jpy.json`.
+- Quantile extension (`scripts/train_rv_quantile.py`, GBM pinball
+  P50/P80/P95 on the same ratio target): 5/5 folds positive pinball
+  skill at every tau on EURUSD (rv16 q80 +0.22, q95 +0.13) with
+  near-target coverage. Artifact `var/rv_quantile_forecaster.joblib`;
+  runtime `RVBlendForecaster(quantile_path=...)` emits
+  `rvf_q{50,80,95}mult_rv*` obs fields via `--rv-quantile`. Sizing
+  consumption: `_select_optimal_action` applies a bounded, down-only
+  `rv_vol_size_factor = clip(1/mult, 0.25, 1.0)` — P95 mult when
+  quantiles are armed, mean mult otherwise. The forecast never raises
+  size; risk service stays the sizing authority.
+- Direction note (2026-11-07): the JEPA-latent world model produced no
+  observable-predictive structure after two honest attempts; the
+  verified local-model channel is multi-bar RV ratio + quantiles.
+  Any "V3-lite" spine should build on that channel, not latents.
 - Off-grid splice contamination is EURUSD-M15-only; GBPUSD/USDJPY M15
   and EURUSD/GBPUSD H1/H4 are clean (verified 2026-11-07). market_data.db
   now carries ~65k M15 bars x3 pairs + H1 (2016+) + H4 (2007+).

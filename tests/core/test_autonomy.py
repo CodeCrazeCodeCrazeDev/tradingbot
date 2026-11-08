@@ -174,6 +174,46 @@ def test_moderate_uncertainty_partial_size(csc):
     assert proposal["quantity"] == pytest.approx(5.0)
 
 
+def test_rv_forecast_scales_exposure(csc):
+    # Predicted 2x vol expansion over the next 16 bars -> half size.
+    csc.state.epistemic_uncertainty = 0.14
+    proposal = csc._select_optimal_action(
+        _branch(), {}, trade_id="t4",
+        market_data={"symbol": "EURUSD", "rvf_mult_rv16": 2.0})
+    assert proposal["rv_vol_size_factor"] == pytest.approx(0.5)
+    assert proposal["quantity"] == pytest.approx(4.0)
+
+
+def test_rv_forecast_never_increases_size(csc):
+    # Predicted vol contraction must not inflate exposure — the scalar
+    # is asymmetric, capped at 1.0.
+    csc.state.epistemic_uncertainty = 0.14
+    proposal = csc._select_optimal_action(
+        _branch(), {}, trade_id="t5",
+        market_data={"symbol": "EURUSD", "rvf_mult_rv16": 0.5})
+    assert proposal["rv_vol_size_factor"] == 1.0
+    assert proposal["quantity"] == pytest.approx(8.0)
+
+
+def test_rv_forecast_scalar_floored(csc):
+    # A wild forecast cannot zero the trade on its own — floor 0.25.
+    csc.state.epistemic_uncertainty = 0.14
+    proposal = csc._select_optimal_action(
+        _branch(), {}, trade_id="t6",
+        market_data={"symbol": "EURUSD", "rvf_mult_rv16": 100.0})
+    assert proposal["rv_vol_size_factor"] == pytest.approx(0.25)
+    assert proposal["quantity"] == pytest.approx(2.0)
+
+
+def test_rv_forecast_absent_noop(csc):
+    # No rvf_* fields (forecaster disabled) -> factor 1, unchanged path.
+    csc.state.epistemic_uncertainty = 0.14
+    proposal = csc._select_optimal_action(
+        _branch(), {}, trade_id="t7", market_data={"symbol": "EURUSD"})
+    assert proposal["rv_vol_size_factor"] == 1.0
+    assert proposal["quantity"] == pytest.approx(8.0)
+
+
 def test_capability_review_surfaces_proposals(csc):
     class _Engine:
         def capability_proposals(self):

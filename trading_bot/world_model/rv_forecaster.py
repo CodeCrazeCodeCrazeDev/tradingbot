@@ -57,7 +57,8 @@ class RVBlendForecaster:
 
     ROW_BUF = 64
 
-    def __init__(self, ckpt_path, seq: int = 32, timeframe: str = "M15"):
+    def __init__(self, ckpt_path, seq: int = 32, timeframe: str = "M15",
+                 quantile_path=None):
         import numpy as np  # noqa: lazy runtime dep
         import torch  # noqa: lazy runtime dep
         from trading_bot.world_model.v2_core import WorldModelV2
@@ -98,6 +99,21 @@ class RVBlendForecaster:
                                np.asarray(m[1], dtype=np.float64).ravel(),
                                np.asarray(m[2], dtype=np.float64).ravel())
                       for h, m in blob["ridge"].items()}
+        # Optional GBM quantile heads (P50/P80/P95 of the same log-ratio
+        # target). joblib/sklearn load lazily like torch; any failure
+        # degrades honestly to mean-only output — no quantile fields is
+        # information, not an error.
+        self._quantile = None
+        if quantile_path:
+            try:
+                import joblib
+                blob_q = joblib.load(str(quantile_path))
+                self._quantile = blob_q.get("models")
+                logger.info("rv quantile heads loaded: %s", quantile_path)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("rv quantile artifact unusable (%s) — "
+                               "running mean-only", exc)
+
         # Pure featurizer — never trained, never used for its own outputs.
         self._featurizer = WorldModelV2(asset_dims={"FX": 64,
                                                   "Equities": 128},
@@ -207,6 +223,19 @@ class RVBlendForecaster:
             out["vol_mult"][key] = float(math.exp(float(blend[k])))
             out["gru"][key] = float(gru_pred[k])
             out["ridge"][key] = float(ridge_pred[k])
+
+        if self._quantile is not None:
+            out["quantile_log_ratio"] = {}
+            out["quantile_mult"] = {}
+            for k, hh in enumerate(self.horizons):
+                key = f"rv{hh}"
+                heads = self._quantile.get(str(hh)) or {}
+                out["quantile_log_ratio"][key] = {}
+                out["quantile_mult"][key] = {}
+                for tag, g in heads.items():
+                    q = float(g.predict(x[None, :])[0])
+                    out["quantile_log_ratio"][key][tag] = q
+                    out["quantile_mult"][key][tag] = float(math.exp(q))
         return out
 
 

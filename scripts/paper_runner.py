@@ -715,9 +715,11 @@ async def run(args: argparse.Namespace) -> int:
             from trading_bot.world_model.rv_forecaster import (
                 RVBlendForecaster)
             rv_forecaster = RVBlendForecaster(
-                PROJECT_ROOT / args.rv_forecast, timeframe=args.timeframe)
-            logger.info("rv forecaster armed (shadow/advisory only): %s",
-                        args.rv_forecast)
+                PROJECT_ROOT / args.rv_forecast, timeframe=args.timeframe,
+                quantile_path=(PROJECT_ROOT / args.rv_quantile)
+                if args.rv_quantile else None)
+            logger.info("rv forecaster armed (advisory): %s quantiles=%s",
+                        args.rv_forecast, args.rv_quantile)
         except Exception as exc:  # noqa: BLE001
             logger.warning(
                 "rv forecaster unavailable (%s) — running without", exc)
@@ -855,6 +857,10 @@ async def run(args: argparse.Namespace) -> int:
                     for _k in rv_last["log_ratio"]:
                         obs[f"rvf_log_{_k}"] = rv_last["log_ratio"][_k]
                         obs[f"rvf_mult_{_k}"] = rv_last["vol_mult"][_k]
+                    for _k, _qs in (rv_last.get("quantile_mult")
+                                    or {}).items():
+                        for _tag, _m in _qs.items():
+                            obs[f"rvf_{_tag}mult_{_k}"] = _m
                     obs["rvf_source"] = "rv_blend_forecaster"
                 try:
                     with open(rv_log_path, "a", encoding="utf-8") as _rf:
@@ -1058,12 +1064,23 @@ def main(argv: Optional[list] = None) -> int:
                              "history for later backtesting")
     parser.add_argument("--rv-forecast", nargs="?", metavar="PATH",
                         const="var/rv_blend_forecaster.pt", default=None,
-                        help="shadow-mode vol-change forecaster: attach "
-                             "rvf_* advisory fields to each obs + append "
+                        help="vol-change forecaster: attach rvf_* fields "
+                             "to each obs + append "
                              "<state-dir>/rv_forecast_log.jsonl (PATH "
                              "defaults to the blend checkpoint; needs "
-                             "torch — hermes env). Advisory only: nothing "
-                             "in the decision path reads these fields.")
+                             "torch — hermes env). The CSC consumes "
+                             "rvf_mult_rv16 as a bounded down-only "
+                             "sizing scalar (see rv_vol_size_factor); "
+                             "the risk service remains the sizing "
+                             "authority.")
+    parser.add_argument("--rv-quantile", nargs="?", metavar="PATH",
+                        const="var/rv_quantile_forecaster.joblib",
+                        default=None,
+                        help="optional GBM quantile heads "
+                             "(P50/P80/P95) alongside --rv-forecast: "
+                             "emits rvf_q*mult_* fields; rvf_q95mult_rv16 "
+                             "then drives the sizing scalar instead of "
+                             "the mean (needs joblib — hermes env).")
     args = parser.parse_args(argv)
     logging.basicConfig(level=args.log_level,
                         format="%(asctime)s %(name)s %(levelname)s %(message)s")
