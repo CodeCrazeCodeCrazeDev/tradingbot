@@ -270,7 +270,9 @@ review date and verify them against the current code before changing anything.
   skill at every tau on EURUSD (rv16 q80 +0.22, q95 +0.13) with
   near-target coverage. Artifact `var/rv_quantile_forecaster.joblib`;
   runtime `RVBlendForecaster(quantile_path=...)` emits
-  `rvf_q{50,80,95}mult_rv*` obs fields via `--rv-quantile`. Sizing
+  `rvf_q{50,80,95}mult_rv*` obs fields via `--rv-quantile`. USDJPY
+  in-pair artifact: `var/rv_quantile_jpy.joblib` (coverage 0.81/0.94,
+  better calibrated than EURUSD's conservative tail). Sizing
   consumption: `_select_optimal_action` applies a bounded, down-only
   `rv_vol_size_factor = clip(1/mult, 0.25, 1.0)` — P95 mult when
   quantiles are armed, mean mult otherwise. The forecast never raises
