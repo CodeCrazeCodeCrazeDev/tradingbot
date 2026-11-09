@@ -283,13 +283,20 @@ review date and verify them against the current code before changing anything.
   explore-promoted qty=0.1 trades exist. 80 directional proposals,
   50 approved, 8 settled; u moved 1.0->0.23->0.93 on real outcomes.
   rv_vol_size_factor computed live on all proposals (0.41-0.60,
-  tracking q95 mult ~2.2). Fix: scalar now applies AFTER explore
+  tracking q95 mult ~2.2). Mechanics (soak 2/3): plans DO carry
+  qty=1.0 unit intent (hypothesis.py) but the electorate verdict is
+  nondirectional every cycle (won_by_branch_range) — all directional
+  trades are _explore_probe promotions capped at min(qty, 0.1), and
+  the u=1.0 floor zeroes the rest. Scalar applies AFTER explore
   promotion — pre-promotion it could only multiply zero. Soak 3
   (`--explore-budget 40`, 22 cycles in): approved exploratory qty is
   now 0.037-0.051 = 0.1 x vol_factor — the forecast observably moves
   real executed size. `--explore-budget N` on paper_runner sets
   TB_CSC_EXPLORE_BUDGET before bot start; without it every qty is
-  zeroed by the u=1.0 floor and nothing ever trades. Sizing
+  zeroed by the u=1.0 floor and nothing ever trades. For the scalar
+  to bind at full unit intent (~0.3-0.7 after unc x vol) a bull/bear
+  branch must win the electorate on merit — a data/alpha question,
+  not wiring. Sizing
   consumption: `_select_optimal_action` applies a bounded, down-only
   `rv_vol_size_factor = clip(1/mult, 0.25, 1.0)` — P95 mult when
   quantiles are armed, mean mult otherwise. The forecast never raises
@@ -339,6 +346,16 @@ terminal path.
   fetch failure.
 - Env: `TB_INTEL_FEEDS` (comma-separated RSS URLs; defaults: Google
   News forex, DailyFX, FXStreet).
+- AI peer teacher (`csc/ai_peer.py`, `AIPeer`, stdlib urllib): after
+  each learn cycle the worker asks a local inference server (Ollama
+  `/api/generate` or OpenAI-compatible `/v1/chat/completions`;
+  `TB_AI_PEER_ENDPOINT`/`TB_AI_PEER_MODEL`, default qwen3:8b) to
+  critique the learning report. 1s TCP probe per consult — zero cost
+  when no server runs. Critiques persist as `ai_peer`-tagged
+  LESSON_LEARNED experiences + journal entries; untrusted evidence,
+  never instructions. `TB_AI_PEER=0` disables. `qwen_codemender`/
+  `deepseek_engineer` already model this pattern via aiohttp
+  (hermes env only); the peer is the .venv-safe equivalent.
 - Pre-existing bug fixed: `mastery_orchestrator.verify_skill_mastery`
   called `application_success_rate`/`needs_review` (they are
   @property) — `run_continuous_learning` was dead code until then.
