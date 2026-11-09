@@ -272,7 +272,14 @@ review date and verify them against the current code before changing anything.
   runtime `RVBlendForecaster(quantile_path=...)` emits
   `rvf_q{50,80,95}mult_rv*` obs fields via `--rv-quantile`. USDJPY
   in-pair artifact: `var/rv_quantile_jpy.joblib` (coverage 0.81/0.94,
-  better calibrated than EURUSD's conservative tail). Sizing
+  better calibrated than EURUSD's conservative tail). Soak 2026-11-08
+  (`--source db --skip 2000 --seed-bars 48 --rv-forecast
+  --rv-quantile`): 60/60 cycles forecast-ready from bar 1 — seed rows
+  now warm the forecaster's 32-bar window (prior_seed_rows carries
+  OHLCV+ts); rv16 mult ranged 0.63-1.75, q95 1.55-2.72. The scalar
+  never fired live: all 60 cycles abstained upstream
+  (directional_proposals=0 — pre-existing pipeline behavior, not an
+  rv issue). Semantics pinned by tests/core/test_autonomy.py. Sizing
   consumption: `_select_optimal_action` applies a bounded, down-only
   `rv_vol_size_factor = clip(1/mult, 0.25, 1.0)` — P95 mult when
   quantiles are armed, mean mult otherwise. The forecast never raises

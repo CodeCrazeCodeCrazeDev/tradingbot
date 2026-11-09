@@ -41,10 +41,15 @@ def stop_requested(args: argparse.Namespace) -> bool:
 
 def prior_seed_rows(db_path: Path, symbol: str, timeframe: str,
                     skip: int, seed_bars: int) -> list:
-    """Only the rows strictly before the selected replay window."""
+    """Only the rows strictly before the selected replay window.
+
+    Columns: close,high,low,open,volume,timestamp — the first three are
+    what callers index; the extras let the rv forecaster warm its own
+    32-bar window from the same strictly-prior data."""
     with sqlite3.connect(Path(db_path).resolve().as_uri() + "?mode=ro", uri=True) as con:
         return con.execute(
-            "SELECT close,high,low FROM market_data WHERE symbol=? AND timeframe=? "
+            "SELECT close,high,low,open,volume,timestamp FROM market_data "
+            "WHERE symbol=? AND timeframe=? "
             "ORDER BY timestamp LIMIT ? OFFSET ?",
             (symbol, timeframe, max(0, min(seed_bars, skip)),
              max(0, skip - seed_bars))).fetchall()
@@ -723,6 +728,25 @@ async def run(args: argparse.Namespace) -> int:
         except Exception as exc:  # noqa: BLE001
             logger.warning(
                 "rv forecaster unavailable (%s) — running without", exc)
+    # Warm the forecaster's 32-bar window from the same strictly-prior
+    # seed rows the CSC windows use — without this the first ~32 replay
+    # cycles produce "warming" status instead of forecasts.
+    if rv_forecaster is not None and args.seed_bars > 0 \
+            and args.source != "hl_live":
+        _warmed = 0
+        for r in rows:
+            try:
+                rv_forecaster.update({
+                    "timestamp": r[5], "broker_timestamp": r[5],
+                    "symbol": args.symbol,
+                    "open": r[3], "high": r[1], "low": r[2],
+                    "close": r[0],
+                    "volume": r[4] if r[4] is not None else 0.0})
+                _warmed += 1
+            except Exception:  # noqa: BLE001
+                pass
+        logger.info("rv forecaster warmed on %d/%d seed bars",
+                    _warmed, len(rows))
     rv_log_path = state_dir / "rv_forecast_log.jsonl"
 
     if args.source == "db":
