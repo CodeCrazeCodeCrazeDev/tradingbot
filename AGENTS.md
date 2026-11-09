@@ -284,7 +284,12 @@ review date and verify them against the current code before changing anything.
   50 approved, 8 settled; u moved 1.0->0.23->0.93 on real outcomes.
   rv_vol_size_factor computed live on all proposals (0.41-0.60,
   tracking q95 mult ~2.2). Fix: scalar now applies AFTER explore
-  promotion — pre-promotion it could only multiply zero. Sizing
+  promotion — pre-promotion it could only multiply zero. Soak 3
+  (`--explore-budget 40`, 22 cycles in): approved exploratory qty is
+  now 0.037-0.051 = 0.1 x vol_factor — the forecast observably moves
+  real executed size. `--explore-budget N` on paper_runner sets
+  TB_CSC_EXPLORE_BUDGET before bot start; without it every qty is
+  zeroed by the u=1.0 floor and nothing ever trades. Sizing
   consumption: `_select_optimal_action` applies a bounded, down-only
   `rv_vol_size_factor = clip(1/mult, 0.25, 1.0)` — P95 mult when
   quantiles are armed, mean mult otherwise. The forecast never raises
@@ -300,3 +305,49 @@ review date and verify them against the current code before changing anything.
   (`on_grid`); eval imports the same loader, so both paths are clean.
 - torch on this box needs `torch.set_num_threads(1)` + OMP/MKL env
   caps: multi-threaded runs deadlock with ~0 CPU (seen twice).
+
+## Evolution supervisor (CSC self-mastery loop)
+
+`trading_bot/core/csc/evolution_supervisor.py` — `EvolutionSupervisor`
+wired into `CognitiveSystemController` (`evolution_supervisor=` kwarg;
+`None` disables). Per-observation tick runs in the
+`process_market_observation` finally block, so it fires on every
+terminal path.
+
+- Every terminal decision (executed/abstained/rejected) is ingested
+  into `self_mastery.ExperienceMemory` with decision context;
+  `record_outcome`/`record_paper_settlement` attach measured outcomes
+  (deduped by settlement_id).
+- `MasteryOrchestrator` reflect/learn passes run on ONE daemon worker
+  thread (never blocks the pipeline). CodeEvolver output is journaled
+  to `evolution_journal.jsonl` — proposals only; `apply_modification`
+  is never called. Promotion stays behind RSI gates + OperatorAuthorization.
+- `NetworkSentinel` + `SelfDefender` are legacy/quarantined components
+  used READ-ONLY (no registered systems, no mode switching). Defender
+  state lives under `var/self_mastery/self_defense/`; its credential
+  store is NOT the canonical provider.
+- Intel sweeps = real browsing + research. `csc/web_browser.py`
+  (`WebBrowser`, stdlib-only urllib — works in .venv, no aiohttp/bs4)
+  gives web_search (DuckDuckGo HTML, no key), webfetch (page -> text),
+  and RSS/Atom news reads, plus arxiv/github via
+  `_fetch_internet_evidence`. SSRF guard refuses private/loopback/
+  reserved IPs; byte caps, timeouts, per-request min-interval; honest
+  `unavailable`/`refused` on failure. Sweeps persist to
+  `var/self_mastery/intel/sweep_*.json`. Operator-visible:
+  `await csc._evolution.browse(url)` / `.search(q)` — connectivity-gated.
+  `internet_access/` deliberately unused: fabricates mock feeds on
+  fetch failure.
+- Env: `TB_INTEL_FEEDS` (comma-separated RSS URLs; defaults: Google
+  News forex, DailyFX, FXStreet).
+- Pre-existing bug fixed: `mastery_orchestrator.verify_skill_mastery`
+  called `application_success_rate`/`needs_review` (they are
+  @property) — `run_continuous_learning` was dead code until then.
+
+Env: `TB_SELF_MASTERY_DIR` (default `var/self_mastery`),
+`TB_SELF_MASTERY=0` (kill learning), `TB_AUTONOMY_EXTERNAL=0`
+(no monitors/intel — set in sandboxes), `TB_EVO_{REFLECT,LEARN,INTEL,SEC,AUDIT}_EVERY`
+cycle cadences (defaults 250/1000/150/50/25).
+
+```bash
+python -m pytest tests/core/test_evolution_supervisor.py -q --no-cov
+```

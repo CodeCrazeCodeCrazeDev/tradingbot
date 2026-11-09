@@ -513,6 +513,13 @@ async def run(args: argparse.Namespace) -> int:
     os.environ.setdefault(
         "TB_RL_STATE_DIR", str(state_dir / "rl"))
 
+    # Bounded exploration: without this the epistemic-uncertainty floor
+    # (u=1.0 at cold start) zeroes every quantity forever — the
+    # abstention trap. Must be set before the CSC reads it at
+    # construction inside the runtime.
+    if args.explore_budget:
+        os.environ["TB_CSC_EXPLORE_BUDGET"] = str(args.explore_budget)
+
     # Macro-event gate: NFP/CPI/central-bank windows are the dominant
     # FX hazard — obs inside a declared window is skipped, not
     # analyzed. Window file is data-driven, not hardcoded.
@@ -1105,6 +1112,13 @@ def main(argv: Optional[list] = None) -> int:
                              "emits rvf_q*mult_* fields; rvf_q95mult_rv16 "
                              "then drives the sizing scalar instead of "
                              "the mean (needs joblib — hermes env).")
+    parser.add_argument("--explore-budget", type=int, default=0,
+                        metavar="N",
+                        help="allow N exploratory trades at ~10%% size so "
+                             "real fills can decay the cold-start "
+                             "epistemic-uncertainty floor (default 0 = "
+                             "fail-closed abstention; sets "
+                             "TB_CSC_EXPLORE_BUDGET before bot start)")
     args = parser.parse_args(argv)
     logging.basicConfig(level=args.log_level,
                         format="%(asctime)s %(name)s %(levelname)s %(message)s")
