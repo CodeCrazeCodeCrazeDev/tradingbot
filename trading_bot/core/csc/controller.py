@@ -2319,7 +2319,7 @@ class CognitiveSystemController:
         # data doesn't exist. Lets the simulator/net-cost gate price
         # execution quality instead of assuming a flat cost.
         try:
-            from trading_bot.analysis.microstructure_estimator import (
+            from trading_bot.cognition.microstructure_estimator import (
                 estimate_all)
             hl = self._hl_history.setdefault(symbol, deque(maxlen=64))
             h_cur = obs_dict.get("high")
@@ -3558,29 +3558,13 @@ class CognitiveSystemController:
         uncertainty_factor = float(max(0.0, min(1.0, 1.0 - _u / 0.7)))
         qty *= uncertainty_factor
 
-        # Realized-vol advisory sizing: when the gated RV forecaster rides
-        # the observation (paper_runner --rv-forecast emits rvf_mult_rv16,
-        # the expected vol-change factor over the next 16 bars), scale size
-        # down when a vol expansion is forecast. With the quantile heads
-        # armed (--rv-quantile) the P95 multiplier rvf_q95mult_rv16 is used
-        # instead — size against the tail forecast, not the mean.
-        # Asymmetric by design — the forecast only ever shrinks size
-        # (scalar <= 1); a predicted vol contraction never inflates
-        # exposure. Bounded at 0.25 so a wild forecast cannot zero a trade
-        # on its own; the risk service remains the sizing authority
-        # downstream.
-        _rvf = market.get("rvf_q95mult_rv16")
-        if not (isinstance(_rvf, (int, float)) and not isinstance(_rvf, bool)
-                and np.isfinite(_rvf) and _rvf > 0):
-            _rvf = market.get("rvf_mult_rv16")
+        # Realized-vol advisory sizing is resolved below, AFTER explore
+        # promotion — every directional branch currently arrives with
+        # qty=0 (the planner emits no measured size), so a scalar applied
+        # here could only ever multiply zero. Post-promotion it binds on
+        # the only proposals that exist today: planner-sized trades AND
+        # explore-budget promotions alike.
         vol_factor = 1.0
-        if isinstance(_rvf, (int, float)) and not isinstance(_rvf, bool) \
-                and np.isfinite(_rvf) and _rvf > 0:
-            vol_factor = float(min(1.0, max(0.25, 1.0 / _rvf)))
-        if vol_factor < 1.0:
-            qty *= vol_factor
-            self._funnel["rv_vol_scaled"] = self._funnel.get(
-                "rv_vol_scaled", 0) + 1
 
         # Portfolio correlation cap — CSC's own sizing constraint, not a
         # risk-rule edit and not advisor veto: a same-direction entry on a
@@ -3624,6 +3608,29 @@ class CognitiveSystemController:
             # Budget decrements at approval, not proposal — a
             # proposal that dies at risk/shield/governance should not
             # spend exploration allowance it never used.
+
+        # Realized-vol advisory sizing: when the gated RV forecaster rides
+        # the observation (paper_runner --rv-forecast emits rvf_mult_rv16,
+        # the expected vol-change factor over the next 16 bars), scale size
+        # down when a vol expansion is forecast. With the quantile heads
+        # armed (--rv-quantile) the P95 multiplier rvf_q95mult_rv16 is used
+        # instead — size against the tail forecast, not the mean.
+        # Asymmetric by design — the forecast only ever shrinks size
+        # (scalar <= 1); a predicted vol contraction never inflates
+        # exposure. Bounded at 0.25 so a wild forecast cannot zero a trade
+        # on its own; the risk service remains the sizing authority
+        # downstream.
+        _rvf = market.get("rvf_q95mult_rv16")
+        if not (isinstance(_rvf, (int, float)) and not isinstance(_rvf, bool)
+                and np.isfinite(_rvf) and _rvf > 0):
+            _rvf = market.get("rvf_mult_rv16")
+        if isinstance(_rvf, (int, float)) and not isinstance(_rvf, bool) \
+                and np.isfinite(_rvf) and _rvf > 0:
+            vol_factor = float(min(1.0, max(0.25, 1.0 / _rvf)))
+        if vol_factor < 1.0:
+            qty *= vol_factor
+            self._funnel["rv_vol_scaled"] = self._funnel.get(
+                "rv_vol_scaled", 0) + 1
 
         # Unmeasurable size on a directional action -> explicit no-position.
         if action in ("BUY", "SELL") and qty <= 0.0:

@@ -214,6 +214,20 @@ def test_rv_forecast_absent_noop(csc):
     assert proposal["quantity"] == pytest.approx(8.0)
 
 
+def test_rv_forecast_scales_explore_promotion(csc):
+    # Planner emits no measured size -> uncertainty zeroes qty ->
+    # explore budget promotes to 0.1 -> the vol scalar must bind on
+    # the promoted size too (it applies after promotion).
+    csc.state.epistemic_uncertainty = 0.95
+    csc._explore_budget = 1
+    proposal = csc._select_optimal_action(
+        _branch(), {}, trade_id="t8",
+        market_data={"symbol": "EURUSD", "rvf_mult_rv16": 2.0})
+    assert proposal["exploratory"] is True
+    assert proposal["rv_vol_size_factor"] == pytest.approx(0.5)
+    assert proposal["quantity"] == pytest.approx(0.05)
+
+
 def test_capability_review_surfaces_proposals(csc):
     class _Engine:
         def capability_proposals(self):

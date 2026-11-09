@@ -276,10 +276,15 @@ review date and verify them against the current code before changing anything.
   (`--source db --skip 2000 --seed-bars 48 --rv-forecast
   --rv-quantile`): 60/60 cycles forecast-ready from bar 1 — seed rows
   now warm the forecaster's 32-bar window (prior_seed_rows carries
-  OHLCV+ts); rv16 mult ranged 0.63-1.75, q95 1.55-2.72. The scalar
-  never fired live: all 60 cycles abstained upstream
-  (directional_proposals=0 — pre-existing pipeline behavior, not an
-  rv issue). Semantics pinned by tests/core/test_autonomy.py. Sizing
+  OHLCV+ts); rv16 mult ranged 0.63-1.75, q95 1.55-2.72. Soak 2
+  (TB_CSC_EXPLORE_BUDGET=80): the abstention trap is the cold-start
+  loop — u=1.0 zeroes every qty, and every directional branch arrives
+  with plan qty=0 anyway (planner emits no measured size), so only
+  explore-promoted qty=0.1 trades exist. 80 directional proposals,
+  50 approved, 8 settled; u moved 1.0->0.23->0.93 on real outcomes.
+  rv_vol_size_factor computed live on all proposals (0.41-0.60,
+  tracking q95 mult ~2.2). Fix: scalar now applies AFTER explore
+  promotion — pre-promotion it could only multiply zero. Sizing
   consumption: `_select_optimal_action` applies a bounded, down-only
   `rv_vol_size_factor = clip(1/mult, 0.25, 1.0)` — P95 mult when
   quantiles are armed, mean mult otherwise. The forecast never raises
