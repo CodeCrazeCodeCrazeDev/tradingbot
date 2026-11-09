@@ -296,7 +296,11 @@ review date and verify them against the current code before changing anything.
   zeroed by the u=1.0 floor and nothing ever trades. For the scalar
   to bind at full unit intent (~0.3-0.7 after unc x vol) a bull/bear
   branch must win the electorate on merit — a data/alpha question,
-  not wiring. Sizing
+  not wiring. Policy (2026-11-09): explore probes stay capped at 0.1
+  forever — they buy information, not conviction. Promotion to real
+  size is a capital-scaling decision: signed OperatorAuthorization,
+  never an automatic graduation rule or an env-var knob. A branch
+  that wins on merit needs no graduation machinery. Sizing
   consumption: `_select_optimal_action` applies a bounded, down-only
   `rv_vol_size_factor = clip(1/mult, 0.25, 1.0)` — P95 mult when
   quantiles are armed, mean mult otherwise. The forecast never raises
