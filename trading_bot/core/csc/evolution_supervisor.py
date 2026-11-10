@@ -825,9 +825,12 @@ class EvolutionSupervisor:
             report["ts"] = _utcnow().isoformat()
             self._last_learning = report
             if kind == "learn":
-                self._peer_study(report)
-                self._maybe_distill_frontier()
+                # Innovation first — it's the load-bearing step and is
+                # bounded; peer critique can block minutes on first
+                # model load and must never starve it.
                 self._maybe_innovate()
+                self._maybe_distill_frontier()
+                self._peer_study(report)
             self._journal(report)
             self._audit_outbox.append({
                 "event_type": "EVOLUTION", "action": f"{kind}_complete",
