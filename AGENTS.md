@@ -327,6 +327,19 @@ review date and verify them against the current code before changing anything.
   strength. COT lev_money positioning: OOS r -0.15..-0.27, sign
   flips vs train — rejected. Closest lead yet is rates-momentum on
   DAILY horizon; it does not promote.
+- `scripts/macro_rates_gate.py` (proper gate eval, 2026-11-09):
+  daily-horizon rates-momentum on macro_data.db — 39 variants x 3
+  pairs, point-in-time clean, cost 5bps/change, 60/40 + 3-segment
+  OOS. THREE variants cleared all-segment LCB5>0 — the first
+  directional candidates in the repo:
+  dUST2y_10d>0.15@USDJPY (mean +4.56bps/d, LCB +0.87..+1.88, 24%
+  expo), dUST2y_10d>0.15@EURUSD (+3.74, LCB +0.25..+1.58, 25%),
+  dUST2y_10d>0.2@EURUSD (+2.54, LCB +0.07..+0.87, 14% — thin).
+  Caveats: single data source (no cross-venue), ~160d segments,
+  daily not M15 — promotion would still need the edge_gate's
+  venue-level protocol, but the signal is real, sign-consistent,
+  and theory-correct (USDJPY = strongest, as rates-sensitivity
+  predicts). Report: var/macro_rates_gate.json.
   Any "V3-lite" spine should build on that channel, not latents.
 - Off-grid splice contamination is EURUSD-M15-only; GBPUSD/USDJPY M15
   and EURUSD/GBPUSD H1/H4 are clean (verified 2026-11-07). market_data.db
