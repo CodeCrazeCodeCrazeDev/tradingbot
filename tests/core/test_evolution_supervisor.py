@@ -264,3 +264,55 @@ def test_frontier_distill_below_min_skips(sup, monkeypatch):
     sup.observe_frontier("llama", "paper", "one obs only")
     sup._maybe_distill_frontier()
     assert sup.frontier_runs == 0
+
+
+# -- self-innovation engine (arXiv:2504.01990 loop) -------------------------
+
+from trading_bot.core.csc.self_innovation import SelfInnovationEngine
+
+
+def test_synthesize_bounded_valid_specs():
+    from trading_bot.core.csc.model_engineering import validate_spec
+    eng = SelfInnovationEngine()
+    specs = eng.synthesize(["rsi timing"], ["outcome_loss"], [],
+                           salt="t")
+    assert 0 < len(specs) <= 4
+    for s in specs:
+        assert validate_spec(s) == []
+        assert s["provenance"] == "self_innovation"
+
+
+def test_synthesize_deterministic_per_salt():
+    eng = SelfInnovationEngine()
+    a = [s["name"] for s in eng.synthesize([], [], [], salt="x")]
+    b = [s["name"] for s in eng.synthesize([], [], [], salt="x")]
+    assert a == b
+
+
+async def test_innovate_promotes_only_validated():
+    eng = SelfInnovationEngine()
+    calls = {"propose": 0, "validate": 0}
+    class FakeCsc:
+        async def propose_model(self, spec, proposed_by="x"):
+            calls["propose"] += 1
+            return {"status": "proposed", "candidate_id": "c1"}
+        async def validate_model(self, cid, bars):
+            calls["validate"] += 1
+            return {"verdict": "VALIDATED"}
+    bars = {"EURUSD": [{"close": 1.0 + i * 0.001} for i in range(150)]}
+    rep = await eng.innovate(FakeCsc(), bars)
+    assert rep["status"] == "ok"
+    assert rep["validated"] >= 1
+    assert rep["rejected"] + rep["validated"] == rep["proposed"]
+
+
+async def test_innovate_insufficient_bars_is_honest():
+    eng = SelfInnovationEngine()
+    class FakeCsc:
+        async def propose_model(self, *a, **k):
+            return {"status": "proposed", "candidate_id": "c"}
+        async def validate_model(self, *a, **k):
+            return {"verdict": "VALIDATED"}
+    rep = await eng.innovate(FakeCsc(), {"EURUSD": [{"close": 1.0}]})
+    assert rep["status"] == "insufficient_evidence"
+    assert eng.candidates_proposed == 0

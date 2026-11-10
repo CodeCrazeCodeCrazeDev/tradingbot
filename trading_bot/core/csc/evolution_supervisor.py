@@ -428,6 +428,46 @@ class EvolutionSupervisor:
                     "evolution: frontier distill %s failed: %s",
                     model, exc)
 
+    def _maybe_innovate(self) -> None:
+        """arXiv:2504.01990 self-enhancement pass: bounded evidence-
+        seeded candidates through the gated propose/validate path.
+        VALIDATED candidates wait for OperatorAuthorization — the
+        engine never auto-approves."""
+        ref = self._csc_ref() if self._csc_ref is not None else None
+        if ref is None or self._mastery_disabled():
+            return
+        try:
+            from .self_innovation import SelfInnovationEngine
+            if not hasattr(self, "_innovator"):
+                self._innovator = SelfInnovationEngine()
+            bars: Dict[str, List[Dict[str, Any]]] = {}
+            obs_hist = getattr(ref, "observation_history", None)
+            syms = list((getattr(ref, "_open_positions", None) or {})
+                        .keys()) or ["EURUSD"]
+            for sym in syms[:2]:
+                closes = obs_hist(sym)[-400:] if obs_hist else []
+                if closes:
+                    bars[sym] = [{"close": float(c)} for c in closes]
+            if not bars:
+                return
+            rep = asyncio.run(
+                self._innovator.innovate(ref, bars))
+            rep["kind"] = "self_innovation"
+            rep["ts"] = _utcnow().isoformat()
+            self._last_learning = dict(self._last_learning or {})
+            self._last_learning["innovation"] = rep
+            self._journal(rep)
+            self._audit_outbox.append({
+                "event_type": "EVOLUTION", "action": "self_innovation",
+                "outcome": rep.get("status", "ok"),
+                "correlation_id":
+                    f"innovate-{self._innovator.cycles_run}",
+                "details": {k: rep.get(k) for k in
+                            ("proposed", "validated", "rejected",
+                             "status")}})
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("evolution: innovate failed: %s", exc)
+
     async def browse(self, url: str) -> Dict[str, Any]:
         """Operator-visible webfetch analog — connectivity-gated."""
         if not self.external_enabled or self.online() is not True:
@@ -787,6 +827,7 @@ class EvolutionSupervisor:
             if kind == "learn":
                 self._peer_study(report)
                 self._maybe_distill_frontier()
+                self._maybe_innovate()
             self._journal(report)
             self._audit_outbox.append({
                 "event_type": "EVOLUTION", "action": f"{kind}_complete",
@@ -976,6 +1017,10 @@ class EvolutionSupervisor:
                     m: len(b) for m, b in self._frontier_obs.items()},
                 "distillation_runs": self.frontier_runs,
                 "min_obs": FRONTIER_MIN_OBS},
+            "innovation": (self._innovator.status()
+                           if getattr(self, "_innovator", None)
+                           is not None
+                           else {"status": "not_started"}),
             "cadence": {"reflect_every": REFLECT_EVERY,
                         "learn_every": LEARN_EVERY,
                         "intel_every": INTEL_EVERY,
