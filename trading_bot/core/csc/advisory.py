@@ -5446,6 +5446,183 @@ def _mi_wyckoff_service() -> AdvisoryModuleAdapter:
     return AdvisoryModuleAdapter("mi_wyckoff_accumulation", analyze)
 
 
+def _golden_path_trap_scan_service() -> AdvisoryModuleAdapter:
+    """golden_path AgentTrapScanner — scans the observation payload
+    itself for injected instructions, memory-poisoning attempts, and
+    manipulation framing. Untrusted text fields in an obs (news,
+    sentiment, feed payloads) are exactly what this defense exists
+    for: a hostile payload is measured evidence, not a hypothetical."""
+    from trading_bot.golden_path.agent_trap_defense import (
+        AgentTrapScanner)
+
+    scanner = AgentTrapScanner()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        rep = scanner.scan_mapping(ctx, source_prefix="obs")
+        return {
+            "blocked": rep.blocked,
+            "risk_score": rep.risk_score,
+            "finding_count": len(rep.findings),
+            "findings": [
+                {"category": f.category.value,
+                 "severity": f.severity,
+                 "source": str(f.source)[:80],
+                 "reason": str(f.reason)[:120]}
+                for f in rep.findings[:8]],
+        }
+
+    return AdvisoryModuleAdapter("golden_path_trap_scan", analyze)
+
+
+def _jurisdiction_session_service() -> AdvisoryModuleAdapter:
+    """global_expansion GlobalMarketAccessManager — venue session state
+    from the observation timestamp: which tracked markets are open
+    right now and the status of the obs symbol's venue."""
+    from trading_bot.global_expansion.multi_jurisdiction import (
+        GlobalMarketAccessManager, MarketStatus)
+
+    mgr = GlobalMarketAccessManager()
+    _crypto_hints = ("BTC", "ETH", "SOL", "XRP", "DOGE", "ADA", "LTC",
+                     "BNB", "USDT", "USDC", "DOT", "AVAX")
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        sym = str(ctx.get("symbol") or "").upper()
+        market = ("CRYPTO" if any(h in sym for h in _crypto_hints)
+                  else "FOREX")
+        t = _num(ctx.get("timestamp") or ctx.get("time"))
+        when = (datetime.fromtimestamp(float(t))
+                if isinstance(t, (int, float)) else datetime.now())
+        status = mgr.get_market_status(market, when)
+        return {
+            "market": market,
+            "status": status.value,
+            "open_markets": [
+                m for m in mgr.markets
+                if mgr.get_market_status(m, when) is MarketStatus.OPEN],
+            "weekday": when.weekday(),
+        }
+
+    return AdvisoryModuleAdapter("jurisdiction_session", analyze)
+
+
+def _mi_smc_structure_service() -> AdvisoryModuleAdapter:
+    """market_intelligence SmartMoneyConceptsAnalyzer +
+    LiquidityPoolDetector — break of structure, change of character,
+    premium/discount zones, equal highs/lows, liquidity voids on
+    accumulated real bars."""
+    from trading_bot.market_intelligence.liquidity_analysis import (
+        LiquidityPoolDetector, SmartMoneyConceptsAnalyzer)
+
+    smc = SmartMoneyConceptsAnalyzer()
+    pools = LiquidityPoolDetector()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 80)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        out = {"bars": len(df)}
+        for det, names in (
+                (smc, ("detect_break_of_structure",
+                       "detect_change_of_character",
+                       "detect_premium_discount_zones")),
+                (pools, ("detect_equal_highs_lows",
+                         "detect_liquidity_voids"))):
+            for name in names:
+                key = name.replace("detect_", "")
+                out[key] = None
+                fn = getattr(det, name, None)
+                if callable(fn):
+                    try:
+                        out[key] = _primitive(fn(df))
+                    except Exception:  # noqa: BLE001
+                        pass
+        return out
+
+    return AdvisoryModuleAdapter("mi_smc_structure", analyze)
+
+
+def _mi_liquidity_gaps_service() -> AdvisoryModuleAdapter:
+    """market_intelligence LiquidityAnalysis (market_context) — VWAP-
+    referenced liquidity gaps from price/volume history. Env-gated:
+    market_context imports scipy at module level."""
+    import scipy  # noqa: F401 - skip at attach when scipy absent
+    from trading_bot.market_intelligence.market_context import (
+        LiquidityAnalysis)
+
+    det = LiquidityAnalysis()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        p, v = hist.prices(), hist.volumes()
+        if len(p) < 60:
+            return {"status": "warming", "bars": len(p)}
+        import pandas as pd
+        gaps = det.detect_liquidity_gaps(
+            pd.Series(p[-120:]), pd.Series(v[-120:]))
+        return {"gap_count": len(gaps or []),
+                "gaps": _primitive((gaps or [])[-5:])}
+
+    return AdvisoryModuleAdapter("mi_liquidity_gaps", analyze)
+
+
+def _mi_vol_regime_change_service() -> AdvisoryModuleAdapter:
+    """market_intelligence RiskIndicators — volatility-regime change
+    flags on accumulated returns (two-window t-test). Env-gated on
+    scipy like the rest of market_context."""
+    import scipy  # noqa: F401 - skip at attach when scipy absent
+    from trading_bot.market_intelligence.market_context import (
+        RiskIndicators)
+
+    det = RiskIndicators()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        r = hist.returns()
+        if len(r) < 140:
+            return {"status": "warming", "bars": len(r)}
+        import pandas as pd
+        flags = det.detect_regime_changes(pd.Series(r[-140:]))
+        tail = flags.tail(10) if flags is not None else []
+        return {"recent_regime_changes": int(pd.Series(tail).sum()),
+                "bars": len(r)}
+
+    return AdvisoryModuleAdapter("mi_vol_regime_change", analyze)
+
+
+def _ml_regime_classifier_service() -> AdvisoryModuleAdapter:
+    """ml/reinforcement MarketRegimeClassifier — ATR/ADX/SMA regime
+    probabilities (trending/ranging/volatile/breakout) on accumulated
+    real bars. Pure pandas — the module's torch import is guarded, so
+    this runs in .venv without GPU or model weights."""
+    from trading_bot.ml.reinforcement import MarketRegimeClassifier
+
+    clf = MarketRegimeClassifier()
+    hist = _BarHistory()
+
+    def analyze(ctx: Mapping[str, Any]) -> Any:
+        hist.add(ctx)
+        df = _bars_df(hist, 60)
+        if df is None:
+            return {"status": "warming", "bars": len(hist)}
+        regimes = clf.classify(df.copy())
+        if not isinstance(regimes, Mapping):
+            return {"status": "unavailable"}
+        # Surface the dominant regime plus the full distribution —
+        # direction evidence comes from trending_up vs trending_down.
+        top = max(regimes.items(), key=lambda kv: kv[1])
+        return {"regimes": _primitive(regimes),
+                "dominant_regime": top[0],
+                "dominant_score": top[1],
+                "trend_score": regimes.get("trending_up", 0.0)
+                - regimes.get("trending_down", 0.0)}
+
+    return AdvisoryModuleAdapter("ml_regime_classifier", analyze)
+
+
 def _session_awareness_service() -> AdvisoryModuleAdapter:
     """improvements SessionAwareness — session tagging from the obs
     timestamp."""
@@ -6334,6 +6511,12 @@ DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
     ("mi_market_structure", _mi_structure_service),
     ("mi_time_price", _mi_time_price_service),
     ("mi_wyckoff_accumulation", _mi_wyckoff_service),
+    ("mi_smc_structure", _mi_smc_structure_service),
+    ("mi_liquidity_gaps", _mi_liquidity_gaps_service),
+    ("mi_vol_regime_change", _mi_vol_regime_change_service),
+    ("golden_path_trap_scan", _golden_path_trap_scan_service),
+    ("jurisdiction_session", _jurisdiction_session_service),
+    ("ml_regime_classifier", _ml_regime_classifier_service),
     ("session_awareness", _session_awareness_service),
     ("signal_enhancement_mtf", _signal_enhancement_mtf_service),
     ("fourier_price", _fourier_service),
@@ -6438,7 +6621,10 @@ LIVE_IMPORTED_NON_ADVISORY: Tuple[Tuple[str, str], ...] = (
      "core/chainofthoughtreasoner.py — legacy compat, no decision role"),
     ("ml", "imported by core/csc/model_engineering.py "
      "(confidence_calibration + data_leakage_guard) - canonical "
-     "dependency, statistical analyzers attached via advisory seam"),
+     "dependency, statistical analyzers attached via advisory seam; "
+     "ml_regime_classifier attached (pure-pandas regime probs); "
+     "torch-gated remainder (RL agents, ensembles, transformers) "
+     "needs trained weights + hermes env"),
 )
 
 # Orphan modules that are NOT observation-callable advisory services —
@@ -6740,7 +6926,32 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
      "superseded by record_outcome/decision sink"),
     ("gets", "gets_market_structure attached; promotion/evolution "
      "remainder is authority surface"),
-    ("golden_path", "orphan scripted demo path"),
+    ("golden_path", "golden_path_trap_scan attached (obs payload "
+     "injection scan); validator/runner/monitoring remainder is a "
+     "scripted demo path + decision-gate authority surface"),
+    ("global_expansion", "jurisdiction_session attached (venue session "
+     "state from obs timestamp); multi-currency manager + expansion "
+     "orchestrator are ops surfaces, not obs analyzers"),
+    ("expansion", "expansion_* services attach via "
+     "expansion.service.attach_expansion_services in "
+     "csc/assembly.build_cognitive_system — the canonical expansion "
+     "engine, not orphan"),
+    ("core_api", "interfaces/types/exceptions protocol package — no "
+     "analyzer surface"),
+    ("market_feeds", "LOB feeds need L2 order-book streams the "
+     "observation does not carry"),
+    ("market_student", "StudentAI learns from MarketLesson objects + "
+     "approval-workflow proposals — not obs-callable; role covered by "
+     "mastery_reflection + learner_knowledge services"),
+    ("core (root files)", "adversarial_failure_analysis attached as "
+     "adversarial_failure_match; unified_market_hostility_gate needs "
+     "per-strategy return/drawdown streams (self-state, not obs); "
+     "signal_counterintelligence is a provenance/licensing ledger; "
+     "correlation_checker/enhancedopportunityscanner/"
+     "evolutionarypolicyoptimization/chainofthoughtreasoner/"
+     "custombotawareness expose no obs-callable analyzer; "
+     "lifecycle/master-integration/pipeline files are composition "
+     "surfaces, never electorate members"),
     ("hivemind", "hivemind_collective + hivemind_threat_assessment "
      "attached; GovernedHivemindEngine evolution remainder is an "
      "authority surface"),
@@ -6797,9 +7008,10 @@ UNWIRED_ORPHAN_MODULES: Tuple[Tuple[str, str], ...] = (
      "attached (env-gated on scipy); deep-model remainder needs "
      "trained tensors"),
     ("market_intelligence", "mi_absorption, mi_manipulation, "
-     "mi_wyckoff_accumulation attached; mi_market_structure, "
-     "mi_time_price env-gated on sklearn/pytz; regulatory/technological "
-     "remainder needs external feeds"),
+     "mi_wyckoff_accumulation, mi_smc_structure attached; "
+     "mi_liquidity_gaps + mi_vol_regime_change + mi_market_structure, "
+     "mi_time_price env-gated on sklearn/pytz/scipy; "
+     "regulatory/technological remainder needs external feeds"),
     ("msos", "vendor-bias detection needs vendor/reference data feeds"),
     ("opportunity_scanner", "spread analyzer needs two symbols; "
      "observation is single-symbol"),
