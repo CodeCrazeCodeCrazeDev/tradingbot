@@ -308,6 +308,17 @@ review date and verify them against the current code before changing anything.
 - Direction note (2026-11-07): the JEPA-latent world model produced no
   observable-predictive structure after two honest attempts; the
   verified local-model channel is multi-bar RV ratio + quantiles.
+- Alpha verdict (2026-11-09, measured): ~20 rule classes gated on
+  M15 h=4/h=16 and H1 h=4 across EURUSD/GBPUSD/USDJPY — including
+  vol-regime-conditioned variants (vol_exp_mom / vol_con_fade /
+  regime_switch added to edge_hypotheses.py) — ALL net ≈ -cost_bps
+  on every walk-forward segment. Gross directional edge ≈ 0 on this
+  data at every tested horizon; the electorate's abstention is the
+  correct answer, not a pipeline failure. Directional exposure only
+  exists via bounded explore probes (by design), and any future
+  directional claim must arrive through the edge_gate as a killable
+  hypothesis with venue-level evidence. The verified contribution
+  of local models is vol/risk information for sizing, not direction.
   Any "V3-lite" spine should build on that channel, not latents.
 - Off-grid splice contamination is EURUSD-M15-only; GBPUSD/USDJPY M15
   and EURUSD/GBPUSD H1/H4 are clean (verified 2026-11-07). market_data.db
@@ -316,6 +327,40 @@ review date and verify them against the current code before changing anything.
   (`on_grid`); eval imports the same loader, so both paths are clean.
 - torch on this box needs `torch.set_num_threads(1)` + OMP/MKL env
   caps: multi-threaded runs deadlock with ~0 CPU (seen twice).
+
+## CSC capability matrix
+
+`trading_bot/core/csc/capabilities.py` — `CSCCapabilities(csc, ctx=ExpansionContext(...))`
+binds every advertised "autonomous superintelligence" capability to a real
+bounded mechanism instead of the fabricated `autonomous_superintelligence/`
+implementations. Everything is measured or honestly refused:
+
+- analyze/optimize/train/tune/discover/experiment -> sealed
+  `propose_model`/`validate_model` (+ `benjamini_hochberg` FDR); sweeps carry a
+  selection-bias warning, "useful" means CONFIRMED only.
+- builds+deploys agents -> foundry + real `approve_model` ->
+  `attach_engineered_model`; stalls at `awaiting_human` without the
+  durable `control:model_approval:<id>` flag, never self-attaches.
+- tests+rollback -> byte snapshot + real pytest subprocess + byte restore,
+  refuses all `ProtectedPathGuard.PROTECTED_PATHS` (asserted equal in test).
+- scan/opportunities/arbitrage -> measured `series_stats`/`scan_all` and a
+  cross-source same-series close-discrepancy probe (stale-data evidence,
+  not tradeable arbitrage without synced quotes).
+- industries/products -> correlation sectors + sealed-eval product cases.
+- infrastructure/resource balance -> verified data onboarding + local-host
+  psutil throttle. No servers/regions/global fleet.
+- measurable self-model (honest "consciousness") -> introspection coverage
+  over real CSC surfaces; knowledge graph edges require shared measured
+  basis; capital deployment -> read-only accounting of the real
+  fills/positions ledger (order authority stays canonical).
+
+`capability_report()` gives per-claim mechanism+scope+probe (never VERIFIED
+by fiat). `attach_capability_services(csc)` registers 7 read-only probes as
+advisory services — work-performing methods stay operator-invoked.
+
+```bash
+python -m pytest tests/foundation/test_csc_capabilities.py -q --no-cov -p no:cacheprovider
+```
 
 ## Evolution supervisor (CSC self-mastery loop)
 
@@ -360,6 +405,36 @@ terminal path.
   never instructions. `TB_AI_PEER=0` disables. `qwen_codemender`/
   `deepseek_engineer` already model this pattern via aiohttp
   (hermes env only); the peer is the .venv-safe equivalent.
+  Backend router `make_peer` (`TB_AI_PEER_BACKEND=auto|ollama|hf`):
+  auto probes Ollama (1s) then falls back to `HuggingFacePeer` —
+  in-process transformers text-gen (`TB_HF_MODEL`, default
+  Qwen/Qwen2.5-0.5B-Instruct; torch/transformers = hermes env).
+  Peer critique runs on the worker thread; lessons stay untrusted.
+- Advisory wiring (2026-11-09): `golden_path_trap_scan`
+  (golden_path AgentTrapScanner over the obs payload — injection/
+  memory-poisoning/manipulation markers), `jurisdiction_session`
+  (global_expansion venue session state from obs timestamp),
+  `mi_smc_structure` (SMC break-of-structure/CoC/premium-discount +
+  liquidity pools/voids on real bars) attach in .venv;
+  `mi_liquidity_gaps` + `mi_vol_regime_change` are env-gated on scipy
+  (hermes env only). `expansion_*` services attach via
+  `expansion.service.attach_expansion_services` in assembly —
+  already canonical, not orphan. core_api/market_feeds/
+  market_student audited with no obs-callable surface — cataloged.
+- Frontier-distillation feed: intel sweeps also extract structured
+  `FrontierObservation`s when fetched text names a watched model
+  (`TB_FRONTIER_WATCH`, default
+  gpt/claude/gemini/deepseek/qwen/llama/mistral/grok). Buffer persists
+  to `frontier_observations.jsonl` (50/model cap); once a model holds
+  `TB_FRONTIER_MIN_OBS` (5) the learn worker runs
+  `csc.distill_frontier(model, obs, [], [])` — the full
+  observe->profile->patterns->weakness-inversion->compile->governance
+  ->validate->selective-rollout->lineage pipeline in
+  `core/frontier_capability_distillation.py`. Honest boundary stands:
+  artifacts are playbook/policy/invariant kinds, never model specs,
+  nothing auto-enters propose_model. `observe_frontier(...)` is the
+  operator feed API. Weakness inversion on fetched docs already runs
+  live via `research/institutional.py` + `weakness_inversion.py`.
 - Pre-existing bug fixed: `mastery_orchestrator.verify_skill_mastery`
   called `application_success_rate`/`needs_review` (they are
   @property) — `run_continuous_learning` was dead code until then.
@@ -372,3 +447,55 @@ cycle cadences (defaults 250/1000/150/50/25).
 ```bash
 python -m pytest tests/core/test_evolution_supervisor.py -q --no-cov
 ```
+
+## Alt-data ingestion + feature edge evaluation (2026-11-09)
+
+`DOCS/DATA_SOURCES.md` is the registry: every evaluated source mapped
+to wired / keyless-planned / licensed. New collectors:
+
+```bash
+# macro_data.db: FRED (DGS2/10, SOFR, DEX* fx refs), ECB ref rates +
+# euro 10y, CFTC COT managed-money (TFF FX + disagg gold), calendar
+python scripts/collect_macro.py                       # all sources
+python scripts/collect_macro.py --sources cot --cot-years 3
+python scripts/collect_macro.py --sources calendar    # weekly accrual
+
+# second FX venue: Dukascopy ticks -> mid candles + measured spread
+python scripts/dsc_candles.py --symbol EURUSD --days 30 \
+  --timeframes M15,H1                                 # ~1s/req, feed 429s faster
+
+# feature-conditioned edge eval (news blackout delta, london sweep
+# with measured spread, COT fade, US-EU rate-diff trend) ->
+# var/edge_features.json
+python scripts/edge_features.py --symbol EURUSD \
+  --m15-db market_data.db --d1-db market_data.db
+```
+
+Facts that will bite you:
+
+- `market_data.db` is deeper than this file used to say: 66,718 EURUSD
+  M15 + 30k H4 (2007->). The 1,000 off-grid splice rows are still in
+  EURUSD M15; `edge_features.py` drops them automatically.
+- fred.stlouisfed.org Akamai-blocks custom User-Agents and stalls
+  python/OpenSSL TLS reads; collectors fall back to Git-for-Windows
+  curl with its DEFAULT UA (System32 curl also fails).
+- `collect_fx_ticks.py` used to stamp .bi5 ticks with LOCAL-time base
+  ms (machine is UTC+3 — ticks were shifted -3h); fixed to UTC but
+  `var/orderflow/fx_ticks.db` predates the fix.
+- COT `XRATE` cross contracts are excluded — they're not the pair's
+  own positioning. Positions join on `published_at` (+3d), never as-of.
+- Calendar coverage: `--sources calendar` is the forward-only weekly
+  mirror; `--sources official` adds REAL FOMC statement+minutes dates
+  2021-2027 (parsed federalreserve.gov page, 14:00 ET) and
+  `rule_seed:nfp_1st_friday` NFP dates (rule-derived, honest label —
+  holiday shifts can be off a week). BLS/BEA ICS and Wayback are
+  IP-blocked here; `--sources ics` reports them, never fakes.
+  First measured blackout A/B (2025-09→2026-10 M15): 105 bars
+  removed, LCB delta ±0.03bps — filter is neutral on baseline rules.
+- First real result: `london_sweep` on clean M15 -> 203 trades,
+  lcb5 -6.1bps, no_edge. `rate_diff_trend` on H4-rollup D1 -> 966
+  trades, lcb5 -40bps (negative systematic — worth inverting as a
+  hypothesis before declaring it dead).
+
+Network-heavy verification commands are slow; the unit tests are not:
+`python -m pytest tests/foundation/test_altdata_ingest.py -q --no-cov -p no:cacheprovider`
