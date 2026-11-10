@@ -319,6 +319,14 @@ review date and verify them against the current code before changing anything.
   directional claim must arrive through the edge_gate as a killable
   hypothesis with venue-level evidence. The verified contribution
   of local models is vol/risk information for sizing, not direction.
+- Macro channel check (2026-11-09, macro_data.db — real daily UST/EU
+  yields + spot, published_at same-day = lookahead-free): ΔUST2y→
+  EURUSD OOS r=-0.215 (correct sign, stable); daily-PnL eval of
+  threshold rules (|Δ|>10-15bp, cost 5bps): OOS mean +0.5..+1.2bps/d
+  in 3/4 variants but LCB5<0 on all — real relationship, sub-gate
+  strength. COT lev_money positioning: OOS r -0.15..-0.27, sign
+  flips vs train — rejected. Closest lead yet is rates-momentum on
+  DAILY horizon; it does not promote.
   Any "V3-lite" spine should build on that channel, not latents.
 - Off-grid splice contamination is EURUSD-M15-only; GBPUSD/USDJPY M15
   and EURUSD/GBPUSD H1/H4 are clean (verified 2026-11-07). market_data.db
