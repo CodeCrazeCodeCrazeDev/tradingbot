@@ -172,11 +172,11 @@ class MasteryOrchestrator:
         skills = [s for s in self.consolidator.skills.values()
                   if skill_id is None or s.skill_id == skill_id]
         for s in skills:
-            rate = s.application_success_rate()
+            rate = s.application_success_rate
             applications = s.successful_applications + s.failed_applications
             if applications < cfg.min_applications:
                 status = MasteryStatus.LEARNING
-            elif rate >= cfg.mastery_threshold and not s.needs_review():
+            elif rate >= cfg.mastery_threshold and not s.needs_review:
                 status = MasteryStatus.MASTERED
             elif rate >= cfg.progress_threshold:
                 status = MasteryStatus.PROGRESSING
@@ -196,7 +196,7 @@ class MasteryOrchestrator:
         ]
         for skill in self.consolidator.get_weakest_skills(3):
             recs.append(f"Review skill '{skill.name}' "
-                        f"(success rate {skill.application_success_rate():.0%})")
+                        f"(success rate {skill.application_success_rate:.0%})")
         return recs
 
     def run_continuous_learning(self, cycles: int = 1) -> Dict[str, Any]:

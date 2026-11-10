@@ -38,6 +38,7 @@ from ..verification.swarm import VerificationSwarm
 from .swarm_intelligence.service import SwarmIntelligenceService
 from .self_wiring import NodeState, SelfWiringSupervisor
 from .autonomy import AutonomyManager
+from .evolution_supervisor import EvolutionSupervisor
 from ..hms.models import (
     ResearchLedgerEntry,
     EvidenceGraph,
@@ -147,6 +148,12 @@ class CognitiveSystemController:
                         container.clear()
                 if hasattr(cls._instance, "last_prediction"):
                     cls._instance.last_prediction = None
+                evo = getattr(cls._instance, "_evolution", None)
+                if evo is not None:
+                    try:
+                        evo.stop()
+                    except Exception:  # noqa: BLE001
+                        pass
                 cls._instance = None
         logger.info("CognitiveSystemController reset completed.")
 
@@ -285,6 +292,24 @@ class CognitiveSystemController:
         # activity-portfolio decision per cycle instead of scattered
         # interval hooks, plus the capability-expansion ledger.
         self._autonomy = kwargs.get("autonomy") or AutonomyManager()
+        # Evolution supervisor: connectivity-gated self-mastery loop —
+        # experience ingest on every terminal decision, scheduled
+        # reflect/consolidate/evolve/verify on a bounded worker,
+        # read-only network/defense monitors, bounded external intel.
+        # Advisory only: CodeEvolver proposals are journaled, never
+        # applied — promotion stays behind RSI gates and signed
+        # OperatorAuthorization. Pass evolution_supervisor=None to
+        # disable entirely.
+        _evo = kwargs.get("evolution_supervisor", "auto")
+        if _evo == "auto":
+            _evo = EvolutionSupervisor()
+        _prev_evo = getattr(self, "_evolution", None)
+        if _prev_evo is not None and _prev_evo is not _evo:
+            try:
+                _prev_evo.stop()
+            except Exception:  # noqa: BLE001
+                pass
+        self._evolution = _evo
         # Curiosity engine: measured-surprise hypothesis generator —
         # emits SRE-ingestible payloads only on real statistical triggers.
         from .curiosity import CuriosityEngine
@@ -1497,6 +1522,13 @@ class CognitiveSystemController:
         self.reliability_tracker.update_action_outcome(
             regime, str(pending.get("action") or "").upper(),
             bool(was_correct), realized_return)
+        # Measured outcome joins the remembered experience — the mastery
+        # loop reflects on real results, not impressions.
+        _evo = getattr(self, "_evolution", None)
+        if _evo is not None:
+            _evo.ingest_outcome(
+                trade_id, pending, bool(was_correct), realized_return,
+                exit_price=exit_price)
         # Swarm consensus learns from the same settled outcome.
         _si = getattr(self, "_swarm_intel", None)
         if _si is not None:
@@ -1791,6 +1823,9 @@ class CognitiveSystemController:
             details={**settlement, "rewards": [reward.to_dict()]})
         inserted = await sink.record_audit_event_once(
             event, audit_id="paper-settlement:" + str(settlement["settlement_id"]))
+        _evo = getattr(self, "_evolution", None)
+        if _evo is not None:
+            _evo.ingest_settlement(dict(settlement))
         return {"status": "recorded" if inserted else "duplicate",
                 "settlement_id": settlement["settlement_id"],
                 "reward": reward.to_dict()}
@@ -4820,6 +4855,12 @@ class CognitiveSystemController:
                         "net_cost_gate": getattr(
                             self, "_last_net_cost_gate", "not_applicable"),
                     })
+                # Every terminal decision is a remembered experience —
+                # executed, abstained, or rejected alike (rejections and
+                # skips carry the learning signal).
+                _evo = getattr(self, "_evolution", None)
+                if _evo is not None:
+                    _evo.ingest_decision(obs_d, decision)
             # Rejected decisions are failure evidence — one seam here covers
             # every TRADE_REJECTED terminal (guardrail, verification, risk,
             # shield, governance) without touching each return site.
@@ -4869,6 +4910,22 @@ class CognitiveSystemController:
                     self._sre_ingest("curiosity", _c)
             except Exception as exc:  # noqa: BLE001
                 logger.debug("CSC-V6: curiosity step failed: %s", exc)
+            # Evolution supervisor tick: connectivity-gated learning —
+            # mastery worker scheduling, defense polling, intel sweeps.
+            # Runs on every observation including early terminal paths;
+            # failures here never reach the trading pipeline.
+            _evo = getattr(self, "_evolution", None)
+            if _evo is not None:
+                try:
+                    _evo.on_cycle(
+                        self,
+                        observation if isinstance(observation, dict) else {})
+                    for _a in _evo.drain_audits():
+                        await self._persist_audit_event(**_a)
+                except Exception as exc:  # noqa: BLE001
+                    logger.debug(
+                        "CSC-V6: evolution supervisor tick failed: %s",
+                        exc)
 
     def _maybe_schedule_research_cycle(self, observation: Any) -> None:
         """Budgeted background research: every ``research_interval``
@@ -5005,7 +5062,11 @@ class CognitiveSystemController:
         """Transparency surface: the organism's ops decisions and its
         capability-expansion ledger."""
         am = getattr(self, "_autonomy", None)
-        return am.report() if am is not None else {}
+        rep = am.report() if am is not None else {}
+        evo = getattr(self, "_evolution", None)
+        if evo is not None:
+            rep["evolution"] = evo.report()
+        return rep
 
     def _maybe_self_question(self, observation: Any) -> None:
         """Bounded self-questioning: every ``self_question_interval``
