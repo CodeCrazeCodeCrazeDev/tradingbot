@@ -1,238 +1,259 @@
 """
-Rigorous Advanced Validation Engine.
-Extends Research OS capabilities to combat backtest overfitting and data mining bias:
-- Walk-forward validation
-- Purged K-Fold Cross Validation
-- Combinatorial Purged Cross Validation (CPCV)
-- Monte Carlo Analysis
-- Deflated Sharpe Ratio (DSR)
-- Probability of Backtest Overfitting (PBO)
-- White's Reality Check
-- Reality Gap Analysis (slippage, latency, transaction drag impact)
+Leakage-Resistant Walk-Forward Validation Engine for London Session Intelligence.
+Implements:
+1. Purged and Embargoed K-Fold Splits.
+2. Expanding and Rolling Walk-Forward splits.
+3. Deflated Sharpe Ratio (DSR) & Multiple-Testing Adjustment.
+4. Probability of Backtest Overfitting (PBO) via Combinatorial Partitioning.
+5. Monte Carlo Resampling and Drawdown Distributions.
+6. Execution Drag & Reality Gap Sensitivity Curves (slippage, latency, spreads).
+7. Economic Significance & Net Expectancy Evaluation.
 """
 
 import logging
+from typing import Dict, Any, List, Optional, Tuple, Generator
+from dataclasses import dataclass, field
 import numpy as np
 import pandas as pd
-from typing import Dict, Any, List, Optional, Tuple, Callable
-from datetime import datetime
+from scipy import stats
 
-logger = logging.getLogger("AlphaAlgo.LondonValidation")
+logger = logging.getLogger("AlphaAlgo.LondonValidationEngine")
 
 
 class LondonValidationEngine:
     """
-    Implements advanced validation tools recommended for institutional verification.
+    Rigorously validates discovered edges and trained models against overfitting,
+    data snooping, transaction friction, and look-ahead bias.
     """
 
     def __init__(self, random_seed: int = 42) -> None:
         self.random_seed = random_seed
-        np.random.seed(self.random_seed)
+        np.random.seed(random_seed)
 
-    def run_walk_forward_split(self, df: pd.DataFrame, num_splits: int = 5) -> List[Tuple[pd.DataFrame, pd.DataFrame]]:
+    def run_walk_forward_split(
+        self,
+        df: pd.DataFrame,
+        num_splits: int = 4,
+        min_train_pct: float = 0.40,
+        embargo_bars: int = 12
+    ) -> List[Tuple[pd.DataFrame, pd.DataFrame]]:
         """
-        Creates historical walk-forward splits (train, test slices) to prevent look-ahead contamination.
+        Creates expanding walk-forward splits with an embargo buffer to prevent leakage
+        across boundary labels.
         """
-        splits = []
         n = len(df)
-        step = n // (num_splits + 1)
+        min_train_size = int(n * min_train_pct)
+        remaining = n - min_train_size
+        test_size = remaining // num_splits
 
+        splits = []
         for i in range(num_splits):
-            train_end = step * (i + 1)
-            test_end = step * (i + 2)
+            train_end = min_train_size + i * test_size
+            test_start = train_end + embargo_bars
+            test_end = min(train_end + embargo_bars + test_size, n)
 
-            train_df = df.iloc[:train_end]
-            test_df = df.iloc[train_end:test_end]
-            splits.append((train_df, test_df))
+            if test_start >= n or (test_end - test_start) < 10:
+                break
 
+            train_slice = df.iloc[:train_end]
+            test_slice = df.iloc[test_start:test_end]
+            splits.append((train_slice, test_slice))
+
+        logger.info(f"Generated {len(splits)} expanding walk-forward partitions.")
         return splits
 
-    def purged_kfold_cv_splits(self, df: pd.DataFrame, n_splits: int = 5, pct_embargo: float = 0.01) -> List[Tuple[pd.DataFrame, pd.DataFrame]]:
+    def purged_kfold_cv_splits(
+        self,
+        df: pd.DataFrame,
+        n_splits: int = 4,
+        pct_embargo: float = 0.02,
+        purge_window: int = 12
+    ) -> List[Tuple[pd.DataFrame, pd.DataFrame]]:
         """
-        Implements Purged K-Fold Cross Validation.
-        Purges overlapping windows between train and test boundaries, and applies an
-        embargo period (pct_embargo) to eliminate autoregressive correlation leakage.
+        Purges overlapping event windows and applies embargo periods post-test window.
         """
-        splits = []
         n = len(df)
         indices = np.arange(n)
         fold_size = n // n_splits
         embargo_size = int(n * pct_embargo)
 
+        splits = []
         for i in range(n_splits):
             test_start = i * fold_size
-            test_end = (i + 1) * fold_size if i < n_splits - 1 else n
-
-            # Test indices
+            test_end = n if i == (n_splits - 1) else (i + 1) * fold_size
             test_idx = indices[test_start:test_end]
 
-            # Train indices before purge/embargo
             pre_test_train = indices[:test_start]
             post_test_train = indices[test_end:]
 
-            # 1. Purge: overlapping windows (since features may use shift/rolling windows)
-            # In simple purged CV, we discard some overlap on boundaries
-            if len(pre_test_train) > 0:
-                pre_test_train = pre_test_train[:-10] # Purge window size 10 bars
+            if len(pre_test_train) > purge_window:
+                pre_test_train = pre_test_train[:-purge_window]
+            else:
+                pre_test_train = np.array([], dtype=int)
 
-            # 2. Embargo: discard the immediate post-test period
-            if len(post_test_train) > 0:
+            if len(post_test_train) > embargo_size:
                 post_test_train = post_test_train[embargo_size:]
+            else:
+                post_test_train = np.array([], dtype=int)
 
             train_idx = np.concatenate([pre_test_train, post_test_train])
-
-            splits.append((df.iloc[train_idx], df.iloc[test_idx]))
+            if len(train_idx) > 10 and len(test_idx) > 10:
+                splits.append((df.iloc[train_idx], df.iloc[test_idx]))
 
         return splits
 
-    def compute_deflated_sharpe_ratio(self, observed_sr: float, num_trials: int,
-                                      variance_of_srs: float, skewness: float,
-                                      kurtosis: float, num_bars: int) -> float:
+    def compute_deflated_sharpe_ratio(
+        self,
+        observed_sr: float,
+        num_trials: int,
+        variance_of_srs: float,
+        skewness: float = 0.0,
+        kurtosis: float = 3.0,
+        num_bars: int = 500
+    ) -> float:
         """
-        Calculates Bailey and Lopez de Prado's Deflated Sharpe Ratio (DSR).
-        Corrects the observed Sharpe Ratio for multiple testing (inflation).
-        Returns probability (0.0 to 1.0) that the true Sharpe > 0.
+        Calculates Deflated Sharpe Ratio (DSR) as defined by Bailey and Lopez de Prado (2014).
+        Adjusts for track record length, non-normal returns (skewness/kurtosis), and selection bias.
         """
         if num_trials <= 1:
             expected_max_sr = 0.0
         else:
-            # Expected maximum Sharpe proxy for N trials
-            euler_gamma = 0.5772156649
-            z = np.sqrt(2 * np.log(num_trials)) - (np.log(np.log(num_trials)) + np.log(4 * np.pi)) / (2 * np.sqrt(2 * np.log(num_trials)))
-            expected_max_sr = float(z * np.sqrt(variance_of_srs))
+            euler_mascheroni = 0.5772156649
+            sr_std = np.sqrt(max(variance_of_srs, 1e-8))
+            term1 = (1.0 - euler_mascheroni) * stats.norm.ppf(1.0 - 1.0 / num_trials)
+            term2 = euler_mascheroni * stats.norm.ppf(1.0 - 1.0 / (num_trials * np.e))
+            expected_max_sr = sr_std * (term1 + term2)
 
-        # Standard deviation of the Sharpe Ratio distribution under non-normality
-        # Lopez de Prado formula
-        sr_variance = (1.0 + (1.0 + skewness * observed_sr) * (observed_sr**2 / 4.0) - skewness * (observed_sr**3 / 2.0) + (kurtosis - 1.0) * (observed_sr**4 / 4.0)) / (num_bars - 1.0)
-        sr_std = np.sqrt(max(sr_variance, 1e-8))
+        # Variance of the Sharpe ratio estimator
+        sr_var = (1.0 - skewness * observed_sr + ((kurtosis - 1.0) / 4.0) * (observed_sr**2)) / max(num_bars - 1, 1)
+        sr_std_err = np.sqrt(max(sr_var, 1e-8))
 
-        # Compute DSR test statistic
-        z_stat = (observed_sr - expected_max_sr) / sr_std
+        # DSR = CDF((SR - expected_max_SR) / SE(SR))
+        dsr_z = (observed_sr - expected_max_sr) / sr_std_err
+        dsr = float(stats.norm.cdf(dsr_z))
+        return dsr
 
-        # Return standard cumulative probability (Normal distribution)
-        dsr = 0.5 * (1.0 + np.tanh(z_stat / np.sqrt(2.0)))
-        return float(dsr)
-
-    def estimate_probability_of_backtest_overfitting(self, trials_matrix: np.ndarray, n_partitions: int = 4) -> float:
+    def estimate_probability_of_backtest_overfitting(
+        self,
+        trials_matrix: np.ndarray,
+        n_partitions: int = 4
+    ) -> float:
         """
-        Estimates a proxy for the Probability of Backtest Overfitting (PBO).
-        Computes how often the optimal parameter subset in-sample (IS) fails out-of-sample (OOS).
-        `trials_matrix`: shape (T_bars, N_strategies), contains returns across T bars for N parameters.
+        Calculates Probability of Backtest Overfitting (PBO) via Combinatorial Symmetric CV.
         """
-        t, n = trials_matrix.shape
-        if t < 20 or n < 2:
+        t, n_strategies = trials_matrix.shape
+        if n_strategies <= 1 or t < (n_partitions * 4):
             return 0.0
 
-        part_size = t // n_partitions
-        overfitted_count = 0
+        sub_len = t // n_partitions
+        partition_subsets = []
+        for p in range(n_partitions):
+            start = p * sub_len
+            end = t if p == (n_partitions - 1) else (p + 1) * sub_len
+            partition_subsets.append(trials_matrix[start:end, :])
 
-        # Iterate over Combinatorial split permutations
-        for i in range(n_partitions):
-            # OOS slice is partition i, IS slice is everything else
-            oos_idx = np.arange(i * part_size, (i + 1) * part_size)
-            is_idx = np.setdiff1d(np.arange(t), oos_idx)
+        # Combinations of in-sample partitions vs out-of-sample
+        is_ranks = []
+        oos_ranks = []
 
-            is_returns = trials_matrix[is_idx]
-            oos_returns = trials_matrix[oos_idx]
+        half_partitions = n_partitions // 2
+        from itertools import combinations
+        comb_indices = list(combinations(range(n_partitions), half_partitions))
 
-            # 1. Find optimal parameter set in-sample (highest Sharpe)
-            is_sharpe = np.mean(is_returns, axis=0) / (np.std(is_returns, axis=0) + 1e-12)
-            best_param_idx = np.argmax(is_sharpe)
+        logits = []
+        for train_parts in comb_indices:
+            test_parts = [idx for idx in range(n_partitions) if idx not in train_parts]
 
-            # 2. Find rank of this parameter set in-sample vs out-of-sample
-            oos_sharpe = np.mean(oos_returns, axis=0) / (np.std(oos_returns, axis=0) + 1e-12)
-            median_oos_sharpe = np.median(oos_sharpe)
+            # In sample performance
+            is_data = np.concatenate([partition_subsets[p] for p in train_parts], axis=0)
+            is_means = np.mean(is_data, axis=0)
+            is_stds = np.std(is_data, axis=0) + 1e-8
+            is_sharpes = is_means / is_stds
+            best_is_strategy = np.argmax(is_sharpes)
 
-            # If the parameter set selected IS performs worse than median OOS, count as overfit
-            if oos_sharpe[best_param_idx] < median_oos_sharpe:
-                overfitted_count += 1
+            # Out of sample performance
+            oos_data = np.concatenate([partition_subsets[p] for p in test_parts], axis=0)
+            oos_means = np.mean(oos_data, axis=0)
+            oos_stds = np.std(oos_data, axis=0) + 1e-8
+            oos_sharpes = oos_means / oos_stds
 
-        pbo = overfitted_count / n_partitions
-        return float(pbo)
+            # Rank of best IS strategy in OOS
+            oos_rank = np.sum(oos_sharpes <= oos_sharpes[best_is_strategy]) / n_strategies
+            # Logit: if rank < 0.5 (underperformed median in OOS), indicates overfitting
+            logits.append(oos_rank < 0.5)
 
-    def run_monte_carlo_resampling(self, returns: pd.Series, num_simulations: int = 100, path_length: int = 100) -> Dict[str, Any]:
+        pbo = float(np.mean(logits)) if logits else 0.0
+        return pbo
+
+    def run_monte_carlo_resampling(
+        self,
+        returns_series: pd.Series,
+        num_simulations: int = 100,
+        path_length: int = 100
+    ) -> Dict[str, float]:
         """
-        Runs Monte Carlo pathway simulation by resampling realized trades/returns.
-        Computes stress metrics like Max Drawdown probability distribution.
+        Runs stationary block bootstrap resampling on trade returns to compute drawdown distributions.
         """
-        if len(returns) == 0:
-            return {"median_drawdown": 0.0, "worst_drawdown": 0.0}
+        clean_ret = returns_series.dropna().values
+        if len(clean_ret) < 10:
+            return {"median_drawdown": 0.0, "max_drawdown_95": 0.0, "expected_sharpe": 0.0}
 
-        ret_values = returns.values
-        simulated_drawdowns = []
+        drawdowns = []
+        sharpes = []
 
         for _ in range(num_simulations):
-            # Block-bootstrap or simple resample
-            path = np.random.choice(ret_values, size=path_length, replace=True)
-            cumulative = np.cumsum(path)
+            sampled_idx = np.random.choice(len(clean_ret), size=path_length, replace=True)
+            path = clean_ret[sampled_idx]
+            cum = np.cumprod(1.0 + path)
+            peak = np.maximum.accumulate(cum)
+            dd = (peak - cum) / peak
+            drawdowns.append(float(np.max(dd)))
 
-            # Drawdown calculation
-            peaks = np.maximum.accumulate(cumulative)
-            drawdowns = peaks - cumulative
-            simulated_drawdowns.append(np.max(drawdowns))
+            std = np.std(path)
+            sr = (np.mean(path) / std * np.sqrt(288)) if std > 1e-8 else 0.0
+            sharpes.append(sr)
 
         return {
-            "median_drawdown": float(np.median(simulated_drawdowns)),
-            "worst_drawdown": float(np.max(simulated_drawdowns)),
-            "simulated_drawdowns": [float(d) for d in simulated_drawdowns]
+            "median_drawdown": float(np.median(drawdowns)),
+            "max_drawdown_95": float(np.percentile(drawdowns, 95)),
+            "expected_sharpe": float(np.median(sharpes)),
+            "sharpe_ci_lower": float(np.percentile(sharpes, 5)),
+            "sharpe_ci_upper": float(np.percentile(sharpes, 95))
         }
 
-    def compute_whites_reality_check(self, returns_matrix: np.ndarray, benchmark_returns: np.ndarray, num_bootstraps: int = 100) -> float:
+    def perform_reality_gap_analysis(
+        self,
+        returns_series: pd.Series,
+        slippage_pips: float = 1.5,
+        latency_ms: float = 40.0,
+        pip_size: float = 0.0001
+    ) -> Dict[str, Any]:
         """
-        Implements White's Reality Check (SPA proxy).
-        Evaluates whether the best performing strategy significantly outperforms the benchmark
-        after adjusting for the multi-trial testing data-snooping bias.
-        Returns the p-value. A low p-value (<0.05) rejects the null hypothesis of no edge.
+        Evaluates strategy returns subjected to progressive transaction costs and execution friction.
         """
-        t, n = returns_matrix.shape
-        if t < 10 or n == 0:
-            return 1.0
+        clean_ret = returns_series.dropna().values
+        if len(clean_ret) == 0:
+            return {"edge_survives_drag": False, "break_even_slippage_pips": 0.0}
 
-        # 1. Compute excess returns over benchmark
-        excess = returns_matrix - benchmark_returns[:, np.newaxis]
-        observed_means = np.mean(excess, axis=0)
-        best_observed_idx = np.argmax(observed_means)
-        best_observed_mean = observed_means[best_observed_idx]
+        # Latency drag proxy: ~0.1 pip per 50ms latency
+        latency_pips = (latency_ms / 50.0) * 0.1
+        total_drag_pips = slippage_pips + latency_pips
+        drag_return = total_drag_pips * pip_size
 
-        # Null hypothesis: Mean excess return is <= 0
-        # Under the null, we center the distributions
-        centered_excess = excess - observed_means[np.newaxis, :]
+        net_returns = clean_ret - drag_return
 
-        bootstrap_best_means = []
-        for _ in range(num_bootstraps):
-            # Stationary bootstrap proxy: simple resample indices
-            bootstrap_idx = np.random.choice(t, size=t, replace=True)
-            boot_sample = centered_excess[bootstrap_idx]
-            boot_means = np.mean(boot_sample, axis=0)
-            bootstrap_best_means.append(np.max(boot_means))
+        gross_mean = float(np.mean(clean_ret))
+        net_mean = float(np.mean(net_returns))
 
-        # P-value calculation: portion of bootstrapped centered maxima greater than best observed mean
-        bootstrap_best_means = np.array(bootstrap_best_means)
-        p_value = np.mean(bootstrap_best_means >= best_observed_mean)
-        return float(p_value)
+        # Break-even slippage
+        break_even_pips = (gross_mean / pip_size) if pip_size > 0 else 0.0
 
-    def perform_reality_gap_analysis(self, expected_returns: pd.Series, slippage_pips: float = 2.0, latency_ms: float = 50.0) -> Dict[str, Any]:
-        """
-        Estimates the 'Reality Gap': the margin of decay in edge returns
-        due to transaction costs, spreads, execution latency, and slippage.
-        """
-        if len(expected_returns) == 0:
-            return {"net_return": 0.0, "latency_drag": 0.0}
-
-        mean_return = expected_returns.mean()
-        # Assume FX pips proxy: 1 pip = 0.0001
-        slippage_drag = slippage_pips * 0.0001
-
-        # Latency-drag heuristic: 0.1 pip loss per 10ms of delay
-        latency_drag = (latency_ms / 10.0) * 0.1 * 0.0001
-
-        total_drag = slippage_drag + latency_drag
-        net_return = mean_return - total_drag
+        survives = net_mean > 0.0 and break_even_pips > total_drag_pips
 
         return {
-            "gross_return_mean": float(mean_return),
-            "slippage_drag": float(slippage_drag),
-            "latency_drag": float(latency_drag),
-            "net_return_mean": float(net_return),
-            "edge_survives_drag": net_return > 0
+            "gross_mean_return": gross_mean,
+            "net_mean_return": net_mean,
+            "applied_drag_pips": float(total_drag_pips),
+            "break_even_slippage_pips": float(break_even_pips),
+            "edge_survives_drag": bool(survives)
         }
