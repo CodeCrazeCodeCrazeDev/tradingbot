@@ -101,11 +101,15 @@ def main() -> int:
     # --- claims funnel: text -> spec -> eval -> verdict -> class ---
     lines.append("## Claims funnel")
     n_recs = n_specs = 0
+    finals = {}
     for lp in ledgers:
         for r in tail_jsonl(lp, 500):
             n_recs += 1
             n_specs += len(r.get("method_specs") or [])
+            f = str(r.get("final") or "?").split(":")[0]
+            finals[f] = finals.get(f, 0) + 1
     lines.append(f"- scout records: {n_recs} -> method_specs: {n_specs}")
+    lines.append(f"- record finals (where attrition happens): {finals}")
     n_evals = n_cand = 0
     vdist = {}
     if cyc_dir.is_dir():
