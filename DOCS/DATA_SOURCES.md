@@ -22,6 +22,7 @@ whether they're free).
 | ICS release calendars | Agency schedules (BLS, ECB GC) | `scripts/collect_macro.py --sources ics` → `news_events` | Generic VEVENT parser (TZID/UTC/date-only). bls.ics exists but bot-blocks this client — reports `not a calendar response`, never faked. Works from any environment where the host serves the file |
 | ALFRED vintage discovery | REAL historical release dates for NFP, CPI, PPI, GDP | `scripts/collect_macro.py --sources releases` → `news_events` | `alfredgraph.csv?vintage_date=D` is keyless: binary-searches the first vintage where each obs appears (= release date) plus value revisions (GDP 2nd/3rd estimates). ~5-15 requests/release, opt-in. Verified: NFP dates land on first Fridays, GDP yields all 3 estimates |
 | Hyperliquid / Kraken / Binance candles | Crypto OHLCV, 3 venues | `scripts/data_scout.py` → `hl/kraken/binance_data.db` | Pre-existing |
+| Binance USDⓈ-M + Hyperliquid funding | Settled funding prints (8h BN / 1h HL) + mark/index premiumIndex snapshots | `scripts/collect_funding.py` → `funding_data.db` (`funding_rates`, `premium_snapshots`) | Keyless. Fulfils the `scout_claims` data request (var/data_requests.json). Idempotent on (source,symbol,funding_time); failures reported, never faked. Verified 2026-11-12: 270 BN + 1,500 HL prints over 30d |
 
 ## Evaluation layer
 
