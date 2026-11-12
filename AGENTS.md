@@ -456,6 +456,15 @@ review date and verify them against the current code before changing anything.
   is a sizing/risk input, not alpha. Report: var/vol_regime_gate.json.
   EDGE SCOREBOARD COMPLETE: every directional channel falsified;
   verified skills = vol forecasting (sizing) + safety spine only.
+- PAIR family added to method->candidate compiler (2026-11-12):
+  `stat_arb` (RSI allow-listed but was missing) — spec.pair declares
+  hedge leg {db,symbol,timeframe}; align_pair inner-joins timestamps;
+  rule2(a,b,i) fades log-spread z-score; pair_pnl_bps charges cost
+  PER LEG (x2); pair_triple feeds evaluate_strategy spread returns.
+  method_candidate `--pair db:sym:tf`; autonomous_cycle marks
+  pair-less extracted specs `needs_pair` (not rejected). Smoke:
+  EURUSD~GBPUSD D1 z2.0 -> rejected -4.06bps (honest null).
+  Tests: +6 in test_method_candidate.py (21 total pass).
 - Off-grid splice contamination is EURUSD-M15-only; GBPUSD/USDJPY M15
   and EURUSD/GBPUSD H1/H4 are clean (verified 2026-11-07). market_data.db
   now carries ~65k M15 bars x3 pairs + H1 (2016+) + H4 (2007+).

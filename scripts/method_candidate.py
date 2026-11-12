@@ -37,8 +37,8 @@ import numpy as np  # noqa: E402
 from scripts.edge_baseline import (  # noqa: E402
     block_bootstrap_lcb, evaluate, load_bars, roll_spread_bps)
 from trading_bot.core.csc.research.method_spec import (  # noqa: E402
-    MethodSpec, SpecError, compile_rule, positions_triple,
-    spec_from_dict)
+    PAIR_FAMILIES, MethodSpec, SpecError, align_pair, compile_rule,
+    pair_pnl_bps, pair_triple, positions_triple, spec_from_dict)
 
 
 def segmented_verdict(closes, rule_fn, horizon, n_segments,
@@ -84,6 +84,71 @@ def segmented_verdict(closes, rule_fn, horizon, n_segments,
             "verdict": "candidate" if passes else "rejected"}
 
 
+def verdict_from_pnl(pnl, n_segments, eval_frac, embargo,
+                     margin_bps, label=""):
+    """Segmented all-LCB verdict on a precomputed per-bar net-bps
+    series (used by PAIR families where the instrument is a synthetic
+    spread, not a single close series)."""
+    import numpy as _np
+    pnl = _np.asarray(pnl, dtype=float)
+    n = len(pnl)
+    disc_end = int(n * (1.0 - eval_frac))
+    eval_start = disc_end + embargo
+    eval_end = n
+    seg_len = max(1, (eval_end - eval_start) // n_segments)
+    segs = []
+    for k in range(n_segments):
+        a = eval_start + k * seg_len
+        b = eval_start + (k + 1) * seg_len if k < n_segments - 1 \
+            else eval_end
+        seg = pnl[a:b]
+        if len(seg) < 30:
+            segs.append({"segment": k, "status": "insufficient_evidence",
+                         "trades": int(len(seg))})
+            continue
+        mean_b, lcb = block_bootstrap_lcb(seg)
+        segs.append({"segment": k, "status": "evaluated",
+                     "trades": int(len(seg)),
+                     "mean_net_bps": round(mean_b, 3),
+                     "lcb5_net_bps": round(lcb, 3)})
+    evaluated = [s for s in segs if s["status"] == "evaluated"]
+    passes = (len(evaluated) == len(segs)
+              and all(s["lcb5_net_bps"] > margin_bps for s in evaluated))
+    ev = pnl[eval_start:eval_end]
+    if len(ev) >= 30:
+        m, l = block_bootstrap_lcb(ev)
+        overall = {"trades": int(len(ev)), "mean_net_bps": round(m, 3),
+                   "lcb5_net_bps": round(l, 3)}
+    else:
+        overall = {"trades": int(len(ev)),
+                   "status": "insufficient_evidence"}
+    return {"label": label, "eval_window": [eval_start, eval_end],
+            "segments": segs, "overall": overall,
+            "verdict": "candidate" if passes else "rejected"}
+
+
+def pair_eval(spec, rule2, pair_ref, db, symbol, timeframe,
+              horizon, cost_bps, segments, eval_frac, embargo,
+              margin_bps):
+    """Load leg A (primary dataset) + leg B (spec.pair or --pair),
+    align on timestamps, run the segmented gate on spread PnL."""
+    a_ts, a_bars = load_bars(db, symbol, timeframe)
+    b_ts, b_bars = load_bars(pair_ref["db"], pair_ref["symbol"],
+                             pair_ref["timeframe"])
+    a_closes, b_closes = a_bars[:, 3], b_bars[:, 3]
+    a_al, b_al = align_pair(a_ts, a_closes, b_ts, b_closes)
+    if len(a_al) < 200:
+        return {"status": "insufficient_aligned_bars",
+                "aligned": len(a_al)}
+    hedge = float(spec.params.get("hedge", 1.0))
+    pnl = pair_pnl_bps(rule2, a_al, b_al, hedge, cost_bps)
+    v = verdict_from_pnl(pnl, segments, eval_frac, embargo, margin_bps,
+                         label=f"{symbol}~{pair_ref['symbol']}")
+    v["aligned_bars"] = len(a_al)
+    v["hedge"] = hedge
+    return v
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--spec", help="JSON MethodSpec file")
@@ -95,6 +160,10 @@ def main():
     ap.add_argument("--db", default="market_data.db")
     ap.add_argument("--symbol", default="EURUSD")
     ap.add_argument("--timeframe", default="M15")
+    ap.add_argument("--pair", default=None,
+                    help="db:symbol:timeframe hedge leg for PAIR "
+                         "families (stat_arb); overrides nothing if "
+                         "the spec already declares spec.pair")
     ap.add_argument("--horizon", type=int, default=4)
     ap.add_argument("--segments", type=int, default=3)
     ap.add_argument("--eval-frac", type=float, default=0.40)
@@ -128,11 +197,21 @@ def main():
             family=args.family, params=params,
             provenance={"origin": "method_candidate.py"})
 
+    if spec.pair is None and args.pair:
+        try:
+            pdb, psym, ptf = args.pair.split(":")
+            spec.pair = {"db": pdb, "symbol": psym, "timeframe": ptf}
+        except ValueError:
+            ap.error("--pair must be db:symbol:timeframe")
+
     try:
         rule_fn = compile_rule(spec)
     except SpecError as e:
         print(f"SPEC REJECTED: {e}", file=sys.stderr)
         return 2
+
+    pair_ref = spec.pair
+    hedge = float(spec.params.get("hedge", 1.0))
 
     ts, bars = load_bars(args.db, args.symbol, args.timeframe)
     closes = bars[:, 3]
@@ -143,9 +222,24 @@ def main():
     if cost_bps is None:
         cost_bps = max(roll_spread_bps(closes) or 0.0, 5.0)
 
-    verdict = segmented_verdict(
-        closes, rule_fn, args.horizon, args.segments,
-        args.eval_frac, args.embargo, cost_bps, args.margin_bps)
+    pair_arrays = None
+    if spec.family in PAIR_FAMILIES:
+        verdict = pair_eval(spec, rule_fn, pair_ref, args.db,
+                            args.symbol, args.timeframe, args.horizon,
+                            cost_bps, args.segments, args.eval_frac,
+                            args.embargo, args.margin_bps)
+        # stash aligned arrays for the optional CSC triple
+        try:
+            a_ts, a_b = load_bars(args.db, args.symbol, args.timeframe)
+            b_ts, b_b = load_bars(pair_ref["db"], pair_ref["symbol"],
+                                  pair_ref["timeframe"])
+            pair_arrays = align_pair(a_ts, a_b[:, 3], b_ts, b_b[:, 3])
+        except Exception:
+            pair_arrays = None
+    else:
+        verdict = segmented_verdict(
+            closes, rule_fn, args.horizon, args.segments,
+            args.eval_frac, args.embargo, cost_bps, args.margin_bps)
 
     report = {
         "spec": {"spec_id": spec.spec_id, "spec_hash": spec.spec_hash,
@@ -165,8 +259,14 @@ def main():
     }
 
     if args.csc_eval:
-        pos, base, rets = positions_triple(rule_fn, closes)
         try:
+            if spec.family in PAIR_FAMILIES:
+                if pair_arrays is None:
+                    raise SpecError("pair alignment unavailable")
+                pos, base, rets = pair_triple(
+                    rule_fn, pair_arrays[0], pair_arrays[1], hedge)
+            else:
+                pos, base, rets = positions_triple(rule_fn, closes)
             from trading_bot.core.csc.research.engine import (
                 ResearchEngine)
             engine = ResearchEngine(hypothesis_gen=None,

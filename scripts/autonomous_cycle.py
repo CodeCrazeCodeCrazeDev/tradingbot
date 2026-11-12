@@ -41,7 +41,8 @@ sys.path.insert(0, str(ROOT))
 from scripts.edge_baseline import load_bars, roll_spread_bps  # noqa: E402
 from scripts.method_candidate import segmented_verdict  # noqa: E402
 from trading_bot.core.csc.research.method_spec import (  # noqa: E402
-    SpecError, compile_rule)
+    PAIR_FAMILIES, SpecError, compile_rule)
+from scripts.method_candidate import pair_eval  # noqa: E402
 from trading_bot.core.csc.research.spec_extractor import (  # noqa: E402
     extract_specs)
 
@@ -162,11 +163,27 @@ def eval_spec_on_datasets(spec_dict: dict, datasets, horizon: int,
     try:
         rule_fn = compile_rule(spec)
     except SpecError as e:
+        # PAIR specs harvested without a hedge-leg declaration land
+        # here — record as needs_pair, not a hard rejection
+        if spec.family in PAIR_FAMILIES and "spec.pair" in str(e):
+            return [{"dataset": None, "status": "needs_pair",
+                     "reason": str(e)}]
         return [{"dataset": None, "status": "spec_rejected",
                  "reason": str(e)}]
     out = []
     for db, sym, tf in datasets:
         try:
+            if spec.family in PAIR_FAMILIES:
+                v = pair_eval(spec, rule_fn, spec.pair, db, sym, tf,
+                              horizon, cost_floor, segments, 0.40, 20,
+                              margin)
+                out.append({"dataset": f"{db}:{sym}:{tf}",
+                            "bars": v.get("aligned_bars"),
+                            "cost_bps": round(cost_floor, 2),
+                            "verdict": v.get("verdict", v.get("status")),
+                            "overall": v.get("overall"),
+                            "segments": v.get("segments")})
+                continue
             ts, bars = load_bars(db, sym, tf)
         except Exception as e:
             out.append({"dataset": f"{db}:{sym}:{tf}",

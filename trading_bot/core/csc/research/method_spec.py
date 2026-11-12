@@ -42,7 +42,11 @@ class SpecError(ValueError):
 
 @dataclass
 class MethodSpec:
-    """A declared, bounded, falsifiable strategy claim."""
+    """A declared, bounded, falsifiable strategy claim.
+
+    ``pair`` is required iff family == "stat_arb": the hedge leg as
+    {"db", "symbol", "timeframe"} — the primary dataset supplies leg A.
+    """
 
     spec_id: str
     hypothesis: str
@@ -52,6 +56,7 @@ class MethodSpec:
     falsification: str = ""
     required_data: str = "close"
     horizon_bars: int = 1
+    pair: Optional[Dict[str, str]] = None
 
     def canonical(self) -> bytes:
         return json.dumps(
@@ -149,6 +154,33 @@ def _volmom_rule(vol_short: int, vol_long: int, vr_min: float,
     return rule
 
 
+PAIR_FAMILIES = {"stat_arb"}
+
+
+def _statarb_rule(window: int, z: float, hedge: float):
+    """Pairs rule on ALIGNED series: spread = log(a) - hedge*log(b);
+    fade z-score extremes. Returns fn2(a, b, i) -> -1/0/+1 where the
+    position is on the SPREAD (long spread = long a / short b)."""
+    def rule2(a: np.ndarray, b: np.ndarray, i: int) -> int:
+        if i < window:
+            return 0
+        sa = np.log(a[i - window + 1:i + 1])
+        sb = np.log(b[i - window + 1:i + 1])
+        if np.any(sa <= 0) or np.any(sb <= 0):
+            return 0
+        spread = sa - hedge * sb
+        m, s = float(np.mean(spread)), float(np.std(spread))
+        if s <= 0:
+            return 0
+        dev = (spread[-1] - m) / s
+        if dev > z:
+            return -1
+        if dev < -z:
+            return 1
+        return 0
+    return rule2
+
+
 FAMILIES: Dict[str, Dict[str, Any]] = {
     "momentum": {
         "description": "follow w-bar return beyond threshold",
@@ -168,6 +200,17 @@ FAMILIES: Dict[str, Dict[str, Any]] = {
         "bounds": {"channel": (5, 60)},
         "defaults": {"channel": 20},
         "factory": lambda p: _donchian_rule(int(p["channel"])),
+    },
+    "stat_arb": {
+        "description": "fade log-spread z-score vs hedge leg "
+                       "(PAIR family — needs spec.pair)",
+        "bounds": {"window": (20, 250), "z": (0.5, 4.0),
+                   "hedge": (0.3, 3.0)},
+        "defaults": {"window": 60, "z": 2.0, "hedge": 1.0},
+        "factory": lambda p: _statarb_rule(int(p["window"]),
+                                           float(p["z"]),
+                                           float(p["hedge"])),
+        "pair": True,
     },
     "vol_regime_momentum": {
         "description": "momentum only when short/long vol ratio expands",
@@ -213,6 +256,12 @@ def compile_rule(spec: MethodSpec) -> RuleFn:
     if spec.family == "vol_regime_momentum" and \
             merged["vol_short"] >= merged["vol_long"]:
         raise SpecError("vol_short must be < vol_long")
+    if fam.get("pair"):
+        if not isinstance(spec.pair, dict) or not all(
+                spec.pair.get(k) for k in ("db", "symbol", "timeframe")):
+            raise SpecError(
+                f"family {spec.family!r} is a PAIR family — spec.pair "
+                "must declare {db, symbol, timeframe} for the hedge leg")
     return fam["factory"](merged)
 
 
@@ -239,11 +288,68 @@ def positions_triple(rule_fn: RuleFn, closes: np.ndarray,
     return pos, base, rets
 
 
+def align_pair(a_ts: List[str], a: np.ndarray,
+               b_ts: List[str], b: np.ndarray
+               ) -> Tuple[np.ndarray, np.ndarray]:
+    """Inner-join two series on timestamp -> aligned close arrays.
+    Both inputs must be timestamp-ordered; output preserves a's order."""
+    bmap = {t: i for i, t in enumerate(b_ts)}
+    ai, bi = [], []
+    for i, t in enumerate(a_ts):
+        j = bmap.get(t)
+        if j is not None:
+            ai.append(i)
+            bi.append(j)
+    if len(ai) < 50:
+        raise SpecError(
+            f"pair alignment too thin: {len(ai)} shared timestamps")
+    return a[np.asarray(ai)], b[np.asarray(bi)]
+
+
+def pair_triple(rule2, a: np.ndarray, b: np.ndarray,
+                hedge: float
+                ) -> Tuple[List[float], List[float], List[float]]:
+    """evaluate_strategy contract for a PAIR candidate: position is on
+    the synthetic spread; bar_returns[i] = ret_a - hedge*ret_b (the
+    spread's simple return). Lookahead-free: signal at i earns i->i+1.
+    """
+    a = np.asarray(a, dtype=float)
+    b = np.asarray(b, dtype=float)
+    n = len(a)
+    pos: List[float] = []
+    rets: List[float] = []
+    for i in range(n - 1):
+        pos.append(float(rule2(a, b, i)))
+        ra = a[i + 1] / a[i] - 1.0 if a[i] > 0 else 0.0
+        rb = b[i + 1] / b[i] - 1.0 if b[i] > 0 else 0.0
+        rets.append(float(ra - hedge * rb))
+    return pos, [0.0] * len(pos), rets
+
+
+def pair_pnl_bps(rule2, a: np.ndarray, b: np.ndarray, hedge: float,
+                 cost_bps: float) -> "np.ndarray":
+    """Per-bar net bps for a pair candidate on ALIGNED series.
+
+    pos[i] = rule2(a,b,i) earns spread return i->i+1
+    (ret_a - hedge*ret_b); turnover charged cost_bps PER LEG (x2).
+    Index i corresponds to aligned bar i; length n-1.
+    """
+    a = np.asarray(a, dtype=float)
+    b = np.asarray(b, dtype=float)
+    n = len(a)
+    pos = np.array([float(rule2(a, b, i)) for i in range(n - 1)])
+    ra = a[1:] / a[:-1] - 1.0
+    rb = b[1:] / b[:-1] - 1.0
+    spr_bps = (ra - hedge * rb) * 1e4
+    dpos = np.abs(np.diff(np.concatenate([[0.0], pos])))
+    return pos * spr_bps - dpos * cost_bps * 2.0
+
+
 def spec_from_dict(d: Dict[str, Any]) -> MethodSpec:
     """Build a MethodSpec from a JSON-able dict; unknown keys kept in
     provenance so nothing is silently dropped."""
     known = {"spec_id", "hypothesis", "family", "params", "provenance",
-             "falsification", "required_data", "horizon_bars"}
+             "falsification", "required_data", "horizon_bars", "pair"}
     extra = {k: v for k, v in d.items() if k not in known}
     prov = dict(d.get("provenance") or {})
     if extra:
@@ -257,4 +363,5 @@ def spec_from_dict(d: Dict[str, Any]) -> MethodSpec:
         falsification=str(d.get("falsification", "")),
         required_data=str(d.get("required_data", "close")),
         horizon_bars=int(d.get("horizon_bars", 1)),
+        pair=dict(d.get("pair")) if d.get("pair") else None,
     )

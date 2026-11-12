@@ -24,6 +24,10 @@ from .method_spec import FAMILIES, MethodSpec, spec_from_dict
 # keyword -> (family, param hints). Order matters: first match wins
 # per family block; a text can emit at most one spec per family.
 _TEMPLATES = [
+    ("stat_arb",
+     ("pairs trading", "pairs trade", "cointegration", "co-integrated",
+      "spread trading", "statistical arbitrage", "stat arb",
+      "pairs arbitrage")),
     ("vol_regime_momentum",
      ("volatility regime", "vol expansion", "volatility expansion",
       "realized vol", "vol ratio", "volatility contraction",
@@ -86,6 +90,14 @@ def _hint_params(family: str, text: str) -> Dict[str, float]:
     elif family == "donchian":
         if periods:
             hints["channel"] = float(periods[0])
+    elif family == "stat_arb":
+        if periods:
+            hints["window"] = float(periods[0])
+        zs = [float(m) for m in _Z_RE.findall(text)]
+        if zs:
+            hints["z"] = zs[0]
+        # hedge ratio is NOT guessed from text — it stays at the
+        # declared default unless the spec is hand-authored
     elif family == "vol_regime_momentum":
         if len(periods) >= 2:
             hints["vol_short"], hints["vol_long"] = \
