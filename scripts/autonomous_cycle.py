@@ -755,6 +755,23 @@ def main() -> int:
         except Exception as exc:  # noqa: BLE001
             print(f"dev_assist skipped: {exc}")
 
+        # Genome evaluation: score development_assist proposals
+        # against current artifact state -> EvaluationEvidence.
+        # PromotionDecision stays operator-gated. Non-fatal.
+        try:
+            import subprocess
+            ge = subprocess.run(
+                [sys.executable,
+                 str(ROOT / "scripts" / "genome_evaluate.py")],
+                cwd=str(ROOT), capture_output=True, text=True,
+                timeout=60)
+            if ge.returncode == 0:
+                tail = (ge.stdout or "").strip().splitlines()
+                if tail:
+                    print(f"genome_eval: {tail[-1]}")
+        except Exception as exc:  # noqa: BLE001
+            print(f"genome_eval skipped: {exc}")
+
         # Analyst stage: re-judge ALL accumulated hunter artifacts
         # (this cycle + history + method_candidates + live outcomes)
         # into the classification queue. Advisory; failure must not
