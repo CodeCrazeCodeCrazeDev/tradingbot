@@ -52,16 +52,22 @@ def _genomes():
     return out
 
 
-def _evaluated_ids():
-    ids = set()
+def _resolved_ids():
+    """Genomes whose LATEST evidence says the condition cleared are
+    done — still-holding genomes get re-checked each run so a cleared
+    condition lands a condition_holds:false record instead of being
+    frozen at its last 'holds' verdict forever."""
+    last = {}
     if EVIDENCE.exists():
         for line in EVIDENCE.read_text(encoding="utf-8",
                                        errors="replace").splitlines():
             try:
-                ids.add(json.loads(line).get("genome_id"))
+                rec = json.loads(line)
+                last[rec.get("genome_id")] = rec
             except Exception:
                 pass
-    return ids
+    return {gid for gid, r in last.items()
+            if r.get("condition_holds") is False}
 
 
 def _check(genome: dict) -> dict:
@@ -85,7 +91,13 @@ def _check(genome: dict) -> dict:
                     bad = {k: s.get(k) for k in
                            ("off_grid", "non_monotonic",
                             "extreme_ret", "dup_ts") if s.get(k)}
-                    return {"holds": bool(bad),
+                    # structural flags are the repairable condition —
+                    # extreme_ret alone is advisory (legit volatility,
+                    # not contamination; same rule as the quarantine
+                    # gate and the proposal trigger)
+                    structural = {k: v for k, v in bad.items()
+                                  if k != "extreme_ret"}
+                    return {"holds": bool(structural),
                             "detail": f"flags={bad} "
                                       f"(audit may be stale)"}
         return {"holds": False,
@@ -127,7 +139,7 @@ def _check(genome: dict) -> dict:
 
 def main() -> int:
     genomes = _genomes()
-    done = _evaluated_ids()
+    done = _resolved_ids()
     EVIDENCE.parent.mkdir(exist_ok=True)
     wrote = 0
     results = []
