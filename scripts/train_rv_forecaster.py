@@ -148,8 +148,13 @@ def main():
                        np.maximum(denom, 1e-9))
         print("targets: log(rv / rolling-mean|ret|)", flush=True)
 
-    y_tr = y_all[S:split]
-    y_mu, y_sd = y_tr.mean(0), y_tr.std(0) + 1e-12
+    # Target warmup: the rolling-21 denominator leaves y_all[:WARM]
+    # undefined — stats and sampling must skip it (seq < 21 let the
+    # NaN rows into y_tr -> y_mu/y_sd NaN -> every loss NaN -> honest
+    # train_failed on the s16 search variants).
+    WARM = 21
+    y_tr = y_all[max(S, WARM):split]
+    y_mu, y_sd = np.nanmean(y_tr, 0), np.nanstd(y_tr, 0) + 1e-12
     y_n = (y_all - y_mu) / y_sd
 
     net = GRUForecaster(in_dim=feats.shape[1], hidden=args.hidden)
@@ -158,8 +163,9 @@ def main():
     print(f"model params: {n_params}", flush=True)
 
     max_i = len(train) - S - H - 1
+    idx_lo = max(0, WARM - S)  # target index (idx + S) must clear warmup
     for step in range(1, args.steps + 1):
-        idx = torch.randint(0, max_i, (args.batch,))
+        idx = torch.randint(idx_lo, max_i, (args.batch,))
         win = torch.stack([train[i:i + S] for i in idx])
         yb = torch.tensor(y_n[idx.numpy() + S], dtype=torch.float32)
         net.train()
@@ -198,7 +204,7 @@ def main():
         }
 
     # raw-feature ridge reference per horizon (last context bar -> target)
-    tr_idx = torch.randint(0, max_i, (20000,), generator=g).numpy()
+    tr_idx = torch.randint(idx_lo, max_i, (20000,), generator=g).numpy()
     Xr_tr = feats[tr_idx + S - 1].numpy()
     Xr_ev = feats[split + ev_idx.numpy() + S - 1].numpy()
     ridge_models = {}
