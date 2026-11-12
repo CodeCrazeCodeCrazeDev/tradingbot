@@ -781,3 +781,20 @@ keyed by obs['symbol'] (verified: interleaved feed gives ridge
 multi-symbol stream MUST be keyed by symbol — check for this first
 whenever an advisory model emits degenerate values on multi-symbol
 runs but tests fine single-symbol.
+
+## Maker paper execution mode (2026-11-12)
+
+Every hypothesis verdict bottomed out at "sub-taker-cost" — the paper
+venue only modeled market orders. Maker mode exists now:
+`paper_runner --paper-order-style maker --maker-offset-bps 3
+--maker-ttl-bars 4 --maker-fee-bps 2`. Entry TRADE_EXECUTIONs become
+passive LIMITs (bridge, `order_style`/`maker_offset_bps`; position_close
+stays MARKET — flattening must not wait). `MakerPaperAdapter`
+(brokers/maker_paper_adapter.py) subclasses the protected
+PaperBrokerAdapter: mark-TTL expiry (stale limits die, not fill later),
+bps-of-notional maker fee. paper_runner feeds on_mark low->high->close
+per bar so limits fill on intra-bar touches; `_sync_maker_reports`
+pushes resting->filled/expired transitions into the repository
+(service.submit only persists submit-time reports — without the sync,
+maker fills never reach the ledger). Verified: buy limit rests ->
+fills at exact limit on touch, fee=qty*px*fee_bps, TTL->expired.
