@@ -445,6 +445,17 @@ review date and verify them against the current code before changing anything.
   continuation has no net edge at retail cost. Report:
   var/event_study_gate.json. NOTE: impacts stored title-case
   ('High'/'Medium') — normalize before filtering.
+- Vol-regime monetization FALSIFIED (2026-10-16 data, hermes env,
+  `scripts/vol_regime_gate.py`): rv16 blend ckpt forecasts -> tercile
+  regimes on EURUSD M15 (29k bars, 11.6k eval). ALL 7 structures
+  rejected at 5bps turnover: mom_flat -0.31, mom_highvol -0.12,
+  mom_lowvol -0.11, mr_lowvol -0.11, mr_highvol -0.32,
+  regime_switch -0.23, invvol_size -0.34 (mean bps/bar, LCB<0).
+  Nuance: regime conditioning DOES shift means ~3x (forecast carries
+  real regime info) but nothing crosses zero net of cost — vol skill
+  is a sizing/risk input, not alpha. Report: var/vol_regime_gate.json.
+  EDGE SCOREBOARD COMPLETE: every directional channel falsified;
+  verified skills = vol forecasting (sizing) + safety spine only.
 - Off-grid splice contamination is EURUSD-M15-only; GBPUSD/USDJPY M15
   and EURUSD/GBPUSD H1/H4 are clean (verified 2026-11-07). market_data.db
   now carries ~65k M15 bars x3 pairs + H1 (2016+) + H4 (2007+).
