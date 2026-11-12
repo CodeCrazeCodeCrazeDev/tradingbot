@@ -110,20 +110,45 @@ def _hint_params(family: str, text: str) -> Dict[str, float]:
     return hints
 
 
-_FINANCE_RE = re.compile(
-    r"price|market|trad(e|ing)|stock|forex|\bfx\b|crypto|bitcoin|"
-    r"volatil|return|asset|equity|bond|future|option|order|flow|"
-    r"arbitrage|portfolio|invest|financial|currency|pair|spread|"
-    r"volume|candle|bars?\b|tick|fill|slippage|drawdown|sharpe|"
-    r"backtest|alpha|beta|hedge|swap|futures|bollinger|donchian|"
-    r"z[- ]?score|stochastic|\brsi\b|\bema\b|\bsma\b|\badx\b|"
-    r"candlestick|ichimoku|elliott|wyckoff|lookback|cointegration|"
-    r"pairs trading|lead[- ]?lag|cross-sectional|term structure|"
-    r"contango|backwardation|risk premium", re.I)
+# Context gate. An ANCHOR term is required before template matching:
+# either an unambiguous market/instrument reference (stocks, forex,
+# futures, treasury, VIX, FOMC, ...) or a finance-specific method
+# term (bollinger, donchian, z-score, cointegration, "volatility
+# regime", ...). Domain-shared words — "momentum", "trend",
+# "volatility", "breakout", "reversion", "regime", "forecast",
+# "price", "return", "volume", "spread" — do NOT admit text alone:
+# they appear throughout physics, climate, software, and medicine
+# writing. Observed live failures this gate prevents: a Minecraft
+# crash log ("Ticking entity") and a climate abstract ("atmospheric
+# momentum and volatility of storm systems") both emitted specs
+# under the old permissive regex.
+_ANCHOR_RE = re.compile(
+    r"\b(?:prices?|markets?|trading|trades?|stocks?|forex|fx|"
+    r"crypto\w*|bitcoin|assets?|equity|equities|bonds?|futures?|"
+    r"options?|portfolio|invest\w*|financial|financing|currency|"
+    r"currencies|hedg\w+|swaps?|treasur\w+|yield curve|vix|fomc|"
+    r"cpi|nfp|pce|risk premium|cross[- ]?sectional|term structure|"
+    r"order flow|limit orders?|open interest|funding rate|"
+    r"basis trade|pairs trading|mean[- ]?reversion|lookback|"
+    r"backtest\w*|sharpe|sortino|drawdown|contango|backwardation|"
+    r"bollinger|donchian|z[- ]?score|stochastic|rsi|ema|sma|adx|"
+    r"macd|candlestick|ichimoku|elliott|wyckoff|cointegration|"
+    r"co[- ]?integration|arbitrage|volatility regime|vol regime|"
+    r"volatility expansion|volatility contraction|vol expansion|"
+    r"realized vol\w*|vol ratio|regime[- ]?switching momentum|"
+    r"eurodollar|sofr)\b", re.I)
+
+# Document-type denylist: crash logs, recipes, and similar are never
+# tradeable claims even if an anchor term appears incidentally.
+_NON_MARKET_RE = re.compile(
+    r"crash report|stack ?trace|heap space|outofmemory|"
+    r"null ?pointer|segmentation fault|kernel panic|minecraft|"
+    r"sourdough", re.I)
 
 
 def _has_finance_context(text: str) -> bool:
-    return bool(_FINANCE_RE.search(text))
+    return bool(_ANCHOR_RE.search(text)) \
+        and not _NON_MARKET_RE.search(text)
 
 
 def extract_specs(text: str, *, provenance: Optional[Dict[str, Any]] = None,

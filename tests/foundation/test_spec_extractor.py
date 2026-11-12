@@ -9,6 +9,14 @@ def test_empty_on_unrelated_text():
     assert extract_specs("a paper about baked goods and sourdough") == []
     assert extract_specs("") == []
     assert extract_specs(None) == []
+    # observed live leak: software crash log with generic words
+    assert extract_specs(
+        "---- Minecraft Crash Report ---- Ticking entity "
+        "java.lang.OutOfMemoryError: Java heap space") == []
+    # 'momentum' in a climate abstract is not a tradeable claim
+    assert extract_specs(
+        "atmospheric momentum and volatility of storm systems "
+        "in climate models") == []
 
 
 def test_momentum_keywords_map():
@@ -50,7 +58,8 @@ def test_clamps_recorded_not_silent():
 
 
 def test_extracted_specs_compile():
-    for text in ["20-period momentum trend following 0.3% threshold",
+    for text in ["20-period momentum trend following 0.3% threshold "
+                 "on equity index futures",
                  "bollinger z-score mean reversion window 30",
                  "donchian breakout 55 channel",
                  "volatility expansion momentum regime"]:
