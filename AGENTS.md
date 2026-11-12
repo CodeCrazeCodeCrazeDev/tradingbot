@@ -426,6 +426,12 @@ review date and verify them against the current code before changing anything.
   re-judged there; survivors keep "candidate", failures are marked
   "candidate_unreplicated" and excluded from the candidate count.
   Tests: tests/foundation/test_spec_extractor.py (7 tests).
+- M3+M4 (2026-11-12): `scripts/data_catalog.py` -> var/data_catalog.json
+  (20 dbs / 85 series / 659k rows; macro_data.db cataloged at
+  series level, others at symbol/timeframe). `scripts/intel_report.py`
+  merges scout ledgers + cycle reports + method candidates + catalog
+  into var/intel_report.md. `autonomous_cycle.py --interval-hours 24
+  --max-cycles 7 --scout` runs unattended (var/autonomous_cycle).
 - Off-grid splice contamination is EURUSD-M15-only; GBPUSD/USDJPY M15
   and EURUSD/GBPUSD H1/H4 are clean (verified 2026-11-07). market_data.db
   now carries ~65k M15 bars x3 pairs + H1 (2016+) + H4 (2007+).
