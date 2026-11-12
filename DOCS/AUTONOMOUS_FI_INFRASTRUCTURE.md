@@ -81,6 +81,18 @@ them — today they are separate tools.
   and "learns from the internet."
 - **Gap**: HF weights never downloaded (disk); dataset candidates are
   listed, not ingested.
+- **Measured 2026-11-12** (`var/ecie/scout_ledger.jsonl`, n=74): the
+  trust gate is the binding constraint — 43/74 records die at
+  `TRUST_GATE_FAILED` (score<50), 14 at `HUMAN_APPROVAL_REQUIRED`,
+  only 2 produce `method_specs`. Structural note: document-mode
+  records (arXiv papers) score a flat ~40 because
+  `pipeline.assess_trust_score` grades repo-health signals
+  (stars/tests/commit cadence) that cannot apply to papers — if the
+  intent is papers→governance via the document path, they are being
+  routed through the code-capability gate. Whether that is a bug or
+  intended conservatism is an operator/governance call, not an agent
+  one; recorded here so the funnel number is not misread as "the gate
+  is too strict" when it may be "the wrong gate."
 
 ### L5 — Hypothesis → evaluation loop — THE MISSING LINK
 - Research engine can `evaluate_strategy` (positions vs baseline on
