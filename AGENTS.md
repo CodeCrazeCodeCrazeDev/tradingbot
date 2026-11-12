@@ -903,6 +903,11 @@ Autonomy stack additions (2026-11-12, all advisory-only):
 - Analyst->hunter escalation: WATCH specs WITH a near-miss are
   re-judged harder next cycle (replication datasets + halved cost,
   `round:2` evals, `--watch-recheck` cap). Judgment directs hunt.
+- Analyst hypothesis GENERATION (`--mutation-budget`, default 4):
+  WATCH near-misses spawn bounded +/-20% param mutations clamped
+  to FAMILIES bounds — same contract as RSI Level-1 candidates.
+  Evaluated as full new candidates; provenance links parent.
+  The system proposes at the frontier, not just judges inputs.
 - `var/data_requests.json`: untestable specs (needs_pair,
   insufficient_bars, load_error) file durable operator requests —
   spec_completion vs data kinds, deduped with counts.
