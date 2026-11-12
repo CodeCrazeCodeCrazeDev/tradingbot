@@ -465,6 +465,16 @@ review date and verify them against the current code before changing anything.
   pair-less extracted specs `needs_pair` (not rejected). Smoke:
   EURUSD~GBPUSD D1 z2.0 -> rejected -4.06bps (honest null).
   Tests: +6 in test_method_candidate.py (21 total pass).
+- Overnight/intraday decomposition FALSIFIED at cost (2026-11-12,
+  `scripts/overnight_intraday_gate.py`): first EQUITY hypothesis —
+  pulled 62k D1 bars x17 symbols (2012->2026) via stock_sync into
+  us_stocks.db. Raw anomaly IS visible (overnight +1..+16bps/day vs
+  intraday mixed/negative across megacaps+ETFs) but at 5bps
+  round-trip cost ALL portfolio strategies rejected: long_overnight
+  -1.64, long_intraday -0.99, long_both -2.64 mean bps/day, LCB<0.
+  The overnight premium is real but sub-retail-cost. Report:
+  var/overnight_intraday_gate.json. NOTE: stock_sync writes timeframe
+  'D1' not '1d'.
 - Off-grid splice contamination is EURUSD-M15-only; GBPUSD/USDJPY M15
   and EURUSD/GBPUSD H1/H4 are clean (verified 2026-11-07). market_data.db
   now carries ~65k M15 bars x3 pairs + H1 (2016+) + H4 (2007+).
