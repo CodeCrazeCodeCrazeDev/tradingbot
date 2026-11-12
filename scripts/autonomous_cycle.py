@@ -735,6 +735,26 @@ def main() -> int:
         except Exception as exc:  # noqa: BLE001
             print(f"self_train skipped: {exc}")
 
+        # Development-assist: evidence artifacts -> ImprovementGenome
+        # proposals for operator review (human-governed contract,
+        # never executable). Cheap JSON scan; non-fatal.
+        try:
+            import subprocess
+            da = subprocess.run(
+                [sys.executable,
+                 str(ROOT / "scripts" / "development_assist.py")],
+                cwd=str(ROOT), capture_output=True, text=True,
+                timeout=60)
+            if da.returncode == 0:
+                tail = (da.stdout or "").strip().splitlines()
+                if tail:
+                    print(f"dev_assist: {tail[-1]}")
+            else:
+                print(f"dev_assist rc={da.returncode}: "
+                      f"{(da.stderr or '')[-200:]}")
+        except Exception as exc:  # noqa: BLE001
+            print(f"dev_assist skipped: {exc}")
+
         # Analyst stage: re-judge ALL accumulated hunter artifacts
         # (this cycle + history + method_candidates + live outcomes)
         # into the classification queue. Advisory; failure must not
