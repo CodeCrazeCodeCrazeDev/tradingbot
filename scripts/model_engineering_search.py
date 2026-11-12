@@ -91,17 +91,31 @@ def _eval_score(wf_json: Path) -> float:
         return float("-inf")
 
 
+# Feature-ablation presets (trainer --ablate): which obs signals
+# carry the vol-forecast skill? Tested at incumbent hyperparams.
+ABLATE_PRESETS = ["none", "no_hour", "no_mom", "no_volz",
+                  "no_rng", "price_only", "vol_only"]
+_ABLATE_MAP = {"no_hour": "hour", "no_mom": "mom8",
+               "no_volz": "vol_z", "no_rng": "rng"}
+
+
 def variants(max_variants: int):
     import random
     keys = list(GRID)
-    combos = [dict(zip(keys, c)) for c in itertools.product(
-        *(GRID[k] for k in keys))]
+    combos = [dict(zip(keys, c), ablate="none")
+              for c in itertools.product(*(GRID[k] for k in keys))]
     # seeded sample so small budgets cover every dimension
-    # (first-N would bias to whichever key varies slowest)
     if len(combos) > max_variants:
         combos = random.Random(42).sample(combos, max_variants)
     for c in combos:
         yield c
+    # dedicated ablation variants at incumbent hyperparams —
+    # guaranteed coverage regardless of hyperparam budget
+    inc = {"blend_w": 0.5, "hidden": 64, "seq": 32, "lr": 0.001}
+    for preset in ABLATE_PRESETS[1:]:
+        v = dict(inc)
+        v["ablate"] = _ABLATE_MAP.get(preset, preset)
+        yield v
 
 
 def main() -> int:
@@ -132,7 +146,8 @@ def main() -> int:
     best = {"score": incumbent, "variant": None, "ckpt": None}
     for i, v in enumerate(plist):
         tag = (f"v{i}_w{v['blend_w']}_h{v['hidden']}"
-               f"_s{v['seq']}_lr{v['lr']}")
+               f"_s{v['seq']}_lr{v['lr']}"
+               f"_ab{v.get('ablate', 'none')}")
         ckpt = SEARCH / f"{tag}.pt"
         wfout = SEARCH / f"{tag}_wf.json"
         rec = {"variant": v, "tag": tag}
@@ -142,6 +157,7 @@ def main() -> int:
                    "--hidden", str(v["hidden"]),
                    "--seq", str(v["seq"]),
                    "--lr", str(v["lr"]),
+                   "--ablate", str(v.get("ablate", "none")),
                    "--out", str(ckpt.relative_to(ROOT))],
                   args.train_timeout, SEARCH / f"{tag}_train.log")
         rec["train_rc"] = tr.get("rc")

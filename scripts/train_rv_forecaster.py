@@ -81,6 +81,11 @@ def main():
                          "predictions (declared a priori, not fitted)")
     ap.add_argument("--blend-w", type=float, default=0.5,
                     help="GRU weight in the ridge blend (1-w = ridge)")
+    ap.add_argument("--ablate", default="none",
+                    help="comma list of obs signals to zero before "
+                         "featurization: hour,mom8,vol_z,rng,"
+                         "roll_std (ret excluded — it feeds the rv "
+                         "targets); presets: price_only,vol_only")
     ap.add_argument("--out", default="var/rv_forecaster.pt")
     args = ap.parse_args()
 
@@ -88,6 +93,25 @@ def main():
     rows, ret, rng, vol_z, mom8, roll_std, hour = load_features(
         args.db, args.symbol, args.timeframe, args.bars)
     print(f"bars after grid filter: {len(rows)}", flush=True)
+
+    # Feature ablation (model-engineering search): zero selected
+    # derived-signal arrays BEFORE featurization. ret is excluded —
+    # absret feeds the rv targets, so ablating it would corrupt y.
+    _ABLATE_PRESETS = {
+        "price_only": ["rng", "vol_z", "mom8", "roll_std", "hour"],
+        "vol_only": ["mom8", "hour"],
+    }
+    _ABLATE_VARS = {"rng": rng, "vol_z": vol_z, "mom8": mom8,
+                    "roll_std": roll_std, "hour": hour}
+    _abl = args.ablate.split(",") if args.ablate != "none" else []
+    for _p in _abl:
+        _abl += _ABLATE_PRESETS.get(_p.strip(), [])
+    for _name in dict.fromkeys(_abl):
+        _v = _ABLATE_VARS.get(_name.strip())
+        if _v is not None:
+            _v[:] = 0.0
+    if _abl:
+        print(f"ablated features: {sorted(set(_abl))}", flush=True)
 
     featurizer = WorldModelV2(asset_dims={"FX": 64, "Equities": 128},
                               latent_dim=256)
