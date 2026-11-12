@@ -841,3 +841,36 @@ pushes resting->filled/expired transitions into the repository
 (service.submit only persists submit-time reports — without the sync,
 maker fills never reach the ledger). Verified: buy limit rests ->
 fills at exact limit on touch, fee=qty*px*fee_bps, TTL->expired.
+
+## Hunter / analyst operating model (2026-11-12)
+
+Two roles, deliberately separated:
+
+- **Hunter (autonomous)**: `scripts/autonomous_cycle.py` — scout ->
+  spec_extractor -> MethodSpec -> bounded compile -> segmented gate
+  -> DIFFERENT_DATASET replication -> `var/autonomous_cycle/` +
+  `var/intel_report.md`. Runs unattended (`--interval-hours`,
+  `--max-cycles`, `--scout` via hermes env for sklearn). It proposes
+  and records only; promotion stays behind signed operator auth.
+- **Analyst (agent/operator)**: reads `var/intel_report.md` and
+  cycle artifacts; runs targeted falsification campaigns
+  (`*_gate.py` scripts) ONLY when a trigger fires.
+
+Active falsification campaigns on already-mapped data are paused —
+every local hypothesis class (bar rules, OFI, rates, cross-venue,
+events, vol-regime, overnight/intraday, low-turnover momentum/pairs/
+calendar) is falsified at 5bps taker cost. Resume triggers:
+
+1. New data (order-book depth in hl_data.db/binance_data.db,
+   funding/basis, new venues/instruments)
+2. A cycle claim surviving early gates -> targeted replication
+3. Cost-structure change -> re-run gates at the new cost model
+   (`--cost-bps`; maker mode above is the first such change —
+   taker-cost falsifications are NOT automatically dead at maker
+   cost; re-judging is analyst work, not assumed)
+4. External claim classes the family space can't express (OFI,
+   ML-alpha, alt-data) -> deliberate bounded-family design decision
+
+Near-miss on record: Tuesday-overnight equity anomaly — real
+2012-2023, broad-based, dead post-2024 at any cost. Do not
+re-test without new data or a different cost/execution model.
