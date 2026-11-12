@@ -207,6 +207,22 @@ def eval_spec_on_datasets(spec_dict: dict, datasets, horizon: int,
     return out
 
 
+def _data_action(dataset_ref) -> str:
+    """Map a 'db:SYM:TF' need to the concrete sync command that would
+    fulfill it — the queue entry is actionable, not just descriptive."""
+    if not dataset_ref or ":" not in str(dataset_ref):
+        return "inspect dataset reference and sync appropriate source"
+    db, sym, tf = str(dataset_ref).split(":", 2)
+    db = Path(db).name
+    if db in ("us_stocks.db", "market_data.db"):
+        return (f"python scripts/stock_sync.py --symbols {sym} "
+                f"--timeframe {tf.lower()} --db-path {db}")
+    if db == "fx_data.db":
+        return (f"python scripts/stock_sync.py --symbols {sym}=X "
+                f"--timeframe {tf.lower()} --db-path {db}")
+    return f"sync {sym} {tf} into {db} via the appropriate collector"
+
+
 def merge_data_requests(eval_sets: list, qpath: Path) -> int:
     """Specs that couldn't be tested emit durable requests — the
     infrastructure asks for what it needs instead of silently
@@ -231,9 +247,13 @@ def merge_data_requests(eval_sets: list, qpath: Path) -> int:
                     "spec_completion",
                     "declare hedge leg {db,symbol,timeframe}",
                     d.get("reason", ""))
+                action = ("set spec.pair = {\"db\": ..., \"symbol\": ..., "
+                          "\"timeframe\": ...} on the MethodSpec, then "
+                          "re-run method_candidate --pair")
             elif status in ("insufficient_bars", "load_error"):
                 kind, need = "data", d.get("dataset")
                 reason = d.get("reason") or status
+                action = _data_action(need)
             else:
                 continue
             key = f"{sid}|{kind}|{need}"
@@ -241,6 +261,7 @@ def merge_data_requests(eval_sets: list, qpath: Path) -> int:
             if r is None:
                 reqs[key] = {"spec_id": sid, "family": fam, "kind": kind,
                              "need": need, "reason": reason,
+                             "action": action,
                              "first_seen": now, "last_seen": now,
                              "count": 1}
                 new += 1
