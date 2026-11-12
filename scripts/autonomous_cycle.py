@@ -207,6 +207,27 @@ def eval_spec_on_datasets(spec_dict: dict, datasets, horizon: int,
     return out
 
 
+def watch_escalation_specs(queue: dict, cap: int) -> list:
+    """Analyst->hunter feedback: WATCH specs that produced a
+    near-miss (positive mean+LCB but failed segments somewhere)
+    earn a harder second look. Returns full spec dicts, capped."""
+    if cap <= 0:
+        return []
+    out = []
+    for s in queue.get("specs", []):
+        if s.get("classification") != "WATCH":
+            continue
+        if not s.get("near_miss_datasets"):
+            continue
+        spec = s.get("spec")
+        if not isinstance(spec, dict) or not spec.get("family"):
+            continue
+        out.append(spec)
+        if len(out) >= cap:
+            break
+    return out
+
+
 def write_report(state_dir: Path, day: str, cycle: dict) -> Path:
     rdir = state_dir / "reports"
     rdir.mkdir(parents=True, exist_ok=True)
@@ -300,6 +321,10 @@ def main() -> int:
     ap.add_argument("--cost-floor-bps", type=float, default=5.0)
     ap.add_argument("--margin-bps", type=float, default=0.0)
     ap.add_argument("--max-specs", type=int, default=8)
+    ap.add_argument("--watch-recheck", type=int, default=3,
+                    help="max WATCH near-miss specs re-evaluated harder "
+                         "each cycle (replication datasets + halved "
+                         "cost on primaries); 0 disables")
     args = ap.parse_args()
 
     state = Path(args.state_dir)
@@ -356,6 +381,8 @@ def main() -> int:
         # candidate_unreplicated — it never reaches the report's
         # candidate count.
         for e in evals:
+            if e.get("round") == 2:
+                continue  # escalation evals are already the harder look
             if not any(d.get("verdict") == "candidate"
                        for d in e["datasets"]):
                 continue
@@ -378,6 +405,55 @@ def main() -> int:
                 for d in e["datasets"]:
                     if d.get("verdict") == "candidate":
                         d["verdict"] = "candidate_unreplicated"
+
+        # Analyst->hunter escalation: WATCH specs with a near-miss
+        # get re-judged harder — replication datasets at declared
+        # cost AND primary datasets at halved cost. This is the
+        # feedback loop: analyst judgment directs the next hunt.
+        try:
+            qpath = ROOT / "var" / "analyst_queue.json"
+            queue = (json.loads(qpath.read_text())
+                     if qpath.exists() else {})
+            esc_specs = watch_escalation_specs(queue,
+                                               args.watch_recheck)
+            have = {e.get("spec_id") for e in evals}
+            for sd in esc_specs:
+                sid = sd.get("spec_id")
+                if sid in have:
+                    continue
+                have.add(sid)
+                if repl_datasets:
+                    evals.append({
+                        "spec_id": sid,
+                        "family": sd.get("family"),
+                        "params": sd.get("params"),
+                        "hypothesis": sd.get("hypothesis", ""),
+                        "spec": sd,
+                        "record_name": "analyst_round2_repl",
+                        "round": 2,
+                        "escalation": "watch_near_miss",
+                        "datasets": eval_spec_on_datasets(
+                            sd, repl_datasets, args.horizon,
+                            args.cost_floor_bps, args.segments,
+                            args.margin_bps)})
+                evals.append({
+                    "spec_id": sid,
+                    "family": sd.get("family"),
+                    "params": sd.get("params"),
+                    "hypothesis": sd.get("hypothesis", ""),
+                    "spec": sd,
+                    "record_name": "analyst_round2_costhalf",
+                    "round": 2,
+                    "escalation": "watch_near_miss",
+                    "datasets": eval_spec_on_datasets(
+                        sd, datasets, args.horizon,
+                        max(0.5, args.cost_floor_bps * 0.5),
+                        args.segments, args.margin_bps)})
+            if esc_specs:
+                print(f"escalation: {len(esc_specs)} watch near-miss "
+                      f"specs re-judged")
+        except Exception as exc:  # noqa: BLE001
+            print(f"escalation skipped: {exc}")
 
         cycle = {"ts": now.isoformat(), "cycle": cycle_no,
                  "query": query, "scout": scout, "evals": evals}

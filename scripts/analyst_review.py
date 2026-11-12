@@ -58,7 +58,8 @@ def _dataset_record(ds):
     }
 
 
-def _aggregate(spec_id, family, hypothesis, records, replicated):
+def _aggregate(spec_id, family, hypothesis, records, replicated,
+               spec_dict=None):
     tested = len(records)
     cands = [r for r in records if r["verdict"] == "candidate"]
     unrep = [r for r in records if r["verdict"] == "candidate_unreplicated"]
@@ -99,6 +100,8 @@ def _aggregate(spec_id, family, hypothesis, records, replicated):
         "spec_id": spec_id,
         "family": family,
         "hypothesis": (hypothesis or "")[:160],
+        "spec": spec_dict,
+        "params": (spec_dict or {}).get("params"),
         "classification": klass,
         "datasets_tested": tested,
         "datasets_positive": len(pos),
@@ -117,7 +120,8 @@ def _aggregate(spec_id, family, hypothesis, records, replicated):
 def collect(cycles_dir: Path, cand_dir: Path):
     """spec_id -> {family, hypothesis, replicated, records[]}"""
     specs = defaultdict(lambda: {"family": None, "hypothesis": "",
-                                 "replicated": None, "records": {}})
+                                 "replicated": None, "records": {},
+                                 "spec_dict": None})
     if cycles_dir.is_dir():
         for f in sorted(cycles_dir.glob("*.json")):
             try:
@@ -133,11 +137,19 @@ def collect(cycles_dir: Path, cand_dir: Path):
                 s["hypothesis"] = s["hypothesis"] or e.get("hypothesis", "")
                 if e.get("replicated") is not None:
                     s["replicated"] = bool(e["replicated"])
+                if s["spec_dict"] is None:
+                    s["spec_dict"] = e.get("spec")
                 for ds in e.get("datasets", []):
                     key = ds.get("dataset") or "?"
+                    cb = ds.get("cost_bps")
+                    if cb is not None:
+                        key = f"{key}@{cb}"
                     s["records"][key] = _dataset_record(ds)
                 for ds in (e.get("replication") or {}).get("datasets", []):
                     key = "REPL:" + (ds.get("dataset") or "?")
+                    cb = ds.get("cost_bps")
+                    if cb is not None:
+                        key = f"{key}@{cb}"
                     s["records"][key] = _dataset_record(ds)
     if cand_dir.is_dir():
         for f in sorted(cand_dir.glob("*.json")):
@@ -150,6 +162,8 @@ def collect(cycles_dir: Path, cand_dir: Path):
             s = specs[sid]
             s["family"] = s["family"] or spec.get("family")
             s["hypothesis"] = s["hypothesis"] or spec.get("hypothesis", "")
+            if s["spec_dict"] is None:
+                s["spec_dict"] = spec
             ds = dict(m.get("verdict") or {})
             ds["dataset"] = m.get("dataset")
             ds["verdict"] = (m.get("gate") or {}).get("verdict") \
@@ -168,7 +182,8 @@ def main() -> int:
 
     specs = collect(Path(args.cycles), Path(args.candidates))
     agg = [_aggregate(sid, s["family"], s["hypothesis"],
-                      list(s["records"].values()), s["replicated"])
+                      list(s["records"].values()), s["replicated"],
+                      s.get("spec_dict"))
            for sid, s in specs.items()]
     order = {"PROMOTE_CANDIDATE": 0, "WATCH": 1, "DEAD": 2}
     agg.sort(key=lambda a: (order.get(a["classification"], 3),
