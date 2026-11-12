@@ -882,6 +882,15 @@ calendar) is falsified at 5bps taker cost. Resume triggers:
 4. External claim classes the family space can't express (OFI,
    ML-alpha, alt-data) -> deliberate bounded-family design decision
 
+Family-coverage analysis (2026-11-12, 28 finance-anchored scout
+misses): recurring unmapped classes map to specific data gaps —
+order-flow/OFI claims need book/trade depth (only candles held),
+funding/basis carry claims recur (4+ records) and are FILED in
+var/data_requests.json pending a funding-rate collector
+(hyperliquid_sync.py pulls candles only), prediction-market claims
+need a new venue, cointegration claims ARE expressible via stat_arb
++ spec.pair (needs_pair status, not a family gap).
+
 Near-miss on record: Tuesday-overnight equity anomaly — real
 2012-2023, broad-based, dead post-2024 at any cost. Do not
 re-test without new data or a different cost/execution model.
