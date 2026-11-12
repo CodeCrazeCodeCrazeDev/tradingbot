@@ -1,5 +1,14 @@
 # Autonomous Financial Intelligence Infrastructure
 
+> **STALE — do not code against this document (audit 2026-11-12).**
+> The APIs, metrics, and file tree below describe a system that is not
+> in the tree: the package orchestrators were rewritten to minimal
+> facades, every documented method is absent, and two modules fabricate
+> "canonical" market data. The package now emits a DeprecationWarning.
+> The real architecture and honest gap map is
+> `DOCS/AUTONOMOUS_FI_INFRASTRUCTURE.md`; the component-by-component
+> disposition is `DOCS/AFI_PACKAGE_AUDIT.md`.
+
 ## Version 2.0.0 - Self-Improving Edition
 
 A revolutionary **self-evolving** financial intelligence infrastructure with **Verified Evidence Reasoning** and **Multi-Layer Anti-Hallucination Governance** that **continuously improves itself** through recursive optimization.

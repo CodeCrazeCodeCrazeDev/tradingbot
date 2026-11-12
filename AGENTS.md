@@ -93,6 +93,35 @@ Two interpreters, different roles:
 python scripts/paper_runner.py --source synthetic --cycles 40 \
   --state-dir var/paper_run --interval 0
 
+# Multi-instrument replay: --symbols merges per-symbol db streams by bar
+# timestamp (aligned to common start); --universe adds multi-db +
+# per-source skip; --universe auto lets the OpportunityScanner pick the
+# top-N series by measured structure_score itself.
+python scripts/paper_runner.py --source db \
+  --symbols EURUSD,GBPUSD,USDJPY --skip 64000 --state-dir var/paper_multi
+python scripts/paper_runner.py --source db --universe \
+  'market_data.db:EURUSD,GBPUSD:M15:64000;binance_data.db:BTC,ETH:15m:15900' \
+  --state-dir var/paper_multi
+python scripts/paper_runner.py --source db --universe auto \
+  --universe-top 6 --universe-tail 4000 --state-dir var/paper_auto
+
+# US equities + fresh FX: scripts/stock_sync.py pulls keyless Yahoo v8
+# chart data into market_data-schema dbs (auto-discovered by scanner).
+# FX: EURUSD=X/GBPUSD=X/JPY=X -> fx_data.db (JPY=X maps to USDJPY).
+python scripts/stock_sync.py --symbols AAPL,MSFT,NVDA,TSLA,SPY --timeframe 15m
+python scripts/stock_sync.py --symbols EURUSD=X,GBPUSD=X,JPY=X \
+  --timeframe 15m --db-path fx_data.db
+python scripts/paper_runner.py --source db \
+  --universe 'us_stocks.db:AAPL,MSFT,NVDA,TSLA,SPY:M15' \
+  --state-dir var/paper_stocks
+
+# Rotating universe: --universe-refresh N re-ranks all onboarded series
+# every N bars on closes strictly BEFORE the tape clock (no lookahead);
+# entries join at the clock, drops stop emitting. Watch
+# 'universe re-rank @<ts>' + 'feed mix' log lines.
+python scripts/paper_runner.py --source db --universe auto \
+  --universe-refresh 500 --cycles 1000 --state-dir var/paper_rotate
+
 # Operator controls against a running bot (audited, no order entry)
 python scripts/operator_cli.py --state-dir var/paper_run pause
 python scripts/operator_cli.py --state-dir var/paper_run resume
@@ -341,6 +370,30 @@ review date and verify them against the current code before changing anything.
   and theory-correct (USDJPY = strongest, as rates-sensitivity
   predicts). Report: var/macro_rates_gate.json.
   Any "V3-lite" spine should build on that channel, not latents.
+- Venue replication FALSIFIED the rates channel (2026-11-12,
+  `scripts/macro_rates_venue_gate.py`): same signals re-judged on
+  tradeable D1 bars (fx_data.db, Yahoo composite, 2012->2026) with
+  yields reindexed lookahead-safe (`--yield-lag`). lag=1 (yields
+  strictly before bar date): EVERY variant rejected on all 3 pairs —
+  best mean +0.79bps, LCB<0. lag=0 (original same-day convention):
+  USDJPY dust_2y_10d|>0.15 mean +2.07/LCB +0.38 but recent-third
+  segment -1.46 — fails all-segments; all else rejected. Verdict:
+  rates↔FX is a coincident daily relationship, not a leading one —
+  the fixing-series "edge" needed the day-t+1 yield print before the
+  day-t+1 fixing completed (suspected lookahead in
+  macro_rates_gate.py's pos/ret alignment: pos[t] consumes yield
+  index t+1 to earn spot[t]->spot[t+1]). Treat the 3 "candidates" as
+  FALSIFIED at venue level; the channel stays open only as a
+  coincident risk indicator, not a signal. Reports:
+  var/macro_rates_venue_gate_lag{0,1}.json.
+- `trading_bot/autonomous_financial_intelligence/` audited
+  (2026-11-12, `DOCS/AFI_PACKAGE_AUDIT.md`): legacy/quarantined —
+  only live import is LogicalVerifier types via
+  chainofthoughtreasoner (try/except); data_canonicalizer +
+  fact_checker FABRICATE canonical prices (random.gauss/hardcoded);
+  README documents methods that don't exist; package now emits
+  DeprecationWarning. Disposition: extract logical_verifier, then
+  archive; destination remains DOCS/AUTONOMOUS_FI_INFRASTRUCTURE.md.
 - Off-grid splice contamination is EURUSD-M15-only; GBPUSD/USDJPY M15
   and EURUSD/GBPUSD H1/H4 are clean (verified 2026-11-07). market_data.db
   now carries ~65k M15 bars x3 pairs + H1 (2016+) + H4 (2007+).
@@ -377,7 +430,29 @@ implementations. Everything is measured or honestly refused:
 
 `capability_report()` gives per-claim mechanism+scope+probe (never VERIFIED
 by fiat). `attach_capability_services(csc)` registers 7 read-only probes as
-advisory services — work-performing methods stay operator-invoked.
+advisory services — work-performing methods stay operator-invoked — and is
+wired into `expansion.service.attach_expansion_services` so the canonical
+assembly actually attaches them to the running CSC (key `capability_services`
+in the attach report).
+
+Known-honest bounds after the 2026-11-09 hardening pass: protected-path
+comparison happens on RESOLVED paths (aliases/case/dirs refused); rollback
+restores bytes on ANY pytest outcome incl. launch failure; the threshold
+sweep is fixed-parameter `evaluate_holdout` (the fitter can't override the
+swept value); `discover_methods` requires verdict CONFIRMED AND fdr_survivor;
+agent attach requires the durable operator flag AND a present verifier
+swarm (reviewer_absent -> gate 'reviewer_unavailable'); sector discovery
+correlates on shared timestamps only; `deployment_performance` reports
+average-cost realized + last-fill-mark unrealized P&L; `balance_resources`
+actuates via bounded advisory `timeout_s` scaling when `apply=True`.
+`capability_verification.py` reports honest statuses
+(VERIFIED / VERIFIED_BOUNDED / UNPROVEN / RETIRED_BY_DESIGN) — no more
+24/24 VERIFIED. `autonomous_superintelligence/` emits a package-level
+DeprecationWarning. `detect_executable_arbitrage(dbs, symbol)` measures
+top-of-book cross-venue net spread (depth-capped, fee/gap bounded; honest
+insufficient_data under 2 venues) and `search_architecture_space(bars)`
+enumerates the honest spec space (threshold grid + logistic subsets + GA
+grammar) through the sealed gate with FDR.
 
 ```bash
 python -m pytest tests/foundation/test_csc_capabilities.py -q --no-cov -p no:cacheprovider
@@ -442,6 +517,13 @@ terminal path.
   `expansion.service.attach_expansion_services` in assembly —
   already canonical, not orphan. core_api/market_feeds/
   market_student audited with no obs-callable surface — cataloged.
+- Self-innovation engine (`csc/self_innovation.py`,
+  arXiv:2504.01990): each learn worker synthesizes bounded
+  threshold_rule candidates from weakest-skills + failure-kinds +
+  frontier hints over DERIVABLE_FEATURES only, runs them through
+  csc.propose_model -> validate_model (70/30 holdout, net-of-cost).
+  VALIDATED candidates wait for OperatorAuthorization — never
+  auto-approved. `TB_INNOVATE_MAX_CANDIDATES` (4).
 - Frontier-distillation feed: intel sweeps also extract structured
   `FrontierObservation`s when fetched text names a watched model
   (`TB_FRONTIER_WATCH`, default
@@ -509,9 +591,12 @@ Facts that will bite you:
   mirror; `--sources official` adds REAL FOMC statement+minutes dates
   2021-2027 (parsed federalreserve.gov page, 14:00 ET) and
   `rule_seed:nfp_1st_friday` NFP dates (rule-derived, honest label —
-  holiday shifts can be off a week). BLS/BEA ICS and Wayback are
+  holiday shifts can be off a week). `--sources releases` discovers
+  REAL release dates keylessly via ALFRED `vintage_date=` (binary-
+  search first vintage containing each obs; revisions = GDP 2nd/3rd
+  estimates; ~5-15 req/release, opt-in). BLS/BEA ICS and Wayback are
   IP-blocked here; `--sources ics` reports them, never fakes.
-  First measured blackout A/B (2025-09→2026-10 M15): 105 bars
+  Measured blackout A/B (2025-09→2026-10 M15): 199 events, 250 bars
   removed, LCB delta ±0.03bps — filter is neutral on baseline rules.
 - First real result: `london_sweep` on clean M15 -> 203 trades,
   lcb5 -6.1bps, no_edge. `rate_diff_trend` on H4-rollup D1 -> 966
@@ -520,3 +605,120 @@ Facts that will bite you:
 
 Network-heavy verification commands are slow; the unit tests are not:
 `python -m pytest tests/foundation/test_altdata_ingest.py -q --no-cov -p no:cacheprovider`
+
+## CSC modular architecture (2026-11-10)
+
+`trading_bot/core/csc/discovery.py` — AST-scans source for top-level
+`CSC_MANIFEST` dicts (`id/kind/provides/requires/factory/status`),
+builds the provides/requires dep graph, topo-orders wiring, reports
+blocked/cycles/conflicts. Never imports scanned code (trading_bot
+init is heavy + concurrent-edit hazard). INVARIANT_IDS + protected
+prefixes rejected at plan time.
+
+`trading_bot/core/csc/self_update.py` — composes the existing gates
+into a declared loop: scan -> wire advisory factories (SHADOW) ->
+propose/validate/operator-flag/attach stays with the controller.
+Plan is reported before execution; authority chain unreachable by
+construction. "Self-update" = the electorate + candidate pool
+improves under measured evidence; the control plane never rewrites.
+
+Docs: `DOCS/CSC_MODULAR_ARCHITECTURE.md` (design), `DOCS/DATA_SOURCES.md`
+(source registry), `DOCS/100_REALISTIC_IDEAS.md` (grounded backlog).
+
+Tests: `tests/foundation/test_csc_discovery.py`,
+`tests/foundation/test_altdata_ingest.py` (15 tests).
+
+## Research lab (2026-11-10)
+
+`trading_bot/core/csc/research_lab.py` — manifest-declared advisory
+service with specialist agents (ResearcherAgent, MLResearchAgent,
+RiskEngineerAgent, SystemsEngineerAgent, OpportunityRadarAgent)
+behind `AdaptiveRouter`: task kind -> agent `provides` interface,
+ordered by EMA health score updated on measured outcomes only.
+Artifacts carry confidence: measured|partial|unprovisioned. Advisory
+only — `build()` is the CSC_MANIFEST factory; discovery.py wires it
+to the CSC at SHADOW. Tests: tests/foundation/test_research_lab.py.
+Doc: DOCS/CSC_RESEARCH_LAB.md.
+
+## Neuro-symbolic reasoning layer (2026-11-10)
+
+`trading_bot/core/csc/neuro_symbolic.py` — advisory NSR layer over the
+SRE. Policy enforced as data (POLICY dict): live_execution -> refused
+by construction; risky_change (deploy/creds/limits/capital/patch/
+promote/kill_switch) -> requires_signed_approval; untrusted ->
+sandbox_only; vulnerability findings -> sealed pending patch or
+disclosure approval; benchmark-only channel can never confirm.
+Six persistent specialists (risk/execution/macro/backtest/
+code_review/security) review every hypothesis; decisions append to a
+hash-chained `var/nsr_ledger.jsonl`. Optional injected model callable
+for the neural channel; pattern templates otherwise.
+Tests: tests/foundation/test_neuro_symbolic.py (9 tests).
+
+## SRE x neuro-symbolic gate (2026-11-10)
+
+`sre_bridge.SREAdvisoryService` now routes every hypothesis's declared
+`target_action` through `neuro_symbolic.route()` before it lands as
+evidence: live_exec/order/trade -> refused, _RISKY_OPS actions ->
+pending_approval, unknown classes normalize to the safest matching
+ActionClass. Artifacts carry `policy: {status, gate, verdict, sealed}`
+— "ungated"/"not_applicable" markers are honest, never implied pass.
+Tests: tests/foundation/test_sre_bridge_gate.py.
+
+## Expansion capabilities (2026-11-10)
+
+`trading_bot/core/csc/expansion_capabilities.py` — 12 advisory
+capabilities through `ExpansionCapabilities.run(name, ctx)` /
+`analyze()`: multi_modal_fusion, seven_dim_awareness, temporal_mesh
+(reads provisioned forecasters), geopolitical_intel, red_team
+(injection/degenerate checks on emits), options_greeks (real BSM),
+portfolio_mpt (risk-parity from real closes), tca (fills ledger),
+voice_interface (text->operator_cli), federated_learning, 
+regulatory_compliance (real ledger reads + nsr chain verify),
+energy_optimization (measured cycle cost). Every capability returns
+confidence: measured|partial|unprovisioned — honest bounds, never
+simulated. CSC_MANIFEST advisory; discovery wires at SHADOW.
+Tests: tests/foundation/test_expansion_capabilities.py (7 tests).
+
+## Autonomous FI loop + L2 order-book eval (2026-11-12)
+
+M1-M5 infrastructure (live, advisory-only): `scripts/method_eval.py`
+(spec -> bounded candidate -> net-of-cost verdict -> `var/methods/ledger.jsonl`),
+`scripts/autonomous_cycle.py` (6h unattended loop: catalog -> data probes ->
+internet scout -> method evals -> edge_research -> `var/reports/*.md`),
+`scripts/build_catalog.py` -> `var/data_catalog.json` (consumed by
+`paper_runner --universe auto` when <24h fresh), `scripts/intel_report.py`
+(one-command status across all ledgers), `scripts/edge_research.py`
+(bounded hypothesis queue, all results ledgered).
+
+M6 — Binance Futures UM L2 suite (`data.binance.vision` keyless archives;
+spot has NO bookDepth, UM does: bookDepth/bookTicker/metrics/liqSnapshot;
+filename `BTCUSDT-<kind>-YYYY-MM-DD.zip`). Bounded week 2024-01-01..07 in
+`var/l2data/` (~13MB total after deleting the 50MB aggTrades csv — klines
+cover price; retention policy is pull-analyze-keep-small-derived).
+Schemas: bookDepth = `timestamp,percentage,depth,notional` (depth by
+%-band, bids negative, snapshots ~30s, NOT top-of-book L2); metrics =
+5min OI + toptrader/retail long-short ratios + taker vol ratio.
+H5 depth_imbalance and H6 positioning_metrics are in edge_research.py
+(--only works). Verdicts on the week: both FAIL.
+
+CRITICAL eval lesson (third time this pattern appeared): pooled
+edge stats on overlapping forward windows are inflated mirages —
+pooled top-decile depth-imbalance edge looked like +21.6bps net
+(+16.6bps over ~5bps UM taker RT), per-day split showed
++36.9/+34.6/+31.6/-4.4/-51.5/-9.1/-6.8 = mean +4.5bps, 3/7 days.
+Same for positioning fade: pooled -31..-36bps spread -> per-day
+-11.3/-5.5bps. The honest unit is the per-day edge; ~300 extreme
+"samples"/day are really 2-12 clusters. Never verdict on pooled
+overlapping-window means.
+
+HF dataset `venvoo/china-a-share-l2-*` is GATED (401, no token) —
+catalog listing is public but files need credentials; recorded, not faked.
+
+M7 additions (same protocol): H7 bookticker_microprice streams the
+128MB/day UM bookTicker zip -> 1s resample (~4MB kept). Measured real
+BTCUSDT-perp quoted spread = 0.02bps median (1 tick); microprice imb
+edge +0.7bps@60s vs fees+spread ~5.02bps -> FAIL. H8 premium_basis on
+premiumIndexKlines: the STRONGEST anomaly found — premium mean-
+reversion corr -0.37..-0.70 all 7 days, fade edges positive 7/7, but
+mean +2.69bps < cost -> FAIL (structural funding-pull, sub-cost).
+liquidationSnapshot is NOT in Vision archives (API-only) — recorded.

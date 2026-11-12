@@ -13,6 +13,16 @@ This infrastructure provides:
 - Self-Improvement System: Continuous evolution and recursive optimization
 """
 
+import warnings as _warnings
+_warnings.warn(
+    "trading_bot.autonomous_financial_intelligence is deprecated: legacy compat only, "
+    "no decision role, contains fabricated canonical-data paths; the canonical "
+    "runtime path is the CSC advisory/evidence-ledger/RSI spine documented in "
+    "DOCS/AUTONOMOUS_FI_INFRASTRUCTURE.md. See DOCS/AFI_PACKAGE_AUDIT.md.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 from .evidence_verification import (
     EvidenceProvenance,
     MerkleVerifier,
