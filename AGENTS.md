@@ -913,3 +913,19 @@ Autonomy stack additions (2026-11-12, all advisory-only):
 - Vol-sizing A/B closed (soakx_norv vs soakx_rv, 500 cycles,
   identical trades): RV scalar cut mean qty 13%/dispersion 14% but
   per-trade expectancy unchanged — risk control, not alpha.
+- Operator claims (trust root bypass, unattended): drop .txt/.md
+  into `var/operator_claims/` — each cycle extracts specs, evals on
+  configured datasets, writes method_candidates records, moves file
+  to done/. `scripts/operator_claim.py --text|--file` does it
+  manually. Needed because the scout trust gate rejects ~100% of
+  web sources BY DESIGN (funnel: 70 records -> 2 specs, 44
+  TRUST_GATE_FAILED) — operator-submitted claims skip web-trust
+  scoring since the human IS the trust decision.
+- `scripts/live_outcome_report.py` (--all-soaks runs every cycle
+  before analyst): paper_runner fills -> FIFO round-trips ->
+  method_candidates records. The spine's own probe P&L is
+  first-class evidence — soakx probes classified DEAD (-3.6bps).
+- Alert digest: analyst diffs vs previous queue -> alerts[] in
+  queue JSON + report header + intel report (NEW WATCH/PROMOTE,
+  classification transitions). Claims funnel in intel_report shows
+  text->spec->eval->verdict attrition incl. trust-gate finals.
