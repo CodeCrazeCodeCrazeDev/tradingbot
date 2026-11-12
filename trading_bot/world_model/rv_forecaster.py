@@ -118,16 +118,19 @@ class RVBlendForecaster:
         self._featurizer = WorldModelV2(asset_dims={"FX": 64,
                                                   "Equities": 128},
                                         latent_dim=256)
-        self.rows = deque(maxlen=self.ROW_BUF)
-        self.feats = deque(maxlen=self.seq)
+        # Per-symbol buffers: a multi-symbol replay emits interleaved
+        # obs; one shared deque would compute returns across symbol
+        # boundaries (price jump ~15%) and poison every feature.
+        self.rows: Dict[str, deque] = {}
+        self.feats: Dict[str, deque] = {}
         self.n_updates = 0
         self.n_skipped_offgrid = 0
 
     # ---- feature derivation (mirrors scripts/train_world_model.to_obs) ----
 
-    def _bar_scalars(self):
+    def _bar_scalars(self, rows_deque):
         np = self._np
-        rows = list(self.rows)
+        rows = list(rows_deque)
         c = np.array([r[4] for r in rows], dtype=np.float64)
         h = np.array([r[2] for r in rows], dtype=np.float64)
         lo = np.array([r[3] for r in rows], dtype=np.float64)
@@ -142,14 +145,14 @@ class RVBlendForecaster:
             "atr": float((h[i] - lo[i]) / max(c[i], 1e-12)),
         }
 
-    def _feat_dict(self, obs) -> Dict[str, Any]:
+    def _feat_dict(self, obs, rows_deque) -> Dict[str, Any]:
         ts = str(obs.get("broker_timestamp") or obs.get("timestamp") or "")
         try:
             from datetime import datetime
             hh = datetime.fromisoformat(ts.replace("Z", "+00:00")).hour
         except Exception:
             hh = 0
-        s = self._bar_scalars()
+        s = self._bar_scalars(rows_deque)
         return {
             "timestamp": ts, "symbol": obs.get("symbol", ""),
             "open": obs["open"], "high": obs["high"], "low": obs["low"],
@@ -189,31 +192,35 @@ class RVBlendForecaster:
                    float(obs["volume"]))
         except (TypeError, ValueError):
             return {"ready": False, "status": "bad_fields"}
-        self.rows.append(row)
+        sym = str(obs.get("symbol") or "")
+        rows = self.rows.setdefault(sym, deque(maxlen=self.ROW_BUF))
+        feats = self.feats.setdefault(sym, deque(maxlen=self.seq))
+        rows.append(row)
         self.n_updates += 1
 
         try:
-            feat = self._featurizer._obs_to_features(self._feat_dict(obs))
+            feat = self._featurizer._obs_to_features(
+                self._feat_dict(obs, rows))
         except Exception as exc:  # noqa: BLE001
             logger.debug("rv forecaster featurization failed: %s", exc)
             return {"ready": False, "status": "featurize_error"}
-        self.feats.append(feat)
+        feats.append(feat)
 
-        if len(self.feats) < self.seq:
+        if len(feats) < self.seq:
             return {"ready": False, "status": "warming",
-                    "warming": self.seq - len(self.feats)}
+                    "warming": self.seq - len(feats)}
 
         torch, np = self._torch, self._np
         with torch.no_grad():
-            win = torch.stack(list(self.feats)).unsqueeze(0).float()
+            win = torch.stack(list(feats)).unsqueeze(0).float()
             gru_pred = self.net(win).numpy()[0] * self.y_sd + self.y_mu
-        x = self.feats[-1].numpy()
+        x = feats[-1].numpy()
         ridge_pred = np.array([
             float(((x - mu) / sd) @ W)
             for h, (mu, sd, W) in sorted(self.ridge.items())])
         blend = self.blend_w * gru_pred + (1.0 - self.blend_w) * ridge_pred
 
-        out = {"ready": True, "status": "ok",
+        out = {"ready": True, "status": "ok", "symbol": sym,
                "skipped_offgrid": self.n_skipped_offgrid,
                "log_ratio": {}, "vol_mult": {},
                "gru": {}, "ridge": {}}

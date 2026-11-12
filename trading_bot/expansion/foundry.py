@@ -145,6 +145,21 @@ class AgentFoundry:
             "p_gt_0": sig.get("p_gt_0"),
             "p_gt_baseline": sig.get("p_gt_baseline"),
             "seal": validation.get("seal"),
+            # business case — the honest 'designed company': a named
+            # product entity with a capital envelope, cost model, and
+            # ops requirements, all derived from the sealed evaluation.
+            "capital_envelope": {
+                "cost_bps_per_signal": validation.get("cost_bps"),
+                "expected_net_bps_per_signal": validation.get(
+                    "mean_net_bps"),
+                "min_signals_for_edge": validation.get(
+                    "holdout_signals"),
+                "note": ("capital sizing is the risk service's "
+                         "authority, not this product's")},
+            "ops_requirements": [
+                "market data feed matching the sealed dataset",
+                "execution path through canonical risk->shield->"
+                "governance->operator approval"],
             "status": ("VALIDATED — awaiting the durable operator "
                        "approval gate before any advisory voice"),
         }

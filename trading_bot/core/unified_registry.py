@@ -132,7 +132,7 @@ class UnifiedComponentRegistry:
                     f"Component '{name}' already registered. Duplicate registration "
                     "is forbidden — pass overwrite=True for intentional re-registration."
                 )
-            logger.warning(f"Component '{name}' already registered. Overwriting.")
+            logger.info(f"Component '{name}' re-registered (overwrite=True).")
 
         comp = component if component is not None else instance
         deps = dependencies or []

@@ -113,7 +113,9 @@ class PaperExecutionBridge:
                  slippage: Optional[SlippageRecorder] = None,
                  execution_service: Any = None,
                  submit_timeout: Optional[float] = 30.0,
-                 instrument_spec: Optional[Dict[str, Any]] = None):
+                 instrument_spec: Optional[Dict[str, Any]] = None,
+                 order_style: str = "market",
+                 maker_offset_bps: float = 0.0):
         self.persist_path = persist_path  # legacy arg; no longer written
         self.fills: List[PaperFill] = []
         self.positions: Dict[str, float] = {}
@@ -127,6 +129,11 @@ class PaperExecutionBridge:
         # Broker-call deadline: a hung submit resolves to a durable UNKNOWN
         # report reconciled later via broker lookup — never a silent retry.
         self.submit_timeout = submit_timeout
+        # "maker" converts entry orders to passive LIMITs priced
+        # maker_offset_bps off the mark; position_close stays MARKET —
+        # a risk flatten must not wait for a counterparty to cross.
+        self.order_style = order_style
+        self.maker_offset_bps = max(float(maker_offset_bps), 0.0)
         self._processed_trade_ids: Dict[str, Dict[str, Any]] = {}
 
     def attach(self, decision_bus: Any) -> None:
@@ -251,16 +258,24 @@ class PaperExecutionBridge:
         )
 
         spec = self.instrument_spec
+        buy = side in ("BUY", "STRONG_BUY")
+        otype = OrderType.MARKET
+        opx = float(price) if float(price) > 0 else None
+        if (self.order_style == "maker" and opx
+                and payload.get("intent") != "position_close"):
+            otype = OrderType.LIMIT
+            off = self.maker_offset_bps * 1e-4
+            opx = opx * (1.0 - off) if buy else opx * (1.0 + off)
         typed_order = OrderRequest(
             instrument=Instrument(
                 symbol,
                 InstrumentType(spec.get("instrument_type", "synthetic")),
                 spec.get("venue", "paper"),
                 contract_size=float(spec.get("contract_size", 1.0))),
-            side=OrderSide.BUY if side in ("BUY", "STRONG_BUY") else OrderSide.SELL,
-            order_type=OrderType.MARKET,
+            side=OrderSide.BUY if buy else OrderSide.SELL,
+            order_type=otype,
             quantity=float(quantity),
-            price=float(price) if float(price) > 0 else None,
+            price=opx,
             client_order_id=trade_id,
             decision_id=trade_id,
         )

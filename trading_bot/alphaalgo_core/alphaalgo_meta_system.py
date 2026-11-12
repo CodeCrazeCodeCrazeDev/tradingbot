@@ -72,16 +72,18 @@ import numpy as np
 # Import existing AlphaAlgo components
 try:
     from ..alpha_research.weakness_detection import (
-        WeaknessDetector, PerformanceSnapshot, RootCauseType, WeaknessSeverity
+        WeaknessDetectionEngine as WeaknessDetector,
+        PerformanceSnapshot, RootCauseType, WeaknessSeverity
     )
     from ..alpha_research.sandbox_testing import (
-        SandboxTester, TestType, TestStatus, TestConfig, TestResult
+        SandboxTestingEngine as SandboxTester,
+        TestType, TestStatus, TestConfig, TestResult
     )
     from ..alpha_research.rdaos_core import Hypothesis, FeatureFamily, RegimeType
     ALPHA_COMPONENTS_AVAILABLE = True
 except ImportError:
     ALPHA_COMPONENTS_AVAILABLE = False
-    logging.warning("AlphaAlgo components not available, using stubs")
+    logging.info("AlphaAlgo components not available, using stubs")
 
 # Import our unified intelligence system
 from ..decision_governance.unified_intelligence import (

@@ -89,7 +89,12 @@ class SelfCorrectionConcepts:
                 signals['enter_earlier'] = False
 
             # Concept 64: Overtrading Brake
-            self.overtrading_window.append(time.time())
+            # Count only snapshots that mark an actual trade — appending
+            # on every pre-trade call would count *evaluations* and
+            # claim "60 trades/hour" with zero orders sent.
+            if (snapshot.get('trade_executed') or snapshot.get('order')
+                    or snapshot.get('action') in ('BUY', 'SELL')):
+                self.overtrading_window.append(time.time())
             # Count trades in last 60 minutes
             cutoff = time.time() - 3600
             recent_trades = sum(1 for t in self.overtrading_window if t > cutoff)

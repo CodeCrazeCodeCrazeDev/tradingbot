@@ -120,8 +120,22 @@ def attach_expansion_services(
                          **ctx.domains.summary()})
     _register("expansion_inventory",
               lambda c: _inventory_advisory(ctx))
+    # Capability matrix: the honest bounded mechanisms for the
+    # advertised capability list — attached in the same canonical
+    # assembly so the running CSC actually holds them.
+    try:
+        from trading_bot.core.csc.capabilities import CSCCapabilities
+        cap_rep = CSCCapabilities(
+            csc, ctx=ctx, repo_root=root).attach_capability_services()
+        attached.extend(cap_rep["attached"])
+        skipped.update(cap_rep["skipped"])
+        report_caps = cap_rep["attached"]
+    except Exception as exc:  # noqa: BLE001
+        report_caps = []
+        skipped["capabilities"] = str(exc)[:160]
     report = {"attached": attached, "skipped": skipped,
-              "state_dir": str(ctx.state_dir)}
+              "state_dir": str(ctx.state_dir),
+              "capability_services": report_caps}
     logger.info("expansion services: attached=%d skipped=%s",
                 len(attached), skipped)
     return report

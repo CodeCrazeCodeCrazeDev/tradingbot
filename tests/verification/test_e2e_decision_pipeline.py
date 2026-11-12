@@ -65,6 +65,10 @@ async def test_e2e_pipeline_full_path():
     # 2. Initialize CSC with mocks
     CognitiveSystemController._instance = None
     csc = CognitiveSystemController(world_model=world_model, hms=hms, shield=shield)
+    # Cold-start epistemic_uncertainty=1.0 zeroes measured size by design
+    # (verified-WAIT abstain). Lower it so the directional plan keeps
+    # quantity and exercises the downstream gates this test targets.
+    csc.state.epistemic_uncertainty = 0.1
     csc.hypothesis_gen = hypothesis_gen
     csc.verifier_swarm = verifier_swarm
 
@@ -130,6 +134,7 @@ async def test_pipeline_rejection_by_shield():
 
     CognitiveSystemController._instance = None
     csc = CognitiveSystemController(shield=shield)
+    csc.state.epistemic_uncertainty = 0.1  # see full-path test
 
     # Patch internals — directional plan so the proposal reaches the shield.
     directional = MagicMock(branch_id="b1")

@@ -84,7 +84,8 @@ def test_evidence_plane_surfaces_assembly_disabled_verdicts():
 
 
 @pytest.mark.asyncio
-async def test_advisor_timeout_coerced_and_ceiling_enforced():
+async def test_advisor_timeout_coerced_and_ceiling_enforced(monkeypatch):
+    monkeypatch.setenv("TB_ADVISORY_DEFER_N", "1")
     csc = _fresh_csc()
     try:
         # A garbage timeout_s used to raise TypeError inside gather and

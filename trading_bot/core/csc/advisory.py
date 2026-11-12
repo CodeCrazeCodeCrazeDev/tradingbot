@@ -818,7 +818,8 @@ def _adaptive_regime_service() -> AdvisoryModuleAdapter:
 
     def analyze(ctx: Mapping[str, Any]) -> Any:
         n = hist.add(ctx)
-        if len(hist) < 40:
+        # detector's own gate is lookback_period bars — warm quietly
+        if len(hist) < detector.lookback_period:
             return {"status": "warming", "bars": n}
         signal = detector.detect_regime(hist.frame())
         out = _payload(signal)
@@ -1422,6 +1423,20 @@ def _risk_evt_service() -> AdvisoryModuleAdapter:
             ev = ars.black_swan_detector.detect_volatility_spike()
             arr = np.asarray(prices[sym], dtype=float)
             rets = np.diff(arr) / arr[:-1]
+            # Mirror the EVT fitter's own gate (>=10 exceedances over
+            # the percentile threshold) so a thin tail reports
+            # "unavailable" instead of warning on every cycle.
+            losses = -rets[rets < 0]
+            if len(losses) == 0:
+                return {"status": "unavailable", "available": False,
+                        "reason": "no_losses"}
+            thr = np.percentile(
+                losses, ars.evt_analyzer.threshold_percentile * 100)
+            n_exc = int((losses > thr).sum())
+            if n_exc < 10:
+                return {"status": "unavailable", "available": False,
+                        "reason": "insufficient_exceedances",
+                        "n_exceedances": n_exc}
             ars.evt_analyzer.fit(rets, sym)
             var99 = ars.evt_analyzer.estimate_var(sym, 0.99)
             es99 = ars.evt_analyzer.estimate_es(sym, 0.99)
@@ -3241,6 +3256,31 @@ def _bars_df(hist: "_BarHistory", last: int):
     return pd.DataFrame(bars)
 
 
+def _resample_bars(bars: List[Dict[str, Any]], n: int
+                   ) -> List[Dict[str, Any]]:
+    """Aggregate n consecutive real bars into one higher-timeframe bar.
+
+    Honest OHLCV roll-up of bars the CSC actually observed — same
+    convention as the fractal-divergence resamples: only complete
+    trailing groups are emitted, no intra-bar data is fabricated.
+    """
+    k = len(bars) // n
+    if k <= 0:
+        return []
+    out = []
+    for i in range(len(bars) - k * n, len(bars), n):
+        group = bars[i:i + n]
+        out.append({
+            "time": group[-1]["time"],
+            "open": group[0]["open"],
+            "high": max(b["high"] for b in group),
+            "low": min(b["low"] for b in group),
+            "close": group[-1]["close"],
+            "volume": sum(b["volume"] for b in group),
+        })
+    return out
+
+
 def _md_dict(ctx: Mapping[str, Any], hist: "_BarHistory") -> Dict[str, Any]:
     """market_data dict shape used by analysis/* dict-consumers."""
     bars = hist.bars(50)
@@ -4975,23 +5015,62 @@ def _analysis_structure_service() -> AdvisoryModuleAdapter:
 
 
 def _analysis_mtf_intel_service() -> AdvisoryModuleAdapter:
-    """analysis/multi_timeframe_intelligence — MTF confluence on real
-    bars."""
+    """analysis/multi_timeframe_intelligence — MTF confluence across all
+    timeframes honestly derivable from the real primary bars.
+
+    The feed delivers one timeframe; higher frames are honest OHLCV
+    roll-ups of the same real bars (M30=x2, H1=x4, H4=x16 — the same
+    convention as the fractal-divergence resamples). Lower frames
+    (M5/M1) are omitted: splitting a real bar fabricates intra-bar
+    data, and D1 needs ~4800 primary bars. A timeframe only reports
+    once it holds 50 real bars (the analyzer's own minimum); until
+    then it is listed under ``warming``."""
+    import pandas as pd
     from trading_bot.analysis.multi_timeframe_intelligence import (
         MultiTimeframeIntelligence, TimeFrame)
 
     mtf = MultiTimeframeIntelligence()
-    hist = _BarHistory()
+    hist = _BarHistory(1024)
+    # TimeFrame -> primary-bar multiple (assumes an M15 primary feed).
+    _TF_BARS = [(TimeFrame.M15, 1), (TimeFrame.M30, 2),
+                (TimeFrame.H1, 4), (TimeFrame.H4, 16)]
+    _MIN_BARS = 50  # analyzer's own sufficiency gate
 
     def analyze(ctx: Mapping[str, Any]) -> Any:
         hist.add(ctx)
-        df = _bars_df(hist, 60)
-        if df is None:
-            return {"status": "warming", "bars": len(hist)}
-        out = mtf.analyze_timeframe(df, TimeFrame.M15)
-        if inspect.isawaitable(out):
-            out = _run_coro_sync(out)
-        return _payload(out)
+        bars = hist.bars()
+        frames = {}
+        warming = {}
+        for tf, mult in _TF_BARS:
+            tf_bars = bars if mult == 1 else _resample_bars(bars, mult)
+            if len(tf_bars) >= _MIN_BARS:
+                frames[tf] = pd.DataFrame(tf_bars[-256:])
+            else:
+                warming[tf.value] = len(tf_bars)
+        if not frames:
+            return {"status": "warming", "bars": len(bars),
+                    "warming": warming}
+        analyses = {}
+        for tf, frame in frames.items():
+            out = mtf.analyze_timeframe(frame, tf)
+            if inspect.isawaitable(out):
+                out = _run_coro_sync(out)
+            analyses[tf] = out
+        price = _num(ctx.get("close") or ctx.get("price"))
+        return {
+            "status": "active",
+            "timeframes_analyzed": [tf.value for tf in frames],
+            "warming": warming,
+            "analyses": {tf.value: _payload(a)
+                         for tf, a in analyses.items()},
+            "trend_alignment": _payload(
+                mtf.get_trend_alignment(analyses)),
+            "confluence_zones": _primitive(
+                mtf.find_confluence_zones(analyses))[:8],
+            "entry_quality": _payload(
+                mtf.get_entry_quality(price, analyses))
+            if price is not None else None,
+        }
 
     return AdvisoryModuleAdapter("analysis_mtf_intelligence", analyze)
 
@@ -5123,36 +5202,50 @@ def _elite_swing_points_service() -> AdvisoryModuleAdapter:
 
 
 def _elite_price_action_service() -> AdvisoryModuleAdapter:
-    """elite_system EliteMarketAnalyzer — load_data(df) then
-    analyze_price_action on real bars."""
+    """elite_system EliteMarketAnalyzer — multi-timeframe read via the
+    analyzer's own ``multi_timeframe_analysis`` across all timeframes
+    honestly derivable from the real primary bars (M30/H1/H4 are
+    OHLCV roll-ups, same convention as the fractal-divergence
+    resamples). A timeframe loads once it holds 20 real bars."""
+    import pandas as pd
     from trading_bot.elite_system.market_analysis import (
         EliteMarketAnalyzer, TimeFrame)
 
     analyzer = EliteMarketAnalyzer("EURUSD")
-    hist = _BarHistory()
+    hist = _BarHistory(1024)
+    _TF_BARS = [(TimeFrame.M15, 1), (TimeFrame.M30, 2),
+                (TimeFrame.H1, 4), (TimeFrame.H4, 16)]
 
     def analyze(ctx: Mapping[str, Any]) -> Any:
         hist.add(ctx)
-        df = _bars_df(hist, 60)
-        if df is None:
-            return {"status": "warming", "bars": len(hist)}
-        try:
-            analyzer.load_data(TimeFrame.M15, df)
-        except Exception:  # noqa: BLE001
-            return {"status": "load_failed"}
-        out = {"bars": len(df)}
-        for name in ("analyze_price_action",
-                     "identify_smart_money_concepts",
-                     "get_trading_opportunities"):
-            fn = getattr(analyzer, name, None)
-            if callable(fn):
+        bars = hist.bars()
+        loaded, warming = [], {}
+        for tf, mult in _TF_BARS:
+            tf_bars = bars if mult == 1 else _resample_bars(bars, mult)
+            if len(tf_bars) >= 20:
                 try:
-                    out[name] = _primitive(fn(TimeFrame.M15))
+                    analyzer.load_data(tf, pd.DataFrame(tf_bars[-256:]))
+                    loaded.append(tf)
                 except Exception:  # noqa: BLE001
-                    try:
-                        out[name] = _primitive(fn())
-                    except Exception:  # noqa: BLE001
-                        out[name] = None
+                    warming[tf.value] = "load_failed"
+            else:
+                warming[tf.value] = len(tf_bars)
+        if not loaded:
+            return {"status": "warming", "bars": len(bars),
+                    "warming": warming}
+        out = {"bars": len(bars),
+               "timeframes_loaded": [tf.value for tf in loaded],
+               "warming": warming}
+        try:
+            out["multi_timeframe"] = _primitive(
+                analyzer.multi_timeframe_analysis())
+        except Exception:  # noqa: BLE001
+            out["multi_timeframe"] = None
+        try:
+            out["get_trading_opportunities"] = _primitive(
+                analyzer.get_trading_opportunities())
+        except Exception:  # noqa: BLE001
+            out["get_trading_opportunities"] = None
         return out
 
     return AdvisoryModuleAdapter("elite_price_action", analyze)
@@ -5399,23 +5492,59 @@ def _mi_structure_service() -> AdvisoryModuleAdapter:
 
 def _mi_time_price_service() -> AdvisoryModuleAdapter:
     """market_intelligence TimeAnalysisComponents — session +
-    day-of-week patterns on timestamped real bars."""
+    day-of-week patterns on timestamped real bars.
+
+    Session and day-of-week analysis is only meaningful on real clock
+    times: feeds that emit bar-index timestamps (synthetic) get an
+    honest ``no_real_timestamps`` marker instead of 1970-epoch session
+    stats. ``detect_time_cycles`` is bar-index based and always runs.
+    """
+    import pandas as pd
     from trading_bot.market_intelligence.time_price_analysis import (
         TimeAnalysisComponents)
 
     analyzer = TimeAnalysisComponents()
     hist = _BarHistory()
+    stamps: Dict[str, Any] = {}
+
+    def _real_ts(v: Any):
+        if isinstance(v, str):
+            try:
+                return pd.to_datetime(v)
+            except Exception:  # noqa: BLE001
+                return None
+        n = _num(v)
+        if n is None:
+            return None
+        if n > 1e12:
+            return pd.to_datetime(n, unit="ms", errors="coerce")
+        if n > 1e9:
+            return pd.to_datetime(n, unit="s", errors="coerce")
+        return None  # bar index, not a clock time
 
     def analyze(ctx: Mapping[str, Any]) -> Any:
         hist.add(ctx)
+        sym = str(ctx.get("symbol") or "?")
+        dq = stamps.setdefault(sym, collections.deque(maxlen=512))
+        dq.append(ctx.get("timestamp"))
         df = _bars_df(hist, 60)
         if df is None:
             return {"status": "warming", "bars": len(hist)}
         df = df.copy()
-        df["timestamp"] = ctx.get("timestamp") or datetime.utcnow()
-        out = {"bars": len(df)}
+        parsed = [_real_ts(v) for v in list(dq)[-len(df):]]
+        have_times = (sum(t is not None for t in parsed)
+                      >= len(df) * 0.9)
+        if have_times:
+            df.index = pd.DatetimeIndex(
+                [t if t is not None else pd.NaT for t in parsed])
+        out = {"bars": len(df), "real_timestamps": have_times}
         for name in ("analyze_session_patterns", "detect_time_cycles",
                      "analyze_day_of_week_patterns"):
+            if not have_times and name != "detect_time_cycles":
+                # clock-time analysis on bar indices would fabricate
+                # session stats — report the gap, don't synthesize it
+                out[name] = {"status": "no_real_timestamps"}
+                continue
             fn = getattr(analyzer, name, None)
             if callable(fn):
                 try:
@@ -5606,7 +5735,8 @@ def _ml_regime_classifier_service() -> AdvisoryModuleAdapter:
     def analyze(ctx: Mapping[str, Any]) -> Any:
         hist.add(ctx)
         df = _bars_df(hist, 60)
-        if df is None:
+        if df is None or len(df) < 50:
+            # classifier's own gate is 50 bars — warm quietly until then
             return {"status": "warming", "bars": len(hist)}
         regimes = clf.classify(df.copy())
         if not isinstance(regimes, Mapping):
@@ -6017,11 +6147,24 @@ def _ml_online_service() -> AdvisoryModuleAdapter:
         df = _bars_df(hist, 60)
         if df is None:
             return {"status": "warming", "bars": len(hist)}
-        out = _probe_all((
-            ("price_anomalies",
-             lambda: pp.detect_anomalies(df.copy())),
-            ("chart_patterns", lambda: pr.scan(df.copy())),
-        ))
+        probes = [("price_anomalies",
+                   lambda: pp.detect_anomalies(df.copy()))]
+        if len(df) >= 30:
+            # scan() is a placeholder that "detects" patterns via
+            # random.random() — surface its output tagged as simulated,
+            # never as real pattern evidence.
+            def _scan():
+                res = pr.scan(df.copy()) or {}
+                return {"status": "simulated_stub",
+                        "note": "module emits random detections, not "
+                                "real pattern recognition",
+                        "patterns": res}
+            probes.append(("chart_patterns", _scan))
+        else:
+            probes.append(("chart_patterns",
+                           lambda: {"status": "warming",
+                                    "bars": len(df)}))
+        out = _probe_all(tuple(probes))
         return out or {"status": "no_ml_read"}
 
     return AdvisoryModuleAdapter("ml_statistical", analyze)

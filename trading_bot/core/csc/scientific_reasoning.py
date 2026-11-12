@@ -417,7 +417,7 @@ class ScientificReasoningEngine:
             if vetoed:
                 hyp.posterior *= 0.5
                 hyp.boundary_conditions["debate"] = "vetoed"
-                logger.warning(f"SRE: Adversarial debate for {hid} vetoed due to verifier disagreement.")
+                logger.info(f"SRE: Adversarial debate for {hid} vetoed due to verifier disagreement.")
             else:
                 hyp.boundary_conditions["debate"] = "survived"
         else:

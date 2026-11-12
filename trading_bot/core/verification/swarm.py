@@ -798,7 +798,10 @@ class EvidenceGraphGate:
                 EvidenceGraphGate.last_rejection_reason = (
                     f"Unprovenanced evidence nodes: {unprovenanced[:5]}"
                 )
-                logger.warning(
+                # Gate rejections are routine per-cycle outcomes — the
+                # reason is persisted in last_rejection_reason and the
+                # funnel counts verification_terminal, so INFO level.
+                logger.info(
                     "EvidenceGate: REJECTED - %s",
                     EvidenceGraphGate.last_rejection_reason,
                 )
@@ -812,7 +815,7 @@ class EvidenceGraphGate:
             EvidenceGraphGate.last_rejection_reason = (
                 f"Consensus below 80% ({valid_count}/{len(verdicts)}): {critiques}"
             )
-            logger.warning("EvidenceGate: REJECTED - Consensus below 80%")
+            logger.info("EvidenceGate: REJECTED - Consensus below 80%")
             return False
 
         # 2. High-Confidence Veto check
@@ -827,7 +830,7 @@ class EvidenceGraphGate:
                 EvidenceGraphGate.last_rejection_reason = (
                     f"High-confidence VETO by {v.agent_name}: {str(v.critique)}"
                 )
-                logger.warning(f"EvidenceGate: REJECTED - {EvidenceGraphGate.last_rejection_reason}")
+                logger.info(f"EvidenceGate: REJECTED - {EvidenceGraphGate.last_rejection_reason}")
                 return False
 
         # 3. Evidence Graph Hard Constraints
@@ -838,7 +841,7 @@ class EvidenceGraphGate:
                 EvidenceGraphGate.last_rejection_reason = (
                     f"Insufficient evidence. Graph has {len(nodes)} nodes and {len(edges)} edges."
                 )
-                logger.warning(f"EvidenceGate: REJECTED - {EvidenceGraphGate.last_rejection_reason}")
+                logger.info(f"EvidenceGate: REJECTED - {EvidenceGraphGate.last_rejection_reason}")
                 return False
 
         return True

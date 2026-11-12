@@ -144,9 +144,9 @@ def test_paper_warmup_never_reads_bars_from_replay_window(tmp_path):
     from scripts.paper_runner import prior_seed_rows
     db = tmp_path / "candles.db"
     with sqlite3.connect(db) as con:
-        con.execute("CREATE TABLE market_data(symbol,timeframe,timestamp,close,high,low)")
-        con.executemany("INSERT INTO market_data VALUES('BTC','15m',?,?,?,?)",
-                        [(f"2026-01-01T00:{i*15:02}:00", i, i+1, i-1) for i in range(4)])
+        con.execute("CREATE TABLE market_data(symbol,timeframe,timestamp,close,high,low,open,volume)")
+        con.executemany("INSERT INTO market_data VALUES('BTC','15m',?,?,?,?,?,?)",
+                        [(f"2026-01-01T00:{i*15:02}:00", i, i+1, i-1, i, 100.0) for i in range(4)])
     assert prior_seed_rows(db, "BTC", "15m", 0, 64) == []
     assert [r[0] for r in prior_seed_rows(db, "BTC", "15m", 2, 64)] == [0, 1]
     assert [r[0] for r in prior_seed_rows(db, "BTC", "15m", 3, 1)] == [2]

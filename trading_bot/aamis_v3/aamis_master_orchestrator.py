@@ -102,7 +102,7 @@ class AAMISMasterOrchestrator:
         self.csc = CognitiveSystemController()
         self.decision_history: List[AAMISDecision] = []
         self.performance_metrics: Dict[str, float] = {}
-        logger.warning(
+        logger.info(
             "AAMISMasterOrchestrator compatibility shim active — "
             "consolidated engine replaced by conservative abstention. "
             "Route primary cognition through the canonical brain."

@@ -492,8 +492,52 @@ class InternetResearcher:
         # Rate limiting
         self.last_request_time = 0
         self.min_request_interval = 1.0  # seconds
-        
+
+        # Offline circuit breaker: consecutive connection failures mark
+        # the researcher offline for _OFFLINE_RETRY_SECONDS instead of
+        # burning a connect timeout + ERROR log on every research cycle.
+        self._net_failures = 0
+        self._offline_until = 0.0
+        self._OFFLINE_AFTER = 3        # consecutive failures before tripping
+        self._OFFLINE_RETRY_SECONDS = 600.0
+
         logger.info("InternetResearcher initialized")
+
+    def _net_available(self, source: str) -> bool:
+        """False while the offline breaker is open; a tripped breaker
+        re-arms after the retry window so a restored connection heals."""
+        if time.time() < self._offline_until:
+            return False
+        return True
+
+    def _net_success(self):
+        if self._net_failures:
+            logger.info("Internet connectivity restored — research resumed")
+        self._net_failures = 0
+        self._offline_until = 0.0
+
+    def _net_failure(self, source: str, exc: Exception) -> bool:
+        """Record a connection-layer failure. Returns True if the error
+        was a connectivity failure (offline handling applied) rather than
+        a server-side error worth logging at ERROR every time."""
+        import socket
+        offline_err = isinstance(
+            exc, (aiohttp.ClientConnectorError, asyncio.TimeoutError,
+                  socket.gaierror, OSError))
+        if not offline_err:
+            return False
+        self._net_failures += 1
+        if (self._net_failures >= self._OFFLINE_AFTER
+                and self._offline_until <= 0.0):
+            self._offline_until = time.time() + self._OFFLINE_RETRY_SECONDS
+            logger.warning(
+                "Internet research unavailable (%s: %s) — pausing external "
+                "searches for %.0fs",
+                source, str(exc)[:120], self._OFFLINE_RETRY_SECONDS)
+        else:
+            logger.info("%s unavailable (failure %d): %s",
+                        source, self._net_failures, str(exc)[:120])
+        return True
     
     def _init_database(self):
         """Initialize SQLite database for storing learned content"""
@@ -569,7 +613,13 @@ class InternetResearcher:
             ssl_context.check_hostname = False
             ssl_context.verify_mode = ssl.CERT_NONE
             
-            connector = aiohttp.TCPConnector(ssl=ssl_context)
+            # aiodns (if present) makes aiohttp default to the c-ares
+            # AsyncResolver, which issues its own UDP DNS — dead on hosts
+            # where only the OS resolver path works. ThreadedResolver
+            # uses getaddrinfo, same as urllib.
+            from aiohttp.resolver import ThreadedResolver
+            connector = aiohttp.TCPConnector(
+                ssl=ssl_context, resolver=ThreadedResolver())
             self.session = aiohttp.ClientSession(
                 timeout=timeout,
                 connector=connector,
@@ -588,6 +638,8 @@ class InternetResearcher:
     
     async def search_arxiv(self, query: str, max_results: int = 5) -> List[Dict]:
         """Search arXiv for research papers"""
+        if not self._net_available("arxiv"):
+            return []
         await self._ensure_session()
         await self._rate_limit()
         
@@ -606,13 +658,15 @@ class InternetResearcher:
                 if response.status == 200:
                     content = await response.text()
                     papers = self._parse_arxiv_response(content)
+                    self._net_success()
                     logger.info(f"Found {len(papers)} papers on arXiv for '{query}'")
                     return papers
                 else:
                     logger.warning(f"arXiv search failed: {response.status}")
                     return []
         except Exception as e:
-            logger.error(f"arXiv search error: {e}")
+            if not self._net_failure("arXiv", e):
+                logger.error(f"arXiv search error: {e}")
             return []
     
     def _parse_arxiv_response(self, xml_content: str) -> List[Dict]:
@@ -639,6 +693,8 @@ class InternetResearcher:
     
     async def search_github(self, query: str, max_results: int = 5) -> List[Dict]:
         """Search GitHub for trading code examples"""
+        if not self._net_available("github"):
+            return []
         await self._ensure_session()
         await self._rate_limit()
         
@@ -665,17 +721,21 @@ class InternetResearcher:
                             'language': item.get('language', ''),
                             'source': 'github',
                         })
+                    self._net_success()
                     logger.info(f"Found {len(repos)} repos on GitHub for '{query}'")
                     return repos
                 else:
                     logger.warning(f"GitHub search failed: {response.status}")
                     return []
         except Exception as e:
-            logger.error(f"GitHub search error: {e}")
+            if not self._net_failure("GitHub", e):
+                logger.error(f"GitHub search error: {e}")
             return []
     
     async def fetch_web_content(self, url: str) -> Optional[str]:
         """Fetch content from a web URL"""
+        if not self._net_available("web"):
+            return None
         await self._ensure_session()
         await self._rate_limit()
         
@@ -688,11 +748,13 @@ class InternetResearcher:
                     text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL)
                     text = re.sub(r'<[^>]+>', ' ', text)
                     text = re.sub(r'\s+', ' ', text).strip()
+                    self._net_success()
                     return text[:50000]  # Limit content size
                 else:
                     return None
         except Exception as e:
-            logger.error(f"Fetch error for {url}: {e}")
+            if not self._net_failure("web fetch", e):
+                logger.error(f"Fetch error for {url}: {e}")
             return None
     
     async def research_topic(self, topic: str, difficulty: DifficultyLevel) -> List[LearningResource]:

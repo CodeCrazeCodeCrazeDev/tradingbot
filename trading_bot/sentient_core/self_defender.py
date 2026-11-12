@@ -285,8 +285,13 @@ class SelfDefender:
         integrity_file = self.secrets_path / "file_hashes.json"
         
         if integrity_file.exists():
-            with open(integrity_file, 'r') as f:
-                stored_hashes = json.load(f)
+            try:
+                with open(integrity_file, 'r') as f:
+                    stored_hashes = json.load(f)
+            except (json.JSONDecodeError, OSError):
+                # Empty/truncated hash store (e.g. ENOSPC mid-write) —
+                # re-baseline rather than spamming the monitor loop.
+                stored_hashes = {}
         else:
             stored_hashes = {}
         

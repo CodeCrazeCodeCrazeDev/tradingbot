@@ -309,9 +309,15 @@ class AutoDependencyManager:
         import_name = dep_info.import_name or dep_info.name
         
         try:
-            # Try to import the module
-            module = importlib.import_module(import_name)
-            
+            # Presence check WITHOUT importing: find_spec resolves the
+            # module but never executes it. A real import has side
+            # effects — `import gym` prints its unmaintained banner,
+            # and optional heavies (torch/transformers) would pay a
+            # multi-second import just to answer "is it installed".
+            spec = importlib.util.find_spec(import_name)
+            if spec is None:
+                raise ImportError(import_name)
+
             try:
                 # Get installed version
                 installed_version = pkg_resources.get_distribution(dep_info.name).version

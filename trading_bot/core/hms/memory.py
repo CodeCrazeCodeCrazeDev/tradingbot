@@ -118,7 +118,10 @@ class SAGEGraphMemory:
             import tempfile
             storage_path = os.path.join(tempfile.mkdtemp(prefix="sage_"), "sage_graph.graphml")
         self.storage_path = storage_path
+        self._journal_path = storage_path + ".journal.jsonl"
         self.graph = self._load_graph()
+        self._baseline_keys = {k for _, _, k in
+                               self.graph.edges(keys=True)}
         self.evolution_rounds = 0
         self.eta = 0.1 # Learning rate for edge weights
         logger.info(f"SAGE V6: Initialized with {len(self.graph.nodes)} nodes")
@@ -139,7 +142,7 @@ class SAGEGraphMemory:
                                 d[attr] = json.loads(d[attr])
                             except json.JSONDecodeError:
                                 logger.warning(f"Handled exception in memory.py")
-                return graph
+                return self._replay_journal(graph)
             except Exception as e:
                 logger.error(f"SAGE: Load failed: {e}")
                 # Quarantine the unparseable file — preserves it for
@@ -154,7 +157,80 @@ class SAGEGraphMemory:
                     pass
         return CompatMultiDiGraph()
 
-    def save(self):
+    def save(self, force: bool = False):
+        """Persist the graph — coalesced. add_evidence calls this on
+        every write; rewriting the full GraphML per add is O(graph size)
+        and pathological at scale (75MB file > minutes). Calls within the
+        debounce window mark the graph dirty and return; flush()
+        forces a write. Window: TB_HMS_SAVE_DEBOUNCE_S (default 30s)."""
+        if not force:
+            if getattr(self, "_last_save_mono", None) is None:
+                self._last_save_mono = time.monotonic()
+            if time.monotonic() - self._last_save_mono < float(
+                    os.environ.get("TB_HMS_SAVE_DEBOUNCE_S", "30")):
+                self._save_pending = True
+                return
+        self._save_pending = False
+        self._last_save_mono = time.monotonic()
+        self._maybe_compact(force_compact=force)
+
+    # -- journal / compaction -------------------------------------------------
+    # Incremental evidence writes append one JSONL op each (~200 bytes) to
+    # ``storage_path + ".journal.jsonl"`` — durable immediately, no graph
+    # rewrite. The full GraphML is rewritten only when the journal exceeds
+    # TB_HMS_JOURNAL_MAX_MB (default 4 MB), when edges were removed or
+    # attributes mutated outside journaled ops, or on force_compact.
+    # Replay is idempotent: keyed add_edge overwrites, so a crash between
+    # graphml replace and journal truncate replays duplicates harmlessly.
+
+    def _journal(self, u: str, v: str, k: str,
+                 d: Dict[str, Any]) -> None:
+        try:
+            line = json.dumps({"u": u, "v": v, "k": k, "d": d},
+                              default=str)
+            with open(self._journal_path, "a", encoding="utf-8") as fh:
+                fh.write(line + "\n")
+        except Exception as exc:  # noqa: BLE001 — journal loss must not
+            logger.error(f"SAGE: journal append failed: {exc}")  # wedge adds
+
+    def _replay_journal(self, graph) -> "CompatMultiDiGraph":
+        if not os.path.exists(self._journal_path):
+            return graph
+        try:
+            with open(self._journal_path, encoding="utf-8",
+                      errors="replace") as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        op = json.loads(line)
+                        graph.add_edge(op["u"], op["v"], key=op["k"],
+                                       **(op.get("d") or {}))
+                    except Exception:
+                        logger.warning("SAGE: skipped corrupt journal line")
+        except OSError as exc:
+            logger.error(f"SAGE: journal replay failed: {exc}")
+        return graph
+
+    def _maybe_compact(self, force_compact: bool = False) -> None:
+        try:
+            max_mb = float(os.environ.get("TB_HMS_JOURNAL_MAX_MB", "4"))
+        except (TypeError, ValueError):
+            max_mb = 4.0
+        jsize = 0
+        try:
+            jsize = os.path.getsize(self._journal_path)
+        except OSError:
+            pass
+        current_keys = {k for _, _, k in self.graph.edges(keys=True)}
+        # Compaction required when the journal is big, when edges were
+        # deleted (baseline keys absent from graph), or forced.
+        need = (force_compact or jsize > max_mb * 1024 * 1024
+                or bool(self._baseline_keys - current_keys)
+                or not os.path.exists(self.storage_path))
+        if not need:
+            return
         parent_dir = os.path.dirname(self.storage_path)
         if parent_dir:
             os.makedirs(parent_dir, exist_ok=True)
@@ -172,6 +248,11 @@ class SAGEGraphMemory:
                 os.close(fd)
                 nx.write_graphml(temp_graph, tmp)
                 os.replace(tmp, self.storage_path)
+                try:
+                    os.unlink(self._journal_path)
+                except OSError:
+                    pass
+                self._baseline_keys = current_keys
             except Exception:
                 try:
                     os.unlink(tmp)
@@ -180,6 +261,15 @@ class SAGEGraphMemory:
                 raise
         except Exception as e:
             logger.error(f"SAGE: Save failed: {e}")
+
+    def flush(self):
+        """Force-write pending graph state (shutdown/explicit persist).
+        Journal entries are already durable; flush compacts only when the
+        journal threshold or a removal demands it."""
+        if self._save_pending:
+            self.save(force=True)
+        else:
+            self._maybe_compact()
 
     def add_evidence(self, triplet: Tuple[str, str, str], context: Dict[str, Any], evidence: Dict[str, Any]):
         """Incremental Construction: Link new entities with context-sensitive triplets."""
@@ -198,6 +288,10 @@ class SAGEGraphMemory:
             weight=initial_weight,
             timestamp=datetime.utcnow().isoformat()
         )
+        self._journal(u, v, edge_key, {
+            "relation": r, "context": context, "evidence": evidence,
+            "weight": initial_weight,
+            "timestamp": datetime.utcnow().isoformat()})
         self.save()
         return (u, v, edge_key)
 

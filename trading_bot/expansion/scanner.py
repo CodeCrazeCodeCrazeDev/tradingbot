@@ -117,6 +117,24 @@ class OpportunityScanner:
         finally:
             con.close()
 
+    @staticmethod
+    def _load_ts_closes(db_path: Path, symbol: str, timeframe: str,
+                        limit: int) -> List[Tuple[str, float]]:
+        """Timestamped closes — sector correlation must align bars on
+        real time, not positional index."""
+        con = sqlite3.connect(
+            db_path.resolve().as_uri() + "?mode=ro", uri=True)
+        try:
+            rows = con.execute(
+                "SELECT timestamp, close FROM (SELECT timestamp, close "
+                "FROM market_data WHERE symbol=? AND timeframe=? "
+                "ORDER BY timestamp DESC LIMIT ?) ORDER BY timestamp",
+                (symbol, timeframe, limit)).fetchall()
+            return [(str(ts), float(c)) for ts, c in rows
+                    if c is not None and float(c) > 0]
+        finally:
+            con.close()
+
     def scan_all(self, catalog: Optional[Dict[str, Any]] = None
                  ) -> Dict[str, Any]:
         cat = catalog or self.inventory.scan()
@@ -161,6 +179,67 @@ class OpportunityScanner:
                      "coin-flip walk — it prioritizes evaluation, it "
                      "is not evidence of tradeable edge"),
         }
+
+    def discover_sectors(self, catalog: Optional[Dict[str, Any]] = None,
+                         min_corr: float = 0.5) -> List[Dict[str, Any]]:
+        """Instrument-sector discovery — the honest 'new industries':
+        groups of tradable series that move together, measured by
+        return correlation. A sector is a real, re-measurable cluster,
+        not a name from a list."""
+        import numpy as np
+        cat = catalog or self.inventory.scan()
+        series: Dict[str, Dict[str, float]] = {}
+        for src, s in cat["sources"].items():
+            path = s.get("path")
+            if not path:
+                continue
+            for e in s.get("series", ()):
+                rows = self._load_ts_closes(
+                    Path(path), e["symbol"], e["timeframe"], 500)
+                if len(rows) >= 100:
+                    series[f"{e['symbol']}:{e['timeframe']}"] = \
+                        dict(rows)
+        keys = sorted(series)
+        n = len(keys)
+        # Returns computed on the timestamps two series actually SHARE —
+        # correlating positional indexes over disjoint periods is not a
+        # measured connection.
+        ts_maps: Dict[str, List[str]] = {
+            k: sorted(series[k]) for k in keys}
+        used = set()
+        sectors = []
+        for i in range(n):
+            if keys[i] in used:
+                continue
+            members = [keys[i]]
+            for j in range(i + 1, n):
+                if keys[j] in used:
+                    continue
+                common = sorted(set(ts_maps[keys[i]])
+                                & set(ts_maps[keys[j]]))
+                if len(common) < 100:
+                    continue
+                ta = np.array([series[keys[i]][t] for t in common],
+                              dtype=float)
+                tb = np.array([series[keys[j]][t] for t in common],
+                              dtype=float)
+                ra = np.diff(np.log(ta))
+                rb = np.diff(np.log(tb))
+                if len(ra) < 50:
+                    continue
+                c = float(np.corrcoef(ra, rb)[0, 1])
+                if not math.isfinite(c):
+                    continue
+                if abs(c) >= min_corr:
+                    members.append(keys[j])
+                    used.add(keys[j])
+            if len(members) > 1:
+                used.add(keys[i])
+                sectors.append({"sector": members[0].split(":")[0]
+                                .rstrip("0123456789") or "group",
+                                "members": members,
+                                "size": len(members)})
+        return sectors
 
     def advisory(self, catalog: Optional[Dict[str, Any]] = None
                  ) -> Dict[str, Any]:

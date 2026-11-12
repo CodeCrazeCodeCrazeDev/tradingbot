@@ -133,6 +133,7 @@ async def test_risk_gate_exception_fails_closed_not_open():
 
 @pytest.mark.asyncio
 async def test_clickhouse_database_identifier_is_validated(monkeypatch):
+    pytest.importorskip("lz4")
     """The database name is interpolated into CREATE DATABASE; config values
     must pass an identifier check before any client call."""
     from trading_bot.ingestion.storage import ClickHouseWriter
@@ -206,6 +207,7 @@ async def test_shield_string_numeric_exposure_still_gated():
 
 @pytest.mark.asyncio
 async def test_legacy_partial_fill_records_fill_quantity():
+    pytest.importorskip("aiohttp")
     """A broker reporting a PARTIALLY_FILLED result produced zero Fill
     objects — executed quantity silently vanished from the report."""
     from trading_bot.foundation.contracts import (

@@ -642,17 +642,18 @@ class TestResearchCycle:
     def test_ev_calibration_shrinks_to_measured_reality(self):
         CognitiveSystemController._instance = None
         c = CognitiveSystemController()
-        # Below min samples -> factor 1.0 (raw gate).
-        assert c._ev_calibration_factor() == 1.0
+        # Below min samples -> conservative cold prior (0.05), not
+        # raw-EV trust — warmup gets less trust, not more.
+        assert 0.0 < c._ev_calibration_factor() < 0.1
         # Measured pattern: predicted +0.0054, realized +0.00004.
         for _ in range(30):
-            c._ev_pairs.append((0.0054, 0.00004))
+            c._ev_pairs.append((0.0054, 0.00004, "range"))
         factor = c._ev_calibration_factor()
         assert 0.0 < factor < 0.01  # ~0.0074
         # Negative realized mean -> factor 0 (nothing earns approval).
         c._ev_pairs.clear()
         for _ in range(30):
-            c._ev_pairs.append((0.0054, -0.0001))
+            c._ev_pairs.append((0.0054, -0.0001, "range"))
         assert c._ev_calibration_factor() == 0.0
 
     def test_capability_proposal_never_promotes(self, csc):

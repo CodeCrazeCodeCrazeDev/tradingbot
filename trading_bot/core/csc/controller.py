@@ -93,7 +93,10 @@ class CSCRuntimeState:
     """Observable runtime state of the controller (legacy UCA test surface)."""
 
     def __init__(self):
-        self.epistemic_uncertainty: float = 1.0
+        # Cold-start floor below full abstain — 1.0 zeroes every qty and
+        # can never trade its way down. Still high: early sizing is
+        # cautious until real outcomes pull u toward the evidence.
+        self.epistemic_uncertainty: float = 0.7
         self.folded_history: List[Any] = []
         self.active_tasks: List[str] = []
 
@@ -442,6 +445,9 @@ class CognitiveSystemController:
             kwargs.get("explore_budget",
                        os.environ.get("TB_CSC_EXPLORE_BUDGET", "0")))
         self._explore_factor = 0.1  # exploratory trades at ~10% size
+        # Console echo for research activity — off by default; the audit
+        # trail is always written regardless (paper_runner --research-log).
+        self._research_log = bool(kwargs.get("research_log", False))
         # Calibration-probe trickle: once cal hits 0.0 (realized mean
         # <= 0), every proposal would downgrade forever and _ev_pairs
         # could never refill. Every 10th blocked proposal goes through
@@ -1301,6 +1307,18 @@ class CognitiveSystemController:
                 event_type="RESEARCH_KG", action=kind,
                 outcome="recorded", correlation_id=report.research_id,
                 details=payload)
+            if self._research_log and kind in ("KG_NODE", "KG_EDGE"):
+                if kind == "KG_NODE":
+                    logger.info(
+                        "research KG %s: %s (conf=%s)",
+                        payload.get("kind", "node"),
+                        str(payload.get("content", ""))[:110],
+                        payload.get("confidence"))
+                else:
+                    logger.info(
+                        "research KG edge: %s -[%s]-> %s",
+                        payload.get("src"), payload.get("relation"),
+                        payload.get("dst"))
         await self._persist_audit_event(
             event_type="RESEARCH",
             action="investigate",
@@ -1321,6 +1339,14 @@ class CognitiveSystemController:
                 "external_evidence": external,
                 "advisory_only": True,
             })
+        if self._research_log:
+            logger.info(
+                "research verdict: %s | question=%r | conf=%.2f | "
+                "branches=%s | evidence=%s",
+                report.verdict, str(report.question)[:90],
+                float(getattr(report, "composite_confidence", 0.0) or 0.0),
+                getattr(report, "branches_considered", None),
+                getattr(report, "evidence_node_count", None))
         return report
 
     async def _fetch_internet_evidence(self, question: str
@@ -1444,10 +1470,36 @@ class CognitiveSystemController:
                 event_type="RESEARCH_KG", action=kind,
                 outcome="recorded", correlation_id=cycle_id,
                 details=payload)
+            if self._research_log:
+                if kind == "KG_NODE":
+                    logger.info(
+                        "research KG %s: %s (conf=%s)",
+                        payload.get("kind", "node"),
+                        str(payload.get("content", ""))[:110],
+                        payload.get("confidence"))
+                elif kind == "KG_EDGE":
+                    logger.info(
+                        "research KG edge: %s -[%s]-> %s",
+                        payload.get("src"), payload.get("relation"),
+                        payload.get("dst"))
         # Each report gets its own RESEARCH verdict row — these rows are
         # what rebuild_policy() replays to restore method yield stats
         # after a restart.
         for report in cycle.get("reports", []):
+            # Bounded internet evidence (arxiv+github) per produced
+            # question — same fail-closed helper as research(); the
+            # audit row records 'unavailable'/'disabled' explicitly.
+            external = await self._fetch_internet_evidence(
+                str(report.get("question") or ""))
+            if self._research_log:
+                srcs = external.get("sources") or []
+                logger.info(
+                    "research internet fetch: status=%s sources=%d",
+                    external.get("status"), len(srcs))
+                for s in srcs[:3]:
+                    logger.info("  [%s] %s — %s", s.get("source"),
+                                str(s.get("title"))[:80],
+                                str(s.get("url"))[:80])
             await self._persist_audit_event(
                 event_type="RESEARCH", action="investigate",
                 outcome=str(report.get("verdict", "INCONCLUSIVE")),
@@ -1455,6 +1507,7 @@ class CognitiveSystemController:
                 details={"question": report.get("question"),
                          "composite_confidence":
                              report.get("composite_confidence"),
+                         "external_evidence": external,
                          "sim_summary": report.get("sim_summary"),
                          "verifier_verdicts": list(
                              report.get("verifier_verdicts") or [])[:16],
@@ -1467,6 +1520,17 @@ class CognitiveSystemController:
             correlation_id=cycle_id,
             details={"questions": len(cycle.get("questions", [])),
                      "reports": len(cycle.get("reports", []))})
+        if self._research_log:
+            for report in cycle.get("reports", []):
+                logger.info(
+                    "research verdict: %s | question=%r | conf=%s",
+                    report.get("verdict", "INCONCLUSIVE"),
+                    str(report.get("question"))[:90],
+                    report.get("composite_confidence"))
+            logger.info(
+                "research cycle done: questions=%d reports=%d",
+                len(cycle.get("questions", [])),
+                len(cycle.get("reports", [])))
         return cycle
 
     def get_research_journal(self) -> List[Dict[str, Any]]:
@@ -3161,8 +3225,11 @@ class CognitiveSystemController:
                         "CSC-V6: advisory %s disabled after 5 failures",
                         cap)
                 else:
+                    # str(exc) is empty for timeouts/cancels — name the
+                    # exception type so the log line is never blank.
                     logger.warning("CSC-V6: advisory %s failed: %s",
-                                   cap, result)
+                                   cap, str(result) or
+                                   type(result).__name__)
                 continue
             failures.pop(cap, None)
             artifact = {"agent": cap, "advisory_only": True}
@@ -3461,7 +3528,7 @@ class CognitiveSystemController:
         # branch before collapsing to a no-exposure pivot.
         for candidate in ranked[1:]:
             if not (_fails_simulation(candidate) or _measured_suppressed(candidate)):
-                logger.warning(
+                logger.info(
                     "CSC-V6: Best branch %s failed simulation; falling back "
                     "to %s", best.branch_id, candidate.branch_id)
                 return candidate

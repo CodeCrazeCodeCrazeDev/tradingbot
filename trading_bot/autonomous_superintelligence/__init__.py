@@ -3,6 +3,18 @@ Autonomous Superintelligence System
 A self-improving, self-modifying AI system that manages its own operations.
 """
 
+import warnings
+
+warnings.warn(
+    "autonomous_superintelligence is a legacy/quarantined package: "
+    "several modules fabricate metrics (random gains, hardcoded test "
+    "passes, dictionary 'infrastructure deployments'). It carries no "
+    "production authority — the honest bounded mechanisms live in "
+    "trading_bot/core/csc/capabilities.py and trading_bot/expansion/.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 from .core_intelligence import AutonomousCore
 from .agent_coordinator import AgentCoordinator
 from .self_modifier import (

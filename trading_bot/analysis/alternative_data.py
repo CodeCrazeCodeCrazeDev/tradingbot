@@ -65,7 +65,10 @@ class AlternativeDataIntegrator:
             try:
                 self.handlers[name] = handler_class(self.config.get(config_key, {}))
             except Exception as e:
-                logger.warning(f"Failed to initialize {name} handler: {e}")
+                # Optional external-data source failing closed at init
+                # (offline/no network) — informational, not a warning:
+                # the source is simply removed from enabled_sources.
+                logger.info(f"Optional {name} handler unavailable: {e}")
                 self.handlers[name] = None
                 if name in self.enabled_sources:
                     self.enabled_sources.remove(name)

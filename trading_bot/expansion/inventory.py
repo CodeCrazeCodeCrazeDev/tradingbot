@@ -29,6 +29,8 @@ DEFAULT_SOURCES = (
     "lse_data.db",
     "tv_data.db",
     "kraken_data.db",
+    "us_stocks.db",
+    "fx_data.db",
 )
 
 REQUIRED_COLS = {"timestamp", "symbol", "timeframe", "close"}
@@ -151,6 +153,63 @@ class DataResourceInventory:
 
     def onboarded(self) -> List[str]:
         return list(self._onboarded)
+
+    # -- resource expansion (#10 general form) ------------------------
+
+    def onboard_resource(self, path: Any, kind: str = "generic"
+                         ) -> Dict[str, Any]:
+        """Register ANY verified SQLite resource the system can consume
+        — order-flow stores, tick stores, sentiment, ledgers. Expanding
+        infrastructure honestly means new data classes coming online
+        with schema and row counts verified, not servers claimed."""
+        p = Path(path)
+        if not p.exists():
+            return {"status": "rejected", "reason": "file not found"}
+        try:
+            con = sqlite3.connect(p.resolve().as_uri() + "?mode=ro",
+                                  uri=True)
+            tables = {}
+            for name, in con.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"):
+                try:
+                    tables[name] = con.execute(
+                        f'SELECT COUNT(*) FROM "{name}"').fetchone()[0]
+                except sqlite3.Error:
+                    tables[name] = -1
+            con.close()
+        except sqlite3.Error:
+            return {"status": "rejected",
+                    "reason": "not a readable sqlite resource"}
+        if not any(v > 0 for v in tables.values()):
+            return {"status": "rejected",
+                    "reason": "no rows — an empty store is not a resource"}
+        res = {"path": str(p), "kind": kind, "tables": tables,
+               "size_bytes": p.stat().st_size}
+        state = self._load_state()
+        res_list = state.setdefault("resources", [])
+        if not any(r["path"] == res["path"] for r in res_list):
+            res_list.append(res)
+            self._save_state(state)
+        return {"status": "onboarded", **res}
+
+    def resources(self) -> List[Dict[str, Any]]:
+        return list(self._load_state().get("resources", []))
+
+    def _load_state(self) -> Dict[str, Any]:
+        if self.state_path and self.state_path.exists():
+            try:
+                return json.loads(self.state_path.read_text())
+            except Exception:  # noqa: BLE001
+                return {}
+        return {}
+
+    def _save_state(self, state: Dict[str, Any]) -> None:
+        if not self.state_path:
+            return
+        self.state_path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = self.state_path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(state, indent=2))
+        tmp.replace(self.state_path)
 
     def _load_onboarded(self) -> List[str]:
         if self.state_path and self.state_path.exists():

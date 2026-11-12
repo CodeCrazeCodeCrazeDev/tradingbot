@@ -61,7 +61,16 @@ class UnifiedTradingBot:
         self.execution_mode = str(
             self.config.get("execution_mode", self.config.get("mode", "paper"))
         ).lower()
-        self._price_window: deque = deque(maxlen=int(self.config.get("rsi_window", 64)))
+        # Per-symbol price windows: a multi-symbol tape interleaving
+        # BTC/SOL/ETH closes into one deque produces cross-instrument
+        # "returns" of +-99% (measured vol ~10) that tripped the HASP
+        # volatility guardrail on every post-warmup bar. _price_window
+        # stays aliased to the configured symbol's deque for the
+        # single-symbol seeding paths and tests that read it.
+        self._price_windows: Dict[str, deque] = {}
+        self._price_window: deque = self._price_windows.setdefault(
+            str(self.config.get("symbol") or ""),
+            deque(maxlen=int(self.config.get("rsi_window", 64))))
         self.data_normalizer = MarketDataNormalizer()
         self.strategy_registry = StrategyRegistry()
         self.capability_registry = CapabilityRegistry()
@@ -372,11 +381,16 @@ class UnifiedTradingBot:
     def enrich_observation(self, obs: Dict[str, Any]) -> Dict[str, Any]:
         """Derive indicator features from the rolling price window."""
         price = obs.get("price", obs.get("close"))
+        sym_key = str(obs.get("symbol") or self.config.get("symbol") or "")
+        window = self._price_windows.get(sym_key)
+        if window is None:
+            window = self._price_windows[sym_key] = deque(
+                maxlen=self._price_window.maxlen)
         if price is not None:
-            self._price_window.append(float(price))
+            window.append(float(price))
 
-        if len(self._price_window) >= 15:
-            prices = np.asarray(self._price_window, dtype=np.float64)
+        if len(window) >= 15:
+            prices = np.asarray(window, dtype=np.float64)
             obs["rsi"] = float(wilder_rsi(prices, period=14)[-1])
             obs["rsi_signal"] = _rsi_signal(obs)
             returns = np.diff(prices) / np.clip(prices[:-1], 1e-12, None)

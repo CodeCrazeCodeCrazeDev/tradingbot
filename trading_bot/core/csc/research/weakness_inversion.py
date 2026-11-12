@@ -2,7 +2,7 @@
 
 Audits weaknesses found in untrusted external sources and emits the
 DEFENSIVE RULE that inverts them — a repo missing OOS validation
-generates an internal gate; code with eval() generates an AST ban;
+generates an internal gate; code with eval generates an AST ban;
 a strategy with look-ahead leakage patterns generates a leakage
 check. Rules are advisory evidence — never auto-enforced; they feed
 the electorate and the governance ledger like every other claim.

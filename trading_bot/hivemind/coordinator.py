@@ -508,7 +508,10 @@ class TradingHiveMind:
         decision.governance_report = guard.to_dict()
 
         if guard.final_action != decision.action:
-            logger.warning(
+            # Routine per-cycle governance outcome — the full guard
+            # report is recorded on decision.governance_report, so
+            # this does not need WARNING noise in the log.
+            logger.info(
                 "Hivemind governance downgraded %s to %s: %s",
                 decision.action,
                 guard.final_action,

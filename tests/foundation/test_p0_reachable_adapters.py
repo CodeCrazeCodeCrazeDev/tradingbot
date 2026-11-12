@@ -191,6 +191,7 @@ def test_telemetry_manager_stub_warns_on_construction() -> None:
 
 @pytest.mark.asyncio
 async def test_broker_interface_base_warns_and_holds_no_session() -> None:
+    pytest.importorskip("aiohttp")
     """The live-capable base is a definition surface: construction warns and
     no network session exists until connect() is called explicitly."""
     # Async test: importing trading_bot.broker pulls ib_insync/eventkit, which

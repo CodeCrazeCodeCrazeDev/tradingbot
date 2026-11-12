@@ -19,6 +19,14 @@ def _obs():
             "volatility": 0.01, "momentum": 0.001, "timestamp": "t0"}
 
 
+async def _settle(svc):
+    """The bridge runs lifecycles stale-while-revalidate in a worker
+    thread — await the in-flight one so the next artifact is real."""
+    pending = getattr(svc, "_pending", None)
+    if pending is not None:
+        await pending
+
+
 @pytest.mark.asyncio
 async def test_cycle_runs_all_stages():
     sre = ScientificReasoningEngine()
@@ -84,6 +92,8 @@ async def test_unmeasured_anomaly_blocks_question():
 async def test_adapter_artifact_shape():
     sre = ScientificReasoningEngine()
     svc = SREAdvisoryService(sre)
+    await svc.analyze(_obs())
+    await _settle(svc)
     art = await svc.analyze(_obs())
     assert art["capability_id"] == "sre_lifecycle"
     assert art["advisory_only"] is True
@@ -98,6 +108,7 @@ async def test_adapter_throttles_and_bounds_registry():
     svc = SREAdvisoryService(sre)
     for _ in range(30):
         await svc.analyze(_obs())
+        await _settle(svc)
     # 30 calls -> 2 full cycles (1st + 26th) not 30.
     assert len(sre.registry) == 2
 

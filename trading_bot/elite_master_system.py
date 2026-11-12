@@ -74,7 +74,7 @@ try:
     )
     DR_AVAILABLE = True
 except ImportError as e:
-    logger.warning(f"Disaster recovery not available: {e}")
+    logger.info(f"Disaster recovery not available: {e}")
     DR_AVAILABLE = False
 # Import existing systems
     from trading_bot.aamis_v3 import AAMISMasterOrchestrator
