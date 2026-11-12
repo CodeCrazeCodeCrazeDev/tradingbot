@@ -30,6 +30,44 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 
 
+# Data-quality quarantine — var/data_quality.json (data_quality_audit.py)
+# flags series for splice/integrity classes. Structural defects and
+# extreme_ret storms quarantine a series: no verdict is emitted on
+# contaminated data, the flag set is recorded instead. Repair is the
+# operator-gated dedup_or_resync path (development_genomes.jsonl).
+QUARANTINE_EXTREME_RET = 50
+_QUALITY_CACHE = {}
+
+
+def quarantine_flags(db_path, symbol, timeframe, quality_path=None):
+    """Return {'flags': {...}, 'quarantined': bool} for a series, or
+    None when the audit artifact has no record for it."""
+    qpath = Path(quality_path) if quality_path else ROOT / "var" / "data_quality.json"
+    key = str(qpath)
+    if key not in _QUALITY_CACHE:
+        try:
+            _QUALITY_CACHE[key] = json.loads(qpath.read_text(encoding="utf-8"))
+        except Exception:
+            _QUALITY_CACHE[key] = None
+    doc = _QUALITY_CACHE[key]
+    if not doc:
+        return None
+    dbname = Path(db_path).name
+    for dbrec in doc.get("dbs", []):
+        if dbrec.get("db") != dbname:
+            continue
+        for s in dbrec.get("series", []):
+            if s.get("symbol") == symbol and s.get("timeframe") == timeframe:
+                flags = {k: s.get(k, 0) for k in
+                         ("off_grid", "non_monotonic", "extreme_ret", "dup_ts")}
+                quarantined = (flags["off_grid"] > 0
+                               or flags["non_monotonic"] > 0
+                               or flags["dup_ts"] > 0
+                               or flags["extreme_ret"] >= QUARANTINE_EXTREME_RET)
+                return {"flags": flags, "quarantined": quarantined}
+    return None
+
+
 def load_bars(db_path, symbol, timeframe):
     con = sqlite3.connect(db_path)
     rows = con.execute(

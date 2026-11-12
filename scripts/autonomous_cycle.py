@@ -39,7 +39,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from scripts.edge_baseline import load_bars, roll_spread_bps  # noqa: E402
+from scripts.edge_baseline import (load_bars, quarantine_flags,  # noqa: E402
+                                   roll_spread_bps)
 from scripts.method_candidate import segmented_verdict  # noqa: E402
 from trading_bot.core.csc.research.method_spec import (  # noqa: E402
     PAIR_FAMILIES, SpecError, compile_rule)
@@ -199,6 +200,14 @@ def eval_spec_on_datasets(spec_dict: dict, datasets, horizon: int,
     out = []
     for db, sym, tf in datasets:
         try:
+            qf = quarantine_flags(db, sym, tf)
+            if qf and qf["quarantined"]:
+                out.append({"dataset": f"{db}:{sym}:{tf}",
+                            "status": "quarantined",
+                            "flags": qf["flags"],
+                            "reason": "data_quality flags — repair is "
+                                      "operator-gated (dedup_or_resync)"})
+                continue
             if spec.family in PAIR_FAMILIES:
                 v = pair_eval(spec, rule_fn, spec.pair, db, sym, tf,
                               horizon, cost_floor, segments, 0.40, 20,
@@ -304,6 +313,12 @@ def merge_data_requests(eval_sets: list, qpath: Path) -> int:
                 kind, need = "data", d.get("dataset")
                 reason = d.get("reason") or status
                 action = _data_action(need)
+            elif status == "quarantined":
+                kind, need = "data_repair", d.get("dataset")
+                reason = (f"data_quality flags {d.get('flags')} — "
+                          f"{d.get('reason', '')}")
+                action = (f"backup then repair {d.get('dataset')} "
+                          f"(operator-gated dedup_or_resync)")
             else:
                 continue
             key = f"{sid}|{kind}|{need}"
