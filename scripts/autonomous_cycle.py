@@ -68,10 +68,23 @@ def parse_datasets(spec: str):
     return out
 
 
+HERMES_PY = (Path.home() / "AppData" / "Local" / "hermes"
+             / "hermes-agent" / "venv" / "Scripts" / "python.exe")
+
+
+def _scout_python() -> str:
+    """internet_scout needs sklearn (research.features.engine) which
+    lives in the hermes env, not .venv. Prefer hermes when present."""
+    if HERMES_PY.exists():
+        return str(HERMES_PY)
+    return sys.executable
+
+
 def run_scout(query: str, sources: str, out_ledger: Path,
               timeout_s: int) -> dict:
     """Bounded scout subprocess; failure is recorded, never raised."""
-    cmd = [sys.executable, str(ROOT / "scripts" / "internet_scout.py"),
+    py = _scout_python()
+    cmd = [py, str(ROOT / "scripts" / "internet_scout.py"),
            "--query", query, "--sources", sources,
            "--out", str(out_ledger)]
     try:
