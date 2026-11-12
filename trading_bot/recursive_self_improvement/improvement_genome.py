@@ -47,6 +47,7 @@ class ImprovementDomain(str, Enum):
     META_LEARNING = "meta_learning"
     ARCHITECTURE = "architecture"
     REASONING = "reasoning"
+    ARTIFICIAL_INTELLIGENCE = "artificial_intelligence"
 
 
 @dataclass(frozen=True)
