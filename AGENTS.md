@@ -921,6 +921,14 @@ Autonomy stack additions (2026-11-12, all advisory-only):
   web sources BY DESIGN (funnel: 70 records -> 2 specs, 44
   TRUST_GATE_FAILED) — operator-submitted claims skip web-trust
   scoring since the human IS the trust decision.
+- Operator-vouched sources: `var/trusted_sources.json` lists
+  source_types/domains the operator accepts as recurring claim
+  origins — ECIE trust score floors at 75 with auditable
+  signals.operator_vouched_source; security/license gates and
+  downstream falsification unchanged. Ships EMPTY (fail-closed);
+  add e.g. {"source_types":["arxiv"]} to activate. This is the
+  honest fix for the ~0% web-scout throughput — operator decides
+  which sources may propose, system still judges every claim.
 - `scripts/live_outcome_report.py` (--all-soaks runs every cycle
   before analyst): paper_runner fills -> FIFO round-trips ->
   method_candidates records. The spine's own probe P&L is
