@@ -3,7 +3,7 @@
 import json
 
 from scripts.autonomous_cycle import (
-    merge_data_requests, watch_escalation_specs)
+    merge_data_requests, mutation_specs, watch_escalation_specs)
 
 
 def _spec(sid="s1", family="momentum"):
@@ -86,3 +86,43 @@ def test_data_requests_dedup_and_count(tmp_path):
     assert len(q["requests"]) == 1
     r = next(iter(q["requests"].values()))
     assert r["count"] == 2 and r["kind"] == "data"
+
+
+def _mspec(**params):
+    return {"spec_id": "base", "family": "momentum",
+            "hypothesis": "h", "params": params,
+            "provenance": {"origin": "test"}}
+
+
+def test_mutation_specs_bounds_and_dedup():
+    # momentum bounds: lookback(2,60) threshold_bps(1,200)
+    out = mutation_specs(_mspec(lookback=10, threshold_bps=15.0), 10)
+    assert len(out) == 4  # 2 params x 2 directions
+    ids = {m["spec_id"] for m in out}
+    assert ids == {"base_mlookback_dn", "base_mlookback_up",
+                   "base_mthreshold_bps_dn", "base_mthreshold_bps_up"}
+    for m in out:
+        assert m["provenance"]["origin"] == "analyst_mutation"
+        assert m["provenance"]["parent"] == "base"
+    # values moved ±20% and stayed in bounds
+    lb = next(m for m in out if m["spec_id"] == "base_mlookback_dn")
+    assert lb["params"]["lookback"] == 8
+    th = next(m for m in out
+              if m["spec_id"] == "base_mthreshold_bps_up")
+    assert th["params"]["threshold_bps"] == 18.0
+
+
+def test_mutation_specs_clamps_at_bounds():
+    # lookback=60 is at upper bound -> 'up' mutation clamps to 60 ==
+    # cur -> skipped; only 'dn' survives for that param
+    out = mutation_specs(_mspec(lookback=60, threshold_bps=15.0), 10)
+    lb_ups = [m for m in out if "lookback_up" in m["spec_id"]]
+    assert lb_ups == []
+    assert any("lookback_dn" in m["spec_id"] for m in out)
+
+
+def test_mutation_specs_unknown_family_and_cap():
+    assert mutation_specs({"spec_id": "x", "family": "bogus",
+                           "params": {}}, 5) == []
+    out = mutation_specs(_mspec(lookback=10, threshold_bps=15.0), 2)
+    assert len(out) == 2  # cap respected

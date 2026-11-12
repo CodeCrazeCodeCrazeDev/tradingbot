@@ -299,6 +299,53 @@ def merge_data_requests(eval_sets: list, qpath: Path) -> int:
     return new
 
 
+def mutation_specs(spec_dict: dict, max_mut: int) -> list:
+    """Analyst hypothesis generation: bounded numeric perturbations
+    around a near-miss spec — the system proposes, not just judges.
+    Same contract as RSI Level-1 candidates: declared params only,
+    clamped to family bounds, deterministic spec_ids, provenance
+    links the parent. Returns full spec dicts."""
+    from trading_bot.core.csc.research.method_spec import FAMILIES
+    fam = FAMILIES.get(spec_dict.get("family"))
+    if not fam:
+        return []
+    bounds = fam.get("bounds") or {}
+    params = dict(spec_dict.get("params") or {})
+    orig_id = spec_dict.get("spec_id") or "spec"
+    out = []
+    for pname, (lo, hi) in bounds.items():
+        cur = params.get(pname)
+        if not isinstance(cur, (int, float)) or isinstance(cur, bool):
+            continue
+        for direction in (-0.2, 0.2):
+            v = cur * (1 + direction)
+            v = max(lo, min(hi, v))
+            if v == cur or any(
+                    m["params"].get(pname) == v for m in out):
+                continue
+            mp = dict(params)
+            mp[pname] = (int(round(v)) if isinstance(cur, int)
+                         and float(v).is_integer() else round(v, 6))
+            out.append({
+                "spec_id": f"{orig_id}_m{pname}_{'dn' if direction < 0 else 'up'}",
+                "hypothesis": (spec_dict.get("hypothesis", "")
+                               + f" [analyst mutation: {pname} "
+                                 f"{cur}->{mp[pname]}]"),
+                "family": spec_dict.get("family"),
+                "params": mp,
+                "provenance": {**(spec_dict.get("provenance") or {}),
+                               "origin": "analyst_mutation",
+                               "parent": orig_id},
+                "falsification": spec_dict.get("falsification", ""),
+                "required_data": spec_dict.get("required_data", "close"),
+                "horizon_bars": spec_dict.get("horizon_bars", 1),
+                "pair": spec_dict.get("pair"),
+            })
+            if len(out) >= max_mut:
+                return out
+    return out
+
+
 def watch_escalation_specs(queue: dict, cap: int) -> list:
     """Analyst->hunter feedback: WATCH specs that produced a
     near-miss (positive mean+LCB but failed segments somewhere)
@@ -417,6 +464,10 @@ def main() -> int:
                     help="max WATCH near-miss specs re-evaluated harder "
                          "each cycle (replication datasets + halved "
                          "cost on primaries); 0 disables")
+    ap.add_argument("--mutation-budget", type=int, default=4,
+                    help="max analyst-generated param mutations "
+                         "evaluated per cycle around WATCH near-misses; "
+                         "0 disables")
     args = ap.parse_args()
 
     state = Path(args.state_dir)
@@ -544,6 +595,36 @@ def main() -> int:
             if esc_specs:
                 print(f"escalation: {len(esc_specs)} watch near-miss "
                       f"specs re-judged")
+            # Analyst hypothesis generation: bounded mutations around
+            # the same near-misses — new candidates, full eval.
+            mut_count = 0
+            for sd in esc_specs:
+                for ms in mutation_specs(sd, args.mutation_budget):
+                    if mut_count >= args.mutation_budget:
+                        break
+                    msid = ms.get("spec_id")
+                    if msid in have:
+                        continue
+                    have.add(msid)
+                    evals.append({
+                        "spec_id": msid,
+                        "family": ms.get("family"),
+                        "params": ms.get("params"),
+                        "hypothesis": ms.get("hypothesis", ""),
+                        "spec": ms,
+                        "record_name": "analyst_mutation",
+                        "mutation": True,
+                        "parent": sd.get("spec_id"),
+                        "datasets": eval_spec_on_datasets(
+                            ms, datasets, args.horizon,
+                            args.cost_floor_bps, args.segments,
+                            args.margin_bps)})
+                    mut_count += 1
+                if mut_count >= args.mutation_budget:
+                    break
+            if mut_count:
+                print(f"mutations: {mut_count} analyst-generated "
+                      f"candidates evaluated")
         except Exception as exc:  # noqa: BLE001
             print(f"escalation skipped: {exc}")
 
