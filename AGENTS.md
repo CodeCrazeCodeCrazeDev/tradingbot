@@ -410,6 +410,19 @@ review date and verify them against the current code before changing anything.
   (consistent with the no-directional-edge verdict). Tests:
   tests/foundation/test_method_candidate.py (9 tests, ~55s — pays
   the trading_bot/__init__ import once).
+- M1 extraction + M2 cycle (2026-11-12):
+  `core/csc/research/spec_extractor.py` — mechanical text->MethodSpec
+  mapper (keyword->allow-listed family, numeric hints clamped into
+  declared bounds with clamps recorded in provenance; honest [] on
+  no match, never fabricates). Wired into `scripts/internet_scout.py`:
+  governance-passed candidates now carry `method_specs` in the ledger
+  record (guarded import — extraction failure can't sink a scout).
+  `scripts/autonomous_cycle.py` — M2 runner: rotating query ->
+  optional bounded scout subprocess -> harvest specs from ledger ->
+  segmented gate eval per dataset -> var/reports/YYYYMMDD.md +
+  var/autonomous_cycle/cycles/*.json. Zero authority; --once or
+  --interval-hours N --max-cycles M. Tests:
+  tests/foundation/test_spec_extractor.py (7 tests).
 - Off-grid splice contamination is EURUSD-M15-only; GBPUSD/USDJPY M15
   and EURUSD/GBPUSD H1/H4 are clean (verified 2026-11-07). market_data.db
   now carries ~65k M15 bars x3 pairs + H1 (2016+) + H4 (2007+).
@@ -745,3 +758,17 @@ premium fade is positive 93/93 days (BTC +3.02, ETH +2.89, SOL
 the 2-leg basis trade (short perp + long spot); std-tier cost ~30bps
 RT, maker+BNB ~18bps — still sub-cost. This IS the textbook funding
 arb; it lives at VIP fee tiers, not here. Robust FAIL.
+
+## Multi-symbol buffer poisoning — recurring bug class (2026-11-12)
+
+Second instance (first was `_price_window`): `RVBlendForecaster` kept
+ONE shared `rows`/`feats` deque while `merged_symbol_observations`
+interleaves EURUSD/GBPUSD obs. Returns computed across symbol
+boundaries (~15% price jumps) poisoned every feature: GRU stayed
+plausible (-0.53) but the ridge head emitted -191, blend -> vol_mult
+~1e-42 -> sizing silently zeroed. Fixed: rows/feats are now dicts
+keyed by obs['symbol'] (verified: interleaved feed gives ridge
++0.54/+0.45, mult ~1.65). RULE: any rolling buffer fed by a merged
+multi-symbol stream MUST be keyed by symbol — check for this first
+whenever an advisory model emits degenerate values on multi-symbol
+runs but tests fine single-symbol.
