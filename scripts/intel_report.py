@@ -98,6 +98,53 @@ def main() -> int:
             lines.append(f"- `{cp.name}`: unreadable")
     lines.append("")
 
+    # --- analyst queue ---
+    aq_path = ROOT / "var" / "analyst_queue.json"
+    lines.append("## Analyst queue")
+    if aq_path.exists():
+        try:
+            aq = json.loads(aq_path.read_text())
+            counts = aq.get("counts", {})
+            lines.append(f"- generated {aq.get('generated')}: "
+                         + ", ".join(f"{k}={v}" for k, v in
+                                     sorted(counts.items())))
+            live = [s for s in aq.get("specs", [])
+                    if s.get("classification") != "DEAD"]
+            if not live:
+                lines.append("- no live signals (all DEAD)")
+            for s in live[:10]:
+                lines.append(
+                    f"- **{s.get('classification')}** "
+                    f"`{s.get('spec_id')}` ({s.get('family')}): "
+                    f"{'; '.join(s.get('reasons') or ['-'])[:140]}")
+        except Exception:
+            lines.append("- unreadable")
+    else:
+        lines.append("- not built — run scripts/analyst_review.py")
+    lines.append("")
+
+    # --- data/spec requests ---
+    dr_path = ROOT / "var" / "data_requests.json"
+    lines.append("## Data/spec requests")
+    if dr_path.exists():
+        try:
+            dr = json.loads(dr_path.read_text())
+            reqs = dr.get("requests", {})
+            kinds = {}
+            for r in reqs.values():
+                kinds[r.get("kind")] = kinds.get(r.get("kind"), 0) + 1
+            lines.append(f"- {len(reqs)} open requests ({kinds})")
+            for r in sorted(reqs.values(),
+                            key=lambda x: -x.get("count", 0))[:8]:
+                lines.append(
+                    f"- [{r.get('kind')}] `{r.get('spec_id')}` needs "
+                    f"{r.get('need')} (x{r.get('count')})")
+        except Exception:
+            lines.append("- unreadable")
+    else:
+        lines.append("- none filed yet")
+    lines.append("")
+
     # --- data catalog ---
     cat_path = ROOT / args.catalog
     lines.append("## Data catalog")
