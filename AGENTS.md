@@ -431,6 +431,12 @@ review date and verify them against the current code before changing anything.
   re-judged there; survivors keep "candidate", failures are marked
   "candidate_unreplicated" and excluded from the candidate count.
   Tests: tests/foundation/test_spec_extractor.py (7 tests).
+  Hit-rate measured 2026-11-12: ~22% of scout descriptions yield specs
+  (13/58) AFTER the anchor-gate tightening — recall held, false
+  positives (Minecraft crash log, climate "momentum") now rejected.
+  Bottleneck is claim quality/family-space coverage, not extraction
+  recall — LLM extractor not justified by hit-rate alone; it would
+  only matter for families the templates can't express (OFI, ML-alpha).
 - M3+M4 (2026-11-12): `scripts/data_catalog.py` -> var/data_catalog.json
   (20 dbs / 85 series / 659k rows; macro_data.db cataloged at
   series level, others at symbol/timeframe). `scripts/intel_report.py`
