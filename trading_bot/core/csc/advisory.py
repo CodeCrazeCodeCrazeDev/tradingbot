@@ -6308,7 +6308,18 @@ def _innovative_decision_service() -> AdvisoryModuleAdapter:
 # Factories for services that are genuinely observation-callable. Each
 # entry is attached at assembly time inside a probe; failures skip the
 # service rather than break the runtime.
+def _afi_research_service() -> AdvisoryModuleAdapter:
+    """AFI research pipeline state (analyst verdicts, live probe
+    outcomes, data-quality flags, open requests) as advisory
+    evidence. Advisory-only by construction — reads var/ artifacts,
+    returns NEUTRAL direction, holds no decision authority."""
+    from trading_bot.core.csc.research.afi_advisory import (
+        _afi_research_service as _factory)
+    return _factory()
+
+
 DEFAULT_ADVISORY_FACTORIES: Tuple[Tuple[str, Callable[[], Any]], ...] = (
+    ("afi_research", _afi_research_service),
     ("multi_agent_debate", _debate_service),
     ("market_anomaly_detection", _anomaly_service),
     ("regime_classification", _regime_classifier_service),
