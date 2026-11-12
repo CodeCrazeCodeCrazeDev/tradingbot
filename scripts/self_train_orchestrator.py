@@ -91,6 +91,12 @@ def strategy_due(args) -> bool:
         not marker.exists()
 
 
+def search_due(args) -> bool:
+    marker = ST / "search_last.json"
+    return _age_hours(marker) > args.search_hours or \
+        not marker.exists()
+
+
 def model_due(args) -> bool:
     meta = VAR / "rv_blend_forecaster.train_meta.json"
     ckpt = VAR / "rv_blend_forecaster.pt"
@@ -113,6 +119,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--strategy-hours", type=float, default=24.0)
     ap.add_argument("--model-hours", type=float, default=72.0)
+    ap.add_argument("--search-hours", type=float, default=168.0,
+                    help="model-engineering search interval (weekly)")
+    ap.add_argument("--search-variants", type=int, default=4)
     ap.add_argument("--model-new-bars", type=int, default=2000,
                     help="(reserved; timestamp-advance check used)")
     ap.add_argument("--seeds", type=int, default=5)
@@ -125,7 +134,9 @@ def main() -> int:
         timespec="seconds"), "stages": {}, "dry_run": args.dry_run}
 
     s_due, m_due = strategy_due(args), model_due(args)
-    report["triggers"] = {"strategy": s_due, "model": m_due}
+    se_due = search_due(args)
+    report["triggers"] = {"strategy": s_due, "model": m_due,
+                          "search": se_due}
 
     if args.dry_run:
         print(json.dumps(report, indent=2))
@@ -147,6 +158,18 @@ def main() -> int:
                        "--ratio", "--blend"], "model_rv_blend")
         report["stages"]["model_rv_blend"] = res
         print(f"model rv-blend retrain launched: {res}")
+
+    if se_due:
+        res = _launch([PY, str(ROOT / "scripts"
+                               / "model_engineering_search.py"),
+                       "--max-variants",
+                       str(args.search_variants)],
+                      "model_engineering")
+        report["stages"]["model_engineering"] = res
+        (ST / "search_last.json").write_text(json.dumps(
+            {"launched_at": report["ran_at"],
+             "pid": res.get("launched_pid")}))
+        print(f"model-engineering search launched: {res}")
 
     (VAR / "self_train_report.json").write_text(
         json.dumps(report, indent=2))
