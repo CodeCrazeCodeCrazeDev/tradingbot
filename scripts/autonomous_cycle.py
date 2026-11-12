@@ -28,6 +28,7 @@ Usage:
 """
 
 import argparse
+import hashlib
 import json
 import subprocess
 import sys
@@ -205,6 +206,30 @@ def eval_spec_on_datasets(spec_dict: dict, datasets, horizon: int,
                     "overall": v.get("overall"),
                     "segments": v["segments"]})
     return out
+
+
+def record_for_dataset(spec_dict, dspec, ds_result):
+    """Shape one dataset eval into the method_candidates contract
+    analyst_review.collect() consumes. Shared by operator_claim.py
+    and the operator-claims inbox watcher."""
+    db, sym, tf = dspec
+    verdict = ds_result.get("verdict")
+    if verdict not in ("candidate", "rejected"):
+        return None
+    return {
+        "spec": spec_dict,
+        "dataset": {"db": db, "symbol": sym, "timeframe": tf},
+        "gate": {"verdict": verdict},
+        "verdict": {
+            "dataset": ds_result.get("dataset"),
+            "eval_window": None,
+            "cost_bps": ds_result.get("cost_bps"),
+            "verdict": verdict,
+            "overall": ds_result.get("overall"),
+            "segments": ds_result.get("segments"),
+            "meta": {"origin": "operator_claim"},
+        },
+    }
 
 
 def _data_action(dataset_ref) -> str:
@@ -521,6 +546,53 @@ def main() -> int:
                       f"specs re-judged")
         except Exception as exc:  # noqa: BLE001
             print(f"escalation skipped: {exc}")
+
+        # Operator-claims inbox: drop .txt/.md claim files into
+        # var/operator_claims/ — the cycle extracts specs, evaluates
+        # them on the configured datasets, writes candidate records,
+        # and moves the file to done/. Operator-submitted claims skip
+        # the web trust gate because the operator IS the trust root.
+        inbox = ROOT / "var" / "operator_claims"
+        if inbox.is_dir():
+            done_dir = inbox / "done"
+            for cf in sorted(inbox.glob("*.txt")) + \
+                    sorted(inbox.glob("*.md")):
+                try:
+                    from trading_bot.core.csc.research.spec_extractor \
+                        import extract_specs
+                    import dataclasses as _dc
+                    text = cf.read_text(encoding="utf-8",
+                                        errors="replace")
+                    raw = extract_specs(text)
+                    specs = [_dc.asdict(s) if _dc.is_dataclass(s)
+                             else dict(s) for s in raw]
+                    if not specs:
+                        print(f"claim {cf.name}: no specs extracted")
+                    for sd in specs:
+                        sid = sd.get("spec_id") or "operator_claim"
+                        results = eval_spec_on_datasets(
+                            sd, datasets, args.horizon,
+                            args.cost_floor_bps, args.segments,
+                            args.margin_bps)
+                        out_dir = ROOT / "var" / "method_candidates"
+                        out_dir.mkdir(parents=True, exist_ok=True)
+                        for dspec, dres in zip(datasets, results):
+                            rec = record_for_dataset(sd, dspec, dres)
+                            if rec is None:
+                                continue
+                            h = hashlib.sha256(json.dumps(
+                                sd, sort_keys=True,
+                                default=str).encode()).hexdigest()[:8]
+                            (out_dir /
+                             f"{sid}__{dspec[1]}_{dspec[2]}_{h}.json"
+                             ).write_text(json.dumps(
+                                 rec, indent=2, default=str))
+                    done_dir.mkdir(exist_ok=True)
+                    cf.rename(done_dir / cf.name)
+                    print(f"claim {cf.name}: processed "
+                          f"({len(specs)} spec(s))")
+                except Exception as exc:  # noqa: BLE001
+                    print(f"claim {cf.name} failed: {exc}")
 
         # Data/spec need queue: untestable specs file durable requests
         # for the operator (sync data / declare pair legs) instead of

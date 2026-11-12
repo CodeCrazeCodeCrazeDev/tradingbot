@@ -32,32 +32,13 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from autonomous_cycle import (  # noqa: E402
-    eval_spec_on_datasets, parse_datasets)
+    eval_spec_on_datasets, parse_datasets, record_for_dataset)
 from trading_bot.core.csc.research.spec_extractor import (  # noqa: E402
     extract_specs)
 
 
 def _record_for(spec_dict, dspec, ds_result):
-    """Shape one dataset eval into the method_candidates contract
-    analyst_review.collect() consumes."""
-    db, sym, tf = dspec
-    verdict = ds_result.get("verdict")
-    if verdict not in ("candidate", "rejected"):
-        return None  # needs_pair / load_error / insufficient — not a verdict
-    return {
-        "spec": spec_dict,
-        "dataset": {"db": db, "symbol": sym, "timeframe": tf},
-        "gate": {"verdict": verdict},
-        "verdict": {
-            "dataset": ds_result.get("dataset"),
-            "eval_window": None,
-            "cost_bps": ds_result.get("cost_bps"),
-            "verdict": verdict,
-            "overall": ds_result.get("overall"),
-            "segments": ds_result.get("segments"),
-            "meta": {"origin": "operator_claim"},
-        },
-    }
+    return record_for_dataset(spec_dict, dspec, ds_result)
 
 
 def main() -> int:
