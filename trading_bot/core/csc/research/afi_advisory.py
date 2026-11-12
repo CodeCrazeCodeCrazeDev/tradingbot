@@ -28,6 +28,19 @@ def _load(name: str) -> Any:
         return None
 
 
+def _load_jsonl(name: str) -> list:
+    p = VAR / name
+    out = []
+    if p.exists():
+        for line in p.read_text(encoding="utf-8",
+                                errors="replace").splitlines():
+            try:
+                out.append(json.loads(line))
+            except Exception:
+                continue
+    return out
+
+
 def afi_research_evidence(ctx: Mapping[str, Any]) -> dict:
     """fn(context) -> evidence dict for AdvisoryModuleAdapter.
 
@@ -100,6 +113,29 @@ def afi_research_evidence(ctx: Mapping[str, Any]) -> dict:
         out["self_train"] = {"ran_at": st.get("ran_at"),
                              "stages": stages,
                              "triggers": st.get("triggers")}
+
+    # Improvement-genome pipeline — the system's own development
+    # proposals and their evaluated persistence. Advisory-only:
+    # PromotionDecision remains operator-gated by contract.
+    genomes = _load_jsonl("development_genomes.jsonl")
+    evidence = _load_jsonl("genome_evidence.jsonl")
+    if genomes or evidence:
+        ev_by_gid = {e.get("genome_id"): e for e in evidence}
+        pending, holding = [], 0
+        for g in genomes[-10:]:
+            ev = ev_by_gid.get(g.get("genome_id"))
+            if ev and ev.get("condition_holds"):
+                holding += 1
+            pending.append({
+                "genome_id": g.get("genome_id"),
+                "domain": g.get("domain"),
+                "objective": (g.get("objective") or "")[:100],
+                "condition_holds": (ev or {}).get("condition_holds")})
+        out["improvement_genomes"] = {
+            "proposals": len(genomes),
+            "evaluated": len(evidence),
+            "conditions_holding": holding,
+            "recent": pending[-5:]}
 
     # Open data/spec requests — what the system needs
     dr = _load("data_requests.json") or {}
