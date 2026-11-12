@@ -421,8 +421,11 @@ review date and verify them against the current code before changing anything.
   optional bounded scout subprocess -> harvest specs from ledger ->
   segmented gate eval per dataset -> var/reports/YYYYMMDD.md +
   var/autonomous_cycle/cycles/*.json. Zero authority; --once or
-  --interval-hours N --max-cycles M. Tests:
-  tests/foundation/test_spec_extractor.py (7 tests).
+  --interval-hours N --max-cycles M. `--replication-datasets` adds
+  the DIFFERENT_DATASET rung: any spec with a candidate verdict is
+  re-judged there; survivors keep "candidate", failures are marked
+  "candidate_unreplicated" and excluded from the candidate count.
+  Tests: tests/foundation/test_spec_extractor.py (7 tests).
 - Off-grid splice contamination is EURUSD-M15-only; GBPUSD/USDJPY M15
   and EURUSD/GBPUSD H1/H4 are clean (verified 2026-11-07). market_data.db
   now carries ~65k M15 bars x3 pairs + H1 (2016+) + H4 (2007+).

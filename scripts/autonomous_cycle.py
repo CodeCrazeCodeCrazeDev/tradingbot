@@ -194,7 +194,7 @@ def write_report(state_dir: Path, day: str, cycle: dict) -> Path:
         lines.append(f"- `{e['spec_id']}` ({e['family']} {e['params']}) "
                      f"from {e.get('record_name','?')}")
         for d in e["datasets"]:
-            if d.get("status") == "evaluated" or "verdict" in d:
+            if "verdict" in d:
                 ov = d.get("overall") or {}
                 lines.append(
                     f"    - {d['dataset']}: **{d['verdict']}** "
@@ -204,6 +204,23 @@ def write_report(state_dir: Path, day: str, cycle: dict) -> Path:
             else:
                 lines.append(f"    - {d.get('dataset')}: {d.get('status')}"
                              f" {d.get('reason','')}")
+        if e.get("replication"):
+            rep = e["replication"]
+            if rep.get("status") == "skipped":
+                lines.append(f"    - replication: skipped ({rep['reason']})")
+            else:
+                rc = [d for d in rep["datasets"]
+                      if d.get("verdict") == "candidate"]
+                lines.append(
+                    f"    - replication@{rep['level']}: "
+                    f"{'SURVIVED' if rc else 'FAILED'} "
+                    f"({len(rc)}/{len(rep['datasets'])} datasets)")
+                for d in rep["datasets"]:
+                    ov = d.get("overall") or {}
+                    lines.append(
+                        f"        - {d.get('dataset')}: "
+                        f"{d.get('verdict', d.get('status'))} "
+                        f"mean={ov.get('mean_net_bps')}")
     cands = [e for e in cycle["evals"]
              for d in e["datasets"] if d.get("verdict") == "candidate"]
     lines += ["", "## Verdict",
@@ -239,6 +256,11 @@ def main() -> int:
     ap.add_argument("--datasets",
                     default="market_data.db:EURUSD:M15",
                     help="; separated db:symbol:timeframe")
+    ap.add_argument("--replication-datasets", default="",
+                    help="; separated db:symbol:timeframe evaluated ONLY "
+                         "for specs that produced a candidate verdict — "
+                         "the DIFFERENT_DATASET replication rung. Empty "
+                         "= replication skipped honestly")
     ap.add_argument("--horizon", type=int, default=4)
     ap.add_argument("--segments", type=int, default=3)
     ap.add_argument("--cost-floor-bps", type=float, default=5.0)
@@ -249,6 +271,8 @@ def main() -> int:
     state = Path(args.state_dir)
     state.mkdir(parents=True, exist_ok=True)
     datasets = parse_datasets(args.datasets)
+    repl_datasets = parse_datasets(args.replication_datasets) \
+        if args.replication_datasets else []
     queries = DEFAULT_QUERIES
     if args.queries_file:
         try:
@@ -287,8 +311,39 @@ def main() -> int:
             evals.append({"spec_id": sd.get("spec_id"),
                           "family": sd.get("family"),
                           "params": sd.get("params"),
+                          "hypothesis": sd.get("hypothesis", ""),
+                          "spec": sd,
                           "record_name": h["record"].get("name"),
                           "datasets": results})
+
+        # M1c replication rung: any spec with a candidate verdict is
+        # re-judged on DIFFERENT datasets before the report calls it a
+        # candidate. A candidate that dies on replication is marked
+        # candidate_unreplicated — it never reaches the report's
+        # candidate count.
+        for e in evals:
+            if not any(d.get("verdict") == "candidate"
+                       for d in e["datasets"]):
+                continue
+            if not repl_datasets:
+                e["replication"] = {"status": "skipped",
+                                    "reason": "no replication datasets "
+                                              "configured"}
+                continue
+            e["replication"] = {
+                "level": "DIFFERENT_DATASET",
+                "datasets": eval_spec_on_datasets(
+                    e["spec"], repl_datasets, args.horizon,
+                    args.cost_floor_bps, args.segments, args.margin_bps)}
+            # downgrade: candidate only survives if replication also
+            # produced a candidate on at least one replication dataset
+            repl_cands = [d for d in e["replication"]["datasets"]
+                          if d.get("verdict") == "candidate"]
+            e["replicated"] = bool(repl_cands)
+            if not repl_cands:
+                for d in e["datasets"]:
+                    if d.get("verdict") == "candidate":
+                        d["verdict"] = "candidate_unreplicated"
 
         cycle = {"ts": now.isoformat(), "cycle": cycle_no,
                  "query": query, "scout": scout, "evals": evals}
