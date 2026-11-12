@@ -1,7 +1,9 @@
-"""Analyst->hunter escalation: WATCH near-miss specs earn a harder
-second look; everything else stays parked."""
+"""Analyst->hunter escalation + data-need queue tests."""
 
-from scripts.autonomous_cycle import watch_escalation_specs
+import json
+
+from scripts.autonomous_cycle import (
+    merge_data_requests, watch_escalation_specs)
 
 
 def _spec(sid="s1", family="momentum"):
@@ -49,3 +51,38 @@ def test_cap_and_missing_spec():
 def test_zero_cap_disables():
     q = {"specs": [_entry("s1", "WATCH", ["x"], _spec())]}
     assert watch_escalation_specs(q, 0) == []
+
+
+def _eval(sid, fam, datasets):
+    return {"spec_id": sid, "family": fam, "datasets": datasets}
+
+
+def test_data_requests_needs_pair_and_data(tmp_path):
+    qpath = tmp_path / "data_requests.json"
+    evals = [
+        _eval("p1", "stat_arb", [{"status": "needs_pair",
+                                  "reason": "spec.pair required"}]),
+        _eval("m1", "momentum", [{"dataset": "fx_data.db:EURUSD:D1",
+                                  "status": "insufficient_bars",
+                                  "bars": 30}]),
+        _eval("ok", "meanrev", [{"dataset": "a.db:X:M15",
+                                 "verdict": "rejected"}]),
+    ]
+    n = merge_data_requests(evals, qpath)
+    assert n == 2  # rejected eval emits nothing
+    q = json.loads(qpath.read_text())
+    kinds = {r["kind"] for r in q["requests"].values()}
+    assert kinds == {"spec_completion", "data"}
+
+
+def test_data_requests_dedup_and_count(tmp_path):
+    qpath = tmp_path / "data_requests.json"
+    e = _eval("m1", "momentum", [{"dataset": "d.db:X:D1",
+                                  "status": "load_error",
+                                  "reason": "missing table"}])
+    merge_data_requests([e], qpath)
+    merge_data_requests([e], qpath)
+    q = json.loads(qpath.read_text())
+    assert len(q["requests"]) == 1
+    r = next(iter(q["requests"].values()))
+    assert r["count"] == 2 and r["kind"] == "data"

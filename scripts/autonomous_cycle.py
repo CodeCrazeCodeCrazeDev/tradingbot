@@ -207,6 +207,52 @@ def eval_spec_on_datasets(spec_dict: dict, datasets, horizon: int,
     return out
 
 
+def merge_data_requests(eval_sets: list, qpath: Path) -> int:
+    """Specs that couldn't be tested emit durable requests — the
+    infrastructure asks for what it needs instead of silently
+    skipping. Merges into var/data_requests.json, deduped by
+    (spec_id, kind, need) with occurrence counts. Returns new
+    request count this call."""
+    try:
+        queue = (json.loads(qpath.read_text())
+                 if qpath.exists() else {"requests": {}})
+    except Exception:
+        queue = {"requests": {}}
+    reqs = queue.setdefault("requests", {})
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    new = 0
+    for e in eval_sets:
+        sid = e.get("spec_id")
+        fam = e.get("family")
+        for d in e.get("datasets", []):
+            status = d.get("status")
+            if status == "needs_pair":
+                kind, need, reason = (
+                    "spec_completion",
+                    "declare hedge leg {db,symbol,timeframe}",
+                    d.get("reason", ""))
+            elif status in ("insufficient_bars", "load_error"):
+                kind, need = "data", d.get("dataset")
+                reason = d.get("reason") or status
+            else:
+                continue
+            key = f"{sid}|{kind}|{need}"
+            r = reqs.get(key)
+            if r is None:
+                reqs[key] = {"spec_id": sid, "family": fam, "kind": kind,
+                             "need": need, "reason": reason,
+                             "first_seen": now, "last_seen": now,
+                             "count": 1}
+                new += 1
+            else:
+                r["last_seen"] = now
+                r["count"] += 1
+                r["reason"] = reason or r.get("reason", "")
+    qpath.parent.mkdir(parents=True, exist_ok=True)
+    qpath.write_text(json.dumps(queue, indent=2, default=str))
+    return new
+
+
 def watch_escalation_specs(queue: dict, cap: int) -> list:
     """Analyst->hunter feedback: WATCH specs that produced a
     near-miss (positive mean+LCB but failed segments somewhere)
@@ -454,6 +500,18 @@ def main() -> int:
                       f"specs re-judged")
         except Exception as exc:  # noqa: BLE001
             print(f"escalation skipped: {exc}")
+
+        # Data/spec need queue: untestable specs file durable requests
+        # for the operator (sync data / declare pair legs) instead of
+        # silently skipping.
+        try:
+            n_new = merge_data_requests(
+                evals, ROOT / "var" / "data_requests.json")
+            if n_new:
+                print(f"data_requests: +{n_new} new "
+                      f"(var/data_requests.json)")
+        except Exception as exc:  # noqa: BLE001
+            print(f"data_requests skipped: {exc}")
 
         cycle = {"ts": now.isoformat(), "cycle": cycle_no,
                  "query": query, "scout": scout, "evals": evals}
