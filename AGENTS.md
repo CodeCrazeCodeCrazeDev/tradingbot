@@ -394,6 +394,22 @@ review date and verify them against the current code before changing anything.
   README documents methods that don't exist; package now emits
   DeprecationWarning. Disposition: extract logical_verifier, then
   archive; destination remains DOCS/AUTONOMOUS_FI_INFRASTRUCTURE.md.
+- M1 method->candidate loop built (2026-11-12):
+  `trading_bot/core/csc/research/method_spec.py` — MethodSpec
+  (spec_id/hypothesis/family/bounded params/provenance/falsification)
+  compiles through allow-listed parametric families
+  (momentum/meanrev/donchian/vol_regime_momentum; RSI Level-1
+  spirit: numeric params only, no free code) into
+  `fn(closes,i)->-1/0/+1` for the edge gate, and
+  `positions_triple` emits the (candidate, flat-baseline, next-bar
+  returns) contract for `ResearchEngine.evaluate_strategy`.
+  `scripts/method_candidate.py --spec|--family --param k=v --db --symbol
+  --timeframe [--csc-eval]` runs segmented all-LCB gate eval and
+  writes var/method_candidates/<id>_<hash>.json (advisory only).
+  Smoke: momentum(10,15bps)@EURUSD M15 h=4 -> rejected, mean -5.3bps
+  (consistent with the no-directional-edge verdict). Tests:
+  tests/foundation/test_method_candidate.py (9 tests, ~55s — pays
+  the trading_bot/__init__ import once).
 - Off-grid splice contamination is EURUSD-M15-only; GBPUSD/USDJPY M15
   and EURUSD/GBPUSD H1/H4 are clean (verified 2026-11-07). market_data.db
   now carries ~65k M15 bars x3 pairs + H1 (2016+) + H4 (2007+).
@@ -722,3 +738,10 @@ premiumIndexKlines: the STRONGEST anomaly found — premium mean-
 reversion corr -0.37..-0.70 all 7 days, fade edges positive 7/7, but
 mean +2.69bps < cost -> FAIL (structural funding-pull, sub-cost).
 liquidationSnapshot is NOT in Vision archives (API-only) — recorded.
+
+H8 extended to full month x 3 perps (2024-01, ~3MB total): the
+premium fade is positive 93/93 days (BTC +3.02, ETH +2.89, SOL
++4.55bps, agg +3.49) — most stable anomaly found, but harvesting is
+the 2-leg basis trade (short perp + long spot); std-tier cost ~30bps
+RT, maker+BNB ~18bps — still sub-cost. This IS the textbook funding
+arb; it lives at VIP fee tiers, not here. Robust FAIL.
