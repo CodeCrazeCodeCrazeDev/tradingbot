@@ -191,9 +191,19 @@ async def _seed_warmup(runtime: Any, symbol: str, bars: Any) -> int:
             await csc.seed_advisory_history(obs_list)
         except Exception:  # noqa: BLE001
             pass
-    window = getattr(runtime.bot, "_price_window", None)
-    if window is not None:
-        window.extend(closes)
+    windows = getattr(runtime.bot, "_price_windows", None)
+    if isinstance(windows, dict):
+        from collections import deque as _dq
+        w = windows.get(symbol)
+        if w is None:
+            _legacy = getattr(runtime.bot, "_price_window", None)
+            w = windows[symbol] = _dq(
+                maxlen=getattr(_legacy, "maxlen", 64) or 64)
+        w.extend(closes)
+    else:
+        window = getattr(runtime.bot, "_price_window", None)
+        if window is not None:
+            window.extend(closes)
     return len(closes)
 
 

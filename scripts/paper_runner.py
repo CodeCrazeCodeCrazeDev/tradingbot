@@ -82,7 +82,8 @@ def _load_htf_bars_raw(db_path: Path, symbol: str, timeframe: str
 
 def db_observations(db_path: Path, symbol: str, timeframe: str,
                     skip: int = 0, htf_timeframe: str = "",
-                    broker_tz_offset: float = 0.0
+                    broker_tz_offset: float = 0.0,
+                    tail: int = 0, start_ts: str = ""
                     ) -> Iterator[Dict[str, Any]]:
     """Replay market_data.db rows read-only as raw observations.
 
@@ -118,12 +119,30 @@ def db_observations(db_path: Path, symbol: str, timeframe: str,
 
     con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
     try:
-        for ts, o, h, l, c, v in con.execute(
-            "SELECT timestamp, open, high, low, close, volume "
-            "FROM market_data WHERE symbol=? AND timeframe=? "
-            "ORDER BY timestamp ASC",
-            (symbol, timeframe),
-        ):
+        if tail > 0:
+            # Last-N window: DESC LIMIT reversed — used by --universe
+            # auto so each selected series replays a bounded recent
+            # window rather than its full history.
+            _q = ("SELECT timestamp, open, high, low, close, volume FROM "
+                  "(SELECT timestamp, open, high, low, close, volume FROM "
+                  "market_data WHERE symbol=? AND timeframe=? "
+                  "ORDER BY timestamp DESC LIMIT ?) "
+                  "ORDER BY timestamp ASC")
+            _params = (symbol, timeframe, tail)
+        elif start_ts:
+            # Resume a series strictly after the tape clock — rotating
+            # universe entries join mid-replay without re-reading bars
+            # the tape already covered.
+            _q = ("SELECT timestamp, open, high, low, close, volume "
+                  "FROM market_data WHERE symbol=? AND timeframe=? "
+                  "AND timestamp > ? ORDER BY timestamp ASC")
+            _params = (symbol, timeframe, start_ts)
+        else:
+            _q = ("SELECT timestamp, open, high, low, close, volume "
+                  "FROM market_data WHERE symbol=? AND timeframe=? "
+                  "ORDER BY timestamp ASC")
+            _params = (symbol, timeframe)
+        for ts, o, h, l, c, v in con.execute(_q, _params):
             if skip > 0:
                 skip -= 1
                 continue
@@ -392,7 +411,275 @@ def cross_observations(db_path: Path, num_symbol: str, den_symbol: str,
         con.close()
 
 
-def synthetic_observations(symbol: str, n_bars: int, seed: int
+def parse_universe(spec: str) -> List[Tuple[str, str, str, int]]:
+    """Parse --universe 'db:sym1,sym2:tf:skip;db2:sym3:tf2:skip2' into
+    (db_path, symbol, timeframe, skip) rows. The 4th field is optional
+    (default 0) — per-source skip exists because each store's history
+    depth differs and a single global --skip cannot align their
+    replay windows."""
+    rows: List[Tuple[str, str, str, int]] = []
+    for chunk in str(spec or "").split(";"):
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+        parts = chunk.split(":")
+        if len(parts) < 3:
+            raise SystemExit(
+                f"--universe: bad spec chunk {chunk!r} "
+                "(want db:sym1,sym2:tf[:skip])")
+        db, syms, tf = parts[0], parts[1], parts[2]
+        skip = int(parts[3]) if len(parts) > 3 else 0
+        for s in syms.split(","):
+            s = s.strip().upper()
+            if s:
+                rows.append((db, s, tf, skip))
+    if not rows:
+        raise SystemExit("--universe: empty spec")
+    return rows
+
+
+def _load_data_catalog(max_age_s: float = 86400.0):
+    """var/data_catalog.json fast path — the scanner consumes the same
+    shape DataResourceInventory.scan() produces, so a fresh catalog
+    file skips re-probing every DB. Returns None if missing/stale —
+    live scan remains the fallback."""
+    import json as _json
+    p = Path("var/data_catalog.json")
+    try:
+        cat = _json.loads(p.read_text())
+        if time.time() - float(cat.get("generated_at", 0)) > max_age_s:
+            logger.info("data catalog stale (>%.0fh) — live probing",
+                        max_age_s / 3600)
+            return None
+        return cat
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def auto_universe(top: int = 6, tail: int = 4000
+                  ) -> List[Tuple[str, str, str, int]]:
+    """Autonomous instrument selection: probe every onboarded
+    market_data store, rank each series by measured structure
+    (autocorrelation + sign-persistence distance from a coin-flip
+    walk), dedupe by symbol and return the top `top` picks as
+    (db, symbol, timeframe, tail) rows for merged replay.
+
+    The ranking is real and logged — but it is a prioritization hint,
+    not evidence of tradeable edge (the scanner itself says so)."""
+    from trading_bot.expansion.inventory import DataResourceInventory
+    from trading_bot.expansion.scanner import OpportunityScanner
+    inv = DataResourceInventory(PROJECT_ROOT)
+    catalog = _load_data_catalog()
+    scan = (OpportunityScanner(inv).scan_all(catalog=catalog)
+            if catalog else OpportunityScanner(inv).scan_all())
+    opps = scan.get("opportunities") or []
+    seen: set = set()
+    picks: List[Tuple[str, str, str, int]] = []
+    for rec in opps:
+        sym = rec["symbol"]
+        if sym in seen:
+            continue  # one series per symbol — best-scored wins
+        seen.add(sym)
+        picks.append((rec["source"], sym, rec["timeframe"], tail))
+        if len(picks) >= top:
+            break
+    logger.info(
+        "auto universe: %d series scanned, %d ranked with "
+        "structure>=0.3; selected=%s",
+        scan.get("series_scanned", 0), len(opps),
+        [(f"{s}@{t}", round(next(
+            r["structure_score"] for r in opps if r["symbol"] == s), 3))
+         for _, s, t, _ in picks])
+    if not picks:
+        raise SystemExit(
+            "--universe auto: no series passed the structure gate")
+    return picks
+
+
+def _closes_for_rank(db_path: Path, symbol: str, timeframe: str,
+                     until_ts: str, limit: int) -> List[float]:
+    """Closes strictly at/before `until_ts` (or the first `limit` bars
+    when until is empty — the pre-tape research window)."""
+    con = sqlite3.connect(
+        f"file:{db_path.resolve()}?mode=ro", uri=True)
+    try:
+        if until_ts:
+            rows = con.execute(
+                "SELECT close FROM (SELECT close, timestamp FROM "
+                "market_data WHERE symbol=? AND timeframe=? AND "
+                "timestamp<=? ORDER BY timestamp DESC LIMIT ?) "
+                "ORDER BY timestamp",
+                (symbol, timeframe, until_ts, limit)).fetchall()
+        else:
+            rows = con.execute(
+                "SELECT close FROM market_data WHERE symbol=? AND "
+                "timeframe=? ORDER BY timestamp ASC LIMIT ?",
+                (symbol, timeframe, limit)).fetchall()
+        return [float(r[0]) for r in rows
+                if r[0] is not None and float(r[0]) > 0]
+    finally:
+        con.close()
+
+
+def rotating_universe_observations(
+        args: Any, btz_for: Any,
+        top: int = 6, rank_window: int = 1000,
+        lookback: int = 500, refresh_every: int = 500
+        ) -> Iterator[Dict[str, Any]]:
+    """Point-in-time rotating universe.
+
+    The watchlist is re-ranked every `refresh_every` emitted bars using
+    closes strictly BEFORE the tape clock — no lookahead, so a rotation
+    decision at replay-time T only uses data that existed at T. On
+    static stores the ranking still moves because the lookback window
+    slides through regime changes. Symbols that rotate out stop
+    emitting; new entries join at the current clock (start_ts), never
+    replaying covered history.
+    """
+    import heapq
+    from trading_bot.expansion.inventory import DataResourceInventory
+    from trading_bot.expansion.scanner import series_stats
+
+    catalog = (_load_data_catalog()
+               or DataResourceInventory(PROJECT_ROOT).scan())
+    series = [(src, e["symbol"], e["timeframe"])
+              for src, s in catalog["sources"].items()
+              for e in s.get("series", ())]
+
+    def _tail_start(db: str, sym: str, tf: str) -> str:
+        con = sqlite3.connect(
+            f"file:{(PROJECT_ROOT / db).resolve()}?mode=ro", uri=True)
+        try:
+            r = con.execute(
+                "SELECT MIN(timestamp) FROM (SELECT timestamp FROM "
+                "market_data WHERE symbol=? AND timeframe=? "
+                "ORDER BY timestamp DESC LIMIT ?)",
+                (sym, tf, args.universe_tail)).fetchone()
+            return str(r[0]) if r and r[0] else ""
+        finally:
+            con.close()
+
+    def _rank(as_of: str, gate: float = 0.3
+              ) -> "List[Tuple[float, str, str, str]]":
+        scored = []
+        for db, sym, tf in series:
+            try:
+                # Tape start (""): rank on history strictly BEFORE each
+                # series' own replay window — zero lookahead. Later
+                # re-ranks use `lookback` closes ending at the clock.
+                until = as_of or _tail_start(db, sym, tf)
+                st = series_stats(_closes_for_rank(
+                    PROJECT_ROOT / db, sym, tf, until,
+                    as_of and lookback or rank_window))
+            except Exception:  # noqa: BLE001 — one bad series mustn't stall the tape
+                continue
+            if st and st.get("structure_score", 0) >= gate:
+                scored.append(
+                    (st["structure_score"], db, sym, tf))
+        scored.sort(key=lambda r: r[0], reverse=True)
+        return scored[:top]
+
+    clock = ""
+    active: Dict[Tuple[str, str, str], Iterator[Dict[str, Any]]] = {}
+    first = True
+    while True:
+        ranked = _rank(clock)
+        relaxed = False
+        if not ranked:
+            # Nothing met the scanner's 0.3 structure floor — take the
+            # best available below it, and say so rather than silently
+            # feeding an unqualified tape (or no tape at all).
+            ranked = _rank(clock, gate=0.0)
+            relaxed = bool(ranked)
+        want = {(db, sym, tf): sc for sc, db, sym, tf in ranked}
+        dropped = [k for k in active if k not in want]
+        for k in dropped:
+            active.pop(k, None)
+        for (db, sym, tf) in want:
+            key = (db, sym, tf)
+            if key in active:
+                continue
+            if first:
+                # Initial watchlist replays each series' last
+                # --universe-tail bars; ranking used only earlier data.
+                active[key] = db_observations(
+                    PROJECT_ROOT / db, sym, tf, 0,
+                    args.htf_timeframe,
+                    broker_tz_offset=btz_for(db),
+                    tail=args.universe_tail)
+            else:
+                active[key] = db_observations(
+                    PROJECT_ROOT / db, sym, tf, 0,
+                    args.htf_timeframe,
+                    broker_tz_offset=btz_for(db),
+                    start_ts=clock)
+        logger.info(
+            "universe re-rank @%s: watchlist=%s dropped=%s%s",
+            clock or "<tape start>",
+            [(f"{s}@{t}", round(sc, 3))
+             for sc, _, s, t in ranked],
+            [f"{s}@{t}" for _, s, t in dropped],
+            " (below 0.3 structure floor)" if relaxed else "")
+        if not active:
+            break
+        merged = heapq.merge(
+            *active.values(),
+            key=lambda o: str(o.get("timestamp") or ""))
+        emitted = 0
+        for obs in merged:
+            clock = str(obs.get("timestamp") or clock)
+            yield obs
+            emitted += 1
+            if emitted >= refresh_every:
+                break
+        if emitted == 0:
+            break  # nothing left after the tape clock in any active series
+        first = False
+
+
+def merged_symbol_observations(
+        sources: Dict[str, Iterator[Dict[str, Any]]],
+        align: bool = True
+        ) -> Iterator[Dict[str, Any]]:
+    """k-way merge per-symbol observation streams by bar timestamp so a
+    multi-instrument session advances whichever instrument's next bar is
+    chronologically earliest. Streams are first aligned to a common
+    start — the latest series's first available bar — so a --skip that
+    lands on different dates per symbol cannot silently run
+    single-symbol for thousands of cycles."""
+    import heapq
+    heads: Dict[str, Dict[str, Any]] = {}
+    for s, it in sources.items():
+        try:
+            heads[s] = next(it)
+        except StopIteration:
+            pass
+    if not heads:
+        return
+    start = max(str(h.get("timestamp") or "") for h in heads.values()) \
+        if align else ""
+    logger.info(
+        "multi-symbol feed: %d streams, common start=%s (heads=%s)",
+        len(heads), start or "<unaligned>",
+        {s: str(h.get("timestamp") or "") for s, h in heads.items()})
+    streams = []
+    for s, it in sources.items():
+        def _stream(it: Iterator[Dict[str, Any]] = it,
+                    head: Optional[Dict[str, Any]] = heads.get(s)
+                    ) -> Iterator[Dict[str, Any]]:
+            if head is not None and str(
+                    head.get("timestamp") or "") >= start:
+                yield head
+            for obs in it:
+                if str(obs.get("timestamp") or "") >= start:
+                    yield obs
+        streams.append(_stream())
+    yield from heapq.merge(
+        *streams, key=lambda item: str(item.get("timestamp") or ""))
+
+
+def synthetic_observations(symbol: str, n_bars: int, seed: int,
+                           symbols: Tuple[str, ...] = ()
                            ) -> Iterator[Dict[str, Any]]:
     from trading_bot.evaluation.synthetic_market import (
         RegimeSpec, SyntheticMarketGenerator, SyntheticMarketSpec)
@@ -428,12 +715,21 @@ def synthetic_observations(symbol: str, n_bars: int, seed: int
         # Blocks exhausted before n_bars (q quantized below n_bars/8):
         # the remainder becomes an explicit high-vol tail.
         regimes.append(RegimeSpec("high_vol", n_bars - used, vol=0.001))
+    instruments = tuple(symbols) if symbols else (symbol,)
     spec = SyntheticMarketSpec(
-        seed=seed, instruments=(symbol,), regimes=tuple(regimes))
+        seed=seed, instruments=instruments, regimes=tuple(regimes))
     frames = SyntheticMarketGenerator(spec).generate()
-    frame = frames[symbol]
-    for row in frame.to_dict("records"):
-        yield {**row, "symbol": symbol, "price": row.get("close")}
+    rows_by_sym = {s: frames[s].to_dict("records") for s in instruments}
+    # Same-index bars are simultaneous across instruments: emit each
+    # symbol's bar per step so a multi-symbol session sees them in
+    # lockstep (synthetic bar-index 'timestamps' can't be merged).
+    for i in range(n_bars):
+        for s in instruments:
+            rows = rows_by_sym[s]
+            if i >= len(rows):
+                continue
+            row = rows[i]
+            yield {**row, "symbol": s, "price": row.get("close")}
 
 
 def publish_snapshot(state_dir: Path, snapshot: Dict[str, Any]) -> None:
@@ -577,11 +873,21 @@ async def run(args: argparse.Namespace) -> int:
     # Seed the derived-feature windows from the durable history file so a
     # restart does not re-lock directional decisions for a warmup period.
     history_path = state_dir / "market_history.json"
-    history: list = []
+    histories: Dict[str, list] = {}
     try:
-        history = json.loads(history_path.read_text(encoding="utf-8"))[-64:]
+        _hist_raw = json.loads(history_path.read_text(encoding="utf-8"))
+        if isinstance(_hist_raw, dict):
+            histories = {str(k): [float(x) for x in v if isinstance(
+                x, (int, float))][-64:]
+                for k, v in _hist_raw.items() if isinstance(v, list)}
+        elif isinstance(_hist_raw, list):
+            # Legacy single-symbol format: attribute to the primary.
+            histories = {args.symbol: [
+                float(x) for x in _hist_raw
+                if isinstance(x, (int, float))][-64:]}
     except (OSError, json.JSONDecodeError):
-        history = []
+        histories = {}
+    history: list = histories.get(args.symbol, [])
     seed_hl = []
     seed_boundary = 0  # ms open-time of newest seeded bar (hl_live only)
     _hl_needs = args.seed_bars > 0
@@ -596,6 +902,7 @@ async def run(args: argparse.Namespace) -> int:
                 PROJECT_ROOT / args.db_path, args.symbol,
                 args.timeframe, args.skip, args.seed_bars)
         history = [r[0] for r in rows]
+        histories[args.symbol] = history
         seed_hl = [(r[1], r[2]) for r in rows]
         logger.info("seed-bars: %d strictly prior closes (replacing saved history)", len(history))
     csc = getattr(runtime.bot, "csc", None)
@@ -652,22 +959,40 @@ async def run(args: argparse.Namespace) -> int:
         csc._decision_stride = args.decision_stride
         logger.info("decision_stride=%d applied to CSC (cadenced decisions)",
                     args.decision_stride)
-    if history:
+    if args.research_log and csc is not None:
+        csc._research_log = True
+        logger.info("research_log enabled — investigations echo to console")
+    if histories:
         if csc is not None:
-            csc.seed_observation_history(args.symbol, history)
-            # Advisory services keep internal bar windows — replay the same
-            # closes through them so they emit from cycle 1 instead of
-            # reporting 'warming' for 50-70 live cycles.
-            if hasattr(csc, "seed_advisory_history"):
-                try:
-                    await csc.seed_advisory_history([
-                        {"symbol": args.symbol, "close": float(c),
-                         "price": float(c), "volume": 0.0}
-                        for c in history if isinstance(c, (int, float))])
-                except Exception:  # noqa: BLE001
-                    pass
-        runtime.bot._price_window.extend(
-            float(c) for c in history if isinstance(c, (int, float)))
+            for _hsym, _hhist in histories.items():
+                csc.seed_observation_history(_hsym, _hhist)
+                # Advisory services keep internal bar windows — replay
+                # the same closes through them so they emit from cycle 1
+                # instead of 'warming' for 50-70 live cycles.
+                if hasattr(csc, "seed_advisory_history"):
+                    try:
+                        await csc.seed_advisory_history([
+                            {"symbol": _hsym, "close": float(c),
+                             "price": float(c), "volume": 0.0}
+                            for c in _hhist
+                            if isinstance(c, (int, float))])
+                    except Exception:  # noqa: BLE001
+                        pass
+        _pw = getattr(runtime.bot, "_price_windows", None)
+        if isinstance(_pw, dict):
+            # Per-symbol windows (multi-instrument feeds): seed every
+            # persisted symbol's deque, not one shared window.
+            from collections import deque as _deque
+            for _s, _h in histories.items():
+                _d = _pw.get(_s)
+                if _d is None:
+                    _d = _pw[_s] = _deque(
+                        maxlen=runtime.bot._price_window.maxlen)
+                _d.extend(
+                    float(c) for c in _h if isinstance(c, (int, float)))
+        else:
+            runtime.bot._price_window.extend(
+                float(c) for c in history if isinstance(c, (int, float)))
         logger.info("seeded %d historical closes into feature windows",
                     len(history))
         # Restore open positions from the prior session — without this a
@@ -698,6 +1023,71 @@ async def run(args: argparse.Namespace) -> int:
     if adapter is not None:
         logger.info("paper cost model: spread=%.2fbps slip=%.2fbps comm=%.4f",
                     args.spread_bps, args.slippage_bps, args.commission)
+
+    # Maker mode: swap the venue for the resting-order adapter and point
+    # the bridge at passive LIMIT entry pricing. service.py is protected
+    # — the swap happens here, never by modifying the protected file.
+    _maker_adapter = None
+    if args.paper_order_style == "maker":
+        from trading_bot.brokers.maker_paper_adapter import (
+            MakerPaperAdapter)
+        exec_svc = getattr(runtime.bot, "execution_service", None)
+        old_ad = getattr(exec_svc, "adapter", None) if exec_svc else None
+        _maker_adapter = MakerPaperAdapter(
+            spread_bps=0.0, slippage_bps=0.0, commission_per_unit=0.0,
+            maker_fee_bps=args.maker_fee_bps,
+            # 3 marks per bar (low/high/close) — TTL bars -> marks
+            resting_ttl_marks=args.maker_ttl_bars * 3)
+        _maker_adapter.market_data_source = args.source
+        if old_ad is not None:  # preserve venue state across the swap
+            _maker_adapter._marks = dict(getattr(old_ad, "_marks", {}))
+            _maker_adapter._resting = dict(
+                getattr(old_ad, "_resting", {}))
+            _maker_adapter._reports = dict(
+                getattr(old_ad, "_reports", {}))
+            _maker_adapter._pending_market = list(
+                getattr(old_ad, "_pending_market", []))
+            _maker_adapter._positions = dict(
+                getattr(old_ad, "_positions", {}))
+            _maker_adapter.connected = getattr(old_ad, "connected", False)
+        if exec_svc is not None:
+            exec_svc.adapter = _maker_adapter
+            adapter = _maker_adapter
+        bridge = getattr(runtime.bot, "bridge", None)
+        if bridge is not None:
+            bridge.order_style = "maker"
+            bridge.maker_offset_bps = args.maker_offset_bps
+        logger.info(
+            "maker paper mode: offset=%.2fbps ttl=%dbars fee=%.2fbps/side",
+            args.maker_offset_bps, args.maker_ttl_bars, args.maker_fee_bps)
+
+    # Resting->filled transitions happen inside on_mark, long after
+    # submit persisted ACCEPTED. Push terminal venue outcomes into the
+    # durable ledger or fills would never reach settlement accounting.
+    _maker_synced: set = set()
+
+    async def _sync_maker_reports():
+        if _maker_adapter is None:
+            return
+        svc = getattr(runtime.bot, "execution_service", None)
+        repo = getattr(svc, "repository", None) if svc else None
+        if repo is None:
+            return
+        terminal = {"filled", "expired", "cancelled", "rejected"}
+        for coid, rep in getattr(_maker_adapter, "_reports", {}).items():
+            if coid in _maker_synced:
+                continue
+            if getattr(rep.status, "value", rep.status) not in terminal:
+                continue
+            order = getattr(svc, "_orders", {}).get(coid)
+            if order is None:
+                continue
+            try:
+                await repo.record_execution(order, rep)
+                _maker_synced.add(coid)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("maker report sync failed %s: %s",
+                               coid, exc)
 
     from trading_bot.execution.paper_feedback import PaperSettlementFeedback
     feedback = PaperSettlementFeedback(
@@ -766,11 +1156,58 @@ async def run(args: argparse.Namespace) -> int:
             _btz = 0.0
         else:
             _btz = float(_btz)
-        source = db_observations(
-            PROJECT_ROOT / args.db_path,
-                                 args.symbol, args.timeframe, args.skip,
-                                 args.htf_timeframe,
-                                 broker_tz_offset=_btz)
+        if args.universe:
+            _auto = str(args.universe).strip().lower() == "auto"
+            if _auto and args.universe_refresh > 0:
+                # Rotating universe: the watchlist is re-ranked
+                # point-in-time every --universe-refresh bars.
+                def _btz_of(db):
+                    return _btz if Path(db).name == \
+                        Path(args.db_path).name else 0.0
+                source = rotating_universe_observations(
+                    args, _btz_of,
+                    top=args.universe_top,
+                    refresh_every=args.universe_refresh)
+                _db_sources = None
+            else:
+                _rows = getattr(args, "_universe_rows", None) \
+                    or parse_universe(args.universe)
+                _db_sources = {}
+                for _db, _sym, _tf, _sk in _rows:
+                    # Broker-time de-offset is a MetaTrader-export quirk —
+                    # apply it only to the configured db; exchange exports
+                    # (binance/kraken/hl) are already UTC.
+                    _sbtz = _btz if Path(_db).name == \
+                        Path(args.db_path).name else 0.0
+                    if _auto:
+                        # Auto rows carry a tail (last-N bars each); the
+                        # merge aligns all series to a common start so the
+                        # replay window is genuinely simultaneous. A series
+                        # whose window doesn't overlap simply emits nothing —
+                        # visible as absence in the feed-mix log.
+                        _db_sources[f"{_db}:{_sym}:{_tf}"] = \
+                            db_observations(
+                                PROJECT_ROOT / _db, _sym, _tf, 0,
+                                args.htf_timeframe,
+                                broker_tz_offset=_sbtz, tail=_sk)
+                    else:
+                        _db_sources[f"{_db}:{_sym}:{_tf}"] = \
+                            db_observations(
+                                PROJECT_ROOT / _db, _sym, _tf, _sk,
+                                args.htf_timeframe,
+                                broker_tz_offset=_sbtz)
+                source = merged_symbol_observations(_db_sources)
+        else:
+            _db_sources = {
+                s: db_observations(
+                    PROJECT_ROOT / args.db_path,
+                    s, args.timeframe, args.skip,
+                    args.htf_timeframe,
+                    broker_tz_offset=_btz)
+                for s in args.symbols}
+            source = next(iter(_db_sources.values())) \
+                if len(_db_sources) == 1 \
+                else merged_symbol_observations(_db_sources)
     elif args.source == "cross":
         source = cross_observations(
             PROJECT_ROOT / args.db_path, args.symbol,
@@ -781,11 +1218,13 @@ async def run(args: argparse.Namespace) -> int:
             hl_tf=args.hl_tf, timeframe_label=args.timeframe,
             poll_s=args.hl_poll_s, start_after_open=seed_boundary)
     else:
-        source = synthetic_observations(args.symbol, args.cycles or 200,
-                                        args.seed)
+        source = synthetic_observations(
+            args.symbol, args.cycles or 200, args.seed,
+            symbols=args.symbols)
 
     processed = 0
     emergency = False
+    _sym_counts: Dict[str, int] = {}
     try:
         for obs in source:
             if stop_requested(args):
@@ -866,12 +1305,24 @@ async def run(args: argparse.Namespace) -> int:
                     getattr(runtime.bot, "execution_service", None),
                     "adapter", None)
                 if hasattr(adapter, "on_mark"):
+                    # Feed the bar range so resting LIMITs can fill on
+                    # intra-bar touches; pending market orders still
+                    # settle at the last mark (the close).
+                    _lo, _hi = obs.get("low"), obs.get("high")
+                    if _lo:
+                        adapter.on_mark(symbol, float(_lo))
+                    if _hi:
+                        adapter.on_mark(symbol, float(_hi))
                     adapter.on_mark(symbol, float(price))
-                history.append(float(price))
-                history = history[-64:]
+                    await _sync_maker_reports()
+                _ph = histories.setdefault(symbol, [])
+                _ph.append(float(price))
+                histories[symbol] = _ph[-64:]
+                if symbol == args.symbol:
+                    history = histories[symbol]
                 try:
                     tmp = history_path.with_suffix(".tmp")
-                    tmp.write_text(json.dumps(history), encoding="utf-8")
+                    tmp.write_text(json.dumps(histories), encoding="utf-8")
                     tmp.replace(history_path)
                 except OSError:
                     logger.warning("market history persistence failed")
@@ -929,6 +1380,12 @@ async def run(args: argparse.Namespace) -> int:
                 if _completed:
                     await task  # surface cycle failures instead of counting them as success
                     processed += 1
+                    _sym_counts[str(obs.get("symbol") or "?")] = (
+                        _sym_counts.get(str(obs.get("symbol") or "?"), 0)
+                        + 1)
+                    if processed % 10 == 0:
+                        logger.info("feed mix after %d cycles: %s",
+                                    processed, _sym_counts)
             feedback_status = await sync_economic_feedback()
             publish_snapshot(state_dir, {
                 "as_of": time.time(),
@@ -943,6 +1400,7 @@ async def run(args: argparse.Namespace) -> int:
                 "data_timeframe": args.timeframe if args.source == "db"
                 else None,
                 "symbol": args.symbol,
+                "symbols": list(args.symbols),
                 # Shadow vol-change forecast (advisory only — rvf_*
                 # fields on the obs carry the same values downstream).
                 "rv_forecast": rv_last,
@@ -961,6 +1419,10 @@ async def run(args: argparse.Namespace) -> int:
                 # governance, consensus) or abstained.
                 "funnel": csc.funnel_report() if csc is not None
                 and hasattr(csc, "funnel_report") else None,
+                # Autonomy + evolution supervisor state — ops decisions,
+                # experience counts, learning cadence, connectivity.
+                "autonomy": csc.autonomy_report() if csc is not None
+                and hasattr(csc, "autonomy_report") else None,
                 # Read-only AI-stack planes (state/evidence/selection)
                 # — one-line summaries per DOCS/CANONICAL_RUNTIME_DATAFLOW §4.
                 "ai_stack": runtime.ai_stack.explain()
@@ -1003,10 +1465,41 @@ def main(argv: Optional[list] = None) -> int:
                         help="db/cross source: SQLite path with a "
                              "market_data table (default market_data.db; "
                              "use lse_data.db for LSE-synced data)")
+    parser.add_argument("--universe", default="",
+                        help="multi-asset db feed: 'db:sym1,sym2:tf[:skip];"
+                             "db2:sym3:tf2[:skip2]' — e.g. "
+                             "'market_data.db:EURUSD,GBPUSD:M15:64000;"
+                             "binance_data.db:BTC,ETH:15m:15900'. "
+                             "Overrides --symbols/--timeframe/--skip; "
+                             "streams align to a common start timestamp "
+                             "and merge chronologically. 'auto' selects "
+                             "the universe itself: every onboarded "
+                             "market_data store is probed and the top "
+                             "--universe-top series by measured "
+                             "structure_score are replayed (last "
+                             "--universe-tail bars each)")
+    parser.add_argument("--universe-top", type=int, default=6)
+    parser.add_argument("--universe-tail", type=int, default=4000,
+                        help="auto universe only: bars per selected "
+                             "series (default 4000)")
+    parser.add_argument("--universe-refresh", type=int, default=0,
+                        help="auto universe only: >0 rotates the "
+                             "watchlist mid-run — every N bars the "
+                             "series ranking is recomputed on closes "
+                             "strictly BEFORE the tape clock (no "
+                             "lookahead); new entries join at the "
+                             "current clock, dropped ones stop emitting")
     parser.add_argument("--source",
                         choices=("synthetic", "db", "cross", "hl_live"),
                         default="synthetic")
     parser.add_argument("--symbol", default="EURUSD")
+    parser.add_argument("--symbols", default="",
+                        help="comma-separated instrument list overriding "
+                             "--symbol for db/synthetic sources — the "
+                             "feed emits every symbol (db: merged by bar "
+                             "timestamp; synthetic: lockstep same-index "
+                             "bars), so cognition analyzes a real "
+                             "multi-instrument market instead of one pair")
     parser.add_argument("--cross-denominator", default="GBPUSD",
                         help="for --source cross: denominator leg")
     parser.add_argument("--timeframe", default="M15",
@@ -1029,6 +1522,17 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--spread-bps", type=float, default=2.0)
     parser.add_argument("--slippage-bps", type=float, default=1.25)
     parser.add_argument("--commission", type=float, default=0.0)
+    # Maker execution: entries become passive LIMITs resting on the
+    # paper venue (position_close stays MARKET). Measures fillable edge
+    # instead of charging taker cost on every hypothetical.
+    parser.add_argument("--paper-order-style",
+                        choices=("market", "maker"), default="market")
+    parser.add_argument("--maker-offset-bps", type=float, default=2.0,
+                        help="passive distance off mark for entry LIMITs")
+    parser.add_argument("--maker-ttl-bars", type=int, default=4,
+                        help="bars a resting order may live before expiry")
+    parser.add_argument("--maker-fee-bps", type=float, default=2.0,
+                        help="bps-of-notional commission per maker fill")
     parser.add_argument("--interval", type=float, default=0.0,
                         help="seconds between cycles (0 = as fast as possible)")
     parser.add_argument("--seed", type=int, default=7)
@@ -1053,6 +1557,10 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("--state-dir", default=str(DEFAULT_STATE_DIR))
     parser.add_argument("--dashboard-port", type=int, default=0,
                         help="serve the read-only snapshot on 127.0.0.1:PORT")
+    parser.add_argument("--research-log", action="store_true",
+                        help="echo research questions/verdicts/KG writes "
+                             "to the console as they happen (audit trail "
+                             "is always written regardless)")
     parser.add_argument("--research-interval", type=int, default=100,
                         help="observations between automatic research "
                              "cycles (0 disables cycles; the engine "
@@ -1120,6 +1628,21 @@ def main(argv: Optional[list] = None) -> int:
                              "fail-closed abstention; sets "
                              "TB_CSC_EXPLORE_BUDGET before bot start)")
     args = parser.parse_args(argv)
+    args.symbols = tuple(
+        s.strip().upper() for s in str(args.symbols or "").split(",")
+        if s.strip()) or (args.symbol,)
+    if args.universe:
+        # Snapshot/status should show the actual universe, not --symbols.
+        _is_auto = str(args.universe).strip().lower() == "auto"
+        if _is_auto and args.universe_refresh > 0:
+            args.symbols = ("<rotating auto>",)
+            args._universe_rows = []
+        else:
+            args._universe_rows = auto_universe(
+                args.universe_top, args.universe_tail) \
+                if _is_auto else parse_universe(args.universe)
+            args.symbols = tuple(dict.fromkeys(
+                s for _, s, _, _ in args._universe_rows))
     logging.basicConfig(level=args.log_level,
                         format="%(asctime)s %(name)s %(levelname)s %(message)s")
     from trading_bot.interfaces.operator_reset import runner_lock

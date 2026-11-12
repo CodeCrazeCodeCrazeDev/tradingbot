@@ -1,279 +1,223 @@
-#!/usr/bin/env python
-"""Data-discovery scout: finds new market data and measures whether it
-carries a tradable signal. Keyless Hyperliquid candles only -- never
-trades, never weakens cost or evidence gates.
+"""Data scout — discover and VERIFY new trading-data sources.
 
-For each (coin, timeframe) in the grid:
-  1. sync candles into --db-path via scripts/hyperliquid_sync.py
-  2. run scripts/edge_baseline.py on that exact symbol/timeframe
-  3. collect the honest verdict (candidate_edge only when the bootstrap
-     lower confidence bound clears the required margin -- a positive
-     mean alone is NOT evidence)
+Two modes, all real and bounded:
 
-Output: a ranked report at var/data_scout.json + a per-combo table.
-Verdicts measure THESE THREE RULES on THIS window/cost model only --
-not the market as a whole.
+1. Probe a curated set of keyless public market-data endpoints (the
+   kind a quant would reach for): checks reachability, latency,
+   auth requirements, and pulls a real sample to confirm the schema
+   parses. No simulated results — every verdict is measured.
 
-    python scripts/data_scout.py
-    python scripts/data_scout.py --coins BTC,ETH,SOL --timeframes 5m,15m,1h --days 60
+2. HuggingFace dataset search (--search 'financial time series'):
+   real dataset discovery via the public API — names, downloads,
+   tags — then listed in the ledger as candidates to inspect.
+
+Usage:
+    .venv/Scripts/python.exe scripts/data_scout.py
+    .venv/Scripts/python.exe scripts/data_scout.py --collect
+    .venv/Scripts/python.exe scripts/data_scout.py --search "limit order book"
 """
 
 from __future__ import annotations
 
 import argparse
+import io
 import json
-import sqlite3
-import subprocess
-import sys
 import time
 import urllib.request
+import urllib.parse
+import zipfile
+import csv
+from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+_UA = {"User-Agent": "AlphaAlgo-DataScout/1.0 (bounded probe)"}
+_TIMEOUT = 20
 
-_KRAKEN = "https://api.kraken.com/0/public/OHLC"
-_KRAKEN_PAIRS = {"BTC": "XXBTZUSD", "ETH": "XETHZUSD",
-                 "SOL": "SOLUSD", "XRP": "XXRPZUSD",
-                 "DOGE": "XDGUSD", "LTC": "XLTCZUSD"}
-_KRAKEN_TF = {"5m": 5, "15m": 15, "1h": 60, "4h": 240, "1d": 1440}
-_BINANCE = "https://api.binance.com/api/v3/klines"
-_BINANCE_SYM = {"BTC": "BTCUSDT", "ETH": "ETHUSDT", "SOL": "SOLUSDT",
-                "XRP": "XRPUSDT", "DOGE": "DOGEUSDT", "LTC": "LTCUSDT"}
-_BINANCE_TF = {"5m": "5m", "15m": "15m", "1h": "1h",
-               "4h": "4h", "1d": "1d"}
+OUT = Path("var/data_scout/ledger.jsonl")
 
 
-def run(cmd: list[str]) -> tuple[int, str]:
-    proc = subprocess.run([sys.executable] + cmd, cwd=ROOT,
-                          capture_output=True, text=True, timeout=1800)
-    return proc.returncode, proc.stdout + proc.stderr
-
-
-def kraken_sync(coin: str, tf: str, db_path: str) -> int:
-    """Keyless public Kraken OHLC -> market_data schema. Cross-venue
-    evidence: a rule that only wins on one exchange's bars is suspect."""
-    pair = _KRAKEN_PAIRS.get(coin)
-    interval = _KRAKEN_TF.get(tf)
-    if pair is None or interval is None:
-        return 0
-    # Paginate on the `last` cursor: one request caps ~720 bars, which
-    # left cross-venue eval windows too thin to reject the null.
-    rows_raw = []
-    since = int(time.time()) - 200 * 24 * 3600
-    for _ in range(12):
-        url = f"{_KRAKEN}?pair={pair}&interval={interval}&since={since}"
-        req = urllib.request.Request(
-            url, headers={"User-Agent": "alphaalgo-research/1.0"})
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            result = json.loads(resp.read())["result"]
-        batch = next((v for k, v in result.items() if isinstance(v, list)
-                      and v and isinstance(v[0], list)), [])
-        if not batch:
-            break
-        rows_raw.extend(batch)
-        cursor = int(result.get("last") or 0)
-        if cursor <= since or len(batch) < 2:
-            break
-        since = cursor
-    # dedupe on timestamp (pages overlap at the seam)
-    seen, dedup = set(), []
-    for r in rows_raw:
-        if int(r[0]) not in seen:
-            seen.add(int(r[0]))
-            dedup.append(r)
-    rows_raw = dedup
-    con = sqlite3.connect(db_path)
+def probe(name: str, url: str, kind: str, check,
+          post: bytes = None, max_read: int = 5_000_000) -> dict:
+    """Fetch url (GET, or POST with `post` body), hand body to check()."""
+    rec = {"source": name, "kind": kind, "url": url,
+           "ts": datetime.now(timezone.utc).isoformat()}
+    t0 = time.time()
     try:
-        con.execute(
-            "CREATE TABLE IF NOT EXISTS market_data ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, "
-            "symbol TEXT, timeframe TEXT, open REAL, high REAL, "
-            "low REAL, close REAL, volume REAL)")
-        con.execute(
-            "CREATE INDEX IF NOT EXISTS idx_md ON "
-            "market_data(symbol, timeframe, timestamp)")
-        con.execute(
-            "DELETE FROM market_data WHERE symbol=? AND timeframe=?",
-            (coin, tf))
-        for r in rows_raw:
-            ts = time.strftime("%Y-%m-%dT%H:%M:%S+00:00",
-                               time.gmtime(int(r[0])))
-            con.execute(
-                "INSERT INTO market_data"
-                "(timestamp,symbol,timeframe,open,high,low,close,volume)"
-                " VALUES(?,?,?,?,?,?,?,?)",
-                (ts, coin, tf, float(r[1]), float(r[2]), float(r[3]),
-                 float(r[4]), float(r[6])))
-        con.commit()
-        return con.execute(
-            "SELECT COUNT(*) FROM market_data "
-            "WHERE symbol=? AND timeframe=?", (coin, tf)).fetchone()[0]
-    finally:
-        con.close()
-
-
-def binance_sync(coin: str, tf: str, db_path: str,
-                 days: int = 200) -> int:
-    """Keyless Binance spot klines -> market_data schema. Unlike
-    Kraken's 720-row OHLC cap, klines paginate via startTime — deep
-    enough for multi-segment walk-forward. Third venue for the
-    cross-venue edge gate."""
-    sym = _BINANCE_SYM.get(coin)
-    interval = _BINANCE_TF.get(tf)
-    if sym is None or interval is None:
-        return 0
-    end = int(time.time() * 1000)
-    cur = end - days * 86_400_000
-    rows_raw = []
-    while cur < end:
-        url = (f"{_BINANCE}?symbol={sym}&interval={interval}"
-               f"&startTime={cur}&endTime={end}&limit=1000")
-        req = urllib.request.Request(
-            url, headers={"User-Agent": "alphaalgo-research/1.0"})
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            batch = json.loads(resp.read())
-        if not batch:
-            break
-        rows_raw.extend(batch)
-        cur = int(batch[-1][0]) + 1
-        if len(batch) < 1000:
-            break
-    con = sqlite3.connect(db_path)
+        hdrs = dict(_UA)
+        if post is not None:
+            hdrs["Content-Type"] = "application/json"
+        req = urllib.request.Request(url, data=post, headers=hdrs)
+        with urllib.request.urlopen(req, timeout=_TIMEOUT) as r:
+            body = r.read(max_read)
+        rec["latency_s"] = round(time.time() - t0, 2)
+        rec["bytes"] = len(body)
+    except Exception as e:
+        rec.update(verdict="UNREACHABLE", error=str(e)[:120],
+                   latency_s=round(time.time() - t0, 2))
+        print(f"  {rec['verdict']:14s} {name:34s} "
+              f"{rec.get('error', '')[:70]}")
+        return rec
     try:
-        con.execute(
-            "CREATE TABLE IF NOT EXISTS market_data ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, "
-            "symbol TEXT, timeframe TEXT, open REAL, high REAL, "
-            "low REAL, close REAL, volume REAL)")
-        con.execute(
-            "CREATE INDEX IF NOT EXISTS idx_md ON "
-            "market_data(symbol, timeframe, timestamp)")
-        con.execute(
-            "DELETE FROM market_data WHERE symbol=? AND timeframe=?",
-            (coin, tf))
-        for r in rows_raw:
-            ts = time.strftime("%Y-%m-%dT%H:%M:%S+00:00",
-                               time.gmtime(int(r[0]) // 1000))
-            con.execute(
-                "INSERT INTO market_data"
-                "(timestamp,symbol,timeframe,open,high,low,close,volume)"
-                " VALUES(?,?,?,?,?,?,?,?)",
-                (ts, coin, tf, float(r[1]), float(r[2]), float(r[3]),
-                 float(r[4]), float(r[5])))
-        con.commit()
-        return con.execute(
-            "SELECT COUNT(*) FROM market_data "
-            "WHERE symbol=? AND timeframe=?", (coin, tf)).fetchone()[0]
-    finally:
-        con.close()
+        rec.update(check(body))
+        rec["verdict"] = rec.get("verdict", "OK_KEYLESS")
+    except Exception as e:
+        rec.update(verdict="FETCH_OK_PARSE_FAIL", error=str(e)[:120])
+    print(f"  {rec['verdict']:18s} {name:34s} "
+          f"{rec.get('detail', rec.get('error', ''))[:70]}")
+    return rec
 
 
-def scout(coins, timeframes, days, db_path, horizon,
-          source="hyperliquid") -> dict:
-    report_path = ROOT / "var" / "edge_baseline.json"
-    results = []
-    for tf in timeframes:
-        for coin in coins:
-            combo = {"coin": coin, "timeframe": tf, "source": source}
-            print(f"\n=== {coin} {tf} [{source}] ===", flush=True)
-            if source == "kraken":
-                try:
-                    n = kraken_sync(coin, tf, str(db_path))
-                    rc, log = (0, f"kraken {coin} {tf}: {n} rows")
-                except Exception as exc:
-                    rc, log = 1, str(exc)
-            elif source == "binance":
-                try:
-                    n = binance_sync(coin, tf, str(db_path), days=days)
-                    rc, log = (0, f"binance {coin} {tf}: {n} rows")
-                except Exception as exc:
-                    rc, log = 1, str(exc)
-            else:
-                rc, log = run(["scripts/hyperliquid_sync.py", "--coin", coin,
-                               "--timeframe", tf, "--days", str(days),
-                               "--db-path", str(db_path)])
-            if rc != 0:
-                combo["status"] = f"sync_failed rc={rc}"
-                print("  " + log.strip().splitlines()[-1][:200])
-                results.append(combo)
-                continue
-            rc, log = run(["scripts/edge_baseline.py", "--db-path",
-                           str(db_path), "--symbol", coin,
-                           "--timeframe", tf, "--horizon", str(horizon)])
-            if rc != 0 or not report_path.exists():
-                combo["status"] = f"baseline_failed rc={rc}"
-                print("  " + log.strip().splitlines()[-1][:200])
-                results.append(combo)
-                continue
-            r = json.loads(report_path.read_text())
-            best = max(
-                ((name, ru["lcb5_net_bps"]) for name, ru in
-                 r.get("rules", {}).items()
-                 if ru.get("lcb5_net_bps") is not None),
-                key=lambda kv: kv[1], default=(None, None))
-            combo.update({
-                "status": "measured",
-                "bars": r.get("bars"),
-                "eval_window": r.get("eval_window"),
-                "cost_bps": r.get("cost_bps"),
-                "verdict": r.get("verdict"),
-                "best_rule": best[0],
-                "best_lcb5_net_bps": best[1],
-                "rules": {k: {"status": v["status"],
-                              "mean_net_bps": v["mean_net_bps"],
-                              "lcb5_net_bps": v["lcb5_net_bps"],
-                              "win_rate": v["win_rate"]}
-                          for k, v in r.get("rules", {}).items()},
-            })
-            print(f"  verdict={combo['verdict']} best={combo['best_rule']}"
-                  f" lcb5={combo['best_lcb5_net_bps']}", flush=True)
-            results.append(combo)
-    candidates = [r for r in results if r.get("verdict") == "candidate_edge"]
-    measured = [r for r in results if r["status"] == "measured"]
-    measured.sort(key=lambda r: (r.get("best_lcb5_net_bps") or -999),
-                  reverse=True)
-    return {
-        "generated_at": time.time(), "grid": {"coins": coins,
-        "timeframes": timeframes, "days": days, "horizon": horizon},
-        "verdict": ("candidates_found" if candidates
-                    else "no_edge_anywhere"),
-        "candidates": candidates,
-        "ranked": measured,
-        "failures": [r for r in results if r["status"] != "measured"],
-        "scope": "3 fixed rules, chronological 60/40 split, embargo, "
-                 "block bootstrap LCB; not a market-wide proof",
-    }
+def j(v, *ks):
+    for k in ks:
+        if isinstance(v, list):
+            v = v[0] if v else None
+        if isinstance(v, dict):
+            v = v.get(k)
+        else:
+            return None
+    return v
+
+
+# --- checkers: parse a real sample, report schema ---------------------------
+
+def check_binance_vision(b: bytes) -> dict:
+    z = zipfile.ZipFile(io.BytesIO(b))
+    rows = list(csv.reader(io.TextIOWrapper(z.open(z.namelist()[0]))))
+    return {"verdict": "OK_KEYLESS",
+            "detail": f"{len(rows)} aggTrades; cols="
+                      f"{len(rows[0])}; schema=aggTradeId,price,qty,"
+                      f"first,last,ts,isBuyerMaker"}
+
+
+def check_json_rows(b: bytes, path) -> dict:
+    data = json.loads(b)
+    v = j(data, *path) if path else data
+    n = len(v) if isinstance(v, list) else 1
+    return {"detail": f"{n} records; sample={str(v)[:60]}"}
+
+
+def check_csv(b: bytes) -> dict:
+    rows = list(csv.reader(io.StringIO(b.decode("utf-8", "replace"))))
+    return {"detail": f"{len(rows)} rows; header={rows[0][:6]}"}
+
+
+SOURCES = [
+    # (name, url, kind, check, post_body_or_None) — hyperliquid is POST
+   
+    ("binance_vision_aggTrades",
+     "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/"
+     "BTCUSDT-aggTrades-2024-01-01.zip", "microstructure_archive",
+     check_binance_vision, None, 60_000_000),
+    ("binance_spot_depth",
+     "https://api.binance.com/api/v3/depth?symbol=BTCUSDT&limit=20",
+     "live_l2",
+     lambda b: check_json_rows(b, ("bids",))),
+    ("kraken_ohlc",
+     "https://api.kraken.com/0/public/OHLC?pair=XBTUSD&interval=15",
+     "ohlcv",
+     lambda b: check_json_rows(b, ("result", "XXBTZUSD"))),
+    ("coinbase_candles",
+     "https://api.exchange.coinbase.com/products/BTC-USD/candles"
+     "?granularity=900", "ohlcv",
+     lambda b: check_json_rows(b, None)),
+    ("hyperliquid_meta",
+     "https://api.hyperliquid.xyz/info", "venue_meta",
+     lambda b: check_json_rows(b, ("universe",)),
+     b'{"type":"meta"}'),
+    ("stooq_eurusd_daily",
+     "https://stooq.com/q/d/l/?s=eurusd&i=d", "daily_ohlcv", check_csv),
+    ("coingecko_price",
+     "https://api.coingecko.com/api/v3/simple/price"
+     "?ids=bitcoin&vs_currencies=usd&include_24hr_vol=true",
+     "spot_price", lambda b: check_json_rows(b, ("bitcoin",))),
+    ("yahoo_eurusd",
+     "https://query1.finance.yahoo.com/v8/finance/chart/EURUSD=X"
+     "?interval=15m&range=1d", "ohlcv",
+     lambda b: check_json_rows(b, ("chart", "result"))),
+    ("dukascopy_tick_index",
+     "https://datafeed.dukascopy.com/datafeed/EURUSD/2026/10/10/"
+     "08h_ticks.bi5", "tick_binary",
+     lambda b: {"detail": f"{len(b)} bytes LZMA bi5"}),
+]
+
+
+def hf_dataset_search(query: str, limit: int = 8) -> list:
+    """REAL dataset discovery via the HF datasets API."""
+    q = urllib.parse.urlencode(
+        {"search": query, "limit": str(limit), "sort": "downloads",
+         "direction": "-1", "full": "false"})
+    try:
+        req = urllib.request.Request(
+            f"https://huggingface.co/api/datasets?{q}", headers=_UA)
+        with urllib.request.urlopen(req, timeout=_TIMEOUT) as r:
+            data = json.loads(r.read(2_000_000))
+    except Exception as e:
+        print(f"  HF search failed: {str(e)[:100]}")
+        return []
+    out = []
+    for d in data:
+        out.append({"source": "hf_dataset", "name": d.get("id"),
+                    "downloads": d.get("downloads", 0),
+                    "likes": d.get("likes", 0),
+                    "tags": [t for t in d.get("tags", [])
+                             if ":" not in t][:6],
+                    "url": f"https://huggingface.co/datasets/{d.get('id')}",
+                    "verdict": "CANDIDATE"})
+    return out
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--coins", default="BTC,ETH,SOL")
-    ap.add_argument("--timeframes", default="15m,1h")
-    ap.add_argument("--days", type=int, default=60)
-    ap.add_argument("--horizon", type=int, default=4)
-    ap.add_argument("--db-path", default="hl_data.db")
-    ap.add_argument("--source",
-                    choices=("hyperliquid", "kraken", "binance"),
-                    default="hyperliquid",
-                    help="kraken/binance use their own db (kraken_data.db "
-                         "/ binance_data.db if --db-path left at default)")
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--search", default=None,
+                    help="HF dataset discovery query")
+    ap.add_argument("--out", default=str(OUT))
+    ap.add_argument("--collect", action="store_true",
+                    help="fetch one real binance_vision day of aggTrades "
+                         "into var/data_scout/ (bounded: 1 day, BTCUSDT)")
     args = ap.parse_args()
-    if args.source == "kraken" and args.db_path == "hl_data.db":
-        args.db_path = "kraken_data.db"
-    if args.source == "binance" and args.db_path == "hl_data.db":
-        args.db_path = "binance_data.db"
-    out = scout([c.strip() for c in args.coins.split(",") if c.strip()],
-                [t.strip() for t in args.timeframes.split(",") if t.strip()],
-                args.days, args.db_path, args.horizon, args.source)
-    rp = ROOT / "var" / "data_scout.json"
-    rp.parent.mkdir(parents=True, exist_ok=True)
-    rp.write_text(json.dumps(out, indent=2))
-    print(f"\n{'='*56}\nVERDICT: {out['verdict']}  report: {rp}")
-    print(f"{'combo':<18}{'bars':>6}{'cost':>7}{'best rule':<16}{'lcb5':>8}")
-    for r in out["ranked"]:
-        print(f"{r['coin']+'/'+r['timeframe']+'@'+r['source']:<18}{r['bars'] or 0:>6}"
-              f"{r['cost_bps'] or 0:>7.1f}{str(r['best_rule']):<16}"
-              f"{r['best_lcb5_net_bps']:>8}")
+
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    records = []
+
+    print("=== probing keyless market-data endpoints ===")
+    for src in SOURCES:
+        name, url, kind, check = src[:4]
+        post = src[4] if len(src) > 4 else None
+        max_read = src[5] if len(src) > 5 else 5_000_000
+        rec = probe(name, url, kind, check, post=post, max_read=max_read)
+        rec["query"] = name
+        records.append(rec)
+
+    if args.search:
+        print(f"\n=== HF dataset discovery: {args.search!r} ===")
+        for d in hf_dataset_search(args.search):
+            records.append(d)
+            print(f"  CANDIDATE      {d['name']:40s} "
+                  f"dl={d['downloads']:>7} {d['url']}")
+
+    if args.collect:
+        print("\n=== collecting sample: BTCUSDT aggTrades 2024-01-01 ===")
+        url = ("https://data.binance.vision/data/spot/daily/aggTrades/"
+               "BTCUSDT/BTCUSDT-aggTrades-2024-01-01.zip")
+        req = urllib.request.Request(url, headers=_UA)
+        z = zipfile.ZipFile(io.BytesIO(
+            urllib.request.urlopen(req, timeout=60).read()))
+        dest = Path("var/data_scout/BTCUSDT-aggTrades-2024-01-01.csv")
+        with z.open(z.namelist()[0]) as src, dest.open("wb") as dst:
+            dst.write(src.read())
+        n = sum(1 for _ in dest.open())
+        print(f"  wrote {dest} ({n} real aggTrades)")
+        records.append({"source": "binance_vision",
+                        "verdict": "COLLECTED", "file": str(dest),
+                        "rows": n})
+
+    with out.open("a", encoding="utf-8") as f:
+        for r in records:
+            f.write(json.dumps(r) + "\n")
+    ok = sum(1 for r in records if str(r.get("verdict")).startswith("OK")
+             or r.get("verdict") in ("CANDIDATE", "COLLECTED"))
+    print(f"\nledger -> {out} ({len(records)} rows, {ok} usable/candidate)")
     return 0
 
 
