@@ -28,17 +28,15 @@ def _load(name: str) -> Any:
         return None
 
 
-def _load_jsonl(name: str) -> list:
+def _jsonl(name: str):
     p = VAR / name
-    out = []
-    if p.exists():
-        for line in p.read_text(encoding="utf-8",
-                                errors="replace").splitlines():
-            try:
-                out.append(json.loads(line))
-            except Exception:
-                continue
-    return out
+    if not p.exists():
+        return []
+    try:
+        return p.read_text(encoding="utf-8",
+                           errors="replace").splitlines()
+    except Exception:
+        return []
 
 
 def afi_research_evidence(ctx: Mapping[str, Any]) -> dict:
@@ -114,29 +112,6 @@ def afi_research_evidence(ctx: Mapping[str, Any]) -> dict:
                              "stages": stages,
                              "triggers": st.get("triggers")}
 
-    # Improvement-genome pipeline — the system's own development
-    # proposals and their evaluated persistence. Advisory-only:
-    # PromotionDecision remains operator-gated by contract.
-    genomes = _load_jsonl("development_genomes.jsonl")
-    evidence = _load_jsonl("genome_evidence.jsonl")
-    if genomes or evidence:
-        ev_by_gid = {e.get("genome_id"): e for e in evidence}
-        pending, holding = [], 0
-        for g in genomes[-10:]:
-            ev = ev_by_gid.get(g.get("genome_id"))
-            if ev and ev.get("condition_holds"):
-                holding += 1
-            pending.append({
-                "genome_id": g.get("genome_id"),
-                "domain": g.get("domain"),
-                "objective": (g.get("objective") or "")[:100],
-                "condition_holds": (ev or {}).get("condition_holds")})
-        out["improvement_genomes"] = {
-            "proposals": len(genomes),
-            "evaluated": len(evidence),
-            "conditions_holding": holding,
-            "recent": pending[-5:]}
-
     # Open data/spec requests — what the system needs
     dr = _load("data_requests.json") or {}
     reqs = list((dr.get("requests") or {}).values())
@@ -144,6 +119,32 @@ def afi_research_evidence(ctx: Mapping[str, Any]) -> dict:
         out["open_requests"] = [
             {"kind": r.get("kind"), "need": r.get("need"),
              "count": r.get("count")} for r in reqs[:5]]
+
+    # Improvement-domain coverage: every ImprovementDomain value
+    # visible to the CSC — proposed genomes, evaluated evidence,
+    # conditions still holding. Domains with zero activity show
+    # honestly as dormant, not absent.
+    try:
+        from trading_bot.recursive_self_improvement \
+            .improvement_genome import ImprovementDomain
+        domains = [d.value for d in ImprovementDomain]
+    except Exception:
+        domains = []
+    if domains:
+        proposed, holds = {}, {}
+        for line in _jsonl("development_genomes.jsonl"):
+            d = (json.loads(line) or {}).get("domain")
+            if d:
+                proposed[d] = proposed.get(d, 0) + 1
+        for line in _jsonl("genome_evidence.jsonl"):
+            r = json.loads(line) or {}
+            d = r.get("domain")
+            if d and r.get("condition_holds"):
+                holds[d] = holds.get(d, 0) + 1
+        out["improvement_domain_coverage"] = {
+            d: {"proposed": proposed.get(d, 0),
+                "conditions_holding": holds.get(d, 0)}
+            for d in domains}
 
     # Direction: neutral — research state informs, never directs
     out["direction"] = "NEUTRAL"
