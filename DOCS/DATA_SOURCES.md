@@ -32,6 +32,7 @@ whether they're free).
 | `scripts/edge_gate.py` | Same rules across walk-forward segments AND ≥2 venues — now satisfiable for FX via `dsc_data.db` |
 | `scripts/edge_leadlag.py` | Cross-asset lead-lag (crypto) |
 | `scripts/edge_features.py` | Feature-conditioned hypotheses the price-only gate can't express: news-blackout A/B delta on all baseline rules, London session-sweep fade (real measured spread as cost), COT crowded-positioning fade, US–EU rate-differential trend. Point-in-time joins on `published_at` |
+| `scripts/funding_carry_eval.py` | Funding-signed fade on `funding_data.db` × spot closes — first non-price-data consumer. Decomposes funding income vs drift; unhedged, spot-as-perp-proxy caveat stamped. Binance 8h PASSes were drift-dominated; Hyperliquid 1h FAILed segment-consistency |
 
 ## Keyless-planned (not yet wired)
 
