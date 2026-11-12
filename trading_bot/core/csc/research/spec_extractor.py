@@ -98,15 +98,34 @@ def _hint_params(family: str, text: str) -> Dict[str, float]:
     return hints
 
 
+_FINANCE_RE = re.compile(
+    r"price|market|trad(e|ing)|stock|forex|\bfx\b|crypto|bitcoin|"
+    r"volatil|return|asset|equity|bond|future|option|order|flow|"
+    r"arbitrage|portfolio|invest|financial|currency|pair|spread|"
+    r"volume|candle|bars?\b|tick|fill|slippage|drawdown|sharpe|"
+    r"backtest|alpha|beta|hedge|swap|futures|bollinger|donchian|"
+    r"z[- ]?score|stochastic|\brsi\b|\bema\b|\bsma\b|\badx\b|"
+    r"candlestick|ichimoku|elliott|wyckoff|lookback|cointegration|"
+    r"pairs trading|lead[- ]?lag|cross-sectional|term structure|"
+    r"contango|backwardation|risk premium", re.I)
+
+
+def _has_finance_context(text: str) -> bool:
+    return bool(_FINANCE_RE.search(text))
+
+
 def extract_specs(text: str, *, provenance: Optional[Dict[str, Any]] = None,
                   spec_prefix: str = "ext") -> List[MethodSpec]:
     """Map free text onto allow-listed families -> MethodSpecs.
 
     Returns [] when nothing matches — honest empty, never a
     fabricated spec. At most one spec per matched family; families
-    are tried in template order (most specific first).
+    are tried in template order (most specific first). Text without
+    ANY finance-market vocabulary emits nothing: "momentum" in a
+    climate or physics abstract is not a tradeable claim, and the
+    eval budget is better spent on plausible candidates.
     """
-    if not text:
+    if not text or not _has_finance_context(text):
         return []
     low = text.lower()
     prov = dict(provenance or {})
