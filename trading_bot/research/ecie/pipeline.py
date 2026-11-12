@@ -1,8 +1,11 @@
 import ast
+import json
 import re
 import logging
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import urlparse
 
 from .models import (
     ExternalCandidate,
@@ -17,6 +20,44 @@ from .models import (
 from .sandbox import LocalRestrictedExecutor
 
 logger = logging.getLogger("AlphaAlgo.ECIE.Pipeline")
+
+_VOUCHED_CACHE: Optional[dict] = None
+
+
+def _trusted_config() -> dict:
+    """Operator-vouched sources config: var/trusted_sources.json.
+    Missing/unreadable -> empty (fail-closed, zero behavior change)."""
+    global _VOUCHED_CACHE
+    if _VOUCHED_CACHE is None:
+        p = (Path(__file__).resolve().parents[3]
+             / "var" / "trusted_sources.json")
+        try:
+            _VOUCHED_CACHE = (json.loads(p.read_text())
+                              if p.exists() else {})
+        except Exception:
+            _VOUCHED_CACHE = {}
+    return _VOUCHED_CACHE
+
+
+def _operator_vouched(candidate: "ExternalCandidate") -> str:
+    """Return the vouch reason ('source_type:x'/'domain:y') if the
+    operator listed this candidate's source, else ''. The operator
+    IS the trust root — a vouched source passes maturity scoring
+    with an auditable signal; security/license gates and downstream
+    spec->gate falsification still apply."""
+    cfg = _trusted_config()
+    st = str(getattr(getattr(candidate, "source_type", None),
+                     "value", "") or "").lower()
+    vtypes = {str(x).lower() for x in cfg.get("source_types", [])}
+    if st and st in vtypes:
+        return f"source_type:{st}"
+    host = urlparse(getattr(candidate, "url", "") or ""
+                    ).netloc.lower().removeprefix("www.")
+    for d in cfg.get("domains", []):
+        d = str(d).lower()
+        if host == d or host.endswith("." + d):
+            return f"domain:{d}"
+    return ""
 
 
 class ECIEPipeline:
@@ -108,6 +149,13 @@ class ECIEPipeline:
             license_clarity = True
         signals["license_clarity"] = license_clarity
 
+        # Operator-vouched sources bypass maturity scoring — the
+        # operator IS the trust root (auditable via the signals dict).
+        vouched = _operator_vouched(candidate)
+        if vouched:
+            score = max(score, 75.0)
+            signals["operator_vouched_source"] = vouched
+
         # Determine level
         if not has_tests or not has_docs:
             level = TrustLevel.LOW
@@ -120,8 +168,11 @@ class ECIEPipeline:
         else:
             level = TrustLevel.ZERO
 
-        # Lack of tests or docs must reject/fail the trust check immediately
-        is_acceptable = (score >= 50.0) and has_tests and has_docs
+        # Lack of tests or docs must reject/fail the trust check
+        # immediately — unless the operator vouched the source, which
+        # substitutes for repo-maturity signals (recorded above).
+        is_acceptable = ((score >= 50.0) and has_tests and has_docs) \
+            or bool(vouched)
         return TrustReport(
             overall_score=round(score, 2),
             trust_level=level,
@@ -173,11 +224,14 @@ class ECIEPipeline:
                                     malicious_scripts = True
 
                         elif isinstance(node.func, ast.Attribute):
-                            # e.g., os.system or subprocess.call
+                            # e.g., os.system or subprocess.call — exact
+                            # match only: substring matching flags legit
+                            # calls like np.reshape / self.flush / .shift
+                            # because "sh" and "bash" are in the list.
                             full_attr = ""
                             if isinstance(node.func.value, ast.Name):
                                 full_attr = f"{node.func.value.id}.{node.func.attr}"
-                            if any(d_call in full_attr for d_call in self.dangerous_calls):
+                            if full_attr in self.dangerous_calls:
                                 unsafe_patterns.append(f"Call to forbidden module attribute: {full_attr}")
                                 if "os.system" in full_attr or "subprocess" in full_attr:
                                     unsafe_patterns.append("Dangerous subprocess spawn detected")
