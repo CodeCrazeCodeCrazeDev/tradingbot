@@ -29,6 +29,10 @@ API = "https://query1.finance.yahoo.com/v8/finance/chart/{sym}"
 
 _TF_MAP = {"1m": "M1", "5m": "M5", "15m": "M15", "30m": "M30",
            "1h": "H1", "4h": "H4", "1d": "D1", "1wk": "W1"}
+# intraday bar width in seconds — Yahoo emits the in-progress bar with
+# a fetch-moment epoch (off-grid), so epochs not on the grid are dropped
+_TF_SECONDS = {"1m": 60, "5m": 300, "15m": 900, "30m": 1800,
+               "1h": 3600, "4h": 14400}
 _RANGE_DAYS = {"1m": 7, "5m": 60, "15m": 60, "30m": 60,
                "1h": 730, "1d": 3650, "1wk": 3650}
 
@@ -53,17 +57,20 @@ def _fetch_chart(symbol: str, interval: str, days: int) -> dict:
         return json.loads(r.read().decode())
 
 
-def _rows(payload: dict, symbol: str, tf: str):
+def _rows(payload: dict, symbol: str, tf: str, yahoo_tf: str = ""):
     res = (payload.get("chart") or {}).get("result") or []
     if not res:
         err = (payload.get("chart") or {}).get("error")
         raise SystemExit(f"{symbol}: no chart result ({err})")
+    grid = _TF_SECONDS.get(yahoo_tf)
     ts = res[0].get("timestamp") or []
     q = ((res[0].get("indicators") or {}).get("quote") or [{}])[0]
     opens, highs, lows = q.get("open") or [], q.get("high") or [], q.get("low") or []
     closes, vols = q.get("close") or [], q.get("volume") or []
     out = []
     for i, t in enumerate(ts):
+        if grid and t % grid:
+            continue  # in-progress partial bar (fetch-moment epoch)
         try:
             o, h, l, c = opens[i], highs[i], lows[i], closes[i]
             if o is None or h is None or l is None or c is None:
@@ -116,7 +123,7 @@ def main() -> int:
         for _y in [s.strip() for s in args.symbols.split(",") if s.strip()]:
             sym = _norm_symbol(_y)
             payload = _fetch_chart(_y, args.timeframe, days)
-            rows = _rows(payload, sym, tf)
+            rows = _rows(payload, sym, tf, args.timeframe)
             # Idempotent re-sync: replace the overlapping window rather
             # than duplicating bars.
             if rows:
