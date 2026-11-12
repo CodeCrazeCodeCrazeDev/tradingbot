@@ -79,6 +79,8 @@ def main():
     ap.add_argument("--blend", action="store_true",
                     help="candidate = fixed 50/50 mean of GRU and ridge "
                          "predictions (declared a priori, not fitted)")
+    ap.add_argument("--blend-w", type=float, default=0.5,
+                    help="GRU weight in the ridge blend (1-w = ridge)")
     ap.add_argument("--out", default="var/rv_forecaster.pt")
     args = ap.parse_args()
 
@@ -218,7 +220,7 @@ def main():
                    "horizons": HORIZONS,
                    "y_mean": y_mu.tolist(), "y_std": y_sd.tolist()}
         if args.blend:
-            payload["blend_w"] = 0.5
+            payload["blend_w"] = float(args.blend_w)
             payload["ridge"] = {str(h): ([m.tolist() for m in mr]
                                          if isinstance(mr, tuple) else mr)
                                 for h, mr in ridge_models.items()}
