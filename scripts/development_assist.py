@@ -83,6 +83,14 @@ def collect_genomes() -> list:
                     "dup_ts") if s.get(k)}
             if not bad:
                 continue
+            # extreme_ret alone never triggers repair: >5% bars are
+            # legitimate volatility (measured: TSLA D1 has 434 real
+            # >5% days, DOGE 1h max 7%), and dedup_or_resync on real
+            # bars would delete good data. Structural flags (off_grid,
+            # non_monotonic, dup_ts) are the repairable defects;
+            # extreme_ret stays in the flags as context.
+            if not any(k != "extreme_ret" for k in bad):
+                continue
             out.append(_gen(
                 "data_intelligence",
                 f"Repair contaminated series {d['db']}:"
