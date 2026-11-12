@@ -432,6 +432,19 @@ review date and verify them against the current code before changing anything.
   merges scout ledgers + cycle reports + method candidates + catalog
   into var/intel_report.md. `autonomous_cycle.py --interval-hours 24
   --max-cycles 7 --scout` runs unattended (var/autonomous_cycle).
+- Cross-venue lead-lag FALSIFIED (2026-11-12, `scripts/cross_venue_gate.py`):
+  Binance taker_imb (2*buy/vol-1, 15m) -> Kraken/HL same-index next-bar
+  returns, lookahead-safe. BTC/ETH x hl+kraken all rejected, best means
+  -0.59..-2.94bps at 5bps cost (imb coverage 33-96%). Report:
+  var/cross_venue_gate.json.
+- Event-study FALSIFIED (2026-11-12, `scripts/event_study_gate.py`):
+  news_events (339 rows, FOMC/NFP/ALFRED vintages) -> M15 continuation
+  of event-bar direction, horizons 1/2/4/8 bars. High-impact n~106/pair:
+  ALL rejected (means -3..-8bps net of 5bps; EURUSD h1 -61bps outlier).
+  Medium-impact n=20 -> insufficient_evidence. Scheduled-release
+  continuation has no net edge at retail cost. Report:
+  var/event_study_gate.json. NOTE: impacts stored title-case
+  ('High'/'Medium') — normalize before filtering.
 - Off-grid splice contamination is EURUSD-M15-only; GBPUSD/USDJPY M15
   and EURUSD/GBPUSD H1/H4 are clean (verified 2026-11-07). market_data.db
   now carries ~65k M15 bars x3 pairs + H1 (2016+) + H4 (2007+).
