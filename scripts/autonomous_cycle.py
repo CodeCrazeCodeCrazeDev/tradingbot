@@ -718,6 +718,23 @@ def main() -> int:
         except Exception as exc:  # noqa: BLE001
             print(f"live_outcomes skipped: {exc}")
 
+        # Self-train stage: interval-gated RSI benchmark + rv-model
+        # retrain via self_train_orchestrator (marker-file checks
+        # make non-due runs cheap). All training keeps its own
+        # fail-closed gates; advisory, failure must not kill loop.
+        try:
+            import subprocess
+            st = subprocess.run(
+                [sys.executable,
+                 str(ROOT / "scripts" / "self_train_orchestrator.py")],
+                cwd=str(ROOT), capture_output=True, text=True,
+                timeout=30)
+            if st.returncode != 0:
+                print(f"self_train rc={st.returncode}: "
+                      f"{(st.stderr or '')[-200:]}")
+        except Exception as exc:  # noqa: BLE001
+            print(f"self_train skipped: {exc}")
+
         # Analyst stage: re-judge ALL accumulated hunter artifacts
         # (this cycle + history + method_candidates + live outcomes)
         # into the classification queue. Advisory; failure must not

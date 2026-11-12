@@ -90,6 +90,17 @@ def afi_research_evidence(ctx: Mapping[str, Any]) -> dict:
     if flags:
         out["data_quality_flags"] = flags[:8]
 
+    # Self-train state — what the improvement loop last did
+    st = _load("self_train_report.json") or {}
+    if st:
+        stages = {k: {"pid": v.get("launched_pid"),
+                      "log": v.get("log"),
+                      "error": v.get("error")}
+                  for k, v in (st.get("stages") or {}).items()}
+        out["self_train"] = {"ran_at": st.get("ran_at"),
+                             "stages": stages,
+                             "triggers": st.get("triggers")}
+
     # Open data/spec requests — what the system needs
     dr = _load("data_requests.json") or {}
     reqs = list((dr.get("requests") or {}).values())
