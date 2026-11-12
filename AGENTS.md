@@ -885,3 +885,22 @@ calendar) is falsified at 5bps taker cost. Resume triggers:
 Near-miss on record: Tuesday-overnight equity anomaly — real
 2012-2023, broad-based, dead post-2024 at any cost. Do not
 re-test without new data or a different cost/execution model.
+
+Autonomy stack additions (2026-11-12, all advisory-only):
+- `scripts/analyst_review.py` runs inside every cycle ->
+  `var/analyst_queue.json` + `var/analyst_report.md`; classifies
+  PROMOTE_CANDIDATE/WATCH/DEAD with reasons (near-miss, decay,
+  cost headroom, replication death). Records keyed dataset@cost.
+- Analyst->hunter escalation: WATCH specs WITH a near-miss are
+  re-judged harder next cycle (replication datasets + halved cost,
+  `round:2` evals, `--watch-recheck` cap). Judgment directs hunt.
+- `var/data_requests.json`: untestable specs (needs_pair,
+  insufficient_bars, load_error) file durable operator requests —
+  spec_completion vs data kinds, deduped with counts.
+- `scripts/regime_split_eval.py` (hermes env): rv16-forecast vol
+  terciles -> per-regime trade verdicts. Confirmed nulls are
+  regime-robust. Extractor hit-rate ~22% post-anchor-gate — LLM
+  extractor not justified by recall alone.
+- Vol-sizing A/B closed (soakx_norv vs soakx_rv, 500 cycles,
+  identical trades): RV scalar cut mean qty 13%/dispersion 14% but
+  per-trade expectancy unchanged — risk control, not alpha.
